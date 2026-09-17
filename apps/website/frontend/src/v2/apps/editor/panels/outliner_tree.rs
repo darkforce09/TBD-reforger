@@ -9,12 +9,12 @@
 use leptos::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::entity_selection;
+#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::panels::outliner;
 use crate::v2::apps::editor::panels::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::entity_selection;
 use crate::v2::core::ui::MaterialIcon;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -197,8 +197,8 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
 }
 
 // T-668 — the tree rows speak the one state vocabulary (`eden_layout`): an idle row wears
-// [`crate::v2::apps::editor::layout::HOVER_FILL`] (`transition-colors hover:bg-white/10 hover:text-on-surface`),
-// a selected/active row wears [`crate::v2::apps::editor::layout::TOGGLED_PLATE`] (`bg-primary/20 text-primary
+// [`crate::v2::apps::editor::shell::layout::HOVER_FILL`] (`transition-colors hover:bg-white/10 hover:text-on-surface`),
+// a selected/active row wears [`crate::v2::apps::editor::shell::layout::TOGGLED_PLATE`] (`bg-primary/20 text-primary
 // border-t border-background/60`). These consts are the pre-merged literals of `base + recipe` — the
 // same "the recipe can't be `cn`'d into a `const`" idiom `eden_layout`'s STRIP/DOCK_* use — and
 // `row_carries_the_hover_fill`, `row_active_carries_the_toggled_plate` and
@@ -230,10 +230,10 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
 pub(crate) const ROW_GEOM: &str =
     "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm";
 
-/// A tree row's shared recipe (idle): [`ROW_GEOM`] + [`crate::v2::apps::editor::layout::HOVER_FILL`]. Depth
+/// A tree row's shared recipe (idle): [`ROW_GEOM`] + [`crate::v2::apps::editor::shell::layout::HOVER_FILL`]. Depth
 /// renders as leading guide-line spans (see `guide_spans`).
 pub(crate) const ROW: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
-/// A tree row's SELECTED/active recipe: [`ROW_GEOM`] + [`crate::v2::apps::editor::layout::TOGGLED_PLATE`] (the
+/// A tree row's SELECTED/active recipe: [`ROW_GEOM`] + [`crate::v2::apps::editor::shell::layout::TOGGLED_PLATE`] (the
 /// lighter primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a
 /// hovered [`ROW`]). The border is inside the `h-4` box, so this row is not a pixel taller than [`ROW`].
 pub(crate) const ROW_ACTIVE: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
@@ -252,7 +252,7 @@ pub(crate) const ROW_DROP_TARGET: &str = "relative flex h-4 w-full items-center 
 /// T-177 A2 — the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
 /// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
 /// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place). Same
-/// [`crate::v2::apps::editor::layout::HOVER_FILL`] as [`ROW`].
+/// [`crate::v2::apps::editor::shell::layout::HOVER_FILL`] as [`ROW`].
 pub(crate) const PALETTE_LEAF: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
 /// T-637 — the non-interactive row kinds (Squad / Comment headers): [`ROW_GEOM`] at the muted rest
 /// weight. They are `<div>`s, not buttons, but they occupy the same 16 px pitch — a group header that
@@ -749,7 +749,9 @@ fn comment_row(
     // is never in, so it would open blank and write nothing.
     let on_dbl = move |_: web_sys::MouseEvent| {
         #[cfg(target_arch = "wasm32")]
-        crate::v2::apps::editor::state::editor_context::open_comment_editor(id_dbl.clone());
+        crate::v2::apps::editor::bridge::host_state::editor_context::open_comment_editor(
+            id_dbl.clone(),
+        );
         #[cfg(not(target_arch = "wasm32"))]
         let _ = &id_dbl;
     };
@@ -1247,7 +1249,7 @@ fn single_row(
                     // the SEL-ORBAT-DBL-001 contract.
                     on:dblclick=move |_| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::v2::apps::editor::state::editor_context::open_attributes(id_dbl.clone());
+                        crate::v2::apps::editor::bridge::host_state::editor_context::open_attributes(id_dbl.clone());
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &id_dbl;
                     }
@@ -1369,7 +1371,7 @@ fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyV
                         }
                         on:dblclick=move |_| {
                             // SEL-ORBAT-DBL-001 — activate opens Attributes, exactly like a slot.
-                            crate::v2::apps::editor::state::editor_context::open_attributes(id_dbl.clone());
+                            crate::v2::apps::editor::bridge::host_state::editor_context::open_attributes(id_dbl.clone());
                         }
                     >
                         // A leading spacer keeps these rows aligned with the tree's guide column.
@@ -2158,7 +2160,7 @@ mod tests {
     /// `ROW_ACTIVE`'s dark top border: it is what makes a SELECTED row distinct-by-construction from a
     /// HOVERED one (before T-668 it had none, so the two differed only by tint).
     mod t668_vocabulary {
-        use crate::v2::apps::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
+        use crate::v2::apps::editor::shell::layout::{HOVER_FILL, TOGGLED_PLATE};
 
         /// The idle row carries the HOVER_FILL tokens (solid fill on hover, no border).
         #[test]
@@ -2244,7 +2246,7 @@ mod t637_one_dense_row_geometry {
         PALETTE_LEAF, ROW, ROW_ACTIVE, ROW_BADGE, ROW_FACTION, ROW_GEOM, ROW_H, ROW_STATIC,
         ROW_UNFILED,
     };
-    use crate::v2::apps::editor::layout::tw_len_px;
+    use crate::v2::apps::editor::shell::layout::tw_len_px;
 
     /// Every recipe a tree row can wear is [`ROW_GEOM`] plus a paint, and the windowing constant is
     /// that geometry's stated height — not a number that merely happens to match it today.

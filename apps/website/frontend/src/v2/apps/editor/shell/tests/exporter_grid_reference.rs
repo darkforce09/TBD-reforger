@@ -7,8 +7,8 @@
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::editing::commands::selection_digest::format_grid_ref;
 
-use crate::v2::apps::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
 use crate::v2::apps::editor::panels::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
+use crate::v2::apps::editor::shell::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
 
 /// **The clipboard and the screen can never disagree.**
 ///

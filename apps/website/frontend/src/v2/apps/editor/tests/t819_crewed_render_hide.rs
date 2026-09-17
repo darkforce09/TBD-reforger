@@ -154,7 +154,7 @@ fn assign_crew_seat_does_not_write_editor_hidden() {
 fn map_binds_feed_map_render_slot_soa() {
     let hist = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
+        "/src/v2/apps/editor/bridge/document_host/history.rs"
     ));
     let rebind = only_body(hist, "pub fn rebind_engine_from_doc");
     let after = only_body(hist, "fn after_doc_change");

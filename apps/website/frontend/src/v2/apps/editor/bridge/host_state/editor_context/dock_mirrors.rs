@@ -1,7 +1,7 @@
 //! Role: pushing the open document into the signals the docks read — the folder tree, the ORBAT
 //! tree, the selected-id list and the reactive document tick — plus the Connections panel's own
 //! signals and the comment seed a brand-new mission starts with.
-//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/editor_context` in the frontend editor shell.
 //! Signals & state: the installed context's dock mirrors, and the Connections panel and connection
 //! selection signals registered above.
 //! Invariants: the document has no change subscription, so the mirrors are pushed from the shared
@@ -48,7 +48,9 @@ pub fn refresh_docks() {
 }
 
 /// Mirror selection using the supplied domain data.
-pub(in crate::v2::apps::editor::state::editor_context) fn mirror_selection(ctx: &EditorContext) {
+pub(in crate::v2::apps::editor::bridge::host_state::editor_context) fn mirror_selection(
+    ctx: &EditorContext,
+) {
     reconcile_connection_selection(ctx);
     ctx.selected_ids.set(ctx.selection.borrow().clone());
 }
@@ -110,7 +112,7 @@ pub fn set_connection_selection_signal(sig: RwSignal<Option<String>>) {
 }
 
 /// Reconcile connection selection using the supplied domain data.
-pub(in crate::v2::apps::editor::state::editor_context) fn reconcile_connection_selection(
+pub(in crate::v2::apps::editor::bridge::host_state::editor_context) fn reconcile_connection_selection(
     ctx: &EditorContext,
 ) {
     CONNECTION_SELECTION.with(|s| {

@@ -21,7 +21,7 @@ use selection::marquee::{marquee_ids, marquee_ids_with_vehicles, view_ids_with_v
 use selection::pick::{frozen_camera, pick};
 use selection::self_check::{marquee_selfcheck, pick_selfcheck};
 
-use crate::v2::apps::editor::state::doc_host::DocHandle;
+use crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle;
 
 /// T-573 — push the live drag preview for a (possibly **mixed**) selection: slot overlay lane +
 /// mission-vehicle lane, from the one world delta the gesture is carrying.
@@ -108,7 +108,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
 /// **THE COLUMN-ALIGNMENT TRAP.** The four columns must describe the same rows in the same order or
 /// every vehicle wears another's kind, side and heading — and a silhouette pointing confidently the
 /// wrong way is believed, which makes it worse than the disc it replaces.
-/// [`crate::v2::apps::editor::state::history::vehicle_lane_fields`] is the SINGLE column builder (one pass over the
+/// [`crate::v2::apps::editor::bridge::document_host::history::vehicle_lane_fields`] is the SINGLE column builder (one pass over the
 /// id-sorted `editor_ops::vehicle_rows`); this reuses it rather than growing a second one, so the
 /// preview is built by the same code as the committed render and cannot drift from it. The `xy`
 /// handed in comes from `engine_ops::vehicle_points`, which is that same `vehicle_rows` reader
@@ -122,7 +122,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
 /// confident lie.
 fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
     let (doc_xy, aliases, tints, headings) =
-        crate::v2::apps::editor::state::history::vehicle_lane_fields();
+        crate::v2::apps::editor::bridge::document_host::history::vehicle_lane_fields();
     if doc_xy.len() == xy.len() {
         e.vehicles_bind_symbology(xy, aliases, &tints, &headings);
     } else {
@@ -138,7 +138,7 @@ fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
 /// still wholesale (hairline API replaces the role). `doc_handle` is the same live `Rc` the commit
 /// path reads — no signature change for callers, matching `vehicle_lane_fields`.
 fn bind_squad_link_preview(e: &mut RenderEngine, drag_ids: &[String], dx: f64, dy: f64) {
-    let Some(doc_h) = crate::v2::apps::editor::state::history::doc_handle() else {
+    let Some(doc_h) = crate::v2::apps::editor::bridge::document_host::history::doc_handle() else {
         return;
     };
     let guard = doc_h.borrow();
@@ -214,15 +214,15 @@ fn farthest_empty_px(w: f64, h: f64, proj: &[(f64, f64)]) -> (f64, f64) {
     // NaN/inverted box.
     // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in), not the expanded consts:
     // a collapsed dock frees its strip to the map, so a "guaranteed-empty" probe px may now sit where
-    // the panel used to be. `crate::v2::apps::editor::layout::*` owns the accessors (`eden_chrome` re-exports the
+    // the panel used to be. `crate::v2::apps::editor::shell::layout::*` owns the accessors (`eden_chrome` re-exports the
     // consts by name for the non-owned readers; the dynamic seam is the accessor).
     let (mut x0, mut x1) = (
-        crate::v2::apps::editor::layout::dock_left_px(),
-        w - crate::v2::apps::editor::layout::dock_right_px(),
+        crate::v2::apps::editor::shell::layout::dock_left_px(),
+        w - crate::v2::apps::editor::shell::layout::dock_right_px(),
     );
     let (mut y0, mut y1) = (
-        crate::v2::apps::editor::layout::strip_top_px(),
-        h - crate::v2::apps::editor::layout::toolbelt_band_px(),
+        crate::v2::apps::editor::shell::layout::strip_top_px(),
+        h - crate::v2::apps::editor::shell::layout::toolbelt_band_px(),
     );
     if x1 - x0 < 1.0 || y1 - y0 < 1.0 {
         x0 = 0.0;
@@ -505,7 +505,7 @@ pub fn register_editor_selection(
 // T-636 / T-638 / T-637 — the inset-reader tests live in `eden_layout` (the consts' owner, natively
 // compiled), NOT here: this whole module is `#[cfg(target_arch = "wasm32")]` (main.rs), so a native
 // `cargo test` never sees it. `farthest_empty_px` above reads the band via the T-638 accessor
-// `crate::v2::apps::editor::layout::toolbelt_band_px()` (was `eden_chrome::TOOLBELT_BAND_PX`) — that read is one of
+// `crate::v2::apps::editor::shell::layout::toolbelt_band_px()` (was `eden_chrome::TOOLBELT_BAND_PX`) — that read is one of
 // the two the layout accessor-conversion test pins by name, and it must not hardcode `96.0`.
 //
 // T-637 equalised the docks to 240/240. This file needed no change for that, and THAT IS THE POINT:

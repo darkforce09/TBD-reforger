@@ -3,8 +3,8 @@
 //! Filed by the wave-255 adversarial verify as a BLOCKER. The slice bound the lane from
 //! `after_doc_change` only, which is reached from undo, redo and `after_local_edit` — i.e. from an
 //! EDIT. Rows reach a document by a different route entirely: the IDB restore
-//! (`mission_editor.rs`), the server hydrate and conflict resolution (`state/hydrate.rs`), and
-//! T-190's peer merge (`state/persist.rs`), all of which land in `rebind_engine_from_doc`.
+//! (`mission_editor.rs`), the server hydrate and conflict resolution (`shell/hydrate.rs`), and
+//! T-190's peer merge (`shell/persist.rs`), all of which land in `rebind_engine_from_doc`.
 //!
 //! The consequence was not subtle. `begin_tactical_draw` has no caller yet, so a hydrated payload
 //! is currently the ONLY way a tactical graphic can exist at all — which made the slice's headline
@@ -23,7 +23,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 fn history_src() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
+        "/src/v2/apps/editor/bridge/document_host/history.rs"
     )))
 }
 

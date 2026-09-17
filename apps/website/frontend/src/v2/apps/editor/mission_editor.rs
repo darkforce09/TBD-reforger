@@ -33,17 +33,17 @@ use crate::v2::apps::editor::panels::validation_panel;
 // T-939.4 — the Arrange chords resolve through the top strip's shared list; nothing about the
 // commands themselves is duplicated here.
 #[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::document_host::doc_host as mission_doc;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::editor_context;
+#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::panels::top_strip;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::doc_host as mission_doc;
+use crate::v2::apps::editor::shell::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::editor_context;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::history as mission_history;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::hydrate as mission_hydrate;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::persist as yrs_persist;
+use crate::v2::apps::editor::shell::persist as yrs_persist;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -51,7 +51,7 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 // feeds, route resolution, the selection universe and the crew-hide SoA filter all live in the map
 // engine, and the tab-local hover state machine lives in `editor::bridge::pointer_hover`.
 // Re-exported `pub(crate)` under the SAME names so the page's bare call sites, the
-// `mission_editor::…` paths (`state/history.rs`, the panel test modules) and the evacuated pins'
+// `mission_editor::…` paths (`bridge/document_host/history.rs`, the panel test modules) and the evacuated pins'
 // `use super::…` imports all keep their exact spelling. The cfg split mirrors the consumers:
 // nothing in the native non-test build reads these through here.
 // (T-934.13: the gesture closures live in `input/pointer_gestures.rs` and still consume these through
@@ -79,7 +79,7 @@ pub(crate) use website_map_engine::editing::routing::{
 pub(crate) use website_map_engine::editing::selection_universe::{
     plain_paste_anchor, selectable_ids,
 };
-// Names only the wasm side consumes (the doc-bound wrappers below + `state/history.rs` + the
+// Names only the wasm side consumes (the doc-bound wrappers below + `bridge/document_host/history.rs` + the
 // T-934.13 gesture closures).
 #[cfg(target_arch = "wasm32")]
 pub(crate) use website_map_engine::editing::lanes::comments::{comment_lane_ids, CommentPoint};
@@ -94,7 +94,7 @@ pub(crate) use website_map_engine::editing::selection_universe::map_render_slot_
 // widget-pivot registry. Re-exported under the SAME names so the page's bare mounts
 // (`<TransformWidgetOverlay …/>`), the wasm block's `register_widget_pivot(` call, and the
 // `crate::v2::apps::editor::mission_editor::{AssetPickerState, ConflictInfo}` paths in
-// `state/operations/context.rs` / `state/hydrate.rs` all keep their exact spelling. The T-797
+// `state/operations/context.rs` / `shell/hydrate.rs` all keep their exact spelling. The T-797
 // toolbar-dispatch registry did NOT move: `eden_top_strip` drives it through
 // `crate::v2::apps::editor::mission_editor::…` and it bridges the page to the strip, not to the overlays.
 // (The `read_widget_pivot()` reader moved with the pointer closures — T-934.13 — and reads it
@@ -115,7 +115,7 @@ pub use crate::v2::apps::editor::bridge::overlays::{AssetPickerState, ConflictIn
 // `mark_registry_fetch_failed`, the T-245 `registry_session` cache) in
 // `editor::bridge::viewport`. Re-exported under the SAME names so the page's bare call sites,
 // the `crate::v2::apps::editor::mission_editor::boot_progress::…` paths in
-// `state/hydrate.rs`, and the evacuated pins' `super::…` imports (`t628_boot_progress`,
+// `shell/hydrate.rs`, and the evacuated pins' `super::…` imports (`t628_boot_progress`,
 // `t631_boot_failure_state`, `t245_registry_session`, `t750_registry_fetch_failure_signal`) all
 // keep their exact spelling. The `pub use` keeps `boot_progress` on the exact module path
 // `pub mod boot_progress` used to declare here. The T-427 cold registry fetch helpers
@@ -1140,11 +1140,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             let timer2 = timer.clone();
             let cb = Closure::once_into_js(move || {
                 timer2.set(None);
-                sz_bytes.set(
-                    editor_context::slots_json()
-                        .as_deref()
-                        .and_then(crate::v2::apps::editor::mission_size::estimate_compiled_bytes),
-                );
+                sz_bytes.set(editor_context::slots_json().as_deref().and_then(
+                    crate::v2::apps::editor::shell::mission_size::estimate_compiled_bytes,
+                ));
             });
             if let Ok(id) = win.set_timeout_with_callback_and_timeout_and_arguments_0(
                 cb.as_ref().unchecked_ref(),
@@ -1550,13 +1548,13 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-159.20 — editor commands (Save/Export) context + the `__editorCommands` smoke bridge
             // (peer of `__missionDoc`). `set_ctx` shares the same `Rc` the persistence swap targets,
             // so both the buttons and the bridge see an IDB-restored doc.
-            crate::v2::apps::editor::state::commands_hotkeys::set_ctx(
+            crate::v2::apps::editor::shell::document_commands::set_ctx(
                 doc.clone(),
                 auth,
                 mission_id.clone(),
                 current_semver,
             );
-            crate::v2::apps::editor::state::commands_hotkeys::register_editor_commands(doc.clone());
+            crate::v2::apps::editor::shell::document_commands::register_editor_commands(doc.clone());
 
             // T-159.18 — LMB select foundation. Selection is app-side state (NOT the Y.Doc — it never
             // lived in the document, matching React's Zustand), held in the editor's leaked-handle
@@ -2161,25 +2159,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let right = dock_right_collapsed.get();
                     // The pre-mirror hidden state (the Cell still holds it) — used to gate the nudge so
                     // an un-hide (was_hidden → shown) also skips the slide.
-                    let was_hidden = crate::v2::apps::editor::layout::chrome_hidden();
+                    let was_hidden = crate::v2::apps::editor::shell::layout::chrome_hidden();
 
                     let rect = container.get_bounding_client_rect();
                     let (w, h) = (rect.width(), rect.height());
                     if !(w > 0.0 && h > 0.0) {
                         // Still mirror the state so the accessors are correct before first layout.
-                        crate::v2::apps::editor::layout::set_chrome_hidden(hidden);
-                        crate::v2::apps::editor::layout::set_dock_left_collapsed(left);
-                        crate::v2::apps::editor::layout::set_dock_right_collapsed(right);
+                        crate::v2::apps::editor::shell::layout::set_chrome_hidden(hidden);
+                        crate::v2::apps::editor::shell::layout::set_dock_left_collapsed(left);
+                        crate::v2::apps::editor::shell::layout::set_dock_right_collapsed(right);
                         return;
                     }
 
                     // Pane centre with the PREVIOUS insets (the Cells still hold the pre-toggle state).
-                    let before = crate::v2::apps::editor::layout::pane_center_px(w, h);
+                    let before = crate::v2::apps::editor::shell::layout::pane_center_px(w, h);
                     // Commit the new inset state, then read the pane centre AFTER.
-                    crate::v2::apps::editor::layout::set_chrome_hidden(hidden);
-                    crate::v2::apps::editor::layout::set_dock_left_collapsed(left);
-                    crate::v2::apps::editor::layout::set_dock_right_collapsed(right);
-                    let after = crate::v2::apps::editor::layout::pane_center_px(w, h);
+                    crate::v2::apps::editor::shell::layout::set_chrome_hidden(hidden);
+                    crate::v2::apps::editor::shell::layout::set_dock_left_collapsed(left);
+                    crate::v2::apps::editor::shell::layout::set_dock_right_collapsed(right);
+                    let after = crate::v2::apps::editor::shell::layout::pane_center_px(w, h);
 
                     let dpr = web_sys::window()
                         .map(|win| win.device_pixel_ratio())
@@ -2194,7 +2192,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 || (before.1 - after.1).abs() > f64::EPSILON)
                         {
                             let scale = e.zoom().exp2();
-                            let (nx, ny) = crate::v2::apps::editor::layout::centre_hold_target(
+                            let (nx, ny) = crate::v2::apps::editor::shell::layout::centre_hold_target(
                                 e.target_x(),
                                 e.target_y(),
                                 scale,
@@ -2363,7 +2361,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         .as_ref()
                         .map(|c| c.slot_count() as u32)
                         .unwrap_or(0);
-                    crate::v2::apps::editor::state::session::mark_ready(&id, n, None);
+                    crate::v2::apps::editor::shell::session::mark_ready(&id, n, None);
                     // 4. Flush-on-hide listeners (visibilitychange/hidden + pagehide).
                     yrs_persist::register_flush_on_hide(id.clone());
                     // 4.5 T-190 (F-32) — join this mission's cross-tab channel, claim the writer
@@ -2798,7 +2796,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let strip_title = mission_id.clone();
                     move || (!chrome_hidden.get()).then(|| view! {
                     <div class="absolute inset-x-0 top-0 z-30 h-12">
-                        <crate::v2::apps::editor::eden_chrome::TopCommandStrip
+                        <crate::v2::apps::editor::shell::eden_chrome::TopCommandStrip
                             title=strip_title.clone()
                             can_undo
                             can_redo
@@ -2825,11 +2823,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // back out of these consts and unprojects with it.
                 {move || (!chrome_hidden.get()).then(|| view! {
                     <div class=move || if dock_left_collapsed.get() {
-                        crate::v2::apps::editor::layout::DOCK_LEFT_MOUNT_COLLAPSED
+                        crate::v2::apps::editor::shell::layout::DOCK_LEFT_MOUNT_COLLAPSED
                     } else {
-                        crate::v2::apps::editor::layout::DOCK_LEFT_MOUNT
+                        crate::v2::apps::editor::shell::layout::DOCK_LEFT_MOUNT
                     }>
-                        <crate::v2::apps::editor::eden_chrome::DockLeft
+                        <crate::v2::apps::editor::shell::eden_chrome::DockLeft
                             nodes=outliner_nodes
                             selected=selected_ids
                             active_layer
@@ -2839,11 +2837,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 })}
                 {move || (!chrome_hidden.get()).then(|| view! {
                     <div class=move || if dock_right_collapsed.get() {
-                        crate::v2::apps::editor::layout::DOCK_RIGHT_MOUNT_COLLAPSED
+                        crate::v2::apps::editor::shell::layout::DOCK_RIGHT_MOUNT_COLLAPSED
                     } else {
-                        crate::v2::apps::editor::layout::DOCK_RIGHT_MOUNT
+                        crate::v2::apps::editor::shell::layout::DOCK_RIGHT_MOUNT
                     }>
-                        <crate::v2::apps::editor::eden_chrome::DockRight
+                        <crate::v2::apps::editor::shell::eden_chrome::DockRight
                             catalog
                             vehicle_catalog
                             registry_items
@@ -2908,11 +2906,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <crate::v2::apps::editor::panels::attributes_modal::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
                 </div>
                 <div class="pointer-events-auto">
-                    <crate::v2::apps::editor::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
+                    <crate::v2::apps::editor::shell::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
                     <crate::pages::operations::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
                     // T-177 B2 / T-071.0 — ORBAT Manager modal shell (browse/select the live ORBAT
                     // faction → squad → slot tree relocated from the left dock).
-                    <crate::v2::apps::editor::eden_chrome::OrbatManagerDialog
+                    <crate::v2::apps::editor::shell::eden_chrome::OrbatManagerDialog
                         open=orbat_open
                         orbat=orbat_nodes
                         selected=selected_ids
@@ -2932,7 +2930,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // "this tab is not saving" must not be hideable with Backspace. Renders no DOM
                 // while this tab holds the writer role.
                 <div class="pointer-events-none absolute inset-x-0 top-3 z-30 px-4">
-                    <crate::v2::apps::editor::state::tab_lock::TabLockBanner />
+                    <crate::v2::apps::editor::shell::tab_lock::TabLockBanner />
                 </div>
                 // T-664 — the right-click context menu overlay. Mounted HERE, beside the ungated
                 // dialogs (Attributes / Settings / Faction / ORBAT / Conflict) and NOT inside the
@@ -3232,9 +3230,9 @@ mod t628_boot_progress;
 mod t631_boot_failure_state;
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::armed_placement;
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::entity_selection;
+use crate::v2::apps::editor::bridge::host_state::entity_selection;
 /// Exercise the graphics crate's satellite arithmetic directly from native UI regression tests.
 #[cfg(all(test, not(target_arch = "wasm32")))]
 use website_map_engine::world::terrain::satellite::streamer as tbd_sat_pure;

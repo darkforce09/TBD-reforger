@@ -1,6 +1,6 @@
 //! Role: the multi-click zone/trigger draw — arm a kind and shape, collect the ring or the
 //! centre-and-radius, and commit the finished geometry as one authored row.
-//! Position: `editor/state/armed_placement` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/armed_placement` in the frontend editor shell.
 //! Signals & state: the draft rides the armed value on the installed editor context, and every
 //! vertex nudges the reactive document tick so the dock's live hint re-reads.
 //! Invariants: the draft lives on the armed value rather than in a reading of its own, because "is
@@ -10,11 +10,13 @@
 //! is taken from the schema's closed enum by whoever arms the draw — never typed.
 
 use super::Pending;
-use crate::v2::apps::editor::eden_chrome::{
-    circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
+use crate::v2::apps::editor::bridge::host_state::editor_context::{
+    bump_doc_tick, ZoneDraft, EDITOR_CONTEXT,
 };
 use crate::v2::apps::editor::panels::zones_panel::DrawTarget;
-use crate::v2::apps::editor::state::editor_context::{bump_doc_tick, ZoneDraft, EDITOR_CONTEXT};
+use crate::v2::apps::editor::shell::eden_chrome::{
+    circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
+};
 use website_map_engine::data::store::operations::entity::ZoneDrawStep;
 use website_map_engine::editing::hosted_commands as engine_ops;
 

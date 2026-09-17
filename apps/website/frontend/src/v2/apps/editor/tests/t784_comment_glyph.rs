@@ -189,7 +189,7 @@ fn route_target_resolves_a_comment_without_disturbing_the_other_arms() {
 fn mission_history_packs_the_lane_through_this_module() {
     let hist = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
+        "/src/v2/apps/editor/bridge/document_host/history.rs"
     )));
     let feed = only_body(&hist, &format!("fn comment_lane{}", "_xy(doc:"));
     let shared = ["mission_editor", "::", "comment_lane_xy("].concat();

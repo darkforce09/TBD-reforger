@@ -1,5 +1,5 @@
 //! Role: the pins that hold the mission row's metadata wire together across the engine wall.
-//! Position: `editor/state` in the frontend.
+//! Position: `editor/shell` in the frontend.
 //! Signals & state: none; every item here is a test.
 //! Invariants: the wire runs `GET /missions/:id` row -> `row_meta_from_detail` -> `RowMeta` ->
 //! the adopt -> `apply_row_meta`, and it crosses a crate boundary in the middle. The
@@ -153,7 +153,7 @@ mod t570_tests {
     /// The frontend's half — the one place the API's row shape is read.
     const HYDRATE_SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/hydrate.rs"
+        "/src/v2/apps/editor/shell/hydrate.rs"
     ));
 
     const ADOPT_SIG: &str = "fn adopt_payload(";

@@ -1,14 +1,14 @@
 //! Role: the palette gestures that arm a place — a character, a vehicle, an object, a saved
 //! composition or a briefing marker — and the readings a panel renders its "click the map" hint
 //! from.
-//! Position: `editor/state/armed_placement` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/armed_placement` in the frontend editor shell.
 //! Signals & state: the armed value on the installed editor context.
 //! Invariants: a marker icon outside the closed schema enum cannot even be armed, let alone stored,
 //! so a bad vocabulary is refused at the palette rather than at save time.
 
 use super::{arm, Pending};
 use crate::v2::apps::editor::arsenal::asset_catalog::PlacePayload;
-use crate::v2::apps::editor::state::editor_context::EDITOR_CONTEXT;
+use crate::v2::apps::editor::bridge::host_state::editor_context::EDITOR_CONTEXT;
 
 /// A palette leaf `pointerdown` arms a character place, consumed by the next canvas release.
 pub fn begin_place(payload: PlacePayload) {

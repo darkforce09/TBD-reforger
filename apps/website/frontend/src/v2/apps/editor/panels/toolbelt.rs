@@ -27,7 +27,7 @@ use website_map_engine::editing::tools::line_of_sight::capture::LosMode;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::tools::selection;
 
-use crate::v2::apps::editor::layout::{HOVER_FILL, TOGGLED_PLATE};
+use crate::v2::apps::editor::shell::layout::{HOVER_FILL, TOGGLED_PLATE};
 use crate::v2::core::ui::{cn, MaterialIcon};
 
 // ── T-667 — map furniture: scale bar + edge grid references (pure geometry) ─────────────────────────
@@ -317,23 +317,23 @@ const MODEBAR: &str = "pointer-events-auto rounded-xl border border-white/10 bg-
 /// The full-width status bar surface — the `overlayDocked` glass (same tokens as the docks/strip),
 /// stretched edge-to-edge across the bottom. `border-t` gives it the docked seam Eden's status bar
 /// has. It is docked `inset-x-0 bottom-0`, so its top edge sits [`STATUSBAR_H_PX`] px up from the
-/// viewport bottom; the (much taller) [`crate::v2::apps::editor::layout::TOOLBELT_BAND_PX`] is the *input* band a
+/// viewport bottom; the (much taller) [`crate::v2::apps::editor::shell::layout::TOOLBELT_BAND_PX`] is the *input* band a
 /// pointer probe must clear, a separate contract from this bar's painted height.
 const STATUSBAR: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-9 w-full items-center gap-3 border-t border-white/10 px-3";
 
 /// T-787 — the status bar's rendered HEIGHT in CSS px (`h-9` in [`STATUSBAR`] → 36 px). This is the
 /// SOURCE OF TRUTH for how far the bar's top edge sits above the viewport bottom, exported so
-/// `eden_layout`'s [`crate::v2::apps::editor::layout::dock_bottom_px`] can inset the docks to STOP at that top
+/// `eden_layout`'s [`crate::v2::apps::editor::shell::layout::dock_bottom_px`] can inset the docks to STOP at that top
 /// edge instead of overlapping it (the O-1 defect: the transparent dock containers ran to
 /// `bottom-0` and ate clicks aimed at the readouts + right-end controls). A test below pins this to
 /// the `h-*` token in [`STATUSBAR`] so the two can never drift. Distinct from
-/// [`crate::v2::apps::editor::layout::TOOLBELT_BAND_PX`], which is the input-handling band (clears the taller
+/// [`crate::v2::apps::editor::shell::layout::TOOLBELT_BAND_PX`], which is the input-handling band (clears the taller
 /// floating [`ModeToolbar`]) and deliberately does not shrink the full-bleed canvas.
 pub const STATUSBAR_H_PX: f64 = 36.0;
 
 /// T-668 — the tool button's shared GEOMETRY (no state colour). The three states are composed from
 /// this base + the one state vocabulary: current mode = [`TOGGLED_PLATE`], a live-but-not-current
-/// mode = [`HOVER_FILL`], and a disabled stub would add `crate::v2::apps::editor::layout::DISABLED_GLYPH` (all
+/// mode = [`HOVER_FILL`], and a disabled stub would add `crate::v2::apps::editor::shell::layout::DISABLED_GLYPH` (all
 /// three tools ship live today, so no button wears the disabled recipe here). Keeping the geometry in
 /// one const and the state in the recipes is what stops a fourth ad-hoc "active" tint creeping back.
 const TOOL_BASE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md";
@@ -592,7 +592,7 @@ pub fn StatusBar(
                                 .and_then(|s| s.get())
                                 .map_or_else(
                                     || "—".to_string(),
-                                    crate::v2::apps::editor::mission_size::format_bytes,
+                                    crate::v2::apps::editor::shell::mission_size::format_bytes,
                                 )
                         }}
                     </span>
@@ -794,7 +794,9 @@ pub fn MapGridRefs(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            use crate::v2::apps::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+            use crate::v2::apps::editor::shell::layout::{
+                DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX,
+            };
             let Some((tx, ty, zoom)) = website_map_engine::streaming::host::camera_snapshot()
             else {
                 return (Vec::new(), Vec::new());
@@ -851,7 +853,7 @@ pub fn MapGridRefs(
                         format!(
                             "left:{:.1}px;top:{:.1}px",
                             l.pos_px,
-                            crate::v2::apps::editor::layout::STRIP_TOP_PX + 2.0,
+                            crate::v2::apps::editor::shell::layout::STRIP_TOP_PX + 2.0,
                         )
                     }
                 >
@@ -871,7 +873,7 @@ pub fn MapGridRefs(
                     style=move || {
                         format!(
                             "left:{:.1}px;top:{:.1}px",
-                            crate::v2::apps::editor::layout::DOCK_LEFT_PX + 2.0,
+                            crate::v2::apps::editor::shell::layout::DOCK_LEFT_PX + 2.0,
                             l.pos_px,
                         )
                     }
@@ -884,7 +886,7 @@ pub fn MapGridRefs(
 }
 
 /// Back-compat shim for the pre-T-636 single-pill mount. `eden_chrome` re-exports this name (the
-/// stable `crate::v2::apps::editor::eden_chrome::*` import surface the T-661 split promised not to break), so it stays
+/// stable `crate::v2::apps::editor::shell::eden_chrome::*` import surface the T-661 split promised not to break), so it stays
 /// a real public component. It is NOT the mount `mission_editor` uses — the split put the tools
 /// ([`ModeToolbar`]) and the readouts ([`StatusBar`]) at two independent mount points, each behind
 /// its own `chrome_hidden` gate — but keeping the symbol lets the re-export shim compile without
@@ -1019,7 +1021,7 @@ mod t636_status_bar {
     /// O-1 click-eating defect would return — this pin fails loudly instead.
     #[test]
     fn statusbar_height_const_tracks_the_h_token() {
-        let painted = crate::v2::apps::editor::layout::tw_len_px(super::STATUSBAR, "h-")
+        let painted = crate::v2::apps::editor::shell::layout::tw_len_px(super::STATUSBAR, "h-")
             .expect("the STATUSBAR recipe must state an `h-*` height");
         assert!(
             (painted - super::STATUSBAR_H_PX).abs() < f64::EPSILON,
@@ -1567,7 +1569,7 @@ mod t667_furniture_math {
             (1500.0, 900.0, -4.0), // near whole-terrain
         ];
         // Pane insets read by name from eden_layout (the real geometry).
-        use crate::v2::apps::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        use crate::v2::apps::editor::shell::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
         for (w, h, z) in cases {
             let mut tx = 6400.0_f64;
             let mut ty = 6400.0_f64;
@@ -1639,7 +1641,7 @@ mod t667_furniture_math {
     /// no label claims that position.
     #[test]
     fn grid_refs_are_clipped_to_the_map_pane_not_the_viewport() {
-        use crate::v2::apps::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        use crate::v2::apps::editor::shell::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
         let (w, h, z) = (1237.0, 843.0, 0.0); // 1 px ≈ 1 m
         let c = cam(w, h, 6400.0, 6400.0, z);
         let pane_right = w - DOCK_RIGHT_PX;
@@ -1683,7 +1685,7 @@ mod t667_furniture_math {
 #[cfg(test)]
 mod t793_grid_labels_live_camera {
     use super::*;
-    use crate::v2::apps::editor::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+    use crate::v2::apps::editor::shell::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
 
     /// The editor's real camera build (`select_tool::frozen_camera`): Everon bounds `[0,0,12800,
     /// 12800]`, north-up, no rotation — so the projection the labels use is the one the GPU grid and

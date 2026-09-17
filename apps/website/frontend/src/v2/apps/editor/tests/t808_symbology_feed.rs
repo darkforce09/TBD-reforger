@@ -3,7 +3,7 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 
 const HIST: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/src/v2/apps/editor/state/history.rs"
+    "/src/v2/apps/editor/bridge/document_host/history.rs"
 ));
 
 fn hist_live() -> String {

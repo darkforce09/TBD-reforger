@@ -1,6 +1,6 @@
 //! Role: the document's own fields read and written through the installed context — the mission
 //! environment block, the title, and the slot roster as JSON.
-//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/editor_context` in the frontend editor shell.
 //! Signals & state: no signals of its own; every read and write goes to the hosted document.
 //! Invariants: a write runs the post-edit tail so the change persists and the docks re-read, and a
 //! read with no document installed answers the empty value rather than panicking — the editor can

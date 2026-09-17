@@ -1,7 +1,7 @@
 //! Role: the editor context installed once at load — the handles every panel reaches the open
 //! mission through (the document, the render engine, the selection), the Leptos signals that mirror
 //! that document into the docks, and the handful of side signals a panel opens or closes.
-//! Position: `editor/state` in the frontend editor shell.
+//! Position: `editor/bridge/host_state` in the frontend editor shell.
 //! Signals & state: one thread-local holding the installed context, plus one thread-local per side
 //! signal (asset picker, comment editor, Connections panel, connection selection) that a component
 //! registers when it mounts.
@@ -38,11 +38,11 @@ thread_local! {
         const { RefCell::new(None) };
 }
 use crate::v2::apps::editor::arsenal::asset_catalog::PlacePayload;
+use crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle;
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
 use crate::v2::apps::editor::mission_editor::AssetPickerState;
 use crate::v2::apps::editor::panels::outliner::build_outliner_with_comments;
 use crate::v2::apps::editor::panels::outliner::OutlinerNode;
-use crate::v2::apps::editor::state::doc_host::DocHandle;
-use crate::v2::apps::editor::state::history as mission_history;
 use selection::SelectionHandle;
 use website_map_engine::data::store::operations::entity::{comment_rows, connection_id_in_doc};
 use website_map_engine::editing::tools::selection;

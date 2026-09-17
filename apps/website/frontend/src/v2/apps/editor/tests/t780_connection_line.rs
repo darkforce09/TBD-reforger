@@ -367,13 +367,14 @@ fn no_second_delete_path_and_no_hardcoded_kind_list() {
 /// ```
 ///
 /// This is the T-069 / T-672 defect stated as a test: break ANY link and the lane keeps drawing
-/// whatever the document held before the undo. `state/history.rs` and the editor context are read
+/// whatever the document held before the undo. `bridge/document_host/history.rs` and the editor
+/// context are read
 /// here, never written — the chain already existed; what is new is that something checks it.
 #[test]
 fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
     let hist = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
+        "/src/v2/apps/editor/bridge/document_host/history.rs"
     )));
     let ops = live_code(crate::v2::core::test_support::editor_operations::CONTEXT);
     let signals = ["refresh_", "signals("].concat();

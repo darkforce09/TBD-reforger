@@ -284,7 +284,7 @@ pub fn AttributesModal(
                 && ev.key() == "Escape"
                 && crate::v2::core::ui::modal_stack::is_topmost_open(modal_id)
             {
-                crate::v2::apps::editor::state::editor_context::close_attributes();
+                crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes();
             }
         });
         on_cleanup(move || {
@@ -374,7 +374,7 @@ pub fn AttributesModal(
                         // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
                         // not merely hidden. Hide keeps `read_attrs` at `Some` (raw existence), so this
                         // arm is no longer reachable from H / layer-hide (wave-113 F-2).
-                        crate::v2::apps::editor::state::editor_context::close_attributes();
+                        crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes();
                         None
                     }
                 }
@@ -440,7 +440,7 @@ fn modal_view(
     view! {
         <div
             class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            on:click=move |_| crate::v2::apps::editor::state::editor_context::close_attributes()
+            on:click=move |_| crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes()
         ></div>
         <div class=move || {
             // T-167 — the Smart Arsenal (tab 3) needs the wide 2-column doll layout; other tabs stay compact.
@@ -478,7 +478,7 @@ fn modal_view(
                     <button
                         type="button"
                         aria-label="Close"
-                        on:click=move |_| crate::v2::apps::editor::state::editor_context::close_attributes()
+                        on:click=move |_| crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes()
                         class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                     >
                         <crate::v2::core::ui::MaterialIcon name="close" />
@@ -628,7 +628,7 @@ fn vehicle_attrs_view(
 
     let Some(v) = engine_ops::vehicle_rows().into_iter().find(|r| r.id == id) else {
         // Race: id was a vehicle at the host gate, then vanished before this render.
-        crate::v2::apps::editor::state::editor_context::close_attributes();
+        crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes();
         return ().into_any();
     };
 
@@ -778,7 +778,7 @@ fn vehicle_attrs_view(
     view! {
         <div
             class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
-            on:click=move |_| crate::v2::apps::editor::state::editor_context::close_attributes()
+            on:click=move |_| crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes()
         ></div>
         <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
             <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
@@ -792,7 +792,7 @@ fn vehicle_attrs_view(
                 <button
                     type="button"
                     aria-label="Close"
-                    on:click=move |_| crate::v2::apps::editor::state::editor_context::close_attributes()
+                    on:click=move |_| crate::v2::apps::editor::bridge::host_state::editor_context::close_attributes()
                     class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
                 >
                     <crate::v2::core::ui::MaterialIcon name="close" />
@@ -2960,7 +2960,7 @@ mod tests {
     fn the_chord_guard_reads_active_element_tag_and_content_editable_directly() {
         let mh = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/history.rs"
+            "/src/v2/apps/editor/bridge/document_host/history.rs"
         )));
         let body = only_body(&mh, "pub fn in_editable_field() -> bool");
         // The source of truth is the LIVE focused node, fetched every call.

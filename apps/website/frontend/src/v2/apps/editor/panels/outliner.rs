@@ -522,7 +522,9 @@ pub fn flatten_visible(
 #[cfg(target_arch = "wasm32")]
 mod active_folder {
     use super::{DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME};
-    use crate::v2::apps::editor::state::editor_context::{EditorContext, EDITOR_CONTEXT};
+    use crate::v2::apps::editor::bridge::host_state::editor_context::{
+        EditorContext, EDITOR_CONTEXT,
+    };
     use leptos::prelude::{GetUntracked, Set};
     use website_map_engine::data::store::MissionDocCore;
     use website_map_engine::editing::hosted_commands as engine_ops;

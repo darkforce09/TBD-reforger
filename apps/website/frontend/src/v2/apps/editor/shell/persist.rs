@@ -125,7 +125,7 @@
 //! time and was never asked.
 //!
 //! Three things changed, and only the second is a guarantee about bytes:
-//!   * **A writer role.** [`crate::v2::apps::editor::state::tab_lock`] holds a `navigator.locks` lock per
+//!   * **A writer role.** [`crate::v2::apps::editor::shell::tab_lock`] holds a `navigator.locks` lock per
 //!     mission; the tab that has it writes and every other tab shows a banner and re-arms. A lock,
 //!     not a heartbeat, because the browser releases it when the page **goes away** — a crashed tab
 //!     must not hold the role forever.
@@ -133,7 +133,7 @@
 //!     live document, then re-encode and write the union. This is what holds when the role does
 //!     not: an insecure context has no Web Locks, and the window between reading the write stamp
 //!     and the `put` belongs to nobody.
-//!   * **A write stamp** ([`crate::v2::apps::editor::state::tab_lock::Stamp`], a `localStorage` sidecar so no
+//!   * **A write stamp** ([`crate::v2::apps::editor::shell::tab_lock::Stamp`], a `localStorage` sidecar so no
 //!     record format changes). It says who wrote what is on disk, which is what lets the common
 //!     single-tab save skip an O(document) decode of its own last write, and what dates the "your
 //!     local copy" half of the conflict modal.
@@ -157,9 +157,9 @@ use website_map_engine::editing::persist::record_key::{
 use website_map_engine::editing::persist::stored_blob::restores_to_authored_content;
 use website_map_engine::editing::persist::{merge_policy, record_read_retry, slot_fingerprint};
 
-use crate::v2::apps::editor::state::doc_host::DocHandle;
-use crate::v2::apps::editor::state::save_status::{self, IDLE_DEBOUNCE_MS, UNREADABLE_RETRY_LIMIT};
-use crate::v2::apps::editor::state::tab_lock;
+use crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle;
+use crate::v2::apps::editor::shell::save_status::{self, IDLE_DEBOUNCE_MS, UNREADABLE_RETRY_LIMIT};
+use crate::v2::apps::editor::shell::tab_lock;
 
 /// IndexedDB coordinates — identical to `yrsPersist.ts` (`DB_NAME` / `STORE` / v1). Distinct from the
 /// legacy v1 `tbd-mission-${id}` and v2 `tbd-mission-persist`; **no migration** (legacy drafts drop).
@@ -793,8 +793,8 @@ fn merge_stored(mission_id: &str, stored: &[u8]) -> bool {
     };
     let applied = merge_policy::apply_update_into_document(&doc, &owner_id, mission_id, stored);
     if applied {
-        crate::v2::apps::editor::state::history::refresh_hud();
-        crate::v2::apps::editor::state::history::rebind_engine_from_doc();
+        crate::v2::apps::editor::bridge::document_host::history::refresh_hud();
+        crate::v2::apps::editor::bridge::document_host::history::rebind_engine_from_doc();
     }
     applied
 }
@@ -1344,7 +1344,7 @@ pub fn register_mission_persist(
     let warm_fn = {
         let id = mission_id.clone();
         Closure::wrap(Box::new(move || -> JsValue {
-            match crate::v2::apps::editor::state::session::read_warm(&id)
+            match crate::v2::apps::editor::shell::session::read_warm(&id)
                 .and_then(|s| serde_json::to_string(&s).ok())
             {
                 Some(json) => JsValue::from_str(&json),
@@ -1376,7 +1376,7 @@ pub fn register_mission_persist(
             let id = id.clone();
             spawn_promise(async move {
                 let _ = clear_state(&id).await;
-                crate::v2::apps::editor::state::session::clear();
+                crate::v2::apps::editor::shell::session::clear();
             })
             .into()
         }) as Box<dyn FnMut() -> JsValue>)

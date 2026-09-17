@@ -45,12 +45,12 @@ use crate::v2::apps::editor::mission_editor::{
 // T-936.7 — the tactical-graphics pick tolerances. Straight from the sibling bridge module rather
 // than through `mission_editor`'s re-export hub: that hub is `mission_editor.rs`, which T-190 owns
 // this wave, and a new `pub(crate) use` line there would be a cross-slice edit for two constants.
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
+use crate::v2::apps::editor::bridge::host_state::editor_context;
 use crate::v2::apps::editor::bridge::overlays as ov;
 use crate::v2::apps::editor::bridge::tactical_graphics::{TG_PICK_PX, TG_VERTEX_PICK_PX};
 use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
-use crate::v2::apps::editor::state::armed_placement;
-use crate::v2::apps::editor::state::editor_context;
-use crate::v2::apps::editor::state::history as mission_history;
 use website_map_engine::data::store::operations::attrs;
 use website_map_engine::editing::hosted_commands as engine_ops;
 use website_map_engine::editing::hosted_commands::selection_transform;
@@ -66,7 +66,7 @@ pub(crate) struct EditorGestureContext {
     /// The map canvas — the hover cursor writes its CSS `cursor` claim here (T-802).
     pub(crate) canvas: web_sys::HtmlCanvasElement,
     pub(crate) engine: website_map_engine::frame::EngineHandle,
-    pub(crate) doc: crate::v2::apps::editor::state::doc_host::DocHandle,
+    pub(crate) doc: crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle,
     pub(crate) selection: selection::SelectionHandle,
     /// The in-flight LMB gesture (T-159.19 `LeftGesture`: Pending → Move | Marquee | Ruler | Rotate).
     pub(crate) left: Rc<RefCell<Option<selection::LeftGesture>>>,
@@ -1109,11 +1109,14 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         ev.client_y() as f64 - rect.top(),
                     );
                     // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in).
-                    let on_canvas = px >= crate::v2::apps::editor::layout::dock_left_px()
-                        && px <= rect.width() - crate::v2::apps::editor::layout::dock_right_px()
-                        && py >= crate::v2::apps::editor::layout::strip_top_px()
+                    let on_canvas = px >= crate::v2::apps::editor::shell::layout::dock_left_px()
+                        && px
+                            <= rect.width()
+                                - crate::v2::apps::editor::shell::layout::dock_right_px()
+                        && py >= crate::v2::apps::editor::shell::layout::strip_top_px()
                         && py
-                            <= rect.height() - crate::v2::apps::editor::layout::toolbelt_band_px();
+                            <= rect.height()
+                                - crate::v2::apps::editor::shell::layout::toolbelt_band_px();
                     let world = if on_canvas {
                         let g = engine.borrow();
                         g.as_ref().map(|e| {

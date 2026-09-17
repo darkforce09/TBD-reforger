@@ -20,13 +20,13 @@ use leptos::prelude::*;
 use website_map_engine::data::scenario::slot_line::format_slot_line;
 
 #[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::entity_selection;
+#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::panels::outliner;
 use crate::v2::apps::editor::panels::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
 };
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::entity_selection;
 use crate::v2::core::api::dto::{FactionDoc, RegistryItem, UserFaction};
 use crate::v2::core::ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
@@ -1330,7 +1330,7 @@ fn stitch_row(
                         }
                         on:dblclick=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::v2::apps::editor::state::editor_context::open_attributes(id_dbl.clone());
+                            crate::v2::apps::editor::bridge::host_state::editor_context::open_attributes(id_dbl.clone());
                         }
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
@@ -1521,7 +1521,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                 class="flex w-full items-center justify-center gap-2 rounded border border-outline-variant bg-surface-container py-2 font-label-md text-on-surface hover:border-primary hover:bg-surface-variant"
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::v2::apps::editor::state::editor_context::open_arsenal(id_ars.clone());
+                    crate::v2::apps::editor::bridge::host_state::editor_context::open_arsenal(id_ars.clone());
                 }
             >
                 <MaterialIcon name="backpack" class="text-[18px]" />
@@ -1714,7 +1714,7 @@ mod tests {
         );
         let hist = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/history.rs"
+            "/src/v2/apps/editor/bridge/document_host/history.rs"
         ));
         assert!(
             hist.contains("vehicles_bind"),
@@ -2040,7 +2040,7 @@ mod tests {
         );
         let context = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/editor_context/mod.rs"
+            "/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs"
         ));
         assert!(
             context.contains("#![cfg(target_arch = \"wasm32\")]"),

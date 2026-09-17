@@ -9,8 +9,8 @@
 //! commit a plan this module made rather than writing the document row by row behind the shared
 //! committer's back.
 
-use crate::v2::apps::editor::state::history as mission_history;
-use crate::v2::apps::editor::state::undo_grouped_gestures::confirm_bulk_n_step;
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
+use crate::v2::apps::editor::bridge::host_state::undo_grouped_gestures::confirm_bulk_n_step;
 use website_map_engine::editing::host::with_doc;
 use website_map_engine::editing::hosted_commands as engine_ops;
 

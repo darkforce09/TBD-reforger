@@ -10,7 +10,7 @@ use leptos::prelude::*;
 use std::collections::HashMap;
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::layout::HOVER_FILL;
+use crate::v2::apps::editor::shell::layout::HOVER_FILL;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::ui::{cn, MaterialIcon};
 

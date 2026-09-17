@@ -1,7 +1,7 @@
 //! Role: the installed context itself — the handles and signals the editor is wired to at load,
 //! the value an armed placement carries until it is dropped, and the registration of the side
 //! signals a panel opens and closes.
-//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/editor_context` in the frontend editor shell.
 //! Signals & state: the one thread-local context and the per-signal thread-locals above it.
 //! Invariants: the context is installed once, after the document is seeded, and never replaced
 //! piecemeal. A side signal that was never registered is silence — opening or closing it is a

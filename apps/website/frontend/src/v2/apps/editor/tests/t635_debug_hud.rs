@@ -111,7 +111,7 @@ fn the_hud_moved_into_the_gated_status_bar() {
     // is the StatusBar's own wrapper, not an earlier mount's.
     assert!(
         !ed[gate..belt].contains("crate::v2::apps::editor::panels::toolbelt::ModeToolbar")
-            && !ed[gate..belt].contains("crate::v2::apps::editor::eden_chrome::Dock"),
+            && !ed[gate..belt].contains("crate::v2::apps::editor::shell::eden_chrome::Dock"),
         "T-636: the chrome_hidden gate immediately preceding StatusBar must be its OWN wrapper"
     );
 }

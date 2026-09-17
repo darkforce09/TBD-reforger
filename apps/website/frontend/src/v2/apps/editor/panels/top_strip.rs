@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use crate::v2::apps::editor::panels::env::author_env;
 // T-637 — `STRIP_ROWS` / `ROW_MENUS` / `ROW_TOOLS` and the icon recipe are `eden_layout`'s again
 // (the T-634 fold-back); this file renders them rather than redefining them.
-use crate::v2::apps::editor::layout::{
+use crate::v2::apps::editor::shell::layout::{
     BTN_ICON, DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, ROW_MENUS, ROW_TOOLS, STRIP_ROWS,
     TOGGLED_PLATE,
 };
@@ -425,7 +425,7 @@ pub fn run_arrange(kind: ArrangeKind) {
 fn run_arrange_action(action: MenuAction) {
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::v2::apps::editor::state::undo_grouped_gestures;
+        use crate::v2::apps::editor::bridge::host_state::undo_grouped_gestures;
         use website_map_engine::editing::hosted_commands::selection_transform;
         // Align is the one that must undo as a single step, so it goes through the host's undo
         // grouping; the other three commit as the engine already batches them. All four are
@@ -669,7 +669,7 @@ pub fn normalize_clock(s: &str) -> Option<String> {
 
 /// T-804 — the full chip text for a completed draft flush that happened `elapsed_ms` ago.
 ///
-/// The instant comes from [`crate::v2::apps::editor::state::persist::last_flush_ms`] (a REAL completed flush — the T-779
+/// The instant comes from [`crate::v2::apps::editor::shell::persist::last_flush_ms`] (a REAL completed flush — the T-779
 /// ack discipline), and this turns "now − then" into the F-24 pre-approved copy: **"Draft saved"**
 /// plus a coarse recency. The recency is deliberately whole-unit and monotone-degrading — seconds,
 /// then minutes, then hours — because it is refreshed off a 1 s coarse tick (never a per-frame
@@ -1275,7 +1275,7 @@ pub fn TopCommandStrip(
     // only in the browser. On the native view shell `last_flush` stays `None`, so the chip's `move ||`
     // renders nothing, which is the correct native behaviour (there is no draft store to report on).
     #[cfg(target_arch = "wasm32")]
-    crate::v2::apps::editor::state::persist::set_last_flush_signal(last_flush);
+    crate::v2::apps::editor::shell::persist::set_last_flush_signal(last_flush);
     #[cfg(target_arch = "wasm32")]
     {
         use wasm_bindgen::JsCast;
@@ -1374,7 +1374,7 @@ pub fn TopCommandStrip(
         }
         #[cfg(target_arch = "wasm32")]
         {
-            crate::v2::apps::editor::state::editor_context::read_env()
+            crate::v2::apps::editor::bridge::host_state::editor_context::read_env()
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -1409,9 +1409,10 @@ pub fn TopCommandStrip(
         let c = census.get();
         let terrain = env.get().terrain;
         #[cfg(target_arch = "wasm32")]
-        let mode = crate::v2::apps::editor::state::editor_context::read_env_value("mode")
-            .and_then(|v| v.as_str().map(str::to_string))
-            .filter(|s| !s.trim().is_empty());
+        let mode =
+            crate::v2::apps::editor::bridge::host_state::editor_context::read_env_value("mode")
+                .and_then(|v| v.as_str().map(str::to_string))
+                .filter(|s| !s.trim().is_empty());
         #[cfg(not(target_arch = "wasm32"))]
         let mode: Option<String> = None;
         summary_line(&c, &terrain, mode.as_deref())
@@ -1449,7 +1450,7 @@ pub fn TopCommandStrip(
         {
             // `MouseEvent: AsRef<Event>` — `time_stamp()` is the base `Event`'s `DOMHighResTimeStamp`.
             let stamp = AsRef::<web_sys::Event>::as_ref(_ev).time_stamp();
-            crate::v2::apps::editor::state::commands_hotkeys::begin_export_gesture(stamp)
+            crate::v2::apps::editor::shell::document_commands::begin_export_gesture(stamp)
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -1471,21 +1472,21 @@ pub fn TopCommandStrip(
             }
             MenuAction::Export => {
                 #[cfg(target_arch = "wasm32")]
-                crate::v2::apps::editor::state::commands_hotkeys::export_now(
+                crate::v2::apps::editor::shell::document_commands::export_now(
                     &save_semver.get_untracked(),
                 );
             }
             MenuAction::ExportCompiled => {
                 #[cfg(target_arch = "wasm32")]
-                crate::v2::apps::editor::state::commands_hotkeys::export_compiled_now(toasts);
+                crate::v2::apps::editor::shell::document_commands::export_compiled_now(toasts);
             }
             MenuAction::Undo => {
                 #[cfg(target_arch = "wasm32")]
-                crate::v2::apps::editor::state::history::undo();
+                crate::v2::apps::editor::bridge::document_host::history::undo();
             }
             MenuAction::Redo => {
                 #[cfg(target_arch = "wasm32")]
-                crate::v2::apps::editor::state::history::redo();
+                crate::v2::apps::editor::bridge::document_host::history::redo();
             }
             MenuAction::Settings => {
                 if let Some(s) = settings_open {
@@ -1613,7 +1614,7 @@ pub fn TopCommandStrip(
                     }
                     #[cfg(target_arch = "wasm32")]
                     let doc_title = {
-                        let t = crate::v2::apps::editor::state::editor_context::read_title();
+                        let t = crate::v2::apps::editor::bridge::host_state::editor_context::read_title();
                         if t.is_empty() { title_fallback.get_value() } else { t }
                     };
                     #[cfg(not(target_arch = "wasm32"))]
@@ -1632,7 +1633,7 @@ pub fn TopCommandStrip(
                                 {
                                     let v = event_target_value(&ev);
                                     if !v.trim().is_empty() {
-                                        crate::v2::apps::editor::state::editor_context::set_title(v.trim());
+                                        crate::v2::apps::editor::bridge::host_state::editor_context::set_title(v.trim());
                                     }
                                 }
                                 #[cfg(not(target_arch = "wasm32"))]
@@ -2027,7 +2028,7 @@ pub fn TopCommandStrip(
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
                     {
-                        crate::v2::apps::editor::state::history::undo();
+                        crate::v2::apps::editor::bridge::document_host::history::undo();
                     }
                 }
             >
@@ -2042,7 +2043,7 @@ pub fn TopCommandStrip(
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
                     {
-                        crate::v2::apps::editor::state::history::redo();
+                        crate::v2::apps::editor::bridge::document_host::history::redo();
                     }
                 }
             >
@@ -2472,9 +2473,9 @@ pub fn TopCommandStrip(
                         let estimate = {
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::v2::apps::editor::state::editor_context::slots_json()
+                                crate::v2::apps::editor::bridge::host_state::editor_context::slots_json()
                                     .as_deref()
-                                    .and_then(crate::v2::apps::editor::mission_size::estimate_compiled_bytes)
+                                    .and_then(crate::v2::apps::editor::shell::mission_size::estimate_compiled_bytes)
                             }
                             #[cfg(not(target_arch = "wasm32"))]
                             {
@@ -2491,7 +2492,7 @@ pub fn TopCommandStrip(
                             Some(b) => {
                                 format!(
                                     "~{} · {} objects",
-                                    crate::v2::apps::editor::mission_size::format_bytes(b),
+                                    crate::v2::apps::editor::shell::mission_size::format_bytes(b),
                                     obj,
                                 )
                             }
@@ -2657,7 +2658,7 @@ pub fn TopCommandStrip(
                                         class="self-end rounded bg-primary px-4 py-1.5 text-xs font-medium text-on-primary"
                                         on:click=move |_| {
                                             #[cfg(target_arch = "wasm32")]
-                                            crate::v2::apps::editor::state::commands_hotkeys::save_now(
+                                            crate::v2::apps::editor::shell::document_commands::save_now(
                                                 save_semver.get_untracked(),
                                                 save_notes.get_untracked(),
                                                 save_status,
@@ -3856,7 +3857,7 @@ mod t634_two_rows_and_a_hierarchy {
     // T-637 — the row recipes moved to `eden_layout` (the T-634 fold-back) and the dead one-row
     // `STRIP` is deleted. `DOCK_L` stands in for it below: "the strip is the same glass as the docks
     // it sits above" is what comparing the two shells always meant.
-    use crate::v2::apps::editor::layout::{
+    use crate::v2::apps::editor::shell::layout::{
         BTN_ICON, DOCK_L, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS,
         STRIP_TOP_PX,
     };
@@ -4028,8 +4029,8 @@ mod t634_two_rows_and_a_hierarchy {
     fn the_exports_live_behind_one_secondary_trigger() {
         let b = body();
         for dispatch in [
-            "crate::v2::apps::editor::state::commands_hotkeys::export_now(",
-            "crate::v2::apps::editor::state::commands_hotkeys::export_compiled_now(",
+            "crate::v2::apps::editor::shell::document_commands::export_now(",
+            "crate::v2::apps::editor::shell::document_commands::export_compiled_now(",
         ] {
             assert_eq!(
                 b.matches(dispatch).count(),

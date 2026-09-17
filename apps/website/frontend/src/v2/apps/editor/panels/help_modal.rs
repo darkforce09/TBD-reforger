@@ -59,11 +59,11 @@ use std::cell::Cell;
 
 use leptos::prelude::*;
 
-use crate::v2::apps::editor::layout::HOVER_FILL;
+use crate::v2::apps::editor::shell::layout::HOVER_FILL;
 use crate::v2::core::ui::{cn, MaterialIcon};
 
 /// T-772 — ControlsHint close-button geometry. Dense strip/dock rows keep
-/// [`crate::v2::apps::editor::layout::BTN_ICON`]'s `p-0.5`; this overlay dismiss is not in a dense row, so the
+/// [`crate::v2::apps::editor::shell::layout::BTN_ICON`]'s `p-0.5`; this overlay dismiss is not in a dense row, so the
 /// comfortable `p-1.5` hit box lives at the call site rather than widening the shared recipe.
 /// Same bright rest + shrink/rounded shape as `BTN_ICON`, different padding only.
 const HINT_CLOSE_BTN: &str = "shrink-0 rounded p-1.5 text-on-surface";
@@ -654,7 +654,8 @@ pub(crate) mod keymap_census {
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
             // The input layer's keyboard half carries BOTH window-level keydowns: the editor's
-            // own chord closure and the undo/redo one that calls into `state/history.rs`. Two
+            // own chord closure and the undo/redo one that calls into
+            // `bridge/document_host/history.rs`. Two
             // listeners in one file, adjudicated against each other like any other pair.
             (
                 "window_keydown.rs",
@@ -1806,7 +1807,7 @@ mod t772_controls_hint_close_hitbox {
     //!    under `live_code` (literals blanked) and exclusive `p-1.5` on the call-site recipe.
 
     use super::HINT_CLOSE_BTN;
-    use crate::v2::apps::editor::layout::BTN_ICON;
+    use crate::v2::apps::editor::shell::layout::BTN_ICON;
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     fn hint_body_source() -> String {

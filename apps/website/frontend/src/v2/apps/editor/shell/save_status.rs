@@ -289,14 +289,14 @@ mod tests {
     fn persist_live() -> String {
         live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/persist.rs"
+            "/src/v2/apps/editor/shell/persist.rs"
         )))
     }
 
     fn persist_source() -> String {
         live_source(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/persist.rs"
+            "/src/v2/apps/editor/shell/persist.rs"
         )))
     }
 

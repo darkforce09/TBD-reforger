@@ -32,8 +32,8 @@ pub(super) fn oversize_refusal(bytes: usize) -> Option<String> {
             "That document is {} — this browser upload accepts up to {}. A mission that large has \
              to be saved from the Mission Creator, which builds the payload in memory instead of \
              parsing a file.",
-            crate::v2::apps::editor::mission_size::format_bytes(bytes),
-            crate::v2::apps::editor::mission_size::format_bytes(UPLOAD_MAX_BYTES)
+            crate::v2::apps::editor::shell::mission_size::format_bytes(bytes),
+            crate::v2::apps::editor::shell::mission_size::format_bytes(UPLOAD_MAX_BYTES)
         )
     })
 }

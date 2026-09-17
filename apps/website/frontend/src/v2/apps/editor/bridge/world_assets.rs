@@ -37,10 +37,10 @@ pub async fn bootstrap(
         HostPreferences, RenderPreferences,
     };
     let preferences = HostPreferences {
-        world_layers: crate::v2::apps::editor::world_layer_prefs::load_prefs,
-        basemap: crate::v2::apps::editor::world_layer_prefs::load_basemap_view,
+        world_layers: crate::v2::apps::editor::shell::world_layer_prefs::load_prefs,
+        basemap: crate::v2::apps::editor::shell::world_layer_prefs::load_basemap_view,
         render: || {
-            let env = crate::v2::apps::editor::state::editor_context::read_env();
+            let env = crate::v2::apps::editor::bridge::host_state::editor_context::read_env();
             RenderPreferences {
                 hillshade_opacity: env.hillshade_opacity,
                 show_hillshade: env.show_hillshade,

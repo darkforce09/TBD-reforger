@@ -12,34 +12,34 @@
 //! do, so the page builds that context once and attaches both from it.
 //! **Signals & state:** every handle and `Copy` signal the chord closure captures comes from the
 //! gesture context; the undo/redo closure captures nothing at all and reads the live editor
-//! through `state::history`'s thread-local context at fire time. Both listen on `window` rather
-//! than on the container, so a chord works before the map has focus, and both leak their closure
-//! the way the editor's other listeners do.
-//! **Invariants:** every arm sits behind `state::history::in_editable_field()`, so a key typed
-//! into a field is a character and never a chord. Undo and redo are reached only through
-//! `state::history::undo` / `state::history::redo` — this module dispatches the chord and calls
-//! across that boundary, it never steps the document's stack itself. Two listeners, two disjoint
-//! key sets: `panels/help_modal.rs`'s keymap census adjudicates them against every other window
-//! keydown in the editor.
+//! through `document_host::history`'s thread-local context at fire time. Both listen on `window`
+//! rather than on the container, so a chord works before the map has focus, and both leak their
+//! closure the way the editor's other listeners do.
+//! **Invariants:** every arm sits behind `document_host::history::in_editable_field()`, so a key
+//! typed into a field is a character and never a chord. Undo and redo are reached only through
+//! `document_host::history::undo` / `document_host::history::redo` — this module dispatches the
+//! chord and calls across that boundary, it never steps the document's stack itself. Two
+//! listeners, two disjoint key sets: `panels/help_modal.rs`'s keymap census adjudicates them
+//! against every other window keydown in the editor.
 //!
-//! Not here: `state/commands_hotkeys.rs`, which is the save / export / clipboard COMMAND registry
-//! the palette and the strip dispatch through. That is a table of named commands; this is the key
-//! dispatch.
+//! Not here: `shell/document_commands.rs`, which is the save / export / clipboard COMMAND
+//! registry the palette and the strip dispatch through. That is a table of named commands; this
+//! is the key dispatch.
 
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use website_map_engine::editing::tools::selection;
 
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
+use crate::v2::apps::editor::bridge::host_state::undo_grouped_gestures;
 use crate::v2::apps::editor::mission_editor::plain_paste_anchor;
-use crate::v2::apps::editor::state::history as mission_history;
-use crate::v2::apps::editor::state::undo_grouped_gestures;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
 use super::pointer_gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
+use crate::v2::apps::editor::bridge::host_state::entity_selection;
 use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
-use crate::v2::apps::editor::state::armed_placement;
-use crate::v2::apps::editor::state::entity_selection;
 
 /// Attach the editor's chord closure to the window.
 ///
@@ -502,7 +502,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
 /// Listens on `window` rather than on the container, so the shortcut works before the map has
 /// focus, and the closure leaks like the editor's other listeners.
 ///
-/// The step itself belongs to `state::history`: this closure calls
+/// The step itself belongs to `document_host::history`: this closure calls
 /// [`mission_history::undo`] / [`mission_history::redo`], which are the one path to the
 /// document's undo stack for the toolbar buttons, these chords and the gate bridge alike.
 pub fn register_key_handler() {

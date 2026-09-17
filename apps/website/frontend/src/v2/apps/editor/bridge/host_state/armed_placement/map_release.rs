@@ -1,6 +1,6 @@
 //! Role: the canvas release that commits an armed place — resolve the folder, commit the entity
 //! under the active side, select it, and run the shared post-change tail.
-//! Position: `editor/state/armed_placement` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/armed_placement` in the frontend editor shell.
 //! Signals & state: the armed value and the active side on the installed editor context, plus the
 //! render engine handle the vehicle lane is rebound through.
 //! Invariants: the armed value is TAKEN before the document opens, so a release commits at most
@@ -11,9 +11,11 @@
 
 use super::zone_draw::{advance_zone_draw, zone_draw_armed};
 use super::Pending;
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
+use crate::v2::apps::editor::bridge::host_state::editor_context::{
+    place_with_crew, EDITOR_CONTEXT,
+};
 use crate::v2::apps::editor::panels::outliner;
-use crate::v2::apps::editor::state::editor_context::{place_with_crew, EDITOR_CONTEXT};
-use crate::v2::apps::editor::state::history as mission_history;
 use leptos::prelude::GetUntracked;
 use outliner::ensure_active_layer;
 use website_map_engine::data::store::operations::entity::ArmedPlacement;

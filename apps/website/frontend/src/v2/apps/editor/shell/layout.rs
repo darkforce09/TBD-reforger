@@ -537,7 +537,7 @@ mod t636_band_readers_agree {
         // none, so its whole body scrubs. mission_editor's first `#[cfg(test)]` is a `clear_for_test`
         // helper near the TOP (above the band reader), so scrubbing the whole file would drop the
         // reader — slice from the page fn anchor first (the t662/t635 idiom), then scrub that.
-        let band_read = "editor::layout::toolbelt_band_px()";
+        let band_read = "editor::shell::layout::toolbelt_band_px()";
         let sel = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/v2/apps/editor/input/tools/select_tool.rs"
@@ -578,10 +578,10 @@ mod t636_band_readers_agree {
         // collapse). eden_chrome + eden_toolbelt legitimately keep the const NAMES — they are not
         // this ticket's owns and read the expanded value as bare f64 — so they are excluded here.
         for acc in [
-            "editor::layout::dock_left_px()",
-            "editor::layout::dock_right_px()",
-            "editor::layout::strip_top_px()",
-            "editor::layout::toolbelt_band_px()",
+            "editor::shell::layout::dock_left_px()",
+            "editor::shell::layout::dock_right_px()",
+            "editor::shell::layout::strip_top_px()",
+            "editor::shell::layout::toolbelt_band_px()",
         ] {
             assert!(
                 sel.contains(acc),
@@ -1228,10 +1228,10 @@ mod t637_dock_geometry {
         let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         let editor = live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..]);
         for name in [
-            "editor::layout::DOCK_LEFT_MOUNT",
-            "editor::layout::DOCK_LEFT_MOUNT_COLLAPSED",
-            "editor::layout::DOCK_RIGHT_MOUNT",
-            "editor::layout::DOCK_RIGHT_MOUNT_COLLAPSED",
+            "editor::shell::layout::DOCK_LEFT_MOUNT",
+            "editor::shell::layout::DOCK_LEFT_MOUNT_COLLAPSED",
+            "editor::shell::layout::DOCK_RIGHT_MOUNT",
+            "editor::shell::layout::DOCK_RIGHT_MOUNT_COLLAPSED",
         ] {
             assert!(
                 editor.contains(name),
@@ -1242,7 +1242,7 @@ mod t637_dock_geometry {
         // Exactly four `eden_layout::DOCK_*` reads in the page body: two per dock (expanded +
         // collapsed). A fifth is a second mount, i.e. a second place the geometry can drift.
         assert_eq!(
-            editor.matches("editor::layout::DOCK_").count(),
+            editor.matches("editor::shell::layout::DOCK_").count(),
             4,
             "T-637: the docks mount in exactly two places, each reading its expanded/collapsed pair"
         );

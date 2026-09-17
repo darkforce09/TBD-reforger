@@ -7,7 +7,7 @@
 //! Bodies are byte-identical to their `mission_editor.rs` originals, and `mission_editor`
 //! re-exports every name here, so the page's bare mounts (`<TransformWidgetOverlay …/>`), the
 //! `crate::v2::apps::editor::mission_editor::{AssetPickerState, ConflictInfo}` paths in
-//! `state/operations/context.rs` / `state/hydrate.rs`, and the page-region mount needles all keep
+//! `state/operations/context.rs` / `shell/hydrate.rs`, and the page-region mount needles all keep
 //! their exact spelling. The evacuated definition pins (`t647_placement_interactions`,
 //! `t726_window_esc_stack`) scrub THIS file — it deliberately carries no `#[cfg(test)]`, so
 //! `class_r_scrub::live_code` keeps all of it.
@@ -260,13 +260,13 @@ pub(crate) fn take_z_drag(drag: &mut Option<ZDrag>, pointer_id: i32) -> Option<Z
 }
 
 #[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::editor_context;
+#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::panels::outliner;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::armed_placement;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::editor_context;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::hydrate as mission_hydrate;
+use crate::v2::apps::editor::shell::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
 

@@ -300,7 +300,7 @@ pub fn env_patch(block: Option<&Value>) -> String {
 
 #[cfg(target_arch = "wasm32")]
 fn read_block() -> Option<Value> {
-    crate::v2::apps::editor::state::editor_context::read_env_value("spawnModules")
+    crate::v2::apps::editor::bridge::host_state::editor_context::read_env_value("spawnModules")
         .filter(|v| v.is_array())
 }
 
@@ -311,7 +311,9 @@ fn commit(block: Option<&Value>) {
             leptos::logging::warn!("spawnModules is not yet complete: {clause}");
         }
     }
-    crate::v2::apps::editor::state::editor_context::update_environment(env_patch(block));
+    crate::v2::apps::editor::bridge::host_state::editor_context::update_environment(env_patch(
+        block,
+    ));
 }
 
 /// The **Spawn modules** panel. `ctrl` is the dialog's shared control class.

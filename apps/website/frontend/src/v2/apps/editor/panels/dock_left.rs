@@ -6,7 +6,7 @@
 //! T-638 — the dock COLLAPSES to a 24×24 stub in its outer (top-LEFT) corner, toggled by the tab-strip
 //! chevron or the `E` key ([`crate::v2::apps::editor::mission_editor`]'s editor keydown). Collapsed is not a rail and
 //! not a vanish: the panel becomes exactly the stub, docked at the corner, overlaying the map, and the
-//! freed width reflows into the map pane (the inset accessors in [`crate::v2::apps::editor::layout`] carry it). The
+//! freed width reflows into the map pane (the inset accessors in [`crate::v2::apps::editor::shell::layout`] carry it). The
 //! chevron glyph points OUTWARD when expanded (« left) and FLIPS when collapsed (» — "expand me"),
 //! occupying the same 24×24 box either way (Eden's mechanism, measured across the 75 screenshots).
 //!
@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 pub use website_map_engine::data::store::operations::document_index::DocEntity;
 pub use website_map_engine::data::store::operations::document_index::DocKind;
 
-use crate::v2::apps::editor::layout::{DOCK_L, STUB_PX};
+use crate::v2::apps::editor::shell::layout::{DOCK_L, STUB_PX};
 
 // ── T-637 — the header row is a WIDTH BUDGET too ─────────────────────────────────────────────────
 //
@@ -50,11 +50,11 @@ const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
 /// T-637 — a tab cell's horizontal padding (`px-1.5` ⇒ 6 px each side).
 const TAB_LABEL_PAD_PX: f64 = 12.0;
 #[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::entity_selection;
+#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::panels::outliner;
 use crate::v2::apps::editor::panels::outliner::OutlinerNode;
 use crate::v2::apps::editor::panels::outliner_tree::virtual_tree;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::entity_selection;
 use crate::v2::core::ui::MaterialIcon;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -63,7 +63,7 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 /// right); the collapsed state shows the OTHER chevron in the SAME 24×24 box (the "flip the glyph"
 /// rule). `at_start` places it at the row's start (left dock, outer corner = top-left) vs end (right
 /// dock, top-right). The button flips `collapsed`; `mission_editor` observes that signal to mirror the
-/// [`crate::v2::apps::editor::layout`] inset latch + run the reflow/centre-hold, so the chevron itself stays a pure
+/// [`crate::v2::apps::editor::shell::layout`] inset latch + run the reflow/centre-hold, so the chevron itself stays a pure
 /// toggle.
 pub fn collapse_chevron(collapsed: RwSignal<bool>, expanded_is_left: bool) -> impl IntoView {
     let title = move || {
@@ -1461,7 +1461,7 @@ fn load_named_places() -> Vec<NamedPlace> {
 // asking the router can.
 //
 // **WHERE IT LIVES, AND WHY THERE IS NO THIRD TAB.** T-637 measured the header as a width budget and
-// `the_header_row_fits_the_dock` adds it up: at [`crate::v2::apps::editor::layout::DOCK_PX`] 240 with `p-2`
+// `the_header_row_fits_the_dock` adds it up: at [`crate::v2::apps::editor::shell::layout::DOCK_PX`] 240 with `p-2`
 // gutters the row has 216 px and already spends 207.5 on the chevron, "Layers", "Locations" and the
 // trailing verb. A third tab is ~50 px against 8.5 px of headroom — it does not fit, and because the
 // tab group carries `min-w-0` it would not overflow, it would SQUEEZE and wrap silently. So document
@@ -2180,8 +2180,8 @@ mod t637_density {
         filter_outliner, find_layer_label, first_folder_label, matches_query, TAB_LABEL_LAYERS,
         TAB_LABEL_PAD_PX, TAB_LABEL_PLACES, UPPERCASE_LABEL_ADVANCE_PX,
     };
-    use crate::v2::apps::editor::layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
     use crate::v2::apps::editor::panels::outliner::{NodeKind, OutlinerNode};
+    use crate::v2::apps::editor::shell::layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
 
     /// The file's production half — everything above the first test module. A needle checked against
     /// this cannot be satisfied by a test's own source.
@@ -2323,7 +2323,7 @@ mod t637_density {
         );
     }
 
-    /// **The height goes to the tree.** The dock is a column ([`crate::v2::apps::editor::layout::DOCK_L`]); the
+    /// **The height goes to the tree.** The dock is a column ([`crate::v2::apps::editor::shell::layout::DOCK_L`]); the
     /// tree region claims the remainder with `flex-1` and can shrink inside it with `min-h-0`. Both
     /// tokens are load-bearing: without `flex-1` the void comes straight back, and without `min-h-0`
     /// a flex child refuses to shrink below its content, so a long tree pushes the panel instead of
@@ -2513,9 +2513,9 @@ mod t697_document_search {
         DocEntity, DocHit, DocKind, HIT_GAP_PX, HIT_ICON_PX, HIT_MIN_LABEL_PX, HIT_ROW_PAD_PX,
         LIST_SCROLLBAR_PX, MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
     };
-    use crate::v2::apps::editor::layout::{tw_len_px, DOCK_L, DOCK_PX};
     use crate::v2::apps::editor::mission_editor::route_target;
     use crate::v2::apps::editor::panels::validation_panel::register_route_probe;
+    use crate::v2::apps::editor::shell::layout::{tw_len_px, DOCK_L, DOCK_PX};
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// The dock's own production text — comments, test modules and unreachable arms removed.

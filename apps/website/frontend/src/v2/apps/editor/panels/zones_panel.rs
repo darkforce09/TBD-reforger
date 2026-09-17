@@ -1171,9 +1171,9 @@ pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
 }
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::armed_placement;
+use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
 /// Which shape a zone draw is building. The vocabulary is the document's, so the panel and the
 /// authored row can never disagree about what a draw is producing.
 pub use website_map_engine::data::store::operations::zones::ZoneShape;

@@ -1,5 +1,5 @@
 //! Role: the browser half of the editor's Save / Export / clipboard commands.
-//! Position: `editor/state` in the frontend editor.
+//! Position: `editor/shell` in the frontend editor.
 //! Signals & state: the hosted document, the auth token and the mission id, reached through one
 //! thread-local context installed at mount.
 //! Invariants: what a command DECIDES — the bytes an export writes, the wording a report carries,
@@ -42,7 +42,7 @@ mod imp {
     /// is what `class_r_source_forbids_value_pretty_on_compiled_export` locates it by.
     type CompiledWithDiagnostics = (String, Vec<Finding>);
 
-    use crate::v2::apps::editor::state::doc_host::DocHandle;
+    use crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle;
     use crate::v2::core::auth::AuthStore;
 
     use super::{
@@ -410,14 +410,15 @@ mod imp {
                 // Naming the staleness is the whole reason this is a toast and not a silent download:
                 // the file is the CURRENT document, which is only what a game server would fetch once
                 // this state is saved.
-                let staleness = if crate::v2::apps::editor::state::history::is_dirty() {
-                    Some(
+                let staleness =
+                    if crate::v2::apps::editor::bridge::document_host::history::is_dirty() {
+                        Some(
                         "Downloaded the compiled mission document — compiled from your unsaved \
                          changes, so the server still serves the last saved version.",
                     )
-                } else {
-                    None
-                };
+                    } else {
+                        None
+                    };
                 match (staleness, summary) {
                     (Some(stale), Some(s)) => toasts.message(format!("{stale} {s}")),
                     (Some(stale), None) => toasts.message(stale.to_string()),
@@ -525,13 +526,13 @@ mod imp {
                     // (T-370 removed the `editor_session::mark_adopted` call that sat here: T-352
                     // had already emptied it, and T-223 replaced the semver marker it once wrote
                     // with the content test in `mission_hydrate::classify_local`.)
-                    crate::v2::apps::editor::state::history::set_dirty(false);
+                    crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
                     // T-191 fix — expire the conflict backup pair. This 201 is the one moment those
                     // whole-document IDB records stop being anybody's last copy, and nothing else ever
                     // deleted them: they accumulated one doc per mission ever conflicted, forever, while
                     // `__missionBackup.has()` kept offering a weeks-old document that a restore would
                     // swap over current work. Rationale in `mission_hydrate::clear_local_backups`.
-                    crate::v2::apps::editor::state::hydrate::clear_local_backups(&mission_id);
+                    crate::v2::apps::editor::shell::hydrate::clear_local_backups(&mission_id);
                     if let Some(sig) = semver_signal() {
                         sig.set(Some(semver.clone()));
                     }
@@ -641,7 +642,7 @@ mod imp {
     /// T-693 (MENU-SCEN-011) — merge another mission (`source_id`) into the CURRENT document.
     ///
     /// Fetches the source's latest payload (`GET /missions/:id` → `current_version.json_payload`, the
-    /// same superset [`crate::v2::apps::editor::state::hydrate`] loads), runs [`MissionDocCore::merge_mission_payload_json`]
+    /// same superset [`crate::v2::apps::editor::shell::hydrate`] loads), runs [`MissionDocCore::merge_mission_payload_json`]
     /// on the hosted doc, and reports the outcome via toasts: a counts line plus, when the merge
     /// tolerated malformed rows, an error toast listing each skipped row (the T-657 totality contract
     /// made visible to the author). `offset` is the optional template placement delta.
@@ -715,7 +716,7 @@ mod imp {
             // so a wired merge reported success by toast while the map showed nothing. The `EDITOR_CTX`
             // doc borrow was dropped at the end of the block above; `after_local_edit` takes its own
             // `HISTORY_CTX` borrow, so this is not held across the earlier `.await`.
-            crate::v2::apps::editor::state::history::after_local_edit();
+            crate::v2::apps::editor::bridge::document_host::history::after_local_edit();
 
             let (summary, skipped) = format_merge_report(&report_json);
             toasts.success(format!("{summary} (Ctrl+Z to undo.)"));
@@ -833,7 +834,7 @@ mod imp {
     /// Copy button carried the very defect this function was written against — a dropped
     /// `write_text` promise followed by an unconditional "copied" toast — and it was the live
     /// in-repo precedent any new exporter would have copied. It now calls through here (reachable
-    /// as `crate::v2::apps::editor::state::commands_hotkeys::write_clipboard` via the `pub use imp::*` re-export below).
+    /// as `crate::v2::apps::editor::shell::document_commands::write_clipboard` via the `pub use imp::*` re-export below).
     /// A second clipboard path is a defect in itself: two vocabularies for "did the copy land"
     /// means one of them is eventually wrong and nobody notices. If another surface needs to copy,
     /// call this — do not re-derive it.
@@ -1130,7 +1131,7 @@ mod tests {
     #[test]
     fn class_r_source_forbids_value_pretty_on_compiled_export() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("commands_hotkeys.rs");
+        const SRC: &str = include_str!("document_commands.rs");
         let production = live_code(SRC);
         let code = only_body(
             &production,
@@ -1176,7 +1177,7 @@ mod tests {
     #[test]
     fn t746_row_hydrate_keeps_game_mode_beside_meta() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        let src = live_code(include_str!("commands_hotkeys.rs"));
+        let src = live_code(include_str!("document_commands.rs"));
         let set = only_body(&src, "pub fn set_row_meta");
         let row_hydrate = format!("{}{}", "ROW_", "HYDRATE");
         let hydrated = format!("{}{}", "Hydrated", "Row {");
@@ -1282,7 +1283,7 @@ mod tests {
     #[test]
     fn class_r_merge_mission_now_runs_the_after_local_edit_tail() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("commands_hotkeys.rs");
+        const SRC: &str = include_str!("document_commands.rs");
         let production = live_code(SRC);
         let code = only_body(&production, "pub fn merge_mission_now");
         assert!(
@@ -1366,7 +1367,7 @@ mod tests {
     #[test]
     fn class_r_the_export_publishes_to_the_panel_and_builds_no_second_one() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("commands_hotkeys.rs");
+        const SRC: &str = include_str!("document_commands.rs");
         let production = live_code(SRC);
         let code = only_body(&production, "pub fn export_compiled_now(");
         assert!(
@@ -1399,7 +1400,7 @@ mod tests {
     #[test]
     fn class_r_write_clipboard_toasts_only_on_the_resolve_arm() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-        const SRC: &str = include_str!("commands_hotkeys.rs");
+        const SRC: &str = include_str!("document_commands.rs");
         let production = live_code(SRC);
         let body = only_body(
             &production,
@@ -1433,7 +1434,7 @@ mod t946_86_duplicate_guard {
     use crate::v2::core::test_support::class_r_scrub::live_code;
 
     fn live() -> String {
-        live_code(include_str!("commands_hotkeys.rs"))
+        live_code(include_str!("document_commands.rs"))
     }
 
     /// **The guard is CALLED, and before the POST.** `duplicate_slot_ids` shipped in wave 255

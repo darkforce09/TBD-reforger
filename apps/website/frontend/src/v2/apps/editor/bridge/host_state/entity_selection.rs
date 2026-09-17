@@ -1,6 +1,6 @@
 //! Role: the editor's selected entities — replacing the set, selecting a folder's rows, selecting
 //! everything in view, and framing the selection with the camera.
-//! Position: `editor/state` in the frontend editor shell.
+//! Position: `editor/bridge/host_state` in the frontend editor shell.
 //! Signals & state: the selected-id set on the installed editor context, the render engine handle
 //! whose tint and camera it drives, and the dock mirrors the shared refresh pushes.
 //! Invariants: one write of the set, then the renderer, then the mirrors — in that order, from one
@@ -8,8 +8,8 @@
 //! document state: nothing here mints an undo step, and a selection over ids the document no longer
 //! holds is pruned by the post-change tail rather than defended against here.
 
-use crate::v2::apps::editor::state::editor_context::EDITOR_CONTEXT;
-use crate::v2::apps::editor::state::history as mission_history;
+use crate::v2::apps::editor::bridge::document_host::history as mission_history;
+use crate::v2::apps::editor::bridge::host_state::editor_context::EDITOR_CONTEXT;
 use website_map_engine::data::store::operations::projections::layer_rows;
 use website_map_engine::editing::hosted_commands::vehicle_points;
 use website_map_engine::editing::tools::selection;

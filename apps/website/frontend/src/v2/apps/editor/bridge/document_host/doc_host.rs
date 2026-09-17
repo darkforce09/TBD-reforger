@@ -178,7 +178,7 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
 /// active is the tree's focus. That is why the seed is assembled here and the document is handed a
 /// folder id it does not have to go looking for.
 fn debug_seed_slots(n: u32) {
-    use crate::v2::apps::editor::state::editor_context::EDITOR_CONTEXT;
+    use crate::v2::apps::editor::bridge::host_state::editor_context::EDITOR_CONTEXT;
     use outliner::ensure_active_layer;
 
     EDITOR_CONTEXT.with(|c| {
@@ -198,5 +198,5 @@ fn debug_seed_slots(n: u32) {
             n,
         );
     });
-    crate::v2::apps::editor::state::history::after_local_edit();
+    crate::v2::apps::editor::bridge::document_host::history::after_local_edit();
 }

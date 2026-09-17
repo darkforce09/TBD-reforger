@@ -59,7 +59,7 @@ fn bad_input_is_inert() {
 fn both_feeds_pass_glyphs_and_captions() {
     let hist = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
+        "/src/v2/apps/editor/bridge/document_host/history.rs"
     )));
     let bind = format!("{}{}", "markers", "_bind");
     let fields = format!("{}{}", "marker_lane_", "fields");

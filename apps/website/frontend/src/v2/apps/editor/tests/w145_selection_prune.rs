@@ -152,7 +152,7 @@ fn a_document_that_does_not_parse_yields_an_empty_universe() {
 fn the_selection_prune_runs_over_the_whole_selectable_universe() {
     let hist = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
+        "/src/v2/apps/editor/bridge/document_host/history.rs"
     )));
     let retain = ["retain", "(|id|"].concat();
     assert_eq!(

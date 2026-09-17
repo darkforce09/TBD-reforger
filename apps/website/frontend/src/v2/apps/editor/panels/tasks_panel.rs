@@ -278,7 +278,8 @@ pub fn env_patch(tasks: Option<&[Value]>) -> String {
 
 #[cfg(target_arch = "wasm32")]
 fn read_block() -> Option<Value> {
-    crate::v2::apps::editor::state::editor_context::read_env_value("tasks").filter(|v| v.is_array())
+    crate::v2::apps::editor::bridge::host_state::editor_context::read_env_value("tasks")
+        .filter(|v| v.is_array())
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -289,7 +290,9 @@ fn commit(tasks: Option<&[Value]>) {
             leptos::logging::warn!("tasks is not yet complete: {clause}");
         }
     }
-    crate::v2::apps::editor::state::editor_context::update_environment(env_patch(tasks));
+    crate::v2::apps::editor::bridge::host_state::editor_context::update_environment(env_patch(
+        tasks,
+    ));
 }
 
 #[cfg(target_arch = "wasm32")]

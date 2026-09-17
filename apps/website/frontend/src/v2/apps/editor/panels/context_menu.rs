@@ -36,10 +36,10 @@ use leptos::prelude::*;
 // T-939.4 — the Arrange rows are the TOP STRIP's list. This module renders and dispatches them; it
 // does not own, copy or re-order them. See `top_strip::ARRANGE`.
 #[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::entity_selection;
+#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::panels::outliner;
 use crate::v2::apps::editor::panels::top_strip::{ArrangeKind, ARRANGE, ARRANGE_MIN_SELECTION};
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::entity_selection;
 
 /// T-672 (`CONN-START-001`) — the three relations Eden's `Connect ▸` submenu can make, as menu-row
 /// payload. Carried INSIDE [`ContextItem::ConnectStart`] rather than as three flat variants so the
@@ -998,12 +998,16 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // selection, so `target_ids[0]` is that entity).
         ContextItem::Attributes => {
             if let Some(id) = target_ids.first() {
-                crate::v2::apps::editor::state::editor_context::open_attributes(id.clone());
+                crate::v2::apps::editor::bridge::host_state::editor_context::open_attributes(
+                    id.clone(),
+                );
             }
         }
         ContextItem::EditLoadout => {
             if let Some(id) = target_ids.first() {
-                crate::v2::apps::editor::state::editor_context::open_arsenal(id.clone());
+                crate::v2::apps::editor::bridge::host_state::editor_context::open_arsenal(
+                    id.clone(),
+                );
             }
         }
         // T-651 (`PLACE-COMMENT-001`) — place an editor-only annotation at the world point the
@@ -1037,7 +1041,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         ContextItem::ConnectCancel => engine_ops::cancel_connect(),
         // T-672 — open the SEE + CHECK panel. The one row on both takes.
         ContextItem::ShowConnections => {
-            crate::v2::apps::editor::state::editor_context::open_connections_panel()
+            crate::v2::apps::editor::bridge::host_state::editor_context::open_connections_panel()
         }
         // T-672 (`ACTION-FORM-001` / `CTX-FORMATION-001`) — re-form the target's squad. Inert (0
         // moved, no undo step) when the target does not LEAD a squad, which is the honest answer:

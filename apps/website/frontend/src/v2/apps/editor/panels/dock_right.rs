@@ -6,7 +6,7 @@
 //! Not cfg-gated (the doc-driving `on:pointerdown` bodies are wasm-gated inside their closures).
 #![allow(dead_code)]
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::editor_context;
+use crate::v2::apps::editor::bridge::host_state::editor_context;
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
@@ -16,19 +16,19 @@ use website_map_engine::editing::tools::selection;
 use serde::{Deserialize, Serialize};
 
 use crate::v2::apps::editor::arsenal::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
-use crate::v2::apps::editor::layout::{DOCK_R, STUB_PX};
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
 use crate::v2::apps::editor::panels::dock_left::collapse_chevron;
 use crate::v2::apps::editor::panels::outliner_tree::{
     chevron_or_spacer, guide_spans, PALETTE_LEAF,
 };
 use crate::v2::apps::editor::panels::zones_panel::zones_panel;
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::armed_placement;
+use crate::v2::apps::editor::shell::layout::{DOCK_R, STUB_PX};
 use crate::v2::core::api::dto::RegistryItem;
 use crate::v2::core::ui::MaterialIcon;
 
 /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
-/// search. A checkbox bound to `with_crew`: a change writes the [`crate::v2::apps::editor::state::editor_context`] placement
+/// search. A checkbox bound to `with_crew`: a change writes the [`crate::v2::apps::editor::bridge::host_state::editor_context`] placement
 /// preference so the NEXT vehicle drop stamps the manned/unmanned intent (`crewed: false` when off)
 /// onto its `vehiclesById` row. Eden's default is crewed, which is `with_crew`'s seed.
 #[cfg(target_arch = "wasm32")]
@@ -2538,7 +2538,7 @@ fn composition_row_view(
     row: &'static str,
     row_active: &'static str,
 ) -> AnyView {
-    use crate::v2::apps::editor::state::editor_context;
+    use crate::v2::apps::editor::bridge::host_state::editor_context;
 
     // `row_active` is part of the shared row vocabulary; a composition row does not carry a
     // persistent "selected" state (its selection IS the transient arm), so only `row` is used.
@@ -6186,7 +6186,7 @@ mod tests {
 #[cfg(test)]
 mod t637_tab_strip_budget {
     use super::{TAB_CELL_OFF, TAB_CELL_ON, TAB_CELL_VERB, TAB_COUNT, TAB_GROUP, TAB_STRIP};
-    use crate::v2::apps::editor::layout::{tw_len_px, DOCK_PX, DOCK_R, STUB_PX};
+    use crate::v2::apps::editor::shell::layout::{tw_len_px, DOCK_PX, DOCK_R, STUB_PX};
 
     /// The production half of this file — everything above the first test module, so a needle here
     /// cannot satisfy itself (the T-759 hollow-pin trap).

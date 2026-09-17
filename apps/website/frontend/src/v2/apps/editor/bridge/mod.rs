@@ -3,11 +3,12 @@
 //! **Role:** owns the surface the map is drawn on and the machinery that keeps it current — the
 //! boot machine that raises the document and the world, the viewport belt that sizes the backing
 //! store and paces the frame pump, the floating overlays laid over the map, the pure geometry the
-//! renderer and the pick paths share, and the asset host that feeds terrain and imagery in.
-//! **Position:** the only place in the editor that holds a live engine or host handle and hands it
-//! to `website_map_engine`. The docked chrome under [`super::panels`] and the interactive tools
-//! under [`super::input::tools`] reach the map through the state and command layers, never through
-//! a handle of their own.
+//! renderer and the pick paths share, the asset host that feeds terrain and imagery in, the hosted
+//! document with its undo drive, and the host signal state the engine's hosted commands read.
+//! **Position:** the only place in the editor that holds a live engine, document or host handle
+//! and hands it to `website_map_engine`. The docked chrome under [`super::panels`] and the
+//! interactive tools under [`super::input::tools`] reach the map through [`host_state`] and the
+//! command layers, never through a handle of their own.
 //! **Signals & state:** the boot phase, the frame-timing samples, the widget-pivot registry and
 //! the hover cursor are all tab-local — they die with the browser tab and never reach the
 //! document. Anything an operator authored travels through `website_map_engine::editing` instead.
@@ -19,9 +20,15 @@
 /// The boot machine: the phases a mounting editor passes through, the per-segment progress
 /// arithmetic behind the boot overlay, and the hand-over that hides it once the world settles.
 pub mod boot;
+/// The hosted mission document and the undo drive that moves it: the document's lifecycle and
+/// smoke bridge, and the single driver the toolbar, the shortcuts and the harness all take.
+pub mod document_host;
 /// The transform gizmo's vertical Z arm: its geometry, its hit test, and the pure arithmetic that
 /// turns a vertical drag into snapped metres of elevation.
 pub mod gizmo_z;
+/// The host signal state the engine's hosted commands read: the installed editor context, the
+/// in-flight placement, the selected entities and the host half of undo grouping.
+pub mod host_state;
 /// The floating overlays and dialogs laid over the map: the transform widget and its mode hint and
 /// snap readout, the empty-ground asset picker, the comment editor, the connections panel and the
 /// local-versus-server conflict dialog, plus the widget-pivot registry the gizmo reads.

@@ -1,6 +1,6 @@
 //! Role: the in-flight placement — what the operator has picked up from a palette and not yet
 //! dropped on the map, and the map release that commits it.
-//! Position: `editor/state` in the frontend editor shell.
+//! Position: `editor/bridge/host_state` in the frontend editor shell.
 //! Signals & state: the armed value on the installed editor context, and the reactive document
 //! tick every arm change nudges so the docks re-read their hints.
 //! Invariants: the discriminant lives on the ARMED VALUE rather than on a reading of which palette
@@ -8,7 +8,9 @@
 //! the commit, and a placement must commit the entity the operator actually picked up. Nothing here
 //! is document state: an arm is never undoable, and a release that commits nothing leaves no trace.
 
-use crate::v2::apps::editor::state::editor_context::{bump_doc_tick, Pending, EDITOR_CONTEXT};
+use crate::v2::apps::editor::bridge::host_state::editor_context::{
+    bump_doc_tick, Pending, EDITOR_CONTEXT,
+};
 use leptos::prelude::GetUntracked;
 use website_map_engine::data::store::operations::entity::ArmedPlacementKind;
 

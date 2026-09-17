@@ -143,7 +143,7 @@ const PERSIST_REFUSED: &str = "That last pick did NOT reach the mission document
 fn mission_has_unsaved_work() -> bool {
     #[cfg(target_arch = "wasm32")]
     {
-        crate::v2::apps::editor::state::history::is_dirty()
+        crate::v2::apps::editor::bridge::document_host::history::is_dirty()
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -841,7 +841,7 @@ pub fn ArsenalTab(
                                             &items.get_value(),
                                             &export_modpack_id(&items.get_value()),
                                         ) {
-                                            let _ = crate::v2::apps::editor::state::commands_hotkeys::download_json("loadout-export.json", &json);
+                                            let _ = crate::v2::apps::editor::shell::document_commands::download_json("loadout-export.json", &json);
                                         }
                                     }
                                 >

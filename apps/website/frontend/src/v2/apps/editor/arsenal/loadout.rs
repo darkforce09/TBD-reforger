@@ -248,7 +248,7 @@ pub(super) fn kit_default_items(
 pub(super) fn slot_asset_id(slot_id: &str) -> Option<String> {
     #[cfg(target_arch = "wasm32")]
     {
-        let json = crate::v2::apps::editor::state::editor_context::slots_json()?;
+        let json = crate::v2::apps::editor::bridge::host_state::editor_context::slots_json()?;
         let map: serde_json::Value = serde_json::from_str(&json).ok()?;
         map.get(slot_id)?
             .get("assetId")?

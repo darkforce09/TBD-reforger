@@ -32,7 +32,7 @@
 //!
 //! # Ungated, deliberately
 //!
-//! Registered in `state/mod.rs` without a `target_arch` gate, for the reason `save_status` gives at
+//! Registered in `shell/mod.rs` without a `target_arch` gate, for the reason `save_status` gives at
 //! `:29-32`: `cargo test -p website-frontend` runs on the **host**, and this crate links
 //! `map-engine-core` *without* the `doc` feature off wasm32 (`Cargo.toml:26` vs `:115`) — so there
 //! is no `MissionDocCore` and no `yrs` natively, and this repo has no wasm-bindgen-test harness
@@ -679,7 +679,7 @@ mod live {
 }
 
 // `pub` does not make these reachable from outside — this crate is a `bin`, so an unused re-export
-// is still an unused import. Their one caller (`persist.rs`) is wasm32-gated in `state/mod.rs`, so
+// is still an unused import. Their one caller (`persist.rs`) is wasm32-gated in `shell/mod.rs`, so
 // on the host nothing calls them and nothing should: they exist to keep that file's call sites free
 // of a second `cfg` each.
 #[cfg(not(target_arch = "wasm32"))]
@@ -694,14 +694,14 @@ mod tests {
     fn persist_live() -> String {
         live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/persist.rs"
+            "/src/v2/apps/editor/shell/persist.rs"
         )))
     }
 
     fn persist_src() -> String {
         live_source(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/state/persist.rs"
+            "/src/v2/apps/editor/shell/persist.rs"
         )))
     }
 

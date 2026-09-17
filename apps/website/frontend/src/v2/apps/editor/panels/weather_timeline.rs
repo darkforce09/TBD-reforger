@@ -273,7 +273,7 @@ pub fn env_patch(timeline: Option<&Value>) -> String {
 
 #[cfg(target_arch = "wasm32")]
 fn read_block() -> Option<Value> {
-    crate::v2::apps::editor::state::editor_context::read_env_value("weatherTimeline")
+    crate::v2::apps::editor::bridge::host_state::editor_context::read_env_value("weatherTimeline")
         .filter(|v| v.is_object())
 }
 
@@ -284,7 +284,9 @@ fn commit(timeline: Option<&Value>) {
             leptos::logging::warn!("weatherTimeline is not yet complete: {clause}");
         }
     }
-    crate::v2::apps::editor::state::editor_context::update_environment(env_patch(timeline));
+    crate::v2::apps::editor::bridge::host_state::editor_context::update_environment(env_patch(
+        timeline,
+    ));
 }
 
 /// The **Weather timeline** panel. `ctrl` is the dialog's shared control class.

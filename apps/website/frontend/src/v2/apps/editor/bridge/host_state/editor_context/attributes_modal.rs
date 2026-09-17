@@ -1,5 +1,5 @@
 //! Role: opening and closing the Attributes modal, and the selection change opening it implies.
-//! Position: `editor/state/editor_context` in the frontend editor shell.
+//! Position: `editor/bridge/host_state/editor_context` in the frontend editor shell.
 //! Signals & state: the installed context's open-target and tab-index signals, and the selection
 //! whose renderer tint the open rebinds.
 //! Invariants: opening over a multi-selection that already contains the target PRESERVES that
@@ -9,7 +9,7 @@
 use super::*;
 
 /// Open attrs modal using the supplied domain data. A multi-selection now OPENS the modal while preserving its selected targets.
-pub(in crate::v2::apps::editor::state::editor_context) fn open_attrs_modal(
+pub(in crate::v2::apps::editor::bridge::host_state::editor_context) fn open_attrs_modal(
     id: String,
     arsenal_tab: bool,
 ) {

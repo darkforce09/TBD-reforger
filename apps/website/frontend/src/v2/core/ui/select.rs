@@ -12,7 +12,7 @@ use leptos::prelude::*;
 
 use super::icons::MaterialIcon;
 use super::page_header::cn;
-use crate::v2::apps::editor::layout::{DISABLED_GLYPH, HOVER_FILL};
+use crate::v2::apps::editor::shell::layout::{DISABLED_GLYPH, HOVER_FILL};
 
 /// A dropdown.
 ///

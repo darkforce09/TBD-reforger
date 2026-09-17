@@ -9,7 +9,7 @@
 //! **T-691 (Eden NEW-F2 + 3den E6) — editor preferences, separated from mission settings.** Eden
 //! keeps Settings ▸ Preferences (editor-local, per-user) apart from Attributes (the mission
 //! document); TBD used to mix both in [`MissionSettingsDialog`]. The per-user half — basemap view
-//! and the 12 world-layer toggles, both localStorage-backed via [`crate::v2::apps::editor::world_layer_prefs`] — now
+//! and the 12 world-layer toggles, both localStorage-backed via [`crate::v2::apps::editor::shell::world_layer_prefs`] — now
 //! lives in its own surface, [`EditorPreferencesDialog`]. [`MissionSettingsDialog`] keeps ONLY the
 //! document keys (time / weather / flow / hillshade / grid, all authored through `author_env` into
 //! `meta.environment`) and grows a one-line pointer row that opens the preferences dialog. The
@@ -173,8 +173,8 @@ struct RowShape {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl From<crate::v2::apps::editor::state::commands_hotkeys::HydratedRow> for RowShape {
-    fn from(h: crate::v2::apps::editor::state::commands_hotkeys::HydratedRow) -> Self {
+impl From<crate::v2::apps::editor::shell::document_commands::HydratedRow> for RowShape {
+    fn from(h: crate::v2::apps::editor::shell::document_commands::HydratedRow) -> Self {
         Self {
             game_mode: h.game_mode,
             max_players: h.max_players,
@@ -451,7 +451,7 @@ fn blur_focused_control() {
 /// which distinguishes "set to empty" from "not supplied".
 #[cfg(target_arch = "wasm32")]
 fn mirror_briefing_into_document(briefing: &str) {
-    let Some(handle) = crate::v2::apps::editor::state::history::doc_handle() else {
+    let Some(handle) = crate::v2::apps::editor::bridge::document_host::history::doc_handle() else {
         return;
     };
     let doc = handle.borrow();
@@ -562,7 +562,7 @@ impl ShapeMirror {
         // T-746 — seed from boot hydrate while the open-GET is in flight (or instead, when a PATCH
         // is already on the wire and we refuse to start a GET that can only stale-clobber).
         if shape.get_untracked().is_none() {
-            if let Some(h) = crate::v2::apps::editor::state::commands_hotkeys::hydrated_row() {
+            if let Some(h) = crate::v2::apps::editor::shell::document_commands::hydrated_row() {
                 shape.set(Some(RowShape::from(h)));
             }
         }
@@ -598,8 +598,8 @@ impl ShapeMirror {
                         briefing: d.briefing.unwrap_or_default(),
                         thumbnail_url: d.thumbnail_url.unwrap_or_default(),
                     };
-                    crate::v2::apps::editor::state::commands_hotkeys::note_hydrated_row(
-                        crate::v2::apps::editor::state::commands_hotkeys::HydratedRow {
+                    crate::v2::apps::editor::shell::document_commands::note_hydrated_row(
+                        crate::v2::apps::editor::shell::document_commands::HydratedRow {
                             game_mode: row.game_mode.clone(),
                             max_players: row.max_players,
                             briefing: row.briefing.clone(),
@@ -656,7 +656,9 @@ impl ShapeMirror {
             .await;
             match &res {
                 Ok(_) => {
-                    crate::v2::apps::editor::state::commands_hotkeys::note_hydrated_game_mode(&next)
+                    crate::v2::apps::editor::shell::document_commands::note_hydrated_game_mode(
+                        &next,
+                    )
                 }
                 Err(e) => {
                     leptos::logging::warn!(
@@ -739,13 +741,13 @@ impl ShapeMirror {
                 Ok(_) => match field {
                     PresentationField::Briefing => {
                         mirror_briefing_into_document(&next);
-                        crate::v2::apps::editor::state::commands_hotkeys::note_hydrated_presentation(
+                        crate::v2::apps::editor::shell::document_commands::note_hydrated_presentation(
                             Some(&next),
                             None,
                         );
                     }
                     PresentationField::Thumbnail => {
-                        crate::v2::apps::editor::state::commands_hotkeys::note_hydrated_presentation(
+                        crate::v2::apps::editor::shell::document_commands::note_hydrated_presentation(
                             None,
                             Some(&next),
                         );
@@ -859,7 +861,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         }
         let _ = doc_tick.get(); // re-read env on undo/redo while open
         #[cfg(target_arch = "wasm32")]
-        let env = crate::v2::apps::editor::state::editor_context::read_env();
+        let env = crate::v2::apps::editor::bridge::host_state::editor_context::read_env();
         #[cfg(not(target_arch = "wasm32"))]
         let env = crate::v2::core::api::dto::MissionEnv::default();
         Some(view! {
@@ -1162,7 +1164,7 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
         let row = shape.get();
         // The seats the document actually holds. `doc_handle()` is `None` on a dialog opened before
         // the editor's doc host mounted; zero is the honest answer there, not a hidden row.
-        let placed = match crate::v2::apps::editor::state::history::doc_handle() {
+        let placed = match crate::v2::apps::editor::bridge::document_host::history::doc_handle() {
             Some(handle) => {
                 let doc = handle.borrow();
                 doc.as_ref().map_or(
@@ -1392,7 +1394,7 @@ fn render_flow_section(ctrl: &'static str) -> AnyView {
 /// [`author_env`]), so they stay in this dialog.
 ///
 /// **T-691:** the per-**user** editor-local controls that used to sit here — basemap view and the 12
-/// world-layer toggles ([`crate::v2::apps::editor::world_layer_prefs`], localStorage) — moved to
+/// world-layer toggles ([`crate::v2::apps::editor::shell::world_layer_prefs`], localStorage) — moved to
 /// [`EditorPreferencesDialog`]; this section now ends with a one-line pointer row linking there. No
 /// world-layer toggle remains in this dialog (the document-vs-local separation pin). On the native
 /// view-shell these are inert (no engine), which is fine — the dialog is a wasm surface.
@@ -1419,7 +1421,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
-                            let op = crate::v2::apps::editor::state::editor_context::read_env().hillshade_opacity;
+                            let op = crate::v2::apps::editor::bridge::host_state::editor_context::read_env().hillshade_opacity;
                             website_map_engine::streaming::host::apply_hillshade(on, op);
                         }
                         class="accent-primary"
@@ -1485,7 +1487,7 @@ fn render_prefs_section(env: &crate::v2::core::api::dto::MissionEnv) -> AnyView 
 /// T-691 (Eden NEW-F2 + 3den E6) — the **Editor Preferences** dialog: the editor-local, per-user
 /// half that Eden keeps separate from mission Attributes. Basemap view (Satellite / Map) and the 12
 /// world-layer visibility toggles, both persisted to localStorage through
-/// [`crate::v2::apps::editor::world_layer_prefs`] (the versioned editor-preferences store) and applied live to the map
+/// [`crate::v2::apps::editor::shell::world_layer_prefs`] (the versioned editor-preferences store) and applied live to the map
 /// host. Mounted as a sibling of [`MissionSettingsDialog`] and opened via
 /// [`open_editor_preferences`] from that dialog's pointer row.
 ///
@@ -1551,7 +1553,7 @@ fn EditorPreferencesDialog(open: RwSignal<bool>) -> impl IntoView {
 
 /// T-691 — the body of [`EditorPreferencesDialog`]: basemap view + the 12 world-layer toggles, moved
 /// verbatim from the old `render_prefs_section`. Every control persists through
-/// [`crate::v2::apps::editor::world_layer_prefs`] (localStorage) and applies live to the map host — no `author_env`.
+/// [`crate::v2::apps::editor::shell::world_layer_prefs`] (localStorage) and applies live to the map host — no `author_env`.
 fn render_editor_prefs_body() -> AnyView {
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -1559,7 +1561,7 @@ fn render_editor_prefs_body() -> AnyView {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::v2::apps::editor::world_layer_prefs::{self as wlp, WorldLayerPrefsView};
+        use crate::v2::apps::editor::shell::world_layer_prefs::{self as wlp, WorldLayerPrefsView};
         let sect = "text-label-sm uppercase tracking-wider text-outline";
         // Basemap view kept in a local signal so the active highlight follows a click within the
         // session (the store is still the source of truth; this only drives the button styling).
@@ -2127,7 +2129,7 @@ pub const ALL_SETTINGS_NOTE: &str =
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 fn document_root() -> Option<serde_json::Value> {
-    let handle = crate::v2::apps::editor::state::history::doc_handle()?;
+    let handle = crate::v2::apps::editor::bridge::document_host::history::doc_handle()?;
     let doc = handle.borrow();
     let core = doc.as_ref()?;
     serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok()
@@ -2238,13 +2240,13 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
         let toggle_class = if filtered {
             format!(
                 "rounded-md px-2.5 py-1.5 text-label-md {} {}",
-                crate::v2::apps::editor::layout::TOGGLED_PLATE,
-                crate::v2::apps::editor::layout::HOVER_FILL
+                crate::v2::apps::editor::shell::layout::TOGGLED_PLATE,
+                crate::v2::apps::editor::shell::layout::HOVER_FILL
             )
         } else {
             format!(
                 "rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface-variant {}",
-                crate::v2::apps::editor::layout::HOVER_FILL
+                crate::v2::apps::editor::shell::layout::HOVER_FILL
             )
         };
 

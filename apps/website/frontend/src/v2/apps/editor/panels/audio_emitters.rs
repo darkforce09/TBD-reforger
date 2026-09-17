@@ -23,7 +23,7 @@ use leptos::prelude::*;
 use serde_json::{Map, Value};
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::armed_placement;
+use crate::v2::apps::editor::bridge::host_state::armed_placement;
 use website_map_engine::data::scenario::audio::validate;
 use website_map_engine::data::scenario::audio::MUSIC_EVENTS;
 
@@ -408,7 +408,7 @@ pub fn env_patch(block: Option<&Value>) -> String {
 
 #[cfg(target_arch = "wasm32")]
 fn read_block() -> Option<Value> {
-    crate::v2::apps::editor::state::editor_context::read_env_value("audio")
+    crate::v2::apps::editor::bridge::host_state::editor_context::read_env_value("audio")
         .filter(|v| v.is_object())
 }
 
@@ -419,7 +419,9 @@ fn commit(block: Option<&Value>) {
             leptos::logging::warn!("audio is not yet complete: {clause}");
         }
     }
-    crate::v2::apps::editor::state::editor_context::update_environment(env_patch(block));
+    crate::v2::apps::editor::bridge::host_state::editor_context::update_environment(env_patch(
+        block,
+    ));
 }
 
 /// Arms the existing marker placement gesture. No new code in gestures.rs.

@@ -5,7 +5,7 @@
 
 const HIST: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../frontend/src/v2/apps/editor/state/history.rs"
+    "/../frontend/src/v2/apps/editor/bridge/document_host/history.rs"
 ));
 
 fn only_body(src: &str, sig: &str) -> String {

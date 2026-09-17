@@ -1,6 +1,6 @@
 //! Role: the gestures that must collapse into ONE undo step, the prompt a bulk gesture asks before
 //! it commits, and the host clock that grouping needs.
-//! Position: `editor/state` in the frontend editor shell.
+//! Position: `editor/bridge/host_state` in the frontend editor shell.
 //! Signals & state: none of its own; the grouping is the engine's, over the hosted document.
 //! Invariants: a gesture the operator experienced as one act undoes as one act — a delete that
 //! spans comments, a connection cascade and slots, a paste that mints a folder first, an align that

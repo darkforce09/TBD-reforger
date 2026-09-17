@@ -1,6 +1,6 @@
 //! Role: reconcile the mission the server holds with the draft this browser holds, and offer the
 //! way back from every replacement that reconciliation performs.
-//! Position: `editor/state` in the frontend.
+//! Position: `editor/shell` in the frontend.
 //! Signals & state: the measured document fetch, the conflict and semver signals, the toasts, the
 //! in-session snapshot cache, and the identity of the editor mount the recovery surface is bound to.
 //! Invariants: every DECISION this file used to make now lives in `map-engine`'s
@@ -50,7 +50,7 @@
 //! A record carrying no owner at all matches no prefix and is therefore neither returned nor
 //! destroyed. The explicit orphan adoption surface is the only thing that moves one.
 //!
-//! [`purge_legacy_markers`]: crate::v2::apps::editor::state::session::purge_legacy_markers
+//! [`purge_legacy_markers`]: crate::v2::apps::editor::shell::session::purge_legacy_markers
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::RefCell;
@@ -72,9 +72,9 @@ use website_map_engine::editing::persist::snapshot_slot::{
     capture_document_snapshot, SnapshotSlot,
 };
 
-use crate::v2::apps::editor::state::doc_host::DocHandle;
-use crate::v2::apps::editor::state::history::after_local_edit;
-use crate::v2::apps::editor::state::tab_lock;
+use crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle;
+use crate::v2::apps::editor::bridge::document_host::history::after_local_edit;
+use crate::v2::apps::editor::shell::tab_lock;
 use crate::v2::core::api::dto::MissionDetail;
 use crate::v2::core::auth::AuthStore;
 
@@ -198,7 +198,7 @@ pub async fn hydrate_from_server(
     //
     // **Do not move this below a branch, a `return`, or the fetch.** Nothing else clears the
     // residue, so a boot this line misses is a browser that keeps it.
-    crate::v2::apps::editor::state::session::purge_legacy_markers();
+    crate::v2::apps::editor::shell::session::purge_legacy_markers();
     if !is_uuid(&id) {
         return;
     }
@@ -219,7 +219,7 @@ pub async fn hydrate_from_server(
     // may still hit Export. Recording it once here rather than per-branch is what makes the
     // recorded row's `None` mean exactly what it claims: the row never arrived, not "it arrived
     // down a branch nobody wired".
-    crate::v2::apps::editor::state::commands_hotkeys::set_row_meta(&detail);
+    crate::v2::apps::editor::shell::document_commands::set_row_meta(&detail);
 
     let row = row_meta_from_detail(&detail);
     let version = detail.current_version.as_ref();
@@ -238,7 +238,7 @@ pub async fn hydrate_from_server(
         // save must not round-trip fixture data. A warm reopen keeps the operator's local work.
         if !loaded_from_idb {
             adopt_payload(&doc, "{}", &row, Adopt::Init, &after_local_edit);
-            crate::v2::apps::editor::state::history::set_dirty(false);
+            crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
         } else {
             apply_row_meta_only(&doc, &row);
         }
@@ -261,7 +261,7 @@ pub async fn hydrate_from_server(
             // because there is nothing to lose.
             LocalDraftVerdict::Empty => {
                 adopt_payload(&doc, &payload_json, &row, Adopt::Init, &after_local_edit);
-                crate::v2::apps::editor::state::history::set_dirty(false);
+                crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
             }
             // Local IS the server's document. Nothing to choose between, so nothing to ask —
             // correcting `dirty` is the whole of this branch's work.
@@ -271,7 +271,7 @@ pub async fn hydrate_from_server(
             // ever saved; here the two documents have been compared and found equal, which is that
             // proof, so a save-then-reopen no longer shows an unsaved dot over a zero delta.
             LocalDraftVerdict::MatchesServer => {
-                crate::v2::apps::editor::state::history::set_dirty(false);
+                crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
             }
             // Two different documents — ask. The price of asking on every real difference is that
             // reopening a tab holding unsaved edits against the current version prompts. That is
@@ -285,7 +285,7 @@ pub async fn hydrate_from_server(
                 // means this browser has no draft stamp, which is the honest answer rather than
                 // "now"), and the server one is the version row's own creation time.
                 let local_objects = doc.borrow().as_ref().map_or(0, MissionDocCore::slot_count);
-                let local_saved = crate::v2::apps::editor::state::persist::draft_written_at(&id)
+                let local_saved = crate::v2::apps::editor::shell::persist::draft_written_at(&id)
                     .map_or_else(
                         || "not recorded on this browser".to_string(),
                         |at| tab_lock::ago(js_sys::Date::now(), at),
@@ -309,7 +309,7 @@ pub async fn hydrate_from_server(
     } else {
         // Empty local → adopt the server payload (replaces the seed). Cold doc: INIT, no snapshot.
         adopt_payload(&doc, &payload_json, &row, Adopt::Init, &after_local_edit);
-        crate::v2::apps::editor::state::history::set_dirty(false);
+        crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
     }
 }
 
@@ -324,7 +324,7 @@ pub fn resolve_conflict_server(
 ) {
     if let (Some(c), Some(doc)) = (
         conflict.get_untracked(),
-        crate::v2::apps::editor::state::history::doc_handle(),
+        crate::v2::apps::editor::bridge::document_host::history::doc_handle(),
     ) {
         // A new adopt opens a new restore cycle, so the counterpart slot — which holds whatever
         // document the PREVIOUS restore displaced — is now stale: `undoRestore()` would put a server
@@ -345,7 +345,7 @@ pub fn resolve_conflict_server(
             Adopt::Undoable,
             &after_local_edit,
         );
-        crate::v2::apps::editor::state::history::set_dirty(false);
+        crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
         // Tell the user the door swings both ways — the modal can't (it is gone by the next line),
         // and an undo nobody knows about is not a recovery.
         notify(&match saved {
@@ -369,7 +369,7 @@ pub fn resolve_conflict_local(
     _mission_id: String,
     conflict: RwSignal<Option<crate::v2::apps::editor::mission_editor::ConflictInfo>>,
 ) {
-    crate::v2::apps::editor::state::history::set_dirty(true);
+    crate::v2::apps::editor::bridge::document_host::history::set_dirty(true);
     conflict.set(None);
 }
 
@@ -427,7 +427,7 @@ thread_local! {
 /// *presence* of A's recovery record depend on B's activity, and the one thing this pair must never
 /// do is disappear because somebody else touched the machine.
 fn remember(mission_id: &str, kind: SnapshotSlot, bytes: Vec<u8>) {
-    let owner = crate::v2::apps::editor::state::persist::owner_token();
+    let owner = crate::v2::apps::editor::shell::persist::owner_token();
     LOCAL_BACKUPS.with(|b| {
         let mut slots = b.borrow_mut();
         slots.retain(|s| s.owner != owner || s.mission_id != mission_id || s.kind != kind);
@@ -446,7 +446,7 @@ fn remember(mission_id: &str, kind: SnapshotSlot, bytes: Vec<u8>) {
 /// rather than whoever is using it, and because [`has_snapshot`] consults it before the (already
 /// scoped) IDB read, it shadowed the scoping T-221 put on the records themselves.
 fn recall(mission_id: &str, kind: SnapshotSlot) -> Option<Vec<u8>> {
-    let owner = crate::v2::apps::editor::state::persist::owner_token();
+    let owner = crate::v2::apps::editor::shell::persist::owner_token();
     LOCAL_BACKUPS.with(|b| {
         b.borrow()
             .iter()
@@ -468,14 +468,14 @@ fn recall(mission_id: &str, kind: SnapshotSlot) -> Option<Vec<u8>> {
 /// cross the namespace boundary is [`purge_local_documents`], and there the account is deleting its
 /// own.
 fn forget_snapshot(mission_id: &str, kind: SnapshotSlot) {
-    let owner = crate::v2::apps::editor::state::persist::owner_token();
+    let owner = crate::v2::apps::editor::shell::persist::owner_token();
     LOCAL_BACKUPS.with(|b| {
         b.borrow_mut()
             .retain(|s| s.owner != owner || s.mission_id != mission_id || s.kind != kind);
     });
     let key = snapshot_key(mission_id, kind.suffix());
     spawn_local(async move {
-        if let Err(e) = crate::v2::apps::editor::state::persist::clear_state(&key).await {
+        if let Err(e) = crate::v2::apps::editor::shell::persist::clear_state(&key).await {
             web_sys::console::warn_1(&JsValue::from_str(&format!(
                 "[t191] backup clear failed for {key}: {e:?}"
             )));
@@ -542,7 +542,7 @@ pub fn purge_local_documents(owner: &str) {
     let dropped = forget_owner(owner);
     let owner = owner.to_string();
     spawn_local(async move {
-        let gone = crate::v2::apps::editor::state::persist::purge_owner(&owner).await;
+        let gone = crate::v2::apps::editor::shell::persist::purge_owner(&owner).await;
         web_sys::console::log_1(&JsValue::from_str(&format!(
             "[t338] sign-out purge: dropped {dropped} in-memory snapshot(s) and deleted {gone} local record(s)"
         )));
@@ -565,7 +565,7 @@ fn snapshot_local(doc: &DocHandle, mission_id: &str, kind: SnapshotSlot) -> Opti
         remember(mission_id, kind, bytes.clone());
         let key = snapshot_key(mission_id, kind.suffix());
         spawn_local(async move {
-            if let Err(e) = crate::v2::apps::editor::state::persist::save_state(&key, &bytes).await
+            if let Err(e) = crate::v2::apps::editor::shell::persist::save_state(&key, &bytes).await
             {
                 web_sys::console::warn_1(&JsValue::from_str(&format!(
                     "[backup] save failed for {key}: {e:?}"
@@ -585,7 +585,7 @@ async fn has_snapshot(mission_id: &str, kind: SnapshotSlot) -> bool {
     if recall(mission_id, kind).is_some() {
         return true;
     }
-    crate::v2::apps::editor::state::persist::load_state(&snapshot_key(mission_id, kind.suffix()))
+    crate::v2::apps::editor::shell::persist::load_state(&snapshot_key(mission_id, kind.suffix()))
         .await
         .is_some_and(|b| !b.is_empty())
 }
@@ -620,7 +620,8 @@ fn set_live_editor(mission_id: &str, doc: &DocHandle) {
 ///     makes pointer identity the exact test; the in-place `*doc.borrow_mut() = …` swaps that the
 ///     IDB restore and this module perform do not disturb it.
 fn live_editor_is(mission_id: &str) -> bool {
-    let Some(ctx_doc) = crate::v2::apps::editor::state::history::doc_handle() else {
+    let Some(ctx_doc) = crate::v2::apps::editor::bridge::document_host::history::doc_handle()
+    else {
         return false;
     };
     LIVE_EDITOR.with(|e| {
@@ -668,7 +669,7 @@ async fn restore_snapshot(mission_id: String, want: SnapshotSlot) -> bool {
     }
     let bytes = match recall(&mission_id, want) {
         Some(b) => b,
-        None => crate::v2::apps::editor::state::persist::load_state(&snapshot_key(
+        None => crate::v2::apps::editor::shell::persist::load_state(&snapshot_key(
             &mission_id,
             want.suffix(),
         ))
@@ -678,7 +679,7 @@ async fn restore_snapshot(mission_id: String, want: SnapshotSlot) -> bool {
     if bytes.is_empty() {
         return false;
     }
-    let Some(doc) = crate::v2::apps::editor::state::history::doc_handle() else {
+    let Some(doc) = crate::v2::apps::editor::bridge::document_host::history::doc_handle() else {
         return false;
     };
     // Rebuild as a FRESH core and swap, exactly like the boot IDB restore. Applying the update over
@@ -710,9 +711,9 @@ async fn restore_snapshot(mission_id: String, want: SnapshotSlot) -> bool {
     // Wholesale document swap: rebind glyphs/HUD/docks (`after_local_edit` would be wrong — it
     // rebinds from a doc it assumes was edited in place), then mark dirty and re-arm the persist so
     // the restored document becomes the local record rather than the displaced one.
-    crate::v2::apps::editor::state::history::rebind_engine_from_doc();
-    crate::v2::apps::editor::state::history::set_dirty(true);
-    crate::v2::apps::editor::state::persist::schedule_edit_persist(doc, &mission_id);
+    crate::v2::apps::editor::bridge::document_host::history::rebind_engine_from_doc();
+    crate::v2::apps::editor::bridge::document_host::history::set_dirty(true);
+    crate::v2::apps::editor::shell::persist::schedule_edit_persist(doc, &mission_id);
     // Name the way back, for the same reason the adopt names Ctrl/Cmd+Z: a recovery nobody knows
     // about is not a recovery.
     let banked = match displaced {

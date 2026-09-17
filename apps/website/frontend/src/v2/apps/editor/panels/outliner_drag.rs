@@ -127,7 +127,7 @@ pub fn complete_multi_drop_onto_folder(
     dest_folder_id: &str,
     folder_descendants: impl Fn(&str) -> Vec<String>,
 ) -> bool {
-    use crate::v2::apps::editor::state::undo_grouped_gestures;
+    use crate::v2::apps::editor::bridge::host_state::undo_grouped_gestures;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
@@ -186,7 +186,7 @@ pub fn complete_multi_drop_onto_folder(
 /// only self-drop case (a slot already in the destination squad) is the core's own no-op.
 #[cfg(target_arch = "wasm32")]
 pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
-    use crate::v2::apps::editor::state::undo_grouped_gestures;
+    use crate::v2::apps::editor::bridge::host_state::undo_grouped_gestures;
     use website_map_engine::editing::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {

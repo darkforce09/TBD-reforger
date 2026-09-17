@@ -25,7 +25,7 @@
 #![cfg(target_arch = "wasm32")]
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::state::editor_context;
+use crate::v2::apps::editor::bridge::host_state::editor_context;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -43,8 +43,8 @@ use wasm_bindgen::JsCast;
 use website_map_engine::frame::engine::RenderEngine;
 use website_map_engine::overlay::lanes::role_id;
 
+use crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle;
 use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
-use crate::v2::apps::editor::state::doc_host::DocHandle;
 use selection::SelectionHandle;
 use website_map_engine::frame::EngineHandle;
 
@@ -141,7 +141,7 @@ pub fn set_ctx(
 
 /// A clone of the live doc handle (the same `Rc` the IDB restore swaps into). For the conflict
 /// resolver, which needs the doc but isn't called from `on_load`'s scope. `None` before mount.
-pub fn doc_handle() -> Option<crate::v2::apps::editor::state::doc_host::DocHandle> {
+pub fn doc_handle() -> Option<crate::v2::apps::editor::bridge::document_host::doc_host::DocHandle> {
     HISTORY_CTX.with(|c| c.borrow().as_ref().map(|ctx| ctx.doc.clone()))
 }
 
@@ -378,7 +378,7 @@ pub fn rebind_engine_from_doc() {
                 // ARRIVE. The slice bound the lane from `after_doc_change` only, which is reached
                 // from undo/redo and `after_local_edit` — i.e. from an EDIT. Rows reach a document
                 // through the IDB restore (`mission_editor.rs`), the server hydrate and conflict
-                // resolution (`state/hydrate.rs`), and T-190's peer merge (`state/persist.rs`), and
+                // resolution (`shell/hydrate.rs`), and T-190's peer merge (`shell/persist.rs`), and
                 // all three land here, not there. `begin_tactical_draw` has no caller yet, so a
                 // hydrated payload is currently the ONLY way rows exist at all: without this line a
                 // mission whose payload carries `tacticalGraphics` drew nothing on 100% of live
@@ -496,7 +496,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
     // The same reasoning covers the hydrate/adopt tail (`mission_hydrate::adopt_payload` reaches
     // here via `after_local_edit` during boot): its content is persisted by that same boot persist.
     if ctx.restore_settled.get() {
-        crate::v2::apps::editor::state::persist::schedule_edit_persist(
+        crate::v2::apps::editor::shell::persist::schedule_edit_persist(
             ctx.doc.clone(),
             &ctx.mission_id,
         );
