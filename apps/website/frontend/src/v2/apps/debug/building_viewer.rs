@@ -1,34 +1,52 @@
-//! `/debug/building-viewer` — the building-blueprint TEST BENCH (Phase A of the blueprint
-//! extraction program; plan `below-is-a-prompt-valiant-piglet`). Public route, no nav entry:
-//! reachable by URL only, `?prefab=<map-assets path>` overrides the default FarmHouse golden.
+//! The single-prefab building-blueprint bench served at `/debug/building-viewer`.
 //!
-//! Purpose: a hyper-focused single-prefab instrument for eyeballing what the Workbench extractor
-//! produced — floor plates, thickness walls, apertures, furniture cover, stairs — and for driving
-//! `evaluate_los` (the BVH raycast over the building's `.bvh` occlusion sidecar, attributed
-//! through the blueprint) interactively (draggable observer/target + elevation sliders, ray
-//! colored by the ordered [`LosHit`] trace). The blueprint JSON is fetched from
-//! `/map-assets/everon/prefabs/buildings/…` (served by the API, proxied by Trunk in dev) and the
-//! sidecar from the same path with `.json` → `.bvh`; without a sidecar the plan still draws but
-//! LOS and the viewshed stay off (the header says so). The viewshed (Alt+click) is the
-//! multi-floor wash of T-090.6 step 4: `map_engine_core::building_viewshed::level_washes` casts
-//! one BVH ray to every 0.25 m cell at eye height on EVERY level, and the floor rail swaps which
-//! level's raster the engine's `Viewshed` texture lane shows.
+//! **Role:** a hyper-focused instrument for eyeballing what the Workbench extractor produced for
+//! one building — floor plates, thickness walls, apertures, furniture cover, stairs — and for
+//! driving `evaluate_los` interactively: the BVH raycast over the building's `.bvh` occlusion
+//! sidecar, attributed through the blueprint, with a draggable observer and target, elevation
+//! sliders, and the ray coloured along the ordered [`LosHit`] trace. Alt+click instead casts the
+//! multi-floor viewshed wash — `website_map_engine::spatial::los::interior::wash::level_washes`
+//! fires one BVH ray at every 0.25 m cell at eye height on every level — and the floor rail swaps
+//! which level's raster the engine's `Viewshed` texture lane shows.
 //!
-//! The 2D DRAWING is the mesh's too (`map_engine_core::building_section`): per-floor section
-//! cuts through the COLL triangles at eye height (walls as true double-line outlines, windows as
-//! gaps, mullions/columns/mesh furniture as outlines) plus a dim low cut for sills, the slab
-//! faces as the floor, the roof faces on the Roof view, and — through a floor's voids — the
-//! floors below. The blueprint's walls / plates / RoofGrid are the no-sidecar fallback; its
-//! apertures, furniture, stairs, swing arcs and rings stay as annotations over the mesh.
+//! **Position:** a routed workspace under `v2::apps::debug`, mounted by `app_routes.rs`, public by
+//! URL and absent from the navigation. It drives the map and graphics engines directly and shares
+//! none of the editor's boot machinery — no IndexedDB, no hydration, no DEM, satellite or world
+//! loaders. Its interior lane tessellation lives in [`super::building_interior`].
 //!
-//! ── Architecture ───────────────────────────────────────────────────────────────────────────────
-//! Rendering is the REAL wgpu engine (`map_engine_render::RenderEngine`) on a page canvas — the
-//! same crate the mission editor mounts — but with none of the editor's boot machinery (no IDB,
-//! no hydrate, no DEM/sat/world loaders). The blueprint becomes plain vector lanes through the
-//! generic upload API (`upload_polygon_mesh` / `upload_strip_tris` / `upload_hairline_segments`
-//! with `role_id::*` constants — never re-copied integers, see draw_order.rs):
+//! **Signals & state:** Leptos `RwSignal`s hold the fetched blueprint, the occlusion sidecar, the
+//! assembled compound, the per-door open/closed states, the viewed floor, the observer and target,
+//! the camera, and the current wash. The `RenderEngine` sits in an `Rc<RefCell<…>>` handle the
+//! wasm mount owns; everything decidable is a pure function in [`geom`] — world mapping, camera
+//! fit, lane tessellation, ray-span colouring, point-in-polygon — so the native test suite proves
+//! the geometry with no browser and the wasm block only wires signals, listeners and the engine.
 //!
-//! | lane (draw order ↑, T-090.11.5 ids) | content |
+//! **Invariants:** the building sits at world `ANCHOR` (6400, 6400) with blueprint +z, which is
+//! game north, mapped up on screen, so f32 lane coordinates stay small; the camera is the engine's
+//! own ortho camera (`zoom` = log2 px/m, capped at 6, so 64 px/m ≈ 18 px for a 0.28 m log wall).
+//! Lanes are addressed by `role_id::*` constants and never by a re-copied integer. Every run is
+//! reproducible from the URL: `?prefab=<map-assets path>` overrides the default farmhouse golden,
+//! `?scene=1` adds exterior trees from `<slug>.scene.json`, `?doors=open` opens every leaf on load,
+//! `?a=x,y,z&b=x,y,z` fixes the ray ends, and `?force=webgl` selects the headless capture backend.
+//!
+//! The blueprint JSON is fetched from `/map-assets/everon/prefabs/buildings/…`, served by the API
+//! and proxied by Trunk in development, and the sidecar from the same path with `.json` → `.bvh`.
+//! Without a sidecar the plan still draws, but LOS and the viewshed stay off and the header says
+//! so. With `<slug>.instances.json` beside the blueprint the bench assembles the
+//! `CompoundBuilding` — shell plus every door leaf, frame, pane and furniture BLAS under its
+//! socket transform — and LOS, the wash and the section cuts all run over that instead; a click on
+//! a leaf swings it.
+//!
+//! The 2D drawing is the mesh's own: per-floor section cuts through the collision triangles at eye
+//! height (walls as true double-line outlines, windows as gaps, mullions, columns and mesh
+//! furniture as outlines), plus a dim low cut for sills, the slab faces as the floor, the roof
+//! faces on the Roof view, and — through a floor's voids — the floors below. The blueprint's
+//! walls, plates and RoofGrid are the no-sidecar fallback; its apertures, furniture, stairs, swing
+//! arcs and rings stay as annotations over the mesh. The blueprint reaches the GPU through the
+//! generic upload API — `upload_polygon_mesh`, `upload_strip_tris`, `upload_hairline_segments` —
+//! on these lanes:
+//!
+//! | lane (draw order ↑)                 | content |
 //! |-------------------------------------|---------|
 //! | `INTERIOR_SLABS` (poly)             | the MESH heightfield clipped below this floor's cut plane, one 0.2 m cell quad per surface, height-ramped (Roof view: the full top surface eave→ridge; fallback: blueprint plate / RoofGrid) |
 //! | `INTERIOR_FURNITURE` (+outline)     | furniture / prop footprints — the compound's instances (world AABB, cover-tier colour); blueprint plates without one |
@@ -40,21 +58,6 @@
 //! | `SCENE_VEGETATION` (+outline)       | `?scene=1` trees: trunk disc + canopy, rim + stipple |
 //! | `Viewshed` (texture)                | the viewed level's visibility wash (`viewshed_upload`; green where A sees) |
 //! | `INTERIOR_PROBE` (strip)            | the LOS ray, split + coloured at each `LosHit` (cyan past glass, yellow-green past canopy), plus event dots |
-//!
-//! T-090.11.6: with `<slug>.instances.json` beside the blueprint the bench assembles the
-//! `CompoundBuilding` (shell + every door leaf / frame / pane / furniture BLAS under its socket
-//! transform); LOS, wash and the section cuts then run over it — a click on a leaf swings it.
-//! URL flags: `?scene=1` (exterior trees from `<slug>.scene.json`), `?doors=open` (every leaf
-//! open on load), `?a=x,y,z&b=x,y,z` (ray ends), `?force=webgl` (the headless capture backend).
-//!
-//! The building sits at world ANCHOR (6400, 6400) with blueprint +z (game north) mapped UP on
-//! screen (`to_world` flips z; the engine's y axis points down). Camera = the engine's own ortho
-//! camera (`zoom` = log2 px/m, max 6 → 64 px/m ≈ 18 px for a 0.28 m log wall).
-//!
-//! Everything decidable is a pure function in [`geom`] (world mapping, camera fit, lane
-//! tessellation, ray span coloring, point-in-polygon) so native `cargo test -p website-frontend`
-//! proves the geometry with no browser — the wasm block only wires signals, listeners and the
-//! engine. This is the `los_tool.rs` idiom.
 #![allow(dead_code)] // native build: the wasm host wires the live path; tests pin the pure core.
 
 use std::sync::Arc;
@@ -159,37 +162,62 @@ pub mod geom {
     pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];
 
     // Palette (linear RGBA) — tuned for the site's dark surface.
+    /// Canvas clear colour behind the plan.
     pub const COL_BG: [f64; 3] = [0.043, 0.055, 0.075];
+    /// Floor plate fill.
     pub const COL_FLOOR: [f32; 4] = [0.16, 0.20, 0.26, 0.85];
+    /// Stair plate fill.
     pub const COL_STAIRS: [f32; 4] = [0.44, 0.36, 0.70, 0.75];
+    /// Exterior wall outline.
     pub const COL_WALL_EXT: [f32; 4] = [0.80, 0.83, 0.88, 1.0];
+    /// Interior partition outline.
     pub const COL_WALL_INT: [f32; 4] = [0.55, 0.58, 0.66, 1.0];
+    /// Geometry on a level other than the one in view, shown faintly for context.
     pub const COL_GHOST: [f32; 4] = [0.55, 0.60, 0.70, 0.35];
+    /// Window aperture.
     pub const COL_WINDOW: [f32; 4] = [0.20, 0.78, 0.95, 1.0];
+    /// Door leaf whose state is open.
     pub const COL_DOOR_OPEN: [f32; 4] = [0.30, 0.85, 0.45, 1.0];
+    /// Door leaf whose state is closed.
     pub const COL_DOOR_CLOSED: [f32; 4] = [0.95, 0.63, 0.20, 1.0];
+    /// Furniture offering low cover.
     pub const COL_FURN_LOW: [f32; 4] = [0.92, 0.80, 0.25, 0.85];
+    /// Furniture offering full cover.
     pub const COL_FURN_FULL: [f32; 4] = [0.90, 0.34, 0.28, 0.90];
+    /// Furniture offering no cover.
     pub const COL_FURN_NONE: [f32; 4] = [0.45, 0.48, 0.55, 0.55];
+    /// A door's swing arc.
     pub const COL_ARC: [f32; 4] = [0.70, 0.75, 0.85, 0.65];
+    /// Surface-normal tick drawn off an aperture.
     pub const COL_NORMAL: [f32; 4] = [0.20, 0.78, 0.95, 0.80];
+    /// Hatching over a stair flight.
     pub const COL_HATCH: [f32; 4] = [0.75, 0.70, 0.95, 0.55];
+    /// Probe-ray span nothing occludes.
     pub const RAY_CLEAR: [f32; 4] = [0.25, 0.90, 0.40, 1.0];
+    /// Probe-ray span crossing glazing.
     pub const RAY_GLASS: [f32; 4] = [0.20, 0.80, 0.95, 1.0];
+    /// Probe-ray span crossing cover that degrades but does not block sight.
     pub const RAY_COVER: [f32; 4] = [0.95, 0.85, 0.20, 1.0];
+    /// Probe-ray span an opaque surface blocks.
     pub const RAY_BLOCKED: [f32; 4] = [0.95, 0.25, 0.20, 1.0];
     /// Roof heightfield ramp (eave → ridge) + the above-ridge chimney accent.
     pub const COL_ROOF_LO: [f32; 4] = [0.16, 0.22, 0.33, 0.92];
+    /// Ridge end of the roof heightfield ramp.
     pub const COL_ROOF_HI: [f32; 4] = [0.82, 0.86, 0.95, 0.95];
+    /// Accent for roof geometry standing above the ridge, chimneys above all.
     pub const COL_ROOF_CHIMNEY: [f32; 4] = [0.95, 0.63, 0.20, 0.95];
     /// Floor plate ramp (±0.4 m around the level base — landings read) + ring edge accent.
     pub const COL_PLATE_LO: [f32; 4] = [0.10, 0.13, 0.18, 0.85];
+    /// High end of the floor plate ramp.
     pub const COL_PLATE_HI: [f32; 4] = [0.24, 0.30, 0.40, 0.90];
+    /// Accent along a floor plate's ring edge.
     pub const COL_PLATE_EDGE: [f32; 4] = [0.45, 0.62, 0.72, 0.80];
     /// Mesh section cuts: the eye-height outline (bright hairline), the low cut (dim), and the
     /// deeper-than-one-floor ghost seen through voids.
     pub const COL_CUT: [f32; 4] = [0.92, 0.94, 0.98, 1.0];
+    /// The dim low cut that picks up sills below eye height.
     pub const COL_CUT_LOW: [f32; 4] = [0.55, 0.60, 0.72, 0.60];
+    /// Geometry more than one floor down, seen through a void.
     pub const COL_GHOST_DEEP: [f32; 4] = [0.55, 0.60, 0.70, 0.20];
     /// Width of the eye-height cut strips (m): weight when zoomed in; the hairline carries it
     /// at low zoom.
@@ -197,9 +225,11 @@ pub mod geom {
     /// Heightfield ramp ends beyond the plate pair: a pit (a void down to the floor below)
     /// and a raised surface (treads, sills, a lower roof seen from above).
     pub const COL_PIT: [f32; 4] = [0.05, 0.07, 0.10, 0.85];
+    /// The raised end of that ramp.
     pub const COL_RAISED: [f32; 4] = [0.50, 0.58, 0.72, 0.92];
     /// Viewshed wash: green where A sees (α 0.27), nothing elsewhere.
     pub const WASH_VISIBLE_RGBA: [u8; 4] = [64, 230, 102, 70];
+    /// Fully transparent texel written wherever the viewshed wash says A sees nothing.
     pub const WASH_CLEAR_RGBA: [u8; 4] = [0, 0, 0, 0];
 
     /// Blueprint-local plan `[x, z]` → engine world `[x, y]`. The ortho camera is deck.gl
@@ -269,6 +299,7 @@ pub mod geom {
         inside
     }
 
+    /// Appends an expanded polyline strip to a lane as interleaved `x, y, r, g, b, a` vertices.
     pub(crate) fn push_strip(out: &mut Vec<f32>, verts: &[StripVertex]) {
         for v in verts {
             out.extend_from_slice(&[
@@ -277,6 +308,7 @@ pub mod geom {
         }
     }
 
+    /// Appends one flat-coloured line segment, already in world coordinates, to a line lane.
     pub(crate) fn seg(out: &mut Vec<f32>, a: [f64; 2], b: [f64; 2], c: [f32; 4]) {
         for p in [a, b] {
             out.extend_from_slice(&[p[0] as f32, p[1] as f32, c[0], c[1], c[2], c[3]]);
@@ -292,6 +324,7 @@ pub mod geom {
         [rot(-hw, -hd), rot(hw, -hd), rot(hw, hd), rot(-hw, hd)]
     }
 
+    /// Appends a flat-coloured quad, given as four blueprint-local corners, as two triangles.
     pub(crate) fn quad(out: &mut Vec<f32>, corners: [[f64; 2]; 4], col: [f32; 4]) {
         // Two triangles, corners in local plan coords → world.
         for idx in [0usize, 1, 2, 0, 2, 3] {
@@ -338,6 +371,8 @@ pub mod geom {
         pub mesh_cell_count: u32,
     }
 
+    /// Triangulates one blueprint-local ring and appends it to an indexed polygon lane, offsetting
+    /// the new indices past whatever the lane already holds.
     pub(crate) fn append_polygon(
         pos: &mut Vec<f32>,
         col: &mut Vec<f32>,
@@ -2261,6 +2296,9 @@ mod live {
         Ok((c, warning))
     }
 
+    /// Boots the render engine on the bench canvas and wires the whole live surface to it: the
+    /// blueprint, sidecar and compound fetches, the floor rail, the draggable observer and target,
+    /// the viewshed wash upload, and the pointer, wheel and keyboard handling.
     #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     pub fn wire(
         canvas_ref: NodeRef<leptos::html::Canvas>,

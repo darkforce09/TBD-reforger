@@ -65,11 +65,11 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
             <Route
                 path=path!("/debug/building-viewer")
-                view=crate::pages::debug::building_viewer::BuildingViewerPage
+                view=crate::v2::apps::debug::building_viewer::BuildingViewerPage
             />
             <Route
                 path=path!("/debug/world-los")
-                view=crate::pages::debug::world_los::WorldLosPage
+                view=crate::v2::apps::debug::world_los::WorldLosPage
             />
             <Route path=path!("/settings") view=SettingsPage />
             <Route path=path!("/admin/events") view=crate::v2::pages::administration::event_manager::EventManagerPage />

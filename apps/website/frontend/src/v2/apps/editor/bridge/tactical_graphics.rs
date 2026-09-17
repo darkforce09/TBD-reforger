@@ -21,7 +21,7 @@
 //! **That lane is declared for zone rings and is squatted here, deliberately and visibly.**
 //! T-592 declared `MissionZones` as "mission zone rings … one flat `[x,y,r,g,b,a]…` LineList",
 //! but NOTHING in the editor uploads to it: the zone ring producer was never written, and the
-//! only other user in the tree (`pages/debug/building_interior.rs`) already reuses this same role
+//! only other user in the tree (`v2/apps/debug/building_interior.rs`) already reuses this same role
 //! for an LoS ray — so reuse is the established pattern here, not an invention. A tactical
 //! graphic is mission line geometry in exactly this draw position (above `Grid`, below
 //! `MissionMarkers`, so a control measure can never occlude a marker or a slot), which is why the

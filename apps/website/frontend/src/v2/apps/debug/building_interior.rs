@@ -1,14 +1,19 @@
-//! T-090.11.6 — the building bench's OWN render lanes (`role_id::INTERIOR_*` / `SCENE_*`,
-//! T-090.11.5) fed from the compound building (T-090.11.4): the shell's section cuts are the
-//! walls, door leaves draw where they hang (orange closed, green open, with their swing arc),
-//! glass panes are cyan strips, window frames jamb ticks, furniture and props footprints by
-//! cover tier, scene trees a trunk disc + canopy, and the LOS probe rides its own lane above
-//! the wash. Pure geometry — native-tested; `building_viewer.rs`'s wasm host uploads it.
+//! Interior plan geometry for the building bench, on the bench's own render lanes.
 //!
-//! Without a compound the blueprint-only tessellation of [`geom::build_static_lanes`] is simply
-//! re-routed lane by lane ([`InteriorLanes::from_static`]) — the six terrain lanes the bench used
-//! to borrow (`LANDCOVER`, `AIRFIELD_APRON`, `ROADS_CASING`, `ROADS`, `CONTOURS`,
-//! `FOREST_OUTLINE`) and `MISSION_ZONES` for the ray are never touched again.
+//! **Role:** tessellates a compound building into the `INTERIOR_*` and `SCENE_*` lanes — the
+//! shell's section cuts become the walls, door leaves draw where they hang (orange closed, green
+//! open, with their swing arc), glass panes are cyan strips, window frames jamb ticks, furniture
+//! and props footprints coloured by cover tier, scene trees a trunk disc plus canopy — and flies
+//! the line-of-sight probe on a lane of its own above the viewshed wash. Without a compound, the
+//! blueprint-only tessellation of [`geom::build_static_lanes`] is re-routed lane by lane through
+//! [`InteriorLanes::from_static`], so the bench never borrows a terrain lane.
+//! **Position:** the pure half of the building bench, below [`super::building_viewer`], whose wasm
+//! host uploads what this module packs. [`super::world_los_scene`] shares the same lane set.
+//! **Signals & state:** none. Every function is a pure transform from blueprint or compound
+//! geometry to packed vertices, which is what lets the whole module be tested natively.
+//! **Invariants:** lane ids come from `role_id`, which on wasm is the render crate's own table and
+//! natively is the mirror below — `lane_ids_match_the_render_crate` pins the two together, so the
+//! mirror can never drift. Coordinates are the building's local plan frame in metres.
 #![allow(dead_code)] // native build: the wasm host wires the live path; tests pin the pure core.
 
 #[cfg(target_arch = "wasm32")]
@@ -34,26 +39,47 @@ use website_map_engine::world::terrain::roads::styling::expand_polyline_strip;
 /// `lane_ids_match_the_render_crate` pins every value against the render crate's source.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod role_id {
+    /// Terrain landcover fill.
     pub const LANDCOVER: u32 = 1;
+    /// Terrain elevation contour lines.
     pub const CONTOURS: u32 = 2;
+    /// The wider casing drawn under a road so it reads as edged.
     pub const ROADS_CASING: u32 = 3;
+    /// Road surfaces.
     pub const ROADS: u32 = 4;
+    /// Outlines around forest canopy areas.
     pub const FOREST_OUTLINE: u32 = 6;
+    /// Airfield apron and taxiway surfaces.
     pub const AIRFIELD_APRON: u32 = 8;
+    /// Mission zone rings.
     pub const MISSION_ZONES: u32 = 10;
+    /// Floor slabs of a building level.
     pub const INTERIOR_SLABS: u32 = 11;
+    /// Footprint fills of furniture and props, coloured by cover tier.
     pub const INTERIOR_FURNITURE: u32 = 12;
+    /// Outlines around those furniture and prop footprints.
     pub const INTERIOR_FURNITURE_OUTLINE: u32 = 13;
+    /// Wall bodies taken from the shell's section cut.
     pub const INTERIOR_WALLS: u32 = 14;
+    /// Outlines along those wall bodies.
     pub const INTERIOR_WALLS_OUTLINE: u32 = 15;
+    /// Door leaves and their swing arcs.
     pub const INTERIOR_PORTALS: u32 = 16;
+    /// Outlines around door leaves, and proxy boxes awaiting real geometry.
     pub const INTERIOR_PORTALS_OUTLINE: u32 = 17;
+    /// Glass panes.
     pub const INTERIOR_GLAZING: u32 = 18;
+    /// Window frames and jamb ticks around those panes.
     pub const INTERIOR_GLAZING_OUTLINE: u32 = 19;
+    /// Stair flights and their tread ticks.
     pub const INTERIOR_STAIRS: u32 = 20;
+    /// Tree trunk discs and canopy fills.
     pub const SCENE_VEGETATION: u32 = 21;
+    /// Outlines around those canopies.
     pub const SCENE_VEGETATION_OUTLINE: u32 = 22;
+    /// The line-of-sight probe ray and its hit dots, above every other lane.
     pub const INTERIOR_PROBE: u32 = 23;
+    /// Highest lane id in the table, so a caller can size a per-lane array.
     pub const MAX: u32 = INTERIOR_PROBE;
 }
 
@@ -537,5 +563,5 @@ pub fn build_ray_lane(
 }
 
 #[cfg(test)]
-#[path = "building_interior_tests.rs"]
+#[path = "tests/building_interior.rs"]
 mod tests;

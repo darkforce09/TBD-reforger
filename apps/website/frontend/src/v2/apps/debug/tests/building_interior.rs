@@ -1,6 +1,6 @@
-//! T-090.11.6 — `building_interior` tests (lane ids pinned against the render crate, lane
-//! routing, door toggle + arc, glazing, trees, `door_at`, ray colours), split out per the
-//! `#[path]` precedent.
+//! Tests for the interior plan lanes: the native lane-id mirror pinned against the render crate's
+//! own table, lane routing with and without a compound, door toggling and swing arcs, glazing,
+//! scene trees, the `door_at` hit test, and the probe ray's colours.
 
 use std::collections::HashMap;
 use std::sync::Arc;

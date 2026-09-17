@@ -5,8 +5,6 @@
 //! (S/V/R/T), not just `cargo check`.
 
 mod app_routes;
-// T-934.2/.3 — standard application pages (pages/{public,operations,admin}/…).
-mod pages;
 mod router;
 // The domain-driven tree the frontend is being reorganised into (see `v2/README.md`).
 mod v2;

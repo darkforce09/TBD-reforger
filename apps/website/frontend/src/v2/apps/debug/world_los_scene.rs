@@ -1,8 +1,18 @@
-//! T-090.12.5 — the `/debug/world-los` bench's pure geometry (native-tested): placed objects as
-//! plan footprints on the T-090.11.6 architectural lanes (buildings on the slab lane with their
-//! eye-height section cuts on the wall lane, props / vehicles / water on the furniture lane,
-//! trees and rocks on the vegetation lane, proxies as amber outlines on the portals-outline
-//! lane) and the A → B ray on the probe lane coloured by what it crossed.
+//! Plan geometry for the world-occluder bench at `/debug/world-los`.
+//!
+//! **Role:** turns the catalogue of objects placed around a map point, plus one A → B line-of-sight
+//! probe, into packed vertex lanes — buildings on the slab lane with their eye-height section cuts
+//! on the wall lane, props, vehicles and water on the furniture lane, trees and rocks on the
+//! vegetation lane, proxy boxes as amber outlines on the portals-outline lane, and the probe ray on
+//! its own lane coloured by what it crossed.
+//! **Position:** the pure half of the bench, below [`super::world_los`], which owns the wasm host,
+//! the fetches and the canvas. It shares the architectural lane set with
+//! [`super::building_interior`].
+//! **Signals & state:** none. Every function here is a pure map-frame → vertex-buffer transform,
+//! so the whole module is exercised by the native test suite.
+//! **Invariants:** coordinates are the map frame (`x` east, `y` north) in metres; colours are
+//! straight `[r, g, b, a]` in linear space; a lane is appended to, never cleared, so a caller
+//! composes several producers into one [`InteriorLanes`].
 
 use website_map_engine::world::architecture::blueprint::attribution_1::LosHit;
 use website_map_engine::world::architecture::blueprint::attribution_1::LosHitKind;
@@ -10,29 +20,48 @@ use website_map_engine::world::terrain::roads::styling::expand_polyline_strip;
 
 use super::building_interior::{InteriorLanes, RAY_FOLIAGE};
 
+/// Fill of a building footprint.
 pub const COL_BUILDING: [f32; 4] = [0.62, 0.66, 0.74, 0.50];
+/// Outline of a building's eye-height section cut, drawn over its fill.
 pub const COL_BUILDING_CUT: [f32; 4] = [0.92, 0.94, 0.98, 1.0];
+/// Fill of a prop footprint, and of any kind the catalogue does not name.
 pub const COL_PROP: [f32; 4] = [0.50, 0.55, 0.62, 0.55];
+/// Fill of a vehicle footprint.
 pub const COL_VEHICLE: [f32; 4] = [0.72, 0.56, 0.30, 0.65];
+/// Fill of a water-body footprint.
 pub const COL_WATER: [f32; 4] = [0.25, 0.45, 0.70, 0.45];
+/// Fill of a rock footprint.
 pub const COL_ROCK: [f32; 4] = [0.46, 0.43, 0.40, 0.60];
+/// Fill of a tree footprint.
 pub const COL_TREE: [f32; 4] = [0.30, 0.55, 0.28, 0.45];
+/// Outline drawn around a tree footprint so canopies stay separable where they overlap.
 pub const COL_TREE_EDGE: [f32; 4] = [0.45, 0.75, 0.40, 0.80];
+/// Outline of an object still drawn as a proxy box, its real geometry not yet loaded.
 pub const COL_PROXY: [f32; 4] = [0.95, 0.70, 0.20, 0.95];
+/// Probe-ray colour over a span that nothing occludes.
 pub const RAY_CLEAR: [f32; 4] = [0.25, 0.90, 0.40, 1.0];
+/// Probe-ray colour over a span crossing glazing, which degrades rather than blocks sight.
 pub const RAY_GLASS: [f32; 4] = [0.20, 0.80, 0.95, 1.0];
+/// Probe-ray colour over a span an opaque surface blocks.
 pub const RAY_BLOCKED: [f32; 4] = [0.95, 0.25, 0.20, 1.0];
+/// Probe-ray colour over a span whose verdict is still provisional because a proxy stands in it.
 pub const RAY_PROVISIONAL: [f32; 4] = [0.95, 0.70, 0.20, 1.0];
 /// Strip widths in world metres (a village-scale bench, not a room).
 pub const RAY_WIDTH_M: f64 = 0.6;
+/// Width in world metres of a building's section-cut outline strip.
 pub const CUT_WIDTH_M: f64 = 0.25;
 
 /// One placed object's plan rectangle (map frame `x`, `y_north`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Footprint {
+    /// Catalogue placement id the rectangle came from.
     pub pid: u16,
+    /// Catalogue kind (`building`, `vehicle`, `water`, `rock`, `tree`, otherwise a prop) that
+    /// selects the fill colour and the lane.
     pub kind: String,
+    /// South-west corner in map metres.
     pub min: [f64; 2],
+    /// North-east corner in map metres.
     pub max: [f64; 2],
     /// Still a proxy box (descriptor / BLAS not loaded).
     pub proxy: bool,

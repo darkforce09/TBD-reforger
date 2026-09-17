@@ -12,5 +12,7 @@
 //! `pages` and never from a sibling workspace. Modules appear here as each workspace lands, and
 //! a `pub mod` line carries the same `cfg` gate as the code it declares.
 
+/// The diagnostics testbenches: URL-only benches that drive one engine subsystem in isolation.
+pub mod debug;
 /// The scenario creator: the 2D/3D CAD workspace that authors a mission document.
 pub mod editor;

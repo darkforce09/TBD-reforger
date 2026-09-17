@@ -1,27 +1,39 @@
-//! `/debug/world-los` — T-090.12.5: the world-occluder bench. Loads the committed catalogue
-//! around a map point straight off `/map-assets/everon/` (manifest, prefabs, the chunks covering
-//! the radius, then every descriptor + BLAS those chunks place — the same `OccluderHost` path
-//! the mission editor uses), draws the placed objects as plan footprints on the T-090.11.6
-//! architectural lanes (buildings with their eye-height section cuts; proxies amber while their
-//! geometry is still loading), and probes one A → B segment through `WorldOccluder::evaluate_los`
-//! — hits, verdict, concealment, coverage — as the reproducible-by-URL instrument for the
-//! object LOS layer.
+//! The world-occluder bench served at `/debug/world-los`.
 //!
-//! URL: `?x=9363&y=285&r=150` (map metres; default = the farmhouse village), `&a=x,y,z` /
-//! `&b=x,y,z` (engine-frame ray ends: x, y_up, z_north — default A/B 40 m either side of the
-//! centre at the mean row elevation + 1.8 m), `&eye=1.8` (cut plane above the mean elevation),
-//! `&force=webgl` (the editor's headless-backend convention). LMB click sets A, the next click B;
-//! drag pans; wheel zooms.
+//! **Role:** loads the committed object catalogue around a map point straight off
+//! `/map-assets/everon/` — manifest, prefabs, the chunks covering the radius, then every
+//! descriptor and BLAS those chunks place, over the same `OccluderHost` path the mission editor
+//! uses — draws the placed objects as plan footprints on the architectural lanes (buildings with
+//! their eye-height section cuts; proxies amber while their geometry is still loading), and probes
+//! one A → B segment through `WorldOccluder::evaluate_los`, reporting hits, verdict, concealment
+//! and coverage.
+//! **Position:** a routed workspace under `v2::apps::debug`, mounted by `app_routes.rs`. Its pure
+//! geometry lives in [`super::world_los_scene`]; it reaches the map engine directly and never
+//! touches the editor.
+//! **Signals & state:** one `Signals` bundle of Leptos `RwSignal`s carries the status line, the
+//! verdict, the hit list, coverage and engine errors from the wasm host back to the view. The
+//! `RenderEngine` itself is held in an `Rc<RefCell<…>>` handle owned by the mount.
+//! **Invariants:** every parameter of a run is in the URL, so a reading reproduces exactly:
+//! `?x=9363&y=285&r=150` (map metres; the default is the farmhouse village), `&a=x,y,z` /
+//! `&b=x,y,z` (engine-frame ray ends: x, y_up, z_north — by default A and B sit 40 m either side
+//! of the centre at the mean row elevation + 1.8 m), `&eye=1.8` (cut plane above the mean
+//! elevation) and `&force=webgl` (the headless-backend convention the editor shares). The bench is
+//! URL-only and never appears in the navigation. Left-click sets A, the next click sets B; drag
+//! pans; the wheel zooms.
 
 use leptos::prelude::*;
 
-/// Default centre: the FarmHouse_E_1L01_Wood the T-090.11 program was built on (chunk 18_0).
+/// Default centre: the wooden farmhouse the architectural lanes were built against (chunk 18_0).
 pub const DEFAULT_CENTER: [f64; 2] = [9363.0, 285.0];
+/// Default radius in map metres of the catalogue window loaded around [`DEFAULT_CENTER`].
 pub const DEFAULT_RADIUS_M: f64 = 150.0;
+/// Default height in metres above the mean row elevation at which buildings are section-cut and
+/// the probe ray is flown.
 pub const DEFAULT_EYE_M: f64 = 1.8;
 /// Buildings cut at eye height, at most this many (a village), the rest keep their footprint.
 pub const MAX_CUT_BUILDINGS: usize = 96;
 
+/// The bench's view: the canvas the engine mounts on, the probe read-outs, and the status line.
 #[component]
 pub fn WorldLosPage() -> impl IntoView {
     let status = RwSignal::new(String::from("booting…"));
@@ -87,6 +99,7 @@ mod live {
 
     type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
 
+    /// The reactive cells the wasm host writes as the catalogue loads and the probe resolves.
     pub struct Signals {
         pub status: RwSignal<String>,
         pub verdict: RwSignal<String>,
@@ -406,6 +419,8 @@ mod live {
         })
     }
 
+    /// Reads the run out of the URL, boots the render engine on the bench canvas, streams the
+    /// catalogue window in, and wires pointer and wheel handling to the probe and the camera.
     pub fn mount(s: Signals) {
         let center = [
             query_f64("x").unwrap_or(DEFAULT_CENTER[0]),

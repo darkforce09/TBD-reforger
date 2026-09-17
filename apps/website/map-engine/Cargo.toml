@@ -22,7 +22,7 @@ store = ["scenario", "dep:yrs"]
 bvh = []
 # `dep:website-graphics-engine` sits HERE and not on `render` alone. Measured, not guessed: the
 # frontend's NATIVE build (`frontend/Cargo.toml:27`, world+io, no render) calls
-# `renderers::primitives::triangulate::triangulate_simple` from `pages/debug/building_viewer.rs`,
+# `renderers::primitives::triangulate::triangulate_simple` from `v2/apps/debug/building_viewer.rs`,
 # and that path IS `website_graphics_engine::draw::triangulate`. The streaming layer needs it too
 # (`core::culling::lod` re-exports `text::scale::REF_ZOOM`, which every `streaming/buffers/*` belt
 # reaches through `symbology/labels/glyph_math`). This is §2C.1 Kind B — POD layout and
