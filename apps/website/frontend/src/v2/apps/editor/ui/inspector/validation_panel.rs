@@ -2299,16 +2299,16 @@ mod f5_seam_lifecycle {
             }
             assert_eq!(
                 live_hits,
-                vec!["v2/apps/editor/panels/validation_panel.rs x1".to_string()],
+                vec!["v2/apps/editor/ui/inspector/validation_panel.rs x1".to_string()],
                 "T-783: `{needle}` must be defined exactly ONCE in live crate code, beside the \
                  SeamRegistration trait it depends on. Found: {live_hits:?}. Import it \
-                 (`crate::v2::apps::editor::panels::validation_panel::install_seam`, or the `ruler_tool` re-export the \
+                 (`crate::v2::apps::editor::ui::inspector::validation_panel::install_seam`, or the `ruler_tool` re-export the \
                  wasm-only seams already use) instead of writing a second copy — one identity check \
                  with two mechanisms is how the remount guard drifts out of one of them."
             );
             assert_eq!(
                 raw_hits,
-                vec!["v2/apps/editor/panels/validation_panel.rs x1".to_string()],
+                vec!["v2/apps/editor/ui/inspector/validation_panel.rs x1".to_string()],
                 "T-783: `{needle}` appears outside live code as well. Found: {raw_hits:?}. The raw \
                  count catches a copy the scrubber cannot see — it cuts from the first test-module \
                  attribute to end of file, so a definition parked below one would hide."

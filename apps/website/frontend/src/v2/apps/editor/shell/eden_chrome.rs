@@ -42,7 +42,7 @@ pub use crate::pages::operations::orbat_manager::OrbatManagerDialog;
 
 // T-582 — the zone draw tool's PURE predicates. `editor_ops` (the wasm-only doc-mutating half) calls
 // these through `crate::v2::apps::editor::shell::eden_chrome`, so they stay re-exported here; they live in
-// [`crate::v2::apps::editor::panels::zones_panel`].
-pub use crate::v2::apps::editor::panels::zones_panel::{
+// [`crate::v2::apps::editor::ui::inspector::zones_panel`].
+pub use crate::v2::apps::editor::ui::inspector::zones_panel::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };

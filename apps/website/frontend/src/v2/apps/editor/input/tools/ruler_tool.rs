@@ -53,7 +53,7 @@ use website_map_engine::editing::tools::selection;
  * in `validation_panel::unregister_seam` — only the LOSING registration is cleared. Only the entry
  * point is re-exported; the guard is that function's private business and no caller here names it.
  */
-pub(crate) use crate::v2::apps::editor::panels::validation_panel::install_seam;
+pub(crate) use crate::v2::apps::editor::ui::inspector::validation_panel::install_seam;
 
 /// Hand the host's leaked ruler chain to the engine's registry so [`RulerOverlay`] can read it.
 ///

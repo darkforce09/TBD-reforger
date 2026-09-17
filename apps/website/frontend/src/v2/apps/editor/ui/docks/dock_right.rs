@@ -18,9 +18,9 @@ use serde::{Deserialize, Serialize};
 use crate::v2::apps::editor::arsenal::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::armed_placement;
-use crate::v2::apps::editor::panels::zones_panel::zones_panel;
 use crate::v2::apps::editor::shell::layout::{DOCK_R, STUB_PX};
 use crate::v2::apps::editor::ui::docks::dock_left::collapse_chevron;
+use crate::v2::apps::editor::ui::inspector::zones_panel::zones_panel;
 use crate::v2::apps::editor::ui::outliner::tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::v2::core::api::dto::RegistryItem;
 use crate::v2::core::ui::MaterialIcon;
@@ -2727,7 +2727,9 @@ pub(crate) fn triggers_panel(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
+    use crate::v2::apps::editor::ui::inspector::zones_panel::{
+        humanize_token, DrawTarget, ZoneShape,
+    };
     use crate::v2::apps::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 
     // The activation the NEXT draw will carry, seeded to the first of the three (presence).
@@ -2824,7 +2826,7 @@ pub(crate) fn triggers_panel(
             } else {
                 "Click the centre.".to_string()
             };
-            let can_close = is_poly && crate::v2::apps::editor::panels::zones_panel::polygon_is_committable(&d.verts);
+            let can_close = is_poly && crate::v2::apps::editor::ui::inspector::zones_panel::polygon_is_committable(&d.verts);
             view! {
                 <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
                     <p class="text-label-sm normal-case text-on-surface">
@@ -2967,7 +2969,7 @@ pub(crate) fn triggers_panel(
 }
 
 /// T-079 — the Attributes panel for one trigger: name, activation, the OWNER picker
-/// (CONN-TRG-OWNER-001), reshape, schema-driven rules, delete. The [`crate::v2::apps::editor::panels::zones_panel`]
+/// (CONN-TRG-OWNER-001), reshape, schema-driven rules, delete. The [`crate::v2::apps::editor::ui::inspector::zones_panel`]
 /// `zone_attributes` twin, with the owner picker + activation in place of zone label/faction/type.
 #[cfg(target_arch = "wasm32")]
 fn trigger_attributes(
@@ -2975,7 +2977,9 @@ fn trigger_attributes(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
+    use crate::v2::apps::editor::ui::inspector::zones_panel::{
+        humanize_token, DrawTarget, ZoneShape,
+    };
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let tid = t.id.clone();
@@ -3115,7 +3119,7 @@ fn trigger_attributes(
             <p class="mt-0.5 text-label-sm normal-case text-outline">
                 "Reuses the mission schema's zoneRules vocabulary — the same controls the Zones panel draws. Blank means the key is not authored and the mod's default applies."
             </p>
-            {crate::v2::apps::editor::panels::zones_panel::zone_rule_fields()
+            {crate::v2::apps::editor::ui::inspector::zones_panel::zone_rule_fields()
                 .into_iter()
                 .map(|f| trigger_rule_control(tid.clone(), f, rules.clone(), doc_tick))
                 .collect_view()}
@@ -3145,11 +3149,11 @@ fn trigger_attributes(
 #[cfg(target_arch = "wasm32")]
 fn trigger_rule_control(
     trigger_id: String,
-    f: crate::v2::apps::editor::panels::zones_panel::ZoneRuleField,
+    f: crate::v2::apps::editor::ui::inspector::zones_panel::ZoneRuleField,
     rules: serde_json::Value,
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::zones_panel::{
+    use crate::v2::apps::editor::ui::inspector::zones_panel::{
         humanize_key, humanize_token, ZoneRuleKind,
     };
 
@@ -3318,7 +3322,7 @@ fn trigger_rule_control(
 /// `overflow`/`backdrop-filter` clipping box and spans the viewport. (This slice owns neither
 /// `mission_editor` nor `ruler_tool`, so it cannot add a shared overlay mount there; the Portal keeps
 /// the whole line self-contained in an owned file.) The projection math is the pure, native-tested
-/// [`crate::v2::apps::editor::panels::zones_panel::project_owner_line`]. Nothing renders when no trigger is selected or the
+/// [`crate::v2::apps::editor::ui::inspector::zones_panel::project_owner_line`]. Nothing renders when no trigger is selected or the
 /// owner is dangling (`owner_line_world` returns `None`).
 #[cfg(target_arch = "wasm32")]
 #[component]
@@ -3371,7 +3375,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
     }
 
     let projected =
-        move || -> Option<crate::v2::apps::editor::panels::zones_panel::ProjectedOwnerLine> {
+        move || -> Option<crate::v2::apps::editor::ui::inspector::zones_panel::ProjectedOwnerLine> {
             // Subscribe to selection, doc edits (owner assign / geometry / delete) and the pan heartbeat
             // (`tick`, bumped per rAF while selected). The camera is read live off the snapshot.
             let _ = doc_tick.get();
@@ -3393,7 +3397,7 @@ fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
                 (p[0], p[1])
             };
             Some(
-                crate::v2::apps::editor::panels::zones_panel::project_owner_line(
+                crate::v2::apps::editor::ui::inspector::zones_panel::project_owner_line(
                     world_a, world_b, project,
                 ),
             )
@@ -3464,7 +3468,8 @@ pub(crate) fn triggers_panel(
 // STYLE and Eden's second Area-marker model. This panel authors none of them.
 
 /// `mission.schema.json` via the crate's single embed — the ONE source of the marker icon vocabulary.
-const MISSION_SCHEMA_JSON: &str = crate::v2::apps::editor::panels::zones_panel::MISSION_SCHEMA;
+const MISSION_SCHEMA_JSON: &str =
+    crate::v2::apps::editor::ui::inspector::zones_panel::MISSION_SCHEMA;
 
 /// The closed `$defs/marker.icon` alias list, in schema order, parsed once.
 ///
@@ -3622,7 +3627,7 @@ struct CanonicalMarkerRow {
 /// alias substring-matches — so "Search icons" still matches slugs and names.
 #[cfg(target_arch = "wasm32")]
 fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
-    use crate::v2::apps::editor::panels::zones_panel::humanize_token;
+    use crate::v2::apps::editor::ui::inspector::zones_panel::humanize_token;
     use website_map_engine::overlay::symbology::markers::marker_glyph_for_alias;
     use website_map_engine::overlay::symbology::markers::MarkerGlyph;
     use website_map_engine::overlay::symbology::markers::MARKER_GLYPH_COUNT;
@@ -3800,7 +3805,7 @@ pub(crate) fn markers_panel(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::zones_panel::humanize_token;
+    use crate::v2::apps::editor::ui::inspector::zones_panel::humanize_token;
     use crate::v2::apps::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 
     let icon_search = RwSignal::new(String::new());
@@ -4003,7 +4008,7 @@ fn marker_attributes(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::zones_panel::humanize_token;
+    use crate::v2::apps::editor::ui::inspector::zones_panel::humanize_token;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let faction = m.faction_id.clone();
@@ -4912,7 +4917,7 @@ mod tests {
         const SRC: &str = include_str!("dock_right.rs");
         let zones_src = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/zones_panel.rs"
+            "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
         ));
         // T-934.7 — the ops module was split; the no-forked-draw absence pins scan every submodule.
         let ops = [
@@ -5033,7 +5038,7 @@ mod tests {
     /// in the store test; this proves the geometry the overlay draws when there IS a line.
     #[test]
     fn project_owner_line_maps_both_endpoints() {
-        use crate::v2::apps::editor::panels::zones_panel::project_owner_line;
+        use crate::v2::apps::editor::ui::inspector::zones_panel::project_owner_line;
         // Trigger centre (10,20) → owner (110,220), through a scale-2 + offset projector.
         let l = project_owner_line((10.0, 20.0), (110.0, 220.0), |x, y| {
             (x * 2.0 + 5.0, y * 2.0 + 7.0)
@@ -5056,7 +5061,7 @@ mod tests {
     /// hinge the whole "one shared draw tool" design turns on.
     #[test]
     fn draw_target_variants_are_distinct() {
-        use crate::v2::apps::editor::panels::zones_panel::DrawTarget;
+        use crate::v2::apps::editor::ui::inspector::zones_panel::DrawTarget;
         assert_ne!(DrawTarget::Zone, DrawTarget::Trigger);
         assert_eq!(DrawTarget::Trigger.noun(), "trigger");
         assert_eq!(DrawTarget::Zone.noun(), "zone");
@@ -5893,7 +5898,7 @@ mod tests {
     /// and the case-collapse assertion fails.
     #[test]
     fn picker_has_one_row_per_canonical_icon() {
-        use crate::v2::apps::editor::panels::zones_panel::humanize_token;
+        use crate::v2::apps::editor::ui::inspector::zones_panel::humanize_token;
 
         // The documented row count — far below the 64 raw aliases (that shrink is the fix).
         assert_eq!(

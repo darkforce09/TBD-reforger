@@ -290,7 +290,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
-/// `packages/tbd-schema/schema/mission.schema.json` (`v2/apps/editor/panels/zones_panel.rs`),
+/// `packages/tbd-schema/schema/mission.schema.json` (`v2/apps/editor/ui/inspector/zones_panel.rs`),
 /// `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census
 /// tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed
@@ -685,7 +685,7 @@ mod tests {
     /// `frontend_tests_changed` originally scoped itself on `wasm_scope_touched` alone. But the
     /// suite compiles files from outside that graph through `include_str!`, and wave 255 itself
     /// changed one of them — `packages/tbd-schema/schema/mission.schema.json`, compiled by
-    /// `v2/apps/editor/panels/zones_panel.rs` and asserted over by
+    /// `v2/apps/editor/ui/inspector/zones_panel.rs` and asserted over by
     /// `zone_rule_fields_cover_the_whole_vocabulary`, which is documented to fail loudly on a new
     /// `$defs/zoneRules` key. A slice whose diff was only that file would have printed "frontend
     /// untouched", skipped the suite, and reported PASS over the one test that would have caught it.

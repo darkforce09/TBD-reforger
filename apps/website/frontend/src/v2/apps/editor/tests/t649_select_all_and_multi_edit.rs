@@ -243,7 +243,7 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
 fn differing_fields_are_locked_behind_a_per_field_checkbox() {
     let raw_attrs = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/panels/attributes_modal.rs"
+        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
     ));
     let attrs = live_code(raw_attrs);
     // The checkbox itself (string literal ⇒ pinned on the RAW source), assembled so this test's
@@ -320,7 +320,7 @@ fn differing_fields_are_locked_behind_a_per_field_checkbox() {
 fn multi_edit_commits_fan_out_to_every_selected_id() {
     let attrs = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/panels/attributes_modal.rs"
+        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
     )));
     for (seam, single, multi) in [
         (
@@ -596,7 +596,7 @@ fn t788_open_attributes_modal_follows_a_selection_change() {
 fn the_arsenal_tab_discloses_one_entity_picks_and_whole_selection_buffer_verbs() {
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/panels/attributes_modal.rs"
+        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
     ));
     let modal_raw = fn_source(raw, "fn modal_view(");
     let one = "Pick and cargo edits apply to this one entity";

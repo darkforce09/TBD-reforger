@@ -13,10 +13,10 @@ use super::Pending;
 use crate::v2::apps::editor::bridge::host_state::editor_context::{
     bump_doc_tick, ZoneDraft, EDITOR_CONTEXT,
 };
-use crate::v2::apps::editor::panels::zones_panel::DrawTarget;
 use crate::v2::apps::editor::shell::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };
+use crate::v2::apps::editor::ui::inspector::zones_panel::DrawTarget;
 use website_map_engine::data::store::operations::entity::ZoneDrawStep;
 use website_map_engine::editing::hosted_commands as engine_ops;
 

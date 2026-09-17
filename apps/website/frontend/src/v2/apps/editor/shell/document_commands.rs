@@ -375,7 +375,7 @@ mod imp {
     ///
     /// **T-690 — this is where the compile stops being a pass/fail.** The compile now returns a
     /// structured finding list alongside the bytes; this publishes that list to the T-655 validation
-    /// panel ([`crate::v2::apps::editor::panels::validation_panel::publish_compile_findings`]) and lets the toast shrink back
+    /// panel ([`crate::v2::apps::editor::ui::inspector::validation_panel::publish_compile_findings`]) and lets the toast shrink back
     /// to what a toast is good at — a one-line verdict with a pointer. The panel is the render
     /// surface and is deliberately not duplicated here.
     ///
@@ -401,10 +401,10 @@ mod imp {
                 // validation finding. Published AFTER the download starts: a diagnostic is not a
                 // refusal, and the file the author asked for is not held back by one.
                 let summary = super::compile_diagnostics_summary(&findings);
-                crate::v2::apps::editor::panels::validation_panel::publish_compile_findings(
+                crate::v2::apps::editor::ui::inspector::validation_panel::publish_compile_findings(
                     findings
                         .iter()
-                        .map(crate::v2::apps::editor::panels::validation_panel::PanelFinding::from_finding)
+                        .map(crate::v2::apps::editor::ui::inspector::validation_panel::PanelFinding::from_finding)
                         .collect(),
                 );
                 // Naming the staleness is the whole reason this is a toast and not a silent download:
@@ -1319,7 +1319,7 @@ mod tests {
 
     #[test]
     fn compile_findings_reach_the_validation_panel() {
-        use crate::v2::apps::editor::panels::validation_panel::{
+        use crate::v2::apps::editor::ui::inspector::validation_panel::{
             evaluate_now, publish_compile_findings, PanelFinding, Rollup,
         };
 

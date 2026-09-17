@@ -29,7 +29,7 @@ use website_map_engine::editing::tools::line_of_sight::capture::{
 };
 use website_map_engine::editing::tools::selection;
 
-use crate::v2::apps::editor::panels::validation_panel;
+use crate::v2::apps::editor::ui::inspector::validation_panel;
 // T-939.4 — the Arrange chords resolve through the top strip's shared list; nothing about the
 // commands themselves is duplicated here.
 #[cfg(target_arch = "wasm32")]
@@ -2905,7 +2905,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
                 // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
                 <div class="pointer-events-auto">
-                    <crate::v2::apps::editor::panels::attributes_modal::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
+                    <crate::v2::apps::editor::ui::inspector::attributes_modal::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
                 </div>
                 <div class="pointer-events-auto">
                     <crate::v2::apps::editor::shell::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />

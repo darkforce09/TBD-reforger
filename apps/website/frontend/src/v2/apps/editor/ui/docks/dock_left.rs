@@ -612,7 +612,7 @@ pub fn DockLeft(
                                         class="flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-on-surface hover:bg-white/5"
                                         on:click=move |ev: web_sys::MouseEvent| {
                                             ev.stop_propagation();
-                                            crate::v2::apps::editor::panels::validation_panel::route_select_by_subject_id(
+                                            crate::v2::apps::editor::ui::inspector::validation_panel::route_select_by_subject_id(
                                                 &click_id,
                                             );
                                         }
@@ -1479,7 +1479,7 @@ fn load_named_places() -> Vec<NamedPlace> {
 /// **WOULD A CLICK ON THIS HIT SELECT ANYTHING? — the T-754 rule, asked of the click's own router.**
 ///
 /// Wave 129 (RV-1), the peer of `validation_panel::finding_is_routable` and
-/// `eden_settings::owner_is_routable`. [`crate::v2::apps::editor::panels::validation_panel::subject_id_routes`] is the
+/// `eden_settings::owner_is_routable`. [`crate::v2::apps::editor::ui::inspector::validation_panel::subject_id_routes`] is the
 /// REGISTERED route probe — an `Rc` of the same resolution `route_select_by_subject_id` runs,
 /// narrowed by `mission_editor::route_availability` — so the affordance and the click cannot answer
 /// differently. Asking it per ROW rather than per KIND is the whole of the fix.
@@ -1492,7 +1492,7 @@ fn load_named_places() -> Vec<NamedPlace> {
 /// probe is registered** — no probe means no router to click into, and `false` is the honest answer.
 #[must_use]
 pub fn hit_is_routable(hit: &DocHit) -> bool {
-    crate::v2::apps::editor::panels::validation_panel::subject_id_routes(&hit.entity.id)
+    crate::v2::apps::editor::ui::inspector::validation_panel::subject_id_routes(&hit.entity.id)
 }
 
 /// T-697 — why a hit row is inert, in words the author can act on. Rendered as the row's `title`
@@ -2515,8 +2515,8 @@ mod t697_document_search {
         LIST_SCROLLBAR_PX, MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
     };
     use crate::v2::apps::editor::mission_editor::route_target;
-    use crate::v2::apps::editor::panels::validation_panel::register_route_probe;
     use crate::v2::apps::editor::shell::layout::{tw_len_px, DOCK_L, DOCK_PX};
+    use crate::v2::apps::editor::ui::inspector::validation_panel::register_route_probe;
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// The dock's own production text — comments, test modules and unreachable arms removed.

@@ -690,7 +690,7 @@ pub(crate) fn row_router_subject(kind: NodeKind, id: &str) -> Option<&str> {
 #[must_use]
 pub(crate) fn row_routes(kind: NodeKind, id: &str) -> bool {
     row_router_subject(kind, id)
-        .is_some_and(crate::v2::apps::editor::panels::validation_panel::subject_id_routes)
+        .is_some_and(crate::v2::apps::editor::ui::inspector::validation_panel::subject_id_routes)
 }
 
 /// Why an unroutable row is inert, in words, rendered as its `title` — the answer available exactly
@@ -784,7 +784,7 @@ fn comment_row(
                 // finding row click, and the same resolution `row_routes` asked above. One decision,
                 // both ends of it; no second selection path was invented for this row.
                 on:click=move |_| {
-                    let _ = crate::v2::apps::editor::panels::validation_panel::route_select_by_subject_id(&id_click);
+                    let _ = crate::v2::apps::editor::ui::inspector::validation_panel::route_select_by_subject_id(&id_click);
                 }
                 on:dblclick=on_dbl
                 on:pointerdown=on_down
@@ -2401,7 +2401,7 @@ mod t637_one_dense_row_geometry {
 #[cfg(test)]
 mod t784_comment_row_selects {
     use super::{inert_row_reason, row_router_subject, row_routes};
-    use crate::v2::apps::editor::panels::validation_panel::{
+    use crate::v2::apps::editor::ui::inspector::validation_panel::{
         register_route_probe, register_select_by_id, route_select_by_subject_id,
     };
     use crate::v2::apps::editor::ui::outliner::outliner::NodeKind;

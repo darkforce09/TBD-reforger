@@ -42,7 +42,7 @@ pub const WEATHER_TIMELINE_READERS: &[(&str, &str)] = &[
     ),
     (
         "editor",
-        "panels/weather_timeline.rs — this panel, via operations::update_environment",
+        "ui/inspector/weather_timeline.rs — this panel, via operations::update_environment",
     ),
 ];
 

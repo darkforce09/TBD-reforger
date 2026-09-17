@@ -12,7 +12,7 @@ use website_map_engine::frame::EngineHandle;
 /// Re-export `website_map_engine::streaming::host::*`.
 pub use website_map_engine::streaming::host::*;
 
-impl crate::v2::apps::editor::panels::validation_panel::SeamRegistration
+impl crate::v2::apps::editor::ui::inspector::validation_panel::SeamRegistration
     for (EngineHandle, HostHandle)
 {
     fn is_same_registration(&self, live: &Self) -> bool {

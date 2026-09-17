@@ -1841,9 +1841,10 @@ mod tests {
     #[test]
     fn the_formation_submenu_uses_the_schema_vocabulary_verbatim() {
         // Shared crate embed (wave-135 H2) — do not re-include_str the schema in this test.
-        let schema: serde_json::Value =
-            serde_json::from_str(crate::v2::apps::editor::panels::zones_panel::MISSION_SCHEMA)
-                .expect("schema parses");
+        let schema: serde_json::Value = serde_json::from_str(
+            crate::v2::apps::editor::ui::inspector::zones_panel::MISSION_SCHEMA,
+        )
+        .expect("schema parses");
         let want: Vec<String> = schema["$defs"]["group"]["properties"]["formation"]["enum"]
             .as_array()
             .expect("$defs/group.formation.enum")

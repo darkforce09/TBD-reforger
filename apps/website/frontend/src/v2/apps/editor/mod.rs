@@ -28,13 +28,13 @@ pub mod input;
 /// The editor page itself: the route component that mounts the canvas, raises the chrome around
 /// it, and wires the docks, tools and overlays to the document.
 pub mod mission_editor;
-/// The docked panels and drawers: the attribute and environment inspectors, the zone, vehicle,
-/// task, radio, spawn and audio panels, the validation drawer, and the help and settings modals.
+/// The two full-screen dialogs over the workspace: the controls hint and the mission settings.
 pub mod panels;
 /// The browser session the workspace runs inside: the draft writer and its status, the server
 /// hydrate, cross-tab locking, the warm-session marker, the chrome and world-layer preferences,
 /// the payload-size readout and the browser transport behind the document commands.
 pub mod shell;
 /// The rendered surfaces around the map: the docked chrome (left and right docks, top strip,
-/// toolbelt, context menu) and the Editor Layers outliner they host.
+/// toolbelt, context menu), the Editor Layers outliner they host, and the inspectors that edit
+/// the selected subject.
 pub mod ui;

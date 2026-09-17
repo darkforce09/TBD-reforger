@@ -1,7 +1,7 @@
 //! T-661 — the Mission Settings dialog (environment + flow + render prefs), split from
 //! `eden_chrome.rs`.
 //!
-//! Terrain (readonly) + time/weather author through [`crate::v2::apps::editor::panels::env::author_env`] (T-193 gate);
+//! Terrain (readonly) + time/weather author through [`crate::v2::apps::editor::ui::inspector::env::author_env`] (T-193 gate);
 //! [`render_flow_section`] is the T-224 mission-flow block. Time and weather additionally mirror to
 //! the `missions` row through [`crate::v2::apps::editor::ui::docks::top_strip::RowMirror`] (T-192). Renders no DOM while
 //! closed; the doc-reading halves are wasm-only.
@@ -77,9 +77,9 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-use crate::v2::apps::editor::panels::env::ENV_UNCARRIED_NOTE;
-use crate::v2::apps::editor::panels::spawn_modules::spawn_modules_panel;
-use crate::v2::apps::editor::panels::win_conditions_card::win_conditions_card;
+use crate::v2::apps::editor::ui::inspector::env::ENV_UNCARRIED_NOTE;
+use crate::v2::apps::editor::ui::inspector::spawn_modules::spawn_modules_panel;
+use crate::v2::apps::editor::ui::inspector::win_conditions_card::win_conditions_card;
 use crate::v2::core::ui::MaterialIcon;
 
 // T-691 — the Editor Preferences dialog's open flag, parked here from `MissionSettingsDialog`'s
@@ -771,13 +771,13 @@ impl ShapeMirror {
 }
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::env::{
+use crate::v2::apps::editor::ui::docks::top_strip::RowMirror;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::ui::inspector::env::{
     author_env, fmt_duration_secs, parse_flow_seconds, read_flow_jip, read_flow_seconds,
     FLOW_DEFAULT_BRIEFING_S, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S, JIP_OPTIONS,
     SETTINGS_UNREAD_NOTE,
 };
-#[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::ui::docks::top_strip::RowMirror;
 
 /// Mission Settings dialog (MissionSettingsDialog.tsx — environment half). Terrain (readonly) +
 /// time / weather flow through [`author_env`] (one undo step each); the render-pref controls (map
@@ -1647,7 +1647,7 @@ fn render_editor_prefs_body() -> AnyView {
  *
  * (2) **ROWS CLICK THROUGH TO THE OWNING ENTITY** (wog.md 14.6 — a findings list that only prints is
  *     worse than one that selects). The click goes through T-655's SHIPPED router,
- *     [`crate::v2::apps::editor::panels::validation_panel::route_select_by_subject_id`], not a second selection path.
+ *     [`crate::v2::apps::editor::ui::inspector::validation_panel::route_select_by_subject_id`], not a second selection path.
  *
  *     **T-754 — and the affordance is TRUE, row by row.** The wave-115 verifier found this view
  *     styling every entity row `cursor-pointer` over a click that could only produce a toast: the
@@ -1693,10 +1693,11 @@ fn render_editor_prefs_body() -> AnyView {
 
 /// `mission.schema.json` — the ONE source of every default this view reports.
 ///
-/// T-757: read [`crate::v2::apps::editor::panels::zones_panel::MISSION_SCHEMA`] rather than a second `include_str!`. That const
+/// T-757: read [`crate::v2::apps::editor::ui::inspector::zones_panel::MISSION_SCHEMA`] rather than a second `include_str!`. That const
 /// carries the full argument (`$defs/zoneRules` is `additionalProperties: false` so consumers do not
 /// invent a copy). One embed, two readers; the schema path is named once.
-const MISSION_SCHEMA_JSON: &str = crate::v2::apps::editor::panels::zones_panel::MISSION_SCHEMA;
+const MISSION_SCHEMA_JSON: &str =
+    crate::v2::apps::editor::ui::inspector::zones_panel::MISSION_SCHEMA;
 
 /// Where a row's default came from — and, for the two negative cases, why there isn't one.
 ///
@@ -2082,10 +2083,10 @@ pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it
 /// **Wave 129 (F7) — it asks the REGISTERED PROBE, not the router directly.** T-754 shipped this
 /// function calling `mission_editor::route_target` over the small-maps root, which was a THIRD
 /// independent copy of "can this subject be clicked" — and it never got F6's narrowing. The click
-/// runs [`crate::v2::apps::editor::panels::validation_panel::route_select_by_subject_id`], whose router REFUSES a
+/// runs [`crate::v2::apps::editor::ui::inspector::validation_panel::route_select_by_subject_id`], whose router REFUSES a
 /// `RouteTarget::Zone` while the Zones panel is unmounted, so with the dock hidden (Backspace, which
 /// this dialog deliberately survives) a zone row still painted `cursor-pointer` over a click that
-/// did nothing. [`crate::v2::apps::editor::panels::validation_panel::subject_id_routes`] is an `Rc::clone` of the very
+/// did nothing. [`crate::v2::apps::editor::ui::inspector::validation_panel::subject_id_routes`] is an `Rc::clone` of the very
 /// resolver the click uses, so asking it makes the affordance and the click ONE decision — including
 /// the mount state neither `route_target` nor the document root can see.
 ///
@@ -2101,7 +2102,7 @@ pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it
 pub fn owner_is_routable(owner: &SettingOwner) -> bool {
     owner
         .subject_id()
-        .is_some_and(crate::v2::apps::editor::panels::validation_panel::subject_id_routes)
+        .is_some_and(crate::v2::apps::editor::ui::inspector::validation_panel::subject_id_routes)
 }
 
 /// The row's cursor/hover classes — **the affordance itself, as a function of one boolean**, so
@@ -2338,7 +2339,7 @@ fn setting_row_view(
     let owner_label = row.owner.label();
     let click_id = subject.clone().unwrap_or_default();
     let click_owner = owner_label.clone();
-    let key_label = crate::v2::apps::editor::panels::zones_panel::humanize_key(&row.key);
+    let key_label = crate::v2::apps::editor::ui::inspector::zones_panel::humanize_key(&row.key);
     let value_text = fmt_setting_value(&row.value);
     let default_text = fmt_setting_default(&row.default);
     // The pointer the default was READ FROM, on the row itself. An author who doubts a diff can go
@@ -2397,7 +2398,7 @@ fn setting_row_view(
                     // path. Only a row the router RESOLVES is clickable at all (T-754), so the toast is
                     // now the race — the entity went away between this list being built and the click —
                     // rather than the everyday outcome it used to be for every zone row.
-                    if !crate::v2::apps::editor::panels::validation_panel::route_select_by_subject_id(&click_id) {
+                    if !crate::v2::apps::editor::ui::inspector::validation_panel::route_select_by_subject_id(&click_id) {
                         toasts.message(format!("{click_owner} — {OWNER_UNRESOLVED_NOTE}"));
                     }
                 }
@@ -3058,7 +3059,7 @@ mod t688_aggregated_settings {
     /// T-757 — zones + settings share ONE `include_str!` of mission.schema.json.
     ///
     /// Perturbation this catches: restoring a second `include_str!` in this file, or dropping the
-    /// `crate::v2::apps::editor::panels::zones_panel::MISSION_SCHEMA` alias so the view re-embeds. Needle path is assembled so
+    /// `crate::v2::apps::editor::ui::inspector::zones_panel::MISSION_SCHEMA` alias so the view re-embeds. Needle path is assembled so
     /// this test cannot become its own haystack; `live_code` drops cfg(test) so the pin cannot match
     /// itself.
     #[test]
@@ -3066,7 +3067,7 @@ mod t688_aggregated_settings {
         // live_source keeps string literals (needed to see the include_str path); live_code would blank them.
         let zones = live_source(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/zones_panel.rs"
+            "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
         )));
         let settings = live_source(include_str!("settings_modal.rs"));
         let path = format!(
@@ -3090,18 +3091,18 @@ mod t688_aggregated_settings {
         );
         let shared = format!(
             "{}{}{}",
-            "crate::v2::apps::editor::panels::zones_panel::", "MISSION", "_SCHEMA"
+            "crate::v2::apps::editor::ui::inspector::zones_panel::", "MISSION", "_SCHEMA"
         );
         assert!(
             settings.contains(&shared),
-            "T-757: eden_settings must read crate::v2::apps::editor::panels::zones_panel::MISSION_SCHEMA"
+            "T-757: eden_settings must read crate::v2::apps::editor::ui::inspector::zones_panel::MISSION_SCHEMA"
         );
         // Stale size lore (~40 KB vs ~91 KB) — drop rather than restate a drifting number.
         // live_source blanks comments; the ticket defect was comment lore, so read the zones file
         // raw (wave-135 F2). Restoring `~40 KB` in a doc-comment must RED.
         let zones_raw = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/zones_panel.rs"
+            "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
         ));
         let stale = format!("{}{}", "~40 ", "KB");
         assert!(
@@ -3659,7 +3660,7 @@ mod t754_click_affordance {
         OWNER_UNRESOLVED_NOTE,
     };
     use crate::v2::apps::editor::mission_editor::{route_target, RouteTarget};
-    use crate::v2::apps::editor::panels::validation_panel::register_route_probe;
+    use crate::v2::apps::editor::ui::inspector::validation_panel::register_route_probe;
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use serde_json::json;
 
@@ -4011,7 +4012,7 @@ mod t754_click_affordance {
 #[cfg(test)]
 mod t758_inert_row_a11y {
     use super::{inert_settings_row_reason, owner_is_routable, row_cursor_class, SettingOwner};
-    use crate::v2::apps::editor::panels::validation_panel::register_route_probe;
+    use crate::v2::apps::editor::ui::inspector::validation_panel::register_route_probe;
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// Mission-owned rows name no entity: they are never routable, wear no pointer, and carry an

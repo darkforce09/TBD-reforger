@@ -39,7 +39,7 @@ pub const SPAWN_MODULES_READERS: &[(&str, &str)] = &[
     ),
     (
         "editor",
-        "panels/spawn_modules.rs — this panel, via operations::update_environment",
+        "ui/inspector/spawn_modules.rs — this panel, via operations::update_environment",
     ),
 ];
 

@@ -702,7 +702,7 @@ pub(crate) mod keymap_census {
                 "attributes.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/panels/attributes_modal.rs"
+                    "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
                 )),
                 1,
             ),

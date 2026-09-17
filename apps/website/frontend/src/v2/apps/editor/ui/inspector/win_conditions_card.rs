@@ -9,7 +9,7 @@
 //! ══ The transport, and why it is the settings bag ════════════════════════════════════════════
 //! Every write goes to `meta.environment.winConditions` through
 //! [`operations::update_environment`], the same one-patch-one-undo-step path the T-224 flow
-//! controls use. That bag is the transport and the table is the contract — `panels/env.rs`'s own
+//! controls use. That bag is the transport and the table is the contract — `ui/inspector/env.rs`'s own
 //! words — and it is the ONLY part of `meta` with a read/write pair the editor can drive plus a
 //! `hydrate` that loads it back verbatim, which is what makes an authored rule survive Save →
 //! reload. `map_engine_core::mission::extensions` reads the key back out of that bag on the compile

@@ -47,7 +47,7 @@ pub const AUDIO_READERS: &[(&str, &str)] = &[
     ),
     (
         "editor",
-        "panels/audio_emitters.rs — this panel, via operations::update_environment",
+        "ui/inspector/audio_emitters.rs — this panel, via operations::update_environment",
     ),
 ];
 

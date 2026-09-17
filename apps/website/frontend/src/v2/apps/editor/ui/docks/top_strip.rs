@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 // The inline scrubber/weather author through the same T-193 gate as the Mission Settings dialog.
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::env::author_env;
+use crate::v2::apps::editor::ui::inspector::env::author_env;
 // T-637 — `STRIP_ROWS` / `ROW_MENUS` / `ROW_TOOLS` and the icon recipe are `eden_layout`'s again
 // (the T-634 fold-back); this file renders them rather than redefining them.
 use crate::v2::apps::editor::shell::layout::{
@@ -1431,7 +1431,7 @@ pub fn TopCommandStrip(
         if let Some(t) = doc_tick {
             t.track();
         }
-        match crate::v2::apps::editor::panels::validation_panel::chip_findings() {
+        match crate::v2::apps::editor::ui::inspector::validation_panel::chip_findings() {
             Some(sig) => sig.get(),
             None => Vec::new(),
         }
@@ -2269,7 +2269,7 @@ pub fn TopCommandStrip(
                     title="Mission validation — click for the findings"
                     data-validation-chip
                     data-issue-total=move || {
-                        crate::v2::apps::editor::panels::validation_panel::Rollup::of(&validation_findings.get()).total()
+                        crate::v2::apps::editor::ui::inspector::validation_panel::Rollup::of(&validation_findings.get()).total()
                     }
                     class=move || {
                         if validation_open.get() {
@@ -2290,7 +2290,7 @@ pub fn TopCommandStrip(
                     // a clean mission — where the text is the quiet "No issues" (never a 0-badge, the
                     // ticket's empty-state call). `tabular-nums` so the count does not jitter width.
                     <span class=move || {
-                        let r = crate::v2::apps::editor::panels::validation_panel::Rollup::of(&validation_findings.get());
+                        let r = crate::v2::apps::editor::ui::inspector::validation_panel::Rollup::of(&validation_findings.get());
                         let accent = if r.has_blocking() {
                             "text-error-alert"
                         } else if r.total() > 0 {
@@ -2301,7 +2301,7 @@ pub fn TopCommandStrip(
                         cn(&["text-xs font-medium tabular-nums", accent])
                     }>
                         {move || {
-                            let r = crate::v2::apps::editor::panels::validation_panel::Rollup::of(&validation_findings.get());
+                            let r = crate::v2::apps::editor::ui::inspector::validation_panel::Rollup::of(&validation_findings.get());
                             if r.is_empty() { "No issues".to_string() } else { r.chip_text() }
                         }}
                     </span>
@@ -2320,7 +2320,7 @@ pub fn TopCommandStrip(
                             // wide list never spills off the viewport's right side.
                             view! {
                                 <div class=cn(&[MENU_PANEL, "right-0 w-80"])>
-                                    {crate::v2::apps::editor::panels::validation_panel::findings_dropdown(
+                                    {crate::v2::apps::editor::ui::inspector::validation_panel::findings_dropdown(
                                         validation_findings.get(),
                                     )}
                                 </div>
