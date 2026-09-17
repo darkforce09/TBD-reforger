@@ -2,7 +2,7 @@ use super::*;
 
 /// The behaviour half of the T-779 pin — [`commit_one_write`] driven natively with a
 /// refusing sink, the exact production shape for an unknown id. The wiring half (the
-/// live `editor_ops` and panel scrub pins) stays in `arsenal/mod.rs::tests::t779`.
+/// live `editor_ops` and panel scrub pins) stays in `arsenal/tests/shell_wiring.rs::t779`.
 mod t779 {
     use super::*;
 

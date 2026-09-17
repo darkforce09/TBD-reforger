@@ -157,7 +157,7 @@ pub fn ArsenalDoll(
                                     e.resize(rect.width().max(1.0), rect.height().max(1.0), dpr);
                                 }
                                 let _ = e.render(); // damage-driven: Rust no-ops idle frames
-                                                    // T-154.1 — the active-part callout tracks its Rust-projected
+                                                    // the active-part callout tracks its Rust-projected
                                                     // anchor every frame (direct style mutation).
                                 let idx = RAIL_REGIONS
                                     .iter()

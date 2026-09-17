@@ -11,7 +11,18 @@ fn live_production_src() -> String {
             env!("CARGO_MANIFEST_DIR"),
             "/src/v2/apps/editor/arsenal/mod.rs"
         )),
-        include_str!("panels.rs"),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/arsenal/panels.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/arsenal/panels/cargo_panel.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/tab_content.rs"
+        )),
     ]
     .into_iter()
     .map(live_code)
@@ -44,7 +55,7 @@ fn cargo_mutations_commit_without_a_staging_gate() {
         "every cargo mutation must commit: {mutations} `cargo.update(` vs {commits} `on_change(`"
     );
 
-    let tab = fn_body(&live, "pub fn ArsenalTab(");
+    let tab = fn_body(&live, "pub(super) fn loaded_catalog(");
     assert!(
         tab.contains("loadout_commands::set_loadout("),
         "ArsenalTab must reach loadout_commands::set_loadout on a live path"

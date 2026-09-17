@@ -18,19 +18,57 @@ fn live_production_src() -> String {
     // a haystack at its first cfg-test attribute, so scrubbing a concatenation would stop
     // examining everything after the first file's test tail.
     [
-        include_str!("mod.rs"),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/mod.rs"
+        )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/v2/apps/editor/arsenal/loadout.rs"
         )),
-        include_str!("loadout/attachments_and_faults.rs"),
-        include_str!("loadout/buffered_loadout_operations.rs"),
-        include_str!("loadout/loadout_export.rs"),
-        include_str!("loadout/loadout_import.rs"),
-        include_str!("loadout/slot_loadout_serialization.rs"),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/loadout/attachments_and_faults.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/loadout/buffered_loadout_operations.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/loadout/loadout_export.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/loadout/loadout_import.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/loadout/slot_loadout_serialization.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/tab_content.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/tab_content/catalog_header.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/tab_content/selection_grid.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/arsenal/tab_content/status_and_persistence.rs"
+        )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/v2/apps/editor/ui/arsenal/panels.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/arsenal/panels/cargo_panel.rs"
         )),
     ]
     .into_iter()
@@ -49,7 +87,7 @@ use crate::v2::core::test_support::class_r_scrub::only_body as fn_body;
 #[test]
 fn the_panel_states_the_persistence_contract() {
     let live = live_production_src();
-    let tab = fn_body(&live, "pub fn ArsenalTab(");
+    let tab = fn_body(&live, "pub(super) fn status_and_persistence(");
     assert!(
         tab.contains("data-arsenal-persist"),
         "the Arsenal must carry a data-arsenal-persist line the author can read"
@@ -68,7 +106,8 @@ fn the_panel_states_the_persistence_contract() {
     // The verdict badge and the per-row line both read `loadout_faults`, which is where the
     // T-504 warning lands — if either stops, the warning stops being visible.
     assert!(
-        tab.matches("loadout_faults(").count() >= 2,
+        fn_body(&live, "pub(super) fn loaded_catalog(").contains("loadout_faults(")
+            && fn_body(&live, "pub(super) fn selection_grid(").contains("loadout_faults("),
         "both the per-row line and the verdict badge must read loadout_faults"
     );
 
@@ -118,7 +157,7 @@ mod t686 {
     #[test]
     fn the_import_applies_in_one_commit() {
         let live = live_production_src();
-        let tab = fn_body(&live, "pub fn ArsenalTab(");
+        let tab = fn_body(&live, "pub(super) fn loaded_catalog(");
         assert!(
             tab.contains("try_import("),
             "the import must be gated on a live path"
@@ -325,7 +364,7 @@ mod t699 {
     #[test]
     fn the_panel_carries_the_three_verbs_and_resyncs_without_recommitting() {
         let live = live_production_src();
-        let tab = fn_body(&live, "pub fn ArsenalTab(");
+        let tab = fn_body(&live, "pub(super) fn loaded_catalog(");
         for needle in [
             "data-loadout-copy",
             "data-loadout-apply",
@@ -367,7 +406,7 @@ mod t737 {
     #[test]
     fn both_refusal_lists_render_through_refusal_line() {
         let live = live_production_src();
-        let tab = fn_body(&live, "pub fn ArsenalTab(");
+        let tab = fn_body(&live, "pub(super) fn loaded_catalog(");
         assert_eq!(
             tab.matches("refusal_line").count(),
             2,
@@ -442,19 +481,57 @@ mod t739 {
         // production-cite asserts. T-934.8 — the absence claims below are whole-surface
         // claims, so every arsenal production half concatenates.
         [
-            include_str!("mod.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/mod.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/src/v2/apps/editor/arsenal/loadout.rs"
             )),
-            include_str!("loadout/attachments_and_faults.rs"),
-            include_str!("loadout/buffered_loadout_operations.rs"),
-            include_str!("loadout/loadout_export.rs"),
-            include_str!("loadout/loadout_import.rs"),
-            include_str!("loadout/slot_loadout_serialization.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/loadout/attachments_and_faults.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/loadout/buffered_loadout_operations.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/loadout/loadout_export.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/loadout/loadout_import.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/loadout/slot_loadout_serialization.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/tab_content.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/tab_content/catalog_header.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/tab_content/selection_grid.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/arsenal/tab_content/status_and_persistence.rs"
+            )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/src/v2/apps/editor/ui/arsenal/panels.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/arsenal/panels/cargo_panel.rs"
             )),
         ]
         .into_iter()
@@ -686,7 +763,7 @@ mod t779 {
     #[test]
     fn a_refused_pick_is_visible_in_the_panel_not_silent() {
         let live = live_production_src();
-        let tab = fn_body(&live, "pub fn ArsenalTab(");
+        let tab = fn_body(&live, "pub(super) fn status_and_persistence(");
         assert!(
             tab.contains("persist_refused"),
             "T-779: the panel must hold the refusal state, or a refused pick is silent"
@@ -712,10 +789,11 @@ mod t779 {
 
         // The commit must CAPTURE the answer rather than call and forget. Checked structurally
         // (is the call bound to something?) and not by matching one formatting of one line.
-        let call_at = tab
+        let persist = fn_body(&live, "let persist =");
+        let call_at = persist
             .find("loadout_commands::set_loadout(")
             .expect("T-779: the Arsenal must still reach set_loadout on a live path");
-        let before = &tab[..call_at];
+        let before = &persist[..call_at];
         assert!(
             before.trim_end().ends_with('='),
             "T-779: the Arsenal must not call set_loadout as a bare statement — the return is \
@@ -723,7 +801,7 @@ mod t779 {
             &before[before.len().saturating_sub(80)..]
         );
         assert!(
-            tab.contains("persist_refused.set("),
+            persist.contains("persist_refused.set("),
             "T-779: the captured answer must reach the panel state, or it is captured and \
              thrown away"
         );
