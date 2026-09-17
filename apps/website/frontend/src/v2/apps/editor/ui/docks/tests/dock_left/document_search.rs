@@ -19,11 +19,11 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 
 /// The dock's own production text — comments, test modules and unreachable arms removed.
 fn dock_code() -> String {
-    live_code(include_str!("../../dock_left.rs"))
+    live_code(super::test_source::dock_left_source())
 }
 /// The same, with string literals KEPT: for pins about copy and `data-testid`s that ship.
 fn dock_source() -> String {
-    live_source(include_str!("../../dock_left.rs"))
+    live_source(super::test_source::dock_left_source())
 }
 /// The document index's production text (`editor_ops.rs` carries no test module of its own).
 fn ops_code() -> String {

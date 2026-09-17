@@ -5,10 +5,12 @@ use super::{
     LeftTab, NamedPlace, BOOKMARKS_KEY, BOOKMARKS_VERSION,
 };
 
-const SRC: &str = include_str!("../../dock_left.rs");
+fn src() -> &'static str {
+    super::test_source::dock_left_source()
+}
 
-/// T-759 — **the haystack a POSITIVE source pin is allowed to read.** `SRC` is the WHOLE file,
-/// test module included, so a bare `SRC.contains(...)` is satisfied by the assertion that
+/// T-759 — **the haystack a POSITIVE source pin is allowed to read.** `src()` is the WHOLE file,
+/// test module included, so a bare `src().contains(...)` is satisfied by the assertion that
 /// spells the needle. Every positive needle below therefore reads the file's PRODUCTION half
 /// through `class_r_scrub`, the same scrubber the `t697_document_search` module three tests
 /// down already uses on this same file — its first pass cuts everything from the first
@@ -19,16 +21,16 @@ const SRC: &str = include_str!("../../dock_left.rs");
 /// one is not the defect that pinning a comment is.
 ///
 /// The NEGATIVE needle in `the_index_and_the_fly_to_reuse_the_shipped_paths` deliberately stays
-/// on raw `SRC`: for "this must NOT appear", the widest unscrubbed haystack is the strongest
+/// on raw `src()`: for "this must NOT appear", the widest unscrubbed haystack is the strongest
 /// one, and scrubbing could only ever hide a hit.
 fn live_src() -> String {
-    crate::v2::core::test_support::class_r_scrub::live_source(SRC)
+    crate::v2::core::test_support::class_r_scrub::live_source(src())
 }
 
 /// The same production half with string/char literals blanked as well — for needles that mean
 /// "this is real CODE", where the same text sitting in a literal is precisely the decoy.
 fn live_rust() -> String {
-    crate::v2::core::test_support::class_r_scrub::live_code(SRC)
+    crate::v2::core::test_support::class_r_scrub::live_code(src())
 }
 
 fn place(name: &str, x: f64, y: f64) -> NamedPlace {
@@ -330,7 +332,7 @@ fn the_index_and_the_fly_to_reuse_the_shipped_paths() {
     // idiom).
     let second_mover = format!("{}{}", "set_view", "(");
     assert!(
-        !SRC.contains(&second_mover),
+        !src().contains(&second_mover),
         "there must be no SECOND camera mover in this dock"
     );
     assert!(
@@ -417,7 +419,7 @@ fn fly_to_and_named_locations_bodies_are_live() {
 /// fails.
 #[test]
 fn bookmarks_and_fly_to_are_not_document_edits() {
-    let production = SRC
+    let production = src()
         .split("#[cfg(test)]")
         .next()
         .expect("the production half precedes the test module");

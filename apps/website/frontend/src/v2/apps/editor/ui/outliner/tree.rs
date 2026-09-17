@@ -1884,7 +1884,7 @@ mod tests {
         const TREE: &str = include_str!("tree.rs");
         const DOCK: &str = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/ui/docks/dock_left.rs"
+            "/src/v2/apps/editor/ui/docks/dock_left/view/full_dock.rs"
         ));
 
         /// Every layer-authoring wrapper rides `after_local_edit()` — the tail that calls

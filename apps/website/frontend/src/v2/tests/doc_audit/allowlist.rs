@@ -274,14 +274,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/ui/docks/dock_left.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
         path: "apps/editor/ui/docks/toolbelt.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
                  naming tickets and waves; the editor decomposition splits it into per-surface \

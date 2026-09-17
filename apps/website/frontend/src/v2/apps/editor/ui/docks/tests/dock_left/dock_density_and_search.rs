@@ -17,7 +17,7 @@ use crate::v2::apps::editor::ui::outliner::outliner::{NodeKind, OutlinerNode};
 /// The file's production half — everything above the first test module. A needle checked against
 /// this cannot be satisfied by a test's own source.
 fn production() -> &'static str {
-    include_str!("../../dock_left.rs")
+    super::test_source::dock_left_source()
         .split("#[cfg(test)]")
         .next()
         .expect("the production half precedes the test modules")
