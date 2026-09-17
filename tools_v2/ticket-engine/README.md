@@ -1,58 +1,24 @@
-# Ticket Engine (`tools_v2/ticket-engine`)
+# Ticket engine
 
-## Phase-one implementation
+Self-contained ticket storage, validation, command services, generated views, scheduling, and accounting. This crate has no internal workspace dependencies.
 
-The typed ticket library is live with its existing source layout and dependencies (`serde`, `time`, `toml`). Ticket checking, CLI orchestration, view synchronization, metrics, and wave lock compilation remain in `../xtask`. The consolidation and test decomposition below are future targets.
+## Ownership
 
-## Target architecture
+- `model`, `encoding`, `vocab`, and `timestamp`: public ticket types, canonical TOML, scope resolution, and UTC timestamps. Existing crate-root exports remain stable.
+- `store` and `ops`: fail-closed corpus loading, validated post-images, and surgical atomic file replacement.
+- `registry`: read-only projections, historical status lookup, and compatibility formats. Legacy writers refuse the live typed format.
+- `validation`: schema, vocabulary, ownership, body, readiness, shipping, hierarchy, accounting, debt, and repository-reference checks.
+- `cli`: briefs, queries, mutations, shipping, batch selection, and configuration.
+- `sync`: six Markdown views, queue JSON, roadmap markers, and gap-analysis ticket columns.
+- `wave_lock`: dependency packing, collision selection, deterministic lock files, drift checks, reservations, and historical plan decoding.
+- `metrics`: measured receipts, elapsed time, token accounting, and derived estimates.
+- `maintenance`: ticket migrations, timestamp provenance, and body quarantine.
+- `repository`: explicit ticket paths and active-checkout root discovery.
 
-Complete, self-contained ticket domain database, schema validation, view synchronization, and wave lockfile compiler for the `.ai/tickets/` registry.
+## Host interfaces
 
-Consolidates the typed data models and store from `crates/tbd-tickets` with the ticket validation (`check.rs`), command operations (`cmds.rs`), markdown synchronizer (`sync.rs`), and lockfile compiler (`wave_lock.rs`) previously stranded in `xtask`.
+Filesystem services receive the active repository root. `cli::cmd_run` receives an execution callback; `cli::cleanup_targets` returns a worktree path and branch without deleting either. The host owns process invocation and cleanup. Shared `wave_lock::history` functions give the compiler and platform checks one close-marker authority while retaining their different HEAD and numbering policies.
 
----
+Unit tests live in sibling `tests/` files. Production files remain below 500 lines, tests below 1,000. Execution receipt fixtures are shared with xtask and live in `tests/fixtures/execution_receipts`.
 
-## 1. Directory Structure & Architecture
-
-```text
-tools_v2/ticket-engine/
-├── Cargo.toml                           <-- serde, time, toml, jsonschema
-├── src/
-│   ├── lib.rs                           <-- Public API interface & re-exports
-│   ├── core/                            <-- Domain types, timestamps, vocabulary, TOML encoding
-│   ├── store/                           <-- Corpus repository store & transactional file I/O
-│   ├── operations/                      <-- Transactional ticket mutation state machine
-│   ├── validation/                      <-- (Relocated from xtask check.rs) Complete schema & gate checks
-│   ├── sync/                            <-- (Relocated from xtask sync.rs) Markdown queue views & queue.json
-│   ├── wave_lock/                       <-- (Relocated from xtask wave_lock.rs) Concurrency DAG & wave.lock
-│   ├── metrics/                         <-- (Relocated from xtask metrics.rs) Receipts & token estimation
-│   └── cli/                             <-- (Relocated from xtask cmds.rs) High-level command runners
-└── tests/
-    ├── proptest_roundtrip.rs            <-- Lossless render(parse(t)) == t property verification
-    ├── ticket_check_tests.rs            <-- Extracted from check.rs
-    ├── ticket_cmds_tests.rs             <-- Extracted from cmds.rs
-    └── wave_lock_tests.rs               <-- Extracted from wave_lock.rs
-```
-
----
-
-## 2. Architectural Responsibilities
-
-| Submodule | Source Files / Origin | Functional Responsibilities | Invariants Enforced |
-|---|---|---|---|
-| **`core/`** | `tbd-tickets/src/lib.rs`, `timestamp.rs`, `vocab.rs`, `encoding.rs` | Strongly typed representations of tickets (`Domain`, `ScopeV2`, `Status`, `Ticket`), canonical-order TOML, and strict UTC timestamps. | • UTC RFC 3339 timestamps only (zero naive time).<br>• Word caps: title ≤ 10, summary ≤ 40, body lines ≤ 30. |
-| **`store/`** | `tbd-tickets/src/store.rs` | Loads `.ai/tickets/T-*.toml` files into in-memory `Corpus`, manages referential integrity, coordinates atomic disk writes. | • Atomic temp-file write and rename.<br>• Never writes malformed TOML to disk. |
-| **`operations/`** | `tbd-tickets/src/ops.rs` | Pure transactional state transitions: `ship`, `mark_ready`, `set_status`, `add`, `remove`, `reorder`, `stamp_sha`. | • Injects clock for deterministic time.<br>• Validates post-images before committing. |
-| **`validation/`** | `xtask/src/check.rs` (1,264 LOC prod) | Audits all tickets against `schema.json`, validates work classes, ownership (`owns`), title debt pins, and ship gates. | • Zero debt drift beyond ratified pins.<br>• All ready tickets must satisfy readiness criteria. |
-| **`sync/`** | `xtask/src/sync.rs` (521 LOC) | Generates `TICKET_REGISTRY.md`, `TICKET_LEAD.md`, `TICKET_DEV_QUEUE.md`, and `.ai/tickets/queue.json`. | • Idempotent generation.<br>• Refuses to emit empty files. |
-| **`wave_lock/`** | `xtask/src/wave_lock.rs` (1,142 LOC prod) | Compiles `.ai/tickets/wave.lock` from ticket graph, schedules file-disjoint slices, verifies drift. | • `repack` is the only legal writer of `wave.lock`.<br>• `check` fails on any graph or hash drift. |
-| **`metrics/`** | `xtask/src/metrics.rs`, `estimate_tokens.rs` | Analyzes execution receipts, calculates elapsed duration, estimates token usage. | • RFC 3339 timestamp arithmetic only. |
-| **`cli/`** | `xtask/src/cmds.rs` (1,343 LOC prod) | Executes high-level operations invoked by `cargo xtask ticket ...` and `apps/ticketboard`. | • Clean exit code mapping. |
-
----
-
-## 3. Invariants
-
-1. **Zero Monorepo Dependencies**: `ticket-engine` depends only on general Rust crates (`serde`, `time`, `toml`, `jsonschema`).
-2. **Single Authority for Tickets**: No code in `xtask` or `apps/ticketboard` directly touches raw ticket TOML bytes; all mutations route through `ticket-engine`.
-3. **No Inline Test Modules**: All test suites are extracted into sibling files under `tests/`.
+See [phase-three verification](../PHASE_THREE_HANDOFF.md).

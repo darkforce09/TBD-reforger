@@ -69,3 +69,61 @@ fn heavy_package_has_one_owner_and_preserves_executable_names() {
             .exists()
     );
 }
+
+#[test]
+fn ticket_engine_has_no_workspace_dependencies() {
+    let root = crate::root::test_repo_root();
+    let workspace: Value =
+        toml::from_str(&fs::read_to_string(root.join("Cargo.toml")).unwrap()).unwrap();
+    let engine: Value = toml::from_str(
+        &fs::read_to_string(root.join("tools_v2/ticket-engine/Cargo.toml")).unwrap(),
+    )
+    .unwrap();
+    for member in workspace["workspace"]["members"].as_array().unwrap() {
+        let manifest: Value = toml::from_str(
+            &fs::read_to_string(root.join(member.as_str().unwrap()).join("Cargo.toml")).unwrap(),
+        )
+        .unwrap();
+        rejects_dependency(&engine, manifest["package"]["name"].as_str().unwrap());
+    }
+}
+
+#[test]
+fn ticket_implementations_have_one_owner() {
+    let root = crate::root::test_repo_root();
+    for module in [
+        "check",
+        "cmds",
+        "sync",
+        "wave_lock",
+        "metrics",
+        "registry",
+        "tickets_store",
+        "phase2",
+        "estimate_tokens",
+        "backfill_stamps",
+        "migrate_v2",
+        "migrate_main_goal",
+        "quarantine_walls",
+        "vocab_check",
+        "slice_collisions",
+        "gap",
+        "prompt",
+    ] {
+        assert!(
+            !root
+                .join(format!("tools_v2/xtask/src/{module}.rs"))
+                .exists(),
+            "duplicate ticket owner: {module}"
+        );
+    }
+    for adapter in ["ticket", "wave"] {
+        let source =
+            fs::read_to_string(root.join(format!("tools_v2/xtask/src/commands/{adapter}/mod.rs")))
+                .unwrap();
+        assert!(
+            source.contains("ticket_engine::"),
+            "adapter must delegate to ticket-engine"
+        );
+    }
+}

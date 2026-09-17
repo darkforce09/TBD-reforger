@@ -166,26 +166,6 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools_v2/ticket-engine/src/encoding.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: tools_v2/ticket-engine/src/lib.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: tools_v2/ticket-engine/src/ops.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: tools_v2/ticket-engine/src/store.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
   path: tools_v2/developer-tools/src/capture.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
@@ -292,21 +272,6 @@
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/backfill_stamps.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/check.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/cmds.rs
-  reason: T-853 xtask port; split follow-up
-  expires: 2027-06-30
-
-- rule: SIZE-3
   path: tools_v2/xtask/src/deploy_db_common.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
@@ -338,11 +303,6 @@
 
 - rule: SIZE-3
   path: tools_v2/xtask/src/deploy_staging/render.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/estimate_tokens.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
@@ -498,16 +458,6 @@
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/metrics.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/migrate_v2.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
   path: tools_v2/xtask/src/mk_build.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
@@ -578,16 +528,6 @@
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/sync.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/tickets_store.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
   path: tools_v2/xtask/src/wave/base.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
@@ -639,10 +579,5 @@
 
 - rule: SIZE-3
   path: tools_v2/xtask/src/wave/verdict.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/wave_lock.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30

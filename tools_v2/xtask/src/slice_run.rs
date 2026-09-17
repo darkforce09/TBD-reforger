@@ -2,16 +2,16 @@
 //!
 //! Launches the configured agent CLI for one ticket slice, captures its final JSON,
 //! extracts `tokens_consumed` and writes ONE run file under
-//! `.ai/tickets/metrics/<id>/` ([`crate::metrics`]). `ticket run` DELEGATES here per
-//! ready slice (see [`crate::cmds`]) — the pre-913 scaffolding invoked nothing and left
+//! `.ai/tickets/metrics/<id>/` ([`ticket_engine::metrics`]). `ticket run` DELEGATES here per
+//! ready slice (see [`ticket_engine::cli`]) — the pre-913 scaffolding invoked nothing and left
 //! no receipt.
 //!
 //! The agent command is configuration, not a hardcode: `TBD_SLICE_RUN_AGENT_CMD`
 //! (whitespace-split; the slice prompt is appended as the final argument). Default:
 //! `claude --print --output-format json`. Cursor factories set it to
 //! `agent --output-format json -p`. Both output dialects are pinned by recorded
-//! fixtures in `tools_v2/xtask/tests/fixtures/` and parsed by
-//! [`crate::metrics::parse_tokens_from_cli_json`].
+//! fixtures in `tools_v2/ticket-engine/tests/fixtures/execution_receipts/` and parsed by
+//! [`ticket_engine::metrics::parse_tokens_from_cli_json`].
 //!
 //! FAIL-CLOSED RULE: an agent process that exits 0 but reports no usage object is a
 //! FAILED run — exit non-zero, write NO file, never `tokens_consumed: 0`.
@@ -21,8 +21,10 @@ use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::metrics::{self, RunRecord};
-use crate::registry::{Registry, opt_str, slice_executor, slice_spec, ticket_by_id, tickets};
+use ticket_engine::metrics::{self, RunRecord};
+use ticket_engine::registry::{
+    Registry, opt_str, slice_executor, slice_spec, ticket_by_id, tickets,
+};
 
 /// Environment override for the agent command line (program + leading args).
 pub const AGENT_CMD_ENV: &str = "TBD_SLICE_RUN_AGENT_CMD";
@@ -255,8 +257,8 @@ mod tests {
     use std::fs;
 
     fn fixture_path(name: &str) -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures")
+        crate::root::test_repo_root()
+            .join("tools_v2/ticket-engine/tests/fixtures/execution_receipts")
             .join(name)
     }
 

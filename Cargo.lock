@@ -7030,11 +7030,16 @@ dependencies = [
 name = "ticket-engine"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "jsonschema",
  "proptest",
+ "regex",
  "serde",
+ "serde_json",
  "time",
  "toml 0.8.23",
  "trybuild",
+ "walkdir",
 ]
 
 [[package]]
@@ -9051,7 +9056,6 @@ dependencies = [
  "serde_norway",
  "syn 2.0.118",
  "ticket-engine",
- "time",
  "toml 0.8.23",
  "typify",
  "verification-core",

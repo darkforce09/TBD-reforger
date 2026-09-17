@@ -2,11 +2,11 @@
 
 Comprehensive technical specification and phased migration roadmap for transitioning from the legacy tooling layout to the unified `tools_v2/` architecture.
 
-## Current phase-two layout
+## Current phase-three layout
 
 All four `tools_v2` crates are live. `developer-tools` owns the heavy CLI, blueprint compiler, shared PAK reader, and engine-backed map verifications. The six executable names remain unchanged. `xtask` delegates these operations without a direct map-engine dependency. See [PHASE_TWO_HANDOFF.md](./PHASE_TWO_HANDOFF.md) for validation.
 
-Ticket consolidation and broad module/test decomposition remain phases three and four. The architecture below includes those later targets.
+Ticket consolidation is implemented: `ticket-engine` owns validation, command services, generated views, compatibility readers, maintenance, wave scheduling/history, and metrics. `xtask` retains platform execution and delegates ticket behavior. See [PHASE_THREE_HANDOFF.md](./PHASE_THREE_HANDOFF.md) for validation. Broad `xtask` and `developer-tools` decomposition remains phase four.
 
 ---
 

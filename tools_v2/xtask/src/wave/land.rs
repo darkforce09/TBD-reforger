@@ -118,12 +118,14 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     // have a slice-run file under .ai/tickets/metrics/<id>/ or the land refuses before
     // touching main. `--bookkeeping` waives the requirement for manual/command-center
     // lands; land still never invents a receipt it does not have.
-    if let Some(refusal) = crate::metrics::land_receipt_refusal(&ctx.root, &ready, bookkeeping) {
+    if let Some(refusal) =
+        ticket_engine::metrics::land_receipt_refusal(&ctx.root, &ready, bookkeeping)
+    {
         werr!("{refusal}");
         return 2;
     }
     if bookkeeping {
-        let missing = crate::metrics::missing_receipts(&ctx.root, &ready);
+        let missing = ticket_engine::metrics::missing_receipts(&ctx.root, &ready);
         if !missing.is_empty() {
             wprintln!(
                 "--bookkeeping: landing WITHOUT run receipts for: {} (nothing will be stamped for these)",
@@ -211,9 +213,9 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             // land sha + finished), before repack_after_land. Land never invents token
             // counts: a bookkeeping ticket without a receipt is skipped, and a receipt
             // that exists but cannot be stamped is a hard stop, not a silent shrug.
-            if crate::metrics::has_receipt(&ctx.root, t) {
+            if ticket_engine::metrics::has_receipt(&ctx.root, t) {
                 let land_sha = git_stdout_lossy(&["rev-parse", "HEAD"]);
-                match crate::metrics::stamp_land(&ctx.root, t, &land_sha) {
+                match ticket_engine::metrics::stamp_land(&ctx.root, t, &land_sha) {
                     Ok(p) => {
                         let rel = p
                             .strip_prefix(&ctx.root)
@@ -300,18 +302,23 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
 /// pushing a main whose lock cannot be recompiled would hand the next agent a red `ticket
 /// check` with this command's name on it.
 fn repack_after_land(ctx: &Ctx) -> u8 {
-    if let Err(e) = crate::wave_lock::repack_quiet(&ctx.root) {
+    if let Err(e) = ticket_engine::wave_lock::repack_quiet(&ctx.root) {
         wprintln!("wave repack FAILED after land: {e:#}");
         wprintln!("  fix the ticket tree, run `cargo xtask wave repack`, commit, then push.");
         return 1;
     }
-    let dirty = git_stdout_lossy(&["status", "--porcelain", "--", crate::wave_lock::LOCK_REL]);
+    let dirty = git_stdout_lossy(&[
+        "status",
+        "--porcelain",
+        "--",
+        ticket_engine::wave_lock::LOCK_REL,
+    ]);
     if dirty.trim().is_empty() {
         return 0;
     }
     super::flush();
     let ok = std::process::Command::new("git")
-        .args(["add", "--", crate::wave_lock::LOCK_REL])
+        .args(["add", "--", ticket_engine::wave_lock::LOCK_REL])
         .status()
         .map(|s| s.success())
         .unwrap_or(false)
@@ -700,7 +707,7 @@ fn parse_close_args(args: &[String]) -> Result<CloseArgs, String> {
 /// pending prints the honest refusal and returns `None` — the caller's rc-1 path, with zero
 /// writes by construction: this reads the lock struct and nothing else. Factored off
 /// [`cmd_wave_close`] for the same testability cut as [`close_ceremony`].
-fn close_target(lock: &crate::wave_lock::WaveLock) -> Option<(String, Vec<String>)> {
+fn close_target(lock: &ticket_engine::wave_lock::WaveLock) -> Option<(String, Vec<String>)> {
     match lock.emptied.first() {
         Some(e) => {
             wprintln!(
@@ -974,7 +981,7 @@ fn close_ceremony(
 
     // REPACK — T-914's include-HEAD derivation exists exactly for this moment: the fresh marker
     // sits AT HEAD, so the recompiled base becomes {n} and open waves renumber {n}+1 onward.
-    if let Err(e) = crate::wave_lock::repack_quiet(root) {
+    if let Err(e) = ticket_engine::wave_lock::repack_quiet(root) {
         wprintln!("wave repack FAILED after the close marker: {e:#}");
         wprintln!("  The marker IS committed. Fix the ticket tree, run `cargo xtask wave repack`,");
         wprintln!("  commit the lock — the documented close → check-red → repack recovery loop.");
@@ -986,11 +993,16 @@ fn close_ceremony(
     // the base just changed — but the guard costs nothing and lies about nothing).
     let lock_dirty = git_at(
         root,
-        &["status", "--porcelain", "--", crate::wave_lock::LOCK_REL],
+        &[
+            "status",
+            "--porcelain",
+            "--",
+            ticket_engine::wave_lock::LOCK_REL,
+        ],
     )
     .unwrap_or_default();
     if !lock_dirty.trim().is_empty() {
-        let committed = git_at(root, &["add", "--", crate::wave_lock::LOCK_REL]).is_ok()
+        let committed = git_at(root, &["add", "--", ticket_engine::wave_lock::LOCK_REL]).is_ok()
             && git_at(root, &["commit", "-m", "wave.lock: repack after close"]).is_ok();
         if !committed {
             wprintln!("could not commit the wave.lock refresh — commit it by hand before pushing");
@@ -1001,7 +1013,7 @@ fn close_ceremony(
 
     // END-STATE PROOF, not a hope: the promise is "tree ends check-green with no manual step",
     // so run the check that would have been red and say so.
-    let errs = crate::wave_lock::check_as_errors(root);
+    let errs = ticket_engine::wave_lock::check_as_errors(root);
     if !errs.is_empty() {
         wprintln!("wave check is RED after the close ceremony — fix before pushing:");
         for e in &errs {
@@ -1165,8 +1177,8 @@ mod tests {
         std::fs::write(dir.join("c0.txt"), "0\n").unwrap();
         git(&dir, &["add", "--", "c0.txt"]);
         git(&dir, &["commit", "-q", "-m", "wave 41 CLOSED — prior wave"]);
-        crate::wave_lock::repack_quiet(&dir).unwrap();
-        git(&dir, &["add", "--", crate::wave_lock::LOCK_REL]);
+        ticket_engine::wave_lock::repack_quiet(&dir).unwrap();
+        git(&dir, &["add", "--", ticket_engine::wave_lock::LOCK_REL]);
         git(&dir, &["commit", "-q", "-m", "wave.lock: baseline"]);
         dir
     }
@@ -1201,17 +1213,17 @@ mod tests {
         assert_eq!(super::super::base::wave_close_number(&marker), Some(42));
         assert_eq!(super::super::base::wave_close_is_newest_wave(&marker), 0);
         assert_eq!(
-            super::super::base::newest_close_base(&dir).unwrap(),
+            ticket_engine::wave_lock::history::newest_close_base(&dir).unwrap(),
             Some(42)
         );
 
         // Repack derived base 42 and renumbered the open wave to 43; check is green; the tree
         // is clean — no manual step left.
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         println!("── lock head ── wave_base = {}", lock.wave_base);
         assert_eq!(lock.wave_base, 42);
         assert_eq!(lock.tickets_in_wave(43), vec!["T-2".to_string()]);
-        let errs = crate::wave_lock::check_as_errors(&dir);
+        let errs = ticket_engine::wave_lock::check_as_errors(&dir);
         println!("── check_as_errors after ── {errs:?}");
         assert!(errs.is_empty(), "{errs:?}");
         assert_eq!(git(&dir, &["status", "--porcelain"]), "");
@@ -1275,7 +1287,7 @@ mod tests {
         assert_eq!(body.trim_end(), subject);
         assert_eq!(super::super::base::wave_close_number(&marker), Some(42));
         assert_eq!(
-            super::super::base::newest_close_base(&dir).unwrap(),
+            ticket_engine::wave_lock::history::newest_close_base(&dir).unwrap(),
             Some(42),
             "the ledger gained 42, not 99"
         );
@@ -1372,8 +1384,8 @@ mod tests {
         std::fs::write(dir.join("c0.txt"), "0\n").unwrap();
         git(&dir, &["add", "--", "c0.txt"]);
         git(&dir, &["commit", "-q", "-m", "wave 41 CLOSED — prior wave"]);
-        crate::wave_lock::repack_quiet(&dir).unwrap();
-        git(&dir, &["add", "--", crate::wave_lock::LOCK_REL]);
+        ticket_engine::wave_lock::repack_quiet(&dir).unwrap();
+        git(&dir, &["add", "--", ticket_engine::wave_lock::LOCK_REL]);
         git(&dir, &["commit", "-q", "-m", "wave.lock: baseline"]);
         for i in 1..=ship {
             std::fs::write(
@@ -1381,7 +1393,7 @@ mod tests {
                 work_toml(&format!("T-{i}"), (i * 10) as i64, "a.rs", "shipped"),
             )
             .unwrap();
-            crate::wave_lock::repack_quiet(&dir).unwrap();
+            ticket_engine::wave_lock::repack_quiet(&dir).unwrap();
             git(&dir, &["add", "--", ".ai"]);
             git(&dir, &["commit", "-q", "-m", &format!("T-{i}: ship")]);
         }
@@ -1419,7 +1431,7 @@ mod tests {
         )
         .unwrap();
 
-        match crate::wave_lock::load_views(&dir) {
+        match ticket_engine::wave_lock::load_views(&dir) {
             Ok(v) => println!(
                 "── load_views ── {:?}",
                 v.iter()
@@ -1499,7 +1511,7 @@ mod tests {
         // No pending entry, so the label falls back to wave_base + 1 — and an OPEN wave holds it.
         let dir = emptied_scratch("open-label", 2, 0);
         let cwd = testcwd::CwdGuard::enter(&dir);
-        let lock = crate::wave_lock::load(&dir).expect("lock");
+        let lock = ticket_engine::wave_lock::load(&dir).expect("lock");
         let n = lock.wave_base + 1;
         println!(
             "── lock ── base {} · open waves {:?} · pending {:?}",
@@ -1542,7 +1554,7 @@ mod tests {
         let dir = emptied_scratch("e2e", 2, 1);
         let cwd = testcwd::CwdGuard::enter(&dir);
 
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         let (out, tgt) = capture_step(|| close_target(&lock));
         println!("── close_target ──\n{out}");
         let (w, ids) = tgt.expect("one pending entry");
@@ -1567,7 +1579,7 @@ mod tests {
         let marker = git(&dir, &["rev-parse", "HEAD~1"]);
         assert_eq!(super::super::base::wave_close_number(&marker), Some(42));
 
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         println!(
             "── lock after close ── wave_base = {}, emptied = {:?}",
             lock.wave_base, lock.emptied
@@ -1578,7 +1590,7 @@ mod tests {
             "the post-close repack dropped the entry: {lock:?}"
         );
         assert_eq!(lock.tickets_in_wave(43), vec!["T-2".to_string()]);
-        let errs = crate::wave_lock::check_as_errors(&dir);
+        let errs = ticket_engine::wave_lock::check_as_errors(&dir);
         println!("── check_as_errors after ── {errs:?}");
         assert!(errs.is_empty(), "{errs:?}");
         assert_eq!(git(&dir, &["status", "--porcelain"]), "");
@@ -1594,7 +1606,7 @@ mod tests {
         let dir = emptied_scratch("two", 3, 2);
         let cwd = testcwd::CwdGuard::enter(&dir);
 
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         let pend: Vec<u32> = lock.emptied.iter().map(|e| e.n).collect();
         assert_eq!(pend, vec![42, 43], "entries pend ascending: {lock:?}");
 
@@ -1607,7 +1619,7 @@ mod tests {
         assert_eq!(rc1, 0, "{out1}");
 
         // Second close targets the NEXT label — the queue drains in ledger order.
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         let (sel2, tgt2) = capture_step(|| close_target(&lock));
         let (w2, ids2) = tgt2.expect("still one pending");
         assert_eq!(w2, "43");
@@ -1627,11 +1639,11 @@ mod tests {
                 "wave 41 CLOSED — prior wave",
             ]
         );
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         assert_eq!(lock.wave_base, 43);
         assert!(lock.emptied.is_empty(), "queue drained: {lock:?}");
         assert_eq!(lock.tickets_in_wave(44), vec!["T-3".to_string()]);
-        assert!(crate::wave_lock::check_as_errors(&dir).is_empty());
+        assert!(ticket_engine::wave_lock::check_as_errors(&dir).is_empty());
         drop(cwd);
     }
 
@@ -1641,7 +1653,7 @@ mod tests {
         // so no open wave ever emptied — the state every tree is in right after a close.
         let dir = close_scratch("no-pending");
         let head = git(&dir, &["rev-parse", "HEAD"]);
-        let lock = crate::wave_lock::load(&dir).unwrap();
+        let lock = ticket_engine::wave_lock::load(&dir).unwrap();
         assert!(lock.emptied.is_empty());
         let (out, tgt) = capture_step(|| close_target(&lock));
         println!("── refusal ──\n{out}");

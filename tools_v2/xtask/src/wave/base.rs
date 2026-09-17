@@ -58,63 +58,16 @@
 //! loose is a gate reporting PASS over a wave it never read.
 
 use std::path::Path;
+pub use ticket_engine::wave_lock::history::{
+    WAVE_CLOSE_MARKER_RE, wave_close_disavowed_in, wave_close_number_in, wave_close_subject_ok,
+};
 
 use super::{Ctx, git_stdout, git_stdout_lossy, ledger, short, subject};
 use crate::{werr, wprintln};
 
-/// The PREFILTER ONLY.
-///
-/// `git rev-list --grep` runs it through GIT's regex engine, not the system grep, so the
-/// ugrep/GNU divergence noted inside [`prev_wave_close`] does not reach it. The AUTHORITY is
-/// [`wave_close_subject_ok`] below, which is pure `case` and therefore the same program under every
-/// shell here. Measured 2026-08-01: this pattern and the old loose one select exactly the same 33
-/// commits, so anchoring the prefilter cannot lose a real marker.
-///
-/// It is handed to git verbatim, so the engine that evaluates it is unchanged by this port.
-pub const WAVE_CLOSE_MARKER_RE: &str = r"^wave [0-9]+ CLOSED([:]|$| —| -)";
-
-/// Is this SUBJECT a wave-close marker? Pure prefix matching, no regex at all — see the note inside
-/// [`prev_wave_close`] for why a glob and not grep, which T-613 preserves rather than replaces. The
-/// number is validated as digits, so `wave 7x CLOSED` cannot become a boundary either.
-pub fn wave_close_subject_ok(s: &str) -> bool {
-    let Some(rest) = s.strip_prefix("wave ") else {
-        return false;
-    };
-    // `n="${rest%% *}"` — up to the first space, or all of it when there is none.
-    let n = match rest.find(' ') {
-        Some(i) => &rest[..i],
-        None => rest,
-    };
-    if n.is_empty() || !n.bytes().all(|b| b.is_ascii_digit()) {
-        return false;
-    }
-    let rest = &rest[n.len()..];
-    rest == " CLOSED"
-        || rest.starts_with(" CLOSED:")
-        || rest.starts_with(" CLOSED —")
-        || rest.starts_with(" CLOSED -")
-}
-
 /// The wave NUMBER a marker claims. `None` for anything that is not an anchored marker.
 pub fn wave_close_number(rev: &str) -> Option<i64> {
     wave_close_number_in(Path::new("."), rev)
-}
-
-/// Root-parameterised core of [`wave_close_number`]. `Path::new(".")` reproduces the cwd-bound
-/// behaviour byte-for-byte, which is how the gate-facing wrapper above delegates here; the root
-/// exists for [`newest_close_base`], whose callers never chdir. Same subject authority
-/// ([`wave_close_subject_ok`]), same parse.
-fn wave_close_number_in(root: &Path, rev: &str) -> Option<i64> {
-    let s = git_in(root, &["log", "-1", "--format=%s", rev])?;
-    if !wave_close_subject_ok(&s) {
-        return None;
-    }
-    let rest = s.strip_prefix("wave ")?;
-    let n = match rest.find(' ') {
-        Some(i) => &rest[..i],
-        None => rest,
-    };
-    n.parse().ok()
 }
 
 /// Has this wave-close been DISAVOWED by a later revert? Returns the reverting commit.
@@ -133,39 +86,6 @@ fn wave_close_number_in(root: &Path, rev: &str) -> Option<i64> {
 /// at all. Without it this forks `git log` once per commit in the range.
 pub fn wave_close_disavowed(rev: &str) -> Option<String> {
     wave_close_disavowed_in(Path::new("."), rev)
-}
-
-/// Root-parameterised core of [`wave_close_disavowed`] — one body so derivation for the gate and
-/// derivation for the repack base cannot disagree about what a disavowal is. The evidence rule
-/// (git's own `This reverts commit <full sha>.` trailer) is unchanged.
-fn wave_close_disavowed_in(root: &Path, rev: &str) -> Option<String> {
-    let full = git_in(
-        root,
-        &[
-            "rev-parse",
-            "--verify",
-            "--quiet",
-            &format!("{rev}^{{commit}}"),
-        ],
-    )
-    .filter(|s| !s.is_empty())?;
-    let needle = format!("This reverts commit {full}.");
-    let list = git_in_lossy(
-        root,
-        &[
-            "rev-list",
-            "--fixed-strings",
-            &format!("--grep={needle}"),
-            &format!("{full}..HEAD"),
-        ],
-    );
-    for c in list.lines().filter(|l| !l.is_empty()) {
-        let body = git_in(root, &["log", "-1", "--format=%B", c]).unwrap_or_default();
-        if body.contains(&needle) {
-            return Some(c.to_string());
-        }
-    }
-    None
 }
 
 /// The previous wave's close commit = the SHA main was at when THIS wave opened.
@@ -227,103 +147,6 @@ pub fn prev_wave_close() -> Option<String> {
         return Some(sha.to_string());
     }
     None
-}
-
-/// [`super::git_stdout`] with an explicit working directory. Private to this file on purpose:
-/// the only legitimate consumers are the root-parameterised marker readers above and
-/// [`newest_close_base`] below — everything gate-facing stays on the cwd-bound helpers, because
-/// [`Ctx::enter`] already chdirs and the gate's refusal messages are asserted byte-for-byte.
-fn git_in(root: &Path, args: &[&str]) -> Option<String> {
-    let out = std::process::Command::new("git")
-        .args(args)
-        .current_dir(root)
-        .output()
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    Some(
-        String::from_utf8_lossy(&out.stdout)
-            .trim_end_matches('\n')
-            .to_string(),
-    )
-}
-
-/// [`super::git_stdout_lossy`] with an explicit working directory — the `|| true` shape.
-fn git_in_lossy(root: &Path, args: &[&str]) -> String {
-    match std::process::Command::new("git")
-        .args(args)
-        .current_dir(root)
-        .output()
-    {
-        Ok(out) => String::from_utf8_lossy(&out.stdout)
-            .trim_end_matches('\n')
-            .to_string(),
-        Err(_) => String::new(),
-    }
-}
-
-/// T-914 — the NUMBERING BASE for `wave repack`: the newest valid, non-disavowed close-marker
-/// wave number reachable from HEAD, INCLUDING HEAD itself.
-///
-/// This is [`prev_wave_close`]'s loop with the HEAD exclusion removed, root-parameterised and
-/// silent. Three differences from that function, each load-bearing — and its SEMANTICS are
-/// untouched, because its gate callers need the exclusion this function must not have:
-///
-///   * HEAD COUNTS. `prev_wave_close` excludes HEAD because the gate runs BEFORE `wave --close`
-///     writes its marker, so the newest reachable marker is always the previous wave's. The
-///     repack base is the opposite phase: the operator commits `wave N CLOSED`, `ticket check`
-///     goes red on the now-stale `wave_base`, and the repack that fixes it runs with the fresh
-///     marker sitting AT HEAD — excluding it would renumber from the wave BEFORE the one that
-///     just closed, and the next close would repeat a number the ledger already holds.
-///   * TAKES A ROOT. `wave repack` / `wave check` / `ticket check` receive a repo root and never
-///     chdir (only the `platform wave` driver does), and the unit tests fabricate scratch git
-///     repos that are not the process cwd. Every git call here runs against `root`; the subject
-///     authority ([`wave_close_subject_ok`]) and the disavowal evidence
-///     ([`wave_close_disavowed_in`]) are the same single definitions the gate uses, so the
-///     repack base and the gate base cannot disagree about what a marker is.
-///   * SKIPS SILENTLY. A disavowed close is not a boundary — same F6 rule, same fall-through to
-///     the marker before it — but without the "gate:" stderr narration, which would be
-///     wrong-context noise in every `ticket check` and repack on a history that holds one.
-///
-/// `Ok(None)` when no marker is reachable: scratch/stub/test roots, no-git dirs, or a real tree
-/// before its first close. The lock compiler maps that to base 0, so open waves number 1..N —
-/// byte-for-byte the pre-T-914 shape.
-///
-/// `Err` on a SHALLOW clone. A depth-limited history hides the ledger, and deriving base 0
-/// there is not a fallback — it is a wrong answer that turns `wave check` into a coin flip
-/// (red against a full-history lock, or silently green if the committed base happens to be 0).
-/// Same refusal class as the missing-lock DidNotRun: unreadable evidence never derives.
-pub fn newest_close_base(root: &Path) -> Result<Option<i64>, String> {
-    if git_in_lossy(root, &["rev-parse", "--is-shallow-repository"]).trim() == "true" {
-        return Err(
-            "shallow clone: the close-marker ledger is unreadable — fetch full history \
-             (fetch-depth: 0 in CI) before wave repack/check"
-                .into(),
-        );
-    }
-    let list = git_in_lossy(
-        root,
-        &[
-            "rev-list",
-            "--extended-regexp",
-            &format!("--grep={WAVE_CLOSE_MARKER_RE}"),
-            "HEAD",
-        ],
-    );
-    for sha in list.lines().filter(|l| !l.is_empty()) {
-        // git's --grep matches the WHOLE message; the subject is the authority — same
-        // confirm-then-use shape as prev_wave_close, sharing wave_close_subject_ok through
-        // wave_close_number_in.
-        let Some(n) = wave_close_number_in(root, sha) else {
-            continue;
-        };
-        if wave_close_disavowed_in(root, sha).is_some() {
-            continue;
-        }
-        return Ok(Some(n));
-    }
-    Ok(None)
 }
 
 // ── T-613: DOES ANYTHING OTHER THAN THE MARKER AGREE? ───────────────────────────────────────────
@@ -422,7 +245,7 @@ pub fn newest_close_base(root: &Path) -> Result<Option<i64>, String> {
 pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
     let blob = git_stdout(&["show", &format!("{rev}:{}", ctx.plan)]).unwrap_or_default();
     if !blob.is_empty() {
-        if let Ok(lock) = crate::wave_lock::parse(&blob) {
+        if let Ok(lock) = ticket_engine::wave_lock::parse(&blob) {
             if let Ok(w) = u32::try_from(n) {
                 let open = lock.tickets_in_wave(w);
                 if !open.is_empty() {
@@ -462,7 +285,7 @@ pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
 pub fn wave_ledger_unshipped_at(ctx: &Ctx, rev: &str, tickets: &[String]) -> Option<String> {
     let _ = ctx;
     let repo = std::path::Path::new(".");
-    let by = crate::tickets_store::status_map_at_rev(repo, rev)?;
+    let by = ticket_engine::registry::legacy_storage::status_map_at_rev(repo, rev)?;
     let open: Vec<&str> = tickets
         .iter()
         .filter(|t| {
@@ -474,68 +297,6 @@ pub fn wave_ledger_unshipped_at(ctx: &Ctx, rev: &str, tickets: &[String]) -> Opt
         .map(String::as_str)
         .collect();
     Some(open.join(" "))
-}
-
-/// The highest wave number any reachable, NON-DISAVOWED marker claims — `None` when the history
-/// carries no marker at all.
-///
-/// T-946. This is [`wave_close_is_newest_wave`]'s `high` lifted out of the oracle so the LOCK can
-/// number waves from the same authority the oracle judges them by. The oracle accepts a candidate
-/// marker `n` only when `n` is strictly above every NON-disavowed claim AND `n <= high + 1`
-/// (T-618: "wave numbers do not merely increase, they increase by ONE"). So `high + 1` is the one
-/// label a close may ever write, and any other number the lock proposes is unwritable.
-///
-/// DISAVOWED MARKERS ARE SKIPPED, and that is the opposite of the oracle's `high`, deliberately.
-/// `high` bounds the candidate from ABOVE (`n <= high + 1`), where counting a reverted close is
-/// conservative — it closes the hole the F6 revert fix opened. This function feeds the label the
-/// lock will PROPOSE, and there the same reasoning inverts: a reverted `wave 42 CLOSED` means
-/// wave 42 was never closed, so 42 is the number the next close should reuse. Counting it would
-/// burn a label the ledger still owes, and `a_disavowed_marker_is_not_a_base` pins exactly that.
-/// The oracle accepts either (42 and 43 both sit inside the window); the lock proposes the honest
-/// one.
-///
-/// WHY THIS IS NOT `newest_close_base`. That one walks newest-first and returns the FIRST
-/// non-disavowed marker — the newest by commit order, not the highest by claim. On a healthy
-/// ledger they are the same number. On this repository, measured 2026-09-05, they are not:
-///
-/// ```text
-/// 1d3253ca8 wave 234 CLOSED — editor wave 211: …      <- newest by commit order  (base 234)
-/// d21197d20 T-853 wave 235 CLOSED — language hard zero <- highest by claim       (high 235)
-/// ```
-///
-/// The T-853 program closed waves 231–235 alongside the editor programme's own 234, so history
-/// genuinely holds a newer marker claiming a lower wave. The lock derived its floor from 234 and
-/// ratcheted a label per emptied wave to 247, while the oracle would accept only 236 — so no
-/// close could be written at all, in either direction.
-pub fn max_close_claim(root: &Path) -> Result<Option<i64>, String> {
-    if git_in_lossy(root, &["rev-parse", "--is-shallow-repository"]).trim() == "true" {
-        return Err(
-            "shallow clone: the close-marker ledger is unreadable — fetch full history              (fetch-depth: 0 in CI) before wave repack/check"
-                .into(),
-        );
-    }
-    let list = git_in_lossy(
-        root,
-        &[
-            "rev-list",
-            "--extended-regexp",
-            &format!("--grep={WAVE_CLOSE_MARKER_RE}"),
-            "HEAD",
-        ],
-    );
-    let mut high: Option<i64> = None;
-    for sha in list.lines().filter(|l| !l.is_empty()) {
-        let Some(n) = wave_close_number_in(root, sha) else {
-            continue;
-        };
-        if wave_close_disavowed_in(root, sha).is_some() {
-            continue;
-        }
-        if high.map(|h| n > h).unwrap_or(true) {
-            high = Some(n);
-        }
-    }
-    Ok(high)
 }
 
 /// ORACLE 1. `0` = this marker claims the highest wave number reachable, by exactly one;
@@ -1054,7 +815,7 @@ mod tests {
             "n = 236\n",
             "tickets = [\"T-300\", \"T-935.1\", \"T-277\"]\n",
         );
-        let lock = crate::wave_lock::parse(toml).expect("parse");
+        let lock = ticket_engine::wave_lock::parse(toml).expect("parse");
         println!(
             "── open 237 = {:?} · open 236 = {:?} · pending = {:?}",
             lock.tickets_in_wave(237),

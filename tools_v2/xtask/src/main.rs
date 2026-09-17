@@ -3,22 +3,16 @@
 #![allow(clippy::unnecessary_unwrap)]
 
 mod ai;
-mod backfill_stamps;
-mod check;
 mod ci_chrome;
 mod ci_editor_api;
-mod cmds;
 mod codegen_schema;
 mod commands;
-mod constants;
 mod debug_cmd;
 mod deploy_db_backup;
 mod deploy_db_common;
 mod deploy_db_drill;
 mod deploy_db_restore;
 mod deploy_staging;
-mod estimate_tokens;
-mod gap;
 mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
 mod gate_debug_direct_join;
@@ -64,9 +58,6 @@ mod hostrun;
 mod mcp;
 mod mcp_daemon;
 mod mcp_netapi;
-mod metrics;
-mod migrate_main_goal;
-mod migrate_v2;
 mod mk_build;
 mod mk_ci;
 mod mk_db;
@@ -76,40 +67,31 @@ mod mod_wave;
 mod mod_world_boot;
 mod mod_world_boot_verdict;
 mod node_free;
-mod phase2;
 mod platform_preflight;
 mod playtest_server;
-mod prompt;
-mod quarantine_walls;
-mod registry;
 mod repro;
 mod root;
 mod schema_gates;
 mod shell_free;
-mod slice_collisions;
 mod slice_run;
 mod slice_worktree;
 mod sql_gates;
-mod sync;
 mod test_env;
-mod tickets_store;
 mod verifications;
 mod verify_ci_shell;
 mod verify_ci_shell_rules;
-mod vocab_check;
 mod wave;
-mod wave_lock;
 
 use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use check::cmd_check;
-use cmds::*;
-use registry::load_registry;
+use commands::ticket::cmd_check;
+use commands::ticket::cmd_sync;
+use commands::ticket::load_registry;
+use commands::ticket::*;
 use root::find_repo_root;
-use sync::cmd_sync;
 
 #[derive(Parser, Debug)]
 // T-896: `disable_help_subcommand` frees the `help` name for the successor to `cargo xtask help`. The
@@ -248,7 +230,7 @@ enum WaveLockCmd {
     /// Compile `.ai/tickets/wave.lock` from the ticket files — the ONLY legal writer.
     Repack {
         /// Freeze these shipped ids as a pending close target (space-separated). For a wave that
-        /// dissolved id by id and left no `[[emptied]]` entry — see `wave_lock::reserved_entry`.
+        /// dissolved id by id and left no `[[emptied]]` entry — see `ticket_engine::wave_lock::reserved_entry`.
         #[arg(long, value_name = "IDS")]
         reserve: Option<String>,
     },
@@ -1310,7 +1292,7 @@ fn run() -> Result<u8> {
             };
             Ok(code)
         }
-        TopCmd::SliceCollisions { args } => slice_collisions::run(&args),
+        TopCmd::SliceCollisions { args } => commands::wave::collisions(&args),
         TopCmd::Wave { cmd } => {
             let root = find_repo_root()?;
             match cmd {
@@ -1321,9 +1303,9 @@ fn run() -> Result<u8> {
                         .split_whitespace()
                         .map(str::to_string)
                         .collect();
-                    wave_lock::cmd_repack(&root, &ids)
+                    commands::wave::cmd_repack(&root, &ids)
                 }
-                WaveLockCmd::Check => wave_lock::cmd_check(&root),
+                WaveLockCmd::Check => commands::wave::cmd_check(&root),
             }
         }
         TopCmd::Platform { cmd } => match cmd {
@@ -1540,36 +1522,36 @@ fn run() -> Result<u8> {
                     cmd_clean(&root, &reg, &id)?;
                 }
                 TicketCmd::Metrics { by } => {
-                    metrics::cmd_metrics(&root, by.as_deref())?;
+                    cmd_metrics(&root, by.as_deref())?;
                 }
                 // No load_registry on either arm: migrate-v2 must run BEFORE the tree
                 // parses as v2 (the registry loader would refuse the v1 files), and
                 // scope-histogram reads the typed corpus directly.
                 TicketCmd::MigrateV2 => {
-                    migrate_v2::cmd_migrate_v2(&root)?;
+                    cmd_migrate_v2(&root)?;
                 }
                 TicketCmd::ScopeHistogram => {
-                    migrate_v2::cmd_scope_histogram(&root)?;
+                    cmd_scope_histogram(&root)?;
                 }
                 // Like migrate-v2: no registry pre-load — the pass itself reloads and
                 // regenerates the sync surface after the write.
                 TicketCmd::QuarantineWalls => {
-                    quarantine_walls::cmd_quarantine_walls(&root)?;
+                    cmd_quarantine_walls(&root)?;
                 }
                 // No registry pre-load either: the miner reads git metadata + the
                 // typed corpus directly, and stamps feed no generated view.
                 TicketCmd::BackfillStamps => {
-                    backfill_stamps::cmd_backfill_stamps(&root)?;
+                    cmd_backfill_stamps(&root)?;
                 }
                 // Same shape as backfill-stamps: git metadata + typed corpus only;
                 // estimates and markers feed no generated view.
                 TicketCmd::EstimateTokens => {
-                    estimate_tokens::cmd_estimate_tokens(&root)?;
+                    cmd_estimate_tokens(&root)?;
                 }
                 // T-920.1: typed corpus only; main_goal and the body lists feed no
                 // generated view and no wave.lock input — no sync, no repack.
                 TicketCmd::MigrateMainGoal => {
-                    migrate_main_goal::cmd_migrate_main_goal(&root)?;
+                    cmd_migrate_main_goal(&root)?;
                 }
             }
             Ok(0)

@@ -92,7 +92,7 @@ fn mod_slice_id(id: &str) -> bool {
 /// The lock's `(wave, slice)` pairs for this program. A missing/unreadable lock is `None` —
 /// callers refuse loudly instead of shrugging into "ALL PLANNED WAVES SHIPPED".
 fn lock_mod_rows(root: &Path) -> Option<Vec<(u32, String)>> {
-    let lock = match crate::wave_lock::load(root) {
+    let lock = match ticket_engine::wave_lock::load(root) {
         Ok(l) => l,
         Err(e) => {
             eprintln!("mod wave: {e:#}");
@@ -126,15 +126,7 @@ fn wave_slices(root: &Path, w: &str) -> Vec<String> {
 }
 
 fn slice_title(root: &Path, s: &str) -> String {
-    let dir = crate::tickets_store::tickets_dir(root).join(format!("{s}.toml"));
-    let Ok(text) = std::fs::read_to_string(dir) else {
-        return String::new();
-    };
-    match ticket_engine::parse_ticket_toml(&text) {
-        Ok(ticket_engine::Ticket::Work(w)) => w.title,
-        Ok(ticket_engine::Ticket::Program(p)) => p.title,
-        Err(_) => String::new(),
-    }
+    ticket_engine::registry::ticket_titles::read_ticket_title(root, s)
 }
 
 /// Open lock waves (n > 0) that hold at least one mod slice, ascending.
@@ -154,7 +146,7 @@ fn unique_sorted_waves(root: &Path) -> Vec<String> {
 
 /// Shipped slice ids for T-181 (python3 one-liner → serde). On any error → empty (2>/dev/null).
 fn shipped_slices(root: &Path) -> Vec<String> {
-    let v: Value = match crate::registry::load_registry(root) {
+    let v: Value = match ticket_engine::registry::load_registry(root) {
         Ok(v) => v,
         Err(_) => return Vec::new(),
     };

@@ -75,7 +75,7 @@ pub enum Tone {
 
 /// A line the check binary itself prints, as opposed to cargo build noise:
 /// `check OK` (stdout, exit 0) or an `ERROR: ` line (stderr, exit 1) — see
-/// `tools_v2/xtask/src/check.rs::cmd_check`.
+/// `ticket_engine::validation::cmd_check`.
 pub fn is_check_output(line: &str) -> bool {
     line == "check OK" || is_error_line(line)
 }

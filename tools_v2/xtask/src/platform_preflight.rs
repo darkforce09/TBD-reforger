@@ -244,7 +244,7 @@ fn curl_http_code(url: &str) -> String {
 /// Open-ticket count straight from the committed lock (waves 1+); `None` when the lock is
 /// missing or unreadable — the caller BLOCKs on that via `wave check` anyway.
 fn wave_lock_open_count(root: &Path) -> Option<(usize, usize)> {
-    let lock = crate::wave_lock::load(root).ok()?;
+    let lock = ticket_engine::wave_lock::load(root).ok()?;
     let open: usize = lock
         .waves
         .iter()

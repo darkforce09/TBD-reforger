@@ -16,7 +16,7 @@ use std::path::Path;
 use std::sync::OnceLock;
 
 use anyhow::Result;
-use serde_json::Value;
+pub use ticket_engine::registry::shipping_status::ShippingStatus as Registry;
 
 use super::{Ctx, git_stdout_lossy};
 use crate::werr;
@@ -27,15 +27,15 @@ use crate::werr;
 fn title_map(ctx: &Ctx) -> &'static HashMap<String, String> {
     static TITLES: OnceLock<HashMap<String, String>> = OnceLock::new();
     TITLES.get_or_init(|| {
-        crate::wave_lock::load_views(&ctx.root)
+        ticket_engine::wave_lock::load_views(&ctx.root)
             .map(|views| views.into_iter().map(|v| (v.id, v.title)).collect())
             .unwrap_or_default()
     })
 }
 
 /// The committed lock, or the DidNotRun refusal for a tree that has none.
-pub fn load_lock(ctx: &Ctx) -> Result<crate::wave_lock::WaveLock> {
-    crate::wave_lock::load(&ctx.root)
+pub fn load_lock(ctx: &Ctx) -> Result<ticket_engine::wave_lock::WaveLock> {
+    ticket_engine::wave_lock::load(&ctx.root)
 }
 
 /// `plan_rows` — one `wave<TAB>id<TAB>title` line per lock entry, waves in lock order.
@@ -67,138 +67,6 @@ pub fn wave_tickets(ctx: &Ctx, w: &str) -> Result<Vec<String>> {
         Ok(n) => lock.tickets_in_wave(n),
         Err(_) => Vec::new(),
     })
-}
-
-/// `.ai/tickets/registry.json`, parsed once, with `is_shipped`'s exact failure semantics.
-///
-/// ── THE PYTHON THIS REPLACES, AND WHY ITS EXIT CODES ARE THE CONTRACT ────────────────────────
-///
-/// ```text
-/// is_shipped() {
-///   python3 - "$1" <<'EOF' 2>/dev/null
-///   r=json.load(open('.ai/tickets/registry.json'))
-///   t=[x for x in r['tickets'] if x['id']==sys.argv[1]]
-///   sys.exit(0 if (t and t[0]['status'] in ('shipped','cancelled')) else 1)
-///   EOF
-/// }
-/// ```
-///
-/// Every failure mode of that snippet exits NON-ZERO, i.e. "not shipped":
-///
-///   * the file is missing or is not JSON      -> exception -> rc 1
-///   * `r['tickets']` is absent                -> `KeyError` -> rc 1
-///   * ANY ticket lacks `id`                   -> `KeyError` inside the comprehension -> rc 1,
-///     for EVERY query, not just that ticket. That is why [`Registry::poisoned`] exists rather
-///     than a per-ticket `Option`.
-///   * the MATCHED ticket lacks `status`       -> `KeyError` -> rc 1
-///   * no ticket matches                       -> `t` is `[]`, falsy -> rc 1
-///
-/// Answering "not shipped" for a registry it could not read is WRONG for one caller, and that
-/// caller has its own reader: [`super::base::wave_ledger_unshipped_at`] returns rc 3 for
-/// cannot-read, because turning an unreadable blob into a CONTRADICTION would hard-refuse the gate
-/// over a file nobody parsed.
-///
-/// PERFORMANCE, and it is only that: the bash forked one `python3` PER TICKET — 548 of them for a
-/// single `status`. This parses once. The ANSWERS are identical; only the wall clock moves.
-pub struct Registry {
-    poisoned: bool,
-    by_id: std::collections::HashMap<String, Option<String>>,
-}
-
-impl Registry {
-    pub fn from_value(v: &Value) -> Registry {
-        let mut r = Registry {
-            poisoned: true,
-            by_id: Default::default(),
-        };
-        let Some(tickets) = v.get("tickets").and_then(Value::as_array) else {
-            return r;
-        };
-        for t in tickets {
-            let Some(obj) = t.as_object() else { return r };
-            let Some(id) = obj.get("id") else { return r };
-            let key = match id.as_str() {
-                Some(s) => s.to_string(),
-                None => continue,
-            };
-            let status = obj
-                .get("status")
-                .and_then(Value::as_str)
-                .map(str::to_string);
-            r.by_id.insert(key, status);
-        }
-        r.poisoned = false;
-        r
-    }
-
-    #[allow(dead_code)]
-    pub fn load(path: &Path) -> Registry {
-        let Ok(body) = std::fs::read_to_string(path) else {
-            return Registry {
-                poisoned: true,
-                by_id: Default::default(),
-            };
-        };
-        let Ok(v) = serde_json::from_str::<Value>(&body) else {
-            return Registry {
-                poisoned: true,
-                by_id: Default::default(),
-            };
-        };
-        Self::from_value(&v)
-    }
-
-    /// The whole ticket tree, CHILDREN INCLUDED — `wave --close`, `current_wave` and `land` all
-    /// key off this, and every one of them asks about slice ids.
-    ///
-    /// T-946: this used to go through `crate::registry::load_registry`, whose phase-2 arm
-    /// (`phase2::load_phase2_tree`) walks `is_parent_id` ONLY. Every child id — `T-934.1`,
-    /// `T-940.5`, every slice the factory actually dispatches — was therefore absent from
-    /// `by_id`, and [`Registry::is_shipped`] answers `false` for an id it has never heard of.
-    /// The observable failure, measured 2026-09-05 on a tree where `T-934.1.toml` reads
-    /// `status = "shipped"`:
-    ///
-    /// ```text
-    /// $ cargo xtask platform wave wave --close --dry-run
-    /// close target: wave 247 — emptied (1 ticket(s), set frozen at repack)
-    /// REFUSED: wave 247 still open: T-934.1
-    /// ```
-    ///
-    /// A wave of slices could never be closed, and the refusal named a ticket that had shipped
-    /// weeks earlier. The typed corpus (`wave_lock::load_views`, i.e. `ticket_engine::Corpus`) is
-    /// the substrate the packer already keys off — which is why the SAME tree parks those very
-    /// ids in the lock's wave 0 while close calls them open. One substrate, one answer.
-    ///
-    /// Fail-closed exactly as before: an unreadable tree poisons the view rather than reporting
-    /// "not shipped" for a corpus nobody parsed.
-    pub fn load_repo(root: &Path) -> Registry {
-        match crate::wave_lock::load_views(root) {
-            Ok(views) => Registry {
-                poisoned: false,
-                by_id: views
-                    .into_iter()
-                    .map(|v| (v.id, Some(v.status.as_str().to_string())))
-                    .collect(),
-            },
-            Err(_) => Registry {
-                poisoned: true,
-                by_id: Default::default(),
-            },
-        }
-    }
-
-    /// `is_shipped` — rc 0 for `shipped`/`cancelled`, non-zero for everything else.
-    pub fn is_shipped(&self, id: &str) -> bool {
-        if self.poisoned {
-            return false;
-        }
-        match self.by_id.get(id) {
-            // Matched, but `t[0]['status']` raised: not shipped.
-            Some(None) => false,
-            Some(Some(s)) => s == "shipped" || s == "cancelled",
-            None => false,
-        }
-    }
 }
 
 /// The first lock wave n>0 holding at least one unshipped ticket — `"done"` when none does.
@@ -352,46 +220,4 @@ pub fn verify_debt(ctx: &Ctx) -> String {
 /// bash it came from.
 fn git_stdout(args: &[&str]) -> Option<String> {
     super::git_stdout(args)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn registry_poisons_on_a_ticket_without_an_id() {
-        // python's KeyError inside the comprehension makes EVERY query answer "not shipped".
-        let dir = std::env::temp_dir().join(format!("t853-reg-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let p = dir.join("registry.json");
-        std::fs::write(
-            &p,
-            r#"{"tickets":[{"id":"T-1","status":"shipped"},{"status":"shipped"}]}"#,
-        )
-        .unwrap();
-        let r = Registry::load(&p);
-        assert!(
-            !r.is_shipped("T-1"),
-            "one id-less ticket poisons every lookup"
-        );
-        std::fs::write(&p, r#"{"tickets":[{"id":"T-1","status":"shipped"}]}"#).unwrap();
-        assert!(Registry::load(&p).is_shipped("T-1"));
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn registry_unreadable_is_not_shipped() {
-        let r = Registry::load(Path::new("/nonexistent/registry.json"));
-        assert!(!r.is_shipped("T-1"));
-    }
-
-    #[test]
-    fn cancelled_counts_as_shipped() {
-        let dir = std::env::temp_dir().join(format!("t853-reg2-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let p = dir.join("registry.json");
-        std::fs::write(&p, r#"{"tickets":[{"id":"T-9","status":"cancelled"}]}"#).unwrap();
-        assert!(Registry::load(&p).is_shipped("T-9"));
-        let _ = std::fs::remove_dir_all(&dir);
-    }
 }

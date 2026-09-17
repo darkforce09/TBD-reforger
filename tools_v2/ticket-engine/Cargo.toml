@@ -5,9 +5,14 @@ edition = "2024"
 rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
-description = "Typed ticket Scope/Status (T-911.2)"
+description = "Ticket storage, validation, operations, generated views, scheduling, and metrics"
 
 [dependencies]
+anyhow = "1"
+regex = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+walkdir = "2"
+jsonschema = { version = "0.46.10", default-features = false }
 serde = { version = "1", features = ["derive"] }
 # T-913.1 timestamp parse/format: `time` is already in the workspace lockfile as a
 # transitive dependency (0.3.53), so this adds zero new supply chain; its well-known

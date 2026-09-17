@@ -2,7 +2,7 @@
 //!
 //! Scans `.ai/tickets/metrics/<id>/<ts>-<sha>.json` — the T-913.2 per-run token
 //! receipts — into per-ticket / per-agent aggregations. Structs and validation
-//! are a LOCAL MIRROR of `tools_v2/xtask/src/metrics.rs` (`RunRecord` / `TokensConsumed`
+//! are a LOCAL MIRROR of `ticket_engine::metrics` (`RunRecord` / `TokensConsumed`
 //! / `validate_record`) plus the committed `.ai/tickets/metrics.schema.json`
 //! (`deny_unknown_fields` mirrors its `additionalProperties: false`; the id /
 //! git_sha patterns are restated below). The app cannot link xtask — heavy bin,
@@ -31,7 +31,7 @@ use time::format_description::well_known::Rfc3339;
 
 use crate::discovery::TICKETS_SUBDIR;
 
-/// Receipt tree under `.ai/tickets/` — mirrors `tools_v2/xtask/src/metrics.rs::METRICS_DIR_REL`.
+/// Receipt tree under `.ai/tickets/` — mirrors `ticket_engine::metrics::METRICS_DIR_REL`.
 pub const METRICS_SUBDIR: &str = "metrics";
 
 /// The explicit empty state (T-915.5 acceptance 1) — rendered INSTEAD of zeros.
@@ -116,7 +116,7 @@ struct Instants {
     finished: Option<OffsetDateTime>,
 }
 
-/// Semantic mirror of `tools_v2/xtask/src/metrics.rs::validate_record` plus the schema
+/// Semantic mirror of `ticket_engine::metrics::validate_record` plus the schema
 /// rules jsonschema enforces there (patterns, minLength via non-empty).
 fn validate_receipt(rec: &RunReceipt) -> Result<Instants, String> {
     if rec.id.trim().is_empty() {

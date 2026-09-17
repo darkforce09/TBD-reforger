@@ -315,7 +315,7 @@ mod tests {
 
     static N: AtomicU32 = AtomicU32::new(0);
 
-    /// A scratch "main checkout". Same idiom as [`crate::metrics`]'s tests, plus a counter so two
+    /// A scratch "main checkout". Same idiom as [`ticket_engine::metrics`]'s tests, plus a counter so two
     /// tests in the same process never share a directory.
     fn scratch(tag: &str) -> PathBuf {
         let n = N.fetch_add(1, Ordering::Relaxed);

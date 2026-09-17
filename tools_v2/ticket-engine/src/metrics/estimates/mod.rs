@@ -1,0 +1,57 @@
+//! Estimates for the ticket domain.
+
+use anyhow::{Result, bail};
+
+use serde::{Deserialize, Serialize};
+
+use crate::{Corpus, StatusName, Ticket, validate_rfc3339_utc};
+use serde_json::Value;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+use crate::maintenance::timestamp_backfill::{SubjectCommit, is_sha_shaped, mine_subjects};
+use walkdir::WalkDir;
+
+mod model;
+
+pub use model::{
+    CohortKey, ESTIMATES_DIR_REL, ESTIMATES_SCHEMA_REL, EstimateRecord, FACTOR_DOC_REL,
+    TOKENS_PER_LOC, estimates_root, validate_estimate,
+};
+
+mod git_changes;
+
+pub use git_changes::{collect_numstat, is_excluded_path, parse_numstat};
+
+mod cohorts;
+
+use cohorts::{Member, attrs_of, cohort_for, estimated_mut, estimated_of, median};
+
+mod planning;
+
+pub use planning::{EstimateReport, plan_estimates};
+
+mod incremental;
+
+pub use incremental::{derivation_shas, plan_estimate_for_id};
+
+use incremental::members_from_existing;
+
+mod storage;
+
+pub use storage::{cmd_estimate_tokens, run_estimates};
+
+#[cfg(test)]
+use storage::render_estimate;
+
+mod verification;
+
+pub use verification::check_as_errors;
+
+#[cfg(test)]
+#[path = "tests/mod.rs"]
+mod tests;
+
+pub(crate) use storage::{load_existing, write_estimate_file};

@@ -3,7 +3,7 @@
 //! `.ai/tickets/scope-vocab.toml` is the 4-level domain → layer → component → surface
 //! word list (T-917.1). This module reads it LENIENTLY — tables of tables of string
 //! arrays — because the file's own shape gate (sortedness, closed domain set, no
-//! duplicates) lives in `tools_v2/xtask/src/vocab_check.rs` and runs in `ticket check`; here the
+//! duplicates) lives in `crate::validation::vocabulary` and runs in `ticket check`; here the
 //! tree only has to answer legality questions: is this ticket's
 //! domain/layer/component/surface a word the vocabulary knows?
 //!
@@ -141,86 +141,5 @@ impl ScopeVocab {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::Domain;
-
-    const MINI: &str =
-        "[repo.docs]\n\n[website.frontend]\nmission_creator = [\"map_canvas\", \"toolbelt\"]\n";
-
-    fn scope(domain: Domain, layer: &str, component: Option<&str>, surface: &[&str]) -> ScopeV2 {
-        ScopeV2 {
-            domain,
-            layer: layer.into(),
-            component: component.map(str::to_string),
-            surface: surface.iter().map(|s| (*s).to_string()).collect(),
-        }
-    }
-
-    #[test]
-    fn legality_walks_the_tree() {
-        let v = ScopeVocab::parse(MINI).unwrap();
-        v.check_scope("T-1", &scope(Domain::Repo, "docs", None, &[]))
-            .expect("component-free layer");
-        v.check_scope(
-            "T-1",
-            &scope(
-                Domain::Website,
-                "frontend",
-                Some("mission_creator"),
-                &["toolbelt"],
-            ),
-        )
-        .expect("known surface");
-
-        let err = v
-            .check_scope("T-2", &scope(Domain::Repo, "nope", None, &[]))
-            .unwrap_err();
-        assert!(err.contains("T-2") && err.contains("repo.nope"), "{err}");
-        let err = v
-            .check_scope(
-                "T-3",
-                &scope(Domain::Website, "frontend", Some("ghost"), &[]),
-            )
-            .unwrap_err();
-        assert!(
-            err.contains("T-3") && err.contains("website.frontend.ghost"),
-            "{err}"
-        );
-        let err = v
-            .check_scope(
-                "T-4",
-                &scope(
-                    Domain::Website,
-                    "frontend",
-                    Some("mission_creator"),
-                    &["dock_left"],
-                ),
-            )
-            .unwrap_err();
-        assert!(
-            err.contains("T-4") && err.contains("\"dock_left\""),
-            "{err}"
-        );
-        let err = v
-            .check_scope("T-5", &scope(Domain::Engine, "core", None, &[]))
-            .unwrap_err();
-        assert!(err.contains("domain \"engine\""), "{err}");
-    }
-
-    #[test]
-    fn missing_file_refuses_naming_path() {
-        let dir = std::env::temp_dir().join(format!("t917-vocab-lib-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
-        let err = ScopeVocab::load(&dir).unwrap_err();
-        assert!(err.contains("scope-vocab.toml"), "{err}");
-        std::fs::write(dir.join(VOCAB_REL), MINI).unwrap();
-        let v = ScopeVocab::load(&dir).expect("present file loads");
-        assert_eq!(
-            v.surfaces_of("website", "frontend", "mission_creator"),
-            Some(&["map_canvas".to_string(), "toolbelt".to_string()][..])
-        );
-        std::fs::remove_dir_all(&dir).unwrap();
-    }
-}
+#[path = "tests/vocab/mod.rs"]
+mod tests;

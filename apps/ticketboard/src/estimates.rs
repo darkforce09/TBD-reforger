@@ -22,7 +22,7 @@
 //!   the measured receipts dashboard, never combined with it.
 //!
 //! The struct mirror below restates `.ai/tickets/estimates.schema.json` +
-//! `tools_v2/xtask/src/estimate_tokens.rs::{EstimateRecord, validate_estimate}` the same
+//! `ticket_engine::metrics::estimates::{EstimateRecord, validate_estimate}` the same
 //! way `metrics.rs` mirrors the receipt walker (the app cannot link xtask), and
 //! with the same observation contrast: a malformed estimate file becomes a
 //! named per-file [`ErrorRow`], never a silent skip, never a coercion, and the
@@ -43,7 +43,7 @@ use crate::discovery::TICKETS_SUBDIR;
 use crate::metrics::{ErrorRow, format_tokens, valid_git_sha, valid_ticket_id};
 
 /// Estimate tree under `.ai/tickets/` — mirrors
-/// `tools_v2/xtask/src/estimate_tokens.rs::ESTIMATES_DIR_REL`. Deliberately OUTSIDE
+/// `ticket_engine::metrics::estimates::ESTIMATES_DIR_REL`. Deliberately OUTSIDE
 /// `metrics/` (an estimate colocated there would impersonate a receipt — the
 /// T-913 violation the schema doc names).
 pub const ESTIMATES_SUBDIR: &str = "estimates";
@@ -182,7 +182,7 @@ pub fn cohort_key_str(key: &CohortKey) -> String {
     }
 }
 
-/// Semantic mirror of `tools_v2/xtask/src/estimate_tokens.rs::validate_estimate` plus
+/// Semantic mirror of `ticket_engine::metrics::estimates::validate_estimate` plus
 /// the schema patterns jsonschema enforces there. Returns the typed per-source
 /// inputs. Deliberately NOT mirrored: `factor == TOKENS_PER_LOC` (each file
 /// carries the factor it used and the board renders it; the doc-pin is check's

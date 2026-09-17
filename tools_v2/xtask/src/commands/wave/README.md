@@ -1,5 +1,3 @@
-# Wave Command Forwarder (`xtask/src/commands/wave`)
+# Wave command adapters
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
-
-Thin CLI adapter forwarding `cargo xtask wave repack` and `cargo xtask wave check` commands directly to `ticket-engine::wave_lock`.
+Delegates wave-lock commands and collision analysis to `ticket-engine`. The existing platform-wave driver remains separate.

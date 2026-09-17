@@ -24,7 +24,7 @@ fn write_registry(root: &Path, slice_plan: &str) {
         close = r#"}}]}"#,
     );
     let v: serde_json::Value = serde_json::from_str(&body).unwrap();
-    crate::tickets_store::save_toml_tree(root, &v).unwrap();
+    ticket_engine::registry::legacy_storage::save_toml_tree(root, &v).unwrap();
 }
 
 /// A stub `.ai/tickets/wave.lock` — the T-912.2 successor to the stub TSVs these tests wrote.

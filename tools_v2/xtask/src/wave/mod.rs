@@ -298,7 +298,7 @@ impl Ctx {
         // T-912.2: the compiled lock IS the plan. The old TSV path and its env override died
         // with the TSVs; the generation floor died with them — landed generations live in the
         // lock's wave 0, so waves 1+ are open work only.
-        let plan = crate::wave_lock::LOCK_REL.to_string();
+        let plan = ticket_engine::wave_lock::LOCK_REL.to_string();
 
         // `git rev-parse --path-format=absolute --git-common-dir`, falling back to `$ROOT/.git`
         // exactly as the bash `|| echo "$ROOT/.git"` did.

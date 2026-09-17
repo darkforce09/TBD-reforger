@@ -18,7 +18,7 @@ use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
-use crate::sync::refuse_empty_write;
+use ticket_engine::sync::refuse_empty_write;
 
 fn read_json(p: &Path) -> Result<Value> {
     let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;
@@ -1270,7 +1270,7 @@ pub fn t090_specs() -> Result<u8> {
 
     // Gate 10 — hub header names the registry active slice.
     let mut active_slice = "T-090.1.2.5".to_string();
-    if let Ok(reg) = crate::registry::load_registry(&root) {
+    if let Ok(reg) = ticket_engine::registry::load_registry(&root) {
         if let Some(t090) = reg["tickets"]
             .as_array()
             .and_then(|a| a.iter().find(|t| t["id"] == "T-090"))
