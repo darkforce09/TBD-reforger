@@ -192,8 +192,7 @@ fn roof_view_paints_the_heightfield() {
     // One 4-vertex rect (8 floats) per covered cell on top of the plate mesh.
     assert_eq!(lanes.floor_pos.len(), base.floor_pos.len() + covered * 8);
     // The ramp actually ramps: the cell colors are not all identical.
-    let cell_cols: std::collections::HashSet<[u32; 4]> = lanes.floor_col
-        [base.floor_col.len()..]
+    let cell_cols: std::collections::HashSet<[u32; 4]> = lanes.floor_col[base.floor_col.len()..]
         .chunks_exact(4)
         .map(|c| {
             [
@@ -588,8 +587,7 @@ fn lower_floor_ghosts_only_through_voids() {
     );
     let ghosts = hairline_mids(&up.hairlines, COL_GHOST);
     // Pieces are 0.2 m long, so a midpoint can sit on the hole edge: allow half a piece.
-    let in_hole =
-        |m: &[f64; 2]| (0.35..=1.65).contains(&m[0]) && (0.35..=1.65).contains(&m[1]);
+    let in_hole = |m: &[f64; 2]| (0.35..=1.65).contains(&m[0]) && (0.35..=1.65).contains(&m[1]);
     assert!(
         ghosts.iter().any(in_hole),
         "no ghost through the stairwell: {ghosts:?}"
@@ -631,10 +629,8 @@ fn rect_corners_rotation_preserves_area_orientation() {
     let xs: Vec<f64> = c.iter().map(|p| p[0]).collect();
     let zs: Vec<f64> = c.iter().map(|p| p[1]).collect();
     let (w, d) = (
-        xs.iter().cloned().fold(f64::MIN, f64::max)
-            - xs.iter().cloned().fold(f64::MAX, f64::min),
-        zs.iter().cloned().fold(f64::MIN, f64::max)
-            - zs.iter().cloned().fold(f64::MAX, f64::min),
+        xs.iter().cloned().fold(f64::MIN, f64::max) - xs.iter().cloned().fold(f64::MAX, f64::min),
+        zs.iter().cloned().fold(f64::MIN, f64::max) - zs.iter().cloned().fold(f64::MAX, f64::min),
     );
     assert!((w - 1.0).abs() < 1e-9 && (d - 2.0).abs() < 1e-9);
 }

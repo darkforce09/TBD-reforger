@@ -15,42 +15,9 @@ use super::GrandfatherRow;
 /// before it, so this table drains on a date rather than on goodwill.
 const EDITOR_DECOMPOSITION_DUE: &str = "2026-12-31";
 
-/// The last day the diagnostics-bench rows exempt anything. The decomposition that splits the
-/// benches and lifts their tests runs before it, on the same schedule as the editor's.
-const DIAGNOSTICS_DECOMPOSITION_DUE: &str = "2026-12-31";
-
 /// Every file currently exempt from audit rules two, four and five. An empty table means the
 /// tree meets the whole standard unaided.
 pub(super) const ROWS: &[GrandfatherRow] = &[
-    GrandfatherRow {
-        path: "apps/debug/building_interior.rs",
-        reason: "The file is over the line limit and has comments naming tickets and waves; the \
-                 diagnostics decomposition splits it into per-lane modules and rewrites that \
-                 prose in the present tense.",
-        expires: DIAGNOSTICS_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/debug/building_viewer.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the diagnostics decomposition splits it into a pure \
-                 geometry module and a wasm host, lifts those tests into sibling `tests/` files \
-                 and rewrites that prose in the present tense.",
-        expires: DIAGNOSTICS_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/debug/world_los.rs",
-        reason: "The file is over the line limit and has comments naming tickets and waves; the \
-                 diagnostics decomposition splits its wasm host off from its view and rewrites \
-                 that prose in the present tense.",
-        expires: DIAGNOSTICS_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/debug/world_los_scene.rs",
-        reason: "The file holds an inline test module and has comments naming tickets and waves; \
-                 the diagnostics decomposition lifts those tests into a sibling `tests/` file and \
-                 rewrites that prose in the present tense.",
-        expires: DIAGNOSTICS_DECOMPOSITION_DUE,
-    },
     GrandfatherRow {
         path: "apps/editor/shell/document_commands.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
