@@ -469,7 +469,7 @@ fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let scrubbed = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/modals/orbat_manager.rs"
+        "/src/v2/apps/editor/ui/modals/orbat_manager/dialog.rs"
     )));
     let body = only_body(&scrubbed, "pub fn OrbatManagerDialog(");
     assert!(

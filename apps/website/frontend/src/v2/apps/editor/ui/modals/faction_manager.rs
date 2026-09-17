@@ -1,10 +1,7 @@
-//! Faction Manager dialog (T-167 / T-153 `FactionManagerDialog.tsx` port). Operator-authored
-//! reusable factions: side → name → role templates (character + tag + optional kind-only loadout)
-//! + a vehicle pool, wired to the live `/api/v1/factions` CRUD (owner-scoped, contract-validated).
+//! Faction Manager dialog for reusable faction roles and vehicles.
 //!
-//! The character/vehicle pickers reuse the flat `/registry` (kind-filtered, abstract/variant
-//! dropped); per-role loadout reuses the Arsenal serialization ([`crate::v2::apps::editor::arsenal::picks_to_loadout`])
-//! in **kind-only, no-compat** mode — the same `SlotLoadoutV2` shape a slot writes.
+//! Character and vehicle pickers use kind-filtered registry entries. Role loadouts share
+//! the Arsenal serialization used by mission slots.
 #![allow(dead_code)]
 use leptos::prelude::*;
 
@@ -42,7 +39,6 @@ pub fn FactionManagerDialog(
     });
     let editing_id = RwSignal::new(None::<String>); // None = new (POST); Some = existing (PUT)
     let status = RwSignal::new(String::new()); // inline error/notice
-                                               // T-286 — sibling pages (missions / event_manager) confirm before destructive delete.
     let confirm_delete_open = RwSignal::new(false);
 
     #[cfg(target_arch = "wasm32")]
@@ -68,7 +64,6 @@ pub fn FactionManagerDialog(
     }
 
     // Esc closes.
-    // T-726 — register + is_topmost_open so a stacked dialog above Faction Manager owns Esc alone.
     #[cfg(target_arch = "wasm32")]
     {
         let modal_id = crate::v2::core::ui::modal_stack::register(move || {
@@ -104,7 +99,6 @@ pub fn FactionManagerDialog(
     };
 
     let save = move |_| {
-        // T-507 — API `validated_side_name` rejects pad (`name != name.trim()`). Trim
         // before serialize so create/update bodies match what the API accepts; empty-
         // after-trim still fails the check below (same UX as the prior trim-empty gate).
         let mut doc = editing.get_untracked();
@@ -311,7 +305,6 @@ pub fn FactionManagerDialog(
                     </div>
                 </div>
             </div>
-            // T-286 — Aegis confirm before DELETE /factions/:id (matches missions / event_manager).
             <Dialog
                 open=confirm_delete_open
                 title="Delete this faction?"

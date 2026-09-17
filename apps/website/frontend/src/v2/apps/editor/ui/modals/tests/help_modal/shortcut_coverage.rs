@@ -72,7 +72,7 @@ fn known_escape_ev_key_sites_are_censused() {
         // wave-112 MINOR-4 (the three overlays moved file at T-934.11)
         ("overlays.rs", "asset picker / comment / connections"),
         ("attributes.rs", "Attributes modal"),
-        ("top_strip.rs", "menus / Save / Controls Hint"),
+        ("top_strip_view.rs", "menus / Save / Controls Hint"),
         // already on the surface when T-703 widened; still a drop-from-scrape trap
         ("context_menu.rs", "context menu"),
         ("mission_dialog.rs", "mission settings dialog"),
@@ -80,7 +80,7 @@ fn known_escape_ev_key_sites_are_censused() {
         ("all_settings_dialog.rs", "all settings dialog"),
         // T-774 — the two the eleven-listener census still missed
         ("faction_manager.rs", "Faction Manager"),
-        ("orbat_manager.rs", "ORBAT Manager"),
+        ("dialog_lifecycle.rs", "ORBAT Manager"),
     ];
     let all = keymap_census::all_bindings();
     for (file, what) in required {
@@ -198,7 +198,7 @@ fn every_row_renders_under_a_real_group() {
 fn overlay_hides_with_the_rest_of_the_chrome() {
     let strip = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/top_strip.rs"
+        "/src/v2/apps/editor/ui/docks/top_strip/view/overlays.rs"
     )));
     assert!(
         strip.contains("ControlsHint"),

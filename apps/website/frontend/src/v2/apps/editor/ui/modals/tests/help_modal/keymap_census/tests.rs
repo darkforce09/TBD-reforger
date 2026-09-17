@@ -399,7 +399,7 @@ fn there_is_exactly_one_extractor() {
     copies.sort();
     assert_eq!(
         copies,
-        vec!["help_modal.rs ×1".to_string()],
+        vec!["mod.rs ×1".to_string()],
         "T-738/T-776: the keydown-arm extractor must be defined ONCE, in `keymap_census`.              Found: {copies:?}. Consume it (`use crate::v2::apps::editor::ui::modals::help_modal::keymap_census::…`) and widen              it there — a second copy is a second answer to the same question."
     );
 }
@@ -437,7 +437,7 @@ fn the_prose_census_numbers_are_derived() {
     );
     // `keymap_census`'s own doc block: everything before the module opens, which is strictly
     // before this test's source and so is subject to the same no-self-reading guarantee.
-    let opens = "pub(crate) mod keymap_census {";
+    let opens = "pub(crate) mod keymap_census;";
     let census_doc = flatten(
         &raw[..raw.find(opens).expect("the census module")]
             .lines()

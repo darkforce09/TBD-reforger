@@ -568,7 +568,7 @@ fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
     // own memory, so the recording sits at the call site, not inside the document command.
     let manager = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/modals/orbat_manager.rs"
+        "/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs"
     )));
     let addv = only_body(&manager, &format!("fn stitch_{}(", "row"));
     let at_add = addv

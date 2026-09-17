@@ -12,12 +12,12 @@ use crate::v2::apps::editor::shell::layout::BTN_ICON;
 use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
 fn hint_body_source() -> String {
-    let src = live_source(include_str!("../../help_modal.rs"));
+    let src = live_source(&super::source::production_source());
     only_body(&src, "pub fn ControlsHint(").to_string()
 }
 
 fn hint_body_code() -> String {
-    let src = live_code(include_str!("../../help_modal.rs"));
+    let src = live_code(&super::source::production_source());
     only_body(&src, "pub fn ControlsHint(").to_string()
 }
 

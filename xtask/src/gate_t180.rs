@@ -173,6 +173,20 @@ const ORBAT_MGR: &str = "apps/website/frontend/src/v2/apps/editor/ui/modals/orba
 const EDEN_CHROME: &str = "apps/website/frontend/src/v2/apps/editor/shell/eden_chrome.rs";
 const SLOTS_GPU: &str = "apps/website/map-engine/src/overlay/symbology/roles/classify.rs";
 
+/// Every UI source that can render the banned ORBAT copy, plus the editor shell.
+const ORBAT_UI_BAN_TARGETS: &[&str] = &[
+    ORBAT_MGR,
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog_lifecycle.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/faction_templates.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/slot_inspector.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/snapshot.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/stats.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_panel.rs",
+    "apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs",
+    EDEN_CHROME,
+];
+
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.
 #[rustfmt::skip]
 type BanRow = (&'static str, &'static str, bool, &'static [&'static str], &'static str);
@@ -187,7 +201,7 @@ const BANS: &[BanRow] = &[
      r"loadout: String::new\(\)", false, &[ORBAT_RS],
      "no loadout String::new() hardcode in derive"),
     ("Standardization / IFAK / Grenade Complement UI strings found (L8 omit)",
-     "standardization|IFAK|Grenade Complement", true, &[ORBAT_MGR, EDEN_CHROME],
+     "standardization|IFAK|Grenade Complement", true, ORBAT_UI_BAN_TARGETS,
      "no Standardization UI strings"),
 ];
 
@@ -516,8 +530,9 @@ mod tests {
     fn scratch(name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("tbd-t180-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        for rel in [ORBAT_RS, ORBAT_MGR, EDEN_CHROME, SLOTS_GPU]
+        for rel in [ORBAT_RS, SLOTS_GPU]
             .into_iter()
+            .chain(ORBAT_UI_BAN_TARGETS.iter().copied())
             .chain(EDITOR_OPS_SPLIT.iter().copied())
         {
             let dst = root.join(rel);

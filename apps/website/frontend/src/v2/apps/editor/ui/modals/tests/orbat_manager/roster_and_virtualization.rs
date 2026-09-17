@@ -27,7 +27,7 @@ fn g1_dialog_class_near_fullscreen() {
 #[test]
 fn g2_set_leader_symbol_in_module_source() {
     // Wiring lives in stitch_row → orbat_set_leader; keep a compile-time reminder.
-    let src = include_str!("../../orbat_manager.rs");
+    let src = super::source::production_source();
     assert!(
         src.contains("orbat_set_leader"),
         "G2 Make SL must call set_leader path"
@@ -40,7 +40,7 @@ fn g2_set_leader_symbol_in_module_source() {
 fn apply_cancel_noop() {
     assert!(!apply_confirm_allows(false));
     assert!(apply_confirm_allows(true));
-    let src = include_str!("../../orbat_manager.rs");
+    let src = super::source::production_source();
     assert!(
         src.contains("apply_confirm_allows(confirmed)"),
         "Apply must gate on confirm"
@@ -104,7 +104,7 @@ fn template_options_exclude_civ_and_other_sides() {
 /// H8 — Add Vehicle wiring present (not a disabled stub).
 #[test]
 fn orbat_add_vehicle_increases_vehicle_ids() {
-    let src = include_str!("../../orbat_manager.rs");
+    let src = super::source::production_source();
     assert!(
         src.contains("orbat_add_vehicle"),
         "Add Vehicle must call orbat_add_vehicle"
@@ -146,7 +146,7 @@ fn orbat_add_vehicle_increases_vehicle_ids() {
 /// live view literals, not comment text.
 #[test]
 fn add_vehicle_empty_catalog_shows_explainer_not_silent_noop() {
-    let src = include_str!("../../orbat_manager.rs");
+    let src = super::source::production_source();
     let empty_guard = format!("picking_vehicle && {}", "vehicle_options.is_empty()");
     assert!(
         src.contains(&empty_guard),
@@ -182,7 +182,7 @@ fn open_arsenal_selects_arsenal_tab() {
         ops.contains("attrs_tab.set(3)"),
         "open_arsenal must select Arsenal tab index 3"
     );
-    let mgr = include_str!("../../orbat_manager.rs");
+    let mgr = super::source::production_source();
     assert!(
         mgr.contains("open_arsenal(id_ars"),
         "OPEN ARSENAL button must call open_arsenal"
@@ -439,7 +439,7 @@ fn t373_shrink_warning_only_fires_when_content_is_removed() {
 /// it — the wiring is what makes the rest of this file true.
 #[test]
 fn t373_save_button_merges_and_editor_ops_says_so() {
-    let src = include_str!("../../orbat_manager.rs");
+    let src = super::source::production_source();
     assert!(
         src.contains(
             "merge_faction_doc_from_side(\n                                        &stored.doc,"
@@ -468,7 +468,7 @@ fn orbat_squad_rename_focuses_via_noderef_on_load() {
     // Scope to stitch_row live body so the ban needle cannot self-match this test's
     // string literal (include_str of the whole file always contains the assert text).
     use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
-    let code = live_source(include_str!("../../orbat_manager.rs"));
+    let code = live_source(&super::source::production_source());
     let body = only_body(&code, "fn stitch_row(");
     assert!(
         body.contains("NodeRef::<leptos::html::Input>::new()"),
@@ -506,8 +506,10 @@ fn orbat_squad_rename_focuses_via_noderef_on_load() {
 #[test]
 fn orbat_manager_gates_escape_on_modal_stack() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let code = live_code(include_str!("../../orbat_manager.rs"));
-    let body = only_body(&code, "pub fn OrbatManagerDialog(");
+    let code = live_code(&super::source::production_source());
+    let dialog = only_body(&code, "pub fn OrbatManagerDialog(");
+    assert!(dialog.contains("install_orbat_dialog_lifecycle("));
+    let body = only_body(&code, "fn install_orbat_dialog_lifecycle(");
     let reg = ["modal_stack", "::", "register("].concat();
     let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
     let unreg = ["modal_stack", "::", "unregister(modal_id)"].concat();
@@ -531,7 +533,7 @@ fn orbat_manager_gates_escape_on_modal_stack() {
 #[test]
 fn cap_label_pluralizes_the_slot_count() {
     use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
-    let code = live_source(include_str!("../../orbat_manager.rs"));
+    let code = live_source(&super::source::production_source());
     let body = only_body(&code, "pub fn OrbatManagerDialog(");
     // Concat so this test's own literals cannot self-match (T-726 idiom).
     let naked = [" slots", " \u{b7} server cap"].concat();

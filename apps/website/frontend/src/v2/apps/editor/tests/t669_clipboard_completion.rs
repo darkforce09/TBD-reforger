@@ -230,7 +230,7 @@ fn both_new_chords_are_documented_in_the_help_table() {
     // the thing under test.
     let help = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/modals/help_modal.rs"
+        "/src/v2/apps/editor/ui/modals/help_modal/shortcut_catalog.rs"
     ));
     for chord in ["Ctrl/Cmd + X", "Ctrl/Cmd + Shift + V"] {
         assert!(

@@ -237,10 +237,10 @@ fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
             1,
         ),
         (
-            "top_strip.rs",
+            "top_strip_view.rs",
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/src/v2/apps/editor/ui/docks/top_strip.rs"
+                "/src/v2/apps/editor/ui/docks/top_strip/view.rs"
             )),
             1,
         ),
@@ -285,10 +285,10 @@ fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
             1,
         ),
         (
-            "orbat_manager.rs",
+            "dialog_lifecycle.rs",
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/src/v2/apps/editor/ui/modals/orbat_manager.rs"
+                "/src/v2/apps/editor/ui/modals/orbat_manager/dialog_lifecycle.rs"
             )),
             1,
         ),

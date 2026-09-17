@@ -1,7 +1,7 @@
 #[test]
 fn the_mounted_manager_arms_and_consumes_the_shared_set() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let code = live_code(include_str!("../../orbat_manager.rs"));
+    let code = live_code(&super::source::production_source());
     let row = only_body(&code, "fn stitch_row(");
     assert!(row.contains("tree::drag_set_for("));
     assert!(row.contains("drag::begin_refile(drag)"));
