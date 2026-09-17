@@ -27,7 +27,7 @@ fn zones_and_settings_share_one_mission_schema_embed() {
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
     )));
-    let settings = live_source(include_str!("../settings_modal.rs"));
+    let settings = live_source(&super::source::production_source());
     let path = format!(
         "{}{}{}",
         "/../../../packages/tbd-schema/schema/", "mission", ".schema.json"
@@ -212,7 +212,7 @@ fn no_flow_constant_is_passed_off_as_a_schema_default() {
     // …and the constants themselves are named nowhere in the aggregation or its rendering.
     // T-755: also scan `from_schema_node` itself — the prior list stopped at five callers and
     // left the ONE value-carrying constructor free to substitute a FLOW_DEFAULT_*.
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let banned = format!("FLOW{}", "_DEFAULT_");
     for f in [
         format!("fn aggregate{}", "_settings"),
@@ -239,7 +239,7 @@ fn no_flow_constant_is_passed_off_as_a_schema_default() {
 /// needle missed (wave-115 MINOR-2 / T-755).
 #[test]
 fn a_default_value_is_built_in_exactly_one_place() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let self_ctor = format!("Self::{} {{", "Schema");
     assert_eq!(
         src.matches(&self_ctor).count(),
@@ -264,7 +264,7 @@ fn a_default_value_is_built_in_exactly_one_place() {
         "T-688/T-755/wave-134: exactly one `::Schema {{ value: … }}` constructor (Self:: in              from_schema_node) — a path- or alias-spelled second site is a second source of truth"
     );
     // …and that one site reads the schema's own `default` key rather than deciding anything.
-    let lit = live_source(include_str!("../settings_modal.rs"));
+    let lit = live_source(&super::source::production_source());
     let body = only_body(&lit, &format!("fn from{}", "_schema_node"));
     assert!(
         body.contains("\"default\""),
@@ -430,7 +430,7 @@ fn numeric_defaults_compare_across_int_and_float() {
 /// dropping an `<input>`/`<select>`/`<textarea>` into a row "just for the numbers".
 #[test]
 fn the_aggregated_view_is_not_a_second_editing_surface() {
-    let src = live_source(include_str!("../settings_modal.rs"));
+    let src = live_source(&super::source::production_source());
     let editing_needles = [
         format!("author{}", "_env"),
         format!("update{}", "_environment"),
@@ -466,7 +466,7 @@ fn the_aggregated_view_is_not_a_second_editing_surface() {
 /// and does nothing with it.
 #[test]
 fn rows_click_through_the_shipped_t655_router() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn setting{}", "_row_view"));
     assert!(
         body.contains(&format!("route{}", "_select_by_subject_id")),
@@ -557,7 +557,7 @@ fn row_order_is_stable() {
 /// is mounted as a sibling so it outlives that dialog being closed (the T-691 idiom).
 #[test]
 fn the_view_is_reachable_from_mission_settings() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let dialog = only_body(&src, "fn MissionSettingsDialog");
     assert!(
         dialog.contains(&format!("render{}", "_all_settings_pointer")),

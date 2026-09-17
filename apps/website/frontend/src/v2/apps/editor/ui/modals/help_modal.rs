@@ -3,7 +3,7 @@
 //! MENU-HELP-001).
 //!
 //! **The defect this closes.** The Mission Creator binds twenty-six distinct `KeyboardEvent` codes
-//! across fifteen window-level keydown listeners in ten editor-surface modules and, before this
+//! across fifteen window-level keydown listeners in twelve editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
 //! `]`, `1`, `2`, `3`, `E`, `R` or Backspace was reading the Rust source.
@@ -723,12 +723,28 @@ pub(crate) mod keymap_census {
                 1,
             ),
             (
-                "settings_modal.rs",
+                "mission_dialog.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/ui/modals/settings_modal.rs"
+                    "/src/v2/apps/editor/ui/modals/settings_modal/mission_dialog.rs"
                 )),
-                3,
+                1,
+            ),
+            (
+                "preferences_dialog.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/v2/apps/editor/ui/modals/settings_modal/preferences_dialog.rs"
+                )),
+                1,
+            ),
+            (
+                "all_settings_dialog.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/v2/apps/editor/ui/modals/settings_modal/all_settings_dialog.rs"
+                )),
+                1,
             ),
             (
                 "faction_manager.rs",
@@ -1638,7 +1654,9 @@ mod t692_help_covers_every_binding {
             ("top_strip.rs", "menus / Save / Controls Hint"),
             // already on the surface when T-703 widened; still a drop-from-scrape trap
             ("context_menu.rs", "context menu"),
-            ("settings_modal.rs", "settings dialogs"),
+            ("mission_dialog.rs", "mission settings dialog"),
+            ("preferences_dialog.rs", "editor preferences dialog"),
+            ("all_settings_dialog.rs", "all settings dialog"),
             // T-774 — the two the eleven-listener census still missed
             ("faction_manager.rs", "Faction Manager"),
             ("orbat_manager.rs", "ORBAT Manager"),

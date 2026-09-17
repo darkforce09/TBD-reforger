@@ -140,7 +140,7 @@ fn the_copy_says_what_each_field_is() {
 /// the setter call and leaving a control that repaints and saves nothing.
 #[test]
 fn presentation_reaches_the_missions_row_by_patch() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let setter = format!("set{}", "_presentation");
     let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
     assert!(
@@ -181,7 +181,7 @@ fn presentation_reaches_the_missions_row_by_patch() {
 /// Perturbation this catches: swapping either handler to `on:input`, with or without a debounce.
 #[test]
 fn the_presentation_controls_commit_on_settle() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
     assert!(
         body.contains(&format!("on:{}", "change")),
@@ -211,7 +211,7 @@ fn the_presentation_controls_commit_on_settle() {
 /// (which would put a refused briefing into the export).
 #[test]
 fn a_saved_briefing_reaches_the_documents_meta() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let mirror = format!("mirror{}", "_briefing_into_document");
     assert!(
         only_body(&src, &format!("fn set{}", "_presentation")).contains(&format!("{mirror}(")),
@@ -229,7 +229,7 @@ fn a_saved_briefing_reaches_the_documents_meta() {
 /// case a writer-side check cannot cover.
 #[test]
 fn the_preview_checks_the_url_at_the_sink() {
-    let src = live_source(include_str!("../settings_modal.rs"));
+    let src = live_source(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
     let guard = format!("is{}", "_acceptable_thumbnail_url");
     let img = format!("<{}", "img");

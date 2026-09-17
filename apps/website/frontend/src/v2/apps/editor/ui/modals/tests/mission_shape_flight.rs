@@ -36,7 +36,7 @@ fn a_get_that_races_a_patch_cannot_apply() {
 /// Production ShapeMirror must call the sequencer — not merely document it.
 #[test]
 fn shape_mirror_wires_the_sequencer() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     for (fn_name, needles) in [
         (
             "fn load",

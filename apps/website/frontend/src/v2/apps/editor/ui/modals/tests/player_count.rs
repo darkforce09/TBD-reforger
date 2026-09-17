@@ -38,7 +38,7 @@ fn the_player_figure_is_the_derived_slot_count() {
 /// it is calling something that reaches the row on this function's behalf.
 #[test]
 fn the_seam_reads_the_document_count_and_nothing_else() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let seam = format!("fn player{}", "_figure");
     let body: String = only_body(&src, &seam).split_whitespace().collect();
     assert_eq!(
@@ -54,7 +54,7 @@ fn the_seam_reads_the_document_count_and_nothing_else() {
 /// house rule): a bypass moved into a neighbouring helper is still a bypass.
 #[test]
 fn the_displayed_players_figure_goes_through_the_seam() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_shape_section"));
     assert!(
         body.contains(&format!("player{}()", "_figure")),
@@ -72,7 +72,7 @@ fn the_displayed_players_figure_goes_through_the_seam() {
     // scrub: `live_code` blanks class strings and copy, so these needles are invisible to it.
     // (Stated positively — a negative needle here could not be whole-file, because the same
     // two-column grid is a legitimate layout for Time and Weather further up this file.)
-    let lit = live_source(include_str!("../settings_modal.rs"));
+    let lit = live_source(&super::source::production_source());
     let lit_body = only_body(&lit, &format!("fn render{}", "_shape_section"));
     assert!(
         lit_body.contains(&format!("text-headline{}", "-sm")),
@@ -93,7 +93,7 @@ fn the_displayed_players_figure_goes_through_the_seam() {
 /// a value the compiler still ships.
 #[test]
 fn the_declared_cap_is_kept_and_labelled() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     assert!(
         src.contains(&format!("max{}", "_players")),
         "T-782: `max_players` reaches the compiled mission — the display ruling must not delete it"

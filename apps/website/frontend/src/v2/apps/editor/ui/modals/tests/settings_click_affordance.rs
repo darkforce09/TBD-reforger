@@ -1,6 +1,5 @@
 use super::{
-    aggregate_settings, owner_is_routable, row_cursor_class, SettingOwner,
-    OWNER_UNRESOLVED_NOTE,
+    aggregate_settings, owner_is_routable, row_cursor_class, SettingOwner, OWNER_UNRESOLVED_NOTE,
 };
 use crate::v2::apps::editor::mission_editor::{route_target, RouteTarget};
 use crate::v2::apps::editor::ui::inspector::validation_panel::register_route_probe;
@@ -118,8 +117,7 @@ fn a_row_is_clickable_iff_the_router_resolves_its_subject() {
     ];
     let (mut clickable_seen, mut inert_seen) = (0usize, 0usize);
     for owner in &owners {
-        let wears_pointer =
-            row_cursor_class(owner_is_routable(owner)).contains("cursor-pointer");
+        let wears_pointer = row_cursor_class(owner_is_routable(owner)).contains("cursor-pointer");
         let resolves = owner
             .subject_id()
             .is_some_and(|id| route_target(&d, id, &|_| false).is_some());
@@ -233,7 +231,7 @@ fn a_zone_row_is_inert_when_the_probe_says_no() {
 /// un-narrowed copy of the decision that the click had already stopped agreeing with.
 #[test]
 fn the_affordance_asks_the_registered_probe_and_not_the_router_directly() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
     assert!(
         routable.contains(&format!("subject_id{}", "_routes")),
@@ -276,7 +274,7 @@ fn the_view_emits_no_owner_kind_the_router_cannot_resolve() {
     );
     // Source side: the walk mints ONE `kind:`, so a second entity family cannot slip in without
     // this pin (and the slot predicate the probe is registered with) being revisited.
-    let src = live_source(include_str!("../settings_modal.rs"));
+    let src = live_source(&super::source::production_source());
     let body = only_body(&src, &format!("fn aggregate{}", "_settings"));
     let kind_writes = body.matches(&format!("kind{}", ": \"")).count();
     assert_eq!(
@@ -300,7 +298,7 @@ fn the_view_emits_no_owner_kind_the_router_cannot_resolve() {
 /// `the_affordance_asks_the_registered_probe_and_not_the_router_directly` owns that half.
 #[test]
 fn the_affordance_and_the_click_ask_the_same_question() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let row = only_body(&src, &format!("fn setting{}", "_row_view"));
     assert!(
         row.contains(&format!("row{}", "_cursor_class(")),
@@ -320,7 +318,7 @@ fn the_affordance_and_the_click_ask_the_same_question() {
          selectable, and not a second resolution of the router either"
     );
     // Literals kept: the row must not hand-roll the affordance beside the function that owns it.
-    let lit = live_source(include_str!("../settings_modal.rs"));
+    let lit = live_source(&super::source::production_source());
     let row_lit = only_body(&lit, &format!("fn setting{}", "_row_view"));
     assert!(
         !row_lit.contains(&format!("cursor{}", "-pointer")),

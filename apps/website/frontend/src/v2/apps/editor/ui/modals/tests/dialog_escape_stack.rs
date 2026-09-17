@@ -1,7 +1,7 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 fn prod() -> String {
-    live_code(include_str!("../settings_modal.rs"))
+    live_code(&super::source::production_source())
 }
 
 fn gate_needles() -> (String, String, String) {

@@ -18,7 +18,7 @@ fn store_call_needles() -> Vec<String> {
 /// pasting back) the basemap buttons or the 12 layer toggles into Mission Settings.
 #[test]
 fn mission_settings_render_prefs_holds_no_world_layer_toggles() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_prefs_section"));
     for needle in store_call_needles() {
         assert!(
@@ -40,7 +40,7 @@ fn mission_settings_render_prefs_holds_no_world_layer_toggles() {
 /// the component rather than via the helper).
 #[test]
 fn mission_settings_dialog_body_holds_no_store_calls() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn Mission{}", "SettingsDialog"));
     for needle in store_call_needles() {
         assert!(
@@ -58,7 +58,7 @@ fn mission_settings_dialog_body_holds_no_store_calls() {
 /// `render_editor_prefs_body`, sliced out here.
 #[test]
 fn editor_preferences_dialog_writes_no_author_env() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_editor_prefs_body"));
     let author = format!("author{}", "_env");
     assert!(
@@ -81,7 +81,7 @@ fn editor_preferences_dialog_writes_no_author_env() {
 /// the pointer-row call.
 #[test]
 fn editor_preferences_opener_is_wired() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let opener = format!("open{}", "_editor_preferences");
     let mount = format!("Editor{}", "PreferencesDialog");
     let register = format!("set{}", "_prefs_signal");

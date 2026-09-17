@@ -36,10 +36,10 @@ fn row_id_guard_rejects_the_synthetic_editor_ids() {
         "",
         "draft",
         "smoke",
-        "3f2504e0-4f89-11d3-9a0c-0305e82c330", // too short
+        "3f2504e0-4f89-11d3-9a0c-0305e82c330",   // too short
         "3f2504e0-4f89-11d3-9a0c-0305e82c33011", // too long
-        "3f2504e04f8911d39a0c0305e82c3301aaaa", // right length, no dashes
-        "zzzzzzzz-4f89-11d3-9a0c-0305e82c3301", // not hex
+        "3f2504e04f8911d39a0c0305e82c3301aaaa",  // right length, no dashes
+        "zzzzzzzz-4f89-11d3-9a0c-0305e82c3301",  // not hex
     ] {
         assert!(
             !is_mission_row_id(not_a_row),
@@ -133,7 +133,7 @@ fn refused_game_mode_patch_explains_itself() {
 /// so `t782_player_count_ruling` pins the other half, that the sourced count is the one shown.
 #[test]
 fn player_count_comes_from_the_document_slot_count() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_shape_section"));
     assert!(
         body.contains(&format!("slot{}", "_count")),
@@ -151,7 +151,7 @@ fn player_count_comes_from_the_document_slot_count() {
 /// control, or a `max(placed, declared)` that quietly picks a winner.
 #[test]
 fn shape_section_invents_no_player_limit() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let body = only_body(&src, &format!("fn render{}", "_shape_section"));
     for banned in [
         format!("min{}", "_players"),
@@ -179,7 +179,7 @@ fn shape_section_invents_no_player_limit() {
 /// into the document (where nothing would read it) or dropping the mirror call entirely.
 #[test]
 fn game_mode_select_patches_the_missions_row() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let setter = format!("set{}", "_game_mode");
 
     // (a) the section's control calls the setter and offers the table's options.

@@ -20,8 +20,7 @@ fn a_mission_owned_row_is_inert_with_a_reason() {
     );
     let reason = inert_settings_row_reason(&owner);
     assert!(
-        reason.to_lowercase().contains("no entity")
-            || reason.to_lowercase().contains("not click"),
+        reason.to_lowercase().contains("no entity") || reason.to_lowercase().contains("not click"),
         "T-758: the inert reason must tell the author why the row is not a click target, got \
          {reason:?}"
     );
@@ -57,7 +56,7 @@ fn an_unroutable_entity_row_is_inert_with_a_reason() {
 /// Literals kept (`live_source`): the claim is about the attributes/tags that ship.
 #[test]
 fn an_inert_row_is_not_a_focusable_button() {
-    let lit = live_source(include_str!("../settings_modal.rs"));
+    let lit = live_source(&super::source::production_source());
     let row = only_body(&lit, &format!("fn setting{}", "_row_view"));
     assert!(
         row.contains("if selectable") || row.contains("if clickable"),
@@ -93,7 +92,7 @@ fn an_inert_row_is_not_a_focusable_button() {
 /// clicks on unroutable entities.
 #[test]
 fn inert_shape_still_asks_subject_id_routes_not_a_kind_list() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
     assert!(
         routable.contains(&format!("subject_id{}", "_routes")),

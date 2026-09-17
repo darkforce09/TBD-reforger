@@ -3,7 +3,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 /// The blank arm must call the clear mutator — early-return on empty was the wave-117 defect.
 #[test]
 fn clearing_a_briefing_calls_the_clear_mutator() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let mirror = format!("mirror{}", "_briefing_into_document");
     let body = only_body(&src, &format!("fn {mirror}"));
     let clear = format!("clear{}", "_meta_briefing");
@@ -37,7 +37,7 @@ fn clearing_a_briefing_calls_the_clear_mutator() {
 /// text). Pin reachability: no trim-empty gate between `Briefing =>` and the call.
 #[test]
 fn blank_next_reaches_the_mirror_at_the_ok_briefing_arm() {
-    let src = live_code(include_str!("../settings_modal.rs"));
+    let src = live_code(&super::source::production_source());
     let mirror = format!("mirror{}", "_briefing_into_document");
     let set = only_body(&src, &format!("fn set{}", "_presentation"));
     let call = format!("{mirror}(&next)");
