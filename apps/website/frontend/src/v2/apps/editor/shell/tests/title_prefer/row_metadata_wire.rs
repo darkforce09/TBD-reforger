@@ -47,7 +47,7 @@ const ADOPTION_SRC: &str = include_str!(concat!(
 /// The frontend's half — the one place the API's row shape is read.
 const HYDRATE_SRC: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/src/v2/apps/editor/shell/hydrate.rs"
+    "/src/v2/apps/editor/shell/hydrate/server_reconciliation.rs"
 ));
 
 const ADOPT_SIG: &str = "fn adopt_payload(";

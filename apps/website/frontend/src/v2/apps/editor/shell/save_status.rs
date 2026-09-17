@@ -1,15 +1,10 @@
-//! T-937.4 — observable persist status: chip + toast, not `console.warn`.
-//!
-//! `persist.rs` is wasm32-only and used to swallow every `save_state_as` `Err` into
-//! `web_sys::console::warn_1`, so a quota failure (or any other IndexedDB write error) left the
-//! author with no chip, no toast, and no signal. This module is the native-testable surface that
-//! persist reports into: [`SaveStatus`], a status chip, and one toast per Failed episode.
+//! Tracks local draft save status for the editor chip and failure toast.
 
 use std::cell::RefCell;
 
 use leptos::prelude::*;
 
-/// Idle debounce the persist writer must arm with. T-937.4: at most 1 s (was 5 s).
+/// Idle debounce the persist writer must arm with. : at most 1 s (was 5 s).
 pub const IDLE_DEBOUNCE_MS: i32 = 1_000;
 
 /// `note_unreadable` retries the read this many times with backoff before lockout.
@@ -42,7 +37,7 @@ pub fn status() -> SaveStatus {
     STATUS.with(|s| s.borrow().clone())
 }
 
-/// Chip copy, or `None` when the chip should hide (Saved — the draft-recency chip already covers
+/// Chip copy, or `None` when the chip should hide (Saved  the draft-recency chip already covers
 /// a successful flush).
 #[must_use]
 pub fn chip_label(status: &SaveStatus) -> Option<String> {
@@ -264,7 +259,7 @@ pub fn SaveStatusChip() -> impl IntoView {
 // `last_toast` is test-only and MUST stay below every production item: the Class-R probe in
 // `unreadable_lockout_offers_retry` splits this file at the FIRST `#[cfg(test)]` and asserts over
 // what precedes it. An earlier test-gated item truncates that haystack and the probe silently
-// stops reading the code it exists to check — the T-937.1 failure of wave 252, one wave on.
+// stops reading the code it exists to check  the  failure of , one wave on.
 /// Last Failed toast payload this page/test lifetime, if any. Native tests read this because
 /// persist's wasm `save_state_as` cannot run on the host.
 #[cfg(test)]

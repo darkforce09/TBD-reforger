@@ -1,8 +1,6 @@
-//! T-172 B9 — the toolbelt `SZ` payload estimate (missionSize.ts port). Pure + native-tested:
-//! sample ≤ `SAMPLE_N` slots' JSON byte lengths, average × slot count + a fixed envelope for the
-//! non-slot payload. Decimal `format_bytes` (one decimal from MB up), `—` handled by the caller.
+//! Estimates mission payload size for the editor toolbelt.
 
-/// Fixed overhead for the non-slot payload parts (meta/map/editor envelope) — missionSize.ts.
+/// Fixed overhead for the non-slot payload parts (meta/map/editor envelope)  missionSize.ts.
 pub const SIZE_ENVELOPE_BYTES: usize = 2048;
 /// How many slots the estimator serializes before extrapolating.
 pub const SIZE_SAMPLE_N: usize = 20;

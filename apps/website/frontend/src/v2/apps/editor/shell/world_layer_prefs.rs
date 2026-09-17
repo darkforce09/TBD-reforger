@@ -1,7 +1,4 @@
-//! Role: world layer prefs.
-//! Position: `editor` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
-//! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
+//! Stores and migrates the editor world-layer visibility preferences.
 
 #![allow(dead_code)]
 

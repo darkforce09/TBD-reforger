@@ -4,10 +4,15 @@ use super::duplicate_slot_id_report;
 use crate::v2::core::test_support::class_r_scrub::live_code;
 
 fn live() -> String {
-    live_code(include_str!(concat!(
+    let root = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/shell/document_commands.rs"
-    )))
+    )));
+    let saving = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/v2/apps/editor/shell/document_commands/imp/mission_saving.rs"
+    )));
+    format!("{root}\n{saving}")
 }
 
 /// **The guard is CALLED, and before the POST.** `duplicate_slot_ids` shipped in wave 255

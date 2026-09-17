@@ -1,12 +1,6 @@
-//! Role: the browser half of the editor's Save / Export / clipboard commands.
-//! Position: `editor/shell` in the frontend editor.
-//! Signals & state: the hosted document, the auth token and the mission id, reached through one
-//! thread-local context installed at mount.
-//! Invariants: what a command DECIDES — the bytes an export writes, the wording a report carries,
-//! the rows a selection resolves to — belongs to `website_map_engine::editing::commands`. What
-//! lives here is the transport: the authed POST, the file download, the clipboard write, the toast,
-//! and the `window.__editorCommands` smoke bridge. Every read is taken as an owned snapshot before
-//! any `.await`, so no borrow is ever held across a yield.
+//! Browser transport for editor save, export, merge, and clipboard commands.
+//! The map engine decides document content; this module handles API requests, downloads,
+//! clipboard promises, toasts, and the editor command bridge.
 
 pub use website_map_engine::editing::commands::export_text::{
     apply_row_metadata_to_export, compile_diagnostics_summary, compiled_export_text,
@@ -37,7 +31,7 @@ mod imp {
     use website_map_engine::data::scenario::flatten::MissionMeta;
     use website_map_engine::data::scenario::validate::Finding;
 
-    /// T-690 — what a compile hands the command layer: the download text and the structured
+    /// what a compile hands the command layer: the download text and the structured
     /// findings, from one compile. Aliased so the entry point's signature stays on one line, which
     /// is what `class_r_source_forbids_value_pretty_on_compiled_export` locates it by.
     type CompiledWithDiagnostics = (String, Vec<Finding>);
@@ -57,7 +51,7 @@ mod imp {
         doc: DocHandle,
         auth: AuthStore,
         mission_id: String,
-        /// T-159.26 — the adopted server semver signal, updated on a successful Save (the saved
+        /// the adopted server semver signal, updated on a successful Save (the saved
         /// version becomes the version local now derives from).
         current_semver: RwSignal<Option<String>>,
     }
@@ -65,31 +59,31 @@ mod imp {
     thread_local! {
         static EDITOR_CTX: RefCell<Option<EditorCtx>> = const { RefCell::new(None) };
 
-        /// **T-243 — the mission ROW, as `GET /missions/:id` last served it.**
+        /// ** the mission ROW, as `GET /missions/:id` last served it.**
         ///
         /// Deliberately NOT part of [`EditorCtx`]: `set_ctx` runs synchronously at mount, and this
         /// arrives later from `mission_hydrate::hydrate_from_server`'s `await`. Folding it in would
         /// have meant either an `Option` field nobody could keep honest or an ordering assumption
         /// between a mount and a fetch.
         ///
-        /// **`None` is load-bearing and must stay refusable.** It means the row never arrived — a
+        /// **`None` is load-bearing and must stay refusable.** It means the row never arrived  a
         /// local-only / non-UUID id (the `smoke` gate route), a 404, an offline boot, **or a 401 /
         /// expired session** (hydrate never got the row; see [`row_meta_missing_message`]). There is
         /// no server document for those, and `MissionMeta::default()` would happily compile one with a
         /// blank author and `playerRange: [1, 1]`. Emitting that under the name "the document the game
         /// server will receive" is the confident-wrong-answer failure this whole ticket exists to
-        /// avoid, so [`export_compiled_now`] refuses instead — and names auth failure separately from
+        /// avoid, so [`export_compiled_now`] refuses instead  and names auth failure separately from
         /// "no saved version".
         static ROW_META: RefCell<Option<MissionMeta>> = const { RefCell::new(None) };
 
-        /// **T-746 — the missions-row columns [`MissionMeta`] deliberately omits.** `compiled_meta()`
+        /// ** the missions-row columns [`MissionMeta`] deliberately omits.** `compiled_meta()`
         /// keeps `max_players` for the flatten but drops `game_mode` (and never carried the library
         /// `briefing` / `thumbnail_url`). That omission is why `eden_settings::ShapeMirror` had to
         /// invent a second GET on every dialog open. Same boot hydrate fills both cells; successful
         /// shape PATCHes refresh this one so a reopen mid-flight is not the only path to the new mode.
         static ROW_HYDRATE: RefCell<Option<HydratedRow>> = const { RefCell::new(None) };
 
-        /// **T-799 (a) — the last export activation's `Event.timeStamp`.** The single-cell state
+        /// ** the last export activation's `Event.timeStamp`.** The single-cell state
         /// behind [`super::export_gesture_is_duplicate`]: [`begin_export_gesture`] records the stamp
         /// of the activation it lets through, and rejects the next one only when it carries the SAME
         /// stamp (the DOM's synthesised pointerup/click double). A `Cell` (not a `RefCell`) because a
@@ -98,7 +92,7 @@ mod imp {
         static LAST_EXPORT_STAMP: std::cell::Cell<f64> = const { std::cell::Cell::new(0.0) };
     }
 
-    /// T-746 — shape/presentation columns from the missions row, beside [`ROW_META`].
+    /// shape/presentation columns from the missions row, beside [`ROW_META`].
     #[derive(Clone, Debug, PartialEq, Eq)]
     pub(crate) struct HydratedRow {
         pub game_mode: String,
@@ -107,12 +101,12 @@ mod imp {
         pub thumbnail_url: String,
     }
 
-    /// Record the mission row for the server-truth Export (T-243). Called by
+    /// Record the mission row for the server-truth Export (). Called by
     /// `mission_hydrate::hydrate_from_server` on every successful `GET /missions/:id`, including the
-    /// fresh-mission and warm-IDB branches — the row is what the compile needs, and it is equally real
+    /// fresh-mission and warm-IDB branches  the row is what the compile needs, and it is equally real
     /// whichever way the payload half was resolved.
     ///
-    /// **T-746 — also records [`HydratedRow`].** `MissionMeta` still has no `game_mode`; the hydrate
+    /// ** also records [`HydratedRow`].** `MissionMeta` still has no `game_mode`; the hydrate
     /// cell is the getter-facing half so ShapeMirror can seed without inventing values.
     pub fn set_row_meta(detail: &crate::v2::core::api::dto::MissionDetail) {
         ROW_META.with(|r| *r.borrow_mut() = Some(detail.compiled_meta()));
@@ -126,23 +120,23 @@ mod imp {
         });
     }
 
-    /// T-746 — `max_players` from boot hydrate / last successful row GET. `None` when [`ROW_META`]
+    /// `max_players` from boot hydrate / last successful row GET. `None` when [`ROW_META`]
     /// never arrived (same refuse conditions as Export Compiled).
     pub(crate) fn row_max_players() -> Option<i64> {
         ROW_META.with(|r| r.borrow().as_ref().map(|m| m.max_players))
     }
 
-    /// T-746 — game mode + presentation columns retained beside [`ROW_META`].
+    /// game mode + presentation columns retained beside [`ROW_META`].
     pub(crate) fn hydrated_row() -> Option<HydratedRow> {
         ROW_HYDRATE.with(|h| h.borrow().clone())
     }
 
-    /// T-746 — a successful shape open-GET (or a full row refresh) replaces the hydrate cell.
+    /// a successful shape open-GET (or a full row refresh) replaces the hydrate cell.
     pub(crate) fn note_hydrated_row(row: HydratedRow) {
         ROW_HYDRATE.with(|h| *h.borrow_mut() = Some(row));
     }
 
-    /// T-746 — a successful `game_mode` PATCH keeps the hydrate cell honest without waiting for reopen.
+    /// a successful `game_mode` PATCH keeps the hydrate cell honest without waiting for reopen.
     pub(crate) fn note_hydrated_game_mode(game_mode: &str) {
         ROW_HYDRATE.with(|h| {
             if let Some(row) = h.borrow_mut().as_mut() {
@@ -151,7 +145,7 @@ mod imp {
         });
     }
 
-    /// T-746 — a successful briefing / thumbnail PATCH updates only the column that landed.
+    /// a successful briefing / thumbnail PATCH updates only the column that landed.
     pub(crate) fn note_hydrated_presentation(briefing: Option<&str>, thumbnail_url: Option<&str>) {
         ROW_HYDRATE.with(|h| {
             if let Some(row) = h.borrow_mut().as_mut() {
@@ -187,7 +181,7 @@ mod imp {
         EDITOR_CTX.with(|c| c.borrow().as_ref().map(|ctx| ctx.current_semver))
     }
 
-    /// An owned snapshot of everything a command needs — taken synchronously so no borrow spans an
+    /// An owned snapshot of everything a command needs  taken synchronously so no borrow spans an
     /// `.await`. `None` when the editor isn't mounted / the doc Option is empty.
     struct Snap {
         small: String,
@@ -211,12 +205,12 @@ mod imp {
         })
     }
 
-    /// T-946.86 (.85) — the live document's duplicate (callsign, slot id) pairs, or empty when
+    /// the live document's duplicate (callsign, slot id) pairs, or empty when
     /// there is no editor context yet.
     ///
     /// Separate from [`snapshot`] because `Snap` is a VALUE snapshot (JSON strings) and
     /// [`website_map_engine::data::store::operations::slot_ids::duplicate_slot_ids`] takes the
-    /// `MissionDocCore` itself — it needs `doc.slot_exists`, which the JSON alone cannot answer.
+    /// `MissionDocCore` itself  it needs `doc.slot_exists`, which the JSON alone cannot answer.
     /// Same one-borrow discipline as `snapshot`: one `EDITOR_CTX` borrow, released before the
     /// caller does anything else.
     fn live_duplicate_slot_ids() -> Vec<(String, String)> {
@@ -233,745 +227,33 @@ mod imp {
         })
     }
 
-    /// **T-243 — download the document the game server will actually receive.**
-    ///
-    /// Returns the compact compiled mod document (byte-identical to `GET /compiled`'s body when the
-    /// local doc matches the saved version), or a message fit to show an author.
-    ///
-    /// ## Why this exists at all
-    ///
-    /// `GET /missions/:id/compiled` takes a `ServiceAuth` (`handlers::missions::get_compiled_mission`)
-    /// — it answers game servers, not browsers — so an author has no way to fetch it. Until this,
-    /// "Export JSON" downloaded [`compile_export`]'s `MissionExport` envelope: the editor SUPERSET,
-    /// `{exportFormatVersion, missionId, title, …, payload}`, whose `payload` is the editor graph. That
-    /// is the right file for re-importing into the editor and it is **not** the mod document — it has
-    /// no `slots[]`, no `orbat`, no `radioPlan`, no `winConditions`, and the mod cannot load it. So
-    /// there was no way to see the compiled document before a game server did.
-    ///
-    /// ## Why the answer can be trusted
-    ///
-    /// This runs `flatten_mod_document_json` — the same `map-engine-core` compile `/compiled` runs,
-    /// over the same two inputs:
-    ///
-    ///   * the **row**, from `GET /missions/:id` ([`ROW_META`]), which is where the server gets
-    ///     `author`, `maxPlayers` and the fallback time/weather;
-    ///   * the **save-shaped payload** (`include_orbat = false`) — byte-for-byte what
-    ///     `POST /missions/:id/versions` stores and therefore what `/compiled` later reads. `orbat` is
-    ///     omitted for the same reason the save omits it: the flatten derives its own from `editor`,
-    ///     and including it would put a key in the preview's input that the stored version never has.
-    ///
-    /// Their agreement is not asserted here — it is pinned natively, on both halves, by
-    /// `website-api`'s `client_twin_is_byte_identical_to_the_compiled_route` (the compile) and
-    /// `dto::r_api::compiled_meta_is_the_row_the_server_compiles_from` (the row).
-    ///
-    /// ## The one honest difference, and it is the point
-    ///
-    /// `/compiled` serves the last **saved** version; this compiles the document **as it is now**,
-    /// unsaved edits included. That is what makes it useful — you can see what a save would ship
-    /// before shipping it — but it means a dirty document previews something the server does not yet
-    /// have. The caller says so in the toast rather than hiding it.
-    ///
-    /// # Errors
-    /// Returns a display message when the row never arrived (local-only id, 404, offline, **401 /
-    /// expired session** — see [`ROW_META`] + [`row_meta_missing_message`]), when the editor is not
-    /// mounted, or when the compile refuses (no placed slots is the common one, and it is the same
-    /// `409` a game server would get).
-    pub fn compiled_document_json() -> Result<String, String> {
-        compiled_document_json_with_diagnostics().map(|(text, _)| text)
-    }
+    mod compilation;
+    use compilation::*;
+    pub use compilation::*;
+    mod exports;
+    use exports::*;
+    pub use exports::*;
+    mod mission_saving;
+    use mission_saving::*;
+    pub use mission_saving::*;
+    mod mission_merge;
+    use mission_merge::*;
+    pub use mission_merge::*;
+    mod clipboard;
+    use clipboard::*;
+    pub use clipboard::*;
 
-    /// T-690 — the compile, with the structured result it produced ALONGSIDE the bytes.
-    ///
-    /// This is the body [`compiled_document_json`] projects: one compile, one document, one finding
-    /// list. Splitting it the other way round (a second compile just for the findings) is the shape
-    /// `flatten_mod_document_json_full` exists to forbid — two compiles are two things that can
-    /// disagree about what was compiled.
-    ///
-    /// The findings are `map_engine_core::mission::validate::Finding`s — the T-657 vocabulary
-    /// (`rule_id` / `severity` / `primitive` / `message` / `subject` / `subject_id`), reused so the
-    /// T-655 panel renders a compile finding through exactly the same row as a validation finding
-    /// and click-to-select works on both.
-    ///
-    /// # Errors
-    /// Same three refusals as [`compiled_document_json`] — a missing row, an unmounted editor, or a
-    /// compile that produced no document. A FINDING is never one of them.
-    pub fn compiled_document_json_with_diagnostics() -> Result<CompiledWithDiagnostics, String> {
-        let Some(snap) = snapshot() else {
-            return Err("Editor not ready".to_string());
-        };
-        let authenticated = snap.auth.access_token.get_untracked().is_some()
-            && snap.auth.user.get_untracked().is_some();
-        let Some(mut meta) = ROW_META.with(|r| r.borrow().as_ref().map(clone_meta)) else {
-            return Err(row_meta_missing_message(authenticated).to_string());
-        };
-        // Carry the mission id from the route when the row's is blank, matching the envelope export's
-        // `meta.id`-then-route fallback (`compile_export`). `mission_doc_id` in the flatten normalizes
-        // whatever lands here into the schema's id space either way.
-        if meta.id.is_empty() {
-            meta.id = snap.mission_id.clone();
-        }
-        // T-799 (b) — the compiled export's title read from `ROW_META`, which is the LIBRARY row's
-        // title (`set_row_meta`, refreshed only by `GET /missions/:id`). Retitling in the editor
-        // writes the LIVE doc (`meta.title` in `small_maps_json`) but not the row, so the two exports
-        // named the same mission differently — the RowMirror gap the review caught (F-34). One source:
-        // both exports use the live doc title. The compile-time override here (rather than a title
-        // RowMirror PATCH) is the alternative the review offered, and it needs no wire round-trip, so
-        // it agrees the instant the author types — no PATCH to confirm (the T-779 lesson), and it does
-        // not fork the T-192/T-746 RowMirror (which stays time+weather; title never joins it). The
-        // JSON export already reads its title from this same `snap.small`, via `compile_export`.
-        if let Some(live_title) = super::live_doc_title(&snap.small) {
-            meta.title = live_title;
-        }
-        let payload = compile_payload(&snap.small, &snap.slots, false);
-        let payload_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
-        let meta_bytes = serde_json::to_vec(&meta).map_err(|e| e.to_string())?;
-
-        let (doc, findings) =
-            flatten_mod_document_json_with_diagnostics(&meta_bytes, &payload_bytes)?;
-        // T-417 — ship the compact wire bytes (byte-identical to `/compiled`). Do not re-parse to
-        // `serde_json::Value` for a "pretty" download — that is not whitespace-only vs the route.
-        compiled_export_text(&doc).map(|text| (text, findings))
-    }
-
-    /// `MissionMeta` is a plain data carrier in core and deliberately not `Clone` (it is an input type
-    /// built once per compile); this is the local copy out of the `thread_local` so no borrow is held
-    /// across the compile below.
-    fn clone_meta(m: &MissionMeta) -> MissionMeta {
-        MissionMeta {
-            id: m.id.clone(),
-            title: m.title.clone(),
-            author: m.author.clone(),
-            terrain: m.terrain.clone(),
-            custom_terrain_name: m.custom_terrain_name.clone(),
-            max_players: m.max_players,
-            time_of_day: m.time_of_day.clone(),
-            weather_preset: m.weather_preset.clone(),
-        }
-    }
-
-    /// **T-799 (a) — open one export gesture; `true` when it is a NEW one that should run.**
-    ///
-    /// The activation-site guard for the F-28/F-34 double export. `stamp` is the click's
-    /// `Event.timeStamp` (the caller passes `ev.time_stamp()` from the export row's `on:click`).
-    /// A duplicate — the second, synthesised activation of the SAME physical click, which carries
-    /// the SAME stamp — returns `false` and is dropped by the caller; a genuinely new gesture (a
-    /// different, later stamp) records itself as the latch and returns `true`. See
-    /// [`super::export_gesture_is_duplicate`] for the pure rule and why a `0.0` stamp always passes.
-    ///
-    /// Deliberately at the ONE seam both export rows funnel through in the strip, not inside
-    /// `export_now` / `export_compiled_now`: the smoke bridge and any future non-DOM caller reach
-    /// those two directly with no `Event` to key on, and must not be latched (a `0.0` stamp would
-    /// pass anyway, but keeping the guard at the DOM edge keeps the export bodies unconditional).
-    pub fn begin_export_gesture(stamp: f64) -> bool {
-        let last = LAST_EXPORT_STAMP.with(std::cell::Cell::get);
-        if super::export_gesture_is_duplicate(last, stamp) {
-            return false;
-        }
-        LAST_EXPORT_STAMP.with(|c| c.set(stamp));
-        true
-    }
-
-    /// Trigger the server-truth download and report the outcome (T-243).
-    ///
-    /// **T-690 — this is where the compile stops being a pass/fail.** The compile now returns a
-    /// structured finding list alongside the bytes; this publishes that list to the T-655 validation
-    /// panel ([`crate::v2::apps::editor::ui::inspector::validation_panel::publish_compile_findings`]) and lets the toast shrink back
-    /// to what a toast is good at — a one-line verdict with a pointer. The panel is the render
-    /// surface and is deliberately not duplicated here.
-    ///
-    /// The publish happens even when the list is EMPTY, and that is load-bearing: a clean compile
-    /// must CLEAR the previous compile's findings, or the panel would show a stale build report
-    /// after the author fixed everything in it.
-    ///
-    /// `toasts` is resolved at component setup by the caller — `use_toasts()` is an `expect_context`
-    /// and would panic from a DOM handler, the `RowMirror` precedent.
-    pub fn export_compiled_now(toasts: crate::v2::core::ui::toast::Toasts) {
-        let mission_id = EDITOR_CTX
-            .with(|c| c.borrow().as_ref().map(|ctx| ctx.mission_id.clone()))
-            .unwrap_or_default();
-        match compiled_document_json_with_diagnostics() {
-            Ok((json, findings)) => {
-                let filename = format!("mission-{mission_id}.compiled.json");
-                if let Err(e) = download_json(&filename, &json) {
-                    toasts.error(format!("Could not start the download: {e:?}"));
-                    return;
-                }
-                // The findings reach the panel through the engine's own row type, so a compile
-                // finding renders — and click-to-selects on its `subject_id` — exactly like a
-                // validation finding. Published AFTER the download starts: a diagnostic is not a
-                // refusal, and the file the author asked for is not held back by one.
-                let summary = super::compile_diagnostics_summary(&findings);
-                crate::v2::apps::editor::ui::inspector::validation_panel::publish_compile_findings(
-                    findings
-                        .iter()
-                        .map(crate::v2::apps::editor::ui::inspector::validation_panel::PanelFinding::from_finding)
-                        .collect(),
-                );
-                // Naming the staleness is the whole reason this is a toast and not a silent download:
-                // the file is the CURRENT document, which is only what a game server would fetch once
-                // this state is saved.
-                let staleness =
-                    if crate::v2::apps::editor::bridge::document_host::history::is_dirty() {
-                        Some(
-                        "Downloaded the compiled mission document — compiled from your unsaved \
-                         changes, so the server still serves the last saved version.",
-                    )
-                    } else {
-                        None
-                    };
-                match (staleness, summary) {
-                    (Some(stale), Some(s)) => toasts.message(format!("{stale} {s}")),
-                    (Some(stale), None) => toasts.message(stale.to_string()),
-                    (None, Some(s)) => {
-                        toasts.message(format!("Downloaded the compiled mission document. {s}"))
-                    }
-                    (None, None) => toasts.success("Downloaded the compiled mission document."),
-                }
-            }
-            Err(e) => toasts.error(e),
-        }
-    }
-
-    /// Export the current mission as a downloaded `mission-<id>.json` (React `exportJson`): compile with
-    /// `orbat` included, wrap in the `MissionExport` envelope, pretty-print, and trigger the browser
-    /// download. `version` is the current semver (envelope `version` field).
-    ///
-    /// **This is the editor SUPERSET, not the mod document** — it round-trips back into the editor and
-    /// the mod cannot load it. The compiled document an author ships is
-    /// [`export_compiled_now`] (T-243); both are kept because they answer different questions.
-    pub fn export_now(version: &str) {
-        let Some(snap) = snapshot() else {
-            return;
-        };
-        let payload = compile_payload(&snap.small, &snap.slots, true);
-        let doc = compile_export(
-            &payload,
-            &snap.small,
-            &snap.mission_id,
-            version,
-            &js_date_iso(),
-        );
-        // T-799 (b) — `compile_export` hard-codes `gameMode: ""` / `maxPlayers: 0` (they are not in
-        // the editor CRDT it reads). Source them from the mission ROW instead — the same place the
-        // create dialog wrote and the same place Export Compiled reads `max_players` — so the two
-        // exports stop disagreeing about the same mission. `version` (the latest saved semver) and
-        // `title` (the live doc title, which `compile_export` already read from `snap.small`) are the
-        // other two legs both exports now agree on; Export Compiled is moved onto the live title in
-        // `compiled_document_json_with_diagnostics`.
-        let game_mode = hydrated_row().map(|r| r.game_mode);
-        let doc = super::apply_row_metadata_to_export(doc, row_max_players(), game_mode.as_deref());
-        let json = serde_json::to_string_pretty(&doc).unwrap_or_default();
-        let filename = format!("mission-{}.json", snap.mission_id);
-        let _ = download_json(&filename, &json);
-    }
-
-    /// Save a new immutable version (React `saveVersion`): compile with `orbat` omitted (the server
-    /// re-derives), POST `{semver, editor_notes, payload}` to `/missions/:id/versions`, and reflect the
-    /// outcome in `status`. 409 = dup semver, 413 = too large, 401 = not signed in.
-    ///
-    /// T-181.44 — a 400 from `create_version` carries the *list* of things wrong with the payload
-    /// (schema violations plus the wire-safety findings), and this used to collapse all of it into
-    /// "Save failed (400)". `findings` takes the per-problem lines so the dialog can name them; the
-    /// headline stays short because `status` is also rendered in the top strip.
-    pub fn save_now(
-        semver: String,
-        notes: String,
-        status: RwSignal<String>,
-        findings: RwSignal<Vec<String>>,
-    ) {
-        findings.set(Vec::new());
-        let Some(snap) = snapshot() else {
-            status.set("Editor not ready".to_string());
-            return;
-        };
-        // ══════ T-946.86 (.85) — REFUSE a document with duplicate slot ids ══════
-        //
-        // `duplicate_slot_ids` shipped in wave 255 with a unit test and NO production caller, so
-        // the check it implements has never run against a real save. This is that call site.
-        //
-        // It sits BEFORE `compile_payload` deliberately: compiling and POSTing a document we
-        // already know the server will reject spends a round trip to learn what is knowable here,
-        // and the server's 400 does not name the squad.
-        //
-        // DIVERGENCE, DELIBERATE AND UNRESOLVED (see the slice report): the UPLOAD path has a
-        // private near-twin, `check_duplicate_slot_ids_in_payload` in `library/mission_library.rs`
-        // (defined :1519, called :1565), which reads `payload.editor.squads[]` JSON. The two do
-        // NOT agree — the engine's `data::store::operations::slot_ids` gates each id on
-        // `doc.slot_exists(id)` and the library version does not, so a payload carrying a
-        // DANGLING duplicate id is refused on upload and passes here. Collapsing them onto this
-        // function is the right repair; `mission_library.rs` is outside T-946.86's owns, so the
-        // divergence is recorded rather than silently halved. Do not "fix" one side alone — that
-        // would make them disagree in a NEW way without anything failing.
-        let dups = live_duplicate_slot_ids();
-        if !dups.is_empty() {
-            let (head, rows) = super::duplicate_slot_id_report(&dups);
-            status.set(head);
-            findings.set(rows);
-            return;
-        }
-        let payload = compile_payload(&snap.small, &snap.slots, false);
-        let body = version_body(&semver, &notes, &payload);
-        let auth = snap.auth;
-        let path = format!("/missions/{}/versions", snap.mission_id);
-        let mission_id = snap.mission_id.clone();
-        status.set(format!("Saving v{semver}…"));
-        spawn_local(async move {
-            match crate::v2::core::api::client::api_post::<serde_json::Value>(auth, &path, body)
-                .await
-            {
-                Ok(_) => {
-                    status.set(format!("Saved v{semver}"));
-                    // T-159.26 — the saved version is now what local derives from: clear the dirty
-                    // flag and update the current-semver signal so a later Export/adopt uses it.
-                    // (T-370 removed the `editor_session::mark_adopted` call that sat here: T-352
-                    // had already emptied it, and T-223 replaced the semver marker it once wrote
-                    // with the content test in `mission_hydrate::classify_local`.)
-                    crate::v2::apps::editor::bridge::document_host::history::set_dirty(false);
-                    // T-191 fix — expire the conflict backup pair. This 201 is the one moment those
-                    // whole-document IDB records stop being anybody's last copy, and nothing else ever
-                    // deleted them: they accumulated one doc per mission ever conflicted, forever, while
-                    // `__missionBackup.has()` kept offering a weeks-old document that a restore would
-                    // swap over current work. Rationale in `mission_hydrate::clear_local_backups`.
-                    crate::v2::apps::editor::shell::hydrate::clear_local_backups(&mission_id);
-                    if let Some(sig) = semver_signal() {
-                        sig.set(Some(semver.clone()));
-                    }
-                }
-                Err((409, _)) => status.set(format!("Version {semver} already exists")),
-                Err((413, _)) => status.set("Payload too large".to_string()),
-                Err((401, _)) => status.set("Sign in to save".to_string()),
-                Err((s, msg)) => {
-                    let (head, rows) =
-                        crate::v2::core::api::client::split_error_lines(msg.as_deref());
-                    let head = head.filter(|h| !h.is_empty());
-                    status.set(match (&head, rows.len()) {
-                        (Some(h), 0) => format!("Save rejected ({s}): {h}"),
-                        (Some(h), n) => format!("Save rejected ({s}): {h} — {n} problem(s) below"),
-                        (None, _) => format!("Save failed ({s})"),
-                    });
-                    findings.set(rows);
-                }
-            }
-        });
-    }
-
-    /// Current wall-clock ISO-8601 (`new Date().toISOString()`) — the one clock read, kept out of the
-    /// pure core (which takes `exported_at` as a param, so the smoke can pin it).
-    fn js_date_iso() -> String {
-        js_sys::Date::new_0()
-            .to_iso_string()
-            .as_string()
-            .unwrap_or_default()
-    }
-
-    /// The `Blob → URL.createObjectURL → <a download> → click → revokeObjectURL` download dance
-    /// (mirrors the React `exportJson` DOM path).
-    pub(crate) fn download_json(filename: &str, contents: &str) -> Result<(), JsValue> {
-        let win = web_sys::window().ok_or_else(|| JsValue::from_str("no window"))?;
-        let document = win
-            .document()
-            .ok_or_else(|| JsValue::from_str("no document"))?;
-
-        let parts = js_sys::Array::new();
-        parts.push(&JsValue::from_str(contents));
-        let opts = web_sys::BlobPropertyBag::new();
-        opts.set_type("application/json");
-        let blob = web_sys::Blob::new_with_str_sequence_and_options(parts.as_ref(), &opts)?;
-
-        let url = web_sys::Url::create_object_url_with_blob(&blob)?;
-
-        let anchor = document
-            .create_element("a")?
-            .dyn_into::<web_sys::HtmlAnchorElement>()?;
-        anchor.set_href(&url);
-        anchor.set_download(filename);
-        let el: &web_sys::HtmlElement = anchor.as_ref();
-        el.click();
-
-        web_sys::Url::revoke_object_url(&url)?;
-        Ok(())
-    }
-
-    /// T-693 (MENU-SCEN-011) — one row in the "Merge Mission…" picker: a mission the author can merge
-    /// FROM. `id` feeds [`merge_mission_now`]; `title` is the label.
-    #[derive(Clone, Debug, PartialEq, Eq)]
-    pub struct MissionPick {
-        /// The mission id (`GET /missions/:id`).
-        pub id: String,
-        /// The mission's display title.
-        pub title: String,
-    }
-
-    /// T-693 — the author's OTHER missions, for the "Merge Mission…" picker.
-    ///
-    /// Reuses the SPA's own list client (`GET /missions?scope=mine`, the same call
-    /// `missions::MissionLibraryPage` makes) through [`crate::v2::core::api::client::api_get`], which owns the
-    /// single-flight refresh — so this adds no second auth path. The CURRENT mission is filtered out
-    /// (you cannot merge a mission into itself). Titles come straight off the `MissionCard` rows.
-    ///
-    /// # Errors
-    /// A display string when the list request fails (offline / 401 / server error).
-    pub async fn other_missions(
-        auth: AuthStore,
-        exclude_id: &str,
-    ) -> Result<Vec<MissionPick>, String> {
-        use crate::v2::core::api::dto::{MissionCard, Paginated};
-        match crate::v2::core::api::client::api_get::<Paginated<MissionCard>>(
-            auth,
-            "/missions?scope=mine",
-        )
-        .await
-        {
-            Ok(page) => Ok(page
-                .data
-                .into_iter()
-                .filter(|c| c.id != exclude_id)
-                .map(|c| MissionPick {
-                    id: c.id,
-                    title: c.title,
-                })
-                .collect()),
-            Err((401, _)) => Err("Sign in to list your missions.".to_string()),
-            Err((s, msg)) => Err(match msg {
-                Some(m) if !m.is_empty() => format!("Could not load your missions ({s}): {m}"),
-                _ => format!("Could not load your missions ({s})."),
-            }),
-        }
-    }
-
-    /// T-693 (MENU-SCEN-011) — merge another mission (`source_id`) into the CURRENT document.
-    ///
-    /// Fetches the source's latest payload (`GET /missions/:id` → `current_version.json_payload`, the
-    /// same superset [`crate::v2::apps::editor::shell::hydrate`] loads), runs [`MissionDocCore::merge_mission_payload_json`]
-    /// on the hosted doc, and reports the outcome via toasts: a counts line plus, when the merge
-    /// tolerated malformed rows, an error toast listing each skipped row (the T-657 totality contract
-    /// made visible to the author). `offset` is the optional template placement delta.
-    ///
-    /// The whole merge is one undo step (the core opens one txn), so a mistaken merge is one Ctrl+Z.
-    /// The borrow of the hosted `MissionDocCore` is taken and released synchronously AFTER the
-    /// `.await` — never held across the yield (the module's borrow-safety contract).
-    pub fn merge_mission_now(
-        source_id: String,
-        offset: Option<(f64, f64)>,
-        toasts: crate::v2::core::ui::toast::Toasts,
-    ) {
-        let Some((doc, auth)) =
-            EDITOR_CTX.with(|c| c.borrow().as_ref().map(|ctx| (ctx.doc.clone(), ctx.auth)))
-        else {
-            toasts.error("Editor not ready.");
-            return;
-        };
-        let path = format!("/missions/{source_id}");
-        spawn_local(async move {
-            let detail = match crate::v2::core::api::client::api_get::<
-                crate::v2::core::api::dto::MissionDetail,
-            >(auth, &path)
-            .await
-            {
-                Ok(d) => d,
-                Err((401, _)) => {
-                    toasts.error("Sign in to merge a mission.");
-                    return;
-                }
-                Err((404, _)) => {
-                    toasts.error("That mission no longer exists.");
-                    return;
-                }
-                Err((s, _)) => {
-                    toasts.error(format!("Could not load the mission to merge ({s})."));
-                    return;
-                }
-            };
-            // The editor superset lives in `current_version.json_payload`; an empty `{}` (a
-            // never-saved source) has nothing to merge — say so rather than run an empty merge.
-            let payload = detail.current_version.as_ref().map(|v| &v.json_payload);
-            let is_empty =
-                payload.is_none_or(|p| p.as_object().is_none_or(serde_json::Map::is_empty));
-            if is_empty {
-                toasts.message(format!(
-                    "\"{}\" has no saved content to merge yet.",
-                    detail.title
-                ));
-                return;
-            }
-            let payload_json = payload
-                .map(std::string::ToString::to_string)
-                .unwrap_or_default();
-
-            // Borrow the doc only now (post-await), run the merge, drop the borrow before toasting.
-            let report_json = {
-                let borrow = doc.borrow();
-                let Some(core) = borrow.as_ref() else {
-                    toasts.error("Editor not ready.");
-                    return;
-                };
-                core.merge_mission_payload_json(&payload_json, offset)
-            };
-            // A merge is a document mutation, so it must run the SAME post-mutation tail every editor
-            // mutator ends on (`editor_ops` mutators all call this): materialize → prune the selection
-            // → rebind the engine slot/vehicle glyphs so the merged rows reach the GPU (they are
-            // invisible on the map otherwise) → bump `doc_ver` (which drives the validation panel's
-            // re-check and the attributes re-read) → set dirty → schedule the IDB persist → refresh the
-            // HUD counts. `set_dirty(true)` alone (the prior code) did only the last-but-two of those,
-            // so a wired merge reported success by toast while the map showed nothing. The `EDITOR_CTX`
-            // doc borrow was dropped at the end of the block above; `after_local_edit` takes its own
-            // `HISTORY_CTX` borrow, so this is not held across the earlier `.await`.
-            crate::v2::apps::editor::bridge::document_host::history::after_local_edit();
-
-            let (summary, skipped) = format_merge_report(&report_json);
-            toasts.success(format!("{summary} (Ctrl+Z to undo.)"));
-            if !skipped.is_empty() {
-                let head = if skipped.len() == 1 {
-                    "1 row was skipped:".to_string()
-                } else {
-                    format!("{} rows were skipped:", skipped.len())
-                };
-                toasts.error(format!("{head} {}", skipped.join("; ")));
-            }
-        });
-    }
-
-    /* ─────────────── T-698 — the browser half of the clipboard exporters ─────────────── */
-
-    /// The author-facing refusal when a clipboard exporter runs with nothing selected. A copy that
-    /// quietly did nothing is indistinguishable from a copy that worked until the paste lands empty.
-    const NOTHING_SELECTED: &str = "Nothing is selected — select an entity on the map first.";
-
-    /// The live selection ids.
-    ///
-    /// **Why through the `window.__editorSelection` bridge rather than a Rust call.** The selection
-    /// is app-side state held in `select_tool`'s leaked `SelectionHandle` and mirrored in
-    /// the installed `EDITOR_CONTEXT`; neither exposes a Rust ids accessor (`website_map_engine::editing::host::selection_len`
-    /// returns only the count, and `attrs_multi_ids` needs an anchor id and refuses below two). The
-    /// one exported reader is `__editorSelection.ids()`, which `select_tool::register_editor_selection`
-    /// installs over the same handle — so this reads the real selection, not a copy that can drift.
-    /// An `editor_ops::selection_ids()` would be the better seam and is reported as residue.
-    ///
-    /// Every failure along the way yields an EMPTY selection, which the callers turn into the
-    /// [`NOTHING_SELECTED`] refusal — never into a copy of something else.
-    fn selected_ids() -> Vec<String> {
-        let Some(win) = web_sys::window() else {
-            return Vec::new();
-        };
-        let Ok(bridge) = js_sys::Reflect::get(&win, &JsValue::from_str("__editorSelection")) else {
-            return Vec::new();
-        };
-        let Ok(f) = js_sys::Reflect::get(&bridge, &JsValue::from_str("ids")) else {
-            return Vec::new();
-        };
-        let Ok(f) = f.dyn_into::<js_sys::Function>() else {
-            return Vec::new();
-        };
-        let Ok(raw) = f.call0(&bridge) else {
-            return Vec::new();
-        };
-        raw.as_string()
-            .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
-            .unwrap_or_default()
-    }
-
-    /// The live selection resolved against the hosted document — the input every exporter shares.
-    fn selection_entities() -> Vec<SelectedEntity> {
-        let ids = selected_ids();
-        if ids.is_empty() {
-            return Vec::new();
-        }
-        EDITOR_CTX.with(|c| {
-            let guard = c.borrow();
-            let Some(ctx) = guard.as_ref() else {
-                return Vec::new();
-            };
-            let d = ctx.doc.borrow();
-            let Some(core) = d.as_ref() else {
-                return Vec::new();
-            };
-            resolve_selected_entities(&core.slots_json(), &core.small_maps_json(), &ids)
-        })
-    }
-
-    /// Resolve `navigator.clipboard`, REFUSING rather than throwing when the browser does not expose
-    /// it. The property is absent on an insecure origin (plain http on a non-localhost host), and
-    /// calling `writeText` on `undefined` would raise a JS exception straight through the wasm
-    /// boundary instead of producing a message an author can act on.
-    fn clipboard_api() -> Result<web_sys::Clipboard, String> {
-        let win = web_sys::window().ok_or_else(|| "there is no browser window".to_string())?;
-        let nav: JsValue = win.navigator().into();
-        let raw = js_sys::Reflect::get(&nav, &JsValue::from_str("clipboard"))
-            .map_err(|_| "this browser exposes no navigator.clipboard".to_string())?;
-        if raw.is_undefined() || raw.is_null() {
-            return Err(
-                "the Clipboard API is unavailable here — it needs a secure context (https, or \
-                 localhost)"
-                    .to_string(),
-            );
-        }
-        Ok(raw.unchecked_into::<web_sys::Clipboard>())
-    }
-
-    /// Best-effort human text for a rejected clipboard promise (a `DOMException` carries `message`).
-    fn js_error_text(e: &JsValue) -> String {
-        if let Some(s) = e.as_string() {
-            return s;
-        }
-        if let Ok(m) = js_sys::Reflect::get(e, &JsValue::from_str("message")) {
-            if let Some(s) = m.as_string() {
-                return s;
-            }
-        }
-        format!("{e:?}")
-    }
-
-    /// **T-698 — write to the clipboard and REPORT the outcome. Never fire-and-forget.**
-    ///
-    /// `navigator.clipboard.writeText` returns a promise that rejects on an insecure context, on an
-    /// unfocused document, and on a denied permission. Dropping that promise and toasting success
-    /// anyway is the "reported success over something it never did" defect: the author walks away
-    /// believing a grid reference is on their clipboard and pastes whatever was there before. So the
-    /// promise is AWAITED, and the success toast is on the resolve arm only — the failure arm names
-    /// the browser's own reason.
-    ///
-    /// **T-773 promoted this to the crate's ONE clipboard path.** `server_intel::server_panel`'s
-    /// Copy button carried the very defect this function was written against — a dropped
-    /// `write_text` promise followed by an unconditional "copied" toast — and it was the live
-    /// in-repo precedent any new exporter would have copied. It now calls through here (reachable
-    /// as `crate::v2::apps::editor::shell::document_commands::write_clipboard` via the `pub use imp::*` re-export below).
-    /// A second clipboard path is a defect in itself: two vocabularies for "did the copy land"
-    /// means one of them is eventually wrong and nobody notices. If another surface needs to copy,
-    /// call this — do not re-derive it.
-    pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: Toasts) {
-        let clipboard = match clipboard_api() {
-            Ok(c) => c,
-            Err(why) => {
-                toasts.error(format!("Could not copy — {why}."));
-                return;
-            }
-        };
-        let promise = clipboard.write_text(&text);
-        spawn_local(async move {
-            match wasm_bindgen_futures::JsFuture::from(promise).await {
-                Ok(_) => toasts.success(ok_message),
-                Err(e) => toasts.error(format!(
-                    "Could not copy to the clipboard — {}. Click the map and try again.",
-                    js_error_text(&e)
-                )),
-            }
-        });
-    }
-
-    /// **T-698 exporter 1 — copy the selection's grid position.**
-    ///
-    /// `#[allow(dead_code)]`: this verb has no UI entry point yet. The menu bar (`eden_top_strip.rs`,
-    /// where `export_compiled_now`'s button lives) and the context menu (`context_menu.rs`) are both
-    /// outside this slice's owns, so the three exporters ship as commands and the missing "Copy grid
-    /// reference" row is reported as residue rather than reached across for. They are harness-drivable
-    /// today through `__editorCommands.clipboard_grid_json()` and its two peers.
-    #[allow(dead_code)]
-    pub fn copy_grid_position_now(toasts: crate::v2::core::ui::toast::Toasts) {
-        let entities = selection_entities();
-        if entities.is_empty() {
-            toasts.error(NOTHING_SELECTED);
-            return;
-        }
-        let text = super::grid_position_text(&entities);
-        let ok = if entities.len() == 1 {
-            format!("Copied the grid reference {text}.")
-        } else {
-            format!(
-                "Copied {}.",
-                super::count_noun(entities.len(), "grid reference", "grid references")
-            )
-        };
-        write_clipboard(text, ok, toasts);
-    }
-
-    /// **T-698 exporter 2 — copy the selection's classnames.** Same missing-menu-entry residue note
-    /// as [`copy_grid_position_now`].
-    ///
-    /// A selection whose every entity is classname-less copies NOTHING and says so: putting an empty
-    /// string on the clipboard while reporting success is the same silent-failure shape the awaited
-    /// promise exists to prevent.
-    #[allow(dead_code)]
-    pub fn copy_classnames_now(toasts: crate::v2::core::ui::toast::Toasts) {
-        let entities = selection_entities();
-        if entities.is_empty() {
-            toasts.error(NOTHING_SELECTED);
-            return;
-        }
-        let (text, skipped) = super::classnames_text(&entities);
-        if text.is_empty() {
-            toasts.error("Nothing in the selection carries a classname — nothing was copied.");
-            return;
-        }
-        let copied = entities.len() - skipped;
-        let ok = if skipped == 0 {
-            format!(
-                "Copied {}.",
-                super::count_noun(copied, "classname", "classnames")
-            )
-        } else {
-            format!(
-                "Copied {}, skipping {} with no classname.",
-                super::count_noun(copied, "classname", "classnames"),
-                super::count_noun(skipped, "entity", "entities")
-            )
-        };
-        write_clipboard(text, ok, toasts);
-    }
-
-    /// **T-698 exporter 3 — copy a human-readable digest of the selection.** Same missing-menu-entry
-    /// residue note as [`copy_grid_position_now`].
-    #[allow(dead_code)]
-    pub fn copy_selection_summary_now(toasts: crate::v2::core::ui::toast::Toasts) {
-        let entities = selection_entities();
-        if entities.is_empty() {
-            toasts.error(NOTHING_SELECTED);
-            return;
-        }
-        let text = super::selection_summary_text(&entities);
-        let ok = format!(
-            "Copied a summary of {}.",
-            super::count_noun(entities.len(), "entity", "entities")
-        );
-        write_clipboard(text, ok, toasts);
-    }
-
-    /// T-698 — what a clipboard exporter WOULD put on the clipboard, for the harness.
-    ///
-    /// `{"text":…,"count":n,"skipped":k}` on success, `{"error":…}` on a refusal — the two are
-    /// distinguishable by shape, the `compiled_diagnostics_json` precedent. This deliberately does
-    /// NOT touch the clipboard: a headless gate has no clipboard permission, and a reader that had
-    /// to grant one would test the browser rather than the exporter. The clipboard write itself is
-    /// [`write_clipboard`], and its contract (await, then report) is prose the author can check
-    /// against the toast.
-    fn export_preview_json(kind: &str) -> String {
-        let entities = selection_entities();
-        if entities.is_empty() {
-            return serde_json::json!({ "error": NOTHING_SELECTED }).to_string();
-        }
-        let (text, skipped) = match kind {
-            "classnames" => super::classnames_text(&entities),
-            "summary" => (super::selection_summary_text(&entities), 0),
-            _ => (super::grid_position_text(&entities), 0),
-        };
-        serde_json::json!({
-            "text": text,
-            "count": entities.len(),
-            "skipped": skipped,
-        })
-        .to_string()
-    }
-
-    /// Install `window.__editorCommands` — the read-only compile smoke bridge (peer of `__missionDoc`,
+    /// Install `window.__editorCommands`  the read-only compile smoke bridge (peer of `__missionDoc`,
     /// same leaked-closure `js_sys::Object` idiom as `register_mission_doc`). `compile_save_json()` and
     /// `compile_export_json()` return the compiled JSON strings; the export path pins `exportedAt` +
     /// `missionId`/`version` to fixed values so the gate output is byte-deterministic.
     ///
-    /// **T-243 adds `compiled_document_json()`** — the same bytes the "Export Compiled" button
+    /// ** adds `compiled_document_json()`** the same bytes the "Export Compiled" button
     /// downloads. It is on the bridge for the reason the other two are: a compile whose only entry
     /// point is a `<button>` and a `Blob` download is a compile no harness can read back, and this one
     /// makes a claim worth checking against a live `GET /missions/:id/compiled`. Unlike its two peers
     /// it pins nothing: its whole value is being the real output. On a failure it returns the same
-    /// author-facing message the toast shows (a plain string either way — the caller can tell them
+    /// author-facing message the toast shows (a plain string either way  the caller can tell them
     /// apart by parsing).
     pub fn register_editor_commands(doc: DocHandle) {
         let obj = js_sys::Object::new();
@@ -980,11 +262,11 @@ mod imp {
             JsValue::from_str(&compiled_document_json().unwrap_or_else(|e| e))
         }) as Box<dyn FnMut() -> JsValue>);
 
-        // T-690 — the compile's structured findings as JSON, so a harness can read back what the
+        // the compile's structured findings as JSON, so a harness can read back what the
         // build step LEARNED and not only what it emitted. Same argument as `compiled_document_json`
         // above: a result whose only exit is a floating card is a result no harness can check.
         // Returns `[{ruleId, severity, primitive, message, subject, subjectId}]`, `[]` on a clean
-        // compile, and `{"error": "…"}` on a refusal — the three cases are distinguishable by shape.
+        // compile, and `{"error": "…"}` on a refusal  the three cases are distinguishable by shape.
         let compiled_diags = Closure::wrap(Box::new(move || -> JsValue {
             let out = match compiled_document_json_with_diagnostics() {
                 Ok((_, findings)) => {
@@ -1044,7 +326,7 @@ mod imp {
                 JsValue::from_str(&json)
             }) as Box<dyn FnMut() -> JsValue>)
         };
-        // T-693 — merge a payload JSON string into the hosted doc and return the report JSON. Unlike
+        // merge a payload JSON string into the hosted doc and return the report JSON. Unlike
         // its read-only peers this one MUTATES (the merge is one undo step in-core), so a smoke that
         // calls it should undo after. Takes the payload as a JS string arg; no offset (the harness
         // exercises the authored-position path). Returns the [`MergeReport`] JSON.
@@ -1061,7 +343,7 @@ mod imp {
             }) as Box<dyn FnMut(JsValue) -> JsValue>)
         };
 
-        // T-698 — one closure per exporter over the shared [`export_preview_json`] reader.
+        // one closure per exporter over the shared [`export_preview_json`] reader.
         let clipboard_grid = Closure::wrap(Box::new(move || -> JsValue {
             JsValue::from_str(&export_preview_json("grid"))
         }) as Box<dyn FnMut() -> JsValue>);
@@ -1097,7 +379,7 @@ mod imp {
             &JsValue::from_str("merge_mission_json"),
             merge_fn.as_ref(),
         );
-        // T-698 — the three clipboard exporters, readable. Same argument as `compiled_document_json`
+        // the three clipboard exporters, readable. Same argument as `compiled_document_json`
         // above: an exporter whose only exit is a `navigator.clipboard` write is an exporter no
         // harness can read back, and the clipboard is not readable in a headless gate.
         for (name, closure) in [
@@ -1126,7 +408,7 @@ mod imp {
 pub use imp::*;
 
 /// The grid-reference exporter is pinned against the map furniture's own edge labels, which only
-/// the frontend draws — so the pin sits here, on the side of the wall that can read both.
+/// the frontend draws  so the pin sits here, on the side of the wall that can read both.
 #[cfg(test)]
 #[path = "tests/exporter_grid_reference.rs"]
 mod exporter_grid_reference_tests;

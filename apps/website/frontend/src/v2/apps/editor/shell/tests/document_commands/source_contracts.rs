@@ -5,7 +5,7 @@ fn class_r_source_forbids_value_pretty_on_compiled_export() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     const SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/document_commands.rs"
+        "/src/v2/apps/editor/shell/document_commands/imp/compilation.rs"
     ));
     let production = live_code(SRC);
     let code = only_body(
@@ -161,7 +161,7 @@ fn class_r_merge_mission_now_runs_the_after_local_edit_tail() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     const SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/document_commands.rs"
+        "/src/v2/apps/editor/shell/document_commands/imp/mission_merge.rs"
     ));
     let production = live_code(SRC);
     let code = only_body(&production, "pub fn merge_mission_now");
@@ -248,7 +248,7 @@ fn class_r_the_export_publishes_to_the_panel_and_builds_no_second_one() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     const SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/document_commands.rs"
+        "/src/v2/apps/editor/shell/document_commands/imp/exports.rs"
     ));
     let production = live_code(SRC);
     let code = only_body(&production, "pub fn export_compiled_now(");
@@ -284,7 +284,7 @@ fn class_r_write_clipboard_toasts_only_on_the_resolve_arm() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     const SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/document_commands.rs"
+        "/src/v2/apps/editor/shell/document_commands/imp/clipboard.rs"
     ));
     let production = live_code(SRC);
     let body = only_body(

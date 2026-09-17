@@ -941,7 +941,7 @@ fn the_mission_document_is_measured_and_still_defers_to_the_single_flight_client
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
     let src = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/hydrate.rs"
+        "/src/v2/apps/editor/shell/hydrate/server_reconciliation.rs"
     )));
     let body = only_body(&src, "async fn get_mission_measured(");
     // `live_code` blanks string literals — see the terrain pin for why the shape, not the

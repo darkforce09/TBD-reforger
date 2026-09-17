@@ -11,18 +11,30 @@ fn reset() {
     RETRY.with(|r| *r.borrow_mut() = None);
 }
 
+fn persist_text() -> String {
+    [
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/shell/persist.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/shell/persist/record_store.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/shell/persist/save_scheduler.rs"
+        )),
+    ]
+    .join("\n")
+}
+
 fn persist_live() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/persist.rs"
-    )))
+    live_code(&persist_text())
 }
 
 fn persist_source() -> String {
-    live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/persist.rs"
-    )))
+    live_source(&persist_text())
 }
 
 fn run_save_err_arm() -> String {

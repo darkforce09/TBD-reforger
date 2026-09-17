@@ -3,18 +3,30 @@
 use super::*;
 use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_item};
 
+fn persist_text() -> String {
+    [
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/shell/persist.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/shell/persist/record_store.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/shell/persist/save_scheduler.rs"
+        )),
+    ]
+    .join("\n")
+}
+
 fn persist_live() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/persist.rs"
-    )))
+    live_code(&persist_text())
 }
 
 fn persist_src() -> String {
-    live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/persist.rs"
-    )))
+    live_source(&persist_text())
 }
 
 fn overlays_src() -> String {
@@ -179,7 +191,7 @@ fn t190_a_second_tab_cannot_silently_overwrite_the_first() {
 fn t190_the_channel_and_the_lock_follow_the_client_rs_precedent() {
     let src = live_source(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/tab_lock.rs"
+        "/src/v2/apps/editor/shell/tab_lock/live.rs"
     )));
     let prod = src.split("#[cfg(test)]").next().expect("test module");
     assert!(
@@ -202,7 +214,7 @@ fn t190_the_channel_and_the_lock_follow_the_client_rs_precedent() {
     // refuses an ambiguous marker rather than picking one of two.
     let src = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/shell/tab_lock.rs"
+        "/src/v2/apps/editor/shell/tab_lock/live.rs"
     )));
     let join = only_item(&src, "pub fn join(mission_id:").to_string();
     assert!(

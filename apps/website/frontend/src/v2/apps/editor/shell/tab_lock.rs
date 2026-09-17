@@ -1,59 +1,20 @@
-//! T-190 (F-32) — two tabs on one mission stop clobbering each other.
-//!
-//! Every tab of `/missions/:id/edit` writes the *same* per-account IndexedDB record
-//! ([`super::persist::save_state_as`]), and until this module nothing told any of them that the
-//! others existed. The UX review's verified repro: tab B loaded the same `OBJ9`, deleted everything
-//! (`OBJ0`) while tab A still showed `OBJ9`, both debounces fired, the last one won, and the next
-//! reload blamed **server** drift for a divergence two *local* tabs had caused. Three things fix it:
-//!
-//! 1. **A writer role, so the second tab cannot silently overwrite the first.** One tab per mission
-//!    holds it; every other tab is [`TabRole::ReadOnly`], shows [`TabLockBanner`], and its saves
-//!    [`SaveDecision::Defer`] instead of landing.
-//! 2. **A read-merge-write in `persist.rs`, so nothing is lost when writes DO interleave.**
-//!    [`decide_save`] is the policy that function obeys; the merge is `MissionDocCore::apply_update`
-//!    — a CRDT union, never a JSON diff.
-//! 3. **A conflict modal that names both options** (`hydrate.rs` + `bridge/overlays.rs`).
-//!
-//! # A Web Lock for the role, a BroadcastChannel for the announcements
-//!
-//! Both reach the platform through `js_sys::Reflect`, following `core::client.rs` (`:422-430`,
-//! `:509-532`) verbatim: `web_sys::BroadcastChannel` is not in this crate's web-sys feature list
-//! and `web_sys::LockManager` is behind `--cfg=web_sys_unstable_apis`, a workspace-wide RUSTFLAGS
-//! change. Reflect costs no dependency and no build flag, and this slice owns no `Cargo.toml`.
-//!
-//! They are not interchangeable. The **lock decides the role**, because the browser releases it
-//! when the page *goes away* — the crash case a presence ping cannot cover (see
-//! `live::claim_writer_lock`). The **channel carries what the lock cannot**: the peer count the
-//! banner names, and `saved`, which is how a read-only tab learns to pull the writer's record
-//! instead of discovering the divergence at the next reload. Where Web Locks are unavailable — they
-//! need a secure context, and staging over plain http on a bare IP has none — the role falls back
-//! to [`elect`] over the presence messages. That fallback is strictly weaker, and it is why item 2
-//! is not optional: **the role is an ergonomic guarantee; the merge is the data guarantee.**
-//!
-//! # Ungated, deliberately
-//!
-//! Registered in `shell/mod.rs` without a `target_arch` gate, for the reason `save_status` gives at
-//! `:29-32`: `cargo test -p website-frontend` runs on the **host**, and this crate links
-//! `map-engine-core` *without* the `doc` feature off wasm32 (`Cargo.toml:26` vs `:115`) — so there
-//! is no `MissionDocCore` and no `yrs` natively, and this repo has no wasm-bindgen-test harness
-//! either. Everything decidable without a browser therefore lives here as a pure function with a
-//! native test ([`elect`], [`decide_save`], [`Stamp`], [`ago`], [`short_utc`], [`banner_copy`]),
-//! and the wasm-only write path is pinned through `class_r_scrub` — the same oracle
-//! `save_status.rs` already uses over `persist.rs`.
+//! Coordinates the writer role for tabs editing the same mission.
+//! A browser lock selects the writer, presence messages inform peer tabs, and write stamps
+//! identify the record that each tab last saved.
 
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// The BroadcastChannel name for one mission's tabs. Per mission id, not per account: two accounts
 /// on one machine would still be two tabs writing one physical key's neighbourhood, and the record
-/// scoping (T-221) is what keeps their *bytes* apart — this channel only has to keep their
+/// scoping () is what keeps their *bytes* apart  this channel only has to keep their
 /// *presence* visible.
 pub const CHANNEL_PREFIX: &str = "tbd-mission-tabs:";
 
 /// The Web Lock whose holder is the writer for one mission.
 pub const WRITER_LOCK_PREFIX: &str = "tbd-mission-writer:";
 
-/// `localStorage` prefix for the write stamp — see [`Stamp`].
+/// `localStorage` prefix for the write stamp  see [`Stamp`].
 pub const STAMP_PREFIX: &str = "tbd-mission-draft:";
 
 /// What this tab is allowed to do with the shared IndexedDB record.
@@ -63,7 +24,7 @@ pub enum TabRole {
     #[default]
     Writer,
     /// Another tab holds it. This tab keeps editing in memory, shows [`TabLockBanner`], and does
-    /// not write — its edits reach the record when it inherits the role and its first save merges.
+    /// not write  its edits reach the record when it inherits the role and its first save merges.
     ReadOnly,
 }
 
@@ -90,14 +51,14 @@ pub struct Msg {
 ///
 /// A `localStorage` sidecar, not a field inside the record, and that is a decision: the record's
 /// value is a `Uint8Array` and `persist::read_raw` treats anything else as *unreadable*, so
-/// wrapping the blob to carry a timestamp would make every pre-T-190 record unreadable to this
-/// build and every post-T-190 record unreadable to any older one. A sidecar key changes no format.
+/// wrapping the blob to carry a timestamp would make every pre- record unreadable to this
+/// build and every post- record unreadable to any older one. A sidecar key changes no format.
 ///
-/// It answers two questions with one fact. **"Must I merge before I write?"** — no, if the last
+/// It answers two questions with one fact. **"Must I merge before I write?"** no, if the last
 /// writer was me: a CRDT document only ever grows, so a record I wrote is a subset of my own
 /// current state and re-reading it costs an O(document) decode to learn nothing. Any other answer
 /// (another tab, or no stamp at all) means the record may hold blocks I have never seen. And
-/// **"when was the local copy last written?"** — the conflict modal's local timestamp, which F-32
+/// **"when was the local copy last written?"** the conflict modal's local timestamp, which F-32
 /// says the author was choosing without.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Stamp {
@@ -120,8 +81,8 @@ pub enum SaveDecision {
 /// The policy `run_save` obeys, as a pure function so it can be tested on the host.
 ///
 /// The `None` stamp deliberately means **merge**, not write-through. A record nobody can attribute
-/// is exactly the record that may hold someone else's only copy — the same posture T-221 takes for
-/// an unowned orphan and T-374 takes for an unreadable one. Reading it costs one decode; assuming
+/// is exactly the record that may hold someone else's only copy  the same posture  takes for
+/// an unowned orphan and  takes for an unreadable one. Reading it costs one decode; assuming
 /// it is ours costs a document.
 #[must_use]
 pub fn decide_save(role: TabRole, stamp: Option<&Stamp>, me: &str) -> SaveDecision {
@@ -191,7 +152,7 @@ pub fn ago(now_ms: f64, then_ms: f64) -> String {
 }
 
 /// An RFC 3339 instant from the API as `YYYY-MM-DD HH:MM UTC`. Anything that is not shaped like one
-/// comes back untouched — a timestamp the modal cannot parse is still better shown than dropped.
+/// comes back untouched  a timestamp the modal cannot parse is still better shown than dropped.
 #[must_use]
 pub fn short_utc(iso: &str) -> String {
     let (date, rest) = match iso.split_once('T') {
@@ -217,7 +178,7 @@ thread_local! {
     /// outlive its page.
     static TAB_ID: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
     /// The role, as a plain cell. Source of truth, because `persist.rs` reads it from detached
-    /// timers and async tasks that hold no reactive owner — the `save_status` / `LAST_FLUSH_MS`
+    /// timers and async tasks that hold no reactive owner  the `save_status` / `LAST_FLUSH_MS`
     /// idiom, for the same reason.
     static ROLE: std::cell::Cell<TabRole> = const { std::cell::Cell::new(TabRole::Writer) };
     /// The banner's reactive mirror, handed over by [`TabLockBanner`] which has an owner.
@@ -230,7 +191,7 @@ thread_local! {
     static PEERS_SIG: std::cell::RefCell<Option<RwSignal<usize>>> =
         const { std::cell::RefCell::new(None) };
     /// What to do when a peer announces it just wrote the record. Installed by
-    /// `persist::register_tab_sync`, so this module never has to reach into the writer — and the
+    /// `persist::register_tab_sync`, so this module never has to reach into the writer  and the
     /// dependency stays one-way.
     static ON_PEER_SAVED: std::cell::RefCell<Option<Box<dyn Fn()>>> =
         const { std::cell::RefCell::new(None) };
@@ -245,7 +206,7 @@ pub fn tab_id() -> String {
     TAB_ID.with(|t| t.borrow_mut().get_or_insert_with(mint_tab_id).clone())
 }
 
-/// This tab's role right now. Cheap and owner-free — `run_save` calls it from a timer.
+/// This tab's role right now. Cheap and owner-free  `run_save` calls it from a timer.
 #[must_use]
 pub fn role() -> TabRole {
     ROLE.with(std::cell::Cell::get)
@@ -287,7 +248,7 @@ fn publish_peer_count() {
     });
 }
 
-/// The read-only banner. Renders no DOM while this tab is the writer — the same
+/// The read-only banner. Renders no DOM while this tab is the writer  the same
 /// "`None` renders nothing" discipline the conflict dialog uses, so it is V-capture-safe.
 ///
 /// It creates both signals and parks them for the cells to push to, **seeded from those cells**,
@@ -321,7 +282,7 @@ pub fn TabLockBanner() -> impl IntoView {
 #[cfg(target_arch = "wasm32")]
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn mint_tab_id() -> String {
-    // 64 random bits, formatted hex. Not a credential and never persisted — it distinguishes tabs
+    // 64 random bits, formatted hex. Not a credential and never persisted  it distinguishes tabs
     // of one browser, so `Math::random` is the right size of tool.
     let a = (js_sys::Math::random() * f64::from(u32::MAX)) as u32;
     let b = (js_sys::Math::random() * f64::from(u32::MAX)) as u32;
@@ -334,322 +295,7 @@ fn mint_tab_id() -> String {
 }
 
 #[cfg(target_arch = "wasm32")]
-mod live {
-    use super::{
-        Msg, Presence, Stamp, TabRole, CHANNEL_PREFIX, LOCK_DECIDED, ON_PEER_SAVED, PEERS,
-        WRITER_LOCK_PREFIX,
-    };
-    use wasm_bindgen::JsCast;
-    use wasm_bindgen::JsValue;
-
-    thread_local! {
-        /// The channel object, kept alive so its `message` listener keeps firing.
-        static CHANNEL: std::cell::RefCell<Option<js_sys::Object>> =
-            const { std::cell::RefCell::new(None) };
-        /// The mission this tab joined, so a re-join of the SAME mission is a no-op.
-        static JOINED: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
-        /// The writer lock's `resolve`. Calling it settles the promise that holds the lock, which
-        /// is the only way this page can release it early — see [`release`].
-        static RELEASE: std::cell::RefCell<Option<js_sys::Function>> =
-            const { std::cell::RefCell::new(None) };
-    }
-
-    /// Let go of the current mission: release the writer lock and drop the channel and peer list.
-    ///
-    /// Needed because the editor is a **client-side route**. Opening mission A and then mission B in
-    /// one page never reloads the wasm module, so without this the tab would still hold A's writer
-    /// lock and A's channel while editing B — B would get no presence at all (`join` would find
-    /// itself already joined) and a third tab genuinely on A would be told, wrongly and for as long
-    /// as this page lived, that A was taken.
-    fn release() {
-        if let Some(resolve) = RELEASE.with(|r| r.borrow_mut().take()) {
-            let _ = resolve.call0(&JsValue::UNDEFINED);
-        }
-        LOCK_DECIDED.set(false);
-        CHANNEL.with(|c| *c.borrow_mut() = None);
-        PEERS.with(|p| p.borrow_mut().clear());
-        OPENED_AT.set(f64::NAN); // re-mint: the fallback election orders tabs by when they opened
-        super::publish_peer_count();
-    }
-
-    /// `window.navigator.locks`, or `None` outside a secure context. Reflect, for the reason
-    /// `core::client::lock_manager` states: the web-sys bindings are behind
-    /// `--cfg=web_sys_unstable_apis`, a workspace RUSTFLAGS change for one object.
-    fn lock_manager() -> Option<js_sys::Object> {
-        let nav = web_sys::window()?.navigator();
-        let locks = js_sys::Reflect::get(nav.as_ref(), &"locks".into()).ok()?;
-        (!locks.is_undefined() && !locks.is_null()).then(|| locks.unchecked_into())
-    }
-
-    /// Ask for the mission's writer lock and hold it until this page lets go or goes away.
-    ///
-    /// The callback returns a promise that settles only when [`release`] calls its `resolve`, so
-    /// the browser keeps the lock through everything else — including a crash, which is the whole
-    /// reason the role is a lock and not a message. The grant is the promotion; the release is the
-    /// handover to whichever tab is next in the queue, and that tab's own pending callback fires
-    /// with no traffic at all.
-    fn claim_writer_lock(mission_id: &str) {
-        let Some(locks) = lock_manager() else {
-            return; // insecure context — the presence election in `on_message` decides instead
-        };
-        let Ok(request) = js_sys::Reflect::get(&locks, &"request".into()) else {
-            return;
-        };
-        let Ok(request) = request.dyn_into::<js_sys::Function>() else {
-            return;
-        };
-        // Not the writer until the browser says so. Set BEFORE the request so the window between
-        // asking and being granted is read-only rather than a second writer.
-        super::set_role(TabRole::ReadOnly);
-        let cb = wasm_bindgen::closure::Closure::once_into_js(move |_lock: JsValue| -> JsValue {
-            LOCK_DECIDED.set(true);
-            super::set_role(TabRole::Writer);
-            // The lock is held for exactly as long as this promise is pending, and only `release`
-            // holds the handle that can settle it.
-            js_sys::Promise::new(&mut |resolve, _reject| {
-                RELEASE.with(|r| *r.borrow_mut() = Some(resolve));
-            })
-            .into()
-        });
-        let name = format!("{WRITER_LOCK_PREFIX}{mission_id}");
-        if request.call2(&locks, &name.into(), &cb).is_err() {
-            // `request` can reject rather than invoke (a document that is not fully active, an
-            // opaque origin). Refusing to write forever on that would be worse than the race it
-            // closes, so fall back to the announcement election, exactly as `with_refresh_lock`
-            // falls back to running unlocked.
-            super::set_role(TabRole::Writer);
-        }
-    }
-
-    /// Open the channel, announce this tab, and start tracking peers.
-    ///
-    /// Idempotent for the same mission; for a **different** one it says goodbye and lets go first
-    /// (see [`release`]) — the editor is a client-side route and the wasm module outlives it.
-    pub fn join(mission_id: &str) {
-        let already = JOINED.with(|j| j.borrow().clone());
-        match already {
-            Some(prev) if prev == mission_id => return,
-            Some(_) => {
-                leave();
-                release();
-            }
-            None => {}
-        }
-        JOINED.with(|j| *j.borrow_mut() = Some(mission_id.to_string()));
-        claim_writer_lock(mission_id);
-        let Some(win) = web_sys::window() else { return };
-        let Ok(ctor) = js_sys::Reflect::get(win.as_ref(), &"BroadcastChannel".into()) else {
-            return;
-        };
-        let Ok(ctor) = ctor.dyn_into::<js_sys::Function>() else {
-            return;
-        };
-        let args = js_sys::Array::of1(&format!("{CHANNEL_PREFIX}{mission_id}").into());
-        let Ok(chan) = js_sys::Reflect::construct(&ctor, &args) else {
-            return;
-        };
-        let listener =
-            wasm_bindgen::closure::Closure::<dyn FnMut(JsValue)>::new(move |ev: JsValue| {
-                let Ok(data) = js_sys::Reflect::get(&ev, &"data".into()) else {
-                    return;
-                };
-                let Some(text) = data.as_string() else { return };
-                // Serde over the structured clone, for `client.rs`'s reason: a message from a
-                // future build with extra fields is ignored rather than half-read.
-                let Ok(msg) = serde_json::from_str::<Msg>(&text) else {
-                    return;
-                };
-                on_message(&msg);
-            });
-        let target: web_sys::EventTarget = chan.clone().unchecked_into();
-        if target
-            .add_event_listener_with_callback("message", listener.as_ref().unchecked_ref())
-            .is_ok()
-        {
-            // One closure per page, alive for as long as the channel is — leaked deliberately, the
-            // same way `client.rs` leaks its peer-rotation listener.
-            listener.forget();
-            CHANNEL.with(|c| *c.borrow_mut() = Some(chan.unchecked_into()));
-        }
-        post(&Msg {
-            kind: "hello".to_string(),
-            tab: super::tab_id(),
-            since: js_sys::Date::now(),
-        });
-    }
-
-    /// Handle one peer announcement.
-    fn on_message(msg: &Msg) {
-        let me = super::tab_id();
-        if msg.tab == me {
-            return; // BroadcastChannel does not echo to the sender, but a relay might
-        }
-        match msg.kind.as_str() {
-            "hello" | "here" => {
-                remember(&Presence {
-                    tab: msg.tab.clone(),
-                    since: msg.since,
-                });
-                if msg.kind == "hello" {
-                    // Answer, so the newcomer can count us and (with no Web Locks) elect.
-                    post(&Msg {
-                        kind: "here".to_string(),
-                        tab: me,
-                        since: opened_at(),
-                    });
-                }
-            }
-            "bye" => {
-                PEERS.with(|p| p.borrow_mut().retain(|q| q.tab != msg.tab));
-                super::publish_peer_count();
-                reelect();
-            }
-            "saved" => {
-                // A peer put fresh bytes at the shared key. Pull them into this document instead of
-                // discovering the divergence at the next reload.
-                ON_PEER_SAVED.with(|h| {
-                    if let Some(f) = h.borrow().as_ref() {
-                        f();
-                    }
-                });
-            }
-            _ => {}
-        }
-    }
-
-    fn remember(p: &Presence) {
-        PEERS.with(|peers| {
-            let mut peers = peers.borrow_mut();
-            match peers.iter_mut().find(|q| q.tab == p.tab) {
-                Some(slot) => slot.since = p.since,
-                None => peers.push(p.clone()),
-            }
-        });
-        super::publish_peer_count();
-        reelect();
-    }
-
-    /// Re-run the fallback election. **A no-op once `navigator.locks` has spoken** — the browser's
-    /// answer is authoritative and a message must never demote a tab it has made the writer.
-    fn reelect() {
-        if LOCK_DECIDED.get() || lock_manager().is_some() {
-            return;
-        }
-        let me = Presence {
-            tab: super::tab_id(),
-            since: opened_at(),
-        };
-        let peers = PEERS.with(|p| p.borrow().clone());
-        super::set_role(super::elect(&me, &peers));
-    }
-
-    thread_local! {
-        static OPENED_AT: std::cell::Cell<f64> = const { std::cell::Cell::new(f64::NAN) };
-    }
-
-    /// The instant this tab opened the mission, minted once.
-    fn opened_at() -> f64 {
-        let at = OPENED_AT.get();
-        if at.is_nan() {
-            let now = js_sys::Date::now();
-            OPENED_AT.set(now);
-            return now;
-        }
-        at
-    }
-
-    /// Post one message. Best effort: a dropped announcement costs a banner, never a document —
-    /// the merge is what protects the bytes.
-    pub fn post(msg: &Msg) {
-        let Some(chan) = CHANNEL.with(|c| c.borrow().clone()) else {
-            return;
-        };
-        let Ok(post) = js_sys::Reflect::get(&chan, &"postMessage".into()) else {
-            return;
-        };
-        let Ok(post) = post.dyn_into::<js_sys::Function>() else {
-            return;
-        };
-        if let Ok(text) = serde_json::to_string(msg) {
-            let _ = post.call1(&chan, &text.into());
-        }
-    }
-
-    /// Announce departure so the surviving tabs re-elect immediately instead of waiting for the
-    /// Web Lock release to propagate. The lock covers the crash case; this covers the ordinary one.
-    pub fn leave() {
-        post(&Msg {
-            kind: "bye".to_string(),
-            tab: super::tab_id(),
-            since: 0.0,
-        });
-    }
-
-    /// Tell the other tabs a fresh record is on disk. Called from `persist::run_save`'s success
-    /// branch, after the bytes actually landed — never before.
-    pub fn announce_saved(at: f64) {
-        post(&Msg {
-            kind: "saved".to_string(),
-            tab: super::tab_id(),
-            since: at,
-        });
-    }
-
-    fn storage() -> Option<web_sys::Storage> {
-        web_sys::window()?.local_storage().ok()?
-    }
-
-    /// Who wrote the record at `physical_key`, and when. `None` when there is no stamp — which
-    /// [`super::decide_save`] treats as "merge", not "mine".
-    pub fn read_stamp(physical_key: &str) -> Option<Stamp> {
-        let raw = storage()?
-            .get_item(&super::stamp_key(physical_key))
-            .ok()??;
-        serde_json::from_str::<Stamp>(&raw).ok()
-    }
-
-    /// Record that this tab just wrote `physical_key`.
-    pub fn write_stamp(physical_key: &str, at: f64) {
-        let stamp = Stamp {
-            tab: super::tab_id(),
-            at,
-        };
-        if let (Some(store), Ok(text)) = (storage(), serde_json::to_string(&stamp)) {
-            let _ = store.set_item(&super::stamp_key(physical_key), &text);
-        }
-    }
-
-    /// `window.__missionTabs` — the read-only probe the editor gate and the operator checklist use
-    /// to see the role, the peer count and this tab's id without opening devtools on two windows.
-    pub fn register_bridge() {
-        let obj = js_sys::Object::new();
-        let role_fn = wasm_bindgen::closure::Closure::wrap(Box::new(move || -> JsValue {
-            JsValue::from_str(if super::may_write() {
-                "writer"
-            } else {
-                "read-only"
-            })
-        })
-            as Box<dyn FnMut() -> JsValue>);
-        let peers_fn = wasm_bindgen::closure::Closure::wrap(Box::new(move || -> JsValue {
-            #[allow(clippy::cast_precision_loss)]
-            JsValue::from_f64(super::peer_count() as f64)
-        })
-            as Box<dyn FnMut() -> JsValue>);
-        let id_fn = wasm_bindgen::closure::Closure::wrap(Box::new(move || -> JsValue {
-            JsValue::from_str(&super::tab_id())
-        }) as Box<dyn FnMut() -> JsValue>);
-        let _ = js_sys::Reflect::set(&obj, &"role".into(), role_fn.as_ref());
-        let _ = js_sys::Reflect::set(&obj, &"peers".into(), peers_fn.as_ref());
-        let _ = js_sys::Reflect::set(&obj, &"tab_id".into(), id_fn.as_ref());
-        if let Some(win) = web_sys::window() {
-            let _ = js_sys::Reflect::set(&win, &"__missionTabs".into(), &obj);
-        }
-        role_fn.forget();
-        peers_fn.forget();
-        id_fn.forget();
-    }
-}
+mod live;
 
 #[cfg(target_arch = "wasm32")]
 pub use live::{announce_saved, join, leave, read_stamp, register_bridge, write_stamp};
@@ -678,7 +324,7 @@ mod live {
     pub fn write_stamp(_physical_key: &str, _at: f64) {}
 }
 
-// `pub` does not make these reachable from outside — this crate is a `bin`, so an unused re-export
+// `pub` does not make these reachable from outside  this crate is a `bin`, so an unused re-export
 // is still an unused import. Their one caller (`persist.rs`) is wasm32-gated in `shell/mod.rs`, so
 // on the host nothing calls them and nothing should: they exist to keep that file's call sites free
 // of a second `cfg` each.
