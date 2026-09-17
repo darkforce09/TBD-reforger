@@ -1,6 +1,6 @@
 //! Editor shortcuts and the floating Controls Hint.
 //!
-//! The editor binds twenty-six distinct `KeyboardEvent` codes across fifteen window-level keydown listeners in twelve editor-surface modules, with forty-two bindings in total.
+//! The editor binds twenty-six distinct `KeyboardEvent` codes across fifteen window-level keydown listeners in fourteen editor-surface modules, with forty-two bindings in total.
 //! The catalog is checked against those live handlers so every binding has a help row.
 
 use crate::v2::apps::editor::shell::layout::HOVER_FILL;

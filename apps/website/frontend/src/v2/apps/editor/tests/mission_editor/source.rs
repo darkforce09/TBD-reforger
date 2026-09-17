@@ -44,3 +44,37 @@ pub(super) fn live_editor() -> String {
     );
     live_code(&source[source.find(&anchor).expect("counted above")..])
 }
+
+pub(super) fn live_pointer_gestures() -> String {
+    let mut source = live_code(include_str!("../../input/pointer_gestures.rs"));
+    source.push('\n');
+    source.push_str(&live_pointer_gesture_handlers());
+    source
+}
+
+pub(super) fn live_pointer_gesture_handlers() -> String {
+    [
+        include_str!("../../input/pointer_gestures/wheel_zoom.rs"),
+        include_str!("../../input/pointer_gestures/pointer_down.rs"),
+        include_str!("../../input/pointer_gestures/pointer_move.rs"),
+        include_str!("../../input/pointer_gestures/pointer_up.rs"),
+        include_str!("../../input/pointer_gestures/pointer_up/special_drag_release.rs"),
+        include_str!("../../input/pointer_gestures/context_menu.rs"),
+        include_str!("../../input/pointer_gestures/double_click.rs"),
+    ]
+    .into_iter()
+    .map(live_code)
+    .collect::<Vec<_>>()
+    .join("\n")
+}
+
+pub(super) fn live_document_history() -> String {
+    [
+        include_str!("../../bridge/document_host/history.rs"),
+        include_str!("../../bridge/document_host/history/render_lanes.rs"),
+    ]
+    .into_iter()
+    .map(live_code)
+    .collect::<Vec<_>>()
+    .join("\n")
+}

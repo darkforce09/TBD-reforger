@@ -1,139 +1,51 @@
-//! T-936.7 — the canvas half of `tacticalGraphics[]`: draw, pick and drag the four control
-//! measures.
-//!
-//! ══ What this module is ═════════════════════════════════════════════════════════════════════
-//! The pure belt for the tactical-graphics lane, in the exact shape T-780 gave the connection
-//! line and T-784 gave the comment glyph: **one document read, drawn AND picked**.
-//! [`live_tactical_graphics`] is the read, [`tactical_lane_verts`] PACKS that read for the GPU,
-//! [`pick_tactical_graphic`] and [`pick_tactical_vertex`] HIT-TEST the same `Vec`. What is drawn
-//! and what a click can find are one set by construction rather than two parsers kept in step by
-//! hope — which is the defect T-784 recorded when the comment glyph had a private second parse.
-//!
-//! Everything here except [`live_tactical_graphics`] is pure and native-testable, which is the
-//! whole reason the parse/pack/pick trio lives in this file rather than in the wasm-only gesture
-//! and history modules that call it.
-//!
-//! ══ NO NEW RENDER LANE ══════════════════════════════════════════════════════════════════════
-//! The graphics ride `LaneRole::MissionZones` (`role_id::MISSION_ZONES`) through the generic
-//! `RenderEngine::upload_hairline_segments`, the same typed-free path `SquadLinks` uses. Nothing
-//! in `map-engine-render` changes — no `LaneRole` variant, no `role_id`, no pipeline, no atlas.
-//!
-//! **That lane is declared for zone rings and is squatted here, deliberately and visibly.**
-//! T-592 declared `MissionZones` as "mission zone rings … one flat `[x,y,r,g,b,a]…` LineList",
-//! but NOTHING in the editor uploads to it: the zone ring producer was never written, and the
-//! only other user in the tree (`v2/apps/debug/building_interior.rs`) already reuses this same role
-//! for an LoS ray — so reuse is the established pattern here, not an invention. A tactical
-//! graphic is mission line geometry in exactly this draw position (above `Grid`, below
-//! `MissionMarkers`, so a control measure can never occlude a marker or a slot), which is why the
-//! squat is honest rather than merely convenient. **The next slice that draws zone rings must
-//! MERGE into this pack rather than call `upload_hairline_segments` a second time** — a second
-//! upload to one role does not add to the lane, it REPLACES it, and whichever ran last would win
-//! silently. That is stated here because there is no compiler check for it.
-//!
-//! ══ Geometry ════════════════════════════════════════════════════════════════════════════════
-//! Three kinds draw their authored vertices as a straight polyline. `curved_arrow` draws a
-//! centripetal Catmull-Rom spline THROUGH them ([`catmull_rom`]), which is why the core validator
-//! floors it at three points: two points have no interior control point and the spline collapses
-//! to the straight segment `axis_of_advance` already is.
-//!
-//! Every kind that means DIRECTION (`axis_of_advance`, `curved_arrow`) gets an arrowhead at the
-//! last vertex, built from the final drawn span so a curve's head follows the curve's tangent
-//! rather than the chord. `boundary` gets perpendicular ticks at its authored vertices — the
-//! doctrinal way a boundary is told apart from a phase line on a monochrome map, and the reason
-//! the two kinds are not just two colours of the same line.
-//!
-//! ══ Picking ═════════════════════════════════════════════════════════════════════════════════
-//! Two picks, in priority order, both point-to-SEGMENT (never point-to-infinite-line, which would
-//! let a click far off the end of a short span but on its extension select it — a hit on nothing):
-//! [`pick_tactical_vertex`] finds an AUTHORED vertex to drag, and [`pick_tactical_graphic`] finds
-//! the whole graphic to select. The vertex pick wins where both hit, because a press on a vertex
-//! is unambiguously an edit gesture and a press on the span between two vertices is not.
-//!
-//! Tolerances are SCREEN pixels ([`TG_PICK_PX`], [`TG_VERTEX_PICK_PX`]), unprojected to world
-//! metres by the caller through the frozen press camera exactly as `CONN_PICK_PX` is — so the
-//! target stays a constant size on screen at every zoom without this file learning the
-//! projection's internals.
-
+//! Tactical graphic rows, geometry, and picking.
 use serde_json::Value;
 
 #[cfg(any(test, target_arch = "wasm32"))]
 pub use website_map_engine::data::store::operations::tactical_graphics::TacticalDraft;
 
-/// Click tolerance for [`pick_tactical_graphic`], in SCREEN pixels. Matches `CONN_PICK_PX`: a
-/// hairline is 1 px and nobody can click a 1 px target.
+/// Screen pixel tolerance for selecting a tactical graphic.
 pub(crate) const TG_PICK_PX: f64 = 6.0;
 
-/// Click tolerance for [`pick_tactical_vertex`], in SCREEN pixels. Wider than [`TG_PICK_PX`]
-/// because a vertex is a POINT rather than a run — the same reason a slot's disc is bigger than
-/// the hairline that reaches it — and because the vertex pick must win over the line pick where
-/// both are in range, which it cannot do reliably from a tighter radius.
+/// Screen pixel tolerance for selecting a graphic vertex.
 pub(crate) const TG_VERTEX_PICK_PX: f64 = 9.0;
 
-/// Samples emitted per authored span when tessellating a `curved_arrow`. Twelve is the count at
-/// which a span the width of the Everon map still reads as a curve rather than a chain of chords
-/// at full zoom-in, and it caps a 128-vertex graphic (the schema's `maxItems`) at ~1.5k segments —
-/// two orders of magnitude under the lanes this one sits beside.
+/// Samples used to approximate one curve span.
 pub(crate) const CURVE_SAMPLES_PER_SPAN: usize = 12;
 
-/// Arrowhead barb length as a fraction of the graphic's own drawn length, clamped by
-/// [`ARROW_HEAD_MIN_M`] / [`ARROW_HEAD_MAX_M`]. Proportional rather than fixed so a 200 m axis and
-/// a 6 km axis both read as arrows.
 const ARROW_HEAD_FRAC: f64 = 0.08;
 const ARROW_HEAD_MIN_M: f64 = 25.0;
 const ARROW_HEAD_MAX_M: f64 = 400.0;
-/// Half-angle of the arrowhead barbs, radians (~28°).
 const ARROW_HEAD_ANGLE: f64 = 0.5;
 
-/// Boundary tick half-length in metres, at the authored vertices.
 const BOUNDARY_TICK_M: f64 = 40.0;
 
-/// The SELECTED graphic: opaque amber, the hue `CONN_LINE_SELECTED_RGBA` uses for the same job on
-/// the connection lane, so "this is what Delete removes" reads identically on both lanes.
+/// Highlight color used for a selected tactical graphic.
 pub(crate) const TG_SELECTED_RGBA: [f32; 4] = [1.0, 0.78, 0.30, 1.0];
 
-/// Per-kind default colour, used when the author set no `style.color`. Doctrinal-ish and, more
-/// importantly, mutually distinguishable at a glance on a satellite basemap.
+/// Returns the default color assigned to a graphic kind.
 #[must_use]
 pub(crate) fn default_kind_rgba(kind: &str) -> [f32; 4] {
     match kind {
-        // Phase line: the cool control-measure blue markers already use.
         "phase_line" => [0.68, 0.78, 1.0, 0.90],
-        // Boundary: amber-yellow, the one hue nothing else on the mission lanes claims.
         "boundary" => [0.96, 0.88, 0.37, 0.90],
-        // Axis of advance: green — a friendly scheme of manoeuvre.
         "axis_of_advance" => [0.55, 0.90, 0.55, 0.90],
-        // Curved arrow: red — the kind most often used for an enemy or a counter-attack.
         "curved_arrow" => [0.95, 0.35, 0.30, 0.90],
         _ => [0.85, 0.85, 0.85, 0.85],
     }
 }
 
-/// One drawable tactical graphic, resolved from the document.
+/// A materialized tactical graphic ready for drawing and picking.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct TacticalGraphic {
-    /// `tacticalGraphics[].id`, the same id the pick returns and the delete consumes.
     pub(crate) id: String,
-    /// One of `map_engine_core::mission::tactical_graphics::KINDS`.
     pub(crate) kind: String,
-    /// The AUTHORED vertices — what a drag edits, and what [`pick_tactical_vertex`] hit-tests.
-    /// Never the tessellated curve.
     pub(crate) points: Vec<[f64; 2]>,
-    /// `label`, empty when unauthored. Carried so a later label lane has the read it needs; this
-    /// module draws no text (there is no text lane to draw it in without a new render lane).
     pub(crate) label: String,
-    /// Resolved stroke colour: `style.color`/`style.alpha` when authored, else
-    /// [`default_kind_rgba`].
     pub(crate) rgba: [f32; 4],
 }
 
-/// Parse the graphics out of an editor `meta.environment` bag.
-///
-/// **Lenient by construction, and that is deliberate.** This is a DRAW path over a live document
-/// the author is mid-way through editing: a row that is malformed is SKIPPED, never a panic and
-/// never a fabricated default. The refusal with a sentence belongs at the compile boundary
-/// (`map_engine_core::mission::tactical_graphics::validate`, which the `AUTHORED_BLOCKS` row
-/// runs), where the author can read it — the same split `copy_authored_blocks` documents for the
-/// save path.
+/// Parses tactical graphics from mission environment data.
 #[must_use]
 pub(crate) fn tactical_graphics_from_env(env: &Value) -> Vec<TacticalGraphic> {
     let Some(arr) = env.get("tacticalGraphics").and_then(Value::as_array) else {
@@ -161,8 +73,6 @@ pub(crate) fn tactical_graphics_from_env(env: &Value) -> Vec<TacticalGraphic> {
                 }
             }
         }
-        // A single vertex is not a line and has nothing to draw; skipping it here is the same
-        // "don't draw a lie" rule `connection_segments` applies to a dangling edge.
         if points.len() < 2 {
             continue;
         }
@@ -202,8 +112,6 @@ fn resolve_rgba(kind: &str, style: Option<&Value>) -> [f32; 4] {
     rgba
 }
 
-/// `#rrggbb` → linear-ish 0..1 RGB. `None` for anything the schema's `$defs/hexColor` would
-/// refuse, so a half-typed colour falls back to the kind default instead of drawing black.
 #[must_use]
 fn hex_to_rgb(hex: &str) -> Option<[f32; 3]> {
     let body = hex.strip_prefix('#')?;
@@ -216,17 +124,7 @@ fn hex_to_rgb(hex: &str) -> Option<[f32; 3]> {
     Some([c(0), c(2), c(4)])
 }
 
-/// Centripetal Catmull-Rom through `points`, `per_span` samples per authored span.
-///
-/// CENTRIPETAL (alpha = 0.5), not uniform. The uniform parameterisation is one line shorter and
-/// forms a CUSP or a self-intersecting loop whenever three authored vertices are unevenly spaced —
-/// which is what hand-drawn map vertices always are, so the uniform form would misdraw the common
-/// case rather than a corner one.
-///
-/// The endpoints are duplicated to synthesise the two phantom control points the spline needs, so
-/// the curve starts and ends exactly on the authored first and last vertices. Fewer than two
-/// points returns them unchanged: there is nothing to interpolate and inventing a curve would be a
-/// fabricated default.
+/// Samples a smooth polyline through control points.
 #[must_use]
 pub(crate) fn catmull_rom(points: &[[f64; 2]], per_span: usize) -> Vec<[f64; 2]> {
     if points.len() < 3 || per_span == 0 {
@@ -244,12 +142,8 @@ pub(crate) fn catmull_rom(points: &[[f64; 2]], per_span: usize) -> Vec<[f64; 2]>
     for span in 0..(n - 1) {
         let i = span as isize;
         let (p0, p1, p2, p3) = (at(i - 1), at(i), at(i + 1), at(i + 2));
-        // Centripetal knot spacing: t_{k+1} = t_k + |p_{k+1} - p_k|^0.5.
         let knot = |t: f64, a: [f64; 2], b: [f64; 2]| -> f64 {
             let d = (b[0] - a[0]).hypot(b[1] - a[1]);
-            // A repeated point would make two knots equal and divide by zero; nudging by an
-            // epsilon keeps the segment straight there instead of producing NaN vertices, which
-            // the GPU would draw as a wild spike rather than as nothing.
             t + d.sqrt().max(1e-6)
         };
         let t0 = 0.0;
@@ -295,8 +189,7 @@ fn catmull_rom_point(
     lerp(b1, b2, t1, t2)
 }
 
-/// The polyline actually DRAWN for `g`: the authored vertices for the three straight kinds, the
-/// Catmull-Rom tessellation for `curved_arrow`.
+/// Returns the drawable points of a graphic.
 #[must_use]
 pub(crate) fn drawn_polyline(g: &TacticalGraphic) -> Vec<[f64; 2]> {
     if g.kind == "curved_arrow" {
@@ -306,15 +199,12 @@ pub(crate) fn drawn_polyline(g: &TacticalGraphic) -> Vec<[f64; 2]> {
     }
 }
 
-/// Does this kind carry an arrowhead? Direction-bearing kinds do; a phase line and a boundary are
-/// not directed and an arrowhead on either would assert something the author did not.
+/// Reports whether a graphic kind draws an arrowhead.
 #[must_use]
 pub(crate) fn kind_has_arrowhead(kind: &str) -> bool {
     matches!(kind, "axis_of_advance" | "curved_arrow")
 }
 
-/// The two barb segments of the arrowhead at the END of `poly`, or empty when there is no
-/// direction to point in (fewer than two points, or a zero-length final span).
 #[must_use]
 fn arrowhead_segments(poly: &[[f64; 2]]) -> Vec<([f64; 2], [f64; 2])> {
     if poly.len() < 2 {
@@ -332,7 +222,6 @@ fn arrowhead_segments(poly: &[[f64; 2]]) -> Vec<([f64; 2], [f64; 2])> {
         .map(|w| (w[1][0] - w[0][0]).hypot(w[1][1] - w[0][1]))
         .sum();
     let len = (total * ARROW_HEAD_FRAC).clamp(ARROW_HEAD_MIN_M, ARROW_HEAD_MAX_M);
-    // Unit vector pointing BACK along the final span — the barbs are rotated off this.
     let (ux, uy) = (-dx / span, -dy / span);
     let (c, s) = (ARROW_HEAD_ANGLE.cos(), ARROW_HEAD_ANGLE.sin());
     let barb = |sign: f64| -> [f64; 2] {
@@ -343,12 +232,10 @@ fn arrowhead_segments(poly: &[[f64; 2]]) -> Vec<([f64; 2], [f64; 2])> {
     vec![(tip, barb(1.0)), (tip, barb(-1.0))]
 }
 
-/// Perpendicular tick segments at each AUTHORED vertex of a boundary.
 #[must_use]
 fn boundary_ticks(points: &[[f64; 2]]) -> Vec<([f64; 2], [f64; 2])> {
     let mut out = Vec::with_capacity(points.len());
     for (i, p) in points.iter().enumerate() {
-        // The local direction: the span leaving this vertex, or the one arriving at the last.
         let (a, b) = if i + 1 < points.len() {
             (*p, points[i + 1])
         } else {
@@ -374,11 +261,7 @@ fn boundary_ticks(points: &[[f64; 2]]) -> Vec<([f64; 2], [f64; 2])> {
     out
 }
 
-/// Every drawable segment of `g`, in draw order: the polyline spans, then the kind's ornament
-/// (arrowhead barbs or boundary ticks).
-///
-/// Shared by [`tactical_lane_verts`] and by nothing else on purpose — a second producer is how the
-/// drawn set and the picked set drift apart, which is exactly what the module header refuses.
+/// Builds all drawable line segments of a graphic.
 #[must_use]
 pub(crate) fn graphic_segments(g: &TacticalGraphic) -> Vec<([f64; 2], [f64; 2])> {
     let poly = drawn_polyline(g);
@@ -392,13 +275,7 @@ pub(crate) fn graphic_segments(g: &TacticalGraphic) -> Vec<([f64; 2], [f64; 2])>
     segs
 }
 
-/// Pack the graphics into the flat `[x,y,r,g,b,a]` LineList
-/// `RenderEngine::upload_hairline_segments` takes: 6 floats per vertex, 2 vertices per segment, in
-/// `graphics` order.
-///
-/// `selected` tints exactly one graphic, matched by id against the same ids
-/// [`pick_tactical_graphic`] returns and the delete consumes — so the highlighted line and the line
-/// Delete removes are the same line by construction rather than by convention (T-780's rule).
+/// Builds GPU lane vertices for tactical graphics.
 #[must_use]
 pub(crate) fn tactical_lane_verts(
     graphics: &[TacticalGraphic],
@@ -423,8 +300,7 @@ pub(crate) fn tactical_lane_verts(
     v
 }
 
-/// Segment count for the packed buffer — `verts.len() / 12`, stated once so no caller re-derives
-/// it and gets it wrong.
+/// Counts line segments in a tactical lane vertex array.
 #[must_use]
 pub(crate) fn lane_segment_count(verts: &[f32]) -> u32 {
     #[allow(clippy::cast_possible_truncation)]
@@ -433,7 +309,6 @@ pub(crate) fn lane_segment_count(verts: &[f32]) -> u32 {
     }
 }
 
-/// Squared point-to-segment distance, the shared kernel of both picks.
 fn dist_to_segment(px: f64, py: f64, a: [f64; 2], b: [f64; 2]) -> f64 {
     let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
     let len2 = dx.mul_add(dx, dy * dy);
@@ -445,13 +320,7 @@ fn dist_to_segment(px: f64, py: f64, a: [f64; 2], b: [f64; 2]) -> f64 {
     (px - t.mul_add(dx, a[0])).hypot(py - t.mul_add(dy, a[1]))
 }
 
-/// The graphic under a world point, or `None`. `tol_m` is the click radius in world metres (the
-/// caller converts [`TG_PICK_PX`] through the frozen press camera). Nearest wins, so overlapping
-/// graphics resolve deterministically instead of by listing order.
-///
-/// Tested against the DRAWN segments — including a curve's tessellation and the ornaments — so a
-/// click on the visible line always finds the graphic the operator can see, never the invisible
-/// chord between two authored vertices of a curve.
+/// Finds the nearest selectable graphic under a screen point.
 #[must_use]
 pub(crate) fn pick_tactical_graphic(
     graphics: &[TacticalGraphic],
@@ -471,10 +340,7 @@ pub(crate) fn pick_tactical_graphic(
     best.map(|(_, id)| id.to_string())
 }
 
-/// The AUTHORED vertex under a world point as `(graphic id, vertex index)`, or `None`.
-///
-/// Authored vertices only — a curve's tessellated samples are not draggable, because moving one
-/// would have nowhere to be written back to. Nearest wins.
+/// Finds a selectable graphic vertex under a screen point.
 #[must_use]
 pub(crate) fn pick_tactical_vertex(
     graphics: &[TacticalGraphic],
@@ -494,22 +360,7 @@ pub(crate) fn pick_tactical_vertex(
     best.map(|(_, id, i)| (id.to_string(), i))
 }
 
-/* ══════════ The DRAW state machine's pure half ═══════════════════════════════════════════════
- *
- * `tactical_graphics_authoring.rs` owns the in-flight draw, but that whole module is gated
- * `#[cfg(target_arch = "wasm32")]` at its `pub mod` (it reaches the document through
- * `EDITOR_CONTEXT`'s `!Send` `Rc`s), so
- * a `#[cfg(test)]` block there is compiled by NOTHING on the native test runner — it would report
- * a green that examined no code, which is the one defect this program exists to kill. So the parts
- * with real arithmetic live HERE, where `cargo test -p website-frontend` actually runs them, and
- * the wasm module is left as thin glue.
- */
-
-/// The live graphics for `core` — the wasm-side document read.
-///
-/// Reads `meta.environment.tacticalGraphics` out of `small_maps_json`, the SAME projection
-/// `editor_context::read_env_value` reads and `compile_payload`'s `copy_authored_blocks` promotes from,
-/// so the canvas and the compiled document can never disagree about what was authored.
+/// Reads materialized tactical graphics from the live mission document.
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn live_tactical_graphics(

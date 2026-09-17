@@ -8,13 +8,16 @@ fn gate_needles() -> (String, String, String) {
     )
 }
 
-/// The overlay components live in `editor/bridge/overlays.rs` (T-934.11). That file carries no
-/// `#[cfg(test)]`, so `live_code` scrubs it whole.
+/// The overlay components each live in a focused module without inline tests.
 fn overlays_region() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/overlays.rs"
-    )))
+    [
+        include_str!("../bridge/overlays/asset_picker.rs"),
+        include_str!("../bridge/overlays/comment_editor.rs"),
+        include_str!("../bridge/overlays/connections_panel.rs"),
+    ]
+    .into_iter()
+    .map(live_code)
+    .collect()
 }
 
 /// Page body + the T-934.14 keydown dispatch (`input/window_keydown.rs`), which hosts the shared

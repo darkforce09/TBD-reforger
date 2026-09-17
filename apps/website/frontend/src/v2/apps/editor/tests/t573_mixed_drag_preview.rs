@@ -56,10 +56,7 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     // T-934.13 — the pointermove/up/cancel closures the needles below sit in are split between
     // the page (pointercancel) and `input/pointer_gestures.rs` (the moved drag closures); examine both.
     let mut editor = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    editor.push_str(&live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    ))));
+    editor.push_str(&super::source::live_pointer_gestures());
     assert!(
         editor.contains("pub fn MissionEditorPage"),
         "canary: the scrubbed region must still contain the editor page, or the anchor moved \

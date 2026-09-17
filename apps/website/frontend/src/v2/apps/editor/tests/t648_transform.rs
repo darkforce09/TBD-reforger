@@ -19,10 +19,7 @@ fn editor_live() -> String {
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    ))));
+    src.push_str(&super::source::live_pointer_gestures());
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/input/window_keydown.rs"
@@ -643,14 +640,18 @@ fn widget_and_readout_are_mounted() {
 /// claim and its correction are comments, which `live_code` strips.
 #[test]
 fn false_t159_22_comment_is_corrected() {
-    // T-934.13 moved the pointerup closure (whose comment this pins) to input/pointer_gestures.rs; the
-    // negative check keeps sweeping BOTH files so the false claim cannot re-enter either.
+    // The negative check sweeps the editor, gesture wiring, and pointer-up body so the false
+    // claim cannot enter any of them.
     let raw = format!(
-        "{}{}",
+        "{}{}{}",
         super::source::raw_editor(),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/v2/apps/editor/input/pointer_gestures.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs"
         ))
     );
     // The false-claim needle is assembled from fragments so this test's OWN source (in this same

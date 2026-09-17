@@ -1,44 +1,16 @@
-//! T-934.12 — the Mission Creator VIEWPORT / frame-timing belt, split out of `mission_editor.rs`
-//! (Phase B; audit §4 Phase 1 item 4): [`device_size`] (CSS→device-pixel rounding), [`start_raf`]
-//! (the ~1 Hz debug-HUD sample and the T-670 guarded scale publish, hung off the shared frame
-//! pump), the three window-gate registrars ([`register_self_checks`] — which also installs the
-//! T-173 `__editorBench` — [`register_editor_cam`], [`register_slot_stats`]), the T-750
-//! [`mark_registry_fetch_failed`] failure writer and the T-245 [`registry_session`] SPA-session
-//! cache.
-//!
-//! Bodies are byte-identical to their `mission_editor.rs` originals except [`start_raf`], whose
-//! loop machinery moved to the renderer's one `RafPump` (`website-graphics-engine`, engine split
-//! 1E), leaving only the leptos half here. `mission_editor`
-//! re-exports every name here, so the page's bare call sites and the evacuated pins' `super::…`
-//! imports (`t245_registry_session`, `t750_registry_fetch_failure_signal`, `t670_scale_signal`)
-//! all keep their exact spelling. ITEM ORDER IS LOAD-BEARING for the Class-R scrubs:
-//! `registry_session` holds this file's only `#[cfg(test)]` (its `clear_for_test` helper) and
-//! sits LAST, so a whole-file `live_code` — which cuts from the first such literal to EOF —
-//! keeps every item above it (`t670`'s `start_raf` pins, `t750`'s body pin).
-// The same gate `mission_editor.rs` carries, for the same reason: everything above
-// `mark_registry_fetch_failed` is only reached from `#[cfg(target_arch = "wasm32")]` mount
-// closures, and the native build sees the rest as test-pin-only.
+//! Editor viewport sizing, frame loop, and debug bridges.
 #![allow(dead_code)]
 
 use leptos::prelude::*;
 
-/// Round CSS px → device-pixel backing size (≥1), matching the React oracle's `deviceSize`.
+/// Converts CSS dimensions and device pixel ratio to canvas pixels.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
     let r = |v: f64| ((v * dpr + 0.5).floor().max(1.0)) as u32;
     (r(css_w), r(css_h))
 }
 
-/// The editor's half of the rAF render loop — the HUD sample and the T-670 scale publish.
-///
-/// The loop itself is the renderer's one [`RafPump`], reached — like every other renderer type
-/// this app touches — through the map engine, never by depending on `website-graphics-engine`
-/// directly: it owns the frame cadence, the T-631 contention-tolerant borrow, the render → poll
-/// order (so readback `map_async` callbacks drain on the WebGL2-fallback + cull-counter path),
-/// the frame count, and stopping and dropping itself once `disposed` is set. What is left here
-/// is what is genuinely the app's: two Leptos signals and when they may be written.
-///
-/// The name stays because the leptos half stays — `t670_scale_signal` scrubs this file for it.
+/// Starts the damage-driven editor render loop.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn start_raf(
     engine: std::rc::Rc<
@@ -50,34 +22,13 @@ pub(crate) fn start_raf(
 ) {
     use website_map_engine::frame::RafPump;
 
-    // T-172 B9 — ~1 Hz debug readout sample (screen-05 bottom-right HUD): zoom, drawn world
-    // chunks, tree glyphs, FPS. Counting frames between samples measures real rAF cadence —
-    // the pump's count is monotonic, so the window is the difference across one sample.
     let mut frames_at_sample = 0u32;
     let mut last_sample = 0.0f64;
-    // T-670 — last PUBLISHED scale readout. The camera zoom is only reachable from inside this
-    // per-frame closure, so this is the guard that keeps a 60 fps read from becoming a 60 fps
-    // Leptos write: the frame formats the scale and calls `set` ONLY when the formatted string
-    // differs from what the status bar is already showing. Without it every frame would dirty
-    // `scale_mpp`, re-rendering the status bar (and the scale bar) 60×/s for a value that changes a
-    // handful of times per wheel gesture and never at all while panning or idle. Empty until the
-    // first frame publishes, so the seeded default is replaced as soon as the engine is live.
     let mut last_scale_text = String::new();
 
-    // The hook runs at the end of every RENDERED frame, inside the pump's engine borrow, with
-    // `frames` the running count including this one. A skipped frame (contended, or the engine
-    // not booted yet) never reaches here — which is exactly the old loop's behaviour, where
-    // every line below sat inside `if let Some(e) = guard.as_mut()`.
     RafPump::new(engine, disposed)
         .after_frame(move |e, frames| {
-            // T-090.12.5 — advance the viewshed's object wash under its per-frame budget.
             crate::v2::apps::editor::input::tools::los_world_wasm::tick_object_wash(e);
-            // T-670 — publish the screen scale for the status-bar readout (and, through it, the
-            // T-667 scale bar). Read every frame so a wheel-zoom shows on the very next frame
-            // rather than waiting up to a second for the ~1 Hz HUD sample below; WRITTEN only when
-            // the displayed string changes, so an idle or panning camera costs zero re-renders.
-            // The `m_per_px`/`format_m_per_px` pair is `eden_toolbelt`'s — the same conversion the
-            // scale bar uses and the same `2^(−deckZoom)` convention T-639's contour ladder takes.
             {
                 let mpp = crate::v2::apps::editor::ui::docks::toolbelt::m_per_px(e.zoom());
                 let text = crate::v2::apps::editor::ui::docks::toolbelt::format_m_per_px(mpp);
@@ -87,29 +38,18 @@ pub(crate) fn start_raf(
                 }
             }
             {
-                // js_sys::Date over web_sys Performance — no extra web-sys feature needed, and
-                // ms precision is plenty for a 1 Hz FPS sample.
                 let now = js_sys::Date::now();
                 if last_sample == 0.0 {
                     last_sample = now;
                 } else if now - last_sample >= 1000.0 {
-                    // `wrapping_sub` against the last sample: the pump's counter is monotonic
-                    // and wraps, and the difference stays right across the wrap.
                     let window = frames.wrapping_sub(frames_at_sample);
                     let fps = (f64::from(window) * 1000.0 / (now - last_sample)).round();
                     let stats: serde_json::Value =
                         serde_json::from_str(&e.stats()).unwrap_or_default();
                     let chunks = stats["chunks"].as_u64().unwrap_or(0);
                     let glyphs = stats["tree_glyphs"].as_u64().unwrap_or(0);
-                    // T-173 — frame-cost cell: submitted-frame CPU EMA + its FPS-equivalent
-                    // (1000/ms — the off-vsync headroom number; rAF FPS stays vsync-capped).
                     let rf_ms = stats["render_cpu_ms_ema"].as_f64().unwrap_or(0.0);
                     let rf_eq = if rf_ms > 0.0 { 1000.0 / rf_ms } else { 0.0 };
-                    // T-938.6 — the memory cell rides the same ~1 Hz sample and the same
-                    // `hud_suffix()` seam as T-090.12's occluder cell: one `RwSignal<String>`
-                    // formatted in exactly one place, so a new readout is a concatenation here
-                    // rather than a second HUD. It reads the ledger, which is cheap and
-                    // allocation-free, and it is empty until the boot has something to say.
                     debug_hud.set(format!(
                         "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
@@ -124,12 +64,7 @@ pub(crate) fn start_raf(
         .start();
 }
 
-/// Expose the byte-exact GPU readback self-checks on `window.__selfChecks` — the map-lane gate the
-/// headless driver awaits (see [[wgpu-headless-gpu-verify]]). Both checks are scene-independent
-/// (`self_check` renders its own fixed calibration probe scene; `texture_self_check` a synthetic
-/// 2×2 texture) and `&self`: they clone their GPU handles up front, so the shared `borrow()` here is
-/// released before the async readback runs — no contention with the rAF loop's `borrow_mut` (JS is
-/// single-threaded). Each resolves to a JSON string with a `pass` field.
+/// Exposes GPU readback self-checks to the browser gate.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_self_checks(
     engine: std::rc::Rc<
@@ -167,9 +102,6 @@ pub(crate) fn register_self_checks(
         calibration.as_ref(),
     );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("texture"), texture.as_ref());
-    // T-173 — `window.__editorBench(n)` off-vsync frame-cost bench (perf gates G-A/G-B): resolves
-    // the engine's `render_bench` JSON. Registered here (not in `__selfChecks`) so the perf probe
-    // and the operator console both reach it by one name.
     let bench = {
         let engine = engine.clone();
         Closure::wrap(Box::new(move |n: f64| {
@@ -187,21 +119,12 @@ pub(crate) fn register_self_checks(
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__selfChecks"), &obj);
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorBench"), bench.as_ref());
     }
-    // The harness reads these across the page lifetime; leak them (the engine leaks too).
     calibration.forget();
     texture.forget();
     bench.forget();
 }
 
-/// Expose the camera view-state on `window.__editorCam()` for the headless pan smoke (T-159.15.2 /
-/// spec P6): a JSON string `{"tx","ty","z","backend"}` read from the `&self` getters `target_x()` /
-/// `target_y()` / `zoom()` / `backend()`. (`#[wasm_bindgen(getter)]` fns are plain method calls from
-/// Rust.) All are `&self` behind a shared `borrow()`, released before return — no contention with the
-/// rAF loop's `borrow_mut` (JS is single-threaded). Registered once the engine is `Some`; the closure
-/// leaks like the self-checks. The smoke drives pan via getter deltas (never `unproject_xy`, X-05).
-///
-/// T-166 — also installs `window.__editorCamSet(tx, ty, z)` so `smoke_fullmap` can Class-R probe
-/// tree glyphs at zoom ≥ 0 without relying on CDP `mouseWheel` → DOM `wheel` delivery.
+/// Exposes editor camera state to browser diagnostics.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_editor_cam(
     engine: std::rc::Rc<
@@ -236,9 +159,8 @@ pub(crate) fn register_editor_cam(
         move |tx: f64, ty: f64, z: f64| {
             if let Some(e) = engine.borrow_mut().as_mut() {
                 e.set_view(tx, ty, z);
-                e.on_camera_changed(); // T-172 H5
+                e.on_camera_changed();
             }
-            // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
             website_map_engine::streaming::host::flush_viewport(map_host.clone(), engine.clone());
         }
     }) as Box<dyn FnMut(f64, f64, f64)>);
@@ -251,8 +173,7 @@ pub(crate) fn register_editor_cam(
     cam_set.forget();
 }
 
-/// T-172 B4 — automated slot-lane proof hook: `window.__wgpuSlotStats()` returns the engine's
-/// `slot_stats_json` (atlas_ready / slot_len / cluster_mode / …) for the doc smoke.
+/// Exposes slot rendering statistics to browser diagnostics.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_slot_stats(
     engine: std::rc::Rc<
@@ -274,11 +195,7 @@ pub(crate) fn register_slot_stats(
     stats.forget();
 }
 
-/// T-750 — apply the `/registry` fetch's terminal failure to the three signals the dock reads.
-///
-/// Lives OUTSIDE the wasm32 gate on purpose: the Favourites failure arm is host-testable via
-/// source pins, and `live_code` kills `#[cfg(target_arch = "wasm32")]` bodies on the native
-/// harness — a helper the Err arm *calls* is the only failure write that survives the scrub.
+/// Sets both catalog failure states and the retry signal.
 pub(crate) fn mark_registry_fetch_failed(
     catalog: RwSignal<crate::v2::apps::editor::arsenal::asset_catalog::CatalogState>,
     vehicle_catalog: RwSignal<crate::v2::apps::editor::arsenal::asset_catalog::CatalogState>,
@@ -290,15 +207,7 @@ pub(crate) fn mark_registry_fetch_failed(
     registry_failed.set(true);
 }
 
-/// T-245 — SPA-session cache for the editor's `/registry` + `/registry/compat` payloads.
-/// Survives `MissionEditorPage` remounts inside one SPA session so leaving
-/// `/missions/:id/edit` and coming back does **not** re-issue the cold fetches or rebuild
-/// the Arsenal compat feed / cargo seed map.
-///
-/// **T-427** moved the cold path off the unbounded dual dump: registry is assembled from
-/// `?limit=` pages, Arsenal edges come from a filtered `edge_type=` list, and cargo seeds
-/// come from `?view=cargo_defaults` (server-aggregated — no client walk of ~16k cargo edges).
-/// This cache still stores the *assembled* result so remounts stay free.
+/// Caches registry and compatibility data across editor mounts.
 pub(crate) mod registry_session {
     use std::cell::RefCell;
     use std::collections::HashMap;
@@ -316,30 +225,30 @@ pub(crate) mod registry_session {
         static COMPAT: RefCell<Option<CachedCompat>> = const { RefCell::new(None) };
     }
 
-    /// `true` when this mount must issue `GET /registry` (no SPA-session hit).
+    /// Reports whether registry data is missing from the session cache.
     #[must_use]
     pub fn must_fetch_registry() -> bool {
         REGISTRY.with(|c| c.borrow().is_none())
     }
 
-    /// `true` when this mount must issue `GET /registry/compat` (no SPA-session hit).
+    /// Reports whether compatibility data is missing from the session cache.
     #[must_use]
     pub fn must_fetch_compat() -> bool {
         COMPAT.with(|c| c.borrow().is_none())
     }
 
-    /// Clone of the session-cached prefab registry, if this SPA session has already fetched it.
+    /// Returns cached registry rows when present.
     #[must_use]
     pub fn cached_registry() -> Option<Vec<RegistryItem>> {
         REGISTRY.with(|c| c.borrow().clone())
     }
 
-    /// Adopt `items` as this SPA session's registry, so later mounts of the editor skip the fetch.
+    /// Stores registry rows for subsequent editor mounts.
     pub fn store_registry(items: Vec<RegistryItem>) {
         REGISTRY.with(|c| *c.borrow_mut() = Some(items));
     }
 
-    /// Clone of the session-ready compat feed + cargo seed map, if any.
+    /// Returns cached compatibility data when present.
     #[must_use]
     pub fn cached_compat() -> Option<(CompatFeed, HashMap<String, Vec<CargoRow>>)> {
         COMPAT.with(|c| {
@@ -349,13 +258,12 @@ pub(crate) mod registry_session {
         })
     }
 
-    /// Adopt an assembled compatibility feed and its cargo seed map as this SPA session's, so
-    /// later mounts of the editor skip both the fetch and the assembly.
+    /// Stores compatibility data for subsequent editor mounts.
     pub fn store_compat(feed: CompatFeed, cargo: HashMap<String, Vec<CargoRow>>) {
         COMPAT.with(|c| *c.borrow_mut() = Some(CachedCompat { feed, cargo }));
     }
 
-    /// Drop both caches, so one test's stored session cannot decide the next test's fetches.
+    /// Clears the cache before an isolated test.
     #[cfg(test)]
     pub fn clear_for_test() {
         REGISTRY.with(|c| *c.borrow_mut() = None);

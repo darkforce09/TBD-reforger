@@ -150,10 +150,7 @@ fn a_document_that_does_not_parse_yields_an_empty_universe() {
 /// down; these only stop the SoA creeping back into the one body that must not read it.
 #[test]
 fn the_selection_prune_runs_over_the_whole_selectable_universe() {
-    let hist = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/document_host/history.rs"
-    )));
+    let hist = super::source::live_document_history();
     let retain = ["retain", "(|id|"].concat();
     assert_eq!(
         hist.matches(&retain).count(),

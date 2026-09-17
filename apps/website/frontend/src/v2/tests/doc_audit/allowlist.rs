@@ -52,47 +52,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         expires: DIAGNOSTICS_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/bridge/document_host/doc_host.rs",
-        reason: "The file has comments naming tickets and waves; the editor decomposition \
-                 rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/bridge/document_host/history.rs",
-        reason: "The file is over the line limit and has comments naming tickets and waves; the \
-                 editor decomposition splits it into per-surface modules and rewrites that \
-                 prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/bridge/gizmo_z.rs",
-        reason: "The file holds inline test modules; the editor decomposition lifts those tests \
-                 into sibling `tests/` files.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/bridge/overlays.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/bridge/tactical_graphics.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/bridge/viewport.rs",
-        reason: "The file has comments naming tickets and waves; the editor decomposition \
-                 rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
         path: "apps/editor/shell/document_commands.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
                  naming tickets and waves; the editor decomposition splits it into per-surface \

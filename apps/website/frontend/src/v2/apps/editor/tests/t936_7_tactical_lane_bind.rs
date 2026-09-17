@@ -21,10 +21,7 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 fn history_src() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/document_host/history.rs"
-    )))
+    super::source::live_document_history()
 }
 
 /// Both binders call it. Neither is allowed to drift back to one.

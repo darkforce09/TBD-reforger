@@ -14,10 +14,7 @@ fn editor_live() -> String {
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    ))));
+    src.push_str(&super::source::live_pointer_gestures());
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/bridge/viewport.rs"

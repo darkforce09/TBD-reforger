@@ -369,10 +369,7 @@ fn no_second_delete_path_and_no_hardcoded_kind_list() {
 /// here, never written — the chain already existed; what is new is that something checks it.
 #[test]
 fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
-    let hist = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/document_host/history.rs"
-    )));
+    let hist = super::source::live_document_history();
     let ops = live_code(crate::v2::core::test_support::editor_operations::CONTEXT);
     let signals = ["refresh_", "signals("].concat();
     let docks = ["editor_context", "::", "refresh_docks()"].concat();

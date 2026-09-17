@@ -70,7 +70,9 @@ fn the_extractor_actually_reads_both_keydowns() {
 fn known_escape_ev_key_sites_are_censused() {
     let required: &[(&str, &str)] = &[
         // wave-112 MINOR-4 (the three overlays moved file at T-934.11)
-        ("overlays.rs", "asset picker / comment / connections"),
+        ("asset_picker.rs", "asset picker"),
+        ("comment_editor.rs", "comment editor"),
+        ("connections_panel.rs", "connections panel"),
         ("attributes.rs", "Attributes modal"),
         ("top_strip_view.rs", "menus / Save / Controls Hint"),
         // already on the surface when T-703 widened; still a drop-from-scrape trap

@@ -214,15 +214,30 @@ fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
             )),
             1,
         ),
-        // T-934.11 — the asset picker / comment editor / connections panel (each installing
-        // one Escape listener) moved out of `mission_editor.rs` into the canvas overlays file.
+        // Each canvas overlay installs one Escape listener.
         (
-            "overlays.rs",
+            "asset_picker.rs",
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/src/v2/apps/editor/bridge/overlays.rs"
+                "/src/v2/apps/editor/bridge/overlays/asset_picker.rs"
             )),
-            3,
+            1,
+        ),
+        (
+            "comment_editor.rs",
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/bridge/overlays/comment_editor.rs"
+            )),
+            1,
+        ),
+        (
+            "connections_panel.rs",
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/bridge/overlays/connections_panel.rs"
+            )),
+            1,
         ),
         (
             "attributes.rs",

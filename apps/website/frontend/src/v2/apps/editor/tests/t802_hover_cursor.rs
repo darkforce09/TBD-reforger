@@ -42,10 +42,7 @@ fn hover_hit_body() -> String {
 /// `input/pointer_gestures.rs`, so the anchor resolves there now (the page keeps `onpointerleave` and
 /// the mount seed, which the mount/leave pin below still reads via `page()`).
 fn pointermove() -> String {
-    let src = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    )));
+    let src = super::source::live_pointer_gestures();
     let anchor = ["let onpointermove = ", "Closure::"].concat();
     assert_eq!(src.matches(anchor.as_str()).count(), 1);
     only_body(&src, &anchor).to_string()

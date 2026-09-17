@@ -1,14 +1,27 @@
 use crate::v2::apps::editor::bridge::overlays::z_drag_elevation_delta;
 use crate::v2::core::test_support::class_r_scrub::live_code;
 
-/// The GESTURE file's LIVE source — comments stripped, string/char literals blanked, test modules
-/// (including this one) cut. Every needle below is therefore a real call in shipped code, not
-/// a reassuring note about one, which is the whole failure mode T-946.86 exists to repair:
-/// wave 255 shipped `z_drag` written-and-never-read with a doc block describing the wiring.
-fn live() -> String {
+/// Returns the live pointer-move handler, with comments and literals scrubbed.
+fn live_move() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures/pointer_move.rs"
+    )))
+}
+
+/// Returns the live special-drag release handler, with comments and literals scrubbed.
+fn live_release() -> String {
+    live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/v2/apps/editor/input/pointer_gestures/pointer_up/special_drag_release.rs"
+    )))
+}
+
+/// Returns the live pointer-up event closure that calls the release handler.
+fn live_up() -> String {
+    live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs"
     )))
 }
 
@@ -19,16 +32,18 @@ fn live() -> String {
 /// PERTURB: delete either borrow and this goes RED.
 #[test]
 fn the_z_arm_is_borrowed_by_both_pointer_closures() {
-    let src = live();
+    let src = live_move();
     assert!(
         src.contains("z_drag.borrow()"),
         "T-946.86 (.82): onpointermove must BORROW the armed z_drag — writing it at \
          pointerdown and never reading it is the wave-255 defect this repairs"
     );
     assert!(
-        src.split("let onpointerup")
+        live_up()
+            .split("let onpointerup")
             .nth(1)
-            .is_some_and(|s| s.contains("ov::take_z_drag(")),
+            .is_some_and(|s| s.contains("special_drag_release::consume_special_drag("))
+            && live_release().contains("ov::take_z_drag("),
         "T-946.86 (.82): onpointerup must TAKE the arm — leaving it latched strands the next \
          gesture behind a drag that already ended"
     );
@@ -40,20 +55,20 @@ fn the_z_arm_is_borrowed_by_both_pointer_closures() {
 /// (a bare expression there would run once and never re-read the value the drag writes).
 #[test]
 fn the_height_chip_is_written_and_its_render_site_tracks() {
-    let src = live();
+    let src = live_move();
     assert!(
         src.contains("set_z_drag_readout(Some("),
         "T-946.86 (.82): the drag must publish the height readout — a reader with no writer \
          is a chip that can never populate"
     );
     assert!(
-        src.contains("set_z_drag_readout(None)"),
+        live_release().contains("set_z_drag_readout(None)"),
         "T-946.86 (.82): the release must clear the readout, or the chip keeps the last \
          drag's height after the gesture is over"
     );
     let overlays = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/overlays.rs"
+        "/src/v2/apps/editor/bridge/overlays/transform_widget.rs"
     )));
     assert!(
         overlays.contains("{move || {") && overlays.contains("read_z_drag_readout()"),
@@ -70,11 +85,14 @@ fn the_height_chip_is_written_and_its_render_site_tracks() {
 /// success path strands the capture on every no-travel click of the arm.
 #[test]
 fn the_z_arm_releases_the_pointer_capture_before_it_commits() {
-    let src = live();
-    let src = src
-        .split("let onpointerup")
-        .nth(1)
-        .expect("pointerup closure");
+    assert!(
+        live_up()
+            .split("let onpointerup")
+            .nth(1)
+            .is_some_and(|s| s.contains("special_drag_release::consume_special_drag(")),
+        "the pointerup closure must call the special-drag release handler"
+    );
+    let src = live_release();
     let at_take = src
         .find("ov::take_z_drag(")
         .expect("the pointerup arm is present");
@@ -214,7 +232,7 @@ fn vehicle_only_drag_uses_same_snap_and_shift_suspension() {
 /// therefore go through `z_drag_elevation_delta`, and there are exactly two of them.
 #[test]
 fn the_preview_and_the_commit_share_one_arithmetic() {
-    let src = live();
+    let src = format!("{}{}", live_move(), live_release());
     let calls = src.matches("z_drag_elevation_delta(").count();
     assert_eq!(
         calls, 2,

@@ -1,12 +1,7 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
-const HIST: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/src/v2/apps/editor/bridge/document_host/history.rs"
-));
-
 fn hist_live() -> String {
-    live_code(HIST)
+    super::source::live_document_history()
 }
 
 fn markers_bind_needle() -> String {

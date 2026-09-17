@@ -708,7 +708,7 @@ mod tests {
     fn overlays_src() -> String {
         live_source(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/bridge/overlays.rs"
+            "/src/v2/apps/editor/bridge/overlays/conflict_dialog.rs"
         )))
     }
 

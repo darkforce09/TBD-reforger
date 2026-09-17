@@ -183,10 +183,7 @@ fn map_binds_feed_map_render_slot_soa() {
     // T-934.13 — the pick sites ride the gesture closures, now in input/pointer_gestures.rs; the first
     // bind stays in the page's engine-boot task. Examine both halves.
     let mut page = live_code(&raw[raw.find(anchor.as_str()).expect("MissionEditorPage")..]);
-    page.push_str(&live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    ))));
+    page.push_str(&super::source::live_pointer_gestures());
     assert!(
         page.contains("map_render_slot_soa") && page.matches("map_render_slot_soa").count() >= 2,
         "T-819: MissionEditorPage must call map_render_slot_soa at the first bind and picks"

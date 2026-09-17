@@ -16,10 +16,7 @@ fn editor_live() -> String {
         "scrub anchor must be unambiguous"
     );
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
-    src.push_str(&live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    ))));
+    src.push_str(&super::source::live_pointer_gesture_handlers());
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/input/window_keydown.rs"
@@ -118,12 +115,12 @@ fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
          between the context menu and it)"
     );
     // The picker component arms the same place a DockRight leaf does. Its definition lives in
-    // `editor/bridge/overlays.rs` (the page still mounts it bare through the
+    // `editor/bridge/overlays/asset_picker.rs` (the page mounts it through the
     // `mission_editor` re-export, which is what the mount pins above ride). That file carries no
     // `#[cfg(test)]`, so `live_code` scrubs it whole — no anchor gymnastics needed.
     let region = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/overlays.rs"
+        "/src/v2/apps/editor/bridge/overlays/asset_picker.rs"
     )));
     let comp = only_body(&region, "fn AssetPickerOverlay(");
     assert!(
@@ -220,11 +217,11 @@ fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
         mount > ctx_menu && !ed[ctx_menu..mount].contains("(!chrome_hidden.get()).then("),
         "T-651: the comment editor must mount beside the ungated dialogs"
     );
-    // The component definition lives in `editor/bridge/overlays.rs` (T-934.11); scrub that file
-    // whole, exactly as the picker pin above does.
+    // The component definition lives in the comment editor overlay module; scrub that file
+    // whole, as the picker pin above does.
     let region = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/overlays.rs"
+        "/src/v2/apps/editor/bridge/overlays/comment_editor.rs"
     )));
     let comp = only_body(&region, "fn CommentEditorOverlay(");
     for op in [
@@ -287,20 +284,16 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
         "CONN-GROUP-001: an unarmed Ctrl-drag of a SINGLE character onto another must regroup"
     );
 
-    // (4) The state machine is DOCUMENTED as one block (the ticket requires the comment). A
-    // comment is stripped by every scrubber, so pin it on the RAW file — since T-934.13 that is
-    // `input/pointer_gestures.rs`, where the pointerup closure (and its comment block) moved verbatim.
-    // The file carries no `#[cfg(test)]` module, so the whole of it is production text and no
-    // slice is needed. The needle is reassembled so this line is not itself the decoy.
+    // The state machine is documented beside the pointer-up place branch. Read raw source
+    // because the scrubber strips comments. Reassemble the needle so this line is not a decoy.
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs"
     ));
     let phrase = format!("Ctrl is {}", "OVERLOADED");
     assert!(
         raw.contains(phrase.as_str()),
-        "T-647: the Ctrl state machine must be documented in a comment block beside the pointerup \
-         place branch (input/pointer_gestures.rs since T-934.13)"
+        "T-647: the Ctrl state machine must be documented beside the pointer-up place branch"
     );
 }
 

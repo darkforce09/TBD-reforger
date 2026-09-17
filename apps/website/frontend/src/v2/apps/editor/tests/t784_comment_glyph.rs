@@ -21,10 +21,7 @@ fn page() -> String {
     let raw = super::source::raw_editor();
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
-    src.push_str(&live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/input/pointer_gestures.rs"
-    ))));
+    src.push_str(&super::source::live_pointer_gesture_handlers());
     src
 }
 
@@ -184,10 +181,7 @@ fn route_target_resolves_a_comment_without_disturbing_the_other_arms() {
 /// be an `include_str!` pin — the same reason the T-748 feed pin in `map-engine-render` is one.
 #[test]
 fn mission_history_packs_the_lane_through_this_module() {
-    let hist = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/bridge/document_host/history.rs"
-    )));
+    let hist = super::source::live_document_history();
     let feed = only_body(&hist, &format!("fn comment_lane{}", "_xy(doc:"));
     let shared = ["mission_editor", "::", "comment_lane_xy("].concat();
     assert!(

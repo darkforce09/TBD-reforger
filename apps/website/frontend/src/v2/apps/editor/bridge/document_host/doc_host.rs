@@ -1,15 +1,4 @@
-//! T-159.16 — MissionDoc host for the Leptos Mission Creator editor.
-//!
-//! The editor owns the `RenderEngine` directly since T-159.15; this slice gives it the mission
-//! document too, as a **plain Rust `MissionDocCore`** (map-engine-core `doc` feature) living in the
-//! SAME wasm module — no `map-engine-wasm` JS shim (spec D2), and no wasm-bindgen `.free()`, so the
-//! React StrictMode double-free hazard cannot occur here (Rust `Drop` runs at most once).
-//!
-//! Scope is **lifecycle + a thin `window.__missionDoc` smoke bridge only** — NOT a `state/ydoc.ts`
-//! mutator port (that lands in later slices). All document logic stays in Rust (the language gate);
-//! the JS bridge only reads. The doc is held in the same `Rc<RefCell<Option<_>>>` idiom the engine
-//! uses and leaks on route-leave exactly as the engine does (`on_cleanup` is `Send`-bound and cannot
-//! hold the `!Send` `Rc`) — consistent, and free-of-double-free by plain-Rust ownership.
+//! Mission document ownership and seed setup.
 #![allow(clippy::cast_precision_loss)] // usize/u32 slot counters → f64 for the JS bridge; values are tiny
 
 use std::cell::{Cell, RefCell};
@@ -19,32 +8,15 @@ use crate::v2::apps::editor::ui::outliner::outliner;
 use wasm_bindgen::prelude::*;
 use website_map_engine::data::store::MissionDocCore;
 
-/// The hosted document. `Rc` is `!Send`, so — like the engine handle in `mission_editor.rs` — the
-/// `Send`-bound `on_cleanup` cannot drop it; it leaks on route-leave (documented, consistent). There
-/// is no manual free, so no double-free.
+/// Shared ownership of the optional active mission document.
 pub type DocHandle = Rc<RefCell<Option<MissionDocCore>>>;
 
-/// Deterministic seed size. The `seed_random` generator writes exactly this many slots into the
-/// `slots` map (no faction/squad/layer needed) in one transaction, so the SLOT CONTENT is
-/// reproducible run to run.
-///
-/// T-590: this used to add "with the core's fixed `CLIENT_ID` this makes `encode_state()`
-/// byte-stable — the golden recorded in the verify log (spec D3)". There is no fixed `CLIENT_ID`
-/// any more: T-222 deleted `const CLIENT_ID: u64 = 1` because one id shared by every document
-/// silently dropped peer blocks on merge, and `MissionDocCore::new` now randomizes it
-/// (`doc/store.rs`). So the encoded bytes are NOT stable across runs and no cross-run byte golden
-/// is asserted anywhere. What `roundtrip_ok` below actually pins is unchanged and still true:
-/// re-encoding the SAME document is byte-identical, and a fresh peer replaying the update
-/// materializes the same slot set.
 const SEED_N: u32 = 8;
-/// Fixed LCG seed — any change re-rolls the golden encode bytes.
 const SEED: u64 = 0x0071_5916;
-/// Everon bounds (matches `mission_editor.rs`), so seeded slot positions land in-world.
 const TERRAIN_W: f64 = 12_800.0;
 const TERRAIN_H: f64 = 12_800.0;
 
-/// Build + seed a fresh document. The seed runs under the `INIT` origin (`set_origin_init`), so it is
-/// never an undo step — mirroring how boot/hydrate/seed run in `state/ydoc.ts`.
+/// Creates a new mission document with deterministic seed slots.
 #[must_use]
 pub fn new_seeded_doc() -> DocHandle {
     let core = MissionDocCore::new();
@@ -54,21 +26,11 @@ pub fn new_seeded_doc() -> DocHandle {
     Rc::new(RefCell::new(Some(core)))
 }
 
-/// Class R (encode round-trip) self-check, in Rust — the live equivalent of the core unit test
-/// `encode_decode_roundtrip_is_stable`, run against the seeded hosted doc. It asserts exactly the two
-/// properties that test proves:
-///   1. **Re-encode stability** — encoding the *same* document twice is byte-identical (deterministic
-///      v1 encode; the client id is randomized per document since T-222, but it is the same id
-///      within one document, which is all this property needs).
-///   2. **Round-trip result-set equality (Class S)** — a fresh peer that replays the update
-///      materializes the same slot set (matched by id; SoA row order is arbitrary) with equal x/rot.
 fn roundtrip_ok(core: &MissionDocCore) -> bool {
     let bytes = core.encode_state();
-    // (1) Re-encoding the same doc is byte-identical.
     if core.encode_state() != bytes {
         return false;
     }
-    // (2) Replay into a fresh peer and compare materialized slots by id.
     let fresh = MissionDocCore::new();
     if fresh.apply_update(&bytes).is_err() {
         return false;
@@ -89,7 +51,6 @@ fn roundtrip_ok(core: &MissionDocCore) -> bool {
     true
 }
 
-/// Lowercase hex of the encode stream, for the smoke gate to compare across two reads + log a prefix.
 fn hex(bytes: &[u8]) -> String {
     let mut s = String::with_capacity(bytes.len() * 2);
     for b in bytes {
@@ -98,11 +59,7 @@ fn hex(bytes: &[u8]) -> String {
     s
 }
 
-/// Install `window.__missionDoc` — a thin, read-only smoke bridge (spec D6) mirroring
-/// `register_self_checks`/`register_editor_cam` in `mission_editor.rs` (a `js_sys::Object` of
-/// `.forget()`'d closures). Enough for the headless Class R gate; NOT the mutator surface. Each
-/// closure returns `JsValue` (the proven `register_editor_cam` shape). Registered synchronously on
-/// mount so the gate does not depend on the wgpu engine having come up.
+/// Registers the active mission document and version counter.
 pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     let obj = js_sys::Object::new();
 
@@ -144,8 +101,6 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
         }) as Box<dyn FnMut() -> JsValue>)
     };
 
-    // T-169 smoke hook — bulk-add N slots so the virtual-outliner gate can exceed the window
-    // threshold. `FnMut(f64)`, not the read-only `FnMut() -> JsValue` shape of the others.
     let seed_slots = Closure::wrap(Box::new(move |n: f64| {
         debug_seed_slots(n.max(0.0) as u32);
     }) as Box<dyn FnMut(f64)>);
@@ -162,7 +117,6 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__missionDoc"), &obj);
     }
-    // The harness reads these across the page lifetime; leak them (the engine + its bridges leak too).
     slot_count.forget();
     seed_slots.forget();
     encode_hex.forget();
@@ -170,13 +124,6 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     roundtrip.forget();
 }
 
-/// Seed `n` placeholder slots under the Outliner's active folder — the smoke hook that lets a gate
-/// push the tree past its virtualisation threshold.
-///
-/// The id minter and the folder are both HOST state: the minter is the editor context's own
-/// counter (every mint still proves uniqueness against the live document), and which folder is
-/// active is the tree's focus. That is why the seed is assembled here and the document is handed a
-/// folder id it does not have to go looking for.
 fn debug_seed_slots(n: u32) {
     use crate::v2::apps::editor::bridge::host_state::editor_context::EDITOR_CONTEXT;
     use outliner::ensure_active_layer;
