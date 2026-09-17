@@ -1,5 +1,5 @@
 //! Role: the browser seam between the LoS object layer and the live world occluder.
-//! Position: `editor/tools` in the frontend editor.
+//! Position: `editor/input/tools` in the frontend editor.
 //! Signals & state: one live wash, its generation, the last upload time, and the occluder
 //! residency signature the wash was finished against.
 //! Invariants: every occluder read goes through `with_occluder`, which answers `None` while the

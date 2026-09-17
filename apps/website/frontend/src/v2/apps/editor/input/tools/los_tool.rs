@@ -1,5 +1,5 @@
 //! Role: the Line-of-Sight overlay — the DOM/SVG surface the engine's LoS tool draws through.
-//! Position: `editor/tools` in the frontend editor.
+//! Position: `editor/input/tools` in the frontend editor.
 //! Signals & state: three host heartbeats (pan cursor, zoom sampler, state tick) and the leaked
 //! tool state this module hands to the engine's registry.
 //! Invariants: every decidable thing — the occlusion rule, the capture machine, the projection and
@@ -27,7 +27,7 @@ use website_map_engine::editing::tools::line_of_sight::object_verdict;
 use website_map_engine::editing::tools::line_of_sight::projection::{ProfileChart, ProjectedShot};
 use website_map_engine::editing::tools::line_of_sight::terrain_verdict::LosVerdict;
 
-use crate::v2::apps::editor::tools::ruler_tool::install_seam;
+use crate::v2::apps::editor::input::tools::ruler_tool::install_seam;
 
 /// The inline profile panel's chart box in CSS px. Width and height of the elevation curve area,
 /// excluding the header text. A drawing dimension, so it lives with the drawing.
@@ -158,7 +158,7 @@ pub fn LosOverlay(
                 // The object layer: terrain and objects, marker at the nearer block.
                 object_verdict::apply_objects(
                     &mut proj,
-                    crate::v2::apps::editor::tools::los_world_wasm::object_verdict(&shot),
+                    crate::v2::apps::editor::input::tools::los_world_wasm::object_verdict(&shot),
                 );
                 let chart = profile_chart(
                     &profile,

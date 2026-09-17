@@ -19,7 +19,7 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -31,14 +31,14 @@ fn editor_live() -> String {
 fn overlay_live() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/tools/los_tool.rs"
+        "/src/v2/apps/editor/input/tools/los_tool.rs"
     )))
 }
 
 fn adapter_live() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/tools/los_world_wasm.rs"
+        "/src/v2/apps/editor/input/tools/los_world_wasm.rs"
     )))
 }
 

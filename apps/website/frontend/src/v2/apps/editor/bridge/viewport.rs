@@ -71,7 +71,7 @@ pub(crate) fn start_raf(
     RafPump::new(engine, disposed)
         .after_frame(move |e, frames| {
             // T-090.12.5 — advance the viewshed's object wash under its per-frame budget.
-            crate::v2::apps::editor::tools::los_world_wasm::tick_object_wash(e);
+            crate::v2::apps::editor::input::tools::los_world_wasm::tick_object_wash(e);
             // T-670 — publish the screen scale for the status-bar readout (and, through it, the
             // T-667 scale bar). Read every frame so a wheel-zoom shows on the very next frame
             // rather than waiting up to a second for the ~1 Hz HUD sample below; WRITTEN only when
@@ -113,7 +113,7 @@ pub(crate) fn start_raf(
                     debug_hud.set(format!(
                         "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
-                        crate::v2::apps::editor::tools::los_world_wasm::hud_suffix(),
+                        crate::v2::apps::editor::input::tools::los_world_wasm::hud_suffix(),
                         website_map_engine::streaming::memory::budget::hud_suffix()
                     ));
                     frames_at_sample = frames;

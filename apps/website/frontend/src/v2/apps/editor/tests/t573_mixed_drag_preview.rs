@@ -6,7 +6,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     let tool = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/tools/select_tool.rs"
+        "/src/v2/apps/editor/input/tools/select_tool.rs"
     )));
     let push = only_body(&tool, "pub fn push_drag_preview(");
     assert!(
@@ -57,11 +57,11 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
          cannot identify"
     );
     // T-934.13 — the pointermove/up/cancel closures the needles below sit in are split between
-    // the page (pointercancel) and `canvas/gestures.rs` (the moved drag closures); examine both.
+    // the page (pointercancel) and `input/pointer_gestures.rs` (the moved drag closures); examine both.
     let mut editor = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     editor.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     assert!(
         editor.contains("pub fn MissionEditorPage"),

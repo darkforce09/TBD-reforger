@@ -5,7 +5,7 @@
 //! cursor travel is worth in metres of height, and how that height quantises and reads out.
 //! **Position:** the leaf of the canvas belt. `bridge/overlays.rs` draws the arm from
 //! [`Z_ARM_LENGTH`] and turns a drag into snapped metres through [`dy_to_elevation`] and
-//! [`snap_elevation`]; `canvas/gestures.rs` calls [`hit_z_arm`] on pointerdown to decide that a
+//! [`snap_elevation`]; `input/pointer_gestures.rs` calls [`hit_z_arm`] on pointerdown to decide that a
 //! press owns Z rather than XY, and [`format_height_readout`] to label the drag on screen.
 //! Nothing here touches Leptos, the DOM or the map engine.
 //! **Signals & state:** none. Every function is pure over its arguments.

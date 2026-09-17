@@ -1,6 +1,6 @@
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
-/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`), where the pointerup
+/// Page-from-anchor + the T-934.13 gesture file (`input/pointer_gestures.rs`), where the pointerup
 /// closure (the LMB complete arm) moved verbatim; `onpointercancel` stays page-side. Each half
 /// scrubbed separately.
 fn page() -> String {
@@ -13,11 +13,11 @@ fn page() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }

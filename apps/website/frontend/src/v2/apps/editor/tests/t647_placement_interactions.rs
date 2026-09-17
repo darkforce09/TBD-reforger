@@ -5,7 +5,7 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 /// blocks the pointer/dblclick handlers live in are KEPT by the scrubber (it decides only
 /// provably-false cfgs, and `target_arch` reads as undecided under the default eval) — the same
 /// reason t662 can pin `chrome_hidden.set(` inside that block. T-934.13 moved those closures to
-/// `canvas/gestures.rs`, so that file is appended (scrubbed separately) — the `only_body`
+/// `input/pointer_gestures.rs`, so that file is appended (scrubbed separately) — the `only_body`
 /// anchors (`let onpointerup =`, `let ondblclick =`, `let oncontextmenu =`) resolve there.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -21,11 +21,11 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }
@@ -285,18 +285,18 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
 
     // (4) The state machine is DOCUMENTED as one block (the ticket requires the comment). A
     // comment is stripped by every scrubber, so pin it on the RAW file — since T-934.13 that is
-    // `canvas/gestures.rs`, where the pointerup closure (and its comment block) moved verbatim.
+    // `input/pointer_gestures.rs`, where the pointerup closure (and its comment block) moved verbatim.
     // The file carries no `#[cfg(test)]` module, so the whole of it is production text and no
     // slice is needed. The needle is reassembled so this line is not itself the decoy.
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ));
     let phrase = format!("Ctrl is {}", "OVERLOADED");
     assert!(
         raw.contains(phrase.as_str()),
         "T-647: the Ctrl state machine must be documented in a comment block beside the pointerup \
-         place branch (canvas/gestures.rs since T-934.13)"
+         place branch (input/pointer_gestures.rs since T-934.13)"
     );
 }
 
@@ -388,14 +388,18 @@ fn regroup_reuses_the_refile_seam_and_noops_off_squad() {
 /// noted since filing: a dock surface, not the map.
 #[test]
 fn alt_census_confirms_no_canvas_collision() {
-    // mission_history: Alt is a NEGATIVE guard on the Ctrl/Cmd copy shortcut, never a place.
-    let hist = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
-    )));
+    // The undo/redo keydown: Alt is a NEGATIVE guard on the Ctrl/Cmd chord, never a place.
+    let undo_redo = only_body(
+        &live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/input/window_keydown.rs"
+        ))),
+        "pub fn register_key_handler",
+    )
+    .to_string();
     assert!(
-        hist.contains("|| ev.alt_key()"),
-        "census: mission_history uses alt_key only as a guard (|| ev.alt_key())"
+        undo_redo.contains("|| ev.alt_key()"),
+        "census: the undo/redo keydown uses alt_key only as a guard (|| ev.alt_key())"
     );
     // mission_editor keydown: Alt only as !alt_empty on copy/paste and the Ctrl+Alt+D HUD
     // toggle — none a canvas placement modifier. (The keydown lives in the same file.)

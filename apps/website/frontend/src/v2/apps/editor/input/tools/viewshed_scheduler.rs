@@ -1,5 +1,5 @@
 //! Role: drive the engine's viewshed job scheduler from the browser's frame loop.
-//! Position: `editor/tools` in the frontend editor.
+//! Position: `editor/input/tools` in the frontend editor.
 //! Signals & state: one `requestAnimationFrame` closure at a time, however many placements arrive.
 //! Invariants: the scheduling policy — one live job per tool, budgeted batches, cancel on new
 //! placement, cap refusals — is the engine's. What lives here is the browser's half of it: the

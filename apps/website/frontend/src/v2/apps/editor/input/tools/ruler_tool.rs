@@ -1,6 +1,6 @@
 //! Role: the ruler overlay — the DOM/SVG surface the engine's ruler tool draws through — and the
 //! install that ties every tool seam in this cluster to its mount.
-//! Position: `editor/tools` in the frontend editor.
+//! Position: `editor/input/tools` in the frontend editor.
 //! Signals & state: two host heartbeats (pan cursor, zoom sampler) plus a mutation tick, and the
 //! leaked chain this module hands to the engine's registry.
 //! Invariants: every decidable thing — the leg quantities, the readout shapes, the capture machine
@@ -35,7 +35,7 @@ use website_map_engine::editing::tools::selection;
  * I put there" and two mechanisms asking it. T-783 widened them to `pub(crate)` and deleted the copy.
  *
  * The `use` below is a RE-EXPORT, not a second definition: `los_tool` and `world_assets` import
- * `crate::v2::apps::editor::tools::ruler_tool::install_seam`, and that path still resolves — to `validation_panel`'s body.
+ * `crate::v2::apps::editor::input::tools::ruler_tool::install_seam`, and that path still resolves — to `validation_panel`'s body.
  * `world_assets` is `#[cfg(target_arch = "wasm32")]` while this file and `validation_panel` are
  * declared unconditionally in `main.rs`, so the single definition is reachable from every consumer on
  * BOTH targets.
@@ -265,7 +265,7 @@ pub fn RulerOverlay(
 #[cfg(test)]
 mod t778_seam_lifecycle {
     use super::register_ruler_chain;
-    use crate::v2::apps::editor::tools::los_tool::{
+    use crate::v2::apps::editor::input::tools::los_tool::{
         register_los_sampler, register_los_state, register_viewshed_state,
     };
     use leptos::prelude::*;

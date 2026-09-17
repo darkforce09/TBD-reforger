@@ -307,7 +307,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
         // remedy verbatim: "one call site under `panels/` makes the whole path live". This is it.
         //
         // A BUTTON, NOT A KEYBINDING, and that is a constraint rather than a preference: a chord
-        // in `canvas/commands.rs` compiles but reddens `help_modal.rs`'s
+        // in `input/window_keydown.rs` compiles but reddens `help_modal.rs`'s
         // `every_binding_has_a_help_entry` (no matching `Shortcut` row) and risks
         // `no_two_listeners_claim_the_same_chord`. `help_modal.rs` is another slice's this wave.
         //
@@ -1582,7 +1582,7 @@ mod tests {
     // only be satisfied by real shipping code, never by the very comments that describe the fix (this
     // is the T-759-class discipline: never grep the raw file for the token you just added).
 
-    /// The keydown Escape arm lives in the editor keydown dispatch — `canvas/commands.rs` since
+    /// The keydown Escape arm lives in the editor keydown dispatch — `input/window_keydown.rs` since
     /// T-934.14 (it was inside `MissionEditorPage` before). Slice the page from its anchor before
     /// scrubbing — the same anchor `t642_ruler_wiring::editor_live` uses (a whole-file `live_code`
     /// prunes reachable-only-after-a-jump statements too aggressively for a deep-nested match arm)
@@ -1603,7 +1603,7 @@ mod tests {
         let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
         src.push_str(&live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/canvas/commands.rs"
+            "/src/v2/apps/editor/input/window_keydown.rs"
         ))));
         src
     }
@@ -2101,7 +2101,7 @@ mod t946_86_tactical_trigger {
     }
 
     /// A BUTTON, not a keybinding — the constraint from `tactical_graphics.rs:175-182`. A chord in
-    /// `canvas/commands.rs` compiles but reddens `help_modal.rs`'s
+    /// `input/window_keydown.rs` compiles but reddens `help_modal.rs`'s
     /// `every_binding_has_a_help_entry` and `no_two_listeners_claim_the_same_chord`, and that file
     /// is owned by another slice. The stable test id is what a CDP acceptance probe presses.
     #[test]

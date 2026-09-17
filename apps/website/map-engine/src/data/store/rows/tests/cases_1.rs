@@ -857,7 +857,7 @@ fn mission_editor_move_commit_names_the_atomic_mix_api() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../apps/website/frontend/src/v2/apps/editor/canvas/gestures.rs"
+            "/../../../apps/website/frontend/src/v2/apps/editor/input/pointer_gestures.rs"
         ))
     ));
 

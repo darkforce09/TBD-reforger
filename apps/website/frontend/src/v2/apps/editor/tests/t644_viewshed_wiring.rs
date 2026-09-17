@@ -1,6 +1,6 @@
 use crate::v2::core::test_support::class_r_scrub::live_code;
 
-/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`) — the viewshed wiring spans
+/// Page-from-anchor + the T-934.13 gesture file (`input/pointer_gestures.rs`) — the viewshed wiring spans
 /// the page body (signals, Esc arm, tool-switch Effect) and the moved pointerup commit arm. The
 /// t642 `editor_live` idiom; each half scrubbed separately.
 fn editor_live() -> String {
@@ -17,11 +17,11 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }

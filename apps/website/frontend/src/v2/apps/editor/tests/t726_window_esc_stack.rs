@@ -17,7 +17,7 @@ fn overlays_region() -> String {
     )))
 }
 
-/// Page body + the T-934.14 keydown dispatch (`canvas/commands.rs`), which hosts the shared
+/// Page body + the T-934.14 keydown dispatch (`input/window_keydown.rs`), which hosts the shared
 /// measure-tool Escape arm since the move. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -29,7 +29,7 @@ fn page() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }

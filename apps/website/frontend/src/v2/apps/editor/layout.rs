@@ -540,7 +540,7 @@ mod t636_band_readers_agree {
         let band_read = "editor::layout::toolbelt_band_px()";
         let sel = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/tools/select_tool.rs"
+            "/src/v2/apps/editor/input/tools/select_tool.rs"
         )));
 
         let raw_editor = include_str!(concat!(
@@ -554,13 +554,13 @@ mod t636_band_readers_agree {
             "scrub anchor must be unambiguous"
         );
         // T-934.13 — the palette-drop `on_canvas` gate rides the pointerup closure, which moved
-        // verbatim to `editor/canvas/gestures.rs`; append it (scrubbed separately) so the reader
+        // verbatim to `editor/input/pointer_gestures.rs`; append it (scrubbed separately) so the reader
         // is still examined wherever it lives.
         let mut editor =
             live_code(&raw_editor[raw_editor.find(anchor.as_str()).expect("anchor present")..]);
         editor.push_str(&live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/canvas/gestures.rs"
+            "/src/v2/apps/editor/input/pointer_gestures.rs"
         ))));
 
         assert!(
@@ -749,13 +749,13 @@ mod t638_collapse {
 
     /// The `E`/`R` keydown wiring is present in the editor keydown dispatch (source pin — the arms
     /// live in a wasm-only keydown a native test cannot fire). T-934.14 moved that dispatch from
-    /// `mission_editor.rs` to `canvas/commands.rs`; the pin follows the arms. Needles are assembled
+    /// `mission_editor.rs` to `input/window_keydown.rs`; the pin follows the arms. Needles are assembled
     /// so this test's own source cannot satisfy them.
     #[test]
     fn keydown_binds_e_and_r_to_the_collapse_latches() {
         let src = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/canvas/commands.rs"
+            "/src/v2/apps/editor/input/window_keydown.rs"
         ));
         let arm = |code: &str| format!("\"{code}\" if !modk");
         // E → left latch, R → right latch.

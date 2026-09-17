@@ -184,7 +184,7 @@ fn the_vehicle_lane_columns_come_from_one_sorted_reader() {
 fn the_drag_preview_binds_through_the_symbology_signature() {
     let tool = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/tools/select_tool.rs"
+        "/src/v2/apps/editor/input/tools/select_tool.rs"
     )));
     let bind = format!("{}{}", "vehicles_bind_", "symbology(");
     let binder = only_body(&tool, "fn bind_vehicle_preview_lane(");

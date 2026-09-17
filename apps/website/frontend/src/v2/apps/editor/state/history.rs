@@ -570,7 +570,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 /// is north).
 ///
 /// `pub(crate)` because it is THE column builder, not this module's: T-808's drag preview
-/// ([`crate::v2::apps::editor::tools::select_tool::bind_vehicle_preview_lane`]) rebinds the same lane at dragged positions
+/// ([`crate::v2::apps::editor::input::tools::select_tool::bind_vehicle_preview_lane`]) rebinds the same lane at dragged positions
 /// and reuses these three non-positional columns rather than growing a second builder in a second
 /// row order. Do not re-privatise it; write the second caller's columns here.
 pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
@@ -713,8 +713,9 @@ fn refresh_signals(ctx: &HistoryCtx, obj: usize) {
 /// **T-785 — this is the LAST line of defence, and the reason it is read directly off
 /// `document.activeElement`.** Every editor chord (E/R collapse the docks, Space recentres the
 /// camera, G flips snap, Ctrl+A / Backspace / copy-paste) sits behind this guard at the top of the
-/// `mission_editor` keydown closure and behind [`register_key_handler`] here — so whatever this
-/// returns is what decides "typed character" vs "chord". The Attributes/rename remount bug
+/// `mission_editor` keydown closure and behind the undo/redo installer in
+/// [`crate::v2::apps::editor::input::window_keydown`] — so whatever this returns is what decides
+/// "typed character" vs "chord". The Attributes/rename remount bug
 /// (fixed in `attributes.rs::text_field` and `eden_dock_left.rs`) worked by dropping focus to
 /// `<body>` mid-word, at which point this correctly reported "not editable" and the tail of the
 /// word ran as chords. Keeping focus is the root fix; reading the LIVE `activeElement` tag and
@@ -756,44 +757,6 @@ pub fn in_editable_field() -> bool {
         el.get_attribute("role").as_deref(),
         Some("textbox" | "searchbox")
     )
-}
-
-/// Install the window `keydown` shortcuts (spec C5): **Ctrl/Cmd+Z** undo, **Ctrl/Cmd+Shift+Z** or
-/// **Ctrl+Y** redo.
-///
-/// Mirrors the React host handler (T-052): `code()` not `key()` (layout-independent — a modifier can
-/// remap `key`), mod = ctrl **or** meta, Alt disqualifies, and `prevent_default` fires on a *match*
-/// even when the stack is empty so the browser's own undo can never fight the document. Listens on
-/// `window` (not the container) so the shortcut works before the map is focused. The closure leaks
-/// like the editor's other listeners.
-pub fn register_key_handler() {
-    let Some(win) = web_sys::window() else {
-        return;
-    };
-    let onkeydown =
-        Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(move |ev: web_sys::KeyboardEvent| {
-            if in_editable_field() {
-                return;
-            }
-            if !(ev.ctrl_key() || ev.meta_key()) || ev.alt_key() {
-                return;
-            }
-            match ev.code().as_str() {
-                "KeyZ" if ev.shift_key() => {
-                    redo();
-                }
-                "KeyZ" => {
-                    undo();
-                }
-                "KeyY" if !ev.shift_key() => {
-                    redo();
-                }
-                _ => return,
-            }
-            ev.prevent_default();
-        });
-    let _ = win.add_event_listener_with_callback("keydown", onkeydown.as_ref().unchecked_ref());
-    onkeydown.forget();
 }
 
 /// Install `window.__editorHistory` — the read-only Class R gate bridge (peer of `__missionDoc` /

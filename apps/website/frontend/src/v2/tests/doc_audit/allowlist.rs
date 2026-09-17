@@ -93,28 +93,50 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/canvas/commands.rs",
+        path: "apps/editor/eden_chrome.rs",
         reason: "The file has comments naming tickets and waves; the editor decomposition \
                  rewrites that prose in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/canvas/gestures.rs",
+        path: "apps/editor/input/pointer_gestures.rs",
         reason: "The file is over the line limit and has comments naming tickets and waves; the \
                  editor decomposition splits it into per-surface modules and rewrites that \
                  prose in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/canvas/mod.rs",
+        path: "apps/editor/input/tools/los_tool.rs",
         reason: "The file has comments naming tickets and waves; the editor decomposition \
                  rewrites that prose in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/eden_chrome.rs",
+        path: "apps/editor/input/tools/los_world_wasm.rs",
         reason: "The file has comments naming tickets and waves; the editor decomposition \
                  rewrites that prose in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/input/tools/ruler_tool.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/input/tools/select_tool.rs",
+        reason: "The file is over the line limit and has comments naming tickets and waves; the \
+                 editor decomposition splits it into per-surface modules and rewrites that \
+                 prose in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/input/window_keydown.rs",
+        reason: "The file is over the line limit and has comments naming tickets and waves; the \
+                 editor decomposition splits it into per-surface modules and rewrites that \
+                 prose in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
@@ -380,33 +402,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
                  naming tickets and waves; the editor decomposition splits it into per-surface \
                  modules, lifts those tests into sibling `tests/` files and rewrites that prose \
                  in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/tools/los_tool.rs",
-        reason: "The file has comments naming tickets and waves; the editor decomposition \
-                 rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/tools/los_world_wasm.rs",
-        reason: "The file has comments naming tickets and waves; the editor decomposition \
-                 rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/tools/ruler_tool.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/tools/select_tool.rs",
-        reason: "The file is over the line limit and has comments naming tickets and waves; the \
-                 editor decomposition splits it into per-surface modules and rewrites that \
-                 prose in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {

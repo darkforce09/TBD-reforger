@@ -1,16 +1,23 @@
-//! T-934.13 — the Mission Creator canvas GESTURE closures, moved verbatim out of
-//! `MissionEditorPage`'s `on_load` block (`mission_editor.rs`). Six closures live here — wheel
-//! zoom, pointerdown/move/up (pan + the LMB Pending→Move/Marquee/Ruler/Rotate machine + the armed
-//! place), contextmenu and dblclick — bundled behind [`EditorGestureContext`], the struct that
-//! carries every `!Send` handle and `Copy` signal they capture. The page builds the context once
-//! its handles exist and calls [`attach_canvas_gestures`]; the closure BODIES are byte-identical
-//! to their pre-move text (the Class-S pins that used to grep `mission_editor.rs` for them now
-//! grep this file), and the capture preambles clone from locals mirroring the page's, so the
-//! capture semantics are unchanged.
+//! The Mission Creator's canvas gesture closures.
 //!
-//! Deliberately NOT here: `onkeydown` (T-934.14 moved it to the sibling `canvas/commands.rs`,
-//! riding this same context), `onpointercancel` / `onpointerleave` / `onresize` (they stay
-//! page-side with the boot tasks — the plan's six-closure scope), and the view template.
+//! **Role:** owns the six pointer-family closures the map surface answers — wheel zoom,
+//! pointerdown / pointermove / pointerup (pan, the LMB Pending→Move/Marquee/Ruler/Rotate machine
+//! and the armed place), contextmenu and dblclick.
+//! **Position:** the pointer half of [`super`], beside the keyboard dispatch in
+//! [`super::window_keydown`]. Both ride [`EditorGestureContext`], which carries every `!Send`
+//! handle and `Copy` signal the closures capture; the page builds that context once its handles
+//! exist and calls [`attach_canvas_gestures`].
+//! **Signals & state:** the in-flight gesture (the frozen camera, the pending promotion, the drag
+//! preview) is tab-local and lives only for the duration of the gesture. A committed change
+//! reaches the document through `website_map_engine::editing`'s hosted commands, so one gesture
+//! files one undo step.
+//! **Invariants:** everything here touches `web_sys` over live engine and document handles, so
+//! the module is wasm-only and its `pub mod` line carries the same gate. What the canvas draws and
+//! what a pick resolves against come from one read of the document, never from two.
+//!
+//! Not here: `keydown` (the sibling [`super::window_keydown`] rides this same context),
+//! `pointercancel` / `pointerleave` / `resize` (page-side, beside the boot tasks), and the view
+//! template.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -35,7 +42,7 @@ use crate::v2::apps::editor::mission_editor::{
     read_widget_pivot, set_map_cursor, transform, HoverPoints, HoverState, COMMENT_PICK_PX,
     CONN_PICK_PX,
 };
-// T-936.7 — the tactical-graphics pick tolerances. Straight from the sibling canvas module rather
+// T-936.7 — the tactical-graphics pick tolerances. Straight from the sibling bridge module rather
 // than through `mission_editor`'s re-export hub: that hub is `mission_editor.rs`, which T-190 owns
 // this wave, and a new `pub(crate) use` line there would be a cross-slice edit for two constants.
 use crate::v2::apps::editor::bridge::overlays as ov;
@@ -97,7 +104,7 @@ pub(crate) struct EditorGestureContext {
     pub(crate) ruler_tick: RwSignal<u64>,
     /// T-643 — LoS repaint tick (`sync_los` bumps it).
     pub(crate) los_tick: RwSignal<u64>,
-    // ── T-934.14 — the four latches only the KEYDOWN dispatch (`canvas/commands.rs`) captures. ──
+    // ── T-934.14 — the four latches only the KEYDOWN dispatch (`window_keydown.rs`) captures. ──
     // The gesture closures never read them; they ride the shared context so the page hands ONE
     // struct to both attach calls and the two files can never disagree about which signal a key
     // flips.
@@ -113,7 +120,7 @@ pub(crate) struct EditorGestureContext {
 
 /// The page's `sync_ruler` rebuilt from the context: push the chain's current summary onto the
 /// reactive surface (status bar + repaint tick). Byte-for-byte the body the page's own copy runs
-/// (its Effect keeps that copy; the keydown Esc arm's lives in `canvas/commands.rs`), reading the
+/// (its Effect keeps that copy; the keydown Esc arm's lives in `window_keydown.rs`), reading the
 /// SAME `Rc` + signals, so no two can ever disagree about what a sync does.
 pub(super) fn make_sync_ruler(ctx: &EditorGestureContext) -> impl Fn() + Clone {
     let ruler = ctx.ruler.clone();
@@ -878,7 +885,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // `set_drag` slot ids only and nothing previewed the vehicles, so a
                         // mixed drag drew the slots moving and the vehicles standing while
                         // the pointerup commit moved both: an overlay lying about its drop.
-                        crate::v2::apps::editor::tools::select_tool::push_drag_preview(
+                        crate::v2::apps::editor::input::tools::select_tool::push_drag_preview(
                             e,
                             &ids,
                             &engine_ops::vehicle_points(),
@@ -1200,7 +1207,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                         if let Some(e) = engine.borrow_mut().as_mut() {
-                            crate::v2::apps::editor::tools::select_tool::clear_drag_preview(
+                            crate::v2::apps::editor::input::tools::select_tool::clear_drag_preview(
                                 e,
                                 &engine_ops::vehicle_points(),
                             );
@@ -1460,7 +1467,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                 let ok = engine_ops::regroup_slot_onto(&ids[0], &tid);
                                 if ok {
                                     if let Some(e) = engine.borrow_mut().as_mut() {
-                                        crate::v2::apps::editor::tools::select_tool::clear_drag_preview(
+                                        crate::v2::apps::editor::input::tools::select_tool::clear_drag_preview(
                                             e,
                                             &engine_ops::vehicle_points(),
                                         );
@@ -1595,7 +1602,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                         // No move ⇒ no commit, so nothing else re-binds: drop BOTH preview
                         // lanes back to the authored positions (T-573 — the vehicle lane is
                         // a live re-pack now, not a passive bind).
-                        crate::v2::apps::editor::tools::select_tool::clear_drag_preview(
+                        crate::v2::apps::editor::input::tools::select_tool::clear_drag_preview(
                             e,
                             &engine_ops::vehicle_points(),
                         );
@@ -1722,7 +1729,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                                     }
                                     // T-090.12.5 — start the object wash over the fresh raster; the
                                     // rAF loop steps it under its budget and re-uploads the merge.
-                                    crate::v2::apps::editor::tools::los_world_wasm::start_object_wash();
+                                    crate::v2::apps::editor::input::tools::los_world_wasm::start_object_wash();
                                 } else {
                                     // LoS RAY: first click sets the observer, second completes
                                     // the shot (Decision 2's two-click capture). Session-local

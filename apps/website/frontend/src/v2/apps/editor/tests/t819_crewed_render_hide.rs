@@ -183,12 +183,12 @@ fn map_binds_feed_map_render_slot_soa() {
         "/src/v2/apps/editor/mission_editor.rs"
     ));
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    // T-934.13 — the pick sites ride the gesture closures, now in canvas/gestures.rs; the first
+    // T-934.13 — the pick sites ride the gesture closures, now in input/pointer_gestures.rs; the first
     // bind stays in the page's engine-boot task. Examine both halves.
     let mut page = live_code(&raw[raw.find(anchor.as_str()).expect("MissionEditorPage")..]);
     page.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     assert!(
         page.contains("map_render_slot_soa") && page.matches("map_render_slot_soa").count() >= 2,

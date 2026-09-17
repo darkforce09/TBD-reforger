@@ -2,10 +2,10 @@
 /// carried the raw-text variant of it; the shared one scrubs comments, which is strictly
 /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
 use crate::v2::apps::editor::panels::help_modal::keymap_census::keydown_arms;
-use crate::v2::core::test_support::class_r_scrub::live_code;
+use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 /// Everything after the editor page's own signature — the live editor body — plus the T-934.13
-/// gesture file (`canvas/gestures.rs`), where the pointer closures (the F-27 click arm among
+/// gesture file (`input/pointer_gestures.rs`), where the pointer closures (the F-27 click arm among
 /// them) moved verbatim. Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -21,11 +21,11 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }
@@ -50,23 +50,29 @@ fn fn_source(src: &str, sig: &str) -> String {
 // ── SEL-ALL-001 ───────────────────────────────────────────────────────────────────────────
 
 /// KEY CENSUS: Ctrl/Cmd+A is claimed by THIS editor keydown and by nothing else. The two
-/// window-level editor keydowns are this file's and `mission_history`'s (Ctrl+Z/Y); the other
+/// window-level editor keydowns are the chord one and the undo/redo one (Ctrl+Z/Y); the other
 /// one must not also bind it, or the two listeners would both fire on one keypress.
 #[test]
 fn t649_ctrl_a_census() {
     let this_arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
-    let history_arms = keydown_arms(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
-    )));
+    // The other window-level editor keydown is the undo/redo one, which sits in the same file as
+    // the chord closure above: slice its installer out by name, then run the one extractor over
+    // that body so the census still reads exactly the arms it is asking about.
+    let history_arms = keydown_arms(only_body(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/input/window_keydown.rs"
+        )),
+        "pub fn register_key_handler",
+    ));
     // Assembled so the literal never appears verbatim in this test's own source.
     let key_a = format!("\"{}\"", "KeyA");
     assert!(
         !history_arms.contains(&key_a),
-        "census: mission_history's keydown (Ctrl+Z/Y) must not claim A"
+        "census: the undo/redo keydown (Ctrl+Z/Y) must not claim A"
     );
     // The arm is modifier-gated (Ctrl/Cmd) and rejects Alt/Shift, exactly like Ctrl+C / Ctrl+V
     // beside it — a BARE `a` must stay free.
@@ -96,7 +102,7 @@ fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
     let ed = editor_live();
     let arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
     assert!(
         arms.contains("container.get_bounding_client_rect()")

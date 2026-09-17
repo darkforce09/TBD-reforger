@@ -22,7 +22,7 @@ impl crate::v2::apps::editor::panels::validation_panel::SeamRegistration
 
 /// Register the live engine and host with identity-guarded cleanup on the current UI owner.
 pub fn register_render_ctx(engine: EngineHandle, host: HostHandle) {
-    crate::v2::apps::editor::tools::ruler_tool::install_seam(&RENDER_CTX, (engine, host));
+    crate::v2::apps::editor::input::tools::ruler_tool::install_seam(&RENDER_CTX, (engine, host));
 }
 
 /// Supply the editor's live preference readers to the graphics asset loader.

@@ -13,7 +13,7 @@ fn comments() -> String {
 }
 
 /// Page-from-anchor + the T-934.13 gesture file — the drag pins span the moved pointermove/up
-/// closures (`canvas/gestures.rs`) and the page's own `onpointercancel` exit. Each half scrubbed
+/// closures (`input/pointer_gestures.rs`) and the page's own `onpointercancel` exit. Each half scrubbed
 /// separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -25,7 +25,7 @@ fn page() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src
 }

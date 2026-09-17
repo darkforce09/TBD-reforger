@@ -1,5 +1,5 @@
 //! Role: Module boundary for the editor's interactive map tools.
-//! Position: `editor` in the frontend editor.
+//! Position: `editor/input` in the frontend editor.
 //! Signals & state: DOM overlays, browser transports, and the mount-scoped installs behind them.
 //! Invariants: the decidable half of every tool here — its state machine, geometry and verdicts —
 //! lives in `website_map_engine::editing::tools`. What remains is the browser's half.

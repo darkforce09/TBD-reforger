@@ -1,6 +1,6 @@
 //! Role: the browser half of the selection tool — the drag preview lanes and the read-only
 //! `window.__editorSelection` smoke bridge.
-//! Position: `editor/tools` in the frontend editor.
+//! Position: `editor/input/tools` in the frontend editor.
 //! Signals & state: the leaked selection / engine / document handles the editor owns.
 //! Invariants: the gesture model, the pick, the marquee and their brute-force oracles belong to
 //! `website_map_engine::editing::tools::selection`. What remains here is what needs a `window`, a

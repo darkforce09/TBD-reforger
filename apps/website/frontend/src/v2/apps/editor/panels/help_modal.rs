@@ -3,7 +3,7 @@
 //! MENU-HELP-001).
 //!
 //! **The defect this closes.** The Mission Creator binds twenty-six distinct `KeyboardEvent` codes
-//! across fifteen window-level keydown listeners in eleven editor-surface modules and, before this
+//! across fifteen window-level keydown listeners in ten editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
 //! `]`, `1`, `2`, `3`, `E`, `R` or Backspace was reading the Rust source.
@@ -256,7 +256,7 @@ pub const SHORTCUTS: &[Shortcut] = &[
         action: "Space the selection equally, horizontally / vertically (needs 2+ selected)",
         group: "Arrange",
     },
-    // ── History (mission_history's keydown — the second window-level editor listener) ──────────
+    // ── History (the undo/redo keydown — the second window-level editor listener) ──────────────
     Shortcut {
         codes: &["KeyZ"],
         chord: "Ctrl/Cmd + Z",
@@ -265,7 +265,7 @@ pub const SHORTCUTS: &[Shortcut] = &[
     },
     Shortcut {
         codes: &["KeyY"],
-        // T-740 — mission_history redo uses ctrl || meta on KeyY (same mod as undo). Bare
+        // T-740 — the undo/redo keydown uses ctrl || meta on KeyY (same mod as undo). Bare
         // "Ctrl + Y" lied to Mac operators; document Cmd on both alternatives.
         chord: "Ctrl/Cmd + Y  or  Ctrl/Cmd + Shift + Z",
         action: "Redo",
@@ -425,7 +425,7 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 /// # What T-738 found, which is the substance
 ///
 /// The old extractor scraped only the two `match ev.code().as_str()` blocks (`mission_editor`'s
-/// editor keydown and `mission_history`'s Ctrl+Z/Y one). The editor binds keys in **eleven more
+/// editor keydown and the Ctrl+Z/Y one). The editor binds keys in **eleven more
 /// window-level listeners** it could not see, all through `ev.key()`: the asset picker, the
 /// comment editor and the connections panel (`overlays`, since T-934.11), the Attributes modal
 /// (`attributes`), the
@@ -452,7 +452,7 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 ///   Space-cycles-the-widget vs Space-flyTo). Nothing orders them, so both run.
 ///   [`no_two_listeners_claim_the_same_chord`].
 /// * **Within one listener** — `match` arms are ORDERED, so an overlap is resolved deterministically
-///   by position and is often deliberate (`mission_history` matches `"KeyZ" if shift` before bare
+///   by position and is often deliberate (the undo/redo listener matches `"KeyZ" if shift` before bare
 ///   `"KeyZ"`). The bug there is a later arm being *entirely* shadowed by an earlier one, which is a
 ///   binding that can never fire. [`no_arm_is_shadowed_within_its_own_listener`].
 ///
@@ -653,29 +653,29 @@ pub(crate) mod keymap_census {
     /// on the file that owns the listener. Grep for the LISTENER HEADS, not for the component.
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
-            // T-934.14 — the editor's own keydown dispatch moved out of `mission_editor.rs` into
-            // `canvas/commands.rs` (the page keeps ZERO window-level keydown listeners now, so it
-            // left the surface with its listener).
+            // The input layer's keyboard half carries BOTH window-level keydowns: the editor's
+            // own chord closure and the undo/redo one that calls into `state/history.rs`. Two
+            // listeners in one file, adjudicated against each other like any other pair.
             (
-                "commands.rs",
+                "window_keydown.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/canvas/commands.rs"
+                    "/src/v2/apps/editor/input/window_keydown.rs"
                 )),
-                1,
+                2,
             ),
             // T-946.86 — the gesture owner cancels its private Z/vertex arm on Escape.
             (
-                "gestures.rs",
+                "pointer_gestures.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/canvas/gestures.rs"
+                    "/src/v2/apps/editor/input/pointer_gestures.rs"
                 )),
                 1,
             ),
             // T-939.4 — and the page is BACK on the surface with one listener: the six Arrange
-            // chords. It is not in `commands.rs` because that file is another slice's `owns`, and it
-            // is not in `top_strip.rs` (where the Arrange list lives) because the strip unmounts
+            // chords. It is not in `window_keydown.rs` because that file is another slice's `owns`,
+            // and it is not in `top_strip.rs` (where the Arrange list lives) because the strip unmounts
             // behind the `chrome_hidden` gate and would take the chords with it. Being censused is
             // what matters — these six are adjudicated against every other binding in the editor by
             // `no_two_listeners_claim_the_same_chord` below, wherever the closure sits.
@@ -696,14 +696,6 @@ pub(crate) mod keymap_census {
                     "/src/v2/apps/editor/bridge/overlays.rs"
                 )),
                 3,
-            ),
-            (
-                "mission_history.rs",
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/state/history.rs"
-                )),
-                1,
             ),
             (
                 "attributes.rs",
@@ -765,7 +757,7 @@ pub(crate) mod keymap_census {
 
     /// Listener-level modifier PRECONDITIONS: an early `return` above the arm list narrows every arm
     /// in that closure, and reading only the arm heads would therefore over-claim.
-    /// `mission_history` bails on anything that is not Ctrl/Cmd-without-Alt before it looks at the
+    /// The undo/redo listener bails on anything that is not Ctrl/Cmd-without-Alt before it looks at the
     /// code at all, which is why its bare `"KeyZ"` arm is not the modifier-free claim it appears to
     /// be.
     ///
@@ -1084,7 +1076,7 @@ pub(crate) mod keymap_census {
     }
 
     /// Within ONE listener, `match` order resolves an overlap deterministically — that is why
-    /// `mission_history` can put `"KeyZ" if ev.shift_key()` in front of a bare `"KeyZ"` and mean it.
+    /// the undo/redo listener can put `"KeyZ" if ev.shift_key()` in front of a bare `"KeyZ"` and mean it.
     /// What is never intentional is an arm whose every keypress was already taken by an arm above
     /// it: that binding can never fire, and `rustc` will not warn because guards make arm
     /// reachability undecidable for it.
@@ -1278,7 +1270,7 @@ pub(crate) mod keymap_census {
         // untouched instead of swallowing the key from the dialogs above.
         let arms = keydown_arms(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/canvas/commands.rs"
+            "/src/v2/apps/editor/input/window_keydown.rs"
         )));
         let esc = arms
             .find(&format!("\"{}\" if !modk", "Escape"))
@@ -1605,7 +1597,7 @@ mod t692_help_covers_every_binding {
         );
         assert!(
             bound.contains("KeyZ"),
-            "extractor must see mission_history's arms (found {bound:?})"
+            "extractor must see the undo/redo listener's arms (found {bound:?})"
         );
         assert!(
             bound.contains("ArrowUp") && bound.contains("Enter"),
@@ -1718,7 +1710,7 @@ mod t692_help_covers_every_binding {
         );
     }
 
-    /// T-740 — mission_history redo accepts ctrl OR meta on KeyY (same as undo on KeyZ). A help
+    /// T-740 — the undo/redo keydown accepts ctrl OR meta on KeyY (same as undo on KeyZ). A help
     /// chord that documents bare `Ctrl + Y` alone lies to Mac operators and is RED.
     #[test]
     fn redo_chord_documents_cmd_for_key_y() {
@@ -1728,7 +1720,7 @@ mod t692_help_covers_every_binding {
             .expect("SHORTCUTS must document KeyY redo");
         assert!(
             row.chord.contains("Ctrl/Cmd + Y"),
-            "T-740: KeyY redo chord must document Cmd (got `{}`); mission_history uses \
+            "T-740: KeyY redo chord must document Cmd (got `{}`); the undo/redo keydown uses \
              ctrl_key() || meta_key() — bare `Ctrl + Y` alone is a lie on Mac",
             row.chord
         );

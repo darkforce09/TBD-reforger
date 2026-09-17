@@ -57,7 +57,7 @@ fn z_drag_readout_generation() -> ArcRwSignal<u32> {
 }
 
 /// T-946.86 (.82) — publish the height chip's text (`None` clears it), then bump the generation so
-/// the chip's closure re-runs. Called from the Z-arm drag in `canvas/gestures.rs`: once per
+/// the chip's closure re-runs. Called from the Z-arm drag in `input/pointer_gestures.rs`: once per
 /// pointermove while the arm is held, and once with `None` on release.
 ///
 /// The bump reads the current value UNTRACKED, so writing the readout never subscribes the writer.
@@ -78,15 +78,15 @@ pub(crate) fn read_z_drag_readout() -> Option<String> {
 
 /* ─── T-946.86 (.82) — the Z-arm gesture's arithmetic ───────────────────────────────────────────
  *
- * These two live HERE, beside the readout they feed, and NOT in `canvas/gestures.rs` where they
- * are called, for one hard reason: `canvas/mod.rs` declares `gestures` under
+ * These two live HERE, beside the readout they feed, and NOT in `input/pointer_gestures.rs` where
+ * they are called, for one hard reason: `input/mod.rs` declares `pointer_gestures` under
  * `#[cfg(target_arch = "wasm32")]`, so a `#[cfg(test)]` module inside that file NEVER COMPILES on
  * the native `cargo test -p website-frontend` harness. Pins written there are dead on arrival —
  * which is the same defect class this ticket exists to repair, one level down, and it was caught
  * only because the suite's test COUNT did not move when seven pins were added.
  *
  * `overlays` is ungated (see the module note above), so the pins at the bottom of this file both
- * run and can `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/v2/apps/editor/canvas/gestures.rs"))` — a crate-anchored path, so it survives either file moving — to scrub the live gesture source.
+ * run and can `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/v2/apps/editor/input/pointer_gestures.rs"))` — a crate-anchored path, so it survives either file moving — to scrub the live gesture source.
  */
 
 /// T-946.86 (.82) — the Z-arm gesture's ONE piece of arithmetic: cursor travel in CSS pixels →
@@ -1276,10 +1276,11 @@ pub(crate) fn ConflictDialog(
 //    definition pins (`t647_placement_interactions`, `t726_window_esc_stack`) scrub everything
 //    above it, which is all of the production source. Do not add production items below this line.
 //
-//    These pins scrub `canvas/gestures.rs` from HERE rather than from inside it: `canvas/mod.rs`
-//    gates `gestures` on `target_arch = "wasm32"`, so a test module in that file never compiles
-//    natively and never runs. That is the wave-255 defect class wearing a test's clothes, and it
-//    is why the `z_drag_elevation_delta` helper it exercises lives in this file too.
+//    These pins scrub `input/pointer_gestures.rs` from HERE rather than from inside it:
+//    `input/mod.rs` gates `pointer_gestures` on `target_arch = "wasm32"`, so a test module in that
+//    file never compiles natively and never runs. That is the wave-255 defect class wearing a
+//    test's clothes, and it is why the `z_drag_elevation_delta` helper it exercises lives in this
+//    file too.
 #[cfg(test)]
 mod t946_86_z_arm {
     use crate::v2::apps::editor::bridge::overlays::z_drag_elevation_delta;
@@ -1292,7 +1293,7 @@ mod t946_86_z_arm {
     fn live() -> String {
         live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/canvas/gestures.rs"
+            "/src/v2/apps/editor/input/pointer_gestures.rs"
         )))
     }
 

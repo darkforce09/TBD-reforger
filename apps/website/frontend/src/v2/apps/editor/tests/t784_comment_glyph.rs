@@ -14,7 +14,7 @@ fn comments() -> String {
     .to_string()
 }
 
-/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`), where the pointerup
+/// Page-from-anchor + the T-934.13 gesture file (`input/pointer_gestures.rs`), where the pointerup
 /// click path this module pins moved verbatim. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -26,7 +26,7 @@ fn page() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src
 }

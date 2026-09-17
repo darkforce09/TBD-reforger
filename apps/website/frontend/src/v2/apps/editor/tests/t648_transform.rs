@@ -7,7 +7,7 @@ use website_map_engine::data::store::operations::rotation::{
     bearing_to_face, norm_deg, snap_rotate,
 };
 
-/// Page-from-anchor + the T-934.13 gesture file (`canvas/gestures.rs`) — the transform wiring
+/// Page-from-anchor + the T-934.13 gesture file (`input/pointer_gestures.rs`) — the transform wiring
 /// spans the page body (keydown arms, widget mounts) and the moved pointer closures (the ring
 /// promotion, the Shift-rotate arm, the Move commit). Each half scrubbed separately.
 fn editor_live() -> String {
@@ -24,11 +24,11 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }
@@ -367,7 +367,7 @@ fn press_on_ring_grabs_the_ring_band_only() {
 }
 
 // ── KEYDOWN CENSUS: G free (+ brackets + digits), Space stays flyTo ────────────────────────
-/// The two window-level EDITOR keydowns are this file's and `mission_history`'s. Census both as
+/// The two window-level EDITOR keydowns are the chord one and the undo/redo one. Census both as
 /// raw text (keeping string literals — a keydown arm IS a `"KeyX"` string). T-648's new keys must
 /// be free before this slice, and Space must remain `center_on_selection` (flyTo), not a widget
 /// cycle (the collision decision).
@@ -386,12 +386,18 @@ fn t648_keydown_census() {
     use crate::v2::apps::editor::panels::help_modal::keymap_census::keydown_arms;
     let this_arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
-    let history_arms = keydown_arms(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
-    )));
+    // The other window-level editor keydown is the undo/redo one, which sits in the same file as
+    // the chord closure above: slice its installer out by name, then run the one extractor over
+    // that body so the census still reads exactly the arms it is asking about.
+    let history_arms = keydown_arms(only_body(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/input/window_keydown.rs"
+        )),
+        "pub fn register_key_handler",
+    ));
     // Needles assembled so the LITERAL never appears verbatim in this test's own source.
     let key = |k: &str| format!("\"{k}\"");
     let g = key("KeyG");
@@ -413,7 +419,7 @@ fn t648_keydown_census() {
             && !history_arms.contains(&d1)
             && !history_arms.contains(&d2)
             && !history_arms.contains(&d3),
-        "census: mission_history's keydown (Ctrl+Z/Y) must not claim G / [ / ] / 1 / 2 / 3"
+        "census: the undo/redo keydown (Ctrl+Z/Y) must not claim G / [ / ] / 1 / 2 / 3"
     );
     // G is the chosen grid toggle — an arm here, and NOT an Eden keysym artefact.
     assert!(
@@ -640,7 +646,7 @@ fn widget_and_readout_are_mounted() {
 /// claim and its correction are comments, which `live_code` strips.
 #[test]
 fn false_t159_22_comment_is_corrected() {
-    // T-934.13 moved the pointerup closure (whose comment this pins) to canvas/gestures.rs; the
+    // T-934.13 moved the pointerup closure (whose comment this pins) to input/pointer_gestures.rs; the
     // negative check keeps sweeping BOTH files so the false claim cannot re-enter either.
     let raw = concat!(
         include_str!(concat!(
@@ -649,7 +655,7 @@ fn false_t159_22_comment_is_corrected() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/canvas/gestures.rs"
+            "/src/v2/apps/editor/input/pointer_gestures.rs"
         ))
     );
     // The false-claim needle is assembled from fragments so this test's OWN source (in this same

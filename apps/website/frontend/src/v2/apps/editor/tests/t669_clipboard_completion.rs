@@ -3,6 +3,7 @@
 /// `(code, modifiers)` census that finally makes the Ctrl+V / Ctrl+Shift+V distinction this
 /// module's own pins had to hand-check.
 use crate::v2::apps::editor::panels::help_modal::keymap_census::keydown_arms;
+use crate::v2::core::test_support::class_r_scrub::only_body;
 use std::collections::BTreeSet;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -12,23 +13,29 @@ fn key(k: &str) -> String {
 }
 
 /// KEY CENSUS: Ctrl/Cmd+X is claimed by THIS editor keydown and by nothing else. The two
-/// window-level editor keydowns are this file's and `mission_history`'s (Ctrl+Z/Y); the other
+/// window-level editor keydowns are the chord one and the undo/redo one (Ctrl+Z/Y); the other
 /// one must not also bind X, or both listeners would fire on one keypress and the selection
 /// would be cut twice.
 #[test]
 fn t669_cut_key_census() {
     let this_arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
-    let history_arms = keydown_arms(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/state/history.rs"
-    )));
+    // The other window-level editor keydown is the undo/redo one, which sits in the same file as
+    // the chord closure above: slice its installer out by name, then run the one extractor over
+    // that body so the census still reads exactly the arms it is asking about.
+    let history_arms = keydown_arms(only_body(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/input/window_keydown.rs"
+        )),
+        "pub fn register_key_handler",
+    ));
     let key_x = key("KeyX");
     assert!(
         !history_arms.contains(&key_x),
-        "census: mission_history's keydown (Ctrl+Z/Y) must not claim X"
+        "census: the undo/redo keydown (Ctrl+Z/Y) must not claim X"
     );
     // Modifier-gated (Ctrl/Cmd), rejecting Alt and Shift — the same guard shape as the Ctrl+C /
     // Ctrl+V arms it sits between, so a BARE `x` stays free.
@@ -57,7 +64,7 @@ fn t669_cut_key_census() {
 fn cut_copies_before_it_deletes_and_short_circuits() {
     let arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
     let at = arms
         .find(&format!("{} if modk", key("KeyX")))
@@ -97,7 +104,7 @@ fn cut_copies_before_it_deletes_and_short_circuits() {
 fn paste_at_original_passes_no_anchor() {
     let arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
     let key_v = key("KeyV");
     let plain = arms
@@ -174,7 +181,7 @@ fn t743_plain_paste_falls_back_to_the_view_centre() {
 fn the_two_paste_arms_are_mutually_exclusive() {
     let arms = keydown_arms(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     )));
     let key_v = key("KeyV");
     assert_eq!(

@@ -4,7 +4,7 @@ use crate::v2::core::test_support::class_r_scrub::live_code;
 /// `clear_for_test` helper near the top, so `live_code` on the whole file would cut everything
 /// below it (see the t425/t427 pins); hand it the region from the editor page onward, at a
 /// brace-0 boundary so the slice stays balanced. T-934.13 moved the pointer/wheel/contextmenu/
-/// dblclick closures to `canvas/gestures.rs`, so that file is appended (scrubbed separately) —
+/// dblclick closures to `input/pointer_gestures.rs`, so that file is appended (scrubbed separately) —
 /// the pan-button and contextmenu pins below read those bodies.
 fn editor_live() -> String {
     // Full signature (with `()`), so the other test's bare `"pub fn MissionEditorPage"` literal
@@ -22,7 +22,7 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src
 }
@@ -33,10 +33,10 @@ fn editor_live() -> String {
 #[test]
 fn backspace_hides_chrome_and_does_not_delete() {
     // String-literal arms: pinned on the RAW file (live_code blanks string literals). The arms
-    // moved with the keydown dispatch to `canvas/commands.rs` at T-934.14 — pin that file.
+    // moved with the keydown dispatch to `input/window_keydown.rs` at T-934.14 — pin that file.
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ));
     // Split the needle so the literal below is not itself a second occurrence in this file.
     let combined = format!("{}{}", "\"Delete\" | ", "\"Backspace\"");

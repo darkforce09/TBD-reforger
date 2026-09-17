@@ -54,7 +54,7 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 // `mission_editor::…` paths (`state/history.rs`, the panel test modules) and the evacuated pins'
 // `use super::…` imports all keep their exact spelling. The cfg split mirrors the consumers:
 // nothing in the native non-test build reads these through here.
-// (T-934.13: the gesture closures live in `canvas/gestures.rs` and still consume these through
+// (T-934.13: the gesture closures live in `input/pointer_gestures.rs` and still consume these through
 // THIS re-export surface — one hub, so the wasm half of this list stays load-bearing.)
 #[cfg(any(test, target_arch = "wasm32"))]
 pub(crate) use crate::v2::apps::editor::bridge::pointer_hover::{
@@ -1169,7 +1169,7 @@ pub fn MissionEditorPage() -> impl IntoView {
      * all). Chords that stopped working the moment an author hid the chrome to look at a clean map
      * would fail exactly when a big alignment pass is most likely. The page outlives the chrome.
      *
-     * **Why it is not folded into `canvas/commands.rs`'s keydown**, which would otherwise be its
+     * **Why it is not folded into `input/window_keydown.rs`'s keydown**, which would otherwise be its
      * natural home: that file is outside this slice's `owns`. Recorded in the report rather than
      * widened unilaterally. The census in `panels/help_modal.rs` sees this listener (the file is
      * back in `editor_surface`), so the two collision pins adjudicate these six chords against
@@ -1606,7 +1606,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-642 — hand the leaked chain to the `ruler_tool` thread_local so the `RulerOverlay`
             // (mounted in the shared view, outside this block) can read + project it (the
             // `context_menu::set_menu_signal` handoff idiom).
-            crate::v2::apps::editor::tools::ruler_tool::register_ruler_chain(ruler.clone());
+            crate::v2::apps::editor::input::tools::ruler_tool::register_ruler_chain(ruler.clone());
 
             // T-643 — the Line-of-Sight capture. Session-local OVERLAY state (Decision 4 — NOT the
             // Y.Doc, exactly like the selection set + the ruler chain above), a leaked
@@ -1663,7 +1663,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         }
                         // T-090.12.5 — the object wash goes with the lane.
                         #[cfg(target_arch = "wasm32")]
-                        crate::v2::apps::editor::tools::los_world_wasm::cancel_object_wash();
+                        crate::v2::apps::editor::input::tools::los_world_wasm::cancel_object_wash();
                     }
                 });
             }
@@ -1674,16 +1674,16 @@ pub fn MissionEditorPage() -> impl IntoView {
             // in the editor) — `los_tool` takes no compile-time dependency on the grid-handle type.
             // The scheduler's policy is the engine's; its clock, frame pump and log line are this
             // host's. Installed before any placement can submit a job.
-            crate::v2::apps::editor::tools::viewshed_scheduler::install_scheduler_host();
-            crate::v2::apps::editor::tools::los_tool::register_los_state(los.clone());
+            crate::v2::apps::editor::input::tools::viewshed_scheduler::install_scheduler_host();
+            crate::v2::apps::editor::input::tools::los_tool::register_los_state(los.clone());
             // T-644 — hand the leaked viewshed state to `los_tool`'s thread_local (peer of
             // `register_los_state`) so `place_viewshed` can store the computed raster into it and a
             // pan re-projects the same rect. The compute reuses the SAME DEM sampler registered just
             // below (the ray's sampler); `place_viewshed` calls `compute_viewshed_for`, which reads it.
-            crate::v2::apps::editor::tools::los_tool::register_viewshed_state(viewshed.clone());
+            crate::v2::apps::editor::input::tools::los_tool::register_viewshed_state(viewshed.clone());
             {
                 let dem_grid = dem_grid.clone();
-                crate::v2::apps::editor::tools::los_tool::register_los_sampler(std::rc::Rc::new(
+                crate::v2::apps::editor::input::tools::los_tool::register_los_sampler(std::rc::Rc::new(
                     move |x: f64, y: f64| {
                         dem_grid.borrow().as_ref().and_then(|g| {
                             website_map_engine::world::terrain::dem::grid::sample_grid_meters(g, x, y)
@@ -1692,7 +1692,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 ));
             }
 
-            crate::v2::apps::editor::tools::select_tool::register_editor_selection(
+            crate::v2::apps::editor::input::tools::select_tool::register_editor_selection(
                 selection.clone(),
                 doc.clone(),
                 engine.clone(),
@@ -2045,7 +2045,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             editor_context::set_connection_selection_signal(selected_connection);
 
             mission_history::register_editor_history();
-            mission_history::register_key_handler();
+            crate::v2::apps::editor::input::window_keydown::register_key_handler();
             // T-189 — the unsaved-work guard (`beforeunload`). Registered after `set_ctx` above,
             // which is what supplies both the `dirty` flag it reads and the mission id it arms on.
             //
@@ -2426,7 +2426,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             register_editor_cam(engine.clone(), map_host.clone());
                             // T-090.12.5 — the object-wash progress bridge (headless probes).
                             #[cfg(target_arch = "wasm32")]
-                            crate::v2::apps::editor::tools::los_world_wasm::register_object_wash_hook();
+                            crate::v2::apps::editor::input::tools::los_world_wasm::register_object_wash_hook();
                             register_slot_stats(engine.clone());
                             // T-173 P6 — let the Mission Settings render-pref controls reach the
                             // live engine + host.
@@ -2577,7 +2577,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // `hover_cursor_css(false)` (not a literal) so there is exactly one source for the value.
             set_map_cursor(&canvas, false);
 
-            // ═══════════ T-934.13 — the gesture closures live in `canvas/gestures.rs` ═══════
+            // ═══════════ T-934.13 — the gesture closures live in `input/pointer_gestures.rs` ═══════
             //
             // Wheel-zoom, pointerdown/move/up (MMB pan + the LMB Pending → Move | Marquee | Ruler |
             // Rotate machine + the armed place), contextmenu and dblclick moved out VERBATIM behind
@@ -2588,15 +2588,16 @@ pub fn MissionEditorPage() -> impl IntoView {
             // capture/passive options and the same leak contract (`forget()`), so the DOM wiring is
             // unchanged; only the file the bodies live in moved.
             //
-            // ═══════════ T-934.14 — the keydown dispatch lives in `canvas/commands.rs` ═══════
+            // ═══════════ T-934.14 — the keydown dispatch lives in `input/window_keydown.rs` ═══════
             //
             // The editor's window-level `onkeydown` (T-159.26 clipboard/Delete/Space, the T-662
             // Backspace hide-chrome + E/R latches, the shared T-642/643/644/723/768/792 Esc stack,
             // the T-635 HUD toggle, the T-648/T-795 snap grid + widget-variant keys) moved out
             // VERBATIM behind the same context — `attach_editor_hotkeys` registers on the window
             // with the same leak contract, and the four latch signals it flips ride the context's
-            // T-934.14 fields below. `mission_history`'s Ctrl+Z/Y keydown is separate and unmoved.
-            let gesture_ctx = crate::v2::apps::editor::canvas::gestures::EditorGestureContext {
+            // T-934.14 fields below. The Ctrl+Z/Y keydown is a separate listener in that same
+            // file, installed above by `register_key_handler`.
+            let gesture_ctx = crate::v2::apps::editor::input::pointer_gestures::EditorGestureContext {
                 container: container.clone(),
                 canvas: canvas.clone(),
                 engine: engine.clone(),
@@ -2626,8 +2627,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                 dock_right_collapsed,
                 debug_hud_shown,
             };
-            crate::v2::apps::editor::canvas::gestures::attach_canvas_gestures(&gesture_ctx);
-            crate::v2::apps::editor::canvas::commands::attach_editor_hotkeys(&gesture_ctx);
+            crate::v2::apps::editor::input::pointer_gestures::attach_canvas_gestures(&gesture_ctx);
+            crate::v2::apps::editor::input::window_keydown::attach_editor_hotkeys(&gesture_ctx);
 
             // T-159.21 — pointer off the map ⇒ the CUR read-out shows the em-dash cells (React's
             // `onPointerLeave → null`). Fires when the pointer enters a chrome panel too, which is
@@ -2684,7 +2685,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-573 — a cancel is never a commit, so nothing downstream
                                 // re-binds: the previewed vehicle rows would otherwise stay parked
                                 // at the last offset while the document says they never moved.
-                                crate::v2::apps::editor::tools::select_tool::clear_drag_preview(e, &engine_ops::vehicle_points());
+                                crate::v2::apps::editor::input::tools::select_tool::clear_drag_preview(e, &engine_ops::vehicle_points());
                                 // T-796 — the comment lane, same reasoning: a cancelled drag that
                                 // held a note left its glyph at the previewed offset. Re-bind the
                                 // authored positions (identity when no note was dragged).
@@ -2971,7 +2972,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // click-chain capture is the map's own pointer handlers), reads the live camera + chain
                 // itself, and re-runs off the same `cursor`/`debug_hud` heartbeats as the furniture (no
                 // new rAF loop) plus `ruler_tick` (repaint on a still-pointer click).
-                <crate::v2::apps::editor::tools::ruler_tool::RulerOverlay cursor debug_hud=Some(debug_hud) tick=ruler_tick />
+                <crate::v2::apps::editor::input::tools::ruler_tool::RulerOverlay cursor debug_hud=Some(debug_hud) tick=ruler_tick />
                 // T-643 — the Line-of-Sight overlay (dispatcher-authorized SINGLE mount line; the
                 // component + all its logic live in `los_tool`, my owned file). UNGATED like the ruler
                 // overlay: a placed LoS shot is a measurement the operator created, so it survives a
@@ -2980,7 +2981,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // reads the live camera + state + DEM sampler itself, and re-runs off the same
                 // `cursor`/`debug_hud` heartbeats as the ruler (no new rAF loop) plus `los_tick`
                 // (repaint on a still-pointer click).
-                <crate::v2::apps::editor::tools::los_tool::LosOverlay cursor debug_hud=Some(debug_hud) tick=los_tick />
+                <crate::v2::apps::editor::input::tools::los_tool::LosOverlay cursor debug_hud=Some(debug_hud) tick=los_tick />
                 // T-648 — the transformation widget (WIDGET-CYCLE-001 / WIDGET-TRANS-001). UNGATED
                 // like the ruler/LoS overlays: it draws on the live selection, is `pointer-events-none`
                 // (the gestures are the map's own handlers), and re-runs off the same
@@ -3326,7 +3327,7 @@ mod t644_los_button_submode;
 /// `select_tool`. The wasm wiring (the Shift-rotate gesture arm, the widget mount, the keydown
 /// bindings, the included comment fix) is proved by SOURCE PINS on `live_code` (comments + dead code
 /// stripped, so a stale note or an `if false` wrapper cannot satisfy them). The keydown CENSUS reads
-/// all fifteen window-level editor keydowns across eleven modules, including `canvas/gestures`,
+/// all fifteen window-level editor keydowns across ten modules, including `input/pointer_gestures`,
 /// as raw text.
 #[cfg(test)]
 #[path = "tests/t648_transform.rs"]

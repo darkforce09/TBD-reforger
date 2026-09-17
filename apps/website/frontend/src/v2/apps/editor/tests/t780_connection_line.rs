@@ -127,13 +127,18 @@ fn page() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
 
-/// The editor keydown dispatch — `canvas/commands.rs` since T-934.14 (the Delete arm moved out of
-/// the page verbatim). Scrubbed like `page()`.
+/// The editor's chord dispatch — the `attach_editor_hotkeys` half of `input/window_keydown.rs`,
+/// which is where the Delete arm lives. Sliced by installer name so the undo/redo listener in the
+/// same file is not a second `let onkeydown =`. Scrubbed like `page()`.
 fn keydown() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
-    )))
+    only_body(
+        &live_code(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/input/window_keydown.rs"
+        ))),
+        "pub(crate) fn attach_editor_hotkeys",
+    )
+    .to_string()
 }
 
 /// **The lane is fed from the DOCUMENT.** The mount body must bind `connections_bind` from

@@ -21,13 +21,15 @@ pub mod arsenal;
 /// The frontend's side of the engine seam: the canvas mount and its boot machine, the viewport and
 /// frame-timing belt, the floating overlays, the tactical-graphics belt and the map-asset host.
 pub mod bridge;
-/// The canvas input nest: the pointer and keyboard gesture closures over the map surface.
-pub mod canvas;
 /// The docked chrome's single import path — re-exports the panel components under [`panels`] so
 /// consumers name one module rather than tracking which panel file holds which component.
 pub mod eden_chrome;
+/// The input layer: the DOM pointer and keyboard events over the map, turned into map-engine
+/// commands — the canvas gesture closures, the two window-level keydown dispatches, and the
+/// browser half of the interactive map tools.
+pub mod input;
 /// The chrome inset constants and shared class recipes the strip, docks and toolbelt are laid out
-/// from. [`tools::select_tool`] and [`mission_editor`] read the same constants back, so the pan,
+/// from. [`input::tools::select_tool`] and [`mission_editor`] read the same constants back, so the pan,
 /// select and marquee gates stay aligned with whatever the panels currently occupy.
 pub mod layout;
 /// The editor page itself: the route component that mounts the canvas, raises the chrome around
@@ -42,10 +44,6 @@ pub mod panels;
 /// placement, persistence and hydration, tab locking, save status and session preferences, and
 /// the command definitions the hotkeys dispatch.
 pub mod state;
-/// The browser half of the interactive map tools — ruler, line of sight, viewshed and select.
-/// Each tool's state machine, geometry and verdicts live in `website_map_engine::editing::tools`;
-/// what sits here is the DOM overlay and the pointer routing that drive them.
-pub mod tools;
 /// Per-user world-layer visibility and basemap preferences, persisted to local storage. The wasm
 /// host applies them to the chunk residency and the engine on each settle.
 pub mod world_layer_prefs;

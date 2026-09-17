@@ -1,19 +1,30 @@
-//! T-934.14 — the Mission Creator window-level KEYDOWN dispatch, moved verbatim out of
-//! `MissionEditorPage`'s `on_load` block (`mission_editor.rs`) — the final Phase B2 evacuation.
-//! One `Closure` lives here: the editor's own `onkeydown` (Backspace/Delete exclusivity, the
-//! shared Esc dismissal stack, Ctrl/Cmd+C/X/V/Shift+V/A, Ctrl+Alt+D, Space flyTo, E/R dock
-//! latches, G/[/] snap grid, 1/2/3 widget variant). It rides the SAME `EditorGestureContext`
-//! the T-934.13 gesture closures use — the page builds the context once and calls
-//! [`attach_editor_hotkeys`] beside `attach_canvas_gestures`; the closure BODY is byte-identical
-//! to its pre-move text (the Class-S pins that used to grep `mission_editor.rs` for the arms now
-//! grep this file), and the capture preamble clones from locals mirroring the page's, so the
-//! capture semantics are unchanged. The window registration + `forget()` leak contract moved with
-//! it.
+//! The Mission Creator's window-level `keydown` dispatch.
 //!
-//! NOT here: `mission_history`'s Ctrl+Z/Y keydown (`state/history.rs` — the OTHER window-level
-//! editor keydown, unmoved), and `state/commands_hotkeys.rs` (the save/export/clipboard COMMAND
-//! registry, a different surface — the name collision is deliberate and documented in the
-//! T-934 plan: this module is the CANVAS key dispatch, that one is the command palette table).
+//! **Role:** installs the two window-level keydown listeners the editor runs.
+//! [`attach_editor_hotkeys`] carries the editor's own chords — the shared Escape dismissal stack,
+//! the split Backspace / Delete arms, Ctrl/Cmd+C/X/V/Shift+V/A, Ctrl+Alt+D, Space fly-to, the E/R
+//! dock latches, the G and `[`/`]` snap grid and the 1/2/3 widget variants.
+//! [`register_key_handler`] carries the undo/redo shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and
+//! Ctrl+Y.
+//! **Position:** the keyboard half of [`super`], beside the pointer closures in
+//! [`super::pointer_gestures`]. The chord listener rides the same
+//! [`EditorGestureContext`](super::pointer_gestures::EditorGestureContext) the pointer closures
+//! do, so the page builds that context once and attaches both from it.
+//! **Signals & state:** every handle and `Copy` signal the chord closure captures comes from the
+//! gesture context; the undo/redo closure captures nothing at all and reads the live editor
+//! through `state::history`'s thread-local context at fire time. Both listen on `window` rather
+//! than on the container, so a chord works before the map has focus, and both leak their closure
+//! the way the editor's other listeners do.
+//! **Invariants:** every arm sits behind `state::history::in_editable_field()`, so a key typed
+//! into a field is a character and never a chord. Undo and redo are reached only through
+//! `state::history::undo` / `state::history::redo` — this module dispatches the chord and calls
+//! across that boundary, it never steps the document's stack itself. Two listeners, two disjoint
+//! key sets: `panels/help_modal.rs`'s keymap census adjudicates them against every other window
+//! keydown in the editor.
+//!
+//! Not here: `state/commands_hotkeys.rs`, which is the save / export / clipboard COMMAND registry
+//! the palette and the strip dispatch through. That is a table of named commands; this is the key
+//! dispatch.
 
 use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
@@ -25,15 +36,16 @@ use crate::v2::apps::editor::state::history as mission_history;
 use crate::v2::apps::editor::state::undo_grouped_gestures;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
-use super::gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
+use super::pointer_gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
 use crate::v2::apps::editor::bridge::tactical_graphics_authoring;
 use crate::v2::apps::editor::state::armed_placement;
 use crate::v2::apps::editor::state::entity_selection;
 
-/// Attach the editor keydown closure to the window. The local `let` belt below mirrors the
-/// page's `on_load` environment name-for-name (the T-934.13 idiom), so the moved block — its
-/// capture preamble and the whole closure body — is byte-identical to the pre-move
-/// `mission_editor.rs` text.
+/// Attach the editor's chord closure to the window.
+///
+/// The local `let` belt below unpacks the gesture context into names the closure captures, the
+/// same idiom [`super::pointer_gestures::attach_canvas_gestures`] uses, so both halves of the
+/// input layer capture one environment built once by the page.
 pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
     let container = ctx.container.clone();
     let engine = ctx.engine.clone();
@@ -208,8 +220,8 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // primitives, so this arm adds no new doc write and no new undo step
                     // beyond the one `delete_selection` already files.
                     //
-                    // Census: X was bound by NEITHER window-level editor keydown before this
-                    // slice (this file's nor `mission_history`'s Ctrl+Z/Y one) — pinned by
+                    // Census: X is bound by NEITHER window-level editor keydown — neither
+                    // this chord closure nor the Ctrl+Z/Y one below — pinned by
                     // `t669_cut_key_census`. It carries the same guard shape as the C / V
                     // arms it sits between, so the top-of-closure `in_editable_field()` guard
                     // keeps Ctrl+X meaning "cut the text" while the operator is typing in an
@@ -291,9 +303,9 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // marquee's own `pick_rect` over the on-screen rect — an entity parked
                     // off-screen is deliberately NOT selected.
                     //
-                    // Census: `KeyA` was bound by NEITHER window-level editor keydown before
-                    // this slice (this file's nor `mission_history`'s Ctrl+Z/Y one) — pinned
-                    // by `t649_ctrl_a_census`. It sits beside `KeyC` / `KeyV` because it is
+                    // Census: `KeyA` is bound by NEITHER window-level editor keydown —
+                    // neither this chord closure nor the Ctrl+Z/Y one below — pinned by
+                    // `t649_ctrl_a_census`. It sits beside `KeyC` / `KeyV` because it is
                     // the same modifier family and the same top-of-closure
                     // `in_editable_field()` guard is what keeps Ctrl+A meaning "select the
                     // text" while the operator is typing in an Attributes field.
@@ -363,7 +375,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     // `Escape` — so the arm would fail `no_two_listeners_claim_the_same_chord`,
                     // and ANY new code literal here also fails `every_binding_has_a_help_entry`
                     // until `panels/help_modal.rs` grows a matching `Shortcut` row. The draw is
-                    // finished by RIGHT-CLICK on the canvas instead (`gestures.rs`'s
+                    // finished by RIGHT-CLICK on the canvas instead (`pointer_gestures.rs`'s
                     // `oncontextmenu`), which is the ordinary polyline-finish gesture and claims
                     // no key at all. Escape and Delete below are EXISTING bindings whose ACTS
                     // this slice widened — that is not a keymap change and the census agrees.
@@ -408,7 +420,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                     }
                     // ══════════════════════ T-648 — the snap grid + transform widget ══════
                     // KEY-GRID-001 — `G` toggles the snap-grid MASTER latch. Census: `KeyG`
-                    // is bound by NOTHING in this editor keydown or `mission_history`'s (the
+                    // is bound by NOTHING in this chord closure or the Ctrl+Z/Y one below (the
                     // only two window-level editor keydowns) — see the census pin
                     // `t648_keydown_census`. Bare key only (no Ctrl/Cmd/Alt/Shift), behind
                     // the top-of-closure `in_editable_field()` guard like E/R, so it never
@@ -479,4 +491,46 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
         }
         onkeydown.forget();
     }
+}
+
+/// Install the window `keydown` shortcuts for history: **Ctrl/Cmd+Z** undo, **Ctrl/Cmd+Shift+Z**
+/// or **Ctrl+Y** redo.
+///
+/// `code()` rather than `key()`, so the binding is layout-independent — a modifier can remap
+/// `key`. The modifier is ctrl **or** meta, Alt disqualifies, and `prevent_default` fires on a
+/// *match* even when the stack is empty, so the browser's own undo can never fight the document.
+/// Listens on `window` rather than on the container, so the shortcut works before the map has
+/// focus, and the closure leaks like the editor's other listeners.
+///
+/// The step itself belongs to `state::history`: this closure calls
+/// [`mission_history::undo`] / [`mission_history::redo`], which are the one path to the
+/// document's undo stack for the toolbar buttons, these chords and the gate bridge alike.
+pub fn register_key_handler() {
+    let Some(win) = web_sys::window() else {
+        return;
+    };
+    let onkeydown =
+        Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(move |ev: web_sys::KeyboardEvent| {
+            if mission_history::in_editable_field() {
+                return;
+            }
+            if !(ev.ctrl_key() || ev.meta_key()) || ev.alt_key() {
+                return;
+            }
+            match ev.code().as_str() {
+                "KeyZ" if ev.shift_key() => {
+                    mission_history::redo();
+                }
+                "KeyZ" => {
+                    mission_history::undo();
+                }
+                "KeyY" if !ev.shift_key() => {
+                    mission_history::redo();
+                }
+                _ => return,
+            }
+            ev.prevent_default();
+        });
+    let _ = win.add_event_listener_with_callback("keydown", onkeydown.as_ref().unchecked_ref());
+    onkeydown.forget();
 }

@@ -2,7 +2,7 @@ use crate::v2::core::test_support::class_r_scrub::live_code;
 
 /// The page from its component anchor PLUS the T-934.13 gesture file: the ruler wiring spans the
 /// page body (tool signals, keydown Esc, overlay mounts) and the pointer/dblclick closures, which
-/// moved verbatim to `canvas/gestures.rs`. Both halves are scrubbed separately (`live_code`
+/// moved verbatim to `input/pointer_gestures.rs`. Both halves are scrubbed separately (`live_code`
 /// truncates at the first `#[cfg(test)]`, and each file has its own tail).
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
@@ -18,11 +18,11 @@ fn editor_live() -> String {
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/gestures.rs"
+        "/src/v2/apps/editor/input/pointer_gestures.rs"
     ))));
     src.push_str(&live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/canvas/commands.rs"
+        "/src/v2/apps/editor/input/window_keydown.rs"
     ))));
     src
 }

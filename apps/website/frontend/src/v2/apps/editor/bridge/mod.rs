@@ -6,8 +6,8 @@
 //! renderer and the pick paths share, and the asset host that feeds terrain and imagery in.
 //! **Position:** the only place in the editor that holds a live engine or host handle and hands it
 //! to `website_map_engine`. The docked chrome under [`super::panels`] and the interactive tools
-//! under [`super::tools`] reach the map through the state and command layers, never through a
-//! handle of their own.
+//! under [`super::input::tools`] reach the map through the state and command layers, never through
+//! a handle of their own.
 //! **Signals & state:** the boot phase, the frame-timing samples, the widget-pivot registry and
 //! the hover cursor are all tab-local — they die with the browser tab and never reach the
 //! document. Anything an operator authored travels through `website_map_engine::editing` instead.
