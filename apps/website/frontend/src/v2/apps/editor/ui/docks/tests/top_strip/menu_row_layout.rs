@@ -24,7 +24,7 @@ use crate::v2::apps::editor::shell::layout::{
 /// The strip's own view body, with comments blanked and class/aria literals kept — the literals
 /// ARE the structure these pins read.
 fn body() -> String {
-    let src = live_source(include_str!("../../top_strip.rs"));
+    let src = live_source(super::test_source::top_strip_source());
     only_body(&src, "pub fn TopCommandStrip(").to_string()
 }
 

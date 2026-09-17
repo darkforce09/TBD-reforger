@@ -126,7 +126,7 @@ fn the_selection_floor_is_two() {
 #[test]
 fn the_menu_click_and_the_chord_share_one_invoker() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_item};
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     // `run_action` is a CLOSURE over the strip's signals, not a free fn — `only_item` slices it
     // from its `let` head all the same, and still refuses a second definition.
     let run_action = only_item(&code, "let run_action = move |a: MenuAction|");

@@ -12,7 +12,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
 /// the structural landmarks the class pins read.
 fn src_kept() -> String {
-    live_source(include_str!("../../top_strip.rs"))
+    live_source(super::test_source::top_strip_source())
 }
 
 /// The open menu-bar button consumes TOGGLED_PLATE (via `cn`), and the closed one HOVER_FILL —
@@ -21,7 +21,7 @@ fn src_kept() -> String {
 /// so the needle is the real `cn(&[…, TOGGLED_PLATE])` call, not a mention.
 #[test]
 fn open_menu_wears_the_toggled_plate_not_the_hover_fill() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     assert!(
         code.contains("TOGGLED_PLATE"),
         "the open menu must consume TOGGLED_PLATE (plate + 1px dark top border)"
@@ -70,7 +70,7 @@ fn no_active_state_wears_the_bare_neutral_fill() {
 /// the disabled (future-command) row branches lead with a `MENU_GUTTER` cell.
 #[test]
 fn menu_rows_reserve_the_checkmark_gutter() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     assert!(
         code.contains("MENU_GUTTER"),
         "menu rows must reserve MENU_GUTTER (the always-present checkmark cell)"
@@ -125,7 +125,7 @@ fn edit_menu_widget_snap_rows_dispatch_not_disabled() {
         "wave-202: every Edit row is a live command now — none may be `action: None`"
     );
     // The dispatch reaches the editor's registered bridge (the write path, wasm-gated).
-    let src = live_code(include_str!("../../top_strip.rs"));
+    let src = live_code(super::test_source::top_strip_source());
     assert!(
         src.contains("with_editor_toolbar_dispatch"),
         "wave-202: the widget/snap/select-all actions must route through the editor bridge"
@@ -154,7 +154,7 @@ fn edit_menu_widget_snap_rows_dispatch_not_disabled() {
 /// byte-offset ordering of two real calls, which no comment or literal can forge.
 #[test]
 fn plates_subscribe_to_dispatch_generation_before_reading_it() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let gen_read = "toolbar_dispatch_generation";
     let dispatch_read = "with_editor_toolbar_dispatch";
     // Markers carry NO trailing `{` on purpose: `only_body` splits at the FIRST `{` after the

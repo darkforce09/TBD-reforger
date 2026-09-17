@@ -18,7 +18,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 /// where the defect lived.
 #[test]
 fn no_raw_browser_control_remains_in_the_strip() {
-    let src = live_source(include_str!("../../top_strip.rs"));
+    let src = live_source(super::test_source::top_strip_source());
     let raw_range = [r#"type=""#, r#"range""#].concat();
     assert!(
         !src.contains(&raw_range),
@@ -42,7 +42,7 @@ fn no_raw_browser_control_remains_in_the_strip() {
 /// satisfied by deleting the controls, which is not the fix.
 #[test]
 fn the_strip_renders_the_aegis_primitives() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     for needle in ["<Slider", "<Select", "options=WEATHER_OPTIONS"] {
         assert!(
@@ -66,7 +66,7 @@ fn the_strip_renders_the_aegis_primitives() {
 /// `ui.rs` already pins the Slider primitive itself).
 #[test]
 fn the_scrubber_settle_commit_path() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     assert!(
         body.contains("on_change=Callback::new(move |mins: i32|"),

@@ -25,7 +25,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 /// the needles are the actual sets, not a mention in a comment/string.
 #[test]
 fn clears_stale_status_on_the_reopen_edge() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     // The rising-edge guard: an Effect that reads save_open and a was-open cell.
     assert!(
@@ -54,7 +54,7 @@ fn clears_stale_status_on_the_reopen_edge() {
 /// reactive insert does not fire). Same shape the eden_tree / eden_dock_left rename pins assert.
 #[test]
 fn version_input_takes_focus_on_open() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     assert!(
         body.contains("let version_ref = NodeRef::<leptos::html::Input>::new()"),
@@ -85,7 +85,7 @@ fn version_input_takes_focus_on_open() {
 /// whole source and match on substrings rather than `only_body`.
 #[test]
 fn traps_tab_within_the_dialog_subtree() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     assert!(
         body.contains("on:keydown=trap_tab"),
@@ -98,7 +98,7 @@ fn traps_tab_within_the_dialog_subtree() {
          focusables to this subtree"
     );
     // The wasm trap body: Tab-only, queries focusables, wraps at the edges.
-    let full = live_code(include_str!("../../top_strip.rs"));
+    let full = live_code(super::test_source::top_strip_source());
     let trap_at = full
         .find("fn trap_tab_in_dialog")
         .expect("T-789: trap_tab_in_dialog must exist");
@@ -139,7 +139,7 @@ fn traps_tab_within_the_dialog_subtree() {
 /// prove on-screen-ness. Never re-add a "by construction" claim here. `live_source` (classes).
 #[test]
 fn dialog_carries_the_centering_classes_rect_is_smoke_proven() {
-    let code = live_source(include_str!("../../top_strip.rs"));
+    let code = live_source(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     // Anchor on the dialog's unique description copy (the button label "Save Version" also
     // appears earlier, so it is not a unique anchor). The description sits INSIDE the popup, so

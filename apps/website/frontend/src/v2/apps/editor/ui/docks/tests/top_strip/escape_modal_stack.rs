@@ -6,7 +6,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
 #[test]
 fn top_command_strip_escape_yields_when_modal_stack_consumed_escape() {
     // live_source (not live_code): Escape is a string literal; live_code blanks literals.
-    let code = live_source(include_str!("../../top_strip.rs"));
+    let code = live_source(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     let esc = ["if ev.key() == \"", "Escape\""].concat();
     let esc_at = body
@@ -47,7 +47,7 @@ fn top_command_strip_escape_yields_when_modal_stack_consumed_escape() {
 
 #[test]
 fn top_strip_escape_consumed_guard_is_load_bearing() {
-    let code = live_source(include_str!("../../top_strip.rs"));
+    let code = live_source(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     let guard = ["modal_stack", "::", "escape_consumed()"].concat();
     assert!(
@@ -63,7 +63,7 @@ fn top_strip_escape_consumed_guard_is_load_bearing() {
 
 #[test]
 fn top_strip_registers_transient_closer_with_modal_stack() {
-    let code = live_source(include_str!("../../top_strip.rs"));
+    let code = live_source(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     let reg = ["modal_stack", "::", "register_transient_closer"].concat();
     assert!(

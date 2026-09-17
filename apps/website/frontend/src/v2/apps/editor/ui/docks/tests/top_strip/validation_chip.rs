@@ -12,7 +12,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 /// so the strip does not re-implement the findings vocabulary, it renders the one home's output.
 #[test]
 fn the_chip_reads_the_validation_seam() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     for needle in [
         "validation_open",                     // the chip's own latch
@@ -26,7 +26,7 @@ fn the_chip_reads_the_validation_seam() {
         );
     }
     // The chip's DOM handle for the live acceptance (the gate reads data-issue-total off it).
-    let lit = live_source(include_str!("../../top_strip.rs"));
+    let lit = live_source(super::test_source::top_strip_source());
     let body_lit = only_body(&lit, "pub fn TopCommandStrip(");
     assert!(
         body_lit.contains("data-validation-chip") && body_lit.contains("data-issue-total"),
@@ -40,7 +40,7 @@ fn the_chip_reads_the_validation_seam() {
 /// `live_source` keeps class strings (the colour is a class literal).
 #[test]
 fn the_error_count_uses_the_aa_contrast_red() {
-    let lit = live_source(include_str!("../../top_strip.rs"));
+    let lit = live_source(super::test_source::top_strip_source());
     let body = only_body(&lit, "pub fn TopCommandStrip(");
     // Scope to the CHIP's accent decision, not the whole strip: the Save dialog's rejected-save
     // list wears its own `text-error` on a different (passing) plate and is out of this finding's
@@ -78,7 +78,7 @@ fn the_error_count_uses_the_aa_contrast_red() {
 /// open dialog). This is the deviation the ticket asked be stated: dropdown = menu-class transient.
 #[test]
 fn the_dropdown_is_a_transient_not_a_modal_dialog() {
-    let code = live_code(include_str!("../../top_strip.rs"));
+    let code = live_code(super::test_source::top_strip_source());
     let body = only_body(&code, "pub fn TopCommandStrip(");
     // (1) close_transients clears it (opening a dialog / another popover closes the chip).
     let ct_at = body
@@ -104,7 +104,7 @@ fn the_dropdown_is_a_transient_not_a_modal_dialog() {
     // (3) NOT a modal_stack Dialog. The chip's latch must never be registered as a modal — it is
     // a menu-class transient. (register_transient_closer is the T-814 strip-owned closer and is
     // fine; `register(` / a Dialog wrapper around validation_open is what is forbidden.)
-    let lit = live_source(include_str!("../../top_strip.rs"));
+    let lit = live_source(super::test_source::top_strip_source());
     let body_lit = only_body(&lit, "pub fn TopCommandStrip(");
     assert!(
         !body_lit.contains("<Dialog open=validation_open")
@@ -119,7 +119,7 @@ fn the_dropdown_is_a_transient_not_a_modal_dialog() {
 /// would mis-centre (the Save-dialog portal trap). No portal needed, no rect-smoke regression.
 #[test]
 fn the_dropdown_is_anchored_via_menu_panel() {
-    let lit = live_source(include_str!("../../top_strip.rs"));
+    let lit = live_source(super::test_source::top_strip_source());
     let body = only_body(&lit, "pub fn TopCommandStrip(");
     // The validation dropdown's surface reuses MENU_PANEL (the export menu's anchored recipe).
     let drop_at = body

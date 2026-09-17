@@ -1329,10 +1329,53 @@ mod t637_dock_geometry {
              DISABLED_GLYPH), not from an ad-hoc pair baked into the geometry recipe"
         );
         // The local copy is gone from the strip. Needle assembled so this source cannot satisfy it.
-        let strip = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/ui/docks/top_strip.rs"
-        ));
+        let strip = [
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/arrange.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/menu_catalog.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/clock_and_draft.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/row_mirror.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/dialog_focus.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/mission_summary.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/view.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/view/menu_row.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/view/tool_row.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/v2/apps/editor/ui/docks/top_strip/view/overlays.rs"
+            )),
+        ]
+        .concat();
         let copy = format!("{} TOOL_ICON", "const");
         assert!(
             !strip.contains(&copy),

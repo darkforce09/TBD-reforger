@@ -109,7 +109,7 @@ fn draft_recency_reads_up_the_ladder() {
 #[test]
 fn t746_row_id_predicate_is_crate_visible() {
     use crate::v2::core::test_support::class_r_scrub::live_code;
-    let src = live_code(include_str!("../../top_strip.rs"));
+    let src = live_code(super::test_source::top_strip_source());
     assert!(
         src.contains("pub(crate) fn is_mission_row_id"),
         "T-746: is_mission_row_id must be pub(crate), not a private twin in eden_settings"

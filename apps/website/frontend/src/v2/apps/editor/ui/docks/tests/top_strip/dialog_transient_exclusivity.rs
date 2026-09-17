@@ -8,7 +8,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 /// `live_code`, so a doc comment or string cannot satisfy the needles.
 #[test]
 fn close_transients_closes_menu_export_and_hint() {
-    let scrubbed = live_code(include_str!("../../top_strip.rs"));
+    let scrubbed = live_code(super::test_source::top_strip_source());
     let body = only_body(&scrubbed, "pub fn TopCommandStrip(");
     // The definition and its three effects.
     let def_at = body
@@ -33,7 +33,7 @@ fn close_transients_closes_menu_export_and_hint() {
 /// directly (they already close menu/export at the top of `run_action`).
 #[test]
 fn every_dialog_open_path_closes_the_controls_hint() {
-    let scrubbed = live_code(include_str!("../../top_strip.rs"));
+    let scrubbed = live_code(super::test_source::top_strip_source());
     let body = only_body(&scrubbed, "pub fn TopCommandStrip(");
     // Save Version, Mission Settings, and ORBAT Manager buttons each close transients before
     // opening. Match the open call, then require a hint-close within the handler just above it.

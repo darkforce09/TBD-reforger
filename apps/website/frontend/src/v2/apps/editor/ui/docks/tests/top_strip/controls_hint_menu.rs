@@ -63,8 +63,9 @@ fn the_hint_has_exactly_one_home_and_it_is_help() {
 /// mount string exists somewhere after the open tag.
 #[test]
 fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
-    let code =
-        crate::v2::core::test_support::class_r_scrub::live_code(include_str!("../../top_strip.rs"));
+    let code = crate::v2::core::test_support::class_r_scrub::live_code(
+        super::test_source::top_strip_source(),
+    );
     let body =
         crate::v2::core::test_support::class_r_scrub::only_body(&code, "pub fn TopCommandStrip(");
     let mount = format!("{} open=hint_open", "ControlsHint");
