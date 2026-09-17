@@ -15,7 +15,7 @@
 /// that — the Esc-close still rides the window-level keydown listener (position-independent), so the
 /// T-726/T-814 ladder is untouched by teleporting the dialog to `document.body`. The on-screen clamp
 /// is the one property that could NOT be proven by construction (an ancestor `backdrop-filter` broke
-/// it, wave-203 MAJOR); it is now proven by the live-rect smoke in `tools/tbd-tools`, not a class pin.
+/// it, wave-203 MAJOR); it is now proven by the live-rect smoke in `tools_v2/developer-tools`, not a class pin.
 use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
 /// FRESH STATE. `save_status` is a shared prop (it also paints inline in the strip) and
@@ -133,7 +133,7 @@ fn traps_tab_within_the_dialog_subtree() {
 /// A class-string pin CANNOT catch that class of failure — the offending classes were all present
 /// and correct; the geometry was wrong because of an ancestor. So the AUTHORITATIVE guard is now
 /// the live-Chrome rect smoke `smoke_save_dialog_rect` (`gate smoke save-dialog-rect`) in
-/// `tools/tbd-tools/src/smokes.rs` (real `getBoundingClientRect`, both viewports, in the wave
+/// `tools_v2/developer-tools/src/smokes.rs` (real `getBoundingClientRect`, both viewports, in the wave
 /// gate). This test remains only as a cheap source-scrub sentinel: it holds the centering classes
 /// in place and forbids the upward-anchored (`top-full`) regression — but it does NOT and cannot
 /// prove on-screen-ness. Never re-add a "by construction" claim here. `live_source` (classes).

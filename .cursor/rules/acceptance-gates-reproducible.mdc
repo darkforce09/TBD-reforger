@@ -15,7 +15,7 @@ font fallback). Binds **every** agent (Claude Code, Cursor, Fable) and every hum
 
 1. **Reproducible + pinned.** A gate's external tools (browser, toolchain, DB image) are **pinned** and
    the pins are **committed and validated**, not floating dev-machine state. For the editor gate the
-   pins live in [`tools/tbd-tools/gate-env.json`](../../tools/tbd-tools/gate-env.json) + root
+   pins live in [`tools_v2/developer-tools/gate-env.json`](../../tools_v2/developer-tools/gate-env.json) + root
    [`rust-toolchain.toml`](../../rust-toolchain.toml), validated by `gate doctor`. Bump a pin
    **deliberately, in the same commit** as the thing it pins.
 2. **Fail-fast, never hang.** A gate that would wedge must fail in seconds with an **actionable

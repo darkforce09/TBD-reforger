@@ -9,6 +9,7 @@ mod ci_chrome;
 mod ci_editor_api;
 mod cmds;
 mod codegen_schema;
+mod commands;
 mod constants;
 mod debug_cmd;
 mod deploy_db_backup;
@@ -59,13 +60,7 @@ mod gate_test_mission;
 mod gate_test_phase1_api;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
-mod golden_gate;
 mod hostrun;
-mod label_gates;
-mod map_blueprint;
-mod map_ingest_blueprints;
-mod map_parity_report;
-mod map_world_los;
 mod mcp;
 mod mcp_daemon;
 mod mcp_netapi;
@@ -98,7 +93,7 @@ mod sql_gates;
 mod sync;
 mod test_env;
 mod tickets_store;
-mod verify_blas_manifest;
+mod verifications;
 mod verify_ci_shell;
 mod verify_ci_shell_rules;
 mod vocab_check;
@@ -1272,24 +1267,24 @@ fn run() -> Result<u8> {
         },
         TopCmd::Map { cmd } => match cmd {
             MapCmd::ExportTerrain { args } => gate_export_terrain::run(&args),
-            MapCmd::IngestBlueprints { args } => map_ingest_blueprints::run(&args),
-            MapCmd::ParityReport { args } => map_parity_report::run(&args),
-            MapCmd::BlueprintFromVoxels { args } => map_blueprint::run(&args),
-            MapCmd::VoxelsFromMesh { args } => map_blueprint::run_voxels_from_mesh(&args),
-            MapCmd::BvhParity { args } => map_blueprint::run_bvh_parity(&args),
-            MapCmd::BvhEmit { args } => map_blueprint::run_bvh_emit(&args),
-            MapCmd::BvhBatch { args } => map_blueprint::run_bvh_batch(&args),
-            MapCmd::XobInspect { args } => map_blueprint::run_xob_inspect(&args),
-            MapCmd::PakCat { args } => map_blueprint::run_pak_cat(&args),
-            MapCmd::InstancesVerify { args } => map_blueprint::run_instances_verify(&args),
-            MapCmd::RotationPin { args } => map_blueprint::run_rotation_pin(&args),
-            MapCmd::WorldLos { args } => map_world_los::run(&args),
+            MapCmd::IngestBlueprints { args } => commands::map::ingest_blueprints(&args),
+            MapCmd::ParityReport { args } => commands::map::parity_report(&args),
+            MapCmd::BlueprintFromVoxels { args } => commands::map::run(&args),
+            MapCmd::VoxelsFromMesh { args } => commands::map::run_voxels_from_mesh(&args),
+            MapCmd::BvhParity { args } => commands::map::run_bvh_parity(&args),
+            MapCmd::BvhEmit { args } => commands::map::run_bvh_emit(&args),
+            MapCmd::BvhBatch { args } => commands::map::run_bvh_batch(&args),
+            MapCmd::XobInspect { args } => commands::map::run_xob_inspect(&args),
+            MapCmd::PakCat { args } => commands::map::run_pak_cat(&args),
+            MapCmd::InstancesVerify { args } => commands::map::run_instances_verify(&args),
+            MapCmd::RotationPin { args } => commands::map::run_rotation_pin(&args),
+            MapCmd::WorldLos { args } => commands::map::world_line_of_sight(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {
                 VerifyCmd::FileLength => node_free::verify_file_length()?,
                 VerifyCmd::BlasManifest => {
-                    verify_blas_manifest::verify_blas_manifest(&find_repo_root()?)?
+                    verifications::map_assets::verify_blas_manifest(&find_repo_root()?)?
                 }
                 VerifyCmd::NoNode => node_free::verify_no_node()?,
                 VerifyCmd::NoShell => shell_free::verify_no_shell()?,
@@ -1376,20 +1371,26 @@ fn run() -> Result<u8> {
                 SchemaCmd::T090Specs => schema_gates::t090_specs()?,
                 SchemaCmd::N6 => schema_gates::n6_sentence()?,
                 SchemaCmd::N10 => schema_gates::n10_tile_budget()?,
-                SchemaCmd::MapObjectGolden => golden_gate::map_object_golden()?,
-                SchemaCmd::HeightLabels { terrain } => label_gates::height_labels(&terrain)?,
+                SchemaCmd::MapObjectGolden => verifications::map_assets::map_object_golden()?,
+                SchemaCmd::HeightLabels { terrain } => {
+                    verifications::map_assets::height_labels(&terrain)?
+                }
                 SchemaCmd::TerrainAlignment { terrain, strict } => {
-                    label_gates::terrain_alignment(&terrain, strict)?
+                    verifications::map_assets::terrain_alignment(&terrain, strict)?
                 }
-                SchemaCmd::Locations { terrain } => label_gates::locations(&terrain)?,
+                SchemaCmd::Locations { terrain } => verifications::map_assets::locations(&terrain)?,
                 SchemaCmd::TownLabels { terrain, zoom } => {
-                    label_gates::town_labels(&terrain, zoom)?
+                    verifications::map_assets::town_labels(&terrain, zoom)?
                 }
-                SchemaCmd::RoadNames { terrain, zoom } => label_gates::road_names(&terrain, zoom)?,
+                SchemaCmd::RoadNames { terrain, zoom } => {
+                    verifications::map_assets::road_names(&terrain, zoom)?
+                }
                 SchemaCmd::MapGlyphs => schema_gates::map_glyphs()?,
                 SchemaCmd::MapObjectEnums => schema_gates::map_object_enums()?,
                 SchemaCmd::TypeInventory => schema_gates::type_inventory()?,
-                SchemaCmd::TerrainManifest { terrain } => schema_gates::terrain_manifest(&terrain)?,
+                SchemaCmd::TerrainManifest { terrain } => {
+                    verifications::map_assets::terrain_manifest(&terrain)?
+                }
                 SchemaCmd::FlattenOrbatSlots { path, in_place } => {
                     schema_gates::flatten_orbat_slots(&path, in_place)?
                 }
@@ -1603,3 +1604,7 @@ mod t857_wb_logs_file_cli {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "tests/tooling_dependency_boundaries.rs"]
+mod tooling_dependency_boundaries;

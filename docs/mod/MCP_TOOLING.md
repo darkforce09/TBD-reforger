@@ -11,7 +11,7 @@ Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Rep
 
 ```text
 cargo xtask mcp call
-  ├─ (default) warm daemon  →  AF_UNIX socket  →  `mcpd` (Rust, tools/tbd-tools)  →  one enfusion-mcp child
+  ├─ (default) warm daemon  →  AF_UNIX socket  →  `mcpd` (Rust, tools_v2/developer-tools)  →  one enfusion-mcp child
   └─ fallback one-shot      →  node …/dist/index.js  →  cargo xtask mcp consume (early exit on id==2)
 ```
 
@@ -19,7 +19,7 @@ cargo xtask mcp call
 |-----------|------|------|
 | Call wrapper | `cargo xtask mcp call` | Daemon-first; one-shot fallback; exports all three `ENFUSION_*` paths |
 | JSON-RPC consumer | `cargo xtask mcp consume` | Shared parser + exit-code contract (daemon, one-shot, self-test) |
-| Daemon broker | `mcpd` (`tools/tbd-tools`, built in-process by `xtask mcp daemon`) | One index load (~35 s cold); serializes `tools/call` |
+| Daemon broker | `mcpd` (`tools_v2/developer-tools`, built in-process by `xtask mcp daemon`) | One index load (~35 s cold); serializes `tools/call` |
 | Daemon control | `cargo xtask mcp daemon` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
 | Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
 | Offline gates | `cargo xtask mcp selftest` | 19 fixture tests, no Workbench |

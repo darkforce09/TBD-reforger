@@ -13,7 +13,7 @@ crate-type = ["rlib"]
 # T-0xx Phase 2A. `terrain` -> `world`, `formats` -> `io`; `scenario` / `store` / `editing` are new
 # and carry the folded `website-mission-core`. The chain direction is unchanged: the on-disk format
 # code depends on the terrain types, not the reverse. `streaming` stays its OWN axis on top of `io`
-# because real consumers (frontend:27, tools/tbd-tools) want the world/io pair without the
+# because real consumers (frontend:27, tools_v2/developer-tools) want the world/io pair without the
 # scheduler. `default` is now `scenario` alone so `website-api` links the compiler and nothing else.
 [features]
 default = ["scenario"]

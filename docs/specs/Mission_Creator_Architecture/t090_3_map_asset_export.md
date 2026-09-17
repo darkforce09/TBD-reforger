@@ -11,7 +11,7 @@
 
 ## In one sentence
 
-Implement **`cargo xtask map export-terrain <id> --phase Pn`** and **`cargo run -q -p tbd-tools --bin world -- verify-phase`** — phased, cumulative object import with **mathematical gates only** (no eyeball sign-off). Full 1M export blocked until **P10**. See [`t090_phased_object_import.md`](t090_phased_object_import.md).
+Implement **`cargo xtask map export-terrain <id> --phase Pn`** and **`cargo run -q -p developer-tools --bin world -- verify-phase`** — phased, cumulative object import with **mathematical gates only** (no eyeball sign-off). Full 1M export blocked until **P10**. See [`t090_phased_object_import.md`](t090_phased_object_import.md).
 
 ---
 
@@ -19,7 +19,7 @@ Implement **`cargo xtask map export-terrain <id> --phase Pn`** and **`cargo run 
 
 ```bash
 cargo xtask map export-terrain everon --phase P1_buildings
-cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings   # exit 0 before P2
+cargo run -q -p developer-tools --bin world -- verify-phase --terrain everon --phase P1_buildings   # exit 0 before P2
 # … P2 trees → P9 footpaths → P10_full
 cargo xtask map export-terrain arland --phase P1_buildings         # same phases, new map
 ```
@@ -151,7 +151,7 @@ Same layout for **every** terrain — only `terrainId` and bounds change.
 | ID | Check | Pass |
 |----|-------|------|
 | E1 | `cargo xtask map export-terrain everon --phase P1_buildings` → exit 0 + ops log | script |
-| E1b | `cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings` → exit 0 (G1–G12 + P1-*) | script |
+| E1b | `cargo run -q -p developer-tools --bin world -- verify-phase --terrain everon --phase P1_buildings` → exit 0 (G1–G12 + P1-*) | script |
 | E2 | Second terrain in registry uses **identical** script path | script |
 | E3 | `prefabs.json.gz` — every row has `ai.*` | script |
 | E4 | `instanceCount` = sum of chunks; all `prefabId` resolve | script |

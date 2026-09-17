@@ -240,7 +240,7 @@ individual glyphs must appear only above TREE_GLYPH_MIN_ZOOM (0) per LOD v2 — 
 
 ═══ DO ═══
   1. worldmap/treePropLayer.ts — buildTreeLayers / buildPropLayers from VisibleSet typed arrays
-  2. Add missing glyph SVGs for PH-P2…P5 kinds (cargo run -q -p tbd-tools --bin map -- build-glyph-atlas + map-glyphs-verify)
+  2. Add missing glyph SVGs for PH-P2…P5 kinds (cargo run -q -p developer-tools --bin map -- build-glyph-atlas + map-glyphs-verify)
   3. Wire viewport stream in useWorldMapLayers (chunkStore or dedicated poll of visibleInstances)
   4. Vitest: LOD3 @ −2 trees hidden; @ 0 trees visible; INSTANCE_BUDGET; R8 rotation fixture
   5. Write .ai/artifacts/t090_5_5_verify_log.md

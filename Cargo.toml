@@ -13,5 +13,5 @@ members = [
     "tools_v2/verification-core",
     "tools_v2/ticket-engine",
     "tools_v2/xtask",
-    "tools/tbd-tools",
+    "tools_v2/developer-tools",
 ]

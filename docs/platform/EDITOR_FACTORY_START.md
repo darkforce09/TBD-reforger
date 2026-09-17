@@ -71,7 +71,7 @@ is either in a wave or explicitly `na`.
 1. ~~`__editorCamSet` panic~~ — **RESOLVED 2026-08-02, headless-only artifact.** The operator ran
    `window.__editorCamSet(6400, 6400, 0)` in a real browser: returns `undefined` (it is a void
    function) and the map renders normally at 147 FPS. **The 8 gate smokes in
-   `tools/tbd-tools/src/smokes.rs` are sound.** The panic reproduces only under headless
+   `tools_v2/developer-tools/src/smokes.rs` are sound.** The panic reproduces only under headless
    vulkan — record it in the capture harness, do not file it against the gate. T-641 is unblocked.
 2. ~~T-687 loadout inheritance~~ — **CANCELLED 2026-08-02 by operator decision.** The synthesis
    ranked OFCRA's model highly and the operator rejected it: *"I don't really agree with the OFCRA

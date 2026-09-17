@@ -17,7 +17,7 @@ apps/website/
   api/                        # Axum API crate (MOVED from apps/website/{src,migrations,…} root)
   frontend/                   # Leptos Trunk SPA (MOVED from apps/website-leptos/)
 crates/map-engine-*
-tools/tbd-tools/
+tools_v2/developer-tools/
 packages/{tbd-schema,map-assets}/
 docs/                         # Cursor prose pass from Claude’s return list (T-171.docs)
 .ai/tickets/                  # registry SoT

@@ -807,7 +807,7 @@ mod tests {
             "members: {members:?}"
         );
         assert!(
-            members.contains(&"tools/tbd-tools".to_string()),
+            members.contains(&"tools_v2/developer-tools".to_string()),
             "members: {members:?}"
         );
         assert!(

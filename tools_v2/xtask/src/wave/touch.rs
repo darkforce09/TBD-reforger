@@ -250,7 +250,7 @@ fn package_name(dir: &str) -> Option<String> {
 /// Scoped to changed crates rather than the workspace because `clippy --workspace -D warnings` is
 /// red on clean main — a gate nothing can pass teaches agents that gate failures are noise. T-603
 /// re-measured 2026-07-31: 60 errors, ALL of them website-frontend linted natively, none in
-/// tools/tbd-tools or xtask (this note used to blame those two; they are clean and the wave gate
+/// tools_v2/developer-tools or xtask (this note used to blame those two; they are clean and the wave gate
 /// now lints them by name). Frontend goes through wasm32 with NO `-D`, matching ci.yml:113;
 /// everything else takes `-D warnings`, matching the wave gate.
 pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
@@ -330,7 +330,7 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             // T-603's re-measure found the 60 workspace errors are ALL website-frontend and called
             // these two clean, and the wave gate has linted them by name since then. Re-verified
             // 2026-08-01 through this very function, both directions: with the arm removed, a
-            // `format!("{}", "verify")` injected into tools/tbd-tools/src/enf/apidoc.rs and into
+            // `format!("{}", "verify")` injected into tools_v2/developer-tools/src/enf/apidoc.rs and into
             // tools_v2/xtask/src/sync.rs made clippy_changed return 1 naming each file and line in turn, and
             // with the injections removed it returned 0 having actually compiled both crates. The
             // old arm returned 0 with BOTH injections in place, printing `(skipped tbd-tools: …)

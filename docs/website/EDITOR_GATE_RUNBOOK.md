@@ -3,7 +3,7 @@
 How to run the editor CDP smokes + frozen V-suite, the environment they need, and how to debug the
 one failure mode that has bitten hard (a boot wedge). Authority for the "gates must be reproducible +
 fail-fast" contract: [`.cursor/rules/acceptance-gates-reproducible.mdc`](../../.cursor/rules/acceptance-gates-reproducible.mdc).
-Pins: [`tools/tbd-tools/gate-env.json`](../../tools/tbd-tools/gate-env.json).
+Pins: [`tools_v2/developer-tools/gate-env.json`](../../tools_v2/developer-tools/gate-env.json).
 
 ## Run it
 
@@ -30,9 +30,9 @@ the reason in wedge mode 4. An `XDG_CACHE_HOME` you export yourself is respected
 Single smoke / doctor standalone:
 
 ```bash
-cargo run -q -p tbd-tools --bin gate -- doctor            # preflight only
-cargo run -q -p tbd-tools --bin gate -- smoke cur         # one smoke (see EDITOR_SUITE for names)
-cargo run -q -p tbd-tools --bin gate -- v-suite verify    # frozen DOM oracle only
+cargo run -q -p developer-tools --bin gate -- doctor            # preflight only
+cargo run -q -p developer-tools --bin gate -- smoke cur         # one smoke (see EDITOR_SUITE for names)
+cargo run -q -p developer-tools --bin gate -- v-suite verify    # frozen DOM oracle only
 ```
 
 CI: [`.github/workflows/editor-gates.yml`](../../.github/workflows/editor-gates.yml) (nightly + on
@@ -40,7 +40,7 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
 
 ## V-suite capture readiness and reference updates
 
-V-suite `verify` and per-route `accept` use the same capture function in `tools/tbd-tools/src/vsuite.rs`. Required fixture responses and their rendered consumers must be ready before two consecutive normalized DOM samples can establish stability. Missing fixtures, malformed JSON, invalid consumer payloads and request-dispatch failures fail capture; a stable loading or error screen is not an acceptable baseline. Waiting is bounded and reports pending resources or the consumer state when it times out.
+V-suite `verify` and per-route `accept` use the same capture function in `tools_v2/developer-tools/src/vsuite.rs`. Required fixture responses and their rendered consumers must be ready before two consecutive normalized DOM samples can establish stability. Missing fixtures, malformed JSON, invalid consumer payloads and request-dispatch failures fail capture; a stable loading or error screen is not an acceptable baseline. Waiting is bounded and reports pending resources or the consumer state when it times out.
 
 Fixtures remain under `apps/website/frontend/tests/fixtures/api/`. The Server Intel status-stream exception explicitly covers cached status rendering only; this suite does not prove live SSE. The frozen clock, 1440×900 viewport, serializer and structural diff remain unchanged. PNGs accompany the DOM evidence but this gate does not perform pixel comparison.
 

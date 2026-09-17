@@ -8,7 +8,7 @@
 >
 > **T-175 shipped:** `BootPhase` loading overlay until hydrate + world settle; cold-load slot rebind; palette **place ghost** + live **slot drag preview**; O(delta) selection tint; trees unpack on zoom-out (GPU empty clear); concurrent forest fetch; readable DEM contours (`CONTOUR_RGBA` lightened); floor-aware zoom glyph memo.
 >
-> **T-176 shipped:** Forest highlight = **8 m TBDD canopy mass** (clearings as holes); loose **32 m landcover forest wash removed**. Place ghost bound to slot atlas (visible for whole palette→map drag). Zoom+pan: `CAMERA_GESTURE` defers DEM/forest recompute. Retune density: `cargo run -p tbd-tools --bin world -- redensify --terrain everon`.
+> **T-176 shipped:** Forest highlight = **8 m TBDD canopy mass** (clearings as holes); loose **32 m landcover forest wash removed**. Place ghost bound to slot atlas (visible for whole palette→map drag). Zoom+pan: `CAMERA_GESTURE` defers DEM/forest recompute. Retune density: `cargo run -p developer-tools --bin world -- redensify --terrain everon`.
 >
 > **T-177 shipped (T-071.0):** YouTube-style tree connectors (spine + elbow); grab cursor on placeable assets; top menus above docks; left **ORBAT removed** (Editor Layers only); top-strip **ORBAT Manager** → `OrbatManagerDialog`. Squad CRUD = **T-071.1+**.
 >

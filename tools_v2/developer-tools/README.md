@@ -1,10 +1,16 @@
 # Developer Tools (`tools_v2/developer-tools`)
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+## Phase-two implementation
 
-Async Rust CLI suite, headless browser test runner, Enfusion script reverse-engineering oracle, 2D map raster/vector imagery pipeline, and 3D architectural CAD compiler.
+This is the live heavy-tooling package, imported as `developer_tools`. Executables retain their names: `enf`, `gate`, `mcpd`, `world`, `map`, and `capture`.
 
-Formerly `tools/tbd-tools` combined with `xtask/src/map_blueprint/`.
+- `src/blueprint`: voxel interpretation, mesh extraction, BVH compilation, ingestion, and parity reporting.
+- `src/enfusion_pak`: shared FORM/PAC1 parser, payload reader, and explicit world/blueprint filesystem policies.
+- `src/map_verification`: object goldens, labels, terrain manifests, BLAS manifests, and world line-of-sight checks.
+- `test_fixtures/blueprint`: byte-preserved blueprint, prefab, and world-parity fixtures.
+- Browser, map, world, and Enfusion tooling retain their existing module layout and fixtures.
+
+Map command entry points accept the active repository path and return the existing exit-code result. The crate does not depend on `xtask`. The structure below is the later decomposition target, not a description of every live directory.
 
 ---
 

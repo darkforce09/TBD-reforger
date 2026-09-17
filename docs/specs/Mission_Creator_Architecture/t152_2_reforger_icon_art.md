@@ -11,7 +11,7 @@
 
 ## In one sentence
 
-Run a **Workbench/MCP icon discovery spike**, replace **placeholder** `LANDMARK_SET` SVGs with Reforger-familiar art, rebuild `world-glyphs.webp` + manifest, and prove **∀ iconKey ∈ LANDMARK_SET** coverage with `cargo run -q -p tbd-tools --bin map -- build-glyph-atlas` + `cargo xtask schema map-glyphs`.
+Run a **Workbench/MCP icon discovery spike**, replace **placeholder** `LANDMARK_SET` SVGs with Reforger-familiar art, rebuild `world-glyphs.webp` + manifest, and prove **∀ iconKey ∈ LANDMARK_SET** coverage with `cargo run -q -p developer-tools --bin map -- build-glyph-atlas` + `cargo xtask schema map-glyphs`.
 
 ---
 
@@ -27,7 +27,7 @@ Run a **Workbench/MCP icon discovery spike**, replace **placeholder** `LANDMARK_
 
 1. **Discovery artifact** [`.ai/artifacts/t152_2_icon_discovery_spike.json`](../../../.ai/artifacts/t152_2_icon_discovery_spike.json): Reforger pak/UI paths, reference PNG dimensions, mapped `iconKey` rows, gaps list.
 2. **Redraw** every `LANDMARK_SET` SVG (hub list) to match Reforger-familiar silhouette + palette (document deviations).
-3. **`cargo run -q -p tbd-tools --bin map -- build-glyph-atlas`** → updated [`atlas/world-glyphs.webp`](../../../packages/map-assets/glyphs/atlas/world-glyphs.webp) + [`world-glyphs.json`](../../../packages/map-assets/glyphs/atlas/world-glyphs.json).
+3. **`cargo run -q -p developer-tools --bin map -- build-glyph-atlas`** → updated [`atlas/world-glyphs.webp`](../../../packages/map-assets/glyphs/atlas/world-glyphs.webp) + [`world-glyphs.json`](../../../packages/map-assets/glyphs/atlas/world-glyphs.json).
 4. **`cargo xtask schema map-glyphs`** + golden prefab `render.iconKey` scan PASS.
 5. **No placeholder SVG** remains for `LANDMARK_SET`: predicate `∀ k ∈ LANDMARK_SET: svg[k]` has `source:reforger` or `source:redraw` in discovery JSON (not `placeholder`).
 
@@ -77,7 +77,7 @@ Run a **Workbench/MCP icon discovery spike**, replace **placeholder** `LANDMARK_
 | **G2** | Coverage | `∀ k ∈ LANDMARK_SET: manifest.glyphs[k]` defined |
 | **G3** | SVG on disk | `∀ k ∈ LANDMARK_SET: test -f packages/map-assets/glyphs/svg/${k}.svg` |
 | **G4** | Placeholder evicted | `∀ k ∈ LANDMARK_SET: sha256(svg[k]) ≠ sha256_pre[k]` (pre recorded in verify log) |
-| **G5** | Atlas build | `cargo run -q -p tbd-tools --bin map -- build-glyph-atlas` exit 0; `icons` count ≥ 28 |
+| **G5** | Atlas build | `cargo run -q -p developer-tools --bin map -- build-glyph-atlas` exit 0; `icons` count ≥ 28 |
 | **G6** | Verify script | `cargo xtask schema map-glyphs` exit 0 |
 | **G7** | Golden prefabs | `cd packages/tbd-schema && npm run verify-map-glyphs` exit 0 |
 
@@ -98,7 +98,7 @@ Let **LANDMARK_SET** be:
 ```bash
 cd /run/media/system/Disk_2/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 test -f .ai/artifacts/t152_2_icon_discovery_spike.json
-cargo run -q -p tbd-tools --bin map -- build-glyph-atlas
+cargo run -q -p developer-tools --bin map -- build-glyph-atlas
 cargo xtask schema map-glyphs
 cd packages/tbd-schema && npm ci --silent && npm run verify-map-glyphs
 # G3/G4: per-key sha256 checks scripted in verify log appendix
@@ -162,14 +162,14 @@ Implement **T-152.2** — Reforger map icon discovery + LANDMARK_SET art + atlas
 ═══ LOCKED ═══
   - LANDMARK_SET = 21 keys in hub (building-* + building-badge-*)
   - MCP discovery → .ai/artifacts/t152_2_icon_discovery_spike.json
-  - cargo run -q -p tbd-tools --bin map -- build-glyph-atlas + cargo xtask schema map-glyphs must PASS
+  - cargo run -q -p developer-tools --bin map -- build-glyph-atlas + cargo xtask schema map-glyphs must PASS
   - ∀ k ∈ LANDMARK_SET: sha256(svg[k]) ≠ pre-slice hash
   - No new iconKey strings without taxonomy alignment
 
 ═══ DO ═══
   1. Workbench MCP icon discovery spike → JSON artifact (G1)
   2. Redraw/replace SVGs for LANDMARK_SET; update manifest if needed
-  3. cargo run -q -p tbd-tools --bin map -- build-glyph-atlas; commit atlas webp+json (G5)
+  3. cargo run -q -p developer-tools --bin map -- build-glyph-atlas; commit atlas webp+json (G5)
   4. cargo xtask schema map-glyphs + npm run verify-map-glyphs (G6–G7)
   5. .ai/artifacts/t152_2_verify_log.md with G1–G7 + sha256 table; tag T-152.2
 
@@ -182,7 +182,7 @@ Implement **T-152.2** — Reforger map icon discovery + LANDMARK_SET art + atlas
 
 ═══ VERIFY (all exit 0) ═══
   test -f .ai/artifacts/t152_2_icon_discovery_spike.json
-  cargo run -q -p tbd-tools --bin map -- build-glyph-atlas
+  cargo run -q -p developer-tools --bin map -- build-glyph-atlas
   cargo xtask schema map-glyphs
   cd packages/tbd-schema && npm ci --silent && npm run verify-map-glyphs
 

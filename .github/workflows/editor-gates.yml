@@ -7,7 +7,7 @@ name: editor-gates
 # editor. This exists so gate-infra regressions are caught by machines, not discovered mid-ticket.
 #
 # NOTE: a new CI job — validate with a first manual `workflow_dispatch` run and iterate. The pinned
-# chromium version is kept in lockstep with tools/tbd-tools/gate-env.json (single source of truth for
+# chromium version is kept in lockstep with tools_v2/developer-tools/gate-env.json (single source of truth for
 # the dev box; mirrored here because CI installs Chrome-for-Testing directly, Node-free).
 
 on:
@@ -18,7 +18,7 @@ on:
     branches: [main]
     paths:
       - "apps/website/frontend/**"
-      - "tools/tbd-tools/**"
+      - "tools_v2/developer-tools/**"
       - "apps/website/map-engine/**"
       - ".github/workflows/editor-gates.yml"
 
@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 env:
-  # Keep in lockstep with tools/tbd-tools/gate-env.json → chromium.version.
+  # Keep in lockstep with tools_v2/developer-tools/gate-env.json → chromium.version.
   CHROME_VERSION: "149.0.7827.55"
 
 jobs:

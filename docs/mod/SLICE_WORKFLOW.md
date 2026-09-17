@@ -177,7 +177,7 @@ real. When the index is silent about something that looks engine-level, probe be
 **Do NOT** let an agent rely on training-data knowledge of Enfusion. It is a niche language and the
 model's priors are wrong. An agent asked to summarise one CRF file invented four APIs that do not
 exist (`RequestSlotChange`, `ReleaseSlot`, `GetInstance`, a wrong base class). That incident is why
-every index is mechanically generated and `cargo run -q -p tbd-tools --bin enf -- citations` gates prose citations.
+every index is mechanically generated and `cargo run -q -p developer-tools --bin enf -- citations` gates prose citations.
 
 ## Oracle lanes — what each one is licensed for
 
@@ -241,11 +241,11 @@ misread it "fixed" a working toolchain and destroyed 2.6 GB of build artifacts.
 ```bash
 cargo run -q -p xtask -- mod compile          # 0 clean
 distrobox-host-exec cargo xtask mod compile-selftest # gate still catches a broken .c
-distrobox-host-exec cargo run -q -p tbd-tools --bin enf -- capability    # 0 UNTRIAGED
-distrobox-host-exec cargo run -q -p tbd-tools --bin enf -- citations        # every @idx resolves
+distrobox-host-exec cargo run -q -p developer-tools --bin enf -- capability    # 0 UNTRIAGED
+distrobox-host-exec cargo run -q -p developer-tools --bin enf -- citations        # every @idx resolves
 distrobox-host-exec cargo xtask verify no-crf-leak   # no oracle code in prod (CRF + PlayableSelector)
 distrobox-host-exec ./scripts/ticket check    # registry valid
-distrobox-host-exec cargo test -p tbd-tools --lib enf::
+distrobox-host-exec cargo test -p developer-tools --lib enf::
 ```
 
 ## Known-broken, unrelated to slices

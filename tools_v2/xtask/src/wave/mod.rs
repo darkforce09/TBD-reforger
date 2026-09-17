@@ -632,7 +632,7 @@ fn run_lane_refusal(
         return Some(vec![
             "run: REFUSING — no cargo arguments.".into(),
             "     usage: cargo xtask platform wave run -p website-api --bin api".into(),
-            "            cargo xtask platform wave run -p tbd-tools --bin world -- reclassify"
+            "            cargo xtask platform wave run -p developer-tools --bin world -- reclassify"
                 .into(),
         ]);
     }
@@ -873,14 +873,14 @@ mod run_target_tests {
         assert_eq!(
             split_run_args(&v(&[
                 "-p",
-                "tbd-tools",
+                "developer-tools",
                 "--bin",
                 "world",
                 "--",
                 "reclassify"
             ])),
             (
-                v(&["-p", "tbd-tools", "--bin", "world"]),
+                v(&["-p", "developer-tools", "--bin", "world"]),
                 v(&["reclassify"])
             )
         );

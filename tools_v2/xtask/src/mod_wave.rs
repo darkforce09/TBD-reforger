@@ -440,7 +440,15 @@ fn cmd_gate(root: &Path) -> u8 {
     run(
         "enf unit tests",
         "distrobox-host-exec",
-        &["cargo", "test", "-q", "-p", "tbd-tools", "--lib", "enf::"],
+        &[
+            "cargo",
+            "test",
+            "-q",
+            "-p",
+            "developer-tools",
+            "--lib",
+            "enf::",
+        ],
     );
 
     println!();

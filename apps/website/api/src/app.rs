@@ -1152,7 +1152,7 @@ fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMap) -> bool 
 ///
 /// Simply adding auth was the wrong fix and is explicitly rejected: `/healthz` is probed **without
 /// credentials** by `scripts/platform/preflight.sh:145`, `scripts/deploy/Caddyfile.website:27`,
-/// `.github/workflows/editor-gates.yml:95` and `tools/tbd-tools/src/smokes.rs:2714`, and T-280
+/// `.github/workflows/editor-gates.yml:95` and `tools_v2/developer-tools/src/smokes.rs:2714`, and T-280
 /// left it open for exactly that reason while gating `/metrics` behind `X-Service-Token`.
 ///
 /// So the split is by **payload**, never by status code:

@@ -14,7 +14,7 @@ so there is no wrapper script to run.
 # stack must be up: cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos-debug
 distrobox-host-exec sh -c 'cd /path/to/TBD-Reforger && \
   CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target \
-  cargo run -q -p tbd-tools --bin capture -- shot /tmp/out.png \
+  cargo run -q -p developer-tools --bin capture -- shot /tmp/out.png \
     "http://localhost:8080/api/v1/auth/dev-login?role=admin" 6000 \
     "http://localhost:3000/missions/<mission-id>/edit" 25000 \
     --canvas'
@@ -65,8 +65,8 @@ canvas.
 
 ## Subcommands
 
-All three are `cargo run -q -p tbd-tools --bin capture -- <sub> …` (via `distrobox-host-exec` — bare
-`cargo` fails on GLIBC in the container). Source: `tools/tbd-tools/src/capture.rs`.
+All three are `cargo run -q -p developer-tools --bin capture -- <sub> …` (via `distrobox-host-exec` — bare
+`cargo` fails on GLIBC in the container). Source: `tools_v2/developer-tools/src/capture.rs`.
 
 | Subcommand | Was | What it does |
 |---|---|---|

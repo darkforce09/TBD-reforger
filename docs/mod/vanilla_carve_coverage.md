@@ -11,8 +11,8 @@ no longer needed.
 ```bash
 bash scripts/mod/fetch-vanilla-source.sh            # curated spine set
 bash scripts/mod/fetch-vanilla-source.sh --grep Respawn
-cargo run -q -p tbd-tools --bin enf -- source       # rebuild .c from cached pages
-cargo run -q -p tbd-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
+cargo run -q -p developer-tools --bin enf -- source       # rebuild .c from cached pages
+cargo run -q -p developer-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
 ```
 
 Every class that was previously unreachable now resolves to real source:
@@ -38,10 +38,10 @@ file table — strictly better than carving where it works. Combined index today
 **2,099 files · 72,226 LOC · 1,659 declarations** (1,489 real-path + 610 carved blobs).
 
 ```bash
-cargo run -q -p tbd-tools --bin enf -- index crf                                            # CRF
-cargo run -q -p tbd-tools --bin enf -- extract            # vanilla, by real path
-cargo run -q -p tbd-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
-cargo run -q -p tbd-tools --bin enf -- apidoc                                           # 7,990 class signatures
+cargo run -q -p developer-tools --bin enf -- index crf                                            # CRF
+cargo run -q -p developer-tools --bin enf -- extract            # vanilla, by real path
+cargo run -q -p developer-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
+cargo run -q -p developer-tools --bin enf -- apidoc                                           # 7,990 class signatures
 ```
 
 ## The pak compression barrier (measured, T-181.3.2)
@@ -74,7 +74,7 @@ Doing so would unlock the remaining ~4,000 files including the whole gameplay la
 
 **Measured 2026-07-25. Read this before assuming a vanilla class is greppable.**
 
-Regenerate: `cargo run -q -p tbd-tools --bin enf -- carve --game "$HOME/.local/share/Steam/steamapps/common/Arma Reforger" --out apps/mod/vanilla_reference` (~6 min, then `enf index vanilla`).
+Regenerate: `cargo run -q -p developer-tools --bin enf -- carve --game "$HOME/.local/share/Steam/steamapps/common/Arma Reforger" --out apps/mod/vanilla_reference` (~6 min, then `enf index vanilla`).
 
 ## What you get
 
@@ -89,7 +89,7 @@ Regenerate: `cargo run -q -p tbd-tools --bin enf -- carve --game "$HOME/.local/s
 
 Query it:
 ```bash
-cargo run -q -p tbd-tools --bin enf -- lookup SCR_AIDangerReaction \
+cargo run -q -p developer-tools --bin enf -- lookup SCR_AIDangerReaction \
   --index .ai/artifacts/enf-index/vanilla_symbols.tsv
 rg 'class SCR_AIDecoTest' apps/mod/vanilla_reference/
 ```
@@ -117,7 +117,7 @@ publishes the complete Script API as Doxygen HTML: **7,990 classes**, and all fi
 classes are there with full member lists.
 
 ```bash
-cargo run -q -p tbd-tools --bin enf -- apidoc          # fetch the class index + parse (1 request for the index)
+cargo run -q -p developer-tools --bin enf -- apidoc          # fetch the class index + parse (1 request for the index)
 cargo xtask fetch vanilla-api SCR_BaseGameMode SCR_PossessSpawnData   # per-class pages
 rg '^SCR_PossessSpawnData\t' .ai/artifacts/enf-index/vanilla_api_members.tsv
 ```
@@ -141,13 +141,13 @@ conflated two things: a large share of that printable volume is `.et` prefab con
 1. `bash scripts/mod/mcp-call.sh api_search '{"query":"SCR_PossessSpawnData"}'` — signatures only, no bodies.
 2. CRF's own usage as the behavioural oracle — e.g.
    `CRF_SCR_PossessSpawnHandlerComponent.c` is exactly how the possess pipeline was found.
-   `cargo run -q -p tbd-tools --bin enf -- lookup <symbol>` (CRF lane).
+   `cargo run -q -p developer-tools --bin enf -- lookup <symbol>` (CRF lane).
 3. `.et` prefab config *is* plaintext and greppable in the paks — useful for component
    composition, GUIDs, and default property values even when the `.c` is not available.
 
 ## Known follow-up
 
-`tools/tbd-tools/src/world/pak.rs` (`PakVfs`) already parses FORM/PAC1 **with zlib inflate** for
+`tools_v2/developer-tools/src/enfusion_pak/world_source.rs` (`PakVfs`) already parses FORM/PAC1 **with zlib inflate** for
 named files. Scripts are not name-addressable in the FILE tree, but inflating every compressed
 block wholesale and re-running the carver over the inflated bytes is the plausible route to the
 remaining corpus. Not attempted in T-181.3 — filed as the next step if the spawn/menu sources

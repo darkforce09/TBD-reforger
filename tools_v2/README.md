@@ -1,8 +1,10 @@
 # Unified Tooling Architecture Hub (`tools_v2/`)
 
-## Phase-one implementation
+## Phase-two implementation
 
-Three crates are live: `verification-core`, `ticket-engine`, and `xtask`. The heavy CLI stays in `../tools/tbd-tools`. The diagrams and architecture descriptions below are the target for all four phases; see [PHASE_ONE_HANDOFF.md](./PHASE_ONE_HANDOFF.md) for the current implementation and checks.
+All four crates are live. `developer-tools` owns the six existing executables, the blueprint compiler, the shared Enfusion PAK reader, and engine-backed map verification. `xtask` delegates those operations and has no direct map-engine dependency. Ticket consolidation and broad module decomposition remain phases three and four.
+
+See [PHASE_TWO_HANDOFF.md](./PHASE_TWO_HANDOFF.md) for the current implementation and checks. The diagrams below describe the complete four-phase target.
 
 ## Target architecture
 

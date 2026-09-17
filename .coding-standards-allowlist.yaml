@@ -186,107 +186,103 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/capture.rs
+  path: tools_v2/developer-tools/src/capture.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/cdp.rs
+  path: tools_v2/developer-tools/src/cdp.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/density.rs
+  path: tools_v2/developer-tools/src/density.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/doctor.rs
+  path: tools_v2/developer-tools/src/doctor.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/map/carto.rs
+  path: tools_v2/developer-tools/src/map/carto.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/map/labels.rs
+  path: tools_v2/developer-tools/src/map/labels.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/map/sap.rs
+  path: tools_v2/developer-tools/src/map/sap.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/map/unified.rs
+  path: tools_v2/developer-tools/src/map/unified.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/map/water.rs
+  path: tools_v2/developer-tools/src/map/water.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/map/water_emit.rs
+  path: tools_v2/developer-tools/src/map/water_emit.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/serve.rs
+  path: tools_v2/developer-tools/src/serve.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/smokes.rs
+  path: tools_v2/developer-tools/src/smokes.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/smokes/t946_86.rs
+  path: tools_v2/developer-tools/src/smokes/t946_86.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/vsuite.rs
+  path: tools_v2/developer-tools/src/vsuite.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/world/aux.rs
+  path: tools_v2/developer-tools/src/world/aux.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/world/build.rs
+  path: tools_v2/developer-tools/src/world/build.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/world/catalog_emit.rs
+  path: tools_v2/developer-tools/src/world/catalog_emit.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/world/forest_smooth.rs
+  path: tools_v2/developer-tools/src/world/forest_smooth.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/world/gates.rs
+  path: tools_v2/developer-tools/src/world/gates.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-01-31
 
-- rule: SIZE-3
-  path: tools/tbd-tools/src/world/pak.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
 
 - rule: SIZE-3
-  path: tools/tbd-tools/src/world/reclassify.rs
+  path: tools_v2/developer-tools/src/world/reclassify.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
@@ -426,7 +422,7 @@
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/golden_gate.rs
+  path: tools_v2/developer-tools/src/map_verification/object_goldens.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
@@ -436,7 +432,7 @@
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/label_gates.rs
+  path: tools_v2/developer-tools/src/map_verification/labels.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
@@ -446,62 +442,58 @@
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/archive_emit.rs
+  path: tools_v2/developer-tools/src/blueprint/archive_emit.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/batch.rs
+  path: tools_v2/developer-tools/src/blueprint/batch.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/bvh.rs
+  path: tools_v2/developer-tools/src/blueprint/bvh.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/library.rs
+  path: tools_v2/developer-tools/src/blueprint/library.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/mesh.rs
+  path: tools_v2/developer-tools/src/blueprint/mesh.rs
+  reason: Split this production module by responsibility before expiry
+  expires: 2027-06-30
+
+
+- rule: SIZE-3
+  path: tools_v2/developer-tools/src/blueprint/prefab.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/pak.rs
+  path: tools_v2/developer-tools/src/blueprint/verify.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/prefab.rs
+  path: tools_v2/developer-tools/src/blueprint/walls.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/verify.rs
+  path: tools_v2/developer-tools/src/blueprint/xob.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/walls.rs
+  path: tools_v2/developer-tools/src/blueprint/xob_nodes.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/xob.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/map_blueprint/xob_nodes.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-06-30
-
-- rule: SIZE-3
-  path: tools_v2/xtask/src/map_world_los.rs
+  path: tools_v2/developer-tools/src/map_verification/world_line_of_sight.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 

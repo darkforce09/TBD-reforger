@@ -2,17 +2,11 @@
 
 Comprehensive technical specification and phased migration roadmap for transitioning from the legacy tooling layout to the unified `tools_v2/` architecture.
 
-## Current phase-one layout
+## Current phase-two layout
 
-The live workspace uses `tools_v2/verification-core`, `tools_v2/ticket-engine`, and
-`tools_v2/xtask`. The heavy CLI remains `tools/tbd-tools`; `tools_v2/developer-tools`
-is a documentation scaffold and is not a workspace member. Phase one preserves
-existing source modules, fixtures, dependencies, CLI commands, and lock-file names.
+All four `tools_v2` crates are live. `developer-tools` owns the heavy CLI, blueprint compiler, shared PAK reader, and engine-backed map verifications. The six executable names remain unchanged. `xtask` delegates these operations without a direct map-engine dependency. See [PHASE_TWO_HANDOFF.md](./PHASE_TWO_HANDOFF.md) for validation.
 
-The integration and four-crate breakdown below describe the final architecture.
-Blueprint extraction, ticket consolidation, and module decomposition belong to
-phases two through four. See [PHASE_ONE_HANDOFF.md](./PHASE_ONE_HANDOFF.md) for
-phase-one validation and remaining blockers.
+Ticket consolidation and broad module/test decomposition remain phases three and four. The architecture below includes those later targets.
 
 ---
 
@@ -162,15 +156,15 @@ To ensure zero downtime and prevent interference with parallel engine work on `m
 7. Update path pins in `node_free.rs`, `schema_gates.rs`, and `mk_ci_tests.rs`.
 8. **Gate**: `cargo check --workspace` passes cleanly; `cargo xtask --help` functions.
 
-### Phase 2: Relocate 3D Blueprint Compiler to `developer-tools`
+### Phase 2: Relocate the Blueprint Compiler and Heavy Tooling
 
-First migrate the live `tools/tbd-tools` crate into `tools_v2/developer-tools` and reconnect its consumers. The phase-one workspace still uses `tbd-tools`.
-1. Move `tools_v2/xtask/src/map_blueprint/` (32 files, 13.4k LOC) to `tools_v2/developer-tools/src/blueprint/`.
-2. Move golden fixtures from `tools_v2/xtask/tests/fixtures/` to `tools_v2/developer-tools/test_fixtures/blueprint/`.
-3. Unify duplicate `.pak` parsers into `tools_v2/developer-tools/src/enfusion_pak/`.
-4. Drop heavy `website-map-engine` 3D mesh dependencies from `tools_v2/xtask/Cargo.toml`.
-5. Update `tools_v2/xtask/src/commands/map/` to delegate blueprint commands to `developer-tools`.
-6. **Gate**: `cargo test -p developer-tools blueprint` passes; `cargo xtask map blueprint-from-voxels --help` succeeds.
+1. Activate `tools_v2/developer-tools` from the live heavy-tooling crate, updating package selectors and imports while retaining the six executable names.
+2. Move the complete blueprint compiler, ingestion, parity reporting, and associated fixtures into that crate.
+3. Consolidate both PAK readers behind shared bounded parsing and payload code with explicit caller policies.
+4. Move engine-backed map goldens, label checks, terrain-manifest checks, BLAS validation, and world-LOS verification into `developer_tools::map_verification`.
+5. Route existing commands through thin adapters and remove `xtask`'s direct map-engine dependency.
+6. Preserve existing module-size exemptions without extending their expiry dates; new consolidated modules and adapters follow the file-size/test-placement rules.
+7. **Gate**: complete tooling test suites retain the baseline results, blueprint/PAK regression suites pass, fixtures and dependency versions remain unchanged, CLI routes work, and citation/file-length checks pass.
 
 ### Phase 3: Consolidate Ticket Subsystem into `ticket-engine`
 1. Relocate `tools_v2/xtask/src/check.rs` (ticket validation) into `tools_v2/ticket-engine/src/validation/` (split <500 LOC, tests extracted).

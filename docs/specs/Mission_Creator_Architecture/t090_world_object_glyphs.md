@@ -120,7 +120,7 @@ packages/map-assets/glyphs/
 Build step (T-090.5):
 
 ```bash
-cargo run -q -p tbd-tools --bin map -- build-glyph-atlas
+cargo run -q -p developer-tools --bin map -- build-glyph-atlas
 # → scripts/map-assets/build-glyph-atlas.mjs (sharp / svg2img)
 ```
 
@@ -204,7 +204,7 @@ cargo xtask schema map-glyphs   # every iconKey referenced in prefabs has svg + 
 | G5 | Golden screenshot @ fixed view: tree @ 0° vs 90° rotation visually distinct | test fixture |
 | G6 | `baseSizePx > 0`, `anchor[0], anchor[1] ∈ [0,1]` | script |
 
-Part of `cargo run -q -p tbd-tools --bin world -- verify-phase`.
+Part of `cargo run -q -p developer-tools --bin world -- verify-phase`.
 
 ---
 
@@ -225,7 +225,7 @@ Part of `cargo run -q -p tbd-tools --bin world -- verify-phase`.
 | 3 | `scripts/map-assets/build-glyph-atlas.mjs` |
 | 4 | `features/tactical-map/layers/worldGlyphAtlas.ts` — load atlas once |
 | 5 | `worldObjectLayers.ts` — IconLayer wired to atlas + rotation + size |
-| 6 | `cargo run -q -p tbd-tools --bin map -- build-glyph-atlas` + `cargo xtask schema map-glyphs` |
+| 6 | `cargo run -q -p developer-tools --bin map -- build-glyph-atlas` + `cargo xtask schema map-glyphs` |
 
 ---
 

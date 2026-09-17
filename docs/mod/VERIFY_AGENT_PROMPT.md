@@ -52,7 +52,7 @@ Read docs/mod/TBD_MOD_DESIGN.md (the north star) and docs/mod/SLICE_WORKFLOW.md 
      GUIDs, but is necessary and NOT sufficient — read the diff for structural copying too.
 
 4. **Enfusion correctness.** Every API called must exist:
-       distrobox-host-exec cargo run -q -p tbd-tools --bin enf -- lookup <Symbol>
+       distrobox-host-exec cargo run -q -p developer-tools --bin enf -- lookup <Symbol>
        rg <pattern> apps/mod/vanilla_reference/Source/     # real vanilla source WITH bodies
    The compile gate catches undefined symbols, but NOT wrong-but-existing usage — e.g. an
    `[RplProp(onRplName:)]` handler that assumes it fires on authority (it fires only on the PROXY),

@@ -326,7 +326,7 @@ fn build_mcpd(root: &Path, mcpd_target: &str) -> Result<(), ()> {
         .arg("build")
         .arg("-q")
         .arg("-p")
-        .arg("tbd-tools")
+        .arg("developer-tools")
         .arg("--bin")
         .arg("mcpd")
         .cwd(root)

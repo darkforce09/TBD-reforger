@@ -29,7 +29,7 @@ fn schema_dir(root: &Path) -> PathBuf {
 /// The red proof, as a test: a dangling `@contract` in `apps/**/*.rs` and a bad pointer in
 /// `tools_v2/**/*.rs` are both caught; the existing tools tree is scanned too.
 #[test]
-fn rust_under_apps_and_both_tools_roots_is_scanned_and_can_fail() {
+fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     let root = fixture_dir("apps-tools-rs");
     let schemas = schema_dir(&root);
     write(
@@ -55,7 +55,7 @@ fn rust_under_apps_and_both_tools_roots_is_scanned_and_can_fail() {
 
     write(
         &root,
-        "tools/tbd-tools/src/lib.rs",
+        "tools_v2/developer-tools/src/lib.rs",
         concat!("// @contract", " good.schema.json#/\n"),
     );
 
@@ -96,11 +96,7 @@ fn missing_scan_root_is_a_scope_failure_not_a_pass() {
 
     let scan = scan_citations(&root, &schemas).expect("scan");
     assert!(scan.problems.is_empty(), "the one citation resolves");
-    assert_eq!(
-        scan.scope_errors.len(),
-        3,
-        "tools/, tools_v2/, and packages/ absent"
-    );
+    assert_eq!(scan.scope_errors.len(), 2, "tools_v2/ and packages/ absent");
     assert!(
         scan.scope_errors
             .iter()

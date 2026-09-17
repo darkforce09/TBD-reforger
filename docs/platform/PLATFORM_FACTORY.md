@@ -423,7 +423,7 @@ cargo. A piped gate looks green while the build is failing. The wave driver capt
 directly for exactly this reason — do not "simplify" it into a pipeline.
 
 Related: `cargo fmt --all --check` is **not** used. 32 files are already unformatted on `main`
-(mostly `tools/tbd-tools/src/bin/enf.rs`, written during T-181 and never formatted), so a
+(mostly `tools_v2/developer-tools/src/bin/enf.rs`, written during T-181 and never formatted), so a
 workspace-wide check would fail for every agent regardless of their work. `fmt_changed` scopes it
 to the slice's own diff against `main`.
 

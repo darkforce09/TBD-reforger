@@ -25,7 +25,7 @@
 | Everon today, Arland tomorrow | `terrain-registry.json` — add row, run same command |
 | **One type at a time** | **Phased import P1→P10** — [`t090_phased_object_import.md`](t090_phased_object_import.md) |
 
-**Human involvement target:** zero after Workbench plugin is installed. **No phase advance without `cargo run -q -p tbd-tools --bin world -- verify-phase` exit 0** — see phased import spec.
+**Human involvement target:** zero after Workbench plugin is installed. **No phase advance without `cargo run -q -p developer-tools --bin world -- verify-phase` exit 0** — see phased import spec.
 
 ---
 
@@ -37,7 +37,7 @@ cargo xtask map export-terrain everon --phase P10_full
 
 # Normal development: one phase at a time (cumulative)
 cargo xtask map export-terrain everon --phase P1_buildings
-cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings   # MUST exit 0 before P2
+cargo run -q -p developer-tools --bin world -- verify-phase --terrain everon --phase P1_buildings   # MUST exit 0 before P2
 
 # Equivalent
 ./scripts/map-assets/export-terrain.sh everon --phase P1_buildings

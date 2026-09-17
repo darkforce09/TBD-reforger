@@ -453,7 +453,7 @@ Prose is therefore held by convention:
 3. `@contract` written in prose is **illustrative**, not a checked link. Checked links live in
    code; a doc that needs one should point at the code that carries it.
 4. A prose citation that genuinely must be machine-checked belongs either in code as a comment
-   tag, or in an index gate of its own (cf. `cargo run -q -p tbd-tools --bin enf -- citations` for `@idx` in `docs/mod`).
+   tag, or in an index gate of its own (cf. `cargo run -q -p developer-tools --bin enf -- citations` for `@idx` in `docs/mod`).
 
 The gate prints its own scope on every run. Trust that line over this section if they disagree.
 
@@ -468,7 +468,7 @@ Pin: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 3. **`.ai/artifacts/` is pipeline OUTPUT only** — never a load-bearing input (`include_str!` / gate reads forbidden).
 4. Byte-pinned goldens are excluded from editorconfig-checker (see `.editorconfig-checker.json`).
 
-SPA R-api goldens: `apps/website/frontend/tests/fixtures/api/`. Gate oracles/manifests: `tools/tbd-tools/fixtures/t159/`.
+SPA R-api goldens: `apps/website/frontend/tests/fixtures/api/`. Gate oracles/manifests: `tools_v2/developer-tools/fixtures/t159/`.
 
 ## 12. Quick-reference cheat sheet
 

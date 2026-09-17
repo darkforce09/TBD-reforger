@@ -1,7 +1,7 @@
 # T-172 — Leptos SPA + Mission Creator bug bash
 
 **Status:** SHIPPED @ tag **T-172** / `e08884f4` · residual perf → **T-173** · **Branch:** `main`  
-**Scope:** `apps/website/frontend/**` (+ `crates/map-engine-*` / `tools/tbd-tools` only if required for render/glyph/forest fixes). **Not** `apps/mod/`. **Not** T-170 prod flip.  
+**Scope:** `apps/website/frontend/**` (+ `crates/map-engine-*` / `tools_v2/developer-tools` only if required for render/glyph/forest fixes). **Not** `apps/mod/`. **Not** T-170 prod flip.
 **Operator evidence:** [`.ai/artifacts/t172_operator_screens/`](../../.ai/artifacts/t172_operator_screens/) + babble 2026-07-18.
 
 **No silent deferrals.** Soft “later / optional / fold forward / separate ticket” is forbidden unless the operator explicitly says `defer X` / `skip X`. Unknown bugs discovered in Phase 0 are **in scope** for this ticket — add them to the inventory and fix them here.

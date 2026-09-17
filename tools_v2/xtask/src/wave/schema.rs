@@ -185,7 +185,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
         // checking that the content moved INTO a listed root is how the stamp silently loses an
         // input, which is T-422 defect 3 all over again.
         "apps/website/map-engine/src",
-        "tools/tbd-tools/src",
+        "tools_v2/developer-tools/src",
     ];
     let mut srcs: Vec<PathBuf> = Vec::new();
     for r in stamp_roots {
@@ -216,7 +216,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     for m in [
         "tools_v2/xtask/Cargo.toml",
         "apps/website/map-engine/Cargo.toml",
-        "tools/tbd-tools/Cargo.toml",
+        "tools_v2/developer-tools/Cargo.toml",
         "Cargo.lock",
     ] {
         if let Ok(b) = std::fs::read(m) {

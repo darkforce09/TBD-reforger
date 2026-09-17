@@ -1,6 +1,6 @@
 # 3D Blueprint Compiler (`developer-tools/src/blueprint`)
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+The compiler is live here, including ingestion and parity reporting. Commands receive the active repository path from `xtask`; shared PAK access lives in `../enfusion_pak`. Existing module names and test placement remain until Phase 4. The submodule list below describes that later decomposition target.
 
 3D geometric mesh decoder, voxel raymarching engine, architectural component extractor, and Bounding Volume Hierarchy (BVH) compiler.
 

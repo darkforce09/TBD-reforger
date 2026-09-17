@@ -341,7 +341,7 @@ cargo xtask ci map-cartographic-verify
 
 **Satellite load (T-174):** day-to-day `cargo xtask mk leptos` upgrades preview→full TBDS automatically (no `?sat=full`). Use `?sat=preview` only for Range-only / fast iteration (same as CI gates). Density-heatmap green glow is removed.
 
-**Forest canopy (T-176):** island forest highlight is **8 m TBDD canopy mass** (not the old 32 m Path B landcover forest wash). Clearings stay open. Retune tightness: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO`, then `cargo run -p tbd-tools --bin world -- redensify --terrain everon` (committed-chunk path; no Workbench).
+**Forest canopy (T-176):** island forest highlight is **8 m TBDD canopy mass** (not the old 32 m Path B landcover forest wash). Clearings stay open. Retune tightness: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO`, then `cargo run -p developer-tools --bin world -- redensify --terrain everon` (committed-chunk path; no Workbench).
 
 See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick spill → `/var/tmp`.
 

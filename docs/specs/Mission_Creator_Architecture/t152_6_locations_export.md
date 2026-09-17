@@ -77,7 +77,7 @@ Town labels (**T-152.8**) need a stable **name + position + importance** feed. M
 | **G5** | **`∀ loc: name.length ≥ 2 ∧ finite(x,y)`** | Row quality |
 | **G6** | **`∀ loc: ¬/location composition/i.test(name)`** | No placeholder names |
 | **G7** | Spike JSON documents export path **A, B, or C** with evidence | Provenance |
-| **G8** | T-152.5 verify PASS; `cargo run -q -p tbd-tools --bin world -- validate-exports` still PASS | Regression |
+| **G8** | T-152.5 verify PASS; `cargo run -q -p developer-tools --bin world -- validate-exports` still PASS | Regression |
 
 ---
 
@@ -92,7 +92,7 @@ node scripts/map-assets/export-locations.mjs --terrain everon
 # or documented Workbench step → locations.json
 
 cargo xtask ci schema-validate
-cargo run -q -p tbd-tools --bin world -- validate-exports
+cargo run -q -p developer-tools --bin world -- validate-exports
 
 node -e "
 const fs=require('node:fs');

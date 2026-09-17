@@ -3,12 +3,12 @@
 **The north star.** One doc that states what the TBD Framework mod *is*. If a slice ever
 conflicts with this, this wins. Program hub: [`t181_event_mod_program.md`](t181_event_mod_program.md).
 
-Every factual claim about CRF or vanilla carries an `@idx <lane>#<Symbol>` marker. `cargo run -q -p tbd-tools --bin enf -- citations`
+Every factual claim about CRF or vanilla carries an `@idx <lane>#<Symbol>` marker. `cargo run -q -p developer-tools --bin enf -- citations`
 resolves each one against a generated index and fails the build if it does not exist. **Line
 numbers are never typed by hand** — cite the name, ask the tool for coordinates:
 
 ```bash
-cargo run -q -p tbd-tools --bin enf -- lookup UpdateSlotPlayerID
+cargo run -q -p developer-tools --bin enf -- lookup UpdateSlotPlayerID
 ```
 
 ---
@@ -77,7 +77,7 @@ Ours adds SAFESTART and replaces AAR with END, because AAR is deferred (§6).
 ## 4. What the mod must supply
 
 Full triage — 57 capabilities, every CRF file accounted for — lives in
-[`capability_verdicts.tsv`](capability_verdicts.tsv), enforced by `cargo run -q -p tbd-tools --bin enf -- capability`
+[`capability_verdicts.tsv`](capability_verdicts.tsv), enforced by `cargo run -q -p developer-tools --bin enf -- capability`
 (a CRF capability with no TBD verdict is a **build error**). The spine:
 
 | # | Capability | Why it is spine |
@@ -96,7 +96,7 @@ Full triage — 57 capabilities, every CRF file accounted for — lives in
 
 ## 5. Load-bearing Enfusion facts
 
-Proven, not remembered. Each resolves through `cargo run -q -p tbd-tools --bin enf -- citations`.
+Proven, not remembered. Each resolves through `cargo run -q -p developer-tools --bin enf -- citations`.
 
 **Deploy is a POSSESS request, not a raw takeover.** `SCR_PossessSpawnData` @idx api#SCR_PossessSpawnData
 exposes `static SCR_PossessSpawnData FromEntity (notnull IEntity entity)`, handed to

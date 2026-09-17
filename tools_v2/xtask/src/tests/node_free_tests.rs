@@ -53,7 +53,7 @@ fn walk_is_nonempty_anti_vacuity() {
         .join("\n");
     for needle in [
         "/tools_v2/xtask/",
-        "/tools/",
+        "/tools_v2/developer-tools/",
         "/tools_v2/verification-core/",
         "/tools_v2/ticket-engine/",
         "/apps/ticketboard/src/",

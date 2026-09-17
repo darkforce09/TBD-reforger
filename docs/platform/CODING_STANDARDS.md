@@ -25,7 +25,7 @@
 > editorconfig — all via **`cargo xtask ci ci-local`** / `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
 > §6–§9 (testing/formatting/size/logging principles) remain in force, language-neutral.
 >
-> V-suite: `verify|accept` only (freeze mode retired); oracles at `tools/tbd-tools/fixtures/t159/oracle-freeze`.
+> V-suite: `verify|accept` only (freeze mode retired); oracles at `tools_v2/developer-tools/fixtures/t159/oracle-freeze`.
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how

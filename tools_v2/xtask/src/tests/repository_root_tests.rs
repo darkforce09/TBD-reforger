@@ -10,7 +10,7 @@ fn nested_tooling_directories_resolve_repository_and_fixtures() {
         assert_eq!(resolved, root);
         for fixture in [
             "packages/tbd-schema/schema/mission.schema.json",
-            "tools_v2/xtask/tests/fixtures/FarmHouse_E_1L01_Wood_children.json",
+            "tools_v2/developer-tools/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
             "tools_v2/xtask/src/wave/schema.rs",
             "scripts/mod/package.json",
         ] {

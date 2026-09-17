@@ -1,8 +1,8 @@
 # Workspace Task Runner (`tools_v2/xtask`)
 
-## Phase-one implementation
+## Phase-two implementation
 
-The existing task runner is live here with its flat source layout and `tests/fixtures`. It still owns the blueprint compiler and ticket orchestration, and depends on `../../tools/tbd-tools` plus the map engine. The lightweight router and directory structure below are future targets.
+The task runner delegates blueprint and map verification through `commands/map` and `verifications/map_assets` to `developer-tools`. Its manifest has no direct map-engine dependency. Execution-receipt fixtures remain in `tests/fixtures`; blueprint fixtures belong to `developer-tools/test_fixtures/blueprint`. Ticket orchestration and most flat modules remain here until phases three and four.
 
 ## Target architecture
 

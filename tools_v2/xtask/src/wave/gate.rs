@@ -161,7 +161,7 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     // 1 on disagreement; run on the day T-244 landed it would have gone RED immediately. ~12 s.
     //
     // `checkrun`, NOT `hostrun`: `hostrun` bakes in the SHARED CARGO_TARGET_DIR, and
-    // `tools/tbd-tools/src/serve.rs` `repo_root()` is `env!("CARGO_MANIFEST_DIR")` — a COMPILE-TIME
+    // `tools_v2/developer-tools/src/serve.rs` `repo_root()` is `env!("CARGO_MANIFEST_DIR")` — a COMPILE-TIME
     // constant. A shared dir can therefore hand this step a `world` binary that reads a DIFFERENT
     // WORKTREE'S rules and catalogue while reporting on yours: the signature defect, with the two
     // inputs the verdict is entirely about.
@@ -177,7 +177,7 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
                 "run",
                 "-q",
                 "-p",
-                "tbd-tools",
+                "developer-tools",
                 "--bin",
                 "world",
                 "--",
@@ -385,9 +385,9 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // workspace-wide gate would be red before a single slice merged and nothing could ever land.
     //
     // T-603 CORRECTION — THE REASON MOVED, AND THE NOTE HAD NOT. This used to read "~45 errors,
-    // almost all in tools/tbd-tools and xtask, which have never been clippy-gated". MEASURED
+    // almost all in tools_v2/developer-tools and xtask, which have never been clippy-gated". MEASURED
     // 2026-07-31, that attribution is now exactly backwards: 60 errors in the bin target (61 with
-    // --all-targets), ALL SIXTY in `website-frontend` linted natively, and ZERO in tools/tbd-tools
+    // --all-targets), ALL SIXTY in `website-frontend` linted natively, and ZERO in tools_v2/developer-tools
     // or xtask — those two are clean and are gated by the `clippy xtask+tbd-tools` step below.
     //
     // ci.yml gates per-crate (:59 website-api, :91 map-engine, :112 website-frontend on wasm32) and
@@ -519,7 +519,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             ],
         )
     });
-    // T-597 — THE STRUCTURAL GAP. `xtask` and `tools/tbd-tools` were tested by NOTHING. The gate ran
+    // T-597 — THE STRUCTURAL GAP. `xtask` and `tools_v2/developer-tools` were tested by NOTHING. The gate ran
     // `test api`, `test map-engine`, `test frontend` and stopped. MEASURED 2026-07-31: ci.yml's
     // `test` step is a bare `cargo test` under the website-api job, whose
     // `defaults.run.working-directory` is `apps/website/api`. Cargo with no `-p` selects the package
@@ -542,13 +542,13 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "-p",
                 "xtask",
                 "-p",
-                "tbd-tools",
+                "developer-tools",
                 "--quiet",
             ],
         )
     });
     // T-603 — THE OTHER HALF OF T-597's GAP. Nothing LINTED them either. 14 errors on clean main
-    // under `-D warnings` — 10 in tools/tbd-tools and 4 in xtask, all mechanical, all older than the
+    // under `-D warnings` — 10 in tools_v2/developer-tools and 4 in xtask, all mechanical, all older than the
     // ticket that found them, fixed in the same commit that added this step because a gate step that
     // is red the moment it lands teaches the next agent that gate failures are noise.
     // `checkrun`, not `hostrun`: this is a check-class step and carries the T-421 exposure verbatim.
@@ -561,7 +561,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "-p",
                 "xtask",
                 "-p",
-                "tbd-tools",
+                "developer-tools",
                 "--all-targets",
                 "--quiet",
                 "--",
@@ -601,7 +601,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "run",
                 "-q",
                 "-p",
-                "tbd-tools",
+                "developer-tools",
                 "--bin",
                 "world",
                 "--",

@@ -77,7 +77,7 @@ Road strips already use `expand_polyline_strip` (`crates/map-engine-core/src/geo
 
 ## Tasks
 
-1. **Export gate:** If fence instance count = 0, run Workbench P5 export + `cargo xtask map export-terrain everon --phase P5_props` + `cargo run -q -p tbd-tools --bin world -- verify-phase`; update manifest phase fields.
+1. **Export gate:** If fence instance count = 0, run Workbench P5 export + `cargo xtask map export-terrain everon --phase P5_props` + `cargo run -q -p developer-tools --bin world -- verify-phase`; update manifest phase fields.
 2. **Rust — `FenceStripComposer`:** In `map-engine-core` (world or geometry module), map fence prop OBB → 2-point centerline + `expand_polyline_strip`.
 3. **Rust — pier strip path:** Extend building compose in `residency.rs` (or dedicated `pier_strip.rs`) to emit thin strip instead of quad fill when aspect ≥ L4.
 4. **Rust — bridge compose:** Deck polygon unchanged; queue bridge glyph instance; optional railing strip batch from nearby fence props.
@@ -92,7 +92,7 @@ Road strips already use `expand_polyline_strip` (`crates/map-engine-core/src/geo
 |------|-----------|-------|
 | **G1** | After export, **`count(prefab.kind=prop ∧ propClass=fence) > 0`** on Everon | Export census |
 | **G2** | **`count(instances of fence prefabs) > 0`** in chunked catalog | Export census |
-| **G3** | **`cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P5_props` exit 0** | Phase script |
+| **G3** | **`cargo run -q -p developer-tools --bin world -- verify-phase --terrain everon --phase P5_props` exit 0** | Phase script |
 | **G4** | ∀ pier/dock instance rendered as strip: **`max(hx,hy)/min(hx,hy) ≥ 4.0`** | Geometry |
 | **G5** | **`count(pier instances with aspect < 4.0 and drawn as square fill) = 0`** | No fat pier |
 | **G6** | ∀ fence strip: triangle mesh width in world m = **`FENCE_STRIP_WIDTH_M ± 0.01`** at segment midpoint | Class R strip |
@@ -112,8 +112,8 @@ git lfs pull && make map-assets-link
 
 # Export (if G1/G2 fail — requires Workbench staged raw)
 cargo xtask map export-terrain everon --phase P5_props
-cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P5_props
-cargo run -q -p tbd-tools --bin world -- validate-exports
+cargo run -q -p developer-tools --bin world -- verify-phase --terrain everon --phase P5_props
+cargo run -q -p developer-tools --bin world -- validate-exports
 
 # Rust / wasm
 cargo fmt --check

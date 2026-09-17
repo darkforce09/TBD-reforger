@@ -110,7 +110,7 @@ pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
         "cached {got} page(s), {miss} missing -> {}",
         cache.display()
     ))?;
-    out_line("next:  cargo run -q -p tbd-tools --bin enf -- source")?;
+    out_line("next:  cargo run -q -p developer-tools --bin enf -- source")?;
     Ok(0)
 }
 

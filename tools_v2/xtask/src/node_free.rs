@@ -27,7 +27,7 @@ const FILE_LENGTH_PINS: &[&str] = &[
     "tools_v2/xtask",
     "tools_v2/verification-core",
     "tools_v2/ticket-engine",
-    "tools",
+    "tools_v2/developer-tools",
     "apps/ticketboard/src",
     "apps/website/api/src",
     "apps/website/frontend/src",

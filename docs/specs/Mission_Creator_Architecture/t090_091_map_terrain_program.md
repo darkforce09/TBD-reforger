@@ -164,7 +164,7 @@ cargo xtask ticket sync ticket-check-strict
 cargo xtask ci schema-validate          # golden missions + terrain manifest + anchors example
 cargo xtask ci verify-terrain           # stub OK — manifest ↔ terrains.ts + anchor schema
 cargo xtask ci verify-terrain-strict    # T-091.0 gate — GetSurfaceY plugin DEM + ≥10 anchors ±1 m
-cargo run -q -p tbd-tools --bin world -- census --terrain everon   # pending_export until full T-090.3 export census
+cargo run -q -p developer-tools --bin world -- census --terrain everon   # pending_export until full T-090.3 export census
 make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
 ```
 
@@ -205,7 +205,7 @@ Scripts live in `packages/tbd-schema/scripts/verify-terrain-*.mjs`.
 | [`.ai/artifacts/everon_object_count_baseline.md`](../../../.ai/artifacts/everon_object_count_baseline.md) | Human-readable mirror (updated @ first census) |
 
 ```bash
-cargo run -q -p tbd-tools --bin world -- census --terrain everon    # after export — writes/validates exact integers
+cargo run -q -p developer-tools --bin world -- census --terrain everon    # after export — writes/validates exact integers
 cargo xtask ci schema-validate              # includes verify-type-inventory
 ```
 | Z burial audit | N/A | T-090.4 pivot + **T-090.6** OBB visibility @ 1M |

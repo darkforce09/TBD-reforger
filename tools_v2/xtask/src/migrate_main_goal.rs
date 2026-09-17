@@ -111,7 +111,7 @@ const FILLS: &[Fill] = &[
             "16-bit DEM quantization on slopes yields false positives; tilted and large props yield false negatives by design — deferred to T-090.6.",
         ],
         approach: &[
-            "Offline tool in tools/tbd-tools/src/world: sample the DEM at each instance (x, y) and classify demZ versus pivot z per kind.",
+            "Offline tool in tools_v2/developer-tools/src/world: sample the DEM at each instance (x, y) and classify demZ versus pivot z per kind.",
             "Emit a machine- and human-readable report keyed by object id and kind so T-090.6 can consume the deltas.",
         ],
         verify: &[
@@ -132,7 +132,7 @@ const FILLS: &[Fill] = &[
             "spatial.halfExtentsM and rotationDeg ship in the catalog as the normative geometry; the T-090.3.0 spike proved the localUp to world Z remap.",
         ],
         approach: &[
-            "Extend the audit tool in tools/tbd-tools/src/world: build an OBB per instance, sample the DEM at corners and edges, classify per kind.",
+            "Extend the audit tool in tools_v2/developer-tools/src/world: build an OBB per instance, sample the DEM at corners and edges, classify per kind.",
             "Neighbor-overlap detection via a spatial grid; concave props carry a confidence note rather than pretending mesh precision.",
         ],
         verify: &[

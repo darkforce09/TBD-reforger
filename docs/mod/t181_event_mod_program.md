@@ -31,11 +31,11 @@ the website's **Aegis** tokens (`apps/website/frontend/style/aegis.css`). Full A
 ```bash
 cargo xtask mod compile             # Enfusion compile gate — ~1.3s, native, no Workbench
 cargo xtask mod compile-selftest    # prove the gate still catches a broken .c
-cargo run -q -p tbd-tools --bin enf -- capability       # fails if any CRF capability has no TBD verdict
-cargo run -q -p tbd-tools --bin enf -- index crf               # rebuild the CRF symbol index
+cargo run -q -p developer-tools --bin enf -- capability       # fails if any CRF capability has no TBD verdict
+cargo run -q -p developer-tools --bin enf -- index crf               # rebuild the CRF symbol index
 
-cargo run -q -p tbd-tools --bin enf -- lookup UpdateSlotPlayerID
-cargo run -q -p tbd-tools --bin enf -- dirs --depth 5 --min 60
+cargo run -q -p developer-tools --bin enf -- lookup UpdateSlotPlayerID
+cargo run -q -p developer-tools --bin enf -- dirs --depth 5 --min 60
 ```
 
 **Everything runs on the host.** Agent shells run inside a `debian:12` container with no C
@@ -109,8 +109,8 @@ of claiming it:
 | `bash scripts/mod/compile.sh` | the Enfusion actually compiles (~1.3 s, no Workbench) |
 | `enf lookup <Symbol>` | the API being called genuinely exists |
 | `cargo xtask verify no-crf-leak` | no oracle code leaked into prod — CRF (Arma Public License) **and** PlayableSelector (no licence at all); see SLICE_WORKFLOW.md §Oracle lanes |
-| `cargo run -q -p tbd-tools --bin enf -- capability` | no capability silently forgotten |
-| `cargo run -q -p tbd-tools --bin enf -- citations` | no invented `file:line` in docs |
+| `cargo run -q -p developer-tools --bin enf -- capability` | no capability silently forgotten |
+| `cargo run -q -p developer-tools --bin enf -- citations` | no invented `file:line` in docs |
 
 **Rules for slice agents** (put these in every prompt):
 1. **Host-aware.** Prefix builds/game binaries with `distrobox-host-exec`. Explain WHY, or the agent

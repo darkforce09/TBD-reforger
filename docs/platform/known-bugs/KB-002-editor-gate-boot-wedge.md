@@ -4,7 +4,7 @@
 |---|---|
 | **Status** | **RESOLVED** — T-177 (harness now uses the full `chrome` build + `--headless=new`) |
 | **Severity** | High (while active) — the entire editor acceptance gate (`cargo xtask mk leptos-gates`) could not run |
-| **Area** | Gate harness (`tools/tbd-tools`) + headless chromium / Skia fontconfig |
+| **Area** | Gate harness (`tools_v2/developer-tools`) + headless chromium / Skia fontconfig |
 | **Discovered** | 2026-07-19, during T-177 verification |
 
 ## Symptom
@@ -49,7 +49,7 @@ processes. Basic CDP + WebGL2 both worked. The decisive evidence was chromium's 
   ignores it).
 - **Fail-fast:** `gate doctor` (a prerequisite of `cargo xtask mk leptos-gates`) validates the resolved chromium
   and runs a ~15 s liveness probe, so a future recurrence fails in seconds with a diagnosis instead of
-  the 130 s hang. Pins live in [`tools/tbd-tools/gate-env.json`](../../../tools/tbd-tools/gate-env.json).
+  the 130 s hang. Pins live in [`tools_v2/developer-tools/gate-env.json`](../../../tools_v2/developer-tools/gate-env.json).
 
 Two stale/behavioral smoke assertions were exposed once the suite could finally run past `selfcheck`,
 both fixed in the same pass (neither was the wedge):

@@ -12,7 +12,7 @@ use std::process::Command;
 
 use serde::Deserialize;
 
-const GATE_ENV: &str = "tools/tbd-tools/gate-env.json";
+const GATE_ENV: &str = "tools_v2/developer-tools/gate-env.json";
 const ZIP_NAME: &str = "chrome-linux64.zip";
 const REL_BIN: &str = "chrome-linux64/chrome";
 

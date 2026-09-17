@@ -79,7 +79,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         );
         eprintln!("  3. Stage it:");
         eprintln!(
-            "       cargo run -q -p tbd-tools --bin world -- copy-export-profile --terrain {terrain} --full \\"
+            "       cargo run -q -p developer-tools --bin world -- copy-export-profile --terrain {terrain} --full \\"
         );
         eprintln!("         --profile \"$PROFILE_DIR\"");
         eprintln!("  4. Re-run: cargo xtask map export-terrain {terrain} --phase {phase}");
@@ -107,7 +107,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         return Ok(rc);
     }
     println!(
-        "export-terrain: {terrain} {phase} done — next: cargo run -q -p tbd-tools --bin world -- verify-phase --terrain {terrain} --phase {phase}"
+        "export-terrain: {terrain} {phase} done — next: cargo run -q -p developer-tools --bin world -- verify-phase --terrain {terrain} --phase {phase}"
     );
     Ok(0)
 }
@@ -149,12 +149,12 @@ fn parse_args(args: &[String]) -> Parse {
 }
 
 fn world_cargo(root: &Path, world_args: &[&str]) -> Result<u8> {
-    // bash: `(cd "$REPO_ROOT" && cargo run -q -p tbd-tools --bin world -- …)`
+    // bash: `(cd "$REPO_ROOT" && cargo run -q -p developer-tools --bin world -- …)`
     let mut args = vec![
         "run".to_string(),
         "-q".to_string(),
         "-p".to_string(),
-        "tbd-tools".to_string(),
+        "developer-tools".to_string(),
         "--bin".to_string(),
         "world".to_string(),
         "--".to_string(),
@@ -176,16 +176,16 @@ fn world_cargo(root: &Path, world_args: &[&str]) -> Result<u8> {
             Ok(127)
         }
         Err(NotRun::Signalled { signal, .. }) => {
-            bail!("cargo run -p tbd-tools --bin world signalled ({signal})")
+            bail!("cargo run -p developer-tools --bin world signalled ({signal})")
         }
         Err(NotRun::Timeout { secs, .. }) => {
-            bail!("cargo run -p tbd-tools --bin world timed out after {secs}s")
+            bail!("cargo run -p developer-tools --bin world timed out after {secs}s")
         }
         Err(NotRun::ToolError { tool, stderr, .. }) => {
             bail!("{tool} failed: {stderr}")
         }
         // TargetMissing / Unreadable are file-scan variants; proc::Run does not emit them.
-        Err(other) => bail!("cargo run -p tbd-tools --bin world: {other:?}"),
+        Err(other) => bail!("cargo run -p developer-tools --bin world: {other:?}"),
     }
 }
 

@@ -27,11 +27,10 @@ serde_norway = "0.9"
 time = { version = "0.3", features = ["parsing"] }
 walkdir = "2"
 jsonschema = { version = "0.46.10", default-features = false }
-tbd-tools = { path = "../../tools/tbd-tools" }
+developer-tools = { path = "../developer-tools" }
 verification-core = { path = "../verification-core" }
 ticket-engine = { path = "../ticket-engine" }
 libc = "0.2"
-website-map-engine = { path = "../../apps/website/map-engine", default-features = false, features = ["world", "io", "streaming", "bvh"] }
 typify = "0.7"
 schemars = "0.8"
 prettyplease = "0.2"

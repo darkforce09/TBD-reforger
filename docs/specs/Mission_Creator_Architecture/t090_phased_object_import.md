@@ -8,7 +8,7 @@
 
 ## In one sentence
 
-Import world objects **one kind at a time** (buildings → trees → … → footpaths), with **automated mathematical proofs** per phase — **no eyeball sign-off**, no advancing until `cargo run -q -p tbd-tools --bin world -- verify-phase` exits **0**.
+Import world objects **one kind at a time** (buildings → trees → … → footpaths), with **automated mathematical proofs** per phase — **no eyeball sign-off**, no advancing until `cargo run -q -p developer-tools --bin world -- verify-phase` exits **0**.
 
 ---
 
@@ -17,7 +17,7 @@ Import world objects **one kind at a time** (buildings → trees → … → foo
 | ❌ Forbidden | ✅ Required |
 |-------------|------------|
 | Import full 1M catalog on first try | Enable **one import phase** at a time |
-| “Looks aligned in the editor” | **`cargo run -q -p tbd-tools --bin world -- verify-phase --phase Pn` exit 0** |
+| “Looks aligned in the editor” | **`cargo run -q -p developer-tools --bin world -- verify-phase --phase Pn` exit 0** |
 | Manual spot-check only | **Deterministic scripts + JSON Schema + count identities** |
 | Skip phase because next slice is ready | Phase **N+1 blocked** in registry until phase **N** shipped |
 
@@ -75,7 +75,7 @@ Each phase adds **one `kind` or `roadClass` filter** to export + render + verify
 cargo xtask map export-terrain everon --phase P1_buildings
 
 # Mathematical verification — MUST exit 0 before next phase
-cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings
+cargo run -q -p developer-tools --bin world -- verify-phase --terrain everon --phase P1_buildings
 
 # Render smoke (T-090.5) — optional automated screenshot diff @ fixed camera.
 # NOT IMPLEMENTED: the `map-render-verify` make target was a stub that printed
@@ -229,7 +229,7 @@ No screenshot judgment in CI v1 — instance count + purity only. Screenshot dif
 | # | Path |
 |---|------|
 | 1 | `scripts/map-assets/export-terrain.sh --phase Pn` |
-| 2 | `scripts/map-assets/verify-phase.mjs` → `cargo run -q -p tbd-tools --bin world -- verify-phase` |
+| 2 | `scripts/map-assets/verify-phase.mjs` → `cargo run -q -p developer-tools --bin world -- verify-phase` |
 | 3 | `packages/tbd-schema/golden/phased/P1-buildings.json` … `P9-path.json` |
 | 4 | `packages/tbd-schema/scripts/verify-map-phase.mjs` |
 | 5 | `terrain-registry.json` → `importPhaseMax`, `importPhaseShipped[]` |

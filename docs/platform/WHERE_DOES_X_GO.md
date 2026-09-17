@@ -8,7 +8,7 @@ T-171 pin: canonical home for each artifact class after the `apps/website/{api,f
 | API handler | `apps/website/api/src/handlers/<resource>.rs` (models in `src/models/` = wire contract) |
 | DB migration | `apps/website/api/migrations/NNNN_*.sql` (sqlx, embedded, runs on boot) |
 | Data seed | `apps/website/api/seeds/*.sql` (applied by root `cargo xtask db seed`; mock_data.sql manual-psql only) |
-| Editor/gate smoke | `tools/tbd-tools` (`gate` bin) wired through `cargo xtask mk leptos-gates` |
+| Editor/gate smoke | `tools_v2/developer-tools` (`gate` bin) wired through `cargo xtask mk leptos-gates` |
 | Test fixture | crate-local `tests/fixtures/` beside consumer; NEVER `.ai/artifacts/` |
 | Cross-crate contract golden | `packages/tbd-schema/{schema,golden,golden-missions,registry}/` |
 | Map asset | `packages/map-assets/<terrain>/` (LFS: dem png + sat .tbd-sat only; staging/tiles rebuildable local) |
@@ -16,4 +16,4 @@ T-171 pin: canonical home for each artifact class after the `apps/website/{api,f
 | Spec / doc | `docs/**` only — never `apps/**/docs` or `packages/**/docs` (verify-doc-layout enforces) |
 | Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `apps/mod/`) |
 | Shared engine code | `crates/map-engine-{core,render,wasm}` |
-| Repo tooling | `xtask` (gates/codegen/ticket lib) · `tools/tbd-tools` (gate harness + asset pipelines) |
+| Repo tooling | `xtask` (gates/codegen/ticket lib) · `tools_v2/developer-tools` (gate harness + asset pipelines) |

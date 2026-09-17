@@ -4,7 +4,7 @@
 **Depends on:** T-175 (shipped)  
 **Verify:** [`.ai/artifacts/t176_verify_log.md`](../../.ai/artifacts/t176_verify_log.md) · inventory [`.ai/artifacts/t176_inventory.md`](../../.ai/artifacts/t176_inventory.md)  
 **Evidence:** [`.ai/artifacts/t176_operator_screens/`](../../.ai/artifacts/t176_operator_screens/)  
-**Scope shipped:** `apps/website/frontend/**`, `crates/map-engine-*`, density re-bake via `tools/tbd-tools` (`world redensify` / gen-density-fixture). **Not** `apps/mod/`.
+**Scope shipped:** `apps/website/frontend/**`, `crates/map-engine-*`, density re-bake via `tools_v2/developer-tools` (`world redensify` / gen-density-fixture). **Not** `apps/mod/`.
 
 **No silent deferrals.** Soft “later / optional / fold forward” forbidden unless the operator explicitly says `defer X` / `skip X`.
 
@@ -17,7 +17,7 @@
 | B1 | Bind `SlotPlacePreview` to slot atlas in `draw_batches` (ghost visible for palette→map drag). |
 | B2 | `CAMERA_GESTURE` flag → defer DEM-contour + 8 m-forest recompute during pan. |
 
-**Forest render model (post T-176):** highlight = **8 m TBDD canopy mass** (`DENSITY_CELL_M=8`, box_blur_corners `r=1`, `CANOPY_MASS_ISO`); loose **32 m Path B landcover forest wash removed**. Retune: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO` → `cargo run -p tbd-tools --bin world -- redensify --terrain everon` (committed-chunk path, no Workbench).
+**Forest render model (post T-176):** highlight = **8 m TBDD canopy mass** (`DENSITY_CELL_M=8`, box_blur_corners `r=1`, `CANOPY_MASS_ISO`); loose **32 m Path B landcover forest wash removed**. Retune: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO` → `cargo run -p developer-tools --bin world -- redensify --terrain everon` (committed-chunk path, no Workbench).
 
 **Gates:** `cargo xtask ci ci-local` PASS · schema-validate (S13 density fixture) · map-engine-core tests · leptos release build. `gate editor-suite` headless lavapipe/WebGPU wedge = pre-existing (t166), not T-176 code.
 

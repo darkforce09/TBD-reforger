@@ -64,7 +64,7 @@ pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
 
     let n = count_html_pages(&cache)?;
     out_line(&format!("cache: {} ({} pages)", cache.display(), n))?;
-    out_line("next:  cargo run -q -p tbd-tools --bin enf -- apidoc")?;
+    out_line("next:  cargo run -q -p developer-tools --bin enf -- apidoc")?;
     Ok(0)
 }
 

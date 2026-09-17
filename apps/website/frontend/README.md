@@ -34,7 +34,7 @@ cargo check -p website-frontend
 cd apps/website/frontend && trunk build
 # render proof — the wasm actually mounts + renders in a real headless browser
 # (T-165.6: the Rust CDP harness; run from the repo root):
-cargo run -q -p tbd-tools --bin gate -- render-check \
+cargo run -q -p developer-tools --bin gate -- render-check \
   --dir apps/website/frontend/dist --path / --expect "COMMAND CENTER"
 ```
 

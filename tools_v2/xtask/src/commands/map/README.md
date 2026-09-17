@@ -1,7 +1,5 @@
-# Map Command Forwarder (`xtask/src/commands/map`)
+# Map command adapters
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+`mod.rs` resolves the active repository root and forwards existing blueprint, ingestion, parity, and world-LOS command arguments to `developer-tools`. The adapter preserves `Result<u8>` exit handling and imports no map-engine types.
 
-Thin CLI adapter forwarding map imagery and 3D blueprint compilation tasks directly to `developer-tools`.
-
-Eliminates the need for `xtask` to depend on heavy 3D mesh rendering libraries.
+Other map export commands retain their current routing until the later dispatcher decomposition.

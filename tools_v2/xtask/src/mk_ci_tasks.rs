@@ -10,7 +10,6 @@
 use super::{Lane, Step, Task, verify_doc_layout};
 use crate::codegen_schema::codegen;
 use crate::gate_no_python::verify_no_python;
-use crate::golden_gate::map_object_golden;
 use crate::node_free::{verify_file_length, verify_no_node};
 use crate::root::find_repo_root;
 use crate::schema_gates::{
@@ -18,6 +17,7 @@ use crate::schema_gates::{
     type_inventory, validate_all,
 };
 use crate::shell_free::verify_no_shell;
+use crate::verifications::map_assets::map_object_golden;
 use crate::verify_ci_shell::verify_ci_shell;
 
 /// An echoed recipe line. The map lane stays a subprocess on purpose: `map` is a `tbd-tools`
@@ -117,7 +117,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-citations",
-        help: "Verify @contract citations in apps/ packages/ tools/ tools_v2/ code — NOT docs/ prose (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port, T-611 scope)",
+        help: "Verify @contract citations in apps/ packages/ tools_v2/ code — NOT docs/ prose (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port, T-611 scope)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema citations", false, citations)],
@@ -187,7 +187,7 @@ pub static TASKS: &[Task] = &[
         steps: &[sh!("cd apps/website/api && cargo test")],
     },
     // T-298 — the tbd-tools half of what T-901 did for website-api above, and it exists for the
-    // same mechanical reason: ci.yml cannot carry a bare `cargo test -p tbd-tools --lib` step,
+    // same mechanical reason: ci.yml cannot carry a bare `cargo test -p developer-tools --lib` step,
     // because `verify ci-shell` refuses any `run:` that is not `cargo xtask` or on its short
     // pre-cargo allowlist (`verify_ci_shell_rules.rs is_allowlisted`). So the command lives here
     // and the workflow names the task.
@@ -203,10 +203,10 @@ pub static TASKS: &[Task] = &[
     // supposed to need no DB, no LFS and no browser.
     Task {
         name: "tbd-tools-test",
-        help: "T-298: cargo test -p tbd-tools --lib (density:: + world:: unit tests; no DB/LFS)",
+        help: "T-298: cargo test -p developer-tools --lib (density:: + world:: unit tests; no DB/LFS)",
         group: "build",
         lane: Lane::Ci,
-        steps: &[sh!("cargo test -p tbd-tools --lib")],
+        steps: &[sh!("cargo test -p developer-tools --lib")],
     },
     // ── map lane ────────────────────────────────────────────────────────────────────────────
     Task {
@@ -221,20 +221,22 @@ pub static TASKS: &[Task] = &[
             sh!(
                 "cp packages/map-assets/everon/staging/sap/everon-sap-ortho.pre-water.png packages/map-assets/everon/staging/sap/everon-sap-ortho.png"
             ),
-            sh!("cargo run -q -p tbd-tools --bin map -- reset-water-meta --terrain everon"),
-            sh!("cargo run -q -p tbd-tools --bin map -- analyze-water"),
-            sh!("cargo run -q -p tbd-tools --bin map -- composite-water"),
+            sh!("cargo run -q -p developer-tools --bin map -- reset-water-meta --terrain everon"),
+            sh!("cargo run -q -p developer-tools --bin map -- analyze-water"),
+            sh!("cargo run -q -p developer-tools --bin map -- composite-water"),
             sh!(
-                "cargo run -q -p tbd-tools --bin map -- build-unified --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/satellite/everon-sat.tbd-sat --terrain everon"
+                "cargo run -q -p developer-tools --bin map -- build-unified --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/satellite/everon-sat.tbd-sat --terrain everon"
             ),
-            sh!("cargo run -q -p tbd-tools --bin map -- patch-unified-bytes --terrain everon"),
             sh!(
-                "cargo run -q -p tbd-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless"
+                "cargo run -q -p developer-tools --bin map -- patch-unified-bytes --terrain everon"
             ),
-            sh!("cargo run -q -p tbd-tools --bin map -- verify-sap-ortho --terrain everon"),
-            sh!("cargo run -q -p tbd-tools --bin map -- verify-unified --terrain everon"),
             sh!(
-                "cargo run -q -p tbd-tools --bin map -- verify-pyramid --terrain everon --expect-lossless"
+                "cargo run -q -p developer-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless"
+            ),
+            sh!("cargo run -q -p developer-tools --bin map -- verify-sap-ortho --terrain everon"),
+            sh!("cargo run -q -p developer-tools --bin map -- verify-unified --terrain everon"),
+            sh!(
+                "cargo run -q -p developer-tools --bin map -- verify-pyramid --terrain everon --expect-lossless"
             ),
         ],
     },
@@ -244,11 +246,13 @@ pub static TASKS: &[Task] = &[
         group: "map",
         lane: Lane::Ci,
         steps: &[
-            sh!("cargo run -q -p tbd-tools --bin map -- build-cartographic --terrain everon"),
+            sh!("cargo run -q -p developer-tools --bin map -- build-cartographic --terrain everon"),
             sh!(
-                "cargo run -q -p tbd-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/map/everon-map-ortho.png --out packages/map-assets/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256"
+                "cargo run -q -p developer-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/map/everon-map-ortho.png --out packages/map-assets/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256"
             ),
-            sh!("cargo run -q -p tbd-tools --bin map -- patch-map-tiles-meta --terrain everon"),
+            sh!(
+                "cargo run -q -p developer-tools --bin map -- patch-map-tiles-meta --terrain everon"
+            ),
             Step::Task("map-cartographic-verify"),
         ],
     },
@@ -258,7 +262,7 @@ pub static TASKS: &[Task] = &[
         group: "map",
         lane: Lane::Ci,
         steps: &[sh!(
-            "cargo run -q -p tbd-tools --bin map -- verify-pyramid --terrain everon --view-map"
+            "cargo run -q -p developer-tools --bin map -- verify-pyramid --terrain everon --view-map"
         )],
     },
     Task {
@@ -519,16 +523,16 @@ pub static TASKS: &[Task] = &[
 // a boxed closure so the table stays a `static` and `help` needs no allocation.
 
 fn x_height_labels() -> anyhow::Result<u8> {
-    crate::label_gates::height_labels("everon")
+    crate::verifications::map_assets::height_labels("everon")
 }
 fn x_terrain_manifest() -> anyhow::Result<u8> {
-    crate::schema_gates::terrain_manifest("everon")
+    crate::verifications::map_assets::terrain_manifest("everon")
 }
 fn x_terrain_alignment() -> anyhow::Result<u8> {
-    crate::label_gates::terrain_alignment("everon", false)
+    crate::verifications::map_assets::terrain_alignment("everon", false)
 }
 fn x_terrain_alignment_strict() -> anyhow::Result<u8> {
-    crate::label_gates::terrain_alignment("everon", true)
+    crate::verifications::map_assets::terrain_alignment("everon", true)
 }
 fn x_no_select_star() -> anyhow::Result<u8> {
     crate::sql_gates::verify_no_select_star(&find_repo_root()?)

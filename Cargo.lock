@@ -1564,6 +1564,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "developer-tools"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64",
+ "bcdec_rs",
+ "clap",
+ "flate2",
+ "futures-util",
+ "image",
+ "image-webp",
+ "jsonschema",
+ "libc",
+ "png 0.17.16",
+ "regex",
+ "reqwest",
+ "resvg",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "tokio",
+ "tokio-tungstenite",
+ "webp",
+ "website-map-engine",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6909,34 +6937,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3a6bfce3d99adfa72d24750a61f782f3036a81e7f86d8841ee1326deaebd171"
 
 [[package]]
-name = "tbd-tools"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64",
- "bcdec_rs",
- "clap",
- "flate2",
- "futures-util",
- "image",
- "image-webp",
- "jsonschema",
- "libc",
- "png 0.17.16",
- "regex",
- "reqwest",
- "resvg",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "tokio",
- "tokio-tungstenite",
- "webp",
- "website-map-engine",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9038,6 +9038,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "developer-tools",
  "flate2",
  "jsonschema",
  "libc",
@@ -9049,14 +9050,12 @@ dependencies = [
  "serde_json",
  "serde_norway",
  "syn 2.0.118",
- "tbd-tools",
  "ticket-engine",
  "time",
  "toml 0.8.23",
  "typify",
  "verification-core",
  "walkdir",
- "website-map-engine",
 ]
 
 [[package]]

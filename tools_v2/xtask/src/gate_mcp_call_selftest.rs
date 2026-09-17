@@ -4,7 +4,7 @@
 //! against recorded fixtures and `xtask mcp call` against the Rust mcpd stub (`MCP_STUB=1`).
 //!
 //! Wave 226 option 2: `cargo run -q -p xtask --` replaces former `lib/xtask-run.sh`;
-//! mcpd path is inlined (`cargo build -q -p tbd-tools --bin mcpd` + `CARGO_TARGET_DIR`
+//! mcpd path is inlined (`cargo build -q -p developer-tools --bin mcpd` + `CARGO_TARGET_DIR`
 //! honor — former `lib/mcpd-bin.sh`). Daemon control is in-process
 //! (`mcp_daemon`, T-888). Warm
 //! `CARGO_TARGET_DIR` keeps stdout reproducible.
@@ -416,7 +416,7 @@ fn resolve_mcpd_bin(root: &Path) -> Result<(i32, String), NotRun> {
         .arg("build")
         .arg("-q")
         .arg("-p")
-        .arg("tbd-tools")
+        .arg("developer-tools")
         .arg("--bin")
         .arg("mcpd")
         .cwd(root)

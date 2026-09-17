@@ -1,9 +1,9 @@
 [package]
 name = "developer-tools"
+description = "Browser automation, Enfusion assets, blueprint compilation, and map verification"
 version = "0.1.0"
 edition = "2024"
 publish = false
-description = "Heavy async CLI suite, headless browser test runner, map imagery & 3D blueprint pipelines"
 
 [dependencies]
 anyhow = "1"
@@ -33,34 +33,30 @@ serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.11"
 tokio = { version = "1.52", features = ["full"] }
 tokio-tungstenite = "0.30"
-typify = "0.7"
-schemars = "0.8"
-prettyplease = "0.2"
-syn = "2"
 
 [[bin]]
-name = "browser_test_runner"
-path = "src/bin/browser_test_runner.rs"
+name = "enf"
+path = "src/bin/enf.rs"
 
 [[bin]]
-name = "screen_capture"
-path = "src/bin/screen_capture.rs"
+name = "gate"
+path = "src/bin/gate.rs"
 
 [[bin]]
-name = "enfusion_oracle"
-path = "src/bin/enfusion_oracle.rs"
+name = "mcpd"
+path = "src/bin/mcpd.rs"
 
 [[bin]]
-name = "mcp_broker"
-path = "src/bin/mcp_broker.rs"
+name = "world"
+path = "src/bin/world.rs"
 
 [[bin]]
-name = "world_pipeline"
-path = "src/bin/world_pipeline.rs"
+name = "map"
+path = "src/bin/map.rs"
 
 [[bin]]
-name = "map_pipeline"
-path = "src/bin/map_pipeline.rs"
+name = "capture"
+path = "src/bin/capture.rs"
 
 [lib]
 name = "developer_tools"

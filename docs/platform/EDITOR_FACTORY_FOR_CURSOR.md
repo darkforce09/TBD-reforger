@@ -243,7 +243,7 @@ drops edges). No `.py` files committed (CI scans for them; scratchpad use is fin
 paths. `cargo xtask ci schema-validate` does not work in worktrees (`xtask schema validate` does). Gate lock
 `WAITING` is serialisation, not a hang.
 
-**Headless probing.** Editor probes run through the `tools/tbd-tools` CDP harness (`smokes.rs`,
+**Headless probing.** Editor probes run through the `tools_v2/developer-tools` CDP harness (`smokes.rs`,
 `cdp.rs`) — playwright chromium, `--headless=new`, SwiftShader, `?force=webgl`. Two known artifacts,
 neither a defect: a **second engine boot in one session** crashes under software WebGPU (use a fresh
 page/profile per probe), and `__editorCamSet` panics under headless vulkan.

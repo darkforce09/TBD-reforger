@@ -539,7 +539,7 @@ If absent, T-090.6 uses **kind defaults** (see `t090_6_geometry_placement_audit.
 ```bash
 cargo xtask ci schema-validate
 cargo xtask schema map-object-enums
-cargo run -q -p tbd-tools --bin world -- census --terrain everon
+cargo run -q -p developer-tools --bin world -- census --terrain everon
 cd packages/tbd-schema && npm run verify-map-object-golden   # after T-090.2 lands script
 ```
 
@@ -649,7 +649,7 @@ Implement **T-090.2** — map object taxonomy ship (S1–S10 goldens + semantic 
 ═══ VERIFY (all exit 0) ═══
   cargo xtask ci schema-validate
   cargo xtask schema map-object-enums
-  cargo run -q -p tbd-tools --bin world -- census --terrain everon
+  cargo run -q -p developer-tools --bin world -- census --terrain everon
   cd packages/tbd-schema && npm run verify-map-object-golden
 
 ═══ MANUAL ═══

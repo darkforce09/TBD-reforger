@@ -66,7 +66,7 @@ Downsample rule: depth = max of the 2×2 block, mask = any-water.
 ```
 
 ### 3.4 `TBDD` — forest density (`objects/density/*.bin`, unchanged layout)
-Existing format from tools/tbd-tools/src/density.rs:24. T-935.5 only replaces the byte loop in
+Existing format from tools_v2/developer-tools/src/density.rs:24. T-935.5 only replaces the byte loop in
 geometry/tbdd.rs:51 with a Pod header parse + `cast_slice`; a Class-R test keeps the 625
 committed tiles bit-exact.
 
@@ -194,7 +194,7 @@ Report schema per brief. Ready for Cursor doc sync.
 cd .ai/artifacts/worktrees/T-935.2 && pwd && git branch --show-current   # slice/T-935.2
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-Spec §2-§3.1; docs/plans/t-935_2_plan.md; tools/tbd-tools/src/world/build.rs:135-520 and mod.rs;
+Spec §2-§3.1; docs/plans/t-935_2_plan.md; tools_v2/developer-tools/src/world/build.rs:135-520 and mod.rs;
 crates/map-engine-core/src/world/{binary/, chunk.rs:46-97}.
 ═══ PROBLEM ═══
 build.rs:503 writes every chunk as gzip-9 JSON only. The loader must inflate and parse it on the
@@ -217,7 +217,7 @@ Rust, edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No loader edits; no manifest edits; no crates/ or apps/ changes.
 ═══ VERIFY ═══
-cargo test -p tbd-tools binary_emit ; cargo test -p map-engine-core --all-features ;
+cargo test -p developer-tools binary_emit ; cargo test -p map-engine-core --all-features ;
 cargo xtask platform wave gate --slice T-935.2
 ═══ MANUAL ═══
 None.
@@ -272,7 +272,7 @@ Report schema per brief. Ready for Cursor doc sync.
 cd .ai/artifacts/worktrees/T-935.4 && pwd && git branch --show-current   # slice/T-935.4
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-Spec §3.2, §6; docs/plans/t-935_4_plan.md; tools/tbd-tools/src/world/aux.rs:1080-1140;
+Spec §3.2, §6; docs/plans/t-935_4_plan.md; tools_v2/developer-tools/src/world/aux.rs:1080-1140;
 crates/map-engine-core/src/dem/{mod.rs, png_decode.rs:40-100}; world_assets/mod.rs:600-660.
 ═══ PROBLEM ═══
 The DEM boots from a 71.9 MB 16-bit PNG decoded through several full-grid copies. A raw u16 grid
@@ -294,7 +294,7 @@ Rust; edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No manifest.json edits; no deletion of the PNG path; no residency edits.
 ═══ VERIFY ═══
-cargo test -p map-engine-core --all-features dem ; cargo test -p tbd-tools elevation_dem ;
+cargo test -p map-engine-core --all-features dem ; cargo test -p developer-tools elevation_dem ;
 cargo xtask mk leptos-gates ; cargo xtask platform wave gate --slice T-935.4
 ═══ MANUAL ═══
 None.
@@ -310,7 +310,7 @@ cd .ai/artifacts/worktrees/T-935.5 && pwd && git branch --show-current   # slice
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
 Spec §3.4; docs/plans/t-935_5_plan.md; crates/map-engine-core/src/geometry/tbdd.rs;
-tools/tbd-tools/src/density.rs:1-120.
+tools_v2/developer-tools/src/density.rs:1-120.
 ═══ PROBLEM ═══
 decode_tbdd (tbdd.rs:51) assembles every cell byte by byte. 625 everon tiles are committed and
 must stay bit-exact, so only the decoder changes.
@@ -330,7 +330,7 @@ Rust.
 ═══ DO NOT ═══
 No format changes; no forest_mass.rs edits.
 ═══ VERIFY ═══
-cargo test -p map-engine-core --all-features tbdd ; cargo test -p tbd-tools density ;
+cargo test -p map-engine-core --all-features tbdd ; cargo test -p developer-tools density ;
 cargo xtask platform wave gate --slice T-935.5
 ═══ MANUAL ═══
 None.
@@ -345,7 +345,7 @@ Report schema per brief. Ready for Cursor doc sync.
 cd .ai/artifacts/worktrees/T-935.6 && pwd && git branch --show-current   # slice/T-935.6
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-Spec §4; docs/plans/t-935_6_plan.md; tools/tbd-tools/src/world/build.rs:1100-1190, bin/world.rs;
+Spec §4; docs/plans/t-935_6_plan.md; tools_v2/developer-tools/src/world/build.rs:1100-1190, bin/world.rs;
 crates/map-engine-core/src/world/{roads.rs, store.rs:40-130, binary/archives.rs}.
 ═══ PROBLEM ═══
 build-roads writes objects/roads.json.gz only; roads.rs parses JSON; store.rs has no format
@@ -365,7 +365,7 @@ Rust; edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No build.rs edits (T-935.2/.11 own it in other waves); no world_host.rs edits.
 ═══ VERIFY ═══
-cargo test -p map-engine-core --all-features roads ; cargo test -p tbd-tools roads_emit ;
+cargo test -p map-engine-core --all-features roads ; cargo test -p developer-tools roads_emit ;
 cargo xtask platform wave gate --slice T-935.6
 ═══ MANUAL ═══
 None.
@@ -380,7 +380,7 @@ Report schema per brief. Ready for Cursor doc sync.
 cd .ai/artifacts/worktrees/T-935.7 && pwd && git branch --show-current   # slice/T-935.7
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-Spec §4; docs/plans/t-935_7_plan.md; tools/tbd-tools/src/{bin/map.rs, map/mod.rs};
+Spec §4; docs/plans/t-935_7_plan.md; tools_v2/developer-tools/src/{bin/map.rs, map/mod.rs};
 world_assets/labels.rs:50-110; crates/map-engine-core/src/world/{locations.rs, road_labels.rs}.
 ═══ PROBLEM ═══
 labels.rs fetches three JSON files and parses them with serde_json. One MapLabelsArchive replaces
@@ -400,7 +400,7 @@ Rust; edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No manifest.json edits; no water code (T-935.9).
 ═══ VERIFY ═══
-cargo test -p map-engine-core --all-features labels ; cargo test -p tbd-tools labels_emit ;
+cargo test -p map-engine-core --all-features labels ; cargo test -p developer-tools labels_emit ;
 cargo xtask mk leptos-gates ; cargo xtask platform wave gate --slice T-935.7
 ═══ MANUAL ═══
 None.
@@ -455,7 +455,7 @@ cd .ai/artifacts/worktrees/T-935.9 && pwd && git branch --show-current   # slice
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ls -la packages/map-assets/everon/staging/water/   # three staging files must exist
 ═══ READ ═══
-Spec §3.3, §4, §6; docs/plans/t-935_9_plan.md; tools/tbd-tools/src/map/mod.rs;
+Spec §3.3, §4, §6; docs/plans/t-935_9_plan.md; tools_v2/developer-tools/src/map/mod.rs;
 crates/map-engine-core/src/world/{mod.rs, binary/}; world_assets/mod.rs (module list only).
 ═══ PROBLEM ═══
 No code reads the water exports (two 328 MB rasters + vectors JSON). Water must become a binary
@@ -477,7 +477,7 @@ Rust; edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No manifest.json edits; no bin/map.rs edits; no residency edits.
 ═══ VERIFY ═══
-cargo test -p map-engine-core --all-features water ; cargo test -p tbd-tools water_emit ;
+cargo test -p map-engine-core --all-features water ; cargo test -p developer-tools water_emit ;
 cargo xtask mk leptos-gates ; cargo xtask platform wave gate --slice T-935.9
 ═══ MANUAL ═══
 None.
@@ -492,7 +492,7 @@ Report schema per brief. Ready for Cursor doc sync.
 cd .ai/artifacts/worktrees/T-935.10 && pwd && git branch --show-current   # slice/T-935.10
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-Spec §3.5; docs/plans/t-935_10_plan.md; tools/tbd-tools/src/map/unified.rs;
+Spec §3.5; docs/plans/t-935_10_plan.md; tools_v2/developer-tools/src/map/unified.rs;
 world_assets/tbd_sat.rs; crates/map-engine-core/src/world/binary/archives.rs (TbdSatIndexV2).
 ═══ PROBLEM ═══
 The TBDS v1 tile table is hand-packed and parsed byte by byte. v2 replaces it with a validated
@@ -512,7 +512,7 @@ Rust; edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No regeneration of the committed everon-sat.tbd-sat (T-935.13); no manifest edits.
 ═══ VERIFY ═══
-cargo test -p tbd-tools unified ; cargo test -p map-engine-core --all-features ;
+cargo test -p developer-tools unified ; cargo test -p map-engine-core --all-features ;
 cargo xtask mk leptos-gates ; cargo xtask platform wave gate --slice T-935.10
 ═══ MANUAL ═══
 None.
@@ -527,7 +527,7 @@ Report schema per brief. Ready for Cursor doc sync.
 cd .ai/artifacts/worktrees/T-935.11 && pwd && git branch --show-current   # slice/T-935.11
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target
 ═══ READ ═══
-Spec §4-§6; docs/plans/t-935_11_plan.md; tools/tbd-tools/src/world/{build.rs:470-760, mod.rs};
+Spec §4-§6; docs/plans/t-935_11_plan.md; tools_v2/developer-tools/src/world/{build.rs:470-760, mod.rs};
 crates/map-engine-core/src/world/{prefab.rs, regions.rs, store.rs}; world_assets/world_host.rs:120-170.
 ═══ PROBLEM ═══
 Prefab catalog, forest regions and type inventory ship as JSON; world_host.rs fetches JSON for
@@ -548,7 +548,7 @@ Rust; edition-2024 rustfmt for tools/*.
 ═══ DO NOT ═══
 No manifest.json edits; no residency edits; no schema edits.
 ═══ VERIFY ═══
-cargo test -p map-engine-core --all-features catalog ; cargo test -p tbd-tools catalog_emit ;
+cargo test -p map-engine-core --all-features catalog ; cargo test -p developer-tools catalog_emit ;
 cargo xtask mk leptos-gates ; cargo xtask platform wave gate --slice T-935.11
 ═══ MANUAL ═══
 None.
@@ -602,7 +602,7 @@ cargo xtask map world-los --cell 18_0 --probe 9350,15,280 9380,15,290 > /tmp/los
 du -sh packages/map-assets/everon/{objects,dem,satellite,prefabs} > /tmp/sizes-before.txt
 ═══ READ ═══
 Spec §5-§7; docs/plans/t-935_13_plan.md; packages/map-assets/everon/manifest.json;
-crates/map-engine-core/Cargo.toml; world_assets/mod.rs; tools/tbd-tools/src/world/build.rs:480-520.
+crates/map-engine-core/Cargo.toml; world_assets/mod.rs; tools_v2/developer-tools/src/world/build.rs:480-520.
 ═══ PROBLEM ═══
 Every loader has a dormant binary branch but everon still boots from JSON/PNG because the
 manifest names those paths; gz-JSON emit and flate2 are still present.

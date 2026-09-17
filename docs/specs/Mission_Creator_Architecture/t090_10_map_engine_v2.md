@@ -115,7 +115,7 @@ Full numeric table: Claude Code delivers in **T-090.10.1** plan artifact; then C
 The plan must include:
 
 1. File-level touch list (`tactical-map/layers/*`, export plugin, schemas).
-2. Phased slices with acceptance gates (`cargo run -q -p tbd-tools --bin world -- verify-phase`, vitest, manual zoom table).
+2. Phased slices with acceptance gates (`cargo run -q -p developer-tools --bin world -- verify-phase`, vitest, manual zoom table).
 3. Migration: what happens to `tiles/map/`, `build-map-cartographic.mjs`, Mission Settings dual radio.
 4. LOD numeric table (A3 `ptsPerSquare` → Deck zoom).
 5. Chunk protocol extensions (density grid, time budget).
