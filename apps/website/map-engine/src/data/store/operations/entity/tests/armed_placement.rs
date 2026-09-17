@@ -37,12 +37,14 @@ fn commit(
 ) -> Option<PlacementCommit> {
     commit_armed_placement(
         core,
-        armed,
-        side,
-        100.0,
-        200.0,
-        true,
-        alt_empty,
+        ArmedPlacementRequest {
+            armed,
+            side,
+            x: 100.0,
+            y: 200.0,
+            crew_toggle: true,
+            alt_empty,
+        },
         &Cell::new(0),
         ensure_default_layer,
     )

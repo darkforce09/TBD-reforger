@@ -167,13 +167,13 @@ pub fn filter_slot_soa_excluding(
 /// the answer is available wherever the document's own row types are not.
 pub(crate) fn zone_centre(zone: &serde_json::Value) -> Option<(f64, f64)> {
     let shape = zone.get("shape")?;
-    if let Some(c) = shape.get("circle") {
-        if let (Some(x), Some(z)) = (
+    if let Some(c) = shape.get("circle")
+        && let (Some(x), Some(z)) = (
             c.get("x").and_then(serde_json::Value::as_f64),
             c.get("z").and_then(serde_json::Value::as_f64),
-        ) {
-            return Some((x, z));
-        }
+        )
+    {
+        return Some((x, z));
     }
     let ring = shape.get("polygon")?.as_array()?;
     let verts: Vec<(f64, f64)> = ring

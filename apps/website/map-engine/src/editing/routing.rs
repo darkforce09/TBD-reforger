@@ -81,13 +81,12 @@ pub fn route_target(
         .get("vehiclesById")
         .and_then(|m| m.get(subject_id))
         .and_then(|v| v.get("position"))
-    {
-        if let (Some(x), Some(y)) = (
+        && let (Some(x), Some(y)) = (
             p.get("x").and_then(serde_json::Value::as_f64),
             p.get("y").and_then(serde_json::Value::as_f64),
-        ) {
-            return Some(RouteTarget::Vehicle { x, y });
-        }
+        )
+    {
+        return Some(RouteTarget::Vehicle { x, y });
     }
     // Placed world objects. An `entitiesById` row carries the SAME `position {x, y, z, rotation}`
     // shape a `vehiclesById` row does, so this is the vehicle lookup over a second map rather than
@@ -96,18 +95,17 @@ pub fn route_target(
         .get("entitiesById")
         .and_then(|m| m.get(subject_id))
         .and_then(|v| v.get("position"))
-    {
-        if let (Some(x), Some(y)) = (
+        && let (Some(x), Some(y)) = (
             p.get("x").and_then(serde_json::Value::as_f64),
             p.get("y").and_then(serde_json::Value::as_f64),
-        ) {
-            return Some(RouteTarget::Entity { x, y });
-        }
+        )
+    {
+        return Some(RouteTarget::Entity { x, y });
     }
-    if let Some(zone) = root.get("zonesById").and_then(|m| m.get(subject_id)) {
-        if let Some((x, y)) = zone_centre(zone) {
-            return Some(RouteTarget::Zone { x, y });
-        }
+    if let Some(zone) = root.get("zonesById").and_then(|m| m.get(subject_id))
+        && let Some((x, y)) = zone_centre(zone)
+    {
+        return Some(RouteTarget::Zone { x, y });
     }
     // The axes are `{x, z}`, not `{x, y}`: a comment row carries TWO HORIZONTALS and no height.
     // Reading `y` here would find nothing, return `None`, and leave the row inert under an
@@ -116,13 +114,12 @@ pub fn route_target(
         .get("commentsById")
         .and_then(|m| m.get(subject_id))
         .and_then(|v| v.get("position"))
-    {
-        if let (Some(x), Some(y)) = (
+        && let (Some(x), Some(y)) = (
             p.get("x").and_then(serde_json::Value::as_f64),
             p.get("z").and_then(serde_json::Value::as_f64),
-        ) {
-            return Some(RouteTarget::Comment { x, y });
-        }
+        )
+    {
+        return Some(RouteTarget::Comment { x, y });
     }
     None
 }

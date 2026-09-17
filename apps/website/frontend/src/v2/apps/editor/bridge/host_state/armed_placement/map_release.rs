@@ -18,7 +18,7 @@ use crate::v2::apps::editor::bridge::host_state::editor_context::{
 use crate::v2::apps::editor::ui::outliner::outliner;
 use leptos::prelude::GetUntracked;
 use outliner::ensure_active_layer;
-use website_map_engine::data::store::operations::entity::ArmedPlacement;
+use website_map_engine::data::store::operations::entity::{ArmedPlacement, ArmedPlacementRequest};
 
 /// Commit an armed place at a WORLD position, then select it and run the shared post-change tail.
 /// `false` when nothing was armed.
@@ -103,12 +103,14 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
         let side = ctx.active_side.get_untracked();
         let placed = website_map_engine::data::store::operations::entity::commit_armed_placement(
             core,
-            armed_placement(pending),
-            &side,
-            x,
-            y,
-            place_with_crew(),
-            alt_empty,
+            ArmedPlacementRequest {
+                armed: armed_placement(pending),
+                side: &side,
+                x,
+                y,
+                crew_toggle: place_with_crew(),
+                alt_empty,
+            },
             &ctx.next_id,
             ensure_active_layer,
         )?;

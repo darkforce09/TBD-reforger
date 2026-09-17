@@ -76,7 +76,8 @@ pub use placement::{orbat_add_slot, orbat_add_vehicle, place_object_in_core};
 mod armed_placement;
 /// Expose armed placement :: {  armed placement ,  placement commit , commit armed placement , vehicle places its crew , } at this domain boundary.
 pub use armed_placement::{
-    ArmedPlacement, PlacementCommit, commit_armed_placement, vehicle_places_its_crew,
+    ArmedPlacement, ArmedPlacementRequest, PlacementCommit, commit_armed_placement,
+    vehicle_places_its_crew,
 };
 mod factions;
 /// Expose factions :: { faction doc from side core , orbat apply faction } at this domain boundary.

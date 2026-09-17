@@ -46,6 +46,16 @@ pub enum ArmedPlacement {
     ZoneDraw,
 }
 
+/// The details captured when an armed palette value is released onto the map.
+pub struct ArmedPlacementRequest<'a> {
+    pub armed: ArmedPlacement,
+    pub side: &'a str,
+    pub x: f64,
+    pub y: f64,
+    pub crew_toggle: bool,
+    pub alt_empty: bool,
+}
+
 /// What a release put into the document, and what the host still owes it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PlacementCommit {
@@ -74,7 +84,7 @@ pub fn vehicle_places_its_crew(crew_toggle: bool, alt_empty: bool) -> bool {
     crew_toggle && !alt_empty
 }
 
-/// Commit `armed` at the world position `(x, y)` for `side`.
+/// Commit an armed value at the request's world position for its side.
 ///
 /// `ensure_layer` resolves the layer a placed character or composition is filed into — it is the
 /// host's because the active layer is a host reading, and it may have to mint the default layer.
@@ -84,15 +94,18 @@ pub fn vehicle_places_its_crew(crew_toggle: bool, alt_empty: bool) -> bool {
 /// the composition carried no entities.
 pub fn commit_armed_placement(
     core: &MissionDocCore,
-    armed: ArmedPlacement,
-    side: &str,
-    x: f64,
-    y: f64,
-    crew_toggle: bool,
-    alt_empty: bool,
+    request: ArmedPlacementRequest<'_>,
     next_id: &Cell<u32>,
     ensure_layer: impl FnOnce(&MissionDocCore) -> String,
 ) -> Option<PlacementCommit> {
+    let ArmedPlacementRequest {
+        armed,
+        side,
+        x,
+        y,
+        crew_toggle,
+        alt_empty,
+    } = request;
     let id = mint_id(core, next_id);
     match armed {
         ArmedPlacement::ZoneDraw => None,
