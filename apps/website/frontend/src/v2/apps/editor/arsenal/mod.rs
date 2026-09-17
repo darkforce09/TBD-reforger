@@ -1110,6 +1110,11 @@ mod tests {
                 env!("CARGO_MANIFEST_DIR"),
                 "/src/v2/apps/editor/arsenal/loadout.rs"
             )),
+            include_str!("loadout/attachments_and_faults.rs"),
+            include_str!("loadout/buffered_loadout_operations.rs"),
+            include_str!("loadout/loadout_export.rs"),
+            include_str!("loadout/loadout_import.rs"),
+            include_str!("loadout/slot_loadout_serialization.rs"),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/src/v2/apps/editor/ui/arsenal/panels.rs"
@@ -1530,6 +1535,11 @@ mod tests {
                     env!("CARGO_MANIFEST_DIR"),
                     "/src/v2/apps/editor/arsenal/loadout.rs"
                 )),
+                include_str!("loadout/attachments_and_faults.rs"),
+                include_str!("loadout/buffered_loadout_operations.rs"),
+                include_str!("loadout/loadout_export.rs"),
+                include_str!("loadout/loadout_import.rs"),
+                include_str!("loadout/slot_loadout_serialization.rs"),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/src/v2/apps/editor/ui/arsenal/panels.rs"

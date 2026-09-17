@@ -595,7 +595,7 @@ fn gear(rn: &str, name: &str, kind: &str) -> RegistryItem {
     }
 }
 
-fn row(container: &str, item: &str, qty: i64) -> rules::CargoRow {
+pub(super) fn row(container: &str, item: &str, qty: i64) -> rules::CargoRow {
     rules::CargoRow {
         container: container.into(),
         item: item.into(),
@@ -604,7 +604,7 @@ fn row(container: &str, item: &str, qty: i64) -> rules::CargoRow {
 }
 
 /// A 0.5 kg / 60 cm³ magazine and a chest rig catalogued at 5 kg / 200 cm³.
-fn capacity_catalog() -> Vec<RegistryItem> {
+pub(super) fn capacity_catalog() -> Vec<RegistryItem> {
     let mut mag = gear("res://mag_stanag", "STANAG 30rd", "magazine");
     mag.weight_kg = Some(0.5);
     mag.volume_cm3 = Some(60.0);
@@ -718,7 +718,7 @@ fn the_verdict_counts_capacity_beside_compat_and_attachment_faults() {
 /* ═════════ T-504 — cargo with nowhere known to go ═════════ */
 
 /// The kit-default vouching set, as [`kit_default_items`] would build it.
-fn kit(items: &[&str]) -> HashSet<String> {
+pub(super) fn kit(items: &[&str]) -> HashSet<String> {
     items.iter().map(|s| (*s).to_string()).collect()
 }
 

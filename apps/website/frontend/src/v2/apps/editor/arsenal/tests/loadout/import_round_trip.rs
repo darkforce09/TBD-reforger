@@ -1,4 +1,6 @@
-use super::serialization_and_export_tests::{attachment_feed, full_picks, picks};
+use super::serialization_and_export_tests::{
+    attachment_feed, capacity_catalog, full_picks, kit, picks, row,
+};
 use super::*;
 
 mod t686 {

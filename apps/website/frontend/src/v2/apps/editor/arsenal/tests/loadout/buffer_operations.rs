@@ -1,4 +1,6 @@
-use super::serialization_and_export_tests::{attachment_feed, names, picks};
+use super::serialization_and_export_tests::{
+    attachment_feed, capacity_catalog, kit, names, picks, row,
+};
 use super::*;
 
 mod t699 {
