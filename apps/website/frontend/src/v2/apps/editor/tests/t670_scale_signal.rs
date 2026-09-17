@@ -4,10 +4,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_item};
 /// slice `t635_debug_hud` uses.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
 }
 

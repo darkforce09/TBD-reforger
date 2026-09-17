@@ -10,10 +10,7 @@ fn editor_live() -> String {
     // Full signature (with `()`), so the other test's bare `"pub fn MissionEditorPage"` literal
     // is not a second match. Split so this anchor is not itself a duplicate occurrence.
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,

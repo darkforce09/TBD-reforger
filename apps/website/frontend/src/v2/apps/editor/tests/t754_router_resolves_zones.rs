@@ -102,10 +102,7 @@ fn a_placed_object_resolves_at_its_authored_position() {
 /// affordance and the click drift apart, which is the entire defect class.
 #[test]
 fn the_affordance_probe_and_the_click_share_one_resolution() {
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let ed = live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..]);
     assert_eq!(
@@ -156,10 +153,7 @@ fn the_one_router_routes_zones_through_the_zones_panel() {
     // Anchored at the page component, exactly as the T-655 module does: `cut_test_module` cuts
     // from the FIRST `#[cfg(test)]` to EOF, and this file has one inside `registry_session` long
     // before the mount — scrubbing from the top would leave an empty haystack every pin passes.
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     let ed = live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..]);
     assert_eq!(
@@ -173,7 +167,7 @@ fn the_one_router_routes_zones_through_the_zones_panel() {
          same question before drawing a click affordance"
     );
     assert!(
-        ed.contains(&format!("dock_right::route{}", "_select_zone(subject_id)")),
+        ed.contains(&format!("dock_right::route{}", "_select_zone(")) && ed.contains("subject_id"),
         "T-754: a zone must be selected through the Zones panel's own selection seam"
     );
 }

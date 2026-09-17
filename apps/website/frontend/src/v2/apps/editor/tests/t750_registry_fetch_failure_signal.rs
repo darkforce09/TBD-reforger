@@ -39,10 +39,7 @@ fn mark_registry_fetch_failed_writes_all_three_signals() {
 
 #[test]
 fn err_arm_and_retry_gen_are_wired_on_the_page() {
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     let call = format!("{}{}", "mark_registry_fetch_", "failed(");
     assert!(
         raw.contains(&call),

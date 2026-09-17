@@ -21,10 +21,7 @@ fn overlays_region() -> String {
 /// measure-tool Escape arm since the move. Each half scrubbed separately.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     src.push_str(&live_code(include_str!(concat!(

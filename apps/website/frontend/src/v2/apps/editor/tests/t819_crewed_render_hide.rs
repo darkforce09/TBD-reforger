@@ -178,10 +178,7 @@ fn map_binds_feed_map_render_slot_soa() {
     }
     // Anchor past the early registry_session `#[cfg(test)]` that would otherwise cut the page
     // (T-750 idiom): the first bind + pick sites live inside `MissionEditorPage`.
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     // T-934.13 — the pick sites ride the gesture closures, now in input/pointer_gestures.rs; the first
     // bind stays in the page's engine-boot task. Examine both halves.

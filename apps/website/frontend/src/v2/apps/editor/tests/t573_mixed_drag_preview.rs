@@ -45,11 +45,8 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     // test modules below.
     // Split so the anchor literal is not itself a second occurrence in this file (the t427
     // pin below uses the same trick for the same reason).
-    let anchor = format!("{}{}", "const REGISTRY_", "COLD_PAGE");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+    let raw = super::source::raw_editor();
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,

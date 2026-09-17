@@ -2,7 +2,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!("../../mission_editor.rs");
+    let raw = super::source::raw_editor();
     live_code(&raw[raw.find(anchor.as_str()).expect("MissionEditorPage")..])
 }
 

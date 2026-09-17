@@ -589,10 +589,7 @@ fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
 /// them.
 #[test]
 fn the_overlay_draws_one_measured_bar_and_no_sweep_anywhere() {
-    let src = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let src = super::source::raw_editor();
     let from_progress = format!("{}{}", "p.", "percent()");
     assert!(
         src.contains(&from_progress),
@@ -914,17 +911,14 @@ fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
              between them means a failed manifest fetch returns past it"
         );
     }
-    let src = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
-    let mission_finish = format!(
-        "{}{}",
-        "BootEvent::Finish(\n", "                        boot_progress::BootSeg::Mission,"
-    );
+    let src = super::source::raw_editor();
+    let boot_tasks = include_str!("../mission_editor/canvas_mount/boot_tasks.rs");
+    let compact: String = boot_tasks
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
     assert!(
-        src.contains(&mission_finish)
-            || src.contains("BootEvent::Finish(boot_progress::BootSeg::Mission)"),
+        compact.contains("BootEvent::Finish(boot_progress::BootSeg::Mission,"),
         "the hydrate task owns the mission segment and must close it once the hydrate returns"
     );
     let handover = format!("{}{}", "hand_", "over(boot)");

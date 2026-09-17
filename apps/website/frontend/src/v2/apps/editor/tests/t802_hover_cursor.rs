@@ -9,10 +9,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 /// this file has one before the component.
 fn page() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
 }
@@ -35,10 +32,7 @@ fn hover_block() -> String {
 /// so this slices from its cache struct's anchor there.
 fn hover_hit_body() -> String {
     let anchor = format!("pub(crate) struct Hover{}", "Points");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     let block = live_code(&raw[raw.find(anchor.as_str()).expect("counted")..]);
     only_body(&block, &["pub(crate) fn hover_", "hit("].concat()).to_string()
@@ -386,13 +380,20 @@ fn the_cursor_is_written_only_when_the_verdict_changes() {
 fn the_mount_seeds_the_resting_cursor_and_pointerleave_drops_the_claim() {
     let page = page();
     let mount = only_body(&page, "canvas_ref.on_load(");
+    assert!(
+        mount.contains("input_listeners::attach("),
+        "the canvas mount attaches input listeners"
+    );
+    let input = live_code(include_str!(
+        "../mission_editor/canvas_mount/input_listeners.rs"
+    ));
     let set = ["set_map_", "cursor("].concat();
     assert!(
-        mount.contains(&format!("{set}&canvas, false)")),
+        input.contains(&format!("{set}&canvas, false)")),
         "T-802: the mount must assert the resting cursor, or 'over empty ground' reads `auto` \
          until the first miss"
     );
-    let leave = only_body(&page, &["let onpointerleave = ", "Closure::"].concat());
+    let leave = only_body(&input, &["let onpointerleave = ", "Closure::"].concat());
     assert!(
         leave.contains("HoverState::default()") && leave.contains(&set),
         "T-802: pointerleave must reset the hover state AND the cursor — `cursor` is an \

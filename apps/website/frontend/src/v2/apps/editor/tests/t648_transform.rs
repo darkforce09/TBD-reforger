@@ -12,10 +12,7 @@ use website_map_engine::data::store::operations::rotation::{
 /// promotion, the Shift-rotate arm, the Move commit). Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
@@ -648,11 +645,9 @@ fn widget_and_readout_are_mounted() {
 fn false_t159_22_comment_is_corrected() {
     // T-934.13 moved the pointerup closure (whose comment this pins) to input/pointer_gestures.rs; the
     // negative check keeps sweeping BOTH files so the false claim cannot re-enter either.
-    let raw = concat!(
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/mission_editor.rs"
-        )),
+    let raw = format!(
+        "{}{}",
+        super::source::raw_editor(),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/v2/apps/editor/input/pointer_gestures.rs"
@@ -715,14 +710,16 @@ fn fired_rule_quantiser_is_load_bearing() {
 /// `cargo test` would silently skip them) is caught.
 #[test]
 fn transform_module_is_native_testable() {
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     // The module declaration must NOT sit under a wasm cfg.
-    let decl = "pub mod transform {";
+    let decl = "pub mod transform;";
     let at = raw.find(decl).expect("transform module present");
     let before = &raw[at.saturating_sub(60)..at];
+    let module = include_str!("../mission_editor/transform.rs");
+    assert!(
+        module.contains("pub enum WidgetVariant"),
+        "the ungated transform module must hold the widget model"
+    );
     assert!(
         !before.contains("cfg(target_arch = \"wasm32\")"),
         "the transform module must stay ungated so its quantiser/bearing tests run on native \

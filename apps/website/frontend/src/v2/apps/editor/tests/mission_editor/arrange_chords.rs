@@ -8,7 +8,7 @@ const ARRANGE_CODES: [&str; 6] = ["KeyL", "KeyR", "KeyT", "KeyB", "KeyH", "KeyV"
 /// THE DEFECT: `Alt` + each of the six reaches no keydown arm.
 #[test]
 fn the_editor_keydown_binds_the_arrange_chords() {
-    let src = live_source(include_str!("../../mission_editor.rs"));
+    let src = live_source(super::source::raw_editor());
     for code in ARRANGE_CODES {
         let arm = format!("\"{code}\" if !modk && ev.alt_key() && !ev.shift_key() =>");
         assert!(
@@ -62,7 +62,7 @@ fn the_bound_codes_are_exactly_the_shared_lists_chorded_rows() {
 /// untouched instead of being swallowed by a command that did nothing.
 #[test]
 fn a_chord_below_the_selection_floor_does_nothing_and_keeps_the_key() {
-    let src = live_source(include_str!("../../mission_editor.rs"));
+    let src = live_source(super::source::raw_editor());
     let at = src
         .find("fn arrange_chord(")
         .expect("T-939.4: the shared chord helper");
@@ -101,7 +101,7 @@ fn a_chord_below_the_selection_floor_does_nothing_and_keeps_the_key() {
 /// and it is the second implementation that eventually disagrees with the first.
 #[test]
 fn every_chord_arm_is_a_thin_caller_of_the_shared_invoker() {
-    let src = live_source(include_str!("../../mission_editor.rs"));
+    let src = live_source(super::source::raw_editor());
     let at = src
         .find("let arrange = window_event_")
         .expect("T-939.4: the chord listener");

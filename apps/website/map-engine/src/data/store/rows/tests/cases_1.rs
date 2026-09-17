@@ -853,7 +853,7 @@ fn mission_editor_move_commit_names_the_atomic_mix_api() {
     let editor = strip_rust_lexical_noise(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../apps/website/frontend/src/v2/apps/editor/mission_editor.rs"
+            "/../../../apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),

@@ -9,10 +9,7 @@ use website_map_engine::editing::hosted_commands as engine_ops;
 /// anchors (`let onpointerup =`, `let ondblclick =`, `let oncontextmenu =`) resolve there.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
@@ -171,27 +168,34 @@ fn the_contextmenu_handler_captures_the_world_point_and_arms_no_gesture() {
 /// server hydrate would stamp a template onto a mission that already has its own comments.
 #[test]
 fn the_new_mission_template_seeds_comments_before_restore_and_hydrate() {
-    let ed = editor_live();
-    let seed = ed
-        .find("editor_context::seed_new_mission_template(&doc)")
-        .expect("T-651: the new-mission template seed must run in the editor page");
-    let mint = ed
+    let mount = include_str!("../mission_editor/canvas_mount.rs");
+    let setup = include_str!("../mission_editor/canvas_mount/document_setup.rs");
+    let boot = include_str!("../mission_editor/canvas_mount/boot_tasks.rs");
+    let mint = setup
         .find("mission_doc::new_seeded_doc()")
         .expect("the fresh-doc mint");
-    let restore = ed
-        .find("yrs_persist::load_state(&id)")
-        .expect("the IDB restore");
-    let hydrate = ed
-        .find("mission_hydrate::hydrate_from_server(")
-        .expect("the server hydrate");
+    let seed = setup
+        .find("editor_context::seed_new_mission_template(&doc)")
+        .expect("the template seed");
     assert!(
         seed > mint,
-        "the template seeds into the freshly-minted doc, not before it exists"
+        "the template seeds into the freshly minted document"
+    );
+    let setup_call = mount
+        .find("document_setup::initialize(")
+        .expect("document setup call");
+    let boot_call = mount.find("boot_tasks::start(").expect("boot task call");
+    assert!(
+        setup_call < boot_call,
+        "document setup must complete before the boot tasks start"
     );
     assert!(
-        seed < restore && seed < hydrate,
-        "the template must seed BEFORE the restore ({restore}) and the hydrate ({hydrate}) — \
-         both replace the document, so a later seed would duplicate onto a saved mission"
+        boot.contains("yrs_persist::load_state(&id)"),
+        "the boot task restores IDB state"
+    );
+    assert!(
+        boot.contains("mission_hydrate::hydrate_from_server("),
+        "the boot task hydrates from the server"
     );
 }
 

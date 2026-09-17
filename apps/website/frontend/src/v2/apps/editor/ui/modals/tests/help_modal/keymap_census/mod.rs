@@ -204,17 +204,13 @@ fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
             )),
             1,
         ),
-        // T-939.4 — and the page is BACK on the surface with one listener: the six Arrange
-        // chords. It is not in `window_keydown.rs` because that file is another slice's `owns`,
-        // and it is not in `top_strip.rs` (where the Arrange list lives) because the strip unmounts
-        // behind the `chrome_hidden` gate and would take the chords with it. Being censused is
-        // what matters — these six are adjudicated against every other binding in the editor by
-        // `no_two_listeners_claim_the_same_chord` below, wherever the closure sits.
+        // The page effects keep the six Arrange chords active while the top strip unmounts
+        // behind the `chrome_hidden` gate. The census compares them with every other binding.
         (
-            "mission_editor.rs",
+            "page_effects.rs",
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/src/v2/apps/editor/mission_editor.rs"
+                "/src/v2/apps/editor/mission_editor/page_effects.rs"
             )),
             1,
         ),

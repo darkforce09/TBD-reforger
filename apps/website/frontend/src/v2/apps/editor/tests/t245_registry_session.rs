@@ -77,10 +77,7 @@ fn warm_session_skips_both_unpaginated_fetches() {
 /// Guards against a future "helpful" revert to the always-spawn_local dual fetch.
 #[test]
 fn mount_source_gates_unpaginated_fetches_on_session_cache() {
-    let src = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let src = super::source::raw_editor();
     assert!(
         src.contains("registry_session::must_fetch_registry()"),
         "mount path must gate GET /registry on must_fetch_registry()"

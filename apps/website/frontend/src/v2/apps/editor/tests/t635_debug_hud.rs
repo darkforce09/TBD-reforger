@@ -4,10 +4,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 /// strings survive as structural landmarks). Same slice boundary as `editor_live`.
 fn editor_src() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     live_source(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
 }
 
@@ -17,10 +14,7 @@ fn editor_src() -> String {
 /// Each half scrubbed separately.
 fn editor_live() -> String {
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     assert_eq!(
         raw.matches(anchor.as_str()).count(),
         1,
@@ -124,10 +118,7 @@ fn the_hud_moved_into_the_gated_status_bar() {
 /// docstring — cannot satisfy the pin. The comment must really ship in the page's source.
 #[test]
 fn the_telemetry_vs_diagnostics_distinction_is_documented() {
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     // Window: `MissionEditorPage`'s definition … first test module after it. The file's FIRST
     // `#[cfg(test)]` is a `clear_for_test` helper near the top (well above the page), so slice
     // from the page anchor forward, then cut at the next test module. (Both needles split so

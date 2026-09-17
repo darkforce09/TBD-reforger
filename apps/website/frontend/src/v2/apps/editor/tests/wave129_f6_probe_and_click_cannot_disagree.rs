@@ -180,10 +180,7 @@ fn the_zone_liveness_oracle_is_the_dock_right_mount_gate() {
 /// file has a `#[cfg(test)]` module long before the mount, so scrubbing from the top would cut
 /// the mount away and leave a haystack every pin passes).
 fn editor_live() -> String {
-    let raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/mission_editor.rs"
-    ));
+    let raw = super::source::raw_editor();
     let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
     live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..])
 }
