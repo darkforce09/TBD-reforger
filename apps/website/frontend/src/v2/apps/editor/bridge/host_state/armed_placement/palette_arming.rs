@@ -47,7 +47,7 @@ pub fn armed_composition_id() -> Option<String> {
 /// A palette icon press arms a marker place. Refuses an alias outside the closed `$defs/marker.icon`
 /// enum.
 pub fn begin_place_marker(icon: String) {
-    if !crate::v2::apps::editor::panels::dock_right::marker_icon_is_authorable(&icon) {
+    if !crate::v2::apps::editor::ui::docks::dock_right::marker_icon_is_authorable(&icon) {
         return;
     }
     arm(Pending::Marker(icon));

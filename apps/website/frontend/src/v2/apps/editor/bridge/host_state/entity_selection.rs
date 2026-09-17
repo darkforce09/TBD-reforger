@@ -78,7 +78,7 @@ pub fn select_layer_children(layer_id: &str) {
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
         Some(
-            crate::v2::apps::editor::panels::outliner_tree::layer_direct_slot_children(
+            crate::v2::apps::editor::ui::outliner::tree::layer_direct_slot_children(
                 &layer_rows(core),
                 layer_id,
             ),
@@ -97,7 +97,7 @@ pub fn select_layer_descendants(layer_id: &str) {
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
         Some(
-            crate::v2::apps::editor::panels::outliner_tree::layer_descendant_slots(
+            crate::v2::apps::editor::ui::outliner::tree::layer_descendant_slots(
                 &layer_rows(core),
                 layer_id,
             ),

@@ -13,7 +13,7 @@ use leptos::prelude::*;
 pub use website_map_engine::data::store::operations::zones::DrawTarget;
 
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
+use crate::v2::apps::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::ui::MaterialIcon;
 

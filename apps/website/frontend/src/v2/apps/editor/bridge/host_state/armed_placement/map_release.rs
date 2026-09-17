@@ -15,7 +15,7 @@ use crate::v2::apps::editor::bridge::document_host::history as mission_history;
 use crate::v2::apps::editor::bridge::host_state::editor_context::{
     place_with_crew, EDITOR_CONTEXT,
 };
-use crate::v2::apps::editor::panels::outliner;
+use crate::v2::apps::editor::ui::outliner::outliner;
 use leptos::prelude::GetUntracked;
 use outliner::ensure_active_layer;
 use website_map_engine::data::store::operations::entity::ArmedPlacement;
@@ -128,7 +128,7 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
     }
 
     if let Some((asset_id, label)) = placed.stamped_composition {
-        crate::v2::apps::editor::panels::dock_right::record_placed(asset_id, label);
+        crate::v2::apps::editor::ui::docks::dock_right::record_placed(asset_id, label);
     }
     true
 }

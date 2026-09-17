@@ -264,9 +264,9 @@ use crate::v2::apps::editor::bridge::host_state::armed_placement;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::editor_context;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::outliner;
-#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::shell::hydrate as mission_hydrate;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::ui::outliner::outliner;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
 

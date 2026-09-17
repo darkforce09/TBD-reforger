@@ -29,7 +29,7 @@ pub fn refresh_docks() {
                             &slots,
                             &comment_rows(core),
                         ),
-                        crate::v2::apps::editor::panels::outliner::build_orbat(
+                        crate::v2::apps::editor::ui::outliner::outliner::build_orbat(
                             &faction_rows(core),
                             &squad_rows(core),
                             &slots,

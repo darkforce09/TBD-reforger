@@ -89,23 +89,23 @@ pub const TOOLBELT_BAND_PX: f64 = 96.0;
 pub const STUB_PX: f64 = 24.0;
 
 /// T-787 — the dock wrappers' BOTTOM inset in CSS px: how far above the viewport bottom an expanded
-/// dock stops. It equals the status bar's painted height ([`crate::v2::apps::editor::panels::toolbelt::STATUSBAR_H_PX`]),
+/// dock stops. It equals the status bar's painted height ([`crate::v2::apps::editor::ui::docks::toolbelt::STATUSBAR_H_PX`]),
 /// so a dock's bottom edge lands exactly on the bar's top edge (`dock.bottom == bar.y`) instead of
 /// running to `bottom-0` and overlapping it.
 ///
 /// **The defect this closes (O-1).** Both docks are transparent `pointer-events` containers that ran
 /// `top-12 … bottom-0`, i.e. `y48 → viewportH`, while the status bar (`inset-x-0 bottom-0`, `h-9`)
-/// occupies the bottom [`crate::v2::apps::editor::panels::toolbelt::STATUSBAR_H_PX`] px. The dock rectangles therefore
+/// occupies the bottom [`crate::v2::apps::editor::ui::docks::toolbelt::STATUSBAR_H_PX`] px. The dock rectangles therefore
 /// covered the bar's full width and `elementFromPoint` at the bar's left/right ends resolved to a
 /// DOCK, not the bar — the containers ate clicks aimed at the readouts and the right-end controls.
 /// Insetting the wrappers by this much lifts their bottom edge off the bar.
 ///
 /// NOT [`TOOLBELT_BAND_PX`] (96 px): that is the *input-handling* band a pointer probe must clear to
-/// count as on-map (it clears the taller floating [`crate::v2::apps::editor::panels::toolbelt::ModeToolbar`] and does not
+/// count as on-map (it clears the taller floating [`crate::v2::apps::editor::ui::docks::toolbelt::ModeToolbar`] and does not
 /// shrink the full-bleed canvas). This is the *painted DOM* inset for the visible bar only — the two
 /// are different contracts and subtracting the full band here would leave a 60 px dead strip where a
 /// dock covers neither the bar nor the map. The DOM half of this number is the mounts' `bottom-9`.
-pub const DOCK_BOTTOM_PX: f64 = crate::v2::apps::editor::panels::toolbelt::STATUSBAR_H_PX;
+pub const DOCK_BOTTOM_PX: f64 = crate::v2::apps::editor::ui::docks::toolbelt::STATUSBAR_H_PX;
 
 // ── T-637 — the DOM half of the inset contract ───────────────────────────────────────────────────
 //
@@ -1012,7 +1012,7 @@ mod t637_dock_geometry {
         DOCK_RIGHT_MOUNT, DOCK_RIGHT_MOUNT_COLLAPSED, DOCK_RIGHT_PX, ROW_MENUS, ROW_MENUS_PX,
         ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
     };
-    use crate::v2::apps::editor::panels::toolbelt::STATUSBAR_H_PX;
+    use crate::v2::apps::editor::ui::docks::toolbelt::STATUSBAR_H_PX;
     use crate::v2::core::test_support::class_r_scrub::live_code;
     use website_map_engine::camera::ortho::state::OrthoCamera;
 
@@ -1331,7 +1331,7 @@ mod t637_dock_geometry {
         // The local copy is gone from the strip. Needle assembled so this source cannot satisfy it.
         let strip = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/top_strip.rs"
+            "/src/v2/apps/editor/ui/docks/top_strip.rs"
         ));
         let copy = format!("{} TOOL_ICON", "const");
         assert!(

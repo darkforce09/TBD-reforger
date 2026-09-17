@@ -11,8 +11,8 @@ use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::entity_selection;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::outliner;
-use crate::v2::apps::editor::panels::outliner::{
+use crate::v2::apps::editor::ui::outliner::outliner;
+use crate::v2::apps::editor::ui::outliner::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
 use crate::v2::core::ui::MaterialIcon;
@@ -83,7 +83,7 @@ pub(crate) fn layer_descendant_slots(layers: &[LayerRow], id: &str) -> Vec<Strin
 /// T-946.86 (.83) — every node id BENEATH `id` in the built `OutlinerNode` tree (folders, slots
 /// and comments alike), at any depth. `id` itself is not included.
 ///
-/// This is what [`crate::v2::apps::editor::panels::outliner_drag::plan_drop`] asks for: "would this drop put
+/// This is what [`crate::v2::apps::editor::ui::outliner::drag::plan_drop`] asks for: "would this drop put
 /// a dragged row inside its own subtree?". It reads the RENDERED tree rather than `LayerRow`s
 /// because that is what the drop handler already holds (`RowAuthoring::nodes`), and because a
 /// multi-select drag can carry slot and comment rows, which the `parentId` chain in
@@ -118,7 +118,7 @@ pub(crate) fn node_descendant_ids(nodes: &[OutlinerNode], id: &str) -> Vec<Strin
     out
 }
 
-/// T-946.86 (.83) — build the [`crate::v2::apps::editor::panels::outliner_drag::DragSet`] a row's
+/// T-946.86 (.83) — build the [`crate::v2::apps::editor::ui::outliner::drag::DragSet`] a row's
 /// `pointerdown` arms: `anchor` plus, when the anchor is itself part of the current selection,
 /// every OTHER selected row, in the tree's own top-to-bottom order.
 ///
@@ -135,7 +135,7 @@ pub(crate) fn drag_set_for(
     anchor: &str,
     selection: &[String],
     nodes: &[OutlinerNode],
-) -> crate::v2::apps::editor::panels::outliner_drag::DragSet {
+) -> crate::v2::apps::editor::ui::outliner::drag::DragSet {
     let mut ids = vec![anchor.to_string()];
     if selection.iter().any(|s| s == anchor) {
         let sel_set: std::collections::HashSet<&String> = selection.iter().collect();
@@ -157,7 +157,7 @@ pub(crate) fn drag_set_for(
             ids = ordered;
         }
     }
-    crate::v2::apps::editor::panels::outliner_drag::DragSet {
+    crate::v2::apps::editor::ui::outliner::drag::DragSet {
         anchor: anchor.to_string(),
         ids,
     }
@@ -550,7 +550,7 @@ struct RowAuthoring {
     renaming: RwSignal<Option<String>>,
     /// Live draft text for the open rename. Input-only — do not read from the list render.
     rename_draft: RwSignal<String>,
-    nodes: RwSignal<Vec<crate::v2::apps::editor::panels::outliner::OutlinerNode>>,
+    nodes: RwSignal<Vec<crate::v2::apps::editor::ui::outliner::outliner::OutlinerNode>>,
 }
 
 /// T-666 — the hover row actions on a Folder row: **rename** (arms the inline input) and **delete**
@@ -562,7 +562,7 @@ fn folder_row_actions(
     label: &str,
     renaming: RwSignal<Option<String>>,
     rename_draft: RwSignal<String>,
-    nodes: RwSignal<Vec<crate::v2::apps::editor::panels::outliner::OutlinerNode>>,
+    nodes: RwSignal<Vec<crate::v2::apps::editor::ui::outliner::outliner::OutlinerNode>>,
 ) -> AnyView {
     let rename_id = id.to_string();
     let rename_seed = label.to_string();
@@ -766,7 +766,7 @@ fn comment_row(
                     &selected.get_untracked(),
                     &authoring.nodes.get_untracked(),
                 );
-                crate::v2::apps::editor::panels::outliner_drag::begin_layer_comment_drag(drag);
+                crate::v2::apps::editor::ui::outliner::drag::begin_layer_comment_drag(drag);
                 engine_ops::begin_layer_comment_drag(id_drag.clone());
             }
             #[cfg(not(target_arch = "wasm32"))]
@@ -881,7 +881,7 @@ fn single_row(
                             // if one is armed, else fall back to the single-id completion.
                             #[cfg(target_arch = "wasm32")]
                             {
-                                if !crate::v2::apps::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&dest) {
+                                if !crate::v2::apps::editor::ui::outliner::drag::complete_multi_refile_onto_squad(&dest) {
                                     engine_ops::complete_refile_onto_squad(dest.clone());
                                 }
                             }
@@ -1150,7 +1150,7 @@ fn single_row(
                             );
                             #[cfg(target_arch = "wasm32")]
                             {
-                                crate::v2::apps::editor::panels::outliner_drag::begin_layer_drag(drag);
+                                crate::v2::apps::editor::ui::outliner::drag::begin_layer_drag(drag);
                                 // The single-id latch stays armed BESIDE the set: the header's
                                 // root dropzone still completes through
                                 // `complete_layer_drop_onto_root`, which reads only that latch.
@@ -1166,7 +1166,7 @@ fn single_row(
                             ev.stop_propagation();
                             // T-946.86 (.83) — CONSUME the multi-select DragSet armed on
                             // pointerdown. Before this, `pointerdown` built the whole set into
-                            // `outliner_drag::PENDING_DRAG` and the drop then completed through
+                            // `drag::PENDING_DRAG` and the drop then completed through
                             // the SINGLE-id latch in `state/operations`, so a five-row drag
                             // moved one row and the plan was thrown away unread.
                             //
@@ -1178,7 +1178,7 @@ fn single_row(
                             #[cfg(target_arch = "wasm32")]
                             {
                                 let nodes_now = drop_nodes.get_untracked();
-                                let claimed = crate::v2::apps::editor::panels::outliner_drag::complete_multi_drop_onto_folder(
+                                let claimed = crate::v2::apps::editor::ui::outliner::drag::complete_multi_drop_onto_folder(
                                     &id_up,
                                     |id| node_descendant_ids(&nodes_now, id),
                                 );
@@ -1267,7 +1267,7 @@ fn single_row(
                                     &selected.get_untracked(),
                                     &drag_nodes.get_untracked(),
                                 );
-                                crate::v2::apps::editor::panels::outliner_drag::begin_refile(drag);
+                                crate::v2::apps::editor::ui::outliner::drag::begin_refile(drag);
                                 engine_ops::begin_refile(id_refile.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -1282,7 +1282,7 @@ fn single_row(
                                     &selected.get_untracked(),
                                     &drag_nodes.get_untracked(),
                                 );
-                                crate::v2::apps::editor::panels::outliner_drag::begin_layer_slot_drag(drag);
+                                crate::v2::apps::editor::ui::outliner::drag::begin_layer_slot_drag(drag);
                                 engine_ops::begin_layer_slot_drag(id_layer_refile.clone());
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -1465,7 +1465,7 @@ pub(crate) fn virtual_tree(
             let release = Closure::<dyn FnMut(web_sys::PointerEvent)>::new(move |_| {
                 if let Some(win) = web_sys::window() {
                     let cleanup = Closure::once_into_js(move || {
-                        crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+                        crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
                         let _ = drag_ghost_pos.try_set(None);
                     });
                     let _ = win.set_timeout_with_callback_and_timeout_and_arguments_0(
@@ -1475,7 +1475,7 @@ pub(crate) fn virtual_tree(
                 }
             });
             let cancel = Closure::<dyn FnMut(web_sys::Event)>::new(move |_| {
-                crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+                crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
                 let _ = drag_ghost_pos.try_set(None);
             });
             let _ = win.add_event_listener_with_callback_and_bool(
@@ -1494,7 +1494,7 @@ pub(crate) fn virtual_tree(
             }
             let hooks = StoredValue::new_local((win, release, cancel));
             on_cleanup(move || {
-                crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+                crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
                 let _ = hooks.try_with_value(|(win, release, cancel)| {
                     let _ = win.remove_event_listener_with_callback_and_bool(
                         "pointerup",
@@ -1632,7 +1632,7 @@ pub(crate) fn virtual_tree(
                     class="h-full min-h-0 overflow-y-auto"
                     on:pointermove=move |ev: web_sys::PointerEvent| {
                         #[cfg(target_arch = "wasm32")]
-                        if crate::v2::apps::editor::panels::outliner_drag::PENDING_DRAG.with(|p| p.borrow().is_some()) {
+                        if crate::v2::apps::editor::ui::outliner::drag::PENDING_DRAG.with(|p| p.borrow().is_some()) {
                             drag_ghost_pos.set(Some((ev.client_x(), ev.client_y())));
                         } else if drag_ghost_pos.get_untracked().is_some() {
                             drag_ghost_pos.set(None);
@@ -1640,7 +1640,7 @@ pub(crate) fn virtual_tree(
                     }
                     on:pointerup=move |_| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+                        crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
                         drag_ghost_pos.set(None);
                     }
                     data-testid="outliner-window-scroller"
@@ -1695,7 +1695,7 @@ mod tests {
     //! inline rename, root dropzone, the unfiltered-doc selection source).
 
     use super::*;
-    use crate::v2::apps::editor::panels::outliner::{build_outliner, LayerRow, SlotRow};
+    use crate::v2::apps::editor::ui::outliner::outliner::{build_outliner, LayerRow, SlotRow};
 
     fn slot(id: &str) -> SlotRow {
         SlotRow {
@@ -1881,10 +1881,10 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/../map-engine/src/data/store/operations/entity/layers.rs"
         ));
-        const TREE: &str = include_str!("outliner_tree.rs");
+        const TREE: &str = include_str!("tree.rs");
         const DOCK: &str = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/dock_left.rs"
+            "/src/v2/apps/editor/ui/docks/dock_left.rs"
         ));
 
         /// Every layer-authoring wrapper rides `after_local_edit()` — the tail that calls
@@ -2335,7 +2335,7 @@ mod t637_one_dense_row_geometry {
     #[test]
     fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
         use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
-        let raw = include_str!("outliner_tree.rs");
+        let raw = include_str!("tree.rs");
         let code = live_code(raw);
         let source = live_source(raw);
         assert!(
@@ -2369,7 +2369,7 @@ mod t637_one_dense_row_geometry {
     /// call site.
     #[test]
     fn no_row_glyph_carries_an_uncollapsed_line_box() {
-        let src = include_str!("outliner_tree.rs");
+        let src = include_str!("tree.rs");
         let production = src
             .split("#[cfg(test)]")
             .next()
@@ -2401,10 +2401,10 @@ mod t637_one_dense_row_geometry {
 #[cfg(test)]
 mod t784_comment_row_selects {
     use super::{inert_row_reason, row_router_subject, row_routes};
-    use crate::v2::apps::editor::panels::outliner::NodeKind;
     use crate::v2::apps::editor::panels::validation_panel::{
         register_route_probe, register_select_by_id, route_select_by_subject_id,
     };
+    use crate::v2::apps::editor::ui::outliner::outliner::NodeKind;
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
     /// A dense ordinal per `NodeKind`. **The compiler is the completeness check**: the match is
@@ -2508,7 +2508,7 @@ mod t784_comment_row_selects {
             !row_routes(NodeKind::Comment, "cmt-1"),
             "T-784: a refusing probe must leave the comment row inert"
         );
-        let src = live_code(include_str!("outliner_tree.rs"));
+        let src = live_code(include_str!("tree.rs"));
         let routes = only_body(&src, "pub(crate) fn row_routes(");
         assert!(
             routes.contains(&format!("subject_id{}", "_routes")),
@@ -2539,7 +2539,7 @@ mod t784_comment_row_selects {
     /// Literals kept (`live_source`): the claim is about the tags and attributes that ship.
     #[test]
     fn the_comment_row_branches_on_the_router_and_is_never_a_dead_button() {
-        let lit = live_source(include_str!("outliner_tree.rs"));
+        let lit = live_source(include_str!("tree.rs"));
         let arm = only_body(&lit, &format!("fn comment{}", "_row("));
         assert!(
             arm.contains(&format!("row{}", "_routes(")),
@@ -2587,11 +2587,11 @@ mod t784_comment_row_selects {
 #[cfg(test)]
 mod t946_86_multi_drop {
     use super::{drag_set_for, node_descendant_ids};
-    use crate::v2::apps::editor::panels::outliner::{NodeKind, OutlinerNode};
+    use crate::v2::apps::editor::ui::outliner::outliner::{NodeKind, OutlinerNode};
     use crate::v2::core::test_support::class_r_scrub::live_code;
 
     fn live() -> String {
-        live_code(include_str!("outliner_tree.rs"))
+        live_code(include_str!("tree.rs"))
     }
 
     fn node(id: &str, children: Vec<OutlinerNode>) -> OutlinerNode {
@@ -2647,7 +2647,7 @@ mod t946_86_multi_drop {
         );
     }
 
-    /// **All three drag arms build a SET, and both drops consume one.** The `outliner_drag`
+    /// **All three drag arms build a SET, and both drops consume one.** The `drag`
     /// versions of `begin_layer_slot_drag`, `begin_layer_comment_drag` and `begin_refile` shipped
     /// in wave 255 shadowed by the single-id `state/operations` namesakes and were never called;
     /// the slot lane is where multi-drag is actually REACHABLE, because slot ids are what the
@@ -2656,10 +2656,10 @@ mod t946_86_multi_drop {
     fn every_drag_arm_builds_a_set_and_every_drop_consumes_one() {
         let src = live();
         for arm in [
-            "outliner_drag::begin_layer_drag(drag)",
-            "outliner_drag::begin_layer_slot_drag(drag)",
-            "outliner_drag::begin_layer_comment_drag(drag)",
-            "outliner_drag::begin_refile(drag)",
+            "drag::begin_layer_drag(drag)",
+            "drag::begin_layer_slot_drag(drag)",
+            "drag::begin_layer_comment_drag(drag)",
+            "drag::begin_refile(drag)",
         ] {
             assert!(
                 src.contains(arm),

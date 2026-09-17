@@ -710,7 +710,7 @@ pub(crate) mod keymap_census {
                 "top_strip.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/panels/top_strip.rs"
+                    "/src/v2/apps/editor/ui/docks/top_strip.rs"
                 )),
                 1,
             ),
@@ -718,7 +718,7 @@ pub(crate) mod keymap_census {
                 "context_menu.rs",
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/panels/context_menu.rs"
+                    "/src/v2/apps/editor/ui/docks/context_menu.rs"
                 )),
                 1,
             ),
@@ -1759,7 +1759,7 @@ mod t692_help_covers_every_binding {
     fn overlay_hides_with_the_rest_of_the_chrome() {
         let strip = live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/panels/top_strip.rs"
+            "/src/v2/apps/editor/ui/docks/top_strip.rs"
         )));
         assert!(
             strip.contains("ControlsHint"),
@@ -1890,7 +1890,7 @@ mod t772_controls_hint_close_hitbox {
 #[cfg(test)]
 mod t939_4_arrange_help_rows {
     use super::{GROUPS, SHORTCUTS};
-    use crate::v2::apps::editor::panels::top_strip::ARRANGE;
+    use crate::v2::apps::editor::ui::docks::top_strip::ARRANGE;
 
     /// Every chorded Arrange row has a help row filed under `Arrange` whose chord text CONTAINS the
     /// spelling the menus print. `contains` rather than equality because a row may pair two chords

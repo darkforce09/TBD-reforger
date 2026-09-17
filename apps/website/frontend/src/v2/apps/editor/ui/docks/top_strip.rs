@@ -150,7 +150,7 @@ use website_map_engine::editing::tools::placement::{AlignEdge, Orient, PatternKi
 /* ═══════════ T-939.4 — the Arrange rows, as ONE list three surfaces read ══════════════════════
  *
  * T-645 built the Placement Tools as a top-strip dropdown and stopped there. T-939.4 adds two more
- * doors to the same nineteen commands — the right-click menu (`panels/context_menu.rs`) and the
+ * doors to the same nineteen commands — the right-click menu (`ui/docks/context_menu.rs`) and the
  * keyboard (the `mission_editor` chord listener) — and the way three doors stay honest is that
  * there is only ever one list behind them.
  *
@@ -2747,8 +2747,8 @@ impl SlotCensus {
 /// Pure + total (no panics, no I/O): the whole reason it lives here and not behind the wasm gate.
 #[must_use]
 pub fn census_from_rows(
-    factions: &[crate::v2::apps::editor::panels::outliner::FactionRow],
-    squads: &[crate::v2::apps::editor::panels::outliner::SquadRow],
+    factions: &[crate::v2::apps::editor::ui::outliner::outliner::FactionRow],
+    squads: &[crate::v2::apps::editor::ui::outliner::outliner::SquadRow],
     slot_squad_ids: &[String],
 ) -> SlotCensus {
     // squadId → side key, resolved once so the per-slot loop is O(1) per slot rather than O(squads).
@@ -2853,7 +2853,7 @@ mod tests {
         is_mission_row_id, minutes_to_hhmm, mirror_failure_message, normalize_clock, summary_line,
         MirrorState, SlotCensus, CENSUS_SIDES, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER,
     };
-    use crate::v2::apps::editor::panels::outliner::{FactionRow, SquadRow};
+    use crate::v2::apps::editor::ui::outliner::outliner::{FactionRow, SquadRow};
 
     // ── T-659 census/summary fixtures ────────────────────────────────────────────────────────────
 

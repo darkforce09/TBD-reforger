@@ -37,9 +37,9 @@ use leptos::prelude::*;
 // does not own, copy or re-order them. See `top_strip::ARRANGE`.
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::entity_selection;
+use crate::v2::apps::editor::ui::docks::top_strip::{ArrangeKind, ARRANGE, ARRANGE_MIN_SELECTION};
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::outliner;
-use crate::v2::apps::editor::panels::top_strip::{ArrangeKind, ARRANGE, ARRANGE_MIN_SELECTION};
+use crate::v2::apps::editor::ui::outliner::outliner;
 
 /// T-672 (`CONN-START-001`) — the three relations Eden's `Connect ▸` submenu can make, as menu-row
 /// payload. Carried INSIDE [`ContextItem::ConnectStart`] rather than as three flat variants so the
@@ -1057,7 +1057,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // target BE the selection (`resolve_target` retargets an unselected hit before the menu
         // opens). Passing ids here would introduce a second notion of "what this acts on".
         ContextItem::ArrangeRun(kind) => {
-            crate::v2::apps::editor::panels::top_strip::run_arrange(kind);
+            crate::v2::apps::editor::ui::docks::top_strip::run_arrange(kind);
         }
         // Every other id is a disabled row (feature not shipped / owned by a later ticket) — no-op.
         _ => {}

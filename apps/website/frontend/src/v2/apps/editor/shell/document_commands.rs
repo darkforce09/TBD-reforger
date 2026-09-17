@@ -94,7 +94,7 @@ mod imp {
         /// of the activation it lets through, and rejects the next one only when it carries the SAME
         /// stamp (the DOM's synthesised pointerup/click double). A `Cell` (not a `RefCell`) because a
         /// single `f64` copy needs no borrow, and a `thread_local` for the same wasm-single-thread
-        /// reason [`MIRROR`](crate::v2::apps::editor::panels::top_strip) is.
+        /// reason [`MIRROR`](crate::v2::apps::editor::ui::docks::top_strip) is.
         static LAST_EXPORT_STAMP: std::cell::Cell<f64> = const { std::cell::Cell::new(0.0) };
     }
 

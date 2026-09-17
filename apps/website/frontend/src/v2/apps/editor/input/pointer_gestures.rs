@@ -1858,10 +1858,12 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
             // repaired the armed pointerup machine — button filter, left.take(), Esc/RMB
             // disarm — but Place Comment still adds ZERO new state to LeftGesture.)
             let world = cam.unproject_xy(px, py);
-            let target =
-                crate::v2::apps::editor::panels::context_menu::resolve_target(hit.as_deref(), &sel)
-                    .at_world(world[0], world[1]);
-            crate::v2::apps::editor::panels::context_menu::open(
+            let target = crate::v2::apps::editor::ui::docks::context_menu::resolve_target(
+                hit.as_deref(),
+                &sel,
+            )
+            .at_world(world[0], world[1]);
+            crate::v2::apps::editor::ui::docks::context_menu::open(
                 ev.client_x() as f64,
                 ev.client_y() as f64,
                 target,

@@ -3,7 +3,7 @@
 //!
 //! Terrain (readonly) + time/weather author through [`crate::v2::apps::editor::panels::env::author_env`] (T-193 gate);
 //! [`render_flow_section`] is the T-224 mission-flow block. Time and weather additionally mirror to
-//! the `missions` row through [`crate::v2::apps::editor::panels::top_strip::RowMirror`] (T-192). Renders no DOM while
+//! the `missions` row through [`crate::v2::apps::editor::ui::docks::top_strip::RowMirror`] (T-192). Renders no DOM while
 //! closed; the doc-reading halves are wasm-only.
 //!
 //! **T-691 (Eden NEW-F2 + 3den E6) — editor preferences, separated from mission settings.** Eden
@@ -555,7 +555,7 @@ impl ShapeMirror {
     /// reverted one.
     fn load(self, shape: RwSignal<Option<RowShape>>) {
         let id = self.mission_id.get_value();
-        if !crate::v2::apps::editor::panels::top_strip::is_mission_row_id(&id) {
+        if !crate::v2::apps::editor::ui::docks::top_strip::is_mission_row_id(&id) {
             shape.set(None);
             return;
         }
@@ -633,7 +633,7 @@ impl ShapeMirror {
         let Some(previous) = shape.get_untracked() else {
             return;
         };
-        if !crate::v2::apps::editor::panels::top_strip::is_mission_row_id(&id)
+        if !crate::v2::apps::editor::ui::docks::top_strip::is_mission_row_id(&id)
             || !is_known_game_mode(&next)
             || previous.game_mode == next
         {
@@ -700,7 +700,7 @@ impl ShapeMirror {
         let Some(previous) = shape.get_untracked() else {
             return;
         };
-        if !crate::v2::apps::editor::panels::top_strip::is_mission_row_id(&id)
+        if !crate::v2::apps::editor::ui::docks::top_strip::is_mission_row_id(&id)
             || field.read(&previous) == next
         {
             return;
@@ -777,7 +777,7 @@ use crate::v2::apps::editor::panels::env::{
     SETTINGS_UNREAD_NOTE,
 };
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::top_strip::RowMirror;
+use crate::v2::apps::editor::ui::docks::top_strip::RowMirror;
 
 /// Mission Settings dialog (MissionSettingsDialog.tsx — environment half). Terrain (readonly) +
 /// time / weather flow through [`author_env`] (one undo step each); the render-pref controls (map
@@ -2663,7 +2663,7 @@ mod t694_mission_shape {
         game_mode_failure_message, is_known_game_mode, PlayerCount, GAME_MODES,
         PLAYER_COUNT_RULING_NOTE, SLOTS_PLACED_NOTE,
     };
-    use crate::v2::apps::editor::panels::top_strip::is_mission_row_id;
+    use crate::v2::apps::editor::ui::docks::top_strip::is_mission_row_id;
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
     /// The select's table is the server's enum. `handlers/missions.rs::valid_game_mode` maps exactly

@@ -22,8 +22,8 @@ use website_map_engine::data::scenario::slot_line::format_slot_line;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::entity_selection;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::outliner;
-use crate::v2::apps::editor::panels::outliner::{
+use crate::v2::apps::editor::ui::outliner::outliner;
+use crate::v2::apps::editor::ui::outliner::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
 };
@@ -267,11 +267,11 @@ pub fn OrbatManagerDialog(
     on_cleanup(move || {
         esc.remove();
         crate::v2::core::ui::modal_stack::unregister(modal_id);
-        crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+        crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
     });
     Effect::new(move |_| {
         if !open.get() {
-            crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+            crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
         }
     });
 
@@ -376,7 +376,7 @@ pub fn OrbatManagerDialog(
                 on:click=move |ev| ev.stop_propagation()
                 on:pointerup=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::v2::apps::editor::panels::outliner_drag::cancel_layer_drag();
+                    crate::v2::apps::editor::ui::outliner::drag::cancel_layer_drag();
                 }
             >
                 // Header
@@ -810,8 +810,8 @@ struct SlotDetail {
 
 #[derive(Clone, Debug, Default)]
 struct Snap {
-    factions: Vec<crate::v2::apps::editor::panels::outliner::FactionRow>,
-    squads: Vec<crate::v2::apps::editor::panels::outliner::SquadRow>,
+    factions: Vec<crate::v2::apps::editor::ui::outliner::outliner::FactionRow>,
+    squads: Vec<crate::v2::apps::editor::ui::outliner::outliner::SquadRow>,
     slots: Vec<SlotDetail>,
 }
 
@@ -846,13 +846,15 @@ fn read_snapshot() -> Snap {
     }
 }
 
-fn slot_rows_from(snap: &Snap) -> Vec<crate::v2::apps::editor::panels::outliner::SlotRow> {
+fn slot_rows_from(snap: &Snap) -> Vec<crate::v2::apps::editor::ui::outliner::outliner::SlotRow> {
     snap.slots
         .iter()
-        .map(|s| crate::v2::apps::editor::panels::outliner::SlotRow {
-            id: s.id.clone(),
-            role: s.role.clone(),
-        })
+        .map(
+            |s| crate::v2::apps::editor::ui::outliner::outliner::SlotRow {
+                id: s.id.clone(),
+                role: s.role.clone(),
+            },
+        )
         .collect()
 }
 
@@ -1035,7 +1037,7 @@ fn stitch_row(
                             ev.stop_propagation();
                             #[cfg(target_arch = "wasm32")]
                             {
-                                if !crate::v2::apps::editor::panels::outliner_drag::complete_multi_refile_onto_squad(&id_drop) {
+                                if !crate::v2::apps::editor::ui::outliner::drag::complete_multi_refile_onto_squad(&id_drop) {
                                     engine_ops::complete_refile_onto_squad(id_drop.clone());
                                 }
                             }
@@ -1239,7 +1241,7 @@ fn stitch_row(
                                             )
                                             .is_some()
                                             {
-                                                crate::v2::apps::editor::panels::dock_right::record_placed(
+                                                crate::v2::apps::editor::ui::docks::dock_right::record_placed(
                                                     resource.clone(),
                                                     resource,
                                                 );
@@ -1337,12 +1339,12 @@ fn stitch_row(
                             {
                                 // This mounted manager has its own rows; the legacy outliner
                                 // ORBAT branch does not handle these pointer events.
-                                let drag = crate::v2::apps::editor::panels::outliner_tree::drag_set_for(
+                                let drag = crate::v2::apps::editor::ui::outliner::tree::drag_set_for(
                                     &id_refile,
                                     &selected.get_untracked(),
                                     &nodes.get_untracked(),
                                 );
-                                crate::v2::apps::editor::panels::outliner_drag::begin_refile(drag);
+                                crate::v2::apps::editor::ui::outliner::drag::begin_refile(drag);
                                 engine_ops::begin_refile(id_refile.clone());
                             }
                         }
@@ -2144,11 +2146,11 @@ mod t946_86_mounted_refile {
         use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
         let code = live_code(include_str!("orbat_manager.rs"));
         let row = only_body(&code, "fn stitch_row(");
-        assert!(row.contains("outliner_tree::drag_set_for("));
-        assert!(row.contains("outliner_drag::begin_refile(drag)"));
-        assert!(row.contains("outliner_drag::complete_multi_refile_onto_squad(&id_drop)"));
+        assert!(row.contains("tree::drag_set_for("));
+        assert!(row.contains("drag::begin_refile(drag)"));
+        assert!(row.contains("drag::complete_multi_refile_onto_squad(&id_drop)"));
         let dialog = only_body(&code, "pub fn OrbatManagerDialog(");
-        assert!(dialog.contains("outliner_drag::cancel_layer_drag()"));
+        assert!(dialog.contains("drag::cancel_layer_drag()"));
         assert!(dialog
             .split_whitespace()
             .collect::<Vec<_>>()

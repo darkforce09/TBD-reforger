@@ -52,9 +52,9 @@ const TAB_LABEL_PAD_PX: f64 = 12.0;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::entity_selection;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::outliner;
-use crate::v2::apps::editor::panels::outliner::OutlinerNode;
-use crate::v2::apps::editor::panels::outliner_tree::virtual_tree;
+use crate::v2::apps::editor::ui::outliner::outliner;
+use crate::v2::apps::editor::ui::outliner::outliner::OutlinerNode;
+use crate::v2::apps::editor::ui::outliner::tree::virtual_tree;
 use crate::v2::core::ui::MaterialIcon;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -1083,7 +1083,8 @@ fn keep_matching(node: &OutlinerNode, query: &str) -> Option<OutlinerNode> {
 #[must_use]
 pub fn find_layer_label(nodes: &[OutlinerNode], id: &str) -> Option<String> {
     for n in nodes {
-        if n.kind == crate::v2::apps::editor::panels::outliner::NodeKind::Folder && n.id == id {
+        if n.kind == crate::v2::apps::editor::ui::outliner::outliner::NodeKind::Folder && n.id == id
+        {
             return Some(n.label.clone());
         }
         if let Some(found) = find_layer_label(&n.children, id) {
@@ -1101,7 +1102,7 @@ pub fn find_layer_label(nodes: &[OutlinerNode], id: &str) -> Option<String> {
 pub fn first_folder_label(nodes: &[OutlinerNode]) -> Option<String> {
     nodes
         .iter()
-        .find(|n| n.kind == crate::v2::apps::editor::panels::outliner::NodeKind::Folder)
+        .find(|n| n.kind == crate::v2::apps::editor::ui::outliner::outliner::NodeKind::Folder)
         .map(|n| n.label.clone())
 }
 
@@ -2180,8 +2181,8 @@ mod t637_density {
         filter_outliner, find_layer_label, first_folder_label, matches_query, TAB_LABEL_LAYERS,
         TAB_LABEL_PAD_PX, TAB_LABEL_PLACES, UPPERCASE_LABEL_ADVANCE_PX,
     };
-    use crate::v2::apps::editor::panels::outliner::{NodeKind, OutlinerNode};
     use crate::v2::apps::editor::shell::layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
+    use crate::v2::apps::editor::ui::outliner::outliner::{NodeKind, OutlinerNode};
 
     /// The file's production half — everything above the first test module. A needle checked against
     /// this cannot be satisfied by a test's own source.

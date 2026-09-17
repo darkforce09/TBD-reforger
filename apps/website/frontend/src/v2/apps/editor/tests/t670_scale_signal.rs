@@ -29,14 +29,14 @@ fn the_scale_signal_is_seeded_and_reaches_the_status_bar() {
     let ed = editor_live();
     assert!(
         ed.contains(&format!(
-            "let scale_mpp = RwSignal::new(crate::v2::apps::editor::panels::toolbelt::{}(-2.0))",
+            "let scale_mpp = RwSignal::new(crate::v2::apps::editor::ui::docks::toolbelt::{}(-2.0))",
             "m_per_px"
         )),
         "T-670: scale_mpp must be a real signal seeded from eden_toolbelt::m_per_px at the \
          editor's default deck zoom"
     );
     let belt = ed
-        .find("crate::v2::apps::editor::panels::toolbelt::StatusBar")
+        .find("crate::v2::apps::editor::ui::docks::toolbelt::StatusBar")
         .expect("StatusBar mount present");
     let close = ed[belt..]
         .find("/>")

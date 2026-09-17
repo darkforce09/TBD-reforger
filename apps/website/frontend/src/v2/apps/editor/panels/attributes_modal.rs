@@ -3775,7 +3775,7 @@ mod t810_type_picker_revert_axes {
 #[cfg(test)]
 mod t939_2_batch_reassign {
     use super::faction_label;
-    use crate::v2::apps::editor::panels::outliner::{FactionRow, SquadRow};
+    use crate::v2::apps::editor::ui::outliner::outliner::{FactionRow, SquadRow};
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
     use website_map_engine::data::store::operations::reassign::plan_reassign;
 

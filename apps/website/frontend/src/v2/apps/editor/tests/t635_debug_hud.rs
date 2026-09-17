@@ -102,7 +102,7 @@ fn the_hud_moved_into_the_gated_status_bar() {
     // The StatusBar mount must be one of the `(!chrome_hidden.get()).then(` gated wrappers, so
     // hiding the chrome unmounts the HUD too (the chrome_hidden half of the T-635 gate stack).
     let belt = ed
-        .find("crate::v2::apps::editor::panels::toolbelt::StatusBar")
+        .find("crate::v2::apps::editor::ui::docks::toolbelt::StatusBar")
         .expect("StatusBar mount present");
     let gate = ed[..belt]
         .rfind("(!chrome_hidden.get()).then(")
@@ -110,7 +110,7 @@ fn the_hud_moved_into_the_gated_status_bar() {
     // Nothing but the wrapper div opens between the gate and the StatusBar mount — i.e. the gate
     // is the StatusBar's own wrapper, not an earlier mount's.
     assert!(
-        !ed[gate..belt].contains("crate::v2::apps::editor::panels::toolbelt::ModeToolbar")
+        !ed[gate..belt].contains("crate::v2::apps::editor::ui::docks::toolbelt::ModeToolbar")
             && !ed[gate..belt].contains("crate::v2::apps::editor::shell::eden_chrome::Dock"),
         "T-636: the chrome_hidden gate immediately preceding StatusBar must be its OWN wrapper"
     );

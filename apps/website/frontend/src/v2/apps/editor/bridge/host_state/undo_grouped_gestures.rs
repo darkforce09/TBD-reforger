@@ -9,7 +9,7 @@
 
 #![cfg(target_arch = "wasm32")]
 
-use crate::v2::apps::editor::panels::outliner;
+use crate::v2::apps::editor::ui::outliner::outliner;
 use outliner::ensure_active_layer;
 pub use website_map_engine::editing::batch::with_batch;
 use website_map_engine::editing::hosted_commands::{entity_clipboard, selection_transform};

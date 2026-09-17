@@ -15,7 +15,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use crate::v2::apps::editor::panels::outliner;
+use crate::v2::apps::editor::ui::outliner::outliner;
 use wasm_bindgen::prelude::*;
 use website_map_engine::data::store::MissionDocCore;
 

@@ -1,14 +1,14 @@
 //! The clipboard exporter's grid reference against the map furniture's own edge labels.
 //!
 //! This pin lives frontend-side because it spans the wall: the edge labels it compares against are
-//! drawn by `editor::panels::toolbelt` inside the frontend's own dock geometry, and the frontend may
+//! drawn by `editor::ui::docks::toolbelt` inside the frontend's own dock geometry, and the frontend may
 //! import the engine while the engine may never import the frontend.
 
 use website_map_engine::camera::ortho::state::OrthoCamera;
 use website_map_engine::editing::commands::selection_digest::format_grid_ref;
 
-use crate::v2::apps::editor::panels::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
 use crate::v2::apps::editor::shell::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+use crate::v2::apps::editor::ui::docks::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};
 
 /// **The clipboard and the screen can never disagree.**
 ///

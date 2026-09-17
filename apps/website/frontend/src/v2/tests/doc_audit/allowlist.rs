@@ -171,30 +171,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
-        path: "apps/editor/panels/context_menu.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/dock_left.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/dock_right.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
         path: "apps/editor/panels/env.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
                  naming tickets and waves; the editor decomposition splits it into per-surface \
@@ -214,29 +190,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         path: "apps/editor/panels/mod.rs",
         reason: "The file has comments naming tickets and waves; the editor decomposition \
                  rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/outliner.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/outliner_drag.rs",
-        reason: "The file holds inline test modules and has comments naming tickets and waves; \
-                 the editor decomposition lifts those tests into sibling `tests/` files and \
-                 rewrites that prose in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/outliner_tree.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
     GrandfatherRow {
@@ -265,22 +218,6 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
     },
     GrandfatherRow {
         path: "apps/editor/panels/tasks_panel.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/toolbelt.rs",
-        reason: "The file is over the line limit, holds inline test modules and has comments \
-                 naming tickets and waves; the editor decomposition splits it into per-surface \
-                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
-                 in the present tense.",
-        expires: EDITOR_DECOMPOSITION_DUE,
-    },
-    GrandfatherRow {
-        path: "apps/editor/panels/top_strip.rs",
         reason: "The file is over the line limit, holds inline test modules and has comments \
                  naming tickets and waves; the editor decomposition splits it into per-surface \
                  modules, lifts those tests into sibling `tests/` files and rewrites that prose \
@@ -402,6 +339,69 @@ pub(super) const ROWS: &[GrandfatherRow] = &[
         path: "apps/editor/shell/world_layer_prefs.rs",
         reason: "The file holds inline test modules; the editor decomposition lifts those tests \
                  into sibling `tests/` files.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/docks/context_menu.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/docks/dock_left.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/docks/dock_right.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/docks/toolbelt.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/docks/top_strip.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/outliner/drag.rs",
+        reason: "The file holds inline test modules and has comments naming tickets and waves; \
+                 the editor decomposition lifts those tests into sibling `tests/` files and \
+                 rewrites that prose in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/outliner/outliner.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
+        expires: EDITOR_DECOMPOSITION_DUE,
+    },
+    GrandfatherRow {
+        path: "apps/editor/ui/outliner/tree.rs",
+        reason: "The file is over the line limit, holds inline test modules and has comments \
+                 naming tickets and waves; the editor decomposition splits it into per-surface \
+                 modules, lifts those tests into sibling `tests/` files and rewrites that prose \
+                 in the present tense.",
         expires: EDITOR_DECOMPOSITION_DUE,
     },
 ];

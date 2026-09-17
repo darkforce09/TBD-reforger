@@ -18,12 +18,10 @@ use serde::{Deserialize, Serialize};
 use crate::v2::apps::editor::arsenal::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::armed_placement;
-use crate::v2::apps::editor::panels::dock_left::collapse_chevron;
-use crate::v2::apps::editor::panels::outliner_tree::{
-    chevron_or_spacer, guide_spans, PALETTE_LEAF,
-};
 use crate::v2::apps::editor::panels::zones_panel::zones_panel;
 use crate::v2::apps::editor::shell::layout::{DOCK_R, STUB_PX};
+use crate::v2::apps::editor::ui::docks::dock_left::collapse_chevron;
+use crate::v2::apps::editor::ui::outliner::tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::v2::core::api::dto::RegistryItem;
 use crate::v2::core::ui::MaterialIcon;
 
@@ -2299,7 +2297,7 @@ pub(crate) fn compositions_panel(
     doc_tick: RwSignal<u64>,
     editing: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
+    use crate::v2::apps::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 
     // The inline save form's open state + field buffers. Opening seeds no defaults; a blank title
     // reads "Untitled" on save so the row is always addressable.
@@ -2729,8 +2727,8 @@ pub(crate) fn triggers_panel(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::v2::apps::editor::panels::zones_panel::{humanize_token, DrawTarget, ZoneShape};
+    use crate::v2::apps::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 
     // The activation the NEXT draw will carry, seeded to the first of the three (presence).
     let draw_activation = RwSignal::new(
@@ -3802,8 +3800,8 @@ pub(crate) fn markers_panel(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
-    use crate::v2::apps::editor::panels::outliner_tree::{ROW, ROW_ACTIVE};
     use crate::v2::apps::editor::panels::zones_panel::humanize_token;
+    use crate::v2::apps::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 
     let icon_search = RwSignal::new(String::new());
 

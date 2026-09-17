@@ -39,11 +39,11 @@ use crate::v2::apps::editor::bridge::document_host::history as mission_history;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::bridge::host_state::editor_context;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::apps::editor::panels::top_strip;
-#[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::shell::hydrate as mission_hydrate;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::apps::editor::shell::persist as yrs_persist;
+#[cfg(target_arch = "wasm32")]
+use crate::v2::apps::editor::ui::docks::top_strip;
 #[cfg(target_arch = "wasm32")]
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -1069,7 +1069,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // The sampler runs EVERY FRAME. It writes this signal only when `format_m_per_px` would change
     // (guard in `start_raf`), so a still or merely panning camera writes nothing and the status bar
     // never re-renders per frame — the regression the `rf <ms>` cell above exists to surface.
-    let scale_mpp = RwSignal::new(crate::v2::apps::editor::panels::toolbelt::m_per_px(-2.0));
+    let scale_mpp = RwSignal::new(crate::v2::apps::editor::ui::docks::toolbelt::m_per_px(-2.0));
     // T-642/T-643 — the active editor tool (Select ⇆ Ruler ⇆ LoS). The `ModeToolbar` buttons read +
     // set it (the active tool enters TOOL_ACTIVE state, Select returns); the wasm pointer handlers
     // branch on it to choose the point-capture gesture (Ruler AND LoS share `LG::Ruler`) vs the
@@ -1161,7 +1161,7 @@ pub fn MissionEditorPage() -> impl IntoView {
      * the arms MIRROR the invoker one-for-one, so a click and a chord cannot come to mean different
      * things. No placement logic lives in this file.
      *
-     * **Why the listener is here and not in `panels/top_strip.rs`**, where the list lives: the top
+     * **Why the listener is here and not in `ui/docks/top_strip.rs`**, where the list lives: the top
      * strip is mounted INSIDE the `chrome_hidden` gate and unmounts on Backspace, taking its window
      * listener with it (that is why the Controls Hint keeps its open state in a thread-local at
      * all). Chords that stopped working the moment an author hid the chrome to look at a clean map
@@ -1216,11 +1216,13 @@ pub fn MissionEditorPage() -> impl IntoView {
     // i.e. at every mutation site). `active_layer` is the drop target (React's `activeLayerId`);
     // `catalog` holds the `/registry` fetch state and never leaves `Loading` on the native shell,
     // where `api_get` doesn't exist.
-    let outliner_nodes =
-        RwSignal::new(Vec::<crate::v2::apps::editor::panels::outliner::OutlinerNode>::new());
+    let outliner_nodes = RwSignal::new(Vec::<
+        crate::v2::apps::editor::ui::outliner::outliner::OutlinerNode,
+    >::new());
     // T-168 — the ORBAT dock tree mirror (faction/squad/slot), rebuilt alongside `outliner_nodes`.
-    let orbat_nodes =
-        RwSignal::new(Vec::<crate::v2::apps::editor::panels::outliner::OutlinerNode>::new());
+    let orbat_nodes = RwSignal::new(Vec::<
+        crate::v2::apps::editor::ui::outliner::outliner::OutlinerNode,
+    >::new());
     let selected_ids = RwSignal::new(Vec::<String>::new());
     // T-648 — bump the transform-widget repaint tick whenever the selection changes (any source:
     // outliner click, keyboard, marquee), so the gizmo re-projects onto the new centroid even with a
@@ -1286,7 +1288,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // overlay reads it. Mounted BESIDE the ungated dialogs below (not inside the chrome_hidden gate),
     // so a floating menu survives Backspace hide-chrome per the wave-101 verifier.
     let context_menu =
-        RwSignal::new(None::<crate::v2::apps::editor::panels::context_menu::MenuState>);
+        RwSignal::new(None::<crate::v2::apps::editor::ui::docks::context_menu::MenuState>);
     // T-647 PLACE-003 — the empty-ground asset picker's open state: `Some(AssetPickerState)` = open
     // at that world/screen point, `None` = closed. The wasm `dblclick` handler sets it via
     // `editor_context::open_asset_picker` (on a MISS); the picker overlay reads it. Mounted BESIDE the
@@ -1953,7 +1955,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // check stays because `route_select_zone` is the actor and its report
                             // is the ground truth; if it ever disagrees with the oracle the honest
                             // answer is still `false`, never a `true` over a no-op.
-                            if !crate::v2::apps::editor::panels::dock_right::route_select_zone(subject_id) {
+                            if !crate::v2::apps::editor::ui::docks::dock_right::route_select_zone(subject_id) {
                                 return false;
                             }
                         } else {
@@ -2024,7 +2026,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             );
             // T-664 — hand the context-menu signal to the module's thread_local so the wasm
             // `contextmenu` closure below (which has no reactive handle) can open the menu.
-            crate::v2::apps::editor::panels::context_menu::set_menu_signal(context_menu);
+            crate::v2::apps::editor::ui::docks::context_menu::set_menu_signal(context_menu);
             // T-647 PLACE-003 — same handoff for the empty-ground asset picker: the wasm `dblclick`
             // closure opens it through `editor_context::open_asset_picker`, which writes this signal.
             editor_context::set_asset_picker_signal(asset_picker);
@@ -2866,7 +2868,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // three buttons in the same pill, no longer sharing the strip with the readouts.
                 {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute bottom-11 left-1/2 -translate-x-1/2">
-                    <crate::v2::apps::editor::panels::toolbelt::ModeToolbar tool_mode los_mode />
+                    <crate::v2::apps::editor::ui::docks::toolbelt::ModeToolbar tool_mode los_mode />
                 </div>
                 })}
                 // (2) The full-width status bar — CUR/OBJ/SEL/SZ readouts, the T-667 map-furniture
@@ -2879,7 +2881,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // `hud_shown`) AND a non-empty sampler string (checked inside `StatusBar`).
                 {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute inset-x-0 bottom-0">
-                    <crate::v2::apps::editor::panels::toolbelt::StatusBar
+                    <crate::v2::apps::editor::ui::docks::toolbelt::StatusBar
                         cursor
                         sel_count
                         obj_count
@@ -2898,7 +2900,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // status-bar furniture slot; it reads the live camera + viewport itself and re-runs
                 // off the same `cursor`/`debug_hud` heartbeats (no new rAF loop). Gated by
                 // `chrome_hidden` like the other furniture so Backspace hides it too.
-                {move || (!chrome_hidden.get()).then(|| view! { <crate::v2::apps::editor::panels::toolbelt::MapGridRefs cursor debug_hud=Some(debug_hud) /> })}
+                {move || (!chrome_hidden.get()).then(|| view! { <crate::v2::apps::editor::ui::docks::toolbelt::MapGridRefs cursor debug_hud=Some(debug_hud) /> })}
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
                 // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
@@ -2939,7 +2941,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // chrome). Renders no DOM while `context_menu` is None; its own backdrop is
                 // `pointer-events-auto` so click-away dismissal works even over the map.
                 <div class="pointer-events-auto">
-                    <crate::v2::apps::editor::panels::context_menu::ContextMenuOverlay menu=context_menu />
+                    <crate::v2::apps::editor::ui::docks::context_menu::ContextMenuOverlay menu=context_menu />
                 </div>
                 // T-647 PLACE-003 — the empty-ground asset picker. Ungated (survives hide-chrome)
                 // and self-contained: it reuses the SAME `registry_items` + `active_side` the
@@ -3692,7 +3694,7 @@ mod t939_4_arrange_chords {
     /// the menu row — the failure mode a source pin over this file alone could not see.
     #[test]
     fn the_bound_codes_are_exactly_the_shared_lists_chorded_rows() {
-        let mut from_list: Vec<&str> = crate::v2::apps::editor::panels::top_strip::ARRANGE
+        let mut from_list: Vec<&str> = crate::v2::apps::editor::ui::docks::top_strip::ARRANGE
             .iter()
             .filter(|e| !e.code.is_empty())
             .map(|e| e.code)
@@ -3706,7 +3708,7 @@ mod t939_4_arrange_chords {
              codes — a chord bound here but not listed there is undiscoverable, and one listed \
              there but not bound here is advertised and dead"
         );
-        for entry in crate::v2::apps::editor::panels::top_strip::ARRANGE
+        for entry in crate::v2::apps::editor::ui::docks::top_strip::ARRANGE
             .iter()
             .filter(|e| !e.code.is_empty())
         {

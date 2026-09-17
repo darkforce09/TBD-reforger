@@ -79,8 +79,8 @@ pub(crate) fn start_raf(
             // The `m_per_px`/`format_m_per_px` pair is `eden_toolbelt`'s — the same conversion the
             // scale bar uses and the same `2^(−deckZoom)` convention T-639's contour ladder takes.
             {
-                let mpp = crate::v2::apps::editor::panels::toolbelt::m_per_px(e.zoom());
-                let text = crate::v2::apps::editor::panels::toolbelt::format_m_per_px(mpp);
+                let mpp = crate::v2::apps::editor::ui::docks::toolbelt::m_per_px(e.zoom());
+                let text = crate::v2::apps::editor::ui::docks::toolbelt::format_m_per_px(mpp);
                 if text != last_scale_text {
                     last_scale_text = text;
                     scale_mpp.set(mpp);

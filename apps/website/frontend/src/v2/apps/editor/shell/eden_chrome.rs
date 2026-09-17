@@ -30,11 +30,11 @@ pub use crate::v2::apps::editor::shell::layout::{
 };
 
 // The four docked components + the Mission Settings dialog `mission_editor` mounts.
-pub use crate::v2::apps::editor::panels::dock_left::DockLeft;
-pub use crate::v2::apps::editor::panels::dock_right::DockRight;
 pub use crate::v2::apps::editor::panels::settings_modal::MissionSettingsDialog;
-pub use crate::v2::apps::editor::panels::toolbelt::BottomToolbelt;
-pub use crate::v2::apps::editor::panels::top_strip::TopCommandStrip;
+pub use crate::v2::apps::editor::ui::docks::dock_left::DockLeft;
+pub use crate::v2::apps::editor::ui::docks::dock_right::DockRight;
+pub use crate::v2::apps::editor::ui::docks::toolbelt::BottomToolbelt;
+pub use crate::v2::apps::editor::ui::docks::top_strip::TopCommandStrip;
 
 // T-180.7 — Stitch ORBAT Manager (near-fullscreen live graph). Implementation lives in
 // [`crate::pages::operations::orbat_manager`]; re-exported so `mission_editor`'s mount path stays stable.
