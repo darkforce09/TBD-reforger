@@ -105,7 +105,7 @@ fn trigger_draw_is_second_consumer_of_the_zone_tool() {
     const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     let zones_src = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
+        "/src/v2/apps/editor/ui/inspector/zones_panel/zone_list_panel.rs"
     ));
     // T-934.7 — the ops module was split; the no-forked-draw absence pins scan every submodule.
     let ops = [

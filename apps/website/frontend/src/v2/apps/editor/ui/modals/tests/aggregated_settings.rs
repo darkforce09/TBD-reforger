@@ -14,6 +14,43 @@ fn schema() -> serde_json::Value {
     )
 }
 
+/// All production files that own the Zones panel and its schema vocabulary.
+fn zones_production_sources() -> (String, String) {
+    let files = [
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/zones_panel/zone_list_panel.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/zones_panel/zone_attributes.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/zones_panel/zone_rule_control.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/zones_panel/zone_geometry.rs"
+        )),
+    ];
+    let raw = files.join("\n");
+    let live = files
+        .iter()
+        .map(|source| live_source(source))
+        .collect::<Vec<_>>()
+        .join("\n");
+    (raw, live)
+}
+
 /// T-757 — zones + settings share ONE `include_str!` of mission.schema.json.
 ///
 /// Perturbation this catches: restoring a second `include_str!` in this file, or dropping the
@@ -23,10 +60,7 @@ fn schema() -> serde_json::Value {
 #[test]
 fn zones_and_settings_share_one_mission_schema_embed() {
     // live_source keeps string literals (needed to see the include_str path); live_code would blank them.
-    let zones = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
-    )));
+    let (zones_raw, zones) = zones_production_sources();
     let settings = live_source(&super::source::production_source());
     let path = format!(
         "{}{}{}",
@@ -58,10 +92,6 @@ fn zones_and_settings_share_one_mission_schema_embed() {
     // Stale size lore (~40 KB vs ~91 KB) — drop rather than restate a drifting number.
     // live_source blanks comments; the ticket defect was comment lore, so read the zones file
     // raw (wave-135 F2). Restoring `~40 KB` in a doc-comment must RED.
-    let zones_raw = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
-    ));
     let stale = format!("{}{}", "~40 ", "KB");
     assert!(
         !zones_raw.contains(&stale),

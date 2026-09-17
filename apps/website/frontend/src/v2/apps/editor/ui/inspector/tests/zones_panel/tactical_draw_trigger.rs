@@ -1,21 +1,14 @@
+//! Zones panel tactical draw trigger tests.
+
 use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 
 fn live_calls() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
-    )))
+    live_code(super::ZONES_PANEL_SOURCE)
 }
 fn live_markup() -> String {
-    live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
-    )))
+    live_source(super::ZONES_PANEL_SOURCE)
 }
 
-/// The ARM is pressed from this panel. `live_code` blanks string literals and cuts comments and
-/// this module, so neither the prose above nor a mention inside a title attribute can satisfy
-/// it — only a real call.
 #[test]
 fn the_panel_arms_the_tactical_draw() {
     let src = live_calls();
@@ -26,10 +19,6 @@ fn the_panel_arms_the_tactical_draw() {
     );
 }
 
-/// A BUTTON, not a keybinding — the constraint from `tactical_graphics.rs:175-182`. A chord in
-/// `input/window_keydown.rs` compiles but reddens `help_modal.rs`'s
-/// `every_binding_has_a_help_entry` and `no_two_listeners_claim_the_same_chord`, and that file
-/// is owned by another slice. The stable test id is what a CDP acceptance probe presses.
 #[test]
 fn the_trigger_is_a_button_with_a_stable_test_id() {
     let markup = live_markup();
@@ -49,9 +38,6 @@ fn the_trigger_is_a_button_with_a_stable_test_id() {
     );
 }
 
-/// The draft surface is wired to the same ops the zone draw uses, so an armed tactical draw is
-/// as visible and as cancellable as an armed zone draw. A tool that can be armed and not
-/// abandoned is its own trap.
 #[test]
 fn an_armed_draw_can_be_seen_finished_and_abandoned() {
     let src = live_calls();
@@ -68,10 +54,6 @@ fn an_armed_draw_can_be_seen_finished_and_abandoned() {
     }
 }
 
-/// The kind vocabulary is READ from the core, never restated here — the rule `zone_types()`
-/// already follows for `$defs/zoneRules`. A hand-typed list would drift from `min_points`, and
-/// `begin_tactical_draw` refuses a kind `min_points` does not know, so the drift would show up
-/// as a Draw button that silently does nothing.
 #[test]
 fn the_kind_list_is_the_cores_vocabulary() {
     let src = live_calls();

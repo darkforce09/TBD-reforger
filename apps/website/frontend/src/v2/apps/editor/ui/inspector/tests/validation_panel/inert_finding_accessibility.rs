@@ -1,3 +1,5 @@
+//! Validation panel inert finding accessibility tests.
+
 use super::{
     finding_is_routable, inert_finding_row_reason, register_route_probe, row_cursor_class,
     PanelFinding,
@@ -17,8 +19,6 @@ fn pf(rule_id: &str, subject_id: Option<&str>) -> PanelFinding {
     }
 }
 
-/// Positional / empty-id findings name nobody: inert with an explicit reason. Affordance stays
-/// glued to [`finding_is_routable`].
 #[test]
 fn a_positional_finding_row_is_inert_with_a_reason() {
     register_route_probe(std::rc::Rc::new(|_: &str| true));
@@ -39,7 +39,6 @@ fn a_positional_finding_row_is_inert_with_a_reason() {
         );
 }
 
-/// Named subject the probe refuses — same inert shape; reason names the refusal.
 #[test]
 fn an_unroutable_finding_row_is_inert_with_a_reason() {
     register_route_probe(std::rc::Rc::new(|_: &str| false));
@@ -56,15 +55,9 @@ fn an_unroutable_finding_row_is_inert_with_a_reason() {
     );
 }
 
-/// **THE shape pin.** `finding_row_view` must branch: selectable → `<button>`; inert →
-/// non-focusable element with `aria-disabled` + `inert_finding_row_reason`. Restoring the
-/// always-`<button>` shape makes this red (wave-115 MINOR class / T-758 peer).
 #[test]
 fn an_inert_finding_row_is_not_a_focusable_button() {
-    let lit = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/validation_panel.rs"
-    )));
+    let lit = live_source(super::VALIDATION_PANEL_SOURCE);
     let row = only_body(&lit, &format!("fn finding{}", "_row_view"));
     assert!(
         row.contains("if selectable"),
@@ -87,13 +80,9 @@ fn an_inert_finding_row_is_not_a_focusable_button() {
     );
 }
 
-/// Clickability remains the registered probe — shape follows that boolean, does not replace it.
 #[test]
 fn inert_finding_shape_still_asks_subject_id_routes() {
-    let src = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/validation_panel.rs"
-    )));
+    let src = live_code(super::VALIDATION_PANEL_SOURCE);
     let routable = only_body(&src, &format!("fn finding{}", "_is_routable"));
     assert!(
         routable.contains(&format!("subject_id{}", "_routes")),

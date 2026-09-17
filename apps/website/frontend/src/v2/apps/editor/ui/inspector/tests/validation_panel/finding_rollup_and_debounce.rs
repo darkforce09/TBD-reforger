@@ -1,11 +1,10 @@
+//! Validation panel finding rollup and debounce tests.
+
 use super::*;
 use serde_json::json;
 use website_map_engine::data::scenario::validate::default_registry;
 use website_map_engine::data::scenario::validate::EvalContext;
 
-/// A payload that fires `ORBAT-CALLSIGN-UNIQUE`: BLUFOR with two squads both called "Alpha" (the
-/// same shape as the rule's own trip fixture, inlined here since the rule constructor is private
-/// to the engine crate). `sq2` is the second row (index 1) and the reported offender.
 fn duplicate_callsign_payload() -> serde_json::Value {
     json!({
         "editor": {
@@ -29,8 +28,6 @@ fn pf(rule_id: &str, severity: Severity, subject_id: Option<&str>) -> PanelFindi
     }
 }
 
-/* ── Rollup counts ── */
-
 #[test]
 fn rollup_counts_by_severity() {
     let rows = vec![
@@ -52,7 +49,6 @@ fn rollup_counts_by_severity() {
 
 #[test]
 fn rollup_chip_text_is_the_one_line_summary() {
-    // The ticket's example shape: "3 errors · 5 warnings". Worst first; only non-zero appear.
     let mut rows = Vec::new();
     for i in 0..3 {
         rows.push(pf("E", Severity::Error, Some(&format!("e{i}"))));
@@ -71,7 +67,6 @@ fn rollup_chip_text_singular_and_omits_zero_severities() {
         pf("I", Severity::Info, Some("i1")),
     ];
     let r = Rollup::of(&rows);
-    // Exactly one of each present → singular; the absent Warning band is omitted entirely.
     assert_eq!(r.chip_text(), "1 error · 1 info");
 }
 
@@ -82,8 +77,6 @@ fn empty_rollup_is_empty_and_has_no_chip() {
     assert!(!r.has_blocking());
     assert_eq!(r.chip_text(), "");
 }
-
-/* ── grouping by rule with counts ── */
 
 #[test]
 fn group_by_rule_groups_and_counts_worst_first() {
@@ -96,7 +89,6 @@ fn group_by_rule_groups_and_counts_worst_first() {
     ];
     let groups = group_by_rule(&rows);
     assert_eq!(groups.len(), 2);
-    // Errors sort ahead of warnings regardless of first-seen order.
     assert_eq!(groups[0].rule_id, "ERR-RULE");
     assert_eq!(groups[0].count(), 2);
     assert_eq!(groups[0].severity, Severity::Error);
@@ -104,13 +96,8 @@ fn group_by_rule_groups_and_counts_worst_first() {
     assert_eq!(groups[1].count(), 3);
 }
 
-/* ── click-to-select routing: subject_id → selection call pins ── */
-
 #[test]
 fn a_finding_with_a_subject_id_names_an_offender() {
-    // Click-to-select routes on `subject_id` (T-657). This is the FACT that the rule kept an
-    // offender id — NOT the claim that the row is clickable; that one belongs to the router
-    // (`finding_is_routable`), see `w129_the_panel_asks_the_router`.
     let f = pf("ORBAT-SLOT-RESOLVES", Severity::Error, Some("slot-7"));
     assert!(f.is_selectable());
     assert_eq!(f.subject_id.as_deref(), Some("slot-7"));
@@ -118,8 +105,6 @@ fn a_finding_with_a_subject_id_names_an_offender() {
 
 #[test]
 fn a_positional_finding_names_no_offender() {
-    // V2-FACTION-MAX / V4-SCHEMA-VERSION carry no entity id — their row renders, and renders
-    // inert, because there is nothing for the router to resolve.
     let f = pf("V2-FACTION-MAX", Severity::Warning, None);
     assert!(!f.is_selectable());
     let blank = pf("X", Severity::Warning, Some(""));
@@ -128,8 +113,6 @@ fn a_positional_finding_names_no_offender() {
 
 #[test]
 fn subject_id_survives_the_flatten_from_an_engine_finding() {
-    // The click-to-select KEY must survive `PanelFinding::from_finding` — the panel selects on
-    // the flattened row, so if the flatten dropped `subject_id`, click-to-select would be dead.
     let payload = duplicate_callsign_payload();
     let engine_findings = default_registry().evaluate(&payload);
     let rows: Vec<PanelFinding> = engine_findings
@@ -140,38 +123,29 @@ fn subject_id_survives_the_flatten_from_an_engine_finding() {
         .iter()
         .find(|r| r.rule_id == "ORBAT-CALLSIGN-UNIQUE")
         .expect("callsign finding present");
-    // The T-655 pointer fix: positional subject, stable id in subject_id (the selection key).
     assert_eq!(callsign.subject, "/editor/squads/1");
     assert_eq!(callsign.subject_id.as_deref(), Some("sq2"));
     assert!(callsign.is_selectable());
 }
 
-/* ── debounce behaviour (pure timer logic) ── */
-
 #[test]
 fn debounce_fires_once_after_the_trailing_window() {
     let mut d = Debouncer::new(REEVAL_DEBOUNCE_MS);
     d.bump(1000.0);
-    // Not yet — the window has not elapsed.
     assert!(!d.should_fire(1000.0 + REEVAL_DEBOUNCE_MS - 1.0));
-    // Exactly at the window → due.
     assert!(d.should_fire(1000.0 + REEVAL_DEBOUNCE_MS));
     assert!(d.take_fire());
-    // Consumed — a second take with nothing pending is a no-op.
     assert!(!d.take_fire());
     assert!(!d.should_fire(1000.0 + 10_000.0));
 }
 
 #[test]
 fn debounce_a_burst_collapses_to_one_trailing_fire() {
-    // The core contract: many bumps in a burst → ONE evaluation, the window after the LAST bump.
     let mut d = Debouncer::new(REEVAL_DEBOUNCE_MS);
     d.bump(1000.0);
     d.bump(1100.0);
     d.bump(1200.0); // last bump of the burst
-                    // A check 250 ms after the FIRST bump must NOT fire — a newer bump reset the window.
     assert!(!d.should_fire(1000.0 + REEVAL_DEBOUNCE_MS));
-    // 250 ms after the LAST bump → fires exactly once.
     assert!(d.should_fire(1200.0 + REEVAL_DEBOUNCE_MS));
     assert!(d.take_fire());
     assert!(!d.is_pending());
@@ -184,16 +158,8 @@ fn debounce_is_idle_until_first_bump() {
     assert!(!d.should_fire(1_000_000.0));
 }
 
-/* ── NO SEVERITY ON CORRECT INPUT: a clean payload → an empty panel ── */
-
 #[test]
 fn a_clean_payload_produces_an_empty_panel() {
-    // The ticket's hard rule, asserted at the panel level: a clean, well-formed mission run
-    // through the SAME registry the panel uses yields zero findings, so `Rollup::is_empty()` and
-    // the panel shows the quiet empty state — never a severity on correct input.
-    //
-    // "Clean" per the T-657 tightening: every squad has an identity (callsign) AND a leader; every
-    // slot resolves a role AND a squad; ≤4 factions; a valid schemaVersion; slots in bounds.
     let clean = json!({
         "schemaVersion": 1,
         "map": {"terrain": "everon"},
@@ -220,8 +186,6 @@ fn a_clean_payload_produces_an_empty_panel() {
 
 #[test]
 fn a_clean_payload_stays_clean_with_a_supplied_catalogue() {
-    // Same clean mission but now with a slot that carries an assetId that DOES resolve in the
-    // supplied catalogue — the T-658 context path must also produce no findings on correct input.
     let asset = "{ABC}Prefabs/Characters/Rifleman.et";
     let clean = json!({
         "schemaVersion": 1,
@@ -247,13 +211,8 @@ fn a_clean_payload_stays_clean_with_a_supplied_catalogue() {
     );
 }
 
-/* ── fire the rollup rule once: perturb → fail → restore (the ticket's fired proof) ── */
-
 #[test]
 fn perturbing_a_clean_mission_fires_the_rollup_then_restoring_clears_it() {
-    // The ticket asks the rollup be fired once. Start clean (empty rollup), PERTURB the mission
-    // into a defect (a second squad sharing the callsign on the same side → ORBAT-CALLSIGN-UNIQUE
-    // fires), assert the rollup now counts it, then RESTORE and assert the rollup is empty again.
     let base_squads = |dup: bool| {
         let second = if dup { "Alpha" } else { "Bravo" };
         json!({
@@ -273,7 +232,6 @@ fn perturbing_a_clean_mission_fires_the_rollup_then_restoring_clears_it() {
         })
     };
 
-    // Clean baseline: distinct callsigns → empty rollup.
     let clean_rows: Vec<PanelFinding> = default_registry()
         .evaluate(&base_squads(false))
         .iter()
@@ -284,7 +242,6 @@ fn perturbing_a_clean_mission_fires_the_rollup_then_restoring_clears_it() {
         "baseline must be clean; got {clean_rows:?}"
     );
 
-    // Perturb: duplicate callsign on one side → the rule fires; the rollup counts a warning.
     let dirty_rows: Vec<PanelFinding> = default_registry()
         .evaluate(&base_squads(true))
         .iter()
@@ -302,10 +259,8 @@ fn perturbing_a_clean_mission_fires_the_rollup_then_restoring_clears_it() {
         "the perturbation must fire ORBAT-CALLSIGN-UNIQUE; got {dirty_rows:?}"
     );
     assert_eq!(dirty_rollup.warnings, 1);
-    // The rollup chip renders the fired count.
     assert_eq!(dirty_rollup.chip_text(), "1 warning");
 
-    // Restore: back to distinct callsigns → the rollup is empty again.
     let restored_rows: Vec<PanelFinding> = default_registry()
         .evaluate(&base_squads(false))
         .iter()
@@ -316,8 +271,6 @@ fn perturbing_a_clean_mission_fires_the_rollup_then_restoring_clears_it() {
         "restoring must clear the rollup; got {restored_rows:?}"
     );
 }
-
-/* ── evaluate_source: the panel's engine call is defensive + threads the catalogue ── */
 
 #[test]
 fn evaluate_source_runs_the_engine_and_flattens() {
@@ -331,24 +284,16 @@ fn evaluate_source_runs_the_engine_and_flattens() {
 
 #[test]
 fn evaluate_now_is_empty_without_a_registered_source() {
-    // On the host (and pre-mount) no payload source is registered, so the panel evaluates to
-    // empty rather than panicking — the "native build simply sees None" contract.
     assert!(evaluate_now().is_empty());
 }
 
 #[test]
 fn click_to_select_is_a_no_op_without_a_registered_router() {
-    // The click-to-select seam: with no router registered (host / pre-mount) a finding click is
-    // a safe no-op returning false — it never panics and never touches a disposed doc. On wasm
-    // the router (installed from `mission_editor.rs`) does the real subject_id → selection route.
     assert!(!route_select_by_subject_id("slot-7"));
-    // A registered router IS consulted, and its verdict is returned verbatim (id-shape agnostic).
     register_select_by_id(std::rc::Rc::new(|id: &str| id == "slot-7"));
     assert!(route_select_by_subject_id("slot-7"));
     assert!(!route_select_by_subject_id("slot-other"));
 }
-
-/* ── the severity ladder legend is complete ── */
 
 #[test]
 fn the_severity_ladder_covers_every_severity_with_a_meaning() {
@@ -360,7 +305,6 @@ fn the_severity_ladder_covers_every_severity_with_a_meaning() {
         assert!(!rung.label.is_empty());
         assert!(!rung.meaning.is_empty(), "{rung:?} needs a meaning");
     }
-    // The tag hook agrees with the engine's spelling.
     assert_eq!(severity_tag(Severity::Error), "error");
     assert_eq!(severity_tag(Severity::Warning), "warning");
     assert_eq!(severity_tag(Severity::Info), "info");

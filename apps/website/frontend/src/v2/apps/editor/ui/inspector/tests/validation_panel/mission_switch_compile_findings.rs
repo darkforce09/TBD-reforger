@@ -1,3 +1,5 @@
+//! Validation panel mission switch compile findings tests.
+
 use super::{
     clear_compile_findings, compile_findings, evaluate_now, publish_compile_findings, PanelFinding,
 };
@@ -11,13 +13,10 @@ fn mission_a_compile_row() -> PanelFinding {
         primitive: Primitive::PerObjectInvariant,
         message: "mission A squad dropped".into(),
         subject: "A/Alpha".into(),
-        // An id that exists only in mission A — clicking it on B selects nothing.
         subject_id: Some("mission-a-squad-1".into()),
     }
 }
 
-/// Behaviour: hydrate clear drops the previous mission's compile findings so evaluate_now
-/// cannot surface their subject_ids on the next mission.
 #[test]
 fn a_second_mission_does_not_inherit_the_previous_missions_compile_findings() {
     publish_compile_findings(vec![mission_a_compile_row()]);
@@ -31,7 +30,6 @@ fn a_second_mission_does_not_inherit_the_previous_missions_compile_findings() {
         Some("mission-a-squad-1")
     );
 
-    // Mission B's editor hydrate — the production call site in MissionEditorPage.
     clear_compile_findings();
 
     assert!(
@@ -47,18 +45,10 @@ fn a_second_mission_does_not_inherit_the_previous_missions_compile_findings() {
     );
 }
 
-/// Class-R — the clear is the named hydrate seam, not an accidental empty publish buried
-/// only in tests.
 #[test]
 fn clear_compile_findings_is_the_hydrate_reset_seam() {
-    // wave-136 F3 — scope to the production body only. Whole-file `src.contains(…)` self-feeds
-    // off this assert's own string literal, and a string decoy in production greened without
-    // `live_code`.
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let src = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/validation_panel.rs"
-    )));
+    let src = live_code(super::VALIDATION_PANEL_SOURCE);
     let body = only_body(&src, "pub fn clear_compile_findings(");
     assert!(
             body.contains("Vec::new()"),
