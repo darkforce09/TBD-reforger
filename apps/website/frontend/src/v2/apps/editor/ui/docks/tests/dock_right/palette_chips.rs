@@ -85,10 +85,7 @@ fn custom_chip_only_under_groups() {
 /// prose (which names the bare function) never contains.
 #[test]
 fn vehicles_tab_places_instead_of_promising() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     let stub = |what: &str, ticket: &str| format!("{what} placement {} {ticket}.", "lands in");
     let arm = |f: &str| format!("armed_placement::{f}{}", "(payload.clone())");
 
@@ -143,10 +140,7 @@ fn vehicles_tab_places_instead_of_promising() {
 /// Character/Object free to grow `.clone()` while this pin stayed green.
 #[test]
 fn favourites_place_arm_stays_clone_free() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     // Fragment the marker — a contiguous fn-name needle in this test would be a second hit.
     let marker = format!("{}{}", "fn arm_favourite_place", "(");
     let fav_arm = crate::v2::core::test_support::class_r_scrub::only_body(SRC, &marker);
@@ -222,10 +216,7 @@ fn apply_eden_chip_opfor_sets_active_side() {
 fn objects_chip_enables_mode_without_clobbering_side() {
     // T-254 — stub constant name must not remain (split so this assert's own source cannot
     // false-fail the contains check).
-    let src = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    let src = DOCK_RIGHT_PRODUCTION_SOURCE;
     let stub_const = ["OBJECTS_", "COMING_", "SOON"].concat();
     assert!(
         !src.contains(&stub_const),

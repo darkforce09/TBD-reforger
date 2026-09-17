@@ -21,10 +21,7 @@ fn triggers_tab_maps_to_its_own_submode() {
     // exists in the enum, not just the tab). Source-inspected because `PaletteKind` is a private
     // enum a native test cannot name without pulling the wasm-gated module graph. The needle is
     // assembled so this test's own text is not the thing that satisfies the check.
-    let src = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    let src = DOCK_RIGHT_PRODUCTION_SOURCE;
     let variant = ["PaletteKind", "::", "Trigger"].concat();
     assert!(
         src.contains(&variant),
@@ -41,10 +38,7 @@ fn triggers_tab_maps_to_its_own_submode() {
 /// the top of this file). Each needle is split and re-joined.
 #[test]
 fn triggers_tab_is_wired_not_stubbed() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     let call = |f: &str| format!("ops::{f}(");
 
     // The tab strip renders a Triggers tab at index 5.
@@ -108,10 +102,7 @@ fn triggers_tab_is_wired_not_stubbed() {
 ///     `zone_draw`/`zone_polygon` functions with the target flag.
 #[test]
 fn trigger_draw_is_second_consumer_of_the_zone_tool() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     let zones_src = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/ui/inspector/zones_panel.rs"
@@ -197,10 +188,7 @@ fn trigger_draw_is_second_consumer_of_the_zone_tool() {
 /// native test (below) and the store's `owner_edge_assigns_clears_and_tolerates_dangling`.
 #[test]
 fn owner_line_uses_the_selection_overlay_idiom() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     // Every SRC needle assembled at run time — this test's own source is part of the haystack, so
     // a contiguous literal would make a presence check unpassable-by-code (satisfied by the test
     // itself). The overlay is the ruler idiom: a non-interactive SVG projected by the pure helper.

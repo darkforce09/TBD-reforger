@@ -1,16 +1,14 @@
+use super::tests::DOCK_RIGHT_PRODUCTION_SOURCE;
 use super::{TAB_CELL_OFF, TAB_CELL_ON, TAB_CELL_VERB, TAB_COUNT, TAB_GROUP, TAB_STRIP};
 use crate::v2::apps::editor::shell::layout::{tw_len_px, DOCK_PX, DOCK_R, STUB_PX};
 
 /// The production half of this file — everything above the first test module, so a needle here
 /// cannot satisfy itself (the T-759 hollow-pin trap).
 fn production() -> &'static str {
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ))
-    .split("#[cfg(test)]")
-    .next()
-    .expect("the production half precedes the test modules")
+    DOCK_RIGHT_PRODUCTION_SOURCE
+        .split("#[cfg(test)]")
+        .next()
+        .expect("the production half precedes the test modules")
 }
 
 /// The strip's rendered width, in CSS px, from the classes themselves.

@@ -217,10 +217,7 @@ fn picker_has_one_row_per_canonical_icon() {
 #[test]
 fn picker_rows_draw_glyph_svgs_and_arm_the_canonical_slug() {
     use crate::v2::core::test_support::class_r_scrub::only_body;
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
 
     // `markers_panel` has two definitions (the wasm picker + the native shell), so it is not a
     // unique `only_body` anchor. The picker rows live in the ONE `<ul aria-label="Marker icons">`
@@ -382,10 +379,7 @@ fn marker_writes_go_to_the_briefing_not_the_root_map() {
 /// fragment-assembled so this module is not its own haystack.
 #[test]
 fn marker_attributes_selects_by_faction_id_and_id() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     let production = SRC
         .split("#[cfg(test)]")
         .next()

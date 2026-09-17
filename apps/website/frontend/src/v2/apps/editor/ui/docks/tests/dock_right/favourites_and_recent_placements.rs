@@ -242,10 +242,7 @@ fn stale_favourite_is_kept_and_marked_not_dropped() {
 /// presence check unfailable.
 #[test]
 fn favourites_tab_is_wired_not_stubbed() {
-    const SRC: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const SRC: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
 
     assert!(
         SRC.contains(&format!("tab_btn(6, {:?})", "Favourites")),
@@ -304,10 +301,7 @@ fn favourites_tab_is_wired_not_stubbed() {
 #[test]
 fn favourites_panel_failure_arm_has_retry() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let code = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let body = only_body(&code, "fn favourites_panel(");
     let failed_get = format!("{}{}", "registry_failed.", "get()");
     let bump = format!("{}{}", "registry_fetch_gen.", "update(");
@@ -320,10 +314,7 @@ fn favourites_panel_failure_arm_has_retry() {
         "T-750: the failure arm must bump registry_fetch_gen on Retry"
     );
     // User-visible copy: live_source keeps string literals; still cut test module.
-    let sourced = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let sourced = live_source(DOCK_RIGHT_PRODUCTION_SOURCE);
     let sourced_body = only_body(&sourced, "fn favourites_panel(");
     let retry = format!("{}{}", "\"", "Retry\"");
     assert!(
@@ -348,10 +339,7 @@ fn favourites_panel_failure_arm_has_retry() {
 #[test]
 fn catalog_failure_view_names_cause_and_offers_retry() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let code = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let body = only_body(&code, "fn catalog_failure_view(");
     let cause_branch = format!("{}{}", "no_modpack.", "get()");
     let bump = format!("{}{}", "registry_fetch_gen.", "update(");
@@ -364,10 +352,7 @@ fn catalog_failure_view_names_cause_and_offers_retry() {
         "T-800: Retry must reuse the T-750 mechanism — bump registry_fetch_gen, not a fresh fetch"
     );
     // User-visible copy on live_source (literals kept, test module still cut).
-    let sourced = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let sourced = live_source(DOCK_RIGHT_PRODUCTION_SOURCE);
     let sourced_body = only_body(&sourced, "fn catalog_failure_view(");
     let retry = format!("{}{}", "\"", "Retry\"");
     let modpack_word = "No modpack is configured";
@@ -395,26 +380,25 @@ fn catalog_failure_view_names_cause_and_offers_retry() {
 #[test]
 fn both_catalog_failed_arms_use_the_named_failure_view() {
     use crate::v2::core::test_support::class_r_scrub::{live_source, only_body};
-    let sourced = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
-    let dock = only_body(&sourced, "pub fn DockRight(");
-    // Two call sites: character catalog + vehicle catalog, each naming its noun.
-    let calls = dock.matches("catalog_failure_view(").count();
+    let dock_source = live_source(include_str!("../../dock_right/shell/layout.rs"));
+    let factions_source = live_source(include_str!("../../dock_right/shell/factions_panel.rs"));
+    let dock = only_body(&dock_source, "pub fn DockRight(");
+    let factions = only_body(&factions_source, "fn factions_panel(");
+    let calls = dock.matches("catalog_failure_view(").count()
+        + factions.matches("catalog_failure_view(").count();
     assert!(
         calls >= 2,
         "T-800: both the Factions and Vehicles Failed arms must call catalog_failure_view \
          (found {calls}); a hand-rolled second arm is how the two drift"
     );
     assert!(
-        dock.contains("\"asset catalog\"") && dock.contains("\"vehicle catalog\""),
+        factions.contains("\"asset catalog\"") && dock.contains("\"vehicle catalog\""),
         "T-800: each arm must name its own palette so the copy reads in place"
     );
     // The flat dead-end line the review flagged must not ship anywhere in the module's views.
     let dead_line = format!("{}{}", "Could not load ", "the catalog.\"");
     assert!(
-        !sourced.contains(&dead_line),
+        !dock_source.contains(&dead_line) && !factions_source.contains(&dead_line),
         "T-800: the flat 'Could not load the catalog.' line must be gone from every live view \
          (F-05/F-21); it was the cause-less dead end this ticket replaced"
     );
@@ -428,21 +412,21 @@ fn both_catalog_failed_arms_use_the_named_failure_view() {
 #[test]
 fn grammar_hint_hides_while_the_tree_is_failed() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
-    let dock = only_body(&code, "pub fn DockRight(");
+    let dock_code = live_code(include_str!("../../dock_right/shell/layout.rs"));
+    let factions_code = live_code(include_str!("../../dock_right/shell/factions_panel.rs"));
+    let dock = only_body(&dock_code, "pub fn DockRight(");
+    let factions = only_body(&factions_code, "fn factions_panel(");
     // Both tab bodies must gate the hint on a not-Failed check. `.then(search_grammar_hint)` is
     // the render, guarded by a `matches!(… CatalogState::Failed)` negation.
-    let gated = dock.matches("then(search_grammar_hint)").count();
+    let gated = dock.matches("then(search_grammar_hint)").count()
+        + factions.matches("then(search_grammar_hint)").count();
     assert!(
         gated >= 2,
         "T-800: both the Factions and Vehicles hint renders must be state-gated (found {gated})"
     );
     // And the healthy render survives: the const is still referenced (filter help stays).
     assert!(
-        dock.contains("search_grammar_hint"),
+        dock.contains("search_grammar_hint") && factions.contains("search_grammar_hint"),
         "T-800: the hint must remain for the healthy state — it is filter help, not chrome"
     );
 }
@@ -489,10 +473,7 @@ fn recently_placed_is_head_first_deduped_and_capped() {
 #[test]
 fn factions_tab_draws_the_merged_tree() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let code = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let dock = only_body(&code, "pub fn DockRight(");
     assert!(
         dock.contains("build_faction_catalog_tree("),
@@ -518,10 +499,7 @@ fn factions_tab_draws_the_merged_tree() {
 #[test]
 fn a_merged_leaf_press_feeds_recently_placed() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let code = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let rows = only_body(&code, "fn faction_palette_rows(");
     assert!(
         rows.contains("arm_favourite_place(") && rows.contains("record_recent("),
@@ -546,10 +524,7 @@ fn a_merged_leaf_press_feeds_recently_placed() {
 #[test]
 fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
-    let dock = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let dock = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
 
     // The dock installs the recorder (register + on_cleanup unregister) at mount, and the closure
     // routes through the pure transform via `record_recent`. Extracted from `DockRight`'s body so
@@ -612,10 +587,7 @@ fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
 #[test]
 fn favourites_and_history_share_one_tab() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let code = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let dock = only_body(&code, "pub fn DockRight(");
     // Tab 6 calls BOTH panels behind the `history_open` toggle.
     assert!(
@@ -627,10 +599,7 @@ fn favourites_and_history_share_one_tab() {
         "T-809: a subtab toggle selects Favourites vs History within the one tab"
     );
     // The subtab is user-visible copy (on live_source: literals kept, comments cut).
-    let sourced = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let sourced = live_source(DOCK_RIGHT_PRODUCTION_SOURCE);
     assert!(
         sourced.contains("\"Recently placed\""),
         "T-809: the History subtab must be labelled for the operator"
@@ -642,30 +611,26 @@ fn favourites_and_history_share_one_tab() {
 #[test]
 fn vehicles_tab_is_catalog_only_without_the_placed_strip() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let code = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let dock = only_body(&code, "pub fn DockRight(");
     assert!(
         !dock.contains("placed_vehicles_panel("),
         "T-818: the Vehicles tab must NOT host placed_vehicles_panel — strip deleted"
     );
     // live_source keeps string literals: the strip's visible "Placed" heading must be gone too.
-    let sourced = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let sourced = live_source(DOCK_RIGHT_PRODUCTION_SOURCE);
     let dock_src = only_body(&sourced, "pub fn DockRight(");
     assert!(
         !dock_src.contains("\"Placed\""),
         "T-818: no Placed section heading anywhere in DockRight"
     );
-    // Its palette renders through the recent-feeding path (so a vehicle place updates history).
-    let vehicles_uses_faction_rows = dock.matches("faction_palette_rows(").count() >= 3; // 2 Factions arms + ≥1 Vehicles arm
+    // The Vehicles tab and both Factions tree arms record recent placement.
+    let factions_code = live_code(include_str!("../../dock_right/shell/factions_panel.rs"));
+    let factions = only_body(&factions_code, "fn factions_panel(");
     assert!(
-        vehicles_uses_faction_rows,
-        "T-809: the Vehicles tab must render through faction_palette_rows so a place feeds history"
+        dock.matches("faction_palette_rows(").count() >= 2
+            && factions.matches("faction_palette_rows(").count() >= 2,
+        "T-809: the Vehicles and Factions trees must render through faction_palette_rows"
     );
     assert!(
         sourced.contains("tab_btn(1, \"Vehicles\")"),
@@ -684,10 +649,7 @@ fn vehicles_tab_is_catalog_only_without_the_placed_strip() {
 /// Delete the placeholder or the hint row and this goes red.
 #[test]
 fn every_asset_search_box_advertises_the_grammar() {
-    const FULL: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ));
+    const FULL: &str = DOCK_RIGHT_PRODUCTION_SOURCE;
     let marker = format!("{}{}", "#[cfg", "(test)]");
     let src = &FULL[..FULL.find(&marker).expect("the test module marker exists")];
     // Guard the guard: the truncation must actually have removed this module.

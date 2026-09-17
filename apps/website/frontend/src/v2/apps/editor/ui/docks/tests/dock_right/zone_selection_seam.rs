@@ -1,15 +1,13 @@
+use super::tests::DOCK_RIGHT_PRODUCTION_SOURCE;
 use super::{register_select_zone, route_select_zone, ZONES_TAB};
 
 /// The production half of this file — everything above the first test module, so a needle here
 /// cannot satisfy itself (the T-759 hollow-pin trap).
 fn production() -> &'static str {
-    include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    ))
-    .split("#[cfg(test)]")
-    .next()
-    .expect("the production half precedes the test modules")
+    DOCK_RIGHT_PRODUCTION_SOURCE
+        .split("#[cfg(test)]")
+        .next()
+        .expect("the production half precedes the test modules")
 }
 
 /// The seam, end to end: with no panel mounted the route reports that it selected NOTHING (which

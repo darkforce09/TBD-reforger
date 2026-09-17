@@ -32,10 +32,7 @@ fn compositions_tab_is_wired_not_stubbed() {
     // presence check — the T-759 hollow-pin class. `live_source` blanks comments and KEEPS string
     // literals, which the `"Compositions"` / `ops::<fn>(` needles below need.
     use crate::v2::core::test_support::class_r_scrub::live_source;
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let src = live_source(DOCK_RIGHT_PRODUCTION_SOURCE);
     let src = src.as_str();
     // The library mutators are the engine's, aliased `engine_ops`; the arm is still the
     // frontend's, aliased `ops`. Both read `<alias>::<fn>(`.
@@ -352,10 +349,7 @@ fn composition_arm_rides_the_shared_pending_machine() {
     // cannot contain this assertion's own text, only the real `armed_placement::armed_composition_id()` call
     // in the panel. Whole-file (not `only_body`): `compositions_panel` has a wasm def AND a
     // native stub, which `only_body` rejects as a shadow pair by design.
-    let dock = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/dock_right.rs"
-    )));
+    let dock = live_code(DOCK_RIGHT_PRODUCTION_SOURCE);
     let gated = format!("armed_{}_id()", "composition");
     assert!(
         dock.contains(&gated),
