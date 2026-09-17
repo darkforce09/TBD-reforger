@@ -12,8 +12,6 @@
 //! never a frame loop of its own. Native builds render nothing (no engine, no `window`); the
 //! geometry is proven engine-side.
 
-// The wasm host wires the live path; on native the overlay renders nothing and the installs have
-// no caller, so every item below reads as dead there.
 #![allow(dead_code)]
 
 use leptos::prelude::*;
@@ -85,20 +83,12 @@ pub fn LosOverlay(
     /// even with a still pointer.
     tick: RwSignal<u64>,
 ) -> impl IntoView {
-    // The overlay's three draw lists, ALL as `Vec` so each `<For each>` is a plain field access (no
-    // turbofish inside the view macro): the placed shot (0 or 1 `ProjectedShot`), the rubber-band
-    // line while capturing (0 or 1 `[x1,y1,x2,y2]`), and the profile-panel pairs (0 or 1
-    // `(ProjectedShot, ProfileChart)`). All derived from the current state + camera + live DEM
-    // sampler. One `derived()` call feeds three thin accessor closures below so the heavy compute
-    // runs once per reactive tick.
     #[allow(clippy::type_complexity)]
     let derived = move || -> (
         Vec<ProjectedShot>,
         Vec<(f64, f64, f64, f64)>,
         Vec<(ProjectedShot, ProfileChart)>,
     ) {
-        // Subscribe to all three heartbeats so the closure re-runs on pan (cursor), zoom (hud) and
-        // any state edit (tick).
         let cur = cursor.get();
         if let Some(h) = debug_hud {
             let _ = h.get();
@@ -134,8 +124,6 @@ pub fn LosOverlay(
                 let p = cam.project([x, y, 0.0]);
                 (p[0], p[1])
             };
-            // Rubber-band: a placed observer awaiting its target → line from the observer to the
-            // live cursor, so the operator aims the target click.
             let mut rubber = Vec::new();
             if let (Some((ox, oy, _)), None) = (state.pending_obs, state.shot) {
                 if let Some((cwx, cwy, _)) = cur {
@@ -144,7 +132,6 @@ pub fn LosOverlay(
                     rubber.push((x1, y1, x2, y2));
                 }
             }
-            // A completed shot → project it + build the profile panel from the live DEM sampler.
             let (mut shots, mut panels) = (Vec::new(), Vec::new());
             if let Some(shot) = state.shot {
                 let profile = build_profile(&shot);
@@ -155,7 +142,6 @@ pub fn LosOverlay(
                     EYE_HEIGHT_TARGET_M,
                     &project,
                 );
-                // The object layer: terrain and objects, marker at the nearer block.
                 object_verdict::apply_objects(
                     &mut proj,
                     crate::v2::apps::editor::input::tools::los_world_wasm::object_verdict(&shot),
@@ -180,12 +166,8 @@ pub fn LosOverlay(
     };
 
     view! {
-        // Full-bleed, non-interactive overlay. z-10 sits it in the same band as the ruler overlay /
-        // MapGridRefs — over the map, under the chrome docks. `pointer-events-none` so it never eats
-        // a map gesture (the click capture is the map's own pointer handlers, not this SVG).
         <div data-los-overlay class="pointer-events-none absolute inset-0 z-10">
             <svg class="absolute inset-0" width="100%" height="100%">
-                // Rubber-band preview — observer → live cursor while awaiting the target (dashed).
                 <For
                     each=move || derived().1
                     key=|rb| format!("{:.0}:{:.0}:{:.0}:{:.0}", rb.0, rb.1, rb.2, rb.3)
@@ -201,9 +183,6 @@ pub fn LosOverlay(
                         stroke-dasharray="4 4"
                     />
                 </For>
-                // The placed sight line + endpoint dots + blocking marker. Keyed by world coord
-                // (T-727) so re-placing the target swaps the node cleanly. Colour encodes the verdict:
-                // clear → success, blocked → error, unknown → neutral outline.
                 <For
                     each=move || derived().0
                     key=|shot| shot.key.clone()
@@ -217,7 +196,6 @@ pub fn LosOverlay(
                         class=los_line_class(object_verdict::styling_of(&shot))
                         stroke-width="1.5"
                     />
-                    // Observer dot.
                     <circle
                         cx=move || format!("{:.1}", shot.obs_px)
                         cy=move || format!("{:.1}", shot.obs_py)
@@ -225,7 +203,6 @@ pub fn LosOverlay(
                         class="fill-surface-container-lowest stroke-primary"
                         stroke-width="1.5"
                     />
-                    // Target dot.
                     <circle
                         cx=move || format!("{:.1}", shot.tgt_px)
                         cy=move || format!("{:.1}", shot.tgt_py)
@@ -233,7 +210,6 @@ pub fn LosOverlay(
                         class=los_dot_class(object_verdict::styling_of(&shot))
                         stroke-width="1.5"
                     />
-                    // Blocking-point marker (only when blocked).
                     {shot.block_px.map(|(bx, by)| view! {
                         <circle
                             cx=format!("{bx:.1}")
@@ -245,8 +221,6 @@ pub fn LosOverlay(
                     })}
                 </For>
             </svg>
-            // The inline profile panel (Decision 2) — anchored by the TARGET point, keyed by world
-            // coord. A small elevation chart (ground curve + sight line) with the verdict header.
             <For
                 each=move || derived().2
                 key=|(shot, _)| shot.key.clone()
@@ -254,12 +228,8 @@ pub fn LosOverlay(
             >
                 {
                     let (shot, chart) = panel;
-                    // Anchor the panel just above-right of the target; nudge so it doesn't sit on the
-                    // dot. Positioned in CSS px from the projected target pixel.
                     let left = shot.tgt_px + 12.0;
                     let top = shot.tgt_py - PANEL_H_PX - 28.0;
-                    // T-090.12.5 — terrain ∧ objects: the header names the nearer blocker (or the
-                    // canopy concealment / "objects not loaded"); styling follows the pair.
                     let style = object_verdict::styling_of(&shot);
                     let verdict_text = object_verdict::format_combined(
                         &object_verdict::combine(shot.verdict, shot.objects.clone()),
@@ -279,7 +249,6 @@ pub fn LosOverlay(
                                 width=format!("{PANEL_W_PX:.0}")
                                 height=format!("{PANEL_H_PX:.0}")
                             >
-                                // The straight sight line (drawn first, under the ground).
                                 <polyline
                                     points=chart.line.clone()
                                     fill="none"
@@ -287,14 +256,12 @@ pub fn LosOverlay(
                                     stroke-width="1.5"
                                     stroke-dasharray="3 3"
                                 />
-                                // The terrain ground curve.
                                 <polyline
                                     points=chart.ground.clone()
                                     fill="none"
                                     class="stroke-on-surface-variant"
                                     stroke-width="1.5"
                                 />
-                                // Blocking marker on the ground curve, when blocked.
                                 {chart.block.map(|(bx, by)| view! {
                                     <circle
                                         cx=format!("{bx:.1}")

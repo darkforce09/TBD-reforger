@@ -108,10 +108,8 @@ pub fn object_verdict(shot: &LosShot) -> ObjectVerdict {
                 occ.kind_of(b.pid).unwrap_or("object").to_string(),
             )
         });
-        // A clear shot names its panes: one cheap trace (µs) only when something conceals.
         let glass_panes = if los.verdict == WorldVerdict::Clear && los.concealment >= 0.005 {
             #[allow(clippy::cast_possible_truncation)]
-            // Both faces of a pane report a Glass event: count panes, not faces.
             let panes: std::collections::HashSet<(String, u32, Owner)> = occ
                 .trace(obs, tgt)
                 .0
@@ -188,8 +186,6 @@ pub fn tick_object_wash(e: &mut RenderEngine) {
             return;
         };
         if wash.pass.done {
-            // T-090.12.5 — a finished wash retests its provisional cells when the occluder's
-            // residency signature moves (descriptors / BLAS fetched after the pass ran).
             let sig = with_occluder(|o| (o.chunk_count(), o.expanded_count(), o.blas_count()));
             let Some(sig) = sig else {
                 return;
@@ -269,9 +265,6 @@ pub fn hud_suffix() -> String {
 /// JSON snapshot of the live wash for the headless probes — `null` when no wash is live.
 #[must_use]
 pub fn wash_status_json() -> String {
-    // The occluder's residency alongside the census: `pendingBlas` / `pendingDesc` separate
-    // "BLAS still in flight" from "segment crossed a chunk residency never loaded" (both are
-    // provisional cells; only the first resolves without a camera move).
     let occ = with_occluder(|o| {
         let ids = o.resident_chunk_ids();
         let want = o.wanted(&ids, usize::MAX);
@@ -292,7 +285,6 @@ pub fn wash_status_json() -> String {
             |wash| {
                 let (tested, queued, cursor) = wash.pass.progress();
                 let (clear, hidden, concealed, provisional, untested) = wash.pass.counts();
-                // Why is the first provisional cell provisional? Its coverage, verbatim.
                 let sample = wash
                     .pass
                     .cells

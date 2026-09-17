@@ -553,14 +553,13 @@ mod t636_band_readers_agree {
             1,
             "scrub anchor must be unambiguous"
         );
-        // T-934.13 — the palette-drop `on_canvas` gate rides the pointerup closure, which moved
-        // verbatim to `editor/input/pointer_gestures.rs`; append it (scrubbed separately) so the reader
-        // is still examined wherever it lives.
+        // The palette-drop `on_canvas` gate lives in the pointer-up handler. Scrub it separately
+        // so the reader is examined with the page source.
         let mut editor =
             live_code(&raw_editor[raw_editor.find(anchor.as_str()).expect("anchor present")..]);
         editor.push_str(&live_code(include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/src/v2/apps/editor/input/pointer_gestures.rs"
+            "/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs"
         ))));
 
         assert!(
