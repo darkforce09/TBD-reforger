@@ -8,7 +8,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use tbd_tickets::{StatusName, Ticket};
+use ticket_engine::{StatusName, Ticket};
 
 use crate::board;
 use crate::corpus::Corpus;

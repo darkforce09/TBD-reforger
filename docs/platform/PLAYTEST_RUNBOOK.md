@@ -45,7 +45,7 @@ factory's 339+ tickets have nothing left blocking them.
 **Everything in this runbook runs on the HOST** — your Bazzite/Fedora machine, not an agent
 container. Agent shells are `debian:12` with glibc 2.36 and no C toolchain; `cargo` dies with
 `linker cc not found` and host binaries die with `GLIBC_2.39 not found`
-([`xtask/src/hostrun.rs`](../../xtask/src/hostrun.rs)). Neither means anything is broken.
+([`tools_v2/xtask/src/hostrun.rs`](../../xtask/src/hostrun.rs)). Neither means anything is broken.
 You are the host, so just run them.
 
 Repo root is `/run/media/system/Disk_2/Projects/TBD-Reforger`. Every command below assumes you are there:
@@ -104,7 +104,7 @@ cargo xtask db seed
 
 Grab the service token the game server will use — it is one value, not a list
 ([`config.rs`](../../apps/website/api/src/config.rs) reads `SERVICE_TOKEN`;
-`cargo xtask setup server-profile` / `xtask/src/gate_setup_server_profile.rs` explains the
+`cargo xtask setup server-profile` / `tools_v2/xtask/src/gate_setup_server_profile.rs` explains the
 `GAME_SERVER_TOKENS` rename that used to break this):
 
 ```bash
@@ -127,7 +127,7 @@ callback. You should land logged in as an admin.
 
 You need a mission whose slots carry **gear and cargo**. The mission the server seeds by default
 now has them: `cargo xtask setup server-profile` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
-(`xtask/src/gate_setup_server_profile.rs`), and **T-605** gave
+(`tools_v2/xtask/src/gate_setup_server_profile.rs`), and **T-605** gave
 that golden real loadouts on 4 of its 18 slots — full gear + cargo (`blufor:Alpha:SL:0`), gear only
 (`blufor:Alpha:AR:0`), cargo only aimed at a container the kit does **not** wear
 (`blufor:Alpha:RFL:0` — the degrade path), the other faction (`opfor:Grom:SL:0`), and 14 left

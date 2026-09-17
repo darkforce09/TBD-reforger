@@ -26,6 +26,10 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
 ## Monorepo layout
+- `tools_v2/verification-core/` — fail-closed verification library (`verification_core`).
+- `tools_v2/ticket-engine/` — typed ticket models and transactional storage (`ticket_engine`).
+- `tools_v2/xtask/` — workspace task runner (`cargo xtask`), checks, ticket orchestration, and blueprint compiler.
+- `tools/tbd-tools/` — heavy async CLI; `tools_v2/developer-tools/` is the future destination scaffold.
 - `apps/website/` — app nest: `api/` (Axum, pkg `website-api`) + `frontend/` (Leptos Trunk, pkg `website-frontend`); seeds at `api/seeds/`
 - `apps/mod/` — Enfusion addons: `tbd-framework` (shipping mod) + `tbd-export` (dependency addon, export tooling) + `tbd-emcp` (committed MCP handlers); gitignored `crf_framework`
 - `packages/tbd-schema/` — mission JSON schema + golden missions

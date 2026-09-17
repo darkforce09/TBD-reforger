@@ -915,7 +915,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
             "tools/tbd-tools/src/world/build.rs",
             "tools/tbd-tools/src/world/gates.rs",
             "tools/tbd-tools/src/world/aux.rs",
-            "xtask/src/gate_export_terrain.rs",
+            "tools_v2/xtask/src/gate_export_terrain.rs",
             "tools/tbd-tools/src/geometry.rs",
             "tools/tbd-tools/src/density.rs",
             "tools/tbd-tools/src/forest.rs",

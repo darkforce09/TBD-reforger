@@ -6909,25 +6909,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3a6bfce3d99adfa72d24750a61f782f3036a81e7f86d8841ee1326deaebd171"
 
 [[package]]
-name = "tbd-gate"
-version = "0.1.0"
-dependencies = [
- "libc",
- "regex",
-]
-
-[[package]]
-name = "tbd-tickets"
-version = "0.1.0"
-dependencies = [
- "proptest",
- "serde",
- "time",
- "toml 0.8.23",
- "trybuild",
-]
-
-[[package]]
 name = "tbd-tools"
 version = "0.1.0"
 dependencies = [
@@ -7046,6 +7027,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ticket-engine"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+ "serde",
+ "time",
+ "toml 0.8.23",
+ "trybuild",
+]
+
+[[package]]
 name = "ticketboard"
 version = "0.1.0"
 dependencies = [
@@ -7056,7 +7048,7 @@ dependencies = [
  "rfd",
  "serde",
  "serde_json",
- "tbd-tickets",
+ "ticket-engine",
  "time",
  "toml 0.8.23",
 ]
@@ -7786,6 +7778,14 @@ dependencies = [
  "glifo",
  "hashbrown 0.17.1",
  "vello_common",
+]
+
+[[package]]
+name = "verification-core"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "regex",
 ]
 
 [[package]]
@@ -9049,12 +9049,12 @@ dependencies = [
  "serde_json",
  "serde_norway",
  "syn 2.0.118",
- "tbd-gate",
- "tbd-tickets",
  "tbd-tools",
+ "ticket-engine",
  "time",
  "toml 0.8.23",
  "typify",
+ "verification-core",
  "walkdir",
  "website-map-engine",
 ]

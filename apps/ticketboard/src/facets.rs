@@ -3,7 +3,7 @@
 //!
 //! `.ai/tickets/scope-vocab.toml` feeds facet dropdown VALUES only — strictly a
 //! DISPLAY input. The board never validates tickets against it (`ticket check`
-//! is the sole legality authority). `tbd_tickets::ScopeVocab` is not reused here
+//! is the sole legality authority). `ticket_engine::ScopeVocab` is not reused here
 //! because it answers point legality questions and exposes no enumeration — the
 //! dropdowns need to LIST values, so this module re-reads the same file into an
 //! enumerable tree. A missing or broken vocab file degrades to
@@ -22,7 +22,7 @@ use std::path::Path;
 use crate::filters::{RowFacts, ScopeFacets};
 
 /// The vocabulary file, relative to the repo root — the same path constant as
-/// `tbd_tickets::vocab::VOCAB_REL` (part of the T-917.1 contract).
+/// `ticket_engine::vocab::VOCAB_REL` (part of the T-917.1 contract).
 pub const VOCAB_REL: &str = ".ai/tickets/scope-vocab.toml";
 
 type Components = BTreeMap<String, Vec<String>>;

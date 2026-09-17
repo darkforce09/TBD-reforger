@@ -161,27 +161,27 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: crates/tbd-gate/src/proc.rs
+  path: tools_v2/verification-core/src/proc.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: crates/tbd-tickets/src/encoding.rs
+  path: tools_v2/ticket-engine/src/encoding.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: crates/tbd-tickets/src/lib.rs
+  path: tools_v2/ticket-engine/src/lib.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: crates/tbd-tickets/src/ops.rs
+  path: tools_v2/ticket-engine/src/ops.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: crates/tbd-tickets/src/store.rs
+  path: tools_v2/ticket-engine/src/store.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
@@ -291,366 +291,366 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: xtask/src/ai.rs
+  path: tools_v2/xtask/src/ai.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/backfill_stamps.rs
+  path: tools_v2/xtask/src/backfill_stamps.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/check.rs
+  path: tools_v2/xtask/src/check.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/cmds.rs
+  path: tools_v2/xtask/src/cmds.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_db_common.rs
+  path: tools_v2/xtask/src/deploy_db_common.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_db_drill.rs
+  path: tools_v2/xtask/src/deploy_db_drill.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_staging/agent.rs
+  path: tools_v2/xtask/src/deploy_staging/agent.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_staging/boot.rs
+  path: tools_v2/xtask/src/deploy_staging/boot.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_staging/config.rs
+  path: tools_v2/xtask/src/deploy_staging/config.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_staging/remote.rs
+  path: tools_v2/xtask/src/deploy_staging/remote.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/deploy_staging/render.rs
+  path: tools_v2/xtask/src/deploy_staging/render.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/estimate_tokens.rs
+  path: tools_v2/xtask/src/estimate_tokens.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_crf_leak.rs
+  path: tools_v2/xtask/src/gate_crf_leak.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_engine_layers.rs
+  path: tools_v2/xtask/src/gate_engine_layers.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_mcp_wb_logs.rs
+  path: tools_v2/xtask/src/gate_mcp_wb_logs.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_mod_compile.rs
+  path: tools_v2/xtask/src/gate_mod_compile.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_remote_log_grep.rs
+  path: tools_v2/xtask/src/gate_remote_log_grep.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_route_tags.rs
+  path: tools_v2/xtask/src/gate_route_tags.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t180.rs
+  path: tools_v2/xtask/src/gate_t180.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t437.rs
+  path: tools_v2/xtask/src/gate_t437.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t438.rs
+  path: tools_v2/xtask/src/gate_t438.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t439.rs
+  path: tools_v2/xtask/src/gate_t439.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t440.rs
+  path: tools_v2/xtask/src/gate_t440.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t456.rs
+  path: tools_v2/xtask/src/gate_t456.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_t468.rs
+  path: tools_v2/xtask/src/gate_t468.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_tbd_spawn_determinism.rs
+  path: tools_v2/xtask/src/gate_tbd_spawn_determinism.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/gate_ui_layouts_awk.rs
+  path: tools_v2/xtask/src/gate_ui_layouts_awk.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/golden_gate.rs
+  path: tools_v2/xtask/src/golden_gate.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/hostrun.rs
+  path: tools_v2/xtask/src/hostrun.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/label_gates.rs
+  path: tools_v2/xtask/src/label_gates.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/main.rs
+  path: tools_v2/xtask/src/main.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/archive_emit.rs
+  path: tools_v2/xtask/src/map_blueprint/archive_emit.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/batch.rs
+  path: tools_v2/xtask/src/map_blueprint/batch.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/bvh.rs
+  path: tools_v2/xtask/src/map_blueprint/bvh.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/library.rs
+  path: tools_v2/xtask/src/map_blueprint/library.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/mesh.rs
+  path: tools_v2/xtask/src/map_blueprint/mesh.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/pak.rs
+  path: tools_v2/xtask/src/map_blueprint/pak.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/prefab.rs
+  path: tools_v2/xtask/src/map_blueprint/prefab.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/verify.rs
+  path: tools_v2/xtask/src/map_blueprint/verify.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/walls.rs
+  path: tools_v2/xtask/src/map_blueprint/walls.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/xob.rs
+  path: tools_v2/xtask/src/map_blueprint/xob.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_blueprint/xob_nodes.rs
+  path: tools_v2/xtask/src/map_blueprint/xob_nodes.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/map_world_los.rs
+  path: tools_v2/xtask/src/map_world_los.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/metrics.rs
+  path: tools_v2/xtask/src/metrics.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/migrate_v2.rs
+  path: tools_v2/xtask/src/migrate_v2.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/mk_build.rs
+  path: tools_v2/xtask/src/mk_build.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/mk_ci.rs
+  path: tools_v2/xtask/src/mk_ci.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/mk_ci_tasks.rs
+  path: tools_v2/xtask/src/mk_ci_tasks.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/mod_wave.rs
+  path: tools_v2/xtask/src/mod_wave.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/mod_world_boot.rs
+  path: tools_v2/xtask/src/mod_world_boot.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/mod_world_boot_verdict.rs
+  path: tools_v2/xtask/src/mod_world_boot_verdict.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/node_free.rs
+  path: tools_v2/xtask/src/node_free.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/platform_preflight.rs
+  path: tools_v2/xtask/src/platform_preflight.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/playtest_server.rs
+  path: tools_v2/xtask/src/playtest_server.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/playtest_server/boot.rs
+  path: tools_v2/xtask/src/playtest_server/boot.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/playtest_server/lifecycle.rs
+  path: tools_v2/xtask/src/playtest_server/lifecycle.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/playtest_server/render.rs
+  path: tools_v2/xtask/src/playtest_server/render.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/schema_gates.rs
+  path: tools_v2/xtask/src/schema_gates.rs
   reason: T-853 xtask port; split follow-up
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/slice_worktree.rs
+  path: tools_v2/xtask/src/slice_worktree.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/sync.rs
+  path: tools_v2/xtask/src/sync.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/tickets_store.rs
+  path: tools_v2/xtask/src/tickets_store.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/base.rs
+  path: tools_v2/xtask/src/wave/base.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/changed.rs
+  path: tools_v2/xtask/src/wave/changed.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/diff_arms.rs
+  path: tools_v2/xtask/src/wave/diff_arms.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/gate.rs
+  path: tools_v2/xtask/src/wave/gate.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/land.rs
+  path: tools_v2/xtask/src/wave/land.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/lock.rs
+  path: tools_v2/xtask/src/wave/lock.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/migrate.rs
+  path: tools_v2/xtask/src/wave/migrate.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/mod.rs
+  path: tools_v2/xtask/src/wave/mod.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/push.rs
+  path: tools_v2/xtask/src/wave/push.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/reclaim.rs
+  path: tools_v2/xtask/src/wave/reclaim.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave/verdict.rs
+  path: tools_v2/xtask/src/wave/verdict.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30
 
 - rule: SIZE-3
-  path: xtask/src/wave_lock.rs
+  path: tools_v2/xtask/src/wave_lock.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-06-30

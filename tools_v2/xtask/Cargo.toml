@@ -1,0 +1,38 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+publish = false
+description = "T-161 ticket CLI + T-162 MCP/debug/repro helpers. cargo xtask …"
+
+[[bin]]
+name = "xtask"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+flate2 = "1"
+png = "0.17"
+clap = { version = "4", features = ["derive"] }
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+toml = "0.8"
+serde_norway = "0.9"
+# T-913.2 run-receipt elapsed math (finished - started). Already in the workspace lockfile
+# via ticket-engine (0.3.x), so this adds zero new supply chain; the acceptance rule itself
+# reuses ticket_engine::timestamp so the two cannot fork.
+time = { version = "0.3", features = ["parsing"] }
+walkdir = "2"
+jsonschema = { version = "0.46.10", default-features = false }
+tbd-tools = { path = "../../tools/tbd-tools" }
+verification-core = { path = "../verification-core" }
+ticket-engine = { path = "../ticket-engine" }
+libc = "0.2"
+website-map-engine = { path = "../../apps/website/map-engine", default-features = false, features = ["world", "io", "streaming", "bvh"] }
+typify = "0.7"
+schemars = "0.8"
+prettyplease = "0.2"
+syn = "2"

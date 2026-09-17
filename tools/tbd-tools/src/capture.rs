@@ -1,4 +1,4 @@
-//! T-661 — the editor-capture harness, ported from the Node scripts under `tools/editor-capture/`.
+//! Headless editor capture using the shared CDP browser harness.
 //!
 //! This is the operator's headless screenshot rig for the live Mission Creator: it drives the
 //! running editor over CDP and captures both the DOM chrome (`Page.captureScreenshot`) and the
@@ -10,7 +10,7 @@
 //!     font-cache workaround, the CDP wait and the teardown are all `cdp::launch_with_gpu` +
 //!     `Browser::shutdown` now. `crop.sh` → [`crop`] (the `image` crate, already a dependency).
 //!
-//! The hard-won environment knowledge lives in `tools/editor-capture/README.md` — the three
+//! The hard-won environment knowledge lives in `docs/tools/editor_capture.md` — the three
 //! non-obvious things (writable `XDG_CACHE_HOME`, `--use-angle=vulkan`, read the map off the canvas
 //! not the compositor) are preserved here. `cdp::launch_with_gpu(_, GpuBackend::Vulkan, _)` carries
 //! the vulkan flags and pins `XDG_CACHE_HOME` on the chromium child (KB-002); this module carries

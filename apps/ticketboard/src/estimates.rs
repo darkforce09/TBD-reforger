@@ -22,7 +22,7 @@
 //!   the measured receipts dashboard, never combined with it.
 //!
 //! The struct mirror below restates `.ai/tickets/estimates.schema.json` +
-//! `xtask/src/estimate_tokens.rs::{EstimateRecord, validate_estimate}` the same
+//! `tools_v2/xtask/src/estimate_tokens.rs::{EstimateRecord, validate_estimate}` the same
 //! way `metrics.rs` mirrors the receipt walker (the app cannot link xtask), and
 //! with the same observation contrast: a malformed estimate file becomes a
 //! named per-file [`ErrorRow`], never a silent skip, never a coercion, and the
@@ -35,7 +35,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
-use tbd_tickets::Ticket;
+use ticket_engine::Ticket;
 
 use crate::board;
 use crate::corpus::Corpus;
@@ -43,7 +43,7 @@ use crate::discovery::TICKETS_SUBDIR;
 use crate::metrics::{ErrorRow, format_tokens, valid_git_sha, valid_ticket_id};
 
 /// Estimate tree under `.ai/tickets/` — mirrors
-/// `xtask/src/estimate_tokens.rs::ESTIMATES_DIR_REL`. Deliberately OUTSIDE
+/// `tools_v2/xtask/src/estimate_tokens.rs::ESTIMATES_DIR_REL`. Deliberately OUTSIDE
 /// `metrics/` (an estimate colocated there would impersonate a receipt — the
 /// T-913 violation the schema doc names).
 pub const ESTIMATES_SUBDIR: &str = "estimates";
@@ -182,7 +182,7 @@ pub fn cohort_key_str(key: &CohortKey) -> String {
     }
 }
 
-/// Semantic mirror of `xtask/src/estimate_tokens.rs::validate_estimate` plus
+/// Semantic mirror of `tools_v2/xtask/src/estimate_tokens.rs::validate_estimate` plus
 /// the schema patterns jsonschema enforces there. Returns the typed per-source
 /// inputs. Deliberately NOT mirrored: `factor == TOKENS_PER_LOC` (each file
 /// carries the factor it used and the board renders it; the doc-pin is check's
@@ -201,7 +201,7 @@ fn validate_file(rec: &EstimateFile) -> Result<Source, String> {
             rec.generated_at
         ));
     }
-    tbd_tickets::validate_rfc3339_utc("generated_at", &rec.generated_at)?;
+    ticket_engine::validate_rfc3339_utc("generated_at", &rec.generated_at)?;
     if rec.factor == 0 {
         return Err("factor must be >= 1".to_owned());
     }

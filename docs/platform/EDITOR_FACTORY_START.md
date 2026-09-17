@@ -149,7 +149,7 @@ Same machinery as waves 100-155: 3 agents, barrier, merge, gate, one Fable adver
   on its pattern, T-789 on T-786's stack, T-797 on T-787's consts, T-798 on T-797's toolbar,
   T-806/T-808 on T-790's lane format. Dependency edges are enforced by wave order.
 - **Never `--repack` while this band is live.** It renumbers 1..N and drops every edge not in the
-  compiled `DEPS` const (`xtask/src/slice_collisions.rs`). If a repack ever becomes unavoidable,
+  compiled `DEPS` const (`tools_v2/xtask/src/slice_collisions.rs`). If a repack ever becomes unavoidable,
   add the 7 edges from the registry `notes`/plan first.
 - **T-790 is the pull-forward valve**: if it looks at risk in 204, move it earlier — T-806 (205)
   and T-808 (207) burn their slots without its lane format.

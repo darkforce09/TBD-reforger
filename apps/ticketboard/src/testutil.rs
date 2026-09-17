@@ -6,7 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use tbd_tickets::Ticket;
+use ticket_engine::Ticket;
 
 use crate::corpus::{Corpus, Counts, LoadedTicket, is_child_id};
 
@@ -40,7 +40,7 @@ impl Drop for Scratch {
 // ---- corpus builders (waves / tree / filters model tests) ----
 
 pub fn parse_ticket(toml: &str) -> Ticket {
-    tbd_tickets::parse_ticket_toml(toml).unwrap()
+    ticket_engine::parse_ticket_toml(toml).unwrap()
 }
 
 /// Minimal work ticket. `status_lines` supplies `status = …` (plus `order` when the

@@ -195,14 +195,14 @@ mod tests {
     ///
     /// T-853 REPOINTED THIS. It was `scripts/mod/deploy-staging.sh`, which is now
     /// `cargo xtask deploy staging`; the agent template moved to
-    /// `xtask/src/deploy_staging/agent.rs`. This is an `include_str!`, so it is a COMPILE-TIME
+    /// `tools_v2/xtask/src/deploy_staging/agent.rs`. This is an `include_str!`, so it is a COMPILE-TIME
     /// dependency across a crate boundary — deleting the script broke `website-api`, which no
     /// `cargo test -p xtask` would ever have caught. The wave gate did, on `clippy api`.
     ///
     /// It is not a cargo dependency (website-api does not depend on xtask), which is the point:
     /// the pin exists precisely because the two sides are otherwise unconnected.
     const DEPLOY_STAGING_SH: &str =
-        include_str!("../../../../../xtask/src/deploy_staging/agent.rs");
+        include_str!("../../../../../tools_v2/xtask/src/deploy_staging/agent.rs");
 
     #[test]
     fn verbs_are_the_agents_four_literals() {

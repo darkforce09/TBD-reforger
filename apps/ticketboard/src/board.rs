@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use tbd_tickets::{ScopeV2, Status, StatusName, Ticket};
+use ticket_engine::{ScopeV2, Status, StatusName, Ticket};
 
 use crate::corpus::Corpus;
 
@@ -326,7 +326,7 @@ impl Breadcrumb {
 
 // ---- work-ticket class (T-918.1 / B.1) ----
 
-/// The closed class set, mirrored from [`tbd_tickets::CLASS_VALUES`] (parity is
+/// The closed class set, mirrored from [`ticket_engine::CLASS_VALUES`] (parity is
 /// test-pinned). An enum so the chip accent match below is TOTAL — a 6th class
 /// fails compile here before it can ever render unstyled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -438,7 +438,7 @@ pub struct TicketView<'a> {
     pub scope: Option<&'a ScopeV2>,
     /// Raw class value (chips parse it through [`Class::parse`]).
     pub class: Option<&'a str>,
-    /// Provenance markers ([`tbd_tickets::ESTIMATED_VALUES`]) — B.1 consumes only
+    /// Provenance markers ([`ticket_engine::ESTIMATED_VALUES`]) — B.1 consumes only
     /// the `"scope"` entry (the breadcrumb glyph); B.2 renders the rest.
     pub estimated: &'a [String],
     /// The method note behind `estimated[]` (T-918.2) — rendered VERBATIM as the
@@ -533,7 +533,7 @@ mod tests {
     use std::path::PathBuf;
 
     fn parse(toml: &str) -> Ticket {
-        tbd_tickets::parse_ticket_toml(toml).unwrap()
+        ticket_engine::parse_ticket_toml(toml).unwrap()
     }
 
     fn work(id: &str, status_lines: &str, extra: &str) -> Ticket {
@@ -810,8 +810,8 @@ surface = ["dock_left", "map_canvas"]
     fn class_parity_and_total_distinct_accents() {
         assert_eq!(
             Class::ALL.map(Class::as_str).to_vec(),
-            tbd_tickets::CLASS_VALUES.to_vec(),
-            "Class::ALL must mirror tbd_tickets::CLASS_VALUES exactly"
+            ticket_engine::CLASS_VALUES.to_vec(),
+            "Class::ALL must mirror ticket_engine::CLASS_VALUES exactly"
         );
         for class in Class::ALL {
             assert_eq!(Class::parse(class.as_str()), Some(class));

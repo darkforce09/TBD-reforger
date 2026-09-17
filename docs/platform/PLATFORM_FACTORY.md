@@ -536,7 +536,7 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 | End-to-end test lane | 6 | `scripts/mod/`, CI |
 | Discord | 6 | `apps/website/api/src/` |
 | Infra / deploy | 6 | root, `docs/` |
-| Registry hygiene | 6 | `xtask/`, `.ai/tickets/` |
+| Registry hygiene | 6 | `tools_v2/xtask/`, `.ai/tickets/` |
 | Mission Creator — collab | 5 | `apps/website/frontend/src/` |
 | Mission Creator — settings | 4 | frontend + schema |
 

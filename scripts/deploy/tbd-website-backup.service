@@ -39,7 +39,7 @@
 
 [Unit]
 Description=TBD website — verified PostgreSQL backup
-Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/xtask/src/deploy_db_backup.rs
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/tools_v2/xtask/src/deploy_db_backup.rs
 ; The dump goes through `podman exec`, so the container stack has to be up. This orders
 ; against it when present and does not require it, because the backup script already
 ; refuses loudly (and non-zero) when the container is missing or not running — a refusal
@@ -51,7 +51,7 @@ Type=oneshot
 WorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER
 
 ; Retention is BY COUNT. 14 nightly dumps ~= two weeks of history that cannot be silently
-; emptied by a stopped timer — see the long comment in xtask/src/deploy_db_backup.rs. Override per host by
+; emptied by a stopped timer — see the long comment in tools_v2/xtask/src/deploy_db_backup.rs. Override per host by
 ; editing this line, not by adding a `find -mtime` sweep somewhere else.
 Environment=TBD_BACKUP_KEEP=14
 Environment=TBD_BACKUP_DB=tbd_reforger

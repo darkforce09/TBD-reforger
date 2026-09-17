@@ -1,7 +1,7 @@
 //! Typed corpus load (T-915.1 §Read architecture).
 //!
 //! Loads ALL `.ai/tickets/T-*.toml` — parents AND children — through
-//! `tbd_tickets::parse_ticket_toml`. Deliberately NOT `load_phase2_tree`, which is
+//! `ticket_engine::parse_ticket_toml`. Deliberately NOT `load_phase2_tree`, which is
 //! parents-only; the app's whole point includes the children that projection hides.
 //!
 //! Fail-closed: the FIRST parse failure aborts the load and names the file with the
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
 
-use tbd_tickets::Ticket;
+use ticket_engine::Ticket;
 
 use crate::discovery::TICKETS_SUBDIR;
 use crate::estimates::{self, RawEstimates};
@@ -131,7 +131,7 @@ pub fn load_corpus(repo_root: &Path) -> LoadResult {
             file: path.clone(),
             error: e.to_string(),
         })?;
-        let ticket = tbd_tickets::parse_ticket_toml(&text).map_err(|error| LoadError {
+        let ticket = ticket_engine::parse_ticket_toml(&text).map_err(|error| LoadError {
             file: path.clone(),
             error,
         })?;

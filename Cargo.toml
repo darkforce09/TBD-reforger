@@ -9,10 +9,9 @@ members = [
     "apps/website/frontend",
     "apps/website/map-engine",
     "apps/website/graphics-engine",
-    # T-853: the four-outcome gate library — the Rust successor to scripts/mod/lib/gate-grep.sh.
-    # Deliberately dependency-light; linked by both `xtask` and `tools/tbd-tools`.
-    "crates/tbd-gate",
-    "crates/tbd-tickets",
-    "xtask",
+    # Dependency-light verification and ticket libraries consumed by repository tooling.
+    "tools_v2/verification-core",
+    "tools_v2/ticket-engine",
+    "tools_v2/xtask",
     "tools/tbd-tools",
 ]

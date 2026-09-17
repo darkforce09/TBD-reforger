@@ -19,7 +19,7 @@ use std::collections::VecDeque;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use tbd_tickets::StatusName;
+use ticket_engine::StatusName;
 
 use crate::board;
 
@@ -90,7 +90,7 @@ fn request(tail: Vec<String>) -> VerbRequest {
     }
 }
 
-// ---- builders (one per CLI verb — arg shapes mirror xtask/src/main.rs TicketCmd) ----
+// ---- builders (one per CLI verb — arg shapes mirror tools_v2/xtask/src/main.rs TicketCmd) ----
 
 /// `ticket ship <id>` — status→shipped, stamps completed_at, clears active.
 pub fn ship(id: &str) -> VerbRequest {

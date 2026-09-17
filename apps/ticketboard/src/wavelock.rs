@@ -11,7 +11,7 @@
 //! banner's job (T-915.3), not this viewer's.
 //!
 //! A missing lock is a REFUSAL, never an empty plan: `missing_lock_message` mirrors
-//! `xtask/src/wave_lock.rs::missing_lock_error` byte-for-byte. `paths_collide` /
+//! `tools_v2/xtask/src/wave_lock.rs::missing_lock_error` byte-for-byte. `paths_collide` /
 //! `collides` mirror `wave_lock::collides` (the prefix-containment rule) for the
 //! owns-collision explainer, unit-tested against the same cases.
 
@@ -67,7 +67,7 @@ pub enum LockState {
     },
 }
 
-/// Byte-for-byte the `xtask/src/wave_lock.rs::missing_lock_error` text.
+/// Byte-for-byte the `tools_v2/xtask/src/wave_lock.rs::missing_lock_error` text.
 pub fn missing_lock_message(path: &Path) -> String {
     format!(
         "{} missing — DidNotRun: run `cargo xtask wave repack`. A missing lock is a refusal, never an empty plan.",

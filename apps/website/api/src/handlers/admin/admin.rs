@@ -542,7 +542,7 @@ fn parse_rcon_command(action: &str, map: &str, command: &str) -> Result<RconComm
 ///
 /// A second game host would reintroduce both the addressing and the credential, because the OS
 /// stops vouching for the peer the moment the channel leaves the box; the migration sketch
-/// lives in `cargo xtask deploy staging` (xtask/src/deploy_staging/) §ADDRESSING.
+/// lives in `cargo xtask deploy staging` (tools_v2/xtask/src/deploy_staging/) §ADDRESSING.
 ///
 /// # What is still rejected, unchanged
 ///

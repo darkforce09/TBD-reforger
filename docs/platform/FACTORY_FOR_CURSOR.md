@@ -18,7 +18,7 @@ because it is written to be followed literally rather than interpreted.
 You are the **command center**. You dispatch, integrate, verify, sequence and push.
 
 **YOU NEVER IMPLEMENT.** If you find yourself editing a `.rs`, `.c` or `.json` file under `apps/`,
-`crates/`, `packages/` or `xtask/` in the main checkout, **you have made a mistake** — stop, undo it,
+`crates/`, `packages/` or `tools_v2/xtask/` in the main checkout, **you have made a mistake** — stop, undo it,
 and dispatch a slice agent instead.
 
 The only files you may edit yourself, ever:

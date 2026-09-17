@@ -16,7 +16,7 @@ use eframe::egui::{
     self, Align, Align2, Area, Button, Checkbox, Color32, ComboBox, Frame, Id, Layout, Modal,
     Order, RichText, ScrollArea, Spinner, TextEdit, Ui, vec2,
 };
-use tbd_tickets::{StatusName, Ticket};
+use ticket_engine::{StatusName, Ticket};
 
 use crate::app::{Action, BoardState, VERDICT_COLLIDE, VERDICT_OK};
 use crate::board;

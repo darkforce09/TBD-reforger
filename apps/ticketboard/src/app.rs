@@ -27,7 +27,7 @@ use eframe::egui::{
 };
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 use egui_extras::{Column as TableColumn, TableBuilder};
-use tbd_tickets::StatusName;
+use ticket_engine::StatusName;
 
 use crate::board::{self, BoardModel, Card, Class, ScopeLevel};
 use crate::corpus::{self, Corpus, LoadBundle, LoadError};

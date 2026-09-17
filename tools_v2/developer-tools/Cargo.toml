@@ -1,0 +1,67 @@
+[package]
+name = "developer-tools"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Heavy async CLI suite, headless browser test runner, map imagery & 3D blueprint pipelines"
+
+[dependencies]
+anyhow = "1"
+axum = "0.8.9"
+base64 = "0.22"
+bcdec_rs = "0.2"
+clap = { version = "4", features = ["derive"] }
+flate2 = "1"
+jsonschema = { version = "0.46.10", default-features = false }
+libc = "0.2"
+image = { version = "0.25", default-features = false, features = ["png", "tga"] }
+image-webp = "0.2"
+png = "0.17"
+resvg = { version = "0.45", default-features = false }
+webp = "0.3"
+website-map-engine = { path = "../../apps/website/map-engine", default-features = false, features = [
+    "world",
+    "streaming",
+    "io",
+    "bvh",
+] }
+futures-util = "0.3"
+regex = "1"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "charset"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.11"
+tokio = { version = "1.52", features = ["full"] }
+tokio-tungstenite = "0.30"
+typify = "0.7"
+schemars = "0.8"
+prettyplease = "0.2"
+syn = "2"
+
+[[bin]]
+name = "browser_test_runner"
+path = "src/bin/browser_test_runner.rs"
+
+[[bin]]
+name = "screen_capture"
+path = "src/bin/screen_capture.rs"
+
+[[bin]]
+name = "enfusion_oracle"
+path = "src/bin/enfusion_oracle.rs"
+
+[[bin]]
+name = "mcp_broker"
+path = "src/bin/mcp_broker.rs"
+
+[[bin]]
+name = "world_pipeline"
+path = "src/bin/world_pipeline.rs"
+
+[[bin]]
+name = "map_pipeline"
+path = "src/bin/map_pipeline.rs"
+
+[lib]
+name = "developer_tools"
+path = "src/lib.rs"

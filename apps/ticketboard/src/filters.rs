@@ -7,7 +7,7 @@
 
 use std::collections::BTreeSet;
 
-use tbd_tickets::{StatusName, Ticket};
+use ticket_engine::{StatusName, Ticket};
 
 use crate::board::{self, Class};
 use crate::corpus::Corpus;

@@ -27,7 +27,7 @@ pub mod topo;
 /// T-278 — the instance kinds a census bucket exists for, in emitted key order.
 ///
 /// WHY THIS IS ONE CONST AND NOT THREE ARRAYS: it was three. `build.rs` had `kind_order`,
-/// `aux.rs` had `ALL_KINDS`, and `xtask/src/schema_gates.rs` has `INSTANCE_KINDS` — all frozen at
+/// `aux.rs` had `ALL_KINDS`, and `tools_v2/xtask/src/schema_gates.rs` has `INSTANCE_KINDS` — all frozen at
 /// the eight kinds that existed before T-244 added `vehicle` to `map-object-enums.schema.json`.
 /// A `vehicle`-classified prefab therefore did not land in a missing bucket, it **panicked the
 /// builder** (`by_kind.get_mut(kind).expect("kind bucket")`, build.rs), which is why re-running

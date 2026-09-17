@@ -13,7 +13,7 @@ alwaysApply: true
 ❌ Task/subagent for T-XXX while any prior Task for T-XXX is still running
 ❌ "Fresh redo" / "interrupt and take over" / second generalPurpose on the same
    `.ai/artifacts/worktrees/T-XXX` because the first looks slow or stuck
-❌ Parallel agents that both write `xtask/src/main.rs` or the same owns paths
+❌ Parallel agents that both write `tools_v2/xtask/src/main.rs` or the same owns paths
    for the same ticket (even if you think the first is idle)
 ❌ Interpreting a short transcript, long silence, or "only untracked files"
    as permission to spawn a replacement
