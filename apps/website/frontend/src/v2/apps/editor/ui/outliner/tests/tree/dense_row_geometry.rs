@@ -104,7 +104,7 @@ fn the_leader_badge_fits_inside_the_row() {
 #[test]
 fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
-    let raw = include_str!("../../tree.rs");
+    let raw = crate::v2::apps::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE;
     let code = live_code(raw);
     let source = live_source(raw);
     assert!(
@@ -138,7 +138,7 @@ fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
 /// call site.
 #[test]
 fn no_row_glyph_carries_an_uncollapsed_line_box() {
-    let src = include_str!("../../tree.rs");
+    let src = crate::v2::apps::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE;
     let production = src
         .split("#[cfg(test)]")
         .next()

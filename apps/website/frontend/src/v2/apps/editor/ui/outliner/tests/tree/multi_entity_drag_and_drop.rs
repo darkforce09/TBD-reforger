@@ -6,7 +6,7 @@ use crate::v2::apps::editor::ui::outliner::outliner::{NodeKind, OutlinerNode};
 use crate::v2::core::test_support::class_r_scrub::live_code;
 
 fn live() -> String {
-    live_code(include_str!("../../tree.rs"))
+    live_code(crate::v2::apps::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE)
 }
 
 fn node(id: &str, children: Vec<OutlinerNode>) -> OutlinerNode {

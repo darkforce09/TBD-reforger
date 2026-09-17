@@ -415,7 +415,7 @@ fn alt_census_confirms_no_canvas_collision() {
     // eden_tree: Alt-click is a DOCK-tree gesture (descendants selection), NOT the canvas.
     let tree = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/outliner/tree.rs"
+        "/src/v2/apps/editor/ui/outliner/tree/single_row.rs"
     )));
     assert!(
         tree.contains("ev.alt_key() || ev.shift_key()"),

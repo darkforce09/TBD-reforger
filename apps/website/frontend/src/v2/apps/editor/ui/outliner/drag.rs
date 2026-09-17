@@ -1,11 +1,6 @@
-//! The Outliner's pointer-drag latch and its drop PLANNER.
+//! The Outliner's pointer-drag latch and drop planner.
 //!
-//! T-946.86 (.83) — ORDER MATTERS IN THIS FILE. Every production item is above the single
-//! `#[cfg(test)]` module at the bottom, because `class_r_scrub::live_source` cuts from the FIRST
-//! `#[cfg(test)]` to EOF: when the test module sat in the MIDDLE (as it did when this file
-//! shipped in wave 255), `LayerDrag`, `PENDING_DRAG` and every `begin_*` below it were invisible
-//! to source-scrubbing pins, which could then only ever examine the planner. Do not move the test
-//! module back up, and do not add production items after it.
+//! Production items precede test declarations so source-inspection tests see the full module.
 
 /// What one Outliner drag carries: the row the pointer went down on, and every id the drop will
 /// move, in render order.
@@ -95,18 +90,8 @@ pub fn cancel_layer_drag() {
     }
 }
 
-/// T-946.86 (.83) — **CONSUME** the pending [`DragSet`] onto `dest_folder_id`, moving EVERY id in
-/// one undo group. Returns whether a set was armed (i.e. whether this call owns the drop).
-///
-/// ## The defect this closes
-///
-/// The folder row armed TWO latches on one `pointerdown`: this module's [`PENDING_DRAG`], which
-/// holds the whole multi-selection, and the engine's single-id `PENDING_LAYER_DRAG`
-/// (`data/store/operations/entity/layer_drag.rs`). The
-/// `pointerup` then completed through `complete_layer_drop_onto_folder`, which reads the SINGLE-id
-/// store — so a five-row drag moved one row, the anchor, and the other four silently stayed put.
-/// [`plan_drop`] — the planner written for exactly this — had zero production callers, and
-/// `PENDING_DRAG` was read only for `.is_some()` (the drag ghost) and cleared, never consumed.
+/// Consumes the pending [`DragSet`] onto `dest_folder_id`, moving every id in one undo group.
+/// Returns whether a set was armed, including when a cyclic drop is refused.
 ///
 /// ## Why it takes the descendants as a closure
 ///
@@ -116,13 +101,10 @@ pub fn cancel_layer_drag() {
 ///
 /// ## Undo
 ///
-/// The whole drop is one `with_batch` group ⇒ ONE Ctrl+Z restores all N rows. Applying N separate
-/// mutators without the group is what would make an operator press Ctrl+Z five times, and the
-/// fourth press would look like it did nothing.
+/// The whole drop is one `with_batch` group, so one undo restores every row.
 ///
-/// A refused plan (dropping a folder into its own subtree) still returns `true`: the drag WAS
-/// armed and is now consumed. Returning `false` there would hand the drop to the legacy single-id
-/// path, which does not know the set and would move the anchor — the exact defect, restored.
+/// A refused plan still consumes the drag and returns `true`, preventing the single-id path
+/// from moving the anchor into its own subtree.
 #[cfg(target_arch = "wasm32")]
 pub fn complete_multi_drop_onto_folder(
     dest_folder_id: &str,
@@ -157,7 +139,7 @@ pub fn complete_multi_drop_onto_folder(
                         engine_ops::reparent_layer(id, Some(dest_folder_id.to_string()));
                     }
                 }
-                // A slot / comment REFILES into it — same latch, different mutator (T-651).
+                // A slot / comment REFILES into it — same latch, different mutator.
                 LayerDrag::Slot(_) => {
                     engine_ops::refile_slot_to_layer(id, dest_folder_id);
                 }
@@ -170,13 +152,8 @@ pub fn complete_multi_drop_onto_folder(
     true
 }
 
-/// T-946.86 (.83) — **CONSUME** the pending set onto `dest_squad_id` (the ORBAT tree's squad-row
-/// drop). Peer of [`complete_multi_drop_onto_folder`]; returns whether a set was armed.
-///
-/// The ORBAT lane had the same shape of defect as the layer lane and needed the same repair: the
-/// slot row armed the single-id latch, so dragging a five-slot selection onto a squad refiled one.
-/// [`begin_refile`] here — the `DragSet` version — was among the functions this file shipped with
-/// no caller at all, shadowed by the engine's single-id `layer_drag` namesake.
+/// Consumes the pending set onto `dest_squad_id` in the ORBAT tree.
+/// Returns whether a set was armed and groups all slot moves into one undo operation.
 ///
 /// `refile_slot` is the ORBAT mutator (slot → SQUAD), NOT `refile_slot_to_layer` (slot → folder):
 /// they are different destinations and the squad row is the wrong drop for a layer move. Every id
@@ -213,9 +190,6 @@ pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
     });
     true
 }
-
-// ── TESTS LAST. See the module note: `live_source` cuts from the first `#[cfg(test)]` to EOF, so
-//    anything below this line is invisible to every source-scrubbing pin in the crate.
 
 #[cfg(test)]
 #[path = "tests/drag/drag_set_drop_planning.rs"]

@@ -204,7 +204,7 @@ mod source_pins {
         env!("CARGO_MANIFEST_DIR"),
         "/../map-engine/src/data/store/operations/entity/layers.rs"
     ));
-    const TREE: &str = include_str!("../../tree.rs");
+    const TREE: &str = crate::v2::apps::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE;
     const DOCK: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/v2/apps/editor/ui/docks/dock_left/view/full_dock.rs"

@@ -122,7 +122,7 @@ fn no_probe_means_no_affordance_and_no_fallback() {
         !row_routes(NodeKind::Comment, "cmt-1"),
         "T-784: a refusing probe must leave the comment row inert"
     );
-    let src = live_code(include_str!("../../tree.rs"));
+    let src = live_code(crate::v2::apps::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE);
     let routes = only_body(&src, "pub(crate) fn row_routes(");
     assert!(
         routes.contains(&format!("subject_id{}", "_routes")),
@@ -153,7 +153,7 @@ fn no_probe_means_no_affordance_and_no_fallback() {
 /// Literals kept (`live_source`): the claim is about the tags and attributes that ship.
 #[test]
 fn the_comment_row_branches_on_the_router_and_is_never_a_dead_button() {
-    let lit = live_source(include_str!("../../tree.rs"));
+    let lit = live_source(crate::v2::apps::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE);
     let arm = only_body(&lit, &format!("fn comment{}", "_row("));
     assert!(
         arm.contains(&format!("row{}", "_routes(")),
