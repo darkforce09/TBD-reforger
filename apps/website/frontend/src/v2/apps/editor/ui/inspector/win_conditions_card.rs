@@ -1,4 +1,4 @@
-//! T-936.1 — the **Win conditions** card: the mode picker, the per-mode field, and the `endOn`
+//! the **Win conditions** card: the mode picker, the per-mode field, and the `endOn`
 //! checklist that decide how a mission's round ends.
 //!
 //! ══ What this closes ═════════════════════════════════════════════════════════════════════════
@@ -8,14 +8,14 @@
 //!
 //! ══ The transport, and why it is the settings bag ════════════════════════════════════════════
 //! Every write goes to `meta.environment.winConditions` through
-//! [`operations::update_environment`], the same one-patch-one-undo-step path the T-224 flow
+//! [`operations::update_environment`], the same one-patch-one-undo-step path the  flow
 //! controls use. That bag is the transport and the table is the contract — `ui/inspector/env.rs`'s own
 //! words — and it is the ONLY part of `meta` with a read/write pair the editor can drive plus a
 //! `hydrate` that loads it back verbatim, which is what makes an authored rule survive Save →
 //! reload. `map_engine_core::mission::extensions` reads the key back out of that bag on the compile
 //! side; its header carries the full argument.
 //!
-//! **The T-193 gate does not run on this key, and that is deliberate rather than an oversight.**
+//! **The  gate does not run on this key, and that is deliberate rather than an oversight.**
 //! `env.rs::author_env` refuses any `meta.environment` key no surface reads back, off
 //! `CARRIED_ENV_KEYS` / `AUTHORED_FLOW_KEYS`. This key HAS a reader chain and it is named end to
 //! end in [`WIN_CONDITIONS_READERS`] below, but the two tables live in `env.rs`, which is not this
@@ -27,8 +27,8 @@
 //! and renders beside it in the Mission Settings dialog. It is MOUNTED, at
 //! `settings_modal.rs`'s `{win_conditions_card(ctrl)}` immediately after the Mission flow section.
 //!
-//! T-936.1 could not land that line itself — `ui/modals/settings_modal.rs` was outside its owned file
-//! list — so the mount went in with the wave-243 bookkeeping instead. A card that is built,
+//!  could not land that line itself — `ui/modals/settings_modal.rs` was outside its owned file
+//! list — so the mount went in with the  bookkeeping instead. A card that is built,
 //! registered and tested but never mounted is a mechanism that cannot fire, which is why it landed
 //! in the same wave rather than as a follow-up.
 //!
@@ -238,9 +238,6 @@ pub fn with_param(
     };
     next["mode"] = serde_json::json!(mode);
 
-    // Refuse a key this mode may not carry rather than writing it. `win_conditions::parse` would
-    // refuse the WHOLE block over a stray param, so a card that wrote one would silently disable
-    // the rule the author is editing — the failure this function exists to make impossible.
     if param_key_for_mode(mode) != Some(key) && !optional_param_keys_for_mode(mode).contains(&key) {
         return Err(format!("`{key}` is not a field of the `{mode}` rule."));
     }
@@ -301,8 +298,6 @@ pub fn with_trigger(
 
     if on {
         if !triggers.iter().any(|t| t == trigger) {
-            // Appended in the SCHEMA's order, not click order, so re-ticking a trigger does not
-            // reshuffle the block and produce a diff that says nothing.
             triggers.push(trigger.to_string());
             triggers.sort_by_key(|t| {
                 END_ON_TRIGGERS
@@ -352,16 +347,9 @@ fn read_block() -> Option<serde_json::Value> {
 /// compile refuses, and the check belongs on the one path every control takes.
 #[cfg(target_arch = "wasm32")]
 fn commit(block: Option<&serde_json::Value>) {
-    // Nested rather than a `let` chain: this crate is edition 2021 (`map-engine-core` is 2024, and
-    // the two are not interchangeable — see the workspace's per-crate edition rule).
     if let Some(clause) =
         block.and_then(|b| website_map_engine::data::scenario::win_conditions::validate(b).err())
     {
-        // NOT a refusal to write. A half-filled card is legitimate authoring in progress (a `vip`
-        // rule whose slot id has not been typed yet), the save path carries it, and the compile
-        // reports it and falls back — so refusing here would lose the author's work instead of
-        // letting them finish it. Logged so a shape this card should never produce is still
-        // visible in the console.
         leptos::logging::warn!("winConditions is not yet complete: {clause}");
     }
     crate::v2::apps::editor::bridge::host_state::editor_context::update_environment(env_patch(
@@ -373,223 +361,8 @@ fn commit(block: Option<&serde_json::Value>) {
 /// `settings_modal::render_flow_section` takes it.
 ///
 /// Inert on the native view shell (no document), like every sibling panel.
-#[cfg(not(target_arch = "wasm32"))]
-#[must_use]
-pub fn win_conditions_card(ctrl: &'static str) -> AnyView {
-    let _ = ctrl;
-    ().into_any()
-}
-
-/// The **Win conditions** card — see the native sibling for the signature contract.
-#[cfg(target_arch = "wasm32")]
-#[must_use]
-pub fn win_conditions_card(ctrl: &'static str) -> AnyView {
-    let sect = "text-label-sm uppercase tracking-wider text-outline";
-    let hint = "text-label-sm normal-case text-outline";
-
-    let block = read_block();
-    let mode = block
-        .as_ref()
-        .and_then(|b| b.get("mode"))
-        .and_then(serde_json::Value::as_str)
-        .filter(|m| AUTHORED_MODES.contains(m))
-        .unwrap_or("")
-        .to_string();
-
-    // The field's inline refusal (a bad minute count, the last trigger unticked). Signal rather
-    // than a rebuild, because the document did not change and rebuilding would clear the box the
-    // author is still typing in.
-    let refusal = RwSignal::new(String::new());
-
-    let picker = {
-        let selected = mode.clone();
-        let block_for_pick = block.clone();
-        view! {
-            <label class="flex flex-col gap-1">
-                <span class=sect>"Win rule"</span>
-                <select
-                    prop:value=selected
-                    on:change=move |ev| {
-                        refusal.set(String::new());
-                        let picked = event_target_value(&ev);
-                        if picked.is_empty() {
-                            commit(None);
-                        } else if AUTHORED_MODES.contains(&picked.as_str()) {
-                            commit(Some(&with_mode(block_for_pick.as_ref(), &picked)));
-                        } else {
-                            // The <select> can only emit its own options, so this is reachable only
-                            // if `mode_options` ever drifts from AUTHORED_MODES — in which case
-                            // refusing is right: the compile would fall back to attrition anyway,
-                            // and doing it here says so instead of shipping a rule that does not run.
-                            leptos::logging::error!(
-                                "refusing winConditions.mode = {picked:?}: not an authored mode"
-                            );
-                        }
-                    }
-                    class=ctrl
-                >
-                    {mode_options()
-                        .into_iter()
-                        .map(|(value, label)| view! { <option value=value>{label}</option> })
-                        .collect::<Vec<_>>()}
-                </select>
-                <span class=hint>
-                    "None leaves the mission on the derived attrition rule — the last side with living players wins."
-                </span>
-            </label>
-        }
-    };
-
-    if mode.is_empty() {
-        return view! {
-            <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
-                <span class=sect>"Win conditions"</span>
-                {picker}
-            </div>
-        }
-        .into_any();
-    }
-
-    let param_rows = param_fields(&mode)
-        .into_iter()
-        .map(|(key, label, hint_text)| {
-            let committed = block
-                .as_ref()
-                .and_then(|b| b.get(key))
-                .map(|v| match v {
-                    serde_json::Value::String(s) => s.clone(),
-                    other => other.to_string(),
-                })
-                .unwrap_or_default();
-            let mode_for_row = mode.clone();
-            let block_for_row = block.clone();
-            let numeric = key == "timeoutMinutes";
-            view! {
-                <label class="flex flex-col gap-1">
-                    <span class=sect>{label}</span>
-                    <input
-                        type=if numeric { "number" } else { "text" }
-                        min=if numeric { TIMEOUT_MINUTES_MIN.to_string() } else { String::new() }
-                        max=if numeric { TIMEOUT_MINUTES_MAX.to_string() } else { String::new() }
-                        step="1"
-                        // `change`, not `input`: a value authored per keystroke would file one undo
-                        // step per character, and each bumps `doc_tick`, which rebuilds this subtree
-                        // out from under the caret. Same reason the flow durations use `change`.
-                        value=committed
-                        on:change=move |ev| {
-                            let raw = event_target_value(&ev);
-                            match with_param(block_for_row.as_ref(), &mode_for_row, key, &raw) {
-                                Ok(next) => {
-                                    refusal.set(String::new());
-                                    commit(Some(&next));
-                                }
-                                Err(clause) => refusal.set(clause),
-                            }
-                        }
-                        class=ctrl
-                    />
-                    <span class=hint>{hint_text}</span>
-                </label>
-            }
-        })
-        .collect::<Vec<_>>();
-
-    let checked: Vec<String> = block
-        .as_ref()
-        .and_then(|b| b.get("endOn"))
-        .and_then(serde_json::Value::as_array)
-        .map(|a| {
-            a.iter()
-                .filter_map(serde_json::Value::as_str)
-                .map(str::to_string)
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let checklist = END_ON_TRIGGERS
-        .iter()
-        .map(|trigger| {
-            let (label, why) = trigger_label(trigger);
-            let is_on = checked.iter().any(|t| t == trigger);
-            let mode_for_row = mode.clone();
-            let block_for_row = block.clone();
-            let trigger = *trigger;
-            view! {
-                <div class="flex flex-col gap-0.5">
-                    <label class="flex items-center justify-between py-0.5">
-                        <span class="text-label-md text-on-surface-variant">{label}</span>
-                        <input
-                            type="checkbox"
-                            prop:checked=is_on
-                            on:change=move |ev| {
-                                let on = event_target_checked(&ev);
-                                match with_trigger(block_for_row.as_ref(), &mode_for_row, trigger, on) {
-                                    Ok(next) => {
-                                        refusal.set(String::new());
-                                        commit(Some(&next));
-                                    }
-                                    Err(clause) => {
-                                        // A refused value must not stay on screen: leaving the box
-                                        // unticked while the document still holds the trigger is
-                                        // the editor showing a setting the author does not have.
-                                        refusal.set(clause);
-                                        if let Some(input) = ev
-                                            .target()
-                                            .and_then(|t| {
-                                                wasm_bindgen::JsCast::dyn_into::<
-                                                    web_sys::HtmlInputElement,
-                                                >(t)
-                                                    .ok()
-                                            })
-                                        {
-                                            input.set_checked(true);
-                                        }
-                                    }
-                                }
-                            }
-                            class="accent-primary"
-                        />
-                    </label>
-                    <span class=hint>{why}</span>
-                </div>
-            }
-        })
-        .collect::<Vec<_>>();
-
-    // The compile's own verdict on what is authored so far, shown where it was authored. One
-    // validator, not a second copy of the rules — `win_conditions::validate` is the same function
-    // the compile calls, so the card cannot disagree with the document about what is acceptable.
-    let incomplete = block
-        .as_ref()
-        .and_then(|b| website_map_engine::data::scenario::win_conditions::validate(b).err());
-
-    view! {
-        <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
-            <span class=sect>"Win conditions"</span>
-            {picker}
-            {param_rows}
-            <div class="flex flex-col gap-2">
-                <span class=sect>"Ends the round on"</span>
-                {checklist}
-            </div>
-            {move || {
-                let r = refusal.get();
-                (!r.is_empty()).then(|| view! { <p class="text-label-sm text-error">{r}</p> })
-            }}
-            {incomplete
-                .map(|clause| {
-                    view! {
-                        <p class="text-label-sm text-error">
-                            {format!(
-                                "This rule is not complete, so the mission will run on the derived attrition rule: {clause}",
-                            )}
-                        </p>
-                    }
-                })}
-        </div>
-    }
-    .into_any()
-}
+mod view;
+pub use view::win_conditions_card;
 
 #[cfg(test)]
 #[path = "tests/win_conditions_card/mode_authoring.rs"]

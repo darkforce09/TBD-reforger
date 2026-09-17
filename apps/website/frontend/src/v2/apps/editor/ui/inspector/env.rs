@@ -1,13 +1,11 @@
-//! T-661 — `meta.environment` authoring policy + the mission-flow block, split from
+//! `meta.environment` authoring policy + the mission-flow block, split from
 //! `eden_chrome.rs`.
 //!
 //! The gate ([`author_env`] → [`CARRIED_ENV_KEYS`] / [`AUTHORED_FLOW_KEYS`]) refuses any environment
-//! key no surface reads back — the rule that stopped the View Distance / Thermals controls (T-193)
-//! and scopes the T-224 flow block. Pure Rust + JSON; the doc-write helpers are wasm-only (they call
+//! key no surface reads back — the rule that stopped the View Distance / Thermals controls ()
+//! and scopes the  flow block. Pure Rust + JSON; the doc-write helpers are wasm-only (they call
 //! `editor_ops`, a wasm32-only module).
 #![allow(dead_code)]
-
-// ── meta.environment — the keys the editor is allowed to author (T-193) ──────────────────────────
 
 /// Every `meta.environment` key the editor writes, paired with the surface that reads it back.
 ///
@@ -24,7 +22,7 @@
 /// the way out of the editor — which is the harder bug, because a rejection at least tells someone.
 ///
 /// **Why they were removed rather than carried through.** There is no destination. The `missions`
-/// row has no `view_distance` / `thermals` column, so the T-192 mirror cannot take them; the mod
+/// row has no `view_distance` / `thermals` column, so the  mirror cannot take them; the mod
 /// document struct and the schema would both have to grow a field; and neither word appears anywhere
 /// in `apps/mod` or `packages/tbd-schema` — the framework has no view-distance or thermals concept
 /// to receive them, so even a widened schema would land the values in a document nothing reads. That
@@ -38,8 +36,6 @@
 /// listed here. That is the part that makes this stay fixed — the next control cannot be wired to a
 /// key with no reader without someone first adding the reader to this table.
 const CARRIED_ENV_KEYS: &[(&str, &str)] = &[
-    // Compiled AND mirrored: `mission_compile` prefers the saved payload's environment over the
-    // row, and T-192 PATCHes the row so the library dossier cannot disagree with the editor.
     (
         "time",
         "compiled `environment.dateTime` + the `missions.time_of_day` column",
@@ -48,8 +44,6 @@ const CARRIED_ENV_KEYS: &[(&str, &str)] = &[
         "weather",
         "compiled `environment.weatherPreset` + the `missions.weather` column",
     ),
-    // Editor-local: per-mission render prefs applied live to the map host. These never compile, and
-    // that is correct — they describe how the AUTHOR looks at the map, not how the mission runs.
     (
         "showHillshade",
         "the editor's map host (`world_assets::apply_hillshade`)",
@@ -99,16 +93,14 @@ pub(crate) fn author_env(key: &str, value: serde_json::Value) {
 pub const ENV_UNCARRIED_NOTE: &str =
     "View distance and thermals are not part of a compiled mission — it carries time and weather only.";
 
-// ── The mission-flow block (T-224) ───────────────────────────────────────────────────────────────
-
 /// The four `flow` fields the editor authors: the key it writes into the document, the compiled
 /// document path that key becomes, and the mod symbol that reads it there.
 ///
-/// **Why these four and not the other four the ticket names.** T-224 asks for six controls —
+/// **Why these four and not the other four the ticket names.**  asks for six controls —
 /// duration, respawn, spectator policy, NVG, tickets, JIP. Only two of those six reach a consumer
 /// (duration = `flow.timeLimitSeconds`, and `jip`), so the block below is the two that do plus the
 /// two remaining `flow` fields, which reach one for the same reason. The other four are refused, and
-/// [`SETTINGS_UNREAD_NOTE`] is the dialog copy that says so. This is the T-193 rule applied to a new
+/// [`SETTINGS_UNREAD_NOTE`] is the dialog copy that says so. This is the  rule applied to a new
 /// block rather than a new exception to it: `mission.schema.json` declaring a field is not a reader,
 /// and a control whose value stops at the editor boundary is worse than no control at all.
 ///
@@ -125,9 +117,9 @@ pub const ENV_UNCARRIED_NOTE: &str =
 /// those two. Anything written beside them is authored into the live document, dropped on Save, and
 /// gone on the next load: a control that works until you reload, which is the shape of bug this file
 /// has now spent three tickets removing. (That the compiler drops unrecognised top-level keys in
-/// silence is its own ticket, T-219; this slice routes around it rather than depending on it.)
+/// silence is its own ticket, ; this slice routes around it rather than depending on it.)
 ///
-/// **The chain is closed end to end — T-204 landed the last hop.** Every reader below is live in
+/// **The chain is closed end to end —  landed the last hop.** Every reader below is live in
 /// the mod, the editor→mod chain is live for `meta.environment` up to the compiler (the saved
 /// payload carries these keys out as top-level `environment`, and `mission_compile.rs` reads that
 /// block for `time`/`weather`), and `ModFlow` no longer splices in four hardcoded constants:
@@ -135,8 +127,8 @@ pub const ENV_UNCARRIED_NOTE: &str =
 /// per duration plus `authored_flow_jip(env)`, reading exactly the four key names in the first
 /// column below, unprefixed, off the payload's top-level `environment`. So an authored 3600 is
 /// stored, saved, reloaded, shown back AND compiled as 3600 — the old note here said it "still says
-/// 5400", which was true when this file was written and stopped being true the day T-204 shipped.
-/// (T-753 corrected it; the comment had outlived its ticket by several waves, and a stale comment
+/// 5400", which was true when this file was written and stopped being true the day  shipped.
+/// ( corrected it; the comment had outlived its ticket by several waves, and a stale comment
 /// claiming a value is ignored is how a real drift gets waved through.)
 ///
 /// The four constants remain as the fallback for a mission that authors nothing, and this module
@@ -178,7 +170,7 @@ const AUTHORED_FLOW_KEYS: &[(&str, &str, &str)] = &[
 /// `TBD_MissionFactionStruct` declares no `tickets`, and `JsonLoadContext` is a typed parser — a key
 /// with no matching member is not rejected or logged, it is invisible. So all four would author
 /// cleanly, validate cleanly, compile cleanly and change nothing about the round. The mod reader is
-/// T-259 (`settings`); tickets has no ticket because TBD events are one life by design and the
+///  (`settings`); tickets has no ticket because TBD events are one life by design and the
 /// framework has no respawn pool for a ticket count to size.
 pub const SETTINGS_UNREAD_NOTE: &str = "Respawn, spectator policy, night vision and per-faction tickets are not authored here — the mission document declares them and no mod script reads them. TBD events are one life.";
 
@@ -322,7 +314,7 @@ pub fn parse_flow_seconds(s: &str) -> Option<i64> {
 /// **Why the box holds seconds and not minutes.** Seconds is the unit of the document, the schema
 /// and every mod reader, so a seconds box is the only one that cannot round. A minutes box has to
 /// divide on open, and an authored 5430 s (90.5 min) would come back as `90` or `91` — the dialog
-/// silently rewriting a value the author never touched, which is the exact class of bug T-192 was
+/// silently rewriting a value the author never touched, which is the exact class of bug  was
 /// filed for. So the number in the box is the number in the document, and this renders what that
 /// number means next to it.
 #[must_use]

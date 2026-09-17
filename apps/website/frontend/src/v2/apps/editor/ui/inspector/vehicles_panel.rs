@@ -1,4 +1,4 @@
-//! T-661 — the placed-vehicles panel under the DockRight Vehicles tab, split from `eden_chrome.rs`.
+//! the placed-vehicles panel under the DockRight Vehicles tab, split from `eden_chrome.rs`.
 //!
 //! Every `vehiclesById` row with its map position, a heading field, a delete, and an expandable
 //! `{item, qty}` cargo editor (`VEHICLE_CARGO_KINDS` is the cargo picker's allow-list). wasm-only:
@@ -14,7 +14,7 @@ use crate::v2::apps::editor::shell::layout::HOVER_FILL;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::ui::{cn, MaterialIcon};
 
-/// T-215 — registry kinds the vehicle cargo picker offers.
+/// registry kinds the vehicle cargo picker offers.
 ///
 /// A superset of `arsenal::CARGO_ADD_KINDS` (magazine / ammo / gear_item / throwable / explosive) on
 /// purpose. That list answers "what goes inside a **worn garment**", so it excludes rifles, vests
@@ -25,13 +25,13 @@ use crate::v2::core::ui::{cn, MaterialIcon};
 /// Still excluded: `character` (a person is not cargo — crews are ORBAT slots), `vehicle` and
 /// `vehicle_weapon` (nesting a vehicle inside a vehicle is not a thing the engine's storage does),
 /// and `other` (the export's escape hatch, whose contents are by definition unclassified).
-/// T-076 — the **generic** seat model shipped ahead of a per-class seat schema.
+/// the **generic** seat model shipped ahead of a per-class seat schema.
 ///
-/// Vehicle data has no per-class seat layout yet (that is T-205, out of scope), so every placed
+/// Vehicle data has no per-class seat layout yet (that is , out of scope), so every placed
 /// vehicle offers the same fixed crew stations — a driver, a gunner and a commander — plus a run of
 /// cargo seats. This is deliberately a lowest-common-denominator model: it over-offers a seat a real
 /// prefab may lack (a jeep has no commander) rather than under-offering, because an empty seat is
-/// harmless (it authors nothing) while a missing seat would make a soldier unassignable. When T-205
+/// harmless (it authors nothing) while a missing seat would make a soldier unassignable. When
 /// lands a real schema, this constant is what it replaces.
 ///
 /// `(seat_id, label)`. The `seat_id` is the stable doc key written into `vehicle.crew`; the label is
@@ -43,11 +43,11 @@ const FIXED_SEATS: &[(&str, &str)] = &[
     ("commander", "Commander"),
 ];
 
-/// T-076 — cargo seats offered when the vehicle has no declared cargo capacity. The registry row has
-/// no per-vehicle seat count today (T-205), so this is the count every vehicle gets.
+/// cargo seats offered when the vehicle has no declared cargo capacity. The registry row has
+/// no per-vehicle seat count today (), so this is the count every vehicle gets.
 const DEFAULT_CARGO_SEATS: usize = 4;
 
-/// T-076 — the ordered `(seat_id, label)` list a placed vehicle offers: the three fixed stations
+/// the ordered `(seat_id, label)` list a placed vehicle offers: the three fixed stations
 /// then `n_cargo` cargo seats (`cargo1`…`cargoN`). Pure (no doc, no runtime) so the generic seat
 /// model is unit-testable in this file's const-assertion idiom, even though the panel that consumes
 /// it is wasm-only. `seat_id`s are the keys written into `vehicle.crew`.
@@ -83,7 +83,7 @@ const VEHICLE_CARGO_KINDS: &[&str] = &[
     "crate",
 ];
 
-/// T-215 — the **Placed** section under the Vehicles palette: every `vehiclesById` row with its map
+/// the **Placed** section under the Vehicles palette: every `vehiclesById` row with its map
 /// position, a delete, and an expandable `{item, qty}` cargo editor.
 ///
 /// This is where authored vehicle cargo is entered. It lives in the Vehicles tab rather than in the
@@ -103,8 +103,6 @@ pub(crate) fn placed_vehicles_panel(
     use website_map_engine::editing::hosted_commands as engine_ops;
     use website_map_engine::editing::hosted_commands::{VehicleCargoRow, VehicleRow};
 
-    // Re-read the doc on every mutation — `MissionDocCore` has no change subscription, so this is
-    // the same pull-mirror tick the Attributes modal uses.
     doc_tick.track();
     let rows: Vec<VehicleRow> = engine_ops::vehicle_rows();
     if rows.is_empty() {
@@ -136,8 +134,6 @@ pub(crate) fn placed_vehicles_panel(
             let open = expanded.with(|e| e.contains(&vid));
             let title = label_of(&v.resource_name);
             let pos = v.xy.map_or_else(
-                // A vehicle added from the ORBAT Manager before it was ever dropped has no
-                // position. Saying so is the point — it is the state this ticket exists to end.
                 || "not placed".to_string(),
                 |(x, y)| format!("{x:.1}, {y:.1}"),
             );
@@ -148,8 +144,6 @@ pub(crate) fn placed_vehicles_panel(
 
             let (id_toggle, id_del) = (vid.clone(), vid.clone());
             let head = view! {
-                // T-668 — the placed-vehicle header row wears HOVER_FILL, the one hover fill the
-                // chrome uses (was a weaker ad-hoc `hover:bg-white/5`).
                 <div class=cn(&["flex items-center gap-1.5 rounded px-1.5 py-1", HOVER_FILL])>
                     <span
                         role="button"
@@ -196,8 +190,6 @@ pub(crate) fn placed_vehicles_panel(
                 return head.into_any();
             }
 
-            // T-425 — heading authoring. Placed vehicles defaulted to rotation 0.0 at drop; this
-            // field is how the operator sets a real heading without delete-and-replace.
             let heading_row = if let Some(h) = heading {
                 let id_h = vid.clone();
                 view! {
@@ -276,19 +268,7 @@ pub(crate) fn placed_vehicles_panel(
                 })
                 .collect_view();
 
-            // T-076 — the CREW seat list. This panel is the SHIPPED crew-authoring path: the
-            // context-menu entry point (CREW-SEAT-001) stays the DISABLED row T-664 shipped in
-            // `context_menu.rs`, so an author boards from here, not from the map right-click.
-            //
-            // Every placed character is a boarding candidate; the picker options are
-            // `placed_slot_choices()` (read once per render). Each seat is a `<select>` whose current
-            // value is the slot the crew map assigns to it — choosing a slot boards (assign), the
-            // empty option unboards (clear). The one-seat-per-slot rule lives in the op, so a slot
-            // already crewing another seat is simply MOVED here; no client-side guard is needed.
             let seat_choices = StoredValue::new(engine_ops::placed_slot_choices());
-            // Cargo-seat count: from the vehicle's declared capacity when one exists, else the
-            // generic default. The registry exposes no per-vehicle seat count today (T-205), so this
-            // is `DEFAULT_CARGO_SEATS` for every vehicle — the branch is here for when it does.
             let n_cargo_seats = DEFAULT_CARGO_SEATS;
             let seat_list = seat_model(n_cargo_seats)
                 .into_iter()
@@ -357,10 +337,6 @@ pub(crate) fn placed_vehicles_panel(
                                 return;
                             }
                             let mut next = base_add.clone();
-                            // Adding an item already present bumps it rather than writing a second
-                            // row for the same prefab: `qty` is a unit count, so two rows of 3 and
-                            // one row of 6 are the same load, and the collapsed form is the one an
-                            // author can read.
                             if let Some(r) = next.iter_mut().find(|r| r.item == item) {
                                 r.qty = r.qty.saturating_add(1);
                             } else {

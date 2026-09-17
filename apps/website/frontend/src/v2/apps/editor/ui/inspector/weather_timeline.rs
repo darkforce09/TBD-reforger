@@ -1,16 +1,16 @@
-//! T-936.4 — the **Weather timeline** panel: keyframes (`atMinutes`, preset, optional wind/fog),
+//! the **Weather timeline** panel: keyframes (`atMinutes`, preset, optional wind/fog),
 //! every write one undo step.
 //!
 //! ══ Transport ═══════════════════════════════════════════════════════════════════════════════
 //! Every write goes to `meta.environment.weatherTimeline` through [`operations::update_environment`],
-//! the same one-patch-one-undo-step path the T-224 flow controls and the T-936.1/.2/.3 cards use.
+//! the same one-patch-one-undo-step path the  flow controls and the /.2/.3 cards use.
 //! `map_engine_core::mission::extensions` copies the key onto the compiled payload root.
 //!
 //! ══ Where this renders ══════════════════════════════════════════════════════════════════════
 //! [`weather_timeline_panel`] is a section in the same shape as `win_conditions_card` /
 //! `tasks_panel` / `radio_panel`. It belongs in the Mission Settings dialog
 //! (`settings_modal.rs`'s `{weather_timeline_panel(ctrl)}`). This slice does not own
-//! `settings_modal.rs`; T-936.1/.2/.3 waited for the wave bookkeeping commit to land the one-line
+//! `settings_modal.rs`; /.2/.3 waited for the wave bookkeeping commit to land the one-line
 //! mount for the same reason. A panel that is built, registered and tested but never mounted is a
 //! mechanism that cannot fire — the mount is on the human checklist, not silently dropped.
 //!
