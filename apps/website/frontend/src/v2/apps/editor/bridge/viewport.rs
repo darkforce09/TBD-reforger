@@ -303,7 +303,7 @@ pub(crate) mod registry_session {
     use std::cell::RefCell;
     use std::collections::HashMap;
 
-    use crate::v2::apps::editor::arsenal::arsenal_rules::{CargoRow, CompatFeed};
+    use crate::v2::apps::editor::arsenal::rules::{CargoRow, CompatFeed};
     use crate::v2::core::api::dto::RegistryItem;
 
     struct CachedCompat {

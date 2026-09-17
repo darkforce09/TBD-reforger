@@ -2,7 +2,8 @@
 //!
 //! **Role:** groups the workspace's Leptos views by the surface they draw: the chrome docked
 //! around the viewport, the layer outliner those docks host, the inspectors that edit the
-//! selected subject, and the full-screen dialogs raised over all of it.
+//! selected subject, the Arsenal's loadout panels, and the full-screen dialogs raised over all
+//! of it.
 //! **Position:** a leaf of `v2::apps::editor`. It reads the document through the map engine and
 //! the session signals under `shell` and `bridge`; nothing under `v2::pages` reaches into it.
 //! **Signals & state:** none of its own. Each surface subscribes to the host signals it draws
@@ -11,6 +12,9 @@
 //! view that touches `web_sys` gates the touching body, not the whole component, so the native
 //! test build still compiles the surface.
 
+/// The Arsenal's panels: the cargo editor, the paper-doll host and the compatibility and
+/// attachment readouts the loadout editor draws.
+pub mod arsenal;
 /// The chrome docked around the map viewport: the left and right docks, the top command strip,
 /// the bottom toolbelt and the right-click context menu.
 pub mod docks;

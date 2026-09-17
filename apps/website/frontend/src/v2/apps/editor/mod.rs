@@ -34,5 +34,6 @@ pub mod mission_editor;
 pub mod shell;
 /// The rendered surfaces around the map: the docked chrome (left and right docks, top strip,
 /// toolbelt, context menu), the Editor Layers outliner they host, the inspectors that edit the
-/// selected subject, and the full-screen dialogs raised over the whole workspace.
+/// selected subject, the Arsenal's loadout panels, and the full-screen dialogs raised over the
+/// whole workspace.
 pub mod ui;

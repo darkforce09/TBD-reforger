@@ -181,15 +181,12 @@ async fn fetch_compat_cold(
     auth: crate::v2::core::auth::AuthStore,
 ) -> Result<
     (
-        crate::v2::apps::editor::arsenal::arsenal_rules::CompatFeed,
-        std::collections::HashMap<
-            String,
-            Vec<crate::v2::apps::editor::arsenal::arsenal_rules::CargoRow>,
-        >,
+        crate::v2::apps::editor::arsenal::rules::CompatFeed,
+        std::collections::HashMap<String, Vec<crate::v2::apps::editor::arsenal::rules::CargoRow>>,
     ),
     crate::v2::core::api::client::ApiErr,
 > {
-    use crate::v2::apps::editor::arsenal::arsenal_rules::{
+    use crate::v2::apps::editor::arsenal::rules::{
         CargoRow, CompatFeed, CompatGraph, CompatStatus,
     };
     use crate::v2::core::api::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
@@ -1340,8 +1337,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     }
     // T-167 — the compat edge feed for the Smart Arsenal (optic/magazine edge rows + validation).
     // Fetched once alongside /registry; starts Loading, degrades to Unavailable on error.
-    let compat =
-        RwSignal::new(crate::v2::apps::editor::arsenal::arsenal_rules::CompatFeed::default());
+    let compat = RwSignal::new(crate::v2::apps::editor::arsenal::rules::CompatFeed::default());
     // T-159.26 — server hydrate / conflict / dirty (data-safety). `conflict` holds an offered
     // server payload when local IDB content diverges; `dirty` is the unsaved-changes flag;
     // `current_semver` tracks the adopted server version.
@@ -1461,9 +1457,7 @@ pub fn MissionEditorPage() -> impl IntoView {
         //   1. Arsenal edge families only (`optic_on_weapon,mag_in_weapon,attachment_on_weapon`)
         //   2. `?view=cargo_defaults` aggregated cargo seed map (server-side collapse)
         {
-            use crate::v2::apps::editor::arsenal::arsenal_rules::{
-                CompatFeed, CompatGraph, CompatStatus,
-            };
+            use crate::v2::apps::editor::arsenal::rules::{CompatFeed, CompatGraph, CompatStatus};
             if registry_session::must_fetch_compat() {
                 spawn_local({
                     async move {

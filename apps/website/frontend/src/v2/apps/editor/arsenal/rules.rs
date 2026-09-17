@@ -1,20 +1,20 @@
-//! Smart-Arsenal domain core (T-167) — the Rust port of React `arsenalRules.ts` +
-//! `arsenalDollModel.ts` (tag T-159.29.2). Pure, framework-free, native-tested: the 14 loadout
-//! rows (incl. the compat **edge** rows optic/magazine), the compat edge graph + `items_for`,
-//! per-row option building (abstract/variant filtered, stranded-pick preserved), loadout
-//! validation, the paper-doll region model, and the honest weight readout.
+//! The Smart-Arsenal domain core — every decision the loadout editor makes, and no rendering.
 //!
-//! The UI (`arsenal.rs`) and the persisted `SlotLoadoutV2` shape (owned by `arsenal.rs`
-//! `picks_to_loadout`) sit on top of this — this module holds only the decisions.
-//!
-//! T-240 checked whether the blanket `allow` below is still earned, because while it is on, the
-//! compiler cannot tell anyone that a rule in here has no caller — which is how `cargo_capacity_errors`
-//! could have shipped unwired and silent. **It is still earned, by exactly three items in the
-//! shipping (wasm32) build:** `PRIMARY_SUB_REGIONS`, `DollRegion::kind` and
-//! `DOLL_REGIONS` — the paper-doll region model, whose consumer went away. A native
-//! `cargo check` lists more, but those are consumers behind `cfg(target_arch = "wasm32")`, not
-//! real deadness. Remove the `allow` the moment those three find a caller or go; do not delete
-//! them to get there.
+//! **Role:** owns the 14 loadout rows (including the compatibility **edge** rows, optic and
+//! magazine), the compatibility edge graph behind `items_for`, per-row option building (abstract
+//! and variant rows filtered out, a stranded pick preserved so it can still be seen and
+//! cleared), loadout validation, the paper-doll region model and the weight readout.
+//! **Position:** the pure floor of `v2::apps::editor::arsenal`. The panels and the persisted
+//! `SlotLoadoutV2` serialization sit on top of it; it depends on neither, so it is framework-free
+//! and tested on the native shell.
+//! **Signals & state:** none. Every entry point is a function of the registry rows, the
+//! compatibility edges and the current picks.
+//! **Invariants:** the blanket `allow(dead_code)` below is earned by exactly three items in the
+//! shipping wasm32 build — `PRIMARY_SUB_REGIONS`, `DollRegion::kind` and `DOLL_REGIONS`, the
+//! paper-doll region model that currently has no consumer. A native `cargo check` lists more,
+//! but those are consumers behind `cfg(target_arch = "wasm32")` rather than real deadness.
+//! While the `allow` is on, the compiler cannot report an unwired rule, so remove it the moment
+//! those three find a caller or go — and do not delete them to get there.
 #![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashMap, HashSet};

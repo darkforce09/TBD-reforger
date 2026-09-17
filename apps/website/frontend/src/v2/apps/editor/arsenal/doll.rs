@@ -1,14 +1,19 @@
-//! T-172 B10 — the 3D arsenal doll mount (SoldierModel3D.tsx port onto the intact T-154
-//! `map_engine_render::DollEngine`, owned as plain Rust — no shim, no three.js).
+//! The 3D paper-doll mount — the browser host for the map engine's `DollEngine`.
 //!
-//! Dumb per D5: sizes the canvas (device px BEFORE create), forwards pointer deltas (drag =
-//! turn character) and sub-threshold clicks (pick), pushes the 14-byte region state array
-//! (RAIL order), and drives a damage-driven rAF loop — ALL scene/camera/pick/anchor policy
-//! lives in Rust (`map_engine_core::doll` / `DollEngine`). The allowed DOM layer (T-154.1):
-//! a cursor tooltip for the hovered part and a pinned name chip + leader line for the ACTIVE
-//! part; anchor px comes from Rust and positions are mutated directly in the rAF loop — no
-//! per-frame reactive renders. On create failure the caller swaps in the SVG `paper_doll`
-//! fallback (the T-154 contract).
+//! **Role:** sizes the canvas in device pixels before the engine is created, forwards pointer
+//! deltas as character turns and sub-threshold clicks as part picks, pushes the region state
+//! array in rail order, and drives a damage-driven `requestAnimationFrame` loop. It also owns
+//! the one DOM layer the engine does not draw: a cursor tooltip for the hovered part and a
+//! pinned name chip with a leader line for the active one.
+//! **Position:** a leaf of `v2::apps::editor::arsenal`, mounted by the Arsenal's doll panel.
+//! Every scene, camera, pick and anchor decision belongs to `website_map_engine::doll`; this
+//! module holds none of them.
+//! **Signals & state:** the engine handle, the last pointer position and the hovered and active
+//! region live in cells owned by the mounted component, never in globals. Anchor pixels come
+//! back from the engine each frame and are written straight onto the chip's style, so the rAF
+//! loop triggers no reactive render.
+//! **Invariants:** wasm-only, like every other live engine host. If the engine fails to create,
+//! the caller swaps in the SVG paper-doll fallback rather than leaving a blank canvas.
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::{Cell, RefCell};
@@ -20,7 +25,7 @@ use leptos::prelude::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use crate::v2::apps::editor::arsenal::arsenal_rules::{LOADOUT_ROWS, RAIL_REGIONS};
+use crate::v2::apps::editor::arsenal::rules::{LOADOUT_ROWS, RAIL_REGIONS};
 
 const CLICK_SLOP_PX: f64 = 4.0; // same bar as the map's drag threshold
 const CALLOUT_DX: f64 = 52.0; // chip offset from the anchor (up-right)

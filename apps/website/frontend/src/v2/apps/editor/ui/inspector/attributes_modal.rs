@@ -269,7 +269,7 @@ pub fn AttributesModal(
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
     registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
     /// T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation).
-    compat: RwSignal<crate::v2::apps::editor::arsenal::arsenal_rules::CompatFeed>,
+    compat: RwSignal<crate::v2::apps::editor::arsenal::rules::CompatFeed>,
 ) -> impl IntoView {
     // Esc closes (React Dialog behavior); the editor's own keydown handler skips editable fields,
     // so this window listener is the one Esc path.
@@ -404,7 +404,7 @@ fn modal_view(
     // `AttributesModal`), one entry per edited slot.
     snapshot: StoredValue<Vec<engine_ops::SlotAttrs>>,
     registry_items: RwSignal<Option<Vec<crate::v2::core::api::dto::RegistryItem>>>,
-    compat: RwSignal<crate::v2::apps::editor::arsenal::arsenal_rules::CompatFeed>,
+    compat: RwSignal<crate::v2::apps::editor::arsenal::rules::CompatFeed>,
     tab: RwSignal<usize>,
 ) -> AnyView {
     let slot_id = StoredValue::new(attrs.id.clone());

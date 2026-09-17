@@ -1,18 +1,27 @@
-//! The Arsenal view panels — the cargo editor, the doll host (3D with SVG fallback), the
-//! attachments / compat panels and the SVG paper-doll. Split out of `arsenal/mod.rs` at
-//! T-934.8 with bodies unchanged; [`super::ArsenalTab`] is the only caller.
+//! The Arsenal's view panels — the cargo editor, the doll host, the compatibility and
+//! attachment readouts, and the SVG paper-doll.
+//!
+//! **Role:** draws the surfaces the Arsenal raises beside its pick rows: the per-container cargo
+//! editor with its budget bar, the 3D doll host that falls back to the SVG paper-doll, the
+//! attachment picker for the selected weapon and the compatibility verdict for the loadout.
+//! **Position:** a leaf of `v2::apps::editor::ui::arsenal`. `ArsenalTab`, in
+//! `v2::apps::editor::arsenal`, is the only caller; the rules and serialization the panels read
+//! live there too.
+//! **Signals & state:** none of its own. Each panel takes the pick, cargo and catalog signals the
+//! Arsenal owns and reports every edit through the `on_change` callback it was handed.
+//! **Invariants:** a cargo mutation commits on the spot — the panel updates its signal and calls
+//! `on_change` in the same handler, so nothing stages behind a Save the Arsenal does not have.
 
 use std::collections::HashMap;
 
 use leptos::prelude::*;
 
-use crate::v2::apps::editor::arsenal::arsenal_rules::{
-    self as rules, index_by_name, row_options, CompatFeed,
+use crate::v2::apps::editor::arsenal::loadout::{
+    attachments_key, attachments_of, pack_attachments, ATTACHMENT_EDGE,
 };
+use crate::v2::apps::editor::arsenal::rules::{self, index_by_name, row_options, CompatFeed};
+use crate::v2::apps::editor::arsenal::{region_title, MaterialCheck};
 use crate::v2::core::api::dto::RegistryItem;
-
-use super::loadout::{attachments_key, attachments_of, pack_attachments, ATTACHMENT_EDGE};
-use super::{region_title, MaterialCheck};
 
 /// Registry kinds offered by the cargo "add" picker (worn/held gear stays on the wear
 /// and weapon rows — cargo is what goes *inside* containers).
@@ -28,9 +37,9 @@ const CARGO_ADD_KINDS: &[&str] = &[
 /// an add picker, and the budget vs the garment's registry capacity.
 ///
 /// T-240 — the container→worn-garment alias used to live here as a second copy of the rule
-/// `arsenal_rules` already documents; it is now [`rules::cargo_garment`] alone, so the readout
+/// `rules` already documents; it is now [`rules::cargo_garment`] alone, so the readout
 /// and the block can never disagree about which garment backs a container.
-pub(super) fn cargo_panel(
+pub(crate) fn cargo_panel(
     cargo: RwSignal<Vec<rules::CargoRow>>,
     picks: RwSignal<HashMap<String, String>>,
     items: StoredValue<Vec<RegistryItem>>,
@@ -168,7 +177,7 @@ pub(super) fn cargo_panel(
 
 /// The center doll: `ArsenalDoll` (wgpu) with the SVG `paper_doll` as the create-error fallback
 /// (T-154 contract). Native shell: always the SVG (no GPU).
-pub(super) fn doll_view(
+pub(crate) fn doll_view(
     picks: RwSignal<HashMap<String, String>>,
     active_key: RwSignal<String>,
     names: StoredValue<HashMap<String, String>>,
@@ -178,7 +187,7 @@ pub(super) fn doll_view(
     {
         if !unavailable.get() {
             return view! {
-                <crate::v2::apps::editor::arsenal::arsenal_doll::ArsenalDoll
+                <crate::v2::apps::editor::arsenal::doll::ArsenalDoll
                     picks
                     active_key
                     names
@@ -309,7 +318,7 @@ fn attachments_panel(
 /// The right compat panel: the active pick's display name, each edge slot that depends on the
 /// active region (screen 04: OPTIC "Nothing compatible." / MAGAZINE list), and — for a weapon
 /// region — the T-197 multi-select attachment set. Rows click-pick.
-pub(super) fn compat_panel(
+pub(crate) fn compat_panel(
     picks: RwSignal<HashMap<String, String>>,
     active_key: RwSignal<String>,
     compat: RwSignal<CompatFeed>,

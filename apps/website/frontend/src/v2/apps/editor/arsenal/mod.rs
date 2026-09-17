@@ -7,7 +7,7 @@
 //! reads), so a pick round-trips through Save/Export.
 //!
 //! The domain decisions (rows, compat graph, option building, validation, doll regions, weight)
-//! live in [`crate::v2::apps::editor::arsenal::arsenal_rules`] (pure, native-tested). This module is the UI + the persisted
+//! live in [`crate::v2::apps::editor::arsenal::rules`] (pure, native-tested). This module is the UI + the persisted
 //! serialization ([`picks_to_loadout`] / [`loadout_to_picks`]: optic/magazine ride `weapons[0]` as
 //! sticky sub-fields; attachments ride their own weapon's `attachments[]`).
 //!
@@ -60,26 +60,23 @@
 //! wiring is pinned by `tests::t503`, so a future slice that quietly introduces staging goes red.
 #![allow(dead_code)]
 
-// T-934.6 — arsenal nest children (flat siblings before the move).
-// T-167 — Smart-Arsenal domain core (arsenalRules.ts + arsenalDollModel.ts port; pure/native-tested).
-pub mod arsenal_rules;
-// T-159.22 — flat registry rows → the Factions palette tree (the T-068.3 `buildCatalogTree` port).
-// Pure data, no web-sys: ungated so its unit tests run on the native `cargo test` shell.
+// Flat registry rows → the Factions palette tree. Pure data, no web-sys: ungated so its unit
+// tests run on the native `cargo test` shell.
 pub mod asset_catalog;
-// T-172 B10 — the 3D arsenal doll mount (DollEngine, wasm-only like the map engine host).
+// The 3D paper-doll mount over the engine's doll renderer — wasm-only, like every other live
+// engine host.
 #[cfg(target_arch = "wasm32")]
-pub mod arsenal_doll;
-// T-934.8 — the pure loadout core (serialization, export/import gates, buffer verbs,
-// receipts). Re-exported below so every `crate::v2::apps::editor::arsenal::X` path keeps working.
+pub mod doll;
+// The pure loadout core (serialization, export/import gates, buffer verbs, receipts).
+// Re-exported below so every `crate::v2::apps::editor::arsenal::X` path stays one segment deep.
 pub mod loadout;
-// T-934.8 — the Arsenal view panels (cargo editor, doll host, compat/attachments,
-// paper-doll); `ArsenalTab` below is the only caller.
-mod panels;
-
 // The Arsenal's writes to the mission document: one slot's loadout, the buffer applied across a
 // selection, and the strip. Reaches the live document, so wasm32-only.
 #[cfg(target_arch = "wasm32")]
 pub mod loadout_commands;
+// The Smart-Arsenal domain core: the loadout rows, the compatibility graph, per-row option
+// building, validation, the doll region model and the weight readout. Pure and native-tested.
+pub mod rules;
 
 // The whole public loadout surface re-exports, used-or-not: `crate::v2::apps::editor::arsenal::X` is the
 // documented path (operations/cargo.rs cites `arsenal::buffer_draw` / `arsenal::stripped_loadout`
@@ -96,14 +93,14 @@ use loadout::{
     attachments_of, export_modpack_id, import_summary, kit_default_items, loadout_faults,
     slot_asset_id,
 };
-use panels::{cargo_panel, compat_panel, doll_view};
 use std::collections::HashMap;
 
 use leptos::prelude::*;
 
-use crate::v2::apps::editor::arsenal::arsenal_rules::{
-    self as rules, format_loadout_weight, index_by_name, loadout_weight, row_options, CompatFeed,
+use crate::v2::apps::editor::arsenal::rules::{
+    format_loadout_weight, index_by_name, loadout_weight, row_options, CompatFeed,
 };
+use crate::v2::apps::editor::ui::arsenal::panels::{cargo_panel, compat_panel, doll_view};
 use crate::v2::core::api::dto::RegistryItem;
 use website_map_engine::editing::hosted_commands as engine_ops;
 
@@ -1054,12 +1051,12 @@ pub fn ArsenalTab(
 
 /// Small check glyph for the current pick row.
 #[component]
-fn MaterialCheck() -> impl IntoView {
+pub(crate) fn MaterialCheck() -> impl IntoView {
     view! { <span class="material-symbols-outlined shrink-0 text-[16px]">"check"</span> }
 }
 
 /// Rail tooltip title per region.
-fn region_title(key: &str) -> &'static str {
+pub(crate) fn region_title(key: &str) -> &'static str {
     rules::LOADOUT_ROWS
         .iter()
         .find(|r| r.key == key)
@@ -1115,7 +1112,7 @@ mod tests {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/src/v2/apps/editor/arsenal/panels.rs"
+                "/src/v2/apps/editor/ui/arsenal/panels.rs"
             )),
         ]
         .into_iter()
@@ -1535,7 +1532,7 @@ mod tests {
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/src/v2/apps/editor/arsenal/panels.rs"
+                    "/src/v2/apps/editor/ui/arsenal/panels.rs"
                 )),
             ]
             .into_iter()

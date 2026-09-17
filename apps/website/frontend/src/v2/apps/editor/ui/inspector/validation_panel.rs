@@ -853,7 +853,7 @@ pub fn ValidationPanel(
 
         // `disposed` is an `Arc<AtomicBool>` (Send + Sync) — the ONLY thing `on_cleanup` may hold,
         // since `on_cleanup` is `Send + Sync`-bound and the timer state (`TimeoutHandle`) is `!Send`
-        // (the `arsenal_doll` / `sse.rs` idiom). A leaked trailing timer on route-leave checks this
+        // (the arsenal `doll` / `sse.rs` idiom). A leaked trailing timer on route-leave checks this
         // and no-ops rather than firing into a disposed signal; the `Rc<RefCell<…>>` timer/debouncer
         // never cross into `on_cleanup`.
         let disposed = Arc::new(AtomicBool::new(false));

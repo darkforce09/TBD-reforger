@@ -10,9 +10,7 @@ pub use website_map_engine::data::store::operations::cargo::commit_writes;
 pub use website_map_engine::data::store::operations::cargo::BufferedLoadout;
 pub use website_map_engine::data::store::operations::cargo::LoadoutWrite;
 
-use crate::v2::apps::editor::arsenal::arsenal_rules::{
-    self as rules, index_by_name, validate_loadout, CompatFeed,
-};
+use crate::v2::apps::editor::arsenal::rules::{self, index_by_name, validate_loadout, CompatFeed};
 use crate::v2::core::api::dto::RegistryItem;
 
 /// A loadout row: the pick key (matches `arsenalRules` `LoadoutKey`), its label, the registry kind
@@ -108,7 +106,7 @@ const ROWS: &[Row] = &[
 /// the vanilla export and nothing read them before this slice.** They have no `LOADOUT_ROWS` entry
 /// because an attachment slot is not one-of-N: a rifle takes a handguard AND a stock AND a muzzle
 /// device at once, so the pick is a **set**, not a value — and `LoadoutRow` models a value.
-pub(super) const ATTACHMENT_EDGE: &str = "attachment_on_weapon";
+pub(crate) const ATTACHMENT_EDGE: &str = "attachment_on_weapon";
 
 /// Separator for the packed attachment set. U+001F (ASCII US) is safe **by contract, not by luck**:
 /// `registry-compat.schema.json#/$defs/resourceName` pins every node to
@@ -119,16 +117,16 @@ const ATTACHMENT_SEP: &str = "\u{1f}";
 /// The `picks` key holding `weapon_key`'s attachment set.
 ///
 /// The set rides a **synthetic key** rather than widening `picks` to `HashMap<String, Vec<String>>`
-/// because that map is the argument type of three [`crate::v2::apps::editor::arsenal::arsenal_rules`] entry points
+/// because that map is the argument type of three [`crate::v2::apps::editor::arsenal::rules`] entry points
 /// (`row_options`, `validate_loadout`, `loadout_weight`) and this slice does not own that module.
 /// The `@` infix cannot collide with a row key, and each of those consumers iterates `LOADOUT_ROWS`
 /// **by key** — so the synthetic entry is invisible to them by construction, not by convention.
-pub(super) fn attachments_key(weapon_key: &str) -> String {
+pub(crate) fn attachments_key(weapon_key: &str) -> String {
     format!("attachments@{weapon_key}")
 }
 
 /// `weapon_key`'s picked attachments, in pick order.
-pub(super) fn attachments_of(picks: &HashMap<String, String>, weapon_key: &str) -> Vec<String> {
+pub(crate) fn attachments_of(picks: &HashMap<String, String>, weapon_key: &str) -> Vec<String> {
     picks
         .get(&attachments_key(weapon_key))
         .map(|packed| {
@@ -143,12 +141,12 @@ pub(super) fn attachments_of(picks: &HashMap<String, String>, weapon_key: &str) 
 
 /// Pack a set back into its `picks` value. An empty set packs to `""`, which the `pick_item` path
 /// treats as "remove the key" — so clearing the last attachment leaves no residue in the map.
-pub(super) fn pack_attachments(list: &[String]) -> String {
+pub(crate) fn pack_attachments(list: &[String]) -> String {
     list.join(ATTACHMENT_SEP)
 }
 
 /// Attachments stranded by a weapon swap — the same authoring hazard `validate_loadout` already
-/// flags for optic/magazine, checked here because the set rides a key `arsenal_rules` cannot see.
+/// flags for optic/magazine, checked here because the set rides a key `rules` cannot see.
 /// Keyed on the **weapon** row so the message lands on the row the author must actually change,
 /// and worded to mirror the two `validate_loadout` cases (hostless / rejected).
 ///
@@ -682,7 +680,7 @@ fn import_doc_to_picks(
 ///    string where a slot wants a ResourceName-or-null — all of them are *schema* errors, and all
 ///    of them were silent data in a hand-maintained `.sqf` (ofcra_omtk.md 5.9, 14.1).
 /// 3. **The picks obey the loadout rules** — [`validate_loadout`] (compat edges),
-///    [`attachment_errors`] (the packed set `arsenal_rules` cannot see) and
+///    [`attachment_errors`] (the packed set `rules` cannot see) and
 ///    [`rules::cargo_capacity_errors`]. A schema-valid document can still describe a scope on no
 ///    rifle or forty magazines in a chest rig; importing it without this check would re-import
 ///    exactly the silent data bugs the schema gate cannot see.
@@ -2103,7 +2101,7 @@ mod tests {
                 .expect_err("an incompatible optic must not be imported");
             assert!(faults.iter().any(|f| f.key == "optic"), "{faults:?}");
 
-            // 3. Attachments — the packed set `arsenal_rules` cannot see is checked too.
+            // 3. Attachments — the packed set `rules` cannot see is checked too.
             let mut p = picks(&[("primary", "res://rifle_m16")]);
             p.insert(
                 attachments_key("primary"),

@@ -1,5 +1,5 @@
 use super::registry_session;
-use crate::v2::apps::editor::arsenal::arsenal_rules::{CompatFeed, CompatStatus};
+use crate::v2::apps::editor::arsenal::rules::{CompatFeed, CompatStatus};
 use crate::v2::core::api::dto::RegistryItem;
 use std::collections::HashMap;
 

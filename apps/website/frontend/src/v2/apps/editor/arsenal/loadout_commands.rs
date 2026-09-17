@@ -1,6 +1,6 @@
 //! Role: the Arsenal's writes to the mission document — commit one slot's loadout, apply the copy
 //! buffer across a selection, and strip a selection back to nothing.
-//! Position: `editor/arsenal` in the frontend editor shell.
+//! Position: `v2::apps::editor::arsenal` in the frontend editor workspace.
 //! Signals & state: none of its own; the document and the selected ids come from the installed
 //! editing host, and the copy buffer from the engine's loadout commands.
 //! Invariants: the history tail fires only if the document ACKNOWLEDGED the write — a pick against
@@ -30,8 +30,8 @@ pub fn set_loadout(id: &str, loadout_json: Option<String>) -> bool {
 /// from the compatibility rules comes back as the refused rows instead.
 pub fn apply_loadout_buffer_to_selection(
     items: &[crate::v2::core::api::dto::RegistryItem],
-    feed: &crate::v2::apps::editor::arsenal::arsenal_rules::CompatFeed,
-) -> Result<(usize, usize), Vec<crate::v2::apps::editor::arsenal::arsenal_rules::RowError>> {
+    feed: &crate::v2::apps::editor::arsenal::rules::CompatFeed,
+) -> Result<(usize, usize), Vec<crate::v2::apps::editor::arsenal::rules::RowError>> {
     let buffer = engine_ops::loadout_buffer();
     let targets = engine_ops::selection_slot_targets();
     if buffer.is_empty() || targets.is_empty() {
