@@ -2,10 +2,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 #[test]
 fn context_menu_gates_escape_on_modal_stack() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/context_menu.rs"
-    )));
+    let code = live_code(super::test_source::raw_context_menu());
     let body = only_body(&code, "pub fn ContextMenuOverlay(");
     let reg = ["modal_stack", "::", "register("].concat();
     let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();

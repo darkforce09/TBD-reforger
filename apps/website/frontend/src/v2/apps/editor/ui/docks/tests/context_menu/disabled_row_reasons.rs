@@ -53,10 +53,7 @@ fn play_rows_now_have_a_reason() {
 /// half of this fix. Source-pinned (literals kept) so removing the wiring turns this red.
 #[test]
 fn render_row_wires_why_into_the_title() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/context_menu.rs"
-    )));
+    let code = live_code(super::test_source::raw_context_menu());
     let body = only_body(&code, "fn render_row");
     assert!(
         body.contains("item.why()"),

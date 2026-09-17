@@ -241,10 +241,10 @@ fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
             1,
         ),
         (
-            "context_menu.rs",
+            "menu_overlay.rs",
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/src/v2/apps/editor/ui/docks/context_menu.rs"
+                "/src/v2/apps/editor/ui/docks/context_menu/menu_overlay.rs"
             )),
             1,
         ),

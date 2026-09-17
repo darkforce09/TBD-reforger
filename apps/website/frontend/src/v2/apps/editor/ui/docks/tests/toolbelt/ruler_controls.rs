@@ -2,10 +2,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 
 /// This file with comments blanked but strings KEPT (class strings + labels survive as landmarks).
 fn src_kept() -> String {
-    live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )))
+    live_source(super::test_source::raw_toolbelt())
 }
 
 /// (button enable) THE RULE: the Ruler button must NOT be a disabled stub any more — it drops
@@ -78,10 +75,7 @@ fn ruler_button_is_enabled_and_toggles_tool_mode() {
 /// not a comment.
 #[test]
 fn status_bar_renders_the_ruler_readout() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     // StatusBar accepts the ruler_status signal…
     assert!(
         code.contains("ruler_status"),
@@ -113,10 +107,7 @@ fn status_bar_renders_the_ruler_readout() {
 /// compiler: `ruler_tool` never imports a doc mutator).
 #[test]
 fn readout_is_display_only_no_doc_writes() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     for banned in ["move_entities", "add_slot", "store.rs", "MissionDocCore"] {
         assert!(
             !code.contains(banned),

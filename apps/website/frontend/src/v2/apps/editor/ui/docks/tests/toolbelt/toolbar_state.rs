@@ -4,10 +4,7 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_
 /// HOVER_FILL for the rest. Proven on scrubbed code so the needle is the real `cn` call.
 #[test]
 fn tool_states_consume_the_vocabulary_recipes() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
     assert!(
         body.contains("TOGGLED_PLATE"),
@@ -25,10 +22,7 @@ fn tool_states_consume_the_vocabulary_recipes() {
 /// class literal in the mode toolbar. Checked on the string-kept source.
 #[test]
 fn no_ad_hoc_tool_state_classes_remain() {
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let src = live_source(super::test_source::raw_toolbelt());
     let mode = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
     // The weaker ad-hoc hover fill the inactive tool used to wear.
     let weak_hover = ["hover:bg-", "white/5"].concat();
@@ -51,10 +45,7 @@ fn no_ad_hoc_tool_state_classes_remain() {
 /// source where the title literals survive.
 #[test]
 fn tools_keep_their_tooltips() {
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let src = live_source(super::test_source::raw_toolbelt());
     let mode = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
     for tip in ["Select", "Ruler", "Line of sight"] {
         assert!(

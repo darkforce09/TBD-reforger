@@ -85,10 +85,7 @@ fn readout_never_goes_backwards_as_you_zoom_in() {
 #[test]
 fn the_printed_scale_is_the_contour_ladders_own_scale() {
     // (1) OUR conversion — scrubbed body, not a test-local recomputation of the formula alone.
-    let ours = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let ours = live_code(super::test_source::raw_toolbelt());
     let our_mpp = only_body(&ours, &format!("pub fn {}", "m_per_px("));
     assert!(
         our_mpp.contains(&format!("2.0_f64.{}(-deck_zoom)", "powf")),
@@ -185,10 +182,7 @@ fn the_bar_and_the_number_describe_the_same_scale() {
 /// renders through the pure formatter above rather than an inline `format!`.
 #[test]
 fn the_scl_cell_sits_in_the_objselsz_group() {
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let src = live_source(super::test_source::raw_toolbelt());
     let status = only_body(&src, &format!("pub fn {}", "StatusBar("));
     let hook = format!("data-status-{}", "scale");
     let at = status
@@ -223,10 +217,7 @@ fn the_scl_cell_sits_in_the_objselsz_group() {
     );
     // The rendered value goes through the pure formatter (proven on scrubbed CODE, so a
     // mention in a comment or a class string cannot satisfy it).
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     let status_code = only_body(&code, &format!("pub fn {}", "StatusBar("));
     assert!(
         status_code.contains(&format!("{}(", "format_m_per_px")),
@@ -240,10 +231,7 @@ fn the_scl_cell_sits_in_the_objselsz_group() {
 /// survives for native/compat callers.
 #[test]
 fn the_scale_bar_resolves_from_the_same_signal() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     let status = only_body(&code, &format!("pub fn {}", "StatusBar("));
     assert!(
         status.contains(&format!("{} cursor debug_hud scale_mpp", "<ScaleBar")),
@@ -268,10 +256,7 @@ fn the_scale_bar_resolves_from_the_same_signal() {
     // Wave 133 F2 / T-756 NIT-3 — comment corrections (seed / camera_snapshot-dead notes).
     // Raw include_str keeps docs that live_code blanks; only_item scopes to ScaleBar so the
     // test module cannot hollow-self-match; needles are fragment-assembled.
-    let docs = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    ));
+    let docs = super::test_source::raw_toolbelt();
     let bar_docs = only_item(docs, &format!("pub fn {}", "ScaleBar("));
     let seeded = format!("{}{}", "seeded ", "4.0");
     let cam_dead = format!("{}{}", "dead on the only real ", "caller");

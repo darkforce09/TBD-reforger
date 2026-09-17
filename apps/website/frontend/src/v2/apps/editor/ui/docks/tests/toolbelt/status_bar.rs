@@ -3,20 +3,14 @@ use crate::v2::core::test_support::class_r_scrub::{live_code, live_source};
 /// This module's file, with comments blanked but string literals KEPT — so the Tailwind class
 /// strings and the readout labels survive as structural landmarks for ordering proofs.
 fn src_kept() -> String {
-    live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )))
+    live_source(super::test_source::raw_toolbelt())
 }
 
 /// (structure) The single conflated pill is split into TWO components — a tools mount and a
 /// readouts mount — which is what makes them two independent mount points in `mission_editor`.
 #[test]
 fn tools_and_readouts_are_two_separate_components() {
-    let src = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let src = live_code(super::test_source::raw_toolbelt());
     let mode_fn = format!("pub fn {}", "ModeToolbar(");
     let status_fn = format!("pub fn {}", "StatusBar(");
     assert!(
@@ -155,10 +149,7 @@ fn fills_the_t667_furniture_slot_with_the_scale_bar() {
 /// than a new rAF loop.
 #[test]
 fn t667_components_and_reactivity_channel() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     // Both public components exist.
     assert!(
         code.contains(&format!("pub fn {}", "ScaleBar("))
@@ -202,10 +193,8 @@ fn t667_components_and_reactivity_channel() {
 /// `key=` binding, not a mention in a comment or class string.
 #[test]
 fn grid_ref_for_is_keyed_by_position_not_text() {
-    let code = crate::v2::core::test_support::class_r_scrub::live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code =
+        crate::v2::core::test_support::class_r_scrub::live_code(super::test_source::raw_toolbelt());
     let body = crate::v2::core::test_support::class_r_scrub::only_body(
         &code,
         &format!("pub fn {}", "MapGridRefs("),
@@ -271,10 +260,7 @@ fn eden_coord_readout_carries_the_metre_unit() {
 /// go through `fmt_coord_eden`.
 #[test]
 fn status_bar_axis_readout_uses_the_eden_unit_formatter() {
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let src = live_source(super::test_source::raw_toolbelt());
     let body = crate::v2::core::test_support::class_r_scrub::only_body(
         &src,
         &format!("pub fn {}", "StatusBar("),
@@ -315,10 +301,7 @@ fn builds_the_open_primary_action_slot() {
 #[test]
 fn hud_slot_is_gated_and_sits_before_open() {
     // Gate expression on scrubbed code (strings blanked) so it is the real gate, not a comment.
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/docks/toolbelt.rs"
-    )));
+    let code = live_code(super::test_source::raw_toolbelt());
     assert!(
         code.contains("on && !text.is_empty()"),
         "T-719: the HUD slot must render only when (hud_shown AND non-empty sampler string)"

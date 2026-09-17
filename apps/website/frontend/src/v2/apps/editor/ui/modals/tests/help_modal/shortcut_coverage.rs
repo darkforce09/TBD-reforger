@@ -74,7 +74,7 @@ fn known_escape_ev_key_sites_are_censused() {
         ("attributes.rs", "Attributes modal"),
         ("top_strip_view.rs", "menus / Save / Controls Hint"),
         // already on the surface when T-703 widened; still a drop-from-scrape trap
-        ("context_menu.rs", "context menu"),
+        ("menu_overlay.rs", "context menu"),
         ("mission_dialog.rs", "mission settings dialog"),
         ("preferences_dialog.rs", "editor preferences dialog"),
         ("all_settings_dialog.rs", "all settings dialog"),
