@@ -1,12 +1,10 @@
-/// T-726 — Attributes modal Esc through the modal stack.
+//! Attributes modal modal escape stack tests.
+
 use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
 
 #[test]
 fn attributes_modal_gates_escape_on_modal_stack() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    )));
+    let code = live_code(super::ATTRIBUTES_MODAL_SOURCE);
     let body = only_body(&code, "pub fn AttributesModal(");
     let reg = ["modal_stack", "::", "register("].concat();
     let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();

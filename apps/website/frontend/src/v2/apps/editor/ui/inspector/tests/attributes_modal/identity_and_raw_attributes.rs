@@ -1,31 +1,11 @@
-// Everything this ticket touches in the modal lives behind `#[cfg(target_arch = "wasm32")]` — it
-// builds `view!` trees over `web_sys` nodes and cannot be instantiated by `cargo test`, which runs
-// native. So the modal half is pinned the way the rest of this crate pins its wasm-only surfaces
-// (`mission_editor.rs`, `arsenal.rs`): against the SCRUBBED live source, with comments and dead
-// `cfg` items removed so a pin can never be satisfied by the prose that describes the code.
-//
-// The BEHAVIOUR half is not pinned this way and does not need to be: `MissionDocCore::
-// update_slot_object` and `slot_layer_is_locked` are native, and `store.rs`'s own tests fire them
-// against a real document (`update_slot_object_sets_clears_and_leaves_none_fields_alone`,
-// `slot_layer_is_locked_agrees_with_the_update_slot_position_refusal`). These pins cover the wiring
-// those tests cannot see: that the modal actually calls them, on the fields it claims to.
+//! Attributes modal identity and raw attributes tests.
+
 use crate::v2::core::test_support::class_r_scrub::{live_code, live_source, only_body};
 
 fn attrs_src() -> String {
-    live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    )))
+    live_code(super::ATTRIBUTES_MODAL_SOURCE)
 }
 
-/// ATTR-FIELD-OBJ-TYPE + ATTR-FIELD-OBJ-ROLE-DESC — both fields exist in the Identity tab and
-/// BOTH route through `commit_slot`'s new argument slots.
-///
-/// The argument position is the assertion, not the presence of a `text_field` call: the two
-/// fields are the 5th and 6th `Option` of one six-argument commit, and a description wired into
-/// the `asset_id` slot would compile, render, and silently overwrite the entity type. Pinned on
-/// `live_code` (string literals blanked) so a label in a comment or a placeholder cannot satisfy
-/// it — this must be a CALL.
 #[test]
 fn identity_tab_commits_type_and_role_description_through_their_own_argument_slots() {
     let src = attrs_src();
@@ -38,8 +18,6 @@ fn identity_tab_commits_type_and_role_description_through_their_own_argument_slo
         body.contains("commit_slot(targets, None, None, None, None, Some(desc))"),
         "the Role Description field must commit into the description slot alone; body was:\n{body}"
     );
-    // And the pre-existing three still commit into theirs — the widening must not have shifted
-    // Role into Tag's position, which is the one way this edit breaks silently.
     assert!(
         body.contains("commit_slot(targets, Some(role), None, None, None, None)"),
         "Role must still commit into the role slot"
@@ -50,8 +28,6 @@ fn identity_tab_commits_type_and_role_description_through_their_own_argument_slo
     );
 }
 
-/// The two new fields read from `SlotAttrs`'s new columns and participate in the T-649 per-field
-/// multi-edit opt-in (`g(diff.…, opts.…)`) rather than bypassing it — the seam T-649 left.
 #[test]
 fn the_new_fields_read_their_own_columns_and_take_the_multi_edit_gate() {
     let src = attrs_src();
@@ -69,14 +45,9 @@ fn the_new_fields_read_their_own_columns_and_take_the_multi_edit_gate() {
     }
 }
 
-/// The labels an operator actually reads. `live_source` KEEPS string literals — this pin is
-/// about user-visible copy, which is the one thing `live_code` deliberately cannot see.
 #[test]
 fn the_two_new_fields_are_labelled_type_and_role_description() {
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    )));
+    let src = live_source(super::ATTRIBUTES_MODAL_SOURCE);
     let body = only_body(&src, "fn identity_tab(");
     assert!(body.contains("\"Type\""), "the type field is labelled Type");
     assert!(
@@ -86,13 +57,6 @@ fn the_two_new_fields_are_labelled_type_and_role_description() {
     );
 }
 
-/// Wave-102 F-7 — a Transform field the core will REFUSE must be disabled, and no multi-edit
-/// latch may re-open it.
-///
-/// Pinned on `Gate::locked`, which is the single place the `disabled` attribute is decided for
-/// every field in this modal: `shut ||` must come FIRST and must be an unconditional `||`, so
-/// that `refused()` overrides the opt-in rather than being one vote among two. Ticking "Apply
-/// to all" on a locked slot re-enabling the input is exactly the lie F-7 banked.
 #[test]
 fn a_refused_transform_field_is_disabled_whatever_the_multi_edit_latch_says() {
     let src = attrs_src();
@@ -101,7 +65,6 @@ fn a_refused_transform_field_is_disabled_whatever_the_multi_edit_latch_says() {
         locked.contains("self.shut || self.opt.is_some_and(|o| !o.get())"),
         "Gate::locked must short-circuit on `shut`; body was:\n{locked}"
     );
-    // `refused()` must actually be reachable from the Transform tab, and only from there.
     let transform = only_body(&src, "fn transform_tab(");
     assert!(
         transform.contains("base.refused()"),
@@ -116,9 +79,6 @@ fn a_refused_transform_field_is_disabled_whatever_the_multi_edit_latch_says() {
     );
 }
 
-/// F-7's other half: the count must come from the CORE's own predicate, and `all_locked` must
-/// mean every target — a partially-locked selection still moves its unlocked members, so
-/// disabling the fields there would be the same lie in reverse.
 #[test]
 fn the_lock_affordance_asks_the_core_and_distinguishes_all_locked_from_some_locked() {
     let src = attrs_src();
@@ -134,9 +94,6 @@ fn the_lock_affordance_asks_the_core_and_distinguishes_all_locked_from_some_lock
     );
 }
 
-/// `read_attrs` must read the two new fields off the RAW slot rows. This is the defect the
-/// ticket named: the type was unreadable because the read path was the SoA, which has no such
-/// column — not because the mutator was missing.
 #[test]
 fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
     let ops = live_code(include_str!(concat!(
@@ -156,17 +113,6 @@ fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
     }
 }
 
-/* ─────────── T-744 — hide must not close Attributes like undo-away ─────────── */
-
-/// wave-113 F-2 / T-744: `read_attrs` Option-gates on RAW membership, not SoA membership.
-///
-/// `materialize()` drops layer-hidden / `editorHidden` slots. The pre-fix body used
-/// `soa.ids.iter().position(|s| s == id)?` as the Option gate, so Hide returned `None` and the
-/// modal's `None` arm called `close_attributes()` — the same path as "slot was undone away".
-///
-/// Hollow-pin rules: `live_code` blanks comments + string literals, so a docstring claiming the
-/// fix cannot green these needles. delete-prod: stripping the raw gate from a forged copy must
-/// drop the existence needle (proves the pin is about production, not this test module).
 #[test]
 fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
     let ops = live_code(include_str!(concat!(
@@ -194,9 +140,6 @@ fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
         body.contains("slot_attrs_from_raw(&rows, id)"),
         "T-744: hidden-but-present slots must fall back to raw field values, not invent zeros"
     );
-    // F1: the needle alone is not an exit — an empty `if !rows.contains_key(id) {}` arm kept
-    // the pin green while missing ids still yielded Some. Require a real absence return in that
-    // arm (wave-135 adversarial).
     let after_gate = body.split(raw_gate).nth(1).expect("raw gate present above");
     let brace = after_gate
         .find('{')
@@ -209,9 +152,6 @@ fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
             || arm.split_whitespace().collect::<Vec<_>>().join(" ") == "None",
         "T-744: raw absence arm must exit with None (empty arm must RED); arm was:\n{arm}"
     );
-    // delete-prod control: remove the raw gate from a forged production body → needle gone →
-    // the positive assert above would RED. (This forged copy is never compiled; it proves the
-    // pin is load-bearing on the production token, not on a comment or this test's own source.)
     let forged = body.replacen(raw_gate, "false /* delete-prod */", 1);
     assert!(
         !forged.contains(raw_gate),
@@ -219,15 +159,9 @@ fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
     );
 }
 
-/// The modal's `None` arm still closes — but only for true absence. Esc alone must not green
-/// this pin: require the `read_attrs` match and **two** `close_attributes()` call sites in the
-/// host (Esc listener + None arm). `live_code` blanks comments; `live_source` keeps call paths.
 #[test]
 fn attributes_modal_none_arm_still_closes_on_true_absence() {
-    let code = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    )));
+    let code = live_code(super::ATTRIBUTES_MODAL_SOURCE);
     let host = only_body(&code, "pub fn AttributesModal(");
     assert!(
         host.contains("read_attrs(&id)"),
@@ -240,10 +174,7 @@ fn attributes_modal_none_arm_still_closes_on_true_absence() {
 {host}",
         host.matches("close_attributes()").count()
     );
-    let src = live_source(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    )));
+    let src = live_source(super::ATTRIBUTES_MODAL_SOURCE);
     let host_src = only_body(&src, "pub fn AttributesModal(");
     assert!(
         host_src.contains("read_attrs(&id)") && host_src.matches("close_attributes()").count() >= 2,
@@ -251,8 +182,6 @@ fn attributes_modal_none_arm_still_closes_on_true_absence() {
     );
 }
 
-/// The write path: both new fields land through `update_slot_object`, and `update_slot`'s three
-/// original columns are not dragged along by a commit that only touches a new one.
 #[test]
 fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
     let ops = live_code(include_str!(concat!(
@@ -270,14 +199,6 @@ fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
     );
 }
 
-/// T-745 Class-R: `attrs_update_slot` must no-op on all-None and on a missing id.
-///
-/// Production already carries both guards (editor_ops.rs). Without this lasting pin a one-hunk
-/// revert ships green — the sibling route pin only requires `update_slot_object` / slot-half
-/// gating (wave-136 F1).
-///
-/// RED: strip the five-field all-None early `return` before `let did`.
-/// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
 #[test]
 fn attrs_update_slot_noops_when_all_none_or_id_missing() {
     let ops = live_code(include_str!(concat!(
@@ -286,7 +207,6 @@ fn attrs_update_slot_noops_when_all_none_or_id_missing() {
     )));
     let body = only_body(&ops, "pub fn attrs_update_slot(");
 
-    // (1) five-field all-None early `return` before `let did`
     let before_did = body
         .split("let did")
         .next()
@@ -308,7 +228,6 @@ fn attrs_update_slot_noops_when_all_none_or_id_missing() {
         "T-745: all-None must early-return before `let did`; prelude was:\n{before_did}"
     );
 
-    // (2) `!raw_slot_rows(core).contains_key(id)` → false arm
     let domain = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../map-engine/src/data/store/operations/attrs.rs"

@@ -30,6 +30,56 @@ fn editor_live() -> String {
     src
 }
 
+/// The modal's production source spans its facade and the named field and tab modules.
+/// Scrubbing each file before joining preserves every live seam after test extraction.
+fn attributes_sources() -> (String, String) {
+    let files = [
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/field_gates_and_labels.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/field_inputs.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/spatial_transform_tab.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/attribute_commits_and_revert.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/identity_tab.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/faction_and_squad_reassignment.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/asset_type_picker.rs"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/v2/apps/editor/ui/inspector/attributes_modal/vehicle_attributes.rs"
+        )),
+    ];
+    let raw = files.join("\n");
+    let live = files
+        .iter()
+        .map(|source| live_code(source))
+        .collect::<Vec<_>>()
+        .join("\n");
+    (raw, live)
+}
+
 /// All whitespace removed. `rustfmt` is free to break a Leptos `view!` expression across lines
 /// wherever it likes (`gate\n.opt\n.map(`), so any pin on an EXPRESSION rather than on a
 /// statement is matched against this form — otherwise the pin is really a formatting pin.
@@ -241,11 +291,7 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
 /// whose values DIFFER across the selection must now be blank, disabled, and behind one.
 #[test]
 fn differing_fields_are_locked_behind_a_per_field_checkbox() {
-    let raw_attrs = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    ));
-    let attrs = live_code(raw_attrs);
+    let (raw_attrs, attrs) = attributes_sources();
     // The checkbox itself (string literal ⇒ pinned on the RAW source), assembled so this test's
     // own text is not the match.
     let checkbox = format!("type=\"{}\"", "checkbox");
@@ -318,10 +364,7 @@ fn differing_fields_are_locked_behind_a_per_field_checkbox() {
 /// "must fire the history/persist tail OUTSIDE the fan-out loop".
 #[test]
 fn multi_edit_commits_fan_out_to_every_selected_id() {
-    let attrs = live_code(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/src/v2/apps/editor/ui/inspector/attributes_modal.rs"
-    )));
+    let (_, attrs) = attributes_sources();
     for (seam, single, multi) in [
         (
             "fn commit_position(",
