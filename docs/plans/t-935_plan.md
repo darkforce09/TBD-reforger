@@ -2,7 +2,7 @@
 
 ## Context
 Operator spec 2026-09-04: hybrid rkyv (structured metadata) + raw `#[repr(C)]` POD (bulk GPU data),
-flatbuffers rejected. audit.md Finding 1.4 names the main-thread gzip-JSON chunk ingest
+flatbuffers rejected. `docs/specs/website_reorg/website_architecture_audit.md` Finding 1.4 names the main-thread gzip-JSON chunk ingest
 (residency.rs:716-737, chunk.rs:46-97) as the boot bottleneck. Today rkyv is used nowhere and
 bytemuck only in map-engine-render; flate2 + serde_json are `world` deps of map-engine-core.
 

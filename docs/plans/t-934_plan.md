@@ -2,7 +2,7 @@
 
 ## Context
 
-`apps/website/audit.md` §3/§4 (2026-08-25) proposes the website reorg: flat 73-file frontend (120,240 LOC) into `core/shell/pages/editor`, decomposition of the three monoliths, gesture extraction via `EditorGestureContext`, and backend handler nesting. Operator locked scope to reorg-only, landing ASAP (in-flight conflicts accepted), executor claude-code. Verification against live code produced material corrections (test-code share, 439 `include_str!` guards, backend §3.4 rejected as written) — recorded in the program spec `docs/specs/website_reorg/plan.md` §1.
+`docs/specs/website_reorg/website_architecture_audit.md` §3/§4 (2026-08-25) proposes the website reorg: flat 73-file frontend (120,240 LOC) into `core/shell/pages/editor`, decomposition of the three monoliths, gesture extraction via `EditorGestureContext`, and backend handler nesting. Operator locked scope to reorg-only, landing ASAP (in-flight conflicts accepted), executor claude-code. Verification against live code produced material corrections (test-code share, 439 `include_str!` guards, backend §3.4 rejected as written) — recorded in the program spec `docs/specs/website_reorg/plan.md` §1.
 
 ## Approach
 

@@ -1,7 +1,7 @@
 # T-935.3 — Plan
 
 ## Context
-audit.md Finding 1.4: chunk ingest is gzip + serde on the main thread (residency.rs:716-737,
+`docs/specs/website_reorg/website_architecture_audit.md` Finding 1.4: chunk ingest is gzip + serde on the main thread (residency.rs:716-737,
 chunk.rs:46-97). residency.rs is an allowlisted SIZE-3 file (3137 lines) so the parser goes into
 a new `chunk_bin.rs`; residency gains call sites only (≤ 40 lines). world_host.rs:426 builds the
 chunk URLs and gets a binary branch keyed on `manifest.objects.binary.chunks`.

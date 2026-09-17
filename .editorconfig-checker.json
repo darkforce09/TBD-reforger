@@ -18,6 +18,7 @@
     "\\.ent$",
     "\\.meta$",
     "\\.tbd-sat$",
+    "\\.rkyv$",
     "\\.bvh$",
     "\\.bvh\\.golden$"
   ]

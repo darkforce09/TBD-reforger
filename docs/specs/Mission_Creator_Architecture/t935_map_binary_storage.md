@@ -1,8 +1,8 @@
 # T-935 — Map binary storage: hybrid rkyv + raw POD
 
 Owner: command center. Source: operator spec 2026-09-04 (hybrid rkyv for complex metadata, raw
-`#[repr(C)]` POD for bulk GPU data; flatbuffers considered and rejected) and audit.md Finding 1.4
-(apps/website/audit.md:117-124: main-thread gzip-JSON chunk ingest in residency.rs:716-737 and
+`#[repr(C)]` POD for bulk GPU data; flatbuffers considered and rejected) and `docs/specs/website_reorg/website_architecture_audit.md` Finding 1.4
+(docs/specs/website_reorg/website_architecture_audit.md:117-124: main-thread gzip-JSON chunk ingest in residency.rs:716-737 and
 chunk.rs:46-97). All multi-byte fields on disk are **little-endian**. All headers are 32 bytes,
 `#[repr(C)]`, `bytemuck::Pod`, with field orders chosen so the struct has no padding.
 

@@ -801,5 +801,5 @@ flowchart LR
    ```
 
 ---
-*End of Master Audit Report (`apps/website/audit.md`).*
+*End of Master Audit Report (`docs/specs/website_reorg/website_architecture_audit.md`).*
 

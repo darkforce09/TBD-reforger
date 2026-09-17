@@ -1,6 +1,6 @@
-# T-934 — Website Reorganization Program (audit.md §3 + §4)
+# T-934 — Website Reorganization Program (website_architecture_audit.md §3 + §4)
 
-**Source:** `apps/website/audit.md` §3 (folder restructure + monolith decomposition + backend nesting) and §4 (operator-added `MissionEditorPage` 2-phase resolution).
+**Source:** `docs/specs/website_reorg/website_architecture_audit.md` §3 (folder restructure + monolith decomposition + backend nesting) and §4 (operator-added `MissionEditorPage` 2-phase resolution).
 **Scope lock:** reorg only. Audit §2 bug/perf findings are a separate future program.
 **Operator decisions (2026-08-25):** land ASAP (conflicts with in-flight T-090/factory accepted); executor claude-code; one child per commit, direct to `main`, tagged `T-934.x`.
 
