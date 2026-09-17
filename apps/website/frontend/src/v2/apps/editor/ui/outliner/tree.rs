@@ -1167,7 +1167,7 @@ fn single_row(
                             // T-946.86 (.83) — CONSUME the multi-select DragSet armed on
                             // pointerdown. Before this, `pointerdown` built the whole set into
                             // `drag::PENDING_DRAG` and the drop then completed through
-                            // the SINGLE-id latch in `state/operations`, so a five-row drag
+                            // the engine's SINGLE-id `layer_drag` latch, so a five-row drag
                             // moved one row and the plan was thrown away unread.
                             //
                             // The fallback is not decoration: `complete_multi_drop_onto_folder`
@@ -2610,7 +2610,7 @@ mod t946_86_multi_drop {
     }
 
     /// **The drop reads the SET.** Wave 255 armed the whole `DragSet` on pointerdown and then
-    /// completed through the single-id latch in `state/operations`, so a five-row drag moved one
+    /// completed through the engine's single-id `layer_drag` latch, so a five-row drag moved one
     /// row. PERTURB: drop the `complete_multi_drop_onto_folder` call and this goes RED.
     #[test]
     fn the_folder_drop_consumes_the_pending_drag_set() {
@@ -2649,7 +2649,7 @@ mod t946_86_multi_drop {
 
     /// **All three drag arms build a SET, and both drops consume one.** The `drag`
     /// versions of `begin_layer_slot_drag`, `begin_layer_comment_drag` and `begin_refile` shipped
-    /// in wave 255 shadowed by the single-id `state/operations` namesakes and were never called;
+    /// in wave 255 shadowed by the engine's single-id `layer_drag` namesakes and were never called;
     /// the slot lane is where multi-drag is actually REACHABLE, because slot ids are what the
     /// canvas selection mirror publishes (folder ids never enter it).
     #[test]

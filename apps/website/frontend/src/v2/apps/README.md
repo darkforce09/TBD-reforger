@@ -1,19 +1,21 @@
-# Standalone Map Applications (`src/v2/apps`)
+# Standalone Workspaces (`src/v2/apps`)
 
-This directory houses the 3 independent full-screen applications that consume the shared map engine (`src/v2/map_engine`).
-
----
-
-## The 3 Applications
+The full-screen applications the SPA hosts beside its document pages. Each mounts its own canvas
+and drives the map and graphics engines directly, owning its entire surface — docks, toolbelts,
+modals, inspectors and canvas mounting.
 
 ```text
 apps/
-├── editor/    <-- 1. SCENARIO CREATOR (Eden CAD Workspace)
-├── planner/   <-- 2. MISSION PLANNER (Tactical Whiteboard)
-└── aar/       <-- 3. AFTER-ACTION REPORT (Telemetry Replay Player)
+├── editor/    Scenario Creator — the 2D/3D CAD workspace a mission is authored in
+├── planner/   Mission Planner — tactical whiteboard and briefing interface (scaffold)
+├── aar/       After-Action Report — telemetry replay player (scaffold)
+└── debug/     Engine diagnostics testbenches — building viewer and world line-of-sight
 ```
 
-Each application owns 100% of its own UI, layouts, feature logic, and state pipeline:
-1. **`editor/`:** Scenario authoring with its own 2-row top strip, ORBAT tree dock, asset palette dock, and Yrs CRDT document store.
-2. **`planner/`:** Pre-mission tactical whiteboard with operational phase selector, assault arrow tools, and squad tasking cards.
-3. **`aar/`:** Post-mission forensics with its own media player playback deck, timeline scrubber bar, killfeed ticker, and casualty inspector.
+**Depended on by:** `app_routes.rs`, which routes each workspace full screen, and the pages that
+link to them.
+
+**Boundary:** a workspace imports from `v2/core` and from the engine crates (`website-map-engine`,
+and the graphics engine only through it). It never imports from `v2/pages` and never from a
+sibling workspace. Document state belongs to the map engine; only what dies with the browser tab
+lives here.

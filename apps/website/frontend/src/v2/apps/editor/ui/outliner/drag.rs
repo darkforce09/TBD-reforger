@@ -101,7 +101,8 @@ pub fn cancel_layer_drag() {
 /// ## The defect this closes
 ///
 /// The folder row armed TWO latches on one `pointerdown`: this module's [`PENDING_DRAG`], which
-/// holds the whole multi-selection, and `state/operations`' single-id `PENDING_LAYER_DRAG`. The
+/// holds the whole multi-selection, and the engine's single-id `PENDING_LAYER_DRAG`
+/// (`data/store/operations/entity/layer_drag.rs`). The
 /// `pointerup` then completed through `complete_layer_drop_onto_folder`, which reads the SINGLE-id
 /// store — so a five-row drag moved one row, the anchor, and the other four silently stayed put.
 /// [`plan_drop`] — the planner written for exactly this — had zero production callers, and
@@ -133,7 +134,7 @@ pub fn complete_multi_drop_onto_folder(
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
         return false;
     };
-    // The SAME pointerdown also armed the single-id latch in `state/operations`. Drop it here or
+    // The SAME pointerdown also armed the engine's single-id `layer_drag` latch. Drop it here or
     // it strands and is consumed by some later, unrelated drop — a move the operator never made.
     cancel_layer_drag();
 
@@ -175,7 +176,7 @@ pub fn complete_multi_drop_onto_folder(
 /// The ORBAT lane had the same shape of defect as the layer lane and needed the same repair: the
 /// slot row armed the single-id latch, so dragging a five-slot selection onto a squad refiled one.
 /// [`begin_refile`] here — the `DragSet` version — was among the functions this file shipped with
-/// no caller at all, shadowed by the `state/operations` single-id namesake.
+/// no caller at all, shadowed by the engine's single-id `layer_drag` namesake.
 ///
 /// `refile_slot` is the ORBAT mutator (slot → SQUAD), NOT `refile_slot_to_layer` (slot → folder):
 /// they are different destinations and the squad row is the wrong drop for a layer move. Every id

@@ -2012,7 +2012,7 @@ mod t670_scale_readout {
 
     /// **Reconciliation with T-639 (wave 101 + T-755).** The summary says this readout is the
     /// on-screen check for the zoom-adaptive contour ladder, so it must print the ladder's OWN
-    /// scale, not a lookalike. `apps/website/frontend/src/world_assets/dem_vectors.rs`
+    /// scale, not a lookalike. `apps/website/map-engine/src/world/terrain/relief/host.rs`
     /// `push_contours` computes `2.0_f64.powf(-zoom)` and hands it — with nothing in between — to
     /// `contour_interval_for_zoom`; [`m_per_px`] is that same expression (param name `deck_zoom`).
     ///

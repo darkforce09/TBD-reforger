@@ -23,7 +23,7 @@ pub(super) fn wear_garment<'a>(loadout: &'a Value, key: &str) -> &'a str {
         .trim()
 }
 
-/// The slot's primary-weapon `weapons[]` entry, if one is authored. A primary is the entry whose `slotIndex == 0` (arsenal_rules.rs:53-57 — the "primary" row maps to `(0, "primary")`); the magazine and optic ride it (`picks_to_loadout` writes `optic`/`magazine` only on the primary, arsenal.rs:450-456). Returns the first `slotIndex == 0` object, or `None`. Total over any JSON.
+/// The slot's primary-weapon `weapons[]` entry, if one is authored. A primary is the entry whose `slotIndex == 0` (`arsenal/rules.rs`'s `LOADOUT_ROWS` — the "primary" row maps to `(0, "primary")`); the magazine and optic ride it (`arsenal/loadout.rs`'s `picks_to_loadout` writes `optic`/`magazine` only on the primary). Returns the first `slotIndex == 0` object, or `None`. Total over any JSON.
 pub(super) fn primary_weapon(loadout: &Value) -> Option<&Value> {
     loadout
         .get("weapons")

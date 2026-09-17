@@ -18,7 +18,7 @@ fn page() -> String {
 }
 
 /// The T-802 primitives block, scrubbed — sliced the same way, from the first constant. The pure
-/// state machine is the tab-local hover policy in `canvas/pointer_hover.rs`, so the declarations
+/// state machine is the tab-local hover policy in `bridge/pointer_hover.rs`, so the declarations
 /// are read there.
 fn hover_block() -> String {
     let anchor = format!("pub(crate) const HOVER_CURSOR_{}", "PICKABLE");

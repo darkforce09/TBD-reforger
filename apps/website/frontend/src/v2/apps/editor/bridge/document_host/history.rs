@@ -632,7 +632,7 @@ fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa)
 ///
 /// **No new render lane.** The graphics ride `role_id::MISSION_ZONES` through the generic
 /// `upload_hairline_segments`, the same path `upload_squad_links` takes one line above — nothing in
-/// `map-engine-render` changed. See `canvas/tactical_graphics.rs`'s header for why that role is the
+/// `map-engine-render` changed. See `bridge/tactical_graphics.rs`'s header for why that role is the
 /// right one to squat and what the next zone-ring slice has to do about it.
 ///
 /// `doc` is the single source of geometry; the in-flight VERTEX DRAG is then laid over it by

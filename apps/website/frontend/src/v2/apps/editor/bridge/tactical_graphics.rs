@@ -496,8 +496,9 @@ pub(crate) fn pick_tactical_vertex(
 
 /* ══════════ The DRAW state machine's pure half ═══════════════════════════════════════════════
  *
- * `state/operations/tactical_graphics.rs` owns the in-flight draw, but that whole module is
- * `#![cfg(target_arch = "wasm32")]` (it reaches the document through `EDITOR_CONTEXT`'s `!Send` `Rc`s), so
+ * `tactical_graphics_authoring.rs` owns the in-flight draw, but that whole module is gated
+ * `#[cfg(target_arch = "wasm32")]` at its `pub mod` (it reaches the document through
+ * `EDITOR_CONTEXT`'s `!Send` `Rc`s), so
  * a `#[cfg(test)]` block there is compiled by NOTHING on the native test runner — it would report
  * a green that examined no code, which is the one defect this program exists to kill. So the parts
  * with real arithmetic live HERE, where `cargo test -p website-frontend` actually runs them, and

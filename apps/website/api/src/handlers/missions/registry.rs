@@ -117,7 +117,7 @@ fn parse_edge_types(raw: Option<&str>) -> Vec<String> {
 }
 
 /// Map `character_default_cargo` evidence (`TargetStorage=<path>`) → Arsenal container key.
-/// Mirrors `arsenal_rules::cargo_container_from_evidence` so the aggregated view matches the
+/// Mirrors `arsenal::rules::cargo_container_from_evidence` so the aggregated view matches the
 /// client-side walk the editor used to run over the full edge dump.
 fn cargo_container_from_evidence(evidence: &str) -> Option<&'static str> {
     let path = evidence.strip_prefix("TargetStorage=")?;

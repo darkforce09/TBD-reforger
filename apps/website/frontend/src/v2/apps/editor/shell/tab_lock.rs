@@ -12,7 +12,7 @@
 //! 2. **A read-merge-write in `persist.rs`, so nothing is lost when writes DO interleave.**
 //!    [`decide_save`] is the policy that function obeys; the merge is `MissionDocCore::apply_update`
 //!    — a CRDT union, never a JSON diff.
-//! 3. **A conflict modal that names both options** (`hydrate.rs` + `canvas/overlays.rs`).
+//! 3. **A conflict modal that names both options** (`hydrate.rs` + `bridge/overlays.rs`).
 //!
 //! # A Web Lock for the role, a BroadcastChannel for the announcements
 //!

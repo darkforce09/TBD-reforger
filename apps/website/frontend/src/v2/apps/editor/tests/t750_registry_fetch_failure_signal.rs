@@ -3,8 +3,8 @@ use leptos::prelude::*;
 
 #[test]
 fn mark_registry_fetch_failed_writes_all_three_signals() {
-    // T-934.12 — the helper moved to `canvas/viewport.rs`, where it still sits above the file's
-    // first `#[cfg(test)]` (inside registry_session), so whole-file `live_code` keeps it.
+    // The helper lives in `bridge/viewport.rs`, above that file's first `#[cfg(test)]` (inside
+    // registry_session), so whole-file `live_code` keeps it.
     // Body pin + behavioural flip.
     let src = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

@@ -483,10 +483,11 @@ fn the_caption_reports_bytes_for_bytes_and_files_for_files() {
 
 // ── the wasm side must actually route through the code proved above ──────────────────────
 
-/// Source pin on `world_assets/satellite.rs`. It is `#[cfg(target_arch = "wasm32")]` (via
-/// `mod world_assets` in `main.rs`), so nothing in it can be called from here — but it can be
-/// held to *shape*. `live_code` blanks comments and string literals first, so a needle can only
-/// be satisfied by code that ships.
+/// Source pin on the engine's satellite quadtree,
+/// `map-engine/src/world/terrain/satellite/quadtree/`. The fetch it describes runs in the
+/// browser, so nothing in it is called from here — it is held to *shape* instead. `live_code`
+/// blanks comments and string literals first, so a needle can only be satisfied by code that
+/// ships.
 #[test]
 fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
     use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};

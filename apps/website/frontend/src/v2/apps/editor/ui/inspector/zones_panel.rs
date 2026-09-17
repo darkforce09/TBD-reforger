@@ -300,11 +300,11 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 
         // ══════ T-946.86 (.84) — TACTICAL GRAPHICS: the arm the draw tool never had ══════
         //
-        // `begin_tactical_draw` (state/operations/tactical_graphics.rs:188) shipped in wave 255
-        // with ZERO call sites. Everything downstream of the arm was already live — `gestures.rs`
-        // appends a vertex per canvas click, its `oncontextmenu` finishes the draw, `commands.rs`
-        // Esc abandons it — so the tool was complete and unreachable. Its own doc block names the
-        // remedy verbatim: "one call site under `panels/` makes the whole path live". This is it.
+        // `begin_tactical_draw` — the engine's `data/store/operations/tactical_graphics.rs`,
+        // reached from here through `bridge/tactical_graphics_authoring.rs` — needs exactly one
+        // call site for the whole path to be live, and this is it. Everything downstream is
+        // already wired: `gestures.rs` appends a vertex per canvas click, its `oncontextmenu`
+        // finishes the draw, `commands.rs` Esc abandons it.
         //
         // A BUTTON, NOT A KEYBINDING, and that is a constraint rather than a preference: a chord
         // in `input/window_keydown.rs` compiles but reddens `help_modal.rs`'s

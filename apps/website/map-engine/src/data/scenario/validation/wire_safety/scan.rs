@@ -238,10 +238,10 @@ pub(super) fn non_empty(v: Option<&Value>) -> bool {
     v.and_then(Value::as_str).is_some_and(|s| !s.is_empty())
 }
 
-/// Wear/container keys that carry cargo on `SlotLoadoutV2` — byte-identical to `arsenal_rules::CARGO_CONTAINERS`.
+/// Wear/container keys that carry cargo on `SlotLoadoutV2` — byte-identical to `arsenal::rules::CARGO_CONTAINERS`.
 pub(super) const CARGO_CONTAINERS: &[&str] = &["vest", "pants", "jacket", "backpack"];
 
-/// Why an over-capacity fault is a refusal and not a prediction. Copied in substance from `arsenal_rules::CARGO_CAPACITY_CAVEAT` so Save and Arsenal export do not disagree about what the number means.
+/// Why an over-capacity fault is a refusal and not a prediction. Copied in substance from `arsenal::rules::CARGO_CAPACITY_CAVEAT` so Save and Arsenal export do not disagree about what the number means.
 pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figure the game never reads back, so treat it as an estimate, not a guarantee. The failure it points at is real: at spawn, cargo the character cannot hold is silently moved to another container or dropped — the rest of that row goes with it — and nothing reports it.";
 
 /// Phys attrs for one `registry_items` row — the only registry surface this crate will accept.
@@ -354,7 +354,7 @@ pub fn scan_cargo_capacity(payload: &Value, catalog: &CargoPhysCatalog) -> Vec<S
     out
 }
 
-/// Worn garment backing a cargo container key. `vest` accepts `armoredVest` — same spike lock as `arsenal_rules::cargo_garment`. Returns the **wear row key** the author must change.
+/// Worn garment backing a cargo container key. `vest` accepts `armoredVest` — same spike lock as `arsenal::rules::cargo_garment`. Returns the **wear row key** the author must change.
 pub(super) fn cargo_garment<'a>(
     wear: Option<&'a Value>,
     container: &str,

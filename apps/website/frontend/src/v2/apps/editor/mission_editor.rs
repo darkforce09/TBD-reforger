@@ -94,8 +94,9 @@ pub(crate) use website_map_engine::editing::selection_universe::map_render_slot_
 // widget-pivot registry. Re-exported under the SAME names so the page's bare mounts
 // (`<TransformWidgetOverlay …/>`), the wasm block's `register_widget_pivot(` call, and the
 // `crate::v2::apps::editor::mission_editor::{AssetPickerState, ConflictInfo}` paths in
-// `state/operations/context.rs` / `shell/hydrate.rs` all keep their exact spelling. The T-797
-// toolbar-dispatch registry did NOT move: `eden_top_strip` drives it through
+// `bridge/host_state/editor_context/mod.rs` / `shell/hydrate.rs` all keep their exact
+// spelling. The T-797 toolbar-dispatch registry lives in this file, not in the overlays:
+// `eden_top_strip` drives it through
 // `crate::v2::apps::editor::mission_editor::…` and it bridges the page to the strip, not to the overlays.
 // (The `read_widget_pivot()` reader moved with the pointer closures — T-934.13 — and reads it
 // through this re-export, like the helper belt above.)
@@ -3155,8 +3156,8 @@ pub(crate) use website_map_engine::editing::selection_universe::{
     crewed_slot_ids, map_render_keep_indices,
 };
 
-// T-934.12 — same discipline: only `t628_boot_progress` still reaches this constant through
-// `super::…` (its one shipping consumer, `hand_over`, moved to `canvas/boot.rs` with it).
+// Same discipline: only `t628_boot_progress` still reaches this constant through `super::…`;
+// its one shipping consumer, `hand_over`, sits beside it in `bridge/boot.rs`.
 #[cfg(test)]
 pub(crate) use crate::v2::apps::editor::bridge::boot::BOOT_HANDOVER_MS;
 

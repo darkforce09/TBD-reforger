@@ -1,14 +1,13 @@
-# 3. After-Action Report (`src/v2/aar`)
+# After-Action Report (`v2/apps/aar`)
 
-The post-match forensics and telemetry replay suite.
+An empty scaffold. The post-match forensics workspace will live here: replaying a completed match
+from server telemetry — player positions, vehicle routes, engagements and objective captures — on
+a playback clock, with the map read-only underneath it.
 
----
+**Depended on by:** nothing yet. `v2/apps/mod.rs` declares only `debug` and `editor`, so no code
+in this directory is compiled, and `app_routes.rs` carries no replay route.
 
-## Purpose
-Allows community members, commanders, and administrators to review completed matches with second-by-second telemetry playback (player positions, vehicle routes, shots, kills, and objective captures).
-
-## Architecture
-- **Consumes:** Mounts `<MapCanvas />` from `src/v2/map_engine`.
-- **`ui/`**: Media player style playback deck, timeline scrubber bar, live killfeed ticker, match scoreboard drawer.
-- **`features/`**: Telemetry log parser, casualty forensics, ballistic trajectory lines, player movement heatmaps.
-- **`state/`**: Time-series telemetry buffer, playback clock (Play/Pause, 1x/2x/5x/10x speeds, jump-to-event).
+**Boundary, and the reason it is written down before there is code:** a replay authors nothing. It
+needs the map engine's camera, world streaming, symbology and picking with no mission document
+open, no undo stack and no armed placement — so `website-map-engine`'s `editing/` must not acquire
+editor-only assumptions that would make its tools unusable without an authoring session.

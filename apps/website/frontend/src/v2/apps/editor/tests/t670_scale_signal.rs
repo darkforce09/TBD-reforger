@@ -11,7 +11,7 @@ fn editor_live() -> String {
     live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
 }
 
-/// T-934.12 — `start_raf` moved to `canvas/viewport.rs`; the sampler pins scrub THAT file.
+/// `start_raf` lives in `bridge/viewport.rs`; the sampler pins scrub THAT file.
 /// Whole-file `live_code` is safe there: the file's only `#[cfg(test)]` (registry_session's
 /// `clear_for_test`) sits below `start_raf`, so the cut keeps the sampler.
 fn viewport_live() -> String {

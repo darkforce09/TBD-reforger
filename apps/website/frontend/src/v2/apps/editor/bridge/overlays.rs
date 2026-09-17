@@ -7,7 +7,8 @@
 //! Bodies are byte-identical to their `mission_editor.rs` originals, and `mission_editor`
 //! re-exports every name here, so the page's bare mounts (`<TransformWidgetOverlay …/>`), the
 //! `crate::v2::apps::editor::mission_editor::{AssetPickerState, ConflictInfo}` paths in
-//! `state/operations/context.rs` / `shell/hydrate.rs`, and the page-region mount needles all keep
+//! `bridge/host_state/editor_context/mod.rs` / `shell/hydrate.rs`, and the page-region mount
+//! needles all keep
 //! their exact spelling. The evacuated definition pins (`t647_placement_interactions`,
 //! `t726_window_esc_stack`) scrub THIS file — it deliberately carries no `#[cfg(test)]`, so
 //! `class_r_scrub::live_code` keeps all of it.

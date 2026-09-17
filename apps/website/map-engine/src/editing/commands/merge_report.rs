@@ -100,7 +100,7 @@ pub fn format_merge_report(report_json: &str) -> (String, Vec<String>) {
     (summary, skipped)
 }
 
-/// T-946.86 (.85) — render the [`crate::editor::state::operations::duplicate_slot_ids`] pairs as
+/// T-946.86 (.85) — render the [`crate::data::store::operations::slot_ids::duplicate_slot_ids`] pairs as
 /// the per-problem lines `save_now` puts in the Save dialog's `findings`, one line per duplicate,
 /// each NAMING THE CALLSIGN AND THE ID. Those two strings are the whole point of the guard: "this
 /// mission has duplicate slot ids" is not actionable, "squad 1-1 lists slot s1 twice" is.

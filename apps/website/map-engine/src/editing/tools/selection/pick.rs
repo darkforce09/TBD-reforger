@@ -69,7 +69,8 @@ pub fn pick(cam: &OrthoCamera, soa: &SlotSoa, px: f64, py: f64) -> Option<String
 /// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
 ///
 /// Vehicles are off the slot SoA (they ride their own lane — see [`bind_vehicle_preview_lane`]), so
-/// the slot [`pick`] path never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor::state::operations::vehicle_points`].
+/// the slot [`pick`] path never sees them. `points` is `(id, world_x, world_y)` from
+/// [`crate::editing::hosted_commands::placed_vehicles::vehicle_points`].
 /// Delegates to [`map_engine_core::doc::MissionDocCore::pick_vehicle`] (Class-R SoT).
 #[must_use]
 #[allow(dead_code)] // public host helper; live path uses pick_slot_or_vehicle

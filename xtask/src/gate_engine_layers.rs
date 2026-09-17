@@ -466,7 +466,7 @@ fn run(repo_root: &Path) -> (u8, Vec<String>) {
             "/// this app touches — through the map engine, never by depending on \
              `website-graphics-engine`",
             "use website_map_engine::frame::EngineHandle;",
-            "use crate::editor::tools::ruler_tool::install_seam;",
+            "use crate::v2::apps::editor::input::tools::ruler_tool::install_seam;",
         ],
     ) {
         Ok(p) => p,

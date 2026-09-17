@@ -1,14 +1,15 @@
-# 2. Mission Planner (`src/v2/planner`)
+# Mission Planner (`v2/apps/planner`)
 
-The pre-match tactical whiteboard and operational briefing suite.
+An empty scaffold. The pre-match tactical whiteboard will live here: drawing operational plans —
+phase lines, assault arrows, boundaries, squad tasking and the commander's intent — over a
+published scenario, for briefing rather than authoring.
 
----
+**Depended on by:** nothing yet. `v2/apps/mod.rs` declares only `debug` and `editor`, so no code
+in this directory is compiled, and `app_routes.rs` carries no planner route.
 
-## Purpose
-Allows commanders, squad leaders, and platoon leadership to draw operational battle plans on top of a published scenario before boots hit the ground.
-
-## Architecture
-- **Consumes:** Mounts `<MapCanvas />` from `src/v2/map_engine`.
-- **`ui/`**: Tactical whiteboard chrome (Floating drawing palette, operational phase selector, slide-out commander intent drawer).
-- **`features/`**: Tactical phase lines, assault arrows, recon markers, squad sector tasking, radio plan assignments.
-- **`state/`**: Operational plan overlay store (lightweight vector drawing format saved alongside event briefings).
+**Boundary, and the reason it is written down before there is code:** the planner will consume the
+same `website-map-engine` the editor does — its camera, world streaming, symbology, picking and
+`editing/` tool state machines. `editing/` must therefore stay free of editor-only assumptions:
+that a mission document is open for authoring, that an undo stack exists, that a palette arm is
+pending. A tool that can only run inside the Scenario Creator blocks this workspace before it is
+written.

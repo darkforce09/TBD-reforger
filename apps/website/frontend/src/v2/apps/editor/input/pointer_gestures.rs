@@ -383,7 +383,7 @@ pub(crate) fn attach_canvas_gestures(ctx: &EditorGestureContext) {
                 // has a Select-machine arm to be taken by.
                 //
                 // (1) A DRAW is armed → this press is a vertex. A tactical draw does not ride
-                //     `Pending` (see `state/operations/tactical_graphics.rs`'s header), so
+                //     `Pending` (see `bridge/tactical_graphics_authoring.rs`'s header), so
                 //     `has_pending()` above is a false negative for it — exactly the T-792
                 //     shape that let an Esc leave a zone draw armed.
                 // (2) A press within `TG_VERTEX_PICK_PX` of an AUTHORED vertex opens a vertex
