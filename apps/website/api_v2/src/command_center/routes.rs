@@ -7,18 +7,18 @@
 use axum::Router;
 use axum::routing::get;
 
+use super::handlers;
 use crate::core::application_state::AppState;
-use crate::handlers;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
-        .route("/dashboard", get(handlers::dashboard::get_dashboard))
+        .route("/dashboard", get(handlers::live_dashboard::get_dashboard))
         .route(
             "/leaderboards",
             get(handlers::leaderboards::get_leaderboards),
         )
         .route(
             "/users/{discordId}/stats",
-            get(handlers::leaderboards::get_user_stats),
+            get(handlers::user_stats_card::get_user_stats),
         )
 }

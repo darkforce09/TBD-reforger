@@ -8,7 +8,6 @@
 //! constraint violation with a 4xx rather than a blanket 500.
 
 pub mod connection_pool;
-pub mod leaderboard_refresh;
 pub mod postgres_errors;
 
 use std::time::Duration;

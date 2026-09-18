@@ -9,6 +9,7 @@ use serde_json::{Value, json};
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
+use crate::command_center::services::user_stats;
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
 use crate::core::database::postgres_errors::is_unique_violation;
@@ -16,7 +17,6 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
 use crate::identity_and_access::services::session_issuance::arma_id_is_linked;
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::services;
 
 /// 6-digit Arma link-code lifetime (10 minutes).
 const LINK_CODE_TTL_MIN: i64 = 10;
@@ -166,7 +166,7 @@ pub async fn unlink(
             // lower it, or an unlinked account keeps advertising deployments whose rows no longer
             // carry its id. `attendance_rate` is recomputed too but does not move — unlink
             // deliberately leaves `event_registrations` alone (see above).
-            services::recompute_user_stats_best_effort(
+            user_stats::recompute_user_stats_best_effort(
                 &state.pool,
                 &user.discord_id,
                 "User stat recompute failed after identity unlink",
@@ -175,7 +175,7 @@ pub async fn unlink(
             // `leaderboard_totals` aggregates `match_player_stats.discord_id` (migration
             // `0001_initial_schema.sql:270-291`), so the released rows keep counting for this
             // player on the leaderboard until the view is refreshed.
-            services::refresh_leaderboard_best_effort(
+            user_stats::refresh_leaderboard_best_effort(
                 &state.pool,
                 "Leaderboard refresh failed after identity unlink",
                 "user",

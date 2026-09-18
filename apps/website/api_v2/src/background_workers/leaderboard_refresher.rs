@@ -10,7 +10,7 @@ use std::time::Duration;
 use sqlx::postgres::PgPool;
 use tokio::task::JoinHandle;
 
-use crate::core::database::leaderboard_refresh::refresh_leaderboard;
+use crate::command_center::services::leaderboard_view::refresh_leaderboard;
 
 /// Env var for the background leaderboard MV refresh cadence (seconds).
 ///

@@ -10,18 +10,18 @@ use serde_json::{Value, json};
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::write_audit;
+use crate::command_center::services::user_stats;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::ServiceAuth;
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::services;
 
 /// Claim every `match_player_stats` row for an `arma_id` that no account owns yet.
 ///
 /// `discord_id` on that table is not a fact about the row — it is a cached answer to "who owns
 /// this `arma_id`", resolved once at ingest. Nothing ever re-asks, so without this every match
 /// a player played *before* linking would keep `discord_id = NULL` forever, and
-/// `recompute_user_stats` (`services/user_stats.rs`) only counts non-NULL rows. Measured on a
+/// `recompute_user_stats` (`command_center/services/user_stats.rs`) only counts non-NULL rows. Measured on a
 /// throwaway fixture without the claim: a player ingested through three real `match-results`
 /// POSTs, then linked, then played a fourth — the platform's own recompute reported
 /// `total_deployments = 1` for four ops, and `leaderboard_totals` showed
@@ -211,10 +211,10 @@ pub async fn ingest_link_confirm(
     // only refresh derived numbers, and the next match ingest redoes both.
     if claimed > 0 || attended > 0 {
         // `users.total_deployments` / `attendance_rate` are denormalized, and
-        // `services::recompute_user_stats` is the crate's only definition of them. Without this
+        // `user_stats::recompute_user_stats` is the crate's only definition of them. Without this
         // a player who links after their *last* op reads zero deployments forever, because
         // nothing else would ever recount.
-        services::recompute_user_stats_best_effort(
+        user_stats::recompute_user_stats_best_effort(
             &state.pool,
             &discord_id,
             "User stat recompute failed after identity link backfill",
@@ -223,7 +223,7 @@ pub async fn ingest_link_confirm(
         // `leaderboard_totals` reads `match_player_stats.discord_id` directly
         // (`0001_initial_schema.sql:270-291`), so a refresh is all the leaderboard needs; it has
         // no `arma_id` of its own to backfill.
-        services::refresh_leaderboard_best_effort(
+        user_stats::refresh_leaderboard_best_effort(
             &state.pool,
             "Leaderboard refresh failed after identity link backfill",
             "user",

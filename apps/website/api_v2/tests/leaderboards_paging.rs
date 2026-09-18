@@ -5,7 +5,7 @@
 //! next page are free to order tied rows differently, so without a total ORDER BY one row can
 //! appear on two pages while another appears on none. The whitelist's shape (every arm ends in
 //! the `lt.discord_id ASC` tie-breaker; nothing off-list reaches ORDER BY) is pinned by the pure
-//! unit tests that stay next to the handler in `src/handlers/telemetry/leaderboards.rs`.
+//! unit tests that stay next to the handler in `src/command_center/handlers/leaderboards.rs`.
 //!
 //! Why it lives in `tests/` and not in that file: the T-542/T-558 Class-R pin
 //! (`common::t542_no_raw_test_database_url_reads_outside_common`) forbids a raw
@@ -27,11 +27,11 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Json};
 use serde_json::{Value, json};
 use sqlx::PgPool;
+use website_api::command_center::handlers::leaderboards::{LeaderboardQuery, get_leaderboards};
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::middleware::AuthUser;
-use website_api::handlers::telemetry::leaderboards::{LeaderboardQuery, get_leaderboards};
 
 /// Every category `order_clause` whitelists. Keep in step with its `match` — and with the
 /// `CATEGORIES` pin beside it in `leaderboards.rs`, which checks every arm's shape while this

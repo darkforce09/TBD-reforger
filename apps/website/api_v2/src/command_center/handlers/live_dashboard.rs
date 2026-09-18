@@ -1,5 +1,4 @@
-//! Home dashboard aggregation — Rust port of `handlers/dashboard.go`. Many
-//! best-effort, null-safe lookups composed into one response.
+//! Home dashboard aggregation: many best-effort, null-safe lookups composed into one response.
 
 use axum::extract::State;
 use axum::response::Json;
@@ -50,12 +49,11 @@ pub async fn get_dashboard(
 
     // Next upcoming operation.
     //
-    // Prefer an event the caller themselves created when one is upcoming (T-410). The
-    // global `ORDER BY start_time ASC LIMIT 1` alone is a ratchet on never-pruned gate
-    // DBs: any residue row with an earlier start_time steals the slot, which is why
-    // `dashboard_reads` was weakened to key-presence. Prefer-mine keeps the community
-    // fallback for users who have never created an event (enlisted browsing the home
-    // bento) while letting an admin/mission_maker fixture win deterministically.
+    // Prefer an event the caller themselves created when one is upcoming. The global
+    // `ORDER BY start_time ASC LIMIT 1` alone is a ratchet on never-pruned gate DBs: any
+    // residue row with an earlier start_time steals the slot. Prefer-mine keeps the
+    // community fallback for users who have never created an event (enlisted browsing the
+    // home bento) while letting an admin/mission_maker fixture win deterministically.
     let next_event: Option<EventSummary> = {
         let ev: Option<Event> = {
             let mine: Option<Event> = sqlx::query_as(
@@ -124,13 +122,14 @@ pub async fn get_dashboard(
     let my_assignment: Option<AssignmentSummary> = {
         // `orbat_slots.callsign`/`loadout`/`tag` are NULLABLE columns behind non-optional
         // `String` fields, so the nullable ones MUST be coalesced here — the column list is
-        // spelled out for exactly that reason and is the same one the other six `OrbatSlot`
-        // read sites use (`operations/handlers/member_service_record.rs`, `events.rs:841`/`1052`/`1245`/`1449`/`1505`).
-        // A bare `orbat_slots.*` 500s the whole dashboard on a real NULL (T-329, measured:
-        // *"error occurred while decoding column `tag`: unexpected null"* for the two
-        // operator users holding a NULL-`tag` slot). Do NOT "fix" that by making the model
-        // fields `Option` — see the rejection recorded on `match_telemetry::models::match_record::Match` (T-325). Every
-        // column is table-qualified because the joins make `id`/`start_time` ambiguous.
+        // spelled out for exactly that reason and is the same one the other `OrbatSlot` read
+        // sites use (`operations/handlers/{member_service_record,orbat_view,event_listing,
+        // slot_assignment,slot_registration}.rs`). A bare `orbat_slots.*` 500s the whole
+        // dashboard on a real NULL (measured: *"error occurred while decoding column `tag`:
+        // unexpected null"* for the two operator users holding a NULL-`tag` slot). Do NOT
+        // "fix" that by making the model fields `Option` — see the rejection recorded on
+        // `match_telemetry::models::match_record::Match`. Every column is table-qualified
+        // because the joins make `id`/`start_time` ambiguous.
         let slot: Option<OrbatSlot> = sqlx::query_as(
             "SELECT orbat_slots.id, orbat_slots.event_mission_id, orbat_slots.faction, \
              orbat_slots.squad, COALESCE(orbat_slots.callsign, '') AS callsign, orbat_slots.role, \

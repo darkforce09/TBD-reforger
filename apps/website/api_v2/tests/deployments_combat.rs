@@ -11,6 +11,7 @@ use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
+use website_api::command_center::services::leaderboard_view;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
@@ -85,7 +86,7 @@ async fn reset(pool: &PgPool) {
         .execute(pool)
         .await
         .expect("clean matches");
-    database::leaderboard_refresh::refresh_leaderboard(pool)
+    leaderboard_view::refresh_leaderboard(pool)
         .await
         .expect("refresh MV");
 }
@@ -213,7 +214,7 @@ async fn derived_combat_figures_match_hand_computation() {
     seed_match(&pool, "a", 17, 4, true, Some(true)).await;
     seed_match(&pool, "b", 8, 6, true, Some(false)).await;
     seed_match(&pool, "c", 2, 10, false, None).await;
-    database::leaderboard_refresh::refresh_leaderboard(&pool)
+    leaderboard_view::refresh_leaderboard(&pool)
         .await
         .expect("refresh MV");
 
@@ -249,7 +250,7 @@ async fn derived_combat_figures_match_hand_computation() {
     // both read the same expression.
     reset(&pool).await;
     seed_match(&pool, "flawless", 7, 0, false, None).await;
-    database::leaderboard_refresh::refresh_leaderboard(&pool)
+    leaderboard_view::refresh_leaderboard(&pool)
         .await
         .expect("refresh MV");
     let body = deployments(&app, &tok).await;
@@ -269,7 +270,7 @@ async fn derived_combat_figures_match_hand_computation() {
     // exactly the fabrication this ticket removed, inverted.
     reset(&pool).await;
     seed_match(&pool, "grunt", 3, 3, false, None).await;
-    database::leaderboard_refresh::refresh_leaderboard(&pool)
+    leaderboard_view::refresh_leaderboard(&pool)
         .await
         .expect("refresh MV");
     let body = deployments(&app, &tok).await;
@@ -292,7 +293,7 @@ async fn derived_combat_figures_match_hand_computation() {
     // everything to zero: the two states have to stay distinguishable on the wire.
     reset(&pool).await;
     seed_match(&pool, "quiet", 0, 0, false, None).await;
-    database::leaderboard_refresh::refresh_leaderboard(&pool)
+    leaderboard_view::refresh_leaderboard(&pool)
         .await
         .expect("refresh MV");
     let body = deployments(&app, &tok).await;

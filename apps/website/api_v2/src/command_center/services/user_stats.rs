@@ -1,28 +1,23 @@
-//! Denormalized user statistics — `users.total_deployments` + `users.attendance_rate`,
-//! and the best-effort `leaderboard_totals` refresh that always travels with them (T-336).
+//! Denormalized user statistics — `users.total_deployments` + `users.attendance_rate`, and the
+//! best-effort `leaderboard_totals` refresh that always travels with them.
 //!
 //! # Why this is a service and not a handler internal
 //!
-//! [`recompute_user_stats`] is the **sole writer** of those two columns. It shipped at T-326
-//! as `pub(super) fn` inside the telemetry ingest handler because `handlers/me.rs` needed it at
-//! identity-link time and `pub(super)` was the minimal unblock. T-326 explicitly refused to
-//! re-derive the SQL in `me.rs` — two definitions of "a deployment" drifting apart is the same
-//! silent-wrong-number failure the backfill was filed to fix — and that refusal is the whole
-//! argument for this file: a function two handlers depend on is a service, not a handler
-//! internal, and an ingest handler is not a place other handlers should be reaching into.
-//!
-//! **Nothing about the behaviour changed in the move.** The three statements, their bind order,
-//! the `count(DISTINCT match_id)` / `state::text = 'attended'` / `start_time <= now()` predicates
-//! and the zero-denominator rule are byte-for-byte what T-326 shipped. `t336_user_stats_service`
-//! pins the numbers from outside the crate, which is only possible now that this is `pub`.
+//! [`recompute_user_stats`] is the **sole writer** of those two columns, and two handler domains
+//! depend on it: match telemetry ingest and identity linking. Re-deriving the SQL per caller is
+//! what this file exists to prevent — two definitions of "a deployment" drifting apart is a
+//! silent-wrong-number failure, and an ingest handler is not a place other handlers should be
+//! reaching into. `tests/t336_user_stats_service.rs` pins the numbers from outside the crate,
+//! which is what the `pub` visibility here is for.
 //!
 //! # The best-effort pair
 //!
-//! Three call sites (`telemetry::ingest_match_results`, `me::unlink`, `me::ingest_link_confirm`)
-//! had the identical `if … .await.is_err() { write_audit(Warn, …) }` block around
-//! [`crate::core::database::leaderboard_refresh::refresh_leaderboard`], differing only in the message and the audit target.
-//! T-336 asked for that pattern to come along "if it also has two callers by then"; it had
-//! three. [`refresh_leaderboard_best_effort`] and [`recompute_user_stats_best_effort`] are that
+//! Three call sites (`match_telemetry::handlers::match_results::ingest_match_results`,
+//! `identity_and_access::handlers::arma_link_codes::unlink`, and
+//! `identity_and_access::handlers::arma_link_confirmation::ingest_link_confirm`) want the
+//! identical `if … .await.is_err() { write_audit(Warn, …) }` block around
+//! [`super::leaderboard_view::refresh_leaderboard`], differing only in the message and the audit
+//! target. [`refresh_leaderboard_best_effort`] and [`recompute_user_stats_best_effort`] are that
 //! block, once.
 //!
 //! Both are deliberately **infallible**. These refresh derived numbers *after* their caller's
@@ -33,9 +28,9 @@
 
 use sqlx::PgPool;
 
+use super::leaderboard_view::refresh_leaderboard;
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::write_audit;
-use crate::core::database::leaderboard_refresh::refresh_leaderboard;
 use crate::core::error_handling::api_error::ApiError;
 
 /// Recompute a user's denormalized deployment + attendance metrics.
@@ -106,7 +101,7 @@ pub async fn recompute_user_stats_best_effort(pool: &PgPool, discord_id: &str, m
     }
 }
 
-/// [`crate::core::database::leaderboard_refresh::refresh_leaderboard`], with a `Warn` audit row instead of an error.
+/// [`super::leaderboard_view::refresh_leaderboard`], with a `Warn` audit row instead of an error.
 ///
 /// The target is the caller's, not the user's: a refresh failure after match ingest is about the
 /// match, and after an identity link it is about the user. Both are wanted in the audit console,

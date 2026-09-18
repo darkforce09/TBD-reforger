@@ -84,7 +84,7 @@ struct ServiceRecord {
 /// ingest, identity link and unlink. Recomputing the same two ratios with a second query here is
 /// precisely how the service record and the leaderboard come to disagree about one player — the
 /// two-definitions-drift failure that keeping **one** `recompute_user_stats` in the services layer
-/// prevents (`services/user_stats.rs`). The refreshes are best-effort, so the view can lag a
+/// prevents (`command_center/services/user_stats.rs`). The refreshes are best-effort, so the view can lag a
 /// failed refresh; it lags identically for both readers, which is the property that matters.
 ///
 /// The view also owns the divide-by-zero: `kd_ratio` is

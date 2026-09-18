@@ -1,13 +1,16 @@
-//! T-336 — `recompute_user_stats` in `services/`, and proof the move changed nothing.
+//! T-336 — `recompute_user_stats` in `command_center/services/`, and proof the move changed
+//! nothing.
 //!
 //! # What this file has to prove, and why it is shaped like this
 //!
 //! T-336 is a **pure relocation**: the function moved from `pub(super) fn` in
-//! the telemetry ingest handler to `pub fn` in `services/user_stats.rs`, with the three statements
+//! the telemetry ingest handler to `pub fn` in `command_center/services/user_stats.rs`, with the
+//!    three statements
 //! byte-identical. The ticket asks for two things, and they are different things.
 //!
 //! 1. **Reachability from where it should be.** This file `use`s
-//!    `website_api::services::recompute_user_stats` from *outside the crate*. That import does not
+//!    `website_api::command_center::services::user_stats::recompute_user_stats` from *outside the
+//!    crate*. That import does not
 //!    compile against the pre-T-336 tree at all — `pub(super)` in the ingest handler module is not
 //!    reachable from an integration test — so the existence of this binary is the proof.
 //! 2. **Behaviour unchanged.** The numbers below are arithmetic written out in the comments, not
@@ -25,7 +28,9 @@ use uuid::Uuid;
 use website_api::core::database;
 // The T-336 reachability proof: the ingest handler's `recompute_user_stats` was `pub(super)`, so
 // this line is the thing that could not be written before the move.
-use website_api::services::{recompute_user_stats, recompute_user_stats_best_effort};
+use website_api::command_center::services::user_stats::{
+    recompute_user_stats, recompute_user_stats_best_effort,
+};
 
 mod common;
 
@@ -325,10 +330,10 @@ async fn the_best_effort_wrapper_still_writes_the_numbers() {
 /// later slice that re-derived the SQL in a handler — would satisfy every test above.
 #[test]
 fn the_sql_lives_only_in_the_service() {
-    let service = include_str!("../src/services/user_stats.rs");
+    let service = include_str!("../src/command_center/services/user_stats.rs");
     assert!(
         service.contains("SELECT count(DISTINCT match_id) FROM match_player_stats"),
-        "services/user_stats.rs no longer owns the deployment count"
+        "command_center/services/user_stats.rs no longer owns the deployment count"
     );
     for handler in [
         include_str!("../src/match_telemetry/handlers/match_results.rs"),
