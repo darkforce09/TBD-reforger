@@ -2,7 +2,7 @@
 
 **Closes `T-181.16` and `T-068.14` — the last two open programs.**
 Both are `executor: human`; one session closes both.
-Registry: [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) ·
+Tickets: [`.ai/tickets/`](../../.ai/tickets) ·
 T-181 hub: [`docs/mod/t181_event_mod_program.md`](../mod/t181_event_mod_program.md) ·
 T-068 hub: [`t068_virtual_arsenal_program.md`](../specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) ·
 T-068.14 checklist: [`t068_14_phase2_e2e_gate.md`](../specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md)
@@ -92,7 +92,8 @@ curl -s http://127.0.0.1:8080/healthz
 ```
 
 Expect a JSON body reporting database + migration state, HTTP 200
-([`app.rs:906`](../../apps/website/api_v2/src/app.rs), [`app.rs:1048`](../../apps/website/api_v2/src/app.rs)).
+([`health_probe.rs`](../../apps/website/api_v2/src/core/observability/health_probe.rs), mounted in
+[`core/http_router.rs`](../../apps/website/api_v2/src/core/http_router.rs)).
 A non-200, or `Connection refused`, means `cargo xtask mk rust-api` is not up — re-read T2's output; the API
 hard-fails at boot on a bad `DATABASE_URL` / `JWT_SECRET`.
 
@@ -120,7 +121,8 @@ Log in to the SPA without Discord:
 http://127.0.0.1:3000
 ```
 then open `http://127.0.0.1:8080/api/v1/auth/dev-login?role=admin` in the same browser
-([`app.rs:883`](../../apps/website/api_v2/src/app.rs)). It mints a real session and 302s to the SPA
+([`developer_login.rs`](../../apps/website/api_v2/src/identity_and_access/handlers/developer_login.rs)).
+It mints a real session and 302s to the SPA
 callback. You should land logged in as an admin.
 
 ### 2.3 The mission (15 min, alone) — this is the T-068 half
@@ -156,10 +158,10 @@ compiler. Author your own as well.
    encodes; open it if you want a worked example of every field's shape.
 4. **Save Version** (top strip). You need a saved version — `/compiled` 409s
    `no saved version to compile` without one
-   ([`missions.rs:1606-1615`](../../apps/website/api_v2/src/handlers/missions.rs)).
+   ([`get_compiled_mission`, `mission_export.rs`](../../apps/website/api_v2/src/missions/handlers/mission_export.rs)).
 5. Copy the mission **UUID** out of the URL. **It must be a UUID.** `GET /missions/:id/compiled`
    calls `Uuid::parse_str` and 400s `invalid id` on anything else
-   ([`missions.rs:1756-1759`](../../apps/website/api_v2/src/handlers/missions.rs)) — so the
+   ([`load_mission_or_404`, `mission_lookup.rs`](../../apps/website/api_v2/src/missions/services/mission_lookup.rs)) — so the
    content-hash ids like `msn_8f3a2c` only work through the on-disk fallback, never through the API.
 
 **Prove the API will serve it, before the game server ever asks:**
@@ -182,7 +184,7 @@ curl -s -o /tmp/compiled.json -w '%{http_code}\n' \
 - **`409 no placed slots`** — you saved a version with no character slots.
 - **`409 no saved version to compile`** — you never pressed Save Version.
 - **`500`** — the stored payload is unreadable or violates `mission.schema.json`
-  ([`validated_compiled_body`, `missions.rs:1464`](../../apps/website/api_v2/src/handlers/missions.rs)).
+  ([`validated_compiled_body`, `mission_export.rs`](../../apps/website/api_v2/src/missions/handlers/mission_export.rs)).
   The body names the reason. A `mission_versions` row is immutable, so **save a new version**; you
   cannot repair the old one.
 
@@ -199,7 +201,7 @@ curl -s -H "X-Service-Token: $TOK" \
 ```
 
 Expect `{"eventId":"…","missionId":"…","assignments":{…}}`
-([`events.rs:2469`](../../apps/website/api_v2/src/handlers/events.rs)). `assignments` is keyed on
+([`roster_ingest.rs`](../../apps/website/api_v2/src/operations/handlers/roster_ingest.rs)). `assignments` is keyed on
 `users.arma_id` — **it will be empty until someone links their game identity** (S6). An empty map is
 legal: everybody falls to round-robin seating, and the lobby picker still works.
 
@@ -531,7 +533,8 @@ wrong. `result=FAIL` keeps the server in LOADING forever; `#tbd validate` replay
 > **Everything in §3 works without these.** They enable exactly one thing: the SPA's
 > **Server Control** page (`/admin/server`) being able to start/stop/restart the game server unit
 > over `POST /api/v1/admin/servers/{id}/rcon`
-> ([`app.rs:837`](../../apps/website/api_v2/src/app.rs)). Until both are done, that endpoint answers
+> ([`send_rcon`, `rcon_console.rs`](../../apps/website/api_v2/src/server_infrastructure/handlers/rcon_console.rs)).
+> Until both are done, that endpoint answers
 > **503** — correctly — and the session is unaffected. **No agent has ever run either of these; they
 > mutate a live host.** Do them if you want the last unexercised platform surface exercised too.
 
@@ -1093,10 +1096,10 @@ Sign-off template: [`t068_14_phase2_e2e_gate.md:50-62`](../specs/Mission_Creator
 On PASS:
 
 ```bash
-./scripts/ticket advance-slice T-068
-./scripts/ticket done T-068
-./scripts/ticket done T-181
-./scripts/ticket sync
+cargo xtask ticket advance-slice T-068
+cargo xtask ticket ship T-068
+cargo xtask ticket ship T-181
+cargo xtask ticket sync
 ```
 
 ---
@@ -1155,8 +1158,8 @@ is null`, or a `Virtual Machine Exception` with no `(E)` marker. That heuristic 
 failures through once ([`t181_event_mod_program.md:226-234`](../mod/t181_event_mod_program.md)).
 When in doubt, keep the whole log.
 
-**Filing it:** add a `queued` ticket to [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)
-with the evidence paths in the `summary`, then `./scripts/ticket sync`. Put the log files under
+**Filing it:** add a `queued` ticket under [`.ai/tickets/`](../../.ai/tickets) with
+`cargo xtask ticket add`, put the evidence paths in its `summary`, then `cargo xtask ticket sync`. Put the log files under
 `.ai/artifacts/` (pipeline output only) and reference them by path.
 
 **Do not use `cargo xtask mod remote-logs` to decide PASS/FAIL.** It is stale: it requires the

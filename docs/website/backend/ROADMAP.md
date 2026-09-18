@@ -2,11 +2,11 @@
 
 > **SUPERSEDED (T-145 / T-171):** Live API is **Rust Axum + sqlx** at [`apps/website/api_v2/`](../../../apps/website/api_v2/) (pkg `website-api`). Go/`internal/`/`cmd/api` / GORM / golangci rows below are historical. Run: `cargo xtask mk rust-api` · SPA: `cargo xtask mk leptos` · seeds: `apps/website/api_v2/seeds/` · migrations: `apps/website/api_v2/migrations/`. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Canonical status: root [`CLAUDE.md`](../../../CLAUDE.md).
 
-**Start here for planning history.** What was **shipped** under the Go era; verify paths against live `api/src/`.
+**Start here for planning history.** What was **shipped** under the Go era; verify paths against live `apps/website/api_v2/src/`.
 
 **Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
 
-**Live code:** [`apps/website/api_v2/src/`](../../../apps/website/api_v2/src) · **Contract:** `api/src/models/` (serde snake_case) + generated `api/src/contract/generated/`
+**Live code:** [`apps/website/api_v2/src/`](../../../apps/website/api_v2/src) · **Contract:** `apps/website/api_v2/src/<domain>/models/` (serde snake_case) + generated `apps/website/api_v2/src/missions/contract/generated/`
 
 ---
 
@@ -14,7 +14,7 @@
 
 | Doc | When to open it |
 |-----|-----------------|
-| **[`architecture.md`](architecture.md)** | ARCHIVE design plan — verify vs live `api/src/models/` |
+| **[`architecture.md`](architecture.md)** | ARCHIVE design plan — verify vs live `apps/website/api_v2/src/<domain>/models/` |
 | **[`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md)** | db-up, api, leptos, dev-login, test-it, seeds, map-assets |
 | **[`docs/website/platform/registration_flow.md`](../platform/registration_flow.md)** | ORBAT registration design (**implemented** T-008–T-010) |
 | **[`docs/website/platform/context_handoff.md`](../platform/context_handoff.md)** | Original product blueprint (§3 partially stale) |
@@ -52,7 +52,7 @@
 
 | T-ID | Item | Notes |
 |------|------|-------|
-| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api_v2/src/contract/generated/` via `cargo xtask ci schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
+| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api_v2/src/missions/contract/generated/` via `cargo xtask ci schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
 
 ## SHIPPED (T-068.2–T-068.4 @ main)
 
@@ -106,4 +106,4 @@ curl -si "http://localhost:8080/api/v1/auth/dev-login?role=admin" | head -1
 cargo xtask db test-it
 ```
 
-API contract smoke: hit endpoint, confirm JSON matches `api/src/models/` serde + `frontend/src/dto.rs`.
+API contract smoke: hit endpoint, confirm JSON matches `apps/website/api_v2/src/<domain>/models/` serde + `apps/website/frontend/src/v2/core/api/dto/`.

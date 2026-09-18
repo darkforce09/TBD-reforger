@@ -12,11 +12,11 @@
 
 ## Ticket registry workflow
 
-1. **Plan / queue change** — edit [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) (status, order, spec path, `active_slice`).
-2. **Regenerate views** — `./scripts/ticket sync` (updates `docs/TICKET_*.md`, `CLAUDE.md` status markers).
-3. **Validate** — `./scripts/ticket check` or `cargo xtask ticket check --strict`.
+1. **Plan / queue change** — edit the ticket's [`.ai/tickets/<id>.toml`](../../.ai/tickets) (`status`, `order`, `spec`, `active_slice`).
+2. **Regenerate views** — `cargo xtask ticket sync` (updates `docs/TICKET_*.md`, `CLAUDE.md` status markers).
+3. **Validate** — `cargo xtask ticket check` or `cargo xtask ticket check --strict`.
 4. **Implement** — Claude Code on **`main`**; **does not edit docs**.
-5. **Ship** — human verifies → set row `status: shipped` → `./scripts/ticket sync` → Cursor syncs narrative docs below.
+5. **Ship** — human verifies → `cargo xtask ticket ship <id>` → `cargo xtask ticket sync` → Cursor syncs narrative docs below.
 
 Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead view: [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
 
@@ -41,24 +41,24 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 
 | What changed | Update these |
 |--------------|--------------|
-| **Shipped milestone** | Registry → `shipped`; `./scripts/ticket sync`; [`CLAUDE.md`](../../CLAUDE.md) §Status Done bullet |
-| **Active slice** | Registry `active_slice`; MC `agent_execution.md` if applicable |
+| **Shipped milestone** | Ticket → `shipped`; `cargo xtask ticket sync`; [`CLAUDE.md`](../../CLAUDE.md) §Status Done bullet |
+| **Active slice** | Ticket `active_slice`; MC `agent_execution.md` if applicable |
 | **New or removed route** | [`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs) + [`pages/*.md`](frontend/pages) + [`INDEX.md`](frontend/INDEX.md) + [`ROADMAP.md`](frontend/ROADMAP.md) |
 | **UI surface (no route)** | Page spec **Element Inventory** + **`Live source:`** → `apps/website/frontend/src/<page>.rs` |
 | **Nav / sidebar** | [`apps/website/frontend/src/nav.rs`](../../apps/website/frontend/src/nav.rs) + [`shell/sidebar.md`](frontend/shell/sidebar.md) |
-| **API / model** | `apps/website/api_v2/src/models/` + matching `apps/website/frontend/src/dto.rs` (R-api golden) |
+| **API / model** | `apps/website/api_v2/src/<domain>/models/` + matching `apps/website/frontend/src/v2/core/api/dto/` (R-api golden) |
 | **Cross-boundary type/handler** | `@contract` / `@route` / `@model` per DOCUMENTATION_STANDARDS — same commit as code |
 | **Mission Creator** | Decisions log / feature_inventory / gap_analysis as applicable |
-| **Deferred** | Registry `status: deferred` — never mark shipped until verified |
+| **Deferred** | Ticket `status: deferred` — never mark shipped until verified |
 | **Doc-only reorg** | Own T-0xx commit; §Status note if authority changed |
 
 ---
 
 ## Mission Creator slice workflow
 
-1. **Spec** — Cursor writes `t0xx_*.md`; registry `ready`; `./scripts/ticket sync`.
+1. **Spec** — Cursor writes `t0xx_*.md`; ticket `ready`; `cargo xtask ticket sync`.
 2. **Code** — Claude Code; `cargo xtask mk ci-local-leptos` (+ `cargo xtask db test-it` when API touched).
-3. **Docs** — Cursor: registry `shipped` + sync + narrative rows.
+3. **Docs** — Cursor: ticket `shipped` + sync + narrative rows.
 
 ---
 
@@ -78,7 +78,7 @@ Live UI authority: `apps/website/frontend/src/` (Leptos page modules).
 ```bash
 cargo xtask mk ci-local-leptos   # fmt + clippy wasm32 + cargo test + trunk release
 cargo xtask db test-it           # when API/DB touched (needs cargo xtask db up)
-./scripts/ticket check # when registry or authority docs changed
+cargo xtask ticket check         # when tickets or authority docs changed
 ```
 
 ---

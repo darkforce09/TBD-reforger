@@ -16,10 +16,10 @@ The canonical home for each artifact class.
 | Test fixture | crate-local `tests/fixtures/` beside consumer; NEVER `.ai/artifacts/` |
 | Cross-crate contract golden | `packages/tbd-schema/{schema,golden,golden-missions,registry}/` |
 | Map asset | `packages/map-assets/<terrain>/` (LFS: dem png + sat .tbd-sat only; staging/tiles rebuildable local) |
-| Ticket | `.ai/tickets/registry.json` + `./scripts/ticket sync` (generated TICKET_*.md never hand-edited) |
+| Ticket | `.ai/tickets/<id>.toml` + `cargo xtask ticket sync` (generated TICKET_*.md never hand-edited) |
 | Spec / doc | `docs/**` only — never `apps/**/docs` or `packages/**/docs` (verify-doc-layout enforces) |
 | Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `apps/mod/`) |
-| Shared engine code | `crates/map-engine-{core,render,wasm}` |
+| Shared engine code | `apps/website/map-engine/` (world, spatial, mission domain) · `apps/website/graphics-engine/` (GPU primitives) |
 | Repo tooling | `xtask` (gates/codegen/ticket lib) · `tools_v2/developer-tools` (gate harness + asset pipelines) |
 
 ## Backend rule of thumb

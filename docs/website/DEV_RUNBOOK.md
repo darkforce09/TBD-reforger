@@ -330,7 +330,7 @@ Corpus: `packages/map-assets/` — Everon ~1.3 GB on disk; **tracked in LFS = ex
 |----------|-------|-----------|
 | CI `map-engine` job | DEM only | `git lfs pull --include …/everon-dem-16bit.png` |
 | CI other jobs | none | sat deliberately never dragged |
-| Local dev editor | DEM + sat | Axum `ServeDir` `/map-assets` (`MAP_ASSETS_DIR`, default `../../../packages/map-assets` from `api/` CWD) ← Trunk proxy ← SPA `fetch("/map-assets/…")` |
+| Local dev editor | DEM + sat | Axum `ServeDir` `/map-assets` (`MAP_ASSETS_DIR`, default `../../../packages/map-assets` from the `apps/website/api_v2/` CWD) ← Trunk proxy ← SPA `fetch("/map-assets/…")` |
 | Gate harness | dist + optional map-assets | `gate serve --map-assets` |
 | Clone without LFS | degraded | manifest/JSON/chunks plain-git; DEM/sat 404 → no sat/hillshade |
 

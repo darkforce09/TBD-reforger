@@ -163,9 +163,9 @@ the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` sti
 ## 2. Go — RETIRED (T-145 Go→Rust)
 
 > Historical: the Go backend (Gin + GORM) was rewritten in Rust (Axum + sqlx) at T-145 and no Go
-> remains in the repo. The architectural intent carries over 1:1 — handlers are the HTTP edge,
-> `src/services/` the logic core, `src/models/` the snake_case DB/API contract — enforced today by
-> `cargo clippy -D warnings` + the centralized `ApiError` type + `cargo fmt`, **except GO-7**, which
+> remains in the repo. The architectural intent carries over 1:1 — a domain's `handlers/` are the
+> HTTP edge, its `services/` the logic core, its `models/` the snake_case DB/API contract — enforced
+> today by `cargo clippy -D warnings` + the centralized `ApiError` type + `cargo fmt`, **except GO-7**, which
 > none of those three can see and which is enforced by
 > `cargo xtask verify route-tags` instead (T-586/T-590).
 >
@@ -200,11 +200,12 @@ the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` sti
   Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §4. Gate: **CI-BLOCK** (golangci
   `revive` `exported`); **T-125.2** removes `only-new-issues`, making it a full-repo gate.
 - **GO-7 (Readability) — Every exported handler fn SHALL carry `@route` in its doc comment, and the
-  tag MUST match the wired route in [`apps/website/api_v2/src/app.rs`](../../apps/website/api_v2/src/app.rs)
-  (method + path).** The three-way triangulation of DOCUMENTATION_STANDARDS.md §3. Gate:
+  tag MUST match the wired route in the eight `apps/website/api_v2/src/<domain>/routes.rs` tables
+  that [`core/http_router.rs`](../../apps/website/api_v2/src/core/http_router.rs) merges under
+  `/api/v1` (method + path).** The three-way triangulation of DOCUMENTATION_STANDARDS.md §3. Gate:
   **CI-SCRIPT** — `cargo xtask verify route-tags`, checked in
   **both** directions (every `@route` tag resolves to a registered route, **and** every registered
-  route carries a matching tag) across all **102** handlers, keyed on (method, path, handler fn).
+  route carries a matching tag) across every tagged handler, keyed on (method, path, handler fn).
   Wired into `cargo xtask ci verify-coding-standards` and both `cargo xtask platform wave` gate lanes.
   **T-590:** this rule cited `handlers.go` `Register()` and `verify-contract-citations.mjs` until
   now. T-145 deleted both, and GO-7 was unenforced for the whole rewrite — see the note under
@@ -366,7 +367,7 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
   component or its basename ends `_tests.rs`. Gate: **CI-SCRIPT**
   (`cargo xtask verify file-length` → exit 1). The walk covers `xtask`, `tools`, `crates`,
   `apps/ticketboard/src`, and existing `apps/website/*/{src,tests}` roots. Generated API contracts
-  under `apps/website/api_v2/src/contract/generated/` are excluded. Standing debt carries a dated
+  under `apps/website/api_v2/src/missions/contract/generated/` are excluded. Standing debt carries a dated
   allowlist row. A row naming a missing or unscanned file fails the gate.
 
 - **COMP-1 (Readability) — Cyclomatic complexity ≤ 15 per function (hard gate).** A function over 15
@@ -385,8 +386,8 @@ Created in **T-125.2** at the repo root. Each entry is normative:
 
 ```yaml
 - rule: SIZE-3
-  path: apps/website/api_v2/src/app.rs
-  reason: split routing and application setup by responsibility
+  path: apps/ticketboard/src/board.rs
+  reason: Split this production module by responsibility before expiry
   expires: 2027-01-31     # YYYY-MM-DD; MC-perf is invalid for SIZE-3
 ```
 

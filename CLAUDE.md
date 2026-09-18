@@ -30,7 +30,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 9. **API & Contract Parity**:
    - Backend Rust models (`apps/website/api_v2/src/<domain>/models/`) are the snake_case API source of truth.
    - Contract types are generated from `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`.
-   - Frontend DTOs (`apps/website/frontend/src/v2/core/api/dto.rs`) mirror models with strict R-api golden test parity.
+   - Frontend DTOs (`apps/website/frontend/src/v2/core/api/dto/`) mirror models with strict R-api golden test parity.
 
 ---
 
