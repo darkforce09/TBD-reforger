@@ -15,12 +15,12 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser};
-use crate::handlers::username;
-use crate::models::{AuditSeverity, Modpack, ModpackMod};
-use crate::services::write_audit;
+use crate::models::{Modpack, ModpackMod};
 
 /// Columns every modpack SELECT projects — keeps COALESCE null-tolerance identical
 /// across list / current / get-by-id / write RETURNING paths.
@@ -309,7 +309,7 @@ pub async fn create_modpack(
 
     let dto = with_mods(&state.pool, pack).await?;
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,
@@ -380,7 +380,7 @@ pub async fn replace_modpack(
 
     let dto = with_mods(&state.pool, pack).await?;
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,
@@ -427,7 +427,7 @@ pub async fn set_current_modpack(
 
     let dto = with_mods(&state.pool, pack).await?;
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,
@@ -490,7 +490,7 @@ pub async fn delete_modpack(
     tx.commit().await?;
 
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Warn,

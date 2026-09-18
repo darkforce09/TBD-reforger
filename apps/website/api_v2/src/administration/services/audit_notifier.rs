@@ -1,10 +1,11 @@
-//! T-940.6 — Postgres `LISTEN audit_log`: the push behind the admin audit stream.
+//! Postgres `LISTEN audit_log`: the push behind the admin audit stream.
 //!
 //! Migration 0025 raises `pg_notify('audit_log', <id>)` from an AFTER INSERT trigger on
-//! `audit_logs`, so every row — [`super::write_audit`]'s and the trigger-written event create /
-//! mission soft-delete / slot kick rows alike — is announced the moment it commits. This module
-//! holds the process's one `PgListener` per pool and fans those announcements out to every
-//! connected `GET /admin/audit-logs/stream` as [`AuditSignal`]s over a broadcast channel.
+//! `audit_logs`, so every row — [`super::audit_writer::write_audit`]'s and the trigger-written
+//! event create / mission soft-delete / slot kick rows alike — is announced the moment it
+//! commits. This module holds the process's one `PgListener` per pool and fans those
+//! announcements out to every connected `GET /admin/audit-logs/stream` as [`AuditSignal`]s over a
+//! broadcast channel.
 //!
 //! Shape:
 //! - **One listener per pool, not per client.** [`AuditNotify::for_pool`] registers the pool
@@ -22,9 +23,9 @@
 //!   away (a `#[tokio::test]` ending), its guard drops, the registry entry reads as orphaned, and
 //!   the next [`AuditNotify::for_pool`] respawns it on the caller's runtime.
 //!
-//! `handlers::audit::audit_row_stream` is the consumer: it fetches `id > last_id` on `Row` and
-//! `Resync`, and lets its 2 s ticker reach the database only while `is_listening()` is false.
-
+//! [`crate::administration::handlers::audit_logs::audit_row_stream`] is the consumer: it fetches
+//! `id > last_id` on `Row` and `Resync`, and lets its 2 s ticker reach the database only while
+//! `is_listening()` is false.
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
@@ -281,32 +282,5 @@ fn forward(shared: &Shared, n: &PgNotification) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// RED: cap the doubling at the wrong ceiling, or stop doubling — the chain below diverges.
-    #[test]
-    fn backoff_doubles_and_caps() {
-        let mut d = BACKOFF_INITIAL;
-        let mut chain = Vec::new();
-        for _ in 0..8 {
-            chain.push(d.as_millis());
-            d = next_backoff(d);
-        }
-        assert_eq!(chain, [250, 500, 1000, 2000, 4000, 5000, 5000, 5000]);
-        assert_eq!(next_backoff(BACKOFF_MAX), BACKOFF_MAX);
-    }
-
-    /// RED: forward every channel, or map a non-numeric payload to `None` — the asserts fire.
-    #[test]
-    fn signal_for_reads_the_row_id_and_ignores_other_channels() {
-        assert_eq!(signal_for(AUDIT_CHANNEL, "42"), Some(AuditSignal::Row(42)));
-        assert_eq!(signal_for(AUDIT_CHANNEL, " 7 "), Some(AuditSignal::Row(7)));
-        assert_eq!(
-            signal_for(AUDIT_CHANNEL, "not-an-id"),
-            Some(AuditSignal::Resync)
-        );
-        assert_eq!(signal_for(AUDIT_CHANNEL, ""), Some(AuditSignal::Resync));
-        assert_eq!(signal_for("server_status", "42"), None);
-    }
-}
+#[path = "tests/audit_notifier.rs"]
+mod tests;

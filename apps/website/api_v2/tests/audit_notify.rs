@@ -4,7 +4,7 @@
 //! connected admin, and three actions wrote no audit row at all — event create, mission
 //! soft-delete and slot kick. The rows now come from row triggers in `0025_audit_notify.sql`
 //! (the handler files belong to other slices this wave), and every `audit_logs` insert raises
-//! `pg_notify('audit_log', id)` so `services::audit_notify` can push instead of poll.
+//! `pg_notify('audit_log', id)` so `administration::services::audit_notifier` can push instead of poll.
 //!
 //! Skips (`skip:` line) unless `TEST_DATABASE_URL` is set; the wave gate and `cargo xtask db
 //! test-it` always set it, so a printed skip is a red there. Each fixture gets fresh ids, so the
@@ -22,10 +22,11 @@ use sqlx::postgres::PgPoolOptions;
 use tokio::sync::broadcast;
 use tokio::time::timeout;
 use uuid::Uuid;
+use website_api::administration::handlers::audit_logs::audit_row_stream;
+use website_api::administration::models::audit_log::{AuditLog, AuditSeverity};
+use website_api::administration::services::audit_notifier::{AuditNotify, AuditSignal};
+use website_api::administration::services::audit_writer::write_audit;
 use website_api::core::database;
-use website_api::handlers::audit::audit_row_stream;
-use website_api::models::{AuditLog, AuditSeverity};
-use website_api::services::{AuditNotify, AuditSignal, write_audit};
 
 /// One planted `audit_logs` row, as the trigger wrote it.
 #[derive(Debug, sqlx::FromRow)]

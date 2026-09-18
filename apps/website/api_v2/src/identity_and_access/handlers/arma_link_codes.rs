@@ -7,6 +7,8 @@ use axum::response::Json;
 use chrono::{Duration, Utc};
 use serde_json::{Value, json};
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
 use crate::core::database::postgres_errors::is_unique_violation;
@@ -14,7 +16,6 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
 use crate::identity_and_access::services::session_issuance::arma_id_is_linked;
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::models::AuditSeverity;
 use crate::services;
 
 /// 6-digit Arma link-code lifetime (10 minutes).
@@ -184,8 +185,8 @@ pub async fn unlink(
         }
         // Releasing a service record must not be silent — without this, a player's deployment
         // count dropping to zero has no explanation anywhere in the audit log.
-        let username = crate::handlers::username(&state.pool, &user.discord_id).await;
-        services::write_audit(
+        let username = actor_display_name(&state.pool, &user.discord_id).await;
+        write_audit(
             &state.pool,
             AuditSeverity::Info,
             Some(&user.discord_id),

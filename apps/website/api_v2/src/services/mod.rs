@@ -1,7 +1,5 @@
-//! Business-logic services — Rust port of `internal/services`.
+//! Business-logic services shared across domains.
 
-pub mod audit;
-pub mod audit_notify;
 pub mod game_agent;
 pub mod mission_compile;
 pub mod mortar;
@@ -9,9 +7,6 @@ pub mod registry_import;
 pub mod user_stats;
 pub mod webhook;
 
-pub use audit::write_audit;
-// T-940.6 — one `LISTEN audit_log` connection per pool, fanned out to every admin audit stream.
-pub use audit_notify::{AuditNotify, AuditSignal};
 // T-595 — the API half of T-289's host control channel.
 pub use game_agent::{AgentAction, AgentReply, AgentResult};
 pub use mission_compile::{

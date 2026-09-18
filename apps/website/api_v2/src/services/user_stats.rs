@@ -33,10 +33,10 @@
 
 use sqlx::PgPool;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::write_audit;
 use crate::core::database::leaderboard_refresh::refresh_leaderboard;
 use crate::core::error_handling::api_error::ApiError;
-use crate::models::AuditSeverity;
-use crate::services::write_audit;
 
 /// Recompute a user's denormalized deployment + attendance metrics.
 ///

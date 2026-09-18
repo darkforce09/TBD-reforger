@@ -19,6 +19,8 @@ use website_map_engine::data::scenario::flatten::scan_editor_payload_types;
 
 use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::contract::validate::validate_mission_editor_payload_with_catalog;
 use crate::contract::validate_mission_document;
 use crate::core::application_state::AppState;
@@ -26,15 +28,15 @@ use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser, MissionMakerUser, ServiceAuth};
 use crate::core::text::http_url_guard::is_http_url;
-use crate::handlers::{load_mission, username};
+use crate::handlers::load_mission;
 use crate::models::{
-    AuditSeverity, GameMode, Mission, MissionArmory, MissionDefaultOverride,
-    MissionDefaultValueBucket, MissionStatus, MissionVersion, TerrainType, WeatherType,
+    GameMode, Mission, MissionArmory, MissionDefaultOverride, MissionDefaultValueBucket,
+    MissionStatus, MissionVersion, TerrainType, WeatherType,
 };
 use crate::services::{
     COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileError,
     CompileFinding, ModMissionDocument, compile_diagnostics_rules_header,
-    flatten_to_mod_document_with_catalog, mission_terrain_key, write_audit,
+    flatten_to_mod_document_with_catalog, mission_terrain_key,
 };
 
 /// `missions.thumbnail_url`, validated at the write boundary. **T-413**, adopting T-405 /
@@ -924,11 +926,11 @@ pub async fn submit_mission(
     // differ whenever an admin submits on someone's behalf; the message names both in that case so
     // the entry cannot be misread as the author having submitted it themselves.
     let actor = &user.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     let message = if *actor == m.author_id {
         format!("{actor_name} submitted mission '{}' for approval", m.title)
     } else {
-        let author_name = username(&state.pool, &m.author_id).await;
+        let author_name = actor_display_name(&state.pool, &m.author_id).await;
         format!(
             "{actor_name} submitted {author_name}'s mission '{}' for approval",
             m.title
@@ -1056,14 +1058,14 @@ pub async fn create_version(
     // "who saved what, when" record. The version row itself has `created_by`, but nothing
     // indexes saves onto the mission timeline the admin audit log reads.
     let actor = &user.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     let message = if *actor == m.author_id {
         format!(
             "{actor_name} saved version {} of mission '{}'",
             input.semver, audit_title
         )
     } else {
-        let author_name = username(&state.pool, &m.author_id).await;
+        let author_name = actor_display_name(&state.pool, &m.author_id).await;
         format!(
             "{actor_name} saved version {} of {author_name}'s mission '{}'",
             input.semver, audit_title
@@ -1154,14 +1156,14 @@ pub async fn set_current_version(
         .await?;
 
     let actor = &user.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     let message = if *actor == m.author_id {
         format!(
             "{actor_name} set current version of mission '{}' to {semver}",
             m.title
         )
     } else {
-        let author_name = username(&state.pool, &m.author_id).await;
+        let author_name = actor_display_name(&state.pool, &m.author_id).await;
         format!(
             "{actor_name} set current version of {author_name}'s mission '{}' to {semver}",
             m.title

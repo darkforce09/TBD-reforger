@@ -34,13 +34,13 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser};
 use crate::handlers::modpacks::{ModpackDto, load_modpack};
-use crate::handlers::username;
-use crate::models::{AuditSeverity, Modpack, ModpackMod, Server, ServerStatus, TerrainType};
-use crate::services::write_audit;
+use crate::models::{Modpack, ModpackMod, Server, ServerStatus, TerrainType};
 
 // Queries cast `inet`→text (`ip::text`) and `numeric`→f64 (`server_fps::float8`).
 
@@ -473,7 +473,7 @@ pub async fn create_server(
     .await?;
 
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,
@@ -559,7 +559,7 @@ pub async fn update_server(
     };
 
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     // T-586, found while reviewing the audit surface this route was about to acquire. PATCH can
     // take a server OUT OF SERVICE — `is_active` is writable here, which is exactly what makes
     // [`deactivate_server`]'s soft delete reversible — and `DELETE /servers/{id}` audits that same
@@ -635,7 +635,7 @@ pub async fn deactivate_server(
     };
 
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Warn,

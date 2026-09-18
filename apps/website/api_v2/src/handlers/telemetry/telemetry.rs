@@ -9,17 +9,19 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::write_audit;
 use crate::core::database::postgres_errors::{is_foreign_key_violation, violated_constraint};
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::ServiceAuth;
 use crate::core::realtime_hub::server_status_topic::publish_server_status;
 use crate::core::text::http_url_guard::is_http_url;
-use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
+use crate::models::{MissionOutcome, ServerStatus, TerrainType};
 // T-336 — `recompute_user_stats` moved to `services::user_stats`; this file is a caller now,
 // not its owner. `identity_and_access::handlers::arma_link_confirmation` calls the same one,
 // which is the point.
 use crate::core::application_state::AppState;
-use crate::services::{recompute_user_stats, refresh_leaderboard_best_effort, write_audit};
+use crate::services::{recompute_user_stats, refresh_leaderboard_best_effort};
 
 const LOW_FPS_THRESHOLD: f64 = 20.0;
 

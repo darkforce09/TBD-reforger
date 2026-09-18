@@ -8,6 +8,8 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
@@ -15,10 +17,8 @@ use crate::core::middleware::AdminUser;
 use crate::core::text::html_sanitizer::{cap_runes, snippet};
 use crate::core::text::http_url_guard::is_http_url;
 use crate::handlers::field_tools::UPLOAD_DIR;
-use crate::handlers::username;
-use crate::models::{Announcement, AnnouncementStatus, AnnouncementTag, AuditSeverity};
+use crate::models::{Announcement, AnnouncementStatus, AnnouncementTag};
 use crate::services::webhook::sanitize_discord_embed_field;
-use crate::services::write_audit;
 
 const MAX_UPLOAD_BYTES: usize = 5 << 20;
 
@@ -257,7 +257,7 @@ pub async fn create_announcement(
         push_to_discord(&state, &a).await;
         a = reload(&state, a.id).await?.unwrap_or(a);
     }
-    let name = username(&state.pool, author).await;
+    let name = actor_display_name(&state.pool, author).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,

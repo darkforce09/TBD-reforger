@@ -11,13 +11,15 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser};
+use crate::handlers::load_mission;
 use crate::handlers::missions::build_mission_doc;
-use crate::handlers::{load_mission, username};
-use crate::models::{AuditSeverity, FireMission, MissionStatus};
-use crate::services::{FireSolution, SolveError, solve_fire_mission, write_audit};
+use crate::models::{FireMission, MissionStatus};
+use crate::services::{FireSolution, SolveError, solve_fire_mission};
 
 /// Staging dir for injected mission.json files (game-server bridge pickup).
 const MISSION_STAGE_DIR: &str = "missions";
@@ -360,7 +362,7 @@ pub async fn inject_mission(
     fs::write(&path, data).map_err(|_| ApiError::internal("could not stage mission"))?;
 
     let actor = &admin.0.discord_id;
-    let actor_name = username(&state.pool, actor).await;
+    let actor_name = actor_display_name(&state.pool, actor).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,

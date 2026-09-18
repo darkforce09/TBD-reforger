@@ -14,6 +14,8 @@ use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
@@ -22,11 +24,10 @@ use crate::core::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
 use crate::core::text::http_url_guard::is_http_url;
 use crate::core::wire_format::go_time;
 use crate::models::{
-    AuditSeverity, Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot,
-    RegistrationState,
+    Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot, RegistrationState,
 };
 use crate::services::{
-    OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template, write_audit,
+    OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template,
 };
 use website_map_engine::data::scenario::orbat::validate_faction_join_key;
 use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};

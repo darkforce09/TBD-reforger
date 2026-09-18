@@ -138,7 +138,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     // models::telemetry::ServerStatus / Server
     ("server_statuses", "current_match_id"),
     ("servers", "required_modpack_id"),
-    // models::admin::AuditLog
+    // administration::models::audit_log::AuditLog
     ("audit_logs", "actor_id"),
     ("audit_logs", "metadata"),
     // models::admin::FireMission

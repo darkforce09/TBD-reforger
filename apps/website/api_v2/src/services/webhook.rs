@@ -21,7 +21,7 @@ fn ensure_tls_provider() {
 
 /// Neutralise formula / control characters in Discord embed text fields (T-498).
 ///
-/// Parallel to audit [`crate::handlers::audit`]'s `escape_csv_formula` (T-408), but Discord is
+/// Parallel to [`crate::administration::handlers::audit_logs`]'s `escape_csv_formula`, but Discord is
 /// **not** a spreadsheet sink — a leading `'` would show as a literal apostrophe in the channel.
 /// Instead:
 /// 1. Strip ASCII control characters (NUL‥US, DEL) so they cannot break Discord JSON/markdown

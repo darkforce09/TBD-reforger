@@ -19,6 +19,8 @@ use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::Response;
 use serde::Deserialize;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
 // `users.avatar_url` is public tier; guarded at this write boundary like every other URL
@@ -30,8 +32,6 @@ use crate::identity_and_access::services::session_issuance::{
     arma_id_is_linked, issue_session, redirect_auth_error, session_redirect,
 };
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::models::AuditSeverity;
-use crate::services;
 
 use super::oauth_host_guard::{
     OAUTH_STATE_CLEAR, callback_csrf_reject, reject_login_on_host_mismatch,
@@ -211,7 +211,7 @@ pub async fn discord_callback(
     // A skipped sync is a degraded login, not a normal one: surface it where admins
     // actually look, not only in the process log.
     if snapshot.ids_to_persist().is_none() {
-        services::write_audit(
+        write_audit(
             &state.pool,
             AuditSeverity::Warn,
             Some(&du.id),
@@ -228,7 +228,7 @@ pub async fn discord_callback(
         .await;
     }
 
-    services::write_audit(
+    write_audit(
         &state.pool,
         AuditSeverity::Info,
         Some(&du.id),

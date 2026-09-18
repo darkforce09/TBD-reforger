@@ -8,14 +8,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AdminUser;
 use crate::core::wire_format::go_time;
-use crate::handlers::{load_mission, username};
-use crate::models::{AuditSeverity, Mission, MissionStatus, TerrainType};
-use crate::services::write_audit;
+use crate::handlers::load_mission;
+use crate::models::{Mission, MissionStatus, TerrainType};
 
 /// The `list_approvals` projection.
 ///
@@ -174,7 +175,7 @@ pub async fn approve_mission(
         .bind(m.id)
         .execute(&state.pool)
         .await?;
-    let reviewer_name = username(&state.pool, reviewer).await;
+    let reviewer_name = actor_display_name(&state.pool, reviewer).await;
     write_audit(
         &state.pool,
         AuditSeverity::Info,
@@ -244,7 +245,7 @@ pub async fn reject_mission(
         .bind(m.id)
         .execute(&state.pool)
         .await?;
-    let reviewer_name = username(&state.pool, reviewer).await;
+    let reviewer_name = actor_display_name(&state.pool, reviewer).await;
     write_audit(
         &state.pool,
         AuditSeverity::Warn,

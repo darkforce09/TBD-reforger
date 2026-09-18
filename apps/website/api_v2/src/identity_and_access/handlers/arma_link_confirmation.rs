@@ -8,11 +8,12 @@ use axum::response::Json;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
+use crate::administration::models::audit_log::AuditSeverity;
+use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::ServiceAuth;
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::models::AuditSeverity;
 use crate::services;
 
 /// Claim every `match_player_stats` row for an `arma_id` that no account owns yet.
@@ -240,7 +241,7 @@ pub async fn ingest_link_confirm(
         .flatten()
         .map(|u| u.username)
         .unwrap_or_default();
-    services::write_audit(
+    write_audit(
         &state.pool,
         AuditSeverity::Info,
         Some(&discord_id),
