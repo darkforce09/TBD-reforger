@@ -1,0 +1,665 @@
+//! The locked flatten contract and the authored-environment precedence: what the compiled mod
+//! document must say about a mission row + its saved editor payload, asserted against the real
+//! compiler and the real `mission.schema.json`.
+//!
+//! [`FIXTURE`] and [`fixture_mission`] live here because this is where most of them are used;
+//! `mission_compile_diagnostics.rs` reads both through `super::flatten_tests`.
+
+use chrono::Utc;
+use serde_json::json;
+use uuid::Uuid;
+
+use super::*;
+use crate::missions::contract::schema_validators::validate_mission_document;
+use crate::missions::models::mission::{GameMode, MissionStatus, TerrainType, WeatherType};
+
+/// A two-faction mission: callsigned squads, a duplicate role (TL x2), one slot carrying real
+/// elevation, and a full loadout on the squad leader.
+pub(super) const FIXTURE: &str = r#"{
+  "schemaVersion": 1,
+  "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+  "editor": {
+    "factions": [
+      {"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]},
+      {"id": "f2", "key": "OPFOR", "name": "Soviet VDV", "squadIds": ["sq2"]}
+    ],
+    "squads": [
+      {"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1", "slotIds": ["s1", "s2", "s3"]},
+      {"id": "sq2", "factionId": "f2", "name": "Grom", "slotIds": ["s4"]}
+    ],
+    "slots": [
+      {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270},
+       "loadout": {"version": 2,
+         "wear": {"headCover": "res://helmet", "jacket": "res://bdu_blouse", "vest": "res://chest_rig", "armoredVest": "res://pasgt"},
+         "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []},
+                     {"slotIndex": 1, "slotType": "primary", "weapon": "res://m72", "attachments": []},
+                     {"slotIndex": 2, "slotType": "secondary", "weapon": "res://m9", "attachments": []},
+                     {"slotIndex": 3, "slotType": "grenade", "weapon": "res://m67", "attachments": []}],
+         "cargo": [{"container": "vest", "item": "res://stanag", "qty": 4}]}},
+      {"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "position": {"x": 4836.9, "y": 6626.5, "z": 142.5, "rotation": 450}},
+      {"id": "s3", "squadId": "sq1", "index": 2, "role": "TL", "position": {"x": 4831.2, "y": 6628.8, "z": 0, "rotation": 0}},
+      {"id": "s4", "squadId": "sq2", "index": 0, "role": "RFL", "assetId": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et", "position": {"x": 6010, "y": 7211.5, "z": 0, "rotation": 90},
+       "loadout": {"version": 2, "cargo": [{"container": "backpack", "item": "res://ak_mag", "qty": 40}]}}
+    ],
+    "editorLayers": []
+  }
+}"#;
+
+pub(super) fn fixture_mission() -> Mission {
+    Mission {
+        id: Uuid::new_v4(),
+        title: "Compiled Fixture".into(),
+        author_id: "maker".into(),
+        terrain: TerrainType::Everon,
+        custom_terrain_name: String::new(),
+        game_mode: GameMode::PveCoop,
+        weather: WeatherType::Clear,
+        time_of_day: "05:30".into(),
+        max_players: 64,
+        status: MissionStatus::Draft,
+        thumbnail_url: String::new(),
+        briefing: String::new(),
+        current_version_id: None,
+        rejection_reason: String::new(),
+        reviewed_by: None,
+        reviewed_at: None,
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    }
+}
+
+#[test]
+fn flatten_matches_locked_contract() {
+    let m = fixture_mission();
+    let doc = flatten_to_mod_document(&m, FIXTURE.as_bytes()).expect("compiles");
+
+    // One slot carries y → schemaVersion bumps to 1.2.
+    assert_eq!(doc.schema_version, "1.2");
+
+    // Deterministic slot ids (faction:callsign:role:occurrence).
+    let ids: Vec<&str> = doc.slots.iter().map(|s| s.id.as_str()).collect();
+    assert_eq!(
+        ids,
+        [
+            "blufor:Alpha:SL:0",
+            "blufor:Alpha:TL:0",
+            "blufor:Alpha:TL:1",
+            "opfor:Grom:RFL:0"
+        ]
+    );
+
+    // Locked mapping: x→x, y→z, z→y (optional), rotation→headingDeg (mod 360).
+    let s0 = &doc.slots[0];
+    assert!((s0.x - 4839.2).abs() < 1e-9 && (s0.z - 6620.8).abs() < 1e-9);
+    assert!(s0.y.is_none() && (s0.heading_deg - 270.0).abs() < 1e-9);
+    assert_eq!(doc.slots[1].y, Some(142.5));
+    assert!((doc.slots[1].heading_deg - 90.0).abs() < 1e-9); // 450 % 360
+
+    // Kit aliases: mapped assetId → kit; unmapped → faction default.
+    assert_eq!(s0.kit, "kit:us_sl");
+    assert_eq!(doc.slots[1].kit, "kit:us_rifleman"); // no assetId → default
+    assert_eq!(doc.slots[3].kit, "kit:sov_rifleman");
+
+    // Orbat instance count must equal slots length (loader parity gate).
+    let orbat_count: i64 = doc
+        .orbat
+        .values()
+        .flat_map(|f| &f.groups)
+        .flat_map(|g| &g.roles)
+        .map(|r| r.count)
+        .sum();
+    assert_eq!(orbat_count, doc.slots.len() as i64);
+
+    assert_eq!(doc.meta.player_range, [1, 64]);
+
+    // `uid` carries the editor slot id (identity thread through the API route).
+    assert_eq!(doc.slots[0].uid, "s1");
+
+    // Compiled slots carry the loadout block (gear derivation + verbatim cargo);
+    // loadout-less slots omit the key.
+    let lo = doc.slots[0].loadout.as_ref().expect("s1 loadout");
+    let g = lo.gear.as_ref().expect("s1 gear");
+    assert_eq!(g.uniform.as_deref(), Some("res://bdu_blouse"));
+    assert_eq!(g.vest.as_deref(), Some("res://pasgt")); // armoredVest wins
+    assert_eq!(lo.cargo[0].qty, 4);
+    assert!(doc.slots[1].loadout.is_none());
+    assert_eq!(
+        doc.slots[3].loadout.as_ref().unwrap().cargo[0].qty,
+        40,
+        "cargo qty verbatim"
+    );
+
+    // All four authored weapon slots survive the compile, not just the rifle.
+    assert_eq!(
+        (
+            g.primary.as_deref(),
+            g.launcher.as_deref(),
+            g.handgun.as_deref(),
+            g.throwable.as_deref()
+        ),
+        (
+            Some("res://m16"),
+            Some("res://m72"),
+            Some("res://m9"),
+            Some("res://m67")
+        )
+    );
+
+    // Gate G6: the compiled document (incl. the loadout block and the weapon slots) validates
+    // against mission.schema.json. This is the assertion that stands between a widened compiler
+    // and a 500 on GET /missions/:id/compiled — `gear` is `additionalProperties: false`, so
+    // emitting launcher/handgun/throwable without the matching schema keys would fail here, and in
+    // production the mod's error path would fall back to a STALE CACHED MISSION rather than
+    // surfacing the break.
+    let bytes = serde_json::to_vec(&doc).unwrap();
+    let details = validate_mission_document(&bytes).expect("schema compiles");
+    assert!(details.is_empty(), "schema violations: {details:?}");
+}
+
+/// The locked contract above only pins blufor/opfor, and INDFOR is the third editor-mintable side
+/// (`apply_faction.rs` VALID_SIDES = BLUFOR|OPFOR|INDFOR). Without a `factionDefaults.indfor` row
+/// in `kit-aliases.json`, `KitAliases::faction_default` falls through to `fallbackFaction`
+/// (blufor) and every INDFOR slot compiles to `kit:us_rifleman` / `preset:us_army_82nd` — nothing
+/// fails, the document still validates, and the mod then spawns a `Character_US_Rifleman.et` body
+/// while `TBD_SpawnManager.EngineFactionKey` forces engine faction FIA. Pinning the compiled values
+/// is what stops that drift.
+#[test]
+fn indfor_compiles_to_fia_not_the_blufor_fallback() {
+    let m = fixture_mission();
+    let payload = r#"{
+      "editor": {
+        "factions": [{"id": "f1", "key": "INDFOR", "name": "FIA", "squadIds": ["sq1"]}],
+        "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Kilo", "name": "Kilo 1", "slotIds": ["s1", "s2"]}],
+        "slots": [
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL", "position": {"x": 5000, "y": 5000, "z": 0, "rotation": 0}},
+          {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL", "assetId": "{677B515F119222C2}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et", "position": {"x": 5010, "y": 5000, "z": 0, "rotation": 0}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
+    let doc = flatten_to_mod_document(&m, payload.as_bytes()).expect("compiles");
+
+    // No assetId → faction default. This is the assertion the fallback bug fails.
+    assert_eq!(doc.slots[0].kit, "kit:fia_rifleman");
+    assert_ne!(
+        doc.slots[0].kit, "kit:us_rifleman",
+        "INDFOR fell back to the blufor default — factionDefaults.indfor is missing"
+    );
+    // Mapped assetId → the FIA kit row, not a degrade to the default.
+    assert_eq!(doc.slots[1].kit, "kit:fia_sl");
+
+    // The faction's presetId is the other half of `faction_default`; a one-sided fix
+    // would leave INDFOR wearing `preset:us_army_82nd`.
+    let indfor = doc
+        .factions
+        .iter()
+        .find(|f| f.key == "indfor")
+        .expect("indfor faction emitted");
+    assert_eq!(indfor.preset_id, "preset:fia");
+
+    // The compiled document must still satisfy mission.schema.json — an empty kit would
+    // fail `^kit:[a-z0-9_]+$` and the mod could not load the mission at all.
+    let bytes = serde_json::to_vec(&doc).unwrap();
+    let details = validate_mission_document(&bytes).expect("schema compiles");
+    assert!(details.is_empty(), "schema violations: {details:?}");
+}
+
+/// One squad, one slot, with the editor fields under test left to the caller.
+fn payload_with(role: &str, callsign: &str, squad_name: &str, slot_id: &str) -> String {
+    format!(
+        r#"{{"editor":{{
+            "factions":[{{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}}],
+            "squads":[{{"id":"sq1","factionId":"f1","callsign":"{callsign}","name":"{squad_name}","slotIds":["{slot_id}"]}}],
+            "slots":[{{"id":"{slot_id}","squadId":"sq1","index":0,"role":"{role}",
+                "position":{{"x":100,"y":200,"z":0,"rotation":0}}}}],
+            "editorLayers":[]}}}}"#
+    )
+}
+
+fn findings_for(m: &Mission, payload: &str) -> Vec<String> {
+    let doc = flatten_to_mod_document(m, payload.as_bytes()).expect("compiles");
+    let bytes = serde_json::to_vec(&doc).unwrap();
+    validate_mission_document(&bytes).expect("schema compiles")
+}
+
+// The editor payload schema leaves `editor.slots[]` unconstrained on purpose (O(1) validation on
+// 100k-slot missions), so these blanks reach the compile. `role` and `groupCallsign` are display
+// labels the mod only warns about, so the compile substitutes rather than emitting a document we
+// would reject — otherwise the /compiled gate would hard-fail missions that load today.
+#[test]
+fn blank_role_and_callsign_still_compile_to_a_valid_document() {
+    let m = fixture_mission();
+    let details = findings_for(&m, &payload_with("", "", "", "s1"));
+    assert!(details.is_empty(), "schema violations: {details:?}");
+
+    let doc = flatten_to_mod_document(&m, payload_with("", "", "", "s1").as_bytes()).unwrap();
+    assert_eq!(doc.slots[0].role, "unassigned");
+    // No callsign and no name → the squad id, so two unnamed squads keep distinct
+    // slot ids (a duplicate id is a hard error in TBD_MissionValidator).
+    assert_eq!(doc.slots[0].group_callsign, "sq1");
+    assert_eq!(doc.slots[0].id, "blufor:sq1:unassigned:0");
+}
+
+/// Two factions, each holding one slot — the case where elimination CAN resolve.
+fn payload_two_sides() -> String {
+    r#"{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]},
+                    {"id":"f2","key":"OPFOR","name":"USSR","squadIds":["sq2"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A","slotIds":["s1"]},
+                  {"id":"sq2","factionId":"f2","callsign":"Grom","name":"G","slotIds":["s2"]}],
+        "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"RFL",
+                    "position":{"x":100,"y":200,"z":0,"rotation":0}},
+                 {"id":"s2","squadId":"sq2","index":0,"role":"RFL",
+                    "position":{"x":300,"y":400,"z":0,"rotation":0}}],
+        "editorLayers":[]}}"#
+        .to_string()
+}
+
+// The editor never authors winConditions, so the compile synthesizes them. Declaring
+// `faction_eliminated` unconditionally makes EVERY single-faction mission unloadable:
+// TBD_MissionValidator rejects the document outright ("declares faction_eliminated but only 1
+// faction(s) actually have slots — no second side can ever be eliminated"), the server parks in
+// LOADING, and the author has no way to fix it because the field is not theirs to edit. Counted
+// over the flattened SLOTS, not `factions`, because a faction can be declared with no seats.
+#[test]
+fn faction_eliminated_is_only_declared_when_two_sides_hold_slots() {
+    let m = fixture_mission();
+
+    let one = flatten_to_mod_document(&m, payload_with("RFL", "Alpha", "A", "s1").as_bytes())
+        .expect("compiles");
+    assert!(
+        !one.win_conditions
+            .end_on
+            .iter()
+            .any(|t| t == "faction_eliminated"),
+        "one-sided mission must not declare faction_eliminated: {:?}",
+        one.win_conditions.end_on
+    );
+    assert!(one.win_conditions.end_on.iter().any(|t| t == "time_limit"));
+
+    let two = flatten_to_mod_document(&m, payload_two_sides().as_bytes()).expect("compiles");
+    assert!(
+        two.win_conditions
+            .end_on
+            .iter()
+            .any(|t| t == "faction_eliminated"),
+        "two-sided mission must still declare faction_eliminated: {:?}",
+        two.win_conditions.end_on
+    );
+}
+
+#[test]
+fn long_title_truncates_to_the_schema_maximum() {
+    let mut m = fixture_mission();
+    m.title = "T".repeat(200);
+    let details = findings_for(&m, &payload_with("RFL", "Alpha", "A", "s1"));
+    assert!(details.is_empty(), "schema violations: {details:?}");
+
+    let doc =
+        flatten_to_mod_document(&m, payload_with("RFL", "Alpha", "A", "s1").as_bytes()).unwrap();
+    assert_eq!(doc.meta.name.chars().count(), 120);
+}
+
+/// The gate has to have something real to catch. A slot that lost its `id`
+/// compiles to `uid: ""`, which `mission.schema.json` rejects — and unlike the
+/// display labels above this one is NOT substituted, because `uid` is the durable
+/// slot identity the mod keys spawn points, rosters and logs on. Inventing one
+/// would be worse than refusing to serve the document.
+#[test]
+fn blank_slot_uid_is_a_schema_violation() {
+    let m = fixture_mission();
+    let details = findings_for(&m, &payload_with("RFL", "Alpha", "A", ""));
+    assert!(
+        details.iter().any(|d| d.contains("/slots/0/uid")),
+        "expected a uid finding, got {details:?}"
+    );
+}
+
+/// The load-bearing invariant of the save-time wire-safety scan, pinned against the REAL compiler
+/// and the REAL schema rather than a restatement of either: for every authored string, the
+/// save-time scan fires **exactly** when compiling that payload would produce a
+/// `wireSafeString` violation.
+///
+/// `⟸` (no false negatives) is the one that makes the `/compiled` 500 unreachable for this
+/// cause. `⟹` (no false positives) is what makes the save-time 400 trustworthy — it is why the
+/// scan mirrors flatten's fallback chains instead of checking every string it can find: a bad
+/// squad `name` that a non-empty `callsign` shadows never reaches the wire, so rejecting the
+/// save on it would be a gate crying wolf.
+///
+/// Both directions break if flatten changes which authored field it reads. That is the point.
+#[test]
+fn save_scan_agrees_with_the_compiled_schema() {
+    let m = fixture_mission();
+
+    // Each case is a payload + one authored defect (or none). `\\t` here is the two-character
+    // JSON escape, so the parsed value carries a real TAB.
+    let cases: Vec<(&str, String)> = vec![
+        ("clean", payload_with("RFL", "Alpha", "Alpha 1-1", "s1")),
+        ("tab in role", payload_with("S\\tL", "Alpha", "A", "s1")),
+        (
+            "tab in callsign",
+            payload_with("RFL", "AL\\tPHA", "A", "s1"),
+        ),
+        // callsign wins, so the bad `name` is never read: must be clean on BOTH sides.
+        (
+            "shadowed squad name",
+            payload_with("RFL", "Alpha", "A\\tB", "s1"),
+        ),
+        // callsign blank → flatten reads `name`, so now it does reach the wire.
+        ("read squad name", payload_with("RFL", "", "A\\tB", "s1")),
+        (
+            "newline in slot id",
+            payload_with("RFL", "Alpha", "A", "s\\n1"),
+        ),
+        (
+            "DEL in faction name",
+            payload_with("RFL", "Alpha", "A", "s1").replace("US Army", "US\\u007fArmy"),
+        ),
+    ];
+
+    let (mut fired, mut clean) = (0, 0);
+    for (name, payload) in cases {
+        let parsed: serde_json::Value =
+            serde_json::from_str(&payload).unwrap_or_else(|e| panic!("{name}: {e}"));
+        let scan = website_map_engine::data::scenario::wire_safety::scan_editor_payload(&parsed);
+
+        // Only the wireSafeString findings — the schema rejects other things (a blank uid, a
+        // bad kit alias) for reasons this scan is not responsible for.
+        let compiled: Vec<String> = findings_for(&m, &payload)
+            .into_iter()
+            .filter(|d| d.contains(r"^[^\x00-\x1F\x7F]*$"))
+            .collect();
+
+        assert_eq!(
+            scan.is_empty(),
+            compiled.is_empty(),
+            "{name}: save-time scan and compiled-document schema disagree.\n  \
+             scan: {scan:?}\n  compiled: {compiled:?}"
+        );
+        if compiled.is_empty() {
+            clean += 1
+        } else {
+            fired += 1
+        }
+    }
+
+    // An `A == B` assertion over cases that never fire is a green that proves nothing — e.g. if
+    // the filter substring above stopped matching the schema's pattern. Both sides must occur.
+    assert!(
+        fired >= 4,
+        "only {fired} case(s) reached the schema pattern"
+    );
+    assert!(clean >= 2, "only {clean} case(s) compiled clean");
+}
+
+#[test]
+fn empty_editor_is_no_slots() {
+    let m = fixture_mission();
+    let payload = br#"{"editor":{"factions":[],"squads":[],"slots":[],"editorLayers":[]}}"#;
+    assert!(matches!(
+        flatten_to_mod_document(&m, payload),
+        Err(CompileError::NoSlots)
+    ));
+}
+
+/* ───────────────────────── authored environment ───────────────────────── */
+
+/// Rebuild the two document JSON strings the save compiler reads
+/// (`MissionDocCore::small_maps_json` / `slots_json`) from the FIXTURE editor graph, with
+/// `meta.environment` set to whatever the Mission Settings dialog would have authored.
+///
+/// The API crate does not enable map-engine-core's `doc` feature, so the CRDT itself cannot be
+/// driven from here; this reproduces its output shape. From `compile_payload` on it is the
+/// **real** save path — the same function that produces the bytes
+/// `POST /missions/:id/versions` stores, so the payload under test is not a hand-written
+/// restatement of what the editor emits.
+fn saved_payload_with_env(environment: serde_json::Value) -> String {
+    use website_map_engine::data::scenario::compile::compile_payload;
+
+    let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+    let editor = &fixture["editor"];
+    let by_id = |key: &str| -> serde_json::Value {
+        editor[key]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| (v["id"].as_str().unwrap().to_string(), v.clone()))
+            .collect::<serde_json::Map<String, serde_json::Value>>()
+            .into()
+    };
+    let small = serde_json::json!({
+        "meta": {
+            "id": "m1",
+            "title": "Compiled Fixture",
+            "terrain": "everon",
+            "environment": environment,
+        },
+        "factionsById": by_id("factions"),
+        "squadsById": by_id("squads"),
+        "loadoutsById": {},
+        "itemsById": {},
+        "objectivesById": {},
+        "vehiclesById": {},
+        "markersById": {},
+        "editorLayersById": by_id("editorLayers"),
+    });
+    // `include_orbat: false` — the Save path exactly (Export is the one that injects orbat).
+    compile_payload(&small.to_string(), &by_id("slots").to_string(), false).to_string()
+}
+
+/// An authored time/weather survives edit → save → compile.
+///
+/// The row deliberately still carries the creation-time `05:30` / `clear`, because nothing in the
+/// editor ever PATCHed it. Reporting the row here would mean the mission the game server loads is
+/// never the mission the author set up.
+///
+/// `viewDistance` / `thermals` are in the payload because the dialog really writes them; this test
+/// only pins that their presence keeps the compiled document schema-clean (the compiled
+/// `environment` is a fixed two-field struct).
+#[test]
+fn authored_environment_beats_a_stale_mission_row() {
+    let m = fixture_mission();
+    assert_eq!(m.time_of_day, "05:30");
+    assert_eq!(m.weather.as_str(), "clear");
+
+    let payload = saved_payload_with_env(serde_json::json!({
+        "time": "21:45",
+        "weather": "dense_fog",
+        "viewDistance": 2500,
+        "thermals": true,
+    }));
+    let doc = flatten_to_mod_document(&m, payload.as_bytes()).expect("compiles");
+    let env = doc.environment.as_ref().expect("environment");
+
+    assert_eq!(env.weather_preset, "dense_fog");
+    assert!(
+        env.date_time.ends_with("T21:45:00Z"),
+        "authored time missing from dateTime: {}",
+        env.date_time
+    );
+
+    // Still a document the game server will accept.
+    let bytes = serde_json::to_vec(&doc).unwrap();
+    let details = validate_mission_document(&bytes).expect("schema compiles");
+    assert!(details.is_empty(), "schema violations: {details:?}");
+}
+
+/// The row is the fallback, not dead weight: a version saved before the editor authored an
+/// environment (or one whose environment is unusable) must still compile to the row's values
+/// rather than to nothing.
+#[test]
+fn unusable_or_absent_environment_falls_back_to_the_row() {
+    let m = fixture_mission(); // 05:30 / clear
+
+    let cases: Vec<(&str, String)> = vec![
+        ("no environment at all", FIXTURE.to_string()),
+        ("empty environment", saved_payload_with_env(json!({}))),
+        (
+            "wrong types",
+            saved_payload_with_env(json!({ "time": 2145, "weather": false })),
+        ),
+        (
+            "blank strings",
+            saved_payload_with_env(json!({ "time": "", "weather": "" })),
+        ),
+        (
+            "off-enum weather + junk time",
+            saved_payload_with_env(json!({ "time": "half past four", "weather": "blizzard" })),
+        ),
+        (
+            "out-of-range clock",
+            saved_payload_with_env(json!({ "time": "24:00", "weather": "clear" })),
+        ),
+    ];
+
+    for (name, payload) in cases {
+        let doc = flatten_to_mod_document(&m, payload.as_bytes())
+            .unwrap_or_else(|e| panic!("{name}: {e:?}"));
+        let env = doc.environment.as_ref().expect("environment");
+        assert!(
+            env.date_time.ends_with("T05:30:00Z"),
+            "{name}: expected the row's time, got {}",
+            env.date_time
+        );
+        assert_eq!(env.weather_preset, "clear", "{name}: expected the row");
+        let bytes = serde_json::to_vec(&doc).unwrap();
+        let details = validate_mission_document(&bytes).expect("schema compiles");
+        assert!(details.is_empty(), "{name}: schema violations: {details:?}");
+    }
+}
+
+/// One field can be authored without the other — `weather` alone must not drag the row's time
+/// along, and vice versa.
+#[test]
+fn each_environment_field_falls_back_independently() {
+    let m = fixture_mission();
+
+    let weather_only = saved_payload_with_env(json!({ "weather": "overcast" }));
+    let doc = flatten_to_mod_document(&m, weather_only.as_bytes()).unwrap();
+    let env = doc.environment.as_ref().unwrap();
+    assert_eq!(env.weather_preset, "overcast");
+    assert!(env.date_time.ends_with("T05:30:00Z"), "{}", env.date_time);
+
+    let time_only = saved_payload_with_env(json!({ "time": "19:05" }));
+    let doc = flatten_to_mod_document(&m, time_only.as_bytes()).unwrap();
+    let env = doc.environment.as_ref().unwrap();
+    assert_eq!(env.weather_preset, "clear");
+    assert!(env.date_time.ends_with("T19:05:00Z"), "{}", env.date_time);
+}
+
+/// **The coupling that the allowlist living in core would otherwise drop.**
+///
+/// `map-engine-core` cannot name a `sqlx` enum, so the guarantee that the compiled document can
+/// never carry a weather the row is unable to follow is a test rather than a `match`. It is a real
+/// one: adding a fifth `WeatherType` variant fails HERE, in the same commit, rather than silently
+/// making a legitimately-authored weather fall back to the row's value forever.
+///
+/// Asserted by round-trip through the shared reader rather than against a copied literal list,
+/// so this cannot pass by two identical typos.
+#[test]
+fn weather_preset_list_matches_the_row_enum() {
+    for w in [
+        WeatherType::Clear,
+        WeatherType::Overcast,
+        WeatherType::HeavyRain,
+        WeatherType::DenseFog,
+    ] {
+        let mut meta = MissionMeta {
+            weather_preset: "row-sentinel".into(),
+            ..MissionMeta::default()
+        };
+        let payload = saved_payload_with_env(json!({ "weather": w.as_str() }));
+        flatten::apply_authored_environment(&mut meta, payload.as_bytes());
+        assert_eq!(
+            meta.weather_preset,
+            w.as_str(),
+            "{:?} is a row weather core will not accept — add it to flatten::WEATHER_PRESETS",
+            w.as_str()
+        );
+    }
+}
+
+/// **THE parity assertion. This is what makes the editor's server-truth Export trustworthy, and
+/// it is the only thing that does.**
+///
+/// The editor cannot call `GET /missions/:id/compiled`: that route takes a `ServiceAuth`
+/// (`missions::handlers::mission_export::get_compiled_mission`), so an author's browser session is
+/// refused by design. The preview is therefore a *twin* — `flatten::flatten_mod_document_json` run
+/// in wasm over the same payload — and a twin is worth less than nothing if it can drift, because
+/// a confident wrong preview is worse than no preview at all.
+///
+/// So this runs BOTH paths over the same row and the same payload bytes and demands the output
+/// be **byte-identical**:
+///
+///   * server: `mission_compile::flatten_to_mod_document` → `serde_json::to_vec`, which is
+///     exactly what `mission_export::validated_compiled_body` serves;
+///   * client: `flatten::flatten_mod_document_json` over the camelCase [`MissionMeta`] the
+///     frontend builds from `GET /missions/:id` (`mission_commands::compiled_meta_json`).
+///
+/// The fixture deliberately carries an **authored environment that disagrees with the row**
+/// (row 05:30/clear, payload 21:45/dense_fog). That is not decoration — it is the one field where
+/// the two paths could plausibly diverge, because everything else is a straight copy out of the
+/// row.
+///
+/// This is also the whole non-vacuity argument. A test that merely proved the binding was
+/// *called* would pass over a preview that is silently wrong; this one fails the instant the
+/// two implementations disagree about a single byte, in either direction, whichever side moved.
+#[test]
+fn client_twin_is_byte_identical_to_the_compiled_route() {
+    let m = fixture_mission(); // row: 05:30 / clear
+    assert_eq!(m.time_of_day, "05:30");
+    assert_eq!(m.weather.as_str(), "clear");
+
+    let payload = saved_payload_with_env(json!({
+        "time": "21:45",
+        "weather": "dense_fog",
+    }));
+
+    // The server's bytes — what a game server receives from `/compiled`.
+    let served = serde_json::to_vec(
+        &flatten_to_mod_document(&m, payload.as_bytes()).expect("server path compiles"),
+    )
+    .expect("server document serializes");
+
+    // The client's bytes — what the author downloads from the editor. The meta JSON is the
+    // camelCase shape `mission_commands::compiled_meta_json` builds from the mission row.
+    let meta_json = json!({
+        "id": m.id.to_string(),
+        "title": m.title,
+        "author": m.author_id,
+        "terrain": m.terrain.as_str(),
+        "customTerrainName": m.custom_terrain_name,
+        "maxPlayers": m.max_players,
+        "timeOfDay": m.time_of_day,
+        "weatherPreset": m.weather.as_str(),
+    })
+    .to_string();
+    let previewed = flatten::flatten_mod_document_json(meta_json.as_bytes(), payload.as_bytes())
+        .expect("client path compiles");
+
+    assert_eq!(
+        String::from_utf8_lossy(&previewed),
+        String::from_utf8_lossy(&served),
+        "the editor's preview is not the document the game server would receive",
+    );
+
+    // And the shared bytes really are the authored answer, not two matching stale ones.
+    let doc: serde_json::Value = serde_json::from_slice(&served).unwrap();
+    assert_eq!(doc["environment"]["weatherPreset"], json!("dense_fog"));
+    assert_eq!(
+        doc["environment"]["dateTime"].as_str().unwrap_or_default(),
+        format!(
+            "{}T21:45:00Z",
+            doc["environment"]["dateTime"]
+                .as_str()
+                .unwrap_or_default()
+                .split('T')
+                .next()
+                .unwrap_or_default()
+        )
+    );
+
+    // A preview the mod would reject is not server truth either.
+    let findings = validate_mission_document(&previewed).expect("schema compiles");
+    assert!(findings.is_empty(), "schema violations: {findings:?}");
+}

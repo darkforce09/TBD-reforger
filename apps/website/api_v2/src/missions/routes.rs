@@ -14,10 +14,10 @@ use crate::core::application_state::AppState;
 /// `version_limit` is the body cap applied to the mission-version POST alone, in bytes.
 pub fn routes(version_limit: usize) -> Router<AppState> {
     Router::new()
-        .route("/registry", get(crate::handlers::registry::list_registry))
+        .route("/registry", get(handlers::registry_items::list_registry))
         .route(
             "/registry/compat",
-            get(crate::handlers::registry::list_registry_compat),
+            get(handlers::registry_compat_graph::list_registry_compat),
         )
         // `/factions` writes are `MissionMakerUser` because a faction is authored content, unlike
         // the infrastructure resources whose writes are `AdminUser`.
@@ -75,42 +75,39 @@ pub fn routes(version_limit: usize) -> Router<AppState> {
         )
         .route(
             "/missions/{id}/export",
-            get(crate::handlers::missions::export_mission),
+            get(handlers::mission_export::export_mission),
         )
         .route(
             "/missions/{id}/compiled",
-            get(crate::handlers::missions::get_compiled_mission),
+            get(handlers::mission_export::get_compiled_mission),
         )
         // Inject a mission into a live session.
         .route(
             "/missions/{id}/inject",
-            post(crate::handlers::field_tools::inject_mission),
+            post(handlers::game_server_injection::inject_mission),
         )
         // Game-server mission read (service-token). Deliberately NOT the member-tier `/missions`
         // handler: that one is scoped to the CALLING USER (owner/bookmark filters) and a service
         // token has no "me" — see the handler docs.
         .route(
             "/ingest/missions",
-            get(crate::handlers::missions::ingest_list_missions),
+            get(handlers::game_server_injection::ingest_list_missions),
         )
         // Corpus-wide default-override instrumentation. Lives under `/admin/*` because it is
         // an aggregate only an admin reads (not per-mission content); the handler is in `missions`
         // because it queries `mission_versions`. Tier via the per-handler `AdminUser` extractor.
         .route(
             "/admin/mission-default-overrides",
-            get(crate::handlers::missions::mission_default_overrides),
+            get(handlers::mission_default_overrides::mission_default_overrides),
         )
         // Approvals.
-        .route(
-            "/approvals",
-            get(crate::handlers::approvals::list_approvals),
-        )
+        .route("/approvals", get(handlers::approvals_queue::list_approvals))
         .route(
             "/approvals/{id}/approve",
-            post(crate::handlers::approvals::approve_mission),
+            post(handlers::approvals_queue::approve_mission),
         )
         .route(
             "/approvals/{id}/reject",
-            post(crate::handlers::approvals::reject_mission),
+            post(handlers::approvals_queue::reject_mission),
         )
 }

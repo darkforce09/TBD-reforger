@@ -10,7 +10,7 @@
 //! app-side; the columns have no DB default) — the inserts below mirror that.
 //!
 //! Also hosts the T-376 sparse-reimport Class-R (moved out of
-//! `src/services/registry_import.rs` at T-558 so the DB consumer goes through the common
+//! `src/missions/services/registry_import.rs` so the DB consumer goes through the common
 //! guard and the t542 `src/` scan stays green).
 
 mod common;
@@ -19,7 +19,7 @@ use uuid::Uuid;
 use website_api::core::database;
 use website_api::identity_and_access::models::user_account::{User, UserRole};
 use website_api::missions::models::mission::MissionVersion;
-use website_api::services::registry_import::import_items;
+use website_api::missions::services::registry_import::import_items;
 
 #[tokio::test]
 async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
@@ -107,7 +107,7 @@ async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
 
 /// Class-R (T-376 / T-558): sparse re-import must not NULL populated Option columns.
 ///
-/// Lived in `src/services/registry_import.rs` as a lib `#[tokio::test]` that read
+/// Lived in `src/missions/services/registry_import.rs` as a lib `#[tokio::test]` that read
 /// `TEST_DATABASE_URL` raw — invisible to the tests-only t542 scan and pointed at the
 /// operator base. Moved here so the consumer uses the common per-binary guard.
 #[tokio::test]

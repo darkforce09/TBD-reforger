@@ -8,7 +8,7 @@ use super::*;
 ///
 /// ## Why this exists at all
 ///
-/// `GET /missions/:id/compiled` takes a `ServiceAuth` (`handlers::missions::get_compiled_mission`)
+/// `GET /missions/:id/compiled` takes a `ServiceAuth` (`missions::handlers::mission_export::get_compiled_mission`)
 /// it answers game servers, not browsers — so an author has no way to fetch it. Until this,
 /// "Export JSON" downloaded [`compile_export`]'s `MissionExport` envelope: the editor SUPERSET,
 /// `{exportFormatVersion, missionId, title, …, payload}`, whose `payload` is the editor graph. That

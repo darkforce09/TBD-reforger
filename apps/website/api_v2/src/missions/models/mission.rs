@@ -157,7 +157,8 @@ pub struct MissionArmory {
 /// only get by machine-parsing 171 shipped PBOs (`wog.md:1078`), which TBD owns as a table.
 ///
 /// `default_value` and the `key` pointer are read FROM `mission.schema.json` at runtime (see
-/// [`crate::handlers::missions::schema_default_keys`]); nothing here is hardcoded, because the
+/// `missions::handlers::mission_default_overrides::schema_default_keys`); nothing here is
+/// hardcoded, because the
 /// schema owns the defaults and nothing else restates them. The counts are over the LATEST
 /// version of every mission (the `current_version_id` join, the same one the library reads).
 #[derive(Debug, Clone, Serialize, Deserialize)]

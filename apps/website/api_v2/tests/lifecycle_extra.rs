@@ -249,7 +249,7 @@ async fn editor_only_orbat_derivation() {
 /// SQLSTATE **23503** — which is stronger than the old one: the export cannot be silently
 /// empty because the data it would read cannot be wrong in the first place.
 ///
-/// `handlers/missions.rs`'s 500 arm is intentionally NOT removed. It still covers a row that
+/// `missions/handlers/mission_export.rs`'s 500 arm is intentionally NOT removed. It still covers a row that
 /// predates this migration on a database restored from an older dump, and 0018's own backfill
 /// is what NULLs exactly those rows on the way in.
 #[tokio::test]

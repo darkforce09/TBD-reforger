@@ -1,7 +1,5 @@
-//! Field tools — mortar fire missions + mission injection. Rust port of
-//! `handlers/field_tools.go`.
-
-use std::fs;
+//! Field tools — the mortar fire-mission calculator: a live firing solution, the persisted
+//! fire-mission row, and the per-event list the gun line reads back.
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
@@ -11,21 +9,13 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::administration::models::audit_log::AuditSeverity;
-use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::core::middleware::{AdminUser, AuthUser};
-use crate::missions::models::mission::MissionStatus;
-use crate::missions::services::mission_document::build_mission_doc;
-use crate::missions::services::mission_lookup::load_mission;
+use crate::core::middleware::AuthUser;
 use crate::models::FireMission;
 use website_map_engine::data::scenario::ballistics::{
     FireSolution, SolveError, solve_fire_mission,
 };
-
-/// Staging dir for injected mission.json files (game-server bridge pickup).
-const MISSION_STAGE_DIR: &str = "missions";
 
 /// The firing-solution request body.
 ///
@@ -339,50 +329,4 @@ pub async fn list_event_fire_missions(
     .fetch_all(&state.pool)
     .await?;
     Ok(Json(json!({ "data": fms })))
-}
-
-/// `POST /api/v1/missions/:id/inject` — stage mission.json for the server bridge (admin).
-///
-/// @route POST /api/v1/missions/:id/inject
-pub async fn inject_mission(
-    State(state): State<AppState>,
-    admin: AdminUser,
-    Path(id): Path<String>,
-) -> Result<(StatusCode, Json<Value>), ApiError> {
-    let Ok(mid) = Uuid::parse_str(&id) else {
-        return Err(ApiError::bad_request("invalid id"));
-    };
-    let m = load_mission(&state.pool, mid)
-        .await?
-        .ok_or_else(|| ApiError::not_found("mission not found"))?;
-    if m.status != MissionStatus::Live {
-        return Err(ApiError::conflict("only live missions can be injected"));
-    }
-    let doc = build_mission_doc(&state.pool, &m).await?;
-    let data = serde_json::to_vec_pretty(&doc)
-        .map_err(|_| ApiError::internal("could not build mission.json"))?;
-    fs::create_dir_all(MISSION_STAGE_DIR).map_err(|_| ApiError::internal("staging unavailable"))?;
-    let path = format!("{MISSION_STAGE_DIR}/{}.mission.json", m.id);
-    fs::write(&path, data).map_err(|_| ApiError::internal("could not stage mission"))?;
-
-    let actor = &admin.0.discord_id;
-    let actor_name = actor_display_name(&state.pool, actor).await;
-    write_audit(
-        &state.pool,
-        AuditSeverity::Info,
-        Some(actor),
-        &actor_name,
-        "mission.inject",
-        &format!(
-            "{actor_name} injected mission '{}' to the server staging directory",
-            m.title
-        ),
-        "mission",
-        &m.id.to_string(),
-    )
-    .await;
-    Ok((
-        StatusCode::ACCEPTED,
-        Json(json!({ "staged_path": path, "version": doc.version })),
-    ))
 }

@@ -51,22 +51,7 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: apps/website/api_v2/src/handlers/missions/missions.rs
-  reason: T-145 Axum port; split follow-up
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/src/handlers/missions/registry.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
   path: apps/website/api_v2/src/handlers/telemetry/telemetry.rs
-  reason: T-145 Axum port; split follow-up
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/src/services/mission_compile.rs
   reason: T-145 Axum port; split follow-up
   expires: 2027-01-31
 

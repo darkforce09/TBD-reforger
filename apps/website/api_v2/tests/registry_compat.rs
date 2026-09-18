@@ -21,7 +21,7 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::services::registry_import::{import_compat, import_items};
+use website_api::missions::services::registry_import::{import_compat, import_items};
 
 mod common;
 

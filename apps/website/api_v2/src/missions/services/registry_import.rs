@@ -1,5 +1,5 @@
-//! Registry envelope ingest (T-068.9) — idempotent, modpack-scoped upsert of the
-//! T-150 Workbench exports (items + compat edges) into Postgres.
+//! Registry envelope ingest — idempotent, modpack-scoped upsert of the Workbench registry
+//! exports (items + compat edges) into Postgres.
 //!
 //! The whole pipeline is a pure function of the envelope: kinds and edge types are
 //! carried as plain text end-to-end, so a new edge family or item kind ships via a
@@ -80,7 +80,7 @@ fn resolve_modpack_id(envelope_id: &str, over: Option<Uuid>) -> Result<Uuid, Imp
 pub async fn ensure_modpack(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO modpacks (id, name, version, total_size_bytes, is_current, created_at) \
-         VALUES ($1, 'Imported registry (T-150 export)', '0', 0, false, now()) \
+         VALUES ($1, 'Imported registry export', '0', 0, false, now()) \
          ON CONFLICT (id) DO NOTHING",
     )
     .bind(id)
@@ -93,7 +93,7 @@ const COUNT_ITEMS: &str = "SELECT count(*) FROM registry_items WHERE modpack_id 
 const COUNT_COMPAT: &str = "SELECT count(*) FROM registry_compat WHERE modpack_id = $1";
 
 /// Full compat-edge identity: `(from_node, to_node, edge_type, evidence-canonical)`
-/// — evidence '' ≡ NULL, matching `idx_registry_compat_edge` (T-068.15.1).
+/// — evidence '' ≡ NULL, matching `idx_registry_compat_edge`.
 type CompatKey = (String, String, String, String);
 
 async fn count_rows(
@@ -107,14 +107,14 @@ async fn count_rows(
         .await
 }
 
-/// Ingest a T-150 items envelope. Idempotent: upsert by `(modpack_id,
+/// Ingest an items envelope. Idempotent: upsert by `(modpack_id,
 /// resource_name)`; the `IS DISTINCT FROM` guard makes a no-op re-run touch zero
 /// rows (stable `updated_at` ⇒ stable ETag). `icon_url` is written on insert but
 /// never updated (curated icons survive re-imports). The ten `Option` metadata
 /// columns (`abstract`, `arsenal_type`, `weight_kg`, `volume_cm3`,
 /// `max_weight_kg`, `max_volume_cm3`, `addon`, `variant_of`, `cargo_grid_w`,
 /// `cargo_grid_h`) use `COALESCE(EXCLUDED.col, registry_items.col)` on conflict
-/// — absent in a sparse/v2 envelope means **unknown**, not clear (T-376).
+/// — absent in a sparse envelope means **unknown**, not clear.
 /// `display_name` / `category` are trimmed. `sort_order` = envelope index.
 /// `prune` deletes modpack rows absent from the envelope.
 pub async fn import_items(
@@ -168,8 +168,8 @@ pub async fn import_items(
             .map(|(_, it)| it.icon_url.clone().filter(|s| !s.is_empty()))
             .collect();
         let orders: Vec<i64> = chunk.iter().map(|(i, _)| *i as i64).collect();
-        // v3 (T-068.10.2) metadata — all optional; absent Option binds NULL, which
-        // means unknown on conflict (COALESCE keeps the populated column — T-376).
+        // Extended metadata — all optional; absent Option binds NULL, which means
+        // unknown on conflict (COALESCE keeps the populated column).
         let abstracts: Vec<Option<bool>> = chunk.iter().map(|(_, it)| it.abstract_).collect();
         let arsenal_types: Vec<Option<String>> = chunk
             .iter()
@@ -184,7 +184,7 @@ pub async fn import_items(
             .iter()
             .map(|(_, it)| it.variant_of.as_ref().map(|v| v.to_string()))
             .collect();
-        // T-068.15.1 cargo grid (schema `minimum: 1` ⇒ generated NonZeroU64).
+        // Cargo grid (schema `minimum: 1` ⇒ generated NonZeroU64).
         let grid_ws: Vec<Option<i32>> = chunk
             .iter()
             .map(|(_, it)| it.cargo_grid_w.map(|v| v.get() as i32))
@@ -282,8 +282,8 @@ pub async fn import_items(
     Ok(counts)
 }
 
-/// Ingest a T-150 compat envelope. Idempotent: upsert by `(modpack_id, from_node,
-/// to_node, edge_type, COALESCE(evidence, ''))` — T-068.15.1 widened the key so the
+/// Ingest a compat envelope. Idempotent: upsert by `(modpack_id, from_node,
+/// to_node, edge_type, COALESCE(evidence, ''))` — evidence is part of the key so the
 /// same item in different storages (`TargetStorage=Pants/…` vs `Vest/…`) keeps
 /// distinct rows. The scanner emits `character_default_cargo` once per
 /// `PrefabsToSpawn` entry (duplicates = quantity); identical edges aggregate into
@@ -309,8 +309,8 @@ pub async fn import_compat(
         ..Default::default()
     };
     // Aggregate by the full edge identity (evidence canonical: '' ≡ NULL). Duplicate
-    // envelope edges are the scanner's quantity signal (one per PrefabsToSpawn entry,
-    // T-068.15.1) — count them into qty instead of last-wins dropping (duplicate keys
+    // envelope edges are the scanner's quantity signal (one per PrefabsToSpawn entry)
+    // — count them into qty instead of last-wins dropping (duplicate keys
     // in one statement would abort ON CONFLICT DO UPDATE).
     let mut by_key: BTreeMap<CompatKey, (&registry_compat::Edge, i32)> = BTreeMap::new();
     for e in &env.edges {

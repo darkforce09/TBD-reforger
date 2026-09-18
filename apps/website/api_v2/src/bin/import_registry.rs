@@ -11,7 +11,7 @@
 
 use uuid::Uuid;
 use website_api::core::database;
-use website_api::services::registry_import::{ImportCounts, import_compat, import_items};
+use website_api::missions::services::registry_import::{ImportCounts, import_compat, import_items};
 
 struct Args {
     items: Option<String>,

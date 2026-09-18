@@ -24,12 +24,11 @@ use crate::core::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
 use crate::core::text::http_url_guard::is_http_url;
 use crate::core::wire_format::go_time;
 use crate::missions::models::mission::MissionArmory;
+use crate::missions::services::mission_compile::flatten_to_mod_document_with_catalog;
 use crate::models::{
     Event, EventMission, EventStatus, OrbatReservation, OrbatSlot, RegistrationState,
 };
-use crate::services::{
-    OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template,
-};
+use crate::services::{OrbatSquadTemplate, parse_orbat_template};
 use website_map_engine::data::scenario::orbat::validate_faction_join_key;
 use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 
@@ -2407,7 +2406,7 @@ pub async fn search_members(
 ///   2. per slot, the role must agree.
 fn pair_slots(
     template: &[OrbatSquadTemplate],
-    slots: &[crate::services::ModSlot],
+    slots: &[crate::missions::services::mission_compile::ModSlot],
     em_id: Uuid,
 ) -> HashMap<(String, i64), String> {
     let mut out: HashMap<(String, i64), String> = HashMap::new();

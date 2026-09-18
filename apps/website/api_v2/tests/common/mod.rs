@@ -1497,7 +1497,7 @@ fn t381_test_database_name_guard() {
 ///
 /// Scans every top-level `tests/*.rs` binary (not this `common/` module) **and** every
 /// `src/**/*.rs` file (T-558). Pre-T-558 the scan was tests-only, so the in-crate
-/// `#[tokio::test]` in `src/services/registry_import.rs` could read the operator base raw
+/// `#[tokio::test]` in `src/missions/services/registry_import.rs` could read the operator base raw
 /// and stay invisible. A raw `env::var("TEST_DATABASE_URL")` outside `common/mod.rs` is a
 /// regression — parallel IT against live `tbd_reforger` must panic, not mutate.
 #[test]

@@ -164,7 +164,7 @@ pub async fn issue_warning(
     // text.
     //
     // The message is "reason is required", the wording `ban_user` uses, `reject_mission` in
-    // `handlers/missions/approvals.rs` uses, and the SPA already shows the operator. A client
+    // `missions/handlers/approvals_queue.rs` uses, and the SPA already shows the operator. A client
     // matching on error text would be surprised by a difference.
     let Json(input) = body.map_err(|_| ApiError::bad_request("reason is required"))?;
     let reason = input.reason.trim();
