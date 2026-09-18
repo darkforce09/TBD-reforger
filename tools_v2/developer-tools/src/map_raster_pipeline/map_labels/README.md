@@ -1,15 +1,5 @@
-# Map Labels & Contours (`map_raster_pipeline/map_labels`)
+# Map Labels
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Terrain location and height label production. Importance assignment, DEM peak processing, deduplication, and output serialization use the parent module shared types.
 
-Exports cartographic town, hill, and water location names, and generates elevation contour labels.
-
-Decomposed from `labels.rs` (520 LOC) and `labels_emit.rs` (403 LOC).
-
----
-
-## Submodules
-
-- **`location_names.rs`** (<280 LOC): Parses settlement, landmark, and marine feature JSONL records.
-- **`height_contours.rs`** (<240 LOC): Samples DEM elevation rasters to generate topographic contour labels.
-- **`binary_archiver.rs`** (<400 LOC): Emits high-speed zero-copy rkyv label catalogs for client map rendering.
+Source modules: `export_height_labels.rs`, `importance_by_name.rs`.

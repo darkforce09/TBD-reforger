@@ -1,0 +1,18 @@
+use super::*;
+
+#[test]
+fn paths_mirror_paths_sh() {
+    let root = Path::new("/repo");
+    let p = Paths::from_root(root);
+    assert_eq!(p.web, PathBuf::from("/repo/apps/website/api"));
+    assert_eq!(p.mod_root, PathBuf::from("/repo/apps/mod"));
+    assert_eq!(p.schema, PathBuf::from("/repo/packages/tbd-schema"));
+}
+
+#[test]
+fn clamp_code_passthrough() {
+    assert_eq!(clamp_code(7), 7);
+    assert_eq!(clamp_code(52), 52);
+    assert_eq!(clamp_code(127), 127);
+    assert_eq!(clamp_code(-1), 1);
+}

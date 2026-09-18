@@ -13,3 +13,6 @@ pub use ticket_engine::maintenance::{
 };
 pub use ticket_engine::metrics::cmd_metrics;
 pub use ticket_engine::metrics::estimates::cmd_estimate_tokens;
+
+pub(crate) mod cli;
+pub(crate) mod dispatch;

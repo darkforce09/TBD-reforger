@@ -1,0 +1,336 @@
+//! T-863 — port of `scripts/mod/tbd-dev-bootstrap.sh` → `cargo xtask mod dev-bootstrap`.
+//!
+//! Path pins are inlined as [`Paths`] (former `lib/paths.sh` values; lib stays on disk
+//! for OOS bash — wave 226 option 2 parks T-879/T-880 deletes):
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api`.
+//!
+//! Daemon pre-warm is in-process (`mcp_daemon`, T-888). MCP game root is in-process
+//! (`gate_setup_mcp_game_root`, T-876).
+//! `xtask mcp call` uses `cargo run -q -p xtask --` from mono root (former xtask-run).
+//!
+//! 2026-09-12: the enfusion-mcp handlers are COMMITTED in `apps/mod/tbd-emcp` (a dependency of
+//! `apps/mod/tbd-export`), so the former `cp -a` of the npx-cache copy into tbd-framework is gone —
+//! it would now plant a second handler set beside tbd-emcp's and kill the bridge. Workbench is
+//! launched with `-gproj apps/mod/tbd-export/addon.gproj` (skips the project picker; loads
+//! tbd-framework + tbd-emcp through the dependency).
+//!
+//! Fail-opens closed or pinned:
+//! - `steam -applaunch … 2>/dev/null || true` — preserved (launch attempt never fails the gate).
+//! - `npm ci || echo warn` — preserved non-fatal offline path.
+//! - `mcp daemon start || echo warn` — preserved.
+//! - `mod_validate … || true` — preserved (validate soft).
+//! - `podman start … || true` / `setup server-profile … || true` on `--api`/`--server`.
+//!
+//! Preserved oddities:
+//! - ACTION REQUIRED re-run line still names `bash scripts/mod/tbd-dev-bootstrap.sh`
+//!   (historical `$0` parity; docs/callers use `cargo xtask mod dev-bootstrap`).
+//! - `port_open`: `ss` then `netstat` fallback, each with bash's `2>/dev/null` collapse.
+
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::thread;
+use std::time::Duration;
+
+use anyhow::Result;
+use verification_core::proc::Run;
+
+use crate::core::repository_root::find_repo_root;
+
+/// Historical bash re-run string (byte parity with former script line 53).
+const RERUN_HISTORICAL: &str = "bash scripts/mod/tbd-dev-bootstrap.sh";
+
+struct Paths {
+    mono_root: PathBuf,
+    mod_root: PathBuf,
+    mod_scripts: PathBuf,
+    web: PathBuf,
+}
+
+impl Paths {
+    fn from_root(root: &Path) -> Self {
+        Self {
+            mono_root: root.to_path_buf(),
+            mod_root: root.join("apps/mod"),
+            mod_scripts: root.join("scripts/mod"),
+            web: root.join("apps/website/api"),
+        }
+    }
+}
+
+/// Entry for `xtask mod dev-bootstrap [--api] [--server]`.
+pub fn run(args: &[String]) -> Result<u8> {
+    // TBD_DEV_BOOTSTRAP_ROOT: throwaway fixture roots for T-853 bash-vs-port arms.
+    let root = match std::env::var_os("TBD_DEV_BOOTSTRAP_ROOT") {
+        Some(p) => PathBuf::from(p),
+        None => find_repo_root()?,
+    };
+    run_with_root(&root, args)
+}
+
+/// Testable entry that does not walk for the repo root.
+pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
+    // Bash `cd … && pwd` is logical (-L): on ostree hosts getcwd is `/var/home/…` while
+    // `$PWD` / bash pwd stay `/home/…`. Prefer the `/home` form so gproj paths match bash.
+    let root = bash_logical_path(root);
+    let p = Paths::from_root(&root);
+    let mod_dir = p.mod_root.join("tbd-framework");
+    let export_dir = p.mod_root.join("tbd-export");
+    // The session project: tbd-export depends on tbd-framework AND tbd-emcp, so opening it loads
+    // all three and the Net API handlers with them.
+    let gproj = export_dir.join("addon.gproj");
+    let emcp_ping = p
+        .mod_root
+        .join("tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c");
+
+    let wb_port = std::env::var("ENFUSION_WORKBENCH_PORT").unwrap_or_else(|_| "5775".into());
+    let wait_sec: u64 = std::env::var("TBD_WB_WAIT_SEC")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(180);
+
+    apply_default_env();
+
+    out_line("== TBD dev bootstrap ==")?;
+
+    // Former bash: `bash "$MOD_SCRIPTS/setup-mcp-game-root.sh"` under set -e.
+    // T-876: in-process `cargo xtask setup mcp-game-root` (same defaults).
+    match crate::commands::setup::mcp_game_root::run(None, None) {
+        Ok(0) => {}
+        Ok(code) => return Ok(code),
+        Err(e) => return Err(e),
+    }
+
+    // Pin enfusion-mcp for the warm MCP daemon (non-fatal offline).
+    let pkg = p.mod_scripts.join("package.json");
+    let nm = p.mod_scripts.join("node_modules/enfusion-mcp");
+    if pkg.is_file() && !nm.is_dir() {
+        match Run::new("npm")
+            .arg("ci")
+            .arg("--silent")
+            .cwd(&p.mod_scripts)
+            .merged_output()
+        {
+            Ok(m) if m.code == 0 => {}
+            _ => {
+                out_line(&format!(
+                    "warn: npm ci in {} failed (offline?) — using npx-cache fallback",
+                    p.mod_scripts.display()
+                ))?;
+            }
+        }
+    }
+
+    if !emcp_ping.is_file() {
+        out_line(&format!(
+            "checkout incomplete: {} missing — the enfusion-mcp handlers are committed in apps/mod/tbd-emcp (2026-09-12); nothing is copied into any addon any more",
+            emcp_ping.display()
+        ))?;
+        return Ok(1);
+    }
+
+    if !port_open(&wb_port) {
+        out_line(&format!(
+            "Workbench Net API not on :{wb_port} — trying steam -applaunch 1874910 ..."
+        ))?;
+        // Preserved fail-open: `steam -applaunch 1874910 2>/dev/null || true`. `-gproj` skips the
+        // project picker (a picker-stuck launch never opens the Net API) and opens tbd-export, which
+        // pulls in tbd-framework + tbd-emcp. Proton maps `/` to `Z:`.
+        let _ = Run::new("steam")
+            .arg("-applaunch")
+            .arg("1874910")
+            .arg("-gproj")
+            .arg(format!("Z:{}", gproj.display()))
+            .merged_output();
+        let mut elapsed: u64 = 0;
+        while !port_open(&wb_port) && elapsed < wait_sec {
+            thread::sleep(Duration::from_secs(3));
+            elapsed = elapsed.saturating_add(3);
+        }
+    }
+
+    if !port_open(&wb_port) {
+        out_line("")?;
+        out_line(&format!(
+            "ACTION REQUIRED: Launch Arma Reforger Tools from Steam, open {}, enable Net API (File > Options > General).",
+            gproj.display()
+        ))?;
+        out_line(&format!("Then re-run: {RERUN_HISTORICAL}"))?;
+        return Ok(1);
+    }
+
+    out_line(&format!("Port {wb_port} is listening."))?;
+
+    out_line("Pre-warming MCP daemon...")?;
+    // T-888: in-process (prints like bash start). Capture via temp? bash printed
+    // start messages on stdout — call non-quiet so messages stream the same way.
+    let code = crate::commands::mcp::daemon::start_at(
+        &crate::commands::mcp::daemon::resolve_sock(),
+        false,
+    );
+    if code != 0 {
+        out_line("warn: daemon pre-warm failed — xtask mcp call will use one-shot fallback")?;
+    }
+
+    // Former lib/xtask-run.sh → cargo run -q -p xtask -- (mono root).
+    match Run::new("cargo")
+        .arg("run")
+        .arg("-q")
+        .arg("-p")
+        .arg("xtask")
+        .arg("--")
+        .arg("mcp")
+        .arg("call")
+        .arg("wb_connect")
+        .arg("{}")
+        .cwd(&p.mono_root)
+        .merged_output()
+    {
+        Ok(m) => {
+            print!("{}", m.text);
+            let _ = io::stdout().flush();
+            if m.code != 0 {
+                out_line(
+                    "wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry.",
+                )?;
+                return Ok(1);
+            }
+        }
+        Err(_) => {
+            out_line(
+                "wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry.",
+            )?;
+            return Ok(1);
+        }
+    }
+
+    // Preserved fail-open: mod_validate || true — the shipping mod and the export tooling addon.
+    for dir in [&mod_dir, &export_dir] {
+        let mod_json = format!("{{\"modPath\":\"{}\"}}", dir.display());
+        if let Ok(m) = Run::new("cargo")
+            .arg("run")
+            .arg("-q")
+            .arg("-p")
+            .arg("xtask")
+            .arg("--")
+            .arg("mcp")
+            .arg("call")
+            .arg("mod_validate")
+            .arg(&mod_json)
+            .cwd(&p.mono_root)
+            .merged_output()
+        {
+            print!("{}", m.text);
+            let _ = io::stdout().flush();
+        }
+    }
+
+    for arg in args {
+        match arg.as_str() {
+            "--api" => {
+                let _ = Run::new("podman")
+                    .arg("start")
+                    .arg("tbdevent-postgres")
+                    .merged_output();
+                // bash: `(cd "$WEB" && npm run dev) &`
+                let _ = Command::new("npm")
+                    .arg("run")
+                    .arg("dev")
+                    .current_dir(&p.web)
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .spawn();
+                out_line("API dev server starting on :8080")?;
+            }
+            "--server" => {
+                // bash: `(cd "$MONO_ROOT" && cargo run -q -p xtask -- setup server-profile) 2>/dev/null || true`
+                let _ = Run::new("cargo")
+                    .arg("run")
+                    .arg("-q")
+                    .arg("-p")
+                    .arg("xtask")
+                    .arg("--")
+                    .arg("setup")
+                    .arg("server-profile")
+                    .cwd(&p.mono_root)
+                    .merged_output();
+                // T-871: run-dev-server.sh → `cargo xtask mod dev-server` (still no args —
+                // same as the former bash spawn; the shim exits 2 with usage).
+                let _ = Command::new("cargo")
+                    .args(["run", "-q", "-p", "xtask", "--", "mod", "dev-server"])
+                    .current_dir(&p.mono_root)
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .spawn();
+                out_line("Dedicated server starting...")?;
+            }
+            _ => {}
+        }
+    }
+
+    out_line("Bootstrap complete.")?;
+    Ok(0)
+}
+
+fn bash_logical_path(path: &Path) -> PathBuf {
+    let s = path.to_string_lossy();
+    if let Some(rest) = s.strip_prefix("/var/home/") {
+        let alt = PathBuf::from(format!("/home/{rest}"));
+        if alt.exists() {
+            return alt;
+        }
+    }
+    path.to_path_buf()
+}
+
+fn apply_default_env() {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/home/Samuel".into());
+    set_default(
+        "ENFUSION_GAME_PATH",
+        &format!("{home}/.cache/enfusion-mcp-root"),
+    );
+    set_default(
+        "ENFUSION_WORKBENCH_PATH",
+        &format!("{home}/.local/share/Steam/steamapps/common/Arma Reforger Tools"),
+    );
+    set_default(
+        "ENFUSION_PROJECT_PATH",
+        &format!("{home}/Documents/Games/ArmaReforgerWorkbench/addons"),
+    );
+}
+
+fn set_default(key: &str, val: &str) {
+    if std::env::var_os(key).is_none() {
+        // Intentionally mutates process env so child helpers (mcp daemon / cargo xtask) see the
+        // same defaults the former script `export`ed.
+        unsafe { std::env::set_var(key, val) };
+    }
+}
+
+/// bash: `ss -tln 2>/dev/null | grep -q ":${WB_PORT} " || netstat -tln 2>/dev/null | grep -q …`
+fn port_open(port: &str) -> bool {
+    let needle = format!(":{port} ");
+    if let Ok(o) = Run::new("ss").arg("-tln").output() {
+        if o.code == 0 && o.stdout.lines().any(|l| l.contains(&needle)) {
+            return true;
+        }
+    }
+    if let Ok(o) = Run::new("netstat").arg("-tln").output() {
+        if o.code == 0 && o.stdout.lines().any(|l| l.contains(&needle)) {
+            return true;
+        }
+    }
+    false
+}
+
+fn out_line(s: &str) -> Result<()> {
+    println!("{s}");
+    let _ = io::stdout().flush();
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "tests/development_bootstrap/tests.rs"]
+mod tests;

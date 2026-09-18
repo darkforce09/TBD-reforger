@@ -1,14 +1,5 @@
-# Inland Water Pipeline (`map_raster_pipeline/inland_water`)
+# Inland Water
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Water source preparation, connected-component classification, and orthophoto compositing. `source_components.rs` owns source classification; analysis and emission retain the original operation order.
 
-Detects inland lakes, rivers, and ponds, applying water tinting and mask contours.
-
-Decomposed from the 943-line legacy `water.rs` file into modular components (<480 LOC each).
-
----
-
-## Submodules
-
-- **`classifier.rs`** (<480 LOC): Connected component labeling and wet/dry pixel classification.
-- **`compositor.rs`** (<450 LOC): Composites nautical water tints over base orthophoto layers.
+Source modules: `analyze_water_sources.rs`, `sap_dir.rs`, `source_components.rs`.

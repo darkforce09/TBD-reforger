@@ -1,26 +1,20 @@
-# 3D Blueprint Compiler (`developer-tools/src/blueprint`)
+# Blueprint compilation
 
-The compiler is live here, including ingestion and parity reporting. Commands receive the active repository path from `xtask`; shared PAK access lives in `../enfusion_pak`. Existing module names and test placement remain until Phase 4. The submodule list below describes that later decomposition target.
+This subsystem decodes model meshes and voxel dumps, extracts building structure, builds bounding volume hierarchies (BVHs), and emits blueprint libraries and binary archives. Command adapters supply the active repository path. Shared PAK parsing and archive access belong to `../enfusion_pak/`; blueprint and spatial contracts come from website-map-engine.
 
-3D geometric mesh decoder, voxel raymarching engine, architectural component extractor, and Bounding Volume Hierarchy (BVH) compiler.
+## Directory ownership
 
-Relocated from `xtask/src/map_blueprint/` (13,409 LOC, 32 files) into `developer-tools` where heavy graphics dependencies belong.
+- `mesh_decoding/`: `.xob` mesh and collision decoding, scene-node records, and archive inspection.
+- `voxel_processing/`: mesh voxelization, voxel-dump parsing, voxel types, analysis parameters, and synthetic test fixtures.
+- `architectural_analysis/`: vertical slabs, wall extraction, floor plates, roof profiles, polygon rings, contour tracing, convex hulls, and surface classification.
+- `bvh/`: BVH construction and sidecar emission, batch processing, prefab catalogs, world instances, instance-pair verification, and rotation validation.
+- `archive_emission/`: blueprint assembly, library reading, archive writing, and archive command handling.
+- `tests/`: separate Rust test modules covering geometry, decoding, compilation, archives, and parity.
 
----
+`mod.rs` exposes the command entrypoints and coordinates voxel interpretation and per-floor assembly. Its `#[path]` declarations map the internal modules to their responsibility directories. `ingest.rs` discovers profile exports, validates building blueprints, and copies them into repository assets. `parity_report.rs` compares recorded Workbench trace results with blueprint line-of-sight results.
 
-## 1. Submodules
+## Command entrypoints
 
-- **`mesh_reader.rs`** (<450 LOC): Decodes Bohemia's proprietary `.xob` 3D model meshes (`LODS`, `COLL` colliders).
-- **`mesh_nodes.rs`** (<400 LOC): Traverses the scene node hierarchy and transforms vertices into object-space coordinates.
-- **`voxel_raymarcher.rs`** (<450 LOC): Raymarches triangle meshes against a 3D bounding volume to emit voxel occupancy grids.
-- **`architectural_analysis/`**: Geometric algorithms extracting structural components from voxel data:
-  - `slabs.rs`: Floor slab separation.
-  - `walls.rs`: Wall detection, window/door openings, and rectilinear simplification.
-  - `plates.rs`: Horizontal floor plate extraction.
-  - `roofs.rs`: Heightfield roof surface generation.
-  - `rings.rs`: 2D polygon boundary tracing.
-- **`bvh/`**: 3D Bounding Volume Hierarchy acceleration structures for fast line-of-sight and raycast occlusion:
-  - `builder.rs`: Builds Bottom-Level Acceleration Structures (BLAS).
-  - `binary_emit.rs`: Emits zero-copy `.bvh` sidecar binary files.
-  - `batch.rs`: Batch generator iterating across all world prefabs.
-- **`archive_compiler.rs`** (<450 LOC): Folds extracted blueprints and BLAS structures into `prefabs/building_blueprints.rkyv`.
+The public entrypoints support voxel interpretation, mesh voxelization, BVH emission and batch compilation, BVH parity, instance verification, rotation checks, and PAK/model inspection. `ingest::run` and `parity_report::run` provide ingestion and parity reporting.
+
+`cargo xtask map blueprint-from-voxels` interprets voxel dumps and writes validated building JSON. Its `archive` subcommand assembles the blueprint library into `building_blueprints.rkyv`. `cargo xtask map ingest-blueprints` imports exported building JSON; `cargo xtask map parity-report` reports agreement with Workbench trace results.

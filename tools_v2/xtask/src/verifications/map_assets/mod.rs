@@ -1,5 +1,5 @@
 //! Delegate map verification without importing map-engine types.
-use crate::root::find_repo_root;
+use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
 use std::path::Path;
 

@@ -1,13 +1,5 @@
-# Architectural Verifications (`verifications/architecture`)
+# Architecture
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Frontend/API route contracts, editor ORBAT coherency, engine dependency layers, SQL query policy, and source-file limits. Separate test modules cover positive cases and deliberately broken enforcement.
 
-Enforces monorepo layering rules and interface contracts.
-
----
-
-## Verifications
-
-- **`engine_layer_boundaries.rs`** (formerly `gate_engine_layers.rs`): Enforces **Law 6 (Strict Boundary Layers)**. Asserts that `graphics-engine` never imports `map-engine` and contains zero map domain vocabulary (`terrain`, `symbology`, `mission`, `orbat`).
-- **`route_tags.rs`** (formerly `gate_route_tags.rs`): Verifies bidirectional parity between Axum HTTP route handlers and markdown `@route` doc tags.
-- **`editor_orbat_coherency.rs`** (formerly `gate_t180.rs`): Enforces that all ORBAT and entity edits route strictly through the Yjs CRDT store; bans direct mutation shortcuts.
+Source modules: `editor_orbat_coherency.rs`, `engine_layer_boundaries.rs`, `engine_layer_rules.rs`, `engine_layer_scan.rs`, `mod.rs`, `route_tags.rs`.

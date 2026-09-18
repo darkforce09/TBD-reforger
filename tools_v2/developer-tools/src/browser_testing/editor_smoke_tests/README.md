@@ -1,18 +1,5 @@
-# Editor Smoke Test Suite (`browser_testing/editor_smoke_tests`)
+# Editor Smoke Tests
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+The parent module owns the browser harness and the fixed 21-entry `EDITOR_SUITE` order. Shared authentication, fixture serving, input, geometry, and runner helpers support scenario groups in this directory. Every production scenario file is below 450 lines. Standalone authentication, rendering, and performance checks remain available through `gate`.
 
-Complete end-to-end regression test suite driving the 2D/3D Mission Creator editor.
-
-Decomposed from the monolithic 4,071-line `smokes.rs` file into 6 focused modules strictly under **450 lines of code** each.
-
----
-
-## Submodules
-
-- **`harness.rs`** (<400 LOC): Page navigation, auth fixture seeding, and browser console panic listener.
-- **`runner.rs`** (<250 LOC): Test runner loop and CLI subcommand dispatch.
-- **`core_tests.rs`** (<450 LOC): Foundational editor tests: `selfcheck`, `editor`, `doc`, `cur`, `persist`.
-- **`canvas_tests.rs`** (<450 LOC): GPU viewport tests: `fullmap`, `hillshade`, `pan`, `marquee_drag`, `select`.
-- **`dock_widget_tests.rs`** (<450 LOC): CAD UI dock tests: `arsenal`, `attributes`, `outliner_palette`, `keyboard_settings`.
-- **`mutation_tests.rs`** (<450 LOC): Transactional editing tests: `undo`, `save_export`, `hydrate`, `entrance_motion_rect`.
+Source modules: `arsenal.rs`, `cur.rs`, `editor_auth_seed.rs`, `fullmap.rs`, `marquee_drag.rs`, `mutations.rs`, `outliner_drag.rs`, `outliner_palette.rs`, `pan.rs`, `run_smoke.rs`, `save_dialog_rect.rs`, `serve_arsenal_golden.rs`, `virtual_outliner.rs`.

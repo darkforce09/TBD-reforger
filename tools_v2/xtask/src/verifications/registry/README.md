@@ -1,11 +1,5 @@
-# Registry Census Verifications (`verifications/registry`)
+# Registry
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Object-registry alias checks compare the registry and frontend mirror, with missing-input and perturbation tests.
 
-Audits entity registries and prefab aliases.
-
----
-
-## Verifications
-
-- **`object_alias_spawn_census.rs`** (formerly `gate_t439.rs`): Audits parity between editor object palette aliases and Enfusion spawn registry entries, proving matching GUID rows exist for every palette item.
+Source modules: `mod.rs`, `object_registry_aliases.rs`.

@@ -1,14 +1,5 @@
-# Forest Polygon Smoothing (`world_export_pipeline/forest_smoothing`)
+# Forest Smoothing
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Forest ring smoothing separates coordinate operations, canopy probes, area compensation, and output emission. Algorithm constants, iteration order, and bounds are shared through the parent module.
 
-Runs computational geometry smoothing and topology verification algorithms on forest canopy regions.
-
-Decomposed from the 1,244-line legacy `forest_smooth.rs` file into modules strictly under **450 LOC** with unit tests moved to sibling files.
-
----
-
-## Submodules
-
-- **`chaikin.rs`** (<450 LOC): Core Chaikin polygon curve subdivision algorithm.
-- **`topology.rs`** (<400 LOC): Resolves self-intersections and prunes degenerate polygon rings.
+Source modules: `round_coord.rs`.

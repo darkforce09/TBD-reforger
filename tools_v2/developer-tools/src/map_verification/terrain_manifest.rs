@@ -256,7 +256,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
         }
     };
 
-    let schema = read_json(&schema_root(&root).join("schema/terrain-manifest.schema.json"))?;
+    let schema = read_json(&schema_root(root).join("schema/terrain-manifest.schema.json"))?;
     let validator =
         jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
     let schema_errs: Vec<String> = validator
@@ -345,7 +345,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
     // this program's signature defect. The POD row doc is checked unconditionally: it describes the
     // format whether or not this terrain has migrated yet.
     let instance_schema =
-        read_json(&schema_root(&root).join("schema/map-object-instance.schema.json"))?;
+        read_json(&schema_root(root).join("schema/map-object-instance.schema.json"))?;
     let mut bin_errors = pod_row_doc_failures(&instance_schema);
     let (declared, path_errors) = manifest_binary_failures(
         &manifest,

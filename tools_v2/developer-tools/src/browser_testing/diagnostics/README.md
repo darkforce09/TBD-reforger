@@ -1,12 +1,5 @@
-# Browser Preflight Diagnostics (`browser_testing/diagnostics`)
+# Diagnostics
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Browser prerequisites and launch diagnostics, including font cache setup, process execution, font checks, and runtime probes. Failed prerequisite checks remain visible before editor scenarios run.
 
-Decomposed from the 742-line `doctor.rs` file into focused submodules (<400 LOC each).
-
----
-
-## Responsibilities
-
-- **`environment_checks.rs`**: Validates that system RAM meets thresholds, headless font caches (`Liberation Sans`, `Fontconfig`) are present, and Chrome version pins match CI locks.
-- **`liveness_probe.rs`**: Probes Chromium startup latency and WebSocket connectivity before test suite execution begins.
+Source modules: `check_fonts.rs`, `ensure_gate_font_cache.rs`.

@@ -8,3 +8,6 @@ pub fn collisions(args: &[String]) -> anyhow::Result<u8> {
     let root = std::path::PathBuf::from(String::from_utf8_lossy(&out.stdout).trim().to_string());
     ticket_engine::wave_lock::collisions::run(&root, args)
 }
+
+pub(crate) mod cli;
+pub(crate) mod dispatch;

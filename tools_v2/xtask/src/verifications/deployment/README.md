@@ -1,11 +1,5 @@
-# Deployment Verifications (`verifications/deployment`)
+# Deployment
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Checks staging deployment compose paths against the live command implementation. Missing source and wrong deployment paths fail independently.
 
-Validates deployment infrastructure configurations and container composition files.
-
----
-
-## Verifications
-
-- **`staging_compose_path.rs`** (formerly `gate_t438.rs`): Verifies that remote staging deploy drivers point `docker compose -f` at `docker-compose.staging.yml`.
+Source modules: `mod.rs`, `staging_compose_paths.rs`.

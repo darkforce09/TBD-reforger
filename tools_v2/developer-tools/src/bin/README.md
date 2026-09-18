@@ -1,14 +1,3 @@
-# Developer-tool executables
+# Executable entrypoints
 
-The package is `developer-tools`; the six binary names and their existing arguments remain stable:
-
-- `enf`: Enfusion source and API tools.
-- `gate`: browser tests and diagnostics.
-- `mcpd`: Workbench MCP broker and offline stub.
-- `world`: world export and asset processing.
-- `map`: raster and cartographic processing.
-- `capture`: editor screenshots.
-
-Example: `cargo run -p developer-tools --bin gate -- --help`.
-
-Executable renaming and broad entrypoint decomposition are not part of Phase 2.
+The stable executable names are `enf`, `gate`, `mcpd`, `world`, `map`, and `capture`. Each file delegates to its subsystem CLI implementation and stays below 250 lines. Argument parsing, help, error handling, and runtime cleanup remain in the owning subsystem.

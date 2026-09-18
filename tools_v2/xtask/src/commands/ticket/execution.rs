@@ -41,11 +41,11 @@ pub fn cmd_done(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
 
 pub fn cmd_run(root: &Path, registry: &Value, dry_run: bool, stream: Option<&str>) -> Result<()> {
     ticket_engine::cli::cmd_run(root, registry, dry_run, stream, |root, registry, id| {
-        crate::slice_run::run_slice(
+        crate::commands::platform::slice_execution::run_slice(
             root,
             registry,
             id,
-            &crate::slice_run::SliceRunOpts::default(),
+            &crate::commands::platform::slice_execution::SliceRunOpts::default(),
         )
         .map(|_| ())
     })

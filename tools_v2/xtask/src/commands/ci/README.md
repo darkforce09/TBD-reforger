@@ -1,13 +1,5 @@
-# Continuous Integration Tasks (`xtask/src/commands/ci`)
+# Ci
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Build and CI composites use the ordered task definitions in `task_definitions.rs`. `task_runner.rs` resolves and runs tasks; leaf adapters, shell execution, and environment setup have separate modules.
 
-Entrypoints for local and remote Continuous Integration test pipelines.
-
----
-
-## Submodules
-
-- **`ci_local.rs`**: Replays the full multi-lane CI check suite locally (`cargo xtask ci ci-local`).
-- **`ci_frontend.rs`**: Frontend check suite: formatting, clippy wasm32, unit tests, Trunk release build (`cargo xtask mk ci-local-leptos`).
-- **`tasks.rs`**: Task table mapping CI target names to ordered execution graphs.
+Source modules: `chromium_install.rs`, `editor_api.rs`, `mod.rs`, `task_definitions.rs`, `task_runner.rs`.

@@ -1,5 +1,5 @@
 use super::*;
-use crate::wave::testcwd::CwdGuard;
+use crate::commands::platform::wave_execution::testcwd::CwdGuard;
 
 #[test]
 fn nested_tooling_directories_resolve_repository_and_fixtures() {
@@ -11,7 +11,7 @@ fn nested_tooling_directories_resolve_repository_and_fixtures() {
         for fixture in [
             "packages/tbd-schema/schema/mission.schema.json",
             "tools_v2/developer-tools/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
-            "tools_v2/xtask/src/wave/schema.rs",
+            "tools_v2/xtask/src/commands/platform/wave_execution/schema.rs",
             "scripts/mod/package.json",
         ] {
             assert!(resolved.join(fixture).is_file(), "missing {fixture}");

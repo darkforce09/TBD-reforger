@@ -1,15 +1,5 @@
-# Enfusion Mod Script Verifications (`verifications/mod_scripts`)
+# Mod Scripts
 
-> Planned architecture scaffold. Phase one keeps the live Rust module layout; this directory does not yet implement the structure described below.
+Enfusion source checks for objective diagnostics, identity comments, mission request size limits, spawn determinism, and UI layout structure.
 
-Static analysis checks enforcing code contracts and layout syntax for the Enfusion game mod.
-
----
-
-## Verifications
-
-- **`destroy_target_diagnostics.rs`** (formerly `gate_t437.rs`): Proves destroy-objective entity diagnostics handle missing target entities cleanly.
-- **`player_identity_comments.rs`** (formerly `mod_comment_gates.rs` & `gate_t296.rs`): Verifies comment contracts and `#tbd link` implementation claims in Enfusion script classes.
-- **`mission_loader_rest_size.rs`** (formerly `gate_t456.rs`): Proves `TBD_MissionLoader.c` enforces HTTP body size limits before parsing JSON payloads.
-- **`enfusion_ui_layouts.rs`** (formerly `gate_ui_layouts.rs` & `gate_ui_layouts_awk.rs`): Validates `.layout` syntax, brace nesting, slot types, and widget naming contracts.
-- **`spawn_determinism.rs`** (formerly `gate_tbd_spawn_determinism.rs`): Proves player and object spawn placements are mathematically deterministic for a given seed.
+Source modules: `destroy_target_diagnostics.rs`, `mission_rest_size_limits.rs`, `mod.rs`, `player_identity_comments.rs`, `results_reporter_identity_comments.rs`, `spawn_determinism.rs`, `spawn_determinism_live.rs`, `spawn_verification.rs`, `ui_layout_parser.rs`, `ui_layouts.rs`.

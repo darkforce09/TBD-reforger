@@ -1,5 +1,5 @@
 //! Forward map commands with the active checkout as their repository input.
-use crate::root::find_repo_root;
+use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
 
 pub fn run(args: &[String]) -> Result<u8> {
@@ -49,3 +49,8 @@ pub fn run_instances_verify(args: &[String]) -> Result<u8> {
 pub fn run_rotation_pin(args: &[String]) -> Result<u8> {
     developer_tools::blueprint::run_rotation_pin(&find_repo_root()?, args)
 }
+
+pub(crate) mod cli;
+pub(crate) mod dispatch;
+
+pub(crate) mod terrain_export;

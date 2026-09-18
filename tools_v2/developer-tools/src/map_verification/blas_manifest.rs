@@ -196,10 +196,10 @@ pub fn verify_blas_manifest(root: &Path) -> Result<u8> {
     for pid in &manifest.hot {
         match entries.get(pid) {
             Some(e) if e.blocks => {
-                if let Some(p) = prev {
-                    if e.instances_in_world > p {
-                        errs.push(format!("hot set not ordered by placements at pid {pid}"));
-                    }
+                if let Some(p) = prev
+                    && e.instances_in_world > p
+                {
+                    errs.push(format!("hot set not ordered by placements at pid {pid}"));
                 }
                 prev = Some(e.instances_in_world);
             }
