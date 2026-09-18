@@ -17,11 +17,12 @@
 //! Splitting it this way is what makes the sweep safe to run at all: it can be late,
 //! skipped, or run twice and no user-visible decision changes.
 //!
-//! AUTOMATIC vs OPERATOR-ONLY
-//!   * automatic  — pre-start → `live` at `start_time`; `live` → `completed` at the end
-//!                  horizon below. Both are things the clock knows and nobody has to assert.
-//!   * operator   — `cancelled` (intent, never inferable), and `open`/`locked` (announcing
-//!                  and freezing a roster are editorial acts, not consequences of time).
+//! Automatic versus operator-only transitions:
+//!
+//! * automatic: pre-start → `live` at `start_time`; `live` → `completed` at the end
+//!   horizon below. Both are things the clock knows and nobody has to assert.
+//! * operator: `cancelled` (intent, never inferable), and `open`/`locked` (announcing
+//!   and freezing a roster are editorial acts, not consequences of time).
 //!
 //! Ending is deliberately NOT hung off results ingest. The event↔match link is
 //! `matches.event_id`, a reverse pointer nothing writes when an operation finishes, so
