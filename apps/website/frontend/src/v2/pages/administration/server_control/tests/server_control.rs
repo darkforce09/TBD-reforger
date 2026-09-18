@@ -3,12 +3,12 @@
 use super::*;
 
 #[test]
-fn rcon_path_tracks_app_rs() {
-    let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
-    let app_rs: &str = app_rs;
+fn rcon_path_tracks_the_api_route_table() {
+    let src = crate::v2::core::test_support::fixtures::api_route_source();
+    let src: &str = &src;
     assert!(
-        app_rs.contains(r#""/admin/servers/{id}/rcon""#),
-        "http_router.rs must register POST /admin/servers/{{id}}/rcon"
+        src.contains(r#""/admin/servers/{id}/rcon""#),
+        "the api_v2 domain route tables must register POST /admin/servers/{{id}}/rcon"
     );
     assert_eq!(
         admin_server_rcon_path("00000000-0000-4000-d000-000000000001"),

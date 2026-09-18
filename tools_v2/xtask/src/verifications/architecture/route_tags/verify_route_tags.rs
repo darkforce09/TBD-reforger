@@ -36,34 +36,33 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         }
     }
 
-    // ── Shape assertions on http_router.rs ───────────────────────────────────────────────────────────
+    // ── Shape assertions on http_router.rs ───────────────────────────────────────────────────
     //
-    // The extractor reads ONE function and prefixes ONE nest path; both are load-bearing, so both
-    // are pinned. bash's `gate_require … "$APP_RS"` is a stat plus a content match, split here into
-    // an explicit read plus `gate::require_str` for one reason: the script `cd`s to `$ROOT` and so
-    // printed `apps/website/api_v2/src/core/http_router.rs`, while xtask takes an absolute root and
-    // may be invoked
-    // from any subdirectory. Reading first lets the missing-target `Finding` carry that same
-    // relative path, with the same `Verdict` shapes.
-    let nest = format!(".nest(\"{API_PREFIX}\", api_routes(");
+    // The extractor reads the MERGE function by name and prefixes ONE nest path; both are
+    // load-bearing, so both are pinned. bash's `gate_require … "$APP_RS"` is a stat plus a content
+    // match, split here into an explicit read plus `gate::require_str` for one reason: the script
+    // `cd`s to `$ROOT` and so printed `apps/website/api_v2/src/core/http_router.rs`, while xtask
+    // takes an absolute root and may be invoked from any subdirectory. Reading first lets the
+    // missing-target `Finding` carry that same relative path, with the same `Verdict` shapes.
+    let nest = format!(".nest(\"{API_PREFIX}\", api_v1_routes(");
     let pins: [(String, &str); 2] = [
         (
             format!(
-                "http_router.rs no longer defines `fn api_routes` — the route extractor in {SELF_REL} reads that function by name, so it is now parsing nothing. Re-point it before trusting any verdict."
+                "http_router.rs no longer defines `{MERGE_FN}` — the mount cross-check in {SELF_REL} reads that function by name to learn which domain route tables are actually served, so it is now reading nothing. Re-point it before trusting any verdict."
             ),
-            "fn api_routes",
+            MERGE_FN,
         ),
         (
             format!(
-                "http_router.rs no longer nests api_routes at `{API_PREFIX}` — every @route tag in the crate is written with that prefix, so the extracted paths would all be wrong."
+                "http_router.rs no longer nests {MERGE_FN_NAME} at `{API_PREFIX}` — every @route tag in the crate is written with that prefix, so the extracted paths would all be wrong."
             ),
             nest.as_str(),
         ),
     ];
-    let app_path = repo_root.join(APP_RS_REL);
-    let app_src = match std::fs::read_to_string(&app_path)
+    let router_path = repo_root.join(ROUTER_RS_REL);
+    let router_src = match std::fs::read_to_string(&router_path)
         .ok()
-        .filter(|_| app_path.is_file())
+        .filter(|_| router_path.is_file())
     {
         Some(text) => text,
         None => {
@@ -71,7 +70,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
             // print. Reproduced rather than collapsed: the second names the nest prefix, and a
             // reader who has lost http_router.rs still needs to know both invariants exist.
             for (msg, _) in &pins {
-                let cause = NotRun::TargetMissing(PathBuf::from(APP_RS_REL));
+                let cause = NotRun::TargetMissing(PathBuf::from(ROUTER_RS_REL));
                 o.push(Verdict::did_not_run(msg.clone(), Kind::Pin, cause).to_string());
             }
             say(&mut o, &["", SHAPE_FAIL]);
@@ -83,7 +82,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         // `require_str` has no NotRun path — the subject is in hand — so the only failing arm is
         // `Failed`, which renders bash's bare `FAIL: $msg`.
         if let v @ (Verdict::Failed(_) | Verdict::DidNotRun(..)) =
-            gate::require_str(msg, &Pattern::literal(needle), &app_src)
+            gate::require_str(msg, &Pattern::literal(needle), &router_src)
         {
             o.push(v.to_string());
             shape_bad = true;
@@ -95,11 +94,38 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     }
 
     // ── Extract both sides ───────────────────────────────────────────────────────────────────
-    let lines = api_routes_lines(&app_src);
-    let mut router = extract_router(&flatten(&lines));
+    //
+    // The router side is the UNION of every `src/<domain>/routes.rs` in the tree, not one
+    // function: each table is parsed on its own so a `.route(` in one cannot bleed into another
+    // through the flattening.
+    let tables = match discover_route_files(repo_root) {
+        Ok(files) => files,
+        Err(cause) => {
+            let msg =
+                format!("the domain route tables could not be discovered under {SRC_DIR_REL}");
+            o.push(Verdict::did_not_run(msg, Kind::Pin, cause).to_string());
+            say(&mut o, &["", PARSE_FAIL]);
+            return (2, o);
+        }
+    };
+    let mut router: Vec<String> = Vec::new();
     // `grep -cF '.route('` counted LINES, not occurrences: a chained `get(a).post(b)` on one line
     // is one raw route but two registrations, which is why the guard below is `<` and not `!=`.
-    let raw_routes = lines.iter().filter(|l| l.contains(".route(")).count();
+    let mut raw_routes = 0usize;
+    for table in &tables {
+        let (lines, declared) = routes_fn_lines(&table.text);
+        if declared != 1 {
+            // A file that does not hold exactly one column-0 `pub fn routes` is a shape this
+            // extractor cannot read, and must be NAMED rather than contribute nothing in silence.
+            router.push(format!(
+                "UNPARSED {}-declares-{declared}-column-0-pub-fn-routes",
+                table.rel
+            ));
+            continue;
+        }
+        raw_routes += lines.iter().filter(|l| l.contains(".route(")).count();
+        router.extend(extract_router(&flatten(&lines)));
+    }
 
     let (mut tags, raw_tags) = match extract_all_tags(repo_root) {
         Ok(pair) => pair,
@@ -126,6 +152,28 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         say(&mut o, NOTHING_TAIL);
         fail = true;
     }
+    // The mount cross-check, both directions. A table nobody merges still feeds side B, so its
+    // routes would be demanded of the tag sweep while serving no traffic; a merge with no table
+    // behind it means the router side shrank without the count moving. Neither is visible to the
+    // counting guards above, because both sides stay internally consistent.
+    let merged = merged_domains(&router_src);
+    let discovered: BTreeSet<String> = tables.iter().map(|t| t.domain.clone()).collect();
+    for domain in discovered.difference(&merged) {
+        o.push(format!(
+            "FAIL: route file src/{domain}/{ROUTES_FILE} is not merged by {MERGE_FN_NAME}"
+        ));
+        fail = true;
+    }
+    for domain in merged.difference(&discovered) {
+        o.push(format!(
+            "FAIL: {MERGE_FN_NAME} merges {domain}::routes but src/{domain}/{ROUTES_FILE} does not exist"
+        ));
+        fail = true;
+    }
+    if discovered != merged {
+        say(&mut o, &[MOUNT_TAIL]);
+    }
+
     // Exact and self-scaling: no floor to go stale, and a tag the parser could not read is NAMED.
     if n_tags != raw_tags {
         o.push(format!("FAIL: {raw_tags} @route tag(s) in the tree but {n_tags} parsed into (METHOD, PATH, HANDLER)."));
@@ -135,7 +183,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     }
     if n_routes < raw_routes || router_bad != 0 {
         o.push(format!(
-            "FAIL: {raw_routes} .route( registration(s) in api_routes but only {n_routes} parsed."
+            "FAIL: {raw_routes} .route( registration(s) in {ROUTE_TABLES} but only {n_routes} parsed."
         ));
         o.extend(marked(&router, "UNPARSED ").map(|l| format!("      {l}")));
         say(&mut o, &[UNPARSED_TAIL]);
@@ -172,7 +220,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
 
     let mut a_bad = 0usize;
     o.push(format!(
-        "── A. @route tags with no matching route in {APP_RS_REL} ──"
+        "── A. @route tags with no matching route in {ROUTE_TABLES} ──"
     ));
     for line in &tags {
         // bash `read -r m p fn loc`: three fields plus "the rest" as the location.
@@ -181,7 +229,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
             continue;
         }
         o.push(format!("  {loc}"));
-        o.push(format!("      @route {m} {p}  ->  handler `{f}` is NOT registered in {APP_RS_REL} on that method+path."));
+        o.push(format!("      @route {m} {p}  ->  handler `{f}` is NOT registered in {ROUTE_TABLES} on that method+path."));
         a_bad += 1;
     }
     if a_bad == 0 {
@@ -210,8 +258,9 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     }
 
     o.push(String::new());
+    let n_files = tables.len();
     o.push(format!(
-        "checked {n_tags} @route tag(s) against {n_routes} registered route(s) in {APP_RS_REL}"
+        "checked {n_tags} @route tag(s) against {n_routes} registered route(s) in {n_files} route file(s) under {SRC_DIR_REL}"
     ));
     if a_bad != 0 || b_bad != 0 {
         o.push(format!(
@@ -222,163 +271,6 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     }
     o.push("ROUTE-TAG CHECK: PASS".into());
     (0, o)
-}
-
-/// `sed -n '/^fn api_routes/,/^}/p' | sed 's://.*$::'` — the comment-stripped range, still LINES.
-///
-/// The crate is rustfmt-clean, so the next column-0 `}` is the function's own closing brace; sed
-/// restarts the range afterwards, so a second `fn api_routes…` would also be taken — kept, because
-/// dropping it would be a silent narrowing. Comments go so a commented-out `.route(...)` cannot
-/// read as live; the strip is naive and would also cut a `//` inside a string literal, a hazard the
-/// script carried and this port keeps (measured 2026-08-12, `grep -n '"[^"]*//'` over the range
-/// finds nothing — a URL literal landing there later would drop the rest of its line).
-///
-/// LINES, not the flattened string, because bash counted `raw_routes` with `grep -cF '.route('`
-/// BEFORE the `tr` — per line. Count after flattening and the answer is 1 for any input, which
-/// `n_routes < raw_routes` can never trip: the guard would print, say nothing and pass forever.
-/// A unit test caught exactly that, which is the whole argument for having them.
-pub(super) fn api_routes_lines(app_src: &str) -> Vec<&str> {
-    let mut out = Vec::new();
-    let mut in_range = false;
-    for line in app_src.lines() {
-        if !in_range {
-            if line.starts_with("fn api_routes") {
-                in_range = true;
-            } else {
-                continue;
-            }
-        } else if line.starts_with('}') {
-            in_range = false;
-        }
-        out.push(line.split_once("//").map_or(line, |(head, _)| head));
-    }
-    out
-}
-
-/// `… | tr '\n' ' '`. A trailing space after EVERY line, the last one included, because sed emitted
-/// a newline after each and `tr` rewrote all of them.
-pub(super) fn flatten(lines: &[&str]) -> String {
-    lines.iter().map(|l| format!("{l} ")).collect()
-}
-
-/// One `METHOD PATH FN` row per registration, or an `UNPARSED …` marker.
-///
-/// The flattened body is split on the literal `.route(`; each piece holds exactly one registration,
-/// whose path is its first quoted string and whose method/handler pairs are every
-/// `method(path::to::fn` in it. That is what makes chained `get(a).post(b)` and
-/// `axum::routing::patch(a).delete(b)` both fall out correctly, and splitting on `.route(` cannot
-/// catch `.route_layer(` (the next character is `_`, not `(`). A piece yielding no method, or no
-/// path, is EMITTED as a marker rather than dropped — the difference between this and a check that
-/// silently shrinks.
-pub(super) fn extract_router(body: &str) -> Vec<String> {
-    let quoted = Regex::new(r#""[^"]*""#).expect("static regex");
-    // Verbatim from the awk, `[ ]*` included: literal spaces only, the body having no newlines now.
-    let meth = Regex::new(r"(get|post|put|patch|delete|head|options|trace)\([ ]*[A-Za-z_:0-9]+")
-        .expect("static regex");
-    let mut out = Vec::new();
-    for (i, rec) in body.split(".route(").enumerate() {
-        if i == 0 {
-            continue; // everything before the first `.route(` is the fn signature
-        }
-        let nr = i + 1; // awk's NR over the same record split, preserved for the marker text
-        let Some(q) = quoted.find(rec) else {
-            out.push(format!("UNPARSED no-path-literal-in-registration-{nr}"));
-            continue;
-        };
-        let path = &q.as_str()[1..q.as_str().len() - 1];
-        let (mut s, mut n) = (rec, 0);
-        while let Some(m) = meth.find(s) {
-            let hit = m.as_str();
-            s = &s[m.end()..];
-            let (method, rest) = hit.split_once('(').expect("the regex matched a `(`");
-            let f = rest.trim_matches(' ').rsplit("::").next().unwrap_or("");
-            out.push(format!(
-                "{} {API_PREFIX}{path} {f}",
-                method.to_ascii_uppercase()
-            ));
-            n += 1;
-        }
-        if n == 0 {
-            out.push(format!("UNPARSED no-method-handler-for-path-{path}"));
-        }
-    }
-    out
-}
-
-/// Sweep `src/` for `@route` tags. Returns the parsed rows plus the RAW tag-line count the vacuity
-/// guard compares for exact equality. A missing or unreadable tree is a `NotRun`, which closes
-/// the script's `2>/dev/null || true`.
-pub(super) fn extract_all_tags(repo_root: &Path) -> Result<(Vec<String>, usize), NotRun> {
-    let src_dir = repo_root.join(SRC_DIR_REL);
-    let files = scan::walk_files(&[&src_dir], scan::with_extension(&["rs"]))?;
-    let tag_re = Regex::new(TAG_RE).expect("static regex");
-    let (mut rows, mut raw) = (Vec::new(), 0usize);
-    for path in files {
-        let text = std::fs::read_to_string(&path).map_err(|source| NotRun::Unreadable {
-            path: path.clone(),
-            source,
-        })?;
-        raw += text.lines().filter(|l| tag_re.is_match(l)).count();
-        // `grep -rl "$SRC_DIR"` printed paths relative to the root the script `cd`'d into.
-        let rel = path.strip_prefix(repo_root).unwrap_or(&path);
-        rows.extend(extract_tags(&rel.to_string_lossy(), &text));
-    }
-    Ok((rows, raw))
-}
-
-/// One `METHOD PATH FN FILE:LINE` row per tag, or an `ORPHAN …` marker.
-///
-/// A tag binds to the next `pub fn` / `pub async fn` below it. A tag with no handler under it is an
-/// ORPHAN — emitted, never dropped, because that is a malformed claim and the vacuity guard's job
-/// is to notice claims this parser could not read.
-pub(super) fn extract_tags(file: &str, text: &str) -> Vec<String> {
-    let tag_re = Regex::new(TAG_RE).expect("static regex");
-    let tag_cut = Regex::new(&format!("{TAG_RE}+")).expect("static regex");
-    let fn_re = Regex::new(FN_RE).expect("static regex");
-    let fn_cut = Regex::new(&format!("{FN_RE}+")).expect("static regex");
-    let ws = Regex::new("[[:space:]]+").expect("static regex");
-    // `:id` -> `{:id}` -> `{id}`. The name is PRESERVED, so `:id` documented against a wired
-    // `{mission_id}` still fails. awk's ERE, not grep's, so the ugrep brace hazard never applied.
-    let param = Regex::new(r":[A-Za-z_][A-Za-z_0-9]*").expect("static regex");
-
-    let mut out = Vec::new();
-    let (mut pend, mut pm, mut pp, mut pline) = (false, String::new(), String::new(), 0usize);
-    for (idx, line) in text.lines().enumerate() {
-        let nr = idx + 1;
-        if tag_re.is_match(line) {
-            if pend {
-                out.push(format!("ORPHAN {file}:{pline} {pm} {pp}"));
-            }
-            let rest = tag_cut.replace(line, "");
-            // awk's `split("", a, re)` is 0, not 1. Inert here (both take the `n < 2` branch), but
-            // copied rather than approximated.
-            let f: Vec<&str> = if rest.is_empty() {
-                Vec::new()
-            } else {
-                ws.split(&rest).collect()
-            };
-            pm = f.first().unwrap_or(&"").to_ascii_uppercase();
-            pp = (*f.get(1).unwrap_or(&"")).to_string();
-            if f.len() < 2 || pm.is_empty() || pp.is_empty() {
-                out.push(format!("ORPHAN {file}:{nr} malformed-tag"));
-                pend = false;
-                continue;
-            }
-            pp = param.replace_all(&pp, "{${0}}").replace("{:", "{");
-            (pend, pline) = (true, nr);
-            continue; // awk's `next`: the pub-fn rule cannot also fire on this line
-        }
-        if pend && fn_re.is_match(line) {
-            let l = fn_cut.replace(line, "");
-            let name = &l[..l.find(['(', '<']).unwrap_or(l.len())];
-            out.push(format!("{pm} {pp} {name} {file}:{pline}"));
-            pend = false;
-        }
-    }
-    if pend {
-        out.push(format!("ORPHAN {file}:{pline} {pm} {pp}"));
-    }
-    out
 }
 
 /// `gate_probe_file -F "$key" "$file"` — a literal substring test. Infallible here: the subject is

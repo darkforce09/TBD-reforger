@@ -15,7 +15,7 @@
 //!
 //! MEASURED CONSEQUENCE (T-586, found by T-576): `handlers/servers.rs` carried `@route` tags on
 //! THREE handlers — `create_server` (POST), `update_server` (PATCH), `deactivate_server` (DELETE) —
-//! that `http_router.rs` never registered. The whole admin server-CRUD triple was documented, tested and
+//! that no route table registered. The whole admin server-CRUD triple was documented, tested and
 //! unreachable, and nothing went red. In the other direction `submit_mission` was a live registered
 //! route carrying no tag at all. A documentation tag nobody checks is a claim, not a contract.
 //!
@@ -31,13 +31,26 @@
 //! Both keys are (METHOD, PATH, HANDLER FN), not just the path — which is what makes a tag moved
 //! onto the wrong handler, or a handler rewired elsewhere, fail as loudly as one never wired.
 //!
+//! ── WHERE THE ROUTES LIVE ────────────────────────────────────────────────────────────────────
+//!
+//! The registrations are not in one function. Each domain owns a route table at
+//! `src/<domain>/routes.rs`, holding exactly one column-0 `pub fn routes`, and `http_router.rs`'s
+//! [`MERGE_FN`] merges all of them under [`API_PREFIX`]. So the router side of this check is the
+//! UNION of every discovered table, and `http_router.rs` is read only for its shape.
+//!
 //! ── VACUITY GUARDS (T-556: a gate reporting nothing == a gate checking nothing) ───────────────
 //!
 //! A verifier that passes because it parsed zero inputs is the T-586 defect in a new hat, so the
 //! parse is checked against itself before any verdict is issued: every raw `@route` line must
 //! become exactly one parsed tuple; every `.route(` line must yield at least one registration;
-//! `http_router.rs` must still have the shape the extractor parses; and two sentinel routes present on both
-//! sides must survive the pipeline. Each is a FAIL, never a SKIP.
+//! every discovered route table must be merged and every merged table must exist on disk;
+//! `http_router.rs` must still have the shape the extractor parses; and four sentinel routes
+//! present on both sides must survive the pipeline. Each is a FAIL, never a SKIP.
+//!
+//! The mount cross-check is the guard that the split into tables made necessary: a table nobody
+//! merges serves nothing while still supplying routes to side B, and a merge with no table behind
+//! it is a build error here but a silently shrinking router side if this gate ever ran on a
+//! partial checkout. Both directions are named, one FAIL line each.
 //!
 //! ── WHAT THE PORT FIXES ──────────────────────────────────────────────────────────────────────
 //!
@@ -68,8 +81,8 @@
 //!
 //! * **`$0` in the two shape-pin messages** becomes [`SELF_REL`]. That sentence tells the reader
 //!   where the extractor they must re-point lives, and after T-853 that is this file; naming a
-//!   script the migration removes would be actively misleading. Reachable only once `fn api_routes`
-//!   has been renamed — never on a clean tree.
+//!   script the migration removes would be actively misleading. Reachable only once
+//!   [`MERGE_FN`] has been renamed — never on a clean tree.
 //! * **Exit 2, not 1, when the check DID NOT RUN** (missing/unreadable `http_router.rs` or `src/`), as in
 //!   `sql_gates.rs` and `gate_t439.rs`. `Makefile:328` and `wave.sh:2562`/`:2833` test `rc -eq 0`,
 //!   so any nonzero is still FAIL there, and the bash headline stays verbatim on line 1 so a grep
@@ -83,22 +96,42 @@ use anyhow::Result;
 use regex::Regex;
 use verification_core::{Kind, NotRun, Pattern, Verdict, gate, scan};
 
-/// The router. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
-const APP_RS_REL: &str = "apps/website/api_v2/src/core/http_router.rs";
-/// The tree swept for `@route` tags — the whole `src/`, not just `handlers/`.
+/// The router assembly. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
+/// Read for its SHAPE only — the registrations live in the domain tables it merges.
+const ROUTER_RS_REL: &str = "apps/website/api_v2/src/core/http_router.rs";
+/// The tree swept for `@route` tags — the whole `src/`, not just `handlers/`. Also the tree the
+/// domain route tables are discovered in.
 const SRC_DIR_REL: &str = "apps/website/api_v2/src";
 /// The nest prefix every `@route` tag is written against. Asserted, never assumed: if
 /// `http_router.rs`
-/// stops nesting `api_routes` here, every extracted path is silently wrong.
+/// stops nesting the merged tables here, every extracted path is silently wrong.
 const API_PREFIX: &str = "/api/v1";
+/// The function in `http_router.rs` that merges the domain route tables. Its body is read for the
+/// `.merge(crate::<domain>::routes(` lines the mount cross-check compares against the tree.
+const MERGE_FN: &str = "fn api_v1_routes";
+/// [`MERGE_FN`] without the `fn` keyword, for the messages that NAME the function rather than pin
+/// its declaration.
+const MERGE_FN_NAME: &str = "api_v1_routes";
+/// A domain route table is exactly `src/<domain>/routes.rs` — one directory level below `src`.
+/// Anything deeper is a handler, a model or a test, and is swept for tags but never for routes.
+const ROUTES_FILE: &str = "routes.rs";
+/// The column-0 function each route table declares exactly once. The `(` is part of the needle so
+/// a neighbouring `pub fn routes_for_tests(` cannot be mistaken for it.
+const ROUTES_FN: &str = "pub fn routes(";
+/// How the report names the router side, which is now a set of files rather than one function.
+const ROUTE_TABLES: &str = "the api_v2 domain route tables";
 /// bash interpolated `$0`. See the module docs on the one deliberate text deviation.
 const SELF_REL: &str = "tools_v2/xtask/src/verifications/architecture/route_tags.rs";
-/// Two routes registered AND tagged today, one with a path parameter and one without. If the
-/// extractor breaks in a way the counting guards miss, these vanish and the run fails rather than
-/// quietly comparing two short lists that happen to agree.
+/// Routes registered AND tagged today, spanning three separate domain tables and covering a path
+/// parameter, a bare path and a chained method. If the extractor breaks in a way the counting
+/// guards miss, these vanish and the run fails rather than quietly comparing two short lists that
+/// happen to agree. Spanning several files is the point: a discovery bug that finds only one table
+/// still satisfies a single-file sentinel set.
 const SENTINELS: &[&str] = &[
     "GET /api/v1/servers list_servers",
     "GET /api/v1/servers/{id}/status get_server_status",
+    "POST /api/v1/events create_event",
+    "GET /api/v1/me get_me",
 ];
 
 // Fixed output blocks, as consts because rustfmt cannot break a string literal — and every byte
@@ -118,6 +151,8 @@ const ORPHAN_TAIL: &str =
     "      A tag with no handler beneath it, or a malformed tag, is an unreadable claim.";
 const UNPARSED_TAIL: &str =
     "      A registration shape this extractor cannot read must not be silently skipped.";
+const MOUNT_TAIL: &str =
+    "      A route table and the merge that serves it are two halves of one registration.";
 const VERDICT_TAIL: &[&str] = &[
     "  A @route tag is a contract with the router, not a comment. Wire the route, move the",
     "  tag onto the handler that really serves it, or delete the claim.",
@@ -141,8 +176,16 @@ mod tests;
 mod verify_route_tags;
 pub use verify_route_tags::verify_route_tags;
 
+mod route_and_tag_extraction;
+use route_and_tag_extraction::{
+    discover_route_files, extract_all_tags, extract_router, flatten, merged_domains,
+    routes_fn_lines,
+};
+
 mod collate_cmp;
 use collate_cmp::collate_cmp;
 
 #[cfg(test)]
-use verify_route_tags::{api_routes_lines, extract_router, extract_tags, flatten, run};
+use route_and_tag_extraction::extract_tags;
+#[cfg(test)]
+use verify_route_tags::run;

@@ -996,9 +996,9 @@ async fn cors_reflects_allowed_origin_only() {
 // ══════════════════════════ §T-235 — servers admin CRUD ══════════════════════════
 //
 // `servers` rows are created, edited and deleted through `handlers/servers.rs`, whose POST / PUT /
-// DELETE routes are registered in `core::http_router::api_routes`. Those routes are what these tests exist to
-// hold: without them `GET /servers` serves an empty list on any production database and the Server
-// Intel page has nothing to render.
+// DELETE routes are registered in `server_infrastructure::routes`. Those routes are what these
+// tests exist to hold: without them `GET /servers` serves an empty list on any production database
+// and the Server Intel page has nothing to render.
 //
 // `boot_servers` hands every test below the PRODUCTION router, so each assertion additionally
 // crosses the request-id / logging / CORS / body-limit / rate-limit chain that a hand-merged

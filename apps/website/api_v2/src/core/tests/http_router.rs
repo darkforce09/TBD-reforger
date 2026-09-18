@@ -326,3 +326,23 @@ async fn healthz_with_a_wrong_token_downgrades_rather_than_rejecting() {
     assert_eq!(v.as_object().expect("object").keys().len(), 1, "{body}");
     assert_eq!(v["status"], "unavailable");
 }
+
+// ───────────────────── domain route tables: one router, no collisions ─────────────────────
+
+/// Merging the eight domain route tables must produce a router, not a panic.
+///
+/// `Router::merge` panics at BUILD time when two tables register the same method on the same
+/// path, so this claim cannot be made by reading the tables: it needs the merge to run. Both
+/// `dev` arms are built because the development-only `/auth/dev-login` registration exists in
+/// only one of them, and a collision it introduced would otherwise never be exercised.
+///
+/// Assembling the full application on top covers the same merge plus the per-route
+/// `DefaultBodyLimit` layers and the global middleware chain. The pool never reaches a server,
+/// but `connect_lazy` still needs a runtime, which is why this is a `tokio::test`.
+#[tokio::test]
+async fn the_eight_domain_route_tables_merge_into_one_router() {
+    for dev in [false, true] {
+        let _: Router<AppState> = super::api_v1_routes(dev, 1 << 20);
+    }
+    let _: Router = app_with(dead_pool());
+}

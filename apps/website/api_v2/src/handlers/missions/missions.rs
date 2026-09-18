@@ -2900,13 +2900,14 @@ mod tests {
             body.contains("mission.version.set_current"),
             "set_current_version must write an audit action distinct from create_version"
         );
-        // Route registration lives in core/http_router.rs — pin the path string here so a
-        // handler without a route cannot Class-R green.
-        const APP: &str = include_str!("../../core/http_router.rs");
+        // Route registration lives in the missions route table, which `core::http_router` merges
+        // under `/api/v1` — pin the path string here so a handler without a route cannot
+        // Class-R green.
+        const ROUTES: &str = include_str!("../../missions/routes.rs");
         assert!(
-            APP.contains("/missions/{id}/versions/{vid}/set-current")
-                && APP.contains("set_current_version"),
-            "http_router.rs must register POST …/versions/{{vid}}/set-current → set_current_version"
+            ROUTES.contains("/missions/{id}/versions/{vid}/set-current")
+                && ROUTES.contains("set_current_version"),
+            "missions/routes.rs must register POST …/versions/{{vid}}/set-current → set_current_version"
         );
     }
 }

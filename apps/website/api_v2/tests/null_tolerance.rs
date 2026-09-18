@@ -17,7 +17,7 @@
 //!   1. **It listed endpoints.** It called 5 of the 44 GET routes, and none of the three defects
 //!      lived in those 5. A listed endpoint set can only ever catch bugs someone remembered.
 //!      → [`route_sweep`] now sweeps every GET route, and
-//!      [`every_get_route_is_swept_or_skipped_with_a_reason`] parses `src/core/http_router.rs` and fails when
+//!      [`every_get_route_is_swept_or_skipped_with_a_reason`] parses the api_v2 route tables and fails when
 //!      a route is added without being covered.
 //!   2. **Its rows were unreachable.** It authenticated as the dev-login user
 //!      (`000000000000000001`) but seeded every row against a different synthetic user, and never
@@ -209,7 +209,7 @@ const KNOWN_OPEN_ROUTES: &[(&str, &str, &str)] = &[
 ];
 
 /// GET routes deliberately outside [`route_sweep`], each with the reason it cannot be swept.
-/// Everything else in `src/core/http_router.rs` must appear in the sweep — see
+/// Everything else the api_v2 route tables register must appear in the sweep — see
 /// [`every_get_route_is_swept_or_skipped_with_a_reason`].
 const ROUTE_SWEEP_SKIP: &[(&str, &str)] = &[
     (
@@ -747,7 +747,7 @@ async fn blast_nulls(
 
 // ───────────────────────────── route sweep ─────────────────────────────
 
-/// `(route template as registered in src/core/http_router.rs, concrete URI, needs X-Service-Token)`.
+/// `(route template as registered by the api_v2 route tables, concrete URI, needs X-Service-Token)`.
 ///
 /// The template is carried alongside the URI so
 /// [`every_get_route_is_swept_or_skipped_with_a_reason`] can prove this table covers the whole
@@ -1046,7 +1046,7 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
 
 /// Guards failure mode 1: the sweep must cover the whole router, not a remembered subset.
 ///
-/// Parses the registered GET routes out of `src/core/http_router.rs` and fails when one is neither swept nor
+/// Parses the registered GET routes out of the api_v2 route tables and fails when one is neither swept nor
 /// explicitly skipped with a reason — so adding a route that reads a nullable column cannot
 /// silently escape this file. No database needed.
 #[test]
@@ -1066,12 +1066,12 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
          {BASELINE_CAP}. Fix the defect, or raise the cap deliberately so a reviewer sees it."
     );
 
-    let src = include_str!("../src/core/http_router.rs");
-    let registered = registered_get_routes(src);
+    let src = router_source();
+    let registered = registered_get_routes(&src);
     assert!(
         registered.len() > 40,
-        "parsed only {} GET routes out of src/core/http_router.rs — the parser has drifted from the source \
-         and this guard is no longer guarding anything",
+        "parsed only {} GET routes out of the eight domain route tables and src/core/http_router.rs \
+         — the parser has drifted from the source and this guard is no longer guarding anything",
         registered.len()
     );
 
@@ -1097,8 +1097,8 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
         .collect();
     assert!(
         missing.is_empty(),
-        "GET routes registered in src/core/http_router.rs but neither swept by route_sweep() nor listed in \
-         ROUTE_SWEEP_SKIP with a reason: {missing:?}"
+        "GET routes registered by the api_v2 route tables but neither swept by route_sweep() nor \
+         listed in ROUTE_SWEEP_SKIP with a reason: {missing:?}"
     );
 
     let stale: Vec<&&str> = swept
@@ -1108,7 +1108,7 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
         .collect();
     assert!(
         stale.is_empty(),
-        "route_sweep()/ROUTE_SWEEP_SKIP name routes that src/core/http_router.rs no longer registers: \
+        "route_sweep()/ROUTE_SWEEP_SKIP name routes that the api_v2 route tables no longer register: \
          {stale:?}"
     );
 }
@@ -1267,7 +1267,27 @@ fn collect_rs(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
     }
 }
 
-/// Parse the GET route paths registered in `src/core/http_router.rs`.
+/// Every source file that registers a route: the eight domain route tables, which hold the whole
+/// of `/api/v1`, plus `core/http_router.rs`, which holds `/healthz` and `/metrics`.
+///
+/// Concatenated rather than parsed one file at a time because [`registered_get_routes`] keys on
+/// the path alone and a `.route(` call never spans two files.
+fn router_source() -> String {
+    const PARTS: [&str; 9] = [
+        include_str!("../src/core/http_router.rs"),
+        include_str!("../src/identity_and_access/routes.rs"),
+        include_str!("../src/operations/routes.rs"),
+        include_str!("../src/missions/routes.rs"),
+        include_str!("../src/server_infrastructure/routes.rs"),
+        include_str!("../src/administration/routes.rs"),
+        include_str!("../src/match_telemetry/routes.rs"),
+        include_str!("../src/command_center/routes.rs"),
+        include_str!("../src/community_content/routes.rs"),
+    ];
+    PARTS.concat()
+}
+
+/// Parse the GET route paths [`router_source`] registers.
 ///
 /// Matches `.route("<path>", ... get( ... )` including the rustfmt-wrapped multi-line form, by
 /// taking the literal and then checking for `get(` inside that `.route(` call's balanced parens.

@@ -636,12 +636,15 @@ mod tests {
             "list query_as window must contain `{filter}`"
         );
 
-        const APP: &str = include_str!("../../core/http_router.rs");
+        // The registration lives in the community_content route table, which `core::http_router`
+        // merges under `/api/v1` — pin the method chain there so a create-only registration
+        // cannot Class-R green behind a listing handler that still compiles.
+        const ROUTES: &str = include_str!("../../community_content/routes.rs");
         assert!(
-            APP.contains(
+            ROUTES.contains(
                 "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
             ),
-            "http_router.rs must MethodRouter GET+POST /cms/announcements"
+            "community_content/routes.rs must MethodRouter GET+POST /cms/announcements"
         );
     }
 

@@ -88,12 +88,12 @@ fn dossier_deployments_binds_total_deployments_not_em_dash() {
 fn admin_roles_sync_path_matches_live_api_route() {
     // This screen is the only caller of the route, so the check reads the live router source:
     // a constant compared against itself would stay green while examining nothing.
-    let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
-    let app_rs: &str = app_rs;
+    let src = crate::v2::core::test_support::fixtures::api_route_source();
+    let src: &str = &src;
     let live_registration = format!(r#".route("{ADMIN_ROLES_SYNC_PATH}""#);
     assert!(
-        app_rs.contains(&live_registration),
-        "apps/website/api_v2/src/core/http_router.rs must register {live_registration}, …); \
+        src.contains(&live_registration),
+        "the api_v2 domain route tables must register {live_registration}, …); \
          Personnel posts ADMIN_ROLES_SYNC_PATH"
     );
     assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");
@@ -103,19 +103,19 @@ fn admin_roles_sync_path_matches_live_api_route() {
 fn admin_ban_and_warnings_paths_match_live_api_routes() {
     // The path helpers must track the router, and a constant compared against itself would
     // stay green forever. These registrations span lines, so the path string is matched.
-    let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
-    let app_rs: &str = app_rs;
+    let src = crate::v2::core::test_support::fixtures::api_route_source();
+    let src: &str = &src;
     assert!(
-        app_rs.contains(r#""/admin/users/{discordId}/ban""#),
-        "http_router.rs must register ban/unban on /admin/users/{{discordId}}/ban"
+        src.contains(r#""/admin/users/{discordId}/ban""#),
+        "the api_v2 domain route tables must register ban/unban on /admin/users/{{discordId}}/ban"
     );
     assert!(
-        app_rs.contains(r#""/admin/users/{discordId}/warnings""#),
-        "http_router.rs must register warnings on /admin/users/{{discordId}}/warnings"
+        src.contains(r#""/admin/users/{discordId}/warnings""#),
+        "the api_v2 domain route tables must register warnings on /admin/users/{{discordId}}/warnings"
     );
     assert!(
-        app_rs.contains("unban_user"),
-        "http_router.rs ban route must wire DELETE to unban_user"
+        src.contains("unban_user"),
+        "the api_v2 ban route must wire DELETE to unban_user"
     );
     assert_eq!(admin_user_ban_path("42"), "/admin/users/42/ban");
     assert_eq!(admin_user_warnings_path("42"), "/admin/users/42/warnings");

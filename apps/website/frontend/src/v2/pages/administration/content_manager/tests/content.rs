@@ -69,30 +69,31 @@ fn cms_paths_match_axum_routes() {
         announcement_push_path("44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"),
         "/cms/announcements/44fa4c17-5bd5-4c6b-b02d-4ccd52af6910/push-discord"
     );
-    let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
-    let app_rs: &str = app_rs;
+    let src = crate::v2::core::test_support::fixtures::api_route_source();
+    let src: &str = &src;
     assert!(
-        app_rs.contains(r#""/cms/announcements""#),
-        "http_router.rs must register /cms/announcements"
+        src.contains(r#""/cms/announcements""#),
+        "the api_v2 domain route tables must register /cms/announcements"
     );
     // The listing must share the route the create uses; a create-only registration refuses it.
     assert!(
-        app_rs.contains(
+        src.contains(
             "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
         ),
-        "http_router.rs must register GET+POST on /cms/announcements (perturbation: post-only)"
+        "the api_v2 community_content route table must register GET+POST on /cms/announcements \
+         (perturbation: post-only)"
     );
     assert!(
-        app_rs.contains(r#""/cms/announcements/{id}""#),
-        "http_router.rs must register PATCH|DELETE /cms/announcements/{{id}}"
+        src.contains(r#""/cms/announcements/{id}""#),
+        "the api_v2 domain route tables must register PATCH|DELETE /cms/announcements/{{id}}"
     );
     assert!(
-        app_rs.contains(r#""/cms/announcements/{id}/push-discord""#),
-        "http_router.rs must register POST …/push-discord"
+        src.contains(r#""/cms/announcements/{id}/push-discord""#),
+        "the api_v2 domain route tables must register POST …/push-discord"
     );
     assert!(
-        app_rs.contains(r#""/cms/uploads""#),
-        "http_router.rs must still register POST /cms/uploads"
+        src.contains(r#""/cms/uploads""#),
+        "the api_v2 domain route tables must still register POST /cms/uploads"
     );
     assert_eq!(super::cms_uploads_path(), "/cms/uploads");
 }

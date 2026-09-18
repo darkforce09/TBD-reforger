@@ -117,11 +117,13 @@ fn bookmark_control_and_handlers_are_wired() {
         "/missions/abc/bookmark",
         "path helper must match Axum POST|DELETE /missions/{{id}}/bookmark"
     );
-    // The route really is registered on the live router, not only called from here.
-    let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
+    // The route really is registered on the live router, not only called from here. Named
+    // `route_tables` rather than `src`, which this test already binds to the page source.
+    let route_tables = crate::v2::core::test_support::fixtures::api_route_source();
+    let route_tables: &str = &route_tables;
     assert!(
-        app_rs.contains(r#""/missions/{id}/bookmark""#),
-        "apps/website/api_v2/src/core/http_router.rs must still register /missions/{{id}}/bookmark"
+        route_tables.contains(r#""/missions/{id}/bookmark""#),
+        "the api_v2 domain route tables must still register /missions/{{id}}/bookmark"
     );
 }
 
