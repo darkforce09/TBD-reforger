@@ -32,7 +32,7 @@ pub(super) async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) 
 
 /// Constant-time `X-Service-Token` comparison, without the 401.
 ///
-/// [`crate::middleware::ServiceAuth`] is the extractor for routes that must *refuse* an
+/// [`crate::core::middleware::ServiceAuth`] is the extractor for routes that must *refuse* an
 /// unauthenticated caller. `/healthz` must not: a load balancer or container orchestrator probes
 /// it with no credentials and has to get a usable answer, so an absent or wrong token downgrades
 /// the payload rather than rejecting the request. Same fail-closed rule as the extractor

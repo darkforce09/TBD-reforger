@@ -10,7 +10,7 @@
 //! are written so that registration is one line per route and nothing else — the exact lines are
 //! in `tests/misc_integration.rs::servers_crud_registration`, which is both the lifecycle
 //! harness and the handoff. Auth tier is *not* set there: every write takes an
-//! [`crate::middleware::AdminUser`] extractor, so the tier travels with the handler and a
+//! [`crate::core::middleware::AdminUser`] extractor, so the tier travels with the handler and a
 //! registration typo cannot silently downgrade it (`core/http_router.rs` — "Auth tiers are enforced
 //! per-handler by the extractor each takes").
 //!
@@ -36,9 +36,9 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::middleware::{AdminUser, AuthUser};
 use crate::handlers::modpacks::{ModpackDto, load_modpack};
 use crate::handlers::username;
-use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, Modpack, ModpackMod, Server, ServerStatus, TerrainType};
 use crate::services::write_audit;
 

@@ -1,6 +1,6 @@
 //! **T-405 — `announcements.thumbnail_url` adopts T-391's scheme guard, on BOTH writers.**
 //!
-//! The unit tests beside the predicate (`services::text::is_http_url`) prove the rule; the shared
+//! The unit tests beside the predicate (`core::text::http_url_guard`) prove the rule; the shared
 //! case table proves both Rust copies agree on it. These prove the **wiring** — that the predicate
 //! is actually reached by the two handlers that can put a value in this column, and that a
 //! rejected request leaves the database exactly as it found it.

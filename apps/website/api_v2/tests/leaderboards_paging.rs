@@ -30,8 +30,8 @@ use sqlx::PgPool;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
+use website_api::core::middleware::AuthUser;
 use website_api::handlers::telemetry::leaderboards::{LeaderboardQuery, get_leaderboards};
-use website_api::middleware::AuthUser;
 
 /// Every category `order_clause` whitelists. Keep in step with its `match` — and with the
 /// `CATEGORIES` pin beside it in `leaderboards.rs`, which checks every arm's shape while this

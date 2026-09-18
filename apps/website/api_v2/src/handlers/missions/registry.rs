@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::middleware::MissionMakerUser;
+use crate::core::middleware::MissionMakerUser;
 use crate::models::{Modpack, RegistryCompatEdge, RegistryItem};
 
 /// Catalog / compat page size when the client asks for `limit` (T-427). Higher than the

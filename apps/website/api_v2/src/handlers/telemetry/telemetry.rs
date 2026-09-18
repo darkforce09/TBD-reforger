@@ -9,12 +9,12 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::core::database::postgres_errors::{is_foreign_key_violation, violated_constraint};
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::middleware::ServiceAuth;
 use crate::core::realtime_hub::server_status_topic::publish_server_status;
-use crate::handlers::{is_foreign_key_violation, violated_constraint};
-use crate::middleware::ServiceAuth;
+use crate::core::text::http_url_guard::is_http_url;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
-use crate::services::text::is_http_url;
 // T-336 — `recompute_user_stats` moved to `services::user_stats`; this file is a caller now,
 // not its owner. `handlers::me` calls the same one, which is the point.
 use crate::core::application_state::AppState;

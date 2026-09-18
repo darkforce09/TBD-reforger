@@ -18,11 +18,12 @@ use tower_http::services::{ServeDir, ServeFile};
 
 use crate::core::application_state::AppState;
 use crate::core::configuration::Config;
+use crate::core::middleware;
 use crate::core::observability::health_probe::{healthz, service_token_matches};
 use crate::core::observability::metrics_exposition::metrics_scrape;
 use crate::core::observability::metrics_registry::Registry;
 use crate::core::observability::request_observer::observe;
-use crate::{handlers, middleware};
+use crate::handlers;
 
 /// The `/api/v1` route tree. Auth tiers are enforced per-handler by the extractor
 /// each takes (`AuthUser`, the role-gated newtypes, `ServiceAuth`). Grows per phase.
@@ -426,7 +427,7 @@ pub fn router(state: AppState) -> Router {
 
     // The rate limiter's own state: `AppState` (the in-memory L1 limiters) plus the durable
     // Postgres L2 built on the same pool. Not folded into `AppState` — see
-    // `middleware::RateLimitState`.
+    // `core::middleware::rate_limiting::RateLimitState`.
     //
     // ─────────────────────────────────────────────────────────────────────────────────────────
     // **THIS LINE IS THE RATE-LIMIT SEAM.** `Router::layer` wraps the routes registered
@@ -441,11 +442,11 @@ pub fn router(state: AppState) -> Router {
     // were `/auth/` or `/ingest/`. A cold Mission Creator boot needs 951 distinct files from this
     // mount — no request-per-second ceiling both clears that and refuses anything a scraper would
     // do differently, because the resource here is bytes and the meter counts requests. See
-    // `middleware/ratelimit.rs`'s `/map-assets` section for the full argument, and
+    // `core/middleware/rate_limiting.rs`'s module header for the full argument, and
     // `tests/t630_map_assets_exempt.rs` for the proof that the routes above this line still refuse.
     //
     // Moving the `nest_service` below back above this layer silently re-arms the defect; that is
-    // why the order is asserted by `middleware::ratelimit::tests::
+    // why the order is asserted by `core::middleware::rate_limiting::tests::
     // the_exempt_mount_is_registered_below_the_rate_limit_layer` as well as behaviourally.
     // ─────────────────────────────────────────────────────────────────────────────────────────
     r = r.layer(from_fn_with_state(

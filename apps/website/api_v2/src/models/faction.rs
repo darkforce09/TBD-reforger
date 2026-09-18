@@ -7,8 +7,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::RawJson;
-use crate::models::serde_helpers::go_time;
+use crate::core::wire_format::RawJson;
+use crate::core::wire_format::go_time;
 
 /// One reusable faction. `doc` is the full faction-library document (validated against
 /// the generated contract on every write); `side`/`name` are projections of the same

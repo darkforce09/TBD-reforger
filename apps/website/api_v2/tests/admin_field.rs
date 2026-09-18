@@ -192,7 +192,7 @@ async fn call_ct(
 /// wrote — it cannot retire the residue already there without deleting rows a concurrently-gating
 /// sibling worktree is mid-assertion on.
 async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<Value> {
-    // `PageParams::bounds()` (`handlers/mod.rs:43`) silently falls back to the default 20 for any
+    // `PageParams::bounds()` (`core/http/pagination.rs`) silently falls back to the default 20 for any
     // limit above 100, so 100 is the largest page actually honoured — asking for more would
     // quietly make this walk five times as many pages.
     const PAGE: usize = 100;

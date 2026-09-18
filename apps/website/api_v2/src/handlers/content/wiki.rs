@@ -8,7 +8,7 @@ use serde_json::{Value, json};
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::middleware::{AdminUser, AuthUser};
+use crate::core::middleware::{AdminUser, AuthUser};
 use crate::models::{VehicleDatabase, WikiPage};
 
 /// `GET /api/v1/wiki` — SOP nav list.

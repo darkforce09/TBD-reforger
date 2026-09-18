@@ -1,14 +1,14 @@
-//! Serde helpers reproducing Go's `encoding/json` wire formats (the Encoder
-//! contract from the T-145 plan). Applied field-by-field on the model structs so
-//! the Rust JSON output matches the Go service under the `≡` equivalence relation.
+//! Go-style RFC3339 timestamp serialization: the three `#[serde(with = …)]` modules the models
+//! apply field by field so the JSON this API emits is byte-identical to the format its clients
+//! parse.
 
-/// `time.Time` (Postgres `timestamptz`) rendered as Go's `RFC3339Nano`:
-/// trailing-zero-trimmed fractional seconds (`.5`, not `.500`), `Z` for UTC.
+/// A `timestamptz` rendered as Go's `RFC3339Nano`: trailing-zero-trimmed fractional seconds
+/// (`.5`, not `.500`), `Z` for UTC.
 pub mod go_time {
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Deserializer, Serializer};
 
-    /// Format a UTC instant exactly as Go's `time.Time.MarshalJSON` would.
+    /// Format a UTC instant the way Go's `time.Time.MarshalJSON` does.
     pub fn format(dt: &DateTime<Utc>) -> String {
         let nanos = dt.timestamp_subsec_nanos();
         let base = dt.format("%Y-%m-%dT%H:%M:%S");
@@ -35,8 +35,8 @@ pub mod go_time {
     }
 }
 
-/// `Option<time.Time>` — same wire format as [`go_time`], `None` handled by the
-/// caller's `skip_serializing_if` (mirrors Go `omitempty` on a nil `*time.Time`).
+/// An optional timestamp — same wire format as [`go_time`], with `None` handled by the caller's
+/// `skip_serializing_if` so an absent value is an absent key.
 pub mod go_time_opt {
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Deserializer, Serializer};
@@ -58,8 +58,8 @@ pub mod go_time_opt {
     }
 }
 
-/// Postgres `date` rendered as Go renders it: a `time.Time` at midnight UTC, i.e.
-/// a full RFC3339 timestamp (`2026-07-06T00:00:00Z`), NOT a bare `2026-07-06`.
+/// A Postgres `date` rendered as an instant at midnight UTC — a full RFC3339 timestamp
+/// (`2026-07-06T00:00:00Z`), NOT a bare `2026-07-06`.
 pub mod go_date {
     use chrono::{DateTime, NaiveDate};
     use serde::{Deserialize, Deserializer, Serializer};

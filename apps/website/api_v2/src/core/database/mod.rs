@@ -3,9 +3,13 @@
 //!
 //! The migration pipeline is a single frozen `migrations/0001_initial_schema.sql`; sqlx embeds
 //! it at compile time via `migrate!`, and future schema changes add new files beside it.
+//!
+//! [`postgres_errors`] classifies a failed query by its SQLSTATE so a handler can answer a
+//! constraint violation with a 4xx rather than a blanket 500.
 
 pub mod connection_pool;
 pub mod leaderboard_refresh;
+pub mod postgres_errors;
 
 use std::time::Duration;
 

@@ -4,7 +4,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::serde_helpers::{go_date, go_time, go_time_opt};
+use crate::core::wire_format::{go_date, go_time, go_time_opt};
 
 /// Event lifecycle states (Postgres ENUM `event_status`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

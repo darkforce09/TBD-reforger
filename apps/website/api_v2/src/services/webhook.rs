@@ -8,9 +8,9 @@ use std::time::Duration;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+use crate::core::http_client::retry_on_429::send_with_retry_on_429;
+use crate::core::text::html_sanitizer::{cap_runes, truncate};
 use crate::models::{Announcement, AnnouncementTag};
-use crate::services::http_retry::send_with_retry_on_429;
-use crate::services::text::{cap_runes, truncate};
 
 static TLS_INIT: Once = Once::new();
 fn ensure_tls_provider() {

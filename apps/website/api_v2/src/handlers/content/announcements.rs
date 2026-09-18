@@ -7,8 +7,8 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::PageParams;
-use crate::middleware::AuthUser;
+use crate::core::http::pagination::PageParams;
+use crate::core::middleware::AuthUser;
 use crate::models::Announcement;
 
 /// `GET /api/v1/announcements` — published feed, pinned first then newest.

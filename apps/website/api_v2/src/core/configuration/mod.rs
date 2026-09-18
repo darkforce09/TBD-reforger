@@ -40,7 +40,7 @@ pub struct Config {
     pub env: String,
     /// Reverse-proxy addresses/CIDRs whose `X-Forwarded-For` is trusted (empty = trust none).
     ///
-    /// The consumer is [`crate::middleware::RateLimitState`]: behind a loopback reverse proxy
+    /// The consumer is [`crate::core::middleware::RateLimitState`]: behind a loopback reverse proxy
     /// every public client shares one `ConnectInfo` peer, so without this list they would share
     /// one rate-limit bucket. Entries are validated at boot by [`proxy_network::ProxyNet::parse`] — an
     /// unparseable entry is a boot failure, not a silently-ignored line that leaves the operator

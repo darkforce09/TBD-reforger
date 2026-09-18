@@ -1,5 +1,5 @@
-//! CORS — Rust port of `cors.go`. Reflects an allow-listed Origin (never `*`, no
-//! credentials — the API is bearer-authed), answers `OPTIONS` preflight with 204.
+//! CORS: reflects an allow-listed `Origin` (never `*`, and never with credentials — the API is
+//! bearer-authed), and answers every `OPTIONS` preflight with 204.
 
 use axum::body::Body;
 use axum::extract::{Request, State};
@@ -23,7 +23,7 @@ pub async fn cors(State(state): State<AppState>, req: Request, next: Next) -> Re
         .as_deref()
         .is_some_and(|o| state.cors_origins.contains(o.trim_end_matches('/')));
 
-    // OPTIONS always short-circuits to 204 (matching Go); other methods run through.
+    // OPTIONS always short-circuits to 204; other methods run through the inner stack.
     let mut resp = if is_preflight {
         Response::builder()
             .status(StatusCode::NO_CONTENT)

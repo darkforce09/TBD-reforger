@@ -17,9 +17,9 @@ use sqlx::PgPool;
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::wire_format::go_time;
 use crate::handlers::load_user;
 use crate::models::RefreshToken;
-use crate::models::serde_helpers::go_time;
 
 /// Opaque refresh token lifetime (30 days).
 const REFRESH_TTL_DAYS: i64 = 30;

@@ -2,7 +2,7 @@
 //!
 //! `frontend/src/deployments.rs:471` binds this column into an `<a href>`, so a stored
 //! `javascript:` URL executed on click. The unit tests beside the guard
-//! (`services::text::is_http_url`) prove the predicate; these prove the *wiring* — that the
+//! (`core::text::http_url_guard`) prove the predicate; these prove the *wiring* — that the
 //! predicate is actually reached by the one live sink, on both SQL paths, and that a rejected
 //! value leaves no row and no column behind.
 //!

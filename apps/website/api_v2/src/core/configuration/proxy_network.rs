@@ -86,7 +86,7 @@ impl ProxyNet {
 /// Parse every entry. `Err` names the first bad one — `(entry, why)`.
 ///
 /// Used twice on purpose: once by `Config::validate` so a typo is a boot failure, and once by
-/// [`crate::middleware::RateLimitState::new`] so the middleware holds parsed networks rather than
+/// [`crate::core::middleware::RateLimitState::new`] so the middleware holds parsed networks rather than
 /// re-parsing strings per request.
 pub fn parse_trusted_proxies(entries: &[String]) -> Result<Vec<ProxyNet>, (String, &'static str)> {
     entries

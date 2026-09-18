@@ -51,7 +51,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 use website_api::core::middleware::durable_ratelimit::bucket_key;
-use website_api::middleware::{DURABLE_STRICT_BURST, DURABLE_STRICT_SCOPE};
+use website_api::core::middleware::{DURABLE_STRICT_BURST, DURABLE_STRICT_SCOPE};
 
 use tower::ServiceExt;
 
@@ -411,11 +411,16 @@ fn the_deployed_proxy_still_fronts_this_api_from_loopback() {
 /// that fails the day the wiring is removed again.
 #[test]
 fn the_rate_limiter_still_reads_the_trusted_proxy_list() {
-    let src = include_str!("../src/middleware/ratelimit.rs");
+    // The limiter's trust list and the client resolution it feeds live in two sibling files;
+    // both halves have to be in view for this pin to mean anything.
+    let src = concat!(
+        include_str!("../src/core/middleware/rate_limiting.rs"),
+        include_str!("../src/core/middleware/client_identity.rs"),
+    );
     assert!(
         src.contains("parse_trusted_proxies(&app.cfg.trusted_proxies)"),
-        "middleware/ratelimit.rs no longer builds its trust list from Config::trusted_proxies — \
-         TRUSTED_PROXIES is back to being configuration that does nothing"
+        "core/middleware/rate_limiting.rs no longer builds its trust list from \
+         Config::trusted_proxies — TRUSTED_PROXIES is back to being configuration that does nothing"
     );
     assert!(
         src.contains("client_ip(&req, &rl.trusted_proxies)"),

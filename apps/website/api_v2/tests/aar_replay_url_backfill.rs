@@ -16,7 +16,7 @@
 //! Two things are proven here, and the first is the reason this file exists rather than a comment:
 //!
 //!   1. **The divergence is PINNED, not asserted.** `public.looks_like_http_url` is a regex, and
-//!      `services::text::is_http_url` is a WHATWG parser; they cannot be identical, so the
+//!      `core::text::http_url_guard::is_http_url` is a WHATWG parser; they cannot be identical, so the
 //!      migration's header enumerates exactly where they part company. An enumeration in a comment
 //!      rots. This runs BOTH predicates over the SAME shared case table
 //!      (`apps/website/shared/is_http_url_cases.rs` — the one the two Rust implementations are
@@ -36,7 +36,7 @@
 use sqlx::{AssertSqlSafe, PgPool, Row};
 use uuid::Uuid;
 use website_api::core::database;
-use website_api::services::text::is_http_url;
+use website_api::core::text::http_url_guard::is_http_url;
 
 mod common;
 

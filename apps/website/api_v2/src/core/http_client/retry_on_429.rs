@@ -1,6 +1,5 @@
-//! Bounded 429 retry — Rust port of `services/httpretry.go`. Shared by the Discord
-//! client + the announcement webhook. Retries honor `Retry-After` (fractional
-//! seconds), clamped so a hostile rate-limit can't park a request indefinitely.
+//! Bounded retry for `429 Too Many Requests`. Retries honor `Retry-After` (fractional seconds),
+//! clamped so a hostile rate-limit cannot park a request indefinitely.
 
 use std::time::Duration;
 
@@ -49,15 +48,5 @@ pub(crate) fn parse_retry_after(v: Option<&str>) -> Duration {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn retry_after_parsing_and_clamp() {
-        assert_eq!(parse_retry_after(Some("2")), Duration::from_secs(2));
-        assert_eq!(parse_retry_after(Some("0.5")), Duration::from_millis(500));
-        assert_eq!(parse_retry_after(Some("100")), MAX_429_BACKOFF); // clamped
-        assert_eq!(parse_retry_after(None), DEFAULT_429_BACKOFF);
-        assert_eq!(parse_retry_after(Some("garbage")), DEFAULT_429_BACKOFF);
-    }
-}
+#[path = "tests/retry_on_429.rs"]
+mod tests;

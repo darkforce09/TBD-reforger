@@ -17,8 +17,8 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::middleware::{AdminUser, AuthUser};
 use crate::handlers::username;
-use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, Modpack, ModpackMod};
 use crate::services::write_audit;
 

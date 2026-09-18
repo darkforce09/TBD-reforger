@@ -10,9 +10,10 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::{PageParams, load_mission, username};
-use crate::middleware::AdminUser;
-use crate::models::serde_helpers::go_time;
+use crate::core::http::pagination::PageParams;
+use crate::core::middleware::AdminUser;
+use crate::core::wire_format::go_time;
+use crate::handlers::{load_mission, username};
 use crate::models::{AuditSeverity, Mission, MissionStatus, TerrainType};
 use crate::services::write_audit;
 
@@ -293,7 +294,7 @@ pub async fn reject_mission(
 // cosmetic: `handlers/telemetry.rs:68`'s mapper matches 23503 on the constraint name to answer
 // 400 instead of 500, and any other spelling silently 500s. That mapper is private to
 // telemetry.rs, but the primitives it is built from are not — `is_foreign_key_violation` and
-// `violated_constraint` are `pub` in `handlers/mod.rs:83,95`, so the endpoint that lands here
+// `violated_constraint` are `pub` in `core/database/postgres_errors.rs`, so the endpoint that lands here
 // builds its own two-line arm without touching a shared file.
 //
 // **`author_id` gets NO foreign key**, deliberately, under 0018 abstention (i): it is an actor

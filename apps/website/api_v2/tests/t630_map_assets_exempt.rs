@@ -47,7 +47,9 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::middleware::{DURABLE_STRICT_BURST, RATE_LIMIT_EXEMPT_MOUNT, STRICT_PREFIXES};
+use website_api::core::middleware::{
+    DURABLE_STRICT_BURST, RATE_LIMIT_EXEMPT_MOUNT, STRICT_PREFIXES,
+};
 
 mod common;
 

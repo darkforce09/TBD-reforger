@@ -15,8 +15,8 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::middleware::AuthUser;
 use crate::handlers::load_user;
-use crate::middleware::AuthUser;
 use crate::models::ServerStatus;
 
 /// One ranked entry joined with the user's display info. Numeric MV columns are

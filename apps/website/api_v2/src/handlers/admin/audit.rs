@@ -20,8 +20,8 @@ use tokio::sync::broadcast;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::PageParams;
-use crate::middleware::AdminUser;
+use crate::core::http::pagination::PageParams;
+use crate::core::middleware::AdminUser;
 use crate::models::AuditLog;
 use crate::services::{AuditNotify, AuditSignal};
 

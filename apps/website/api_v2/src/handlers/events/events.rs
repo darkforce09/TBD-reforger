@@ -16,15 +16,16 @@ use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
+use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::{PageParams, is_unique_violation};
-use crate::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
-use crate::models::serde_helpers::go_time;
+use crate::core::http::pagination::PageParams;
+use crate::core::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
+use crate::core::text::http_url_guard::is_http_url;
+use crate::core::wire_format::go_time;
 use crate::models::{
     AuditSeverity, Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot,
     RegistrationState,
 };
-use crate::services::text::is_http_url;
 use crate::services::{
     OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template, write_audit,
 };
@@ -561,7 +562,7 @@ async fn orbat_template_for_mission(
             "this mission has no published version, so it has no ORBAT to seat — publish a version, or attach with an explicit `orbat`",
         ));
     };
-    let payload: Option<crate::models::RawJson> =
+    let payload: Option<crate::core::wire_format::RawJson> =
         sqlx::query_scalar("SELECT json_payload FROM mission_versions WHERE id = $1")
             .bind(vid)
             .fetch_optional(pool)
@@ -2550,7 +2551,7 @@ pub async fn ingest_event_roster(
         let Some(vid) = mission.current_version_id else {
             continue;
         };
-        let payload: Option<crate::models::RawJson> =
+        let payload: Option<crate::core::wire_format::RawJson> =
             sqlx::query_scalar("SELECT json_payload FROM mission_versions WHERE id = $1")
                 .bind(vid)
                 .fetch_optional(&state.pool)
@@ -2713,7 +2714,7 @@ mod t550_roster_cargo_catalog {
 
 #[cfg(test)]
 mod t412_members_pagination {
-    use crate::handlers::PageParams;
+    use crate::core::http::pagination::PageParams;
 
     /// Pure page oracle over a sorted username list — mirrors SQL `ORDER BY username ASC
     /// LIMIT $limit OFFSET $offset`. Member index 20 is invisible at offset 0 and appears

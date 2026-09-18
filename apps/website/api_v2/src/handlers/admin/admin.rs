@@ -12,8 +12,9 @@ use sqlx::{Postgres, QueryBuilder};
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::{PageParams, username};
-use crate::middleware::AdminUser;
+use crate::core::http::pagination::PageParams;
+use crate::core::middleware::AdminUser;
+use crate::handlers::username;
 use crate::models::{AuditSeverity, UserRole};
 use crate::services::game_agent::{self, AgentAction, AgentReply, AgentResult};
 use crate::services::{resync_all_roles, write_audit};

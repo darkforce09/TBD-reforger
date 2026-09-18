@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::serde_helpers::{go_time, go_time_opt};
+use crate::core::wire_format::{go_time, go_time_opt};
 
 /// Announcement statuses (Postgres ENUM `announcement_status`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

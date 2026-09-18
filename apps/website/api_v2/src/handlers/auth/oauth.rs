@@ -31,7 +31,7 @@ use crate::services::discord::GuildMember;
 // T-405 — `users.avatar_url` is public tier; guarded at this write boundary like every other URL
 // column (T-391's `is_http_url`).
 use crate::core::application_state::AppState;
-use crate::services::text::is_http_url;
+use crate::core::text::http_url_guard::is_http_url;
 
 /// Query params on the OAuth callback.
 #[derive(Debug, Deserialize)]

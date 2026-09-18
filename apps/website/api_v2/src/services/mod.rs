@@ -4,13 +4,11 @@ pub mod audit;
 pub mod audit_notify;
 pub mod discord;
 pub mod game_agent;
-pub mod http_retry;
 pub mod mission_compile;
 pub mod mortar;
 pub mod ratelimit_gc;
 pub mod registry_import;
 pub mod role_sync;
-pub mod text;
 pub mod token_purge;
 pub mod user_stats;
 pub mod webhook;
@@ -41,7 +39,6 @@ pub use website_map_engine::data::scenario::orbat::{
 pub use ratelimit_gc::{RATE_LIMIT_BUCKET_TTL, RATE_LIMIT_PRUNE_INTERVAL, start_rate_limit_prune};
 pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
 pub use role_sync::resync_all_roles;
-pub use text::{sanitize_html, snippet};
 pub use token_purge::{PurgeHandle, purge_expired_refresh_tokens, start_refresh_token_purge};
 // T-336 — `users.total_deployments` / `attendance_rate` have exactly one writer and two callers.
 // That makes it a service; it used to be `pub(super)` inside `handlers/telemetry.rs`.

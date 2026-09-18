@@ -35,10 +35,10 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
+use website_api::core::middleware::IpLimiter;
 use website_api::core::middleware::durable_ratelimit::{
     PgRateLimiter, RATE_LIMIT_BUCKETS_DDL, bucket_key,
 };
-use website_api::middleware::IpLimiter;
 
 mod common;
 

@@ -4,8 +4,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::RawJson;
-use crate::models::serde_helpers::go_time;
+use crate::core::wire_format::RawJson;
+use crate::core::wire_format::go_time;
 
 /// Audit severities (Postgres ENUM `audit_severity`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::serde_helpers::{go_time, go_time_opt};
+use crate::core::wire_format::{go_time, go_time_opt};
 
 /// Web permission level, synced from Discord roles. Backed by the Postgres ENUM
 /// `user_role`. Ordering (low→high): enlisted < leader < mission_maker < admin.

@@ -13,9 +13,9 @@ use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::middleware::{AdminUser, AuthUser};
 use crate::handlers::missions::build_mission_doc;
 use crate::handlers::{load_mission, username};
-use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, FireMission, MissionStatus};
 use crate::services::{FireSolution, SolveError, solve_fire_mission, write_audit};
 

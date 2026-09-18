@@ -10,10 +10,11 @@ use serde_json::{Value, json};
 
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
+use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
+use crate::core::middleware::{AuthUser, ServiceAuth};
 use crate::handlers::auth::arma_id_is_linked;
-use crate::handlers::{is_unique_violation, load_user};
-use crate::middleware::{AuthUser, ServiceAuth};
+use crate::handlers::load_user;
 use crate::models::AuditSeverity;
 use crate::services;
 
@@ -138,7 +139,7 @@ pub async fn create_link_code(
                     StatusCode::CREATED,
                     Json(json!({
                         "code": code,
-                        "expires_at": crate::models::serde_helpers::go_time::format(&expires),
+                        "expires_at": crate::core::wire_format::go_time::format(&expires),
                     })),
                 ));
             }

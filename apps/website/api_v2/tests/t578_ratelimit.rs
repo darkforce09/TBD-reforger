@@ -19,7 +19,7 @@
 //!
 //! These requests carry a real `ConnectInfo` peer, because production does: `bin/api.rs` serves
 //! with `into_make_service_with_connect_info::<SocketAddr>()`. A `oneshot` without it is a request
-//! with no client, which [`middleware::ratelimit`]'s `client_ip` reports as `None` — see
+//! with no client, which [`core::middleware::client_identity`]'s `client_ip` reports as `None` — see
 //! [`api_binary_still_installs_connect_info`], which pins the binary so that path cannot become
 //! production's.
 //!
@@ -41,7 +41,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 use website_api::core::middleware::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, bucket_key};
-use website_api::middleware::{
+use website_api::core::middleware::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, STRICT_PREFIXES,
 };
 use website_api::services::{RATE_LIMIT_BUCKET_TTL, start_rate_limit_prune};

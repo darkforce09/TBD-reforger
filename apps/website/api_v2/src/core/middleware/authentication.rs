@@ -1,8 +1,8 @@
-//! Auth as axum extractors — Rust port of `auth.go` + `authz.go`.
+//! Authentication and role authorization, expressed as axum extractors.
 //!
-//! [`AuthUser`] = `RequireAuth` (Bearer JWT → identity). The role-gated newtypes
-//! ([`LeaderUser`], [`MissionMakerUser`], [`AdminUser`]) = `RequireMinRole`.
-//! [`ServiceAuth`] = `RequireServiceToken` (constant-time `X-Service-Token`).
+//! [`AuthUser`] validates a Bearer JWT into an identity. The role-gated newtypes
+//! ([`LeaderUser`], [`MissionMakerUser`], [`AdminUser`]) additionally require a minimum rank.
+//! [`ServiceAuth`] guards game-server ingest with a constant-time `X-Service-Token` comparison.
 
 use std::sync::Arc;
 
@@ -14,12 +14,12 @@ use axum::http::request::Parts;
 
 use crate::core::authentication_primitives::{Manager, constant_time_equal};
 use crate::core::configuration::Config;
-use crate::middleware::{json_error, role_rank};
+use crate::core::middleware::{json_error, role_rank};
 
 type Rejection = (StatusCode, Json<serde_json::Value>);
 
-/// A validated bearer identity (mirrors the `discord_id`/`role`/`arma_linked`
-/// context keys set by Go's `RequireAuth`).
+/// A validated bearer identity: the Discord id, the role it carries, and whether the account has
+/// a linked Arma identity.
 #[derive(Debug, Clone)]
 pub struct AuthUser {
     pub discord_id: String,
@@ -61,7 +61,7 @@ where
 /// Build a role-gated extractor newtype requiring at least `$min`.
 macro_rules! role_gate {
     ($name:ident, $min:literal) => {
-        #[doc = concat!("`RequireMinRole(\"", $min, "\")` — wraps an authenticated ", $min, "+ user.")]
+        #[doc = concat!("An authenticated user of rank ", $min, " or higher.")]
         #[derive(Debug, Clone)]
         pub struct $name(pub AuthUser);
 
@@ -91,8 +91,8 @@ role_gate!(LeaderUser, "leader");
 role_gate!(MissionMakerUser, "mission_maker");
 role_gate!(AdminUser, "admin");
 
-/// `RequireServiceToken` — game-server ingest guarded by a shared secret in the
-/// `X-Service-Token` header, compared in constant time.
+/// Game-server ingest guarded by a shared secret in the `X-Service-Token` header, compared in
+/// constant time. An empty configured token refuses every request rather than accepting one.
 #[derive(Debug, Clone, Copy)]
 pub struct ServiceAuth;
 

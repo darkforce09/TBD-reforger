@@ -4,8 +4,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::core::wire_format::{go_time, go_time_opt};
 use crate::models::TerrainType;
-use crate::models::serde_helpers::{go_time, go_time_opt};
 
 /// Mission outcomes (Postgres ENUM `mission_outcome`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

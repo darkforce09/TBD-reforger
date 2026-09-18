@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::serde_helpers::go_time;
+use crate::core::wire_format::go_time;
 
 /// Serde default for [`RegistryCompatEdge::qty`] — a row predating T-068.15.1 is one edge.
 fn default_edge_qty() -> i32 {

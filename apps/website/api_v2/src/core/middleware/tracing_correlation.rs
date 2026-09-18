@@ -1,4 +1,4 @@
-//! Request-ID + access logging — Rust port of `requestid.go` (`RequestID` + `Logger`).
+//! Request correlation id plus the structured access log line that carries it.
 
 use axum::extract::Request;
 use axum::http::HeaderValue;

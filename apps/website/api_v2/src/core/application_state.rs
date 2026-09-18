@@ -12,8 +12,8 @@ use sqlx::PgPool;
 
 use crate::core::authentication_primitives::Manager;
 use crate::core::configuration::Config;
+use crate::core::middleware::IpLimiter;
 use crate::core::realtime_hub::Hub;
-use crate::middleware::IpLimiter;
 use crate::services::{DiscordService, WebhookService};
 
 /// Everything shared across the HTTP layer. Cheap to clone (all `Arc`/pool handles).

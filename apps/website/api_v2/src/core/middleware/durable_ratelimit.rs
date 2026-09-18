@@ -1,9 +1,9 @@
 //! Durable, cross-process rate limiting on Postgres — the L2 tier behind the in-memory L1
-//! limiters in `middleware/ratelimit.rs`.
+//! limiters in `rate_limiting.rs`.
 //!
 //! # What the in-memory tier alone cannot do
 //!
-//! `middleware/ratelimit.rs` holds `governor` keyed limiters in `AppState`. Those are in-memory
+//! `rate_limiting.rs` holds `governor` keyed limiters in `AppState`. Those are in-memory
 //! and single-instance: every restart hands an abuser a fresh full bucket, and two API processes
 //! each enforce the limit separately, so N processes means N× the intended rate. The buckets here
 //! live in the database, so they survive a restart and are shared by every process pointed at the
@@ -22,9 +22,9 @@
 //! * the table — `migrations/0021_rate_limit_buckets.sql`, which is [`RATE_LIMIT_BUCKETS_DDL`]
 //!   verbatim (pinned by `tests/t578_ratelimit.rs::migration_0020_is_the_ddl_constant_verbatim`,
 //!   so the bytes the tests prove and the bytes the migration lands cannot drift);
-//! * the wiring — [`crate::middleware::RateLimitState`], mounted by
+//! * the wiring — [`crate::core::middleware::RateLimitState`], mounted by
 //!   [`crate::core::http_router::router`]. The L1 `IpLimiter`s stay in front, narrowed to the
-//!   strict prefixes; `middleware/ratelimit.rs`'s header is the policy and its justification;
+//!   strict prefixes; `rate_limiting.rs`'s header is the policy and its justification;
 //! * the `prune` tick — [`crate::services::start_rate_limit_prune`], armed in `src/bin/api.rs`
 //!   beside the leaderboard refresher.
 
@@ -129,7 +129,7 @@ impl PgRateLimiter {
 /// `scope|ip` — the scope keeps the strict and global buckets independent for one IP,
 /// exactly as the two separate `IpLimiter`s do.
 ///
-/// The IP is whatever `middleware::ratelimit::client_ip` resolved: the connection peer, or the
+/// The IP is whatever `client_identity::client_ip` resolved: the connection peer, or the
 /// client behind it when that peer is a configured `TRUSTED_PROXIES` entry. So on the deployed
 /// stack these rows read `strict|<member's public address>` rather than `strict|127.0.0.1` for
 /// the whole community. With no trusted proxy configured they are the peer.

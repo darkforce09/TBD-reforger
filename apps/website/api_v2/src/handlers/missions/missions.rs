@@ -22,14 +22,15 @@ use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalo
 use crate::contract::validate::validate_mission_editor_payload_with_catalog;
 use crate::contract::validate_mission_document;
 use crate::core::application_state::AppState;
+use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::{is_unique_violation, load_mission, username};
-use crate::middleware::{AdminUser, AuthUser, MissionMakerUser, ServiceAuth};
+use crate::core::middleware::{AdminUser, AuthUser, MissionMakerUser, ServiceAuth};
+use crate::core::text::http_url_guard::is_http_url;
+use crate::handlers::{load_mission, username};
 use crate::models::{
     AuditSeverity, GameMode, Mission, MissionArmory, MissionDefaultOverride,
     MissionDefaultValueBucket, MissionStatus, MissionVersion, TerrainType, WeatherType,
 };
-use crate::services::text::is_http_url;
 use crate::services::{
     COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileError,
     CompileFinding, ModMissionDocument, compile_diagnostics_rules_header,
@@ -1943,7 +1944,7 @@ pub(crate) struct MissionJson {
     briefing: String,
     armory: Vec<ArmoryExport>,
     payload: Box<RawValue>,
-    #[serde(with = "crate::models::serde_helpers::go_time")]
+    #[serde(with = "crate::core::wire_format::go_time")]
     exported_at: chrono::DateTime<Utc>,
 }
 
