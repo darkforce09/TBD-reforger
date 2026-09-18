@@ -20,7 +20,7 @@ use crate::core::application_state::AppState;
 use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AdminUser;
-use crate::models::EventMission;
+use crate::operations::models::EventMission;
 use crate::operations::services::event_lookup::load_event;
 use crate::operations::services::{OrbatSquadTemplate, parse_orbat_template};
 

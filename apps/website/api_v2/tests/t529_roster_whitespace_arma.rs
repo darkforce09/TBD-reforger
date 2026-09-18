@@ -2,10 +2,11 @@
 //!
 //! # Owns expansion (called out)
 //!
-//! Wave owns list is `handlers/events.rs` + `apps/website/api/tests/**`. This IT binary is
-//! the Class-R / IT half: plant a whitespace-only `users.arma_id` on an assigned seat and
-//! assert GET `/ingest/events/:id/roster` does **not** emit it as a seating key. Also pins
-//! that a padded real id emits the trimmed form (agree with T-350 / link-confirm / telemetry).
+//! Wave owns list is `operations/handlers/roster_ingest.rs` + `apps/website/api/tests/**`.
+//! This IT binary is the Class-R / IT half: plant a whitespace-only `users.arma_id` on an
+//! assigned seat and assert GET `/ingest/events/:id/roster` does **not** emit it as a seating
+//! key. Also pins that a padded real id emits the trimmed form (agree with T-350 /
+//! link-confirm / telemetry).
 
 use axum::Router;
 use axum::body::{Body, to_bytes};

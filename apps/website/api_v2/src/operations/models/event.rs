@@ -1,10 +1,11 @@
-//! Event / ORBAT models — Rust port of `internal/models/event.go`.
+//! The scheduled operation container, the missions attached to it, and the ORBAT seats, squad
+//! holds and registrations that hang off those missions.
 
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::{go_date, go_time, go_time_opt};
+use crate::core::wire_format::{go_time, go_time_opt};
 
 /// Event lifecycle states (Postgres ENUM `event_status`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -58,16 +59,6 @@ impl RegistrationState {
     }
 }
 
-/// Leave-request states (Postgres ENUM `leave_status`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "leave_status", rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum LeaveStatus {
-    Pending,
-    Approved,
-    Denied,
-}
-
 /// Scheduled operation containing one or more sequential missions (campaign container).
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Event {
@@ -84,11 +75,11 @@ pub struct Event {
     pub registration_locked: bool,
     pub max_slots: i64,
     pub created_by: String,
-    /// Game server this operation is scheduled on (T-260). Nullable uuid — no FK in schema
-    /// (house style; see migration 0011). Absent on the wire when unset.
+    /// Game server this operation is scheduled on. Nullable uuid — no FK in schema (house
+    /// style; see migration 0011). Absent on the wire when unset.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub server_id: Option<Uuid>,
-    /// Modpack this operation requires (T-260). Per-event, not the global `/modpacks/current`.
+    /// Modpack this operation requires. Per-event, not the global `/modpacks/current`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub modpack_id: Option<Uuid>,
     #[serde(with = "go_time")]
@@ -155,23 +146,4 @@ pub struct EventRegistration {
     pub state: RegistrationState,
     #[serde(with = "go_time")]
     pub registered_at: DateTime<Utc>,
-}
-
-/// Backs "Submit Leave of Absence (LOA)". `starts_on`/`ends_on` are Postgres `date`
-/// columns rendered as midnight-UTC timestamps (matching Go's `time.Time`).
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct LeaveRequest {
-    pub id: Uuid,
-    pub discord_id: String,
-    #[serde(with = "go_date")]
-    pub starts_on: NaiveDate,
-    #[serde(with = "go_date")]
-    pub ends_on: NaiveDate,
-    #[serde(skip_serializing_if = "String::is_empty", default)]
-    pub reason: String,
-    pub status: LeaveStatus,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub reviewed_by: Option<String>,
-    #[serde(with = "go_time")]
-    pub created_at: DateTime<Utc>,
 }

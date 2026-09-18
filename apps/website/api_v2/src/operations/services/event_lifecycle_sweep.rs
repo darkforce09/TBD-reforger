@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::write_audit;
-use crate::models::EventStatus;
+use crate::operations::models::EventStatus;
 use crate::operations::services::event_status_rules::{EVENT_END_HORIZON_SQL, sql};
 
 /// Postgres advisory-lock key for the lifecycle sweep. Arbitrary but fixed: every API

@@ -109,15 +109,16 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("missions", "reviewed_at"),
     // missions::models::mission::MissionArmory — `null` = unlimited, a real third state.
     ("mission_armories", "quantity"),
-    // models::event::Event — `match_id` dropped at T-284 (dead weight; link is matches.event_id)
+    // operations::models::event::Event — `match_id` dropped at T-284 (dead weight; link is
+    // matches.event_id)
     ("events", "server_id"),  // T-260 Option<Uuid> — migration 0011
     ("events", "modpack_id"), // T-260 Option<Uuid> — migration 0011
-    // models::event::OrbatSlot
+    // operations::models::event::OrbatSlot
     ("orbat_slots", "assigned_to"),
     ("orbat_slots", "assigned_at"),
-    // models::event::EventRegistration
+    // operations::models::event::EventRegistration
     ("event_registrations", "slot_id"),
-    // models::event::LeaveRequest
+    // operations::models::leave_request::LeaveRequest
     ("leave_requests", "reviewed_by"),
     // models::telemetry::Match
     ("matches", "source_match_id"),

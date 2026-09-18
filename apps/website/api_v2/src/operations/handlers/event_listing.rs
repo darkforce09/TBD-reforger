@@ -21,7 +21,7 @@ use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AuthUser;
 use crate::core::wire_format::go_time;
 use crate::missions::models::mission::MissionArmory;
-use crate::models::{Event, EventMission, OrbatSlot, RegistrationState};
+use crate::operations::models::{Event, EventMission, OrbatSlot, RegistrationState};
 use crate::operations::services::event_lookup::load_event;
 use crate::operations::services::event_status_rules::{EFFECTIVE_STATUS_SQL, EVENT_COLUMNS, sql};
 

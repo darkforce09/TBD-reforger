@@ -31,7 +31,7 @@ use std::sync::LazyLock;
 
 use sqlx::AssertSqlSafe;
 
-use crate::models::EventStatus;
+use crate::operations::models::EventStatus;
 
 /// SQL scalar — the instant a still-`live` operation is considered over. Requires the
 /// `events` row to be aliased `e`.

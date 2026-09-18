@@ -52,9 +52,8 @@ use crate::core::middleware::{AdminUser, AuthUser};
 use crate::core::wire_format::go_time;
 use crate::identity_and_access::services::user_lookup::load_user;
 use crate::missions::services::mission_lookup::mission_title_terrain;
-use crate::models::{
-    Event, EventMission, EventRegistration, LeaveRequest, Match, MatchPlayerStat, OrbatSlot,
-};
+use crate::models::{Match, MatchPlayerStat};
+use crate::operations::models::{Event, EventMission, EventRegistration, LeaveRequest, OrbatSlot};
 
 #[derive(Debug, Serialize)]
 struct DeploymentUpcoming {

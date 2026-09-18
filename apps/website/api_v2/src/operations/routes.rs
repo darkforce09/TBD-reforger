@@ -53,33 +53,33 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/event-missions/{emid}/orbat",
-            get(crate::handlers::events::get_orbat),
+            get(handlers::orbat_view::get_orbat),
         )
         .route(
             "/event-missions/{emid}/register",
-            post(crate::handlers::events::register_for_event_mission)
-                .delete(crate::handlers::events::withdraw_from_event_mission),
+            post(handlers::slot_registration::register_for_event_mission)
+                .delete(handlers::slot_registration::withdraw_from_event_mission),
         )
         .route(
             "/event-missions/{emid}/slots/{slotId}/assign",
-            axum::routing::put(crate::handlers::events::assign_slot)
-                .delete(crate::handlers::events::clear_slot),
+            axum::routing::put(handlers::slot_assignment::assign_slot)
+                .delete(handlers::slot_assignment::clear_slot),
         )
         .route(
             "/event-missions/{emid}/squads/reserve",
-            post(crate::handlers::events::reserve_squad),
+            post(handlers::slot_assignment::reserve_squad),
         )
         .route(
             "/event-missions/{emid}/squads/release",
-            post(crate::handlers::events::release_squad),
+            post(handlers::slot_assignment::release_squad),
         )
-        .route("/members", get(crate::handlers::events::search_members))
+        .route("/members", get(handlers::orbat_view::search_members))
         // Game-server roster read (service-token). Deliberately NOT the member-tier
         // `/event-missions/{emid}/orbat` handler: that one is scoped to the CALLING USER (the
         // caller's own registration state) and a service token has no "me" — see the handler docs.
         .route(
             "/ingest/events/{id}/roster",
-            get(crate::handlers::events::ingest_event_roster),
+            get(handlers::roster_ingest::ingest_event_roster),
         )
         // Field tools — mortar ballistics and saved fire missions.
         .route(

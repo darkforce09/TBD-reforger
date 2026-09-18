@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::core::error_handling::api_error::ApiError;
-use crate::models::{Event, EventMission};
+use crate::operations::models::{Event, EventMission};
 use crate::operations::services::event_status_rules::{EVENT_COLUMNS, sql};
 
 /// Load one event. `status` is the **effective** status ([`EVENT_COLUMNS`]), so every

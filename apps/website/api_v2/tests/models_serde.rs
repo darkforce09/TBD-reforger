@@ -9,7 +9,7 @@ use serde_json::json;
 use website_api::core::wire_format::go_time;
 use website_api::identity_and_access::models::user_account::{User, UserRole};
 use website_api::missions::models::mission::{GameMode, MissionStatus, WeatherType};
-use website_api::models::RegistrationState;
+use website_api::operations::models::event::RegistrationState;
 
 #[test]
 fn enum_values_are_snake_case() {

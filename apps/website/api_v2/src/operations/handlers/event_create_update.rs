@@ -17,7 +17,7 @@ use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AdminUser;
 use crate::core::text::http_url_guard::is_http_url;
-use crate::models::{Event, EventStatus};
+use crate::operations::models::{Event, EventStatus};
 use crate::operations::services::event_lookup::load_event;
 use crate::operations::services::event_status_rules::{
     can_transition, is_pre_start, valid_event_status,
