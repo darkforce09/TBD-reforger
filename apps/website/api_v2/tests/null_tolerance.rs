@@ -135,7 +135,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("match_player_stats", "longest_kill_m"),
     ("match_player_stats", "vehicles_destroyed"),
     ("match_player_stats", "is_command"),
-    // models::telemetry::ServerStatus / Server
+    // server_infrastructure::models::server::{Server, ServerStatus}
     ("server_statuses", "current_match_id"),
     ("servers", "required_modpack_id"),
     // administration::models::audit_log::AuditLog

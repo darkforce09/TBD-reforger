@@ -1,20 +1,19 @@
 //! HTTP handlers grouped by domain; the `/api/v1` route tree is assembled in
 //! [`crate::core::http_router`].
 //!
-//! Where a domain directory carries a file of its own name (`admin/admin.rs`, …) the
+//! Where a domain directory carries a file of its own name (`telemetry/telemetry.rs`, …) the
 //! domain's `mod.rs` glob re-exports it, and the `pub use` façade below restores every other
-//! module at a flat path, so `handlers::servers::list_servers` and friends resolve from one
-//! place. The mission row loader below stays here: it is the domain-neutral floor the
+//! module at a flat path, so `handlers::leaderboards::get_leaderboards` and friends resolve from
+//! one place. The mission row loader below stays here: it is the domain-neutral floor the
 //! remaining domains sit on.
 
-pub mod admin;
 pub mod events;
 pub mod missions;
 pub mod telemetry;
 
 pub use self::events::factions;
 pub use self::missions::{approvals, registry};
-pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards, servers};
+pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards};
 
 use sqlx::PgPool;
 use uuid::Uuid;

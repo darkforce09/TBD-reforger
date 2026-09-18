@@ -1,23 +1,15 @@
-//! Leaderboards + player stats + SSE server-status — Rust port of `handlers/leaderboards.go`.
+//! Leaderboards and per-player aggregate stats.
 
-use std::convert::Infallible;
-
-use async_stream::stream;
 use axum::extract::{Path, Query, State};
-use axum::http::HeaderName;
-use axum::response::sse::{Event, Sse};
-use axum::response::{IntoResponse, Json, Response};
+use axum::response::Json;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sqlx::QueryBuilder;
-use tokio::sync::broadcast::error::RecvError;
-use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::models::ServerStatus;
 
 /// One ranked entry joined with the user's display info. Numeric MV columns are
 /// cast (`::int8` / `::float8`) into the wire types.
@@ -150,46 +142,6 @@ pub async fn get_user_stats(
         "total_operations": user.total_deployments,
         "attendance_rate": user.attendance_rate,
     })))
-}
-
-/// `GET /api/v1/servers/:id/status/stream` — SSE live server-status feed.
-///
-/// @route GET /api/v1/servers/:id/status/stream
-pub async fn stream_server_status(
-    State(state): State<AppState>,
-    _u: AuthUser,
-    Path(id): Path<String>,
-) -> Response {
-    let topic = format!("server:{id}");
-    let mut rx = state.hub.subscribe(&topic);
-    let pool = state.pool.clone();
-    let uuid = Uuid::parse_str(&id).ok();
-
-    let body = stream! {
-        // Current snapshot first, so the client renders without delay.
-        if let Some(sid) = uuid {
-            let snap: Result<Option<ServerStatus>, _> = sqlx::query_as(
-                "SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM server_statuses WHERE server_id = $1",
-            ).bind(sid).fetch_optional(&pool).await;
-            if let Ok(Some(status)) = snap
-                && let Ok(js) = serde_json::to_string(&status) {
-                yield Ok::<Event, Infallible>(Event::default().data(js));
-            }
-        }
-        loop {
-            match rx.recv().await {
-                Ok(bytes) => yield Ok(Event::default().data(String::from_utf8_lossy(&bytes))),
-                Err(RecvError::Lagged(_)) => continue,
-                Err(RecvError::Closed) => break,
-            }
-        }
-    };
-
-    (
-        [(HeaderName::from_static("x-accel-buffering"), "no")],
-        Sse::new(body),
-    )
-        .into_response()
 }
 
 #[cfg(test)]

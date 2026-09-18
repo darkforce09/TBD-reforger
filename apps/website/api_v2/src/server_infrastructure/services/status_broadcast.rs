@@ -6,8 +6,8 @@
 
 use sqlx::PgPool;
 
-use super::Hub;
-use crate::models::ServerStatus;
+use crate::core::realtime_hub::Hub;
+use crate::server_infrastructure::models::server::ServerStatus;
 
 /// SQL that both the SSE snapshot and the scheduled publisher use — one shape, one cast.
 const SELECT_SERVER_STATUSES: &str = "SELECT server_id, is_online, player_count, max_players, \
@@ -17,8 +17,7 @@ const SELECT_SERVER_STATUSES: &str = "SELECT server_id, is_online, player_count,
      FROM server_statuses";
 
 /// Serialize `status` and fan it out on `server:{id}` — the exact bytes ingest and the
-/// scheduled publisher both put on the wire (and that the SSE handler's
-/// `decode_server_status_frame` consumes).
+/// scheduled publisher both put on the wire (and that the SSE handler's snapshot matches).
 pub fn publish_server_status(hub: &Hub, status: &ServerStatus) {
     if let Ok(payload) = serde_json::to_vec(status) {
         hub.publish(&format!("server:{}", status.server_id), payload);
@@ -42,5 +41,5 @@ pub async fn publish_all_server_statuses(pool: &PgPool, hub: &Hub) -> Result<usi
 }
 
 #[cfg(test)]
-#[path = "tests/server_status_topic.rs"]
+#[path = "tests/status_broadcast.rs"]
 mod tests;

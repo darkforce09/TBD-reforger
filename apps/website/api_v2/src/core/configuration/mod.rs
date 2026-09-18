@@ -19,7 +19,7 @@
 //! is a [`ConfigError::MalformedValue`] naming the variable.
 //!
 //! [`DbPoolConfig::from_env`]: crate::core::database::connection_pool::DbPoolConfig::from_env
-//! [`handlers::admin::send_rcon`]: crate::handlers::admin::send_rcon
+//! [`server_infrastructure::handlers::rcon_console::send_rcon`]: crate::server_infrastructure::handlers::rcon_console::send_rcon
 
 pub mod proxy_network;
 

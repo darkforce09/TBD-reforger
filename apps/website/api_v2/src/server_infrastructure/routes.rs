@@ -16,26 +16,31 @@ use axum::Router;
 use axum::routing::{get, post};
 
 use crate::core::application_state::AppState;
-use crate::handlers;
+
+use super::handlers;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/servers",
-            get(handlers::servers::list_servers).post(handlers::servers::create_server),
+            get(handlers::server_intel::list_servers)
+                .post(handlers::server_registry::create_server),
         )
         .route(
             "/servers/{id}",
-            axum::routing::patch(handlers::servers::update_server)
-                .delete(handlers::servers::deactivate_server),
+            axum::routing::patch(handlers::server_registry::update_server)
+                .delete(handlers::server_registry::deactivate_server),
         )
         .route(
             "/servers/{id}/status",
-            get(handlers::servers::get_server_status),
+            get(handlers::server_intel::get_server_status),
         )
         .route(
             "/servers/{id}/status/stream",
-            get(handlers::leaderboards::stream_server_status),
+            get(handlers::server_status_stream::stream_server_status),
         )
-        .route("/admin/servers/{id}/rcon", post(handlers::admin::send_rcon))
+        .route(
+            "/admin/servers/{id}/rcon",
+            post(handlers::rcon_console::send_rcon),
+        )
 }

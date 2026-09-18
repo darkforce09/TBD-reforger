@@ -5,8 +5,6 @@
 //! non-blocking (a subscriber too slow to drain lags and drops rather than stalling the
 //! publisher), and a dropped receiver auto-unsubscribes, so no explicit cancel is needed.
 
-pub mod server_status_topic;
-
 use std::collections::HashMap;
 use std::sync::Mutex;
 

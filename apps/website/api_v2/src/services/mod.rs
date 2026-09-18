@@ -1,13 +1,10 @@
 //! Business-logic services shared across domains.
 
-pub mod game_agent;
 pub mod mission_compile;
 pub mod mortar;
 pub mod registry_import;
 pub mod user_stats;
 
-// T-595 — the API half of T-289's host control channel.
-pub use game_agent::{AgentAction, AgentReply, AgentResult};
 pub use mission_compile::{
     CompileError, ModMissionDocument, ModSlot, flatten_to_mod_document,
     flatten_to_mod_document_with_catalog, mission_terrain_key,

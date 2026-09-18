@@ -65,7 +65,8 @@ fn repo_root() -> PathBuf {
 ///
 /// Rendering through `deploy-staging.sh` rather than copying the script is the point: this
 /// suite must fail if the shipped agent's wire format drifts from what
-/// `services::game_agent` parses. A vendored copy would keep passing while the real host
+/// `server_infrastructure::services::game_agent` parses. A vendored copy would keep passing
+/// while the real host
 /// spoke something else.
 fn agent_dir() -> &'static Path {
     static DIR: OnceLock<PathBuf> = OnceLock::new();
@@ -524,7 +525,8 @@ async fn kick_change_map_and_custom_are_refused_as_unsupported_not_as_no_transpo
 /// at or under that sleep would turn every honest slow answer into a false `unreachable`.
 ///
 /// This drives the agent with a **9-second dwell** — above the shipped 8s default and below
-/// [`website_api::services::game_agent::AGENT_TIMEOUT`] — and demands a 202. The unit source
+/// [`website_api::server_infrastructure::services::game_agent::AGENT_TIMEOUT`] — and demands a
+/// 202. The unit source
 /// pin proves the two numbers are ordered; this proves the client actually waits. Drop
 /// `AGENT_TIMEOUT` to 5s and this is the test that goes red, with the exact symptom an
 /// operator would have seen: a healthy server reported unreachable.

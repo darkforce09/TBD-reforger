@@ -6,8 +6,8 @@ use chrono::Utc;
 use uuid::Uuid;
 
 use crate::core::database::connect_lazy;
-use crate::core::realtime_hub::server_status_topic::publish_server_status;
-use crate::models::ServerStatus;
+use crate::server_infrastructure::models::server::ServerStatus;
+use crate::server_infrastructure::services::status_broadcast::publish_server_status;
 
 fn sample_status(id: Uuid) -> ServerStatus {
     ServerStatus {

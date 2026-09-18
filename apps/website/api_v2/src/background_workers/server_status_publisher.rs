@@ -14,7 +14,7 @@ use sqlx::PgPool;
 use tokio::task::JoinHandle;
 
 use crate::core::realtime_hub::Hub;
-use crate::core::realtime_hub::server_status_topic::publish_all_server_statuses;
+use crate::server_infrastructure::services::status_broadcast::publish_all_server_statuses;
 
 /// Env var for the background server-status → SSE republish cadence (seconds).
 ///
