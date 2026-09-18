@@ -46,11 +46,6 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: apps/website/api_v2/tests/events.rs
-  reason: Split integration tests by behavior before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
   path: apps/website/api_v2/tests/misc_integration.rs
   reason: Split integration tests by behavior before expiry
   expires: 2027-01-31
@@ -62,11 +57,6 @@
 
 - rule: SIZE-3
   path: apps/website/api_v2/tests/null_tolerance.rs
-  reason: Split integration tests by behavior before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/tests/telemetry.rs
   reason: Split integration tests by behavior before expiry
   expires: 2027-01-31
 

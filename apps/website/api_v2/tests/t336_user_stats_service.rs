@@ -19,7 +19,7 @@
 //!    of which two are `attended`. Those two fixtures exist specifically so a plausible rewrite of
 //!    the moved SQL goes red rather than passing on a degenerate case.
 //!
-//! The existing `tests/telemetry.rs` and `tests/identity_link.rs` suites are the other half: they
+//! The existing telemetry ingest suites and `tests/identity_link.rs` are the other half: they
 //! exercise the same function through `POST /ingest/match-results` and the identity-link confirm,
 //! and they were green before this move and are green after it without an edit.
 

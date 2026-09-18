@@ -224,27 +224,32 @@ fn parse_str_const(src: &str, name: &str) -> Option<String> {
 /// onto `telemetry_ingest_closes_the_loop`'s leaderboard row) could return one-sided.
 ///
 /// The cure is to *read* the other suite's fixture rather than remember it. `include_str!`
-/// pulls `tests/telemetry.rs` in at compile time, so this pin cannot drift from the value
+/// pulls `tests/telemetry_server_status_ingest.rs` in at compile time, so this pin cannot drift
+/// from the value
 /// telemetry actually uses — and it fails loudly if it cannot find that value at all.
 ///
 /// Arma ids are checked on the same principle: `users.arma_id` is UNIQUE (`idx_users_arma_id`),
 /// so a shared one is a hard insert failure in whichever suite loses the race — the same
 /// cross-suite coupling, just noisier when it lands.
 ///
-/// RED: set `PLAYER_DISCORD` in `tests/telemetry.rs` to `000000000000400013` and this test
+/// RED: set `PLAYER_DISCORD` in `tests/telemetry_server_status_ingest.rs` to
+/// `000000000000400013` and this test
 /// fails, while the hard-coded assertion in `t400_actor_is_not_shared_dev_login_user` stays
 /// green. RED (parser): turn that `const` into a `static` and the `expect` below fires, so a
 /// pin that has stopped reading anything cannot pass quietly.
 #[test]
 fn t518_fixtures_do_not_collide_with_the_live_telemetry_player() {
-    let telemetry_src = include_str!("telemetry.rs");
+    let telemetry_src = include_str!("telemetry_server_status_ingest.rs");
     let player_discord = parse_str_const(telemetry_src, "PLAYER_DISCORD").expect(
-        "could not find `const PLAYER_DISCORD: &str = \"…\";` in tests/telemetry.rs — this pin \
+        "could not find `const PLAYER_DISCORD: &str = \"…\";` in \
+         tests/telemetry_server_status_ingest.rs — this pin \
          reads the live fixture instead of remembering it, so a rename must fail here loudly \
          rather than silently guard nothing (T-518)",
     );
-    let player_arma = parse_str_const(telemetry_src, "PLAYER_ARMA")
-        .expect("could not find `const PLAYER_ARMA: &str = \"…\";` in tests/telemetry.rs (T-518)");
+    let player_arma = parse_str_const(telemetry_src, "PLAYER_ARMA").expect(
+        "could not find `const PLAYER_ARMA: &str = \"…\";` in \
+             tests/telemetry_server_status_ingest.rs (T-518)",
+    );
     assert!(
         player_discord.len() >= 17 && player_discord.chars().all(|c| c.is_ascii_digit()),
         "parsed PLAYER_DISCORD `{player_discord}` is not a snowflake — the parse is reading the \

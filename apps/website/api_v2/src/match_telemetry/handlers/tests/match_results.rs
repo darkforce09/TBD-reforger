@@ -56,7 +56,8 @@ fn ingest_match_results_invokes_require_role_played_at_both_sites() {
 /// Class-R: a re-point must retract prior event_mission attendance before the SET.
 ///
 /// A SET-only path false-greens every "marks EV2" assert while leaving EV1 attended. The full
-/// integration coverage lives in `tests/telemetry.rs`; this pin fails if the retract UPDATE, its
+/// integration coverage lives in `tests/telemetry_attendance.rs`; this pin fails if the retract
+/// UPDATE, its
 /// NOT EXISTS attribution guard, or the `retract_from` plumbing is deleted.
 #[test]
 fn ingest_match_results_retracts_prior_attendance_on_repoint() {

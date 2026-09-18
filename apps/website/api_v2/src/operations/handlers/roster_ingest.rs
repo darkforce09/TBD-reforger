@@ -127,7 +127,8 @@ fn pair_slots(
 /// [`flatten_to_mod_document_with_catalog`], so an over-capacity version is omitted here
 /// instead of being seated from an empty-catalog no-op.
 ///
-/// `tests/events.rs::roster_omits_over_capacity_mission_when_catalog_loaded` seeds an
+/// `tests/events_roster_and_members.rs::roster_omits_over_capacity_mission_when_catalog_loaded`
+/// seeds an
 /// over-capacity tip (Save-bypass) and asserts the roster stays 200 with that mission's
 /// assignments omitted.
 ///
