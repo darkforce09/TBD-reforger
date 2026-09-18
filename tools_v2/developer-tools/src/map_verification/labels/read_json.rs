@@ -20,7 +20,7 @@ pub(super) fn to_height_label(row: &Value) -> HeightLabel {
 }
 
 pub fn height_labels(root: &Path, terrain: &str) -> Result<u8> {
-    let base = root.join("packages/map-assets").join(terrain);
+    let base = terrain_dir(root, terrain);
     let label_path = base.join("height-labels.json");
     if !label_path.exists() {
         eprintln!("verify-height-labels: missing {}", label_path.display());
@@ -357,10 +357,7 @@ pub(super) fn locations_gate_errors(locs: &[Value]) -> Vec<String> {
 }
 
 pub fn locations(root: &Path, terrain: &str) -> Result<u8> {
-    let loc_path = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("locations.json");
+    let loc_path = terrain_dir(root, terrain).join("locations.json");
     if !loc_path.exists() {
         eprintln!("verify-locations: missing {}", loc_path.display());
         return Ok(1);
@@ -370,7 +367,7 @@ pub fn locations(root: &Path, terrain: &str) -> Result<u8> {
     let mut failures = 0usize;
     println!("verify-locations ({terrain}):");
 
-    let schema = read_json(&root.join("packages/tbd-schema/schema/locations.schema.json"))?;
+    let schema = read_json(&definition_path(root, "locations.schema.json"))?;
     let validator =
         jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
     let schema_errs: Vec<String> = validator

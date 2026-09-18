@@ -1,14 +1,20 @@
 use super::*;
+use crate::repository_layout::terrain_assets_dir;
+use std::path::Path;
 
 /// Dispatch one smoke by suite name. `dist`/`path` fall back to the Node defaults.
 pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -> Result<u8> {
     let dist = dist.unwrap_or_else(|| DIST_DEFAULT.to_string());
     let path = path.unwrap_or_else(|| EDIT_PATH.to_string());
+    // The harness resolves a relative serving directory against the gate's working directory.
+    let map_assets = terrain_assets_dir(Path::new(""))
+        .to_string_lossy()
+        .into_owned();
     match name {
         "editor" => smoke_editor(&dist, &path).await,
         "selfcheck" => smoke_selfcheck(&dist, &path).await,
-        "fullmap" => smoke_fullmap(&dist, "packages/map-assets").await,
-        "hillshade" => smoke_hillshade(&dist, "packages/map-assets").await,
+        "fullmap" => smoke_fullmap(&dist, &map_assets).await,
+        "hillshade" => smoke_hillshade(&dist, &map_assets).await,
         "doc" => smoke_doc(&dist, &path).await,
         "pan" => smoke_pan(&dist, &path).await,
         "persist" => smoke_persist(&dist, &path).await,

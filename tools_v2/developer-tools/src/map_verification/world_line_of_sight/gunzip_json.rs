@@ -277,7 +277,7 @@ pub fn run(root: &Path, args: &[String]) -> Result<u8> {
         }
     }
     let cell = cell.context("--cell <cx_cy> is required")?;
-    let assets = assets.unwrap_or_else(|| root.join("packages/map-assets/everon"));
+    let assets = assets.unwrap_or_else(|| terrain_dir(root, "everon"));
     let t0 = std::time::Instant::now();
     let (occ, loaded) = load_cell(&assets, &cell)?;
     println!(

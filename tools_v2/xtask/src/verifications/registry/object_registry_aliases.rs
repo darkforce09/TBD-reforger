@@ -70,11 +70,10 @@ use std::io;
 use std::path::Path;
 
 use anyhow::Result;
+use developer_tools::repository_layout::registry_items_catalog_path;
 use serde_json::Value;
 use verification_core::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 
-/// The Objects-eligible census — the same export the API imports, so no live Workbench needed.
-const WB_REL: &str = "packages/tbd-schema/registry/registry-items.workbench.json";
 /// What `SpawnMissionEntities` actually reads at mission load.
 const MOD_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 /// The mission-domain derivation used by the frontend; pinned independently of this mirror.
@@ -111,7 +110,8 @@ const FE_PINS: &[(&str, &str)] = &[
 ];
 
 pub fn verify_t439(repo_root: &Path) -> Result<u8> {
-    let wb_path = repo_root.join(WB_REL);
+    // The Objects-eligible census — the same export the API imports, so no live Workbench needed.
+    let wb_path = registry_items_catalog_path(repo_root);
     let mod_path = repo_root.join(MOD_REL);
     let fe_path = repo_root.join(FE_REL);
 

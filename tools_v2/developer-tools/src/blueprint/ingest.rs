@@ -18,6 +18,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
+use crate::repository_layout::terrain_dir;
+
 const PROFILE_CANDIDATES: [&str; 2] = [
     ".local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/TBD_Export",
     "Games/ArmaReforger-Base/TBD_Export",
@@ -55,7 +57,7 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
         return Ok(1);
     }
 
-    let dest = root.join("packages/map-assets/everon/prefabs/buildings");
+    let dest = terrain_dir(root, "everon").join("prefabs/buildings");
     fs::create_dir_all(&dest)?;
 
     let mut ok = 0usize;

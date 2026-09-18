@@ -1,5 +1,6 @@
 use super::*;
 use crate::blueprint::tests::fixture;
+use crate::repository_layout::terrain_dir;
 
 /// The T-090.11.4 door-parity pin: the committed shell + every architectural instance
 /// (doors closed — the editor's `InitialAngle 0`; furniture excluded because the Workbench
@@ -19,7 +20,7 @@ use crate::blueprint::tests::fixture;
 #[test]
 fn farmhouse_compound_door_parity_is_pinned() {
     let root = crate::repository_paths::test_repo_root();
-    let buildings = root.join("packages/map-assets/everon/prefabs/buildings");
+    let buildings = terrain_dir(&root, "everon").join("prefabs/buildings");
     let shell_bytes = fs::read(buildings.join("FarmHouse_E_1L01_Wood.bvh")).expect("shell");
     let sc = BvhSidecar::parse(&shell_bytes).expect("shell parses");
     let shell = Arc::new(BvhSidecar {

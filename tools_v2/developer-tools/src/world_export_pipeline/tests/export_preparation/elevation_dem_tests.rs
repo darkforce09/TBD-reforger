@@ -5,6 +5,7 @@ use website_map_engine::world::terrain::dem::png::decode_png_gray16;
 use website_map_engine::world::terrain::dem::raw::RawDem;
 
 use super::*;
+use crate::repository_layout::{terrain_dir, terrain_manifest_path};
 
 /// A distinct, non-square grid: a width/height swap anywhere in the emit or the read is a
 /// different file, and both `u16` endpoints are present.
@@ -181,7 +182,7 @@ fn everon_elevation_dem_matches_the_shipped_png() {
     use website_map_engine::world::terrain::dem::sampling::uint16_to_meters;
 
     let root = repo_root();
-    let png = root.join("packages/map-assets/everon/dem/everon-dem-16bit.png");
+    let png = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png");
     // An LFS pointer is ~133 B; the real 6400x6400 16-bit PNG is 71.9 MB. Anything in between
     // is neither, and is worth failing on rather than skipping past.
     const LFS_POINTER_MAX: u64 = 4096;
@@ -211,8 +212,7 @@ fn everon_elevation_dem_matches_the_shipped_png() {
     assert_eq!((w, h), (6400, 6400), "everon DEM dims");
 
     let manifest: Value = serde_json::from_str(
-        &std::fs::read_to_string(root.join("packages/map-assets/everon/manifest.json"))
-            .expect("manifest"),
+        &std::fs::read_to_string(terrain_manifest_path(&root, "everon")).expect("manifest"),
     )
     .expect("manifest json");
     let min_m = manifest["dem"]["heightRangeMinM"].as_f64().expect("min");

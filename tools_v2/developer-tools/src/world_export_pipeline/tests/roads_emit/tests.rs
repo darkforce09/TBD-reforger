@@ -15,7 +15,7 @@ const EVERON_CLASSES: usize = 5;
 const EVERON_POINT_FLOOR: usize = 20_000;
 
 fn everon_dir() -> PathBuf {
-    repo_root().join("packages/map-assets/everon")
+    terrain_dir(&repo_root(), "everon")
 }
 
 fn everon_json_segments() -> Vec<RoadSegment> {

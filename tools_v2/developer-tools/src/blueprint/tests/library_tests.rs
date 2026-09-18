@@ -9,6 +9,7 @@ use crate::blueprint::xob::tests::{coll_box_record_with_material, with_coll};
 use crate::blueprint::xob_nodes::XobNode;
 use crate::blueprint::xob_nodes::tests::{synth_head, wrap_xob};
 use crate::enfusion_pak::DirSource;
+use crate::repository_layout::{contract_definitions_dir, definition_path, terrain_dir};
 
 fn write(dir: &Path, rel: &str, bytes: &[u8]) {
     let p = dir.join(rel);
@@ -124,12 +125,6 @@ fn tmp(name: &str) -> PathBuf {
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).unwrap();
     dir
-}
-
-fn schema_dir() -> PathBuf {
-    crate::repository_paths::find_repo_root()
-        .unwrap()
-        .join("packages/tbd-schema/schema")
 }
 
 #[test]
@@ -257,10 +252,12 @@ fn write_is_schema_valid_and_deterministic() {
         layer_policy: crate::blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
+    let root = crate::repository_paths::test_repo_root();
+    let schemas = contract_definitions_dir(&root);
     let out = dir.join("prefabs");
-    let first = write_library(&out, &lib, &schema_dir(), false).unwrap();
+    let first = write_library(&out, &lib, &schemas, false).unwrap();
     assert_eq!(first, 8 + 3 + 1, "8 descriptors + 3 BLAS + manifest");
-    let again = write_library(&out, &lib, &schema_dir(), false).unwrap();
+    let again = write_library(&out, &lib, &schemas, false).unwrap();
     assert_eq!(again, 0, "a re-emit that changes nothing writes nothing");
     // Round trip through the files.
     let m: BlasManifest =
@@ -271,7 +268,7 @@ fn write_is_schema_valid_and_deterministic() {
     assert_eq!(d, lib.descriptors[2]);
     // A filtered run never writes a manifest.
     let partial_out = dir.join("partial");
-    let n = write_library(&partial_out, &lib, &schema_dir(), true).unwrap();
+    let n = write_library(&partial_out, &lib, &schemas, true).unwrap();
     assert_eq!(n, 11);
     assert!(!partial_out.join("blas-manifest.json").exists());
     // The schemas reject a padded document.
@@ -280,7 +277,7 @@ fn write_is_schema_valid_and_deterministic() {
     assert!(
         validate_against(
             &bad,
-            &schema_dir().join("prefab-descriptor.schema.json"),
+            &definition_path(&root, "prefab-descriptor.schema.json"),
             "bad"
         )
         .is_err()
@@ -311,7 +308,7 @@ fn only_kind_and_limit_select_rows() {
 fn committed_farmhouse_descriptor_reproduces_the_t090_11_instances() {
     use website_map_engine::world::architecture::compound::instances::InstancesFile;
     let root = crate::repository_paths::test_repo_root();
-    let prefabs = root.join("packages/map-assets/everon/prefabs");
+    let prefabs = terrain_dir(&root, "everon").join("prefabs");
     let manifest: BlasManifest =
         serde_json::from_str(&fs::read_to_string(prefabs.join("blas-manifest.json")).unwrap())
             .unwrap();
@@ -321,7 +318,7 @@ fn committed_farmhouse_descriptor_reproduces_the_t090_11_instances() {
     )
     .unwrap();
     let names =
-        load_prefab_rows(&root.join("packages/map-assets/everon/objects/prefabs.json.gz")).unwrap();
+        load_prefab_rows(&terrain_dir(&root, "everon").join("objects/prefabs.json.gz")).unwrap();
     let pid = names
         .iter()
         .find(|r| strip_guid(&r.resource_name) == file.resource_name)

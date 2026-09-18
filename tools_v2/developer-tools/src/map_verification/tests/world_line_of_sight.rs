@@ -19,7 +19,7 @@ use crate::blueprint::tests::fixture;
 
 fn assets() -> PathBuf {
     // Compile-time root, not the cwd walk: see `root::test_repo_root` for the race.
-    crate::repository_paths::test_repo_root().join("packages/map-assets/everon")
+    terrain_dir(&crate::repository_paths::test_repo_root(), "everon")
 }
 
 /// The T-090.11.4 door-parity oracle replayed through the WORLD occluder: the committed farmhouse

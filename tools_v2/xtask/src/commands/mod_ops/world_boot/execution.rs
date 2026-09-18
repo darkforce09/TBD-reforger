@@ -50,7 +50,7 @@ pub(super) fn parse_args(args: &[String]) -> std::result::Result<Opts, u8> {
 }
 
 pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
-    let goldens = root.join("packages/tbd-schema/golden-missions");
+    let goldens = developer_tools::repository_layout::mission_fixtures_valid_dir(root);
     if let Some(ref m) = opts.mission.clone() {
         if !Path::new(&m).is_file() {
             let as_json = goldens.join(format!("{m}.json"));

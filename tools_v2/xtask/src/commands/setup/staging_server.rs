@@ -72,7 +72,7 @@ impl Paths {
         Self {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
-            schema: root.join("packages/tbd-schema"),
+            schema: developer_tools::repository_layout::contracts_dir(root),
             web: root.join("apps/website/api_v2"),
             // paths.sh pin — not an env override (unlike deploy-website).
             deploy_env: root.join("scripts/deploy/deploy.env"),

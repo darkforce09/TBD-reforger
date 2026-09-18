@@ -195,8 +195,8 @@ fn matches_through_the_building_yaw_and_skips_furniture_descendants() {
 #[test]
 fn farmhouse_sockets_match_the_workbench_recon() {
     let root = crate::repository_paths::test_repo_root();
-    let instances = root
-        .join("packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json");
+    let instances = crate::repository_layout::terrain_dir(&root, "everon")
+        .join("prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json");
     let recon = root.join(
         "tools_v2/developer-tools/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
     );

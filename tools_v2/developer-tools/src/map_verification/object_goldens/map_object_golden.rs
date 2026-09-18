@@ -1,7 +1,7 @@
 use super::*;
 
 pub fn map_object_golden(root: &Path) -> Result<u8> {
-    let sroot = root.join("packages/tbd-schema");
+    let sroot = contracts_dir(root);
     let mo = |parts: &[&str]| -> PathBuf {
         let mut p = sroot.join("golden/map-objects");
         for x in parts {

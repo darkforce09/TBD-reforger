@@ -1,7 +1,9 @@
 use super::*;
 
+use crate::repository_layout::map_scratch_dir;
+
 pub(super) fn sap_dir() -> PathBuf {
-    repo_root().join("packages/map-assets/everon/staging/sap") // E2c-allow (SAP lane is Eden-only)
+    map_scratch_dir(&repo_root(), "everon").join("sap") // E2c-allow (SAP lane is Eden-only)
 }
 
 pub(super) fn r2(v: f64) -> f64 {

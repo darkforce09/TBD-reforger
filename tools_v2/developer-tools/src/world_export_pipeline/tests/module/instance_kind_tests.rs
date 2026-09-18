@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use super::INSTANCE_KINDS;
 use crate::browser_testing::server::repo_root;
+use crate::repository_layout::definition_path;
 
 /// T-278 — the guard that would have caught T-244 the day it landed.
 ///
@@ -10,7 +11,7 @@ use crate::browser_testing::server::repo_root;
 /// panic during an export nobody could run. This compares them.
 #[test]
 fn instance_kinds_match_enums_schema() {
-    let p = repo_root().join("packages/tbd-schema/schema/map-object-enums.schema.json");
+    let p = definition_path(&repo_root(), "map-object-enums.schema.json");
     let doc: serde_json::Value =
         serde_json::from_str(&std::fs::read_to_string(&p).expect("enums schema")).unwrap();
     let names = |k: &str| -> BTreeSet<String> {

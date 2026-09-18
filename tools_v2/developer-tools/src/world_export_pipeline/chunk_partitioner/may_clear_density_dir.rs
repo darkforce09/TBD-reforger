@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::terrain_registry_path;
 
 /// T-378: only an intentional density rebuild may wipe `objects/density/`.
 /// Non-density phases must leave the 625 committed bins alone.
@@ -40,9 +41,9 @@ pub fn phase_kinds(phase: &str) -> Option<&'static [&'static str]> {
 }
 
 pub fn terrain_row(terrain: &str) -> Result<Value> {
-    let reg: Value = serde_json::from_str(&std::fs::read_to_string(
-        repo_root().join("packages/map-assets/terrain-registry.json"),
-    )?)?;
+    let reg: Value = serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(
+        &repo_root(),
+    ))?)?;
     reg["terrains"]
         .as_array()
         .and_then(|a| a.iter().find(|t| t["terrainId"] == terrain).cloned())

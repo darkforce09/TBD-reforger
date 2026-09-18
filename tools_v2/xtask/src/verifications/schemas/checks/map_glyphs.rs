@@ -1,4 +1,5 @@
 use super::*;
+use developer_tools::repository_layout::{glyph_assets_dir, terrain_dir};
 
 /// Glyph coverage gate (port of `verify-map-glyphs-manifest.mjs`) — golden + committed-catalog
 /// iconKey coverage, SVG existence/viewBox, sane render fields, and the built-atlas rect/RIFF
@@ -7,7 +8,7 @@ pub fn map_glyphs() -> Result<u8> {
     use std::io::Read as _;
     let root = repo_root()?;
     let sroot = schema_root(&root);
-    let glyph_dir = root.join("packages/map-assets/glyphs");
+    let glyph_dir = glyph_assets_dir(&root);
     let manifest = read_json(&glyph_dir.join("manifest.json"))?;
     let glyphs = manifest["glyphs"].as_object().cloned().unwrap_or_default();
     let prefabs = read_json(&sroot.join("golden/map-objects/map-object-prefabs-sample.json"))?;
@@ -27,7 +28,7 @@ pub fn map_glyphs() -> Result<u8> {
     }
 
     // 1b. Committed terrain catalogs.
-    let catalog = root.join("packages/map-assets/everon/objects/prefabs.json.gz");
+    let catalog = terrain_dir(&root, "everon").join("objects/prefabs.json.gz");
     if catalog.exists() {
         let bytes = fs::read(&catalog)?;
         let mut inflated = Vec::new();

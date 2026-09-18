@@ -1,7 +1,9 @@
 use super::*;
 
+use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
+
 pub(super) fn sap_dir() -> PathBuf {
-    repo_root().join("packages/map-assets/everon/staging/sap") // E2c-allow (Eden-only lane)
+    map_scratch_dir(&repo_root(), "everon").join("sap") // E2c-allow (Eden-only lane)
 }
 
 pub(super) fn read_dem_u16(path: &std::path::Path) -> Result<(Vec<u16>, usize, usize)> {
@@ -24,9 +26,9 @@ pub fn composite_water_ortho() -> Result<u8> {
     let backup = sap.join("everon-sap-ortho.pre-water.png");
     let meta_path = sap.join("TBD_SatExport_meta.json");
     let inland_path = sap.join("water-inland-mask.png");
-    let dem_path = root.join("packages/map-assets/everon/dem/everon-dem-16bit.png"); // E2c-allow
+    let dem_path = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png"); // E2c-allow
     let manifest: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join("packages/map-assets/everon/manifest.json"), // E2c-allow
+        terrain_manifest_path(&root, "everon"), // E2c-allow
     )?)?;
     let log = |m: &str| println!("[water-composite] {m}");
     let t0 = std::time::Instant::now();

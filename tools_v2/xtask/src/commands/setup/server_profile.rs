@@ -25,11 +25,14 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
+use developer_tools::repository_layout::mission_fixtures_valid_dir;
+
 use crate::core::repository_root::find_repo_root;
 
 const MISSION_ID: &str = "msn_8f3a2c";
 const PLACEHOLDER: &str = "replace-with-SERVICE_TOKEN-value";
-const GOLDEN_REL: &str = "packages/tbd-schema/golden-missions/bridgehead-at-levie.json";
+/// Golden mission seeded as the `MISSION_ID` disk fallback.
+const GOLDEN_MISSION_FILE: &str = "bridgehead-at-levie.json";
 const BACKEND_EXAMPLE_REL: &str = "apps/mod/tbd-framework/Data/backend.example.json";
 const REGISTRY_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 
@@ -86,7 +89,7 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
         substitute_token(&backend_dst, &token)?;
     }
 
-    let golden = root.join(GOLDEN_REL);
+    let golden = mission_fixtures_valid_dir(root).join(GOLDEN_MISSION_FILE);
     if !golden.is_file() {
         eprintln!("ERROR: golden mission not found: {}", golden.display());
         eprintln!(

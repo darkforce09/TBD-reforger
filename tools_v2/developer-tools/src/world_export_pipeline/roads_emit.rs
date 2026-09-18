@@ -45,6 +45,7 @@ use website_map_engine::world::terrain::roads::network::RoadSegment;
 use website_map_engine::world::terrain::roads::network::parse_roads_payload;
 
 use crate::browser_testing::server::repo_root;
+use crate::repository_layout::terrain_dir;
 
 /// The gzip-JSON road export, relative to a terrain directory.
 pub const ROADS_GZ: &str = "objects/roads.json.gz";
@@ -134,10 +135,7 @@ pub fn build_road_network_archive(terrain_dir: &Path) -> Result<RoadNetworkArchi
 /// base wins, otherwise `packages/map-assets/<terrain>`.
 #[must_use]
 pub fn resolve_terrain_dir(terrain: &str, out_base: Option<&Path>) -> PathBuf {
-    out_base.map_or_else(
-        || repo_root().join("packages/map-assets").join(terrain),
-        Path::to_path_buf,
-    )
+    out_base.map_or_else(|| terrain_dir(&repo_root(), terrain), Path::to_path_buf)
 }
 
 /// Build and write `roads/road_network.rkyv` for one terrain directory. Returns the path written

@@ -48,7 +48,7 @@ fn box_room_blueprint_passes_the_schema_contract() {
     );
 
     let root = crate::repository_paths::test_repo_root();
-    let schema = root.join("packages/tbd-schema/schema/building-blueprint.schema.json");
+    let schema = crate::repository_layout::definition_path(&root, "building-blueprint.schema.json");
     let tmp = std::env::temp_dir().join("tbd_bp_synth_schema_test.json");
     validate_and_write(&bp, &schema, &tmp).expect("schema-valid blueprint");
     let _ = std::fs::remove_file(tmp);

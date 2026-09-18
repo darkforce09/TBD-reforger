@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::{terrain_dir, terrain_registry_path};
 
 /// The full verify-phase gate run. Returns the process exit code.
 pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
@@ -10,7 +11,7 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
     let density_phase = phase == "P2_trees";
 
     let root = repo_root();
-    let terrain_dir = root.join("packages/map-assets").join(terrain);
+    let terrain_dir = terrain_dir(&root, terrain);
     let objects_dir = terrain_dir.join("objects");
     let chunks_dir = objects_dir.join("chunks");
     let staging = terrain_dir.join("staging/export");
@@ -31,9 +32,8 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
     let v_inventory = schemas.validator("map-object-type-inventory")?;
     let v_region = schemas.validator("map-object-region")?;
 
-    let registry: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join("packages/map-assets/terrain-registry.json"),
-    )?)?;
+    let registry: Value =
+        serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(&root))?)?;
     let world_size_m = registry["terrains"]
         .as_array()
         .and_then(|a| a.iter().find(|t| t["terrainId"] == terrain))

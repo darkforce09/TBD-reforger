@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
+
+use crate::repository_layout::{contract_definitions_dir, terrain_dir};
 use website_map_engine::spatial::los::world::descriptor::BlasEntry;
 
 use super::batch::open_sources;
@@ -164,9 +166,9 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
             }
         }
     }
-    let assets = root.join("packages/map-assets").join(&terrain);
+    let assets = terrain_dir(root, &terrain);
     let out_dir = out.unwrap_or_else(|| assets.join("prefabs"));
-    let schema_dir = root.join("packages/tbd-schema/schema");
+    let schema_dir = contract_definitions_dir(root);
     let rows = load_prefab_rows(&assets.join("objects/prefabs.json.gz"))?;
     let census = world_census(&assets.join("objects/chunks"))?;
     let source = open_sources(paks.as_deref(), extract.as_deref())?;

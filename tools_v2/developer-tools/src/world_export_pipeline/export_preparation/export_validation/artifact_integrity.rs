@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::{terrain_assets_dir, terrain_dir, terrain_registry_path};
 
 pub fn validate_export_artifacts() -> Result<u8> {
     let root = repo_root();
@@ -15,9 +16,8 @@ pub fn validate_export_artifacts() -> Result<u8> {
     };
     let pass = |msg: String| println!("  PASS  {msg}");
 
-    let registry: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join("packages/map-assets/terrain-registry.json"),
-    )?)?;
+    let registry: Value =
+        serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(&root))?)?;
     if !v_registry.is_valid(&registry) {
         failures += 1;
         fail("terrain-registry.json schema: invalid".into());
@@ -28,10 +28,9 @@ pub fn validate_export_artifacts() -> Result<u8> {
     let terrains = registry["terrains"].as_array().cloned().unwrap_or_default();
     for t in &terrains {
         let tid = t["terrainId"].as_str().unwrap_or("");
-        let terrain_dir = root.join("packages/map-assets").join(tid);
-        let manifest_path = root
-            .join("packages/map-assets")
-            .join(t["manifestPath"].as_str().unwrap_or(""));
+        let terrain_dir = terrain_dir(&root, tid);
+        let manifest_path =
+            terrain_assets_dir(&root).join(t["manifestPath"].as_str().unwrap_or(""));
         if !manifest_path.exists() {
             pass(format!(
                 "{tid}: no manifest (status {}) — skipped",
@@ -295,9 +294,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
     }
 
     let other = terrains.iter().find(|t| {
-        !root
-            .join("packages/map-assets")
-            .join(t["terrainId"].as_str().unwrap_or(""))
+        !terrain_dir(&root, t["terrainId"].as_str().unwrap_or(""))
             .join("staging/export/raw-entities.jsonl")
             .exists()
     });

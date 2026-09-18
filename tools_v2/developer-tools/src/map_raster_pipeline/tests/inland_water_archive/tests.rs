@@ -366,7 +366,7 @@ fn a_missing_terrain_or_staging_directory_exits_one() {
 fn terrain_dir_takes_an_id_or_a_directory() {
     assert_eq!(
         terrain_dir("everon"),
-        repo_root().join("packages/map-assets/everon")
+        crate::repository_layout::terrain_dir(&repo_root(), "everon")
     );
     let here = repo_root();
     assert_eq!(terrain_dir(here.to_str().expect("utf8")), here);

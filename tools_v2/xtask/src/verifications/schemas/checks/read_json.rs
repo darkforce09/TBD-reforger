@@ -6,7 +6,7 @@ pub(super) fn read_json(p: &Path) -> Result<Value> {
 }
 
 pub(super) fn schema_root(root: &Path) -> PathBuf {
-    root.join("packages/tbd-schema")
+    developer_tools::repository_layout::contracts_dir(root)
 }
 
 pub(super) fn spec_dir(root: &Path) -> PathBuf {

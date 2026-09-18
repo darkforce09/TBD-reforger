@@ -1,11 +1,10 @@
 use super::{INSTANCE_KINDS, instance_kinds_lockstep_failures, read_json, repo_root};
 
 fn enums() -> serde_json::Value {
-    read_json(
-        &repo_root()
-            .expect("repo root")
-            .join("packages/tbd-schema/schema/map-object-enums.schema.json"),
-    )
+    read_json(&developer_tools::repository_layout::definition_path(
+        &repo_root().expect("repo root"),
+        "map-object-enums.schema.json",
+    ))
     .expect("enums schema")
 }
 

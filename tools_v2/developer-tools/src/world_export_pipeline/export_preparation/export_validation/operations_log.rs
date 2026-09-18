@@ -1,14 +1,12 @@
 use super::*;
+use crate::repository_layout::map_scratch_dir;
 
 pub fn verify_spike_ops_log(terrain: &str) -> Result<u8> {
     let root = repo_root();
     let ops_path = root
         .join(".ai/artifacts")
         .join(format!("map_export_{terrain}.json"));
-    let staging = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/spike");
+    let staging = map_scratch_dir(&root, terrain).join("spike");
     let raw_path = staging.join("raw-entities.jsonl");
     if !ops_path.exists() {
         eprintln!(

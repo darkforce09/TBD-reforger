@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::map_scratch_dir;
 
 pub fn copy_world_export_profile(
     terrain: &str,
@@ -34,11 +35,7 @@ pub fn copy_world_export_profile(
             "TBD_WorldExport_meta.json"
         })
     });
-    let dest_dir = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging")
-        .join(if full { "export" } else { "spike" });
+    let dest_dir = map_scratch_dir(&root, terrain).join(if full { "export" } else { "spike" });
     let dest_jsonl = dest_dir.join("raw-entities.jsonl");
     let dest_meta = dest_dir.join("export-meta.json");
     let dest_stamp = dest_dir.join("staged-meta.json");

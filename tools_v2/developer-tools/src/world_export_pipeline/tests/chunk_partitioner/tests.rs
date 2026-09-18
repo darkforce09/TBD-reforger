@@ -5,8 +5,11 @@
 /// make them non-zero. Five places in the repo also claimed 888; the file ships 887.
 #[test]
 fn the_road_census_reads_the_committed_roads_file() {
-    let objects =
-        crate::browser_testing::server::repo_root().join("packages/map-assets/everon/objects");
+    let objects = crate::repository_layout::terrain_dir(
+        &crate::browser_testing::server::repo_root(),
+        "everon",
+    )
+    .join("objects");
     if !objects.join("roads.json.gz").is_file() {
         panic!("everon roads.json.gz missing at {}", objects.display());
     }

@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::{density_fixtures_dir, terrain_dir};
 use website_map_engine::io::density::tbdd::decode_tbdd;
 use website_map_engine::io::density::tbdd::encode_tbdd;
 
@@ -7,8 +8,8 @@ use website_map_engine::io::density::tbdd::encode_tbdd;
 /// A missing or short corpus is a FAILURE, never a skip: the T-935.5 acceptance is *all 625*
 /// tiles, and "the directory was not there" is the shape of a green run that examined nothing.
 fn everon_density_tiles() -> Vec<std::path::PathBuf> {
-    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../packages/map-assets/everon/objects/density");
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let dir = terrain_dir(&root, "everon").join("objects/density");
     let rd = std::fs::read_dir(&dir)
         .unwrap_or_else(|e| panic!("T-935.5: {} could not be read ({e})", dir.display()));
     let mut files: Vec<std::path::PathBuf> = rd
@@ -150,8 +151,8 @@ fn encode_decode_round_trip_and_fixture() {
     let g = decode_tbdd(&buf).expect("decode");
     assert_eq!((g.cols, g.rows), (DENSITY_COLS, DENSITY_ROWS));
 
-    let fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../packages/tbd-schema/golden/map-objects/density/density-fixture.bin");
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let fixture = density_fixtures_dir(&root).join("density-fixture.bin");
     if fixture.exists() {
         let bytes = std::fs::read(&fixture).unwrap();
         let g = decode_tbdd(&bytes).expect("fixture decode");

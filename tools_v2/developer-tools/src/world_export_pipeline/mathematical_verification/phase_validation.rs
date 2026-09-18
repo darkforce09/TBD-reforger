@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::terrain_registry_path;
 
 /// The requested phase must not exceed the registry's importPhaseMax.
 pub fn phase_gate(terrain: &str, phase: &str) -> Result<u8> {
@@ -14,9 +15,9 @@ pub fn phase_gate(terrain: &str, phase: &str) -> Result<u8> {
         "P9_roads_path",
         "P10_full",
     ];
-    let reg: Value = serde_json::from_str(&std::fs::read_to_string(
-        repo_root().join("packages/map-assets/terrain-registry.json"),
-    )?)?;
+    let reg: Value = serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(
+        &repo_root(),
+    ))?)?;
     let Some(row) = reg["terrains"]
         .as_array()
         .and_then(|a| a.iter().find(|t| t["terrainId"] == terrain))

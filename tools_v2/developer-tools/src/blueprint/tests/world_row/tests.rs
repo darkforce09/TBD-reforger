@@ -1,11 +1,11 @@
 use super::*;
 use crate::blueprint::tests::fixture;
 use crate::blueprint::verify::{load, verify};
+use crate::repository_layout::terrain_dir;
 
 fn objects_dir() -> std::path::PathBuf {
-    crate::repository_paths::find_repo_root()
-        .unwrap()
-        .join("packages/map-assets/everon/objects")
+    let root = crate::repository_paths::find_repo_root().unwrap();
+    terrain_dir(&root, "everon").join("objects")
 }
 
 #[test]
@@ -35,8 +35,8 @@ fn chunk_id_is_the_floor_partition() {
 #[test]
 fn farmhouse_chunk_row_places_every_socket_child_within_2cm() {
     let root = crate::repository_paths::test_repo_root();
-    let instances = root
-        .join("packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json");
+    let instances =
+        terrain_dir(&root, "everon").join("prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json");
     let recon = fixture("FarmHouse_E_1L01_Wood_children.json");
     let (file, dump) = load(&instances, &recon).unwrap();
     let matches = verify(&file, &dump);

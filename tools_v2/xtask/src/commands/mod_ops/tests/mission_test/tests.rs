@@ -76,7 +76,8 @@ fn throwaway_root(tag: &str, with_golden: bool) -> PathBuf {
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
-    fs::create_dir_all(root.join("packages/tbd-schema/golden-missions")).unwrap();
+    fs::create_dir_all(developer_tools::repository_layout::mission_fixtures_valid_dir(&root))
+        .unwrap();
     fs::write(
         root.join("apps/mod/tbd-framework/Data/registry.json"),
         "{\"ok\":true}\n",
@@ -84,7 +85,8 @@ fn throwaway_root(tag: &str, with_golden: bool) -> PathBuf {
     .unwrap();
     if with_golden {
         fs::write(
-            root.join("packages/tbd-schema/golden-missions/bridgehead-at-levie.json"),
+            developer_tools::repository_layout::mission_fixtures_valid_dir(&root)
+                .join("bridgehead-at-levie.json"),
             r#"{"meta":{"id":"msn_8f3a2c"},"slots":[{"faction":"blufor"},{"faction":"blufor"},{"faction":"opfor"}]}"#,
         )
         .unwrap();

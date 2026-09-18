@@ -1,9 +1,10 @@
 use super::*;
+use crate::repository_layout::terrain_dir;
 use website_map_engine::spatial::los::world::descriptor::ArchiveBoot;
 use website_map_engine::spatial::los::world::descriptor::BuildingArchiveBytes;
 
 fn prefabs_dir() -> PathBuf {
-    crate::repository_paths::test_repo_root().join("packages/map-assets/everon/prefabs")
+    terrain_dir(&crate::repository_paths::test_repo_root(), "everon").join("prefabs")
 }
 
 /// The archive read back through the loader's own entry point, plus the JSON it came from.

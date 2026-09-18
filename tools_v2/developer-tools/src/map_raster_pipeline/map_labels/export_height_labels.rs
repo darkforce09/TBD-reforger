@@ -1,8 +1,10 @@
 use super::*;
 
+use crate::repository_layout::terrain_dir;
+
 pub fn export_height_labels(terrain: &str) -> Result<u8> {
     let root = repo_root();
-    let terrain_dir = root.join("packages/map-assets").join(terrain);
+    let terrain_dir = terrain_dir(&root, terrain);
     let manifest_path = terrain_dir.join("manifest.json");
     let dem_path = terrain_dir.join("dem/everon-dem-16bit.png");
     let locations_path = terrain_dir.join("locations.json");

@@ -71,7 +71,7 @@ pub fn run_with_root(root: &Path, target: Option<&str>) -> Result<u8> {
 }
 
 fn stage_golden(root: &Path, prof: &Path, cfg: &Path, name: &str) -> Result<u8> {
-    let schema = root.join("packages/tbd-schema");
+    let schema = developer_tools::repository_layout::contracts_dir(root);
     let want = format!("{name}.json");
     let golden = match find_golden(&schema, &want) {
         Ok(Some(p)) => p,

@@ -1,5 +1,6 @@
 use super::*;
 use crate::blueprint::tests::fixture;
+use crate::repository_layout::terrain_dir;
 
 /// The engine-free parity pin: the committed sidecar replayed against the committed
 /// 400-pair Workbench oracle — CI re-proves the 3D lane without the (unshippable)
@@ -10,8 +11,8 @@ fn farmhouse_bvh_sidecar_parity_is_pinned() {
     let golden =
         fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("golden sidecar fixture");
     // The shipping sidecar and the test golden are the same bytes, forever.
-    let shipping = crate::repository_paths::test_repo_root()
-        .join("packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh");
+    let shipping = terrain_dir(&crate::repository_paths::test_repo_root(), "everon")
+        .join("prefabs/buildings/FarmHouse_E_1L01_Wood.bvh");
     assert_eq!(
         golden,
         fs::read(&shipping).expect("shipping sidecar"),

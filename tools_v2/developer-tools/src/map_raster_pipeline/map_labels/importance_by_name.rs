@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::repository_layout::{map_scratch_dir, terrain_dir};
+
 pub(super) fn importance_by_name(name: &str) -> Option<f64> {
     Some(match name {
         "Montignac" => 0.85,
@@ -269,15 +271,9 @@ pub fn verify_locations_gates(locs: &[Value]) -> Vec<String> {
 
 pub fn export_locations(terrain: &str, src: Option<PathBuf>, dry_run: bool) -> Result<u8> {
     let root = repo_root();
-    let default_src = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/export/raw-entities.jsonl");
+    let default_src = map_scratch_dir(&root, terrain).join("export/raw-entities.jsonl");
     let src = src.unwrap_or(default_src);
-    let out_path = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("locations.json");
+    let out_path = terrain_dir(&root, terrain).join("locations.json");
     if !src.exists() {
         eprintln!("export-locations: source not found: {}", src.display());
         eprintln!(

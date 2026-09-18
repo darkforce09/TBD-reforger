@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use super::*;
+use crate::repository_layout::terrain_dir;
 use crate::world_export_pipeline::forest_contours::REGION_CELL_M;
 
 fn closed(v: &[(f64, f64)]) -> Vec<(f64, f64)> {
@@ -424,7 +425,8 @@ fn a_degenerate_ring_does_not_produce_nan() {
 /* ── the real everon catalogue ── */
 
 fn everon_objects() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packages/map-assets/everon/objects")
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    terrain_dir(&root, "everon").join("objects")
 }
 
 /// The committed everon `forest-regions.json.gz`. Neither this nor the density tiles below is

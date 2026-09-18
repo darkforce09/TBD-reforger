@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::{density_fixtures_dir, terrain_dir};
 
 /// T-176 A2 — re-derive the TBDD density grids from the **committed** objects (no staging /
 /// Workbench). Reads `objects/prefabs.json.gz` (prefabId→kind) + every `objects/chunks/*.json.gz`
@@ -18,7 +19,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
         bail!("worldBoundsM unsupported (expect square)");
     }
 
-    let terrain_dir = repo_root().join("packages/map-assets").join(terrain);
+    let terrain_dir = terrain_dir(&repo_root(), terrain);
     let objects_dir = terrain_dir.join("objects");
     let chunks_dir = objects_dir.join("chunks");
     let density_dir = objects_dir.join("density");
@@ -120,7 +121,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
 /// cell-size change the committed fixture must be regenerated. No canopy blur — this validates the
 /// codec/accumulate pipeline, not the mass.
 pub fn gen_density_fixture() -> Result<()> {
-    let dir = repo_root().join("packages/tbd-schema/golden/map-objects/density");
+    let dir = density_fixtures_dir(&repo_root());
     let json_path = dir.join("density-fixture.json");
     let mut fx: Value = serde_json::from_str(&std::fs::read_to_string(&json_path)?)?;
     let world = fx["worldSizeM"].as_f64().unwrap_or(0.0);
@@ -305,7 +306,7 @@ pub fn build_roads_from_topo_opt(
     )?;
     let out_base: PathBuf = out_base
         .map(Path::to_path_buf)
-        .unwrap_or_else(|| repo_root().join("packages/map-assets").join(terrain));
+        .unwrap_or_else(|| terrain_dir(&repo_root(), terrain));
     let objects_dir = out_base.join("objects");
     std::fs::create_dir_all(&objects_dir)?;
     std::fs::write(

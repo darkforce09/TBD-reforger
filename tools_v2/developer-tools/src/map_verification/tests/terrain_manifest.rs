@@ -49,7 +49,7 @@ fn materialise(dir: &Path) {
 
 fn live_instance_schema() -> Value {
     let root = repo_root().expect("repo root");
-    read_json(&schema_root(&root).join("schema/map-object-instance.schema.json"))
+    read_json(&definition_path(&root, "map-object-instance.schema.json"))
         .expect("map-object-instance.schema.json")
 }
 
@@ -158,7 +158,7 @@ fn a_row_shape_this_build_cannot_read_is_refused() {
 #[test]
 fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
     let root = repo_root().expect("repo root");
-    let dir = root.join("packages/map-assets/everon");
+    let dir = terrain_dir(&root, "everon");
     let m = read_json(&dir.join("manifest.json")).expect("everon manifest");
     let (declared, errs) = manifest_binary_failures(&m, &dir);
     assert_eq!(errs, Vec::<String>::new(), "{errs:?}");

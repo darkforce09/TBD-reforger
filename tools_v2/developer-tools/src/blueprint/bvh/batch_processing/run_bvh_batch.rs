@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::{definition_path, terrain_dir};
 
 /// `map bvh-batch --prefab <Prefabs/…/X.et> [--slug <s>] [--out <dir>] [--paks <dir>]
 /// [--extract <dir>] [--scene <spec.json>] [--kind <record>=<kind>]… [--dry-run]`
@@ -71,8 +72,8 @@ pub fn run_bvh_batch(root: &std::path::Path, args: &[String]) -> Result<u8> {
         }
     }
     let prefab = prefab.context("--prefab <Prefabs/…/X.et> is required")?;
-    let out_dir = out.unwrap_or_else(|| root.join("packages/map-assets/everon/prefabs"));
-    let schema = root.join("packages/tbd-schema/schema/building-instances.schema.json");
+    let out_dir = out.unwrap_or_else(|| terrain_dir(root, "everon").join("prefabs"));
+    let schema = definition_path(root, "building-instances.schema.json");
     let slug = slug.unwrap_or_else(|| slug_of(&prefab));
 
     let source = open_sources(paks.as_deref(), extract.as_deref())?;

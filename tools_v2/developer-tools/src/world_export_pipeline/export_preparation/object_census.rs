@@ -1,4 +1,5 @@
 use super::*;
+use crate::repository_layout::{map_scratch_dir, terrain_dir};
 
 pub(super) fn classified_rows(
     rules: &Rules,
@@ -35,10 +36,7 @@ pub(super) fn entry_is_k1_building(row: &Value, kind: &str) -> bool {
 }
 
 pub fn verify_spike_k1(terrain: &str) -> Result<u8> {
-    let raw = repo_root()
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/spike/raw-entities.jsonl");
+    let raw = map_scratch_dir(&repo_root(), terrain).join("spike/raw-entities.jsonl");
     if !raw.exists() {
         eprintln!(
             "verify-spike-k1: FAIL — raw-entities.jsonl not found: {}",
@@ -70,10 +68,7 @@ pub fn verify_spike_k1(terrain: &str) -> Result<u8> {
 }
 
 pub fn census_spike(terrain: &str) -> Result<u8> {
-    let staging = repo_root()
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/spike");
+    let staging = map_scratch_dir(&repo_root(), terrain).join("spike");
     let raw = staging.join("raw-entities.jsonl");
     let out_path = staging.join("type-inventory-spike.json");
     if !raw.exists() {
@@ -219,10 +214,7 @@ pub(super) fn spawn_type_inventory_gate() -> Result<bool> {
 
 pub fn census_types(terrain: &str) -> Result<u8> {
     let root = repo_root();
-    let inventory_path = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("objects/type-inventory.json");
+    let inventory_path = terrain_dir(&root, terrain).join("objects/type-inventory.json");
     if !inventory_path.exists() {
         eprintln!("map-census: missing {}", inventory_path.display());
         return Ok(1);
@@ -231,14 +223,8 @@ pub fn census_types(terrain: &str) -> Result<u8> {
         return Ok(1);
     }
     let inv: Value = serde_json::from_str(&std::fs::read_to_string(&inventory_path)?)?;
-    let full = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/export/raw-entities.jsonl");
-    let spike = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/spike/raw-entities.jsonl");
+    let full = map_scratch_dir(&root, terrain).join("export/raw-entities.jsonl");
+    let spike = map_scratch_dir(&root, terrain).join("spike/raw-entities.jsonl");
     if inv["censusStatus"] == "pending_export" {
         if full.exists() {
             eprintln!(

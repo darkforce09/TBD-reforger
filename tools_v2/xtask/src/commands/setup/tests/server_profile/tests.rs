@@ -75,7 +75,7 @@ fn throwaway_root(tag: &str, with_backend: bool, with_golden: bool) -> PathBuf {
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
-    fs::create_dir_all(root.join("packages/tbd-schema/golden-missions")).unwrap();
+    fs::create_dir_all(mission_fixtures_valid_dir(&root)).unwrap();
     fs::create_dir_all(root.join("apps/website/api_v2")).unwrap();
     if with_backend {
         fs::write(
@@ -88,7 +88,7 @@ fn throwaway_root(tag: &str, with_backend: bool, with_golden: bool) -> PathBuf {
     }
     if with_golden {
         fs::write(
-            root.join(GOLDEN_REL),
+            mission_fixtures_valid_dir(&root).join(GOLDEN_MISSION_FILE),
             format!("{{\"meta\":{{\"id\":\"{MISSION_ID}\"}}}}\n"),
         )
         .unwrap();

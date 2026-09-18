@@ -29,6 +29,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use developer_tools::repository_layout::definition_path;
 use regex::Regex;
 use verification_core::{Finding, NotRun, Pattern, Verdict, gate};
 
@@ -38,7 +39,6 @@ const COMP_REL: &str =
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/TBD_ObjectivesComponent.c";
 const RULES_REL: &str =
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/TBD_ObjectiveRules.c";
-const SCHEMA_REL: &str = "packages/tbd-schema/schema/mission.schema.json";
 const VALIDATOR_REL: &str =
     "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c";
 
@@ -96,7 +96,7 @@ impl Paths {
             reg: root.join(REG_REL),
             comp: root.join(COMP_REL),
             rules: root.join(RULES_REL),
-            schema: root.join(SCHEMA_REL),
+            schema: definition_path(root, "mission.schema.json"),
             validator: root.join(VALIDATOR_REL),
         }
     }

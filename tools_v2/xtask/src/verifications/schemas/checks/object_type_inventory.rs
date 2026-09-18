@@ -1,4 +1,7 @@
 use super::*;
+use developer_tools::repository_layout::{
+    map_scratch_dir, terrain_assets_dir, terrain_dir, terrain_registry_path,
+};
 
 /// The lockstep invariant for `INSTANCE_KINDS`, as a list of failure strings (empty = OK).
 ///
@@ -226,21 +229,17 @@ pub fn type_inventory() -> Result<u8> {
         }
     };
 
-    let registry_path = root.join("packages/map-assets/terrain-registry.json");
+    let registry_path = terrain_registry_path(&root);
     if registry_path.exists() {
         let reg = read_json(&registry_path)?;
         for t in reg["terrains"].as_array().into_iter().flatten() {
             let terrain_id = t["terrainId"].as_str().unwrap_or_default();
-            let inv_path = root
-                .join("packages/map-assets")
-                .join(terrain_id)
-                .join("objects/type-inventory.json");
+            let inv_path = terrain_dir(&root, terrain_id).join("objects/type-inventory.json");
             if !inv_path.exists() {
                 continue;
             }
-            let manifest_path = root
-                .join("packages/map-assets")
-                .join(t["manifestPath"].as_str().unwrap_or_default());
+            let manifest_path =
+                terrain_assets_dir(&root).join(t["manifestPath"].as_str().unwrap_or_default());
             let manifest = manifest_path
                 .exists()
                 .then(|| read_json(&manifest_path))
@@ -267,10 +266,7 @@ pub fn type_inventory() -> Result<u8> {
     }
 
     for t in ["everon", "arland", "custom"] {
-        let spike = root
-            .join("packages/map-assets")
-            .join(t)
-            .join("staging/spike/type-inventory-spike.json");
+        let spike = map_scratch_dir(&root, t).join("spike/type-inventory-spike.json");
         if spike.exists() {
             let inv = read_json(&spike)?;
             check(

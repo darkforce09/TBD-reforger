@@ -1,4 +1,7 @@
 use super::*;
+use developer_tools::repository_layout::{
+    terrain_dir, terrain_manifest_path, terrain_registry_path,
+};
 
 /// The full contract-validation suite (port of `packages/tbd-schema/scripts/validate.mjs`):
 /// golden missions + registries + compat FK walkers + addon/variant provenance + bridge samples +
@@ -165,7 +168,7 @@ pub fn validate_all() -> Result<u8> {
     check(
         "everon/manifest.json",
         &v_tmanifest,
-        &read_json(&root.join("packages/map-assets/everon/manifest.json"))?,
+        &read_json(&terrain_manifest_path(&root, "everon"))?,
     );
 
     println!("Locations (T-152.6):");
@@ -174,7 +177,7 @@ pub fn validate_all() -> Result<u8> {
         &v_locations,
         &read_json(&sroot.join("golden/locations-everon-sample.json"))?,
     );
-    let everon_loc = root.join("packages/map-assets/everon/locations.json");
+    let everon_loc = terrain_dir(&root, "everon").join("locations.json");
     if everon_loc.exists() {
         check(
             "map-assets/everon/locations.json",
@@ -184,7 +187,7 @@ pub fn validate_all() -> Result<u8> {
     }
 
     println!("Height labels (T-152.16):");
-    let hl = root.join("packages/map-assets/everon/height-labels.json");
+    let hl = terrain_dir(&root, "everon").join("height-labels.json");
     if hl.exists() {
         check(
             "map-assets/everon/height-labels.json",
@@ -197,7 +200,7 @@ pub fn validate_all() -> Result<u8> {
     check(
         "everon/anchors/verification.example.json",
         &v_anchors,
-        &read_json(&root.join("packages/map-assets/everon/anchors/verification.example.json"))?,
+        &read_json(&terrain_dir(&root, "everon").join("anchors/verification.example.json"))?,
     );
 
     println!("Enfusion DTO fixtures (ENF-4):");
@@ -327,7 +330,7 @@ pub fn validate_all() -> Result<u8> {
     check(
         "map-assets/terrain-registry.json",
         &v_tregistry,
-        &read_json(&root.join("packages/map-assets/terrain-registry.json"))?,
+        &read_json(&terrain_registry_path(&root))?,
     );
 
     println!("Dual + legacy terrain manifests (T-090.1/.1.1):");
@@ -356,7 +359,7 @@ pub fn validate_all() -> Result<u8> {
     check(
         "map-assets/everon/objects/type-inventory.json",
         &v_mo_inventory,
-        &read_json(&root.join("packages/map-assets/everon/objects/type-inventory.json"))?,
+        &read_json(&terrain_dir(&root, "everon").join("objects/type-inventory.json"))?,
     );
 
     println!("TBD_MissionValidator unconsumed-key warnings (T-250):");

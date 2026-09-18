@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::Value;
 
+use crate::repository_layout::{definition_path, terrain_dir};
+
 use website_map_engine::world::environment::locations::peaks::HeightLabel;
 use website_map_engine::world::environment::locations::peaks::HeightLabelKind;
 use website_map_engine::world::environment::locations::peaks::PEAK_MIN_VALUE_M;

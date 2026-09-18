@@ -8,6 +8,7 @@ use website_map_engine::streaming::loaders::store::bytes_to_json;
 
 use super::*;
 use crate::browser_testing::server::repo_root;
+use crate::repository_layout::terrain_dir;
 
 /// Every committed everon chunk. Re-pin deliberately if the export ever changes shape — a
 /// silently shrinking corpus is how a parity test stops proving anything.
@@ -17,7 +18,7 @@ const EVERON_CHUNKS: usize = 315;
 const EVERON_INSTANCE_FLOOR: usize = 1_200_000;
 
 fn objects_dir() -> PathBuf {
-    repo_root().join("packages/map-assets/everon/objects")
+    terrain_dir(&repo_root(), "everon").join("objects")
 }
 
 /// A copy of `bytes` whose first byte sits on a 4-byte boundary, so the zero-copy

@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
+
 /// build-tile-pyramid.sh port: XYZ WebP levels from a full-extent ortho (+full.webp).
 #[allow(clippy::too_many_arguments)]
 pub fn build_tile_pyramid(
@@ -95,10 +97,7 @@ pub fn build_tile_pyramid(
 
 /// `cargo xtask ci map-water-everon` step 2: drop the one-shot waterComposite block from the SAP meta.
 pub fn reset_water_meta(terrain: &str) -> Result<u8> {
-    let p = repo_root()
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("staging/sap/TBD_SatExport_meta.json");
+    let p = map_scratch_dir(&repo_root(), terrain).join("sap/TBD_SatExport_meta.json");
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&p)?)?;
     if let Some(obj) = m.as_object_mut() {
         obj.remove("waterComposite");
@@ -109,7 +108,7 @@ pub fn reset_water_meta(terrain: &str) -> Result<u8> {
 
 /// `cargo xtask ci map-water-everon` step 5: manifest.tiles.satellite.unified.bytes = bundle size.
 pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
-    let root = repo_root().join("packages/map-assets").join(terrain);
+    let root = terrain_dir(&repo_root(), terrain);
     let mp = root.join("manifest.json");
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&mp)?)?;
     let bundle = root.join(
@@ -124,10 +123,7 @@ pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
 
 /// `cargo xtask ci map-cartographic-everon` step 3: tiles.map {source, encoding} patch.
 pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
-    let mp = repo_root()
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("manifest.json");
+    let mp = terrain_manifest_path(&repo_root(), terrain);
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&mp)?)?;
     let map_block = m["tiles"]["map"]
         .as_object_mut()

@@ -63,6 +63,10 @@ fn locations_resolve_against_the_given_root() {
         glyph_assets_dir(root),
         map_scratch_dir(root, "everon"),
     ] {
-        assert!(path.starts_with(root), "escaped the root: {}", path.display());
+        assert!(
+            path.starts_with(root),
+            "escaped the root: {}",
+            path.display()
+        );
     }
 }

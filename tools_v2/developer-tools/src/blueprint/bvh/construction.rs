@@ -25,6 +25,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
+
+use crate::repository_layout::terrain_dir;
 use website_map_engine::spatial::bvh::node::dot;
 use website_map_engine::spatial::bvh::node::sub;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
@@ -402,7 +404,7 @@ pub fn run_bvh_emit(root: &std::path::Path, args: &[String]) -> Result<u8> {
     }
     let out_dir = match out_override {
         Some(d) => d,
-        None => root.join("packages/map-assets/everon/prefabs/buildings"),
+        None => terrain_dir(root, "everon").join("prefabs/buildings"),
     };
 
     let bytes = fs::read(&mesh_path).with_context(|| mesh_path.display().to_string())?;

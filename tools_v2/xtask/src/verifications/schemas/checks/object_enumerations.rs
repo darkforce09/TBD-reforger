@@ -1,4 +1,5 @@
 use super::*;
+use developer_tools::repository_layout::glyph_manifest_path;
 
 pub fn map_object_enums() -> Result<u8> {
     let root = repo_root()?;
@@ -117,7 +118,7 @@ pub fn map_object_enums() -> Result<u8> {
         }
     }
 
-    let glyphs_doc = read_json(&root.join("packages/map-assets/glyphs/manifest.json"))?;
+    let glyphs_doc = read_json(&glyph_manifest_path(&root))?;
     let glyphs = glyphs_doc["glyphs"]
         .as_object()
         .cloned()

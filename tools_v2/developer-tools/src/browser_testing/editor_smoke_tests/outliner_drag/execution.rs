@@ -1,11 +1,12 @@
 use super::*;
+use crate::repository_layout::terrain_assets_dir;
 
 pub(crate) async fn run(dist: &str) -> Result<u8> {
     let h = Harness::new(
         dist,
         5396,
         9496,
-        Some(repo_root().join("packages/map-assets")),
+        Some(terrain_assets_dir(&repo_root())),
         None,
         &[],
     )

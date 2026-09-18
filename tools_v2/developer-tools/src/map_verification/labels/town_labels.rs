@@ -5,10 +5,7 @@ pub fn town_labels(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
     use website_map_engine::overlay::symbology::labels::importance::declutter_town_labels;
     use website_map_engine::overlay::symbology::labels::importance::town_declutter_invariant_holds;
     use website_map_engine::overlay::symbology::labels::importance::town_label_fade_alpha;
-    let loc_path = root
-        .join("packages/map-assets")
-        .join(terrain)
-        .join("locations.json");
+    let loc_path = terrain_dir(root, terrain).join("locations.json");
     if !loc_path.exists() {
         eprintln!(
             "verify-town-labels: missing {} (run T-152.6)",
@@ -165,7 +162,7 @@ pub fn road_names(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
     use website_map_engine::world::environment::locations::route_placement::declutter_road_labels;
     use website_map_engine::world::environment::locations::route_placement::place_road_labels;
     use website_map_engine::world::environment::locations::route_placement::road_declutter_invariant_holds;
-    let base = root.join("packages/map-assets").join(terrain);
+    let base = terrain_dir(root, terrain);
     let names_path = base.join("road-names.json");
     let roads_path = base.join("objects/roads.json.gz");
     for (p, hint) in [(&names_path, ""), (&roads_path, "")] {

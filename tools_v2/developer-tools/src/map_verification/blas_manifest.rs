@@ -20,6 +20,8 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 use serde_json::Value;
+
+use crate::repository_layout::{contract_definitions_dir, terrain_dir};
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
 use website_map_engine::spatial::los::world::descriptor::BlasManifest;
 use website_map_engine::spatial::los::world::descriptor::PrefabDescriptor;
@@ -50,9 +52,9 @@ fn catalogue_pids(prefabs_gz: &Path) -> Result<Vec<u32>> {
 }
 
 pub fn verify_blas_manifest(root: &Path) -> Result<u8> {
-    let assets = root.join("packages/map-assets").join(TERRAIN);
+    let assets = terrain_dir(root, TERRAIN);
     let prefabs = assets.join("prefabs");
-    let schemas = root.join("packages/tbd-schema/schema");
+    let schemas = contract_definitions_dir(root);
     let mut errs: Vec<String> = Vec::new();
 
     let manifest_path = prefabs.join("blas-manifest.json");

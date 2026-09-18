@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::repository_layout::map_scratch_dir;
+
 /// build-landcover-mask.mjs port — classification at CLASS_PX (nearest sample), close-then-
 /// open morphology, soft-edge masks + meta JSON.
 pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
@@ -7,14 +9,16 @@ pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
         bail!("build-landcover-mask: no SAP source registered for terrain \"{terrain}\"");
     }
     let root = repo_root();
+    let sap = map_scratch_dir(&root, "everon").join("sap/everon-sap-ortho.png"); // E2c-allow
+    // Checkout-relative spelling of `sap`, quoted verbatim in the meta JSON's provenance field and
+    // in the missing-source error, where an absolute host path would be noise.
     let sap_rel = "packages/map-assets/everon/staging/sap/everon-sap-ortho.png"; // E2c-allow
-    let sap = root.join(sap_rel);
     if !sap.exists() {
         bail!(
             "build-landcover-mask: SAP ortho missing: {sap_rel}\nstaging/ is gitignored — restore it (cargo xtask ci map-water-everon rebuilds the water composite)."
         );
     }
-    let out_dir = root.join("packages/map-assets/everon/staging/map"); // E2c-allow
+    let out_dir = map_scratch_dir(&root, "everon").join("map"); // E2c-allow
     std::fs::create_dir_all(&out_dir)?;
     let started = std::time::Instant::now();
 
@@ -179,9 +183,9 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
         return Ok(1);
     }
     let root = repo_root();
-    let tga = root.join("packages/map-assets/everon/staging/spike/TBD_SatExport_everon.tga"); // E2c-allow
-    let out = root.join("packages/map-assets/everon/staging/map/everon-map-ortho.png"); // E2c-allow
-    let water_mask_path = root.join("packages/map-assets/everon/staging/sap/water-inland-mask.png"); // E2c-allow
+    let tga = map_scratch_dir(&root, "everon").join("spike/TBD_SatExport_everon.tga"); // E2c-allow
+    let out = map_scratch_dir(&root, "everon").join("map/everon-map-ortho.png"); // E2c-allow
+    let water_mask_path = map_scratch_dir(&root, "everon").join("sap/water-inland-mask.png"); // E2c-allow
     let (world_px, source_px) = (12800usize, 4096usize);
     if !tga.exists() {
         eprintln!(

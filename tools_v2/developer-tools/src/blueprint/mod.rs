@@ -86,6 +86,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use crate::blueprint::ingest::find_profile_subdirs;
+use crate::repository_layout::{definition_path, terrain_dir};
 use emit::BandProducts;
 use params::Params;
 use walls::Algo;
@@ -153,8 +154,8 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
         return Ok(1);
     }
     let out_dir =
-        out_override.unwrap_or_else(|| root.join("packages/map-assets/everon/prefabs/buildings"));
-    let schema = root.join("packages/tbd-schema/schema/building-blueprint.schema.json");
+        out_override.unwrap_or_else(|| terrain_dir(root, "everon").join("prefabs/buildings"));
+    let schema = definition_path(root, "building-blueprint.schema.json");
 
     let mut ok = 0usize;
     let mut failed = 0usize;

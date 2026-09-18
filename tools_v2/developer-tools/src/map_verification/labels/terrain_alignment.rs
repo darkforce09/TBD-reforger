@@ -5,11 +5,11 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
     use website_map_engine::world::terrain::dem::sampling::sample_elevation_meters;
     use website_map_engine::world::terrain::dem::sampling::world_to_pixel;
     const MIN_ANCHORS_STRICT: usize = 10;
-    let base = root.join("packages/map-assets").join(terrain);
+    let base = terrain_dir(root, terrain);
     let manifest = read_json(&base.join("manifest.json"))?;
 
     // Manifest schema.
-    let schema = read_json(&root.join("packages/tbd-schema/schema/terrain-manifest.schema.json"))?;
+    let schema = read_json(&definition_path(root, "terrain-manifest.schema.json"))?;
     let v = jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("compile: {e}"))?;
     if v.iter_errors(&manifest).next().is_some() {
         eprintln!("FAIL  Manifest schema");
@@ -46,7 +46,7 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
     };
 
     let anchors_doc = read_json(&anchors_file)?;
-    let aschema = read_json(&root.join("packages/tbd-schema/schema/terrain-anchors.schema.json"))?;
+    let aschema = read_json(&definition_path(root, "terrain-anchors.schema.json"))?;
     let av = jsonschema::validator_for(&aschema).map_err(|e| anyhow::anyhow!("compile: {e}"))?;
     if av.iter_errors(&anchors_doc).next().is_some() {
         eprintln!("FAIL  Anchors schema");

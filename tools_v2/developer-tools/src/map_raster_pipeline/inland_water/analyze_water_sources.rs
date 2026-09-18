@@ -1,13 +1,15 @@
 use super::*;
 
+use crate::repository_layout::{terrain_dir, terrain_manifest_path};
+
 #[allow(clippy::too_many_lines)]
 pub fn analyze_water_sources() -> Result<u8> {
     let root = repo_root();
     let sap = sap_dir();
     let ortho_path = sap.join("everon-sap-ortho.png");
-    let dem_path = root.join("packages/map-assets/everon/dem/everon-dem-16bit.png"); // E2c-allow
+    let dem_path = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png"); // E2c-allow
     let manifest: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join("packages/map-assets/everon/manifest.json"), // E2c-allow
+        terrain_manifest_path(&root, "everon"), // E2c-allow
     )?)?;
     let out_json = root.join(".ai/artifacts/t090_1_2_5_2_source_spike.json");
     let prev_spike = root.join(".ai/artifacts/t090_1_2_5_1_refine_spike.json");

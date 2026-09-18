@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::repository_layout::{terrain_dir, terrain_manifest_path};
+
 pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
     if terrain != "everon" {
         eprintln!("only everon supported this slice (got {terrain})");
@@ -163,8 +165,8 @@ pub fn verify_sap_ortho(terrain: &str) -> Result<u8> {
     let catalog_path = sap.join("cell-catalog.json");
     let meta_path = sap.join("TBD_SatExport_meta.json");
     let ortho_path = sap.join("everon-sap-ortho.png");
-    let manifest_path = root.join("packages/map-assets/everon/manifest.json"); // E2c-allow
-    let z000 = root.join("packages/map-assets/everon/tiles/satellite/0/0/0.webp"); // E2c-allow
+    let manifest_path = terrain_manifest_path(&root, "everon"); // E2c-allow
+    let z000 = terrain_dir(&root, "everon").join("tiles/satellite/0/0/0.webp"); // E2c-allow
 
     const EXPECT_CELLS: u64 = 2500;
     const EXPECT_DIM: usize = 12800;
@@ -252,8 +254,7 @@ pub fn verify_sap_ortho(terrain: &str) -> Result<u8> {
         && manifest_path.exists()
     {
         let manifest: Value = serde_json::from_str(&std::fs::read_to_string(&manifest_path)?)?;
-        let dem_path = root
-            .join("packages/map-assets/everon") // E2c-allow
+        let dem_path = terrain_dir(&root, "everon") // E2c-allow
             .join(manifest["dem"]["path"].as_str().unwrap_or(""));
         if !dem_path.exists() {
             errors.push(format!(

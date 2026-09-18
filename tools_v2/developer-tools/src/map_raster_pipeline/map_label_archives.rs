@@ -41,6 +41,7 @@ use website_map_engine::world::environment::locations::towns::towns_to_archive;
 use website_map_engine::world::terrain::roads::network::parse_roads_payload;
 
 use crate::browser_testing::server::repo_root;
+use crate::repository_layout;
 
 /// Terrain-relative source paths.
 pub const LOCATIONS_JSON: &str = "locations.json";
@@ -129,7 +130,7 @@ pub fn terrain_dir(terrain: &str) -> PathBuf {
     if as_path.is_dir() {
         return as_path;
     }
-    repo_root().join("packages/map-assets").join(terrain)
+    repository_layout::terrain_dir(&repo_root(), terrain)
 }
 
 /// `map labels-rkyv --terrain <id|dir>`.

@@ -10,6 +10,7 @@ use super::{
     CHUNK_SIZE_M, ChunkRow, KeptRow, PHASE_ORDER, compact, gz9, phase_kinds, pretty_nl, terrain_row,
 };
 use crate::browser_testing::server::repo_root;
+use crate::repository_layout::terrain_dir;
 use crate::world_export_pipeline::binary_emit;
 use crate::world_export_pipeline::classify::{Classifier, Rules, load_rules, stream_raw_entities};
 use crate::world_export_pipeline::json_number_formatting::{
@@ -64,7 +65,7 @@ pub(super) fn prepare_world_objects(
     }
     let world_size_m = max_x;
 
-    let terrain_dir = repo_root().join("packages/map-assets").join(terrain);
+    let terrain_dir = terrain_dir(&repo_root(), terrain);
     let staging = terrain_dir.join("staging/export");
     let raw_path = staging.join("raw-entities.jsonl");
     let export_meta_path = staging.join("export-meta.json");

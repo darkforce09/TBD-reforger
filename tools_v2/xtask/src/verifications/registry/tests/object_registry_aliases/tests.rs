@@ -18,10 +18,18 @@ impl Fixture {
     fn new(name: &str, mod_json: Option<String>) -> Fixture {
         let root = std::env::temp_dir().join(format!("tbd-t439-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        for rel in [WB_REL, MOD_REL, FE_REL] {
-            let dst = root.join(rel);
+        let src_root = repo();
+        let copies = [
+            (
+                registry_items_catalog_path(&src_root),
+                registry_items_catalog_path(&root),
+            ),
+            (src_root.join(MOD_REL), root.join(MOD_REL)),
+            (src_root.join(FE_REL), root.join(FE_REL)),
+        ];
+        for (src, dst) in copies {
             std::fs::create_dir_all(dst.parent().unwrap()).unwrap();
-            std::fs::copy(repo().join(rel), &dst).unwrap();
+            std::fs::copy(src, &dst).unwrap();
         }
         if let Some(body) = mod_json {
             std::fs::write(root.join(MOD_REL), body).unwrap();

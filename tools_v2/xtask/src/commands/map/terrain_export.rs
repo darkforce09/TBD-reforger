@@ -19,6 +19,8 @@ use anyhow::{Result, bail};
 use verification_core::proc::Run;
 use verification_core::verdict::NotRun;
 
+use developer_tools::repository_layout::map_scratch_dir;
+
 use crate::core::repository_root::find_repo_root;
 
 /// Entry for `xtask map export-terrain …` (args after the subcommand, bash-shaped).
@@ -50,10 +52,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         return Ok(rc);
     }
 
-    let raw = root
-        .join("packages/map-assets")
-        .join(&terrain)
-        .join("staging/export/raw-entities.jsonl");
+    let raw = map_scratch_dir(root, &terrain).join("export/raw-entities.jsonl");
     if !raw.is_file() {
         // Unquoted heredoc in bash: $RAW / $TERRAIN / $PHASE expand; \$profile / \$PROFILE_DIR stay.
         eprintln!("export-terrain: staged raw export missing for '{terrain}':");

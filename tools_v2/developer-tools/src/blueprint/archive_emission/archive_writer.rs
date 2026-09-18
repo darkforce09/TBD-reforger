@@ -23,6 +23,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+
+use crate::repository_layout::terrain_dir;
 use website_map_engine::io::archives::blueprints::BuildingBlueprintArchive;
 use website_map_engine::io::archives::blueprints::BuildingLevel as WireLevel;
 use website_map_engine::io::archives::blueprints::DoorRec as WireDoor;
@@ -340,7 +342,7 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
             }
         }
     }
-    let assets = root.join("packages/map-assets").join(&terrain);
+    let assets = terrain_dir(root, &terrain);
     let prefabs = out.unwrap_or_else(|| assets.join("prefabs"));
     let started = std::time::Instant::now();
 

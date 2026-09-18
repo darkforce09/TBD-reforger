@@ -130,7 +130,7 @@ impl Paths {
     pub fn resolve() -> Result<Paths> {
         let mono_root = crate::core::repository_root::find_repo_root()?;
         Ok(Paths {
-            schema: mono_root.join("packages/tbd-schema"),
+            schema: developer_tools::repository_layout::contracts_dir(&mono_root),
             deploy_env: mono_root.join("scripts/deploy/deploy.env"),
             mono_root,
         })

@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::repository_layout;
+
 /// Spec §3.3: a coarse texel keeps the **deepest** depth of the block it covers.
 ///
 /// Conservative in the same direction as [`reduce_mask`] — a coarse level never reports shallower
@@ -402,5 +404,5 @@ pub fn terrain_dir(terrain: &str) -> PathBuf {
     if as_path.is_dir() {
         return as_path;
     }
-    repo_root().join("packages/map-assets").join(terrain)
+    repository_layout::terrain_dir(&repo_root(), terrain)
 }

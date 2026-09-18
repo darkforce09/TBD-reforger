@@ -1,7 +1,9 @@
 use super::*;
 
+use crate::repository_layout::terrain_assets_dir;
+
 pub(super) fn map_assets_root() -> PathBuf {
-    repo_root().join("packages/map-assets")
+    terrain_assets_dir(&repo_root())
 }
 
 pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {

@@ -10,6 +10,8 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 
+use developer_tools::repository_layout::contract_definitions_dir;
+
 use crate::core::repository_root::find_repo_root as repo_root;
 
 /// (schema file, output module) — the generated four. `loadout-export` is deliberately absent.
@@ -22,7 +24,7 @@ const TARGETS: [(&str, &str); 4] = [
 
 pub fn codegen() -> Result<u8> {
     let root = repo_root()?;
-    let schema_dir = root.join("packages/tbd-schema/schema");
+    let schema_dir = contract_definitions_dir(&root);
     let out_dir = root.join("apps/website/api_v2/src/missions/contract/generated");
     fs::create_dir_all(&out_dir)?;
 

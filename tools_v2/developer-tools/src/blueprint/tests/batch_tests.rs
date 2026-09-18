@@ -381,9 +381,10 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
         instances: w.instances.clone(),
         notes: w.notes.clone(),
     };
-    let schema = crate::repository_paths::find_repo_root()
-        .unwrap()
-        .join("packages/tbd-schema/schema/building-instances.schema.json");
+    let schema = crate::repository_layout::definition_path(
+        &crate::repository_paths::find_repo_root().unwrap(),
+        "building-instances.schema.json",
+    );
     validate_instances(&file, &schema).expect("schema-valid instances");
     fs::remove_dir_all(&dir).unwrap();
 }

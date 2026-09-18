@@ -22,6 +22,8 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
+
+use crate::repository_layout::terrain_dir;
 use website_map_engine::spatial::bvh::sidecar::BvhSidecar;
 use website_map_engine::spatial::los::world::coverage_1::BlockPolicy;
 use website_map_engine::spatial::los::world::coverage_1::WorldVerdict;
