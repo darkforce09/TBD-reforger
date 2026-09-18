@@ -20,7 +20,7 @@
 //!
 //! Three call sites (`telemetry::ingest_match_results`, `me::unlink`, `me::ingest_link_confirm`)
 //! had the identical `if … .await.is_err() { write_audit(Warn, …) }` block around
-//! [`crate::db::refresh_leaderboard`], differing only in the message and the audit target.
+//! [`crate::core::database::leaderboard_refresh::refresh_leaderboard`], differing only in the message and the audit target.
 //! T-336 asked for that pattern to come along "if it also has two callers by then"; it had
 //! three. [`refresh_leaderboard_best_effort`] and [`recompute_user_stats_best_effort`] are that
 //! block, once.
@@ -33,8 +33,8 @@
 
 use sqlx::PgPool;
 
-use crate::db::refresh_leaderboard;
-use crate::error::ApiError;
+use crate::core::database::leaderboard_refresh::refresh_leaderboard;
+use crate::core::error_handling::api_error::ApiError;
 use crate::models::AuditSeverity;
 use crate::services::write_audit;
 
@@ -106,7 +106,7 @@ pub async fn recompute_user_stats_best_effort(pool: &PgPool, discord_id: &str, m
     }
 }
 
-/// [`crate::db::refresh_leaderboard`], with a `Warn` audit row instead of an error.
+/// [`crate::core::database::leaderboard_refresh::refresh_leaderboard`], with a `Warn` audit row instead of an error.
 ///
 /// The target is the caller's, not the user's: a refresh failure after match ingest is about the
 /// match, and after an identity link it is about the user. Both are wanted in the audit console,

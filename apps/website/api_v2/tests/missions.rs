@@ -6,17 +6,17 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 mod common;
 
 async fn app_and_token(role: &str) -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool,
         Config::for_tests(url, "missions-secret"),
@@ -1113,7 +1113,7 @@ async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, String)>
     let url = common::require_test_database_url()?;
     let (app, maker) = app_and_token("mission_maker").await?;
     let (_, admin) = app_and_token("admin").await?;
-    let pool = db::connect(&url).await.expect("connect");
+    let pool = database::connect(&url).await.expect("connect");
     Some((app, pool, maker, admin))
 }
 

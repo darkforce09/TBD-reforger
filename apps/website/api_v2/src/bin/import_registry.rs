@@ -1,5 +1,4 @@
-//! `import-registry` — ingest T-150 registry envelopes (items + compat edges)
-//! into Postgres (T-068.9). Successor of the Go `cmd/import-registry-items`.
+//! `import-registry` — ingest registry envelopes (items + compat edges) into Postgres.
 //!
 //! ```text
 //! import-registry [--items <path>] [--compat <path>] [--modpack <uuid>] [--prune]
@@ -11,7 +10,7 @@
 //! (`.env` honored); runs migrations first so a fresh DB works out of the box.
 
 use uuid::Uuid;
-use website_api::db;
+use website_api::core::database;
 use website_api::services::registry_import::{ImportCounts, import_compat, import_items};
 
 struct Args {
@@ -65,8 +64,8 @@ async fn main() -> anyhow::Result<()> {
     let url = std::env::var("DATABASE_URL")
         .map_err(|_| anyhow::anyhow!("DATABASE_URL is not set (env or .env)"))?;
 
-    let pool = db::connect(&url).await?;
-    db::migrate(&pool).await?;
+    let pool = database::connect(&url).await?;
+    database::migrate(&pool).await?;
 
     if let Some(path) = &args.items {
         let raw = std::fs::read(path)?;

@@ -151,7 +151,7 @@
 //! silently-diverging notion of "which route is this" next to axum's own. The router already knows
 //! which service a request reached. This uses that answer instead of re-deriving it.
 //!
-//! [`Config::trusted_proxies`]: crate::config::Config::trusted_proxies
+//! [`Config::trusted_proxies`]: crate::core::configuration::Config::trusted_proxies
 
 use std::net::{IpAddr, SocketAddr};
 use std::num::NonZeroU32;
@@ -165,10 +165,10 @@ use governor::clock::DefaultClock;
 use governor::state::keyed::DefaultKeyedStateStore;
 use governor::{Quota, RateLimiter};
 
-use crate::config::{ProxyNet, parse_trusted_proxies};
+use crate::core::application_state::AppState;
+use crate::core::configuration::proxy_network::{ProxyNet, parse_trusted_proxies};
 use crate::core::middleware::durable_ratelimit::{PgRateLimiter, bucket_key};
 use crate::middleware::json_error;
-use crate::state::AppState;
 
 /// Full rooted-path prefixes that get the strict limiter (HasPrefix, not substring).
 ///
@@ -264,7 +264,7 @@ impl RateLimitState {
     /// what parsed" is the wrong answer, because the entries that failed are exactly the ones
     /// nobody has checked. Trusting nobody restores the shared-bucket behaviour, which is safe.
     ///
-    /// [`Config::load`]: crate::config::Config::load
+    /// [`Config::load`]: crate::core::configuration::Config::load
     pub fn new(app: AppState) -> Self {
         let durable_strict = Arc::new(PgRateLimiter::new(
             app.pool.clone(),
@@ -876,12 +876,12 @@ mod tests {
     fn durable_strict_policy_matches_the_in_memory_strict_policy() {
         assert_eq!(DURABLE_STRICT_RPS, 1);
         assert_eq!(DURABLE_STRICT_BURST, 10);
-        let src = include_str!("../state.rs");
+        let src = include_str!("../core/application_state.rs");
         assert!(
             src.contains(&format!(
                 "IpLimiter::new({DURABLE_STRICT_RPS}, {DURABLE_STRICT_BURST})"
             )),
-            "state.rs no longer builds rl_strict as IpLimiter::new({DURABLE_STRICT_RPS}, \
+            "application_state.rs no longer builds rl_strict as IpLimiter::new({DURABLE_STRICT_RPS}, \
              {DURABLE_STRICT_BURST}) — retune the durable tier with it"
         );
     }

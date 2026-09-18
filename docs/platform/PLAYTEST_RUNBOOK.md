@@ -103,7 +103,7 @@ cargo xtask db seed
 ```
 
 Grab the service token the game server will use — it is one value, not a list
-([`config.rs`](../../apps/website/api_v2/src/config.rs) reads `SERVICE_TOKEN`;
+([`configuration`](../../apps/website/api_v2/src/core/configuration/mod.rs) reads `SERVICE_TOKEN`;
 `cargo xtask setup server-profile` / `tools_v2/xtask/src/commands/setup/server_profile.rs` explains the
 `GAME_SERVER_TOKENS` rename that used to break this):
 
@@ -567,7 +567,7 @@ printf 'GAME_AGENT_SOCKET=/run/user/%s/tbd-reforger-agent.sock\n' "$(id -u)" >> 
 grep GAME_AGENT_SOCKET apps/website/api_v2/.env
 ```
 The path must be **absolute and free of leading/trailing whitespace**, or the API refuses at boot
-with `ConfigError::Malformed` ([`config.rs:83-90`](../../apps/website/api_v2/src/config.rs)) — which is
+with `ConfigError::Malformed` ([`configuration`](../../apps/website/api_v2/src/core/configuration/mod.rs)) — which is
 deliberate: the alternative is an ENOENT at 03:00 that reads as "the game host is down".
 
 **Step B — install the host control agent, once.**

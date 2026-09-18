@@ -45,7 +45,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::{PageParams, load_user};
 use crate::middleware::{AdminUser, AuthUser};
 use crate::models::serde_helpers::go_time;
@@ -53,7 +54,6 @@ use crate::models::{
     Event, EventMission, EventRegistration, LeaveRequest, Match, MatchPlayerStat, OrbatSlot,
     TerrainType,
 };
-use crate::state::AppState;
 
 #[derive(Debug, Serialize)]
 struct DeploymentUpcoming {

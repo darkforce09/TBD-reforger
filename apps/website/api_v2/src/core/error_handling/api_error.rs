@@ -1,5 +1,5 @@
-//! Shared handler error type. Serializes to Go's error envelope
-//! `{"error": msg}` (plus optional `"details"`), with the mapped HTTP status.
+//! Shared handler error type. Serializes to the error envelope `{"error": msg}` (plus an
+//! optional `"details"`), carrying the HTTP status the client sees.
 
 use axum::Json;
 use axum::http::StatusCode;

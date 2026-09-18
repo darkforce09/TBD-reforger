@@ -11,13 +11,13 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::missions::build_mission_doc;
 use crate::handlers::{load_mission, username};
 use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, FireMission, MissionStatus};
 use crate::services::{FireSolution, SolveError, solve_fire_mission, write_audit};
-use crate::state::AppState;
 
 /// Staging dir for injected mission.json files (game-server bridge pickup).
 const MISSION_STAGE_DIR: &str = "missions";

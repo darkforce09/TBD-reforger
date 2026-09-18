@@ -36,15 +36,15 @@ use axum::http::{Request, StatusCode, header};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
 use website_api::core::middleware::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, bucket_key};
-use website_api::db;
 use website_api::middleware::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, STRICT_PREFIXES,
 };
 use website_api::services::{RATE_LIMIT_BUCKET_TTL, start_rate_limit_prune};
-use website_api::state::AppState;
 
 mod common;
 
@@ -56,8 +56,8 @@ const GLOBAL_ROUTE: &str = "/api/v1/announcements";
 
 async fn boot() -> Option<(PgPool, String)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     Some((pool, url))
 }
 

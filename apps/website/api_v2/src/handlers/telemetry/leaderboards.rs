@@ -13,11 +13,11 @@ use sqlx::QueryBuilder;
 use tokio::sync::broadcast::error::RecvError;
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::load_user;
 use crate::middleware::AuthUser;
 use crate::models::ServerStatus;
-use crate::state::AppState;
 
 /// One ranked entry joined with the user's display info. Numeric MV columns are
 /// cast (`::int8` / `::float8`) into the wire types.

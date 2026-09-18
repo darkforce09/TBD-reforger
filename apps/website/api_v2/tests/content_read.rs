@@ -6,17 +6,17 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 mod common;
 
 async fn setup() -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     let _ = sqlx::query("DELETE FROM wiki_pages WHERE slug = 'content-test'")
         .execute(&pool)
         .await;

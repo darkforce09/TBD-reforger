@@ -18,12 +18,12 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, QueryBuilder};
 use tokio::sync::broadcast;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::PageParams;
 use crate::middleware::AdminUser;
 use crate::models::AuditLog;
 use crate::services::{AuditNotify, AuditSignal};
-use crate::state::AppState;
 
 /// Neutralise CSV formula injection for spreadsheet consumers (Excel / Sheets).
 ///

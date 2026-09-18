@@ -15,10 +15,10 @@ use sqlx::types::Json as SqlxJson;
 use uuid::Uuid;
 
 use crate::contract::validate_faction_library_doc;
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::middleware::MissionMakerUser;
 use crate::models::UserFaction;
-use crate::state::AppState;
 
 /// Validate the raw doc and project (side, name) out of it.
 fn validated_side_name(doc: &Value) -> Result<(String, String), ApiError> {

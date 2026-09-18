@@ -35,7 +35,10 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
     );
     // Something the SPA genuinely does not compile stays out.
     assert!(
-        !wasm_scope_touched(&root, ["apps/website/api_v2/src/db.rs"].into_iter()),
+        !wasm_scope_touched(
+            &root,
+            ["apps/website/api_v2/src/core/database/mod.rs"].into_iter()
+        ),
         "a backend-only change must not force the most expensive step in the gate"
     );
 }
@@ -83,7 +86,10 @@ fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
     );
     // And the negative: a backend-only change stays out, include inputs and all.
     assert!(
-        !frontend_include_input_touched(&root, ["apps/website/api_v2/src/db.rs"].into_iter()),
+        !frontend_include_input_touched(
+            &root,
+            ["apps/website/api_v2/src/core/database/mod.rs"].into_iter()
+        ),
         "a backend-only change must not reach the frontend suite"
     );
     // A path nobody includes is not in scope either — this is a membership test, not a

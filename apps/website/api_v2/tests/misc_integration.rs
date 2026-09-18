@@ -10,10 +10,10 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 mod common;
 
@@ -21,8 +21,8 @@ const ORIGIN: &str = "http://localhost:5173";
 
 async fn boot() -> Option<Router> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     Some(http_router::router(AppState::new(
         pool,
         Config::for_tests(url, "misc-secret"),
@@ -748,7 +748,7 @@ async fn t571_dev_login_first_create_coalesces_arma_id() {
     };
     let _guard = DEV_ROLE_ROWS.lock().await;
     let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
-    let pool = db::connect(&url).await.expect("connect");
+    let pool = database::connect(&url).await.expect("connect");
 
     // `leader` is this binary's spare role — no sibling test asserts on its row.
     const ROLE: &str = "leader";
@@ -829,7 +829,7 @@ async fn t572_dev_login_gives_every_role_its_own_identity_at_runtime() {
     };
     let _guard = DEV_ROLE_ROWS.lock().await;
     let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
-    let pool = db::connect(&url).await.expect("connect");
+    let pool = database::connect(&url).await.expect("connect");
 
     const EXPECT: [(&str, &str, &str); 4] = [
         ("admin", "000000000000000001", "dev-arma-76561190000000001"),
@@ -889,7 +889,7 @@ async fn t387_dev_login_roles_do_not_rewrite_each_other() {
     };
     let _guard = DEV_ROLE_ROWS.lock().await;
     let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
-    let pool = db::connect(&url).await.expect("connect");
+    let pool = database::connect(&url).await.expect("connect");
 
     let (_e_tok, e_id, e_role) = dev_login_identity(&app, "enlisted").await;
     assert_eq!(e_role, "enlisted");
@@ -1012,8 +1012,8 @@ async fn cors_reflects_allowed_origin_only() {
 /// Every assertion below likewise filters `GET /servers` down to its own rows.
 async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     let like = format!("T235 {tag}%");
     sqlx::query(
         "DELETE FROM server_statuses WHERE server_id IN (SELECT id FROM servers WHERE name LIKE $1)",

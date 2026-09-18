@@ -8,7 +8,7 @@
 //! **T-508 / T-331 alignment:** migration `0015_matches_empty_text_missions_timestamps.sql` made
 //! `matches.aar_replay_url` `DEFAULT '' NOT NULL`. Canonical empty is `''` (telemetry COALESCE,
 //! seed writes). A successful NULL plant is illegal; scrubbed rows must land as `''`, not NULL.
-//! sqlx embeds 0010 with a SHA-384 checksum — editing the applied file breaks `db::migrate` on
+//! sqlx embeds 0010 with a SHA-384 checksum — editing the applied file breaks `database::migrate` on
 //! every DB that already ran version 10 — so this test re-executes the real file via
 //! `include_str!` after substituting the historical `SET … = NULL` scrub for the T-331-canonical
 //! `SET … = ''` (see [`migration_for_post_0015_rerun`]).
@@ -35,7 +35,7 @@
 
 use sqlx::{AssertSqlSafe, PgPool, Row};
 use uuid::Uuid;
-use website_api::db;
+use website_api::core::database;
 use website_api::services::text::is_http_url;
 
 mod common;
@@ -101,8 +101,8 @@ async fn boot() -> PgPool {
             url
         }
     };
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     pool
 }
 

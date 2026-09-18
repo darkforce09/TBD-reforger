@@ -11,10 +11,10 @@ use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 mod common;
 
@@ -27,8 +27,8 @@ const EV: &str = "e-t233-combat";
 
 async fn setup() -> Option<(Router, String, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
         Config::for_tests(url, "t233-secret"),
@@ -85,7 +85,9 @@ async fn reset(pool: &PgPool) {
         .execute(pool)
         .await
         .expect("clean matches");
-    db::refresh_leaderboard(pool).await.expect("refresh MV");
+    database::leaderboard_refresh::refresh_leaderboard(pool)
+        .await
+        .expect("refresh MV");
 }
 
 /// Seed one match plus the caller's stat line in it.
@@ -211,7 +213,9 @@ async fn derived_combat_figures_match_hand_computation() {
     seed_match(&pool, "a", 17, 4, true, Some(true)).await;
     seed_match(&pool, "b", 8, 6, true, Some(false)).await;
     seed_match(&pool, "c", 2, 10, false, None).await;
-    db::refresh_leaderboard(&pool).await.expect("refresh MV");
+    database::leaderboard_refresh::refresh_leaderboard(&pool)
+        .await
+        .expect("refresh MV");
 
     let body = deployments(&app, &tok).await;
     assert_eq!(body["kills"], 27, "17 + 8 + 2");
@@ -245,7 +249,9 @@ async fn derived_combat_figures_match_hand_computation() {
     // both read the same expression.
     reset(&pool).await;
     seed_match(&pool, "flawless", 7, 0, false, None).await;
-    db::refresh_leaderboard(&pool).await.expect("refresh MV");
+    database::leaderboard_refresh::refresh_leaderboard(&pool)
+        .await
+        .expect("refresh MV");
     let body = deployments(&app, &tok).await;
     assert_eq!(body["deaths"], 0);
     assert!(
@@ -263,7 +269,9 @@ async fn derived_combat_figures_match_hand_computation() {
     // exactly the fabrication this ticket removed, inverted.
     reset(&pool).await;
     seed_match(&pool, "grunt", 3, 3, false, None).await;
-    db::refresh_leaderboard(&pool).await.expect("refresh MV");
+    database::leaderboard_refresh::refresh_leaderboard(&pool)
+        .await
+        .expect("refresh MV");
     let body = deployments(&app, &tok).await;
     assert!(
         (f(&body, "kd_ratio") - 1.0).abs() < 1e-9,
@@ -284,7 +292,9 @@ async fn derived_combat_figures_match_hand_computation() {
     // everything to zero: the two states have to stay distinguishable on the wire.
     reset(&pool).await;
     seed_match(&pool, "quiet", 0, 0, false, None).await;
-    db::refresh_leaderboard(&pool).await.expect("refresh MV");
+    database::leaderboard_refresh::refresh_leaderboard(&pool)
+        .await
+        .expect("refresh MV");
     let body = deployments(&app, &tok).await;
     assert!(
         !body["kd_ratio"].is_null(),
@@ -311,8 +321,8 @@ async fn no_column_records_what_a_player_actually_used() {
         return;
     };
 
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
 
     // Guard the guard: a typo in the table name would make the query below vacuously pass.
     let columns: i64 = sqlx::query_scalar(

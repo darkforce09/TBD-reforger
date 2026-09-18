@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::{PageParams, load_mission, username};
 use crate::middleware::AdminUser;
 use crate::models::serde_helpers::go_time;
 use crate::models::{AuditSeverity, Mission, MissionStatus, TerrainType};
 use crate::services::write_audit;
-use crate::state::AppState;
 
 /// The `list_approvals` projection.
 ///

@@ -15,7 +15,8 @@ use sqlx::{AssertSqlSafe, PgPool, Postgres, QueryBuilder};
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::{PageParams, is_unique_violation};
 use crate::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
 use crate::models::serde_helpers::go_time;
@@ -27,7 +28,6 @@ use crate::services::text::is_http_url;
 use crate::services::{
     OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template, write_audit,
 };
-use crate::state::AppState;
 use website_map_engine::data::scenario::orbat::validate_faction_join_key;
 use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 

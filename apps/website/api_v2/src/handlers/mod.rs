@@ -56,7 +56,7 @@ pub fn is_unique_violation(e: &sqlx::Error) -> bool {
 ///
 /// **T-576 — this sibling did not exist until now, and that absence had a cost.** T-262's `0018`
 /// landed the schema's first 25 foreign keys; with no 23503 arm anywhere in the crate every one
-/// of them reached the client through [`crate::error`]'s blanket `From<sqlx::Error>` as
+/// of them reached the client through [`crate::core::error_handling`]'s blanket `From<sqlx::Error>` as
 /// `500 {"error":"internal error"}`. Reproduced over HTTP before the fix:
 /// `POST /api/v1/ingest/server-status` with an unregistered `server_id` → **500**, the same
 /// heartbeat for a registered one → **200**, log line

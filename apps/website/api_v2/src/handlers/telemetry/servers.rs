@@ -34,13 +34,13 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::modpacks::{ModpackDto, load_modpack};
 use crate::handlers::username;
 use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, Modpack, ModpackMod, Server, ServerStatus, TerrainType};
 use crate::services::write_audit;
-use crate::state::AppState;
 
 // Queries cast `inet`→text (`ip::text`) and `numeric`→f64 (`server_fps::float8`).
 

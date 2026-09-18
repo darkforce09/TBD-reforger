@@ -9,7 +9,7 @@ use serde_json::json;
 use sqlx::PgPool;
 
 use super::metrics_registry::Registry;
-use crate::config::Config;
+use crate::core::configuration::Config;
 
 /// Budget for the health/scrape database probe. Long enough for a loaded server, short
 /// enough that a wedged pool reports `down` instead of holding the probe open (the pool's
@@ -43,7 +43,8 @@ pub(crate) fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMa
         .get("x-service-token")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    !cfg.service_token.is_empty() && crate::auth::constant_time_equal(got, &cfg.service_token)
+    !cfg.service_token.is_empty()
+        && crate::core::authentication_primitives::constant_time_equal(got, &cfg.service_token)
 }
 
 /// Liveness/readiness probe.

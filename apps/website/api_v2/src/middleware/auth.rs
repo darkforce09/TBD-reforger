@@ -12,8 +12,8 @@ use axum::http::StatusCode;
 use axum::http::header;
 use axum::http::request::Parts;
 
-use crate::auth::{Manager, constant_time_equal};
-use crate::config::Config;
+use crate::core::authentication_primitives::{Manager, constant_time_equal};
+use crate::core::configuration::Config;
 use crate::middleware::{json_error, role_rank};
 
 type Rejection = (StatusCode, Json<serde_json::Value>);

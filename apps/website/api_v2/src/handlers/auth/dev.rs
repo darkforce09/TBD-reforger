@@ -6,9 +6,9 @@ use axum::extract::{Query, State};
 use axum::response::Response;
 use serde::Deserialize;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::auth::{issue_session, session_redirect};
-use crate::state::AppState;
 
 /// Stable Discord snowflake for the local **admin** / default-role operator.
 ///

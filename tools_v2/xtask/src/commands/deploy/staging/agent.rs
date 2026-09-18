@@ -210,7 +210,7 @@ pub const API_SLICE_SPEC: &str = "\
 apps/website/api_v2/** is NOT this slice's to touch. The host half above is complete and
 proven; the API half is mechanical from here.
 
-1. CONFIG — one new var in apps/website/api_v2/src/config.rs:
+1. CONFIG — one new var in apps/website/api_v2/src/core/configuration/mod.rs:
       game_agent_socket: env::var(\"GAME_AGENT_SOCKET\").unwrap_or_default()
    Empty = no transport, and `send_rcon` keeps answering 503. Fail closed. Populate it in
    the API's systemd unit (docs/website/HOME_SERVER.md:282) as %t/tbd-reforger-agent.sock.

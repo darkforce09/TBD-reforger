@@ -13,17 +13,17 @@ use axum::http::{Method, Request, StatusCode, header};
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 mod common;
 
 async fn boot(tag: &str) -> Option<(Router, PgPool, String, String)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
 
     let like = format!("T271 {tag}%");
     // Nested mods first — no FK, but keep the table tidy across parallel IT binaries.

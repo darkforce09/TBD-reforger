@@ -9,7 +9,7 @@
 
 mod common;
 
-use website_api::db;
+use website_api::core::database;
 
 #[tokio::test]
 async fn migrate_creates_full_schema() {
@@ -18,9 +18,9 @@ async fn migrate_creates_full_schema() {
         return;
     };
 
-    let pool = db::connect(&url).await.expect("connect");
+    let pool = database::connect(&url).await.expect("connect");
     // Provision already migrated; a second apply must be a no-op and leave counts intact.
-    db::migrate(&pool).await.expect("migrate");
+    database::migrate(&pool).await.expect("migrate");
 
     // 30 base tables (29 Go-parity + registry_compat, T-068.9) + the sqlx
     // `_sqlx_migrations` bookkeeping table.
@@ -55,5 +55,5 @@ async fn migrate_creates_full_schema() {
     assert_eq!(matviews, 1, "expected leaderboard_totals matview");
 
     // Idempotent: a second run is a no-op (already-applied migration).
-    db::migrate(&pool).await.expect("migrate idempotent");
+    database::migrate(&pool).await.expect("migrate idempotent");
 }

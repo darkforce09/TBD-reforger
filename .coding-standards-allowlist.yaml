@@ -46,17 +46,7 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: apps/website/api_v2/src/config.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
   path: apps/website/api_v2/src/contract/validate.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/src/db.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 

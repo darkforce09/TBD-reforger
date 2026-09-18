@@ -8,14 +8,14 @@ use chrono::{Duration, Utc};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use crate::auth;
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::authentication_primitives;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::auth::arma_id_is_linked;
 use crate::handlers::{is_unique_violation, load_user};
 use crate::middleware::{AuthUser, ServiceAuth};
 use crate::models::AuditSeverity;
 use crate::services;
-use crate::state::AppState;
 
 /// 6-digit Arma link-code lifetime (10 minutes).
 const LINK_CODE_TTL_MIN: i64 = 10;
@@ -121,7 +121,7 @@ pub async fn create_link_code(
 
     // Generate a unique code (retry on the rare PK collision).
     for _ in 0..5 {
-        let code = auth::numeric_code(6);
+        let code = authentication_primitives::numeric_code(6);
         let expires = Utc::now() + Duration::minutes(LINK_CODE_TTL_MIN);
         let res = sqlx::query(
             "INSERT INTO identity_link_codes (code, discord_id, expires_at, created_at) \

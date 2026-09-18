@@ -29,10 +29,10 @@ use axum::routing::post;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 const SUITE: &str = "cms_announcement_body";
 const AUTHOR: &str = "Damage threshold: a < b & c > d";
@@ -43,8 +43,8 @@ async fn boot() -> Option<(Router, PgPool)> {
 
 async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     let mut cfg = Config::for_tests(url, "t239-secret");
     cfg.discord_webhook_url = webhook_url;
     let app = http_router::router(AppState::new(pool.clone(), cfg));

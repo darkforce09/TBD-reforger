@@ -14,12 +14,12 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 
-use crate::auth;
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::authentication_primitives;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::load_user;
 use crate::models::RefreshToken;
 use crate::models::serde_helpers::go_time;
-use crate::state::AppState;
 
 /// Opaque refresh token lifetime (30 days).
 const REFRESH_TTL_DAYS: i64 = 30;
@@ -62,8 +62,8 @@ pub async fn issue_session(
 
 /// Create + store a new opaque refresh token (hashed); return the raw value.
 pub async fn issue_refresh(pool: &PgPool, discord_id: &str) -> Result<String, ApiError> {
-    let raw = auth::random_token(32);
-    let hash = auth::hash_token(&raw);
+    let raw = authentication_primitives::random_token(32);
+    let hash = authentication_primitives::hash_token(&raw);
     let expires_at = Utc::now() + Duration::days(REFRESH_TTL_DAYS);
     sqlx::query(
         "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) \
@@ -132,7 +132,7 @@ pub async fn refresh(
     if req.refresh_token.is_empty() {
         return Err(ApiError::bad_request("refresh_token required"));
     }
-    let hash = auth::hash_token(&req.refresh_token);
+    let hash = authentication_primitives::hash_token(&req.refresh_token);
 
     let rt: Option<RefreshToken> = sqlx::query_as(
         "SELECT id, discord_id, token_hash, expires_at, revoked_at, \
@@ -204,7 +204,7 @@ pub async fn logout(
     if req.refresh_token.is_empty() {
         return Err(ApiError::bad_request("refresh_token required"));
     }
-    let hash = auth::hash_token(&req.refresh_token);
+    let hash = authentication_primitives::hash_token(&req.refresh_token);
     let _: Result<_, _> = sqlx::query(
         "UPDATE refresh_tokens SET revoked_at = now() WHERE token_hash = $1 AND revoked_at IS NULL",
     )

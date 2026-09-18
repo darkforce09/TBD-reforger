@@ -1,19 +1,13 @@
-//! TBD Reforger backend — Rust port of the Go API (T-145).
+//! TBD Reforger backend: the Axum REST API and SSE realtime hub behind the web platform.
 //!
-//! Modules are populated phase-by-phase per the approved plan
-//! (`~/.claude/plans/okay-so-here-s-the-mighty-babbage.md`). Each module mirrors
-//! the corresponding Go package under `internal/`, preserving the wire contract
-//! verified in the ground-truth census.
+//! `core` holds the cross-cutting foundations (configuration, database, state, errors, auth
+//! primitives, router, middleware, observability); `background_workers` holds the interval
+//! tasks the binary spawns at boot; the remaining modules are the feature surfaces.
 
-pub mod auth;
-pub mod config;
+pub mod background_workers;
 pub mod contract;
 pub mod core;
-pub mod db;
-pub mod error;
 pub mod handlers;
 pub mod middleware;
 pub mod models;
-pub mod realtime;
 pub mod services;
-pub mod state;

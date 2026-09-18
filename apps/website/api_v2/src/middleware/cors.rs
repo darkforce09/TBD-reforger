@@ -7,7 +7,7 @@ use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::middleware::Next;
 use axum::response::Response;
 
-use crate::state::AppState;
+use crate::core::application_state::AppState;
 
 const ALLOW_METHODS: &str = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
 const ALLOW_HEADERS: &str = "Authorization, Content-Type, X-Service-Token, X-Request-ID";

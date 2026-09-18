@@ -5,11 +5,11 @@ use axum::response::Json;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::PageParams;
 use crate::middleware::AuthUser;
 use crate::models::Announcement;
-use crate::state::AppState;
 
 /// `GET /api/v1/announcements` — published feed, pinned first then newest.
 ///

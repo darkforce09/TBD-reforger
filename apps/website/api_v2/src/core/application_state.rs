@@ -1,8 +1,8 @@
-//! Shared application state injected into handlers + middleware.
+//! Shared application state injected into handlers and middleware.
 //!
-//! `FromRef` impls let axum extractors pull sub-state (the pool, config, JWT
-//! manager) without threading the whole struct. Grows with each phase (the Discord
-//! service, webhook, and SSE hub land with the auth/realtime work).
+//! `FromRef` impls let axum extractors pull one sub-state — the pool, the config, the JWT
+//! manager, the SSE hub, the Discord client, the webhook client — without a handler having to
+//! take (and therefore depend on) the whole struct.
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -10,10 +10,10 @@ use std::sync::Arc;
 use axum::extract::FromRef;
 use sqlx::PgPool;
 
-use crate::auth;
-use crate::config::Config;
+use crate::core::authentication_primitives::Manager;
+use crate::core::configuration::Config;
+use crate::core::realtime_hub::Hub;
 use crate::middleware::IpLimiter;
-use crate::realtime::Hub;
 use crate::services::{DiscordService, WebhookService};
 
 /// Everything shared across the HTTP layer. Cheap to clone (all `Arc`/pool handles).
@@ -21,7 +21,7 @@ use crate::services::{DiscordService, WebhookService};
 pub struct AppState {
     pub pool: PgPool,
     pub cfg: Arc<Config>,
-    pub jwt: Arc<auth::Manager>,
+    pub jwt: Arc<Manager>,
     /// Normalized (trailing-slash-trimmed) CORS allow-list.
     pub cors_origins: Arc<HashSet<String>>,
     pub rl_global: Arc<IpLimiter>,
@@ -35,10 +35,10 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// Build state from an open pool + loaded config. Rate limiters mirror
-    /// `cmd/api/main.go`: global 20 req/s burst 40, strict 1 req/s burst 10.
+    /// Build state from an open pool + loaded config. Rate limiters are sized global
+    /// 20 req/s burst 40, strict 1 req/s burst 10.
     pub fn new(pool: PgPool, cfg: Config) -> Self {
-        let jwt = auth::Manager::new(&cfg.jwt_secret, cfg.jwt_access_ttl_min);
+        let jwt = Manager::new(&cfg.jwt_secret, cfg.jwt_access_ttl_min);
         let discord = DiscordService::new(
             cfg.discord_client_id.clone(),
             cfg.discord_client_secret.clone(),
@@ -77,8 +77,26 @@ impl FromRef<AppState> for Arc<Config> {
     }
 }
 
-impl FromRef<AppState> for Arc<auth::Manager> {
+impl FromRef<AppState> for Arc<Manager> {
     fn from_ref(s: &AppState) -> Self {
         s.jwt.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<Hub> {
+    fn from_ref(s: &AppState) -> Self {
+        s.hub.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<DiscordService> {
+    fn from_ref(s: &AppState) -> Self {
+        s.discord.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<WebhookService> {
+    fn from_ref(s: &AppState) -> Self {
+        s.webhook.clone()
     }
 }

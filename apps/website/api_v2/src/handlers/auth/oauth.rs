@@ -19,8 +19,8 @@ use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::Response;
 use serde::Deserialize;
 
-use crate::auth;
-use crate::config::Config;
+use crate::core::authentication_primitives;
+use crate::core::configuration::Config;
 use crate::handlers::auth::{
     arma_id_is_linked, issue_session, redirect_auth_error, session_redirect,
 };
@@ -30,8 +30,8 @@ use crate::services;
 use crate::services::discord::GuildMember;
 // T-405 — `users.avatar_url` is public tier; guarded at this write boundary like every other URL
 // column (T-391's `is_http_url`).
+use crate::core::application_state::AppState;
 use crate::services::text::is_http_url;
-use crate::state::AppState;
 
 /// Query params on the OAuth callback.
 #[derive(Debug, Deserialize)]
@@ -105,7 +105,7 @@ pub async fn discord_login(State(state): State<AppState>) -> Response {
     if let Some(reject) = reject_login_on_host_mismatch(&state.cfg) {
         return reject;
     }
-    let st = auth::random_token(16);
+    let st = authentication_primitives::random_token(16);
     match state.discord.authorize_url(&st) {
         Ok(url) => {
             let secure = if state.cfg.is_development() {
@@ -228,7 +228,9 @@ fn callback_csrf_reject(
         ));
     }
     let cookie_state = read_cookie(headers, "oauth_state").unwrap_or_default();
-    if cookie_state.is_empty() || !auth::constant_time_equal(&q.state, &cookie_state) {
+    if cookie_state.is_empty()
+        || !authentication_primitives::constant_time_equal(&q.state, &cookie_state)
+    {
         // T-303 — `invalid_state` has two very different causes and reads as only one of
         // them. A MISSING cookie with mismatched config hosts is the config fault; a
         // PRESENT-but-different cookie is the genuine tamper/expiry shape. Say which was

@@ -19,10 +19,10 @@ use serde_json::json;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::middleware::MissionMakerUser;
 use crate::models::{Modpack, RegistryCompatEdge, RegistryItem};
-use crate::state::AppState;
 
 /// Catalog / compat page size when the client asks for `limit` (T-427). Higher than the
 /// shared `PageParams` max of 100 so the editor can assemble ~1.8k items in a few shots

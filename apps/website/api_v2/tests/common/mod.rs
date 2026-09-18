@@ -49,7 +49,7 @@ use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use tower::ServiceExt;
 use url::Url;
 use uuid::Uuid;
-use website_api::state::AppState;
+use website_api::core::application_state::AppState;
 
 /// Process-local counter for [`unique_arma`]. Starts at 1 so a mint never looks like a bare prefix.
 static ARMA_SEQ: AtomicU64 = AtomicU64::new(1);
@@ -330,10 +330,10 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
         .await
         .unwrap_or_else(|e| panic!("T-534: close maintenance connection: {e}"));
 
-    let pool = website_api::db::connect(derived_url)
+    let pool = website_api::core::database::connect(derived_url)
         .await
         .unwrap_or_else(|e| panic!("T-534: connect to `{derived_url}`: {e}"));
-    website_api::db::migrate(&pool)
+    website_api::core::database::migrate(&pool)
         .await
         .unwrap_or_else(|e| panic!("T-534: migrate `{derived_name}`: {e}"));
 

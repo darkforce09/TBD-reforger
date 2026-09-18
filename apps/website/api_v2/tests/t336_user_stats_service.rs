@@ -22,7 +22,7 @@
 
 use sqlx::PgPool;
 use uuid::Uuid;
-use website_api::db;
+use website_api::core::database;
 // The T-336 reachability proof: `handlers::telemetry::recompute_user_stats` was `pub(super)`, so
 // this line is the thing that could not be written before the move.
 use website_api::services::{recompute_user_stats, recompute_user_stats_best_effort};
@@ -42,8 +42,8 @@ struct Fixture {
 impl Fixture {
     async fn boot(player: &'static str, tag: &'static str) -> Option<(PgPool, Self)> {
         let url = common::require_test_database_url()?;
-        let pool = db::connect(&url).await.expect("connect");
-        db::migrate(&pool).await.expect("migrate");
+        let pool = database::connect(&url).await.expect("connect");
+        database::migrate(&pool).await.expect("migrate");
         let f = Self { player, tag };
         common::seed_user(
             &pool,

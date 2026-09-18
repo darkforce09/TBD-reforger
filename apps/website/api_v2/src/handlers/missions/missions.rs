@@ -21,7 +21,8 @@ use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalo
 
 use crate::contract::validate::validate_mission_editor_payload_with_catalog;
 use crate::contract::validate_mission_document;
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::{is_unique_violation, load_mission, username};
 use crate::middleware::{AdminUser, AuthUser, MissionMakerUser, ServiceAuth};
 use crate::models::{
@@ -34,7 +35,6 @@ use crate::services::{
     CompileFinding, ModMissionDocument, compile_diagnostics_rules_header,
     flatten_to_mod_document_with_catalog, mission_terrain_key, write_audit,
 };
-use crate::state::AppState;
 
 /// `missions.thumbnail_url`, validated at the write boundary. **T-413**, adopting T-405 /
 /// T-391's `is_http_url`.

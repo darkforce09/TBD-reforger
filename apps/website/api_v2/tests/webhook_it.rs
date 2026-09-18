@@ -39,12 +39,12 @@ use chrono::Utc;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 use uuid::Uuid;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
 use website_api::models::{Announcement, AnnouncementStatus, AnnouncementTag};
 use website_api::services::WebhookService;
-use website_api::state::AppState;
 
 mod common;
 
@@ -260,8 +260,8 @@ async fn t546_cms_publish_sanitises_the_title_it_pushes_to_discord() {
         eprintln!("skip: test database URL unset");
         return;
     };
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
 
     let (hook_url, seen) = spawn_discord().await;
     let mut cfg = Config::for_tests(url, "webhook-it-secret");

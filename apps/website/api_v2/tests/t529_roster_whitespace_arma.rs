@@ -13,10 +13,10 @@ use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
-use website_api::db;
-use website_api::state::AppState;
 
 mod common;
 
@@ -50,8 +50,8 @@ const EDITOR_PAYLOAD: &str = r#"{
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
     let cfg = Config::for_tests(url, "t529-secret");
     let state = AppState::new(pool.clone(), cfg);
     Some((http_router::router(state.clone()), state, pool))

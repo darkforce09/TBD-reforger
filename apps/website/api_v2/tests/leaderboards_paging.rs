@@ -27,11 +27,11 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Json};
 use serde_json::{Value, json};
 use sqlx::PgPool;
-use website_api::config::Config;
-use website_api::db;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::handlers::telemetry::leaderboards::{LeaderboardQuery, get_leaderboards};
 use website_api::middleware::AuthUser;
-use website_api::state::AppState;
 
 /// Every category `order_clause` whitelists. Keep in step with its `match` — and with the
 /// `CATEGORIES` pin beside it in `leaderboards.rs`, which checks every arm's shape while this
@@ -77,7 +77,7 @@ async fn provision_golden_database() -> (String, PgPool) {
              to rust_it; by hand: postgres://tbd:tbd@localhost:5434/<name>_it?sslmode=disable"
         )
     });
-    let pool = db::connect(&url)
+    let pool = database::connect(&url)
         .await
         .unwrap_or_else(|e| panic!("connect to `{url}`: {e}"));
     sqlx::raw_sql(CONTENT_GOLDEN)

@@ -16,12 +16,12 @@ use sqlx::PgPool;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::services::{ServeDir, ServeFile};
 
-use crate::config::Config;
+use crate::core::application_state::AppState;
+use crate::core::configuration::Config;
 use crate::core::observability::health_probe::{healthz, service_token_matches};
 use crate::core::observability::metrics_exposition::metrics_scrape;
 use crate::core::observability::metrics_registry::Registry;
 use crate::core::observability::request_observer::observe;
-use crate::state::AppState;
 use crate::{handlers, middleware};
 
 /// The `/api/v1` route tree. Auth tiers are enforced per-handler by the extractor

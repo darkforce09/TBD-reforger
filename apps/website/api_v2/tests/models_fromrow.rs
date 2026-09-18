@@ -16,7 +16,7 @@
 mod common;
 
 use uuid::Uuid;
-use website_api::db;
+use website_api::core::database;
 use website_api::models::{MissionVersion, User, UserRole};
 use website_api::services::registry_import::import_items;
 
@@ -26,8 +26,8 @@ async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
 
     let did = format!("frt-{}", Uuid::new_v4());
 
@@ -115,8 +115,8 @@ async fn sparse_reimport_preserves_option_columns() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = db::connect(&url).await.expect("connect");
-    db::migrate(&pool).await.expect("migrate");
+    let pool = database::connect(&url).await.expect("connect");
+    database::migrate(&pool).await.expect("migrate");
 
     const MP: &str = "00000000-0000-4000-a000-000000003377";
     const RN: &str = "{DEADBEEF00003761}Prefabs/Clothing/T376_ClassR_Vest.et";

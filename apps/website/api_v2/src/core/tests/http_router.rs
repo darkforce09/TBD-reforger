@@ -12,9 +12,9 @@ use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt as _;
 
 use super::router;
-use crate::config::Config;
+use crate::core::application_state::AppState;
+use crate::core::configuration::Config;
 use crate::core::observability::metrics_registry::{LATENCY_BUCKETS_S, UNMATCHED_ROUTE};
-use crate::state::AppState;
 
 // ───────────────────────────── harness ─────────────────────────────
 

@@ -15,12 +15,12 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::application_state::AppState;
+use crate::core::error_handling::api_error::ApiError;
 use crate::handlers::username;
 use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, Modpack, ModpackMod};
 use crate::services::write_audit;
-use crate::state::AppState;
 
 /// Columns every modpack SELECT projects — keeps COALESCE null-tolerance identical
 /// across list / current / get-by-id / write RETURNING paths.

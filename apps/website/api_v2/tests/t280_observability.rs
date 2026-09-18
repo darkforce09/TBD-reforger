@@ -31,14 +31,14 @@ use axum::http::{Request, StatusCode};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
-use website_api::config::Config;
+use website_api::core::application_state::AppState;
+use website_api::core::configuration::Config;
+use website_api::core::database;
 use website_api::core::http_router;
 use website_api::core::middleware::durable_ratelimit::{
     PgRateLimiter, RATE_LIMIT_BUCKETS_DDL, bucket_key,
 };
-use website_api::db;
 use website_api::middleware::IpLimiter;
-use website_api::state::AppState;
 
 mod common;
 
@@ -134,7 +134,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
         return;
     };
     let pool = pool_for(&url).await;
-    db::migrate(&pool).await.expect("migrate");
+    database::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
     let (st, body) = call(&app, "/healthz", true).await;
@@ -206,7 +206,7 @@ async fn healthz_public_shape_is_status_only_against_a_live_database() {
         return;
     };
     let pool = pool_for(&url).await;
-    db::migrate(&pool).await.expect("migrate");
+    database::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
     let (st, body) = call(&app, "/healthz", false).await;

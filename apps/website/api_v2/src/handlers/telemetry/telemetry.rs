@@ -9,16 +9,16 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::error::ApiError;
+use crate::core::error_handling::api_error::ApiError;
+use crate::core::realtime_hub::server_status_topic::publish_server_status;
 use crate::handlers::{is_foreign_key_violation, violated_constraint};
 use crate::middleware::ServiceAuth;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
-use crate::realtime::publish_server_status;
 use crate::services::text::is_http_url;
 // T-336 — `recompute_user_stats` moved to `services::user_stats`; this file is a caller now,
 // not its owner. `handlers::me` calls the same one, which is the point.
+use crate::core::application_state::AppState;
 use crate::services::{recompute_user_stats, refresh_leaderboard_best_effort, write_audit};
-use crate::state::AppState;
 
 const LOW_FPS_THRESHOLD: f64 = 20.0;
 

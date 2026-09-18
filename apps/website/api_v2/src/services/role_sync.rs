@@ -264,8 +264,8 @@ mod tests {
         let calls_c = calls.clone();
 
         // Lazy pool — never connects; the stub never touches SQL.
-        let pool =
-            crate::db::connect_lazy("postgres://t428-scheduler-test/unused").expect("lazy pool");
+        let pool = crate::core::database::connect_lazy("postgres://t428-scheduler-test/unused")
+            .expect("lazy pool");
 
         let handle = start_role_resync_with(pool, Duration::from_millis(40), move |_p| {
             let calls = calls_c.clone();

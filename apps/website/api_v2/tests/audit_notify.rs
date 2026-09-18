@@ -22,7 +22,7 @@ use sqlx::postgres::PgPoolOptions;
 use tokio::sync::broadcast;
 use tokio::time::timeout;
 use uuid::Uuid;
-use website_api::db;
+use website_api::core::database;
 use website_api::handlers::audit::audit_row_stream;
 use website_api::models::{AuditLog, AuditSeverity};
 use website_api::services::{AuditNotify, AuditSignal, write_audit};
@@ -41,7 +41,7 @@ struct AuditRow {
 
 async fn boot() -> Option<PgPool> {
     let url = common::require_test_database_url()?;
-    Some(db::connect(&url).await.expect("connect"))
+    Some(database::connect(&url).await.expect("connect"))
 }
 
 /// A fresh, snowflake-shaped discord id so parallel tests never share a user row.
@@ -482,7 +482,7 @@ async fn listener_down_falls_back_to_polling_and_recovers() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = db::connect(&url).await.expect("connect");
+    let pool = database::connect(&url).await.expect("connect");
     let tight = PgPoolOptions::new()
         .max_connections(1)
         .acquire_timeout(Duration::from_secs(2))
