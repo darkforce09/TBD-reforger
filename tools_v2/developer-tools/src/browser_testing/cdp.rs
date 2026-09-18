@@ -338,26 +338,46 @@ impl Page {
         Ok(())
     }
 
+    /// Fulfill an intercepted request with a body handed over byte for byte.
+    ///
+    /// The byte path matters for `text/event-stream`: a Server-Sent Events frame is delimited by a
+    /// literal `\n\n`, and routing that body through `serde_json` would re-escape the delimiter into
+    /// the two-character sequence `\\n\\n`, so the subscriber's frame splitter never sees a boundary
+    /// and no frame ever decodes. Anything that is not JSON reaches the page through here.
+    pub async fn fulfill_raw(
+        &self,
+        request_id: &str,
+        status: u16,
+        content_type: &str,
+        body_bytes: &[u8],
+    ) -> Result<()> {
+        use base64::Engine as _;
+        let body = base64::engine::general_purpose::STANDARD.encode(body_bytes);
+        self.send(
+            "Fetch.fulfillRequest",
+            json!({
+                "requestId": request_id, "responseCode": status,
+                "responseHeaders": [{ "name": "content-type", "value": content_type }],
+                "body": body,
+            }),
+        )
+        .await?;
+        Ok(())
+    }
+
     /// Fulfill an intercepted request with a JSON body (the harness's fixture reply).
+    ///
+    /// Serialization and the `application/json` content type are the only things this adds over
+    /// [`Self::fulfill_raw`], so every existing fixture reply keeps the bytes it always had.
     pub async fn fulfill_json(
         &self,
         request_id: &str,
         status: u16,
         body_json: &Value,
     ) -> Result<()> {
-        use base64::Engine as _;
-        let body =
-            base64::engine::general_purpose::STANDARD.encode(serde_json::to_string(body_json)?);
-        self.send(
-            "Fetch.fulfillRequest",
-            json!({
-                "requestId": request_id, "responseCode": status,
-                "responseHeaders": [{ "name": "content-type", "value": "application/json" }],
-                "body": body,
-            }),
-        )
-        .await?;
-        Ok(())
+        let body = serde_json::to_string(body_json)?;
+        self.fulfill_raw(request_id, status, "application/json", body.as_bytes())
+            .await
     }
 
     pub async fn continue_request(&self, request_id: &str) -> Result<()> {

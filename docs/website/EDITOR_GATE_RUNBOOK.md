@@ -40,11 +40,11 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
 
 ## V-suite capture readiness and reference updates
 
-V-suite `verify` and per-route `accept` use the same capture function in `tools_v2/developer-tools/src/vsuite.rs`. Required fixture responses and their rendered consumers must be ready before two consecutive normalized DOM samples can establish stability. Missing fixtures, malformed JSON, invalid consumer payloads and request-dispatch failures fail capture; a stable loading or error screen is not an acceptable baseline. Waiting is bounded and reports pending resources or the consumer state when it times out.
+V-suite `verify` and per-route `accept` use the same capture function in `tools_v2/developer-tools/src/browser_testing/dom_oracle.rs`. Required fixture responses and their rendered consumers must be ready before two consecutive normalized DOM samples can establish stability. Missing fixtures, malformed JSON, invalid consumer payloads and request-dispatch failures fail capture; a stable loading or error screen is not an acceptable baseline. Waiting is bounded and reports pending resources or the consumer state when it times out.
 
-Fixtures remain under `apps/website/frontend/tests/fixtures/api/`. The Server Intel status-stream exception explicitly covers cached status rendering only; this suite does not prove live SSE. The frozen clock, 1440×900 viewport, serializer and structural diff remain unchanged. PNGs accompany the DOM evidence but this gate does not perform pixel comparison.
+Fixtures remain under `apps/website/frontend/tests/fixtures/api/`, named `<METHOD>__<path with `/` as `__`>` plus an extension that names the media type: `.json` for a response body, `.sse.txt` for a Server-Sent Events wire body served as `text/event-stream`. The query string does not select the fixture. An `/api/v1/` request with no fixture behind it is not answered with a placeholder: it is recorded and, once the DOM has settled, fails the route with every unanswered URL and the corpus file that would have served it. Server Intel's status stream is fixtured, so the suite now renders a decoded live frame rather than cached status alone. The frozen clock, 1440×900 viewport, serializer and structural diff remain unchanged. PNGs accompany the DOM evidence but this gate does not perform pixel comparison.
 
-Use `gate v-suite accept --only <slug> --note "<specific intended change and provenance>"` only after reviewing the populated state and complete differences. Preserve original React references, explain each route separately, and keep unchanged route references intact. A missing or broken fixture must be repaired before acceptance. Run the full V-suite again after the reviewed updates and after integration into main.
+A capture that could not be fed cannot be accepted, because `accept` captures through the same function and never reaches the write. Use `gate v-suite accept --only <slug> --note "<specific intended change and provenance>"` only after reviewing the populated state and complete differences. Preserve original React references, explain each route separately, and keep unchanged route references intact. A missing or broken fixture must be repaired before acceptance. Run the full V-suite again after the reviewed updates and after integration into main.
 
 ## Required environment
 
@@ -161,7 +161,7 @@ Use `gate v-suite accept --only <slug> --note "<specific intended change and pro
 - **`gate smoke hydrate` / `mutations` need the API on :8080** and return exit **2** with
   `backend not reachable` when it is down. That is deliberate — they are data-safety gates and a gate
   it could not run must not report green. Start `cargo xtask mk rust-api` rather than reinterpreting the code.
-- **`gate v-suite` launches its own chromium** (`vsuite.rs`) and therefore does **not** get the
+- **`gate v-suite` launches its own chromium** (`dom_oracle.rs`) and therefore does **not** get the
   T-320 gate-owned font cache. It renders ordinary routes, which survive a broken font environment,
   so it is unaffected today; moving `ensure_gate_font_cache()` into `cdp::launch` would close it for
   every caller at once.

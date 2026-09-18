@@ -183,3 +183,78 @@ fn events_envelope() {
         ],
     );
 }
+
+/// The caller's own leave panel. A bare `{data: […]}` envelope, not the paginated one the admin
+/// queue uses — `list_my_leave` and `list_all_leave` really do differ there.
+#[test]
+fn my_leave_requests_envelope() {
+    assert_golden::<DataEnvelope<LeaveRequest>>(golden!("GET__me__leave-requests.json"), &[]);
+}
+
+/// The rows belong to the seeded operator. A corpus keyed to anyone else would render another
+/// member's leave on the caller's own panel and still look perfectly healthy.
+#[test]
+fn my_leave_requests_belong_to_the_seeded_operator() {
+    let me: Value = serde_json::from_str(golden!("GET__me.json")).unwrap();
+    let seeded = me["user"]["discord_id"]
+        .as_str()
+        .expect("seeded discord_id");
+    let mine: DataEnvelope<LeaveRequest> =
+        serde_json::from_str(golden!("GET__me__leave-requests.json")).unwrap();
+    assert!(!mine.data.is_empty(), "the personal panel must have rows");
+    for row in &mine.data {
+        assert_eq!(row.discord_id, seeded);
+    }
+}
+
+#[test]
+fn admin_leave_queue_envelope() {
+    assert_golden::<Paginated<LeaveRequest>>(golden!("GET__admin__leave-requests.json"), &[]);
+}
+
+/// The queue renders a chip per status and approve/deny controls only on `pending`. A corpus with
+/// one status leaves the other branches unrendered and therefore unguarded.
+#[test]
+fn admin_leave_queue_exercises_every_status_branch() {
+    let queue: Paginated<LeaveRequest> =
+        serde_json::from_str(golden!("GET__admin__leave-requests.json")).unwrap();
+    let statuses: Vec<&str> = queue.data.iter().map(|r| r.status.as_str()).collect();
+    for expected in ["pending", "approved", "denied"] {
+        assert!(
+            statuses.contains(&expected),
+            "the queue corpus must carry a {expected} row, got {statuses:?}"
+        );
+    }
+    assert_eq!(
+        queue.total,
+        queue.data.len() as i64,
+        "the envelope total must describe the rows it carries"
+    );
+    // A reviewed row records who reviewed it; a pending one cannot have.
+    for row in &queue.data {
+        assert_eq!(
+            row.status == "pending",
+            row.reviewed_by.is_none(),
+            "row {} has status {} and reviewed_by {:?}",
+            row.id,
+            row.status,
+            row.reviewed_by
+        );
+    }
+}
+
+/// A `date` column crosses the wire as full midnight UTC (`go_date`), not a bare `YYYY-MM-DD`.
+/// The DTO carries both spellings as `String`, so only an assertion catches the wrong one.
+#[test]
+fn leave_dates_are_the_backend_midnight_utc_spelling() {
+    let queue: Paginated<LeaveRequest> =
+        serde_json::from_str(golden!("GET__admin__leave-requests.json")).unwrap();
+    for row in &queue.data {
+        for (field, value) in [("starts_on", &row.starts_on), ("ends_on", &row.ends_on)] {
+            assert!(
+                value.ends_with("T00:00:00Z") && value.len() == 20,
+                "{field} must be go_date-spelled, got {value}"
+            );
+        }
+    }
+}

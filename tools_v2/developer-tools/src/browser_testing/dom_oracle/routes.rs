@@ -1,5 +1,13 @@
 use super::*;
 
+use std::sync::Mutex;
+
+#[path = "fixture_router.rs"]
+pub(super) mod fixture_router;
+pub use fixture_router::MissingFixture;
+use fixture_router::Reply;
+use fixture_router::fixtures_dir;
+
 /// slug → { path, authed }. 25 of routes.csv's 26 rows (the editor is excluded — its
 /// regression gate is the CDP editor smokes, strictly stronger than a DOM snapshot).
 pub fn routes() -> Vec<Route> {
@@ -84,26 +92,20 @@ pub(super) fn sha_hex(bytes: &[u8]) -> String {
     h.finalize().iter().map(|b| format!("{b:02x}")).collect()
 }
 
+/// Append one unanswered request to the capture's shared record.
+///
+/// A poisoned lock cannot make the capture pass: the record is only ever read to *refuse* a route,
+/// so the recovered guard is used rather than propagated.
+fn record_missing(record: &Arc<Mutex<Vec<MissingFixture>>>, entry: MissingFixture) {
+    let mut guard = match record.lock() {
+        Ok(g) => g,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    guard.push(entry);
+}
+
 pub(super) fn gold_dir() -> PathBuf {
     repo_root().join("tools_v2/developer-tools/fixtures/t159/oracle-freeze")
-}
-
-pub(super) fn fixtures_dir() -> PathBuf {
-    repo_root().join("apps/website/frontend/tests/fixtures/api")
-}
-
-/// `/api/v1/<path>[?…]` → fixture file (gate_v's mapping): `GET__` + path with the trailing
-/// slash stripped and `/` → `__`, `.json`.
-pub(super) fn fixture_for(url: &str) -> Option<PathBuf> {
-    let idx = url.find("/api/v1/")?;
-    let rest = &url[idx + "/api/v1/".len()..];
-    let end = rest.find(['?', '#']).unwrap_or(rest.len());
-    let slug = format!(
-        "GET__{}.json",
-        rest[..end].trim_end_matches('/').replace('/', "__")
-    );
-    let f = fixtures_dir().join(slug);
-    f.exists().then_some(f)
 }
 
 /// The localStorage auth seed — the stored VALUE is built with the same key order as the
@@ -171,30 +173,49 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
     .await?;
     let mut paused = page.on_event("Fetch.requestPaused").await;
     let router_page = Arc::clone(&page);
+    // Every API request the corpus could not answer, in the order the page asked for it. The
+    // capture reads it once the DOM has settled and refuses the route rather than snapshotting a
+    // page that rendered without its data.
+    let missing: Arc<Mutex<Vec<MissingFixture>>> = Arc::new(Mutex::new(Vec::new()));
+    let router_missing = Arc::clone(&missing);
     let router = tokio::spawn(async move {
         while let Some(p) = paused.recv().await {
             let Some(request_id) = p["requestId"].as_str() else {
                 continue;
             };
             let url = p["request"]["url"].as_str().unwrap_or_default();
-            let reply: Option<Value> = if url.contains("/api/v1/auth/refresh") {
-                Some(
-                    json!({ "access_token": "acc-v", "refresh_token": "rt-v2", "expires_at": "2026-01-01T01:00:00Z" }),
-                )
-            } else if url.contains("/api/v1/auth/logout") {
-                Some(json!({}))
-            } else if let Some(f) = fixture_for(url) {
-                std::fs::read_to_string(&f)
-                    .ok()
-                    .and_then(|s| serde_json::from_str(&s).ok())
-            } else if url.contains("/api/v1/") {
-                Some(json!({}))
-            } else {
-                None
-            };
-            let res = match reply {
-                Some(body) => router_page.fulfill_json(request_id, 200, &body).await,
-                None => router_page.continue_request(request_id).await,
+            let method = p["request"]["method"].as_str().unwrap_or("GET");
+            let res = match fixture_router::route(method, url) {
+                Reply::Canned(body) => router_page.fulfill_json(request_id, 200, &body).await,
+                Reply::Fixture { path, content_type } => {
+                    match fixture_router::body_bytes(&path, content_type) {
+                        Some(bytes) => {
+                            router_page
+                                .fulfill_raw(request_id, 200, content_type, &bytes)
+                                .await
+                        }
+                        // Unreadable or malformed: the file exists but answers nothing, which is
+                        // the same defect as its absence and is reported the same way.
+                        None => {
+                            record_missing(
+                                &router_missing,
+                                MissingFixture {
+                                    url: url.to_string(),
+                                    expected_file: format!(
+                                        "{} (unreadable or malformed)",
+                                        path.file_name().unwrap_or_default().to_string_lossy()
+                                    ),
+                                },
+                            );
+                            router_page.continue_request(request_id).await
+                        }
+                    }
+                }
+                Reply::Missing(m) => {
+                    record_missing(&router_missing, m);
+                    router_page.continue_request(request_id).await
+                }
+                Reply::Passthrough => router_page.continue_request(request_id).await,
             };
             let _ = res; // errors swallowed, as in the Node harness
         }
@@ -238,6 +259,19 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
     let result = run.await;
     page.close().await;
     router.abort();
+
+    // Checked after the settle loop rather than at the first miss: one report naming every
+    // unanswered request is what repairs the corpus, where the first one only restarts the hunt.
+    let unanswered = match missing.lock() {
+        Ok(g) => g.clone(),
+        Err(poisoned) => poisoned.into_inner().clone(),
+    };
+    if !unanswered.is_empty() {
+        return Err(anyhow!(fixture_router::missing_fixture_error(
+            &route.path,
+            &unanswered
+        )));
+    }
     result
 }
 

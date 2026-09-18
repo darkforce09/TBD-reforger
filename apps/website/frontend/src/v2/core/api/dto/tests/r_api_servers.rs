@@ -20,13 +20,12 @@ fn servers_envelope() {
 ///
 /// The rest of the fixture corpus is request bodies, so without this one nothing pinned the type a
 /// live consumer deserialises on every single frame.
-pub(crate) const LIVE_SSE_FRAME: &str = concat!(
-    r#"data: {"server_id":"00000000-0000-4000-d000-000000000001","is_online":true,"#,
-    r#""player_count":47,"max_players":64,"server_fps":58.7,"uptime_seconds":19842,"#,
-    r#""current_match_id":"00000000-0000-4000-f000-000000000003","ingame_time":"06:42","#,
-    r#""ingame_weather":"overcast","updated_at":"2026-07-26T05:00:00Z"}"#,
-    "\n\n"
-);
+///
+/// It is embedded from the corpus rather than written out here because the DOM oracle serves the
+/// same file to the browser as `text/event-stream`: one file means the bytes this test pins and the
+/// bytes a rendered page receives cannot drift apart.
+pub(crate) const LIVE_SSE_FRAME: &str =
+    golden!("GET__servers__00000000-0000-4000-d000-000000000001__status__stream.sse.txt");
 
 /// The captured live frame must deserialize, and must carry the tenth the `numeric(5,1)`
 /// column really holds — rounding it away would be a second, quieter version of this bug.

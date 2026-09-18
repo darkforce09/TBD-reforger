@@ -59,6 +59,7 @@ mod tests;
 
 #[path = "dom_oracle/routes.rs"]
 mod routes;
+pub use routes::MissingFixture;
 pub use routes::capture_route;
 pub use routes::diff_node;
 pub use routes::js_len;

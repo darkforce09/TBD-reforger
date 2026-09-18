@@ -58,7 +58,20 @@ pub(super) async fn run_modes(
                     continue;
                 }
                 let golden = std::fs::read_to_string(&gold_file)?;
-                let cap = capture_route(browser, &args.leptos_dir, 5196, route).await?;
+                // A route that cannot be captured is one failing route, not the end of the run:
+                // stopping here would report the first broken route and hide the rest of the debt.
+                let cap = match capture_route(browser, &args.leptos_dir, 5196, route).await {
+                    Ok(cap) => cap,
+                    Err(e) => {
+                        println!("FAIL   {:<14} {e}", route.slug);
+                        rows.push(json!({
+                            "slug": route.slug, "path": route.path,
+                            "pass": false, "error": e.to_string(),
+                        }));
+                        fail += 1;
+                        continue;
+                    }
+                };
                 let mut out = Vec::new();
                 diff_node(
                     &serde_json::from_str(&golden)?,

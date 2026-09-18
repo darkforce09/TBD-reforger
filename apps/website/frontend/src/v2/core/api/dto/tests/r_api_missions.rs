@@ -156,3 +156,25 @@ fn missions_envelope_rejected_card_carries_its_reason() {
 fn approvals_envelope() {
     assert_golden::<Paginated<ApprovalRow>>(golden!("GET__approvals.json"), &[]);
 }
+
+/// The submission the approvals drawer opens on: `/admin/approvals` selects the first queue row
+/// when nothing is picked, and reads that mission's own briefing under the review header. Without
+/// this golden the drawer has no mission to show while the queue beside it lists one.
+#[test]
+fn mission_detail_of_the_first_pending_submission() {
+    const G: &str = golden!("GET__missions__00000000-0000-4000-c000-000000000004.json");
+    assert_golden::<MissionDetail>(G, &["current_version/json_payload"]);
+
+    // The two goldens describe one submission from two sides; a drawer showing a different
+    // mission's briefing than the row it is anchored to would still round-trip cleanly.
+    let queue: Paginated<Value> = serde_json::from_str(golden!("GET__approvals.json")).unwrap();
+    let first = &queue.data[0];
+    let detail: MissionDetail = serde_json::from_str(G).unwrap();
+    assert_eq!(detail.id, first["mission_id"].as_str().unwrap());
+    assert_eq!(detail.title, first["title"].as_str().unwrap());
+    assert_eq!(detail.author_id, first["author_id"].as_str().unwrap());
+    assert_eq!(
+        detail.status, "pending_approval",
+        "a mission in the approvals queue is awaiting approval"
+    );
+}

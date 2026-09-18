@@ -18,31 +18,37 @@
       "slug": "dashboard",
       "path": "/",
       "authed": true,
-      "bytes": 97827,
-      "sha256": "7526acf6fb0bbedeb0edec9bd18623fc1a9b0a04afe991b0b2aacd62adc67afe"
+      "bytes": 120901,
+      "sha256": "bdd5f21265c4f26d3dd0ff84486cc064d487542628b3f3c5a30140b75d9d2cbe",
+      "goldenSource": "leptos",
+      "acceptedDelta": "T-159 oracle froze the React dist on 2026-07-17 with no operations data behind it, so the next-op card captured its \"NO UPCOMING OPS\" empty state. GET__dashboard.json and GET__me__deployments.json feed the card, which now names the scheduled operation and counts down to it. Fixture-fed, not a UI change."
     },
     {
       "slug": "approvals",
       "path": "/admin/approvals",
       "authed": true,
-      "bytes": 72772,
-      "sha256": "cd649445cfa10b4f03297e52dfd811a93bc7b21081f444c33c2c31153a913c10"
+      "bytes": 103939,
+      "sha256": "4c79bf337ad40603762e7dab9e9ff71060fd5d97104fb806d8862619bc9642dd",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The queue selects its first row when nothing is picked, and the review drawer reads that mission's own briefing. The React capture had no mission detail behind it; GET__missions__00000000-0000-4000-c000-000000000004.json supplies the submission the queue is anchored to, so the drawer renders the briefing beside the row."
     },
     {
       "slug": "audit",
       "path": "/admin/audit",
       "authed": true,
-      "bytes": 70465,
-      "sha256": "ae469d58860b35c8552d3c14ff814a8f3486a260a20b600c596f1653dffb4415"
+      "bytes": 104025,
+      "sha256": "5ae14c54330d94945300d00c500f2081a726f7ba64bbe53dad3b3ddbb57eca78",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The React capture recorded the empty audit list as a paragraph. GET__admin__audit-logs.json feeds ten entries, each an expandable row button."
     },
     {
       "slug": "content",
       "path": "/admin/content",
       "authed": true,
-      "bytes": 107632,
-      "sha256": "1fdc18e0fed005cdf1c2c6cec94fb6f8b148c91ae1122fe00a18979f4b5233fd",
+      "bytes": 117495,
+      "sha256": "90057dd22d674181b50775fa9506d192b591620fe769a9bc45cb4967f55989b8",
       "goldenSource": "leptos",
-      "acceptedDelta": "T-159.25 mock-to-live rebuild: React ContentManager pre-filled a hardcoded mock briefing ('Operation Blue Storm Briefing', published switch on); Leptos wires the live CMS state and starts empty. Intended divergence; React reference kept at content.react.dom.json"
+      "acceptedDelta": "T-159.25, carried forward: React's ContentManager pre-filled a hardcoded mock briefing (\"Operation Blue Storm Briefing\", published switch on), and the first Leptos accept recorded the manager starting empty because no /cms/announcements fixture existed. GET__cms__announcements.json now supplies the live-shaped list — four published rows and one draft, ordered pinned-first then most recently updated — so the manager renders its real populated state. React reference kept at content.react.dom.json."
     },
     {
       "slug": "eventmgr",
@@ -55,22 +61,28 @@
       "slug": "personnel",
       "path": "/admin/personnel",
       "authed": true,
-      "bytes": 88050,
-      "sha256": "9cb2a2cebcc8d898cb647b3dd3edb7890f7fad3141dc274ac514c1f661f9fa74"
+      "bytes": 127153,
+      "sha256": "8a124233eca2e4d7fc9fb1254590b50a3ee2012a5b3842487c04aa3e35779011",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The roster toolbar gained a Sync Roles action after the freeze and the sort control now names its key (\"Sort: Name\"), so the first two controls shift along and a third appears. The six roster rows come from GET__admin__users.json, where the React capture recorded a single placeholder row."
     },
     {
       "slug": "servercontrol",
       "path": "/admin/server",
       "authed": true,
-      "bytes": 124456,
-      "sha256": "ec9cafd454690d8f9a6b89d204ce4b44dab83f6723592d857d1856fd9eba298d"
+      "bytes": 120520,
+      "sha256": "7cf79f897cf55dcee851c6a65bd0806ee4ed0e98691d8c2127be418d97f4263d",
+      "goldenSource": "leptos",
+      "acceptedDelta": "Server identities come from GET__servers.json — TBD Primary/Secondary/Staging. The React capture rendered its own \"TBD Main Server\" / \"TBD Training Ground\" mock, which no fixture has ever contained."
     },
     {
       "slug": "announcements",
       "path": "/announcements",
       "authed": true,
-      "bytes": 71618,
-      "sha256": "1d5b14b9995fcbd0b5fa7d8a54205048f5a12daf700cb1bc3cb24dea59326244"
+      "bytes": 91980,
+      "sha256": "ad32d8bfd855fdaf4a7861d2520e30a40e8ac12a958396140e3a18d83548e9c2",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The React capture recorded the empty board as a paragraph. GET__announcements.json feeds four entries, each a selectable card."
     },
     {
       "slug": "callback",
@@ -83,36 +95,46 @@
       "slug": "deployments",
       "path": "/deployments",
       "authed": true,
-      "bytes": 92862,
-      "sha256": "c63e67c7121119279d4dfe45f7087b85da2530fee8063493f772251a49617703"
+      "bytes": 179891,
+      "sha256": "9cf409229a5e51b15d9ac48e2d8f861f5b1476c02b7d323735719c1e8564538e",
+      "goldenSource": "leptos",
+      "acceptedDelta": "Neither the leave-of-absence panel nor the LOA review queue existed when the React dist was frozen, so the golden contains neither section. The service record is fed by GET__me__deployments.json, committed 2026-07-26 — nine days after the freeze — and the two panels by the new GET__me__leave-requests.json and GET__admin__leave-requests.json."
     },
     {
       "slug": "events",
       "path": "/events",
       "authed": true,
-      "bytes": 69007,
-      "sha256": "bb38ab398b695587e6a33743eefaedbf0743183eb2300136d9acdcf7d8edc241"
+      "bytes": 205010,
+      "sha256": "93176016c312918ec2decdc50158d01588887dc36e444561a5d54f65eb320394",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The React capture recorded the empty schedule as a paragraph. GET__events.json feeds the operations list and the detail pane beside it."
     },
     {
       "slug": "eventhub",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
       "authed": true,
-      "bytes": 108294,
-      "sha256": "b594faefc44a5552ccaa737971d7c9ea89d0f8b0d61fcc5e1ac8b12bd8688ebd"
+      "bytes": 176555,
+      "sha256": "fbcd118b3ec82d2fff81ccbad502fba741c2c2f4b8bb9c1f3d13036cf26cd6f6",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The operation briefing gained a block and its summary line became a prose paragraph rather than a chip row, both after the freeze. The armoury rows below come from GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json, whose armoury was populated after the freeze."
     },
     {
       "slug": "orbat",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/orbat",
       "authed": true,
-      "bytes": 66721,
-      "sha256": "95ffb5cbd630353cb7dda6d2572e60683ad84f12b2ca5298fa533c35135fe775"
+      "bytes": 128372,
+      "sha256": "40697143e6514b4f0b8ca4bb1d515b1c18c51a69f906626984e680c418426e6c",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The order of battle is fed by GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json; the React capture recorded the unfed paragraph in its place."
     },
     {
       "slug": "leaderboards",
       "path": "/leaderboards",
       "authed": true,
-      "bytes": 112177,
-      "sha256": "2df15868ccbf9de9d92497c6e977d93b27216a8c7da56b102bcc7f0cb757b3ac"
+      "bytes": 102675,
+      "sha256": "d8e9cd71b69503aaec78dae201a6f0e4f4aaaaf3bc8f4869c9b12490b6d3c011",
+      "goldenSource": "leptos",
+      "acceptedDelta": "Ladder rows come from GET__leaderboards.json. The React capture rendered its own mock ladder (\"Reaper\", 5.92), which no fixture has ever contained."
     },
     {
       "slug": "login",
@@ -125,66 +147,82 @@
       "slug": "missions",
       "path": "/missions",
       "authed": true,
-      "bytes": 84607,
-      "sha256": "42ae50e5acec32c0c92c06304413a37125a21bd0d65b4808c58de0eccf186812",
+      "bytes": 152235,
+      "sha256": "74947efc96df2700544c0c596f889aa1fee1e48006de18863a611cb529a38e62",
       "goldenSource": "leptos",
-      "acceptedDelta": "T-173 P4: /missions scrollport backdrop-blur-xl removed (per-frame re-blur caused scroll lag); glass tint moved to a static z-0 bg layer behind the composited scroller"
+      "acceptedDelta": "T-173 P4, carried forward: the /missions scrollport lost backdrop-blur-xl because the per-frame re-blur caused scroll lag, and the glass tint moved to a static z-0 layer behind the composited scroller — that is the relative-to-absolute and children-count difference here. The catalogue itself is fed by GET__missions.json. React reference kept at missions.react.dom.json."
     },
     {
       "slug": "missionview",
       "path": "/missions/512d8658-7025-4a70-94e9-a1b44a7aa155",
       "authed": true,
-      "bytes": 80022,
-      "sha256": "61c948a2d1ecb84eecbd50d45a9b9ed5ca592d4824b1cf7db0cb2ce518d757b2"
+      "bytes": 82166,
+      "sha256": "d1084feb37ff6d670ebd0663eef0eb5d36cedfe8f78c7402ba945de13dc15296",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The mission header became a wrapping flex row after the freeze: the title moved into a block of its own and the trailing paragraph became an action button pushed to the far edge. The status chip is title-cased, \"Draft\" rather than \"draft\". The mission data behind it is unchanged."
     },
     {
       "slug": "modpacks",
       "path": "/modpacks",
       "authed": true,
-      "bytes": 114141,
-      "sha256": "3e14ee9fa42826c1ecc020947b60d2f0e8fae380d2dc1d2dc689138adbbc72fe"
+      "bytes": 90900,
+      "sha256": "78fa7d10aac68f1e7995b52bfa23ab6a6115bfa37095797e379e8d9aaeb64d96",
+      "goldenSource": "leptos",
+      "acceptedDelta": "GET__modpacks.json carries one modpack, Core Modern Expansion 2.1. The React capture rendered a three-entry 2.4.1 mock that no fixture has ever contained, which is why the Leptos capture is the smaller of the two."
     },
     {
       "slug": "serverintel",
       "path": "/server-intel",
       "authed": true,
-      "bytes": 66327,
-      "sha256": "5fb04ab5e855036dcaef7ad45d1f3e6f540b2ef84945f62b409dfa02a216d9a7"
+      "bytes": 111376,
+      "sha256": "6b6afb91eaee4014a342b8bd80a3179ee6bc357c5ea8baa7168567f34b0d332f",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The status stream is fixtured for the first time: GET__servers__00000000-0000-4000-d000-000000000001__status__stream.sse.txt is served as text/event-stream, so the panel's preferred source is a decoded frame rather than the empty object the router used to return for an unmatched API call. The rendered difference is the populated panel fed by GET__servers.json in place of the React capture's unfed paragraph; the frame reproduces that row's cached status by design, so both sources agree."
     },
     {
       "slug": "settings",
       "path": "/settings",
       "authed": true,
-      "bytes": 82367,
-      "sha256": "5ad2350c1a39862a18a77feec4f98da112c74ef46bc77dc1b8e9323f9f74435b"
+      "bytes": 82371,
+      "sha256": "465e4308b66a1feaec939c3a0165292d97caafa396b89363681ed58102e53d65",
+      "goldenSource": "leptos",
+      "acceptedDelta": "Service totals come from GET__me__deployments.json, committed 2026-07-26 — nine days after the 2026-07-17 freeze. The oracle's zeros are the unfed state, not a UI state; the fixture's 17 operations and 92.5 per cent attendance are what the page is given."
     },
     {
       "slug": "mortar",
       "path": "/tools/mortar",
       "authed": true,
-      "bytes": 78130,
-      "sha256": "6ff3bbad9110a4c50ee37104e4ccc9ce2387ba4769155000c3e88bb9c2de29f6"
+      "bytes": 90566,
+      "sha256": "02c197fbfd9c96d2e1c38c4ec0c0c5a5488af4c61c9db8f298851ca067b24ddd",
+      "goldenSource": "leptos",
+      "acceptedDelta": "The calculator gained a Weapon select and an Operation select after the freeze, which is the pair of extra fields and the input grid moving from four columns to three, and the plot became a real SVG rather than positioned divs. Default firing-point coordinates changed with it."
     },
     {
       "slug": "vehicles",
       "path": "/vehicles",
       "authed": true,
-      "bytes": 119030,
-      "sha256": "6ba8e25308ddf730b9e1f67756914ee7b526c188055d6b05d2bc5a2afb5437d2"
+      "bytes": 116818,
+      "sha256": "610aad67b6de58f1f4016318bdfb1572c1aecf2b77facb231d4c4f5a25ec3a5c",
+      "goldenSource": "leptos",
+      "acceptedDelta": "Catalogue rows and faction labels come from GET__vehicle-database.json, which spells the faction \"USSR\". The React capture rendered its own \"USSR Forces\" mock."
     },
     {
       "slug": "wiki",
       "path": "/wiki",
       "authed": true,
-      "bytes": 135253,
-      "sha256": "9aa12e491f48781d7473fc8a5fef17ded5bae9686dea29ea54770187d69848bc"
+      "bytes": 104471,
+      "sha256": "df3c27a34c7e1ec45901d7f445ce60e26933562d394d2af3ed6a63d9add90cf0",
+      "goldenSource": "leptos",
+      "acceptedDelta": "GET__wiki.json carries four pages across two categories. The React capture rendered a four-category mock (\"Leadership Fundamentals\" and others) that no fixture has ever contained, which is why the Leptos capture is the smaller of the two."
     },
     {
       "slug": "wikislug",
       "path": "/wiki/field-manual",
       "authed": true,
-      "bytes": 135253,
-      "sha256": "9aa12e491f48781d7473fc8a5fef17ded5bae9686dea29ea54770187d69848bc"
+      "bytes": 104471,
+      "sha256": "df3c27a34c7e1ec45901d7f445ce60e26933562d394d2af3ed6a63d9add90cf0",
+      "goldenSource": "leptos",
+      "acceptedDelta": "Same page and same cause as the wiki route: the article view renders the corpus's two categories where the React capture rendered its own four-category mock."
     }
   ]
 }
