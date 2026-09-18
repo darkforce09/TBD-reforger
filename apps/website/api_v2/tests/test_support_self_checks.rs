@@ -419,7 +419,7 @@ fn pin_binds_file_scope_dev_login_and_blanks_pg_dollar_quotes() {
 /// 4. An early `return` / `?` above it.
 /// 5. A macro, `include!`, or a shadowed `sqlx` module that expands to something else.
 ///
-/// **The authority is a runtime test, not this one.** `tests/misc_integration.rs` drives
+/// **The authority is a runtime test, not this one.** `tests/dev_login_runtime_identity.rs` drives
 /// `GET /auth/dev-login` against a real database and asserts the COALESCE *semantics* on the
 /// row: a NULL `arma_id` is stamped, and an already-linked one survives. Dead code stamps
 /// nothing, so all five shapes above fail there by construction. Keep this pin as the fast,

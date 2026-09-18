@@ -177,8 +177,8 @@ async fn call_ct(
 /// **Do not shrink this back to "is it on page 1" (T-399).** `handlers/approvals.rs` serves the
 /// queue `ORDER BY COALESCE(...) ASC, m.id ASC` — *oldest first*, unique-tied (T-414) — and
 /// nothing anywhere ever removes a `pending_approval` mission from the shared gate database:
-/// `tests/missions.rs:963/1138/1156` each leave one behind on every run,
-/// `tests/null_tolerance.rs:77` leaves one with both timestamps NULL (which the sentinel sorts to
+/// the mission suites each leave one behind on every run, `tests/null_tolerance_reads.rs`
+/// leaves one with both timestamps NULL (which the sentinel sorts to
 /// the very *front*), and a failure of this assertion leaves this test's own row pending too, so
 /// the ratchet feeds itself. The queue therefore only ever grows, while the row a test just
 /// submitted is always the *newest* — i.e. on the **last** page. The moment residue passes one

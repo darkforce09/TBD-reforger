@@ -97,7 +97,7 @@ pub fn assert_test_database_url(database_url: &str) {
 ///
 /// Cargo compiles one crate per top-level `tests/*.rs`, and `CARGO_CRATE_NAME` is set per
 /// compilation unit — so this expands to `admin_field` inside `tests/admin_field.rs`'s
-/// binary and to `misc_integration` inside `tests/misc_integration.rs`'s. It is a
+/// binary and to `dev_login_runtime_identity` inside `tests/dev_login_runtime_identity.rs`'s. It is a
 /// compile-time `env!`, so a Cargo that stopped setting it is a build error here rather
 /// than a silent fallback to one shared name — which is the defect this whole section
 /// exists to prevent.

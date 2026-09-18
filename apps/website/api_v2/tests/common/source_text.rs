@@ -18,7 +18,7 @@
 //!   literal is data, so a `SELECT` carrying the needle inside one is not an `UPDATE`.
 //!
 //! What these scanners cannot decide is **reachability**: whether the statement they found
-//! executes. `tests/misc_integration.rs` owns that half, by driving `GET /auth/dev-login`
+//! executes. `tests/dev_login_runtime_identity.rs` owns that half, by driving `GET /auth/dev-login`
 //! against a real database and asserting the COALESCE semantics on the stored row.
 
 /// Index just past the Rust literal that opens at `bytes[i]`, or `None` when none does.

@@ -46,21 +46,6 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: apps/website/api_v2/tests/misc_integration.rs
-  reason: Split integration tests by behavior before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/tests/missions.rs
-  reason: Split integration tests by behavior before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/tests/null_tolerance.rs
-  reason: Split integration tests by behavior before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
   path: tools_v2/verification-core/src/proc.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31

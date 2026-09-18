@@ -36,7 +36,7 @@ impl MissionOutcome {
 /// **`winning_faction`, `aar_replay_url` and `created_at` are non-optional fields over NULLABLE
 /// columns, so every read site MUST `COALESCE` them — `Option` was considered and rejected.**
 /// That is the house convention here, not an oversight: the zero value is kept in the type and
-/// the conversion is pushed into SQL. `tests/null_tolerance.rs` exists to hold that line ("NULL
+/// the conversion is pushed into SQL. The `tests/null_tolerance_*.rs` suites exist to hold that line ("NULL
 /// reads back as a zero value, 200 not 500"), and `operations/handlers/member_service_record.rs`
 /// — the only read of this struct — coalesces all three. Measured against a real NULL:
 /// `GET /api/v1/me/deployments` serves **200**, and dropping the `COALESCE` fails the row with

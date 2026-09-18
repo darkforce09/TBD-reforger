@@ -94,7 +94,7 @@ pub async fn list_approvals(
     //    it renders as "submitted just now" and sorts an unknown-age submission to the *bottom* of
     //    an oldest-first review queue — a lie that also hides the row it lies about.
     // 2. **`'0001-01-01 00:00:00+00'`** — the crate-wide "unknown timestamp" sentinel, which
-    //    `go_time` renders as `0001-01-01T00:00:00Z` and `tests/null_tolerance.rs` asserts for a
+    //    `go_time` renders as `0001-01-01T00:00:00Z` and `tests/null_tolerance_reads.rs` asserts for a
     //    NULL timestamp. It is what makes the fallback **total**: `missions.created_at` is *also*
     //    nullable with no default (`0001_initial_schema.sql:374`), so a two-argument COALESCE
     //    would still fail to decode a row with both timestamps NULL.
