@@ -29,7 +29,7 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 | **Any work** | [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) → registry row → spec path |
 | **Frontend surfaces** | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) → [`INDEX.md`](frontend/INDEX.md) |
 | **Mission Creator** | MC [`ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) |
-| **Backend / API** | [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md) · live code `apps/website/api/` |
+| **Backend / API** | [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md) · live code `apps/website/api_v2/` |
 | **Conventions pin** | [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md) |
 | **Cross-boundary comments** | [`DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) |
 | **Coding standards** | [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) — before commit: `cargo xtask db up` then `cargo xtask ci ci-local` |
@@ -46,7 +46,7 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 | **New or removed route** | [`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs) + [`pages/*.md`](frontend/pages) + [`INDEX.md`](frontend/INDEX.md) + [`ROADMAP.md`](frontend/ROADMAP.md) |
 | **UI surface (no route)** | Page spec **Element Inventory** + **`Live source:`** → `apps/website/frontend/src/<page>.rs` |
 | **Nav / sidebar** | [`apps/website/frontend/src/nav.rs`](../../apps/website/frontend/src/nav.rs) + [`shell/sidebar.md`](frontend/shell/sidebar.md) |
-| **API / model** | `apps/website/api/src/models/` + matching `apps/website/frontend/src/dto.rs` (R-api golden) |
+| **API / model** | `apps/website/api_v2/src/models/` + matching `apps/website/frontend/src/dto.rs` (R-api golden) |
 | **Cross-boundary type/handler** | `@contract` / `@route` / `@model` per DOCUMENTATION_STANDARDS — same commit as code |
 | **Mission Creator** | Decisions log / feature_inventory / gap_analysis as applicable |
 | **Deferred** | Registry `status: deferred` — never mark shipped until verified |

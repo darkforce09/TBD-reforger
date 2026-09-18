@@ -1,205 +1,199 @@
-# CLAUDE.md — TBD Reforger Platform
+# TBD Reforger Platform
 
-Working context for AI sessions. Read this first; it is the source of truth for
-**current state and how to run things**. Design specs live under [`docs/`](docs/website/README.md)
-(`docs/website/platform/context_handoff.md`, [`docs/website/backend/architecture.md`](docs/website/backend/architecture.md) — archive) — verify against
-live code for post-T-008 behavior.
+Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event / ORBAT scheduling, mission library, 2D/3D CAD scenario editor, server telemetry, leaderboards, doctrine wiki, and Enfusion mod tooling.
 
-## HARD GATE — No deferrals without explicit operator word
+---
 
-**Do the whole ask.** Do not "fold forward", invent Out-of-scope, ship an MVP and call the
-program done, or write a verify-log DEFERRED section instead of code — unless the **operator
-explicitly** said to defer that piece ("defer X", "skip X", "not this pass"). Soft plan language
-("if feasible", "optional", "P1 later") and **agent-authored** deferral lists are **not** permission.
+## 1. Core Project Laws
 
-Full rule: [`.cursor/rules/no-silent-deferrals.mdc`](.cursor/rules/no-silent-deferrals.mdc).
-Applies to Claude Code, Cursor, Fable, and any finish/audit plan.
+1. **Hard Gate — No Silent Deferrals**:
+   Do the whole ask. Never invent "out of scope", "deferred", or ship an MVP and call the task done unless the operator explicitly specifies to defer that piece ("defer X", "skip X"). Rule: `.cursor/rules/no-silent-deferrals.mdc`.
+2. **Git Discipline — Direct to Main**:
+   Never create git branches (`git checkout -b` is forbidden). All commits land directly on `main`. Merge and delete any stray branch immediately.
+3. **Fundamentals & Clean Architecture Over Hacks**:
+   Never tack on ad-hoc code to "just make it work". If a clean solution requires an architectural adjustment or structural refactoring, plan and execute that refactor cleanly. Understandability, simplicity, and long-term maintainability strictly supersede quick patches.
+4. **Zero Context Needed for Directory & File Names**:
+   Every folder, file, module, and symbol name must be so clear and self-describing that anyone can immediately and unmistakably understand its purpose without needing *any* prior project or historical context. Avoid cryptic abbreviations, project-specific jargon, and overloaded names.
+5. **Categorize Variants & Primitives (Avoid Flat Dumps)**:
+   Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
+6. **Strict Boundary Layers**:
+   - `website-graphics-engine`: Pure GPU rendering primitives (pipelines, shaders, draw batching). Knows **zero** map concepts.
+   - `website-map-engine`: Map graphics, spatial computation, terrain formats, asset streaming, camera math, and the mission domain (compilation, validation, Yjs CRDT document model). Speaks graphics engine frame vocabulary; zero UI/Leptos dependencies.
+   - `website-frontend`: Presentation, navigation, and CAD workspaces (`src/v2/`); consumes engine crates.
+   - `website-api`: Axum REST API and SSE realtime hub.
+7. **File Size Limits & Test Placement**:
+   - Production files must stay **under 500 lines of code**.
+   - Test files must stay **under 1000 lines of code**.
+   - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
+8. **Present-Tense, Context-Free Code Documentation**:
+   Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, hardware/engine constraints). Never document historical transitions (no "rewritten from X", "fixed in Y"). Commit history owns history.
+9. **API & Contract Parity**:
+   - Backend Rust models (`apps/website/api_v2/src/models/`) are the snake_case API source of truth.
+   - Contract types are generated from `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`.
+   - Frontend DTOs (`apps/website/frontend/src/v2/core/api/dto.rs`) mirror models with strict R-api golden test parity.
 
-## What this is
-A web suite for the "TBD" Arma Reforger milsim community: Discord auth, event /
-ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
-leaderboards, doctrine wiki, CMS, and admin tooling.
+---
 
-- **Backend:** Rust (Axum + sqlx), PostgreSQL — crate `website-api` in `apps/website/api/` (the T-145 Go→Rust rewrite).
-- **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website/frontend/` — the T-159 rewrite; the React app was deleted at T-159.29.3. All tooling is Rust (T-165 Node eradication); Node exists solely as the `enfusion-mcp` runtime (`scripts/mod`).
-- **Mod:** three Enfusion addons under `apps/mod/` — the shipping mod `tbd-framework/` (`TBD_Framework`), the map-export tooling `tbd-export/` (`TBD_Export`, depends on the framework), and the enfusion-mcp Workbench bridge handlers `tbd-emcp/` (`TBD_EMCP`); shared mission schema in `packages/tbd-schema/`.
-- **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
+## 2. Monorepo Directory Atlas
 
-## Monorepo layout
-- `tools_v2/verification-core/` — fail-closed verification library (`verification_core`).
-- `tools_v2/ticket-engine/` — typed ticket models and transactional storage (`ticket_engine`).
-- `tools_v2/xtask/` — workspace task runner (`cargo xtask`), checks, ticket orchestration, and blueprint compiler.
-- `tools/tbd-tools/` — heavy async CLI; `tools_v2/developer-tools/` is the future destination scaffold.
-- `apps/website/` — app nest: `api/` (Axum, pkg `website-api`) + `frontend/` (Leptos Trunk, pkg `website-frontend`); seeds at `api/seeds/`
-- `apps/mod/` — Enfusion addons: `tbd-framework` (shipping mod) + `tbd-export` (dependency addon, export tooling) + `tbd-emcp` (committed MCP handlers); gitignored `crf_framework`
-- `packages/tbd-schema/` — mission JSON schema + golden missions
-- `packages/map-assets/` — terrain DEM/sat (LFS) + rebuildable staging/tiles; served by API `/map-assets`
-- `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
-- `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`cargo xtask mcp call`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
-- `.ai/tickets/` + `cargo run -q -p xtask -- ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline **output only** (fixtures live crate-local `tests/fixtures/` — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md))
-- `apps/website/api/src/bin/api.rs` — entrypoint: loads `.env`, runs migrations on boot, serves `/api/v1`.
-- `apps/website/api/src/handlers/` — Axum HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
-- `apps/website/api/src/models/` — serde models; **JSON field names (snake_case) here are the API contract**.
-- `apps/website/api/migrations/` — sqlx SQL migrations (extensions, enums, indexes, leaderboard MV).
-- `apps/website/api/src/{services,middleware,realtime}/` — logic core, auth tiers, SSE hub.
-- `apps/website/frontend/src/` — one module per page + `client.rs` (gloo-net + single-flight refresh), `dto.rs` (API DTOs, R-api golden-tested), `mission_editor.rs` + editor modules (wgpu engine via `map-engine-render`).
+```text
+apps/
+├── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets
+├── mod/                                 <-- Enfusion engine mod suite
+│   ├── tbd-framework/                   <-- Shipping game mod (TBD_Framework)
+│   │   ├── Configs/                     <-- System configs, entity catalogs, voice frequencies
+│   │   ├── Data/                        <-- Game mode data, sound presets
+│   │   ├── Missions/                    <-- Mission header configs and world definitions
+│   │   ├── Prefabs/                     <-- Character, weapon, vehicle, and UI entity prefabs
+│   │   ├── Scripts/Game/TBD/            <-- Gameplay scripts (compiled into game runtime)
+│   │   │   ├── API/                     <-- Backend REST & event streaming bridge
+│   │   │   ├── Core/                    <-- Foundation classes, event dispatcher, logging
+│   │   │   ├── Gamemode/                <-- Phase manager, game state lifecycle, safe-start
+│   │   │   ├── Session/                 <-- Player state, slot reservation tokens
+│   │   │   ├── Systems/                 <-- Radios, gear/loadouts, objectives, markers, play areas
+│   │   │   └── UI/                      <-- HUD widgets, menu controllers, briefing/slotting screens
+│   │   └── UI/                          <-- UI layout definitions and visual assets
+│   │       ├── Textures/                <-- UI icons, discs, custom textures
+│   │       └── layouts/                 <-- Enfusion widget layout files (.layout)
+│   │           ├── Common/              <-- Reusable design system primitives (buttons, panels, cards)
+│   │           ├── Hud/                 <-- Tactical in-game HUD and compass widgets
+│   │           └── Session/             <-- Pre-game lobby, slotting screen, briefing dock layouts
+│   ├── tbd-export/                      <-- Tooling addon (TBD_Export, depends on framework + emcp)
+│   │   ├── Missions/                    <-- Export world mission configurations (Everon export)
+│   │   ├── Prefabs/                     <-- Export game mode and road export components
+│   │   ├── tools/                       <-- Export helper scripts
+│   │   └── Scripts/
+│   │       ├── Game/TBD/Export/         <-- Runtime export components (roads, terrain features)
+│   │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, Equipment, Vehicles, Registry)
+│   ├── tbd-emcp/                        <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
+│   │   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
+│   ├── crf_framework/                   <-- Reference: Upstream Coalition Reforger Framework scripts
+│   └── vanilla_reference/               <-- Reference: Extracted vanilla Reforger scripts and API docs
+└── website/                             <-- Web platform applications and engines
+    ├── api_v2/                          <-- Axum + sqlx REST API and SSE backend (:8080)
+    │   └── src/
+    │       ├── auth/                    <-- Discord OAuth2, JWT issuance, session management
+    │       ├── handlers/                <-- Axum HTTP handlers (one module per resource)
+    │       ├── models/                  <-- Serde database & wire models (contract source of truth)
+    │       ├── services/                <-- Business logic core (missions, events, telemetry)
+    │       └── realtime.rs              <-- Server-Sent Events (SSE) broadcast hub
+    ├── frontend/                        <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000)
+    │   └── src/v2/                      <-- Domain-driven frontend architecture
+    │       ├── core/                    <-- Shared foundations across the frontend
+    │       │   ├── api/                 <-- HTTP client, DTOs, SSE subscriber, error handling
+    │       │   ├── auth/                <-- Session storage, role hierarchy, route guards
+    │       │   ├── ui/                  <-- Reusable design system primitives (buttons, inputs)
+    │       │   └── utils/               <-- Time formatting, math, and DOM helpers
+    │       ├── pages/                   <-- Standard platform navigation & document pages
+    │       │   ├── navigation/          <-- Platform frame (topbar, sidebar navigation drawer)
+    │       │   ├── account/             <-- User login, OAuth callback, settings
+    │       │   ├── command_center/      <-- Dashboard, announcements, live server intel
+    │       │   ├── operations/          <-- Event schedule, dossier, slotting, ladders
+    │       │   │   ├── schedule/        <-- Calendar schedule of upcoming community events
+    │       │   │   ├── event_detail/    <-- Event briefing dossier and slot signups
+    │       │   │   ├── orbat_selection/ <-- Dedicated full-screen slotting view
+    │       │   │   ├── deployments/     <-- Historical operations archive and attendance
+    │       │   │   └── leaderboards/    <-- Community player and team match rankings
+    │       │   ├── mission_hub/         <-- Scenario library, overview dossier, create modal
+    │       │   │   ├── library/         <-- Filterable community scenario catalog
+    │       │   │   ├── overview/        <-- Scenario version history, ORBAT preview, metadata
+    │       │   │   └── create_dialog/   <-- Initial scenario creation dialog
+    │       │   ├── field_tools/         <-- Interactive tactical utilities
+    │       │   │   └── mortar/          <-- Mortar ballistics calculation and firing solutions
+    │       │   ├── doctrine_and_info/   <-- Knowledgebase and reference catalogs
+    │       │   │   ├── wiki/            <-- Markdown tactical doctrine and rules articles
+    │       │   │   ├── vehicles/        <-- Vehicle catalog and asset technical specs
+    │       │   │   └── modpacks/        <-- Modpack manifests and delta download information
+    │       │   └── administration/      <-- Management and administrative control panels
+    │       │       ├── event_manager/   <-- Event scheduling and operations calendar admin
+    │       │       ├── server_control/  <-- Dedicated server lifecycle and RCON console
+    │       │       ├── personnel/       <-- Member roster, rank, and permission management
+    │       │       ├── approvals/       <-- Mission submission review and approval queue
+    │       │       ├── content_manager/ <-- CMS for doctrine articles and announcements
+    │       │       └── audit_logs/      <-- Audit trail of administrative actions
+    │       └── apps/                    <-- Standalone CAD workspaces & interactive tools
+    │           ├── editor/              <-- Scenario Creator 2D/3D CAD workspace shell (~55k)
+    │           │   ├── ui/              <-- Modular CAD docks, outliner, inspector, toolbelt, modals (<500 LOC)
+    │           │   ├── input/           <-- DOM Pointer/Keyboard events -> Map Engine commands
+    │           │   ├── bridge/          <-- Canvas mount, DPR scaling, rAF heartbeat connector
+    │           │   ├── shell/           <-- Tab locks, autosave persistence, session preferences
+    │           │   └── arsenal/         <-- Loadout forms, gear catalog, 3D paper doll UI
+    │           ├── planner/             <-- Tactical planning whiteboard and briefing interface
+    │           ├── aar/                 <-- Telemetry replay and after-action review player
+    │           └── debug/               <-- Diagnostics testbench (occlusion and building viewer)
+    ├── map-engine/                      <-- World, spatial computation, formats, and mission domain
+    │   └── src/
+    │       ├── data/                    <-- Scenario compiler/AST/validation + Yjs CRDT store/rows
+    │       ├── editing/                 <-- Headless tool FSMs (Ruler, LOS, Place), commands, undo history
+    │       ├── world/                   <-- DEM terrain elevation, building meshes, vegetation, water
+    │       ├── spatial/                 <-- 3D BVH spatial indexes, picking, raymarching (terrain/world/interior)
+    │       ├── camera/                  <-- Camera projections, pan/zoom, metric <-> MGRS coordinate unproject
+    │       ├── streaming/               <-- 512m chunk residency, tile cache, memory budgets
+    │       ├── io/                      <-- Binary rkyv map formats, compressed containers, POD serialization
+    │       ├── symbology/               <-- NATO MIL-STD-2525 symbology and tactical graphics
+    │       ├── frame/                   <-- BUILDS graphics_engine::frame packets from world state
+    │       ├── doll/                    <-- 3D character equipment and arsenal preview
+    │       └── diagnostics/             <-- Engine benchmarks, probe runners
+    └── graphics-engine/                 <-- Pure GPU rendering primitives (knows zero map concepts)
+        └── src/
+            ├── gpu_context/             <-- GPU adapter, logical device, queue, surface lifecycle
+            ├── render_passes/           <-- Vertex/index buffers, draw calls, instanced batching
+            ├── frame/                   <-- Uniform uploads, render pass layout, timing
+            ├── frame_loop/              <-- Damage-driven rAF render loop and frame orchestration
+            ├── pipeline/                <-- Render pipelines, bind group layouts, depth states
+            ├── shaders/                 <-- WGSL shader source code and compilation helpers
+            └── text/                    <-- MSDF and bitmap glyph atlas texture rendering
 
-## Run it locally
-Everything is configured in `apps/website/api/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`.
+tools/
+└── tbd-tools/                           <-- Heavy async Rust CLI suite:
+    ├── enf                              <-- Enfusion pak unpacker and script source extractor
+    ├── gate                             <-- Headless CDP Chrome gate test harness
+    ├── mcpd                             <-- Enfusion MCP broker daemon
+    ├── world                            <-- World object and terrain chunk processing pipeline
+    ├── map                              <-- Image optimization and satellite tile pipeline
+    └── capture                          <-- Headless map snapshot utility
 
-**There is no `Makefile`** — T-897 deleted it (T-853 Phase 3). Every task it carried is a
-`cargo xtask` subcommand: **`cargo xtask help`** is the task surface (the old `help` target) and lists the CI /
-schema / verify / map / build / db lanes; `cargo xtask mk` and `cargo xtask db` list their own.
-`cargo xtask` is the `.cargo/config.toml` alias for `cargo run --package xtask --`, so it works from
-any directory in the workspace. The `~/go/bin` PATH prepend the Makefile did for
-`editorconfig-checker` now lives in `xtask`'s own child environment.
+tools_v2/                               <-- Tooling crates and phased architecture scaffold
+├── verification-core/                  <-- Fail-closed assertions, process isolation, and locking
+├── ticket-engine/                      <-- Typed tickets, canonical TOML, transactional storage
+├── xtask/                              <-- Live task runner (`cargo xtask`), checks and blueprint compiler
+└── developer-tools/                    <-- Future heavy CLI destination (documentation scaffold)
 
-```bash
-cargo xtask db up            # start local Postgres (podman/docker compose), port 5434
-cargo xtask mk rust-api      # run the Rust API on :8080 (cargo run --bin api; migrates on boot)
-cargo xtask mk leptos        # Leptos on :3000 — trunk serve --release (T-173 P8; day-to-day perf path)
-cargo xtask mk leptos-debug  # debug wasm rebuilds only — editor FPS NOT representative
-cargo xtask db test-it       # Rust integration tests (needs db up; sets TEST_DATABASE_URL)
-cargo xtask db down          # stop Postgres (keeps volume)
-cargo xtask db seed          # apply the five SQL seeds to the running DB
+packages/
+├── tbd-schema/                          <-- Canonical JSON schemas for missions, loadouts, ORBATs
+└── map-assets/                          <-- Terrain DEM, satellite imagery, and binary tile caches
+
+docs/                                    <-- Architecture specs, UI surface specs, and runbooks
+.ai/tickets/                             <-- Ticket registry TOML files
 ```
 
-Frontend checks: `cargo xtask mk ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release build); full editor gates: `cargo xtask mk leptos-gates` (T-177: runs **`gate doctor`** first — see [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md); full Chrome `--headless=new`, not `chrome-headless-shell`). Toolchain pin: root [`rust-toolchain.toml`](rust-toolchain.toml) (**1.95.0**). Editor HUD shows `rf <ms>`; console `window.__editorBench(500)` for local pan/zoom encode samples (T-173).
+---
 
-### Dev login (no Discord needed)
-`APP_ENV=development` exposes `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted`.
-It mints a real session and 302-redirects to the SPA callback exactly like Discord —
-open it in the browser to log in, or curl it and read `access_token` from the
-`Location` fragment for API testing.
+## 3. Canonical Commands (`cargo xtask`)
 
-## Conventions
-- **Where does X go?** — [`docs/platform/WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md) (T-171 pin: SPA pages, handlers, migrations, seeds, fixtures, map-assets, tickets).
-- API JSON is **snake_case** (from serde field names). The Rust models in `apps/website/api/src/models/`
-  are the snake_case DB/API source of truth, and the Leptos `dto.rs` DTOs mirror them (R-api golden
-  round-trip tests) — when changing a model, update the matching DTO. Cross-boundary **contract** types are **generated** from
-  `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen` into
-  `apps/website/api/src/contract/generated/` (DO NOT EDIT; T-123.4 — Rust-only since the T-159.29.3
-  React deletion; the Leptos SPA hand-writes `dto.rs` gated by R-api golden tests). The mission
-  **export** JSON (`/missions/:id/export`) is the one camelCase exception.
-- List endpoints return `{data, total, limit, offset}` (audit logs use a `next_cursor`).
-- Auth tiers: public, `RequireAuth` (JWT), `RequireMinRole(admin|mission_maker)`,
-  `RequireServiceToken` (`X-Service-Token`, for game-server ingest).
-- Refresh tokens are **single-use** (rotated + revoked each call). All refreshes go
-  through one single-flight helper (`apps/website/frontend/src/client.rs`) so the token is
-  never double-spent.
-- Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
-  the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
-- **Ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): all work happens **directly on `main` — no branches** (supersedes the old `ticket/T-0xx` flow). Composer 2.5 owns doc writes/sync; Claude Code ships code + in-code comments; the registry is source of truth (`cargo run -q -p xtask -- ticket sync`).
-- **Documentation standards:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](docs/platform/DOCUMENTATION_STANDARDS.md) — cross-boundary `@contract` / `@route` / `@model`, codegen + validation + CI (**T-123**).
-- Docs: see **§Documentation** — sync before commit. Ticket queue: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
+Configuration lives in `apps/website/api_v2/.env` (`APP_ENV=development`, Postgres on port 5434).
 
-## Documentation
+```bash
+# Database (Postgres :5434)
+cargo xtask db up              # Start local Postgres container
+cargo xtask db down            # Stop local Postgres container (keeps volume)
+cargo xtask db seed            # Apply development SQL seeds
 
-Keep docs in sync **in the same commit** as the code change (or immediately before — never merge stale docs).
+# Development Servers
+cargo xtask mk rust-api        # Axum API on :8080 (runs migrations on boot)
+cargo xtask mk leptos          # Leptos SPA on :3000 (Trunk release build)
 
-**Agent split (2026-06):** **Cursor (Composer 2.5)** owns all documentation writes and sync. **Claude Code** reads specs and ships code only — return verify output to Cursor for doc updates. See [`agent_execution.md`](docs/specs/Mission_Creator_Architecture/agent_execution.md) §Agent roles and [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
+# Quality Gates & Testing
+cargo xtask ci ci-local        # Replay full CI check suite locally
+cargo xtask mk ci-local-leptos # Frontend checks: fmt, clippy wasm32, test, trunk release build
+cargo xtask mk leptos-gates    # Full headless Chrome CDP editor gates (runs gate doctor first)
+cargo xtask db test-it         # Rust backend integration tests (requires db up)
+cargo xtask mod compile        # Compile check Enfusion mod scripts
 
-> **SUPERSEDED FOR THE PLATFORM FACTORY (2026-07-26).** Claude Code's budget ran out after wave 5, so
-> **Cursor + Grok 4.5 now runs the T-182…T-297 platform factory and owns application code there**, via
-> slice agents in `slice/T-XXX` worktrees. The 2026-06 split above still governs all *other* work.
-> Runbook: [`docs/platform/FACTORY_FOR_CURSOR.md`](docs/platform/FACTORY_FOR_CURSOR.md) · mode switch:
-> [`.cursor/rules/platform-factory-mode.mdc`](.cursor/rules/platform-factory-mode.mdc).
+# Ticket Registry
+cargo xtask ticket check       # Validate ticket registry structure
+cargo xtask ticket sync        # Regenerate ticket views and roadmaps
+```
 
-**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` or `apps/mod/tbd-export` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `cargo run -q -p xtask -- ticket run` skips non-`claude-code` rows automatically.
-**In platform-factory mode, `executor: claude-code` means "any AI coding agent may take this" — it is not a vendor claim,** and Grok now fills that role. Do **not** mass-edit the 95 open platform tickets to `cursor-docs`. `workbench` and `human` still mean stop.
-
-**Before every T-0xx commit, check what changed:**
-
-| Change type | Update |
-|-------------|--------|
-| Shipped feature / milestone | **§Status** — new T-0xx bullet under **Done**; bump `latest shipped` line |
-| **Active slice** (code in progress, not shipped) | **§Status — ACTIVE SLICE** block at top; keep `latest shipped` on last **git tag** only |
-| New/changed route | Matching `docs/website/frontend/pages/*.md` + row in `docs/website/frontend/INDEX.md`; verify against `apps/website/frontend/src/router.rs` |
-| UI surface (no new route) | Relevant page doc + `Live source:` path to the `apps/website/frontend/src/` page module |
-| API / model change | Backend model/handler + the matching `apps/website/frontend/src/dto.rs` DTO (R-api golden); note handler if behavior changed |
-| Mission Creator | MC README, `agent_execution.md` Decisions log, and/or `feature_inventory.md` — only if editor contract or Eden parity changed |
-| Deferred / queued work | [`.ai/tickets/registry.json`](.ai/tickets/registry.json) row `status: deferred` or `queued` — sync via `cargo run -q -p xtask -- ticket sync`; never mark shipped until verified |
-
-**Doc hub:** [`docs/website/README.md`](docs/website/README.md) → [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) → domain **`ROADMAP.md`** files. Tag contract: [`docs/website/TAGS.md`](docs/website/TAGS.md). **Commit checklist:** [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
-
-**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `apps/website/frontend/src/` (the React app was deleted at T-159.29.3).
-
-**Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
-
-## Ticket operations
-
-**Source of truth:** [`.ai/tickets/registry.json`](.ai/tickets/registry.json). **Lead view:** [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md). **Full table:** [`docs/TICKET_REGISTRY.md`](docs/TICKET_REGISTRY.md).
-
-| Step | Command / doc |
-|------|----------------|
-| Edit queue / status / spec | Edit `.ai/tickets/registry.json` |
-| Regenerate views + CLAUDE status block | `cargo run -q -p xtask -- ticket sync` (or `cargo xtask ticket sync`) |
-| Validate structure | `cargo run -q -p xtask -- ticket check` |
-| Strict legacy-ID scan | `cargo xtask ticket check --strict` |
-| Operator playbook | [`.ai/tickets/AI_PLAYBOOK.md`](.ai/tickets/AI_PLAYBOOK.md) |
-| Claude Code brief | `cargo run -q -p xtask -- ticket brief T-0xx` |
-| Batch implement | `cargo run -q -p xtask -- ticket run` on `main` (claude-code slices only) |
-| Mod / Workbench queue | [`docs/TICKET_MOD_QUEUE.md`](docs/TICKET_MOD_QUEUE.md) |
-| Advance slice | `cargo run -q -p xtask -- ticket advance-slice T-0xx` |
-
-Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:status -->` markers — change the registry and sync.
-
-## Status
-
-> **ACTIVE PROGRAM (2026-07-26): the platform factory — T-182…T-297.**
-> Process: [`docs/platform/PLATFORM_FACTORY.md`](docs/platform/PLATFORM_FACTORY.md) ·
-> wave lock: [`.ai/tickets/wave.lock`](.ai/tickets/wave.lock) — compiled from the tickets by
-> **`cargo xtask wave repack`** (the only legal writer; `cargo xtask wave check` verifies and is
-> wired into `ticket check`). The hand-kept wave-plan TSVs were deleted at T-912.2.
-> **T-181 is complete** (54 slices; the mod boots, all five screens open, objectives/radio/
-> play-area/briefings/markers all run). Both **T-068** and **T-181** are `deferred` because their
-> only remaining slice is `executor: human` — a live two-client E2E on a dedicated server. Do not
-> pick either up; they are not agent-actionable.
-> The generated block below is derived from the registry and lags this note by design — it reports
-> the lowest-ordered `ready` program, not the program in flight.
-
-<!-- ticket-sync:status:start -->
-**Latest shipped:** **T-930**
-
-**ACTIVE NOW:** **T-154** — T-154.1 (Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)). Slice spec: `docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md`.
-
-**Next (by order):**
-- **T-940** — Website platform: events, telemetry, admin, content (`queued`)
-- **T-090** — Map visualization program (`ready`)
-- **T-935** — Map binary storage — hybrid rkyv + POD (`queued`)
-- **T-212** — Typed per-side objectives with attributes (`ready`)
-- **T-674** — T-216 follow-on: slot identity reaches the wire (`queued`)
-- **T-675** — Vehicle roster reaches game — T-076 compile half (`queued`)
-- **T-936** — Mission logic the audit found missing (`queued`)
-- **T-290** — Nine dead flatten fields mod never reads (`ready`)
-- **T-941** — Enfusion mod lifecycle: safestart, lobby, screens, HUD (`queued`)
-- **T-937** — Editor data layer: id arrays, undo, persist (`queued`)
-<!-- ticket-sync:status:end -->
-
-**Shipped history — every slice, sha and tag — lives in**
-[`docs/platform/SHIPPED_HISTORY.md`](docs/platform/SHIPPED_HISTORY.md).
-It was moved out of this file on 2026-08-07: it was 86% of CLAUDE.md and ~98% archive, and it
-described the deleted Go backend and React/TypeScript frontend in the present tense. Nothing was
-dropped — the relocation is verified entry-for-entry. Git tags (`git tag -l 'T-*'`) remain the
-independent index.
-
-**Current environment notes:**
-- Discord OAuth credentials ARE populated in `apps/website/api/.env` (client id, secret, guild id); `DISCORD_BOT_TOKEN` and `DISCORD_WEBHOOK_URL` are empty and the bot token is read by no consumer. Dev still uses dev-login by default. Runbook: [`DEV_RUNBOOK.md`](docs/website/DEV_RUNBOOK.md) — and note `FRONTEND_URL`/`DISCORD_REDIRECT_URL` host mismatch (T-303) breaks the first live login.
-- Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
-- A fresh DB is empty of content (events, missions, etc.) — seed those via the API
-  or `psql`. The committed seeds live at `apps/website/api/seeds/`: `discord_roles.sql` +
-  `registry_dev.sql` via `cargo xtask db seed`; `mock_data.sql` (Operation Red Dawn etc., four fixed
-  UUIDs) is **manual `psql` only** (the Go `cmd/seed` applier was deleted at T-145). DEV_RUNBOOK.md
-  has the DELETE SQL to purge those mock missions if they leak into the live library.
-
-## Verifying changes
-Source of truth for the API contract is the Axum handlers + `apps/website/api/src/models/`;
-the Leptos `dto.rs` yields to the backend on conflict. To check a wire change for real, run the
-stack, `dev-login`, hit the endpoint, and confirm the JSON round-trips through the DTO — the
-R-api golden tests (`cargo test -p website-frontend`) pin this against committed captures.
-
-**Platform CI replay:** `cargo xtask db up` → **`cargo xtask ci ci-local`** (mirrors
-[`ci.yml`](.github/workflows/ci.yml): verify-editorconfig, verify-no-python, rust-ci (cargo
-fmt/clippy/build + wasm-ci + test-it), verify-coding-standards, ci-local-leptos (fmt + clippy
-wasm32 + cargo test + trunk release), schema validate + citations). See
-[`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) §11.
+### Dev Login (No Discord Required)
+`APP_ENV=development` exposes `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted`. Open in browser or read `access_token` from the 302 `Location` fragment for API testing.

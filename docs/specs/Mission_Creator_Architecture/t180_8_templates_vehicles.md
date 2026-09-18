@@ -66,7 +66,7 @@ PUT /factions/:id { side, name, roles, vehicles }
 | `apps/website/frontend/src/faction_manager.rs` / client | Reuse list/create/update |
 | `apps/website/frontend/src/editor_ops.rs` | Add Vehicle place/attach |
 | Map GPU | Vehicle icon or reuse slot ring with distinct glyph — minimal visible presence |
-| `apps/website/api` IT | Existing factions tests remain green; add apply round-trip if needed |
+| `apps/website/api_v2` IT | Existing factions tests remain green; add apply round-trip if needed |
 
 ---
 

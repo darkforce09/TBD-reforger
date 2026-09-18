@@ -3,7 +3,7 @@
 //! The keys are camelCase on the wire (not the platform's usual snake_case) because
 //! `JsonLoadContext` binds JSON keys onto these field names, and a key this class does not
 //! declare is silently invisible rather than an error. The backend renames to match — see
-//! `ingest_event_roster` in `apps/website/api/src/handlers/events.rs`.
+//! `ingest_event_roster` in `apps/website/api_v2/src/handlers/events.rs`.
 //!
 //! `assignments` is keyed on `users.arma_id`, which is the SAME string
 //! `TBD_SpawnManager.PlayerBindKey` produces and `TBD_PlayerIdentity.GetArmaId` puts on the
@@ -148,7 +148,7 @@ class TBD_RosterLoader
 
 		string token = TBD_BackendConfig.GetServerToken();
 		// T-181.51 — the game-server tier is `X-Service-Token`, NOT an Authorization bearer
-		// (`ServiceAuth`, apps/website/api/src/middleware/auth.rs, reads only that header). This
+		// (`ServiceAuth`, apps/website/api_v2/src/middleware/auth.rs, reads only that header). This
 		// pointed at `/api/game/events/{id}/roster`, a route that has never existed, so the 404
 		// masked the auth bug underneath: fixing the URL alone would have turned it into a 401.
 		// Same "Key,Value,Key,Value" comma form the three working loaders use.

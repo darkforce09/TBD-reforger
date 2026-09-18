@@ -5,9 +5,9 @@ T-171 pin: canonical home for each artifact class after the `apps/website/{api,f
 | X | Home (post-T-171) |
 |---|---|
 | SPA page module | `apps/website/frontend/src/<page>.rs` (one module per page; route in `src/router.rs`) |
-| API handler | `apps/website/api/src/handlers/<resource>.rs` (models in `src/models/` = wire contract) |
-| DB migration | `apps/website/api/migrations/NNNN_*.sql` (sqlx, embedded, runs on boot) |
-| Data seed | `apps/website/api/seeds/*.sql` (applied by root `cargo xtask db seed`; mock_data.sql manual-psql only) |
+| API handler | `apps/website/api_v2/src/handlers/<resource>.rs` (models in `src/models/` = wire contract) |
+| DB migration | `apps/website/api_v2/migrations/NNNN_*.sql` (sqlx, embedded, runs on boot) |
+| Data seed | `apps/website/api_v2/seeds/*.sql` (applied by root `cargo xtask db seed`; mock_data.sql manual-psql only) |
 | Editor/gate smoke | `tools_v2/developer-tools` (`gate` bin) wired through `cargo xtask mk leptos-gates` |
 | Test fixture | crate-local `tests/fixtures/` beside consumer; NEVER `.ai/artifacts/` |
 | Cross-crate contract golden | `packages/tbd-schema/{schema,golden,golden-missions,registry}/` |

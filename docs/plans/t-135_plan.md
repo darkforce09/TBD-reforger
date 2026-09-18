@@ -5,7 +5,7 @@ Modpacks exist globally (handlers/content/modpacks.rs, T-271 workshop fields) bu
 never checks that the mods a mission's registry aliases need are in the chosen modset.
 
 ## Approach
-1. New `apps/website/api/src/services/workshop_sync.rs` (register in `services/mod.rs`): resolve workshop ids via
+1. New `apps/website/api_v2/src/services/workshop_sync.rs` (register in `services/mod.rs`): resolve workshop ids via
    http_retry, cache into modpack_mods; unit tests with a stubbed client.
 2. `handlers/content/modpacks.rs`: `PUT/DELETE /missions/{id}/modpack` attach/detach; list shows mission counts;
    export handler path calls `validate_coverage(mission_aliases, preset)` and 422s naming the alias.

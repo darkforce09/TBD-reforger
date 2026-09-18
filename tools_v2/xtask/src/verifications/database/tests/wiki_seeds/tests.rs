@@ -104,7 +104,7 @@ fn a_missing_seed_file_does_not_read_as_pass() {
     let t = Tree::new("no-seed");
     let v = t.verdict();
     assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
-    assert!(text(&v).contains("T-444 requires apps/website/api/seeds/wiki_pages.sql"));
+    assert!(text(&v).contains("T-444 requires apps/website/api_v2/seeds/wiki_pages.sql"));
     assert_eq!(verify_t444(&t.0).unwrap(), 1);
 }
 

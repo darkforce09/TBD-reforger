@@ -383,7 +383,7 @@ REFUSING to restore into database `{name}` (T-381 allow-list).
   so a typo here is unrecoverable without another backup.
 
   This is the same allow-list the integration harness carries at
-  apps/website/api/tests/common/mod.rs:87, which already stopped one
+  apps/website/api_v2/tests/common/mod.rs:87, which already stopped one
   exported TEST_DATABASE_URL from wiping the live database.
 
   If you genuinely mean it (disaster recovery), name it twice:

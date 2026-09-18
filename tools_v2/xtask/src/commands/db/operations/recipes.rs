@@ -14,7 +14,7 @@ use super::test_it::reap_select;
 use super::{IT_BASE_DB, IT_MAINT_DB, SEEDS, WEB};
 
 /// Every recipe line the port reproduces, rendered with make's own variable values
-/// (`$(WEB)` → `apps/website/api`, `$(COMPOSE)` → `podman compose` on a host with no docker).
+/// (`$(WEB)` → `apps/website/api_v2`, `$(COMPOSE)` → `podman compose` on a host with no docker).
 ///
 /// The four `deploy db` wrappers are deliberately absent: their recipes are make's own
 /// `cargo run -q -p xtask -- deploy db …` transport, which the port replaces with an in-process

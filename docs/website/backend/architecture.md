@@ -2,7 +2,7 @@
 
 > **ARCHIVE (T-145 / T-171).** This document is the original Go-era design plan. It is **not** the live backend.
 >
-> **Live API:** [`apps/website/api/`](../../../apps/website/api/) — Rust **Axum + sqlx**, pkg `website-api`. Handlers `api/src/handlers/`, models `api/src/models/`, migrations `api/migrations/`, seeds `api/seeds/`.
+> **Live API:** [`apps/website/api_v2/`](../../../apps/website/api_v2/) — Rust **Axum + sqlx**, pkg `website-api`. Handlers `api/src/handlers/`, models `api/src/models/`, migrations `api/migrations/`, seeds `api/seeds/`.
 >
 > **Run / status:** root [`CLAUDE.md`](../../../CLAUDE.md) · [`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md) · conventions [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
 >

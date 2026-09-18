@@ -16,7 +16,7 @@
 //! `field-manual` are separate, separately-worded failures rather than one "seed looks wrong".
 //!
 //! OWNS WIDEN (carried from the script): wave_plan T-444 lists `Makefile` +
-//! `apps/website/api/seeds`; this is the Class-R perturbation guard for the seed-recipe contract.
+//! `apps/website/api_v2/seeds`; this is the Class-R perturbation guard for the seed-recipe contract.
 //! T-462 owns the gate and its `scripts/platform/wave.sh` wiring (two `run "T-444 wiki seed"` call
 //! sites, in the `gate` and `gate --slice` paths).
 //!
@@ -90,7 +90,7 @@ const RECIPE_SOURCE: &str = "cargo xtask db seed";
 /// the list arrives as a `&[&str]`, so no arrangement of text in that file can satisfy the gate.
 const RECIPE_CONST: &str = "tools_v2/xtask/src/commands/db/operations.rs SEEDS";
 /// The seed the seeder must apply, repo-relative. Also quoted verbatim in one failure hint.
-const SEED_FILE: &str = "apps/website/api/seeds/wiki_pages.sql";
+const SEED_FILE: &str = "apps/website/api_v2/seeds/wiki_pages.sql";
 /// The [`SEEDS`] entry that must be present. The const holds bare file names (the seeder redirects
 /// `seeds/<entry>`), so this is the bare name — matched by EQUALITY, not substring, so a
 /// `wiki_pages.sql.disabled` entry cannot satisfy the pin.

@@ -1,7 +1,7 @@
 # TBD Reforger Platform: Master Architecture, Performance & Disjointedness Audit
 
 **Date:** 2026-08-25  
-**Target Repository:** `TBD-Reforger` (`apps/website/frontend/`, `apps/website/api/`, `crates/`)  
+**Target Repository:** `TBD-Reforger` (`apps/website/frontend/`, `apps/website/api_v2/`, `crates/`)  
 **Scope:** Full-stack audit across 73 frontend modules (~120k LOC), 22 backend API handlers (~23.5k LOC), and core rendering/engine crates (~67.7k LOC).
 
 ---
@@ -220,7 +220,7 @@
 ### 2.4 Operations, Events & Realtime ORBAT Subsystem
 
 #### Finding 4.1: Ghost Occupant Registration Desync in `assign_slot`
-- **Affected Files:** `apps/website/api/src/handlers/events.rs:2153-2168`.
+- **Affected Files:** `apps/website/api_v2/src/handlers/events.rs:2153-2168`.
 - **Defect:** When a leader assigns User A to a slot currently occupied by User B, `orbat_slots.assigned_to` updates to User A, but **User B's `event_registrations` row is never updated**, leaving User B in a ghost registered state.
 - **Type of Fix:** **Atomic Registration Slot Revocation**
 - **Maximum-Speed Optimized Implementation:**
@@ -235,7 +235,7 @@
 ---
 
 #### Finding 4.2: Unhandled Concurrency 500 in `reserve_squad`
-- **Affected Files:** `apps/website/api/src/handlers/events.rs:2234-2281`.
+- **Affected Files:** `apps/website/api_v2/src/handlers/events.rs:2234-2281`.
 - **Defect:** `reserve_squad` performs checks without row locks. Concurrent reservations cause unhandled unique constraint violations on `(event_mission_id, squad)` returning HTTP 500.
 - **Type of Fix:** **Atomic Upsert with Conflict Handling**
 - **Maximum-Speed Optimized Implementation:**
@@ -251,7 +251,7 @@
 ---
 
 #### Finding 4.3: Faction-Blind Squad Reservation Collision
-- **Affected Files:** `apps/website/api/migrations/0001_initial_schema.sql:403-409`, `apps/website/api/src/handlers/events.rs:1631-1647`.
+- **Affected Files:** `apps/website/api_v2/migrations/0001_initial_schema.sql:403-409`, `apps/website/api_v2/src/handlers/events.rs:1631-1647`.
 - **Defect:** `orbat_reservations` unique constraint is `(event_mission_id, squad)` without a `faction` column. A BLUFOR leader reserving "Alpha 1-1" locks out an OPFOR leader from managing their own "Alpha 1-1" squad.
 - **Type of Fix:** **Schema Migration & Compound Unique Index**
 - **Maximum-Speed Optimized Implementation:**
@@ -299,7 +299,7 @@
 ### 2.6 Administration, Moderation & Audit Subsystem
 
 #### Finding 6.1: Personnel Roster Silent Truncation Bug
-- **Affected Files:** `apps/website/api/src/handlers/admin.rs:60-64`, `apps/website/frontend/src/personnel.rs:232-241`.
+- **Affected Files:** `apps/website/api_v2/src/handlers/admin.rs:60-64`, `apps/website/frontend/src/personnel.rs:232-241`.
 - **Defect:** Backend `list_users` defaults to `LIMIT 20`. Frontend `personnel.rs` omits pagination controls and applies sorting/filtering **only to the first 20 records in memory**. Members 21–150 are completely invisible.
 - **Type of Fix:** **Server-Side Query Pagination & Filter Parameters**
 - **Maximum-Speed Optimized Implementation:**
@@ -309,7 +309,7 @@
 ---
 
 #### Finding 6.2: Missing Audit Logging Across CMS and Events
-- **Affected Files:** `apps/website/api/src/handlers/cms.rs:288-409`, `apps/website/api/src/handlers/events.rs:665-888, 1274-1443`.
+- **Affected Files:** `apps/website/api_v2/src/handlers/cms.rs:288-409`, `apps/website/api_v2/src/handlers/events.rs:665-888, 1274-1443`.
 - **Defect:** Critical administrative mutations (`update_announcement`, `delete_announcement`, `create_event`, `update_event`, `delete_event`, `add_event_mission`, `remove_event_mission`) omit `write_audit` logging.
 - **Type of Fix:** **Complete Audit Trail Instrumentation**
 - **Maximum-Speed Optimized Implementation:**
@@ -320,7 +320,7 @@
 ### 2.7 Backend API, Realtime SSE & Database Architecture
 
 #### Finding 7.1: Match Telemetry Ingestion N+1 Loop (480+ Queries per Ingest)
-- **Affected Files:** `apps/website/api/src/handlers/telemetry.rs:790-1050`, `apps/website/api/src/services/user_stats.rs:52-87`.
+- **Affected Files:** `apps/website/api_v2/src/handlers/telemetry.rs:790-1050`, `apps/website/api_v2/src/services/user_stats.rs:52-87`.
 - **Defect:** For an 80-player match, iterates sequentially over players executing 80 user lookups, 80 stat upserts, and 320 user stat recomputation queries (4 queries $\times 80$).
 - **Type of Fix:** **Set-Based Vectorized Batch Queries**
 - **Maximum-Speed Optimized Implementation:**
@@ -336,7 +336,7 @@
 ---
 
 #### Finding 7.2: Deployments Service Record N+1 Loop (100+ Queries)
-- **Affected Files:** `apps/website/api/src/handlers/deployments.rs:171-240`.
+- **Affected Files:** `apps/website/api_v2/src/handlers/deployments.rs:171-240`.
 - **Defect:** Iterates over up to 50 match player stat rows and executes 2 queries per row (`matches` and `missions`), triggering 100+ database round-trips.
 - **Type of Fix:** **Single Composite SQL JOIN**
 - **Maximum-Speed Optimized Implementation:**
@@ -353,7 +353,7 @@
 ---
 
 #### Finding 7.3: Missing Foreign-Key Migration Indexes
-- **Affected Files:** `apps/website/api/migrations/`.
+- **Affected Files:** `apps/website/api_v2/migrations/`.
 - **Defect:** `matches` table lacks indexes on `(event_id, mission_id)` and `event_id`, causing full table scans.
 - **Type of Fix:** **Migration Index Creation**
 - **Maximum-Speed Optimized Implementation:**
@@ -366,7 +366,7 @@
 ---
 
 #### Finding 7.4: Unbounded Memory Leak in SSE Hub
-- **Affected Files:** `apps/website/api/src/realtime.rs:64-84`.
+- **Affected Files:** `apps/website/api_v2/src/realtime.rs:64-84`.
 - **Defect:** `Hub::subscribe` inserts broadcast senders into `self.topics: HashMap<String, broadcast::Sender<Vec<u8>>>` without cleanup if the server ID is stale or invalid.
 - **Type of Fix:** **Dead-Topic Sweeper / Weak Sender Maps**
 - **Maximum-Speed Optimized Implementation:**
@@ -536,10 +536,10 @@ graph TD
 
 ### 3.4 Backend API Modular Domain Reorganization
 
-Currently, `apps/website/api/src/` has flat `handlers/` (22 files) and `services/` (11 files). We reorganize them into cohesive, domain-driven modules:
+Currently, `apps/website/api_v2/src/` has flat `handlers/` (22 files) and `services/` (11 files). We reorganize them into cohesive, domain-driven modules:
 
 ```
-apps/website/api/src/
+apps/website/api_v2/src/
 ├── main.rs                           # Entrypoint (env boot, migrations, listener)
 ├── lib.rs                            # Library exports
 ├── app.rs                            # Router assembly & middleware stacking

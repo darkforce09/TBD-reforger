@@ -9,7 +9,7 @@ Owner: command center. Builds on T-190 (local CRDT merge). ADR-3 deferred multip
 cd .ai/artifacts/worktrees/T-295 && pwd && git branch --show-current   # must be slice/T-295
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target ; cargo xtask db up
 ═══ READ ═══
-apps/website/api/src/{lib.rs, app.rs:700-800}, api/Cargo.toml, frontend state/{persist.rs, mod.rs}, docs/plans/t-295_plan.md
+apps/website/api_v2/src/{lib.rs, app.rs:700-800}, api/Cargo.toml, frontend state/{persist.rs, mod.rs}, docs/plans/t-295_plan.md
 ═══ PROBLEM ═══
 No live sync between clients; POST /versions cannot tell a stale save from a fresh one.
 ═══ SHIPPED ═══

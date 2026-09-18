@@ -5,7 +5,7 @@ leaderboards.rs:47-51 whitelists five ORDER BY arms with no secondary key; T-194
 LIMIT/OFFSET paging can repeat and skip rows. Small fix, real correctness bug on a public page.
 
 ## Approach
-1. `apps/website/api/src/handlers/telemetry/leaderboards.rs`: write the paging test first (golden seed, LIMIT 2 over
+1. `apps/website/api_v2/src/handlers/telemetry/leaderboards.rs`: write the paging test first (golden seed, LIMIT 2 over
    the team_kills tie, collect pages, assert set equality and no duplicates) — red or flaky on main; paste it.
 2. Append `, lt.discord_id ASC` to each of the five whitelist strings (:47-51).
 3. Perturbation: remove it from `team_kills` → red; restore, `touch`, green.

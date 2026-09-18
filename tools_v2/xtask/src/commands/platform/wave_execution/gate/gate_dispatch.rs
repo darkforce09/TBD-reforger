@@ -271,7 +271,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // T-597 — THE STRUCTURAL GAP. `xtask` and `tools_v2/developer-tools` were tested by NOTHING. The gate ran
     // `test api`, `test map-engine`, `test frontend` and stopped. MEASURED 2026-07-31: ci.yml's
     // `test` step is a bare `cargo test` under the website-api job, whose
-    // `defaults.run.working-directory` is `apps/website/api`. Cargo with no `-p` selects the package
+    // `defaults.run.working-directory` is `apps/website/api_v2`. Cargo with no `-p` selects the package
     // in the CWD, so both are workspace members that no gate and no workflow has ever run. What that
     // cost: density::tests::corner_partition_identity sat red from T-176 to T-597 — four weeks.
     // PRIVATE TARGET DIR, same reason and not negotiable: this step BUILDS AND RUNS test binaries.

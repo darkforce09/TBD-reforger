@@ -26,8 +26,8 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "--exclude=apps/mod/Tbd_framework/".into(),
         "--exclude=apps/mod/.local-test-profile/".into(),
         "--exclude=**/node_modules/".into(),
-        "--exclude=apps/website/api/.tools/".into(),
-        "--exclude=apps/website/api/.env".into(),
+        "--exclude=apps/website/api_v2/.tools/".into(),
+        "--exclude=apps/website/api_v2/.env".into(),
         "--exclude=apps/mod/tbd-export/".into(),
         "--exclude=apps/mod/tbd-emcp/".into(),
         "--exclude=scripts/deploy/deploy.env".into(),
@@ -239,7 +239,7 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
 
     // ── docker compose ──────────────────────────────────────────────────────────────────────
     // T-438: the compose file lives at apps/website/docker-compose.staging.yml (T-251), not under
-    // apps/website/api/. Match `cargo xtask deploy website`.
+    // apps/website/api_v2/. Match `cargo xtask deploy website`.
     println!("==> docker compose (API + Postgres)");
     if cli.dry_run {
         println!(

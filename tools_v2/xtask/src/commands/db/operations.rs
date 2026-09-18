@@ -20,7 +20,7 @@
 //!
 //! ```text
 //! $ make db-up
-//! cd apps/website/api && podman compose up -d db
+//! cd apps/website/api_v2 && podman compose up -d db
 //! /bin/sh: 1: podman: not found
 //! make: *** [Makefile:70: db-up] Error 127
 //! ```
@@ -87,7 +87,7 @@
 //!   `rust_it` is safe by construction; the port adds `TBD_IT_BASE_DB` (the selftest needs a
 //!   scratch base to avoid racing sibling slices), which would be a loaded gun without a guard. It
 //!   goes through the SAME T-381 allow-list the integration harness carries
-//!   (`apps/website/api/tests/common/mod.rs:87` ⇄ [`crate::commands::deploy::database_operations::
+//!   (`apps/website/api_v2/tests/common/mod.rs:87` ⇄ [`crate::commands::deploy::database_operations::
 //!   is_safe_scratch_database_name`]), and every individual name is re-checked immediately before
 //!   its `DROP`. `tbd_reforger` is refused twice over.
 //! - **The reap was skipped on exactly the runs that leak.** `cargo test` failing aborts the make
@@ -118,8 +118,8 @@ pub mod test_it;
 // after T-897 deletes it, the consts are what survives — which is why the pin lives here and not
 // only in a test that reads a file that is going away.
 
-/// `WEB := apps/website/api` (Makefile:3).
-pub(crate) const WEB: &str = "apps/website/api";
+/// `WEB := apps/website/api_v2` (Makefile:3).
+pub(crate) const WEB: &str = "apps/website/api_v2";
 
 /// `seed:` — five appliers, in order (Makefile:78-83). Order is contractual: `registry_dev`
 /// references roles seeded by `discord_roles`.

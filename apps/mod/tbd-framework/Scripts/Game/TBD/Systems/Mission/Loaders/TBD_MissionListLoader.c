@@ -2,7 +2,7 @@
 //!
 //! Field names are the wire keys — Enfusion's `JsonLoadContext` binds JSON keys onto class
 //! fields BY NAME, so `slotCount` is camelCase on the backend too
-//! (`IngestMissionListEntry` in `apps/website/api/src/handlers/missions.rs` renames it
+//! (`IngestMissionListEntry` in `apps/website/api_v2/src/handlers/missions.rs` renames it
 //! explicitly). A key this class does not declare is not an error there, it is invisible —
 //! a snake_case `slot_count` would parse to 0 for every mission with nothing logged.
 //!
@@ -115,7 +115,7 @@ class TBD_MissionListLoader
 		s_Callback.SetOnSuccess(OnSuccess);
 		s_Callback.SetOnError(OnError);
 		// T-181.51 — the game-server tier is `X-Service-Token`, NOT an Authorization bearer
-		// (`ServiceAuth`, apps/website/api/src/middleware/auth.rs, reads only that header). This
+		// (`ServiceAuth`, apps/website/api_v2/src/middleware/auth.rs, reads only that header). This
 		// sent `Authorization: Bearer` against a route that never existed, so the 404 hid the
 		// auth bug underneath it: fixing the URL alone would have turned it into a 401. Same
 		// "Key,Value,Key,Value" comma form (no space) the three working loaders use —

@@ -6,7 +6,7 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 
 | Path | Contents |
 |------|----------|
-| [`apps/website/`](apps/website/) | Nest (T-171): [`api/`](apps/website/api/) Rust Axum + sqlx (`website-api`, compose, `.env`, seeds) · [`frontend/`](apps/website/frontend/) Leptos Trunk SPA (`website-frontend`) — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md) |
+| [`apps/website/`](apps/website/) | Nest (T-171): [`api_v2/`](apps/website/api_v2/) Rust Axum + sqlx (`website-api`, compose, `.env`, seeds) · [`frontend/`](apps/website/frontend/) Leptos Trunk SPA (`website-frontend`) — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md) |
 | [`apps/mod/`](apps/mod/) | `tbd-framework` Enfusion scripts; `crf_framework/` (gitignored local reference) |
 | [`packages/tbd-schema/`](packages/tbd-schema/) | Mission JSON schema, golden missions, spikes |
 | [`docs/specs/`](docs/specs/) | Design specs (Mission Creator, blueprints, UX) |
@@ -19,7 +19,7 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 ## Quick start
 
 ```bash
-cp apps/website/api/.env.example apps/website/api/.env   # if needed
+cp apps/website/api_v2/.env.example apps/website/api_v2/.env   # if needed
 cargo xtask db up
 cargo xtask mk rust-api      # :8080
 cargo xtask mk leptos   # :3000 (trunk serve; proxies /api + /map-assets)

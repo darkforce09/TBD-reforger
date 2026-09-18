@@ -300,7 +300,7 @@ pub(super) fn api_env_fail(api_base: &str, msg: &str, hint: Option<&str>) -> Gat
 pub(super) fn api_doc_fail(msg: &str) -> GateExit {
     println!("\nCOMPILED BOOT: FAIL — {msg}");
     println!("  The API would not produce a compiled document. That is a COMPILER/CONTRACT defect, not an environment one — re-running will not fix it.");
-    println!("  Check the API log: a 500 is schema validation (validated_compiled_body in apps/website/api/src/handlers/missions/missions.rs); a 409 is no placed slots.");
+    println!("  Check the API log: a 500 is schema validation (validated_compiled_body in apps/website/api_v2/src/handlers/missions/missions.rs); a 409 is no placed slots.");
     GateExit(1)
 }
 

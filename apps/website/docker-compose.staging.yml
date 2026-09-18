@@ -11,7 +11,7 @@
 #
 # Host Postgres port: TBD_POSTGRES_HOST_PORT (default 5432) — see
 # scripts/deploy/deploy.env.example. Local laptop stack remains
-# apps/website/api/docker-compose.yml on host 5434.
+# apps/website/api_v2/docker-compose.yml on host 5434.
 #
 # SPA + COOP/COEP: scripts/deploy/Caddyfile.website (not this file).
 

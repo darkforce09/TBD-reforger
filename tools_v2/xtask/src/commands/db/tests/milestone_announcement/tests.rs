@@ -4,7 +4,7 @@ fn fixture_root(tag: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!("t872-seed-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-    fs::create_dir_all(root.join("apps/website/api")).unwrap();
+    fs::create_dir_all(root.join("apps/website/api_v2")).unwrap();
     fs::create_dir_all(root.join("scripts/mod")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     // Script path exists only for error-message pin (port does not execute it).
@@ -13,7 +13,7 @@ fn fixture_root(tag: &str) -> PathBuf {
 }
 
 fn write_env(root: &Path, body: &str) {
-    fs::write(root.join("apps/website/api/.env"), body).unwrap();
+    fs::write(root.join("apps/website/api_v2/.env"), body).unwrap();
 }
 
 fn chmod_755(path: &Path) {
@@ -129,7 +129,7 @@ fn bad_database_url_forwards_psql_rc() {
 fn paths_pin_web_under_apps_website_api() {
     let root = PathBuf::from("/tmp/fake-mono");
     let p = Paths::from_root(&root);
-    assert_eq!(p.web, PathBuf::from("/tmp/fake-mono/apps/website/api"));
+    assert_eq!(p.web, PathBuf::from("/tmp/fake-mono/apps/website/api_v2"));
     assert_eq!(
         p.script,
         PathBuf::from("/tmp/fake-mono/scripts/mod/seed-milestone-announcement.sh")

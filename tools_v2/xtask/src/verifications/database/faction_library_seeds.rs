@@ -6,7 +6,7 @@
 //! Class-R. Three facts must hold together, and the script's own header says why each is there:
 //!
 //! > Wave 10 / residual adversarial: cold/schema gates validate faction-library.sample.json but
-//! > never pin that `make seed` applies apps/website/api/seeds/faction_library.sql. Deleting that
+//! > never pin that `make seed` applies apps/website/api_v2/seeds/faction_library.sql. Deleting that
 //! > Makefile seed line still greens the cold gate.
 //!
 //! So: (1) the seed file carries a **live** `INSERT INTO user_factions` naming the starter BLUFOR
@@ -101,7 +101,7 @@ const RECIPE_CONST: &str = "tools_v2/xtask/src/commands/db/operations.rs SEEDS";
 /// matched by EQUALITY so a parked `faction_library.sql.bak` cannot satisfy the pin.
 const SEED_ENTRY: &str = "faction_library.sql";
 /// The seed the seeder must apply, repo-relative.
-const SEED_REL: &str = "apps/website/api/seeds/faction_library.sql";
+const SEED_REL: &str = "apps/website/api_v2/seeds/faction_library.sql";
 /// The wave driver whose two gate paths must both invoke this gate.
 /// T-902 deleted `scripts/platform/wave.sh`; both paths now live in `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs`
 /// as `VERIFY_STEPS` iterated by `gate_slice` and `cmd_gate`.

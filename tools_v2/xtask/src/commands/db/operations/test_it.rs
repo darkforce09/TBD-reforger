@@ -10,7 +10,7 @@
 //! ```text
 //! -podman exec tbd_reforger_db psql … -qc "DROP DATABASE IF EXISTS rust_it WITH (FORCE);"
 //!  podman exec tbd_reforger_db psql … -qc "CREATE DATABASE rust_it;"
-//!  cd apps/website/api && TEST_DATABASE_URL=…/rust_it?sslmode=disable cargo test
+//!  cd apps/website/api_v2 && TEST_DATABASE_URL=…/rust_it?sslmode=disable cargo test
 //! @podman exec … -Atc "SELECT … LIKE 'rust_it\_%\_it' ESCAPE '\'" | while read -r db; do …; done
 //! ```
 //!
@@ -21,7 +21,7 @@
 //!    first line's status and honours the second's.
 //! 2. `ESCAPE '\'` makes the underscores in `rust_it\_%\_it` LITERAL. Without it, `_` is SQL's
 //!    single-character wildcard and the pattern would match names nobody meant to drop. This is
-//!    the T-534 per-binary naming (`<base>_<suite>_it`, `apps/website/api/tests/common/mod.rs`)
+//!    the T-534 per-binary naming (`<base>_<suite>_it`, `apps/website/api_v2/tests/common/mod.rs`)
 //!    read back out.
 //! 3. `[ -n "$db" ] || continue` guards the empty line `read` yields on a blank result set.
 //! 4. `>/dev/null` is on the DROP's stdout only — psql's stderr stays on the terminal.
@@ -81,7 +81,7 @@ REFUSING to run the integration suite against database `{base}` (T-381 allow-lis
   dev database `tbd_reforger` that is unrecoverable without a backup.
 
   This is the same allow-list the integration harness carries at
-  apps/website/api/tests/common/mod.rs:87, which already stopped one
+  apps/website/api_v2/tests/common/mod.rs:87, which already stopped one
   exported TEST_DATABASE_URL from wiping the live database.
 
   Unset TBD_IT_BASE_DB to use the default scratch database `rust_it`.

@@ -119,7 +119,7 @@ fn lock_rows(
 }
 
 /// Two tickets collide if any owned path overlaps — including prefix containment, so
-/// `apps/website/api/src/` collides with `apps/website/api/src/handlers/admin.rs`.
+/// `apps/website/api_v2/src/` collides with `apps/website/api_v2/src/handlers/admin.rs`.
 fn collides(a: &[String], b: &[String]) -> bool {
     wave_lock::collides(a, b)
 }

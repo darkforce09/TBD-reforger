@@ -27,7 +27,7 @@ docs/                         # Cursor prose pass from Claude’s return list (T
 
 | Path | Cargo package name |
 |------|--------------------|
-| `apps/website/api` | `website-api` (shipped; was `reforger-backend`) |
+| `apps/website/api_v2` | `website-api` (shipped; was `reforger-backend`) |
 | `apps/website/frontend` | `website-frontend` (shipped; was `website-leptos`) |
 
 Update every `-p`, CI job, Makefile target, and doc string in the same ship. Prefer clear names over preserving obsolete package ids.
@@ -62,7 +62,7 @@ No deletes until this exists. Tables:
 ### Phase 1 — Layout
 
 - Move SPA → `apps/website/frontend/`
-- Move API crate root → `apps/website/api/` (src, migrations, tests, Cargo.toml, rust-toolchain as needed)
+- Move API crate root → `apps/website/api_v2/` (src, migrations, tests, Cargo.toml, rust-toolchain as needed)
 - Rename packages to `website-frontend` / `website-api` (or document the single exception with operator ASK if truly blocked)
 - Root workspace, Makefile, CI, Trunk, compose, `.env.example`, scripts, gates — all paths updated
 - Prove `cargo xtask mk rust-api` + `cargo xtask mk leptos`; `/map-assets` 200; FRONTEND_URL `:3000`
@@ -97,7 +97,7 @@ cargo xtask ci ci-local
 cargo xtask verify no-node
 ./scripts/ticket check
 test -d apps/website/frontend && test -f apps/website/frontend/Trunk.toml
-test -d apps/website/api && test -f apps/website/api/Cargo.toml
+test -d apps/website/api_v2 && test -f apps/website/api_v2/Cargo.toml
 test ! -e apps/website-leptos
 # API not left as dual root with src/ still at apps/website/src (unless thin wrapper — prefer clean)
 ```

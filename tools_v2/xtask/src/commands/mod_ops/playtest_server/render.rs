@@ -112,7 +112,7 @@ pub fn setup_server_profile(root: &Path, run_dir: &str) -> Result<(), u8> {
 ///
 /// PRESERVED: `eventId` is set even when `--event-id` was not given, so the key lands as `""`.
 /// `serverToken` is the only conditional one — `setup server-profile` has already substituted the
-/// value from `apps/website/api/.env` and an empty `--token` must leave that work alone.
+/// value from `apps/website/api_v2/.env` and an empty `--token` must leave that work alone.
 pub fn patch_backend_config(path: &str, o: &Opts) -> Result<(), String> {
     let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
     let mut d: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;

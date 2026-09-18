@@ -17,8 +17,8 @@
 //!
 //! `2>/dev/null` hid "no such directory" and `|| true` turned the failure into an empty result
 //! set, which the loop read as *zero violations*. Renaming `src/handlers` — or running the script
-//! from a tree where `apps/website/api` had moved — printed `no-select-star: clean` over source it
-//! never opened. That is the signature defect, and here a missing root is a `DidNotRun`.
+//! from a tree where `apps/website/api_v2` had moved — printed `no-select-star: clean` over
+//! source it never opened. That is the signature defect, and here a missing root is a `DidNotRun`.
 //!
 //! Output is byte-identical to the script otherwise, including the absolute paths that
 //! `grep -rn "$ROOT/..."` produced, so the port is accepted by diffing stdout.
@@ -35,11 +35,14 @@ use verification_core::{NotRun, Pattern};
 /// so adding one is not an exercise in regex quoting.
 const ALLOW: &[&str] = &["modpack_mods", "orbat_reservations"];
 
-/// Directories searched, relative to `apps/website/api`.
-const ROOTS: &[&str] = &["src/handlers", "src/services"];
+/// Directories searched, relative to `apps/website/api_v2`.
+///
+/// The whole `src` tree, not a hand-listed set of subdirectories: any SQL-bearing module is in
+/// scope wherever it sits, and no rename can silently drop source out of the gate.
+const ROOTS: &[&str] = &["src"];
 
 pub fn verify_no_select_star(repo_root: &Path) -> Result<u8> {
-    let api = repo_root.join("apps/website/api");
+    let api = repo_root.join("apps/website/api_v2");
     let roots: Vec<_> = ROOTS.iter().map(|r| api.join(r)).collect();
     let root_refs: Vec<&Path> = roots.iter().map(|p| p.as_path()).collect();
 

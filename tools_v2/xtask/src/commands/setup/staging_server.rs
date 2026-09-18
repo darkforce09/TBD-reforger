@@ -1,7 +1,7 @@
 //! T-870 — port of `scripts/mod/bootstrap-staging-server.sh` → `cargo xtask mod bootstrap-staging`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api`,
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`,
 //! `DEPLOY_ENV=scripts/deploy/deploy.env`.
 //!
 //! One-time staging-host discovery + mkdir. Does **not** install steamcmd / Arma — see
@@ -73,7 +73,7 @@ impl Paths {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
             schema: root.join("packages/tbd-schema"),
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
             // paths.sh pin — not an env override (unlike deploy-website).
             deploy_env: root.join("scripts/deploy/deploy.env"),
         }
@@ -123,7 +123,9 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     println!();
     println!("Next steps (manual — see docs/STAGING-SERVER.md):");
     println!("  1. steamcmd +app_update 1890870 on server");
-    println!("  2. Create apps/website/api/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)");
+    println!(
+        "  2. Create apps/website/api_v2/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)"
+    );
     println!("  3. sudo loginctl enable-linger sam");
     println!("  4. bash scripts/mod/deploy-staging.sh");
 

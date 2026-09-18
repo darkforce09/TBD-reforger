@@ -1,7 +1,7 @@
 //! T-859 — port of `scripts/mod/manual-test.sh` → `cargo xtask mod manual-test`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`.
 //!
 //! PASS/FAIL/SKIP accounting and `== section ==` banners match bash byte-for-byte.
 //! On the live tree this gate ships **red** (legacy Go restspike + npm schema + missing
@@ -50,7 +50,7 @@ impl Paths {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
             schema: root.join("packages/tbd-schema"),
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
         }
     }
 }

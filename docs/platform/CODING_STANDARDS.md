@@ -16,7 +16,7 @@
 > §10 rows are current, not historical. GO-7 spent the whole Go→Rust rewrite dead precisely because
 > a blanket "that's all retired" reading was easier than checking — see the §2 note (T-590).
 >
-> **Live layout:** `apps/website/api/` (`website-api`) · `apps/website/frontend/` (`website-frontend`).
+> **Live layout:** `apps/website/api_v2/` (`website-api`) · `apps/website/frontend/` (`website-frontend`).
 > CI jobs: `website-api` / `website-frontend`. Conventions: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 >
 > **Live enforcement:** `cargo fmt --check` + `cargo clippy -D warnings` + `cargo xtask mk wasm-ci` +
@@ -127,7 +127,7 @@ script parses anything, it is tooling, and tooling is Rust.
 files (comment-only mentions do not count). Same `TrackedLanguageBan` table as LANG-1;
 `cargo xtask verify no-python` is an alias so CI job names stay. Ported to `xtask`, same as LANG-1.
 
-**LANG-3 — Both are BANS, not ratchets.** One table in `tools_v2/xtask/src/shell_free.rs` covers shell,
+**LANG-3 — Both are BANS, not ratchets.** One table in `tools_v2/xtask/src/verifications/language_bans/shell_scripts.rs` covers shell,
 Python, Node script extensions (`*.mjs` / `*.cjs`), and Make. Any tracked match is FAIL. A missing
 or unreadable path is FAIL. A walk that examined zero tracked files is FAIL. There is no inventory
 and no "may only shrink". Enfusion source under `apps/mod/**` is `.c`, which is not in the table;
@@ -200,7 +200,7 @@ the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` sti
   Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §4. Gate: **CI-BLOCK** (golangci
   `revive` `exported`); **T-125.2** removes `only-new-issues`, making it a full-repo gate.
 - **GO-7 (Readability) — Every exported handler fn SHALL carry `@route` in its doc comment, and the
-  tag MUST match the wired route in [`apps/website/api/src/app.rs`](../../apps/website/api/src/app.rs)
+  tag MUST match the wired route in [`apps/website/api_v2/src/app.rs`](../../apps/website/api_v2/src/app.rs)
   (method + path).** The three-way triangulation of DOCUMENTATION_STANDARDS.md §3. Gate:
   **CI-SCRIPT** — `cargo xtask verify route-tags`, checked in
   **both** directions (every `@route` tag resolves to a registered route, **and** every registered
@@ -366,7 +366,7 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
   component or its basename ends `_tests.rs`. Gate: **CI-SCRIPT**
   (`cargo xtask verify file-length` → exit 1). The walk covers `xtask`, `tools`, `crates`,
   `apps/ticketboard/src`, and existing `apps/website/*/{src,tests}` roots. Generated API contracts
-  under `apps/website/api/src/contract/generated/` are excluded. Standing debt carries a dated
+  under `apps/website/api_v2/src/contract/generated/` are excluded. Standing debt carries a dated
   allowlist row. A row naming a missing or unscanned file fails the gate.
 
 - **COMP-1 (Readability) — Cyclomatic complexity ≤ 15 per function (hard gate).** A function over 15
@@ -385,7 +385,7 @@ Created in **T-125.2** at the repo root. Each entry is normative:
 
 ```yaml
 - rule: SIZE-3
-  path: apps/website/api/src/app.rs
+  path: apps/website/api_v2/src/app.rs
   reason: split routing and application setup by responsibility
   expires: 2027-01-31     # YYYY-MM-DD; MC-perf is invalid for SIZE-3
 ```
@@ -457,13 +457,13 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | live |
 | **SIZE-1** | Sc | 600-line warning superseded by SIZE-3 | — | — | — | T-125.4 / T-165.10 | retired |
 | **SIZE-2** | Sc | SIZE-2 list empty (Leptos); exemptions only in allowlist | ALLOWLIST | `.coding-standards-allowlist.yaml` (no SIZE-2 rows) | `cargo xtask verify file-length` | T-125.2 | live |
-| **SIZE-3** | Sc | Production >500 L or test >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `tools_v2/xtask/src/node_free.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
+| **SIZE-3** | Sc | Production >500 L or test >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
 | **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
 | **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `cargo xtask ci verify-coding-standards` | `cargo xtask ci verify-coding-standards` | T-125.4 | live |
 | **CI-1** | De | No `only-new-issues:true` post-T-125.2 | — | — (script + `ci-local-backend` target both deleted; golangci job died with the Go backend at T-145) | — | T-125.2 | retired |
 | **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `cargo xtask ci ci-local` (mirror) | T-125.1 | live |
-| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `tools_v2/xtask/src/shell_free.rs` TrackedLanguageBan (hard zero; no inventory) | `cargo xtask verify no-shell` | T-621/T-904 | live |
+| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `tools_v2/xtask/src/verifications/language_bans/shell_scripts.rs` TrackedLanguageBan (hard zero; no inventory) | `cargo xtask verify no-shell` | T-621/T-904 | live |
 | **LANG-2** | Sc | Zero tracked `.py`; zero `python3` in command position | CI-SCRIPT | same TrackedLanguageBan table (`verify no-python` alias) | `cargo xtask verify no-python` | T-162/T-620/T-904 | live |
 | **LANG-3** | De | Language bans are hard zeros — any match fails; unreadable/unrun fails | CI-SCRIPT | same table, both CLI names | `cargo xtask verify no-shell && cargo xtask verify no-python` | T-620/T-621/T-904 | live |
 
@@ -510,7 +510,7 @@ cargo xtask verify no-node                    # T-165.10 — .mjs/.cjs ban
 cargo xtask verify no-shell                   # LANG-1/3 — shell/Make hard zero (no inventory)
 
 # 1. Rust API + engine crates (website-api job)
-cd apps/website/api && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
+cd apps/website/api_v2 && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
 cargo xtask mk wasm-ci                           # map-engine core/wasm/render fmt + clippy -D + tests
 cargo xtask db test-it                           # backend integration tests (fresh sqlx-migrated DB)
 cargo xtask ci verify-coding-standards           # SIZE-3 + doc layout + no SELECT *

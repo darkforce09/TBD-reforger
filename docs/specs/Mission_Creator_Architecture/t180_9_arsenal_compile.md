@@ -20,7 +20,7 @@
 3. **Compile paths.**  
    - Save Version: [`compile.rs:7-8,103-109`](../../../crates/map-engine-core/src/mission/compile.rs) — `include_orbat=false`; server re-derives via `parse_orbat_template` → `derive_orbat_from_editor`.  
    - Export: `include_orbat=true` injects derived `orbat[]`.  
-   - Events: [`apps/website/api/src/handlers/events.rs`](../../../apps/website/api/src/handlers/events.rs) `orbat_template_for_mission` → `parse_orbat_template` → materializes lobby slots from `OrbatSlotTemplate.{role,loadout,tag}`.
+   - Events: [`apps/website/api_v2/src/handlers/events.rs`](../../../apps/website/api_v2/src/handlers/events.rs) `orbat_template_for_mission` → `parse_orbat_template` → materializes lobby slots from `OrbatSlotTemplate.{role,loadout,tag}`.
 
 4. **Open Arsenal.** Stitch inspector has **OPEN ARSENAL**. Live Arsenal is [`ArsenalTab`](../../../apps/website/frontend/src/arsenal.rs) inside Attributes. ORBAT Manager must open that same loadout editor for the selected slot id (not a second Arsenal).
 
@@ -63,7 +63,7 @@
 |------|--------|
 | `crates/map-engine-core/src/mission/orbat.rs` | Deserialize loadout; fill summary; new helpers `loadout_summary_from_value`; tests I1–I5; delete empty-loadout assertion |
 | `crates/map-engine-core/src/mission/compile.rs` | Export golden/smoke if it asserts empty loadout — update |
-| `apps/website/api` event IT | If any test expects empty loadout on derive — update |
+| `apps/website/api_v2` event IT | If any test expects empty loadout on derive — update |
 | `apps/website/frontend/src/editor_ops.rs` | Add `open_arsenal(id)` |
 | `apps/website/frontend/src/attributes.rs` | Lift `tab` to OpsCtx **or** accept initial-tab param so Arsenal can be selected (today tab is local `RwSignal::new(1)`) |
 | `apps/website/frontend/src/orbat_manager.rs` | OPEN ARSENAL → `open_arsenal` |
@@ -156,7 +156,7 @@ Implement **T-180.9** — Open Arsenal + orbat[] compile/derive loadout truth.
   5. crates/map-engine-core/src/mission/compile.rs (include_orbat export path)
   6. crates/map-engine-core/src/doc/store.rs update_slot_loadout + summary golden ~1501
   7. apps/website/frontend/src/arsenal.rs picks_to_loadout / ArsenalTab
-  8. apps/website/api/src/handlers/events.rs orbat_template_for_mission
+  8. apps/website/api_v2/src/handlers/events.rs orbat_template_for_mission
 
 ═══ PROBLEM ═══
   derive_orbat always emits loadout "". Sl deserializer ignores slot.loadout.

@@ -57,7 +57,7 @@ fn walk_is_nonempty_anti_vacuity() {
         "/tools_v2/verification-core/",
         "/tools_v2/ticket-engine/",
         "/apps/ticketboard/src/",
-        "/apps/website/api/src/",
+        "/apps/website/api_v2/src/",
         "/apps/website/frontend/src/",
     ] {
         assert!(
@@ -120,7 +120,7 @@ fn production_boundary_is_500_lines() {
 #[test]
 fn test_boundary_is_1000_lines_for_directory_and_basename() {
     let d = TmpRepo::new("test-boundary");
-    let directory_test = d.0.join("apps/website/api/tests/integration.rs");
+    let directory_test = d.0.join("apps/website/api_v2/tests/integration.rs");
     let basename_test = d.0.join("tools_v2/xtask/src/fixture_tests.rs");
     for path in [&directory_test, &basename_test] {
         write_lines(path, SIZE_3_TEST_MAX_LINES);
@@ -129,7 +129,7 @@ fn test_boundary_is_1000_lines_for_directory_and_basename() {
         assert_eq!(verify_file_length_in(&d.0), 1);
         std::fs::remove_file(path).unwrap();
     }
-    assert!(is_test_file("apps/website/api/tests/integration.rs"));
+    assert!(is_test_file("apps/website/api_v2/tests/integration.rs"));
     assert!(is_test_file("tools_v2/xtask/src/fixture_tests.rs"));
     assert!(!is_test_file("tools_v2/xtask/src/test_helpers.rs"));
 }
@@ -137,9 +137,9 @@ fn test_boundary_is_1000_lines_for_directory_and_basename() {
 #[test]
 fn website_test_roots_are_walked_and_generated_contracts_are_excluded() {
     let d = TmpRepo::new("walk-coverage");
-    let test = d.0.join("apps/website/api/tests/integration.rs");
+    let test = d.0.join("apps/website/api_v2/tests/integration.rs");
     let generated =
-        d.0.join("apps/website/api/src/contract/generated/registry_items.rs");
+        d.0.join("apps/website/api_v2/src/contract/generated/registry_items.rs");
     write_lines(&test, SIZE_3_TEST_MAX_LINES + 1);
     write_lines(&generated, SIZE_3_TEST_MAX_LINES + 1);
     let files = walk_rust_sources(&d.0).unwrap();

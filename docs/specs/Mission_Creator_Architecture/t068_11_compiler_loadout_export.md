@@ -118,7 +118,7 @@ Implement **T-068.11** — Compiled mod document loadout block incl. cargo (for 
   2. .ai/artifacts/t068_15_fable_program_handoff.md
   3. docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md
   4. crates/map-engine-core/src/mission/flatten.rs
-  5. apps/website/api/src/services/mission_compile.rs
+  5. apps/website/api_v2/src/services/mission_compile.rs
   6. packages/tbd-schema schema for mod/compiled mission + loadout-export cargo[]
   7. .cursor/rules/no-silent-deferrals.mdc
 

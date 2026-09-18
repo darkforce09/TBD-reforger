@@ -177,7 +177,7 @@ pub(crate) fn did_not_run(msg: &str, e: anyhow::Error) -> Verdict {
     )
 }
 
-/// A private clone of `apps/website/api/docker-compose.yml`: different container name, port and
+/// A private clone of `apps/website/api_v2/docker-compose.yml`: different container name, port and
 /// volume, so no arm here can stop or wipe the DB a sibling slice is using.
 pub(crate) fn write_scratch_compose(dir: &Path) -> Result<()> {
     fs::create_dir_all(dir)?;

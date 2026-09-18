@@ -434,7 +434,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
 
 // ───────────────────────── T-626 — the claim 0020 makes about its own regex ─────────────────────
 
-/// `frontend/src/pages/public/mortar.rs::parse_grid`, transcribed.
+/// `frontend/src/v2/pages/field_tools/mortar/grid.rs::parse_grid`, transcribed.
 ///
 /// The frontend is a separate crate (`website-frontend`, built for `wasm32`) and cannot be linked
 /// into an API test binary, so the rule is restated here and
@@ -448,7 +448,7 @@ fn parse_grid(s: &str) -> Option<(f64, f64)> {
     (x.is_finite() && y.is_finite()).then_some((x, y))
 }
 
-const SHIPPED_MORTAR: &str = include_str!("../../frontend/src/pages/public/mortar.rs");
+const SHIPPED_MORTAR: &str = include_str!("../../frontend/src/v2/pages/field_tools/mortar/grid.rs");
 const MIGRATION_0020: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
 
 /// The accept regex out of the shipped migration — both copies, which must be the same regex.
@@ -510,15 +510,18 @@ fn parse_grid_source(src: &str, whose: &str) -> String {
 fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
     assert_eq!(
         parse_grid_source(THIS_SUITE, "this suite"),
-        parse_grid_source(SHIPPED_MORTAR, "frontend/src/pages/public/mortar.rs"),
+        parse_grid_source(
+            SHIPPED_MORTAR,
+            "frontend/src/v2/pages/field_tools/mortar/grid.rs"
+        ),
         "the copy of parse_grid in this file is no longer the shipped one — every assertion about \
          'what the calculator accepts' below is measuring a function nothing ships"
     );
     // …and the corrected claim is where a reader of `parse_grid` will find it, since 0020 is
     // applied + checksummed and its own comment can never be edited.
     assert!(
-        SHIPPED_MORTAR.contains("T-626 — what migration `0020`'s backfill regex really accepts"),
-        "the T-626 correction is gone from mortar.rs, and 0020's false 'character for character' \
+        SHIPPED_MORTAR.contains("The divergence is under-permissive, which is the safe direction."),
+        "the divergence correction is gone from grid.rs, and 0020's false 'character for character' \
          claim is once again the only description of the accept set"
     );
 }
@@ -560,7 +563,7 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
     for form in ["+1000, 2000", ".5, 2", "5., 2", "1e3, 500"] {
         assert!(
             parse_grid(form).is_some(),
-            "{form:?} must parse in mortar.rs — if it no longer does, the divergence closed and \
+            "{form:?} must parse in grid.rs — if it no longer does, the divergence closed and \
              this test is describing history"
         );
         assert!(
@@ -593,7 +596,7 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
         assert_eq!(
             parse_grid(grid),
             Some(want),
-            "{grid:?} does not parse to {want:?} in mortar.rs"
+            "{grid:?} does not parse to {want:?} in grid.rs"
         );
         // The migration's own arithmetic: `btrim(split_part(...))::double precision`.
         let (x, y): (f64, f64) = sqlx::query_as(
@@ -625,7 +628,7 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
             !regex_accepts(&pool, &regex, grid).await,
             "regex took {grid:?}"
         );
-        assert_eq!(parse_grid(grid), None, "mortar.rs took {grid:?}");
+        assert_eq!(parse_grid(grid), None, "grid.rs took {grid:?}");
     }
 
     // 3 ── the pathological edge, recorded for the next reader. 309 nines is past `f64::MAX`.

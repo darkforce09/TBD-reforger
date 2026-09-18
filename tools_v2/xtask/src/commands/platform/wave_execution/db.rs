@@ -114,7 +114,7 @@ pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
 ///
 /// T-534: the wave DB is no longer the only thing to reap. `cargo test -p website-api` now gives
 /// each test BINARY its own database, derived as `<base>_<suite>_it` by
-/// `apps/website/api/tests/common/mod.rs` (`per_binary_database_name`) — so one gate run against
+/// `apps/website/api_v2/tests/common/mod.rs` (`per_binary_database_name`) — so one gate run against
 /// `tbd_gate_w60` also leaves `tbd_gate_w60_admin_field_it`, `…_events_it`, … 25 of them, measured.
 /// They are dropped and recreated on every run, so they do not grow per run — but without this they
 /// would accumulate 25 per WAVE forever, because the old `^tbd_gate_w[0-9]+$` pattern matched none

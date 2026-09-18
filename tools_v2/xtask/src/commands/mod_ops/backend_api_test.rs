@@ -2,7 +2,7 @@
 //! → `cargo xtask mod test-phase1-api`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`.
 //! Bash sources paths.sh then `WEB="$WEB"` (no-op); `$WEB` is unused by the smoke itself.
 //!
 //! Smoke: curl Phase-1 game-server routes (link / roster / compiled mission) with
@@ -117,7 +117,7 @@ impl Paths {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
             schema: root.join("packages/tbd-schema"),
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
         }
     }
 }

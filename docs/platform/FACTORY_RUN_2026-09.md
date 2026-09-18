@@ -18,7 +18,7 @@ edit, in-editor play button.
 - 2026-09-04 `cargo xtask platform wave push` deadlocked in `git check-attr` on a 1,691-file LFS
   commit; killed, pushed with plain `git push origin main` (git-lfs 3.7.1 on host). Filed T-943.
 - 2026-09-05 First slice gate of the run (T-311) exposed three trunk defects on `main`, none in
-  any slice's owns: (1) `apps/website/api/.gitignore` `missions/` also ignored
+  any slice's owns: (1) `apps/website/api_v2/.gitignore` `missions/` also ignored
   `handlers/missions/mod.rs` — main did not build from a clean checkout; (2) two tracked `.mjs`
   tools tripped `verify no-python`, so every slice gate was red; (3) schema gate 10 read a missing
   `active_slice` on T-090. Fixed by the command center in `36f65687e` (harness, not app code).

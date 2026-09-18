@@ -3,7 +3,7 @@
 ## Context
 Master audit S5 (2026-09-04) verified against main: waitlist seats, tombstones, schedule cascades, flat telemetry,
 pool config, audit stream, users pager, vehicle mutations, wiki features, mortar model, rcon actions, tiers, telemetry
-events. Thirteen slices under `apps/website/api/src/`; migrations from 0022.
+events. Thirteen slices under `apps/website/api_v2/src/`; migrations from 0022.
 
 ## Approach
 1. Wave A: T-940.1 waitlist, .4 telemetry fold, .5 pool config, .6 audit notify, .7 users pager, .10 ballistics.

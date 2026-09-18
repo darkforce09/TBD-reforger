@@ -26,8 +26,9 @@ fn a_line_comment_inside_a_block_does_not_end_it() {
 
 #[test]
 fn migration_version_and_description_match_the_sed_pipeline() {
-    let p =
-        PathBuf::from("apps/website/api/migrations/0016_backfill_pre_t326_linked_match_stats.sql");
+    let p = PathBuf::from(
+        "apps/website/api_v2/migrations/0016_backfill_pre_t326_linked_match_stats.sql",
+    );
     assert_eq!(mig_ver(&p), "16");
     assert_eq!(mig_desc(&p), "backfill pre t326 linked match stats");
 }

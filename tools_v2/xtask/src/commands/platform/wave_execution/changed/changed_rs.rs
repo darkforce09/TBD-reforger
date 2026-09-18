@@ -38,7 +38,7 @@ pub fn changed_rs(base: &str) -> Result<Vec<String>, i32> {
 
 /// Resolve a file's edition from the nearest `Cargo.toml` above it.
 ///
-/// Edition is NOT fixed across this workspace: `apps/website/api` is edition 2024, most other
+/// Edition is NOT fixed across this workspace: `apps/website/api_v2` is edition 2024, most other
 /// crates are 2021, and the two style editions sort a mixed-case brace import differently.
 /// Hardcoding `--edition 2021` made every slice touching an edition-2024 file fail a gate it did
 /// not cause — main's own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already
@@ -275,7 +275,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
 /// `packages/tbd-schema/schema/mission.schema.json` (`v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`),
-/// `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census
+/// `loadout-export.schema.json` (`arsenal/`), `apps/website/api_v2/src/app.rs` (four `pages/` census
 /// tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed
 /// "frontend untouched" and skipped, while `zone_rule_fields_cover_the_whole_vocabulary` compiles
@@ -283,7 +283,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// So the include inputs are added — but SCOPED to the wasm-scope crates via
 /// [`include_inputs_under`], not taken wholesale from [`compiled_include_input_paths`]. Wholesale
-/// would drag `apps/website/api/**` into the frontend's scope, which this module's own test
+/// would drag `apps/website/api_v2/**` into the frontend's scope, which this module's own test
 /// deliberately asserts must never happen.
 ///
 /// Native `cargo test`, not `--target wasm32-unknown-unknown`: the wasm target has no test runner
@@ -341,7 +341,7 @@ pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
 ///
 /// The companion to [`wasm_scope_touched`] — see [`frontend_tests_changed`] for why the dependency
 /// graph alone is not the frontend suite's input set. Scoped deliberately: passing
-/// `wasm_scope_prefixes` rather than `workspace_members` keeps `apps/website/api/**` out of the
+/// `wasm_scope_prefixes` rather than `workspace_members` keeps `apps/website/api_v2/**` out of the
 /// frontend's scope even though the API has plenty of include inputs of its own.
 pub(super) fn frontend_include_input_touched<'a>(
     root: &Path,

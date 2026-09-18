@@ -17,7 +17,7 @@ Locate/map code → cheap default + `cavecrew-investigator` — **not** Grok. Gr
 
 | Agent | Owns | Must NOT |
 |-------|------|----------|
-| **Cursor (you)** | Plan review, critique, docs, `.ai/tickets/registry.json`, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `./scripts/ticket sync` | Application code in `apps/website/api/`, `apps/website/frontend/`, `apps/mod/`, `packages/tbd-schema/` (except schema doc-only) |
+| **Cursor (you)** | Plan review, critique, docs, `.ai/tickets/registry.json`, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `./scripts/ticket sync` | Application code in `apps/website/api_v2/`, `apps/website/frontend/`, `apps/mod/`, `packages/tbd-schema/` (except schema doc-only) |
 | **Claude Code** | Application code on `executor: claude-code` slices via `./scripts/ticket run` (on **`main`**) | Documentation, registry, ticket sync |
 
 **Executor gate:** Only act on slices where `executor` is `cursor-docs` or `claude-code`. If `workbench`, `human`, or `ci` — **stop and wait**.
@@ -105,7 +105,7 @@ State **Mode A/B/C** and list **every path** you will touch. App paths under `ap
 If about to write files, state **Mode (A/B/C)** and list **every path** you will touch.
 
 If the list includes any of:
-- `apps/website/api/src/**`
+- `apps/website/api_v2/src/**`
 - `apps/website/frontend/src/**` (live Leptos SPA — Claude-owned)
 - `apps/mod/**`
 

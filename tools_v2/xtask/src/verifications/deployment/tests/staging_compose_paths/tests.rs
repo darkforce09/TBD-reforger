@@ -48,7 +48,7 @@ impl Tree {
 /// names the good path, so a gate grepping the raw file would pass on the comment alone.
 const GOOD_SCRIPT: &str = r#"echo "==> docker compose (API + Postgres)"
 # T-438: compose file lives at apps/website/docker-compose.staging.yml (T-251),
-# not under apps/website/api/. Match `cargo xtask deploy website`.
+# not under apps/website/api_v2/. Match `cargo xtask deploy website`.
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] cd \$TBD_REMOTE_DIR && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
 else
@@ -115,11 +115,11 @@ fn every_script_perturbation_bites() {
         &[
             &format!(
                 "FAIL: live {LIVE_KEY} -f path must be apps/website/docker-compose.staging.yml \
-                 (got: apps/website/api/docker-compose.staging.yml)"
+                 (got: apps/website/api_v2/docker-compose.staging.yml)"
             ),
             "FAIL: dry-run and live compose -f paths diverge:",
             "FAIL: live compose line still references \
-                 apps/website/api/docker-compose.staging.yml",
+                 apps/website/api_v2/docker-compose.staging.yml",
         ],
     );
     // The wave-23 false-green: the good path present ONLY in `#` and `//` comments.
@@ -136,7 +136,7 @@ fn every_script_perturbation_bites() {
         "cd-sq",
         &format!("{GOOD_SCRIPT}{CD_INTO_API_SQ}\n"),
         &[&format!(
-            "FAIL: {} still cds into apps/website/api (compose must not)",
+            "FAIL: {} still cds into apps/website/api_v2 (compose must not)",
             script_basename()
         )],
     );
@@ -144,7 +144,7 @@ fn every_script_perturbation_bites() {
         "cd-dq",
         &format!("{GOOD_SCRIPT}{CD_INTO_API_DQ}\n"),
         &[&format!(
-            "FAIL: {} still cds into apps/website/api (double-quoted form)",
+            "FAIL: {} still cds into apps/website/api_v2 (double-quoted form)",
             script_basename()
         )],
     );

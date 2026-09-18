@@ -259,7 +259,7 @@ Then on the **server**:
 cd /home/sam/tbd/repo
 # Toolchain: install Rust if missing, then from repo root:
 cargo xtask mk leptos-build
-cd /home/sam/tbd/repo/apps/website/api
+cd /home/sam/tbd/repo/apps/website/api_v2
 cargo build --release --bin api
 ```
 

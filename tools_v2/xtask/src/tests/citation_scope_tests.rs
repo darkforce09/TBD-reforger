@@ -34,7 +34,7 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     let schemas = schema_dir(&root);
     write(
         &root,
-        "apps/website/api/src/handlers/x.rs",
+        "apps/website/api_v2/src/handlers/x.rs",
         concat!("//! @contract", " nope.schema.json#/\n"),
     );
     write(
@@ -69,7 +69,7 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     assert!(
         scan.problems
             .iter()
-            .any(|p| p.contains("apps/website/api/src/handlers/x.rs") && p.contains("not found")),
+            .any(|p| p.contains("apps/website/api_v2/src/handlers/x.rs") && p.contains("not found")),
         "missing-schema in apps/**/*.rs must fail: {:?}",
         scan.problems
     );

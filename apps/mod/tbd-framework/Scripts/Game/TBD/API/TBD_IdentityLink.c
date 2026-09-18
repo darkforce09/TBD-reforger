@@ -3,10 +3,10 @@
 //! ══ WHAT THIS CLOSES ═══════════════════════════════════════════════════════════════════════
 //! `POST /api/v1/ingest/match-results` (T-181.13.1, `TBD_ResultsReporter`) resolves every player
 //! with `SELECT discord_id FROM users WHERE arma_id = $1`
-//! (`apps/website/api/src/handlers/telemetry.rs:238`). `users.arma_id` is written by exactly two
+//! (`apps/website/api_v2/src/handlers/telemetry.rs:238`). `users.arma_id` is written by exactly two
 //! things: the dev seed, and `POST /api/v1/ingest/link-confirm`
-//! (`apps/website/api/src/handlers/me.rs:160-205`, service-token tier, registered at
-//! `apps/website/api/src/app.rs:39-40`) — the GAME SERVER confirming a link code. Until this file
+//! (`apps/website/api_v2/src/handlers/me.rs:160-205`, service-token tier, registered at
+//! `apps/website/api_v2/src/app.rs:39-40`) — the GAME SERVER confirming a link code. Until this file
 //! existed the mod never called it, so in production nobody had an `arma_id`, the results POST
 //! returned 200, the match rows were written, and attendance marking, the user-stat recompute and
 //! the leaderboard refresh all silently did nothing. `TBD_ResultsReporter.LogIdentityCensus` prints

@@ -1,7 +1,7 @@
 # T-940 — Website platform: events, telemetry, admin, content
 
 Owner: command center. Source: master audit S5 (2026-09-04), verified against main @ 072988d57 (README.md in this
-directory). Scope: TBD-Reforger only. Executor: claude-code. API dir `apps/website/api/src/`; migrations from 0022 (next
+directory). Scope: TBD-Reforger only. Executor: claude-code. API dir `apps/website/api_v2/src/`; migrations from 0022 (next
 free number at ship time); frontend mirrors in `apps/website/frontend/src/core/dto.rs` (R-api golden).
 
 ## 1. Related existing tickets — referenced, never re-minted

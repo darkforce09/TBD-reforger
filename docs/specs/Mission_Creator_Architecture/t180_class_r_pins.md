@@ -11,7 +11,7 @@
 |------------|--------------|-----|
 | `crates/map-engine-core` | **`map-engine-core`** | Graph, orbat derive, tint, squad_links, apply_faction |
 | `apps/website/frontend` | **`website-frontend`** | Place path, dock, ORBAT UI (**NOT** `website-leptos`; bin tests) |
-| `apps/website/api` | **`website-api`** | `cargo xtask db test-it` / factions / events |
+| `apps/website/api_v2` | **`website-api`** | `cargo xtask db test-it` / factions / events |
 | `crates/map-engine-render` | **`map-engine-render`** | Lane order / hairline / vehicles_bind |
 
 **Feature gates:**
@@ -83,7 +83,7 @@ active_side ∈ {BLUFOR,OPFOR,INDFOR}
 
 | Item | Path |
 |------|------|
-| Routes | `apps/website/api` `/api/v1/factions` |
+| Routes | `apps/website/api_v2` `/api/v1/factions` |
 | Schema | `packages/tbd-schema/schema/faction-library.schema.json` |
 
 ---

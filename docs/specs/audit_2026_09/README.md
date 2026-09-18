@@ -69,7 +69,7 @@ Specs: `t939_editor_usability.md`, `t940_website_platform.md`, `t941_mod_lifecyc
 | outliner re-flatten; vehicles bypass virtualization | outliner.rs:39; vehicles_panel.rs:231-276 | TRUE | T-939.7 |
 | Ctrl+F not captured | dock_left.rs:134-144 (T-697) | PARTIAL | T-939.8 |
 
-## S5 — website API (apps/website/api/src/)
+## S5 — website API (apps/website/api_v2/src/)
 | Finding | Anchor | Verdict | Ticket |
 |---|---|---|---|
 | waitlist promote slot_id NULL | events.rs:2042-2053 | TRUE | T-940.1 |

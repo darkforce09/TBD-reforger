@@ -24,7 +24,7 @@
 //! ══ IDENTITY LINKING (T-181.35 SHIPPED) ════════════════════════════════════════════════════
 //! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard — all three
 //! hang off `SELECT discord_id FROM users WHERE arma_id = $1`
-//! (`apps/website/api/src/handlers/telemetry.rs:238`). `users.arma_id` is written by the dev seed
+//! (`apps/website/api_v2/src/handlers/telemetry.rs:238`). `users.arma_id` is written by the dev seed
 //! and by `POST /api/v1/ingest/link-confirm` (service-token). The mod **does** implement that
 //! confirm path: `TBD_IdentityLink` exposes `#tbd link <code>` (also `#tbd link status`), and
 //! `TBD_MissionLoader.ParseMissionJson` calls `TBD_IdentityLink.Arm()` next to this reporter's

@@ -45,7 +45,7 @@ factory's 339+ tickets have nothing left blocking them.
 **Everything in this runbook runs on the HOST** — your Bazzite/Fedora machine, not an agent
 container. Agent shells are `debian:12` with glibc 2.36 and no C toolchain; `cargo` dies with
 `linker cc not found` and host binaries die with `GLIBC_2.39 not found`
-([`tools_v2/xtask/src/hostrun.rs`](../../xtask/src/hostrun.rs)). Neither means anything is broken.
+([`tools_v2/xtask/src/core/host_execution.rs`](../../xtask/src/hostrun.rs)). Neither means anything is broken.
 You are the host, so just run them.
 
 Repo root is `/run/media/system/Disk_2/Projects/TBD-Reforger`. Every command below assumes you are there:
@@ -92,7 +92,7 @@ curl -s http://127.0.0.1:8080/healthz
 ```
 
 Expect a JSON body reporting database + migration state, HTTP 200
-([`app.rs:906`](../../apps/website/api/src/app.rs), [`app.rs:1048`](../../apps/website/api/src/app.rs)).
+([`app.rs:906`](../../apps/website/api_v2/src/app.rs), [`app.rs:1048`](../../apps/website/api_v2/src/app.rs)).
 A non-200, or `Connection refused`, means `cargo xtask mk rust-api` is not up — re-read T2's output; the API
 hard-fails at boot on a bad `DATABASE_URL` / `JWT_SECRET`.
 
@@ -103,12 +103,12 @@ cargo xtask db seed
 ```
 
 Grab the service token the game server will use — it is one value, not a list
-([`config.rs`](../../apps/website/api/src/config.rs) reads `SERVICE_TOKEN`;
-`cargo xtask setup server-profile` / `tools_v2/xtask/src/gate_setup_server_profile.rs` explains the
+([`config.rs`](../../apps/website/api_v2/src/config.rs) reads `SERVICE_TOKEN`;
+`cargo xtask setup server-profile` / `tools_v2/xtask/src/commands/setup/server_profile.rs` explains the
 `GAME_SERVER_TOKENS` rename that used to break this):
 
 ```bash
-grep '^SERVICE_TOKEN=' apps/website/api/.env
+grep '^SERVICE_TOKEN=' apps/website/api_v2/.env
 ```
 
 Expect one non-empty value. If the line is missing, add one (any long random string) and restart
@@ -120,14 +120,14 @@ Log in to the SPA without Discord:
 http://127.0.0.1:3000
 ```
 then open `http://127.0.0.1:8080/api/v1/auth/dev-login?role=admin` in the same browser
-([`app.rs:883`](../../apps/website/api/src/app.rs)). It mints a real session and 302s to the SPA
+([`app.rs:883`](../../apps/website/api_v2/src/app.rs)). It mints a real session and 302s to the SPA
 callback. You should land logged in as an admin.
 
 ### 2.3 The mission (15 min, alone) — this is the T-068 half
 
 You need a mission whose slots carry **gear and cargo**. The mission the server seeds by default
 now has them: `cargo xtask setup server-profile` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
-(`tools_v2/xtask/src/gate_setup_server_profile.rs`), and **T-605** gave
+(`tools_v2/xtask/src/commands/setup/server_profile.rs`), and **T-605** gave
 that golden real loadouts on 4 of its 18 slots — full gear + cargo (`blufor:Alpha:SL:0`), gear only
 (`blufor:Alpha:AR:0`), cargo only aimed at a container the kit does **not** wear
 (`blufor:Alpha:RFL:0` — the degrade path), the other faction (`opfor:Grom:SL:0`), and 14 left
@@ -156,17 +156,17 @@ compiler. Author your own as well.
    encodes; open it if you want a worked example of every field's shape.
 4. **Save Version** (top strip). You need a saved version — `/compiled` 409s
    `no saved version to compile` without one
-   ([`missions.rs:1606-1615`](../../apps/website/api/src/handlers/missions.rs)).
+   ([`missions.rs:1606-1615`](../../apps/website/api_v2/src/handlers/missions.rs)).
 5. Copy the mission **UUID** out of the URL. **It must be a UUID.** `GET /missions/:id/compiled`
    calls `Uuid::parse_str` and 400s `invalid id` on anything else
-   ([`missions.rs:1756-1759`](../../apps/website/api/src/handlers/missions.rs)) — so the
+   ([`missions.rs:1756-1759`](../../apps/website/api_v2/src/handlers/missions.rs)) — so the
    content-hash ids like `msn_8f3a2c` only work through the on-disk fallback, never through the API.
 
 **Prove the API will serve it, before the game server ever asks:**
 
 ```bash
 MID=<paste-the-uuid>
-TOK=$(grep '^SERVICE_TOKEN=' apps/website/api/.env | cut -d= -f2- | tr -d '"'"'"'\r')
+TOK=$(grep '^SERVICE_TOKEN=' apps/website/api_v2/.env | cut -d= -f2- | tr -d '"'"'"'\r')
 curl -s -o /tmp/compiled.json -w '%{http_code}\n' \
   -H "X-Service-Token: $TOK" \
   "http://127.0.0.1:8080/api/v1/missions/$MID/compiled"
@@ -182,7 +182,7 @@ curl -s -o /tmp/compiled.json -w '%{http_code}\n' \
 - **`409 no placed slots`** — you saved a version with no character slots.
 - **`409 no saved version to compile`** — you never pressed Save Version.
 - **`500`** — the stored payload is unreadable or violates `mission.schema.json`
-  ([`validated_compiled_body`, `missions.rs:1464`](../../apps/website/api/src/handlers/missions.rs)).
+  ([`validated_compiled_body`, `missions.rs:1464`](../../apps/website/api_v2/src/handlers/missions.rs)).
   The body names the reason. A `mission_versions` row is immutable, so **save a new version**; you
   cannot repair the old one.
 
@@ -199,7 +199,7 @@ curl -s -H "X-Service-Token: $TOK" \
 ```
 
 Expect `{"eventId":"…","missionId":"…","assignments":{…}}`
-([`events.rs:2469`](../../apps/website/api/src/handlers/events.rs)). `assignments` is keyed on
+([`events.rs:2469`](../../apps/website/api_v2/src/handlers/events.rs)). `assignments` is keyed on
 `users.arma_id` — **it will be empty until someone links their game identity** (S6). An empty map is
 legal: everybody falls to round-robin seating, and the lobby picker still works.
 
@@ -531,14 +531,14 @@ wrong. `result=FAIL` keeps the server in LOADING forever; `#tbd validate` replay
 > **Everything in §3 works without these.** They enable exactly one thing: the SPA's
 > **Server Control** page (`/admin/server`) being able to start/stop/restart the game server unit
 > over `POST /api/v1/admin/servers/{id}/rcon`
-> ([`app.rs:837`](../../apps/website/api/src/app.rs)). Until both are done, that endpoint answers
+> ([`app.rs:837`](../../apps/website/api_v2/src/app.rs)). Until both are done, that endpoint answers
 > **503** — correctly — and the session is unaffected. **No agent has ever run either of these; they
 > mutate a live host.** Do them if you want the last unexercised platform surface exercised too.
 
 They only work when the API and the game server are **sibling `systemctl --user` units under one
 uid on one box**. The transport is a UNIX socket in `$XDG_RUNTIME_DIR` with `SocketMode=0600`, so
 the OS is the credential and there is no secret
-([`.env.example:123-127`](../../apps/website/api/.env.example),
+([`.env.example:123-127`](../../apps/website/api_v2/.env.example),
 `cargo xtask deploy staging` (formerly `deploy-staging.sh:92-137`)). **If your API runs under
 `cargo xtask mk rust-api` on one machine and the game server on another, this cannot work at all** — the socket
 would be on the wrong box.
@@ -558,16 +558,16 @@ systemctl --user show -p Environment --value tbd-website-api.service | tr ' ' '\
 ```
 Expect `GAME_AGENT_SOCKET=/run/user/<uid>/tbd-reforger-agent.sock`. systemd expands `%t` for you;
 the literal string to paste is documented verbatim at
-[`.env.example:135`](../../apps/website/api/.env.example).
+[`.env.example:135`](../../apps/website/api_v2/.env.example).
 
 *If you are running the API with `cargo xtask mk rust-api`* there is no unit — put it in the env file the API
 loads, then restart `cargo xtask mk rust-api`:
 ```bash
-printf 'GAME_AGENT_SOCKET=/run/user/%s/tbd-reforger-agent.sock\n' "$(id -u)" >> apps/website/api/.env
-grep GAME_AGENT_SOCKET apps/website/api/.env
+printf 'GAME_AGENT_SOCKET=/run/user/%s/tbd-reforger-agent.sock\n' "$(id -u)" >> apps/website/api_v2/.env
+grep GAME_AGENT_SOCKET apps/website/api_v2/.env
 ```
 The path must be **absolute and free of leading/trailing whitespace**, or the API refuses at boot
-with `ConfigError::Malformed` ([`config.rs:83-90`](../../apps/website/api/src/config.rs)) — which is
+with `ConfigError::Malformed` ([`config.rs:83-90`](../../apps/website/api_v2/src/config.rs)) — which is
 deliberate: the alternative is an ENOENT at 03:00 that reads as "the game host is down".
 
 **Step B — install the host control agent, once.**

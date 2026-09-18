@@ -41,7 +41,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     // The extractor reads ONE function and prefixes ONE nest path; both are load-bearing, so both
     // are pinned. bash's `gate_require … "$APP_RS"` is a stat plus a content match, split here into
     // an explicit read plus `gate::require_str` for one reason: the script `cd`s to `$ROOT` and so
-    // printed `apps/website/api/src/app.rs`, while xtask takes an absolute root and may be invoked
+    // printed `apps/website/api_v2/src/app.rs`, while xtask takes an absolute root and may be invoked
     // from any subdirectory. Reading first lets the missing-target `Finding` carry that same
     // relative path, with the same `Verdict` shapes.
     let nest = format!(".nest(\"{API_PREFIX}\", api_routes(");

@@ -114,7 +114,7 @@ pub fn compiled_include_input_paths() -> Vec<PathBuf> {
 ///
 /// T-946.64 follow-up (wave-255 verify). Split out so the slice gate's frontend test step can ask
 /// the same question about the WASM-SCOPE crates ONLY. Taking the whole-workspace answer would put
-/// `apps/website/api/**`'s include inputs into the frontend's scope, which
+/// `apps/website/api_v2/**`'s include inputs into the frontend's scope, which
 /// `the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not` deliberately forbids.
 /// Behaviour for the original caller is unchanged: it passes `workspace_members()` and gets the
 /// identical list.

@@ -60,7 +60,7 @@ Confirm key paths exist:
 From repo root:
 
 ```bash
-cp apps/website/api/.env.example apps/website/api/.env   # only if .env missing
+cp apps/website/api_v2/.env.example apps/website/api_v2/.env   # only if .env missing
 cargo xtask db up
 cargo xtask mk rust-api      # background terminal — Axum :8080
 cargo xtask mk leptos   # background terminal — Trunk :3000

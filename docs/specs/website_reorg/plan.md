@@ -140,7 +140,7 @@ Rows marked `(omitted in audit)` were absent from audit table 3.5 and are placed
 | arsenal_doll.rs | editor/arsenal/arsenal_doll.rs | .6 |
 | mission_editor.rs | editor/mission_editor.rs (then B/B2 splits) | .6 |
 
-### Backend (`apps/website/api/src/handlers/`, 22 files)
+### Backend (`apps/website/api_v2/src/handlers/`, 22 files)
 
 All moves per Phase C child T-934.15 table above; everything else in `api/src/` stays put.
 

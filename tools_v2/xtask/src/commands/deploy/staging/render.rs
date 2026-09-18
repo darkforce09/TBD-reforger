@@ -51,7 +51,7 @@ pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
             eprintln!("FAIL: TBD_MODPACK_URL is set but TBD_MODPACK_TOKEN is empty.");
             eprintln!("      GET /api/v1/modpacks/current is gated by AuthUser (Bearer JWT,");
             eprintln!(
-                "      apps/website/api/src/middleware/auth.rs). TBD_GAME_SERVER_TOKEN is the"
+                "      apps/website/api_v2/src/middleware/auth.rs). TBD_GAME_SERVER_TOKEN is the"
             );
             eprintln!(
                 "      SERVICE_TOKEN checked on the X-Service-Token header by ServiceAuth and"

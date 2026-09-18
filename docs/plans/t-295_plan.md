@@ -5,7 +5,7 @@ The editor persists yrs to IndexedDB only; the API has no websocket (axum withou
 check on POST /versions. T-190 adds local CRDT merging first; this ticket adds the transport and the server check.
 
 ## Approach
-1. `apps/website/api/Cargo.toml`: axum `ws` feature (no new crates beyond yrs already in the workspace).
+1. `apps/website/api_v2/Cargo.toml`: axum `ws` feature (no new crates beyond yrs already in the workspace).
 2. New `api/src/realtime/mod.rs` + `yrs_sync.rs` (register `pub mod realtime;` in `lib.rs`): room per mission id,
    broadcast of update/awareness frames, cookie auth; route in `app.rs` beside :751.
 3. `api/src/app.rs` versions handler path: `base_version_id` param; mismatch → 409 with the head id.

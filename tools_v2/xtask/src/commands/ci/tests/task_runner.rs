@@ -241,7 +241,7 @@ fn doc_layout_predicate_reproduces_finds_globs() {
     assert!(!is_forbidden_doc("apps/x/node_modules/p/docs/readme.md"));
     // not markdown, and not under a docs/ directory
     assert!(!is_forbidden_doc("apps/website/docs/spec.txt"));
-    assert!(!is_forbidden_doc("apps/website/api/README.md"));
+    assert!(!is_forbidden_doc("apps/website/api_v2/README.md"));
     // `docs` as a filename fragment is not a `docs/` directory
     assert!(!is_forbidden_doc("apps/website/docsite/a.md"));
 }
@@ -268,9 +268,9 @@ fn cmd_lines_are_shell_free() {
     }
     // …and the `cd <dir> && <cmd>` split is the only shell idiom that IS honoured.
     assert_eq!(
-        split_cmd("cd apps/website/api && cargo build --release --bin api"),
+        split_cmd("cd apps/website/api_v2 && cargo build --release --bin api"),
         (
-            Some("apps/website/api"),
+            Some("apps/website/api_v2"),
             vec!["cargo", "build", "--release", "--bin", "api"]
         )
     );

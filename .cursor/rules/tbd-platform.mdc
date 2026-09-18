@@ -9,7 +9,7 @@ alwaysApply: true
 - **HARD GATE:** Read [`.cursor/rules/cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) — step phrases, three modes, forbidden code edits.
 - **HARD GATE:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — never defer/fold in-scope work unless the operator **explicitly** says to defer that piece.
 - Repo root: `$HOME/Projects/TBD-Reforger/` (this checkout may also appear as `/var/home/...` — same tree). Mission Creator specs: `docs/specs/Mission_Creator_Architecture/`.
-- Layout: `apps/website/api/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`). Conventions pin: [`docs/platform/WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md).
+- Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`). Conventions pin: [`docs/platform/WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md).
 - Frontend surface specs: `docs/website/frontend/` only — never under `apps/**/docs` (verify-doc-layout enforces).
 - Ticket source of truth: `.ai/tickets/registry.json`. After edits run `./scripts/ticket sync` and `./scripts/ticket check`. Work on **`main` only** — no `ticket/T-0xx` branches.
 - Do not hand-edit generated `docs/TICKET_*.md` or `<!-- ticket-sync:status -->` markers in CLAUDE.md.

@@ -1,6 +1,6 @@
 ---
 description: HARD GATE — no Cursor edits to application source without explicit user code authorization
-globs: apps/website/api/src/**/*.rs,apps/website/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
+globs: apps/website/api_v2/src/**/*.rs,apps/website/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
 alwaysApply: false
 ---
 
@@ -24,7 +24,7 @@ Application code is shipped by **Claude Code** on `executor: claude-code` slices
 
 ## Forbidden unless user explicitly says "Cursor implement this code"
 
-- Any patch under `apps/website/api/src/`, `apps/website/frontend/src/`, `apps/mod/`
+- Any patch under `apps/website/api_v2/src/`, `apps/website/frontend/src/`, `apps/mod/`
 - "Fixing" audit findings (C1, C2, etc.) yourself
 - Completing plan todos that say `claude-code`
 

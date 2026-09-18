@@ -6,7 +6,7 @@ Conventions: [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md).
 
 ## Start everything
 
-**Toolchain:** Rust stable (API + SPA + tooling). Postgres **18** (`postgres:18-alpine` in `apps/website/api/docker-compose.yml`). Node exists only for `enfusion-mcp` under `scripts/mod` (T-165).
+**Toolchain:** Rust stable (API + SPA + tooling). Postgres **18** (`postgres:18-alpine` in `apps/website/api_v2/docker-compose.yml`). Node exists only for `enfusion-mcp` under `scripts/mod` (T-165).
 
 **CI replay:** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Local mirror:
 
@@ -15,13 +15,13 @@ cargo xtask db up          # Postgres on host :5434
 cargo xtask ci ci-local       # editorconfig + website-api + coding-standards + leptos + schema/citations
 ```
 
-**Formatting:** `cargo xtask ci verify-editorconfig` · `cargo fmt --check` in `apps/website/api` + `-p website-frontend`. Coding-standards: `cargo xtask ci verify-coding-standards`.
+**Formatting:** `cargo xtask ci verify-editorconfig` · `cargo fmt --check` in `apps/website/api_v2` + `-p website-frontend`. Coding-standards: `cargo xtask ci verify-coding-standards`.
 
 ```bash
 # 1. Postgres (port 5434)
 cargo xtask db up
 
-# 2. Axum API on :8080 (CWD = apps/website/api; migrates on boot)
+# 2. Axum API on :8080 (CWD = apps/website/api_v2; migrates on boot)
 cargo xtask mk rust-api
 
 # 3. Leptos Trunk SPA on :3000 (proxies /api + /map-assets → :8080)
@@ -32,7 +32,7 @@ cargo xtask mk rust-api
 cargo xtask mk leptos
 ```
 
-Config: `apps/website/api/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
+Config: `apps/website/api_v2/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
 
 ## Confirm it's up
 
@@ -46,7 +46,7 @@ curl -sf http://localhost:8080/api/v1/health
 ## Contract codegen, validation & CI (T-123)
 
 ```bash
-cargo xtask ci schema-codegen    # → apps/website/api/src/contract/generated/ (DO NOT hand-edit)
+cargo xtask ci schema-codegen    # → apps/website/api_v2/src/contract/generated/ (DO NOT hand-edit)
 cargo xtask ci schema-validate   # packages/tbd-schema goldens
 cargo xtask ci verify-citations
 ```
@@ -69,7 +69,7 @@ token exchange, role sync, bounded 429 retry — but **has never been run agains
 this tree**. Finishing it needs a browser and a human at a Discord consent screen; there is no
 unattended substitute.
 
-**Credential state** in `apps/website/api/.env` (verified 2026-07-26 — presence and length only,
+**Credential state** in `apps/website/api_v2/.env` (verified 2026-07-26 — presence and length only,
 values never recorded):
 
 | Var | State | Required for |
@@ -85,7 +85,7 @@ Root `CLAUDE.md`'s note that *"Real Discord OAuth credentials are blank in `.env
 client id, secret and guild id are all populated. What is unproven is whether they are *valid*.
 
 `.env` is gitignored, so a **git worktree has no `.env` at all**. Copy the main checkout's
-`apps/website/api/.env` in before `cargo xtask mk rust-api`, or the API won't boot (`DATABASE_URL` is required).
+`apps/website/api_v2/.env` in before `cargo xtask mk rust-api`, or the API won't boot (`DATABASE_URL` is required).
 
 ### 1. Register the redirect URI
 
@@ -101,7 +101,7 @@ string-compares it both times. Trailing slash, `127.0.0.1` vs `localhost`, `http
 all significant.
 
 Do **not** use the portal's URL generator. The app builds its own authorize URL and requests
-`identify guilds.members.read` (`apps/website/api/src/services/discord.rs:15`). `guilds.members.read`
+`identify guilds.members.read` (`apps/website/api_v2/src/services/discord.rs:15`). `guilds.members.read`
 returns only the caller's own membership in one guild, so **no bot and no bot token are involved**.
 
 ### 2. Align the host string (do this before you touch a browser)
@@ -132,7 +132,7 @@ the exchange failure is not logged (see the table below). Check the pair directl
 client-credentials grant validates id+secret and needs no consent screen:
 
 ```bash
-cd apps/website/api && set -a && . ./.env && set +a
+cd apps/website/api_v2 && set -a && . ./.env && set +a
 curl -s -o /dev/null -w '%{http_code}\n' \
   -u "$DISCORD_CLIENT_ID:$DISCORD_CLIENT_SECRET" \
   -d grant_type=client_credentials -d scope=identify \
@@ -179,7 +179,7 @@ SELECT created_at, severity, action, message
 ### 5. Map guild roles to web tiers
 
 A flawless login still resolves to **enlisted** unless the guild's role snowflakes are mapped.
-`cargo xtask db seed` applies `apps/website/api/seeds/discord_roles.sql`, whose ids are specific to the TBD
+`cargo xtask db seed` applies `apps/website/api_v2/seeds/discord_roles.sql`, whose ids are specific to the TBD
 guild (Command Staff / Mission Maker / Player). **Squad Leader / `leader` is not seeded** — the old
 placeholder snowflake `1517290000000000000` was removed at T-428 (no real guild id is committed).
 Insert the real mapping after a login (recipe is in the seed file header), then re-resolve.
@@ -270,7 +270,7 @@ Dev data is reseedable; mock missions are optional (see below).
 
 ## Registry catalog (T-068 / T-150 / T-068.9)
 
-**Dev seed** (`cargo xtask db seed` → `apps/website/api/seeds/registry_dev.sql`) is the thin 21-row smoke set.
+**Dev seed** (`cargo xtask db seed` → `apps/website/api_v2/seeds/registry_dev.sql`) is the thin 21-row smoke set.
 
 **Full catalog** (Workbench universal export): **1,880 items** + **4,012 compat edges**.
 
@@ -279,7 +279,7 @@ Dev data is reseedable; mock missions are optional (see below).
 cargo xtask db registry-import
 
 # Or explicit paths / prune:
-# cargo run --bin import-registry --manifest-path apps/website/api/Cargo.toml -- \
+# cargo run --bin import-registry --manifest-path apps/website/api_v2/Cargo.toml -- \
 #   --items packages/tbd-schema/registry/registry-items.workbench.json \
 #   --compat packages/tbd-schema/registry/registry-compat.workbench.json \
 #   [--modpack <uuid>] [--prune]
@@ -295,7 +295,7 @@ Restart `cargo xtask mk rust-api` after handler changes — `cargo run` does not
 **Mod compiled mission (T-092.2):**
 
 ```bash
-# Requires SERVICE_TOKEN in apps/website/api/.env
+# Requires SERVICE_TOKEN in apps/website/api_v2/.env
 curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
   http://localhost:8080/api/v1/missions/{mission_id}/compiled | jq .schemaVersion
 ```
@@ -356,23 +356,23 @@ cargo xtask ci verify-terrain-strict
 
 ## Notes
 
-- A fresh DB only has Discord role mappings + registry smoke rows (`cargo xtask db seed` → `apps/website/api/seeds/`).
+- A fresh DB only has Discord role mappings + registry smoke rows (`cargo xtask db seed` → `apps/website/api_v2/seeds/`).
 - Frontend: `cargo xtask mk ci-local-leptos`; full editor gates: `cargo xtask mk leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](EDITOR_GATE_RUNBOOK.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
 - Integration tests: `cargo xtask db test-it` (needs `cargo xtask db up`).
 
 ## Mock data (optional, not run by `cargo xtask db seed`)
 
-`apps/website/api/seeds/mock_data.sql` (Operation Red Dawn etc.) is **manual psql only** — the Go `cmd/seed` applier was deleted at T-145. Example:
+`apps/website/api_v2/seeds/mock_data.sql` (Operation Red Dawn etc.) is **manual psql only** — the Go `cmd/seed` applier was deleted at T-145. Example:
 
 ```bash
 podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger < \
-  apps/website/api/seeds/mock_data.sql
+  apps/website/api_v2/seeds/mock_data.sql
 ```
 
 To purge those four fixed-UUID missions (children first; no ON DELETE CASCADE):
 
 ```bash
-docker compose -f apps/website/api/docker-compose.yml exec -T db psql -U tbd -d tbd_reforger <<'SQL'
+docker compose -f apps/website/api_v2/docker-compose.yml exec -T db psql -U tbd -d tbd_reforger <<'SQL'
 DELETE FROM mission_versions  WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
 DELETE FROM mission_armories  WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
 DELETE FROM mission_bookmarks WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');

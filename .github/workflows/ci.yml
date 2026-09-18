@@ -31,7 +31,7 @@ jobs:
     #
     # T-534 gives each test binary its own database, derived from whatever `TEST_DATABASE_URL`
     # names (`<base>_<suite>_it`), and T-381's guard —
-    # `apps/website/api/tests/common/mod.rs:87 is_safe_test_database_name` — hard-REFUSES the
+    # `apps/website/api_v2/tests/common/mod.rs:87 is_safe_test_database_name` — hard-REFUSES the
     # literal name `tbd_reforger` before anything can connect, create or drop. That guard is
     # correct and deliberate: it is the only thing standing between an exported
     # `TEST_DATABASE_URL=…/tbd_reforger` and a wiped live dev database. It is not to be widened.
@@ -66,7 +66,7 @@ jobs:
           --health-retries 10
     defaults:
       run:
-        working-directory: apps/website/api
+        working-directory: apps/website/api_v2
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -75,7 +75,7 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       # T-453: workspace --all (matches `cargo xtask mk rust-fmt` / T-297). Job default cwd is
-      # apps/website/api — override so xtask/tbd-tools drift cannot slip past CI.
+      # apps/website/api_v2 — override so xtask/tbd-tools drift cannot slip past CI.
       - name: fmt (FMT-1 analog — workspace --all)
         working-directory: .
         run: cargo xtask mk rust-fmt
@@ -88,11 +88,11 @@ jobs:
           SQLX_OFFLINE: "true"
         run: cargo xtask mk rust-build
       # T-298: tbd-tools ran in NO workflow. `grep -n tbd-tools .github/workflows/ci.yml` matched
-      # ONE COMMENT (the fmt note above) and no step, the mod gate scopes itself to `--lib enf::`,
+      # ONE COMMENT (the fmt note above) and no step, the mod gate scopes itself to `--lib enfusion_tooling::`,
       # and the wave gate's `test xtask+tbd-tools` is local-only — so on push, nothing checked the
       # density grid and `density::tests::corner_partition_identity` sat red from T-176 to T-597.
       # `working-directory: .` for the same reason as the fmt step: the job default is
-      # apps/website/api, and `-p` alone would resolve against that package's directory.
+      # apps/website/api_v2, and `-p` alone would resolve against that package's directory.
       # AHEAD of the DB-backed `test` step deliberately. Steps stop at the first failure, so behind
       # it a Postgres-service red would decide whether the density invariant was checked at all —
       # and that step is exactly the one with the history (T-381/T-597). This lane needs no

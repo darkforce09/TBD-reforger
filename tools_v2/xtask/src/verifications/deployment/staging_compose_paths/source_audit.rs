@@ -338,7 +338,7 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
     Ok(out)
 }
 
-/// python: the two `cd '$TBD_REMOTE_DIR/apps/website/api'` bans over the stripped source.
+/// python: the two `cd '$TBD_REMOTE_DIR/apps/website/api_v2'` bans over the stripped source.
 ///
 /// Not redundant with the `-f` pin: `cd api && docker compose -f docker-compose.staging.yml` puts
 /// a plausible-looking relative filename in front of the wrong directory. The `-f` argument alone
@@ -348,12 +348,12 @@ pub(super) fn ban_cd_into_api(stripped: &str) -> Vec<Verdict> {
     let base = script_basename();
     vec![
         gate::ban_str(
-            &format!("{base} still cds into apps/website/api (compose must not)"),
+            &format!("{base} still cds into apps/website/api_v2 (compose must not)"),
             &Pattern::literal(CD_INTO_API_SQ),
             stripped,
         ),
         gate::ban_str(
-            &format!("{base} still cds into apps/website/api (double-quoted form)"),
+            &format!("{base} still cds into apps/website/api_v2 (double-quoted form)"),
             &Pattern::literal(CD_INTO_API_DQ),
             stripped,
         ),

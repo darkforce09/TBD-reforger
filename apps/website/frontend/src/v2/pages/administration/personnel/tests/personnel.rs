@@ -93,7 +93,7 @@ fn admin_roles_sync_path_matches_live_api_route() {
     let live_registration = format!(r#".route("{ADMIN_ROLES_SYNC_PATH}""#);
     assert!(
         app_rs.contains(&live_registration),
-        "apps/website/api/src/app.rs must register {live_registration}, …); \
+        "apps/website/api_v2/src/app.rs must register {live_registration}, …); \
          Personnel posts ADMIN_ROLES_SYNC_PATH"
     );
     assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");

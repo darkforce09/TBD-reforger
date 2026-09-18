@@ -129,7 +129,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-codegen-fresh",
-        help: "Fail if apps/website/api/src/contract/generated is stale after schema-codegen",
+        help: "Fail if apps/website/api_v2/src/contract/generated is stale after schema-codegen",
         group: "schema",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -156,10 +156,10 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "website-api-test",
-        help: "T-901: cargo test in apps/website/api (honours TEST_DATABASE_URL)",
+        help: "T-901: cargo test in apps/website/api_v2 (honours TEST_DATABASE_URL)",
         group: "build",
         lane: Lane::Ci,
-        steps: &[sh!("cd apps/website/api && cargo test")],
+        steps: &[sh!("cd apps/website/api_v2 && cargo test")],
     },
     // The library suite runs without database, browser, or asset prerequisites.
     Task {
@@ -258,7 +258,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Ci,
         steps: &[
-            sh!("cd apps/website/api && cargo build --release --bin api"),
+            sh!("cd apps/website/api_v2 && cargo build --release --bin api"),
             Step::Task("leptos-build"),
         ],
     },
@@ -372,7 +372,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Borrowed("T-895"),
         steps: &[
-            sh!("cd apps/website/api && cargo fmt --check"),
+            sh!("cd apps/website/api_v2 && cargo fmt --check"),
             sh!("cargo fmt --all --check"),
         ],
     },
@@ -382,7 +382,7 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Borrowed("T-895"),
         steps: &[sh!(
-            "cd apps/website/api && cargo clippy --all-targets -- -D warnings"
+            "cd apps/website/api_v2 && cargo clippy --all-targets -- -D warnings"
         )],
     },
     Task {
@@ -390,14 +390,14 @@ pub static TASKS: &[Task] = &[
         help: "Build the Rust backend (all targets)",
         group: "build",
         lane: Lane::Borrowed("T-895"),
-        steps: &[sh!("cd apps/website/api && cargo build --all-targets")],
+        steps: &[sh!("cd apps/website/api_v2 && cargo build --all-targets")],
     },
     Task {
         name: "rust-test",
         help: "Run Rust unit tests (no DB)",
         group: "build",
         lane: Lane::Borrowed("T-895"),
-        steps: &[sh!("cd apps/website/api && cargo test --lib --bins")],
+        steps: &[sh!("cd apps/website/api_v2 && cargo test --lib --bins")],
     },
     Task {
         name: "wasm-ci",
@@ -464,7 +464,7 @@ pub static TASKS: &[Task] = &[
             Step::Shell {
                 silent: false,
                 ignore_err: false,
-                script: "cd apps/website/api && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
+                script: "cd apps/website/api_v2 && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
             },
             Step::Shell {
                 silent: true,

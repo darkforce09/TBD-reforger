@@ -76,7 +76,7 @@ fn throwaway_root(tag: &str, with_backend: bool, with_golden: bool) -> PathBuf {
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
     fs::create_dir_all(root.join("packages/tbd-schema/golden-missions")).unwrap();
-    fs::create_dir_all(root.join("apps/website/api")).unwrap();
+    fs::create_dir_all(root.join("apps/website/api_v2")).unwrap();
     if with_backend {
         fs::write(
             root.join(BACKEND_EXAMPLE_REL),

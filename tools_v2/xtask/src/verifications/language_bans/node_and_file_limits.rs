@@ -22,7 +22,7 @@ const FILE_LENGTH_PINS: &[&str] = &[
     "tools_v2/ticket-engine",
     "tools_v2/developer-tools",
     "apps/ticketboard/src",
-    "apps/website/api/src",
+    "apps/website/api_v2/src",
     "apps/website/frontend/src",
 ];
 

@@ -308,7 +308,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     }
 
     // Token: explicit flag wins; otherwise `setup server-profile` already substituted the one from
-    // `apps/website/api/.env` and we leave its work alone. (former python3 site 1 of 3)
+    // `apps/website/api_v2/.env` and we leave its work alone. (former python3 site 1 of 3)
     if let Err(e) = render::patch_backend_config(&backend_cfg, &o) {
         // bash printed python's traceback on stderr and then this exact line. The cause keeps its
         // own line so the `ERROR:` line stays byte-identical to the baseline.

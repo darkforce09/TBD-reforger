@@ -5,7 +5,7 @@
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/website/README.md`](../website/README.md) → **this doc** (supporting tier)
 **Updated:** 2026-07-18 (T-171 path refresh)
 
-> **Live stack (T-145 / T-159 / T-171):** `apps/website/api/` (Axum + sqlx) + `apps/website/frontend/` (Leptos). Go/TS examples below are **historical patterns** for `@contract` / `@route` vocabulary — prefer Rust rustdoc + clippy today. Homes: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+> **Live stack (T-145 / T-159 / T-171):** `apps/website/api_v2/` (Axum + sqlx) + `apps/website/frontend/` (Leptos). Go/TS examples below are **historical patterns** for `@contract` / `@route` vocabulary — prefer Rust rustdoc + clippy today. Homes: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 
 > This document is the source of truth for **how code is documented** across the three
 > boundaries of `TBD-Reforger`. It is **ruthless and prescriptive**: where it says REQUIRED,
@@ -137,7 +137,7 @@ the standard makes them uniform. The schema definition:
 ```
 
 **Go model** — `internal/models/registry.go`, **deleted at T-145**. The tag it carried now sits on
-`RegistryItem` in [`apps/website/api/src/models/registry.rs`](../../apps/website/api/src/models/registry.rs).
+`RegistryItem` in [`apps/website/api_v2/src/models/registry.rs`](../../apps/website/api_v2/src/models/registry.rs).
 The historical Go form:
 
 ```go
@@ -152,7 +152,7 @@ type RegistryItem struct {
 ```
 
 **Go handler** — `internal/handlers/registry.go`, **deleted at T-145**. The `@route` tag now sits on
-`list_registry` in [`apps/website/api/src/handlers/registry.rs`](../../apps/website/api/src/handlers/registry.rs).
+`list_registry` in [`apps/website/api_v2/src/handlers/registry.rs`](../../apps/website/api_v2/src/handlers/registry.rs).
 The historical Go form:
 
 ```go
@@ -203,8 +203,8 @@ adds the cross-boundary tags.
 1. Every exported `func`, method, type, and `const`/`var` has a doc comment, and it **starts with
    the identifier name** (Godoc convention). The gold standards this rule was written against —
    `internal/models/mission.go` and `internal/handlers/handlers.go` — were **deleted at T-145**.
-   Their rustdoc successors are `Mission` in [`apps/website/api/src/models/mission.rs`](../../apps/website/api/src/models/mission.rs)
-   and the handlers under [`apps/website/api/src/handlers/`](../../apps/website/api/src/handlers).
+   Their rustdoc successors are `Mission` in [`apps/website/api_v2/src/models/mission.rs`](../../apps/website/api_v2/src/models/mission.rs)
+   and the handlers under [`apps/website/api_v2/src/handlers/`](../../apps/website/api_v2/src/handlers).
 2. Every package has a `// Package <name> …` doc on exactly one file.
 3. Struct fields carry a **trailing intent comment** where the name is not self-evident
    (e.g. units, nil-meaning, enum domain). See `RegistryItem` fields above.
@@ -404,16 +404,16 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
 
 1. **Generated projections (shipped, Rust-only since T-159.29.3).** Contract types are **generated from**
    `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`:
-   - Rust → `apps/website/api/src/contract/generated/` (DO NOT hand-edit).
+   - Rust → `apps/website/api_v2/src/contract/generated/` (DO NOT hand-edit).
    - Leptos SPA hand-writes `apps/website/frontend/src/dto.rs` gated by R-api golden tests.
    - Enforce Script has no codegen tooling: Enforce DTOs stay hand-written but MUST carry
      `@contract` (§3/§6.4) **and** a golden fixture that round-trips through schema validate.
 2. **API runtime validation (shipped).** `CreateVersion` validates the incoming version payload
    against [`mission-editor-payload.schema.json`](../../packages/tbd-schema/schema/mission-editor-payload.schema.json)
-   **before persist** (`apps/website/api/src/contract/validate.rs`),
+   **before persist** (`apps/website/api_v2/src/contract/validate.rs`),
    returning **400** on a malformed payload. It validates the **editor superset**, not the canonical
    `mission.schema.json` — those are different artifacts (see §2.2).
-3. **Hand-written types remain debt** where not generated. API wire models = `apps/website/api/src/models/` (serde snake_case).
+3. **Hand-written types remain debt** where not generated. API wire models = `apps/website/api_v2/src/models/` (serde snake_case).
 
 > **Implementation:** [**T-123**](t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
 
@@ -428,7 +428,7 @@ Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../.
 |------|------|-------|
 | Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
 | Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in `.c/.go/.js/.mjs/.rs/.ts/.tsx` under `apps/`, `crates/`, `packages/` — **code only, never `docs/`** |
-| Route tags | `cargo xtask ci verify-coding-standards` (route-tag check) | `@route` against registered routes in `apps/website/api/src/app.rs` |
+| Route tags | `cargo xtask ci verify-coding-standards` (route-tag check) | `@route` against registered routes in `apps/website/api_v2/src/app.rs` |
 | Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
 
 > **Historical (retired T-145/T-159):** golangci `exported`, eslint TSDoc — replaced by clippy + rustdoc.

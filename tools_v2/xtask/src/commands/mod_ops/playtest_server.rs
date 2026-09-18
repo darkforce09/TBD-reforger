@@ -116,7 +116,7 @@ Options:
   --mission-file=<p>    stage <p> as the on-disk fallback for that id (no API needed)
   --event-id=<id>       roster event id
   --backend-url=<url>   default http://127.0.0.1:8080
-  --token=<tok>         SERVICE_TOKEN; default read from apps/website/api/.env
+  --token=<tok>         SERVICE_TOKEN; default read from apps/website/api_v2/.env
   --admin=<id>          identityId (UUID) or 17-digit SteamID; repeatable
   --name=<s>            server browser name
   --scenario=<id>       scenarioId override (default: from tbd-dev-server.config.json)

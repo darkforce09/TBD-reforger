@@ -244,7 +244,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
         };
         let newest = git_out(
             &root,
-            &["log", "-1", "--format=%ct", "--", "apps/website/api"],
+            &["log", "-1", "--format=%ct", "--", "apps/website/api_v2"],
         )
         .and_then(|s| s.parse().ok())
         .unwrap_or(0);

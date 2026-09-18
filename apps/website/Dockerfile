@@ -1,6 +1,6 @@
 # T-251 — release image for the Axum `api` binary (`website-api`).
 #
-# Build from the **monorepo root** (required: `map-engine-core` path dep +
+# Build from the **monorepo root** (required: `website-map-engine` path dep +
 # `packages/tbd-schema` compile-time `include_str!` embeds in validate.rs / kit.rs):
 #
 #   docker build -f apps/website/Dockerfile -t tbd-website-api .
@@ -8,7 +8,7 @@
 #   docker compose -f apps/website/docker-compose.staging.yml --profile api build
 #
 # Runtime listens on 0.0.0.0:$PORT (default 8080). Supply at least DATABASE_URL and
-# JWT_SECRET (see apps/website/api/.env.example). This image does **not** serve the
+# JWT_SECRET (see apps/website/api_v2/.env.example). This image does **not** serve the
 # Leptos SPA — use scripts/deploy/Caddyfile.website (COOP/COEP + /api reverse-proxy).
 
 # syntax=docker/dockerfile:1
@@ -17,19 +17,21 @@ FROM docker.io/library/rust:1.95.0-bookworm AS builder
 WORKDIR /src
 
 # Trimmed workspace: only the crates the `api` binary links. Paths under apps/,
-# crates/, and packages/ stay monorepo-shaped so include_str! relatives resolve.
+# and packages/ stay monorepo-shaped so include_str! relatives resolve.
 COPY Cargo.lock ./
 RUN printf '%s\n' \
   '[workspace]' \
   'resolver = "3"' \
   'members = [' \
-  '    "apps/website/api",' \
-  '    "crates/map-engine-core",' \
+  '    "apps/website/api_v2",' \
+  '    "apps/website/map-engine",' \
+  '    "apps/website/graphics-engine",' \
   ']' \
   > Cargo.toml
 
-COPY apps/website/api ./apps/website/api
-COPY crates/map-engine-core ./crates/map-engine-core
+COPY apps/website/api_v2 ./apps/website/api_v2
+COPY apps/website/map-engine ./apps/website/map-engine
+COPY apps/website/graphics-engine ./apps/website/graphics-engine
 COPY packages/tbd-schema/schema ./packages/tbd-schema/schema
 COPY packages/tbd-schema/registry/kit-aliases.json ./packages/tbd-schema/registry/kit-aliases.json
 

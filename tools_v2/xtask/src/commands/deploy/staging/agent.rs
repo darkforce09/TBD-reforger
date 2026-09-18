@@ -207,15 +207,15 @@ esac
 pub const API_SLICE_SPEC: &str = "\
 ── WHAT THE API SLICE MUST BUILD ────────────────────────────────────────────
 
-apps/website/api/** is NOT this slice's to touch. The host half above is complete and
+apps/website/api_v2/** is NOT this slice's to touch. The host half above is complete and
 proven; the API half is mechanical from here.
 
-1. CONFIG — one new var in apps/website/api/src/config.rs:
+1. CONFIG — one new var in apps/website/api_v2/src/config.rs:
       game_agent_socket: env::var(\"GAME_AGENT_SOCKET\").unwrap_or_default()
    Empty = no transport, and `send_rcon` keeps answering 503. Fail closed. Populate it in
    the API's systemd unit (docs/website/HOME_SERVER.md:282) as %t/tbd-reforger-agent.sock.
 
-2. CLIENT — new apps/website/api/src/services/game_agent.rs. No new dependency: tokio is
+2. CLIENT — new apps/website/api_v2/src/services/game_agent.rs. No new dependency: tokio is
    already in the tree and `tokio::net::UnixStream` is all this needs.
       pub enum AgentAction { Status, Start, Stop, Restart }   // Display -> the wire verb
       #[derive(Deserialize)] pub struct AgentReply {
@@ -229,7 +229,7 @@ proven; the API half is mechanical from here.
    answering start/restart, on purpose. Use 20s. A timeout shorter than the dwell would
    turn every honest slow answer into a false \"unreachable\".
 
-3. HANDLER — apps/website/api/src/handlers/admin/admin.rs `send_rcon` (currently ends in the
+3. HANDLER — apps/website/api_v2/src/handlers/admin/admin.rs `send_rcon` (currently ends in the
    unconditional Err(SERVICE_UNAVAILABLE, RCON_NO_TRANSPORT) at :628). Map the validated
    RconCommand, then map the reply — the mapping is three-way, because that is the delivery
    result T-269 asked for:

@@ -528,13 +528,13 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 | Contract / `flatten` | 14 | `crates/map-engine-core/src/mission/` |
 | Website — dead pages | 14 | `apps/website/frontend/src/` |
 | Mission Creator — authoring | 12 | `apps/website/frontend/src/` |
-| Website — event lifecycle | 11 | `apps/website/api/src/` |
+| Website — event lifecycle | 11 | `apps/website/api_v2/src/` |
 | Mission Creator — data loss | 8 | `apps/website/frontend/src/` |
-| Website — server manager | 8 | `apps/website/api/src/` |
+| Website — server manager | 8 | `apps/website/api_v2/src/` |
 | Arsenal / loadouts | 7 | frontend + `flatten.rs` |
 | Data pipeline | 7 | `packages/tbd-schema/`, `tools/` |
 | End-to-end test lane | 6 | `scripts/mod/`, CI |
-| Discord | 6 | `apps/website/api/src/` |
+| Discord | 6 | `apps/website/api_v2/src/` |
 | Infra / deploy | 6 | root, `docs/` |
 | Registry hygiene | 6 | `tools_v2/xtask/`, `.ai/tickets/` |
 | Mission Creator — collab | 5 | `apps/website/frontend/src/` |

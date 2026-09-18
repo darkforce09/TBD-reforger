@@ -35,7 +35,7 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
     );
     // Something the SPA genuinely does not compile stays out.
     assert!(
-        !wasm_scope_touched(&root, ["apps/website/api/src/db.rs"].into_iter()),
+        !wasm_scope_touched(&root, ["apps/website/api_v2/src/db.rs"].into_iter()),
         "a backend-only change must not force the most expensive step in the gate"
     );
 }
@@ -83,7 +83,7 @@ fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
     );
     // And the negative: a backend-only change stays out, include inputs and all.
     assert!(
-        !frontend_include_input_touched(&root, ["apps/website/api/src/db.rs"].into_iter()),
+        !frontend_include_input_touched(&root, ["apps/website/api_v2/src/db.rs"].into_iter()),
         "a backend-only change must not reach the frontend suite"
     );
     // A path nobody includes is not in scope either — this is a membership test, not a
@@ -123,10 +123,10 @@ fn edition_falls_back_to_2021_when_nothing_says_otherwise() {
 
 #[test]
 fn edition_is_read_from_the_nearest_manifest() {
-    // The real workspace: apps/website/api is edition 2024, and hardcoding 2021 made every
+    // The real workspace: apps/website/api_v2 is edition 2024, and hardcoding 2021 made every
     // slice touching it fail a gate it did not cause.
-    if Path::new("apps/website/api/Cargo.toml").is_file() {
-        assert_eq!(file_edition("apps/website/api/src/lib.rs"), "2024");
+    if Path::new("apps/website/api_v2/Cargo.toml").is_file() {
+        assert_eq!(file_edition("apps/website/api_v2/src/lib.rs"), "2024");
     }
 }
 
@@ -174,7 +174,7 @@ fn workspace_members_parse_is_not_empty_on_the_real_manifest() {
         "members: {members:?}"
     );
     assert!(
-        members.contains(&"apps/website/api".to_string()),
+        members.contains(&"apps/website/api_v2".to_string()),
         "members: {members:?}"
     );
 }

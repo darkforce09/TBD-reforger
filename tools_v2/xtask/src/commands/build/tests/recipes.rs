@@ -98,7 +98,7 @@ fn private_target_dir_violation_bites() {
     ];
     assert_eq!(
         private_target_dir_violation(&bad).as_deref(),
-        Some("cd apps/website/api && CARGO_TARGET_DIR=/tmp/private cargo build --all-targets")
+        Some("cd apps/website/api_v2 && CARGO_TARGET_DIR=/tmp/private cargo build --all-targets")
     );
 }
 
@@ -120,12 +120,12 @@ fn only_rust_api_sets_a_private_target_dir() {
 fn echo_matches_make() {
     assert_eq!(
         rust_build()[0].echo(),
-        "cd apps/website/api && cargo build --all-targets"
+        "cd apps/website/api_v2 && cargo build --all-targets"
     );
     assert_eq!(rust_fmt()[1].echo(), "cargo fmt --all --check");
     assert_eq!(
         rust_clippy()[0].echo(),
-        "cd apps/website/api && cargo clippy --all-targets -- -D warnings"
+        "cd apps/website/api_v2 && cargo clippy --all-targets -- -D warnings"
     );
     assert_eq!(
         leptos()[0].echo(),
@@ -149,7 +149,7 @@ fn echo_matches_make() {
     assert_eq!(
         rust_api()[0].echo(),
         format!(
-            "cd apps/website/api && CARGO_TARGET_DIR={}/{DEV_API_TARGET} cargo run --bin api",
+            "cd apps/website/api_v2 && CARGO_TARGET_DIR={}/{DEV_API_TARGET} cargo run --bin api",
             cwd_root().display()
         )
     );

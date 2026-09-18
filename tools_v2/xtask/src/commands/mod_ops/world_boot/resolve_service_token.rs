@@ -8,8 +8,8 @@ pub(super) fn resolve_service_token(root: &Path) -> Option<String> {
     }
     let main_root = git_main_root(root).unwrap_or_else(|| root.to_path_buf());
     for f in [
-        root.join("apps/website/api/.env"),
-        main_root.join("apps/website/api/.env"),
+        root.join("apps/website/api_v2/.env"),
+        main_root.join("apps/website/api_v2/.env"),
     ] {
         if let Some(tok) = token_from_env_file(&f) {
             return Some(tok);

@@ -9,7 +9,7 @@ Owner: command center. Frozen-scope ticket; proposed scope website/backend/http_
 cd .ai/artifacts/worktrees/T-311 && pwd && git branch --show-current   # must be slice/T-311
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target ; cargo xtask db up
 ═══ READ ═══
-apps/website/api/src/handlers/telemetry/leaderboards.rs (all), the T-194 golden seed, docs/plans/t-311_plan.md
+apps/website/api_v2/src/handlers/telemetry/leaderboards.rs (all), the T-194 golden seed, docs/plans/t-311_plan.md
 ═══ PROBLEM ═══
 Five ORDER BY arms (:47-51) have no secondary key; tied rows make LIMIT/OFFSET pages overlap and skip.
 ═══ SHIPPED ═══

@@ -18,7 +18,7 @@ T-216 schema deltas (all landed), T-674 leaderSlotId (emission is T-674.1's — 
 Rust + JSON schema. No scripts. generated/ is codegen output only.
 ═══ LOCKED ═══
 - Goldens validate under schema-validate before and after.
-- No hand edits under apps/website/api/src/contract/generated/.
+- No hand edits under apps/website/api_v2/src/contract/generated/.
 ═══ DO ═══
 1. Golden with the four fields; paste the drop diagnostic (red on main). 2. Emit; retire the four DIAG rows.
 3. schema-validate + schema-codegen. 4. Perturb (skip stance) → red → restore → touch → green. 5. Wave gate.

@@ -24,7 +24,7 @@ cargo xtask ci lfs-sat   # ~153 MB — full satellite
 # or: git lfs install && git lfs pull
 ```
 
-**Serving (T-171):** Axum `GET /map-assets/*` (`MAP_ASSETS_DIR`, default from `apps/website/api/` CWD) ← Trunk proxy ← SPA same-origin fetch. No symlink step.
+**Serving (T-171):** Axum `GET /map-assets/*` (`MAP_ASSETS_DIR`, default from `apps/website/api_v2/` CWD) ← Trunk proxy ← SPA same-origin fetch. No symlink step.
 
 Full story: [`docs/website/DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md) §Map assets · conventions [`WHERE_DOES_X_GO.md`](../../docs/platform/WHERE_DOES_X_GO.md).
 

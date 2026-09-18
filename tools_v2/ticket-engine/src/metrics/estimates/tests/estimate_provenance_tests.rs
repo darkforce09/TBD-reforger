@@ -29,7 +29,7 @@ fn excluded_paths_and_numstat_parse() {
     assert!(is_excluded_path("docs/TICKET_LEAD.md"));
     assert!(is_excluded_path("docs/TICKET_REGISTRY.md"));
     assert!(is_excluded_path("Cargo.lock"));
-    assert!(is_excluded_path("apps/website/api/Cargo.lock"));
+    assert!(is_excluded_path("apps/website/api_v2/Cargo.lock"));
     assert!(!is_excluded_path("docs/platform/token_estimate_factor.md"));
     assert!(!is_excluded_path("tools_v2/xtask/src/main.rs"));
     assert!(!is_excluded_path("docs/TICKETING.rs")); // suffix rule: .md only

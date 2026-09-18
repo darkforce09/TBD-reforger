@@ -121,7 +121,7 @@ fn bookmark_control_and_handlers_are_wired() {
     let app_rs = crate::v2::core::test_support::fixtures::api_app_source();
     assert!(
         app_rs.contains(r#""/missions/{id}/bookmark""#),
-        "apps/website/api/src/app.rs must still register /missions/{{id}}/bookmark"
+        "apps/website/api_v2/src/app.rs must still register /missions/{{id}}/bookmark"
     );
 }
 

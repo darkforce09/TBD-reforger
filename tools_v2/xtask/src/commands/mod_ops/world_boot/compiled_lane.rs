@@ -11,7 +11,7 @@ pub(super) fn compiled_lane(
     let svc = resolve_service_token(root).ok_or_else(|| {
         api_env_fail(
             api_base,
-            "no SERVICE_TOKEN — set TBD_SERVICE_TOKEN, or add it to apps/website/api/.env",
+            "no SERVICE_TOKEN — set TBD_SERVICE_TOKEN, or add it to apps/website/api_v2/.env",
             None,
         )
     })?;

@@ -119,7 +119,7 @@ pub fn verify_codegen_fresh() -> i32 {
             "diff",
             "--exit-code",
             "--",
-            "apps/website/api/src/contract/generated",
+            "apps/website/api_v2/src/contract/generated",
         ])
         .cwd(&root)
         .output()

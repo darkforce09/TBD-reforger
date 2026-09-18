@@ -4,12 +4,12 @@
 //! Two halves of one contract have to agree on a string, byte for byte, or the whole identity
 //! system silently matches nobody, forever, with no error anywhere:
 //!
-//!   * `POST /api/v1/ingest/link-confirm` (`apps/website/api/src/handlers/me.rs:160-205`) is the
+//!   * `POST /api/v1/ingest/link-confirm` (`apps/website/api_v2/src/handlers/me.rs:160-205`) is the
 //!     GAME SERVER confirming a player's link code. It is the ONLY thing besides the dev seed that
 //!     ever writes `users.arma_id`. The mod **does** implement that path: `TBD_IdentityLink`
 //!     exposes `#tbd link <code>` (also `#tbd link status`), and `TBD_MissionLoader.ParseMissionJson`
 //!     calls `TBD_IdentityLink.Arm()` (T-181.35 shipped).
-//!   * `POST /api/v1/ingest/match-results` (`apps/website/api/src/handlers/telemetry.rs:215`)
+//!   * `POST /api/v1/ingest/match-results` (`apps/website/api_v2/src/handlers/telemetry.rs:215`)
 //!     resolves each player with `SELECT discord_id FROM users WHERE arma_id = $1`
 //!     (telemetry.rs:238). That is `TBD_ResultsReporter`.
 //!

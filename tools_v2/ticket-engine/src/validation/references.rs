@@ -113,7 +113,7 @@ pub(super) const FOSSIL_ALLOWLIST: &[(&str, &str)] = &[
          agent-editable from a platform slice",
     ),
     (
-        "apps/website/api/migrations/0011_events_server_modpack.sql",
+        "apps/website/api_v2/migrations/0011_events_server_modpack.sql",
         "committed migrations are checksum-frozen (db_migrate persist audits them); editing one \
          to reword a comment is the a843905f incident",
     ),

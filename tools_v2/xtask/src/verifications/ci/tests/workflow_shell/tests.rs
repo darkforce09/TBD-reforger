@@ -83,7 +83,7 @@ fn defaults_run_without_step_run_does_not_false_fail() {
     // THE LANDMINE. ci.yml has defaults.run.working-directory. A regex count of `run:` keys
     // treats that as a step; the production walker must not.
     let yaml = "\
-jobs:\n  j:\n    defaults:\n      run:\n        working-directory: apps/website/api\n    steps:\n      - uses: actions/checkout@v7\n";
+jobs:\n  j:\n    defaults:\n      run:\n        working-directory: apps/website/api_v2\n    steps:\n      - uses: actions/checkout@v7\n";
     assert_eq!(rc_of(yaml), 0, "defaults.run must not be a step");
 }
 
@@ -118,7 +118,7 @@ jobs:\n  j:\n    steps:\n      - run: |\n          cargo xtask a\n          carg
 fn defaults_run_only_no_steps_is_red() {
     // BLOCKER: a job with only defaults.run and no steps used to print OK — 0 check(s).
     let yaml = "\
-jobs:\n  j:\n    defaults:\n      run:\n        working-directory: apps/website/api\n";
+jobs:\n  j:\n    defaults:\n      run:\n        working-directory: apps/website/api_v2\n";
     assert_ne!(rc_of(yaml), 0, "no-steps job must not be OK with 0 checks");
 }
 

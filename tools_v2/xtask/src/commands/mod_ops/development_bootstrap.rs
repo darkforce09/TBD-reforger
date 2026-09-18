@@ -2,7 +2,7 @@
 //!
 //! Path pins are inlined as [`Paths`] (former `lib/paths.sh` values; lib stays on disk
 //! for OOS bash — wave 226 option 2 parks T-879/T-880 deletes):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api_v2`.
 //!
 //! Daemon pre-warm is in-process (`mcp_daemon`, T-888). MCP game root is in-process
 //! (`gate_setup_mcp_game_root`, T-876).
@@ -53,7 +53,7 @@ impl Paths {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
             mod_scripts: root.join("scripts/mod"),
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
         }
     }
 }

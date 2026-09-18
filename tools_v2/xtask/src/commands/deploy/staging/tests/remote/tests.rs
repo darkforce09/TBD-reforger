@@ -78,7 +78,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=apps/mod/vanilla_reference/",
         "--exclude=apps/mod/playable_selector/",
         "--exclude=scripts/deploy/deploy.env",
-        "--exclude=apps/website/api/.env",
+        "--exclude=apps/website/api_v2/.env",
         "--exclude=apps/mod/tbd-export/",
         "--exclude=apps/mod/tbd-emcp/",
     ] {

@@ -56,20 +56,26 @@ use crate::core::repository_root::find_repo_root;
 /// existed. This is the baseline the whole slice is measured against; it stays here after T-897
 /// deletes the Makefile, which is the point — arm 2 dies with the file, arm 1 does not.
 const BASELINE: &[(&str, &[&str])] = &[
-    ("db-up", &["cd apps/website/api && podman compose up -d db"]),
-    ("db-down", &["cd apps/website/api && podman compose down"]),
+    (
+        "db-up",
+        &["cd apps/website/api_v2 && podman compose up -d db"],
+    ),
+    (
+        "db-down",
+        &["cd apps/website/api_v2 && podman compose down"],
+    ),
     (
         "db-logs",
-        &["cd apps/website/api && podman compose logs -f db"],
+        &["cd apps/website/api_v2 && podman compose logs -f db"],
     ),
     (
         "seed",
         &[
-            "cd apps/website/api && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql",
-            "cd apps/website/api && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/registry_dev.sql",
-            "cd apps/website/api && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql",
-            "cd apps/website/api && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/vehicle_database.sql",
-            "cd apps/website/api && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/registry_dev.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/vehicle_database.sql",
+            "cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
         ],
     ),
     (
@@ -77,7 +83,7 @@ const BASELINE: &[(&str, &[&str])] = &[
         &[
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS rust_it WITH (FORCE);\"",
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"CREATE DATABASE rust_it;\"",
-            "cd apps/website/api && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
+            "cd apps/website/api_v2 && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc \"SELECT datname FROM pg_database WHERE datname = 'rust_it' OR datname LIKE 'rust_it\\_%\\_it' ESCAPE '\\'\"",
         ],
     ),

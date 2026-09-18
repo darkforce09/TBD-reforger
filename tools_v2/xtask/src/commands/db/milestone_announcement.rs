@@ -2,7 +2,7 @@
 //! → `cargo xtask mod seed-announcement`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `WEB=apps/website/api`. Sources `$WEB/.env` for `DATABASE_URL` (KEY=VALUE parse, not a
+//! `WEB=apps/website/api_v2`. Sources `$WEB/.env` for `DATABASE_URL` (KEY=VALUE parse, not a
 //! full shell `source`).
 //!
 //! Inserts the pinned Milestone #1 website announcement when absent.
@@ -70,7 +70,7 @@ struct Paths {
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
             script: root.join(SCRIPT_REL),
         }
     }

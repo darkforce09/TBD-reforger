@@ -2,10 +2,10 @@
 //
 // `is_http_url` exists twice on purpose:
 //
-//   * `apps/website/api/src/services/text.rs`          — the INGRESS guard (T-391). Rejects at
-//                                                        the write boundary with a 400.
-//   * `apps/website/frontend/src/url_guard.rs`         — the EGRESS guard (T-405). Refuses to
-//                                                        emit a non-http(s) `href`.
+//   * `apps/website/api_v2/src/services/text.rs`    — the INGRESS guard (T-391). Rejects at
+//                                                  the write boundary with a 400.
+//   * `apps/website/frontend/src/url_guard.rs`      — the EGRESS guard (T-405). Refuses to
+//                                                  emit a non-http(s) `href`.
 //
 // It is not one function in a shared crate because there is no crate both sides can honestly
 // share — see the module header on `frontend/src/url_guard.rs` for the decision and the two

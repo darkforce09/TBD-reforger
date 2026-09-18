@@ -35,19 +35,19 @@ impl Repo {
         let mut p = std::env::temp_dir();
         p.push(format!("tbd-rt-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
-        std::fs::create_dir_all(p.join("apps/website/api/src/handlers/telemetry")).unwrap();
+        std::fs::create_dir_all(p.join("apps/website/api_v2/src/handlers/telemetry")).unwrap();
         let r = Repo(p);
         r.app(APP);
         r.tags(TAGS);
         r
     }
     fn app(&self, body: &str) {
-        std::fs::write(self.0.join("apps/website/api/src/app.rs"), body).unwrap();
+        std::fs::write(self.0.join("apps/website/api_v2/src/app.rs"), body).unwrap();
     }
     fn tags(&self, body: &str) {
         let p = self
             .0
-            .join("apps/website/api/src/handlers/telemetry/servers.rs");
+            .join("apps/website/api_v2/src/handlers/telemetry/servers.rs");
         std::fs::write(p, body).unwrap();
     }
     /// Run; assert the exit code and every expected line; hand back the joined output.
@@ -73,7 +73,7 @@ fn clean_tree_passes_and_counts_exactly() {
     let all = Repo::new("clean").expect(
         0,
         &[
-            "checked 3 @route tag(s) against 3 registered route(s) in apps/website/api/src/app.rs",
+            "checked 3 @route tag(s) against 3 registered route(s) in apps/website/api_v2/src/app.rs",
             "  none — all 3 tag(s) resolve to a registered route.",
             "  none — all 3 registered route(s) are documented.",
             "ROUTE-TAG CHECK: PASS",
@@ -90,8 +90,8 @@ fn a_tag_pointing_at_no_route_fails() {
     let extra = "/// @route DELETE /api/v1/servers/:id\npub async fn deactivate_server() {}\n";
     r.tags(&format!("{TAGS}\n{extra}"));
     r.expect(1, &[
-            "  apps/website/api/src/handlers/telemetry/servers.rs:11",
-            "      @route DELETE /api/v1/servers/{id}  ->  handler `deactivate_server` is NOT registered in apps/website/api/src/app.rs on that method+path.",
+            "  apps/website/api_v2/src/handlers/telemetry/servers.rs:11",
+            "      @route DELETE /api/v1/servers/{id}  ->  handler `deactivate_server` is NOT registered in apps/website/api_v2/src/app.rs on that method+path.",
             "checked 4 @route tag(s) against 3 registered route(s)",
             "ROUTE-TAG CHECK: FAIL — 1 unwired tag(s), 0 undocumented route(s)",
         ]);
@@ -131,7 +131,7 @@ fn inputs_that_were_never_read_do_not_pass() {
     let all = out.join("\n");
     assert_eq!(code, 2, "a check that never ran must not exit 0:\n{all}");
     assert!(
-        all.contains("target file missing: apps/website/api/src/app.rs"),
+        all.contains("target file missing: apps/website/api_v2/src/app.rs"),
         "{all}"
     );
     assert!(
@@ -177,7 +177,7 @@ fn an_unreadable_parse_is_named_not_skipped() {
     r.tags(&format!("{TAGS}\n/// @route GET /api/v1/orphaned-claim\n"));
     r.expect(1, &[
             "FAIL: 4 @route tag(s) in the tree but 3 parsed into (METHOD, PATH, HANDLER).",
-            "      orphan: ORPHAN apps/website/api/src/handlers/telemetry/servers.rs:11 GET /api/v1/orphaned-claim",
+            "      orphan: ORPHAN apps/website/api_v2/src/handlers/telemetry/servers.rs:11 GET /api/v1/orphaned-claim",
             ORPHAN_TAIL,
             PARSE_FAIL,
         ]);

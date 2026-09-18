@@ -3,7 +3,7 @@
 //! Path pins MIRROR the values `scripts/mod/lib/paths.sh` defined; nothing here reads that file.
 //! T-853 deleted `lib/xtask-run.sh` (zero consumers); `lib/paths.sh` survives only until
 //! `deploy-staging.sh`, its last consumer, is ported.
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api`,
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`,
 //! `DEPLOY_ENV=scripts/deploy/deploy.env`.
 //!
 //! Orchestrator only: keeps `debug a2s-probe` / `debug direct-join-log` / `debug ndjson-append`.
@@ -66,7 +66,7 @@ impl Paths {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
             schema: root.join("packages/tbd-schema"),
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
             deploy_env: root.join("scripts/deploy/deploy.env"),
         }
     }

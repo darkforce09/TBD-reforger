@@ -1,12 +1,12 @@
 # Backend — ROADMAP
 
-> **SUPERSEDED (T-145 / T-171):** Live API is **Rust Axum + sqlx** at [`apps/website/api/`](../../../apps/website/api/) (pkg `website-api`). Go/`internal/`/`cmd/api` / GORM / golangci rows below are historical. Run: `cargo xtask mk rust-api` · SPA: `cargo xtask mk leptos` · seeds: `apps/website/api/seeds/` · migrations: `apps/website/api/migrations/`. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Canonical status: root [`CLAUDE.md`](../../../CLAUDE.md).
+> **SUPERSEDED (T-145 / T-171):** Live API is **Rust Axum + sqlx** at [`apps/website/api_v2/`](../../../apps/website/api_v2/) (pkg `website-api`). Go/`internal/`/`cmd/api` / GORM / golangci rows below are historical. Run: `cargo xtask mk rust-api` · SPA: `cargo xtask mk leptos` · seeds: `apps/website/api_v2/seeds/` · migrations: `apps/website/api_v2/migrations/`. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Canonical status: root [`CLAUDE.md`](../../../CLAUDE.md).
 
 **Start here for planning history.** What was **shipped** under the Go era; verify paths against live `api/src/`.
 
 **Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
 
-**Live code:** [`apps/website/api/src/`](../../../apps/website/api/src) · **Contract:** `api/src/models/` (serde snake_case) + generated `api/src/contract/generated/`
+**Live code:** [`apps/website/api_v2/src/`](../../../apps/website/api_v2/src) · **Contract:** `api/src/models/` (serde snake_case) + generated `api/src/contract/generated/`
 
 ---
 
@@ -38,7 +38,7 @@
 | **Admin** | `admin.go` | `admin.go` | Personnel, audit logs |
 | **Realtime** | — | SSE hub in `api/src/realtime/` | |
 
-**Migrations (live):** [`apps/website/api/migrations/`](../../../apps/website/api/migrations) · **Seeds:** [`apps/website/api/seeds/`](../../../apps/website/api/seeds) (`cargo xtask db seed` = Discord roles + registry_dev)
+**Migrations (live):** [`apps/website/api_v2/migrations/`](../../../apps/website/api_v2/migrations) · **Seeds:** [`apps/website/api_v2/seeds/`](../../../apps/website/api_v2/seeds) (`cargo xtask db seed` = Discord roles + registry_dev)
 
 ---
 
@@ -52,7 +52,7 @@
 
 | T-ID | Item | Notes |
 |------|------|-------|
-| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api/src/contract/generated/` via `cargo xtask ci schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
+| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api_v2/src/contract/generated/` via `cargo xtask ci schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
 
 ## SHIPPED (T-068.2–T-068.4 @ main)
 

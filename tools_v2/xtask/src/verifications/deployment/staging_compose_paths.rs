@@ -4,14 +4,14 @@
 //! ── WHAT THE GATE IS FOR ─────────────────────────────────────────────────────────────────────
 //!
 //! Staging deploys must point `docker compose -f` at `apps/website/docker-compose.staging.yml`
-//! (T-251), never at the `apps/website/api/` sibling that used to live there. Getting it wrong
+//! (T-251), never at the `apps/website/api_v2/` sibling that used to live there. Getting it wrong
 //! does not fail loudly — compose happily starts *a* stack from *a* file, so the deploy goes green
 //! and staging quietly runs the wrong topology. Hence a static pin rather than a smoke test.
 //!
 //! T-461 (wave 23 adversarial) found the previous Class-R false-green, in the script's own words:
 //!
 //! > (1) a `//` / `#` comment containing the good path counted as presence;
-//! > (2) only one exact `cd '$TBD_REMOTE_DIR/apps/website/api'` string was banned, so live could
+//! > (2) only one exact `cd '$TBD_REMOTE_DIR/apps/website/api_v2'` string was banned, so live could
 //! >     use api/compose while dry-run stayed good (or good path lived only in a comment).
 //!
 //! So the gate strips comments first, then requires the good `-f` path on **both** the dry-run
@@ -84,13 +84,13 @@ const GOOD_PATH: &str = "apps/website/docker-compose.staging.yml";
 /// The stale pre-T-251 location. Must appear on neither compose line and must not exist on disk —
 /// a file left there is what makes the wrong `-f` path a *plausible* edit rather than an obvious
 /// typo, so the gate removes the temptation as well as the reference.
-const BAD_PATH: &str = "apps/website/api/docker-compose.staging.yml";
+const BAD_PATH: &str = "apps/website/api_v2/docker-compose.staging.yml";
 
 /// Banned outright: `cd`-ing the remote shell into `api/` before compose. Both quotings, because
 /// T-461's finding was that banning one exact string is banning nothing.
-const CD_INTO_API_SQ: &str = "cd '$TBD_REMOTE_DIR/apps/website/api'";
+const CD_INTO_API_SQ: &str = "cd '$TBD_REMOTE_DIR/apps/website/api_v2'";
 /// The double-quoted twin of [`CD_INTO_API_SQ`].
-const CD_INTO_API_DQ: &str = r#"cd "$TBD_REMOTE_DIR/apps/website/api""#;
+const CD_INTO_API_DQ: &str = r#"cd "$TBD_REMOTE_DIR/apps/website/api_v2""#;
 
 /// How the dry-run compose line is recognised: the script prints its plan with this prefix.
 const DRY_RUN_KEY: &str = "[dry-run]";

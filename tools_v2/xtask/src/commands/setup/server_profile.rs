@@ -1,7 +1,7 @@
 //! T-861 — port of `scripts/mod/setup-server-profile.sh` → `cargo xtask setup server-profile`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`.
 //!
 //! Builds a dedicated-server profile tree (`profile/TBD_BackendConfig.json`, mission fallback,
 //! optional registry). Acceptance is bash/port stdout+stderr+rc (+ tree modes/bytes) on a clean
@@ -43,7 +43,7 @@ impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
             mod_root: root.join("apps/mod"),
-            web: root.join("apps/website/api"),
+            web: root.join("apps/website/api_v2"),
         }
     }
 }
@@ -136,7 +136,7 @@ fn resolve_profile(arg: Option<&Path>, mod_root: &Path) -> PathBuf {
     mod_root.join(".local-test-profile")
 }
 
-/// `SERVICE_TOKEN` env wins; else first `SERVICE_TOKEN=` line in `apps/website/api/.env`.
+/// `SERVICE_TOKEN` env wins; else first `SERVICE_TOKEN=` line in `apps/website/api_v2/.env`.
 fn resolve_service_token(web: &Path) -> Option<String> {
     if let Ok(t) = std::env::var("SERVICE_TOKEN") {
         if !t.is_empty() {

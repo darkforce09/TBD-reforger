@@ -36,7 +36,7 @@ Root `Cargo.toml` updates its workspace `members` array:
 resolver = "3"
 members = [
     "apps/ticketboard",
-    "apps/website/api",
+    "apps/website/api_v2",
     "apps/website/frontend",
     "apps/website/map-engine",
     "apps/website/graphics-engine",

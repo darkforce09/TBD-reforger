@@ -118,7 +118,7 @@ Per §9.1. **Generate** projections from `packages/tbd-schema/schema/*.json`; st
 Per §9.2.
 
 - Validate incoming mission version payload against `mission-editor-payload.schema.json` (the editor superset, **not** canonical `mission.schema.json`) **before persist** in `CreateVersion`, via `internal/contract/validate.go` (**deleted at T-145**; the
-  live carrier is [`apps/website/api/src/contract/validate.rs`](../../apps/website/api/src/contract/validate.rs))
+  live carrier is [`apps/website/api_v2/src/contract/validate.rs`](../../apps/website/api_v2/src/contract/validate.rs))
 - Library: `santhosh-tekuri/jsonschema/v6`; schema `go:embed`-ed + compiled once (`sync.Once`)
 - **400** with structured `{ error, details[] }` on validation failure; golden missions + invalid fixtures in integration tests
 - Align with existing `packages/tbd-schema/scripts/validate-file.mjs` semantics

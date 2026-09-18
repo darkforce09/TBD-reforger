@@ -134,7 +134,7 @@ impl Step {
 
 // ── THE RECIPES ──────────────────────────────────────────────────────────────────────────────
 
-pub(crate) const WEB: &str = "apps/website/api";
+pub(crate) const WEB: &str = "apps/website/api_v2";
 const FE: &str = "apps/website/frontend";
 
 // ── DISPATCH ─────────────────────────────────────────────────────────────────────────────────

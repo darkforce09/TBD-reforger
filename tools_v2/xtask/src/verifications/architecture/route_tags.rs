@@ -84,9 +84,9 @@ use regex::Regex;
 use verification_core::{Kind, NotRun, Pattern, Verdict, gate, scan};
 
 /// The router. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
-const APP_RS_REL: &str = "apps/website/api/src/app.rs";
+const APP_RS_REL: &str = "apps/website/api_v2/src/app.rs";
 /// The tree swept for `@route` tags — the whole `src/`, not just `handlers/`.
-const SRC_DIR_REL: &str = "apps/website/api/src";
+const SRC_DIR_REL: &str = "apps/website/api_v2/src";
 /// The nest prefix every `@route` tag is written against. Asserted, never assumed: if `app.rs`
 /// stops nesting `api_routes` here, every extracted path is silently wrong.
 const API_PREFIX: &str = "/api/v1";
