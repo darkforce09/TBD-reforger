@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/mission/v1.json",
   "title": "TBD Mission",
-  "description": "Mission JSON contract v1. Authored by the web wizard / hand-written, validated by the web validator, and executed by the TBD-Framework Enfusion loader. Missions reference registry aliases, never raw prefab GUIDs.\n\nT-450 — WHOLE-DOCUMENT SIZE CEILING. `TBD_MissionLoader.MISSION_FILE_MAX_BYTES` is `8 * 1024 * 1024` (8388608) bytes (`apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c`). A profile file over that is refused at `LoadFromProfileFile` before `Read()`, because a truncated read would then fail JSON parse with a misleading error. JSON Schema draft 2020-12 cannot express raw byte size of an object instance, so the ceiling is declared here as `x-tbd-missionFileMaxBytes` and enforced by `validate_mission_document` (API `GET /missions/:id/compiled`) and `xtask schema validate` (which also cross-checks the mod constant). A soft description alone is not a pin.",
+  "description": "Mission JSON contract v1. Authored by the web wizard or by hand, validated by the web validator, and executed by the TBD-Framework Enfusion loader. Missions reference registry aliases, never raw prefab GUIDs. Whole-document size ceiling: `TBD_MissionLoader.MISSION_FILE_MAX_BYTES` is `8 * 1024 * 1024` (8388608) bytes, and a profile file larger than that is refused at `LoadFromProfileFile` before `Read()`, because a truncated read would then fail JSON parse with a misleading error. JSON Schema draft 2020-12 cannot express the raw byte size of an object instance, so the ceiling is declared here as `x-tbd-missionFileMaxBytes` and enforced by the API's compiled-document validator (`GET /missions/:id/compiled`) and by the xtask schema validation, which also cross-checks the mod constant. A description alone is not a pin.",
   "x-tbd-missionFileMaxBytes": 8388608,
   "type": "object",
   "required": ["schemaVersion", "meta", "factions", "orbat", "zones", "flow", "winConditions"],
@@ -61,7 +61,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": ["1.0", "1.1", "1.2", "1.3"],
-      "description": "1.1 adds required slots[] for per-player spawn positions. 1.2 adds the optional per-slot y (spawn height, metres ASL). 1.3 widens the WIRE once for the whole editor program (T-706): objectives[], variants, marker style/area, per-slot uid already present, vehicles[], editorTriggers[], per-squad waypoints/AI state, placement scatter, vehicle/entity states, environment, missionParams[], zone-volume + attacker/defender + startingOwner rules, play-area vehicleClasses, per-slot gadgets. Every 1.3 addition is OPTIONAL and ADDITIVE — `JsonLoadContext` ignores unknown keys, so the WIRE SHAPE of a 1.1/1.2 document is unchanged and the bump exists to NAME the widening, not to reshape it. THE MOD ACCEPTS \"1.3\" SINCE 2026-09-06 (e5f46e4fc): both copies of `TBD_MissionValidator.c` (tbd-framework and tbd-export) declare SCHEMA_1_3 and `CheckSchemaVersion` admits it, compile-verified since T-946.3 unblocked the mod gate. `flatten.rs` EMITS 1.3, and only when a 1.3 key actually reaches the wire: T-674.1 latches on emitted slot identity and `leaderSlotId`, T-675.1 on a non-empty `vehicles[]`. A document with no 1.3 key still emits 1.1/1.2, so old servers are unaffected. The latch must stay on the SERIALISED value, never the resolved one — T-946.11 is the shape where the version claims 1.3 and no key is on the wire. Like 1.1/1.2, a 1.3 document still requires slots[]. THE READERS ARE MOD-SIDE AND LAND SEPARATELY: most 1.3 fields are carried on the wire and read by nothing on any build shipped today (the `xtask schema validate` unread-fields gate asserts exactly that, per field, and names the ticket that will land each reader; a field whose reader has landed loses its row rather than keeping a re-pinned one). `editorTriggers`/`activation`/`effects`/`variantId` are the first to have lost theirs, to T-676's trigger runtime. Do not cite a 1.3 field as a capability — it is a definition ahead of its consumer, the same discipline the top-level `entities` description states."
+      "description": "Wire version of this document. 1.1 requires `slots[]` for per-player spawn positions. 1.2 adds the optional per-slot `y` (spawn height, metres ASL). 1.3 widens the wire once for the whole editor program: `objectives[]`, `variants`, marker style and area, `vehicles[]`, `editorTriggers[]`, per-squad waypoints and AI state, placement scatter, vehicle and entity states, environment, `missionParams[]`, zone-volume plus attacker/defender and starting-owner rules, play-area vehicle classes, and per-slot gadgets. Every 1.3 addition is optional and additive — `JsonLoadContext` ignores unknown keys — so the wire shape of a 1.1 or 1.2 document is unchanged and the bump names the widening rather than reshaping it. Both copies of `TBD_MissionValidator` (tbd-framework and tbd-export) declare SCHEMA_1_3 and `CheckSchemaVersion` admits it. The compiler emits 1.3 only when a 1.3 key actually reaches the wire: it latches on emitted slot identity plus `leaderSlotId`, and on a non-empty `vehicles[]`. A document with no 1.3 key still emits 1.1 or 1.2, so older servers are unaffected. The latch reads the serialised value, never the resolved one, so the version cannot claim 1.3 while no 1.3 key is on the wire. Like 1.1 and 1.2, a 1.3 document still requires `slots[]`. Many 1.3 fields ride the wire and are read by nothing on any shipped build; the xtask unread-fields gate asserts that per field and names the ticket that lands each reader, and a field whose reader has landed loses its row rather than keeping a re-pinned one. A 1.3 field is a definition ahead of its consumer, not a capability — the same discipline the top-level `entities` description states."
     },
     "meta": { "$ref": "#/$defs/meta" },
     "environment": { "$ref": "#/$defs/environment" },
@@ -97,46 +97,46 @@
     "winConditions": { "$ref": "#/$defs/winConditions" },
     "tasks": {
       "type": "array",
-      "description": "T-936.2 — authored TASKS with a real state machine (schemaVersion 1.3). Distinct from `objectives[]` (T-212: the mission's typed objective SUBJECT) and from `winConditions.endOn` (the round-end TRIGGER vocabulary). A task is what the HUD and the briefing's My Tasks list show: a primary, secondary or optional assignment that starts `assigned` and reaches exactly one terminal state (`succeeded` or `failed`). Tasks OBSERVE T-676 trigger completion via `triggerId`; they never fire `endOn` and they never duplicate objective logic.\n\nREAD SINCE T-936.2 by `Objectives/TBD_TaskStateMachine.c` (server-authoritative transitions) and `UI/TBD_TaskHud.c` (one HUD marker per assigned task, hidden once terminal). Absent array ⇒ a mission with no tasks, which is every pre-T-936.2 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.",
+      "description": "Authored tasks with a real state machine (schemaVersion 1.3). Distinct from `objectives[]`, which is the mission's typed objective subject, and from `winConditions.endOn`, which is the round-end trigger vocabulary. A task is what the HUD and the briefing's My Tasks list show: a primary, secondary or optional assignment that starts `assigned` and reaches exactly one terminal state, `succeeded` or `failed`. Tasks observe trigger completion through `triggerId`; they never fire `endOn` and never duplicate objective logic. Read by `TBD_TaskStateMachine` (server-authoritative transitions) and `TBD_TaskHud` (one HUD marker per assigned task, hidden once terminal). An absent array means a mission with no tasks, and the authored-block carrier then emits nothing, so byte-parity fixtures stay identical.",
       "items": { "$ref": "#/$defs/task" }
     },
     "weatherTimeline": { "$ref": "#/$defs/weatherTimeline" },
     "audio": { "$ref": "#/$defs/audio" },
     "spawnModules": {
       "type": "array",
-      "description": "T-936.6 — authored DYNAMIC SPAWN modules (schemaVersion 1.3). Each row is a wave or a garrison: `{id, kind: wave|garrison, factionKey, groupTemplate, x+z XOR zoneId, count, intervalSeconds?, maxAlive?, triggerId?}`. A wave spawns `count` groups on `intervalSeconds` (or after `triggerId` FIRED) while living groups stay below `maxAlive`. A garrison spawns once and holds. `maxAlive` is capped at 32 (spawn_modules.rs MAX_ALIVE). Absent array ⇒ a mission with no dynamic AI, which is every pre-T-936.6 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.\n\nREAD SINCE T-936.6 (2026-09-07) by `Gamemode/TBD_DynamicSpawner.c` (both mod trees): the server spawns groups from `groupTemplate` at (x,z) or the named zone's centre; clients see replicated AI. JsonLoadContext allocates the array when the key is absent — presence is `Count()`. Flatten `EditorPayload::authored_blocks_root` copies every AUTHORED_BLOCKS key it has a named field for, including `spawnModules`.",
+      "description": "Authored dynamic spawn modules (schemaVersion 1.3). Each row is a wave or a garrison: `{id, kind: wave|garrison, factionKey, groupTemplate, x+z XOR zoneId, count, intervalSeconds?, maxAlive?, triggerId?}`. A wave spawns `count` groups on `intervalSeconds` (or once `triggerId` has fired) while living groups stay below `maxAlive`, which the compiler caps at 32. A garrison spawns once and holds. An absent array means a mission with no dynamic AI, and the authored-block carrier then emits nothing, so byte-parity fixtures stay identical. Read by `TBD_DynamicSpawner` in both mod trees: the server spawns groups from `groupTemplate` at (x, z) or at the named zone's centre, and clients see replicated AI. `JsonLoadContext` allocates the array when the key is absent, so presence is `Count()`.",
       "items": { "$ref": "#/$defs/spawnModule" }
     },
     "tacticalGraphics": {
       "type": "array",
-      "description": "T-936.7 — authored TACTICAL CONTROL MEASURES (schemaVersion 1.3): the multi-point graphics `markers[]` structurally cannot express. A marker is ONE point with a glyph — its icon enum even carries the word `phase_line`, which was a one-glyph stand-in for a line the author could not draw. Each row here is `{id, kind: phase_line|boundary|axis_of_advance|curved_arrow, points: [[x, z], …], label?, sideKey?, style?}`. Per-kind vertex floors live in `tactical_graphics.rs` `min_points`: two for the open polylines, THREE for `curved_arrow` (a Catmull-Rom through two points is the straight segment `axis_of_advance` already is, so allowing it would make the two kinds indistinguishable on the wire). `points` is capped at 128 (MAX_POINTS) because the compiled document is re-fetched by the game server and a draw tool can otherwise author a megabyte of vertices. Absent array ⇒ a mission with no control measures, which is every pre-T-936.7 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical.\n\nNOT YET READ BY THE MOD. Nothing under `Scripts/Game/TBD` binds this key today — the Enfusion reader is a later slice. It reaches the wire and stops there, which is a different state from `spawnModules`/`weatherTimeline` (read since T-936.4/.6) and is recorded here rather than implied.\n\nFlatten: `EditorPayload` declares a named `tacticalGraphics` field AND `authored_block_value` an arm for it. Both are required — the AUTHORED_BLOCKS row alone does NOT reach `/compiled`, because that `match` ends `_ => None` and drops an unregistered key silently (T-946.53). `flatten.rs` `every_authored_block_key_reaches_the_wire` is the guard that now refuses a row without them.",
+      "description": "Authored tactical control measures (schemaVersion 1.3): the multi-point graphics `markers[]` structurally cannot express, because a marker is one point carrying one glyph. Each row is `{id, kind: phase_line|boundary|axis_of_advance|curved_arrow, points: [[x, z], …], label?, sideKey?, style?}`. Per-kind vertex floors live in the compiler's `min_points`: two for the open polylines, three for `curved_arrow`, because a Catmull-Rom through two points is the straight segment `axis_of_advance` already is and the two kinds would then be indistinguishable on the wire. `points` is capped at 128 vertices, because the compiled document is re-fetched by the game server and a draw tool can otherwise author a megabyte of vertices. An absent array means a mission with no control measures, and the authored-block carrier then emits nothing, so byte-parity fixtures stay identical. Nothing under the mod's `Scripts/Game/TBD` binds this key: it reaches the wire and stops there, unlike `spawnModules` and `weatherTimeline`, which the mod reads. Reaching `/compiled` takes both a named `tacticalGraphics` field on the flatten payload struct and a match arm for it; an authored-block row alone is dropped silently, because that match ends `_ => None`, and `every_authored_block_key_reaches_the_wire` is the guard that refuses a row missing either half.",
       "items": { "$ref": "#/$defs/tacticalGraphic" }
     },
     "briefings": { "$ref": "#/$defs/briefings" },
     "settings": { "$ref": "#/$defs/settings" },
     "objectives": {
       "type": "array",
-      "description": "T-212 / T-685 — typed per-side objective entities (schemaVersion 1.3). Distinct from `zones[]` of `type: objective_*`: a `zone` is a VOLUME with capture RULES, whereas an `objective` is the mission's first-class task record — the container the editor's `objectivesById` compiles into. READ SINCE T-212 (2026-09-08) by `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c` (`TBD_ObjectiveEntityReader`), which takes a THIRD typed `JsonLoadContext` pass over the raw document for this key — `TBD_MissionDocumentStruct` declares no field for it and `JsonLoadContext` binds by member name, so the primary loader structurally cannot see it. STILL NOT EMITTED by `flatten.rs` on `/compiled` (that is T-946.36), so the only document reaching the reader today is a hand-staged 1.3 one; `golden-missions/schema-1_3-wire-fields.json` is the staged case, the same precedent T-685 shipped against. Each row is ONE objective with a uniform attribute spine (id/type/side/zoneId/label), optional PER-SIDE `framing` (the attacker/defender readings of the SAME objective — never two rows for one objective; see `$defs/objective`), and WOG's proven capture/defend/height model carried on `zoneRules` (T-685: attackerCount/defenderCount/advantagePercent/minHeight/maxHeight/startingOwner, whose degenerate 1-vs-1 case is a zone's `contestable`). Distinct from `winConditions.endOn` — that is the win TRIGGER vocabulary; this is the objective SUBJECT it fires on.",
+      "description": "Typed per-side objective entities (schemaVersion 1.3). Distinct from `zones[]` rows of `type: objective_*`: a zone is a volume with capture rules, whereas an objective is the mission's first-class task record — the container the editor's `objectivesById` compiles into. Read by `TBD_ObjectiveRegistry` through `TBD_ObjectiveEntityReader`, which takes a third typed `JsonLoadContext` pass over the raw document for this key, because `TBD_MissionDocumentStruct` declares no field for it and `JsonLoadContext` binds by member name, so the primary loader structurally cannot see it. The compiler does not emit the key on `/compiled`, so the only document that reaches the reader is a hand-staged 1.3 one; `golden-missions/schema-1_3-wire-fields.json` is that staged case. Each row is one objective with a uniform attribute spine (id, type, side, zoneId, label), optional per-side `framing` (the attacker and defender readings of the same objective — never two rows for one objective; see `$defs/objective`), and the capture, defend and height model carried on `zoneRules`: attackerCount, defenderCount, advantagePercent, minHeight, maxHeight and startingOwner, whose degenerate one-against-one case is a zone's `contestable`. Distinct from `winConditions.endOn`: that is the win trigger vocabulary, this is the objective subject it fires on.",
       "items": { "$ref": "#/$defs/objective" }
     },
     "vehicles": {
       "type": "array",
-      "description": "T-675 / T-076 — mission-placed VEHICLE roster (schemaVersion 1.3), the compile half split out of T-076 so the crew UI could ship. A vehicle is NOT an `entities[]` alias row: `#/$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and the mod's `Data/registry.json` holds exactly ONE `veh:` row, so routing crewed vehicles through `entities[]` would reproduce the T-200 silent-substitution defect with a ten-tonne vehicle (flatten.rs:2631-2640). This is `document root + a new $def`, keyed `vehicles`, carrying seats/crew refs onto the wire. READ SINCE T-675.2 (2026-09-06) by `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionVehicleStruct.c`, bound through `TBD_MissionDocumentStruct.vehicles` and seated by `TBD_SpawnManager` after the slot bodies materialise. NOTE FOR ANY FUTURE READER: one authored vehicle emits TWO rows — this roster row AND an `entities[]` alias row (flatten.rs:78-83) — and `entities[]` is already spawned by `SpawnMissionEntities()`, so `uid` is the join key the roster reader claims on. Without that claim every crewed vehicle reaches the world twice. Compiled from the editor `vehiclesById` (T-215/T-425), sibling of the payload's own top-level `vehicles` bag but the DECLARED contract shape here.",
+      "description": "Mission-placed vehicle roster (schemaVersion 1.3), the compile half of the crewed-vehicle path. A vehicle is not an `entities[]` alias row: `#/$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and the mod's `Data/registry.json` holds exactly one `veh:` row, so routing crewed vehicles through `entities[]` would silently substitute a ten-tonne vehicle. This is a document root key plus its own `$def`, carrying seats and crew references onto the wire. Read by `TBD_MissionVehicleStruct`, bound through `TBD_MissionDocumentStruct.vehicles` and seated by `TBD_SpawnManager` once the slot bodies materialise. One authored vehicle emits two rows — this roster row and an `entities[]` alias row — and `entities[]` is already spawned by `SpawnMissionEntities()`, so `uid` is the join key the roster reader claims on; without that claim every crewed vehicle reaches the world twice. Compiled from the editor's `vehiclesById`, the sibling of the payload's own top-level `vehicles` bag, and this is the declared contract shape.",
       "items": { "$ref": "#/$defs/vehicle" }
     },
     "editorTriggers": {
       "type": "array",
-      "description": "T-079 / T-676 — editor-authored TRIGGER entities: an activation model (condition/repeat/timeout/owner side) plus an effects model (schemaVersion 1.3). NAMED `editorTriggers`, NOT `triggers`, DELIBERATELY (T-706 forward-constraint 3): `flatten.rs` already emits a win-condition trigger vocabulary as `winConditions.endOn` (values `time_limit` / `faction_eliminated` / …, computed at flatten.rs:2152-2160), and T-079's editor triggers are a DIFFERENT object with a different lifecycle — an authored condition→effect rule, not a round-end predicate. Collapsing them onto one `triggers` key would make a reader unable to tell a win predicate from an authored rule, so they are named apart on the wire; `winConditions.endOn` keeps the win vocabulary and `editorTriggers[]` carries the T-079 runtime. The editor payload rides `triggersById` undeclared today (T-706 forward-constraint 2); this is the compiled, DECLARED shape. READ SINCE T-676 (2026-09-06) by `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c`, which takes a SECOND typed `JsonLoadContext` pass over the raw document for this key — `TBD_MissionDocumentStruct` declares no field for it, and `JsonLoadContext` binds by member name, so the primary loader structurally cannot see it. Geometry rides the shipped T-582 zone draw tool, so a trigger's area is a `zones[]` row referenced by `zoneId`, not re-declared here.",
+      "description": "Editor-authored trigger entities: an activation model (condition, repeat, timeout, owner side) plus an effects model (schemaVersion 1.3). The key is `editorTriggers`, not `triggers`, deliberately. The compiler already emits a win-condition trigger vocabulary as `winConditions.endOn` (`time_limit`, `faction_eliminated` and so on), and an editor trigger is a different object with a different lifecycle — an authored condition-to-effect rule, not a round-end predicate. Collapsing them onto one `triggers` key would leave a reader unable to tell a win predicate from an authored rule, so they are named apart on the wire: `winConditions.endOn` keeps the win vocabulary and `editorTriggers[]` carries the trigger runtime. The editor payload carries these as `triggersById`; this is the compiled, declared shape. Read by `TBD_TriggerRuntime`, which takes a second typed `JsonLoadContext` pass over the raw document for this key, because `TBD_MissionDocumentStruct` declares no field for it and `JsonLoadContext` binds by member name. Geometry rides the zone draw tool, so a trigger's area is a `zones[]` row referenced by `zoneId` rather than re-declared here.",
       "items": { "$ref": "#/$defs/editorTrigger" }
     },
     "variants": {
       "type": "array",
-      "description": "T-654 — the named-variant registry for conditional inclusion (schemaVersion 1.3). Generalises what FNF v3 built by hand with Eden layers: a template ships named modes (`FNF Gamemode: <Mode>`) and the setup script deletes every object/marker belonging to the modes not picked, making the layer name a HARD RUNTIME CONTRACT. Here each variant is declared ONCE by id, and any variant-gated subtree elsewhere in the document (an objective, a vehicle, an entity, a zone, a trigger) references it via `variantId` — the compiler emits that subtree only when the variant is selected. Declaring variants centrally is what lets the `variantId` predicate be validated (an unknown id is catchable) instead of being a free string. T-654's TBD_MissionLoader now evaluates the registry at ParseMissionJson ($profile:TBD_VariantConfig.json activeVariants[] else default:true rows) and drops excluded subtrees before spawn. objectives[] and editorTriggers[] still re-parse GetRawJson() (T-946.48).",
+      "description": "The named-variant registry for conditional inclusion (schemaVersion 1.3). It generalises the by-hand layer convention a template ships when it names modes and a setup script deletes every object and marker belonging to the modes not picked, which makes a layer name a hard runtime contract. Here each variant is declared once by `id`, and any variant-gated subtree elsewhere in the document — an objective, a vehicle, an entity, a zone, a trigger — references it through `variantId`; the compiler emits that subtree only when the variant is selected. Declaring variants centrally is what makes the `variantId` predicate validatable: an unknown id is catchable rather than a free string. `TBD_MissionLoader` evaluates the registry at `ParseMissionJson` (`$profile:TBD_VariantConfig.json` `activeVariants[]`, else the rows whose `default` is true) and drops excluded subtrees before spawn. `objectives[]` and `editorTriggers[]` are re-parsed from `GetRawJson()`, so they are gated in their own passes.",
       "items": { "$ref": "#/$defs/variant" }
     },
     "missionParams": {
       "type": "array",
-      "description": "T-684 — first-class launch-time mission parameters (schemaVersion 1.3): a mission carries named parameters chosen at LAUNCH rather than baked at authoring time (name, i18n title key, value list, display list, default, consuming symbol). Models Arma's `class Params` — OFCRA runs one artefact as training server, briefing room, mod-check sandbox and match off 29 such entries. READ SINCE T-684 (2026-09-06) by `TBD_MissionParams.c` (both mod trees); launch selection is `$profile:TBD_MissionParams.json` or the authored default. flatten.rs does not yet emit the array onto `/compiled`.",
+      "description": "First-class launch-time mission parameters (schemaVersion 1.3): a mission carries named parameters chosen at launch rather than baked in at authoring time — name, i18n title key, value list, display list, default, and the symbol the mission consumes each one through. This models Arma's `class Params`, the mechanism that lets one artefact serve as training server, briefing room, mod-check sandbox and match. Read by `TBD_MissionParams` in both mod trees; the launch selection comes from `$profile:TBD_MissionParams.json`, else the authored default. The compiler does not emit the array onto `/compiled`.",
       "items": { "$ref": "#/$defs/missionParam" }
     }
   },
@@ -148,12 +148,12 @@
     },
     "cargoContainer": {
       "type": "string",
-      "description": "Worn container a cargo row is inserted into. CLOSED vocabulary (T-181.34) — unlike kit:/preset: aliases these four are fixed by the ENGINE's worn-garment areas, not by extensible content, so an enum here can never fight the registry. TBD_LoadoutEquipHelper.GarmentForContainer maps exactly these to LoadoutVestArea (+ LoadoutArmoredVestSlotArea), LoadoutJacketArea, LoadoutPantsArea and LoadoutBackpackArea, and the Arsenal UI offers exactly these (arsenal_rules.rs CARGO_CONTAINERS). Before this enum a typo validated clean and then DEGRADED at runtime: GarmentForContainer returned null and InsertCargo fell through to TryInsertItem anywhere, so the cargo silently landed in the wrong place instead of failing. armoredVest is deliberately NOT a key — it shares the vest container (single-vest collapse).",
+      "description": "Worn container a cargo row is inserted into. Closed vocabulary: unlike `kit:` and `preset:` aliases these four are fixed by the engine's worn-garment areas rather than by extensible content, so the enum can never fight the registry. `TBD_LoadoutEquipHelper.GarmentForContainer` maps exactly these to LoadoutVestArea (plus LoadoutArmoredVestSlotArea), LoadoutJacketArea, LoadoutPantsArea and LoadoutBackpackArea, and the Arsenal UI offers exactly these. Without the enum a typo validates clean and then degrades at runtime: `GarmentForContainer` returns null and `InsertCargo` falls through to `TryInsertItem` anywhere, so the cargo lands in the wrong place instead of failing. `armoredVest` is deliberately not a key — it shares the vest container (single-vest collapse).",
       "enum": ["vest", "pants", "jacket", "backpack"]
     },
     "wireSafeString": {
       "type": "string",
-      "description": "A free-text authored string that reaches a DELIMITED wire, and therefore may not contain a character that FRAMES one. TBD_SpawnManager.BuildSlotRoster, TBD_BriefingData, TBD_LobbyData and TBD_AdminData all serialise to tab-separated fields joined by newlines, so a TAB in an authored value opens a new column and a CR/LF opens a new row. T-181.42 recorded the consequence end to end: a callsign authored `AL<TAB>PHA` was a SCHEMA-VALID mission that produced a seven-field roster row, sailed past the consumer's `< 6` guard, shifted every column, rendered `role` as `PHA`, made the real role read as the STATE (so the seat matched neither OPEN nor DEAD and became UNSELECTABLE), and parsed `holderId` from `\"OPEN\".ToInt()` = 0. The mod now sanitises at the source (TBD_SpawnManager.RosterField / TBD_BriefingData.Sanitise, both substituting a space and warning once per distinct value) and the lobby parser is pinned to exact arity, so this is DEFENCE IN DEPTH — but the schema is where the class dies, because a rewritten field is still a field the author did not write.\n\nSCOPE — the pattern bans the C0 control block plus DEL, not just the three framing characters. That is a strict superset of \\t, \\r and \\n at zero cost to legitimate authoring (no web-editor author types a control character into a callsign on purpose), it is a CLOSED character class that cannot drift, and it covers the un-sanitised siblings: NUL is a C-string terminator on a byte-indexed engine (`string.Length()` counts BYTES here), and VT/FF are treated as line breaks by enough downstream tooling to be the next hazard. Nothing in the mod strips those three today.\n\nDELIBERATELY NOT BANNED. `.` — the per-field marker (TBD_BriefingData.FIELD_MARK) is BIJECTIVE by construction, `Unmark(Field(x)) == Sanitise(x)` for every x including `.` and the empty string, so an authored dot cannot confuse a reader. `~` — the RETIRED TBD_LobbyData.EMPTY sentinel, replaced precisely because it was lossy; forbidding it would enshrine a convention the tree abandoned. `:` — load-bearing INSIDE slot.id (`{faction}:{groupCallsign}:{role}:{index}`). Zero-width joiners, bidi/RTL overrides and U+2028/U+2029 — a display-SPOOFING class, not a wire-FRAMING one: none of them can shift a column, an open-ended Unicode blocklist is exactly the drifting vocabulary T-181.34 correctly refused to close, and folding two unrelated defects behind one pattern means a failure no longer names its cause. If spoofing is worth gating it deserves its own check and its own negative fixture.\n\nBriefing prose (briefing.situation/mission/execution) is deliberately EXCLUDED from this $ref: it does not ride a delimited wire at all — TBD_BriefingService ships it as parallel `array<string>` RPC parameters, so an embedded newline there is legitimate authoring, not a hazard.",
+      "description": "A free-text authored string that reaches a delimited wire and therefore may not contain a character that frames one. `TBD_SpawnManager.BuildSlotRoster`, `TBD_BriefingData`, `TBD_LobbyData` and `TBD_AdminData` all serialise to tab-separated fields joined by newlines, so a TAB in an authored value opens a new column and a CR or LF opens a new row. The consequence runs end to end: a callsign authored `AL<TAB>PHA` is a schema-valid mission that produces a seven-field roster row, passes the consumer's `< 6` arity guard, shifts every column, renders `role` as `PHA`, makes the real role read as the state (so the seat matches neither OPEN nor DEAD and becomes unselectable), and parses `holderId` from `\"OPEN\".ToInt()` = 0. The mod also sanitises at the source (`TBD_SpawnManager.RosterField` and `TBD_BriefingData.Sanitise`, each substituting a space and warning once per distinct value) and the lobby parser is pinned to exact arity, so this pattern is defence in depth — but the schema is where the class dies, because a rewritten field is still a field the author did not write. The pattern bans the whole C0 control block plus DEL rather than only the three framing characters: a strict superset at zero cost to legitimate authoring, a closed character class that cannot drift, and one that covers the unsanitised siblings — NUL is a C-string terminator on a byte-indexed engine (`string.Length()` counts bytes here), and VT and FF are treated as line breaks by enough downstream tooling to be the next hazard. Deliberately not banned: `.`, because the per-field marker `TBD_BriefingData.FIELD_MARK` is bijective by construction, with `Unmark(Field(x)) == Sanitise(x)` for every x including `.` and the empty string; `~`, the retired `TBD_LobbyData.EMPTY` sentinel, forbidding which would enshrine a convention the tree abandoned; `:`, load-bearing inside `slot.id` (`{faction}:{groupCallsign}:{role}:{index}`); and zero-width joiners, bidi and RTL overrides and U+2028/U+2029, which are a display-spoofing class rather than a wire-framing one — none can shift a column, an open-ended Unicode blocklist is exactly the drifting vocabulary a closed class refuses to become, and folding two unrelated defects behind one pattern means a failure no longer names its cause. Briefing prose (`briefing.situation`, `briefing.mission`, `briefing.execution`) is deliberately excluded from this `$ref`: it rides no delimited wire, because `TBD_BriefingService` ships it as parallel `array<string>` RPC parameters, so an embedded newline there is legitimate authoring rather than a hazard.",
       "pattern": "^[^\\x00-\\x1F\\x7F]*$"
     },
     "factionKey": {
@@ -200,27 +200,27 @@
     },
     "environment": {
       "type": "object",
-      "description": "Mission environment. T-682 adds `fog` / `wind` / `viewDistance` on the WIRE (schemaVersion 1.3) as the scenario-side environment axes (ATTR-FIELD-SCN-FOG / -SCN-WIND / -SCN-VIEW-DIST).\n\nAUTHORING PATH LANDS SEPARATELY — read this before adding an editor control. `env.rs`'s `keys_nothing_reads_are_not_authored` test names `viewDistance` (and `thermals`/`windDirDeg`/`fog`/`wind`) as keys the EDITOR MUST NOT AUTHOR. That frontend test gates AUTHORING, NOT the wire. The mod READER comes first and the control second (`author_env`). READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c` (both mod trees) and `ModEnvironment` serialisation of `fog`/`wind`/`windDirDeg`/`viewDistance` when authored. Editor controls stay refused until a later ticket.",
+      "description": "Mission environment. `fog`, `wind` and `viewDistance` ride the wire (schemaVersion 1.3) as the scenario-side environment axes. The authoring path lands separately, so read this before adding an editor control: the frontend's `keys_nothing_reads_are_not_authored` test names `viewDistance`, `thermals`, `windDirDeg`, `fog` and `wind` as keys the editor must not author. That test gates authoring, not the wire — the mod reader comes first and the control second. Read by `TBD_EnvironmentReader` in both mod trees, which binds `fog`, `wind`, `windDirDeg` and `viewDistance` when they are authored. Editor controls stay refused until the authoring slice lands.",
       "additionalProperties": false,
       "properties": {
         "dateTime": { "type": "string", "format": "date-time" },
         "weatherPreset": { "type": "string" },
-        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360, "description": "T-682 / T-291. Wind direction degrees. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`; T-291 (2026-09-07) reapplies it in `TBD_FrameworkManager.c` weather setup (`SetWindDirectionOverride`, ABSENT sentinel)." },
+        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360, "description": "Wind direction in degrees. Read by `TBD_EnvironmentReader`, and reapplied in `TBD_FrameworkManager` weather setup through `SetWindDirectionOverride` with an ABSENT sentinel for the unauthored case." },
         "fog": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-682 (ATTR-FIELD-SCN-FOG). Fog density, 0 (clear) → 1 (thickest), matching Eden's normalised scenario fog. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`."
+          "description": "Fog density, 0 (clear) to 1 (thickest), matching Eden's normalised scenario fog. Read by `TBD_EnvironmentReader`."
         },
         "wind": {
           "type": "number",
           "minimum": 0,
-          "description": "T-682 (ATTR-FIELD-SCN-WIND). Wind STRENGTH (m/s); direction is the existing `windDirDeg`. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`."
+          "description": "Wind strength in m/s; direction is the sibling `windDirDeg`. Read by `TBD_EnvironmentReader`."
         },
         "viewDistance": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "T-682 (ATTR-FIELD-SCN-VIEW-DIST). Terrain/object view distance in metres. READ SINCE T-682 (2026-09-06) by `TBD_EnvironmentReader.c`. DELIBERATELY NOT AUTHORED by the editor (T-193 removed its control; env.rs asserts it stays un-authored). The editor control is a later ticket."
+          "description": "Terrain and object view distance in metres. Read by `TBD_EnvironmentReader`. Deliberately not authored by the editor: the frontend environment inspector asserts the key stays un-authored, and the editor control is a later slice."
         }
       }
     },
@@ -280,12 +280,12 @@
         "combatMode": {
           "type": "string",
           "enum": ["blue", "green", "white", "yellow", "red"],
-          "description": "T-678 (ATTR-FIELD-GRP-COMBAT-MODE, schemaVersion 1.3). Group rules of engagement, TBD's own ladder blue=never fire → red=open fire, engage at will. These are TBD VOCABULARY mapped onto `EAIGroupCombatMode` (HOLD_FIRE / RETURN_FIRE / FIRE_AT_WILL). READ SINCE T-678 (2026-09-06) by `TBD_GroupState.c`. Applied only when T-677 has already AI-enabled the group."
+          "description": "Group rules of engagement (schemaVersion 1.3), on TBD's own ladder from blue (never fire) to red (open fire, engage at will). These are TBD vocabulary mapped onto `EAIGroupCombatMode` (HOLD_FIRE / RETURN_FIRE / FIRE_AT_WILL). Read by `TBD_GroupState`, and applied only once the group has been AI-enabled."
         },
         "behaviour": {
           "type": "string",
           "enum": ["careless", "safe", "aware", "combat", "stealth"],
-          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state — TBD vocabulary (careless/safe/aware/combat/stealth). READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c`, and READ SINCE T-678 (2026-09-06) as group defaults via `TBD_GroupState.c`. A waypoint that authors behaviour still wins (WAYPOINT origin)."
+          "description": "Group behaviour state (schemaVersion 1.3) in TBD vocabulary: careless, safe, aware, combat, stealth. Read by `TBD_WaypointRuntime` as a waypoint override and by `TBD_GroupState` as the group default. A waypoint that authors behaviour wins over the group default."
         },
         "formation": {
           "type": "string",
@@ -300,36 +300,36 @@
             "file",
             "diamond"
           ],
-          "description": "T-678 (ATTR-FIELD-GRP-FORMATION, schemaVersion 1.3). Group movement formation. Enum tokens are the shared vocabulary: T-672's editor `force_to_formation` + Transform submenu consume them (geometry via `formation_offsets`). READ SINCE T-678 (2026-09-06) by `TBD_GroupState.c` (engine four-name set; extras map onto Wedge/Line/Column/StaggeredColumn)."
+          "description": "Group movement formation (schemaVersion 1.3). The enum tokens are shared vocabulary: the editor's `force_to_formation` action and Transform submenu consume them, with geometry from `formation_offsets`. Read by `TBD_GroupState`, which maps the engine's four-name set directly and folds the extra names onto Wedge, Line, Column and StaggeredColumn."
         },
         "speedMode": {
           "type": "string",
           "enum": ["limited", "normal", "full"],
-          "description": "T-678 (ATTR-FIELD-GRP-SPEED-MODE, schemaVersion 1.3). Group movement speed mode. READ SINCE T-677 (2026-09-06) on waypoint overrides via `TBD_WaypointRuntime.c`, and READ SINCE T-678 (2026-09-06) as group defaults via `TBD_GroupState.c` (DEFAULT origin so a waypoint speedMode still wins)."
+          "description": "Group movement speed mode (schemaVersion 1.3). Read by `TBD_WaypointRuntime` as a waypoint override and by `TBD_GroupState` as the group default, which binds with DEFAULT origin so a waypoint `speedMode` wins."
         },
         "waypoints": {
           "type": "array",
-          "description": "T-677 — per-squad waypoint list (schemaVersion 1.3), the nine `ATTR-FIELD-WP-*` ids. READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c`. `TBD_SpawnManager` opens the AI spawn gate only for waypointed groups. Group combatMode/formation READ SINCE T-678 (2026-09-06) by `TBD_GroupState.c`.",
+          "description": "Per-squad waypoint list (schemaVersion 1.3). Read by `TBD_WaypointRuntime`. `TBD_SpawnManager` opens the AI spawn gate only for waypointed groups. The group's own `combatMode` and `formation` are read by `TBD_GroupState`.",
           "items": { "$ref": "#/$defs/waypoint" }
         },
         "placementRadius": {
           "type": "number",
           "minimum": 0,
-          "description": "T-679 (ATTR-FIELD-GRP-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: the group's members are scattered within this radius of its authored position at spawn (0/absent = exact placement). READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader. Group scatter is a shared offset because groups have no authored x/z on the wire. The 2D top-down editor is the surface where the scatter circle is drawable."
+          "description": "Scatter radius in metres (schemaVersion 1.3): the group's members are scattered within this radius of its authored position at spawn, and 0 or absent means exact placement. Read by `TBD_PlacementScatter`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader. Group scatter is a shared offset because groups carry no authored x/z on the wire. The 2D top-down editor is the surface where the scatter circle is drawable."
         },
         "placementShape": {
           "type": "string",
           "enum": ["circle", "square"],
-          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE applied to a group, schemaVersion 1.3). Scatter area shape for `placementRadius`. READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "Scatter area shape for this group's `placementRadius` (schemaVersion 1.3). Read by `TBD_PlacementScatter`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this group is emitted only if the named `variants[]` entry is selected (conditional inclusion). T-654's MissionLoader now drops this subtree when the named variant is inactive."
+          "description": "Conditional inclusion (schemaVersion 1.3). When set, this group is emitted only if the named `variants[]` entry is selected. `TBD_MissionLoader` drops the subtree when the named variant is inactive."
         },
         "leaderSlotId": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 — the TBD-only key naming which slot leads this squad (schemaVersion 1.3). References `slots[].uid` — a durable identity, because `id` is derived and shifts under role renames/reorders/deletes (see the `slot.id` description). This is a PER-SQUAD fact, so it lives here on the wire orbat group (one copy, the T-216 delta table's own proposal) rather than denormalised onto every `slots[]` entry where N copies could disagree with no schema able to catch it — the editor already authors it once per squad at `/editor/squads/*/leaderSlotId`. READ SINCE T-674.2 (2026-09-06) via `TBD_MissionLoader.GetSquadLeaderSlot` / `IsSquadLeader`, which resolve it through the uid-aware slot lookup and then RE-CHECK that the seat belongs to this squad: slot uids are unique document-wide, so a leaderSlotId copied between squads resolves cleanly to a seat in the wrong one and nothing downstream could notice. A cross-squad reference yields no leader rather than a guessed one."
+          "description": "The TBD-only key naming which slot leads this squad (schemaVersion 1.3). It references `slots[].uid`, a durable identity, because `id` is derived and shifts under role renames, reorders and deletes (see the `slot.id` description). Squad leadership is a per-squad fact, so it lives here on the wire ORBAT group in one copy rather than denormalised onto every `slots[]` entry, where N copies could disagree with no schema able to catch it; the editor likewise authors it once per squad at `/editor/squads/*/leaderSlotId`. Read through `TBD_MissionLoader.GetSquadLeaderSlot` and `IsSquadLeader`, which resolve it through the uid-aware slot lookup and then re-check that the seat belongs to this squad: slot uids are unique document-wide, so a `leaderSlotId` copied between squads resolves cleanly to a seat in the wrong one and nothing downstream could notice. A cross-squad reference yields no leader rather than a guessed one."
         }
       }
     },
@@ -386,12 +386,12 @@
         "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
         "loadout": {
           "type": "object",
-          "description": "Optional per-slot Arsenal loadout (T-068.11), flattened from the editor SlotLoadoutV2. Additive data: JsonLoadContext readers ignore unknown keys, so this ships WITHOUT a schemaVersion bump (the mod loader allowlists 1.1/1.2); T-068.12 reads it to equip the human player. The kit alias stays authoritative for the base character — loadout layers on top.",
+          "description": "Optional per-slot Arsenal loadout, flattened from the editor's SlotLoadout v2. It is additive data: `JsonLoadContext` readers ignore unknown keys, so it ships without a schemaVersion bump and the mod loader's 1.1/1.2 allowlist still admits the document. The kit alias stays authoritative for the base character, and the loadout layers on top of it.",
           "additionalProperties": false,
           "properties": {
             "gear": {
               "type": "object",
-              "description": "Fixed gear ResourceNames. WEAR derivation: jacket→uniform, armoredVest else vest→vest (single-vest collapse, documented), headCover→helmet; pants/boots/handwear/backpack copied verbatim since A3. WEAPONS (T-182): all FOUR editor weapon slots are carried, each selected by the exact (slotIndex, slotType) pair the Arsenal authors — (0,primary)→primary, (1,primary)→launcher, (2,secondary)→handgun, (3,grenade)→throwable — and each keeps the editor's own key name so the compiled document reads the same words the Arsenal UI shows (arsenal_rules.rs WEAPON_SLOTS is the source of that mapping). optic/magazine ride the (0,primary) rifle ALONE; the other three weapons carry no sub-slots today. Before T-182 the compiler selected ONLY (0,primary) and silently discarded launcher/handgun/throwable — this prose used to describe that partial mapping as complete, which is why the loss shipped unnoticed. Empty slots are omitted, never empty strings. T-310: optional attachments[] (wireSafeString ResourceNames) from the (0,primary) SlotLoadoutV2 edges; omitted when empty.",
+              "description": "Fixed gear ResourceNames. Wear derivation: jacket → uniform, armoredVest else vest → vest (single-vest collapse), headCover → helmet; pants, boots, handwear and backpack are copied verbatim. Weapons: all four editor weapon slots are carried, each selected by the exact (slotIndex, slotType) pair the Arsenal authors — (0, primary) → primary, (1, primary) → launcher, (2, secondary) → handgun, (3, grenade) → throwable — and each keeps the editor's own key name so the compiled document reads the same words the Arsenal UI shows. `optic` and `magazine` ride the (0, primary) rifle alone; the other three weapons carry no sub-slots. Empty slots are omitted, never written as empty strings. `attachments[]` is optional and holds wire-safe ResourceNames from the (0, primary) SlotLoadout v2 edges; it is omitted when empty.",
               "additionalProperties": false,
               "properties": {
                 "primary": { "type": "string", "minLength": 1 },
@@ -399,7 +399,7 @@
                 "magazine": { "type": "string", "minLength": 1 },
                 "attachments": {
                   "type": "array",
-                  "description": "T-310. Optional. Primary-rifle Arsenal attachment ResourceNames, copied from SlotLoadoutV2 weapons[].attachments edges on (slotIndex 0, slotType primary). Omitted when empty. Mounted by TBD_LoadoutEquipHelper after optic/magazine.",
+                  "description": "Optional primary-rifle Arsenal attachment ResourceNames, copied from the SlotLoadout v2 `weapons[].attachments` edges on (slotIndex 0, slotType primary). Omitted when empty. Mounted by `TBD_LoadoutEquipHelper` after optic and magazine.",
                   "items": { "$ref": "#/$defs/wireSafeString", "minLength": 1 }
                 },
                 "launcher": { "type": "string", "minLength": 1 },
@@ -416,7 +416,7 @@
             },
             "cargo": {
               "type": "array",
-              "description": "Container cargo rows ({container,item,qty} — the loadout-export v2 shape), copied verbatim from the editor cargo (T-068.15.2). Omitted when empty.",
+              "description": "Container cargo rows in the loadout-export v2 shape, `{container, item, qty}`, copied verbatim from the editor cargo. Omitted when empty.",
               "items": {
                 "type": "object",
                 "required": ["container", "item", "qty"],
@@ -433,7 +433,7 @@
         "callsign": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 (ATTR-FIELD-OBJ-CALLSIGN, schemaVersion 1.3). A per-slot display callsign, distinct from `groupCallsign` (the ORBAT group name) and from `id` (the derived label). READ SINCE T-674.2 (2026-09-06): bound on `TBD_MissionSlotStruct` and logged per identified seat. Reforger exposes NO replicated free-text name on a character (`CharacterIdentityComponent.SetIdentityFromIDs` takes indices into a faction identity table), so this reaches every surface holding the slot and the server log, and is deliberately NOT pushed onto the spawned entity. `wireSafeString`-constrained because it reaches the same tab-delimited roster wire as `id`."
+          "description": "A per-slot display callsign (schemaVersion 1.3), distinct from `groupCallsign` (the ORBAT group name) and from `id` (the derived label). Bound on `TBD_MissionSlotStruct` and logged per identified seat. Reforger exposes no replicated free-text name on a character — `CharacterIdentityComponent.SetIdentityFromIDs` takes indices into a faction identity table — so this value reaches every surface holding the slot and the server log, and is deliberately not pushed onto the spawned entity. Constrained to `wireSafeString` because it reaches the same tab-delimited roster wire as `id`."
         },
         "rank": {
           "type": "string",
@@ -446,40 +446,40 @@
             "major",
             "colonel"
           ],
-          "description": "T-674 (ATTR-FIELD-OBJ-RANK, schemaVersion 1.3). Character rank — TBD's own ladder (private → colonel); READ SINCE T-674.2 (2026-09-06). The engine type is `SCR_ECharacterRank` with unprefixed members PRIVATE/CORPORAL/SERGEANT/LIEUTENANT/CAPTAIN/MAJOR/COLONEL (also RENEGADE and GENERAL, which TBD does not author), applied through `SCR_CharacterRankComponent.SetCharacterRank` and replicated. TBD's ladder is an exact lowercase subset. The names here remain the contract; a kit prefab with no rank component is reported at WARNING rather than silently dropping the authored rank."
+          "description": "Character rank on TBD's own ladder, private through colonel (schemaVersion 1.3). The engine type is `SCR_ECharacterRank`, whose unprefixed members are PRIVATE, CORPORAL, SERGEANT, LIEUTENANT, CAPTAIN, MAJOR and COLONEL (plus RENEGADE and GENERAL, which TBD does not author), applied through `SCR_CharacterRankComponent.SetCharacterRank` and replicated. TBD's ladder is an exact lowercase subset, and the names here are the contract. A kit prefab with no rank component is reported at WARNING rather than silently dropping the authored rank."
         },
         "stance": {
           "type": "string",
           "enum": ["stand", "crouch", "prone"],
-          "description": "T-674 (ATTR-FIELD-OBJ-STANCE, schemaVersion 1.3). Initial spawn pose. READ SINCE T-674.2 (2026-09-06), applied through `CharacterControllerComponent.SetStanceChange` on EVERY spawn including respawn, because a fresh body inherits nothing."
+          "description": "Initial spawn pose (schemaVersion 1.3). Applied through `CharacterControllerComponent.SetStanceChange` on every spawn including respawn, because a fresh body inherits nothing."
         },
         "unitName": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 (ATTR-FIELD-OBJ-UNIT-NAME, schemaVersion 1.3). A per-slot unit name that rides this slice rather than standing alone (the sweep says so explicitly). READ SINCE T-674.2 (2026-09-06): bound on the slot and logged, not pushed onto the entity, for the same reason as `callsign` — read that description. `wireSafeString`-constrained (reaches a delimited wire)."
+          "description": "A per-slot unit name (schemaVersion 1.3). Bound on the slot and logged, not pushed onto the spawned entity, for the same reason as `callsign` — read that description. Constrained to `wireSafeString` because it reaches a delimited wire."
         },
         "tag": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-674 — the TBD-only slot tag key (schemaVersion 1.3), mirroring the ORBAT-slot `tag` the events path already carries (T-010). READ SINCE T-674.2 (2026-09-06): bound on the slot and logged. Like `callsign` and `unitName` it has no engine target that reaches a client, so it is not pushed onto the spawned entity."
+          "description": "The TBD-only slot tag key (schemaVersion 1.3), mirroring the ORBAT-slot `tag` the events path already carries. Bound on the slot and logged. Like `callsign` and `unitName` it has no engine target that reaches a client, so it is not pushed onto the spawned entity."
         },
         "placementRadius": {
           "type": "number",
           "minimum": 0,
-          "description": "T-679 (ATTR-FIELD-OBJ-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: this slot is scattered within this radius of its authored (x, z) at spawn (0/absent = exact). READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c` (`ForSlot` from SpawnSlotBody). Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "Scatter radius in metres (schemaVersion 1.3): this slot is scattered within this radius of its authored (x, z) at spawn, and 0 or absent means exact placement. Read by `TBD_PlacementScatter` (`ForSlot`, from `SpawnSlotBody`). The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "placementShape": {
           "type": "string",
           "enum": ["circle", "square"],
-          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE, schemaVersion 1.3). Scatter area shape for this slot's `placementRadius`. READ SINCE T-679 (2026-09-07) by `TBD_PlacementScatter.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "Scatter area shape for this slot's `placementRadius` (schemaVersion 1.3). Read by `TBD_PlacementScatter`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "gadgets": {
           "$ref": "#/$defs/gadgetFlags",
-          "description": "T-705 (schemaVersion 1.3). Which personal gadgets this player spawns with (map/compass/watch/gps/radio), the Eden General-States model that lets a scenario decide a player's gadgets. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c` (both mod trees): Bind from MissionLoader, apply after spawn. Presence is a `map<string,bool>` (Count()==0 omit keeps kit defaults; Find is per-flag). Flatten does not emit `slot.gadgets` (T-946.43); hand-staged 1.3 JSON reaches the reader. Authored `gps: true` cannot add a GPS — no GPS item in the TBD registry."
+          "description": "Which personal gadgets this player spawns with — map, compass, watch, GPS, radio (schemaVersion 1.3). This is the Eden General-States model that lets a scenario decide a player's gadgets. Read by `TBD_GadgetFlags` in both mod trees: bound from the mission loader and applied after spawn. The binding is a `map<string,bool>`, so an empty map (`Count() == 0`) keeps the kit defaults and each flag is resolved by `Find`. The compiler does not emit `slot.gadgets`, so hand-staged 1.3 JSON is what reaches the reader. Authoring `gps: true` cannot add a GPS, because the TBD registry holds no GPS item."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this slot is emitted only if the named `variants[]` entry is selected. T-654's MissionLoader now drops this subtree when the named variant is inactive."
+          "description": "Conditional inclusion (schemaVersion 1.3). When set, this slot is emitted only if the named `variants[]` entry is selected. `TBD_MissionLoader` drops the subtree when the named variant is inactive."
         }
       }
     },
@@ -493,7 +493,7 @@
           "type": "array",
           "minItems": 1,
           "maxItems": 32,
-          "description": "T-275: `maxItems` 32 pins `TBD_RadioPlan.MAX_NETS` (TBD_RadioPlan.c:91). The mod truncates to the first 32 valid nets and warns — without this, a document can validate and still drop authored channels.",
+          "description": "Radio nets in this plan. `maxItems` 32 pins `TBD_RadioPlan.MAX_NETS`: the mod truncates to the first 32 valid nets and warns, so without this bound a document can validate and still drop authored channels.",
           "items": { "$ref": "#/$defs/net" }
         }
       }
@@ -508,13 +508,13 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 48,
-          "description": "T-275: `maxLength` 48 pins `TBD_RadioPlan.MAX_LABEL_CHARS` (TBD_RadioPlan.c:94). The mod truncates over-long labels via CapLabel — without this, a document can validate and still show a shortened channel name."
+          "description": "Display label for the net. `maxLength` 48 pins `TBD_RadioPlan.MAX_LABEL_CHARS`: the mod truncates over-long labels through `CapLabel`, so without this bound a document can validate and still show a shortened channel name."
         },
         "freqMHz": { "type": "number", "minimum": 30, "maximum": 512 },
         "faction": { "$ref": "#/$defs/factionKey" },
         "range": {
           "type": "string",
-          "description": "T-292: which radio class this net prefers. Enfusion exposes exactly two gadget types — EGadgetType.RADIO (handheld) and EGadgetType.RADIO_BACKPACK — and the mod wire is a 0/1 flag (TBD_RadioService.LongRangeFlag → m_aLongRange). short → handheld (flag 0); long → backpack (flag 1). There is no third hardware class, so the retired value any is rejected here rather than kept as a synonym that looked distinct while collapsing to the same flag as short.",
+          "description": "Which radio class this net prefers. Enfusion exposes exactly two gadget types — `EGadgetType.RADIO` (handheld) and `EGadgetType.RADIO_BACKPACK` — and the mod wire is a 0/1 flag (`TBD_RadioService.LongRangeFlag` into `m_aLongRange`): `short` means handheld (flag 0), `long` means backpack (flag 1). There is no third hardware class, so a value meaning 'either' is rejected here rather than kept as a synonym that looks distinct while collapsing onto the same flag as `short`.",
           "enum": ["short", "long"],
           "default": "short"
         }
@@ -538,7 +538,7 @@
     },
     "markerArea": {
       "type": "object",
-      "description": "T-673 (schemaVersion 1.3). The extent of an AREA marker — a SUPERSET of `#/$defs/shape` (circle | polygon) that ALSO expresses the rectangle and ellipse extents Eden's second marker model needs, which `#/$defs/shape` cannot (a rect/ellipse has a centre, half-extents and a rotation, not a radius or a ring). Exactly one of circle / polygon / rectangle / ellipse. This def, not `shape` (the icon-glyph selector on `marker`), is the AUTHORITATIVE geometry of an area marker: when a `marker.area` is present the marker IS an area marker and `marker.shape` is ignored (precedence stated on both). On the wire only — the area-marker reader lands under T-673.",
+      "description": "The extent of an AREA marker (schemaVersion 1.3): a superset of `#/$defs/shape` (circle | polygon) that also expresses the rectangle and ellipse extents Eden's second marker model needs and `#/$defs/shape` cannot, since a rect or ellipse has a centre, half-extents and a rotation rather than a radius or a ring. Exactly one of circle, polygon, rectangle or ellipse. This def, not `shape` (the icon-glyph selector on `marker`), is the authoritative geometry of an area marker: when `marker.area` is present the marker is an area marker and `marker.shape` is ignored — a precedence rule stated on both. On the wire only; no mod-side reader binds it.",
       "oneOf": [
         {
           "required": ["circle"],
@@ -564,7 +564,7 @@
     },
     "rectExtent": {
       "type": "object",
-      "description": "T-673 (schemaVersion 1.3). The extent of a rectangle or ellipse area marker: a centre `(x, z)`, half-extents `halfWidth`/`halfHeight` (metres, so the full box is 2·halfWidth by 2·halfHeight), and a `rotationDeg`. Shared by the `rectangle` and `ellipse` arms of `#/$defs/markerArea` — an ellipse is the same bounding box read as an oval, matching Eden's rectangular/elliptical marker areas.",
+      "description": "The extent of a rectangle or ellipse area marker (schemaVersion 1.3): a centre `(x, z)`, half-extents `halfWidth` and `halfHeight` in metres (so the full box is 2·halfWidth by 2·halfHeight), and a `rotationDeg`. Shared by the `rectangle` and `ellipse` arms of `#/$defs/markerArea` — an ellipse is the same bounding box read as an oval, matching Eden's rectangular and elliptical marker areas.",
       "required": ["x", "z", "halfWidth", "halfHeight"],
       "additionalProperties": false,
       "properties": {
@@ -621,13 +621,13 @@
         "rules": { "$ref": "#/$defs/zoneRules" },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this zone is emitted only if the named `variants[]` entry is selected. T-654's MissionLoader now drops this subtree when the named variant is inactive."
+          "description": "Conditional inclusion (schemaVersion 1.3). When set, this zone is emitted only if the named `variants[]` entry is selected. `TBD_MissionLoader` drops the subtree when the named variant is inactive."
         }
       }
     },
     "zoneRules": {
       "type": "object",
-      "description": "Zone-type specific rules. OPTIONAL as a whole — a zone that authors no `rules` runs entirely on the defaults named per key below.\n\nWHY THIS IS A CLOSED VOCABULARY (T-241). Both readers are TYPED: Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is INVISIBLE to it — not rejected, not logged, simply absent. `TBD_ZoneRegistry.ResolveRules` then reports \"no rule this build understands was readable\", which is true of both \"authored nothing\" and \"authored `graceSecconds`\", and a typed parser cannot tell those apart. That makes this schema the ONLY place a misspelled rule key can be caught, so `additionalProperties` is false and every key the mod reads is declared here. Adding a rule to the vocabulary is a field in the reader plus a property here.\n\nWHY THE VOCABULARY IS FLAT AND NOT NARROWED BY `zone.type`. Neither reader is type-conditional. `TBD_MissionZoneRulesStruct` (TBD_MissionLoader.c:93-105) is parsed for every zone and `TBD_ObjectiveRulesStruct` (TBD_ObjectiveRules.c:76-101) runs a second pass over every zone in the same document, so `captureSeconds` on a boundary zone parses and is ignored exactly as it is today. Narrowing per type here would declare a rule the runtime does not enforce; the per-key descriptions name the consuming zone type instead. `TBD_ZoneRegistry.ResolveRules` only SUPPRESSES its diagnostics for types it does not enforce (`report`), it does not reject the keys.\n\nWHY THERE ARE MINIMA AND MAXIMA. Each minimum below is the reader's own error branch (`< 0` or `<= 0`), where an out-of-range value is discarded in favour of the default. Each maximum pins the matching mod sanity CEILING (T-275): `graceSeconds` ≤ `TBD_ZoneRegistry.MAX_GRACE_SECONDS` (3600); `captureSeconds` / `neutralizeSeconds` / `holdSeconds` ≤ `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (21600). Those ceilings used to be runtime-only (warn + fall back / inert); encoding them here means a document cannot validate and still be clamped.\n\nPRESENCE. Numeric and string keys carry an ABSENT sentinel (-1e6; -1 for the one integer, because `targetCount: 0` is meaningful) so a bad authored value is reported as an error instead of being mistaken for \"not authored\". BOOLS CANNOT — there is no third value — so for the four booleans \"absent\" and \"authored false\" are indistinguishable at runtime and always will be. Each bool's default is the value an author gets by writing nothing, so nothing is lost behaviourally.",
+      "description": "Zone-type specific rules. Optional as a whole — a zone that authors no `rules` runs entirely on the defaults named per key below. This is a closed vocabulary because both readers are typed: Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is invisible to it — not rejected, not logged, simply absent. `TBD_ZoneRegistry.ResolveRules` then reports that it could read no rule this build understands, which is equally true of a zone that authored nothing and of one that authored `graceSecconds`, and a typed parser cannot tell those apart. That makes this schema the only place a misspelled rule key can be caught, so `additionalProperties` is false and every key the mod reads is declared here; adding a rule to the vocabulary is a field in the reader plus a property here. The vocabulary is flat and is not narrowed by `zone.type`, because neither reader is type-conditional: `TBD_MissionZoneRulesStruct` is parsed for every zone and `TBD_ObjectiveRulesStruct` runs a second pass over every zone in the same document, so `captureSeconds` on a boundary zone parses and is ignored. Narrowing per type here would declare a rule the runtime does not enforce; the per-key descriptions name the consuming zone type instead, and `TBD_ZoneRegistry.ResolveRules` only suppresses its diagnostics for types it does not enforce rather than rejecting the keys. Each minimum below is the reader's own error branch (`< 0` or `<= 0`), where an out-of-range value is discarded in favour of the default, and each maximum pins the matching mod sanity ceiling: `graceSeconds` at `TBD_ZoneRegistry.MAX_GRACE_SECONDS` (3600), and `captureSeconds`, `neutralizeSeconds` and `holdSeconds` at `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (21600). Encoding those ceilings here means a document cannot validate and still be clamped at runtime. On presence: numeric and string keys carry an ABSENT sentinel (-1e6, and -1 for the one integer, because `targetCount: 0` is meaningful) so a bad authored value is reported as an error instead of being mistaken for 'not authored'. Bools cannot carry one — there is no third value — so for the four booleans 'absent' and 'authored false' are indistinguishable at runtime; each bool's default is the value an author gets by writing nothing, so nothing is lost behaviourally.",
       "additionalProperties": false,
       "properties": {
         "graceSeconds": {
@@ -635,7 +635,7 @@
           "minimum": 0,
           "maximum": 3600,
           "default": 30,
-          "description": "PLAY AREA (`boundary`, `base_protection`). Seconds a player may remain in violation before `penalty` is applied. Read at TBD_MissionLoader.c:102, resolved at TBD_ZoneRegistry.c:387-397. Negative is rejected for the default. T-275: `maximum` 3600 pins `TBD_ZoneRegistry.MAX_GRACE_SECONDS` (TBD_ZoneRegistry.c:52) — above that the mod warns and falls back to 30 s."
+          "description": "Play area (`boundary`, `base_protection`). Seconds a player may remain in violation before `penalty` is applied. Bound by `TBD_MissionZoneRulesStruct` and resolved by `TBD_ZoneRegistry`; a negative value is rejected in favour of the default. The `maximum` of 3600 pins `TBD_ZoneRegistry.MAX_GRACE_SECONDS` — above that the mod warns and falls back to 30 s."
         },
         "warnEverySeconds": {
           "type": "number",
@@ -654,13 +654,13 @@
           "exclusiveMinimum": 0,
           "maximum": 21600,
           "default": 120,
-          "description": "`objective_capture`. Seconds of uninterrupted presence needed to take a NEUTRAL objective. Read at TBD_ObjectiveRules.c:85, resolved at TBD_ObjectiveRegistry.c:441-457. Absent DEFAULTS rather than going inert: an objective nobody chose the length of is playable, whereas an inert one takes the `all_objectives_captured` trigger with it and the round can no longer be won. T-275: `maximum` 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (TBD_ObjectiveRegistry.c:60)."
+          "description": "`objective_capture`. Seconds of uninterrupted presence needed to take a NEUTRAL objective. Bound by `TBD_ObjectiveRulesStruct` and resolved by `TBD_ObjectiveRegistry`. Absent defaults rather than going inert: an objective nobody chose the length of is still playable, whereas an inert one takes the `all_objectives_captured` trigger with it and the round can no longer be won. The `maximum` of 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS`."
         },
         "neutralizeSeconds": {
           "type": "number",
           "minimum": 0,
           "maximum": 21600,
-          "description": "`objective_capture`. Seconds of presence needed to tear a HELD objective back to neutral. Read at TBD_ObjectiveRules.c:86, resolved at TBD_ObjectiveRegistry.c:462-472. Defaults to `captureSeconds` (a symmetric 1:1 rate), so there is no literal default to state here. `0` is legal and means instant — a single-stage capture. T-275: `maximum` 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (TBD_ObjectiveRegistry.c:60)."
+          "description": "`objective_capture`. Seconds of presence needed to tear a HELD objective back to neutral. Bound by `TBD_ObjectiveRulesStruct` and resolved by `TBD_ObjectiveRegistry`. It defaults to `captureSeconds`, a symmetric 1:1 rate, so there is no literal default to state here. `0` is legal and means instant — a single-stage capture. The `maximum` of 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS`."
         },
         "contestable": {
           "type": "boolean",
@@ -677,13 +677,13 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "default": 1,
-          "description": "`objective_capture`, and only meaningful with `onEmpty: \"decay\"`. Progress-seconds lost per real second while decaying — `1` bleeds at the rate it was earned. Read at TBD_ObjectiveRules.c:88, resolved at TBD_ObjectiveRegistry.c:495-506."
+          "description": "`objective_capture`, and meaningful only with `onEmpty: \"decay\"`. Progress-seconds lost per real second while decaying; `1` bleeds at the same rate progress accrues. Bound by `TBD_ObjectiveRulesStruct` and resolved by `TBD_ObjectiveRegistry`."
         },
         "holdSeconds": {
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 21600,
-          "description": "`objective_hold_until`, and EFFECTIVELY REQUIRED there. Seconds the zone's `faction` must hold the ground. Read at TBD_ObjectiveRules.c:87, resolved at TBD_ObjectiveRegistry.c:539-550. There is deliberately NO default: a hold is the length of the round (`last-stand-at-montfort.json` authors 2700 s inside a 3000 s limit), so guessing it means guessing when the round ends and who won. An objective_hold_until with no readable `holdSeconds` goes INERT and reports why. Not declared `required` here because the readers do not reject the document — see the $def description on why this vocabulary is not narrowed by zone type. T-275: `maximum` 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (TBD_ObjectiveRegistry.c:60) — above that the mod marks the objective inert."
+          "description": "`objective_hold_until`, where it is effectively required. Seconds the zone's `faction` must hold the ground. Bound by `TBD_ObjectiveRulesStruct` and resolved by `TBD_ObjectiveRegistry`. There is deliberately no default: a hold is the length of the round (`last-stand-at-montfort.json` authors 2700 s inside a 3000 s limit), so guessing it means guessing when the round ends and who won. An `objective_hold_until` with no readable `holdSeconds` goes inert and reports why. It is not declared `required` here because the readers do not reject the document — see the `$def` description on why this vocabulary is not narrowed by zone type. The `maximum` of 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS`; above that the mod marks the objective inert."
         },
         "pauseOnEnemy": {
           "type": "boolean",
@@ -702,7 +702,7 @@
         },
         "targetAlias": {
           "$ref": "#/$defs/alias",
-          "description": "`objective_destroy`, and EFFECTIVELY REQUIRED there. Registry alias of the thing that must be destroyed (e.g. \"comp:ammo_cache\"). Read at TBD_ObjectiveRules.c:94, resolved at TBD_ObjectiveRegistry.ArmDestroyTargets; an objective_destroy with no readable alias goes INERT because there is nothing to watch. Constrained to the same `#/$defs/alias` form as `entity.alias` — it is resolved through the same framework registry. T-254: `TBD_MissionDocumentStruct` models `entities[]` and `SpawnMissionEntities` places resolvable rows after parse; ArmDestroyTargets then AABB-queries the zone. INERT reasons distinguish unresolved registry alias vs no matching `entities[]` row vs out-of-zone authorship vs spawn/query miss (T-437) — never a 'build does not spawn entities[]' claim."
+          "description": "`objective_destroy`, where it is effectively required. Registry alias of the thing that must be destroyed, for example `comp:ammo_cache`. Bound by `TBD_ObjectiveRulesStruct` and resolved by `TBD_ObjectiveRegistry.ArmDestroyTargets`; an `objective_destroy` with no readable alias goes inert, because there is nothing to watch. Constrained to the same `#/$defs/alias` form as `entity.alias`, since it resolves through the same framework registry. `TBD_MissionDocumentStruct` models `entities[]` and `SpawnMissionEntities` places resolvable rows after parse, and `ArmDestroyTargets` then AABB-queries the zone. Inert reasons distinguish an unresolved registry alias, no matching `entities[]` row, out-of-zone authorship, and a spawn or query miss."
         },
         "targetCount": {
           "type": "integer",
@@ -723,34 +723,34 @@
         "attackerCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "T-685 (schemaVersion 1.3). `objective_capture`. How many attackers must be inside to make progress — WOG's `_CaptureCount` (observed 4x128 / 1x16 / 2x6 / 3x5 across 166 instances). TBD's `contestable: bool` is the degenerate 1-vs-1 case of this + `defenderCount`. READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / `TBD_MissionZoneRulesStruct` bind / `TBD_ObjectivesComponent.c` apply. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader. Absent ⇒ 1; authored 0 turns the count gate off."
+          "description": "`objective_capture` (schemaVersion 1.3). How many attackers must be inside the volume for capture progress to accrue. A zone's `contestable: bool` is the degenerate one-against-one case of this plus `defenderCount`. Read by `TBD_ZoneVolume` through the `TBD_MissionZoneRulesStruct` bind and applied by `TBD_ObjectivesComponent`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader. Absent means 1; an authored 0 turns the count gate off."
         },
         "defenderCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "T-685 (schemaVersion 1.3). `objective_capture` / `objective_hold_until`. How many defenders must be inside to HOLD — WOG's `_DefCount` (observed 3x129 / 1x17 / 2x8 / 0x5). READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "`objective_capture` and `objective_hold_until` (schemaVersion 1.3). How many defenders must be inside the volume to hold it. Read by `TBD_ZoneVolume` through the loader bind and applied by `TBD_ObjectivesComponent`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "advantagePercent": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "T-685 (schemaVersion 1.3). `objective_capture`. The numeric advantage (percent) one side needs before capture progresses — WOG's `_AdvantagePercent` (observed 2x72 / 0x67 / 4x14 / 3x13). READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "`objective_capture` (schemaVersion 1.3). The numeric advantage, in percent, one side needs over the other before capture progresses. Read by `TBD_ZoneVolume` through the loader bind and applied by `TBD_ObjectivesComponent`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "minHeight": {
           "type": "number",
-          "description": "T-685 (schemaVersion 1.3). The objective volume's LOWER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position — not ASL, and not anchored to the zone centre. AXIS + EVALUATION POINT stated because a slope makes the two readings diverge by tens of metres, which is precisely the behaviour these bounds exist for: a small negative min (WOG's `_MinHeight` = -5 INVARIANT across all 166 instances) reaches basements-in under the entity, while a bounded max excludes aircraft overhead — both judged per-entity, so a POLYGON zone needs no separate height anchor (each entity supplies its own terrain reference). Together with `maxHeight` this makes an objective a 3D VOLUME rather than a flat footprint. READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` (AGL at each entity's own ground). Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "The objective volume's LOWER bound (schemaVersion 1.3), in metres above terrain (AGL), evaluated at each tested entity's own ground position — not ASL, and not anchored to the zone centre. Axis and evaluation point are stated because a slope makes the two readings diverge by tens of metres, which is precisely the behaviour these bounds exist for: a small negative minimum reaches basements under the entity, while a bounded maximum excludes aircraft overhead, both judged per entity — so a polygon zone needs no separate height anchor, since each entity supplies its own terrain reference. Together with `maxHeight` this makes an objective a 3D volume rather than a flat footprint. Read by `TBD_ZoneVolume`, AGL at each entity's own ground. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "maxHeight": {
           "type": "number",
-          "description": "T-685 (schemaVersion 1.3). The objective volume's UPPER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position (same axis and evaluation point as `minHeight` — AGL per-entity, not ASL, not anchored to the zone centre; WOG's `_MaxHeight`, observed 30x137 / 15x16 / 20x13, is read as excluding aircraft). READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "The objective volume's UPPER bound (schemaVersion 1.3), in metres above terrain (AGL), evaluated at each tested entity's own ground position — the same axis and evaluation point as `minHeight`: AGL per entity, not ASL, and not anchored to the zone centre. Its practical job is to exclude aircraft overhead. Read by `TBD_ZoneVolume` through the loader bind and applied by `TBD_ObjectivesComponent`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "startingOwner": {
           "$ref": "#/$defs/factionKey",
-          "description": "T-685 (schemaVersion 1.3). Which faction holds this objective at round start — WOG's `_Owner` (observed 1x70 / 0x65 / 2x30 / 4x1). Constrained to `factionKey` — it names a `factions[].key`. READ SINCE T-685 (2026-09-07) by `TBD_ZoneVolume.c` / loader bind / `TBD_ObjectivesComponent.c`. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "Which faction holds this objective at round start (schemaVersion 1.3). Constrained to `factionKey`, because it names a `factions[].key`. Read by `TBD_ZoneVolume` through the loader bind and applied by `TBD_ObjectivesComponent`. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "vehicleClasses": {
           "type": "array",
-          "description": "T-689 (schemaVersion 1.3). PLAY AREA (`boundary`, `base_protection`). WHICH VEHICLE CLASSES the play-area rule applies to — the missing axis on TBD's otherwise-complete play-area model (graceSeconds/warnEverySeconds/penalty). FNF v4 documents exactly why it exists: the play-zone group's air flag is `false` so AIRCRAFT MAY LEAVE the play area while ground vehicles and infantry may not (`fn_addRestrictionGroup.sqf`). PRESENCE SEMANTICS (there is no `minItems`, so all three cases are legal and defined here): ABSENT means the rule applies to EVERYTHING — every vehicle class and infantry are confined (today's behaviour); a NON-EMPTY list restricts the rule to exactly the classes named, so omitting `aircraft` from the list is how the aircraft exemption is authored; an EMPTY list `[]` is the explicit INVERSE of absent — the rule applies to NO vehicle class, so nothing is confined by it (no vehicle is disallowed from leaving). `[]` therefore is NOT the same as absent, and this clause is what defines it. READ SINCE T-689 (2026-09-07) by `TBD_PlayAreaVehicleAxis.c` / loader bind / `TBD_ZoneRegistry.c` apply. Flatten clones `zones[].rules` as JSON Value. Authored `[]` and absent both bind as Count()==0 and confine everyone — the schema inverse is unreachable (T-946.42).",
+          "description": "Play area (`boundary`, `base_protection`), schemaVersion 1.3: which vehicle classes the play-area rule applies to — the remaining axis on a play-area model that otherwise carries graceSeconds, warnEverySeconds and penalty. The case it exists for is an aircraft exemption: a play-zone rule whose air flag is off lets aircraft leave the area while ground vehicles and infantry may not. There is no `minItems`, so all three presence cases are legal and are defined here. Absent means the rule applies to everything — every vehicle class and infantry are confined. A non-empty list restricts the rule to exactly the classes named, so omitting `aircraft` from the list is how the aircraft exemption is authored. An empty list `[]` is the explicit inverse of absent: the rule applies to no vehicle class, so nothing is confined by it. `[]` is therefore not the same as absent, and this clause is what defines it. Read by `TBD_PlayAreaVehicleAxis` through the loader bind and applied by `TBD_ZoneRegistry`. The compiler clones `zones[].rules` as an opaque JSON value. On the mod side an authored `[]` and an absent key both bind as `Count() == 0` and confine everyone, so the schema's inverse case is unreachable at runtime.",
           "items": {
             "type": "string",
             "enum": ["infantry", "ground", "aircraft", "sea"]
@@ -768,7 +768,7 @@
         "uid": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-946.18 (schemaVersion 1.3) — stable identity for this entity, carried verbatim from the editor, the same role `slot.uid` and `vehicle.uid` play. THIS IS THE JOIN KEY BETWEEN THE TWO ROWS ONE AUTHORED VEHICLE EMITS: T-675.1 emits a placed vehicle as an `entities[]` alias row AND a `vehicles[]` roster row, deliberately, and until this property existed the two had nothing in common to match on — while the mod already spawns `entities[]` (`TBD_MissionLoader.SpawnMissionEntities`), so a roster reader would have spawned every crewed vehicle twice. A reader dedupes on `entity.uid == vehicle.uid`. Optional: an entity nothing references needs no uid, and a blank or wire-unsafe authored id yields no key rather than a repaired one."
+          "description": "Stable identity for this entity (schemaVersion 1.3), carried verbatim from the editor — the same role `slot.uid` and `vehicle.uid` play. It is the join key between the two rows one authored vehicle emits: a placed vehicle compiles to an `entities[]` alias row AND a `vehicles[]` roster row, deliberately, and the mod already spawns `entities[]` through `TBD_MissionLoader.SpawnMissionEntities`, so without a shared key a roster reader would spawn every crewed vehicle a second time. A reader dedupes on `entity.uid == vehicle.uid`. Optional: an entity nothing references needs no uid, and a blank or wire-unsafe authored id yields no key rather than a repaired one."
         },
         "x": { "type": "number" },
         "z": { "type": "number" },
@@ -777,52 +777,52 @@
         "inventory": { "$ref": "#/$defs/entityInventory" },
         "lock": {
           "type": "boolean",
-          "description": "T-680 (ATTR-FIELD-OBJ-LOCK, schemaVersion 1.3). Vehicle-lock state. READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` on the `vehicles[]` roster (`LockPilotControls`). An `entities[]`-only row with no roster twin is still unread."
+          "description": "Vehicle lock state (schemaVersion 1.3). Read by `TBD_VehicleState` on the `vehicles[]` roster, through `LockPilotControls`. An `entities[]`-only row with no roster twin is not read."
         },
         "fuel": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-680 (ATTR-FIELD-OBJ-FUEL, schemaVersion 1.3). Vehicle fuel fraction, 0 → 1 (full). READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` on the `vehicles[]` roster. An `entities[]`-only row with no roster twin is still unread."
+          "description": "Vehicle fuel fraction, 0 to 1 (full), schemaVersion 1.3. Read by `TBD_VehicleState` on the `vehicles[]` roster. An `entities[]`-only row with no roster twin is not read."
         },
         "ammo": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-680 (ATTR-FIELD-OBJ-AMMO, schemaVersion 1.3). Vehicle ammunition fraction, 0 → 1 (full). READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` on the `vehicles[]` roster (current magazines + cargo). An `entities[]`-only row with no roster twin is still unread."
+          "description": "Vehicle ammunition fraction, 0 to 1 (full), schemaVersion 1.3. Read by `TBD_VehicleState` on the `vehicles[]` roster, covering current magazines and cargo. An `entities[]`-only row with no roster twin is not read."
         },
         "health": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-681 (ATTR-FIELD-OBJ-HEALTH, schemaVersion 1.3). Initial health fraction, 0 (destroyed) → 1 (pristine). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`DamageManagerComponent.SetHealthScaled`) on spawned `entities[]` bodies. Unset leaves the prefab default. Flatten still omits the key on `/compiled` (T-946.36); hand-staged 1.3 JSON reaches the reader."
+          "description": "Initial health fraction, 0 (destroyed) to 1 (pristine), schemaVersion 1.3. Read by `TBD_EntityState` through `DamageManagerComponent.SetHealthScaled` on spawned `entities[]` bodies. Unset leaves the prefab default. The compiler omits the key on `/compiled`, so hand-staged 1.3 JSON is what reaches the reader."
         },
         "allowDamage": {
           "type": "boolean",
-          "description": "T-681 (ATTR-FIELD-OBJ-ALLOW-DAMAGE, schemaVersion 1.3). Whether this entity may take damage at all (Eden's invincibility toggle). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`EnableDamageHandling(true)`) only when bound true. Authored false and omit bind identically (T-946.37 class). Flatten still omits the key on `/compiled` (T-946.36)."
+          "description": "Whether this entity may take damage at all — Eden's invincibility toggle (schemaVersion 1.3). Read by `TBD_EntityState` through `EnableDamageHandling(true)`, and only when bound true: a bool carries no absent sentinel, so an authored false and an omitted key bind identically. The compiler omits the key on `/compiled`."
         },
         "showModel": {
           "type": "boolean",
-          "description": "T-681 (ATTR-FIELD-OBJ-SHOW-MODEL, schemaVersion 1.3). Whether the entity's model is visible (Eden's show/hide). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`SetFlags(VISIBLE)`) only when bound true. Authored false (hide) cannot be distinguished from omit. Flatten still omits the key on `/compiled` (T-946.36)."
+          "description": "Whether the entity's model is visible — Eden's show/hide (schemaVersion 1.3). Read by `TBD_EntityState` through `SetFlags(VISIBLE)`, and only when bound true: an authored false (hide) cannot be distinguished from an omitted key. The compiler omits the key on `/compiled`."
         },
         "size": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "T-681 (ATTR-FIELD-OBJ-SIZE, schemaVersion 1.3). Uniform scale multiplier for the placed object (1 = native size). READ SINCE T-681 (2026-09-06) by `TBD_EntityState.c` (`IEntity.SetScale`). Unset leaves the prefab scale. Identifier count collides with T-673 marker.size (UNREAD re-pin, not retire). Flatten still omits the entity key on `/compiled` (T-946.36)."
+          "description": "Uniform scale multiplier for the placed object, where 1 is native size (schemaVersion 1.3). Read by `TBD_EntityState` through `IEntity.SetScale`. Unset leaves the prefab scale. Distinct from `marker.size`, which shares the spelling and is a different field. The compiler omits the entity key on `/compiled`."
         },
         "stamina": {
           "type": "boolean",
-          "description": "T-681 (ATTR-FIELD-OBJ-STAMINA, schemaVersion 1.3). Whether stamina is enabled for a character entity. READ SINCE T-681 (2026-09-06) as a bound identifier on `TBD_EntityState.c`; Reforger exposes no per-character stamina enable toggle (`BaseStaminaComponent.GetStamina` only), so authored true is logged and skipped. Flatten still omits the key on `/compiled` (T-946.36)."
+          "description": "Whether stamina is enabled for a character entity (schemaVersion 1.3). Bound as an identifier on `TBD_EntityState`, but Reforger exposes no per-character stamina enable toggle (`BaseStaminaComponent` offers `GetStamina` only), so an authored true is logged and skipped. The compiler omits the key on `/compiled`."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654 (schemaVersion 1.3). When set, this entity is emitted only if the named `variants[]` entry is selected. T-654's MissionLoader now drops this subtree when the named variant is inactive."
+          "description": "Conditional inclusion (schemaVersion 1.3). When set, this entity is emitted only if the named `variants[]` entry is selected. `TBD_MissionLoader` drops the subtree when the named variant is inactive."
         }
       }
     },
     "entityInventory": {
       "type": "array",
-      "description": "What an author puts INTO this entity's own storage — the vehicle/crate answer to the question `slot.loadout.cargo` answers for a worn garment (T-198).\n\nWHY THIS IS NOT A cargoContainer ROW. `#/$defs/cargoContainer` is [vest, pants, jacket, backpack] and is closed by the ENGINE's worn-garment areas, not by content: TBD_LoadoutEquipHelper.GarmentForContainer resolves each key to a LoadoutArea on a CHARACTER, and the negative golden cargo-container-typo.json exists to keep it closed. Widening it to admit `vehicle`/`crate` was proposed and DECLINED — a vehicle is not a garment, and an enum that means \"worn area\" cannot be made to also mean \"any object with storage\" without losing the property that made it safe to close. Here the CONTAINER IS THE ENTITY, which is why these rows carry no `container` key at all: there is exactly one storage to address and `alias` already names it. Nor is a sub-compartment vocabulary invented — naming vehicle bays would be exactly the extensible-content enum T-181.34 correctly refused to close.\n\nNO CAPACITY FIELDS, deliberately. The limits already exist per prefab in registry-items.schema.json — `max_weight_kg` / `max_volume_cm3` / `cargo_grid_w` / `cargo_grid_h` (T-068.15.1) — across 218 `vehicle` and 311 `crate` rows, and the join is live today: entity.alias -> registry.json entry.guid -> the registry-items row keyed by that same ResourceName. `veh:m151_mg` resolves to {F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et = 360 kg / 25000 cm3 / a 4x125 grid. Restating any of that here would be a SECOND source of truth for a number the mission does not own, and the copy would go stale the first time the prefab is rebalanced. The mission says WHAT goes in; the registry says HOW MUCH fits.\n\nADDITIVE, never a wipe. A row is INSERTED into whatever the prefab already spawns carrying — the same layering `slot.loadout` does over the kit alias. Absent and `[]` therefore mean the SAME thing: leave the prefab's own contents alone. An \"empty it first\" semantic would need its own key and must never be spelled as the ABSENCE of this one, because that would silently redefine every mission authored before this key existed.\n\nNO CONSUMER YET — see the top-level `entities` description. This defines the contract; it does not deliver the capability.",
+      "description": "What an author puts INTO this entity's own storage — the vehicle and crate answer to the question `slot.loadout.cargo` answers for a worn garment. This is not a `cargoContainer` row: `#/$defs/cargoContainer` is [vest, pants, jacket, backpack] and is closed by the engine's worn-garment areas rather than by content, since `TBD_LoadoutEquipHelper.GarmentForContainer` resolves each key to a LoadoutArea on a CHARACTER. Widening that enum to admit `vehicle` or `crate` is deliberately declined: a vehicle is not a garment, and an enum meaning 'worn area' cannot also mean 'any object with storage' without losing the property that made it safe to close. Here the container IS the entity, which is why these rows carry no `container` key at all — there is exactly one storage to address and `alias` already names it. No sub-compartment vocabulary is invented either, because naming vehicle bays would be exactly the extensible-content enum that must stay open. There are deliberately no capacity fields: the limits already exist per prefab in `registry-items.schema.json` (`max_weight_kg`, `max_volume_cm3`, `cargo_grid_w`, `cargo_grid_h`) across the vehicle and crate rows, and the join is live — `entity.alias` resolves through `registry.json` to a ResourceName and that keys the registry-items row. Restating any of it here would be a second source of truth for a number the mission does not own, and the copy would go stale the first time the prefab is rebalanced: the mission says what goes in, the registry says how much fits. Rows are additive, never a wipe. A row is INSERTED into whatever the prefab already spawns carrying — the same layering `slot.loadout` does over the kit alias — so absent and `[]` mean the same thing: leave the prefab's own contents alone. An 'empty it first' semantic would need its own key and must never be spelled as the absence of this one, because that would silently redefine every mission authored without it. Nothing consumes this key yet; see the top-level `entities` description. It defines the contract, it does not deliver the capability.",
       "items": {
         "type": "object",
         "required": ["item", "qty"],
@@ -843,7 +843,7 @@
     },
     "objective": {
       "type": "object",
-      "description": "T-212 / T-685 — one typed objective entity (schemaVersion 1.3). Read the top-level `objectives` description first, including which half of the path is live: READ SINCE T-212 by `TBD_ObjectiveRegistry.c`, still not emitted on `/compiled` (T-946.36). Carries the UNIFORM ATTRIBUTE SPINE every objective shares (id/type/side/zoneId/label) plus the T-212-decided fields below. The `type` is the SUBJECT vocabulary (what kind of task), distinct from `winConditions.endOn`'s TRIGGER vocabulary (when the round ends) and from `zone.type`'s VOLUME-with-rules. Capture-tuning numbers (attackerCount/defenderCount/advantagePercent/min/maxHeight/startingOwner) live on `zoneRules` where the runtime already reads them; this def carries the objective's IDENTITY, not a second copy of those numbers.\n\nONE ENTITY, TWO FRAMINGS — NOT TWO ROWS. T-212's decision from FNF v4: an objective reads differently to attacker and defender (different task text and titles, separate My Tasks / Ally Tasks trees), but that is ONE objective with per-side FRAMING, authored via the optional `framing` object below. The two-modules-per-objective shape v4 shipped is explicitly FORBIDDEN here — a document must NOT carry two `objectives[]` rows that are 'the same objective' for opposite sides (v4's four documented defects: positional identity, two modules only linked by a shared prefix/target, nothing validating both halves exist, and a lobby tool dividing objective counts by 2 so a forgotten second half yields a fractional count). TBD's stable `uid`/derived `id` already makes v4's positional-identity defect unreachable; do not regress it by splitting an objective across rows.\n\nDROPPED (T-212 correction): the earlier `callsign`/`rank`/`stance` fields had NO source — they were slot-identity copy-through, not part of WOG's `WMT_Task_Point` spine (the best-evidenced objective design in the corpus, 166 instances × 15 parameters), and are removed. The capture/defend/height parameters WOG proved live on `zoneRules` (T-685).",
+      "description": "One typed objective entity (schemaVersion 1.3). Read the top-level `objectives` description first, including which half of the path is live: `TBD_ObjectiveRegistry` reads the key, and the compiler does not emit it on `/compiled`. This def carries the uniform attribute spine every objective shares — id, type, side, zoneId, label — plus the fields below. `type` is the SUBJECT vocabulary (what kind of task), distinct from `winConditions.endOn`'s TRIGGER vocabulary (when the round ends) and from `zone.type`'s volume-with-rules. Capture-tuning numbers (attackerCount, defenderCount, advantagePercent, minHeight, maxHeight, startingOwner) live on `zoneRules` where the runtime already reads them; this def carries the objective's identity, not a second copy of those numbers. One entity, two framings — not two rows: an objective reads differently to attacker and defender (different task text and titles, separate My Tasks and Ally Tasks trees), but that is ONE objective with per-side framing, authored through the optional `framing` object below. A document must NOT carry two `objectives[]` rows that are 'the same objective' for opposite sides. Splitting an objective across rows brings four defects with it — positional identity, two halves linked only by a shared prefix or target, nothing validating that both halves exist, and tooling that divides objective counts by two so a forgotten half yields a fractional count — and TBD's stable `uid` and derived `id` already make the positional-identity defect unreachable.",
       "required": ["id", "type"],
       "additionalProperties": false,
       "properties": {
@@ -860,7 +860,7 @@
         "zoneId": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "The `zones[].id` that gives this objective its geometry and capture rules — an objective points at its enforcement volume rather than restating the shape, so the T-582-drawn zone is the single source of the footprint."
+          "description": "The `zones[].id` that gives this objective its geometry and capture rules. An objective points at its enforcement volume rather than restating the shape, so the drawn zone is the single source of the footprint."
         },
         "label": {
           "$ref": "#/$defs/wireSafeString",
@@ -868,7 +868,7 @@
         },
         "framing": {
           "type": "object",
-          "description": "T-212 — the PER-SIDE FRAMING of this one objective (FNF v4's real insight, implemented as one entity rather than two modules). Optional; when absent the objective reads the same to everyone off `label`/`type`. Each side gets its own task title and text — 'Seize the hilltop' to the attacker, 'Hold the hilltop' to the defender — from a SINGLE objective, so there is never a second row to keep in sync. READ SINCE T-212 (2026-09-08): `TBD_Objective.RoleOf` derives the viewer's role from the one row and `TitleFor`/`TaskTextFor` render it, so `BoardLine` titles per side. The reader also REFUSES the shape this def forbids — two `objectives[]` rows naming one `zoneId` is a load warning quoting the ban, and the first row wins.",
+          "description": "The per-side framing of this one objective, implemented as one entity rather than two modules. Optional; when absent the objective reads the same to everyone, off `label` and `type`. Each side gets its own task title and text — 'Seize the hilltop' to the attacker, 'Hold the hilltop' to the defender — from a single objective, so there is never a second row to keep in sync. `TBD_Objective.RoleOf` derives the viewer's role from the one row and `TitleFor` / `TaskTextFor` render it, so board lines read per side. The reader also refuses the shape this def forbids: two `objectives[]` rows naming one `zoneId` raise a load warning quoting the ban, and the first row wins.",
           "additionalProperties": false,
           "properties": {
             "attacker": { "$ref": "#/$defs/objectiveFraming" },
@@ -877,21 +877,21 @@
         },
         "lock": {
           "type": "boolean",
-          "description": "T-212 — WOG's `_Lock` (observed 1 in 136 of 166 `Task_Point` instances). Whether this objective is locked at round start. SEMANTICS ARE INFERRED — `wmt_main` is absent from the WOG corpus, so the parameter NAME and observed VALUE are hard evidence but the reading of what a locked objective does is inference and must not be treated as fact by the reader. PARSED AND REPORTED SINCE T-212, DELIBERATELY NOT ENFORCED: the parameter says 'at round start' and the corpus holds no evidence of what UNLOCKS one, so implementing it as a permanent exclusion would be a different parameter wearing this one's name — and would make a mission whose only capture objective is locked unwinnable. `TBD_ObjectiveRegistry` counts locked objectives and says in the boot log that the round runs as if every objective were live."
+          "description": "Whether this objective is locked at round start. The semantics are inferred: the parameter name and its observed values are hard evidence from the source corpus, but the reading of what a locked objective does is inference and a reader must not treat it as fact. It is parsed and reported, deliberately not enforced: the parameter says 'at round start' and the corpus holds no evidence of what unlocks one, so implementing it as a permanent exclusion would be a different parameter wearing this one's name — and would make a mission whose only capture objective is locked unwinnable. `TBD_ObjectiveRegistry` counts locked objectives and states in the boot log that the round runs as if every objective were live."
         },
         "autoLose": {
           "$ref": "#/$defs/factionKey",
-          "description": "T-212 — WOG's `_AutoLose` (wog.md:400 distribution: -1 (disabled) x156, live side-1 x10 — 166 carried it). When set, names the `factions[].key` that automatically LOSES if this objective falls; absent/disabled dominates but ten instances used it live, which is why the field is carried. SEMANTICS ARE INFERRED (see `lock` — `wmt_main` is not in the corpus), so this is carried as declared vocabulary, not asserted behaviour. PARSED AND REPORTED SINCE T-212, DELIBERATELY NOT ENFORCED: acting on it means ENDING A ROUND, and the round-end authority is `TBD_FrameworkManager.TickWinConditions` reading `TBD_ObjectiveRegistry.EvaluateEndTriggers()` — one owner, in another file. The reader validates the key against `factions[].key` and BLANKS a dangling one, so a later consumer cannot inherit a side that does not exist."
+          "description": "When set, names the `factions[].key` that automatically LOSES if this objective falls. Absent or disabled is the dominant case, but the field is carried because live use of it exists in the source corpus. The semantics are inferred for the same reason as `lock`, so this is declared vocabulary rather than asserted behaviour. It is parsed and reported, deliberately not enforced: acting on it means ENDING A ROUND, and the round-end authority is `TBD_FrameworkManager.TickWinConditions` reading `TBD_ObjectiveRegistry.EvaluateEndTriggers()` — one owner, in another file. The reader validates the key against `factions[].key` and blanks a dangling one, so a later consumer cannot inherit a side that does not exist."
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654. When set, this objective is emitted only if the named variant is selected."
+          "description": "Conditional inclusion. When set, this objective is emitted only if the named variant is selected."
         }
       }
     },
     "objectiveFraming": {
       "type": "object",
-      "description": "T-212 — one side's reading of an objective: its task title and body text, shown in that side's task tree. Both optional so a side may frame only a title or only text.",
+      "description": "One side's reading of an objective: its task title and body text, shown in that side's task tree. Both are optional, so a side may frame only a title or only text.",
       "additionalProperties": false,
       "properties": {
         "title": { "$ref": "#/$defs/wireSafeString" },
@@ -900,7 +900,7 @@
     },
     "vehicle": {
       "type": "object",
-      "description": "T-675 / T-076 — one mission-placed vehicle (schemaVersion 1.3). `alias` is the `veh:` (or comp:) registry alias; `seats` carries the crew plan (which slots ride where) so the crew UI's authored state reaches the game. Crew spawn READ SINCE T-675.2. `lock`/`fuel`/`ammo` READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c`. A FIRST-CLASS row, not an alias-substituted `entities[]` entry.",
+      "description": "One mission-placed vehicle (schemaVersion 1.3). `alias` is the `veh:` (or `comp:`) registry alias; `seats` carries the crew plan — which slots ride where — so the crew UI's authored state reaches the game. Crew spawn is read by the mission vehicle struct and seated by `TBD_SpawnManager`; `lock`, `fuel` and `ammo` are read by `TBD_VehicleState`. This is a first-class row, not an alias-substituted `entities[]` entry.",
       "required": ["alias", "x", "z"],
       "additionalProperties": false,
       "properties": {
@@ -908,7 +908,7 @@
         "uid": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-675 — stable identity for this roster vehicle (schemaVersion 1.3), carried verbatim from the editor so a reference survives recompiles and edits — the same role `slot.uid` plays for a slot. A `get_in` waypoint's `vehicleUid` names this. Optional; a vehicle nothing references needs no uid. READ SINCE T-675.2 (2026-09-06): it is the JOIN KEY the roster reader claims on, because one authored vehicle emits both this row and an `entities[]` alias row carrying the same uid, and only the claim stops the vehicle being spawned twice. A roster row with no uid falls back to an `alias|x|z` fingerprint."
+          "description": "Stable identity for this roster vehicle (schemaVersion 1.3), carried verbatim from the editor so a reference survives recompiles and edits — the same role `slot.uid` plays for a slot. A `get_in` waypoint's `vehicleUid` names this. Optional: a vehicle nothing references needs no uid. It is the join key the roster reader claims on, because one authored vehicle emits both this row and an `entities[]` alias row carrying the same uid, and only that claim stops the vehicle being spawned twice. A roster row with no uid falls back to an `alias|x|z` fingerprint."
         },
         "x": { "type": "number" },
         "z": { "type": "number" },
@@ -916,7 +916,7 @@
         "faction": { "$ref": "#/$defs/factionKey" },
         "seats": {
           "type": "array",
-          "description": "Crew assignment plan: which slot fills which crew position. `slotId` references `slots[].uid` — the durable identity, not the derived `id` (see the `slot.id` description on why references key on uid). `role` is the crew position. The `seats/crew refs` T-076's crew UI authors.",
+          "description": "Crew assignment plan: which slot fills which crew position. `slotId` references `slots[].uid` — the durable identity, not the derived `id`; see the `slot.id` description on why references key on uid. `role` is the crew position. This is the seats-and-crew state the crew UI authors.",
           "items": {
             "type": "object",
             "required": ["role"],
@@ -938,19 +938,19 @@
         "inventory": { "$ref": "#/$defs/entityInventory" },
         "lock": {
           "type": "boolean",
-          "description": "T-680 lock state on the roster vehicle (schemaVersion 1.3). READ SINCE T-680 (2026-09-06) by `TBD_VehicleState.c` (`LockPilotControls`; authored true only, bool cannot distinguish omit from false)."
+          "description": "Lock state on the roster vehicle (schemaVersion 1.3). Read by `TBD_VehicleState` through `LockPilotControls`, and only when bound true, since a bool cannot distinguish an omitted key from an authored false."
         },
         "fuel": { "type": "number", "minimum": 0, "maximum": 1 },
         "ammo": { "type": "number", "minimum": 0, "maximum": 1 },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654. When set, this vehicle is emitted only if the named variant is selected."
+          "description": "Conditional inclusion. When set, this vehicle is emitted only if the named variant is selected."
         }
       }
     },
     "editorTrigger": {
       "type": "object",
-      "description": "T-079 / T-676 — one editor-authored trigger (schemaVersion 1.3). Read the top-level `editorTriggers` description first (including WHY it is not named `triggers`): read since T-676 by `TBD_TriggerRuntime.c`. An `activation` model (condition/repeat/timeout/owner side) fires an `effects` model. Geometry is a `zones[]` reference (`zoneId`), riding the shipped T-582 zone draw tool rather than re-declaring a shape here — the twelve `ATTR-FIELD-TRG-*` ids this ticket owns are activation + effects; the geometry/palette half is elsewhere.",
+      "description": "One editor-authored trigger (schemaVersion 1.3). Read the top-level `editorTriggers` description first, including why the key is not named `triggers`; `TBD_TriggerRuntime` reads it. An `activation` model (condition, repeat, timeout, owner side) fires an `effects` model. Geometry is a `zones[]` reference through `zoneId`, riding the zone draw tool rather than re-declaring a shape here: what this def owns is activation and effects, and the geometry and palette half lives elsewhere.",
       "required": ["id", "activation"],
       "additionalProperties": false,
       "properties": {
@@ -958,7 +958,7 @@
         "zoneId": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "The `zones[].id` whose volume arms this trigger (T-582 draw tool). A trigger without a zone is a document-wide condition."
+          "description": "The `zones[].id` whose volume arms this trigger. A trigger without a zone is a document-wide condition."
         },
         "activation": {
           "type": "object",
@@ -1014,20 +1014,20 @@
               },
               "params": {
                 "type": "object",
-                "description": "Effect-specific parameters, interpreted by the T-676 reader. Open by design — see the def description."
+                "description": "Effect-specific parameters, interpreted by the trigger runtime. Open by design — see the def description."
               }
             }
           }
         },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
-          "description": "T-654. When set, this trigger is emitted only if the named variant is selected."
+          "description": "Conditional inclusion. When set, this trigger is emitted only if the named variant is selected."
         }
       }
     },
     "variant": {
       "type": "object",
-      "description": "T-654 — one named variant in the conditional-inclusion registry (schemaVersion 1.3). Read the top-level `variants` description first: T-654's MissionLoader now reads this registry at parse. Declaring a variant here by `id` is what makes a `variantId` reference elsewhere validatable (an unknown id is a catchable error rather than a silent free string), which is the whole point of a central registry — it turns FNF v3's by-hand `FNF Gamemode: <Mode>` layer-name convention into a checked contract.",
+      "description": "One named variant in the conditional-inclusion registry (schemaVersion 1.3). Read the top-level `variants` description first; `TBD_MissionLoader` reads this registry at parse. Declaring a variant here by `id` is what makes a `variantId` reference elsewhere validatable — an unknown id becomes a catchable error rather than a silent free string — which is the whole point of a central registry: it turns a by-hand layer-name convention into a checked contract.",
       "required": ["id"],
       "additionalProperties": false,
       "properties": {
@@ -1047,11 +1047,11 @@
     "variantIdRef": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$",
-      "description": "T-654 — a reference to a `variants[].id`. Same shape as `variant.id` so a subtree's `variantId` and the registry entry it points at cannot disagree on form. WHOLE-DOCUMENT referential integrity (every `variantId` names a declared variant) is a graph check the T-654 reader owns, not something JSON Schema draft 2020-12 can express here — the pattern pins the SHAPE, the same split `entity.alias` uses (schema shape here, registry existence in the gate)."
+      "description": "A reference to a `variants[].id`. The same shape as `variant.id`, so a subtree's `variantId` and the registry entry it points at cannot disagree on form. Whole-document referential integrity — every `variantId` naming a declared variant — is a graph check the mod-side reader owns, not something JSON Schema draft 2020-12 can express here: the pattern pins the SHAPE, which is the same split `entity.alias` uses, with the shape here and registry existence in the gate."
     },
     "missionParam": {
       "type": "object",
-      "description": "T-684 — one launch-time mission parameter (schemaVersion 1.3). READ SINCE T-684 (2026-09-06) by `TBD_MissionParams.c`. Models Arma's `class Params` row: a named value chosen at launch, with a title key for i18n, the list of allowed values and their display strings, a default, and the symbol the mission consumes it through.",
+      "description": "One launch-time mission parameter (schemaVersion 1.3). Read by `TBD_MissionParams`. It models Arma's `class Params` row: a named value chosen at launch, with a title key for i18n, the list of allowed values and their display strings, a default, and the symbol the mission consumes it through.",
       "required": ["name", "values", "default"],
       "additionalProperties": false,
       "properties": {
@@ -1072,18 +1072,18 @@
         },
         "displays": {
           "type": "array",
-          "description": "Parallel display strings for `values` (Arma's `texts[]`). When present, must line up 1:1 with `values` — a length check the T-684 reader owns.",
+          "description": "Parallel display strings for `values` (Arma's `texts[]`). When present they must line up 1:1 with `values` — a length check the mission-params reader owns.",
           "items": { "$ref": "#/$defs/wireSafeString" }
         },
         "default": {
           "type": "integer",
-          "description": "The value used when the launcher makes no choice (must be one of `values` — a membership check the T-684 reader owns)."
+          "description": "The value used when the launcher makes no choice. It must be one of `values` — a membership check the mission-params reader owns."
         }
       }
     },
     "waypoint": {
       "type": "object",
-      "description": "T-677 — one squad waypoint (schemaVersion 1.3). READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c` (both mod trees). Ordered by position in the array; `type` is the waypoint kind, `x`/`z` its position. The AI spawn gate opens only for waypointed groups.",
+      "description": "One squad waypoint (schemaVersion 1.3). Read by `TBD_WaypointRuntime` in both mod trees. Waypoints are ordered by position in the array; `type` is the waypoint kind and `x` / `z` its position. The AI spawn gate opens only for waypointed groups.",
       "required": ["type", "x", "z"],
       "additionalProperties": false,
       "properties": {
@@ -1112,7 +1112,7 @@
         "vehicleUid": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "T-677 (schemaVersion 1.3). For a `get_in` (and, when boarding a specific vehicle, `get_out`) waypoint: the target vehicle, referenced by a `vehicles[].uid`-style stable id, so the squad boards THE authored vehicle rather than any nearby one by proximity inference. Absent → proximity/nearest, the only behaviour available before this key. Ignored for non-boarding waypoint types. READ SINCE T-677 (2026-09-06) by `TBD_WaypointRuntime.c`."
+          "description": "For a `get_in` waypoint — and, when boarding a specific vehicle, a `get_out` one — the target vehicle, referenced by a `vehicles[].uid`-style stable id, so the squad boards THE authored vehicle rather than any nearby one by proximity inference (schemaVersion 1.3). Absent falls back to nearest-by-proximity. Ignored for non-boarding waypoint types. Read by `TBD_WaypointRuntime`."
         },
         "radiusM": {
           "type": "number",
@@ -1133,14 +1133,14 @@
     },
     "gadgetFlags": {
       "type": "object",
-      "description": "T-705 — per-player gadget presence flags (schemaVersion 1.3). READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`. Each is Eden's General-States gadget toggle; ABSENT means \"leave the kit's default\", `true`/`false` force the gadget on/off. The reader uses a string-bool map so omit vs authored-false do not collapse. Flatten omits the block (T-946.43).",
+      "description": "Per-player gadget presence flags (schemaVersion 1.3). Read by `TBD_GadgetFlags`. Each is Eden's General-States gadget toggle: absent means leave the kit's default, while `true` and `false` force the gadget on or off. The reader uses a string-to-bool map so that an omitted key and an authored false do not collapse. The compiler omits the block on `/compiled`.",
       "additionalProperties": false,
       "properties": {
-        "map": { "type": "boolean", "description": "T-705 — spawn with a map. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`." },
-        "compass": { "type": "boolean", "description": "T-705 — spawn with a compass. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`." },
-        "watch": { "type": "boolean", "description": "T-705 — spawn with a watch. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c` (prefab-path needle; no EGadgetType.WATCH)." },
-        "gps": { "type": "boolean", "description": "T-705 — spawn with a GPS. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`. Authored true cannot add a GPS (no registry item); authored false still withholds a GPS-named item." },
-        "radio": { "type": "boolean", "description": "T-705 — spawn with a personal radio. READ SINCE T-705 (2026-09-07) by `TBD_GadgetFlags.c`." }
+        "map": { "type": "boolean", "description": "Spawn with a map. Read by `TBD_GadgetFlags`." },
+        "compass": { "type": "boolean", "description": "Spawn with a compass. Read by `TBD_GadgetFlags`." },
+        "watch": { "type": "boolean", "description": "Spawn with a watch. Read by `TBD_GadgetFlags`, which matches on the prefab path because the engine exposes no `EGadgetType.WATCH`." },
+        "gps": { "type": "boolean", "description": "Spawn with a GPS. Read by `TBD_GadgetFlags`. An authored true cannot add a GPS, because the registry holds no GPS item; an authored false still withholds a GPS-named item." },
+        "radio": { "type": "boolean", "description": "Spawn with a personal radio. Read by `TBD_GadgetFlags`." }
       }
     },
     "flow": {
@@ -1158,7 +1158,7 @@
     },
     "winConditions": {
       "type": "object",
-      "description": "How the round is won (T-936.1).\n\n`endOn` is the CLOSED list of triggers that may END the round and is unchanged by T-936.1 — `TBD_ObjectiveRegistry.EvaluateEndTriggers` drives three of them and `TBD_FrameworkManager.TickWinConditions` the other two. `mode` is the AUTHORED WIN RULE that sits on top of them, and until T-936.1 it was a free `minLength: 1` string that `flatten.rs` hardcoded to `attrition` no matter what the author chose — so it could not be wrong and it could not be right either.\n\n═══ WHY THE ENUM CARRIES SEVEN VALUES AND NOT FIVE ═══\n\nThe five the editor authors are `attrition` | `objective` | `extraction` | `vip` | `timeout` (`crates/map-engine-core/src/mission/win_conditions.rs` `AUTHORED_MODES`, and the `mode` enum in `mission-editor-payload.schema.json`, which lists ONLY those five — an editor payload cannot carry the other two).\n\n`points_then_attrition` and `defender_holds_or_attacker_destroys` are GRANDFATHERED. They are not editor output and no slice will ever emit them: they are carried by four committed hand-authored goldens (`bridgehead-at-levie`, `empty-warning-fields`, `slot-loadout-coverage`, `last-stand-at-montfort`) plus two `golden-missions-invalid` fixtures, all of which pre-date the enum and must keep validating — this ticket's own acceptance says so. Dropping them would fail `xtask schema validate` on six committed files whose subject is the mod's PARSER, not the win rule.\n\nThey cost nothing at runtime. `mode` reaches the mod at exactly one place — `TBD_BriefingData.BuildWinConditions` renders `Humanise(mode)` on the briefing screen — and `TBD_WinConditionEvaluator` treats any mode outside the five as MODE_UNKNOWN, which is the pre-T-936.1 behaviour those documents were written for: the round ends on `endOn` alone.\n\n═══ PER-MODE PARAMS ═══\n\n`extractionZoneId` / `vipSlotId` / `timeoutMinutes` are each REQUIRED BY, and only meaningful to, one mode — the `allOf` below states that per mode rather than leaving three optional keys nothing has to fill in. `win_conditions.rs` additionally REFUSES a param that belongs to a different mode than the one authored, which a schema `if/then` could express only as a fourth pile of conditionals; the compile is the authoring gate and says which param and which mode.",
+      "description": "How the round is won. `endOn` is the closed list of triggers that may END the round: `TBD_ObjectiveRegistry.EvaluateEndTriggers` drives three of them and `TBD_FrameworkManager.TickWinConditions` the other two. `mode` is the authored win rule that sits on top of them. The enum carries seven values rather than five. The five the editor authors are `attrition`, `objective`, `extraction`, `vip` and `timeout` — the same five the compiler's authored-mode list and `mission-editor-payload.schema.json` declare, so an editor payload cannot carry the other two. `points_then_attrition` and `defender_holds_or_attacker_destroys` are grandfathered: they are not editor output and no slice emits them, but four committed hand-authored goldens (`bridgehead-at-levie`, `empty-warning-fields`, `slot-loadout-coverage`, `last-stand-at-montfort`) plus two invalid-golden fixtures carry them and must keep validating, so dropping them would fail schema validation on six committed files whose subject is the mod's parser rather than the win rule. They cost nothing at runtime: `mode` reaches the mod at exactly one place, `TBD_BriefingData.BuildWinConditions`, which renders `Humanise(mode)` on the briefing screen, and `TBD_WinConditionEvaluator` treats any mode outside the five as MODE_UNKNOWN, so the round ends on `endOn` alone. On per-mode params: `extractionZoneId`, `vipSlotId` and `timeoutMinutes` are each required by, and meaningful only to, one mode, which the `allOf` below states per mode rather than leaving three optional keys nothing has to fill in. The compiler additionally refuses a param belonging to a different mode than the one authored — a rule a schema `if`/`then` could express only as a fourth pile of conditionals — and names which param and which mode in the refusal.",
       "required": ["mode", "endOn"],
       "additionalProperties": false,
       "allOf": [
@@ -1196,7 +1196,7 @@
             "points_then_attrition",
             "defender_holds_or_attacker_destroys"
           ],
-          "description": "The authored win rule. Five editor-authorable values plus two grandfathered golden-only values — see this block's own note for why the enum is seven wide. `attrition` is what `flatten.rs` emits when the payload authors no `winConditions` at all, which is what keeps every pre-T-936.1 mission byte-identical."
+          "description": "The authored win rule: five editor-authorable values plus two grandfathered golden-only values — see this block's own description for why the enum is seven wide. `attrition` is what the compiler emits when the payload authors no `winConditions` at all, which is what keeps a mission with no authored win rule byte-identical to one compiled before the key existed."
         },
         "extractionZoneId": {
           "type": "string",
@@ -1212,7 +1212,7 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 1440,
-          "description": "`mode: timeout` only — how long the round runs before the clock ends it, in whole minutes. 1440 is 24 h; the ceiling exists for the same reason `$defs/zoneRules.captureSeconds` has one (a typo'd `600` where `60` was meant is a round nobody can finish).\n\nIt is NOT a second clock. `flatten.rs` projects it onto `flow.timeLimitSeconds` (× 60) and adds `time_limit` to `endOn`, so the round is ended by the ONE armed clock `TBD_FrameworkManager.ArmRoundClock` already runs. Two timers for one deadline is the T-946.19 defect class, and `TBD_WinConditionEvaluator` deliberately starts no timer of its own for this mode."
+          "description": "`mode: timeout` only: how long the round runs before the clock ends it, in whole minutes. 1440 is 24 h, and the ceiling exists for the same reason `$defs/zoneRules.captureSeconds` has one — a typo'd `600` in place of `60` is a round nobody can finish. It is not a second clock: the compiler projects it onto `flow.timeLimitSeconds` (multiplied by 60) and adds `time_limit` to `endOn`, so the round is ended by the one armed clock `TBD_FrameworkManager.ArmRoundClock` already runs. Two timers for one deadline is a defect class of its own, and `TBD_WinConditionEvaluator` deliberately starts no timer for this mode."
         },
         "endOn": {
           "type": "array",
@@ -1232,7 +1232,7 @@
     },
     "task": {
       "type": "object",
-      "description": "T-936.2 — one authored task. Transitions are assigned→succeeded and assigned→failed only; anything else is logged and ignored (server authoritative, `TBD_TaskStateMachine`). `triggerId` names an `editorTriggers[].id` whose T-676 completion drives the success transition. `markerId` is the HUD glyph: an authored `$defs/marker.icon` alias, resolved through `TBD_MarkerIcons` (the existing marker icon path). Position comes from the linked trigger's zone.",
+      "description": "One authored task. Transitions are assigned → succeeded and assigned → failed only; anything else is logged and ignored, and the server is authoritative through `TBD_TaskStateMachine`. `triggerId` names an `editorTriggers[].id` whose completion drives the success transition. `markerId` is the HUD glyph: an authored `$defs/marker.icon` alias resolved through `TBD_MarkerIcons`, the same path markers use. Position comes from the linked trigger's zone.",
       "required": ["id", "title", "tier", "state"],
       "additionalProperties": false,
       "properties": {
@@ -1271,31 +1271,31 @@
         },
         "schedule": {
           "$ref": "#/$defs/taskSchedule",
-          "description": "READ SINCE T-133 (2026-09-06). Optional timed window. Absent ⇒ untimed (always evaluate). `TBD_TaskStateMachine.c` reads nested `startAfterS`/`windowS` via the ABSENT sentinel; presence of the object is not a nested-ref test."
+          "description": "Optional timed window. Absent means untimed — the task is always evaluated. `TBD_TaskStateMachine` reads the nested `startAfterS` and `windowS` through an ABSENT sentinel, so presence of the object is not itself a nested-ref test."
         }
       }
     },
     "taskSchedule": {
       "type": "object",
-      "description": "T-133 — seconds from mission start (`startAfterS`) and duration (`windowS`). windowS must be > 0; startAfterS must be ≥ 0 and strictly inside mission length (enforced by tasks.rs; schema pins types and closed keys).",
+      "description": "A timed window measured from mission start: `startAfterS` seconds of delay and `windowS` seconds of duration. `windowS` must be greater than 0, and `startAfterS` must be at least 0 and strictly inside the mission length — both enforced by the compiler, while the schema pins the types and closes the key set.",
       "required": ["startAfterS", "windowS"],
       "additionalProperties": false,
       "properties": {
         "startAfterS": {
           "type": "integer",
           "minimum": 0,
-          "description": "READ SINCE T-133 (2026-09-06). Seconds from mission start before the task becomes active. 0 is legal (evaluate from T+0)."
+          "description": "Seconds from mission start before the task becomes active. 0 is legal and means evaluate from T+0."
         },
         "windowS": {
           "type": "integer",
           "exclusiveMinimum": 0,
-          "description": "READ SINCE T-133 (2026-09-06). Duration in seconds the task stays evaluable after startAfterS. Must be > 0."
+          "description": "Duration in seconds that the task stays evaluable after `startAfterS`. Must be greater than 0."
         }
       }
     },
     "weatherTimeline": {
       "type": "object",
-      "description": "T-936.4 — authored weather KEYFRAMES (schemaVersion 1.3). Distinct from `environment.weatherPreset` (the single static preset the mission starts with). A timeline is `{keyframes: [{atMinutes, weatherPreset, windDirDeg?, fog?}]}`; `atMinutes` is minutes from LIVE start and must be strictly increasing (enforced by weather.rs; schema pins types and closed keys). Preset vocabulary is the same four strings `environment.weatherPreset` already uses (`clear` / `overcast` / `heavy_rain` / `dense_fog`).\n\nREAD SINCE T-936.4 (2026-09-07) by `Gamemode/TBD_WeatherRuntime.c` (both mod trees): the server applies each keyframe at its offset through `TimeAndWeatherManagerEntity.ForceWeatherTo`; clients follow weather replication. Absent object ⇒ a mission with no timeline, which is every pre-T-936.4 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical. T-936.6: `EditorPayload::authored_blocks_root` copies every AUTHORED_BLOCKS key it has a named field for, including `weatherTimeline`.",
+      "description": "Authored weather KEYFRAMES (schemaVersion 1.3). Distinct from `environment.weatherPreset`, the single static preset the mission starts with. A timeline is `{keyframes: [{atMinutes, weatherPreset, windDirDeg?, fog?}]}`; `atMinutes` is minutes from LIVE start and must be strictly increasing, which the compiler enforces while the schema pins the types and closes the key set. The preset vocabulary is the same four strings `environment.weatherPreset` uses: `clear`, `overcast`, `heavy_rain`, `dense_fog`. Read by `TBD_WeatherRuntime` in both mod trees: the server applies each keyframe at its offset through `TimeAndWeatherManagerEntity.ForceWeatherTo`, and clients follow weather replication. An absent object means a mission with no timeline, and the authored-block carrier then emits nothing, so byte-parity fixtures stay identical.",
       "required": ["keyframes"],
       "additionalProperties": false,
       "properties": {
@@ -1308,7 +1308,7 @@
     },
     "weatherKeyframe": {
       "type": "object",
-      "description": "T-936.4 — one authored weather keyframe. `TBD_WeatherRuntime` applies `weatherPreset` at `atMinutes` and, when present, the T-682 fog / windDirDeg overrides.",
+      "description": "One authored weather keyframe. `TBD_WeatherRuntime` applies `weatherPreset` at `atMinutes` and, when present, the fog and wind-direction overrides.",
       "required": ["atMinutes", "weatherPreset"],
       "additionalProperties": false,
       "properties": {
@@ -1326,19 +1326,19 @@
           "type": "number",
           "minimum": 0,
           "maximum": 360,
-          "description": "Optional wind direction, same axis as environment.windDirDeg (T-682). Omitted ⇒ leave the previous override (or the static environment value) alone."
+          "description": "Optional wind direction, on the same axis as `environment.windDirDeg`. Omitted leaves the previous override — or the static environment value — alone."
         },
         "fog": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Optional fog density, same axis as environment.fog (T-682). Omitted ⇒ leave the previous override alone."
+          "description": "Optional fog density, on the same axis as `environment.fog`. Omitted leaves the previous override alone."
         }
       }
     },
     "audio": {
       "type": "object",
-      "description": "T-936.5 — authored positional AUDIO emitters and music cues (schemaVersion 1.3). `emitters[]` are world-space sound sources `{id, x, z, y?, sound, radiusM, loop, triggerId?}`; `musicCues[]` are `{id, event, track}` fired on mission_start / task_succeeded / task_failed / mission_end. radiusM must be > 0 (audio.rs; schema exclusiveMinimum). Ids are unique across both arrays.\n\nREAD SINCE T-936.5 by `Gamemode/TBD_AudioEmitter.c` (both mod trees): the server arms emitters (honouring triggerId via T-676) and plays cues on the named events; each client spawns one sound source per emitter and only raises the sound while the local player is inside radiusM. Absent object ⇒ a mission with no authored audio, which is every pre-T-936.5 document; the AUTHORED_BLOCKS carrier emits nothing in that case, so Class-R byte-parity fixtures stay identical. T-936.6: `EditorPayload::authored_blocks_root` copies every AUTHORED_BLOCKS key it has a named field for, including `audio`.",
+      "description": "Authored positional AUDIO emitters and music cues (schemaVersion 1.3). `emitters[]` are world-space sound sources `{id, x, z, y?, sound, radiusM, loop, triggerId?}`; `musicCues[]` are `{id, event, track}` fired on mission_start, task_succeeded, task_failed or mission_end. `radiusM` must be greater than 0, which the schema pins with `exclusiveMinimum` and the compiler re-checks. Ids are unique across both arrays. Read by `TBD_AudioEmitter` in both mod trees: the server arms emitters (honouring `triggerId`) and plays cues on the named events, while each client spawns one sound source per emitter and raises the sound only while the local player is inside `radiusM`. An absent object means a mission with no authored audio, and the authored-block carrier then emits nothing, so byte-parity fixtures stay identical.",
       "required": ["emitters", "musicCues"],
       "additionalProperties": false,
       "properties": {
@@ -1354,7 +1354,7 @@
     },
     "audioEmitter": {
       "type": "object",
-      "description": "T-936.5 — one positional sound source. `TBD_AudioEmitter` spawns a client-side source at (x, z) (y metres ASL when authored, otherwise terrain surface) and raises `sound` only while the listener is inside radiusM. `loop` keeps it repeating inside the radius; a one-shot fires once on first enter. `triggerId` delays arming until that editorTriggers[] row FIRED (T-676); omitted ⇒ arm at LIVE.",
+      "description": "One positional sound source. `TBD_AudioEmitter` spawns a client-side source at (x, z) — at `y` metres ASL when authored, otherwise on the terrain surface — and raises `sound` only while the listener is inside `radiusM`. `loop` keeps it repeating inside the radius; a one-shot fires once on first entry. `triggerId` delays arming until that `editorTriggers[]` row has fired; omitted arms at LIVE.",
       "required": ["id", "x", "z", "sound", "radiusM", "loop"],
       "additionalProperties": false,
       "properties": {
@@ -1372,7 +1372,7 @@
         "sound": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "SCR_SoundEvent name (same vocabulary as T-676 play_sound `sound`). An unknown name raises nothing."
+          "description": "`SCR_SoundEvent` name, the same vocabulary a trigger's play-sound effect uses. An unknown name raises nothing."
         },
         "radiusM": {
           "type": "number",
@@ -1392,7 +1392,7 @@
     },
     "musicCue": {
       "type": "object",
-      "description": "T-936.5 — one 2D music/UI cue fired on a named mission event. `track` is an SCR_SoundEvent name; `event` is the closed vocabulary below.",
+      "description": "One 2D music or UI cue fired on a named mission event. `track` is an `SCR_SoundEvent` name; `event` is the closed vocabulary below.",
       "required": ["id", "event", "track"],
       "additionalProperties": false,
       "properties": {
@@ -1409,13 +1409,13 @@
         "track": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "SCR_SoundEvent name raised as a 2D cue (same path as T-676 play_sound)."
+          "description": "`SCR_SoundEvent` name raised as a 2D cue, on the same path a trigger's play-sound effect uses."
         }
       }
     },
     "spawnModule": {
       "type": "object",
-      "description": "T-936.6 — one dynamic spawn module. `TBD_DynamicSpawner` spawns `count` groups of `groupTemplate` for `factionKey`. Placement is exclusive: either world `(x, z)` or a `zones[].id` (`zoneId`), never both and never neither (spawn_modules.rs `placement_is_exclusive`). `kind: wave` restocks on `intervalSeconds` while living groups < `maxAlive` (hard cap 32). `kind: garrison` spawns once and holds. `triggerId` delays the first spawn until that editorTriggers[] row FIRED (T-676); omitted ⇒ arm at LIVE.",
+      "description": "One dynamic spawn module. `TBD_DynamicSpawner` spawns `count` groups of `groupTemplate` for `factionKey`. Placement is exclusive: either world `(x, z)` or a `zones[].id` through `zoneId`, never both and never neither, which the compiler's placement check enforces. `kind: wave` restocks on `intervalSeconds` while living groups stay below `maxAlive`, itself capped at 32. `kind: garrison` spawns once and holds. `triggerId` delays the first spawn until that `editorTriggers[]` row has fired; omitted arms at LIVE.",
       "additionalProperties": false,
       "required": ["id", "kind", "factionKey", "groupTemplate", "count"],
       "oneOf": [
@@ -1481,7 +1481,7 @@
     },
     "tacticalGraphic": {
       "type": "object",
-      "description": "T-936.7 — one tactical control measure: an ORDERED RUN of world vertices with a doctrinal kind. Deliberately NOT `#/$defs/polygon`, which is `minItems: 3` and closed — these are OPEN polylines and a two-point phase line is the commonest case there is. `style` reuses T-673's MARKER vocabulary rather than inventing a second one (`color` is `#/$defs/hexColor`, `alpha` is 0..1, `brush` is the same eight Eden fill names `$defs/marker.brush` declares) so a reader that already styles markers styles these with the same table; `widthM` is the one addition and the geometry forces it — a marker is a glyph with a `size` multiplier, a control measure is a STROKE and a stroke needs a world width. Vertex-count floors are per kind and are enforced by `tactical_graphics.rs` `min_points`, not by this schema: JSON Schema cannot make `minItems` depend on a sibling's value without an `if`/`then` per kind, and putting the rule in one Rust function keeps the refusal a sentence the author can read.",
+      "description": "One tactical control measure: an ORDERED RUN of world vertices with a doctrinal kind. Deliberately not `#/$defs/polygon`, which is `minItems: 3` and closed — these are OPEN polylines and a two-point phase line is the commonest case there is. `style` reuses the marker vocabulary rather than inventing a second one (`color` is `#/$defs/hexColor`, `alpha` is 0..1, `brush` is the same eight Eden fill names `$defs/marker.brush` declares), so a reader that already styles markers styles these from the same table. `widthM` is the one addition, and the geometry forces it: a marker is a glyph with a `size` multiplier, whereas a control measure is a STROKE and a stroke needs a world width. Vertex-count floors are per kind and are enforced by the compiler's `min_points` rather than by this schema, because JSON Schema cannot make `minItems` depend on a sibling's value without an `if`/`then` per kind, and keeping the rule in one Rust function keeps the refusal a sentence the author can read.",
       "required": ["id", "kind", "points"],
       "additionalProperties": false,
       "properties": {
@@ -1521,7 +1521,7 @@
     },
     "tacticalGraphicStyle": {
       "type": "object",
-      "description": "T-936.7 — optional stroke style for a tactical graphic. Every key is optional; an absent `style` means the renderer picks its own defaults from `sideKey`, which is the common case and the reason nothing here is required.",
+      "description": "Optional stroke style for a tactical graphic. Every key is optional; an absent `style` means the renderer picks its own defaults from `sideKey`, which is the common case and the reason nothing here is required.",
       "additionalProperties": false,
       "properties": {
         "color": {
@@ -1546,7 +1546,7 @@
             "grid",
             "fill_diagonal"
           ],
-          "description": "Fill brush, spelled identically to `marker.brush` (T-673) so one reader can style both from one table."
+          "description": "Fill brush, spelled identically to `marker.brush` so one reader can style both from one table."
         },
         "widthM": {
           "type": "number",
@@ -1581,7 +1581,7 @@
         "z": { "type": "number" },
         "icon": {
           "type": "string",
-          "description": "Authored marker glyph alias (T-276). CLOSED vocabulary matching the 64 Register() keys in TBD_MarkerIcons.EnsureAliases — the words a mission author / Mission Creator may type. Before this enum a typo or empty string validated clean and then DEGRADED at runtime: Resolve() returned FALLBACK_ICON (DOT) and logged once, so the marker still drew but not as authored. Live engine imageset-quad names (measured 91 at boot via GetIconEntries) may still resolve at RUNTIME via the config-quad path, but the *authored* contract is this enum only — documents that pass the validator never need the silent DOT downgrade.",
+          "description": "Authored marker glyph alias. Closed vocabulary, matching the 64 `Register()` keys in `TBD_MarkerIcons.EnsureAliases` — the words a mission author or the Mission Creator may type. Without the enum a typo or an empty string validates clean and then degrades at runtime: `Resolve()` returns FALLBACK_ICON (DOT) and logs once, so the marker still draws, but not as authored. Live engine imageset-quad names may still resolve at RUNTIME through the config-quad path, but the AUTHORED contract is this enum only, so a document that passes the validator never needs the silent DOT downgrade.",
           "enum": [
             "dot",
             "dot2",
@@ -1653,18 +1653,18 @@
         "size": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "T-673 (ATTR-FIELD-MRK-SIZE, schemaVersion 1.3). Marker icon/text scale multiplier (1 = default). READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct` in `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c`, packed onto the marker RPC xs-trailer and applied by `TBD_MarkerClient`. Entity OBJ-SIZE (T-681) is a different field and still unread."
+          "description": "Marker icon and text scale multiplier, where 1 is the default (schemaVersion 1.3). Read by `TBD_MissionMarkerStruct` in `TBD_MissionLoader`, packed onto the marker RPC trailer and applied by `TBD_MarkerClient`. The entity `size` key is a different field that shares this spelling."
         },
         "rotationDeg": {
           "type": "number",
           "minimum": 0,
           "maximum": 360,
-          "description": "T-673 (ATTR-FIELD-MRK-ROTATION, schemaVersion 1.3). Marker rotation in degrees. READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct` / `TBD_MarkerClient.SetRotation`."
+          "description": "Marker rotation in degrees (schemaVersion 1.3). Read by `TBD_MissionMarkerStruct` and applied through `TBD_MarkerClient.SetRotation`."
         },
         "shape": {
           "type": "string",
           "enum": ["icon", "rectangle", "ellipse", "polyline"],
-          "description": "T-673 (ATTR-FIELD-MRK-SHAPE, schemaVersion 1.3). Icon-vs-AREA is Eden's entire second marker model, and this key is the ICON-side selector / authoring hint, NOT the geometry. PRECEDENCE (the one rule that resolves the two): if `area` (a `#/$defs/markerArea`) is present, this marker IS an area marker and `shape` is IGNORED — the authoritative extent is `area`, whose vocabulary (circle | polygon | rectangle | ellipse) is the superset that can actually express a rect/ellipse. If `area` is absent, this is an icon marker (draw the `icon` glyph). `icon` names the glyph marker; `rectangle`/`ellipse`/`polyline` are legacy shape hints subordinate to `area` (an author who sets `shape: \"ellipse\"` must also author an ellipse `area` for it to take effect — the reader reads `area`, and mismatches resolve in `area`'s favour by this rule). READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.shape`. Area *fill* (brush over `area` geometry) is still not drawn — `SCR_MapMarkerBase` has no brush API; T-673 logs once and still draws the icon with authored colour/rotation/size/alpha."
+          "description": "Icon-versus-AREA is Eden's entire second marker model, and this key is the ICON-side selector and authoring hint, not the geometry (schemaVersion 1.3). Precedence is the one rule that resolves the two: if `area` (a `#/$defs/markerArea`) is present, this marker IS an area marker and `shape` is IGNORED — the authoritative extent is `area`, whose vocabulary (circle, polygon, rectangle, ellipse) is the superset that can actually express a rect or ellipse. If `area` is absent, this is an icon marker and the `icon` glyph is drawn. `icon` names the glyph marker; `rectangle`, `ellipse` and `polyline` are shape hints subordinate to `area`, so an author who sets `shape: \"ellipse\"` must also author an ellipse `area` for it to take effect, and a mismatch resolves in `area`'s favour by this rule. Read by `TBD_MissionMarkerStruct.shape`. Area FILL over `area` geometry is not drawn, because `SCR_MapMarkerBase` has no brush API; the mod logs once and still draws the icon with the authored colour, rotation, size and alpha."
         },
         "brush": {
           "type": "string",
@@ -1678,21 +1678,21 @@
             "grid",
             "fill_diagonal"
           ],
-          "description": "T-673 (ATTR-FIELD-MRK-BRUSH, schemaVersion 1.3). Area-marker fill brush (matches Eden's marker brush set). Meaningful only for a `shape` other than `icon`. READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.brush` (bound and packed); fill is not yet painted on the map widget."
+          "description": "Area-marker fill brush, matching Eden's marker brush set (schemaVersion 1.3). Meaningful only for a `shape` other than `icon`. Read by `TBD_MissionMarkerStruct.brush`, which binds and packs it; the fill is not painted on the map widget."
         },
         "color": {
           "$ref": "#/$defs/hexColor",
-          "description": "T-673 (ATTR-FIELD-MRK-COLOR, schemaVersion 1.3). Marker colour, same `#rrggbb` form as `faction.color`. READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.color`; hex is mapped to the nearest `SCR_EScenarioFrameworkMarkerCustomColor` via `SetColorEntry`."
+          "description": "Marker colour, in the same `#rrggbb` form as `faction.color` (schemaVersion 1.3). Read by `TBD_MissionMarkerStruct.color`; the hex value is mapped to the nearest `SCR_EScenarioFrameworkMarkerCustomColor` through `SetColorEntry`."
         },
         "alpha": {
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "T-673 (ATTR-FIELD-MRK-ALPHA, schemaVersion 1.3). Marker opacity, 0 (transparent) → 1 (opaque). READ SINCE T-673 (2026-09-06) by `TBD_MissionMarkerStruct.alpha` / `TBD_StyledMapMarker` widget opacity."
+          "description": "Marker opacity, 0 (transparent) to 1 (opaque), schemaVersion 1.3. Read by `TBD_MissionMarkerStruct.alpha` and applied as `TBD_StyledMapMarker` widget opacity."
         },
         "area": {
           "$ref": "#/$defs/markerArea",
-          "description": "T-673 (schemaVersion 1.3). The AUTHORITATIVE extent of an area marker: circle | polygon | rectangle | ellipse (`#/$defs/markerArea`, a superset of the zone `#/$defs/shape` that adds the rect/ellipse extents `shape`'s circle|polygon cannot express). PRECEDENCE: when `area` is present this marker is an AREA marker and `marker.shape` is ignored (the rule is stated once here and once on `shape`). Its circle/polygon arms speak the same geometry vocabulary as a zone, so an area marker and a zone stay comparable. On the wire only — lands under T-673."
+          "description": "The AUTHORITATIVE extent of an area marker (schemaVersion 1.3): circle, polygon, rectangle or ellipse, through `#/$defs/markerArea` — a superset of the zone `#/$defs/shape` that adds the rect and ellipse extents `shape`'s circle-or-polygon vocabulary cannot express. Precedence: when `area` is present this marker is an AREA marker and `marker.shape` is ignored; the rule is stated once here and once on `shape`. Its circle and polygon arms speak the same geometry vocabulary as a zone, so an area marker and a zone stay comparable. On the wire only; no mod-side reader binds it."
         }
       }
     },
@@ -1704,9 +1704,9 @@
         "spectatorPolicy": {
           "type": "string",
           "enum": ["none", "own_side_delayed_60s", "free"],
-          "description": "T-291. READ SINCE T-291 (2026-09-07) by `TBD_SpectatorController.c` via replicated `TBD_FrameworkManager.GetSpectatorPolicy()`. Empty/unauthored keeps today's enter-immediately behaviour."
+          "description": "Who may enter spectator, and when. Read by `TBD_SpectatorController` through the replicated `TBD_FrameworkManager.GetSpectatorPolicy()`. Empty or unauthored keeps the enter-immediately behaviour."
         },
-        "nightVision": { "type": "boolean", "description": "T-291. READ SINCE T-291 (2026-09-07) by `TBD_FrameworkManager.c` (strip NVG gadgets when false). JsonLoadContext binds omit as false, so unauthored missions strip NVG (T-946.46)." }
+        "nightVision": { "type": "boolean", "description": "Whether night-vision gadgets are allowed. Read by `TBD_FrameworkManager`, which strips NVG gadgets when the value is false. `JsonLoadContext` binds an omitted key as false, so a mission that does not author the key has its NVG stripped." }
       }
     }
   }

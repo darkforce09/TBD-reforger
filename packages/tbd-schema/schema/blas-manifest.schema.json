@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tbd.example/schema/blas-manifest.schema.json",
   "title": "TBD Prefab BLAS Library Manifest",
-  "description": "T-090.12.2 — `prefabs/blas-manifest.json`: every BLAS file of the library with its byte size and triangle / kind counts, every prefab descriptor, the per-kind census and the `hot` prefetch set (the most-placed blocking prefabs, most first). Deterministic: `blas` sorted by path, `descriptors` by pid, no timestamps. Emitted by `cargo xtask map bvh-batch --all-prefabs`; Rust source of truth `map_engine_core::world::occluder::descriptor::BlasManifest`.",
+  "description": "`prefabs/blas-manifest.json`: every BLAS file in the library with its byte size and triangle / kind counts, every prefab descriptor, the per-kind census, and the `hot` prefetch set (the most-placed blocking prefabs, most-placed first). Deterministic: `blas` is sorted by path, `descriptors` by pid, and nothing carries a timestamp. Emitted by `cargo xtask map bvh-batch --all-prefabs`; the Rust shape is `BlasManifest` in the map engine's world occluder descriptor module.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "terrainId", "blas", "descriptors", "hot", "totals"],

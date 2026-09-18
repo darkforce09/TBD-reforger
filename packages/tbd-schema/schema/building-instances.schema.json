@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tbd.example/schema/building-instances.schema.json",
   "title": "TBD Building Instances",
-  "description": "T-090.11 — the placed BLAS instances of one building prefab (`<slug>.instances.json`, beside the blueprint JSON and the shell `.bvh`): every child entity the prefab slots into the building (door leaves and frames, window frames, glass panes, furniture, props) or a scene places around it (trees), each with its own `.bvh` sidecar under `blas/` and a rigid transform in the building's local frame (Enfusion x, y up, z; metres; rotation as a unit quaternion [x, y, z, w]). Emitted by `cargo xtask map bvh-batch`; the Rust source of truth is `map_engine_core::building_compound`.",
+  "description": "The placed BLAS instances of one building prefab (`<slug>.instances.json`, beside the blueprint JSON and the shell `.bvh`): every child entity the prefab slots into the building (door leaves and frames, window frames, glass panes, furniture, props) or a scene places around it (trees), each with its own `.bvh` sidecar under `blas/` and a rigid transform in the building's local frame (Enfusion x, y up, z; metres; rotation as a unit quaternion [x, y, z, w]). Emitted by `cargo xtask map bvh-batch`; the Rust shape is the map engine's building-compound module.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "prefabId", "resourceName", "shellBvh", "instances"],

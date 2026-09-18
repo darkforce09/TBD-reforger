@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-roads/v1.json",
   "title": "TBD Map Object Road Network",
-  "description": "Road network polylines (T-090.2). Roads share roadClass but each segment has a unique polyline, so they are not deduped through prefab/instance. ~5k-20k segments on Everon — one roads.json.gz.",
+  "description": "Road network polylines. Roads share a `roadClass` but each segment carries a unique polyline, so they are not deduplicated through the prefab/instance split. Everon holds roughly 5k-20k segments, shipped as a single `roads.json.gz`.",
   "type": "object",
   "required": ["schemaVersion", "terrainId", "roadSegments"],
   "additionalProperties": false,

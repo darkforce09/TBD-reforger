@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-resolved/v1.json",
-  "title": "TBD ResolvedWorldObject (Eden AI + T-090.7 read contract)",
-  "description": "Join of catalog instance + prefab (+ optional audit overlay). Every AI tool and the human inspect panel (T-090.9) receive this exact shape — do not invent parallel field names in frontend AI code.",
+  "title": "TBD ResolvedWorldObject (read contract)",
+  "description": "Join of a catalog instance with its prefab, plus an optional audit overlay. Every AI tool and the human inspect panel receives this exact shape — frontend AI code must not invent parallel field names for it.",
   "type": "object",
   "required": ["id", "prefabId", "resourceName", "kind", "class", "label", "taxonomyPath", "summary", "x", "y", "z", "rotationDeg", "spatial", "gameplay", "tags"],
   "additionalProperties": false,
@@ -31,7 +31,7 @@
     "placement": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Placement quality overlay from T-090.4 / T-090.6 (Z-trust badge in the inspect panel).",
+      "description": "Placement quality overlay, surfaced as the Z-trust badge in the inspect panel.",
       "properties": {
         "zDeltaM": { "type": "number" },
         "severity": { "type": "string", "enum": ["ok", "warn", "fail"] },

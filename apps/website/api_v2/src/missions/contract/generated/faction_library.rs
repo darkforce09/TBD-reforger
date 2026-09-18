@@ -955,7 +955,7 @@ impl ::std::convert::From<::std::option::Option<::std::string::String>> for Slot
         Self(value)
     }
 }
-///One operator-authored reusable faction (T-153): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).
+///One operator-authored reusable faction: a side and display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb document of a `user_factions` row; the Mission Creator palette renders side → faction → roles/vehicles from these rather than from the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes: `wear` is an open map keyed by engine LoadoutSlotInfo name, and weapons are slot-indexed.
 ///
 /// <details><summary>JSON schema</summary>
 ///
@@ -963,7 +963,7 @@ impl ::std::convert::From<::std::option::Option<::std::string::String>> for Slot
 ///{
 ///  "$id": "https://schema.tbdevent.eu/faction-library/v1.json",
 ///  "title": "TBD Faction Library Entry",
-///  "description": "One operator-authored reusable faction (T-153): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).",
+///  "description": "One operator-authored reusable faction: a side and display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb document of a `user_factions` row; the Mission Creator palette renders side → faction → roles/vehicles from these rather than from the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes: `wear` is an open map keyed by engine LoadoutSlotInfo name, and weapons are slot-indexed.",
 ///  "type": "object",
 ///  "required": [
 ///    "name",
@@ -1000,7 +1000,7 @@ impl ::std::convert::From<::std::option::Option<::std::string::String>> for Slot
 ///      ]
 ///    },
 ///    "vehicles": {
-///      "description": "Vehicle pool (listed in the palette; map placement lands with T-070).",
+///      "description": "Vehicle pool for this faction. The Mission Creator palette lists these; placing a pool vehicle on the map is not wired up.",
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/vehicle"
@@ -1023,7 +1023,7 @@ pub struct TbdFactionLibraryEntry {
     pub roles: ::std::vec::Vec<Role>,
     ///Export-side key (mirrors the mission doc Faction.key vocabulary).
     pub side: TbdFactionLibraryEntrySide,
-    ///Vehicle pool (listed in the palette; map placement lands with T-070).
+    ///Vehicle pool for this faction. The Mission Creator palette lists these; placing a pool vehicle on the map is not wired up.
     pub vehicles: ::std::vec::Vec<Vehicle>,
 }
 ///Display name, e.g. 'US Army 1980s'.

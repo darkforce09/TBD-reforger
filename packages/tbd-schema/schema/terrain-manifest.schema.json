@@ -45,8 +45,8 @@
       "additionalProperties": false,
       "properties": {
         "path": { "type": "string" },
-        "widthPx": { "type": "integer", "minimum": 0, "description": "0 = stub awaiting T-091.0 export" },
-        "heightPx": { "type": "integer", "minimum": 0, "description": "0 = stub awaiting T-091.0 export" },
+        "widthPx": { "type": "integer", "minimum": 0, "description": "DEM width in pixels. 0 marks a stub manifest whose DEM export has not run." },
+        "heightPx": { "type": "integer", "minimum": 0, "description": "DEM height in pixels. 0 marks a stub manifest whose DEM export has not run." },
         "encoding": { "const": "uint16-linear" },
         "heightRangeMinM": { "type": "number" },
         "heightRangeMaxM": { "type": "number" },
@@ -72,7 +72,7 @@
         },
         "raw": {
           "type": "object",
-          "description": "T-935 (spec §3.2) — the TBDE raw-u16 twin of the DEM PNG, streamed into one Vec<u16> instead of decoded through a PNG codec. OPTIONAL: absent means the PNG above is the only elevation source. Mirrors DemRawBlock in crates/map-engine-core/src/world/manifest.rs.",
+          "description": "The TBDE raw-u16 twin of the DEM PNG, streamed into one `Vec<u16>` instead of decoded through a PNG codec. Optional: absent means the PNG above is the only elevation source. Mirrors `DemRawBlock` in the map engine's world manifest module.",
           "additionalProperties": false,
           "required": ["path", "encoding"],
           "properties": {
@@ -84,7 +84,7 @@
     },
     "tiles": {
       "type": "object",
-      "description": "Dual basemap pyramids (T-090.1/.1.1, N9). Legacy single `urlTemplate` = satellite alias (live everon manifest unchanged). `satellite` + `map` are the Google-Maps-style switchable views; both share bounds/zoom and the XYZ disk layout + fetch-time Y inversion.",
+      "description": "Dual basemap pyramids. A bare `urlTemplate` is an alias for the satellite pyramid. `satellite` and `map` are the two switchable views; both share bounds and zoom range and both use the XYZ disk layout with fetch-time Y inversion.",
       "properties": {
         "type": { "const": "xyz" },
         "indexOrder": { "type": "string", "enum": ["xyz", "tms"] },
@@ -116,21 +116,21 @@
             },
             "encoding": {
               "type": "string",
-              "description": "Tile codec — webp-lossless (VP8L) for the picture-perfect satellite pyramid (T-090.1.2.1); webp-lossy (VP8 q=N) for interim/dev builds.",
+              "description": "Tile codec. webp-lossless (VP8L) is the picture-perfect satellite pyramid; webp-lossy (VP8 at quality N) is for interim and development builds.",
               "enum": ["webp-lossy", "webp-lossless", "png"]
             },
             "delivery": {
               "type": "string",
-              "description": "Primary satellite delivery (T-090.1.2.8): unified = one tbd-sat bundle → single GPU texture with mips; pyramid = legacy per-viewport {z}/{x}/{y} tiles. The frontend falls back to the pyramid when the unified bundle is missing/unreadable.",
+              "description": "Primary satellite delivery. `unified` is one tbd-sat bundle fetched as a single GPU texture with mips; `pyramid` is per-viewport {z}/{x}/{y} tiles. The frontend falls back to the pyramid when the unified bundle is missing or unreadable.",
               "enum": ["pyramid", "unified"]
             },
             "waterComposite": {
               "type": "boolean",
-              "description": "T-090.1.2.5 — true when the satellite ortho has engine-sourced hydrology composited on (ocean = DEM <= sea level; inland = supertexture water appearance, DEM-filtered). Provenance: staging TBD_SatExport_meta.json waterComposite block + .ai/artifacts/t090_1_2_5_water_source_spike.json."
+              "description": "True when the satellite ortho has engine-sourced hydrology composited onto it: ocean where the DEM is at or below sea level, inland water from the supertexture water appearance filtered by the DEM. Provenance is the staging export's own `waterComposite` metadata block."
             },
             "unified": {
               "type": "object",
-              "description": "Unified satellite bundle (tbd-sat v1, T-090.1.2.8): GLB-style container of lossless-WebP mip blocks, fetched once and uploaded as a single mipmapped GPU texture.",
+              "description": "Unified satellite bundle (tbd-sat v1): a GLB-style container of lossless-WebP mip blocks, fetched once and uploaded as a single mipmapped GPU texture.",
               "additionalProperties": false,
               "required": ["path", "url", "encoding"],
               "properties": {
@@ -138,7 +138,7 @@
                 "url": { "type": "string" },
                 "encoding": {
                   "type": "string",
-                  "description": "tbd-sat-v1 is the shipped hand-packed tile table; tbd-sat-v2 (T-935, spec §3.5) replaces its index with an rkyv TbdSatIndexV2 behind the same magic. The reader dispatches on the file's own version field — this string only tells a loader which one to expect.",
+                  "description": "Which tbd-sat layout to expect. tbd-sat-v1 is the hand-packed tile table; tbd-sat-v2 replaces that index with an rkyv `TbdSatIndexV2` behind the same magic. The reader dispatches on the file's own version field, so this string only tells a loader which one to expect.",
                   "enum": ["tbd-sat-v1", "tbd-sat-v2"]
                 },
                 "baseWidthPx": { "type": "integer", "minimum": 1 },
@@ -162,7 +162,7 @@
             },
             "encoding": {
               "type": "string",
-              "description": "Tile codec — webp-lossy (VP8 q=N) is the Map-view default (stylized cartographic raster, T-090.1.1); lossless is a satellite-only requirement.",
+              "description": "Tile codec. webp-lossy (VP8 at quality N) is the Map-view default, because that view is a stylized cartographic raster; lossless is a satellite-only requirement.",
               "enum": ["webp-lossy", "webp-lossless", "png"]
             }
           }
@@ -171,7 +171,7 @@
     },
     "objects": {
       "type": "object",
-      "description": "Catalog v1 world-object pointers + counts (T-090.2/.3). Optional until first object export.",
+      "description": "Catalog v1 world-object pointers and counts. Optional until a terrain has had its first object export.",
       "additionalProperties": false,
       "properties": {
         "schemaVersion": { "type": "string" },
@@ -188,32 +188,32 @@
         "transforms": {
           "type": "string",
           "enum": ["yaw", "yaw+pitch+roll", "yaw+pitch+roll+scale"],
-          "description": "T-090.12.1 (objects schemaVersion 1.1.0): what a chunk row can carry beyond its position. `yaw` = the 5-wide v1 tuple only; `yaw+pitch+roll` = 8-wide rows exist but the export carried no scale (every scale is 1); `yaw+pitch+roll+scale` = the v2 full-export plugin wrote GetScale()."
+          "description": "What a chunk row can carry beyond its position, at objects schemaVersion 1.1.0. `yaw` means 5-wide v1 tuples only; `yaw+pitch+roll` means 8-wide rows exist but the export carried no scale, so every scale is 1; `yaw+pitch+roll+scale` means the full-export plugin wrote `GetScale()`."
         },
         "scaleSource": {
           "type": "string",
           "enum": ["absent", "GetScale"],
-          "description": "T-090.12.1: where the per-row scale came from — `absent` (pre-v2 export, unit scale assumed everywhere) or `GetScale` (the full-export plugin v2)."
+          "description": "Where the per-row scale comes from: `absent` (the export predates scale capture, so unit scale is assumed everywhere) or `GetScale` (the full-export plugin read it from the entity)."
         },
         "workbenchVersion": {
           "type": "string",
-          "description": "T-090.12.1: the Workbench build that produced the world export, copied from the export meta when the plugin wrote one (omitted otherwise)."
+          "description": "The Workbench build that produced the world export, copied from the export metadata when the plugin wrote one; omitted otherwise."
         },
         "typeInventoryPath": {
           "type": "string",
-          "description": "Relative path to type-inventory.json — exact prefab/instance counts (T-090.2)."
+          "description": "Relative path to `type-inventory.json`, which carries the exact prefab and instance counts for this terrain."
         },
         "densityPath": {
           "type": "string",
-          "description": "RESERVED (T-090.3.2): relative dir of per-chunk tree/rock corner-density grids objects/density/{cx}_{cy}.bin (TBDD binary, plan §3.3). Field documented in T-090.3.1; first written by T-090.3.2."
+          "description": "Reserved: relative directory of the per-chunk tree and rock corner-density grids, `objects/density/{cx}_{cy}.bin` in the TBDD binary format. Declared here; no export writes it."
         },
         "densityCellM": {
           "type": "number",
-          "description": "RESERVED (T-090.3.2): density grid cell size in meters — locked 32 (17×17 corners per 512 m chunk, plan Q3)."
+          "description": "Reserved: density grid cell size in metres, locked at 32 — 17x17 corners per 512 m chunk."
         },
         "lod": {
           "type": "object",
-          "description": "RESERVED (T-090.3.2): LOD gate constants snapshot for cache-busting (plan §3.4/§5) — refZoom + per-class minZoom gates. Field documented in T-090.3.1; first written by T-090.3.2.",
+          "description": "Reserved: snapshot of the LOD gate constants for cache-busting — `refZoom` plus the per-class `minZoom` gates. Declared here; no export writes it.",
           "additionalProperties": false,
           "properties": {
             "schemaVersion": { "type": "string" },
@@ -227,7 +227,7 @@
         "exportedAt": { "type": "string", "format": "date-time" },
         "binary": {
           "type": "object",
-          "description": "T-935 (spec §5) — the TBDC chunk container plus the four Tier-2 rkyv archives that replace the objects/*.json.gz set. OPTIONAL: absent means the JSON paths above are the only ones, which is every manifest shipped before T-935.13. Mirrors ObjectsBinaryBlock in crates/map-engine-core/src/world/manifest.rs; container/containerVersion/pod/podBytes are on the wire so a loader can REFUSE a row shape it does not implement (ObjectsBinaryBlock::matches_this_build) instead of reading a 24-byte-row file at a 32-byte stride and drawing a map made of garbage that never errors.",
+          "description": "The TBDC chunk container plus the four Tier-2 rkyv archives that replace the `objects/*.json.gz` set. Optional: absent means the JSON paths above are the only ones. Mirrors `ObjectsBinaryBlock` in the map engine's world manifest module. `container`, `containerVersion`, `pod` and `podBytes` are on the wire so that a loader can refuse a row shape it does not implement (`ObjectsBinaryBlock::matches_this_build`) rather than read a 24-byte-row file at a 32-byte stride and draw a map made of garbage that never errors.",
           "additionalProperties": false,
           "required": ["container", "containerVersion", "pod", "podBytes", "chunks"],
           "properties": {
@@ -247,7 +247,7 @@
     },
     "labels": {
       "type": "object",
-      "description": "T-935 (spec §5) — the rkyv label archive replacing locations.json plus the road-name JSON. OPTIONAL. Mirrors LabelsBlock in crates/map-engine-core/src/world/manifest.rs.",
+      "description": "The rkyv label archive that replaces `locations.json` and the road-name JSON. Optional. Mirrors `LabelsBlock` in the map engine's world manifest module.",
       "additionalProperties": false,
       "required": ["path", "encoding"],
       "properties": {
@@ -257,7 +257,7 @@
     },
     "water": {
       "type": "object",
-      "description": "T-935 (spec §3.3/§5) — water vectors as an rkyv archive and the TBDB mipmapped bathymetry raster. OPTIONAL. Mirrors WaterBlock in crates/map-engine-core/src/world/manifest.rs.",
+      "description": "Water vectors as an rkyv archive, plus the TBDB mipmapped bathymetry raster. Optional. Mirrors `WaterBlock` in the map engine's world manifest module.",
       "additionalProperties": false,
       "required": ["vectors", "encoding"],
       "properties": {
@@ -268,7 +268,7 @@
     },
     "buildings": {
       "type": "object",
-      "description": "T-935 (spec §5) — one BuildingBlueprintArchive fetch in place of 1623 descriptor fetches, plus the directory its .bvh sidecars are indexed out of. OPTIONAL. Mirrors BuildingsBlock in crates/map-engine-core/src/world/manifest.rs.",
+      "description": "One `BuildingBlueprintArchive` fetch in place of 1623 individual descriptor fetches, plus the directory its `.bvh` sidecars are indexed out of. Optional. Mirrors `BuildingsBlock` in the map engine's world manifest module.",
       "additionalProperties": false,
       "required": ["archive"],
       "properties": {
@@ -278,7 +278,7 @@
     },
     "glyphs": {
       "type": "object",
-      "description": "World-object SVG/atlas pointers (T-090.5). Optional.",
+      "description": "World-object SVG and atlas pointers. Optional.",
       "additionalProperties": false,
       "properties": {
         "manifestPath": { "type": "string" },
@@ -288,7 +288,7 @@
     },
     "locations": {
       "type": "object",
-      "description": "Named settlements / peaks for cartographic labels (T-152.6).",
+      "description": "Named settlements and peaks used for cartographic labels.",
       "additionalProperties": false,
       "required": ["path"],
       "properties": {

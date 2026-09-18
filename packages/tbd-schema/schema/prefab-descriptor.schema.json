@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tbd.example/schema/prefab-descriptor.schema.json",
   "title": "TBD Prefab BLAS Descriptor",
-  "description": "T-090.12.2 — one catalogue prefab's collision closure (`prefabs/descriptors/<prefabId>.json`): the root mesh as an instance record at identity (kind `shell` for buildings, the walker's classification otherwise) plus every collision-bearing child the prefab slots in, each with its `.bvh` sidecar under `blas/` and a rigid transform in the prefab's object frame (Enfusion x, y up, z; metres; unit quaternion [x, y, z, w]); or `blocks: false` with a reason when nothing in the closure collides. Emitted by `cargo xtask map bvh-batch --all-prefabs`; the Rust source of truth is `map_engine_core::world::occluder::descriptor`.",
+  "description": "One catalogue prefab's collision closure (`prefabs/descriptors/<prefabId>.json`): the root mesh as an instance record at identity (kind `shell` for buildings, the walker's classification otherwise) plus every collision-bearing child the prefab slots in, each with its `.bvh` sidecar under `blas/` and a rigid transform in the prefab's object frame (Enfusion x, y up, z; metres; unit quaternion [x, y, z, w]); or `blocks: false` with a reason when nothing in the closure collides. Emitted by `cargo xtask map bvh-batch --all-prefabs`; the Rust shape is the map engine's world occluder descriptor module.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "prefabId", "slug", "resourceName", "kind", "blocks", "canopy", "shellBvh", "instances"],

@@ -309,7 +309,7 @@ impl<'de> ::serde::Deserialize<'de> for ResourceName {
             })
     }
 }
-///Engine-derived compatibility edge graph between registry items (T-150). Nodes are full Enfusion ResourceNames and must exist in the paired registry-items envelope; edges are read from prefab container data (magazine wells, attachment slot types, vehicle weapon slots, character loadout slots) — never hand-authored. Drives canEquip/canAttach (T-068.9 ingest, T-068.10 smart Forge).
+///Engine-derived compatibility edge graph between registry items. Nodes are full Enfusion ResourceNames and must exist in the paired registry-items envelope; edges are read from prefab container data (magazine wells, attachment slot types, vehicle weapon slots, character loadout slots) and are never hand-authored. Drives the canEquip / canAttach answers the Arsenal and the smart Forge rely on.
 ///
 /// <details><summary>JSON schema</summary>
 ///
@@ -317,7 +317,7 @@ impl<'de> ::serde::Deserialize<'de> for ResourceName {
 ///{
 ///  "$id": "https://schema.tbdevent.eu/registry-compat/v1.json",
 ///  "title": "TBD Registry Compat",
-///  "description": "Engine-derived compatibility edge graph between registry items (T-150). Nodes are full Enfusion ResourceNames and must exist in the paired registry-items envelope; edges are read from prefab container data (magazine wells, attachment slot types, vehicle weapon slots, character loadout slots) — never hand-authored. Drives canEquip/canAttach (T-068.9 ingest, T-068.10 smart Forge).",
+///  "description": "Engine-derived compatibility edge graph between registry items. Nodes are full Enfusion ResourceNames and must exist in the paired registry-items envelope; edges are read from prefab container data (magazine wells, attachment slot types, vehicle weapon slots, character loadout slots) and are never hand-authored. Drives the canEquip / canAttach answers the Arsenal and the smart Forge rely on.",
 ///  "type": "object",
 ///  "required": [
 ///    "edges",

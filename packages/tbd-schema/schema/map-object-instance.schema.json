@@ -2,10 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-instance/v1.json",
   "title": "TBD Map Object Instance (catalog v1 placement row)",
-  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Three equivalent JSON encodings: an expanded object (golden/readability), a legacy id-first positional array [id, prefabId, x, y, z?, rotationDeg?], or the chunk wire tuple — [prefabId, x, y, z, rotationDeg] (T-090.3.1) or, since objects schemaVersion 1.1.0 (T-090.12.1), [prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale] (all numbers; id derived as {cx}_{cy}:{index}). Discriminator: element 0 string = legacy tuple, element 0 number = chunk tuple. A FOURTH encoding of the same row exists and is NOT JSON: the 32-byte ObjectInstancePod inside a TBDC container (T-935, spec §2/§3.1), documented byte-for-byte at $defs/objectInstancePodRow below.",
+  "description": "One placed object. Compact: it references its prefab by index and never duplicates kind, class, resourceName or bounds — resolve those through `prefabs[prefabId]`. Three equivalent JSON encodings exist: an expanded object (the readable form, used by goldens), a legacy id-first positional array `[id, prefabId, x, y, z?, rotationDeg?]`, and the chunk wire tuple `[prefabId, x, y, z, rotationDeg]` or, at objects schemaVersion 1.1.0 and above, `[prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale]` (all numbers; the id is derived as {cx}_{cy}:{index}). The discriminator between the two array forms is element 0: a string means the legacy tuple, a number the chunk tuple. A fourth encoding of the same row is not JSON at all — the 32-byte ObjectInstancePod inside a TBDC container, documented byte for byte at `$defs/objectInstancePodRow` below.",
   "$defs": {
     "objectInstancePodRow": {
-      "title": "ObjectInstancePod — the 32-byte binary row (T-935.1, spec §2)",
+      "title": "ObjectInstancePod — the 32-byte binary row",
       "description": "NOT a JSON Schema validator (JSON Schema cannot describe bytes) — this is the wire contract for objects/chunks/{cx}_{cy}.bin, recorded beside the JSON rows it encodes so the two cannot drift apart unnoticed. One .bin is a 32-byte TbdcHeader followed by `count` of these and nothing else, so byte offset of row i is 32 + 32 * i and the whole ingest is a length check plus one bytemuck::cast_slice. All fields little-endian; the struct is #[repr(C)] with no padding, which is what the field ORDER below buys. A 5-wide JSON row decodes with pitchDeg = rollDeg = 0 and scale = 1. Live definition: crates/map-engine-core/src/world/binary/pod.rs; the manifest names it as objects.binary.pod / podBytes so a loader can refuse a shape it does not implement. Checked by `cargo xtask schema terrain-manifest` (arithmetic: no gap, no overlap, total = POD_BYTES) and by golden_gate S15, which decodes the committed golden .bin at these very offsets.",
       "podBytes": 32,
       "fields": [
@@ -42,7 +42,7 @@
     },
     {
       "type": "array",
-      "description": "Legacy positional tuple [id, prefabId, x, y, z?, rotationDeg?] (T-110 binary compile input). Position 0 is the string id; 1 is the integer prefabId; 2..5 are numbers (x, y, z?, rotationDeg?).",
+      "description": "Legacy positional tuple `[id, prefabId, x, y, z?, rotationDeg?]`, the input form the binary compiler accepts. Position 0 is the string id, position 1 the integer prefabId, and positions 2..5 are numbers (x, y, z?, rotationDeg?).",
       "minItems": 4,
       "maxItems": 6,
       "prefixItems": [
@@ -57,7 +57,7 @@
     },
     {
       "type": "array",
-      "description": "Chunk wire tuple [prefabId, x, y, z, rotationDeg] (T-090.3.1, plan §3.2) or, since objects schemaVersion 1.1.0 (T-090.12.1), [prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale] — all numbers, exactly 5 or 8 wide (never 6 or 7). The trailing three are written only when non-trivial (pitchDeg != 0 or rollDeg != 0 or scale != 1 after rounding: angles 2 dp, scale 3 dp); a reader missing them assumes 0, 0, 1. Angle order is Enfusion GetAngles(): pitch about X, heading about Y (rotationDeg), roll about Z; scale is the entity's uniform GetScale(). Instance id is derived from chunk file + index ({cx}_{cy}:{index}), unique by construction (G5). Written by objects/chunks/{cx}_{cy}.json.gz only.",
+      "description": "Chunk wire tuple `[prefabId, x, y, z, rotationDeg]` or, at objects schemaVersion 1.1.0 and above, `[prefabId, x, y, z, rotationDeg, pitchDeg, rollDeg, scale]` — all numbers, exactly 5 or 8 wide, never 6 or 7. The trailing three are written only when non-trivial (pitchDeg != 0, rollDeg != 0, or scale != 1 after rounding: angles to 2 dp, scale to 3 dp); a reader that does not find them assumes 0, 0, 1. Angle order follows Enfusion `GetAngles()`: pitch about X, heading about Y (`rotationDeg`), roll about Z; `scale` is the entity's uniform `GetScale()`. The instance id is derived from the chunk file and row index ({cx}_{cy}:{index}), which makes it unique by construction. Written only by `objects/chunks/{cx}_{cy}.json.gz`.",
       "minItems": 5,
       "maxItems": 8,
       "oneOf": [

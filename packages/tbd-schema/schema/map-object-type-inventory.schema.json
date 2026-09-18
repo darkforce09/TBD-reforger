@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-type-inventory/v1.json",
   "title": "TBD Map Object Type Inventory",
-  "description": "Exact prefab/instance census for a terrain (T-090.2). Every count is a non-negative integer when censusStatus=complete — no ranges, no rounding, no ± tolerance on totals. Verification gates I1–I6 in t090_world_object_type_inventory.md.",
+  "description": "Exact prefab and instance census for a terrain. Every count is a non-negative integer when `censusStatus` is `complete` — no ranges, no rounding, and no tolerance on totals.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -41,7 +41,7 @@
     },
     "byKind": {
       "type": "object",
-      "description": "One census bucket per instance kind — map-object-enums.schema.json $defs.kind minus $defs.regionKind (regions are counted under byRegionKind, not here). T-594: `vehicle` (added to the kind enum by T-244) is a property but deliberately NOT in `required`, because golden/map-objects/type-inventory-pending-everon.json is a hand-authored pre-export fixture frozen at the eight pre-T-244 buckets and validates against this schema. An absent bucket is still caught: I1 (xtask schema type-inventory) sums only the buckets present against levels.totalInstances, so dropping a populated kind comes up short and fails. Adding a kind here without adding it to tools_v2/xtask/src/schema_gates.rs INSTANCE_KINDS is what made T-244 latent for a month; that array is now pinned to this enum by type_inventory()'s own lockstep check.",
+      "description": "One census bucket per instance kind — the `map-object-enums.schema.json` `$defs.kind` members minus `$defs.regionKind`, since regions are counted under `byRegionKind`. `vehicle` is a declared property but deliberately not `required`, because `golden/map-objects/type-inventory-pending-everon.json` is a hand-authored pre-export fixture carrying only the eight non-vehicle buckets and it must keep validating. An absent bucket is still caught: the xtask type-inventory check sums only the buckets present against `levels.totalInstances`, so dropping a populated kind comes up short and fails. That same check pins the xtask instance-kind list to this enum in lockstep, so a kind added here but not there fails rather than going unnoticed.",
       "required": [
         "building",
         "tree",
@@ -167,7 +167,7 @@
           "type": "number",
           "minimum": -6,
           "maximum": 6,
-          "description": "T-090.3.1 (plan §3.4): per-class importanceZoom default copied from prefab-classify.json rules so the LOD table is data-driven from census. Absent when no rule for the class declares one."
+          "description": "Per-class `importanceZoom` default, copied from the `prefab-classify.json` rules so the LOD table is data-driven from the census. Absent when no rule for the class declares one."
         },
         "prefabs": {
           "type": "array",

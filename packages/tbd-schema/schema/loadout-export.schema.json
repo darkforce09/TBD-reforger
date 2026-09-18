@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/loadout-export/v2.json",
   "title": "TBD Loadout Export",
-  "description": "Loadout download consumed by the mod equip path. v1: ACE-shaped fixed gear slots. v2 (T-068.10.4): Reforger-shaped — wear is an open map keyed by engine LoadoutSlotInfo name (canonical keys documented; mod-added areas allowed), weapons are slot-indexed (two untyped primary slots + secondary + grenade/throwable per Character_Base.et), equipment/cargo are forward skeletons. v2 keeps a derived legacy gear block so the v1 mod reader (TBD_LoadoutEquipComponent, JsonLoadContext ignores unknown fields — U6) keeps working until T-068.12 reads v2 natively.",
+  "description": "Loadout download consumed by the mod equip path, in one of two envelope versions. v1 is ACE-shaped: a fixed set of gear slots. v2 is Reforger-shaped: `wear` is an open map keyed by engine LoadoutSlotInfo name (the canonical keys are documented; mod-added areas are allowed), weapons are slot-indexed (two untyped primary slots plus secondary and grenade/throwable, per `Character_Base.et`), and `equipment` / `cargo` are forward skeletons. A v2 envelope also carries a derived legacy `gear` block so a v1 reader keeps working: Enfusion's `JsonLoadContext` ignores unknown fields, so a v1 reader skips the v2 keys instead of failing on them.",
   "oneOf": [
     {
       "type": "object",
@@ -31,7 +31,7 @@
         },
         "weapons": {
           "type": "array",
-          "description": "Slot-indexed weapons. Vanilla characters: slotIndex 0/1 slotType 'primary' (two untyped long slots — two rifles legal), 2 'secondary' (pistol), 3 'grenade', 4 'throwable'. T-068.12 must equip via slot-indexed SetWeapon, not blind EquipWeapon.",
+          "description": "Slot-indexed weapons. On vanilla characters slotIndex 0 and 1 are slotType 'primary' (two untyped long slots, so two rifles are legal), 2 is 'secondary' (pistol), 3 is 'grenade' and 4 is 'throwable'. A reader equips through slot-indexed `SetWeapon` rather than a blind `EquipWeapon`, so the authored slot survives.",
           "items": { "$ref": "#/$defs/weapon" }
         },
         "equipment": {
@@ -63,7 +63,7 @@
   "$defs": {
     "cargoContainer": {
       "type": "string",
-      "description": "Worn container a cargo row is inserted into. CLOSED vocabulary, kept byte-identical to mission.schema.json#/$defs/cargoContainer — this file is the editor-side export and that one is the game-server contract, so the two drifting is exactly the failure T-181.34 exists to stop. The four keys are fixed by the engine's worn-garment areas (TBD_LoadoutEquipHelper.GarmentForContainer) and mirrored by the Arsenal UI (arsenal_rules.rs CARGO_CONTAINERS); armoredVest shares the vest container.",
+      "description": "Worn container a cargo row is inserted into. Closed vocabulary, kept byte-identical to `mission.schema.json#/$defs/cargoContainer` — this file is the editor-side export and that one is the game-server contract, and the two drifting is exactly the failure the duplication exists to stop. The four keys are fixed by the engine's worn-garment areas (`TBD_LoadoutEquipHelper.GarmentForContainer`) and mirrored by the Arsenal UI's cargo-container list. `armoredVest` is not a key of its own — it shares the vest container.",
       "enum": ["vest", "pants", "jacket", "backpack"]
     },
     "slot": {
@@ -85,7 +85,7 @@
     },
     "gear": {
       "type": "object",
-      "description": "v1 fixed gear slots. In v2 envelopes this block is DERIVED (jacket→uniform, armoredVest else vest→vest, headCover→helmet, weapons[0]→primary/optic/magazine) for the v1 mod reader; T-068.12 switches to the v2 fields.",
+      "description": "v1 fixed gear slots. In a v2 envelope this block is derived from the v2 fields (jacket → uniform, armoredVest else vest → vest, headCover → helmet, weapons[0] → primary/optic/magazine) so that a v1 reader still works; a v2 reader takes the v2 fields directly.",
       "required": ["primary", "uniform", "vest", "helmet"],
       "additionalProperties": false,
       "properties": {

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/height-labels/v1.json",
   "title": "TBD Map Height Labels",
-  "description": "Elevation markers for a terrain (T-152.16): named peaks/hills merged from locations.json plus anonymous DEM-prominence peaks. Post-floor set (unnamed peaks are ≥ PEAK_MIN_VALUE_M). Coordinates: x east, y north, world meters (same frame as manifest worldBounds).",
+  "description": "Elevation markers for a terrain: named peaks and hills merged from `locations.json`, plus anonymous DEM-prominence peaks. Unnamed peaks are filtered to prominence ≥ PEAK_MIN_VALUE_M. Coordinates are x east, y north, in world metres — the same frame as the terrain manifest's `worldBounds`.",
   "type": "array",
   "minItems": 1,
   "items": { "$ref": "#/$defs/heightLabel" },
@@ -32,7 +32,7 @@
         "name": {
           "type": "string",
           "minLength": 2,
-          "description": "Optional toponym for named peaks/hills (T-152.16). Absent on anonymous DEM peaks. Rendered as '{name} · {value_m} m'."
+          "description": "Optional toponym for a named peak or hill. Absent on anonymous DEM peaks. Rendered as '{name} · {value_m} m'."
         }
       }
     }

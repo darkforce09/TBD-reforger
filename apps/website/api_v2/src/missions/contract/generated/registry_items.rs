@@ -93,7 +93,7 @@ pub struct Addon {
 ///      "type": "boolean"
 ///    },
 ///    "addon": {
-///      "description": "Per-item mod provenance: the addon ID this prefab was scanned from. Must match an addons[].name entry (strict check in validate.mjs); vanilla-ness derives from addons[].vanilla — no separate flag to drift.",
+///      "description": "Per-item mod provenance: the addon ID this prefab comes from. Must match an `addons[].name` entry; vanilla-ness derives from `addons[].vanilla`, so there is no separate flag to drift.",
 ///      "type": "string"
 ///    },
 ///    "arsenal_type": {
@@ -123,7 +123,7 @@ pub struct Addon {
 ///      "type": "string"
 ///    },
 ///    "kind": {
-///      "description": "v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0 rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the escape hatch and its count must be reported in export verify logs. Taxonomy: .ai/artifacts/ace_arsenal_taxonomy_map.md.",
+///      "description": "v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.",
 ///      "type": "string",
 ///      "enum": [
 ///        "character",
@@ -170,7 +170,7 @@ pub struct Addon {
 ///      "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
 ///    },
 ///    "variant_of": {
-///      "description": "T-068.10.5: set on factory attachment/camo CONFIGURATIONS of a base weapon (same family prefix, magwell, attachment-slot-type set and mesh — only pre-mounted attachments/materials differ, e.g. 'Rifle AK74N 1P29' → 'Rifle AK74N'). Points at the immediate parent item (must exist in the envelope — strict check in validate.mjs). Pickers hide variant rows like abstracts; the census artifact t068_10_5_weapon_families.md carries the per-weapon evidence.",
+///      "description": "Set on a factory attachment or camo configuration of a base weapon — same family prefix, magwell, attachment-slot-type set and mesh, differing only in pre-mounted attachments or materials (for example 'Rifle AK74N 1P29' against 'Rifle AK74N'). Points at the immediate parent item, which must exist in the same envelope. Pickers hide variant rows the way they hide abstracts.",
 ///      "type": "string",
 ///      "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
 ///    },
@@ -199,7 +199,7 @@ pub struct Item {
         skip_serializing_if = "::std::option::Option::is_none"
     )]
     pub abstract_: ::std::option::Option<bool>,
-    ///Per-item mod provenance: the addon ID this prefab was scanned from. Must match an addons[].name entry (strict check in validate.mjs); vanilla-ness derives from addons[].vanilla — no separate flag to drift.
+    ///Per-item mod provenance: the addon ID this prefab comes from. Must match an `addons[].name` entry; vanilla-ness derives from `addons[].vanilla`, so there is no separate flag to drift.
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub addon: ::std::option::Option<::std::string::String>,
     ///SCR_EArsenalItemType flag name (e.g. RIFLE, NON_LETHAL_THROWABLE) when the item appears in a faction EntityCatalog SCR_ArsenalItem entry (Tier-B classification metadata). Absent when no catalog entry exists.
@@ -216,7 +216,7 @@ pub struct Item {
     pub display_name: ItemDisplayName,
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub icon_url: ::std::option::Option<::std::string::String>,
-    ///v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0 rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the escape hatch and its count must be reported in export verify logs. Taxonomy: .ai/artifacts/ace_arsenal_taxonomy_map.md.
+    ///v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.
     pub kind: ItemKind,
     ///Container volume capacity (storage component MaxCumulativeVolume, cm³) for items that ARE containers. Absent when the prefab relies on the engine class default — never guessed. Feeds the later cargo-budget slice.
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
@@ -226,7 +226,7 @@ pub struct Item {
     pub max_weight_kg: ::std::option::Option<f64>,
     ///Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.
     pub resource_name: ItemResourceName,
-    ///T-068.10.5: set on factory attachment/camo CONFIGURATIONS of a base weapon (same family prefix, magwell, attachment-slot-type set and mesh — only pre-mounted attachments/materials differ, e.g. 'Rifle AK74N 1P29' → 'Rifle AK74N'). Points at the immediate parent item (must exist in the envelope — strict check in validate.mjs). Pickers hide variant rows like abstracts; the census artifact t068_10_5_weapon_families.md carries the per-weapon evidence.
+    ///Set on a factory attachment or camo configuration of a base weapon — same family prefix, magwell, attachment-slot-type set and mesh, differing only in pre-mounted attachments or materials (for example 'Rifle AK74N 1P29' against 'Rifle AK74N'). Points at the immediate parent item, which must exist in the same envelope. Pickers hide variant rows the way they hide abstracts.
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub variant_of: ::std::option::Option<ItemVariantOf>,
     ///ItemPhysicalAttributes.ItemVolume in cubic centimetres (API-documented unit), read from the prefab ancestry chain. Absent when the value is an engine class default not serialized in the prefab — never guessed.
@@ -373,13 +373,13 @@ impl<'de> ::serde::Deserialize<'de> for ItemDisplayName {
             })
     }
 }
-///v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0 rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the escape hatch and its count must be reported in export verify logs. Taxonomy: .ai/artifacts/ace_arsenal_taxonomy_map.md.
+///v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.
 ///
 /// <details><summary>JSON schema</summary>
 ///
 /// ```json
 ///{
-///  "description": "v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0 rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the escape hatch and its count must be reported in export verify logs. Taxonomy: .ai/artifacts/ace_arsenal_taxonomy_map.md.",
+///  "description": "v3 item classification. The phase 1 kinds are all still valid. `gear_uniform` carries no rows — it is split into `gear_jacket`, `gear_pants` and `gear_boots` — but is still accepted. `other` is the escape hatch, and its count is reported in the export verify logs. The taxonomy mapping lives at `.ai/artifacts/ace_arsenal_taxonomy_map.md`.",
 ///  "type": "string",
 ///  "enum": [
 ///    "character",
@@ -641,13 +641,13 @@ impl<'de> ::serde::Deserialize<'de> for ItemResourceName {
             })
     }
 }
-///T-068.10.5: set on factory attachment/camo CONFIGURATIONS of a base weapon (same family prefix, magwell, attachment-slot-type set and mesh — only pre-mounted attachments/materials differ, e.g. 'Rifle AK74N 1P29' → 'Rifle AK74N'). Points at the immediate parent item (must exist in the envelope — strict check in validate.mjs). Pickers hide variant rows like abstracts; the census artifact t068_10_5_weapon_families.md carries the per-weapon evidence.
+///Set on a factory attachment or camo configuration of a base weapon — same family prefix, magwell, attachment-slot-type set and mesh, differing only in pre-mounted attachments or materials (for example 'Rifle AK74N 1P29' against 'Rifle AK74N'). Points at the immediate parent item, which must exist in the same envelope. Pickers hide variant rows the way they hide abstracts.
 ///
 /// <details><summary>JSON schema</summary>
 ///
 /// ```json
 ///{
-///  "description": "T-068.10.5: set on factory attachment/camo CONFIGURATIONS of a base weapon (same family prefix, magwell, attachment-slot-type set and mesh — only pre-mounted attachments/materials differ, e.g. 'Rifle AK74N 1P29' → 'Rifle AK74N'). Points at the immediate parent item (must exist in the envelope — strict check in validate.mjs). Pickers hide variant rows like abstracts; the census artifact t068_10_5_weapon_families.md carries the per-weapon evidence.",
+///  "description": "Set on a factory attachment or camo configuration of a base weapon — same family prefix, magwell, attachment-slot-type set and mesh, differing only in pre-mounted attachments or materials (for example 'Rifle AK74N 1P29' against 'Rifle AK74N'). Points at the immediate parent item, which must exist in the same envelope. Pickers hide variant rows the way they hide abstracts.",
 ///  "type": "string",
 ///  "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
 ///}
@@ -716,7 +716,7 @@ impl<'de> ::serde::Deserialize<'de> for ItemVariantOf {
             })
     }
 }
-///Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build). v2 (T-150): kind vocabulary expanded for the universal mod-agnostic scanner; optional addons[] records the Workbench scan set.
+///Flat catalog of placeable and equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (`resource_name`). This is a separate layer from the alias spawn registry in `registry.schema.json`: that registry maps mission aliases to GUIDs for spawn, while this catalog drives the web Virtual Arsenal (browse, seed / import, loadout build). A v2 envelope widens the `kind` vocabulary for the mod-agnostic scanner and carries an optional `addons[]` recording the Workbench scan set.
 ///
 /// <details><summary>JSON schema</summary>
 ///
@@ -724,7 +724,7 @@ impl<'de> ::serde::Deserialize<'de> for ItemVariantOf {
 ///{
 ///  "$id": "https://schema.tbdevent.eu/registry-items/v1.json",
 ///  "title": "TBD Registry Items",
-///  "description": "Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build). v2 (T-150): kind vocabulary expanded for the universal mod-agnostic scanner; optional addons[] records the Workbench scan set.",
+///  "description": "Flat catalog of placeable and equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (`resource_name`). This is a separate layer from the alias spawn registry in `registry.schema.json`: that registry maps mission aliases to GUIDs for spawn, while this catalog drives the web Virtual Arsenal (browse, seed / import, loadout build). A v2 envelope widens the `kind` vocabulary for the mod-agnostic scanner and carries an optional `addons[]` recording the Workbench scan set.",
 ///  "type": "object",
 ///  "required": [
 ///    "items",
@@ -733,7 +733,7 @@ impl<'de> ::serde::Deserialize<'de> for ItemVariantOf {
 ///  ],
 ///  "properties": {
 ///    "addons": {
-///      "description": "Workbench addons loaded during the export (the scan set). Optional for v1 envelopes; the universal exporter (T-150) always writes it.",
+///      "description": "Workbench addons loaded during the export — the scan set. Optional in a v1 envelope; the mod-agnostic exporter always writes it.",
 ///      "type": "array",
 ///      "items": {
 ///        "$ref": "#/$defs/addon"
@@ -764,7 +764,7 @@ impl<'de> ::serde::Deserialize<'de> for ItemVariantOf {
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct TbdRegistryItems {
-    ///Workbench addons loaded during the export (the scan set). Optional for v1 envelopes; the universal exporter (T-150) always writes it.
+    ///Workbench addons loaded during the export — the scan set. Optional in a v1 envelope; the mod-agnostic exporter always writes it.
     #[serde(default, skip_serializing_if = "::std::vec::Vec::is_empty")]
     pub addons: ::std::vec::Vec<Addon>,
     #[serde(

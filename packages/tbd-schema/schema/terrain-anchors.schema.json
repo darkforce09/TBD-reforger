@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/terrain-anchors/v1.json",
   "title": "TBD Terrain Anchor Verification",
-  "description": "GetSurfaceY probe log for T-091.0 anchor gate. demYM filled by verify-terrain-alignment.ts after DEM lands.",
+  "description": "`GetSurfaceY` probe log for the terrain anchor gate. `demYM` is filled in by the terrain alignment verification once the DEM lands.",
   "type": "object",
   "required": ["terrainId", "schemaVersion", "thresholdM", "anchors"],
   "additionalProperties": false,
