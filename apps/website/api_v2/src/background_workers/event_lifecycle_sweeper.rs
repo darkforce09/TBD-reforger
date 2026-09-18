@@ -1,7 +1,7 @@
 //! Scheduled convergence of the stored `events.status` column.
 //!
 //! Every read derives an event's effective status from `now()` inside Postgres
-//! ([`crate::handlers::events::sweep_once`] documents the derivation), so this worker decides
+//! ([`crate::operations::services::event_status_rules`] documents the derivation), so this worker decides
 //! nothing: it exists so the stored column — what an operator sees in `psql`, and what the
 //! audit trail records — agrees with the derived answer. A slow, late, or entirely absent pass
 //! cannot let anyone register for a started operation.
@@ -15,7 +15,7 @@ use std::time::Duration;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 
-use crate::handlers::events::sweep_once;
+use crate::operations::services::event_lifecycle_sweep::sweep_once;
 
 /// How often the convergence sweep runs. Tight enough that the calendar is never more than
 /// a minute stale, cheap enough to be free — `events` is a community ops calendar
