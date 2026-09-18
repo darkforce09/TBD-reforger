@@ -161,7 +161,7 @@ async fn call(
 /// Class-R: this suite must never authenticate as / mutate the shared dev-login snowflake,
 /// and PAD_ACTOR must not collide with telemetry's PLAYER_DISCORD (T-517).
 #[test]
-fn t400_actor_is_not_shared_dev_login_user() {
+fn actor_is_not_the_shared_dev_login_user() {
     assert_ne!(
         ACTOR,
         common::DEV_LOGIN_USER,
@@ -202,7 +202,7 @@ fn t400_actor_is_not_shared_dev_login_user() {
 ///
 /// Deliberately narrow, and deliberately `Option`-returning: the caller turns "not found" into
 /// a loud failure. Returning `""` on a miss would make every `assert_ne!` in
-/// [`t518_fixtures_do_not_collide_with_the_live_telemetry_player`] trivially pass — which is
+/// [`fixtures_do_not_collide_with_the_live_telemetry_player`] trivially pass — which is
 /// the exact shape of the defect T-518 is about, a check reporting success over an input it
 /// never actually examined.
 fn parse_str_const(src: &str, name: &str) -> Option<String> {
@@ -216,7 +216,7 @@ fn parse_str_const(src: &str, name: &str) -> Option<String> {
 /// T-518 — bind the T-517 collision guard to telemetry's **live** fixture instead of to a
 /// hard-coded copy of the value it happened to hold in wave 45.
 ///
-/// [`t400_actor_is_not_shared_dev_login_user`] above denies `000000000000400003`. That is a
+/// [`actor_is_not_the_shared_dev_login_user`] above denies `000000000000400003`. That is a
 /// denylist of one historical id: it REDs if `PAD_ACTOR` moves back onto 400003, and stays
 /// **green** if telemetry's `PLAYER_DISCORD` moves forward onto `PAD_ACTOR` (`…400013`). Same
 /// single collision, approached from the other side — and the side nothing was watching. The
@@ -234,11 +234,11 @@ fn parse_str_const(src: &str, name: &str) -> Option<String> {
 ///
 /// RED: set `PLAYER_DISCORD` in `tests/telemetry_server_status_ingest.rs` to
 /// `000000000000400013` and this test
-/// fails, while the hard-coded assertion in `t400_actor_is_not_shared_dev_login_user` stays
+/// fails, while the hard-coded assertion in `actor_is_not_the_shared_dev_login_user` stays
 /// green. RED (parser): turn that `const` into a `static` and the `expect` below fires, so a
 /// pin that has stopped reading anything cannot pass quietly.
 #[test]
-fn t518_fixtures_do_not_collide_with_the_live_telemetry_player() {
+fn fixtures_do_not_collide_with_the_live_telemetry_player() {
     let telemetry_src = include_str!("telemetry_server_status_ingest.rs");
     let player_discord = parse_str_const(telemetry_src, "PLAYER_DISCORD").expect(
         "could not find `const PLAYER_DISCORD: &str = \"…\";` in \

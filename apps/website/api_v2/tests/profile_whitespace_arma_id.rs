@@ -95,7 +95,13 @@ async fn get_me_whitespace_arma_id_reports_arma_linked_false() {
     plant_whitespace(&pool).await;
 
     // JWT claim may still say linked=true from mint; /me recomputes from the DB row.
-    let tok = common::access_token(&state, "t528_me_whitespace_linked", ACTOR, "enlisted", true);
+    let tok = common::access_token(
+        &state,
+        "profile_whitespace_arma_id",
+        ACTOR,
+        "enlisted",
+        true,
+    );
     let resp = app
         .clone()
         .oneshot(
@@ -132,7 +138,13 @@ async fn link_status_whitespace_arma_id_reports_linked_false() {
     cleanup(&pool).await;
     plant_whitespace(&pool).await;
 
-    let tok = common::access_token(&state, "t528_me_whitespace_linked", ACTOR, "enlisted", true);
+    let tok = common::access_token(
+        &state,
+        "profile_whitespace_arma_id",
+        ACTOR,
+        "enlisted",
+        true,
+    );
     let resp = app
         .clone()
         .oneshot(
@@ -173,7 +185,7 @@ async fn get_me_and_link_status_real_arma_id_reports_linked_true() {
 
     let tok = common::access_token(
         &state,
-        "t528_me_whitespace_linked",
+        "profile_whitespace_arma_id",
         ACTOR,
         "enlisted",
         false,

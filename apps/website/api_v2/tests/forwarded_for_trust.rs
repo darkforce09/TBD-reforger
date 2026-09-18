@@ -91,7 +91,7 @@ async fn call(app: &Router, peer: &str, forwarded: Option<&str>) -> (StatusCode,
     }
     let mut req = b.body(Body::from("{}")).expect("request");
     // Production installs this on every accepted connection
-    // (`t578_ratelimit::api_binary_still_installs_connect_info` pins it), so the tests do too.
+    // (`durable_rate_limit::api_binary_still_installs_connect_info` pins it), so the tests do too.
     let ip: IpAddr = peer.parse().expect("peer address");
     req.extensions_mut()
         .insert(ConnectInfo(SocketAddr::new(ip, 51_000)));

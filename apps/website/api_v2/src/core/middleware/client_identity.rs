@@ -64,7 +64,7 @@ const X_FORWARDED_FOR: &str = "x-forwarded-for";
 /// The production path always has a real peer: `bin/api.rs` serves with
 /// `into_make_service_with_connect_info::<SocketAddr>()`, which installs the extension for every
 /// accepted connection. That is not a comment relying on good behaviour —
-/// `t578_ratelimit::api_binary_still_installs_connect_info` reads `src/bin/api.rs` and fails if it
+/// `durable_rate_limit::api_binary_still_installs_connect_info` reads `src/bin/api.rs` and fails if it
 /// stops doing so, because the day it does, this function starts returning `None` in production
 /// and both tiers quietly stop distinguishing clients.
 pub(super) fn client_ip(req: &Request, trusted: &[ProxyNet]) -> Option<IpAddr> {

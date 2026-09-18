@@ -192,7 +192,7 @@ async fn delete_event_is_soft_and_destroys_none_of_what_the_dialog_names() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let admin = common::dev_login_token(&app, "t579", "admin").await;
+    let admin = common::dev_login_token(&app, "event_soft_delete", "admin").await;
     let (event_id, emid, _mission_id) = seed_operation(&app, &admin).await;
     let ev = Uuid::parse_str(&event_id).unwrap();
     let em = Uuid::parse_str(&emid).unwrap();

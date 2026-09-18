@@ -171,7 +171,13 @@ async fn submit_leave_rejects_blank_and_whitespace_reason() {
     };
     cleanup(&pool).await;
     common::seed_user(&pool, ACTOR, "t350-leave", SEED_ARMA, "enlisted").await;
-    let tok = common::access_token(&state, "t350_whitespace_linked", ACTOR, "enlisted", false);
+    let tok = common::access_token(
+        &state,
+        "refresh_whitespace_arma_id",
+        ACTOR,
+        "enlisted",
+        false,
+    );
 
     let rejected = [
         (

@@ -111,7 +111,7 @@ fn golden_doc() -> Value {
 
 /// Class-R: the unscoped wipe must not return; deletes stay owner-scoped (T-400 / T-381).
 #[test]
-fn t400_factions_delete_is_owner_scoped() {
+fn factions_delete_is_owner_scoped() {
     let src = include_str!("factions.rs");
     assert!(
         src.contains("DELETE FROM user_factions WHERE owner_id"),

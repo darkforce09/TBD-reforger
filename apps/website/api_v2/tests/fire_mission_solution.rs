@@ -141,7 +141,7 @@ async fn saved_solution_reaches_the_row_and_comes_back_out() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let tok = common::dev_login_token(&app, "t587_save", "admin").await;
+    let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
     let event = Uuid::new_v4().to_string();
 
     let (st, body) = call(
@@ -238,7 +238,7 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let tok = common::dev_login_token(&app, "t587_legacy", "admin").await;
+    let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
     let event = Uuid::new_v4().to_string();
 
     let id: Uuid = sqlx::query_scalar(
@@ -479,7 +479,7 @@ fn shipped_accept_regex() -> String {
 
 /// This suite's own source, so the transcription above can be compared with the shipped function
 /// rather than merely asserted to resemble it.
-const THIS_SUITE: &str = include_str!("t587_fire_mission_solution.rs");
+const THIS_SUITE: &str = include_str!("fire_mission_solution.rs");
 
 /// `fn parse_grid`'s source out of `src`, comment lines dropped and whitespace flattened.
 ///
@@ -687,7 +687,7 @@ async fn out_of_range_and_unknown_weapon_still_answer_422_and_400() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let tok = common::dev_login_token(&app, "t587_guards", "admin").await;
+    let tok = common::dev_login_token(&app, "fire_mission_solution", "admin").await;
 
     let (st, body) = call(
         &app,

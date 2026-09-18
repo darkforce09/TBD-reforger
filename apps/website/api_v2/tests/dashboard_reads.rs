@@ -233,7 +233,7 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
 /// Class-R static pins: reinstating a bare star on event_registrations or `.ok().flatten()` on
 /// `mission_title_terrain` must turn this red without needing a schema change.
 #[test]
-fn t341_deployments_source_pins() {
+fn deployments_reads_avoid_bare_star_and_swallowed_errors() {
     let src = include_str!("../src/operations/handlers/member_service_record.rs");
     // Needle split so this assert's own source (and handler comments) do not contain the
     // forbidden SQL as one literal.

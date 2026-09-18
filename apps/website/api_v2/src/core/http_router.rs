@@ -135,7 +135,7 @@ pub fn router(state: AppState) -> Router {
     // mount — no request-per-second ceiling both clears that and refuses anything a scraper would
     // do differently, because the resource here is bytes and the meter counts requests. See
     // `core/middleware/rate_limiting.rs`'s module header for the full argument, and
-    // `tests/t630_map_assets_exempt.rs` for the proof that the routes above this line still refuse.
+    // `tests/map_assets_rate_limit_exemption.rs` for the proof that the routes above this line still refuse.
     //
     // Moving the `nest_service` below back above this layer silently re-arms the defect; that is
     // why the order is asserted by `core::middleware::rate_limiting::tests::

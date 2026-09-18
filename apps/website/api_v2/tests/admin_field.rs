@@ -811,7 +811,7 @@ async fn empty_snapshot_admin_survives_roles_sync() {
 /// is a silent cross-suite demotion — this pin fails the binary if the isolation helpers
 /// or call-site restore disappear.
 #[test]
-fn t499_roles_sync_is_suite_scoped_snapshot_restore() {
+fn roles_sync_is_suite_scoped_snapshot_restore() {
     let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
     assert!(
         src.contains("common::require_test_database_url"),
@@ -851,7 +851,7 @@ fn t499_roles_sync_is_suite_scoped_snapshot_restore() {
 /// IT would leave the HTTP path covered only by a 200 assert — the T-372 lockout
 /// regresses silently at the route.
 #[test]
-fn t502_empty_snapshot_admin_survive_it_present() {
+fn empty_snapshot_admin_survival_it_is_present() {
     let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
     assert!(
         src.contains("fn empty_snapshot_admin_survives_roles_sync"),

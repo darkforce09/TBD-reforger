@@ -369,7 +369,7 @@ pub async fn update_event(
 /// **The SPA's confirm dialog is an assertion about this function**, and the two are locked
 /// together from both ends:
 ///
-///   * `tests/t579_event_delete_is_soft.rs` asserts on **database state** after a real
+///   * `tests/event_soft_delete.rs` asserts on **database state** after a real
 ///     `DELETE /api/v1/events/:id` and names `DELETE_EVENT_CONFIRM_DESC` in its failure message.
 ///     Turn this into a hard cascade and it goes red telling you which copy to rewrite.
 ///   * `event_manager.rs`'s `delete_confirm_copy_matches_the_soft_delete_handler` bans

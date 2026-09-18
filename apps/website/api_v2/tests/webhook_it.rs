@@ -18,10 +18,10 @@
 //!
 //! # What is covered
 //!
-//! * [`t546_hostile_titles_are_neutralised_on_the_wire`] — the classic CSV/formula-injection lead
+//! * [`hostile_titles_are_neutralised_on_the_wire`] — the classic CSV/formula-injection lead
 //!   set (`=`, `+`, `-`, `@`) plus tab / CR / NUL, driven through the real `WebhookService` and
 //!   its real reqwest client, asserted on the captured JSON **and** on the raw bytes.
-//! * [`t546_cms_publish_sanitises_the_title_it_pushes_to_discord`] — the same thing over the full
+//! * [`cms_publish_sanitises_the_title_it_pushes_to_discord`] — the same thing over the full
 //!   HTTP path the Content Manager uses: `POST /api/v1/cms/announcements` with
 //!   `push_to_discord`, through the router, the admin gate, the database row, and out.
 //!
@@ -159,7 +159,7 @@ async fn push_and_capture(title: &str, body: &str, snippet: &str) -> (String, Ve
 /// - swap the order to prefix-then-strip → the `"\t=SUM(A1)"` case fails: stripping the tab
 ///   afterwards re-exposes a live `=` as the first character.
 #[tokio::test]
-async fn t546_hostile_titles_are_neutralised_on_the_wire() {
+async fn hostile_titles_are_neutralised_on_the_wire() {
     // ── The four spreadsheet formula leads. Excel / Sheets execute a pasted cell that starts
     //    with any of them, and a Discord title is copy-pasted into spreadsheets constantly. ──
     for hostile in [
@@ -257,7 +257,7 @@ async fn t546_hostile_titles_are_neutralised_on_the_wire() {
 /// RED perturbation (measured): drop the sanitise call from `push_announcement`'s title arm →
 /// the outbound embed title is the raw `=…` and this fails while the 201 still says pushed.
 #[tokio::test]
-async fn t546_cms_publish_sanitises_the_title_it_pushes_to_discord() {
+async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
     let Some(url) = common::require_test_database_url() else {
         eprintln!("skip: test database URL unset");
         return;

@@ -7,7 +7,7 @@
 //! depend on it: match telemetry ingest and identity linking. Re-deriving the SQL per caller is
 //! what this file exists to prevent — two definitions of "a deployment" drifting apart is a
 //! silent-wrong-number failure, and an ingest handler is not a place other handlers should be
-//! reaching into. `tests/t336_user_stats_service.rs` pins the numbers from outside the crate,
+//! reaching into. `tests/user_stats_service.rs` pins the numbers from outside the crate,
 //! which is what the `pub` visibility here is for.
 //!
 //! # The best-effort pair

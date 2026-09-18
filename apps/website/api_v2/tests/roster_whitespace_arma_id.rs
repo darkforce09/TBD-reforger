@@ -82,7 +82,7 @@ async fn cleanup(pool: &PgPool) {
 }
 
 async fn admin_token(app: &Router) -> String {
-    common::dev_login_token(app, "t529_roster_whitespace_arma", "admin").await
+    common::dev_login_token(app, "roster_whitespace_arma_id", "admin").await
 }
 
 async fn call(

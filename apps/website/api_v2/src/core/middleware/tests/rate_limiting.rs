@@ -85,7 +85,7 @@ fn the_exempt_mount_is_the_path_the_editor_requests() {
 /// the entire exemption is one ordering fact in `core::http_router::router`: the `/map-assets`
 /// `nest_service` comes *below* the `rate_limit` layer.
 ///
-/// `tests/t630_map_assets_exempt.rs` proves the behaviour through real HTTP, which is the
+/// `tests/map_assets_rate_limit_exemption.rs` proves the behaviour through real HTTP, which is the
 /// primary guard. This is the diagnostic one: a tidy-up that moves the mount back alongside the
 /// other static mounts re-arms the defect with no compile error and no obvious symptom beyond a
 /// slower editor boot, and this says so by name instead of leaving a burst test to fail
@@ -129,7 +129,7 @@ fn the_exempt_mount_is_registered_below_the_rate_limit_layer() {
 /// user-uploaded content, which is a different risk profile from terrain data shipped in the
 /// repo. Nothing here generalises to "static files are unlimited", and this states that so the
 /// next reader does not generalise it for us. The behavioural half is
-/// `t630_map_assets_exempt::the_other_static_mount_is_still_limited`.
+/// `map_assets_rate_limit_exemption::the_other_static_mount_is_still_limited`.
 #[test]
 fn the_exemption_does_not_cover_the_other_static_mount() {
     assert_ne!(RATE_LIMIT_EXEMPT_MOUNT, "/uploads");

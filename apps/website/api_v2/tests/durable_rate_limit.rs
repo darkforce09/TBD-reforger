@@ -2,7 +2,7 @@
 //!
 //! # What T-280 proved, and why it was not enough
 //!
-//! `tests/t280_observability.rs` proves `PgRateLimiter` refuses at the limit and still refuses
+//! `tests/observability.rs` proves `PgRateLimiter` refuses at the limit and still refuses
 //! after a restart — at the **library** level, by calling `check()` directly. Every one of those
 //! assertions stayed true while the API had no working rate limiting at all, because nothing
 //! called `check()`. That is the signature defect in its production form: the code exists, the

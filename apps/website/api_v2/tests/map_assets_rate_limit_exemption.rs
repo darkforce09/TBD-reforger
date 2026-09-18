@@ -23,7 +23,7 @@
 //!   an ordinary `/api/v1/…` read (global tier), and on `/uploads/…` (the *other* `ServeDir`).
 //!
 //! A limiter that cannot refuse anything would pass the first assertion and fail all three of the
-//! others, which is exactly why they are here. `t578_ratelimit` and `t625_forwarded_for` remain the
+//! others, which is exactly why they are here. `durable_rate_limit` and `forwarded_for_trust` remain the
 //! proof that the limiter works at all; this file is the proof that T-630 narrowed it by one mount
 //! and not by more.
 //!

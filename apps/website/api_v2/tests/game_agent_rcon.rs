@@ -257,7 +257,7 @@ async fn seed_server(pool: &PgPool, name: &str) -> String {
 }
 
 async fn admin_token(app: &Router) -> String {
-    common::dev_login_token(app, "t595_game_agent_rcon", "admin").await
+    common::dev_login_token(app, "game_agent_rcon", "admin").await
 }
 
 async fn post_rcon(app: &Router, tok: &str, server_id: &str, body: Value) -> (StatusCode, Value) {

@@ -90,7 +90,7 @@ fn a_row_saved_before_the_migration_still_restores_and_shows_no_tof_or_charge() 
 
 /// **The row a save produces once the columns exist.** Captured from
 /// `GET /events/{id}/fire-missions` against the live handler in
-/// `api/tests/t587_fire_mission_solution.rs`, which asserts these same values against the
+/// `apps/website/api_v2/tests/fire_mission_solution.rs`, which asserts these same values against the
 /// database row itself.
 ///
 /// The card a reload builds from this must be the card the live solve built: same charge, same
