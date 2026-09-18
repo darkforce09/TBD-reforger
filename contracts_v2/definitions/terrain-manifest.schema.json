@@ -17,7 +17,7 @@
     "terrainId": {
       "type": "string",
       "minLength": 1,
-      "description": "Terrain key — must match an entry in terrain-registry.json (same id namespace as packages/map-assets/{terrainId}/)."
+      "description": "Terrain key — must match an entry in terrain-registry.json (same id namespace as assets_v2/terrains/{terrainId}/)."
     },
     "schemaVersion": { "type": "integer", "minimum": 1 },
     "worldBounds": {
@@ -76,7 +76,7 @@
           "additionalProperties": false,
           "required": ["path", "encoding"],
           "properties": {
-            "path": { "type": "string", "description": "Relative to packages/map-assets/{terrainId}/, e.g. dem/elevation.dem." },
+            "path": { "type": "string", "description": "Relative to assets_v2/terrains/{terrainId}/, e.g. dem/elevation.dem." },
             "encoding": { "const": "tbde-v1" }
           }
         }
