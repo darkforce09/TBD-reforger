@@ -243,13 +243,14 @@ fn t341_deployments_source_pins() {
         "T-341: deployments must not SELECT a bare star on event_registrations \
          (bare-* class that 500'd dashboard)"
     );
+    let lookup = include_str!("../src/missions/services/mission_lookup.rs");
     let swallowed = concat!(".ok()", ".flatten()");
     assert!(
-        !src.contains(swallowed),
+        !lookup.contains(swallowed),
         "T-341: mission_title_terrain must not swallow errors via .ok().flatten()"
     );
     assert!(
-        src.contains("Result<Option<(String, TerrainType)>, sqlx::Error>"),
+        lookup.contains("Result<Option<(String, TerrainType)>, sqlx::Error>"),
         "T-341: mission_title_terrain must return Result so decode/SQL failures propagate"
     );
 }

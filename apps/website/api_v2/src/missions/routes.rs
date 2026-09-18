@@ -35,43 +35,43 @@ pub fn routes(version_limit: usize) -> Router<AppState> {
         // Mission library + editor.
         .route(
             "/missions",
-            get(crate::handlers::missions::list_missions)
-                .post(crate::handlers::missions::create_mission),
+            get(handlers::mission_library::list_missions)
+                .post(handlers::mission_lifecycle::create_mission),
         )
         .route(
             "/missions/{id}",
-            get(crate::handlers::missions::get_mission)
-                .patch(crate::handlers::missions::update_mission)
-                .delete(crate::handlers::missions::delete_mission),
+            get(handlers::mission_library::get_mission)
+                .patch(handlers::mission_lifecycle::update_mission)
+                .delete(handlers::mission_lifecycle::delete_mission),
         )
         .route(
             "/missions/{id}/submit",
-            post(crate::handlers::missions::submit_mission),
+            post(handlers::mission_lifecycle::submit_mission),
         )
         .route(
             "/missions/{id}/versions",
             // The version POST carries the compiled editor payload (hundreds of MB) —
             // override the global 1 MB body cap for this route only (Go: per-route BodyLimit).
-            post(crate::handlers::missions::create_version)
+            post(handlers::mission_versions::create_version)
                 .layer(DefaultBodyLimit::max(version_limit)),
         )
         .route(
             "/missions/{id}/versions/{vid}",
-            get(crate::handlers::missions::get_version),
+            get(handlers::mission_versions::get_version),
         )
         // Re-point current_version_id at a prior mission_versions row (rollback tip).
         .route(
             "/missions/{id}/versions/{vid}/set-current",
-            post(crate::handlers::missions::set_current_version),
+            post(handlers::mission_versions::set_current_version),
         )
         .route(
             "/missions/{id}/armory",
-            get(crate::handlers::missions::get_armory).put(crate::handlers::missions::set_armory),
+            get(handlers::mission_armory::get_armory).put(handlers::mission_armory::set_armory),
         )
         .route(
             "/missions/{id}/bookmark",
-            post(crate::handlers::missions::bookmark_mission)
-                .delete(crate::handlers::missions::remove_bookmark),
+            post(handlers::mission_library::bookmark_mission)
+                .delete(handlers::mission_library::remove_bookmark),
         )
         .route(
             "/missions/{id}/export",

@@ -15,8 +15,8 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AdminUser;
 use crate::core::wire_format::go_time;
-use crate::handlers::load_mission;
 use crate::missions::models::mission::{Mission, MissionStatus, TerrainType};
+use crate::missions::services::mission_lookup::load_mission;
 
 /// The `list_approvals` projection.
 ///
@@ -84,7 +84,7 @@ pub async fn list_approvals(
     // NOT NULL and no DEFAULT** (`migrations/0001_initial_schema.sql:375`) — so any INSERT that
     // omits the column stores NULL, and a bare `m.updated_at` decoded a 500:
     // *"error occurred while decoding column `updated_at`: unexpected null; try decoding as an
-    // `Option`"*. `handlers/mod.rs:82` (`load_mission`, the canonical mission read) already
+    // `Option`"*. `missions::services::mission_lookup::load_mission`, the canonical mission read, already
     // coalesced this exact column; this query was the outlier that didn't. Its author clearly
     // understood *join* nullability — `u.username` is NOT NULL in the schema and is coalesced
     // anyway, because the LEFT JOIN makes it NULL for a mission whose author row is gone — and

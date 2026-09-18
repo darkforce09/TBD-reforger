@@ -87,7 +87,7 @@ pub fn compile_diagnostics_rules_header(findings: &[CompileFinding]) -> Option<S
 /// unit tests and callers without a pool. Live boundaries that hold the registry phys table must
 /// call [`flatten_to_mod_document_with_catalog`] instead:
 ///
-/// * Save — `handlers::missions::validate_payload` → `load_cargo_phys_catalog` →
+/// * Save — `missions::handlers::mission_versions::validate_payload` → `load_cargo_phys_catalog` →
 ///   `validate_mission_editor_payload_with_catalog`
 /// * `GET /missions/:id/compiled` — `load_cargo_phys_catalog` → this catalogued gate (T-549)
 ///
@@ -805,7 +805,7 @@ mod tests {
     /* ───────────────────────── T-500 — cargo refuse at compile ───────────────────────── */
 
     /// Same phys table + over-capacity numbers as Save's T-416 Class-R
-    /// (`handlers::missions::over_capacity_cargo_is_refused_at_save_with_catalog` /
+    /// (`missions::handlers::mission_versions::over_capacity_cargo_is_refused_at_save_with_catalog` /
     /// `contract::schema_validators::over_capacity_cargo_is_a_save_time_finding_with_catalog`).
     fn cargo_phys_catalog_fixture() -> CargoPhysCatalog {
         let mut catalog = CargoPhysCatalog::new();
@@ -955,16 +955,16 @@ mod tests {
             "compile adapter must name the live /compiled catalogued path (T-549)"
         );
 
-        const HANDLER: &str = include_str!("../handlers/missions/missions.rs");
-        let handler_prod = HANDLER
+        const VERSIONS: &str = include_str!("../missions/handlers/mission_versions.rs");
+        let versions_prod = VERSIONS
             .split("#[cfg(test)]")
             .next()
-            .expect("missions.rs must have a #[cfg(test)] module");
+            .expect("mission_versions.rs must have a #[cfg(test)] module");
         assert!(
-            handler_prod.contains("load_cargo_phys_catalog"),
+            versions_prod.contains("load_cargo_phys_catalog"),
             "Save must still load registry phys into the catalog"
         );
-        let helper = handler_prod
+        let helper = versions_prod
             .split("fn validate_payload_with_catalog(")
             .nth(1)
             .expect("validate_payload_with_catalog must exist");
@@ -972,6 +972,11 @@ mod tests {
             helper.contains("validate_mission_editor_payload_with_catalog"),
             "Save helper must call the catalogued validator"
         );
+        const HANDLER: &str = include_str!("../handlers/missions/missions.rs");
+        let handler_prod = HANDLER
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
         let compiled = handler_prod
             .split("pub async fn get_compiled_mission(")
             .nth(1)

@@ -16,9 +16,9 @@ use crate::administration::services::audit_writer::{actor_display_name, write_au
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser};
-use crate::handlers::load_mission;
-use crate::handlers::missions::build_mission_doc;
 use crate::missions::models::mission::MissionStatus;
+use crate::missions::services::mission_document::build_mission_doc;
+use crate::missions::services::mission_lookup::load_mission;
 use crate::models::FireMission;
 use website_map_engine::data::scenario::ballistics::{
     FireSolution, SolveError, solve_fire_mission,

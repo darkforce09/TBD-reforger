@@ -13,7 +13,7 @@ use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
 use crate::core::wire_format::go_time;
-use crate::handlers::deployments::mission_title_terrain;
+use crate::missions::services::mission_lookup::mission_title_terrain;
 use crate::models::{Event, EventMission, OrbatSlot};
 use crate::server_infrastructure::models::server::ServerStatus;
 

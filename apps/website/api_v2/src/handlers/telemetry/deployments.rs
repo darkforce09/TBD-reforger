@@ -51,7 +51,7 @@ use crate::core::http::pagination::PageParams;
 use crate::core::middleware::{AdminUser, AuthUser};
 use crate::core::wire_format::go_time;
 use crate::identity_and_access::services::user_lookup::load_user;
-use crate::missions::models::mission::TerrainType;
+use crate::missions::services::mission_lookup::mission_title_terrain;
 use crate::models::{
     Event, EventMission, EventRegistration, LeaveRequest, Match, MatchPlayerStat, OrbatSlot,
 };
@@ -118,22 +118,6 @@ struct CombatTotals {
     command_games: Option<i64>,
     command_wins: i64,
     command_win_rate: f64,
-}
-
-/// Fetch a mission's (title, terrain) for enrichment (avoids the full-row time cast).
-///
-/// **T-341 — errors must not look like success.** A missing mission is `Ok(None)`. A decode or
-/// SQL failure is `Err` and must propagate to the caller — never map a failed query into a silent
-/// empty title/terrain via Option-collapse. The pre-fix path made a broken query
-/// indistinguishable from "no mission".
-pub(crate) async fn mission_title_terrain(
-    pool: &sqlx::PgPool,
-    id: Uuid,
-) -> Result<Option<(String, TerrainType)>, sqlx::Error> {
-    sqlx::query_as("SELECT title, terrain FROM missions WHERE id = $1 AND deleted_at IS NULL")
-        .bind(id)
-        .fetch_optional(pool)
-        .await
 }
 
 /// `GET /api/v1/me/deployments` — service record: stats, upcoming, history.

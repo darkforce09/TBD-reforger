@@ -2514,7 +2514,10 @@ pub async fn ingest_event_roster(
     let mut assignments: BTreeMap<String, String> = BTreeMap::new();
 
     for em in &ems {
-        let Some(mission) = crate::handlers::load_mission(&state.pool, em.mission_id).await? else {
+        let Some(mission) =
+            crate::missions::services::mission_lookup::load_mission(&state.pool, em.mission_id)
+                .await?
+        else {
             continue;
         };
         let Some(vid) = mission.current_version_id else {
@@ -2615,7 +2618,7 @@ struct CargoPhysRow {
 
 /// Load `CargoPhysCatalog` from the **current** modpack's `registry_items`.
 ///
-/// Mirror of `handlers::missions::load_cargo_phys_catalog` (private there). Missing weights /
+/// Mirror of `missions::handlers::mission_versions::load_cargo_phys_catalog`. Missing weights /
 /// maxima stay `None` (never invent). No current modpack / empty table → empty catalog →
 /// cargo walk is a no-op.
 async fn load_cargo_phys_catalog(pool: &PgPool) -> Result<CargoPhysCatalog, ApiError> {
