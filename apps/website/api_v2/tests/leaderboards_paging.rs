@@ -8,7 +8,7 @@
 //! unit tests that stay next to the handler in `src/command_center/handlers/leaderboards.rs`.
 //!
 //! Why it lives in `tests/` and not in that file: the T-542/T-558 Class-R pin
-//! (`common::t542_no_raw_test_database_url_reads_outside_common`) forbids a raw
+//! (`common::assert_no_raw_test_database_url_reads_outside_common`) forbids a raw
 //! `TEST_DATABASE_URL` read anywhere under `src/**` — only [`common::require_test_database_url`]
 //! may read it, and `tests/common` is not reachable from a lib test. So this binary gets the
 //! T-534 shape every other suite has: its own `<base>_leaderboards_paging_it` database, dropped

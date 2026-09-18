@@ -4,7 +4,7 @@
 //!
 //! Everything that can be proven in-process (the metrics registry, the exposition text,
 //! the cardinality cap, `/healthz` going red) lives in `src/core/http_router.rs` next to the code.
-//! What is here needs a **real** database, and `common::t542_no_raw_test_database_url_reads_outside_common`
+//! What is here needs a **real** database, and `common::assert_no_raw_test_database_url_reads_outside_common`
 //! (T-542 / T-558) forbids `src/**` from reading `TEST_DATABASE_URL` at all — a rule that
 //! exists because an in-crate DB test once read the operator's base URL raw and could have
 //! run against live `tbd_reforger`. So the DB half comes here and goes through
