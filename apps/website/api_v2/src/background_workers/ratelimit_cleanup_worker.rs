@@ -1,4 +1,4 @@
-//! Garbage collection for the durable rate limiter's bucket table (T-578).
+//! Garbage collection for the durable rate limiter's bucket table.
 //!
 //! `rate_limit_buckets` gains one row per `(scope, client IP)` that has ever reached a
 //! strict-prefix route. Nothing removes them, so without this task the table grows for the life of
@@ -14,8 +14,8 @@
 //! path would. So this is pure reclamation and can never hand a throttled client its quota back
 //! early. That property is what makes it safe to run on a timer with no coordination.
 //!
-//! Shaped after `db::start_leaderboard_refresh`: one immediate sweep, then every interval, failures
-//! logged and retried on the next tick.
+//! Shape: one immediate sweep, then every interval; failures are logged and retried on the next
+//! tick.
 
 use std::time::Duration;
 

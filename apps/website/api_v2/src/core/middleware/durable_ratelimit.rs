@@ -25,7 +25,8 @@
 //! * the wiring — [`crate::core::middleware::RateLimitState`], mounted by
 //!   [`crate::core::http_router::router`]. The L1 `IpLimiter`s stay in front, narrowed to the
 //!   strict prefixes; `rate_limiting.rs`'s header is the policy and its justification;
-//! * the `prune` tick — [`crate::services::start_rate_limit_prune`], armed in `src/bin/api.rs`
+//! * the `prune` tick — [`crate::background_workers::ratelimit_cleanup_worker::start_rate_limit_prune`],
+//!   armed by [`crate::background_workers::spawn_all`]
 //!   beside the leaderboard refresher.
 
 use std::net::IpAddr;

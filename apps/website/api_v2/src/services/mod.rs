@@ -6,7 +6,6 @@ pub mod discord;
 pub mod game_agent;
 pub mod mission_compile;
 pub mod mortar;
-pub mod ratelimit_gc;
 pub mod registry_import;
 pub mod role_sync;
 pub mod token_purge;
@@ -32,14 +31,12 @@ pub use mission_compile::{
 };
 // Ported to the shared crate (T-145 Phase 2); re-exported so `crate::services::…` callers are unchanged.
 pub use mortar::{FireSolution, SolveError, solve_fire_mission};
+pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
+pub use role_sync::resync_all_roles;
+pub use token_purge::purge_expired_refresh_tokens;
 pub use website_map_engine::data::scenario::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
 };
-// T-578 — garbage collection for the durable rate limiter's bucket table.
-pub use ratelimit_gc::{RATE_LIMIT_BUCKET_TTL, RATE_LIMIT_PRUNE_INTERVAL, start_rate_limit_prune};
-pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
-pub use role_sync::resync_all_roles;
-pub use token_purge::{PurgeHandle, purge_expired_refresh_tokens, start_refresh_token_purge};
 // T-336 — `users.total_deployments` / `attendance_rate` have exactly one writer and two callers.
 // That makes it a service; it used to be `pub(super)` inside `handlers/telemetry.rs`.
 pub use user_stats::{

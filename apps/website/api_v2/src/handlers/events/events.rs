@@ -12,7 +12,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, PgPool, Postgres, QueryBuilder};
-use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
@@ -63,9 +62,10 @@ fn validated_banner_image_url(raw: &str) -> Result<String, ApiError> {
 //      Every read and the registration guard go through it, so correctness NEVER depends on
 //      a background task having run. The stored column is a cache, not the authority.
 //
-//   2. CONVERGENCE — [`start_event_lifecycle`] sweeps the table so the stored column agrees
-//      with the derivation. That is what makes the automatic moves *visible* (audit log,
-//      admin console, `psql`) instead of a fiction the handlers recompute per request.
+//   2. CONVERGENCE — the `event_lifecycle_sweeper` background worker calls [`sweep_once`]
+//      on a timer so the stored column agrees with the derivation. That is what makes the
+//      automatic moves *visible* (audit log, admin console, `psql`) instead of a fiction the
+//      handlers recompute per request.
 //
 // Splitting it this way is what makes a third background task safe to add at all: the
 // sweeper can be late, skipped, or run twice and no user-visible decision changes. See the
@@ -101,11 +101,6 @@ const EVENT_END_HORIZON_SQL: &str = "(GREATEST(e.start_time, COALESCE(\
 /// Postgres advisory-lock key for the lifecycle sweep. Arbitrary but fixed: every API
 /// instance must pick the same number or the lock does nothing.
 const LIFECYCLE_LOCK_KEY: i64 = 0x7BD_0225;
-
-/// How often the convergence sweep runs. Tight enough that the calendar is never more than
-/// a minute stale, cheap enough to be free — `events` is a community ops calendar
-/// (hundreds of rows), and a late or skipped sweep changes no decision (see [`sweep_once`]).
-const LIFECYCLE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60);
 
 /// SQL scalar — an event's **effective** status. Requires the `events` row aliased `e`.
 ///
@@ -317,10 +312,6 @@ fn can_register_status(s: EventStatus) -> bool {
 
 // --- Lifecycle convergence sweep ---
 
-/// Handle to the lifecycle sweeper (aborted on drop at shutdown), mirroring
-/// [`crate::services::PurgeHandle`].
-pub type LifecycleHandle = JoinHandle<()>;
-
 /// Run one convergence pass: move started operations to `live`, then finished ones to
 /// `completed`, and audit both.
 ///
@@ -429,30 +420,6 @@ pub async fn sweep_once(pool: &PgPool) -> sqlx::Result<(Vec<Uuid>, Vec<Uuid>)> {
     }
 
     Ok((started, completed))
-}
-
-/// Spawn the lifecycle sweeper: an immediate pass, then every [`LIFECYCLE_INTERVAL`].
-///
-/// Mirrors [`crate::services::start_refresh_token_purge`] — same shape, same lifetime, and
-/// like it, a failed pass is logged and the next tick retries rather than killing the task.
-pub fn start_event_lifecycle(pool: PgPool) -> LifecycleHandle {
-    tokio::spawn(async move {
-        let mut ticker = tokio::time::interval(LIFECYCLE_INTERVAL);
-        loop {
-            ticker.tick().await;
-            match sweep_once(&pool).await {
-                Ok((started, completed)) if !started.is_empty() || !completed.is_empty() => {
-                    tracing::info!(
-                        started = started.len(),
-                        completed = completed.len(),
-                        "event lifecycle sweep"
-                    );
-                }
-                Ok(_) => {}
-                Err(e) => tracing::error!(error = %e, "event lifecycle sweep failed"),
-            }
-        }
-    })
 }
 
 // --- helpers ---

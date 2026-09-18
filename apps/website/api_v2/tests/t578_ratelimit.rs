@@ -36,6 +36,9 @@ use axum::http::{Request, StatusCode, header};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
+use website_api::background_workers::ratelimit_cleanup_worker::{
+    RATE_LIMIT_BUCKET_TTL, start_rate_limit_prune,
+};
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
@@ -44,7 +47,6 @@ use website_api::core::middleware::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, b
 use website_api::core::middleware::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, STRICT_PREFIXES,
 };
-use website_api::services::{RATE_LIMIT_BUCKET_TTL, start_rate_limit_prune};
 
 mod common;
 
@@ -412,11 +414,13 @@ fn api_binary_still_installs_connect_info() {
          — without it every production request has no peer address, and both rate-limit tiers \
          stop distinguishing clients"
     );
-    // …and the prune tick the bucket table depends on is still armed there.
+    // …and the prune tick the bucket table depends on is still armed, now by the worker
+    // supervisor the binary delegates every interval task to.
+    let workers = include_str!("../src/background_workers/mod.rs");
     assert!(
-        src.contains("start_rate_limit_prune"),
-        "src/bin/api.rs no longer arms the rate-limit bucket sweeper — rate_limit_buckets grows \
-         without bound"
+        workers.contains("start_rate_limit_prune"),
+        "src/background_workers/mod.rs no longer arms the rate-limit bucket sweeper — \
+         rate_limit_buckets grows without bound"
     );
 }
 
