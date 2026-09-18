@@ -6,6 +6,8 @@
 //! `[[proxy]]` equivalent) and `/map-assets/` passthrough to the real assets_v2/terrains.
 
 use std::path::{Component, Path, PathBuf};
+
+use crate::repository_layout::MapAssetMounts;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -47,7 +49,12 @@ fn sanitize_rel(p: &str) -> PathBuf {
 pub struct ServeConfig {
     pub dir: PathBuf,
     pub api_proxy: Option<String>,
-    pub map_assets_dir: Option<PathBuf>,
+    /// The terrain and glyph directories, served together under `/map-assets/`.
+    ///
+    /// One value rather than two, so a gate cannot serve terrain data with no icons. The harness
+    /// joins the pair under one URL prefix exactly as the API router does, which is what makes a
+    /// smoke exercise the arrangement the browser actually sees.
+    pub map_assets: Option<MapAssetMounts>,
 }
 
 struct AppState {
@@ -252,12 +259,19 @@ async fn handler(
 
     // /map-assets/ passthrough (T-159.28). T-166: honor Range with seek+partial read → 206
     // so CI sat preview never loads the full 152_713_114 B `.tbd-sat` into RAM.
-    if let Some(assets) = &state.cfg.map_assets_dir
-        && let Some(rest) = path.strip_prefix("/map-assets/")
-    {
-        let decoded = percent_decode(rest);
-        let file = assets.join(sanitize_rel(&decoded));
-        return serve_map_asset(&file, &headers).await;
+    // Glyphs first: it is the more specific prefix, and the terrain branch below would otherwise
+    // claim it and look for a `glyphs/` directory inside the terrain tree.
+    if let Some(mounts) = &state.cfg.map_assets {
+        if let Some(rest) = path.strip_prefix("/map-assets/glyphs/") {
+            let decoded = percent_decode(rest);
+            let file = mounts.glyphs.join(sanitize_rel(&decoded));
+            return serve_map_asset(&file, &headers).await;
+        }
+        if let Some(rest) = path.strip_prefix("/map-assets/") {
+            let decoded = percent_decode(rest);
+            let file = mounts.terrains.join(sanitize_rel(&decoded));
+            return serve_map_asset(&file, &headers).await;
+        }
     }
 
     // Same-origin API proxy (T-159.25 equivalent).

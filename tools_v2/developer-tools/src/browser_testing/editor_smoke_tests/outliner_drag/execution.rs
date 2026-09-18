@@ -1,12 +1,12 @@
 use super::*;
-use crate::repository_layout::terrain_assets_dir;
+use crate::repository_layout::MapAssetMounts;
 
 pub(crate) async fn run(dist: &str) -> Result<u8> {
     let h = Harness::new(
         dist,
         5396,
         9496,
-        Some(terrain_assets_dir(&repo_root())),
+        Some(MapAssetMounts::from_root(&repo_root())),
         None,
         &[],
     )

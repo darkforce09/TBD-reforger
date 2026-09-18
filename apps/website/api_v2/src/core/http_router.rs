@@ -106,6 +106,11 @@ pub fn router(state: AppState) -> Router {
     } else {
         state.cfg.map_assets_dir.clone()
     };
+    let glyph_assets = if state.cfg.glyph_assets_dir.is_empty() {
+        "../../../assets_v2/glyphs".to_string()
+    } else {
+        state.cfg.glyph_assets_dir.clone()
+    };
 
     // Serve the Leptos SPA statically when SPA_DIST_DIR is set (unset in dev, where `trunk serve`
     // owns the SPA). A no-extension path falls back to index.html
@@ -146,10 +151,18 @@ pub fn router(state: AppState) -> Router {
         middleware::rate_limit,
     ));
 
-    r = r.nest_service(
-        middleware::RATE_LIMIT_EXEMPT_MOUNT,
-        ServeDir::new(map_assets),
-    );
+    // Two directories, one URL prefix. Glyphs are shared by every terrain, so they live beside the
+    // terrain tree rather than inside it, and the router is where the two are joined. Both mounts
+    // sit below the seam above: a glyph atlas is the same kind of traffic as a terrain chunk.
+    r = r
+        .nest_service(
+            middleware::RATE_LIMIT_EXEMPT_GLYPH_MOUNT,
+            ServeDir::new(glyph_assets),
+        )
+        .nest_service(
+            middleware::RATE_LIMIT_EXEMPT_MOUNT,
+            ServeDir::new(map_assets),
+        );
 
     // Cross-origin isolation (COOP `same-origin` + COEP `credentialless`) mirrors the Trunk/gate
     // headers so the wasm SharedArrayBuffer path stays available. Applied after **both** the SPA

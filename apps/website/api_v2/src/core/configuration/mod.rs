@@ -61,6 +61,9 @@ pub struct Config {
     /// The map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM /
     /// basemap / world chunks). Empty defaults to `../../assets_v2/terrains` relative to the CWD.
     pub map_assets_dir: String,
+    /// The glyph dir served at `/map-assets/glyphs` (the tactical marker atlas, shared by every
+    /// terrain). Empty defaults to `../../assets_v2/glyphs` relative to the CWD.
+    pub glyph_assets_dir: String,
 
     // Database
     pub database_url: String,
@@ -127,6 +130,7 @@ impl Config {
             frontend_url,
             spa_dist_dir: env::var("SPA_DIST_DIR").unwrap_or_default(),
             map_assets_dir: env::var("MAP_ASSETS_DIR").unwrap_or_default(),
+            glyph_assets_dir: env::var("GLYPH_ASSETS_DIR").unwrap_or_default(),
             database_url: env::var("DATABASE_URL").unwrap_or_default(),
             mission_version_max_body_bytes: get_env_int(
                 "MISSION_VERSION_MAX_BODY_BYTES",
@@ -297,6 +301,7 @@ impl Config {
             allowed_origins: vec!["http://localhost:5173".into()],
             spa_dist_dir: String::new(),
             map_assets_dir: String::new(),
+            glyph_assets_dir: String::new(),
             database_url: database_url.into(),
             mission_version_max_body_bytes: DEFAULT_MISSION_VERSION_MAX_BODY_BYTES,
             jwt_secret: jwt_secret.into(),

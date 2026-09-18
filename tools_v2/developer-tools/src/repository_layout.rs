@@ -134,6 +134,40 @@ pub fn glyph_manifest_path(root: &Path) -> PathBuf {
     glyph_assets_dir(root).join("manifest.json")
 }
 
+/// The pair of directories the map client reaches under a single `/map-assets` URL prefix.
+///
+/// Terrains and glyphs are separate on disk because glyphs are shared by every terrain, and they
+/// are joined under one prefix by whatever is serving them. Carrying them as one value keeps a
+/// caller from wiring the terrain mount and forgetting the glyph mount, which does not fail at
+/// startup: the map renders, and every icon is missing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MapAssetMounts {
+    pub terrains: PathBuf,
+    pub glyphs: PathBuf,
+}
+
+impl MapAssetMounts {
+    /// Both directories as they sit in a checkout.
+    pub fn from_root(root: &Path) -> Self {
+        Self {
+            terrains: terrain_assets_dir(root),
+            glyphs: glyph_assets_dir(root),
+        }
+    }
+
+    /// The pair implied by a terrain directory, wherever it has been placed.
+    ///
+    /// Glyphs are the terrain tree's sibling, so a deployment that relocates one relocates both.
+    /// A terrain path with no parent yields a bare `glyphs`, which is the correct relative answer.
+    pub fn beside_terrains(terrains: PathBuf) -> Self {
+        let glyphs = terrains
+            .parent()
+            .unwrap_or_else(|| Path::new(""))
+            .join("glyphs");
+        Self { terrains, glyphs }
+    }
+}
+
 /// Local, uncommitted export scratch for one island: stitched orthophotos, masks, spikes.
 ///
 /// Ignored by git. Pipeline stages write intermediates here; nothing downstream of an export may

@@ -83,9 +83,17 @@ const BURST: usize = 200;
 /// explicitly is the same code path a deployment with `MAP_ASSETS_DIR` set takes.
 const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets_v2/terrains");
 
+/// The glyph directory, resolved the same way. Glyphs are shared by every terrain, so they sit
+/// beside the terrain tree on disk and are joined to it at the router.
+const GLYPH_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets_v2/glyphs");
+
+/// A committed, non-LFS glyph asset, chosen for the same reason as [`EXEMPT_ASSET`].
+const EXEMPT_GLYPH: &str = "/map-assets/glyphs/manifest.json";
+
 fn config_for(url: &str) -> Config {
     let mut cfg = Config::for_tests(url, "t630-secret");
     cfg.map_assets_dir = MAP_ASSETS_DIR.to_string();
+    cfg.glyph_assets_dir = GLYPH_ASSETS_DIR.to_string();
     cfg
 }
 
@@ -240,6 +248,34 @@ async fn the_exemption_holds_with_no_database_at_all() {
         "{EXEMPT_ASSET} served {len} bytes — this suite is asserting against something that is not \
          the committed map asset"
     );
+}
+
+/// Both mounts under `/map-assets` are served, and neither is throttled.
+///
+/// The glyph atlas lives in a different directory from the terrain data, joined to it only by the
+/// router. That join is invisible to every unit test — the constants can both be right while the
+/// two `nest_service` calls resolve the wrong way round and every glyph request 404s. Asking for
+/// one file from each, past the global burst, is what proves the arrangement actually serves.
+#[tokio::test]
+async fn both_directories_answer_under_one_url_prefix_and_neither_is_throttled() {
+    let app = dead_router();
+    let ip = Ipv4Addr::new(10, 63, 5, 5);
+
+    for uri in [EXEMPT_GLYPH, EXEMPT_ASSET] {
+        let hist = burst(&app, ip, "GET", uri).await;
+        assert_eq!(
+            count(&hist, StatusCode::OK),
+            BURST,
+            "{BURST} requests to {uri} did not all return 200 — got {hist:?}"
+        );
+
+        let (st, len) = get(&app, ip, uri).await;
+        assert_eq!(st, StatusCode::OK, "{uri}");
+        assert!(
+            len > 100,
+            "{uri} served {len} bytes — the mount resolves but not to the committed asset"
+        );
+    }
 }
 
 /// The exempt mount answers **Range** requests, which is the shape the satellite loader uses.

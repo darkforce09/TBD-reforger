@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::terrain_assets_dir;
+use crate::repository_layout::MapAssetMounts;
 use std::path::Path;
 
 /// smoke_mutations.mjs — T-159.25 live suite-mutation gate (TOKEN/REFRESH envs, backend on :8080).
@@ -213,7 +213,7 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
         &a.dir,
         a.port,
         a.debug_port,
-        a.map_assets.clone(),
+        a.map_assets.clone().map(MapAssetMounts::beside_terrains),
         api_proxy,
         &injects,
     )
@@ -281,7 +281,7 @@ pub async fn smoke_perf(dist: &str, strict: bool) -> Result<u8> {
         5321,
         9381,
         // The harness resolves a relative serving directory against the gate's working directory.
-        Some(terrain_assets_dir(Path::new(""))),
+        Some(MapAssetMounts::from_root(Path::new(""))),
         None,
         &[],
     )

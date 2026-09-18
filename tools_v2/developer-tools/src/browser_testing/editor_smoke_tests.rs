@@ -19,6 +19,7 @@ use serde_json::{Map, Value, json};
 
 use crate::browser_testing::cdp::{self, Browser, Page};
 use crate::browser_testing::server::{RunningServer, ServeConfig, repo_root, start_server};
+use crate::repository_layout::MapAssetMounts;
 
 mod outliner_drag;
 
@@ -77,7 +78,7 @@ impl Harness {
         dist: &str,
         port: u16,
         debug_port: u16,
-        map_assets_dir: Option<PathBuf>,
+        map_assets: Option<MapAssetMounts>,
         api_proxy: Option<String>,
         init_scripts: &[&str],
     ) -> Result<Harness> {
@@ -88,7 +89,7 @@ impl Harness {
             ServeConfig {
                 dir: PathBuf::from(dist),
                 api_proxy,
-                map_assets_dir,
+                map_assets,
             },
             port,
         )

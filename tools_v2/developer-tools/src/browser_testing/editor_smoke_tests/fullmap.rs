@@ -1,9 +1,18 @@
 use super::*;
+use crate::repository_layout::MapAssetMounts;
 
 /// T-166 — full W1–W5 host wiring Class-R matrix (`?force=webgl&sat=preview`).
 pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
     let path = "/missions/smoke/edit?force=webgl&sat=preview";
-    let h = Harness::new(dist, 5318, 9378, Some(PathBuf::from(map_assets)), None, &[]).await?;
+    let h = Harness::new(
+        dist,
+        5318,
+        9378,
+        Some(MapAssetMounts::beside_terrains(PathBuf::from(map_assets))),
+        None,
+        &[],
+    )
+    .await?;
     let run = async {
         // Track whether any Network response delivered the full sat body (A_sat_bytes).
         h.page.send("Network.enable", json!({})).await?;
@@ -218,7 +227,15 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
 /// smoke_hillshade_editor.mjs — T-159.28: DEM fetched + Rust-decoded + hillshade uploaded.
 pub async fn smoke_hillshade(dist: &str, map_assets: &str) -> Result<u8> {
     let path = "/missions/smoke/edit?force=webgl&sat=preview";
-    let h = Harness::new(dist, 5317, 9377, Some(PathBuf::from(map_assets)), None, &[]).await?;
+    let h = Harness::new(
+        dist,
+        5317,
+        9377,
+        Some(MapAssetMounts::beside_terrains(PathBuf::from(map_assets))),
+        None,
+        &[],
+    )
+    .await?;
     let run = async {
         h.page.navigate(&h.url(path)).await?;
         h.page

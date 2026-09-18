@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::terrain_assets_dir;
+use crate::repository_layout::MapAssetMounts;
 
 /// **T-320 — can chromium resolve a font at all?**
 ///
@@ -167,7 +167,7 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
             dir: PathBuf::from(dist),
             api_proxy: None,
             // A relative serving directory resolves against the gate's working directory.
-            map_assets_dir: Some(terrain_assets_dir(Path::new(""))),
+            map_assets: Some(MapAssetMounts::from_root(Path::new(""))),
         },
         5299,
     )

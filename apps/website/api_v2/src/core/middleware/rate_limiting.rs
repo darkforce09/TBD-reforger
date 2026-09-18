@@ -78,6 +78,17 @@ pub const STRICT_PREFIXES: [&str; 2] = ["/api/v1/auth/", "/api/v1/ingest/"];
 /// mount and the client cannot drift apart silently.
 pub const RATE_LIMIT_EXEMPT_MOUNT: &str = "/map-assets";
 
+/// The glyph atlas mount, exempt for the same reason and registered the same way.
+///
+/// Glyphs are shared by every terrain, so on disk they sit beside the terrain tree rather than
+/// inside it. The URL keeps them under `/map-assets/` because that is what the map client already
+/// requests (`world_loader/atlas.rs` builds `/map-assets/glyphs/atlas/world-glyphs.webp`), so the
+/// two directories are joined at the router rather than on disk.
+///
+/// This is a more specific path than [`RATE_LIMIT_EXEMPT_MOUNT`], and axum resolves the static
+/// segment ahead of the catch-all regardless of registration order.
+pub const RATE_LIMIT_EXEMPT_GLYPH_MOUNT: &str = "/map-assets/glyphs";
+
 /// Bucket scope for the durable strict tier. One scope, because the two prefixes share one
 /// policy; `bucket_key` keeps it independent of any future scope.
 pub const DURABLE_STRICT_SCOPE: &str = "strict";

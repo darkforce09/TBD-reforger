@@ -141,7 +141,7 @@ pub async fn capture_route(
         ServeConfig {
             dir: dir.to_path_buf(),
             api_proxy: None,
-            map_assets_dir: None,
+            map_assets: None,
         },
         port,
     )

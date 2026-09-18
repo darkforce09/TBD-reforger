@@ -16,7 +16,8 @@ pub use authentication::{AdminUser, AuthUser, LeaderUser, MissionMakerUser, Serv
 pub use cross_origin::cors;
 pub use rate_limiting::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, IpLimiter,
-    RATE_LIMIT_EXEMPT_MOUNT, RateLimitState, STRICT_PREFIXES, rate_limit,
+    RATE_LIMIT_EXEMPT_GLYPH_MOUNT, RATE_LIMIT_EXEMPT_MOUNT, RateLimitState, STRICT_PREFIXES,
+    rate_limit,
 };
 pub use tracing_correlation::{logging, request_id};
 

@@ -123,6 +123,44 @@ fn the_exempt_mount_is_registered_below_the_rate_limit_layer() {
     );
 }
 
+/// The glyph mount carries the same exemption and needs the same pin.
+///
+/// A map client asks for the atlas on the same cold boot that asks for 951 terrain files, so a
+/// glyph mount left above the layer re-opens the defect for a smaller set of requests — small
+/// enough to look like an unrelated intermittent failure rather than a throttle.
+#[test]
+fn the_glyph_mount_is_also_registered_below_the_rate_limit_layer() {
+    const LAYER: &str = "RateLimitState::new(state.clone())";
+    const MOUNT: &str = "RATE_LIMIT_EXEMPT_GLYPH_MOUNT";
+    let src = include_str!("../../http_router.rs");
+
+    assert_eq!(
+        src.matches(MOUNT).count(),
+        1,
+        "src/core/http_router.rs no longer contains exactly one `{MOUNT}` — this pin cannot locate the \
+         glyph mount, so it is not checking anything"
+    );
+
+    let layer_at = src.find(LAYER).expect("the rate-limit layer");
+    let mount_at = src.find(MOUNT).expect("counted above");
+    assert!(
+        mount_at > layer_at,
+        "src/core/http_router.rs mounts {RATE_LIMIT_EXEMPT_GLYPH_MOUNT} ABOVE the rate-limit layer"
+    );
+}
+
+/// The glyph mount must stay a strict sub-path of the terrain mount.
+///
+/// The two directories are joined at the router, not on disk, and that join only reaches the
+/// client if the glyph prefix still sits under the prefix the map client builds its URLs from.
+#[test]
+fn the_glyph_mount_is_nested_under_the_map_asset_mount() {
+    assert!(
+        RATE_LIMIT_EXEMPT_GLYPH_MOUNT.starts_with(&format!("{RATE_LIMIT_EXEMPT_MOUNT}/")),
+        "{RATE_LIMIT_EXEMPT_GLYPH_MOUNT} is not under {RATE_LIMIT_EXEMPT_MOUNT}"
+    );
+}
+
 /// The exemption is one named mount, not a category.
 ///
 /// `/uploads` is the other `ServeDir` in the router and it is **not** exempt: it serves

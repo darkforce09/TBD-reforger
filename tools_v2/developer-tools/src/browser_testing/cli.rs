@@ -14,6 +14,7 @@ use crate::browser_testing::dom_oracle as vsuite;
 use crate::browser_testing::editor_smoke_tests as smokes;
 use crate::browser_testing::route_drift as sroutes;
 use crate::browser_testing::server as serve;
+use crate::repository_layout::MapAssetMounts;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -97,8 +98,9 @@ enum Cmd {
         /// live-check evidence rig: one URL + one probe script = one screenshot).
         #[arg(long)]
         shot: Option<PathBuf>,
-        /// T-090.12.5 — serve `/map-assets/` from this directory (the editor smokes' passthrough);
-        /// without it the SPA fallback answers every asset fetch with index.html.
+        /// Serve `/map-assets/` from this terrain directory (the editor smokes' passthrough);
+        /// without it the SPA fallback answers every asset fetch with index.html. The glyph atlas
+        /// is taken from this directory's `glyphs` sibling, which is how the repository ships it.
         #[arg(long)]
         map_assets: Option<PathBuf>,
         /// T-090.12.5 — a JS file evaluated on every new document BEFORE the SPA boots (peer of
@@ -193,7 +195,7 @@ pub fn run() -> ExitCode {
                     serve::ServeConfig {
                         dir: dir.clone(),
                         api_proxy,
-                        map_assets_dir: map_assets,
+                        map_assets: map_assets.map(MapAssetMounts::beside_terrains),
                     },
                     port,
                 )
