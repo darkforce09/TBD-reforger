@@ -10,12 +10,12 @@ use std::sync::Arc;
 use axum::extract::FromRef;
 use sqlx::PgPool;
 
+use crate::community_content::services::discord_webhook::WebhookService;
 use crate::core::authentication_primitives::Manager;
 use crate::core::configuration::Config;
 use crate::core::middleware::IpLimiter;
 use crate::core::realtime_hub::Hub;
 use crate::identity_and_access::services::discord_client::DiscordService;
-use crate::services::WebhookService;
 
 /// Everything shared across the HTTP layer. Cheap to clone (all `Arc`/pool handles).
 #[derive(Clone)]

@@ -7,13 +7,14 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::{Value, json};
 
+use crate::community_content::models::announcement::Announcement;
+use crate::community_content::services::modpack_lookup::load_current_modpack;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
 use crate::core::wire_format::go_time;
 use crate::handlers::deployments::mission_title_terrain;
-use crate::handlers::modpacks::load_current_modpack;
-use crate::models::{Announcement, Event, EventMission, OrbatSlot, ServerStatus};
+use crate::models::{Event, EventMission, OrbatSlot, ServerStatus};
 
 #[derive(Debug, Serialize)]
 struct EventSummary {

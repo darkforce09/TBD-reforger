@@ -10,64 +10,69 @@ use axum::routing::{get, post};
 
 use crate::core::application_state::AppState;
 use crate::core::middleware;
-use crate::handlers;
+
+use super::handlers;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
         // Content reads (member tier via each handler's AuthUser extractor).
         .route(
             "/announcements",
-            get(handlers::announcements::list_announcements),
+            get(handlers::announcements_public::list_announcements),
         )
         .route(
             "/announcements/{id}",
-            get(handlers::announcements::get_announcement),
+            get(handlers::announcements_public::get_announcement),
         )
-        .route("/wiki", get(handlers::wiki::list_wiki))
+        .route("/wiki", get(handlers::wiki_knowledgebase::list_wiki))
         .route(
             "/wiki/{slug}",
-            get(handlers::wiki::get_wiki_page).put(handlers::wiki::upsert_wiki_page),
+            get(handlers::wiki_knowledgebase::get_wiki_page)
+                .put(handlers::wiki_knowledgebase::upsert_wiki_page),
         )
         .route(
             "/vehicle-database",
-            get(handlers::wiki::list_vehicles).post(handlers::wiki::create_vehicle),
+            get(handlers::vehicle_database::list_vehicles)
+                .post(handlers::vehicle_database::create_vehicle),
         )
         // Admin writes (create / replace / delete / set-current). Auth tier is per-handler via
         // AdminUser — same pattern as /wiki/{slug} PUT and /vehicle-database POST.
         .route(
             "/modpacks",
-            get(handlers::modpacks::list_modpacks).post(handlers::modpacks::create_modpack),
+            get(handlers::modpack_catalog::list_modpacks)
+                .post(handlers::modpack_admin::create_modpack),
         )
         .route(
             "/modpacks/current",
-            get(handlers::modpacks::get_current_modpack),
+            get(handlers::modpack_catalog::get_current_modpack),
         )
         .route(
             "/modpacks/{id}",
-            axum::routing::put(handlers::modpacks::replace_modpack)
-                .delete(handlers::modpacks::delete_modpack),
+            axum::routing::put(handlers::modpack_admin::replace_modpack)
+                .delete(handlers::modpack_admin::delete_modpack),
         )
         .route(
             "/modpacks/{id}/set-current",
-            post(handlers::modpacks::set_current_modpack),
+            post(handlers::modpack_admin::set_current_modpack),
         )
         // CMS — announcements + uploads.
         .route(
             "/cms/announcements",
-            get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement),
+            get(handlers::announcements_admin::list_cms_announcements)
+                .post(handlers::announcements_admin::create_announcement),
         )
         .route(
             "/cms/announcements/{id}",
-            axum::routing::patch(handlers::cms::update_announcement)
-                .delete(handlers::cms::delete_announcement),
+            axum::routing::patch(handlers::announcements_admin::update_announcement)
+                .delete(handlers::announcements_admin::delete_announcement),
         )
         .route(
             "/cms/announcements/{id}/push-discord",
-            post(handlers::cms::push_announcement_discord),
+            post(handlers::announcement_discord_push::push_announcement_discord),
         )
         .route(
             "/cms/uploads",
-            post(handlers::cms::upload_image)
+            post(handlers::media_upload::upload_image)
                 .layer(DefaultBodyLimit::max(middleware::MAX_MULTIPART_BODY)),
         )
 }

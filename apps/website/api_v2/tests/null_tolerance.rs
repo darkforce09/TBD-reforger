@@ -101,7 +101,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("users", "last_login_at"),
     // identity_and_access::models::user_account::RefreshToken
     ("refresh_tokens", "revoked_at"),
-    // models::content::Announcement
+    // community_content::models::announcement::Announcement
     ("announcements", "published_at"),
     // models::mission::Mission
     ("missions", "current_version_id"),
@@ -143,7 +143,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("audit_logs", "metadata"),
     // models::admin::FireMission
     ("fire_missions", "event_id"),
-    // models::content::WikiPage
+    // community_content::models::wiki::WikiPage
     ("wiki_pages", "updated_by"),
     // models::registry::RegistryItem — every one of these is `Option`, and NULL means
     // "engine class default", which is a distinct state from any zero value.

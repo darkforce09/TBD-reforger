@@ -36,11 +36,12 @@ use uuid::Uuid;
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
+use crate::community_content::models::modpack::{Modpack, ModpackMod};
+use crate::community_content::services::modpack_lookup::{ModpackDto, load_modpack};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser};
-use crate::handlers::modpacks::{ModpackDto, load_modpack};
-use crate::models::{Modpack, ModpackMod, Server, ServerStatus, TerrainType};
+use crate::models::{Server, ServerStatus, TerrainType};
 
 // Queries cast `inet`→text (`ip::text`) and `numeric`→f64 (`server_fps::float8`).
 

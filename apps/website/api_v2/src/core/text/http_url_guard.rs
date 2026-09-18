@@ -54,7 +54,7 @@ use url::Url;
 /// # The sinks that use it
 ///
 /// Every URL column writes through this guard at its boundary:
-/// `announcements.thumbnail_url` (`handlers/content/cms.rs`), `events.banner_image_url`
+/// `announcements.thumbnail_url` (`community_content/handlers/announcements_admin.rs`), `events.banner_image_url`
 /// (`handlers/events/events.rs`), `missions.thumbnail_url` (`handlers/missions/missions.rs`),
 /// `users.avatar_url` (`handlers/auth/oauth.rs`, which `format!`-builds a CDN URL out of an
 /// unvalidated Discord avatar hash), and `matches.replay_url`

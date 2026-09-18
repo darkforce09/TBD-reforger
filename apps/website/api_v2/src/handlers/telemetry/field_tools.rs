@@ -23,8 +23,6 @@ use crate::services::{FireSolution, SolveError, solve_fire_mission};
 
 /// Staging dir for injected mission.json files (game-server bridge pickup).
 const MISSION_STAGE_DIR: &str = "missions";
-/// Local upload storage dir (also served at `/uploads`).
-pub(crate) const UPLOAD_DIR: &str = "uploads";
 
 /// The firing-solution request body.
 ///
@@ -56,7 +54,8 @@ pub(crate) const UPLOAD_DIR: &str = "uploads";
 /// is a perfectly legitimate coordinate — grid origin — so unlike a string there is no "empty"
 /// sentinel a guard could look for, and presence is the only question that can be asked. This is
 /// exactly the `nav_order = 0` argument T-319 made in this ticket's sibling file
-/// ([`crate::handlers::wiki::WikiInput`]): the fix is *presence*, not non-emptiness, and `0.0` must stay
+/// ([`crate::community_content::handlers::wiki_knowledgebase::WikiInput`]): the fix is *presence*,
+/// not non-emptiness, and `0.0` must stay
 /// writable. Measured on the pre-fix binary, `{"weapon_system":"M252 81mm","fp_x":1000,"fp_y":2000}`
 /// — no target at all — answered **200** with distance 2236 m, azimuth 206.6° and elevation
 /// 915 mils: a firing solution onto grid (0,0), a target the caller never named.
@@ -169,7 +168,8 @@ pub async fn solve_fire(
 /// reader can identify and no author can find again.
 ///
 /// The grids are **trim**-and-stored rather than refused, unlike `weapon_system` above and
-/// `wiki_pages.slug` in [`crate::handlers::wiki`]. The difference is that a grid reference is matched by
+/// `wiki_pages.slug` in [`crate::community_content::handlers::wiki_knowledgebase`]. The difference is
+/// that a grid reference is matched by
 /// nothing — no index, no `ON CONFLICT`, no join, no lookup table — it is only ever rendered back
 /// out by `GET /events/:id/fire-missions`. With no reader to disagree with, canonicalising a
 /// pasted `"012345 "` is a kindness rather than a hazard, which is the same call T-346 made for

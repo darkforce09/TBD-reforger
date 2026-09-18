@@ -5,7 +5,6 @@ pub mod mission_compile;
 pub mod mortar;
 pub mod registry_import;
 pub mod user_stats;
-pub mod webhook;
 
 // T-595 — the API half of T-289's host control channel.
 pub use game_agent::{AgentAction, AgentReply, AgentResult};
@@ -31,4 +30,3 @@ pub use website_map_engine::data::scenario::orbat::{
 pub use user_stats::{
     recompute_user_stats, recompute_user_stats_best_effort, refresh_leaderboard_best_effort,
 };
-pub use webhook::WebhookService;

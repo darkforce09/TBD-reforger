@@ -2,7 +2,7 @@
 //!
 //! # Why this file exists
 //!
-//! T-498 gave `services/webhook.rs` a real sanitiser (`sanitize_discord_embed_field`: strip ASCII
+//! T-498 gave `community_content/services/discord_webhook.rs` a real sanitiser (`sanitize_discord_embed_field`: strip ASCII
 //! controls, then prefix a leading `=` / `+` / `-` / `@` with U+200B) and three Class-R pins. Two
 //! of the three test the helper in isolation; the third is an `include_str!` window pin that
 //! greps `push_announcement` for the call. Nothing anywhere asserted what the **webhook actually
@@ -39,12 +39,14 @@ use chrono::Utc;
 use serde_json::{Value, json};
 use tower::ServiceExt;
 use uuid::Uuid;
+use website_api::community_content::models::announcement::{
+    Announcement, AnnouncementStatus, AnnouncementTag,
+};
+use website_api::community_content::services::discord_webhook::WebhookService;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::models::{Announcement, AnnouncementStatus, AnnouncementTag};
-use website_api::services::WebhookService;
 
 mod common;
 

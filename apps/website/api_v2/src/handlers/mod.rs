@@ -8,12 +8,10 @@
 //! remaining domains sit on.
 
 pub mod admin;
-pub mod content;
 pub mod events;
 pub mod missions;
 pub mod telemetry;
 
-pub use self::content::{announcements, cms, modpacks, wiki};
 pub use self::events::factions;
 pub use self::missions::{approvals, registry};
 pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards, servers};

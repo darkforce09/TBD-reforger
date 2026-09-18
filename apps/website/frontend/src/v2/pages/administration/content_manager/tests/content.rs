@@ -77,11 +77,14 @@ fn cms_paths_match_axum_routes() {
     );
     // The listing must share the route the create uses; a create-only registration refuses it.
     assert!(
-        src.contains(
-            "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
-        ),
-        "the api_v2 community_content route table must register GET+POST on /cms/announcements \
+        src.contains("get(handlers::announcements_admin::list_cms_announcements)"),
+        "the api_v2 community_content route table must register GET on /cms/announcements \
          (perturbation: post-only)"
+    );
+    assert!(
+        src.contains(".post(handlers::announcements_admin::create_announcement)"),
+        "the api_v2 community_content route table must register POST on /cms/announcements \
+         (perturbation: get-only)"
     );
     assert!(
         src.contains(r#""/cms/announcements/{id}""#),

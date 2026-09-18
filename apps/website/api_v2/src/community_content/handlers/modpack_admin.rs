@@ -1,56 +1,24 @@
-//! Modpack handlers — GETs (list / current) plus admin create / replace / delete /
-//! set-current (T-271).
+//! Modpack authoring: create, full replace, set-current, and delete.
 //!
-//! Before T-271 this file was GET-only: `modpack_mods` could not express a Reforger
-//! `game.mods[]` entry (no workshop_id / mod_guid / version), and the SPA page was
-//! fully MOCK with an in-memory Save. Writes live here; route registration is in
-//! [`crate::core::http_router`] (owns widen — same shape as T-263 vehicle POST).
+//! Nested mods are always written as a whole list rather than patched per row, so a pack and its
+//! `game.mods[]` entries can never disagree about which mods the pack contains.
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
-use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
-use sqlx::{PgPool, Postgres, Transaction};
+use serde::Deserialize;
+use serde_json::json;
+use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
+use crate::community_content::models::modpack::Modpack;
+use crate::community_content::services::modpack_lookup::{ModpackDto, modpack_cols, with_mods};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::core::middleware::{AdminUser, AuthUser};
-use crate::models::{Modpack, ModpackMod};
-
-/// Columns every modpack SELECT projects — keeps COALESCE null-tolerance identical
-/// across list / current / get-by-id / write RETURNING paths.
-///
-/// A `macro_rules!` (not `const &str`): sqlx 0.9 `SqlSafeStr` only accepts `&'static str`
-/// literals; `concat!` keeps one projection without `AssertSqlSafe` (same as `servers.rs`).
-macro_rules! modpack_cols {
-    () => {
-        "id, name, version, total_size_bytes, \
-         COALESCE(workshop_url, '') AS workshop_url, is_current, \
-         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at"
-    };
-}
-
-/// Columns every modpack_mods SELECT projects (T-271 workshop fields included).
-macro_rules! mod_cols {
-    () => {
-        "id, modpack_id, name, is_key_dependency, sort_order, \
-         COALESCE(workshop_id, '') AS workshop_id, COALESCE(mod_guid, '') AS mod_guid, \
-         COALESCE(version, '') AS version"
-    };
-}
-
-/// A modpack with its mod list embedded (Go struct embedding → serde flatten).
-#[derive(Debug, Serialize)]
-pub struct ModpackDto {
-    #[serde(flatten)]
-    pub modpack: Modpack,
-    pub mods: Vec<ModpackMod>,
-}
+use crate::core::middleware::AdminUser;
 
 /// One mod in a create/replace body.
 #[derive(Debug, Deserialize)]
@@ -87,52 +55,6 @@ pub struct ModpackInput {
     pub is_current: bool,
     #[serde(default)]
     pub mods: Vec<ModInput>,
-}
-
-/// Load a modpack's mods (ordered) and wrap it as a DTO.
-pub async fn with_mods(pool: &PgPool, modpack: Modpack) -> sqlx::Result<ModpackDto> {
-    let mods: Vec<ModpackMod> = sqlx::query_as(concat!(
-        "SELECT ",
-        mod_cols!(),
-        " FROM modpack_mods WHERE modpack_id = $1 \
-         ORDER BY is_key_dependency DESC, sort_order ASC"
-    ))
-    .bind(modpack.id)
-    .fetch_all(pool)
-    .await?;
-    Ok(ModpackDto { modpack, mods })
-}
-
-/// The active (`is_current`) modpack as a DTO, or `None` if none configured.
-/// Shared by the dashboard + modpack endpoints.
-pub async fn load_current_modpack(pool: &PgPool) -> sqlx::Result<Option<ModpackDto>> {
-    let mp: Option<Modpack> = sqlx::query_as(concat!(
-        "SELECT ",
-        modpack_cols!(),
-        " FROM modpacks WHERE is_current = true"
-    ))
-    .fetch_optional(pool)
-    .await?;
-    match mp {
-        Some(mp) => Ok(Some(with_mods(pool, mp).await?)),
-        None => Ok(None),
-    }
-}
-
-/// Load one modpack DTO by id (or `None`).
-pub async fn load_modpack(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<ModpackDto>> {
-    let mp: Option<Modpack> = sqlx::query_as(concat!(
-        "SELECT ",
-        modpack_cols!(),
-        " FROM modpacks WHERE id = $1"
-    ))
-    .bind(id)
-    .fetch_optional(pool)
-    .await?;
-    match mp {
-        Some(mp) => Ok(Some(with_mods(pool, mp).await?)),
-        None => Ok(None),
-    }
 }
 
 fn validated_name(raw: &str) -> Result<String, ApiError> {
@@ -233,40 +155,6 @@ async fn replace_mods(
         .await?;
     }
     Ok(())
-}
-
-/// `GET /api/v1/modpacks` — every modpack with its mods (current first).
-///
-/// @route GET /api/v1/modpacks
-pub async fn list_modpacks(
-    State(state): State<AppState>,
-    _u: AuthUser,
-) -> Result<Json<Value>, ApiError> {
-    let packs: Vec<Modpack> = sqlx::query_as(concat!(
-        "SELECT ",
-        modpack_cols!(),
-        " FROM modpacks ORDER BY is_current DESC, created_at DESC"
-    ))
-    .fetch_all(&state.pool)
-    .await?;
-    let mut out = Vec::with_capacity(packs.len());
-    for mp in packs {
-        out.push(with_mods(&state.pool, mp).await?);
-    }
-    Ok(Json(json!({ "data": out })))
-}
-
-/// `GET /api/v1/modpacks/current` — the active modpack.
-///
-/// @route GET /api/v1/modpacks/current
-pub async fn get_current_modpack(
-    State(state): State<AppState>,
-    _u: AuthUser,
-) -> Result<Json<ModpackDto>, ApiError> {
-    load_current_modpack(&state.pool)
-        .await?
-        .map(Json)
-        .ok_or_else(|| ApiError::not_found("no current modpack configured"))
 }
 
 /// `POST /api/v1/modpacks` — create a pack + nested mods (admin).

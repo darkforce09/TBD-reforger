@@ -1,15 +1,15 @@
-//! Announcement read handlers — Rust port of `handlers/announcements.go`.
+//! The member-facing announcement feed: the published list and one published row.
 
 use axum::extract::{Path, Query, State};
 use axum::response::Json;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::community_content::models::announcement::Announcement;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AuthUser;
-use crate::models::Announcement;
 
 /// `GET /api/v1/announcements` — published feed, pinned first then newest.
 ///
