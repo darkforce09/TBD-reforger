@@ -1,6 +1,5 @@
-//! Webhook + Discord service HTTP behavior against a local axum mock server —
-//! ports the Go `webhook_test.go` + `discord_test.go` httptest suites (success,
-//! disabled, server-error, bounded 429 retry, embed caps, OAuth exchange, fetch).
+//! Webhook + Discord service HTTP behavior against a local axum mock server: success,
+//! disabled, server-error, bounded 429 retry, embed caps, OAuth exchange, fetch.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};

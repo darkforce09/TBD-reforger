@@ -14,14 +14,13 @@ use uuid::Uuid;
 mod common;
 mod telemetry_support;
 
-/// T-369 — a *corrected* re-POST must land, and attendance must follow it.
+/// A *corrected* re-POST must land, and attendance must follow it.
 ///
-/// `upsert_match`'s re-ingest branch omitted `event_id`, `mission_id`, `terrain` and
-/// `started_at` from the UPDATE and returned the *stored* `event_id`, so a first POST that
-/// carried a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the
-/// right one, marked nobody's attendance — forever — on two 200s. That is the opposite of what
-/// T-316 decided for the sibling fields (`ended_at` / `winning_faction` / `aar_replay_url`,
-/// where a *present* field wins), so all seven now read the same way.
+/// A re-ingest branch that omitted `event_id`, `mission_id`, `terrain` and `started_at` from
+/// the UPDATE and returned the *stored* `event_id` would leave a first POST that carries a
+/// `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one,
+/// marking nobody's attendance — forever — on two 200s. The sibling fields (`ended_at` /
+/// `winning_faction` / `aar_replay_url`) let a *present* field win, and all seven read alike.
 ///
 /// The three POSTs below are the whole argument: create without the event, correct it, then
 /// retry partially. Keep them under the strict limiter's burst (1/s, burst 10).
@@ -47,7 +46,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     .execute(&pool)
     .await
     .unwrap();
-    // Same reasoning as the T-316 / T-347 tests: `matches` does not cascade to
+    // Same reasoning as the sibling envelope tests: `matches` does not cascade to
     // `match_player_stats`, and `leaderboard_totals` sums every row for a discord_id, so a
     // second run would double-count. Clear the stats first and keep this test's ids to itself.
     let clean = |pool: PgPool| async move {
@@ -210,9 +209,9 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
         "attendance_rate follows the corrected row"
     );
 
-    // (3) T-316's direction, unbroken: a partial retry must not null any of the four back out,
-    // and must not stamp `started_at` with `now()` — the create path's `unwrap_or_else(Utc::now)`
-    // must never reach the UPDATE.
+    // (3) The absent-keeps direction, unbroken: a partial retry must not null any of the four
+    // back out, and must not stamp `started_at` with `now()` — the create path's
+    // `unwrap_or_else(Utc::now)` must never reach the UPDATE.
     let (st, retry) = post(format!(
         r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success"}},{players}}}"#
     ))
@@ -221,14 +220,14 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     assert_eq!(
         read_match(pool.clone()).await,
         after,
-        "an omitted field still keeps the stored value (T-316)"
+        "an omitted field still keeps the stored value"
     );
     assert_eq!(read_state(pool.clone()).await, "attended", "still attended");
 
     clean(pool.clone()).await;
 }
 
-/// T-230 — attendance marks only the *played* event_mission, not every mission on the event.
+/// Attendance marks only the *played* event_mission, not every mission on the event.
 ///
 /// Pre-fix the ingest ran:
 ///   UPDATE event_registrations SET state = 'attended'
@@ -442,14 +441,13 @@ async fn attendance_marks_only_the_played_event_mission() {
         .unwrap();
 }
 
-/// T-540 — re-pointing a match at a different event retracts the attendance it granted, and
-/// only when no other match still justifies it.
+/// Re-pointing a match at a different event retracts the attendance it granted, and only when
+/// no other match still justifies it.
 ///
-/// T-369 made EV1→EV2 reachable, and the attendance SET marked EV2 without ever undoing EV1:
-/// `attendance_rate` inflated to 100% off two past registrations both reading `attended`.
-/// T-384 made the write reversible by attributing through live match rows, because
-/// `event_registrations` still carries no `match_id`. Coverage was a Class-R source pin whose
-/// own comment cited an integration test in this file — one that did not exist.
+/// EV1→EV2 is reachable, and an attendance SET that marks EV2 without undoing EV1 inflates
+/// `attendance_rate` to 100% off two past registrations both reading `attended`. The write is
+/// reversible because it attributes through live match rows: `event_registrations` carries no
+/// `match_id` of its own.
 ///
 /// Both halves are asserted, because the guard is the hard half:
 ///
@@ -637,7 +635,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
         state(pool.clone(), em_1).await,
         "registered",
         "THE TICKET / RED: with no match left pointing at EV1, the attendance it granted must be \
-         retracted — pre-T-384 both registrations stayed `attended` and attendance_rate inflated \
+         retracted — otherwise both registrations stay `attended` and attendance_rate inflates \
          to 100%"
     );
     assert_eq!(

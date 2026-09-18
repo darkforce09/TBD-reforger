@@ -14,9 +14,9 @@ use uuid::Uuid;
 mod common;
 mod telemetry_support;
 
-/// T-316 — a partial re-ingest must not walk a finished match backwards or zero a
+/// A partial re-ingest must not walk a finished match backwards or zero a
 /// scoreline. Every body below is one a buggy or retried game server could plausibly send;
-/// each one used to return 200 and destroy data.
+/// each is a shape that returns 200 and destroys data when the guard is missing.
 ///
 /// Keep the ingest calls in this test under the strict limiter's burst (1/s, burst 10).
 #[tokio::test]
@@ -124,16 +124,14 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
     assert_eq!(read_match(pool.clone()).await, before, "match untouched");
 
     // (2) A player row missing a required *identity* field — this body has neither
-    // `role_played` nor a scoreline, and it used to zero a 17/3 line.
+    // `role_played` nor a scoreline, and without the guard it zeroes a 17/3 line.
     //
-    // **T-393 re-read this case, because the reason it is a 400 changed.** It is now rejected
-    // for the missing `role_played`, not for the missing counters: counters live in an optional
-    // nested block, and omitting the block is a legal statement meaning "I make no claim about
-    // the scoreline". What T-316 actually established — that an omission must never be a write
-    // — is unchanged and is asserted directly by
-    // `absent_counters_are_not_a_write_on_reingest`, which sends a *well-formed* counters-less
-    // row and proves the stored 17/3 survives it. The two tests together say: silence never
-    // writes, and an incomplete identity is still a 400.
+    // It is rejected for the missing `role_played`, not for the missing counters: counters live
+    // in an optional nested block, and omitting the block is a legal statement meaning "I make
+    // no claim about the scoreline". That an omission must never be a write is asserted
+    // directly by `absent_counters_are_not_a_write_on_reingest`, which sends a *well-formed*
+    // counters-less row and proves the stored 17/3 survives it. The two tests together say:
+    // silence never writes, and an incomplete identity is still a 400.
     let (st, r) = call(
         &app,
         "POST",
@@ -197,7 +195,7 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
     clean(pool.clone()).await;
 }
 
-/// T-347 — a blank `source_match_id` must never reach the UNIQUE index, and the dedupe lookup
+/// A blank `source_match_id` must never reach the UNIQUE index, and the dedupe lookup
 /// must agree with the bind about what the key is.
 ///
 /// The two halves of `upsert_match` used to disagree: the lookup guarded on `!s.is_empty()`
@@ -243,7 +241,7 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     .execute(&pool)
     .await
     .unwrap();
-    // Same reasoning as the T-316 test above: `matches` does not cascade to
+    // Same reasoning as the partial-reingest test above: `matches` does not cascade to
     // `match_player_stats`, and `leaderboard_totals` sums every row for a discord_id, so a second
     // run would double-count. Clear the stats first, and keep this test's ids to itself.
     let clean = |pool: PgPool| async move {
@@ -281,11 +279,11 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
         }
     };
 
-    // Counts *blank-or-absent* source ids rather than `count(*) FROM matches` (T-229). A bare
+    // Counts *blank-or-absent* source ids rather than `count(*) FROM matches`. A bare
     // global count is a cross-test assertion in a suite whose tests run in parallel: any other
-    // test in this binary creating a legitimate match between the two reads fails this one, which
-    // is what happened the moment T-229's test was added — 1 vs 2, reported as "no match row
-    // minted", naming neither the cause nor the test that caused it.
+    // test in this binary creating a legitimate match between the two reads fails this one —
+    // 1 vs 2, reported as "no match row minted", naming neither the cause nor the test that
+    // caused it.
     //
     // The predicate is the invariant itself rather than a narrower scope, so nothing is given up:
     // it is exactly "a blank id reached the table", which is what the three rejected POSTs below
@@ -368,9 +366,9 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     clean(pool.clone()).await;
 }
 
-/// T-501 — a community terrain name degrades the match report; it does not reject it.
+/// A community terrain name degrades the match report; it does not reject it.
 ///
-/// `parse_terrain_opt` soft-fails unknown names to `None` (T-402) because the mission schema
+/// `parse_terrain_opt` soft-fails unknown names to `None` because the mission schema
 /// constrains terrain to `^[a-z][a-z0-9_]*$`, so community missions legitimately carry names
 /// outside `everon|arland|custom`; 400-ing a whole report over one of them was the "production
 /// ingest 400s" failure mode for those senders. That was pinned only by a unit test on the
@@ -380,8 +378,8 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
 /// degradation has to be what actually landed. Asserting the 200 alone would pass over a
 /// handler that returns 200 and stores `everon` — a guess dressed as a reading.
 ///
-/// RED (half 1): make `upsert_match` reject an unknown terrain instead of soft-failing (the
-/// pre-T-402 behaviour) and the first POST is a 400 — this test fails.
+/// RED (half 1): make `upsert_match` reject an unknown terrain instead of soft-failing and
+/// the first POST is a 400 — this test fails.
 /// RED (half 2): make `parse_terrain_opt` fall back to `Some(TerrainType::Everon)` instead of
 /// `None`; every POST still returns 200 while `matches.terrain` reads `everon` — this test
 /// fails on the database assertion, which is the assertion a status code cannot make.
@@ -524,12 +522,12 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
     clean(pool.clone()).await;
 }
 
-/// T-533 — a malformed `event_id` / `mission_id` is a 400 **through the route**, and nothing
+/// A malformed `event_id` / `mission_id` is a 400 **through the route**, and nothing
 /// is written.
 ///
-/// `parse_uuid_opt_strict` is T-355: junk used to become `None` through the soft parser, the
-/// match stored with no event or mission, the attendance UPDATE matched nothing, and the game
-/// server got a **200** for a report that had silently lost its attribution. The helper's unit
+/// `upsert_match` parses with `parse_uuid_opt_strict`: through the soft parser junk becomes
+/// `None`, the match stores with no event or mission, the attendance UPDATE matches nothing,
+/// and the game server gets a **200** for a report that has silently lost its attribution. The helper's unit
 /// tests and the Class-R source pin both hold, but neither can answer the only question a game
 /// server actually asks — what does the endpoint do. This POSTs the junk.
 ///
@@ -538,7 +536,7 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
 /// loss in a different costume.
 ///
 /// RED: swap `parse_uuid_opt_strict` back to `parse_uuid_opt` at both `upsert_match` call
-/// sites (the T-355 pre-fix) and every junk POST below returns 200 with a match row written —
+/// sites and every junk POST below returns 200 with a match row written —
 /// this test fails on the first status assertion and again on "nothing written".
 #[tokio::test]
 async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {

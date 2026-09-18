@@ -1,4 +1,4 @@
-//! T-271 — modpack admin CRUD + workshop_id / mod_guid / version columns.
+//! Modpack admin CRUD + workshop_id / mod_guid / version columns.
 //!
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 //!

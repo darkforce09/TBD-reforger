@@ -1,13 +1,13 @@
-//! T-546 — Discord embed sanitisation, pinned on the bytes that leave the process.
+//! Discord embed sanitisation, pinned on the bytes that leave the process.
 //!
 //! # Why this file exists
 //!
-//! T-498 gave `community_content/services/discord_webhook.rs` a real sanitiser (`sanitize_discord_embed_field`: strip ASCII
+//! `community_content/services/discord_webhook.rs` owns the sanitiser (`sanitize_discord_embed_field`: strip ASCII
 //! controls, then prefix a leading `=` / `+` / `-` / `@` with U+200B) and three Class-R pins. Two
 //! of the three test the helper in isolation; the third is an `include_str!` window pin that
-//! greps `push_announcement` for the call. Nothing anywhere asserted what the **webhook actually
-//! posts**, so the whole contract rested on a substring appearing near the word `title:` in a
-//! source file — the exact shape W67 has now walked around twice in this crate (T-571 / T-572).
+//! greps `push_announcement` for the call. None of them asserts what the **webhook actually
+//! posts**, so on their own the contract would rest on a substring appearing near the word
+//! `title:` in a source file — the shape of pin a W67 edit walks around.
 //!
 //! A sink test does not need that argument. The sanitiser's entire job is to change bytes on
 //! their way out of the process, so the honest instrument is to catch the bytes: a local axum
@@ -50,7 +50,7 @@ use website_api::core::http_router;
 
 mod common;
 
-/// U+200B ZERO WIDTH SPACE — the neutraliser T-498 chose over CSV's leading apostrophe, because
+/// U+200B ZERO WIDTH SPACE — the neutraliser used instead of CSV's leading apostrophe, because
 /// Discord is a chat channel and would render `'` literally.
 const ZWSP: char = '\u{200B}';
 
@@ -149,7 +149,7 @@ async fn push_and_capture(title: &str, body: &str, snippet: &str) -> (String, Ve
     only_capture(&seen)
 }
 
-/// **T-546 — the hostile-title set, asserted on what actually goes out.**
+/// **The hostile-title set, asserted on what actually goes out.**
 ///
 /// RED perturbations (measured):
 /// - `title: cap_runes(&a.title, 256)` in `push_announcement` (drop the sanitise call) → the
@@ -174,19 +174,19 @@ async fn hostile_titles_are_neutralised_on_the_wire() {
         assert_eq!(
             sent,
             format!("{ZWSP}{hostile}"),
-            "T-546: {hostile:?} must leave as ZWSP + the authored text; got {sent:?}"
+            "{hostile:?} must leave as ZWSP + the authored text; got {sent:?}"
         );
         assert!(
             !matches!(
                 sent.chars().next().expect("non-empty title"),
                 '=' | '+' | '-' | '@'
             ),
-            "T-546: the first character on the wire is still live: {sent:?}"
+            "the first character on the wire is still live: {sent:?}"
         );
         // Not a display artefact — the ZWSP is really in the request body.
         assert!(
             raw.windows(3).any(|w| w == [0xE2, 0x80, 0x8B]),
-            "T-546: no U+200B bytes in the outbound payload: {}",
+            "no U+200B bytes in the outbound payload: {}",
             String::from_utf8_lossy(&raw)
         );
     }
@@ -197,11 +197,11 @@ async fn hostile_titles_are_neutralised_on_the_wire() {
     let sent = embed_title(&raw);
     assert_eq!(
         sent, "OpRedDawn",
-        "T-546: ASCII controls (tab, CR, NUL, DEL) must not reach Discord; got {sent:?}"
+        "ASCII controls (tab, CR, NUL, DEL) must not reach Discord; got {sent:?}"
     );
     assert!(
         !raw.iter().any(|b| *b == b'\t' || *b == b'\r' || *b == 0),
-        "T-546: raw control bytes are on the wire"
+        "raw control bytes are on the wire"
     );
 
     // ── Order matters: strip first, THEN prefix. A leading tab that hides a formula must not
@@ -210,7 +210,7 @@ async fn hostile_titles_are_neutralised_on_the_wire() {
     assert_eq!(
         embed_title(&raw),
         format!("{ZWSP}=SUM(A1)"),
-        "T-546: a control character in front of a formula must not smuggle the formula through"
+        "a control character in front of a formula must not smuggle the formula through"
     );
 
     // ── The description field is the same sink and takes the same treatment. ──
@@ -218,14 +218,14 @@ async fn hostile_titles_are_neutralised_on_the_wire() {
     assert_eq!(
         embed_description(&raw),
         format!("{ZWSP}=IMPORTXML(A1,\"//x\")"),
-        "T-546: the embed description must be sanitised too (snippet path)"
+        "the embed description must be sanitised too (snippet path)"
     );
     // ...and when there is no snippet, the body is what fills it.
     let (_uri, raw) = push_and_capture("Safe title", "@from_body", "").await;
     assert_eq!(
         embed_description(&raw),
         format!("{ZWSP}@from_body"),
-        "T-546: the body-derived description must be sanitised (no-snippet path)"
+        "the body-derived description must be sanitised (no-snippet path)"
     );
 
     // ── No false positives: an ordinary title must arrive byte-identical. A sanitiser that
@@ -234,22 +234,22 @@ async fn hostile_titles_are_neutralised_on_the_wire() {
     let sent = embed_title(&raw);
     assert_eq!(
         sent, "Op Red Dawn — 9=ok",
-        "T-546: safe titles must pass through untouched; got {sent:?}"
+        "safe titles must pass through untouched; got {sent:?}"
     );
     assert!(
         !sent.contains(ZWSP),
-        "T-546: no neutraliser may be added to a safe title"
+        "no neutraliser may be added to a safe title"
     );
 }
 
-/// **T-546 — the same contract over the CMS HTTP path the Content Manager actually uses.**
+/// **The same contract over the CMS HTTP path the Content Manager actually uses.**
 ///
-/// The ticket's repro was `rg sanitize_discord apps/website/api/tests` → no hit: the T-498 pin is
-/// source-only, and no test drove a hostile title through `POST /cms/announcements` to see what
-/// reached Discord. This does exactly that, through the production router (admin gate, request-id
-/// / CORS / body-limit chain, the real INSERT, `push_to_discord`, the real reqwest client).
+/// The sanitiser's own pins are source-only and none of them drives a hostile title through
+/// `POST /cms/announcements` to see what reaches Discord. This does exactly that, through the
+/// production router (admin gate, request-id / CORS / body-limit chain, the real INSERT,
+/// `push_to_discord`, the real reqwest client).
 ///
-/// It also pins the division of labour T-498 chose: the **stored row keeps the authored bytes**
+/// It also pins the division of labour: the **stored row keeps the authored bytes**
 /// (the SPA shows what the author typed) and only the Discord sink is sanitised. A future "fix"
 /// that sanitises at persist instead would make this fail on the row assertion, which is the
 /// point — that would silently rewrite content on a surface that never had the problem.
@@ -326,7 +326,7 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
         "the created message id must be stored: {created}"
     );
 
-    // The stored row keeps the authored bytes — sanitising is a sink concern (T-498).
+    // The stored row keeps the authored bytes — sanitising is a sink concern.
     assert_eq!(
         created["title"].as_str(),
         Some(HOSTILE),
@@ -343,15 +343,15 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
     assert_eq!(
         sent,
         format!("{ZWSP}=HYPERLINK(\"http://evil.example\",\"payroll\")Q4Ops"),
-        "T-546: the outbound embed title must be control-stripped and ZWSP-led; got {sent:?}"
+        "the outbound embed title must be control-stripped and ZWSP-led; got {sent:?}"
     );
     assert!(
         !sent.starts_with('='),
-        "T-546: a live formula lead reached Discord: {sent:?}"
+        "a live formula lead reached Discord: {sent:?}"
     );
     assert!(
         !sent.contains('\t') && !sent.contains('\r'),
-        "T-546: control characters reached Discord: {sent:?}"
+        "control characters reached Discord: {sent:?}"
     );
 
     // Clean up this suite's own row.

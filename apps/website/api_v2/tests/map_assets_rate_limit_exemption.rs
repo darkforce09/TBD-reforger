@@ -1,17 +1,17 @@
-//! T-630 — `/map-assets` is served **outside** the rate limiter, and nothing else is.
+//! `/map-assets` is served **outside** the rate limiter, and nothing else is.
 //!
-//! # What went wrong
+//! # The collision the exemption prevents
 //!
-//! T-578 put an in-memory L1 limiter on every route (global `20/s` burst `40`). T-627 replaced the
-//! satellite's single whole-bundle `GET` with **49** HTTP Range requests at concurrency 4. Those
-//! two shipped the same night and `/map-assets` was not exempt, so a legitimate Mission Creator
-//! boot asked for 49 spans out of a 40-token bucket the DEM, the 951 world/density files and the
-//! SPA's own assets had already been drawing on. Replaying the real plan with `curl` returned
-//! **48× `429`, 1× `206`**; the client's fail-fast fetch discarded all 152,710,470 B on the first
-//! refusal and the editor silently kept its 800×800 preview.
+//! An in-memory L1 limiter covers every route (global `20/s` burst `40`), and the satellite loader
+//! fetches its bundle as **49** HTTP Range requests at concurrency 4. Without the exemption a
+//! legitimate Mission Creator boot asks for 49 spans out of a 40-token bucket the DEM, the 951
+//! world/density files and the SPA's own assets are already drawing on. Replaying that plan with
+//! `curl` against a limited mount returns **48× `429`, 1× `206`**; the client's fail-fast fetch
+//! discards all 152,710,470 B on the first refusal and the editor silently keeps its 800×800
+//! preview.
 //!
-//! T-629 taught the client to absorb `429`s with bounded backoff, which fixed the resolution and
-//! left the tax: seconds of real backoff on every boot of the operator's own editor, protecting a
+//! The client absorbs `429`s with bounded backoff, which holds the resolution and leaves the tax:
+//! seconds of real backoff on every boot of the operator's own editor, protecting a
 //! `ServeDir` that has no database, no session and no credential behind it.
 //!
 //! # What this file proves
@@ -24,8 +24,8 @@
 //!
 //! A limiter that cannot refuse anything would pass the first assertion and fail all three of the
 //! others, which is exactly why they are here. `durable_rate_limit` and `forwarded_for_trust` remain the
-//! proof that the limiter works at all; this file is the proof that T-630 narrowed it by one mount
-//! and not by more.
+//! proof that the limiter works at all; this file is the proof that the exemption narrows it by one
+//! mount and not by more.
 //!
 //! # ConnectInfo
 //!
@@ -58,8 +58,8 @@ mod common;
 /// Deliberately **not** the 152 MB satellite bundle. That file is git-LFS, so a checkout without
 /// LFS content would turn this suite red for a reason that has nothing to do with rate limiting —
 /// and the claim under test is about request *count*, not about which bytes come back. The real
-/// 49-span plan against the real bundle is measured end to end with `curl` in the T-630 verify
-/// notes; here the shape is 200 requests, which is 5× the global burst and 4× that plan.
+/// 49-span plan against the real bundle is measured end to end with `curl` by hand; here the shape
+/// is 200 requests, which is 5× the global burst and 4× that plan.
 const EXEMPT_ASSET: &str = "/map-assets/terrain-registry.json";
 
 /// A strict-prefix route: both tiers, and it needs no fixture rows. The handler's own verdict
@@ -165,7 +165,7 @@ fn count(hist: &[(StatusCode, usize)], want: StatusCode) -> usize {
 
 // ───────────────────────── the headline: both halves, one client ─────────────────────────
 
-/// **The T-630 proof.** One client, one router: 200 map-asset requests are all served, and that
+/// **The headline proof.** One client, one router: 200 map-asset requests are all served, and that
 /// same client is still refused on the strict tier and on the global tier.
 ///
 /// Ordering is deliberate. The map-asset burst runs **first**, so if it were still limiter-bound it
@@ -188,8 +188,8 @@ async fn a_map_asset_burst_is_served_while_auth_and_the_global_tier_still_refuse
         count(&assets, StatusCode::OK),
         BURST,
         "{BURST} requests to {EXEMPT_ASSET} did not all return 200 — got {assets:?}. A 429 here is \
-         the T-627/T-578 collision: a legitimate editor boot needs 951 distinct files from this \
-         mount and cannot fit through a 40-token bucket."
+         the collision the exemption exists to prevent: a legitimate editor boot needs 951 distinct \
+         files from this mount and cannot fit through a 40-token bucket."
     );
 
     // ── half two: the same client, still limited everywhere else ──
@@ -197,8 +197,8 @@ async fn a_map_asset_burst_is_served_while_auth_and_the_global_tier_still_refuse
     let auth_429 = count(&auth, StatusCode::TOO_MANY_REQUESTS);
     assert!(
         auth_429 >= BURST - usize::try_from(DURABLE_STRICT_BURST).expect("burst fits") - 5,
-        "the strict tier let {} of {BURST} requests through to {STRICT_ROUTE} — T-578's whole \
-         point was that /auth/ needs durable limiting, and T-630 must not have touched it. Got \
+        "the strict tier let {} of {BURST} requests through to {STRICT_ROUTE} — /auth/ needs \
+         durable limiting and the map-asset exemption must not reach it. Got \
          {auth:?}",
         BURST - auth_429
     );
@@ -242,7 +242,7 @@ async fn the_exemption_holds_with_no_database_at_all() {
     );
 }
 
-/// The exempt mount answers **Range** requests, which is the shape T-627 actually uses.
+/// The exempt mount answers **Range** requests, which is the shape the satellite loader uses.
 ///
 /// A 200 to a plain `GET` would not prove the satellite path works: the loader sends
 /// `Range: bytes=a-b` and treats anything that is not a `206` as a failure. Thirty of them here,
@@ -268,7 +268,7 @@ async fn range_requests_over_the_exempt_mount_are_all_served() {
 
 // ───────────────────────── the limiter can still refuse ─────────────────────────
 
-/// **The other `ServeDir` is still limited.** T-630 exempted one named mount, not a category.
+/// **The other `ServeDir` is still limited.** The exemption covers one named mount, not a category.
 ///
 /// `/uploads` serves user-uploaded content — a different risk profile from terrain data that ships
 /// in the repo — and it must keep the global tier. This also doubles as the no-database proof that
@@ -284,7 +284,7 @@ async fn the_other_static_mount_is_still_limited() {
     assert!(
         refused > 0,
         "{BURST} requests to {LIMITED_STATIC} were never refused — the global tier is not limiting \
-         static serving any more, which is more than T-630 asked for. Got {hist:?}"
+         static serving at all, which is wider than the one-mount exemption. Got {hist:?}"
     );
     assert!(
         count(&hist, StatusCode::NOT_FOUND) > 0,
@@ -296,14 +296,14 @@ async fn the_other_static_mount_is_still_limited() {
 ///
 /// `SPA_DIST_DIR` is unset under `cargo xtask mk leptos` + `cargo xtask mk rust-api`, so the branch that mounts the SPA
 /// fallback and the COOP/COEP layers is dead on the operator's machine and would go untested by
-/// everything else in this file. T-630 moved the map-asset mount across the rate-limit seam and had
-/// to move those two header layers with it, so that branch is exactly the one place this slice
-/// could have changed behaviour by accident. Two claims:
+/// everything else in this file. The map-asset mount sits on the far side of the rate-limit seam
+/// and carries those two header layers with it, so that branch is exactly the one place the seam
+/// can change behaviour by accident. Two claims:
 ///
-/// 1. the SPA fallback is still **rate-limited** — it is a document route, not a map asset, and it
-///    was registered above the seam on purpose; and
-/// 2. a map-asset response still carries both isolation headers, byte-for-byte what it carried
-///    before the split.
+/// 1. the SPA fallback is **rate-limited** — it is a document route, not a map asset, and it is
+///    registered above the seam on purpose; and
+/// 2. a map-asset response carries both isolation headers, byte-for-byte what the limited routes
+///    carry.
 ///
 /// The dist directory does not exist, so the fallback answers 404 — which is the point: a 404 means
 /// the request reached `ServeDir`, and a 429 means the limiter stopped it first.
@@ -318,15 +318,15 @@ async fn the_spa_deployment_keeps_its_fallback_limited_and_its_isolation_headers
     let hist = burst(&app, ip, "GET", "/t630-spa-route").await;
     assert!(
         count(&hist, StatusCode::TOO_MANY_REQUESTS) > 0,
-        "the SPA fallback was never refused in {BURST} requests — moving the map-asset mount below \
-         the rate-limit layer took the fallback with it. Got {hist:?}"
+        "the SPA fallback was never refused in {BURST} requests — the fallback has followed the \
+         map-asset mount below the rate-limit layer. Got {hist:?}"
     );
     assert!(
         count(&hist, StatusCode::NOT_FOUND) > 0,
         "nothing reached the SPA ServeDir at all: {hist:?}"
     );
 
-    // 2. …and the exempt mount still carries the isolation headers it carried pre-T-630.
+    // 2. …and the exempt mount carries the isolation headers below the seam as well.
     let fresh = Ipv4Addr::new(10, 63, 6, 7);
     let mut req = Request::builder()
         .method("GET")
@@ -344,7 +344,7 @@ async fn the_spa_deployment_keeps_its_fallback_limited_and_its_isolation_headers
         assert_eq!(
             resp.headers().get(name).and_then(|v| v.to_str().ok()),
             Some(want),
-            "{EXEMPT_ASSET} lost {name} when the mount moved below the rate-limit layer — the \
+            "{EXEMPT_ASSET} is missing {name} below the rate-limit layer — the \
              wasm SharedArrayBuffer path depends on these matching Trunk's"
         );
     }
@@ -353,7 +353,7 @@ async fn the_spa_deployment_keeps_its_fallback_limited_and_its_isolation_headers
 /// A `429` from the limiter still carries the shipped envelope and `Retry-After`.
 ///
 /// Narrowing which routes the limiter sees must not change what it says when it does refuse — the
-/// SPA reads both, and T-629's backoff ladder is driven by the `Retry-After` value.
+/// SPA reads both, and the client's backoff ladder is driven by the `Retry-After` value.
 #[tokio::test]
 async fn a_refusal_still_looks_exactly_as_it_did() {
     let app = dead_router();
@@ -387,9 +387,9 @@ async fn a_refusal_still_looks_exactly_as_it_did() {
 
 // ───────────────────────── anti-drift pins ─────────────────────────
 
-/// Class-R: T-630 changed **which routes** the limiter sees and nothing about the strict tier's
-/// surface. If this ever needs updating, `/auth/` or `/ingest/` protection is being edited and that
-/// is a different ticket.
+/// Class-R: the exemption governs **which routes** the limiter sees and nothing about the strict
+/// tier's surface. If this ever needs updating, `/auth/` or `/ingest/` protection is being edited,
+/// which is a separate change.
 #[test]
 fn the_strict_surface_is_untouched() {
     assert_eq!(STRICT_PREFIXES, ["/api/v1/auth/", "/api/v1/ingest/"]);

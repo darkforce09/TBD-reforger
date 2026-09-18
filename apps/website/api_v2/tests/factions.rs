@@ -1,15 +1,15 @@
-//! T-153 faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
+//! Faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
 //! role tier. Skips unless `TEST_DATABASE_URL` points at a migrated DB (cargo xtask db up).
 //!
-//! # Fixture ownership (T-400) + DB target guard (T-381)
+//! # Fixture ownership + DB target guard
 //!
-//! Pre-fix `setup` ran `DELETE FROM user_factions` with **no WHERE** (the only unscoped
-//! destructive statement in the IT corpus) and then `dev-login` as `mission_maker` followed
-//! by `enlisted` — leaving the shared [`common::DEV_LOGIN_USER`] row on `enlisted`. That
-//! wiped `null_tolerance`'s faction rows and made `misc_integration`'s `GET /me` role==admin
-//! assert fail under concurrent `cargo test -p website-api`. Actors and deletes are now
-//! owner-scoped; tokens come from [`common::access_token`] (no shared-row role rewrite).
-//! T-381: [`common::require_test_database_url`] refuses `tbd_reforger` before any DELETE.
+//! A `setup` running `DELETE FROM user_factions` with **no WHERE**, then `dev-login` as
+//! `mission_maker` followed by `enlisted`, leaves the shared [`common::DEV_LOGIN_USER`] row on
+//! `enlisted`: it wipes `null_tolerance`'s faction rows and fails `misc_integration`'s
+//! `GET /me` role==admin assert under concurrent `cargo test -p website-api`. Actors and
+//! deletes here are owner-scoped; tokens come from [`common::access_token`] (no shared-row
+//! role rewrite), and [`common::require_test_database_url`] refuses `tbd_reforger` before any
+//! DELETE.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -32,12 +32,12 @@ const ENLISTED: &str = "000000000000400012";
 const GHOST: &str = "000000000000400099";
 
 async fn setup() -> Option<(Router, PgPool, String, String)> {
-    // T-381: unset → skip; set-but-live-DB → panic before connect/DELETE.
+    // Unset → skip; set-but-live-DB → panic before connect/DELETE.
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
 
-    // Owner-scoped wipe only — never `DELETE FROM user_factions` bare (T-381 / T-400).
+    // Owner-scoped wipe only — never `DELETE FROM user_factions` bare.
     sqlx::query("DELETE FROM user_factions WHERE owner_id = ANY($1)")
         .bind(vec![
             MAKER.to_string(),
@@ -109,22 +109,22 @@ fn golden_doc() -> Value {
     serde_json::from_slice(&raw).unwrap()
 }
 
-/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped (T-400 / T-381).
+/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped.
 #[test]
 fn factions_delete_is_owner_scoped() {
     let src = include_str!("factions.rs");
     assert!(
         src.contains("DELETE FROM user_factions WHERE owner_id"),
-        "factions setup must scope DELETE FROM user_factions to owner_id (T-400)"
+        "factions setup must scope DELETE FROM user_factions to owner_id"
     );
-    // The pre-fix defect: bare wipe with no WHERE clause inside the query string.
+    // The defect: a bare wipe with no WHERE clause inside the query string.
     assert!(
         !src.contains("sqlx::query(\"DELETE FROM user_factions\")"),
-        "unscoped DELETE FROM user_factions must not return (T-400)"
+        "unscoped DELETE FROM user_factions must not return"
     );
     assert!(
         src.contains("require_test_database_url"),
-        "factions setup must call common::require_test_database_url (T-381)"
+        "factions setup must call common::require_test_database_url"
     );
     assert_ne!(MAKER, common::DEV_LOGIN_USER);
     assert_ne!(ENLISTED, common::DEV_LOGIN_USER);
@@ -188,8 +188,8 @@ async fn faction_library_crud_gates() {
     .await;
     assert_eq!(s, StatusCode::CONFLICT);
 
-    // T4b — trailing-space twin of an existing name must NOT 201 (T-358). Schema minLength:1
-    // accepts "Soviet Army 1980s "; pre-fix that bypassed UNIQUE (owner_id, name) and T4.
+    // T4b — a trailing-space twin of an existing name must NOT 201. Schema minLength:1
+    // accepts "Soviet Army 1980s ", which would bypass UNIQUE (owner_id, name) and T4.
     let mut padded = golden_doc();
     padded["name"] = json!("Soviet Army 1980s ");
     let (s, body) = req(&app, Method::POST, "/api/v1/factions", &maker, Some(padded)).await;
@@ -202,7 +202,7 @@ async fn faction_library_crud_gates() {
         "{body}"
     );
 
-    // T4c — whitespace-only name validates schema minLength:1 but must be rejected (T-358).
+    // T4c — a whitespace-only name validates schema minLength:1 but must be rejected.
     let mut blank = golden_doc();
     blank["name"] = json!("\t");
     let (s, body) = req(&app, Method::POST, "/api/v1/factions", &maker, Some(blank)).await;

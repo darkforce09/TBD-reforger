@@ -1,16 +1,16 @@
-//! **T-405 — the backfill that retires the stored `javascript:` payloads, and the exact shape of
-//! the SQL-vs-Rust disagreement.**
+//! **The backfill that retires the stored `javascript:` payloads, and the exact shape of the
+//! SQL-vs-Rust disagreement.**
 //!
-//! T-391 closed the write boundary; it could do nothing about rows already in the table, and
-//! `frontend/src/deployments.rs` binds `matches.aar_replay_url` into an `<a href>`. Migration
-//! `0010_backfill_aar_replay_url_scheme.sql` quarantines and scrubs the offenders.
+//! The write boundary refuses non-`http(s)` replay URLs, which does nothing about rows already in
+//! the table, and `frontend/src/deployments.rs` binds `matches.aar_replay_url` into an `<a href>`.
+//! Migration `0010_backfill_aar_replay_url_scheme.sql` quarantines and scrubs the offenders.
 //!
-//! **T-508 / T-331 alignment:** migration `0015_matches_empty_text_missions_timestamps.sql` made
+//! **Empty-string alignment:** migration `0015_matches_empty_text_missions_timestamps.sql` makes
 //! `matches.aar_replay_url` `DEFAULT '' NOT NULL`. Canonical empty is `''` (telemetry COALESCE,
 //! seed writes). A successful NULL plant is illegal; scrubbed rows must land as `''`, not NULL.
 //! sqlx embeds 0010 with a SHA-384 checksum — editing the applied file breaks `database::migrate` on
 //! every DB that already ran version 10 — so this test re-executes the real file via
-//! `include_str!` after substituting the historical `SET … = NULL` scrub for the T-331-canonical
+//! `include_str!` after substituting the frozen `SET … = NULL` scrub for the canonical
 //! `SET … = ''` (see [`migration_for_post_0015_rerun`]).
 //!
 //! Two things are proven here, and the first is the reason this file exists rather than a comment:
@@ -23,9 +23,10 @@
 //!      already pinned to) and fails if the disagreement set is anything other than the documented
 //!      one. A new divergence in either direction names itself.
 //!   2. **The migration actually moves rows.** Planted rows, the real migration file executed
-//!      (T-331-adapted scrub) via `include_str!`, then the table re-read. Executing the file rather
-//!      than a re-typed copy of its statements is deliberate: a test that runs its own paraphrase
-//!      of a migration proves the paraphrase, which is the one thing nobody ships.
+//!      (scrub adapted to the NOT NULL column) via `include_str!`, then the table re-read.
+//!      Executing the file rather than a re-typed copy of its statements is deliberate: a test
+//!      that runs its own paraphrase of a migration proves the paraphrase, which is the one thing
+//!      nobody ships.
 //!
 //! Running the file a second time is also the idempotency check, and it is free — that is what
 //! `ON CONFLICT DO NOTHING` plus a self-clearing `WHERE` buys.
@@ -45,24 +46,24 @@ mod common;
 include!("../../shared/is_http_url_cases.rs");
 
 /// The migration, executed verbatim rather than paraphrased. If someone edits the file, this test
-/// runs the edit — except for the one T-508 substitution documented on
+/// runs the edit — except for the one substitution documented on
 /// [`migration_for_post_0015_rerun`].
 const MIGRATION: &str = include_str!("../migrations/0010_backfill_aar_replay_url_scheme.sql");
 
-/// Historical 0010 scrub line. Frozen in the migration file (sqlx checksum); illegal after T-331
-/// / 0015 made the column `NOT NULL`.
+/// The scrub line as it stands in 0010. Frozen in the migration file (sqlx checksum); illegal
+/// because 0015 makes the column `NOT NULL`.
 const HISTORICAL_NULL_SCRUB: &str = "SET aar_replay_url = NULL";
 
-/// T-331-canonical scrub: empty string matches 0015 backfill + telemetry `COALESCE(..., '')`.
+/// Canonical scrub: empty string matches the 0015 backfill + telemetry `COALESCE(..., '')`.
 const CANONICAL_EMPTY_SCRUB: &str =
-    "SET aar_replay_url = '' /* T-508: T-331 NOT NULL; '' is canonical */";
+    "SET aar_replay_url = '' /* column is NOT NULL; '' is canonical */";
 
 /// Re-run body for post-0015 databases: real 0010 file with the scrub line adapted so
 /// `include_str!` execution does not violate the NOT NULL constraint.
 fn migration_for_post_0015_rerun() -> String {
     assert!(
         MIGRATION.contains(HISTORICAL_NULL_SCRUB),
-        "0010 no longer contains `{HISTORICAL_NULL_SCRUB}` — update the T-508 substitution pin"
+        "0010 no longer contains `{HISTORICAL_NULL_SCRUB}` — update the substitution pin"
     );
     MIGRATION.replace(HISTORICAL_NULL_SCRUB, CANONICAL_EMPTY_SCRUB)
 }
@@ -89,7 +90,7 @@ fn unstorable(s: &str) -> bool {
 }
 
 async fn boot() -> PgPool {
-    // T-542: hard-require — missing URL is FAIL (not skip); refuse live `tbd_reforger`.
+    // Hard-require: a missing URL is FAIL (not skip); refuse live `tbd_reforger`.
     let url = match common::require_test_database_url() {
         Some(u) => u,
         None => {
@@ -180,7 +181,7 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
         .await
         .expect("clear prior run");
 
-    // T-331 / 0015 pin: NULL is illegal on aar_replay_url (23502). Do not plant NULL successfully.
+    // NOT NULL pin: NULL is illegal on aar_replay_url (23502). Do not plant NULL successfully.
     let null_plant = sqlx::query(
         "INSERT INTO matches (source_match_id, started_at, outcome, aar_replay_url) \
          VALUES ($1, now(), 'pending', NULL)",
@@ -189,7 +190,7 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
     .execute(&pool)
     .await;
     let null_err = null_plant.expect_err(
-        "T-331 pin: INSERT NULL into matches.aar_replay_url must fail after 0015 NOT NULL",
+        "NOT NULL pin: INSERT NULL into matches.aar_replay_url must fail after 0015 NOT NULL",
     );
     let null_err_text = format!("{null_err:?}");
     assert!(
@@ -238,13 +239,13 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
         "empty-string sentinel row missing from planted set — cannot pin that '' is kept"
     );
 
-    // Run the REAL migration file (T-331-adapted scrub — see migration_for_post_0015_rerun).
+    // Run the REAL migration file (NOT NULL-adapted scrub — see migration_for_post_0015_rerun).
     // AssertSqlSafe: body is include_str!(0010) with one audited scrub-line substitution; no user input.
     let migration = AssertSqlSafe(migration_for_post_0015_rerun());
     sqlx::raw_sql(migration)
         .execute(&pool)
         .await
-        .expect("run migration 0010 (T-508 post-0015 scrub)");
+        .expect("run migration 0010 (post-0015 scrub)");
 
     let mut wrong = Vec::new();
     for (id, original, expect_kept) in &planted {
@@ -276,7 +277,7 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
                 wrong.push(format!("  KEPT-ROW QUARANTINED {original:?}"));
             }
         } else {
-            // T-331 canonical empty after scrub — not NULL.
+            // Canonical empty after scrub — not NULL.
             if now.as_str() != "" {
                 wrong.push(format!(
                     "  STILL LIVE {original:?} -> {now:?} (a stored payload survived the backfill; \

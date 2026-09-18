@@ -1,6 +1,6 @@
-//! T-578 — the durable rate limiter, **wired**, proven through the real HTTP router.
+//! The durable rate limiter, **wired**, proven through the real HTTP router.
 //!
-//! # What T-280 proved, and why it was not enough
+//! # Why the library-level proof is not enough
 //!
 //! `tests/observability.rs` proves `PgRateLimiter` refuses at the limit and still refuses
 //! after a restart — at the **library** level, by calling `check()` directly. Every one of those
@@ -12,8 +12,8 @@
 //! central one is [`refusal_survives_a_restart`]: spend the bucket on one router, build a second
 //! router with a **fresh in-memory limiter** over the same database, and require the very next
 //! request to be refused. A fresh `IpLimiter` cannot refuse a first request, so nothing but the
-//! durable tier can produce that 429. Under the pre-T-578 tree that request is a 400 from the
-//! handler, which is exactly the RED this file is for.
+//! durable tier can produce that 429. With the durable tier unwired that request is a 400 from
+//! the handler, which is exactly the RED this file is for.
 //!
 //! # ConnectInfo
 //!
@@ -126,8 +126,8 @@ async fn strict_route_trips_with_429_retry_after_and_a_spent_bucket() {
         }
     }
     let (at, retry, body) = refused.expect(
-        "the wired limiter never refused — a limiter that cannot trip is exactly as inert as the \
-         unwired one T-578 was filed against",
+        "the wired limiter never refused — a limiter that cannot trip is exactly as inert as an \
+         unwired one",
     );
     assert!(
         at > DURABLE_STRICT_BURST,
@@ -158,7 +158,7 @@ async fn strict_route_trips_with_429_retry_after_and_a_spent_bucket() {
 ///
 /// A fresh `IpLimiter` (burst 10) cannot refuse a first request, so a 429 here can only have come
 /// from Postgres. This is the perturbation that separates "the durable limiter exists" from "the
-/// durable limiter is consulted" — pre-T-578 it is a 400 from the refresh handler.
+/// durable limiter is consulted" — unwired, it is a 400 from the refresh handler.
 #[tokio::test]
 async fn refusal_survives_a_restart() {
     let Some((pool, url)) = boot().await else {
@@ -385,9 +385,9 @@ fn prune_ttl_is_longer_than_a_full_refill() {
 
 /// The migration is `RATE_LIMIT_BUCKETS_DDL`, verbatim.
 ///
-/// T-280 made the DDL a `const` precisely so "the bytes the tests prove and the bytes the
-/// migration lands" could not diverge. That guarantee is worth nothing unless something reads both
-/// and compares them, which is what this does.
+/// The DDL is a `const` precisely so "the bytes the tests prove and the bytes the migration
+/// lands" cannot diverge. That guarantee is worth nothing unless something reads both and
+/// compares them, which is what this does.
 #[test]
 fn migration_0020_is_the_ddl_constant_verbatim() {
     let sql = include_str!("../migrations/0021_rate_limit_buckets.sql");

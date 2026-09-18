@@ -1,7 +1,7 @@
-//! **T-413 — `missions.thumbnail_url` adopts T-405/T-391's scheme guard on the PATCH writer.**
+//! **`missions.thumbnail_url` carries the HTTP scheme guard on the PATCH writer.**
 //!
 //! Create hardcodes `thumbnail_url` to `''` and does not accept a body field — PATCH is the only
-//! HTTP writer. Authz is `MissionMakerUser` (T-408); these prove the URL guard wiring.
+//! HTTP writer. Authz is `MissionMakerUser`; these prove the URL guard wiring.
 //!
 //! Skips without `TEST_DATABASE_URL` — a skip is a failure to have tested, not a pass.
 

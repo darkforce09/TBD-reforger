@@ -1,4 +1,4 @@
-//! T-311 — LIMIT/OFFSET paging over the T-194 content golden's 4-way ties yields every row
+//! LIMIT/OFFSET paging over the content golden's 4-way ties yields every row
 //! exactly once, in the one order the ORDER BY whitelist specifies.
 //!
 //! Why the defect needs Postgres: a bounded (`LIMIT 2`) top-N sort and the full sort of the
@@ -7,13 +7,13 @@
 //! the `lt.discord_id ASC` tie-breaker; nothing off-list reaches ORDER BY) is pinned by the pure
 //! unit tests that stay next to the handler in `src/command_center/handlers/leaderboards.rs`.
 //!
-//! Why it lives in `tests/` and not in that file: the T-542/T-558 Class-R pin
+//! Why it lives in `tests/` and not in that file: the Class-R pin
 //! (`common::assert_no_raw_test_database_url_reads_outside_common`) forbids a raw
 //! `TEST_DATABASE_URL` read anywhere under `src/**` — only [`common::require_test_database_url`]
 //! may read it, and `tests/common` is not reachable from a lib test. So this binary gets the
-//! T-534 shape every other suite has: its own `<base>_leaderboards_paging_it` database, dropped
-//! and recreated on first use, migrated, the T-381 allow-list asserted on both the operator's
-//! name and the derived one. The content golden is applied on top here.
+//! shape every other suite has: its own `<base>_leaderboards_paging_it` database, dropped and
+//! recreated on first use, migrated, the database-name allow-list asserted on both the
+//! operator's name and the derived one. The content golden is applied on top here.
 //!
 //! Never a `skip:` — a missing `TEST_DATABASE_URL` is a FAIL. The whole point of this test is
 //! the database; the wave gate and `cargo xtask db test-it` always export it.
@@ -44,7 +44,7 @@ const CATEGORIES: [&str; 5] = [
     "team_kills",
 ];
 
-/// The T-194 content golden, applied on top of this binary's migrated database. Every INSERT is
+/// The content golden, applied on top of this binary's migrated database. Every INSERT is
 /// `ON CONFLICT … DO UPDATE` and §12 refreshes the view, so applying it is idempotent — also over
 /// the `dev-login` row `common` primes (`…001`, a golden player too).
 const CONTENT_GOLDEN: &str = include_str!("../seeds/content_golden.sql");
@@ -67,12 +67,13 @@ const FOUR_WAY_TIED: [&str; 3] = ["missions", "team_kills", "command_win"];
 const PAGE: i64 = 2;
 
 /// This binary's database, seeded with the content golden. [`common::require_test_database_url`]
-/// has already dropped, recreated and migrated it (T-534) and refused any name outside the T-381
-/// allow-list; a missing URL is a FAIL here, not a skip. Returns its URL and an open pool.
+/// has already dropped, recreated and migrated it, and refused any name outside the
+/// database-name allow-list; a missing URL is a FAIL here, not a skip. Returns its URL and an
+/// open pool.
 async fn provision_golden_database() -> (String, PgPool) {
     let url = common::require_test_database_url().unwrap_or_else(|| {
         panic!(
-            "TEST_DATABASE_URL required — a missing DB URL is a FAIL, not a skip (T-311). \
+            "TEST_DATABASE_URL required — a missing DB URL is a FAIL, not a skip. \
              The wave gate exports it from ensure_gate_db; `cargo xtask db test-it` sets it \
              to rust_it; by hand: postgres://tbd:tbd@localhost:5434/<name>_it?sslmode=disable"
         )
@@ -133,7 +134,7 @@ fn id(row: &Value) -> &str {
         .unwrap_or_else(|| panic!("row without discord_id: {row}"))
 }
 
-/// The category's ranking column on one wire row; `None` for SQL NULL (`kd_ratio`, T-397).
+/// The category's ranking column on one wire row; `None` for SQL NULL (`kd_ratio`).
 fn score(category: &str, row: &Value) -> Option<f64> {
     let column = match category {
         "kd" => "kd_ratio",
@@ -146,7 +147,7 @@ fn score(category: &str, row: &Value) -> Option<f64> {
     row[column].as_f64()
 }
 
-/// `(score DESC NULLS LAST, discord_id ASC)` — the order every arm specifies after T-311.
+/// `(score DESC NULLS LAST, discord_id ASC)` — the order every arm specifies.
 fn in_order(category: &str, a: &Value, b: &Value) -> bool {
     match (score(category, a), score(category, b)) {
         (Some(x), Some(y)) if x != y => x > y,

@@ -1,4 +1,4 @@
-//! **T-391 — `aar_replay_url` scheme guard, at the write boundary.**
+//! **`aar_replay_url` scheme guard, at the write boundary.**
 //!
 //! `frontend/src/deployments.rs:471` binds this column into an `<a href>`, so a stored
 //! `javascript:` URL executed on click. The unit tests beside the guard
@@ -139,7 +139,7 @@ impl Ns {
         })
     }
 
-    /// The same POST with `aar_replay_url` omitted — the "absent keeps" shape (T-316).
+    /// The same POST with `aar_replay_url` omitted — the "absent keeps" shape.
     fn body_without_replay(&self, src: &str) -> Value {
         json!({
             "match": { "source_match_id": src, "outcome": "success", "winning_faction": "USA" },
@@ -327,7 +327,7 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
         );
     }
 
-    // Absent keeps (T-316): the second POST names no link, and the first one survives.
+    // Absent keeps: the second POST names no link, and the first one survives.
     let src = ns.src("absent");
     let good = "https://aar.tbd/replays/keepme.json";
     let (st, r) = post(&app, &ns.body(&src, good)).await;

@@ -1,16 +1,16 @@
-//! T-587 — `POST /api/v1/fire-missions` must persist the solution it computed, and
+//! `POST /api/v1/fire-missions` must persist the solution it computed, and
 //! `GET /api/v1/events/{id}/fire-missions` must hand it back.
 //!
 //! # Why this suite exists in this shape
 //!
-//! The defect is a save endpoint that answers **201 CREATED** carrying a full firing solution and
-//! writes a third of it. `charge`, `azimuth_mils` and `time_of_flight_s` were computed, serialised
-//! into the response, and dropped on the way to the INSERT; the four coordinates the caller sent
-//! reached no column at all. Every one of those is invisible from the response body, because the
-//! response is built from the in-memory `FireSolution` and never re-reads the row. That is this
-//! program's signature defect exactly — a tool reporting success over an input it never examined —
-//! and it means **a test that asserts on the 201 body proves nothing here.** The pre-fix handler
-//! passes that test.
+//! The defect this guards against is a save endpoint that answers **201 CREATED** carrying a full
+//! firing solution and writes a third of it: `charge`, `azimuth_mils` and `time_of_flight_s`
+//! computed, serialised into the response, and dropped on the way to the INSERT, with the four
+//! coordinates the caller sent reaching no column at all. Every one of those is invisible from the
+//! response body, because the response is built from the in-memory `FireSolution` and never
+//! re-reads the row. That is this program's signature defect exactly — a tool reporting success
+//! over an input it never examined — and it means **a test that asserts on the 201 body proves
+//! nothing here.** A handler that drops the columns passes that test.
 //!
 //! So every assertion below lands on one of two things the handler cannot fake:
 //!
@@ -21,7 +21,7 @@
 //!
 //! # The cases
 //!
-//! 1. [`saved_solution_reaches_the_row_and_comes_back_out`] — the ticket. Save, read the row,
+//! 1. [`saved_solution_reaches_the_row_and_comes_back_out`] — the headline. Save, read the row,
 //!    read the list, and require all three to agree on all seven values.
 //! 2. [`a_row_written_before_this_migration_still_lists_and_restores`] — the columns are nullable
 //!    because rows predating the migration exist. One is forged directly into the table with all
@@ -30,16 +30,16 @@
 //! 3. [`the_shipped_backfill_recovers_coordinates_from_the_grid_encoding`] — runs the migration's
 //!    **own** `UPDATE` statements, read out of the shipped `.sql` file, over rows this test
 //!    inserts. A transcribed copy of the SQL would test the copy.
-//! 4. [`out_of_range_and_unknown_weapon_still_answer_422_and_400`] — T-587 deleted an unreachable
-//!    guard in `solve_checked`; these are the two statuses that must not have moved with it.
+//! 4. [`out_of_range_and_unknown_weapon_still_answer_422_and_400`] — `solve_checked` carries no
+//!    unreachable range guard; these are the two statuses it must answer.
 //!
-//! # T-626 — the claim case 3 was not checking
+//! # The claim case 3 has to check
 //!
 //! 0020's comment calls its accept regex `parse_grid`'s, "deliberately character for character".
 //! It is not: `parse::<f64>` also takes `+1000, 2000`, `.5, 2`, `5., 2` and `1e3, 500`, and the
-//! regex takes none of them. Case 3's original six fixtures omitted **exactly** those four forms,
-//! so the suite agreed with the claim by never testing it — the same shape as the defect this file
-//! was written for. Two cases close that:
+//! regex takes none of them. A fixture set that omits **exactly** those four forms agrees with the
+//! claim by never testing it — the same shape as the defect this file guards against. Two cases
+//! close that:
 //!
 //! 5. [`the_backfill_regex_is_narrower_than_parse_grid`] — measures both readers on the divergent
 //!    forms, on the agreed forms (same `f64` bits, not just "both accept"), and on the one input
@@ -64,7 +64,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 
-/// FP (1000, 2000) → TGT (2200, 1800) on an `M252 81mm`: the T-285 field report's own probe.
+/// FP (1000, 2000) → TGT (2200, 1800) on an `M252 81mm`: the field report's own probe.
 /// 1217 m at 99.5°, which `website_map_engine::data::scenario::ballistics` reaches on charge 2 — a solution with a
 /// **non-zero** charge and a **non-zero** TOF, so a handler that wrote zeros could not pass by
 /// accident.
@@ -131,10 +131,10 @@ async fn stored_solution(pool: &PgPool, id: &str) -> StoredRow {
     .bind(id)
     .fetch_one(pool)
     .await
-    .expect("T-587: read the stored fire mission back")
+    .expect("read the stored fire mission back")
 }
 
-/// **The ticket.** Save a solution, then prove it is in the database and comes back out.
+/// **The headline.** Save a solution, then prove it is in the database and comes back out.
 #[tokio::test]
 async fn saved_solution_reaches_the_row_and_comes_back_out() {
     let Some((app, pool)) = boot().await else {
@@ -155,7 +155,7 @@ async fn saved_solution_reaches_the_row_and_comes_back_out() {
     assert_eq!(st, StatusCode::CREATED, "save fire: {body}");
 
     // ── What the handler CLAIMS it computed. Not evidence of anything being stored: this half
-    // ── of the body is `serde_json::to_value(&sol)` and was identical before T-587.
+    // ── of the body is `serde_json::to_value(&sol)`, built without reading the row back.
     let sol = &body["solution"];
     assert_eq!(sol["distance_m"], 1217);
     assert_eq!(sol["charge"], 2);
@@ -166,8 +166,8 @@ async fn saved_solution_reaches_the_row_and_comes_back_out() {
         .expect("201 carries the row id")
         .to_string();
 
-    // ── What is actually in the table. This is the assertion the pre-fix handler fails: it
-    // ── answered the identical 201 above with all seven of these NULL.
+    // ── What is actually in the table. This is the assertion a handler that drops the columns
+    // ── fails: it answers the identical 201 above with all seven of these NULL.
     let (fp_x, fp_y, tgt_x, tgt_y, az_mils, charge, tof) = stored_solution(&pool, &id).await;
     assert_eq!(
         (fp_x, fp_y, tgt_x, tgt_y),
@@ -213,7 +213,7 @@ async fn saved_solution_reaches_the_row_and_comes_back_out() {
     assert_eq!(row["charge"], 2, "a reload cannot see the charge");
     assert_eq!(
         row["time_of_flight_s"], 29.4,
-        "a reload cannot see the time of flight — the T-285 asymmetry"
+        "a reload cannot see the time of flight"
     );
     // The shipped columns are untouched by this change.
     assert_eq!(row["distance_m"], 1217);
@@ -230,8 +230,8 @@ async fn saved_solution_reaches_the_row_and_comes_back_out() {
 /// `charges_for` and `time_of_flight_s: 0.0` is a plausible flight; either would render on the
 /// calculator's card as a confident, wrong, unfalsifiable number for a mission nobody re-checked.
 ///
-/// Forged with a direct INSERT that names only the pre-T-587 columns, which is byte-for-byte what
-/// the old handler's statement did.
+/// Forged with a direct INSERT that names only the columns predating the solution migration,
+/// which is byte-for-byte the statement such a row was written by.
 #[tokio::test]
 async fn a_row_written_before_this_migration_still_lists_and_restores() {
     let Some((app, pool)) = boot().await else {
@@ -252,7 +252,7 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
     .bind(&event)
     .fetch_one(&pool)
     .await
-    .expect("T-587: forge a pre-migration fire mission");
+    .expect("forge a pre-migration fire mission");
 
     // Nothing filled them in behind our back — no DEFAULT, no trigger.
     let (fp_x, fp_y, tgt_x, tgt_y, az_mils, charge, tof) =
@@ -260,7 +260,7 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
     assert_eq!(
         (fp_x, fp_y, tgt_x, tgt_y, az_mils, charge, tof),
         (None, None, None, None, None, None, None),
-        "a column added by T-587 acquired a default — a stored 0 claims to be a measurement"
+        "a solution column acquired a default — a stored 0 claims to be a measurement"
     );
 
     let (st, list) = call(
@@ -309,7 +309,7 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
 /// replayed here at all.
 ///
 /// The criterion under test is **not** "accept exactly what `parse_grid` accepts" — 0020's comment
-/// claims that and it is false (T-626). It is the direction: the regex must never accept a grid
+/// claims that and it is false. It is the direction: the regex must never accept a grid
 /// `parse_grid` would refuse, because that invents coordinates for a row the calculator has always
 /// shown as unrestorable. Accepting *less* is survivable and is what actually happens for four
 /// syntactic forms; those four are in the table below, and
@@ -349,10 +349,10 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         // One grid is the encoding and the other is not. The two pairs are backfilled by two
         // independent statements, so this row gets one real pair and one NULL pair.
         ("500, 600", "GRID REF ALPHA", Some((500.0, 600.0)), None),
-        // ── T-626 — the four forms `parse_grid` accepts and the regex does not.
+        // ── The four forms `parse_grid` accepts and the regex does not.
         //
         // The six cases above are exactly the ones where 0020's "character for character" claim
-        // is TRUE, which is why the claim survived: the suite avoided the inputs that break it.
+        // is TRUE, and a suite that stops there never tests the inputs that break it.
         // These four are those inputs, and they must come back NULL — the regex refuses them, and
         // refusing is the safe direction. `restore()` still reads such a row through `parse_grid`,
         // so nothing is stranded; see `the_backfill_regex_is_narrower_than_parse_grid`.
@@ -374,7 +374,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         .bind(target_grid)
         .execute(&pool)
         .await
-        .expect("T-587: insert a backfill fixture row");
+        .expect("insert a backfill fixture row");
     }
 
     // Replay the migration's own UPDATEs, scoped to this test's rows so a parallel sibling's
@@ -406,7 +406,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         sqlx::raw_sql(sqlx::AssertSqlSafe(scoped.clone()))
             .execute(&pool)
             .await
-            .unwrap_or_else(|e| panic!("T-587: replay the shipped backfill: {e}\n{scoped}"));
+            .unwrap_or_else(|e| panic!("replay the shipped backfill: {e}\n{scoped}"));
     }
 
     for (fp_grid, target_grid, want_fp, want_tgt) in cases {
@@ -419,7 +419,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         .bind(target_grid)
         .fetch_one(&pool)
         .await
-        .expect("T-587: read a backfilled row");
+        .expect("read a backfilled row");
         assert_eq!(
             (got.0, got.1),
             (want_fp.map(|p| p.0), want_fp.map(|p| p.1)),
@@ -433,7 +433,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
     }
 }
 
-// ───────────────────────── T-626 — the claim 0020 makes about its own regex ─────────────────────
+// ───────────────────────── the claim 0020 makes about its own regex ─────────────────────────────
 
 /// `frontend/src/v2/pages/field_tools/mortar/grid.rs::parse_grid`, transcribed.
 ///
@@ -506,7 +506,7 @@ fn parse_grid_source(src: &str, whose: &str) -> String {
 /// Class-R: the transcribed `parse_grid` above **is** the shipped one, token for token.
 ///
 /// Not "contains these lines" — that would pass while the copy in this file drifted, which is the
-/// same shape of defect as the comment T-626 is here to correct: a check that agrees with itself.
+/// same shape of defect as the comment this suite corrects: a check that agrees with itself.
 #[test]
 fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
     assert_eq!(
@@ -527,8 +527,8 @@ fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
     );
 }
 
-/// **T-626.** 0020 says its regex is `parse_grid`'s "deliberately character for character". It is
-/// not. This measures both readers on the same strings and states what is actually true.
+/// 0020 says its regex is `parse_grid`'s "deliberately character for character". It is not. This
+/// measures both readers on the same strings and states what is actually true.
 ///
 /// Three claims, each asserted rather than argued:
 ///
@@ -557,10 +557,10 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
             .bind(regex)
             .fetch_one(pool)
             .await
-            .expect("T-626: evaluate the shipped accept regex")
+            .expect("evaluate the shipped accept regex")
     }
 
-    // 1 ── the divergence, form by form. Measured, not asserted from the ticket.
+    // 1 ── the divergence, form by form. Measured, not taken on trust.
     for form in ["+1000, 2000", ".5, 2", "5., 2", "1e3, 500"] {
         assert!(
             parse_grid(form).is_some(),
@@ -607,7 +607,7 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
         .bind(grid)
         .fetch_one(&pool)
         .await
-        .expect("T-626: cast an accepted grid the way the migration does");
+        .expect("cast an accepted grid the way the migration does");
         assert_eq!(
             (x.to_bits(), y.to_bits()),
             (want.0.to_bits(), want.1.to_bits()),
@@ -677,10 +677,9 @@ async fn the_backfill_regex_is_narrower_than_parse_grid() {
     assert_eq!(x, f64::MAX);
 }
 
-/// T-587 collapsed `solve_checked` onto a direct `match`, deleting a guard that had been
-/// unreachable since T-365. These are the two statuses that must not have moved with it — an
-/// unknown weapon is a **400** and it beats the **422** an out-of-range target gets, and the 422
-/// still carries the partial solution in `details`.
+/// `solve_checked` dispatches on a direct `match` and carries no unreachable range guard. These
+/// are the two statuses it must answer — an unknown weapon is a **400** and it beats the **422**
+/// an out-of-range target gets, and the 422 still carries the partial solution in `details`.
 #[tokio::test]
 async fn out_of_range_and_unknown_weapon_still_answer_422_and_400() {
     let Some((app, _pool)) = boot().await else {

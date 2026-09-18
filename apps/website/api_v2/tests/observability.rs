@@ -1,13 +1,13 @@
-//! T-280 — the database-backed half of the observability / durable-rate-limiting slice.
+//! The database-backed half of the observability / durable-rate-limiting slice.
 //!
 //! # Why this file exists rather than `#[cfg(test)]` in `src/core/http_router.rs`
 //!
 //! Everything that can be proven in-process (the metrics registry, the exposition text,
 //! the cardinality cap, `/healthz` going red) lives in `src/core/http_router.rs` next to the code.
 //! What is here needs a **real** database, and `common::assert_no_raw_test_database_url_reads_outside_common`
-//! (T-542 / T-558) forbids `src/**` from reading `TEST_DATABASE_URL` at all — a rule that
-//! exists because an in-crate DB test once read the operator's base URL raw and could have
-//! run against live `tbd_reforger`. So the DB half comes here and goes through
+//! forbids `src/**` from reading `TEST_DATABASE_URL` at all — a rule that exists because an
+//! in-crate DB test reading the operator's base URL raw could run against live
+//! `tbd_reforger`. So the DB half comes here and goes through
 //! [`common::require_test_database_url`], which provisions this binary its own database.
 //!
 //! # What it proves
@@ -120,7 +120,7 @@ async fn ensure_bucket_table(pool: &PgPool) {
 /// database_is_unreachable`. Neither is worth anything without the other: a probe that is
 /// always green and a probe that is always red are the same defect.
 ///
-/// **T-580** moved the detail behind `X-Service-Token`, so this now reads the probe *with* the
+/// The detail sits behind `X-Service-Token`, so this reads the probe *with* the
 /// token. The public shape (`{"status": …}` and nothing else) is asserted against a dead pool by
 /// `core::tests::http_router::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
 /// [`healthz_public_shape_is_status_only_against_a_live_database`] below — a probe that discloses
@@ -192,7 +192,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     );
 }
 
-/// T-580 — against a **live, healthy** database the public probe still discloses nothing.
+/// Against a **live, healthy** database the public probe still discloses nothing.
 ///
 /// The dead-pool half lives in `src/core/http_router.rs`. Both are needed: a `/healthz` that reveals nothing
 /// because it is 503-ing on every check has not been fixed, it has been broken, and this is the
@@ -254,9 +254,9 @@ async fn healthz_public_shape_is_status_only_against_a_live_database() {
 
 /// **The durability claim.** Refuse at the limit; still refuse after a restart.
 ///
-/// The in-memory limiter is exercised first, in the same test, to pin the defect T-280
-/// exists for: a fresh `IpLimiter` hands the same caller a full bucket, which is exactly
-/// what a process restart does today.
+/// The in-memory limiter is exercised first, in the same test, to pin the defect the durable
+/// tier exists for: a fresh `IpLimiter` hands the same caller a full bucket, which is exactly
+/// what a process restart produces.
 #[tokio::test]
 async fn pg_limiter_refuses_at_the_limit_and_after_a_restart() {
     let Some(url) = common::require_test_database_url() else {

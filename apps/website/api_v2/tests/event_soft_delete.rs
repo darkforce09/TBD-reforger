@@ -1,4 +1,4 @@
-//! T-579 — `DELETE /api/v1/events/:id` is a **soft** delete, proven against database state.
+//! `DELETE /api/v1/events/:id` is a **soft** delete, proven against database state.
 //!
 //! # Why this suite exists
 //!
@@ -27,14 +27,14 @@
 //! # If you are here because this suite went red
 //!
 //! You probably changed `delete_event` into a hard delete. That may well be right — the FK that
-//! makes it correct has shipped since T-262 (`0018_foreign_keys.sql` constraint 1). But the dialog
+//! makes it correct is in place (`0018_foreign_keys.sql` constraint 1). But the dialog
 //! copy is now wrong in the *other* direction: it currently promises the operator that nothing is
 //! erased and the operation can be restored. Rewrite `DELETE_EVENT_CONFIRM_DESC` in the same commit
 //! and check what happens to `event_registrations.state = 'attended'` — attendance history, stamped
 //! from telemetry, which the cascade erases. That is the loss worth arguing about.
 //!
-//! Do **not** repeat what this header used to say about `matches.event_id`: "no foreign key — a
-//! hard delete orphans it silently". `0019_ingest_pointer_foreign_keys.sql:222-224` (T-585) added
+//! `matches.event_id` is not an unguarded pointer:
+//! `0019_ingest_pointer_foreign_keys.sql:222-224` declares
 //! `matches_event_id_fkey … REFERENCES events(id) ON DELETE SET NULL`, so a hard delete orphans
 //! nothing. It NULLs the match's attribution to the event; the `matches` row, its `aar_replay_url`
 //! and the whole leaderboard (aggregated from `match_player_stats`, keyed on `match_id`) survive
@@ -254,8 +254,8 @@ async fn delete_event_is_soft_and_destroys_none_of_what_the_dialog_names() {
          delete silently does nothing"
     );
 
-    // ── 2. Nothing cascaded. These three are exactly what the pre-T-579 dialog promised were
-    //       "removed", and every one of them is still here. ──
+    // ── 2. Nothing cascaded. These three are exactly what a "removed" claim would cover, and
+    //       every one of them is still here. ──
     assert_eq!(
         count(
             &pool,

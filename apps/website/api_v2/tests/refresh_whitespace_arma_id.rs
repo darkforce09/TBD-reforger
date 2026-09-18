@@ -1,4 +1,4 @@
-//! T-350 — whitespace `arma_id` is not linked; leave `reason` rejects blank/whitespace.
+//! Whitespace `arma_id` is not linked; leave `reason` rejects blank/whitespace.
 //!
 //! # Owns expansion (called out)
 //!
@@ -161,7 +161,7 @@ async fn refresh_real_arma_id_mints_arma_linked_true() {
     cleanup(&pool).await;
 }
 
-/// Leave reason blank/whitespace → 400 (T-218/317/343 family; T-350 closes the LOA site).
+/// Leave reason blank/whitespace → 400, closing the LOA write site.
 #[tokio::test]
 async fn submit_leave_rejects_blank_and_whitespace_reason() {
     let _guard = DB_LOCK.lock().await;

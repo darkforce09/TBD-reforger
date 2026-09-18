@@ -1,9 +1,9 @@
-//! T-068.9 registry ingest + compat API slice — proof-ledger gates G1–G5, G9, G10
+//! Registry ingest + compat API slice — proof-ledger gates G1–G5, G9, G10
 //! (see `.ai/artifacts/t068_9_verify_log.md`): ingest bijection, idempotency,
 //! API fidelity, `edge_type` filter, DB referential integrity, any-mod synthetic
 //! round-trip + modpack isolation + prune, histograms.
 //!
-//! Uses the committed T-150 envelopes as ground truth, imported under a fixed
+//! Uses the committed vanilla envelopes as ground truth, imported under a fixed
 //! test-scoped modpack (never `is_current` — `content_read.rs` asserts the
 //! no-current-modpack 404 on this shared DB). Skips unless `TEST_DATABASE_URL`
 //! points at a migrated DB.
@@ -25,7 +25,7 @@ use website_api::missions::services::registry_import::{import_compat, import_ite
 
 mod common;
 
-/// Fixed test-scoped modpacks: vanilla T-150 envelopes + the synthetic "any mod".
+/// Fixed test-scoped modpacks: the vanilla envelopes + the synthetic "any mod".
 const TEST_MP: &str = "00000000-0000-4000-a000-00000000c0de";
 const TEST_MP2: &str = "00000000-0000-4000-a000-00000000c0d2";
 
@@ -181,8 +181,8 @@ async fn db_items(pool: &PgPool, mp: Uuid) -> BTreeSet<(String, String, String, 
 }
 
 /// Full-row snapshot (ids + timestamps) — byte-level idempotency evidence (G2).
-/// evidence joins the ORDER BY (and qty the row) since T-068.15.1 widened the
-/// edge key: several rows can share (from, to, type).
+/// evidence joins the ORDER BY (and qty the row) because the edge key is wide:
+/// several rows can share (from, to, type).
 #[allow(clippy::type_complexity)]
 async fn db_edge_snapshot(
     pool: &PgPool,
@@ -237,16 +237,16 @@ async fn registry_compat_ingest_api_worker_gates() {
     let items_env: Value = serde_json::from_slice(&items_raw).unwrap();
     let compat_env: Value = serde_json::from_slice(&compat_raw).unwrap();
 
-    // ── Import the committed T-150 envelopes under the test modpack ──────────
+    // ── Import the committed vanilla envelopes under the test modpack ────────
     let ci = import_items(&pool, &items_raw, Some(mp), false)
         .await
         .expect("items");
     let cc = import_compat(&pool, &compat_raw, Some(mp), false)
         .await
         .expect("compat");
-    // T-068.10.2 census-gated envelope (see .ai/artifacts/t068_10_2_census.md),
-    // re-exported at T-068.15.1: 1,857 items (23 predicted drops from the 1,880
-    // T-150 set) / 20,908 raw edges = the untouched 4,685 legacy set + 16,223
+    // The census-gated envelope (see .ai/artifacts/t068_10_2_census.md):
+    // 1,857 items (23 predicted drops from the 1,880-item scan) / 20,908 raw
+    // edges = the untouched 4,685 legacy set + 16,223
     // character_default_cargo emissions (one per InitialInventoryItems
     // PrefabsToSpawn entry — duplicates are the qty signal). The importer
     // aggregates duplicates per (from, to, type, evidence): 10,604 unique rows
@@ -268,7 +268,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     assert_eq!(cc.histogram["character_default_weapon"], 673);
     assert_eq!(cc.histogram["character_default_cargo"], 16223);
 
-    // T-068.15.1 — multiplicity conservation: DB qty sums back to the raw
+    // Multiplicity conservation: DB qty sums back to the raw
     // envelope edge count, and duplicate emissions survive as qty > 1.
     let (qty_sum, max_qty): (i64, i32) = sqlx::query_as(
         "SELECT sum(qty)::int8, max(qty) FROM registry_compat WHERE modpack_id = $1",
@@ -474,7 +474,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     });
     // Edge per type; index into `kinds` picks plausible endpoints; the ammo
     // families prove the pipeline accepts them the moment an export ships them
-    // (test fixture only — the committed T-150 data keeps them empty).
+    // (test fixture only — the committed vanilla data keeps them empty).
     let syn_edges = vec![
         json!({"from_node": rn(8), "to_node": rn(1), "edge_type": "mag_in_weapon", "evidence": "SynWell"}),
         json!({"from_node": rn(9), "to_node": rn(8), "edge_type": "ammo_in_mag", "evidence": "SynAmmo"}),
@@ -485,7 +485,7 @@ async fn registry_compat_ingest_api_worker_gates() {
         json!({"from_node": rn(9), "to_node": rn(13), "edge_type": "ammo_in_vehicle_weapon", "evidence": "SynShell"}),
         json!({"from_node": rn(6), "to_node": rn(0), "edge_type": "character_default_loadout", "evidence": "SynSlot"}),
     ];
-    // T-068.15.1 — duplicate emissions (the scanner's cargo qty signal) must
+    // Duplicate emissions (the scanner's cargo qty signal) must
     // aggregate, not last-wins: ship the first edge three times in one envelope.
     let mut syn_edges_raw = syn_edges.clone();
     syn_edges_raw.push(syn_edges[0].clone());

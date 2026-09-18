@@ -1,4 +1,4 @@
-//! OAuth redirect paths — Rust port of `oauth_redirect_test.go`. These bail before
+//! OAuth redirect paths. These bail before
 //! any DB access, so they run with a lazy (unconnected) pool and need no live DB.
 
 use axum::Router;
@@ -28,9 +28,9 @@ fn location(resp: &Response) -> String {
         .to_string()
 }
 
-/// T-429 / T-480 — CSRF reject responses must clear `oauth_state` with the
-/// exact live helper string (`OAUTH_STATE_CLEAR`). Soft `contains("Path=/")`
-/// greened a divergent Path=/api; Class-R requires byte equality.
+/// CSRF reject responses must clear `oauth_state` with the exact live helper string
+/// (`OAUTH_STATE_CLEAR`). A soft `contains("Path=/")` would green a divergent `Path=/api`;
+/// Class-R requires byte equality.
 fn assert_oauth_state_cleared(resp: &Response) {
     let cookie = resp.headers()[header::SET_COOKIE]
         .to_str()
@@ -71,7 +71,7 @@ async fn callback_missing_code_redirects_error() {
         .unwrap();
     assert_eq!(resp.status(), StatusCode::FOUND);
     assert!(location(&resp).contains("error=missing_code"));
-    // T-429 — missing_code goes through callback_csrf_reject → OAUTH_STATE_CLEAR.
+    // missing_code goes through callback_csrf_reject → OAUTH_STATE_CLEAR.
     assert_oauth_state_cleared(&resp);
 }
 
@@ -89,7 +89,7 @@ async fn callback_invalid_state_redirects_error() {
         .unwrap();
     assert_eq!(resp.status(), StatusCode::FOUND);
     assert!(location(&resp).contains("error=invalid_state"));
-    // T-429 — invalid_state goes through callback_csrf_reject → OAUTH_STATE_CLEAR.
+    // invalid_state goes through callback_csrf_reject → OAUTH_STATE_CLEAR.
     assert_oauth_state_cleared(&resp);
 }
 

@@ -1,24 +1,24 @@
 //! Admin + approvals + CMS + field-tools. Skips without `TEST_DATABASE_URL`.
 //!
-//! Dev-login minting goes through [`common::dev_login_token`] (T-469) so a non-302 or
+//! Dev-login minting goes through [`common::dev_login_token`] so a non-302 or
 //! missing `Location` reports status + body + suite instead of
 //! `no entry found for key "location"`.
 //!
-//! # T-499 — roles/sync must not demote the shared IT DB
+//! # roles/sync must not demote the shared IT DB
 //!
-//! `POST /api/v1/admin/roles/sync` walks **every** `users` row. T-372 skips empty
-//! `user_discord_roles` snapshots, but any user with stored snowflakes can still be
+//! `POST /api/v1/admin/roles/sync` walks **every** `users` row. An empty
+//! `user_discord_roles` snapshot is skipped, but any user with stored snowflakes can still be
 //! remapped/demoted. On the shared gate DB that rewrites sibling suites' actors.
 //! Suite-scoped snapshot → call → restore keeps the endpoint covered without leaving
 //! demotions behind.
 //!
-//! # T-502 — empty-snapshot admin must survive sync
+//! # empty-snapshot admin must survive sync
 //!
-//! Class-R unit pins prove `resync_ids_from_snapshot([]) → None`, but the existing
-//! roles/sync IT only asserted HTTP 200. A cold IT promotes an admin who holds
+//! Class-R unit pins prove `resync_ids_from_snapshot([]) → None`, and an HTTP 200 assertion on
+//! roles/sync says nothing past the status line. A cold IT promotes an admin who holds
 //! **zero** `user_discord_roles`, POSTs sync, and asserts the web role stays
-//! `admin` — the T-372 lockout path that unit tests alone cannot catch at the
-//! route. Still wrapped in T-499 snapshot → restore so sibling suites stay intact.
+//! `admin` — the lockout path that unit tests alone cannot catch at the
+//! route. Still wrapped in the snapshot → restore isolation so sibling suites stay intact.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -35,16 +35,16 @@ mod common;
 
 const TARGET: &str = "000000000000000009";
 
-/// T-534 — serialises the two tests that snapshot / mutate the **whole** `users` table.
+/// Serialises the two tests that snapshot / mutate the **whole** `users` table.
 ///
-/// `POST /admin/roles/sync` walks every row, so the T-499 isolation around it is a
+/// `POST /admin/roles/sync` walks every row, so the isolation around it is a
 /// whole-table `snapshot → sync → restore`. Two of those running at once is a race no
 /// amount of per-row care fixes: `empty_snapshot_admin_survives_roles_sync` snapshots
 /// [`TARGET`] as `enlisted`, `admin_approvals_cms_field` PATCHes the same row to `leader`,
 /// and whichever restores last is wrong about the other.
 ///
 /// MEASURED before this lock, with per-binary databases already in place: 1 of 8 full-suite
-/// runs died on `T-499: discord_id=000000000000000009 role after restore is leader, want
+/// runs died on `discord_id=000000000000000009 role after restore is leader, want
 /// enlisted`. Database isolation cannot reach this one — both tests are in the SAME binary
 /// and therefore the same database by construction.
 ///
@@ -65,14 +65,14 @@ async fn boot() -> Option<(Router, PgPool)> {
     Some((app, pool))
 }
 
-/// Suite-scoped web-role snapshot for T-499 isolation around `POST /admin/roles/sync`.
+/// Suite-scoped web-role snapshot isolating `POST /admin/roles/sync`.
 async fn snapshot_user_roles(pool: &PgPool) -> Vec<(String, String)> {
     sqlx::query_as(
         "SELECT discord_id, role::text FROM users WHERE deleted_at IS NULL ORDER BY discord_id",
     )
     .fetch_all(pool)
     .await
-    .expect("T-499: snapshot user roles")
+    .expect("snapshot user roles")
 }
 
 /// Restore every snapped role exactly — sibling suites must keep the tiers they set.
@@ -89,11 +89,11 @@ async fn restore_user_roles(pool: &PgPool, snapshot: &[(String, String)]) {
         .bind(discord_id)
         .execute(pool)
         .await
-        .unwrap_or_else(|e| panic!("T-499: restore role for {discord_id}: {e}"));
+        .unwrap_or_else(|e| panic!("restore role for {discord_id}: {e}"));
     }
 }
 
-/// Assert every still-present snapped user holds the pre-sync web role (T-499).
+/// Assert every still-present snapped user holds the pre-sync web role.
 async fn assert_roles_match_snapshot(pool: &PgPool, snapshot: &[(String, String)]) {
     for (discord_id, role) in snapshot {
         let current: Option<String> = sqlx::query_scalar(
@@ -102,11 +102,11 @@ async fn assert_roles_match_snapshot(pool: &PgPool, snapshot: &[(String, String)
         .bind(discord_id)
         .fetch_optional(pool)
         .await
-        .expect("T-499: re-read role after restore");
+        .expect("re-read role after restore");
         if let Some(cur) = current {
             assert_eq!(
                 cur, *role,
-                "T-499: discord_id={discord_id} role after restore is {cur}, want {role}"
+                "discord_id={discord_id} role after restore is {cur}, want {role}"
             );
         }
     }
@@ -174,8 +174,8 @@ async fn call_ct(
 
 /// Find one mission anywhere in the `GET /api/v1/approvals` queue, walking **every** page.
 ///
-/// **Do not shrink this back to "is it on page 1" (T-399).** `handlers/approvals.rs` serves the
-/// queue `ORDER BY COALESCE(...) ASC, m.id ASC` — *oldest first*, unique-tied (T-414) — and
+/// **Do not shrink this to "is it on page 1".** `handlers/approvals.rs` serves the
+/// queue `ORDER BY COALESCE(...) ASC, m.id ASC` — *oldest first*, unique-tied — and
 /// nothing anywhere ever removes a `pending_approval` mission from the shared gate database:
 /// the mission suites each leave one behind on every run, `tests/null_tolerance_reads.rs`
 /// leaves one with both timestamps NULL (which the sentinel sorts to
@@ -196,8 +196,8 @@ async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<
     // limit above 100, so 100 is the largest page actually honoured — asking for more would
     // quietly make this walk five times as many pages.
     const PAGE: usize = 100;
-    // Cap at 10 full pages (T-414). The prior `100_000` guard was correct but allowed 1000 HTTP
-    // round trips before failing when LIMIT stopped being applied; 1000 rows still dwarfs any
+    // Cap at 10 full pages. A `100_000` guard is correct but allows 1000 HTTP
+    // round trips before failing when LIMIT stops being applied; 1000 rows still dwarfs any
     // realistic gate-DB residue (~24 measured) while diagnosing in seconds instead of minutes.
     const MAX_OFFSET: usize = 1_000;
     let mut offset = 0usize;
@@ -231,7 +231,7 @@ async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<
     }
 }
 
-/// T-317 — a ban must never erase the reason a previous admin recorded.
+/// A ban must never erase the reason a previous admin recorded.
 ///
 /// The regression this pins is specifically a **re-ban**: the target starts already banned
 /// with a real reason, and every malformed request has to leave that reason standing. A test
@@ -250,7 +250,7 @@ async fn ban_reason_survives_a_malformed_reban() {
     };
     let t = admin_token(&app).await;
     const BAN_TARGET: &str = "000000000000000317";
-    const SENTINEL: &str = "ORIGINAL: griefing 2026-07-01 [T-317 sentinel]";
+    const SENTINEL: &str = "ORIGINAL: griefing 2026-07-01 [prior-ban sentinel]";
     const ORIG_AT: &str = "2026-07-01 12:00:00+00";
 
     // Re-arm the fixture: already banned, with a reason and a ban date worth losing.
@@ -373,7 +373,7 @@ async fn ban_reason_survives_a_malformed_reban() {
 
 #[tokio::test]
 async fn admin_approvals_cms_field() {
-    // T-534: whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
+    // Whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
     let _roles_table = ROLES_TABLE_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
@@ -383,7 +383,7 @@ async fn admin_approvals_cms_field() {
 
     // A ban/warn target + a server for RCON.
     // arma_id NULL (not '') — a UNIQUE index forbids duplicate non-null arma_ids;
-    // Go stores unlinked users as NULL (`*string`), so NULLs coexist.
+    // unlinked users are stored as NULL, so any number of them coexist.
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
          VALUES ($1, 'Target Z', 'targetz', '', NULL, '', 'enlisted', false, '', now(), now()) \
@@ -462,17 +462,16 @@ async fn admin_approvals_cms_field() {
     assert_eq!(st, StatusCode::OK);
     assert_eq!(r["banned"], false);
 
-    // T-499: snapshot → sync → restore. The handler still walks every user; we must
+    // Snapshot → sync → restore. The handler walks every user, and we must
     // not leave remapped/demoted tiers on the shared gate DB for sibling binaries.
     let role_snap = snapshot_user_roles(&pool).await;
     let (st, sync_body) = call(&app, "POST", "/api/v1/admin/roles/sync", &t, None).await;
     assert_eq!(st, StatusCode::OK, "roles/sync: {sync_body}");
     restore_user_roles(&pool, &role_snap).await;
     assert_roles_match_snapshot(&pool, &role_snap).await;
-    // T-269 — the RCON endpoint must not report success over a command it cannot deliver.
-    // Until T-289 supplies a channel to the game-server host there is no transport, so a
+    // The RCON endpoint must not report success over a command it cannot deliver. With no
+    // channel to the game-server host configured here there is no transport, so a
     // syntactically valid request is audited and refused with 503, never 202 `accepted:true`.
-    // This assertion was `StatusCode::ACCEPTED` and was itself pinning the defect.
     let (st, r) = call(
         &app,
         "POST",
@@ -494,9 +493,9 @@ async fn admin_approvals_cms_field() {
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST);
 
-    // T-269 — `custom` with no command is a 400. Pre-fix the handler discarded `command`
-    // entirely (`let _ = &input.command;`), so this body was indistinguishable from a real
-    // one and returned 202.
+    // `custom` with no command is a 400. A handler that discarded `command` entirely
+    // (`let _ = &input.command;`) would make this body indistinguishable from a real one
+    // and answer 202.
     let (st, r) = call(
         &app,
         "POST",
@@ -511,10 +510,10 @@ async fn admin_approvals_cms_field() {
         "blank custom command must 400: {r}"
     );
 
-    // T-269 — and a real command must reach the audit row, which is the ONLY place an RCON
-    // request lands at all today. Pre-fix every custom command persisted the bare string
-    // `issued RCON 'custom'`, so the trail could not tell a shutdown from anything else.
-    // This is the assertion that fails against the discarding handler.
+    // And a real command must reach the audit row, which is the ONLY place an RCON
+    // request lands at all. A handler that persisted the bare string `issued RCON 'custom'`
+    // leaves a trail that cannot tell a shutdown from anything else, and this is the
+    // assertion that fails against it.
     let marker = format!("#tbd-t269-probe-{server_id}");
     let (st, r) = call(
         &app,
@@ -533,14 +532,14 @@ async fn admin_approvals_cms_field() {
     .fetch_optional(&pool)
     .await
     .unwrap();
-    let audited = audited.expect("T-269: an RCON attempt must still be audited");
+    let audited = audited.expect("an RCON attempt must still be audited");
     assert!(
         audited.contains(&marker),
-        "T-269: the audit row must record the command that was requested, got {audited:?}"
+        "the audit row must record the command that was requested, got {audited:?}"
     );
     assert!(
         !audited.contains("issued RCON"),
-        "T-269: the audit row must not claim the command was issued, got {audited:?}"
+        "the audit row must not claim the command was issued, got {audited:?}"
     );
     sqlx::query("DELETE FROM audit_logs WHERE action = 'server.rcon' AND target_id = $1")
         .bind(server_id.to_string())
@@ -570,12 +569,12 @@ async fn admin_approvals_cms_field() {
     .await;
     assert_eq!(st, StatusCode::OK);
     // The queue is oldest-first and never pruned, so the row just submitted is on the LAST page,
-    // never necessarily the first — see `find_in_approvals` (T-399).
+    // never necessarily the first — see `find_in_approvals`.
     let appr = find_in_approvals(&app, &t, &mid)
         .await
         .unwrap_or_else(|| panic!("submitted mission {mid} is absent from the approvals queue"));
     // Assert the projection, not just the id: these three come from three different places in
-    // the query — the base table, the `LEFT JOIN`, and the `COALESCE` chain T-330 added.
+    // the query — the base table, the `LEFT JOIN`, and the `COALESCE` chain.
     assert_eq!(appr["title"], "Approve Me", "approval row: {appr}");
     assert_eq!(
         appr["author_id"], "000000000000000001",
@@ -620,17 +619,18 @@ async fn admin_approvals_cms_field() {
     .await;
     assert_eq!(st, StatusCode::CREATED, "announce: {a}");
     let aid = a["id"].as_str().unwrap().to_string();
-    // T-239: CMS stores announcement body as authored plain text (SPA text-node escape).
-    // Pre-T-239 ammonia stripped <script> / entity-escaped bare < — that double-escaped in Leptos.
+    // CMS stores announcement body as authored plain text (SPA text-node escape).
+    // Running it through ammonia strips <script> / entity-escapes a bare < — which then
+    // double-escapes in Leptos.
     const AUTHORED: &str = "<b>hi</b><script>x</script>";
     assert_eq!(
         a["body"].as_str().unwrap(),
         AUTHORED,
-        "T-239: body must be plain-text identity (not ammonia-sanitized)"
+        "body must be plain-text identity (not ammonia-sanitized)"
     );
     assert!(
         !a["body"].as_str().unwrap().contains("&lt;"),
-        "T-239: body must not be entity-escaped"
+        "body must not be entity-escaped"
     );
     // Visible on the public feed while published.
     let (st, _) = call(
@@ -697,26 +697,26 @@ async fn admin_approvals_cms_field() {
     assert_eq!(saved["fire_mission"]["distance_m"], 1000);
 }
 
-/// T-502 — cold IT: an admin with zero `user_discord_roles` must survive
+/// Cold IT: an admin with zero `user_discord_roles` must survive
 /// `POST /admin/roles/sync`.
 ///
-/// Pre-T-372, `resync_all_roles` treated an empty stored snowflake list as
-/// `Authoritative([])` → `resolve_role` → enlisted, demoting every hand-promoted
+/// A `resync_all_roles` that treated an empty stored snowflake list as
+/// `Authoritative([])` → `resolve_role` → enlisted would demote every hand-promoted
 /// or seed admin who never OAuth'd. Unit Class-R pins `resync_ids_from_snapshot`
 /// empty→None; this IT proves the HTTP path leaves the web role alone.
 ///
-/// Isolation: T-499 snapshot → sync → restore still wraps the call so users with
+/// Isolation: the snapshot → sync → restore wrapper still surrounds the call so users with
 /// real snowflakes are not left remapped for sibling binaries on the shared gate DB.
 #[tokio::test]
 async fn empty_snapshot_admin_survives_roles_sync() {
-    // T-534: whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
+    // Whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
     let _roles_table = ROLES_TABLE_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
     let t = admin_token(&app).await;
-    // Private fixture — ticket-scoped snowflake, never the shared dev-login admin.
+    // Private fixture — suite-scoped snowflake, never the shared dev-login admin.
     const COLD_ADMIN: &str = "000000000000000502";
 
     sqlx::query(
@@ -728,14 +728,14 @@ async fn empty_snapshot_admin_survives_roles_sync() {
     .bind(COLD_ADMIN)
     .execute(&pool)
     .await
-    .expect("T-502: insert cold admin fixture");
+    .expect("insert cold admin fixture");
 
-    // Guarantee the T-372 empty-snapshot precondition — no leftover OAuth rows.
+    // Guarantee the empty-snapshot precondition — no leftover OAuth rows.
     sqlx::query("DELETE FROM user_discord_roles WHERE discord_id = $1")
         .bind(COLD_ADMIN)
         .execute(&pool)
         .await
-        .expect("T-502: clear user_discord_roles for cold admin");
+        .expect("clear user_discord_roles for cold admin");
 
     // Promote via PATCH (writes `users.role` only — never touches user_discord_roles).
     let (st, promoted) = call(
@@ -746,24 +746,24 @@ async fn empty_snapshot_admin_survives_roles_sync() {
         Some(r#"{"role":"admin"}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::OK, "T-502: promote cold admin: {promoted}");
-    assert_eq!(promoted["role"], "admin", "T-502: PATCH must yield admin");
+    assert_eq!(st, StatusCode::OK, "promote cold admin: {promoted}");
+    assert_eq!(promoted["role"], "admin", "PATCH must yield admin");
 
     let snowflake_count: i64 =
         sqlx::query_scalar("SELECT COUNT(*)::bigint FROM user_discord_roles WHERE discord_id = $1")
             .bind(COLD_ADMIN)
             .fetch_one(&pool)
             .await
-            .expect("T-502: count user_discord_roles before sync");
+            .expect("count user_discord_roles before sync");
     assert_eq!(
         snowflake_count, 0,
-        "T-502: cold admin must hold zero user_discord_roles before sync (empty snapshot)"
+        "cold admin must hold zero user_discord_roles before sync (empty snapshot)"
     );
 
-    // T-499 isolation: sync still walks every user; restore sibling tiers afterward.
+    // Isolation: sync walks every user, so restore sibling tiers afterward.
     let role_snap = snapshot_user_roles(&pool).await;
     let (st, sync_body) = call(&app, "POST", "/api/v1/admin/roles/sync", &t, None).await;
-    assert_eq!(st, StatusCode::OK, "T-502: roles/sync: {sync_body}");
+    assert_eq!(st, StatusCode::OK, "roles/sync: {sync_body}");
 
     let role_after: String = sqlx::query_scalar(
         "SELECT role::text FROM users WHERE discord_id = $1 AND deleted_at IS NULL",
@@ -771,10 +771,10 @@ async fn empty_snapshot_admin_survives_roles_sync() {
     .bind(COLD_ADMIN)
     .fetch_one(&pool)
     .await
-    .expect("T-502: read cold admin role after sync");
+    .expect("read cold admin role after sync");
     assert_eq!(
         role_after, "admin",
-        "T-502: empty-snapshot admin must survive roles/sync (got {role_after})"
+        "empty-snapshot admin must survive roles/sync (got {role_after})"
     );
 
     let snowflake_after: i64 =
@@ -782,10 +782,10 @@ async fn empty_snapshot_admin_survives_roles_sync() {
             .bind(COLD_ADMIN)
             .fetch_one(&pool)
             .await
-            .expect("T-502: count user_discord_roles after sync");
+            .expect("count user_discord_roles after sync");
     assert_eq!(
         snowflake_after, 0,
-        "T-502: sync must not invent snowflakes for an empty-snapshot user"
+        "sync must not invent snowflakes for an empty-snapshot user"
     );
 
     restore_user_roles(&pool, &role_snap).await;
@@ -796,98 +796,97 @@ async fn empty_snapshot_admin_survives_roles_sync() {
         .bind(COLD_ADMIN)
         .execute(&pool)
         .await
-        .expect("T-502: cleanup audit_logs");
+        .expect("cleanup audit_logs");
     sqlx::query("DELETE FROM users WHERE discord_id = $1")
         .bind(COLD_ADMIN)
         .execute(&pool)
         .await
-        .expect("T-502: cleanup cold admin fixture");
+        .expect("cleanup cold admin fixture");
 }
 
-/// Class-R (T-499): `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
+/// Class-R: `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
 ///
 /// A bare `POST /admin/roles/sync` on the shared gate DB remaps every user with stored
-/// Discord snowflakes and (pre-T-372) demoted empty-snapshot admins. Removing the restore
-/// is a silent cross-suite demotion — this pin fails the binary if the isolation helpers
-/// or call-site restore disappear.
+/// Discord snowflakes. Removing the restore is a silent cross-suite demotion — this pin
+/// fails the binary if the isolation helpers or call-site restore disappear.
 #[test]
 fn roles_sync_is_suite_scoped_snapshot_restore() {
     let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
     assert!(
         src.contains("common::require_test_database_url"),
-        "admin_field boot must call common::require_test_database_url (T-381/T-542)"
+        "admin_field boot must call common::require_test_database_url"
     );
     assert!(
         src.contains("fn snapshot_user_roles"),
-        "T-499: snapshot_user_roles helper missing"
+        "snapshot_user_roles helper missing"
     );
     assert!(
         src.contains("fn restore_user_roles"),
-        "T-499: restore_user_roles helper missing"
+        "restore_user_roles helper missing"
     );
     assert!(
         src.contains("/api/v1/admin/roles/sync"),
-        "T-499: roles/sync coverage must remain (do not silently drop the endpoint IT)"
+        "roles/sync coverage must remain (do not silently drop the endpoint IT)"
     );
     // Call order pin: snapshot before sync, restore after — not merely that the helpers exist.
     let snap = src
         .find("let role_snap = snapshot_user_roles")
-        .expect("T-499: role_snap = snapshot_user_roles call site missing");
+        .expect("role_snap = snapshot_user_roles call site missing");
     let sync = src
         .find(r#"call(&app, "POST", "/api/v1/admin/roles/sync""#)
-        .expect("T-499: roles/sync call(...) site missing");
+        .expect("roles/sync call(...) site missing");
     let restore = src
         .find("restore_user_roles(&pool, &role_snap)")
-        .expect("T-499: restore_user_roles(&pool, &role_snap) call site missing");
+        .expect("restore_user_roles(&pool, &role_snap) call site missing");
     assert!(
         snap < sync && sync < restore,
-        "T-499: expected snapshot → roles/sync → restore order (snap={snap} sync={sync} restore={restore})"
+        "expected snapshot → roles/sync → restore order (snap={snap} sync={sync} restore={restore})"
     );
 }
 
-/// Class-R (T-502): cold empty-snapshot admin IT must remain in this binary.
+/// Class-R: the cold empty-snapshot admin IT must remain in this binary.
 ///
 /// Unit Class-R already pins `resync_ids_from_snapshot([]) → None`. Dropping this
-/// IT would leave the HTTP path covered only by a 200 assert — the T-372 lockout
+/// IT would leave the HTTP path covered only by a 200 assert, and the lockout
 /// regresses silently at the route.
 #[test]
 fn empty_snapshot_admin_survival_it_is_present() {
     let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
     assert!(
         src.contains("fn empty_snapshot_admin_survives_roles_sync"),
-        "T-502: cold IT empty_snapshot_admin_survives_roles_sync missing"
+        "cold IT empty_snapshot_admin_survives_roles_sync missing"
     );
     assert!(
         src.contains("common::require_test_database_url"),
-        "T-502: boot must use common::require_test_database_url"
+        "boot must use common::require_test_database_url"
     );
     assert!(
         src.contains("DELETE FROM user_discord_roles WHERE discord_id"),
-        "T-502: cold IT must force zero user_discord_roles before sync"
+        "cold IT must force zero user_discord_roles before sync"
     );
     assert!(
-        src.contains(r#""T-502: empty-snapshot admin must survive roles/sync"#)
+        src.contains(r#""empty-snapshot admin must survive roles/sync"#)
             || src.contains("empty-snapshot admin must survive roles/sync"),
-        "T-502: post-sync admin role assert missing"
+        "post-sync admin role assert missing"
     );
-    // Cold IT must keep T-499 isolation — snapshot before its sync, restore after.
+    // Cold IT must keep the isolation — snapshot before its sync, restore after.
     let cold_fn = src
         .find("fn empty_snapshot_admin_survives_roles_sync")
-        .expect("T-502: cold IT fn missing");
+        .expect("cold IT fn missing");
     let cold_snap = src[cold_fn..]
         .find("let role_snap = snapshot_user_roles")
         .map(|i| cold_fn + i)
-        .expect("T-502: cold IT must snapshot before sync (T-499 isolation)");
+        .expect("cold IT must snapshot before sync");
     let cold_sync = src[cold_fn..]
         .find(r#"call(&app, "POST", "/api/v1/admin/roles/sync""#)
         .map(|i| cold_fn + i)
-        .expect("T-502: cold IT must POST roles/sync");
+        .expect("cold IT must POST roles/sync");
     let cold_restore = src[cold_fn..]
         .find("restore_user_roles(&pool, &role_snap)")
         .map(|i| cold_fn + i)
-        .expect("T-502: cold IT must restore after sync (T-499 isolation)");
+        .expect("cold IT must restore after sync");
     assert!(
         cold_snap < cold_sync && cold_sync < cold_restore,
-        "T-502: expected snapshot → roles/sync → restore in cold IT (snap={cold_snap} sync={cold_sync} restore={cold_restore})"
+        "expected snapshot → roles/sync → restore in cold IT (snap={cold_snap} sync={cold_sync} restore={cold_restore})"
     );
 }

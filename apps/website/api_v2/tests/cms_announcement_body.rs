@@ -1,20 +1,20 @@
-//! **T-239 — announcement body is a plain-text field (no ammonia on write).**
+//! **Announcement body is a plain-text field (no ammonia on write).**
 //!
-//! The SPA renders `body` as a Leptos text node. Pre-T-239, `create_announcement` /
-//! `update_announcement` ran `sanitize_html` (ammonia) before INSERT/UPDATE, which HTML-escaped
-//! bare `<` / `&`. Leptos then escaped again → authors saw literal `a &lt; b` on screen.
+//! The SPA renders `body` as a Leptos text node. Running `sanitize_html` (ammonia) in
+//! `create_announcement` / `update_announcement` before INSERT/UPDATE HTML-escapes bare
+//! `<` / `&`, Leptos escapes it again, and authors see literal `a &lt; b` on screen.
 //!
 //! These tests pin the HTTP round-trip: create and body-only PATCH store authored text
 //! **byte-identical**, and a body-only PATCH recomputes `snippet` (capped) from the new body.
 //!
-//! RED perturbation (T-239): re-introduce `sanitize_html(&input.body)` in `handlers/cms.rs` —
+//! RED perturbation: introduce `sanitize_html(&input.body)` in `handlers/cms.rs` —
 //! the `assert_eq!(body, AUTHOR)` arms fail because the row contains `&lt;` / `&amp;`.
 //!
-//! **T-246 — `POST …/push-discord` refuses non-published.** Create/PATCH already gate Discord
-//! push on `status == published`; the dedicated route did not. Tests below prove draft → 400
+//! **`POST …/push-discord` refuses non-published.** Create/PATCH gate Discord push on
+//! `status == published`, and so does the dedicated route. Tests below prove draft → 400
 //! and published → 200 against a local mock webhook.
 //!
-//! RED perturbation (T-246): drop the `status != Published` guard in `push_announcement_discord`
+//! RED perturbation: drop the `status != Published` guard in `push_announcement_discord`
 //! — `push_discord_refuses_draft` fails (draft reaches the webhook / returns 200).
 //!
 //! Skips without `TEST_DATABASE_URL` — a skip is a failure to have tested, not a pass.
@@ -247,12 +247,12 @@ async fn explicit_snippet_is_hard_capped_at_200_runes() {
     assert_eq!(
         snip.chars().count(),
         200,
-        "explicit snippet must be capped (pre-T-239 stored all 250)"
+        "explicit snippet must be capped, never stored at all 250"
     );
     assert!(snip.ends_with('…'));
 }
 
-/// T-246 — draft must not reach Discord even when a webhook is configured.
+/// Draft must not reach Discord even when a webhook is configured.
 #[tokio::test]
 async fn push_discord_refuses_draft() {
     let Some((app, _pool)) = boot_with_webhook(spawn_mock_webhook().await).await else {
@@ -294,7 +294,7 @@ async fn push_discord_refuses_draft() {
     );
 }
 
-/// T-246 — archived is also refused (same hole as draft before the guard).
+/// Archived is also refused — the same hole the draft guard closes.
 #[tokio::test]
 async fn push_discord_refuses_archived() {
     let Some((app, _pool)) = boot_with_webhook(spawn_mock_webhook().await).await else {
@@ -349,7 +349,7 @@ async fn push_discord_refuses_archived() {
     );
 }
 
-/// T-246 — published + configured webhook → 200 `{pushed:true}`.
+/// Published + configured webhook → 200 `{pushed:true}`.
 #[tokio::test]
 async fn push_discord_allows_published() {
     let Some((app, pool)) = boot_with_webhook(spawn_mock_webhook().await).await else {
@@ -399,7 +399,7 @@ async fn push_discord_allows_published() {
     assert_eq!(msg_id, "t246-msg");
 }
 
-/// T-465 — CMS master list returns drafts; public feed does not; non-admin is refused.
+/// CMS master list returns drafts; public feed does not; non-admin is refused.
 ///
 /// RED: change `list_cms_announcements` SQL to published-only (`status = 'published'`) —
 /// `find_id_in_list(... /cms/announcements ...)` fails because the draft id is absent.

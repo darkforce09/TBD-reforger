@@ -23,13 +23,13 @@ mod telemetry_support;
 const PLAYER_DISCORD: &str = "000000000000400003";
 const PLAYER_ARMA: &str = "telemetry-arma-400003";
 
-/// Class-R: the main ingest player must not be content_golden Vance (T-400 / T-334 residual).
+/// Class-R: the main ingest player must not be content_golden Vance.
 #[test]
 fn ingest_player_is_not_the_content_golden_seed_identity() {
     assert_ne!(
         PLAYER_DISCORD, "000000000000000003",
-        "PLAYER_DISCORD must not be content_golden Vance — T-334 vacated events; T-400 \
-         vacates telemetry"
+        "PLAYER_DISCORD must not be content_golden Vance — the golden seed identity is \
+         reserved for content fixtures"
     );
     assert_ne!(PLAYER_ARMA, "76561190000000003");
 }
@@ -127,16 +127,14 @@ async fn telemetry_ingest_closes_the_loop() {
 
     // Match results ingest → resolves arma→discord, records stats.
     //
-    // T-316: this body used to omit `team_kills` / `longest_kill_m` /
-    // `vehicles_destroyed` / `is_command` and let `#[serde(default)]` fill them with zeros.
-    // That default was a mechanical carry-over of Go's zero-value JSON decoding from the
-    // T-145 port, not a designed contract, and it is exactly what let a re-ingest wipe a
-    // real scoreline — so the stat block is now spelled out in full.
+    // The body spells the stat block out in full rather than leaning on `#[serde(default)]`
+    // to fill `team_kills` / `longest_kill_m` / `vehicles_destroyed` / `is_command` with
+    // zeros: a zero-filling default is exactly what lets a re-ingest wipe a real scoreline.
     //
-    // T-393: and it is spelled out inside `counters`, which is where the whole block lives now.
-    // Present = authoritative, so this is still the "full replace" path T-316 designed; what
-    // changed is that a sender with no scoreline to state may omit the block instead of being
-    // rejected (`the_shipping_mod_payload_is_accepted_verbatim`).
+    // The block is spelled out inside `counters`, which is where it lives. Present =
+    // authoritative, so this is the "full replace" path; a sender with no scoreline to state
+    // may omit the block instead of being rejected
+    // (`the_shipping_mod_payload_is_accepted_verbatim`).
     let match_body = format!(
         r#"{{"match":{{"source_match_id":"m-tele-1","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PLAYER_ARMA}","role_played":"SL","source_event_id":"e1","counters":{{"kills":5,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
@@ -203,8 +201,8 @@ async fn telemetry_ingest_closes_the_loop() {
     assert_eq!(stats["total_operations"], 1);
 }
 
-/// T-316 — a heartbeat is a merge, not a wipe. Unlike a match result, a partial heartbeat
-/// is legitimate, so the fix here is `COALESCE` (absent = no new reading) rather than
+/// A heartbeat is a merge, not a wipe. Unlike a match result, a partial heartbeat
+/// is legitimate, so this path uses `COALESCE` (absent = no new reading) rather than
 /// mandatory fields; only a heartbeat with nothing at all to say is rejected.
 #[tokio::test]
 async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {

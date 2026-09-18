@@ -2,16 +2,15 @@
 //! Postgres ENUM → Rust enum, `timestamptz` → `DateTime<Utc>`, `bigint` → `i64`,
 //! `numeric` → `f64` (via `::float8` cast), and `jsonb` → RawValue passthrough.
 //!
-//! Skips unless `TEST_DATABASE_URL` is set. T-558: no longer shares
-//! `MIGRATE_TEST_DATABASE_URL` with `db_migrate.rs` — [`common::require_test_database_url`]
-//! gives this binary its own `<base>_models_fromrow_it` database.
+//! Skips unless `TEST_DATABASE_URL` is set. [`common::require_test_database_url`] gives
+//! this binary its own `<base>_models_fromrow_it` database.
 //!
-//! NOTE: the Rust app sets `created_at`/`updated_at` explicitly on INSERT (GORM did this
-//! app-side; the columns have no DB default) — the inserts below mirror that.
+//! NOTE: the app sets `created_at`/`updated_at` explicitly on INSERT (the columns have no DB
+//! default) — the inserts below mirror that.
 //!
-//! Also hosts the T-376 sparse-reimport Class-R (moved out of
-//! `src/missions/services/registry_import.rs` so the DB consumer goes through the common
-//! guard and the t542 `src/` scan stays green).
+//! Also hosts the sparse-reimport Class-R for
+//! `src/missions/services/registry_import.rs`, so that DB consumer goes through the common
+//! guard and the tests-only `src/` scan stays green.
 
 mod common;
 
@@ -105,11 +104,11 @@ async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
         .await;
 }
 
-/// Class-R (T-376 / T-558): sparse re-import must not NULL populated Option columns.
+/// Class-R: sparse re-import must not NULL populated Option columns.
 ///
-/// Lived in `src/missions/services/registry_import.rs` as a lib `#[tokio::test]` that read
-/// `TEST_DATABASE_URL` raw — invisible to the tests-only t542 scan and pointed at the
-/// operator base. Moved here so the consumer uses the common per-binary guard.
+/// Lives here rather than beside `src/missions/services/registry_import.rs` so the DB
+/// consumer goes through the common per-binary guard instead of reading `TEST_DATABASE_URL`
+/// raw against the operator base.
 #[tokio::test]
 async fn sparse_reimport_preserves_option_columns() {
     let Some(url) = common::require_test_database_url() else {

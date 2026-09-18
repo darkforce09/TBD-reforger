@@ -1,33 +1,28 @@
-//! T-336 — `recompute_user_stats` in `command_center/services/`, and proof the move changed
-//! nothing.
+//! `recompute_user_stats` in `command_center/services/`, proven reachable and correct.
 //!
 //! # What this file has to prove, and why it is shaped like this
 //!
-//! T-336 is a **pure relocation**: the function moved from `pub(super) fn` in
-//! the telemetry ingest handler to `pub fn` in `command_center/services/user_stats.rs`, with the
-//!    three statements
-//! byte-identical. The ticket asks for two things, and they are different things.
+//! The function is `pub fn` in `command_center/services/user_stats.rs`, and this file proves
+//! two different things about it.
 //!
 //! 1. **Reachability from where it should be.** This file `use`s
 //!    `website_api::command_center::services::user_stats::recompute_user_stats` from *outside the
-//!    crate*. That import does not
-//!    compile against the pre-T-336 tree at all — `pub(super)` in the ingest handler module is not
-//!    reachable from an integration test — so the existence of this binary is the proof.
+//!    crate*. A `pub(super)` definition inside the ingest handler module is not reachable from
+//!    an integration test, so the existence of this binary is the proof.
 //! 2. **Behaviour unchanged.** The numbers below are arithmetic written out in the comments, not
 //!    whatever the query returned: four matches (one of them a second stat line for the *same*
 //!    match, so `count(DISTINCT match_id)` and `count(*)` disagree), and three past registrations
 //!    of which two are `attended`. Those two fixtures exist specifically so a plausible rewrite of
 //!    the moved SQL goes red rather than passing on a degenerate case.
 //!
-//! The existing telemetry ingest suites and `tests/identity_link.rs` are the other half: they
-//! exercise the same function through `POST /ingest/match-results` and the identity-link confirm,
-//! and they were green before this move and are green after it without an edit.
+//! The telemetry ingest suites and `tests/identity_link.rs` are the other half: they exercise
+//! the same function through `POST /ingest/match-results` and the identity-link confirm.
 
 use sqlx::PgPool;
 use uuid::Uuid;
 use website_api::core::database;
-// The T-336 reachability proof: the ingest handler's `recompute_user_stats` was `pub(super)`, so
-// this line is the thing that could not be written before the move.
+// The reachability proof: a `pub(super)` `recompute_user_stats` inside the ingest handler could
+// not be imported here at all, so this line is itself the assertion.
 use website_api::command_center::services::user_stats::{
     recompute_user_stats, recompute_user_stats_best_effort,
 };
@@ -37,7 +32,7 @@ mod common;
 /// Per-test fixture identity. Tests inside one binary run in parallel, so each owns a **distinct**
 /// `discord_id` and a distinct row tag — a shared player would have them deleting each other's
 /// matches and reading each other's counts, which is a harness bug wearing the costume of a
-/// behaviour change. Ids are in the T-400 private range and are never content-golden Vance
+/// behaviour change. Ids are in the suite-private range and are never content-golden Vance
 /// (`…003`).
 struct Fixture {
     player: &'static str,
@@ -208,10 +203,10 @@ impl Fixture {
 /// below marks a *future* op attended and requires the rate to move to 100 — which is what the
 /// shipped SQL does, and which means `attendance_rate` can in principle exceed 100.
 ///
-/// That is a real latent defect and it is **not** this ticket's to fix: T-336 is a pure
-/// relocation, and quietly correcting the SQL inside a move is exactly how a "no behaviour change"
-/// claim stops being true. Pinning it here means the fix, when someone takes it, arrives as a
-/// deliberate red test rather than as a silent difference nobody notices.
+/// That is a real latent defect, pinned here rather than fixed: quietly correcting the SQL
+/// while relocating it is exactly how a "no behaviour change" claim stops being true. Pinning
+/// it means the fix, when someone takes it, arrives as a deliberate red test rather than as a
+/// silent difference nobody notices.
 #[tokio::test]
 async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
     let Some((pool, f)) = Fixture::boot("000000000000336001", "t336-correct").await else {
@@ -304,7 +299,7 @@ async fn a_player_with_no_history_reads_zero_rather_than_dividing_by_zero() {
     );
 }
 
-/// The best-effort wrapper T-336 folded in writes the same numbers on the happy path.
+/// The best-effort wrapper writes the same numbers on the happy path.
 ///
 /// It is infallible by design — the point is that it does not swallow the *work*, only the error.
 #[tokio::test]
@@ -316,7 +311,7 @@ async fn the_best_effort_wrapper_still_writes_the_numbers() {
     let m = f.seed_match(&pool, "wrapper").await;
     f.seed_stat(&pool, m, "w").await;
 
-    recompute_user_stats_best_effort(&pool, f.player, "T-336 wrapper check").await;
+    recompute_user_stats_best_effort(&pool, f.player, "wrapper check").await;
 
     let (deployments, _) = f.stored_stats(&pool).await;
     assert_eq!(deployments, 1, "the wrapper must actually recompute");
@@ -325,9 +320,9 @@ async fn the_best_effort_wrapper_still_writes_the_numbers() {
 
 /// Class-R: the function has exactly one definition, and it is not in `handlers/`.
 ///
-/// T-326's whole argument was that two definitions of "a deployment" drifting apart is the same
-/// silent-wrong-number bug the backfill was filed to fix. A move that left a copy behind — or a
-/// later slice that re-derived the SQL in a handler — would satisfy every test above.
+/// Two definitions of "a deployment" drifting apart is the same silent-wrong-number bug the
+/// backfill exists to prevent. A relocation that left a copy behind — or a later slice that
+/// re-derived the SQL in a handler — would satisfy every test above.
 #[test]
 fn the_sql_lives_only_in_the_service() {
     let service = include_str!("../src/command_center/services/user_stats.rs");
@@ -344,8 +339,8 @@ fn the_sql_lives_only_in_the_service() {
     ] {
         assert!(
             !handler.contains("count(DISTINCT match_id) FROM match_player_stats"),
-            "a handler re-derives the deployment count — that is the two-definitions drift T-326 \
-             refused and T-336 moved this function to prevent"
+            "a handler re-derives the deployment count — that is the two-definitions drift this \
+             function lives in the service layer to prevent"
         );
         assert!(
             !handler.contains("UPDATE users SET total_deployments"),

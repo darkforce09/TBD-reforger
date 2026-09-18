@@ -1,4 +1,4 @@
-//! T-625 — `X-Forwarded-For` behind `TRUSTED_PROXIES`, proven through the real HTTP router.
+//! `X-Forwarded-For` behind `TRUSTED_PROXIES`, proven through the real HTTP router.
 //!
 //! # The defect
 //!
@@ -139,7 +139,7 @@ async fn spend_burst(
 // ───────────────────────── the header must be inert by default ─────────────────────────
 
 /// **`TRUSTED_PROXIES` unset — the shipped default.** Every request forges a different
-/// `X-Forwarded-For`, and the API must behave exactly as it did before T-625: one bucket, keyed by
+/// `X-Forwarded-For`, and the API must ignore it entirely: one bucket, keyed by
 /// the connection peer, refused after the burst.
 ///
 /// The forged addresses are the evidence. If the header were honoured with no trusted proxy
@@ -241,8 +241,8 @@ async fn a_forged_header_from_an_untrusted_peer_gets_no_bucket_of_its_own() {
 /// **The ticket.** Two members open the site through the same Caddy. They get **two** buckets, and
 /// one exhausting its own does not touch the other.
 ///
-/// Pre-T-625 both clients key to `127.0.0.3` — the proxy — so B's first request is B's eleventh,
-/// and B is refused. That is the op-night defect, reproduced as an assertion.
+/// Without proxy-aware keying both clients key to `127.0.0.3` — the proxy — so B's first request
+/// is B's eleventh and B is refused. That is the op-night defect, reproduced as an assertion.
 #[tokio::test]
 async fn two_clients_behind_the_trusted_proxy_get_separate_buckets() {
     let Some((pool, url)) = boot().await else {
@@ -265,7 +265,7 @@ async fn two_clients_behind_the_trusted_proxy_get_separate_buckets() {
         st,
         StatusCode::TOO_MANY_REQUESTS,
         "client B was refused because client A had spent the bucket — this is the shared-bucket \
-         defect T-625 is about, and it is what every public client saw behind Caddy: {body}"
+         defect, and it is what every public client sees behind Caddy: {body}"
     );
     assert_ne!(st, StatusCode::SERVICE_UNAVAILABLE, "B: {body}");
 
@@ -429,7 +429,8 @@ fn the_rate_limiter_still_reads_the_trusted_proxy_list() {
 }
 
 /// Class-R: an unspecified peer is still nobody, and `Ipv4Addr::UNSPECIFIED` is still the L1
-/// fallback rather than a durable bucket — T-578's contract, which T-625 must not have moved.
+/// fallback rather than a durable bucket — the durable limiter's contract, which proxy-aware
+/// keying must not move.
 #[tokio::test]
 async fn a_peerless_client_still_writes_no_durable_bucket() {
     let Some((pool, url)) = boot().await else {

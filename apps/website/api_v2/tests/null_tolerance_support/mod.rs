@@ -1,8 +1,8 @@
 //! Shared harness for the null-tolerance suites.
 //!
 //! **The invariant.** Every nullable column read into a non-`Option` model field must be
-//! `COALESCE`d *in the query*. This is a Go→Rust port: Go's `string`/`time.Time` cannot hold
-//! NULL, so the port keeps the zero value on the field and pushes the NULL→zero conversion
+//! `COALESCE`d *in the query*. A non-`Option` field such as `String`/`DateTime` cannot hold
+//! NULL, so the model keeps the zero value on the field and pushes the NULL→zero conversion
 //! into SQL. `Option` is deliberately NOT the fix — `skip_serializing_if = "String::is_empty"`
 //! already omits the key for `""` byte-identically to an omitted `None`, so `Option` would add
 //! a second encoding of one state and break the committed goldens. The full rejection is

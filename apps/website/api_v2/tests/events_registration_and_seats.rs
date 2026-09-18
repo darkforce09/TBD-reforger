@@ -214,7 +214,7 @@ async fn event_orbat_registration_and_race() {
     );
 }
 
-/// T-318 — the registration upsert used to orphan an ORBAT seat that nobody could free.
+/// The registration upsert must not orphan an ORBAT seat that nobody can free.
 ///
 /// Two independent failures, both covered here because fixing either alone leaves the bug
 /// live: a bad body was collapsed into "no seat" and blanked `event_registrations.slot_id`
@@ -369,9 +369,9 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         "explicit empty slot_id is the bench registration"
     );
 
-    // T-324: that request also stands the seat down now. It used to be the orphan factory —
-    // registration blanked, `assigned_to` left naming the caller — which is what made it the
-    // convenient way to reproduce the shape below.
+    // That request also stands the seat down. Blanking the registration while leaving
+    // `assigned_to` naming the caller is the orphan factory, and the convenient way to
+    // reproduce the shape below.
     assert!(
         reg_slot(&emid).await.unwrap().is_none(),
         "registration blank"
@@ -385,8 +385,8 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     // ── Part 2: withdraw frees the seat through `assigned_to`, not `slot_id` ─
     // The orphan shape — claim held, registration blank — is no longer reachable through the
     // API, so seed it. Rows in this state exist from before both fixes and have to stay
-    // recoverable by their occupant; pre-T-318 this was terminal, because withdraw looked the
-    // seat up through the column that was blank and then deleted the row anyway.
+    // recoverable by their occupant; a withdraw that looks the seat up through the column that
+    // is blank and then deletes the row anyway makes the state terminal.
     sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
         .bind(DEV_USER)
         .bind(slot0.parse::<uuid::Uuid>().unwrap())
@@ -445,10 +445,10 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     // not who is allowed to call it or what it reports when there is nothing to do.
     assert_eq!(withdraw(&emid).await, StatusCode::NOT_FOUND);
 
-    // T-511: multi-seat seed retired. A partial unique on
+    // No multi-seat seed: a partial unique on
     // (event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL makes the
-    // legacy two-seat shape unreachable (and the index cannot be DEFERRABLE).
-    // T-318 recovery intent remains in Part 2 above — orphan seats freed via
+    // two-seat shape unreachable (and the index cannot be DEFERRABLE).
+    // The recovery intent lives in Part 2 above — orphan seats freed via
     // `assigned_to`, not `slot_id`. Prove the structural guard: a second seat
     // for the same occupant must raise unique_violation (SQLSTATE 23505).
     assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
@@ -497,13 +497,13 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     );
 }
 
-/// T-324 — a second claim MOVES the caller's seat; it does not mint a second one.
+/// A second claim MOVES the caller's seat; it does not mint a second one.
 ///
-/// The bug T-318 measured and left standing: claim slot0, claim slot1, both requests entirely
-/// valid and both 200, and the caller ends up holding two `orbat_slots` rows while their single
-/// `event_registrations` row names one. Measured against the pre-fix binary over real HTTP, a
-/// 2-slot ORBAT then reported `filled: 2, registered: 1` — an operation that reads FULL with one
-/// person signed up, and stays that way until someone withdraws.
+/// The defect this bounds: claim slot0, claim slot1, both requests entirely valid and both 200,
+/// and the caller ends up holding two `orbat_slots` rows while their single
+/// `event_registrations` row names one. Measured over real HTTP, a 2-slot ORBAT then reports
+/// `filled: 2, registered: 1` — an operation that reads FULL with one person signed up, and
+/// stays that way until someone withdraws.
 ///
 /// The invariant under test is one seat per caller per event-mission, and that it is the seat the
 /// registration names. Everything else here is a bound on the release: it must not reach another
@@ -730,7 +730,7 @@ async fn register_moves_the_caller_s_seat() {
 
     // ── The bench branch gives the seat up rather than orphaning it ─────────
     // `{"slot_id":""}` nulls the registration's `slot_id` by design, so leaving `assigned_to`
-    // set is exactly the T-318 orphan. It is now the one thing a valid request cannot produce.
+    // set is exactly the orphan shape. It is the one thing a valid request cannot produce.
     assert_eq!(register(&emid, r#"{"slot_id":""}"#).await, StatusCode::OK);
     assert_eq!(held(&emid, DEV_USER).await, 0, "benched holds no seat");
     assert_eq!(

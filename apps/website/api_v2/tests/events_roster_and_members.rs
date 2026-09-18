@@ -14,7 +14,7 @@ use tower::ServiceExt;
 mod common;
 mod events_support;
 
-/// Class-R: two seeds must not share a fixed `arma_id` string (the T-479 cold-gate flake).
+/// Class-R: two seeds must not share a fixed `arma_id` string (the cold-gate flake).
 ///
 /// Perturbation: change [`arma`] back to `format!("events-arma-{discord_id}")` → both
 /// equal the literal below → assert fails.
@@ -27,20 +27,20 @@ fn arma_mint_never_collides_on_a_fixed_string() {
         "arma() must mint distinct ids — fixed events-arma-{{discord}} collides under parallel IT"
     );
     let fixed = format!("events-arma-{OTHER}");
-    assert_ne!(a, fixed, "mint must not be the pre-T-479 fixed string: {a}");
-    assert_ne!(b, fixed, "mint must not be the pre-T-479 fixed string: {b}");
+    assert_ne!(a, fixed, "mint must not be the fixed string: {a}");
+    assert_ne!(b, fixed, "mint must not be the fixed string: {b}");
     assert!(
         a.starts_with(&format!("events-arma-{OTHER}-")),
         "traceable prefix required: {a}"
     );
 }
 
-/// Class-R: suite snowflakes must stay off telemetry / identity / dev-login ranges (T-517).
+/// Class-R: suite snowflakes must stay off telemetry / identity / dev-login ranges.
 ///
 /// Perturbation: set OTHER/THIRD equal to a known foreign actor → assert fails.
 #[test]
 fn actor_snowflakes_are_suite_private() {
-    // telemetry_server_status_ingest.rs PLAYER_DISCORD (pre-T-517 collision class)
+    // telemetry_server_status_ingest.rs PLAYER_DISCORD (collision class)
     const TELEMETRY_PLAYER: &str = "000000000000400003";
     // identity_link.rs ACTOR / PAD
     const IDENTITY_ACTOR: &str = "000000000000400001";
@@ -56,13 +56,13 @@ fn actor_snowflakes_are_suite_private() {
     assert_ne!(THIRD, IDENTITY_PAD);
 }
 
-/// T-495 — `GET /api/v1/members` must honour `offset` (not only return an array).
+/// `GET /api/v1/members` must honour `offset` (not only return an array).
 ///
-/// T-412 shipped handler LIMIT/OFFSET + `{data,total,limit,offset}` and a pure-oracle unit
-/// test, but the live IT path in this suite still only did `assert!(mem["data"].is_array())`.
-/// That stays green if OFFSET is deleted. Cure: seed 25 suite-private members whose
-/// usernames sort under a unique `q` prefix, request `offset=20` (default limit 20), and
-/// assert the window starts at member index 20 plus the envelope fields.
+/// The handler does LIMIT/OFFSET behind `{data,total,limit,offset}` and a pure-oracle unit
+/// test covers the arithmetic; an IT that only did `assert!(mem["data"].is_array())` stays
+/// green if OFFSET is deleted. So: seed 25 suite-private members whose usernames sort under a
+/// unique prefix, request `offset=20` (default limit 20), and assert the window starts at
+/// member index 20 plus the envelope fields.
 ///
 /// Perturbation: drop `OFFSET` / hard-code `LIMIT 20` with no bind → page still length 20 but
 /// first username is `t495_user_00` (or total/offset mismatch) → assert fails.
@@ -76,7 +76,7 @@ async fn members_list_honours_offset_pagination() {
 
     const N: usize = 25;
     const PREFIX: &str = "t495_user_";
-    // Suite-private discord ids (T-495 range) — must not collide with OTHER/THIRD / other suites.
+    // Suite-private discord ids — must not collide with OTHER/THIRD / other suites.
     for i in 0..N {
         let discord_id = format!("000000000000495{i:03}");
         let username = format!("{PREFIX}{i:02}");
@@ -198,9 +198,8 @@ const T551_GOOD_EDITOR: &str = r#"{
   }
 }"#;
 
-/// T-551 — events roster omits seating when the tip is pre-T-416 over-capacity and the
-/// registry phys catalog is loaded (T-550 wire). Same numbers as T-549 `/compiled` IT:
-/// 4×60 cm³ into a 200 cm³ vest.
+/// The events roster omits seating when the tip is over-capacity and the registry phys
+/// catalog is loaded. Same numbers as the `/compiled` IT: 4×60 cm³ into a 200 cm³ vest.
 ///
 /// Control: good tip seats the assigned arma_id. After a direct SQL tip swap to the
 /// over-capacity payload (Save would 400 — residual rows bypass Save), roster stays 200
@@ -338,7 +337,7 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
         "good tip must seat assigned arma_id; got {body}"
     );
 
-    // Bypass Save (would 400) — plant the pre-T-416 residual tip.
+    // Bypass Save (would 400) — plant the over-capacity residual tip.
     let bad_payload = format!(
         r#"{{"schemaVersion":1,"editor":{{
         "factions":[{{"id":"f1","key":"BLUFOR","name":"US","squadIds":["sq1"]}}],

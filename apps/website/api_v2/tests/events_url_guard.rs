@@ -1,4 +1,4 @@
-//! **T-413 — `events.banner_image_url` adopts T-405/T-391's scheme guard on BOTH writers.**
+//! **`events.banner_image_url` carries the HTTP scheme guard on BOTH writers.**
 //!
 //! Predicate coverage lives in `core::text::http_url_guard::is_http_url` + the shared case table. These prove
 //! the **wiring** — create and PATCH both reach the guard, and a rejection leaves the DB alone.

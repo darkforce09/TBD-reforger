@@ -1,12 +1,11 @@
 //! Dashboard / leaderboards / deployments / LOA / audit reads. Skips without
 //! `TEST_DATABASE_URL`. SSE endpoints are excluded (they never complete under oneshot).
 //!
-//! **T-341 — caller identity owns the seeded rows.** Pre-fix this suite authenticated via
-//! `dev-login` (`…001`) while the assertions that mattered for the dashboard 500 class depended
-//! on `WHERE assigned_to = $me` / `WHERE discord_id = $me` branches that never saw a matching
-//! row — so `GET /dashboard` 200 was vacuous (T-329 measured the same defect in
-//! `null_tolerance`). This file mints a private session for [`DASH_UID`] and seeds every
-//! caller-scoped row against that same id.
+//! **Caller identity owns the seeded rows.** Authenticating via `dev-login` (`…001`) while the
+//! assertions that matter for the dashboard 500 class depend on `WHERE assigned_to = $me` /
+//! `WHERE discord_id = $me` branches that never see a matching row makes `GET /dashboard` 200
+//! vacuous — the same defect `null_tolerance` measures. This file mints a private session for
+//! [`DASH_UID`] and seeds every caller-scoped row against that same id.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -27,15 +26,15 @@ mod common;
 const DASH_UID: &str = "000000000000000341";
 
 /// Tag prefix for events this suite inserts. Soft-delete is scoped to this prefix only —
-/// never a blanket `DELETE FROM events` (misc_integration `boot_servers` pattern; T-410).
+/// never a blanket `DELETE FROM events` (the misc_integration `boot_servers` pattern).
 const EVENT_TAG: &str = "T341-Dash-";
 
 /// Boot the router and mint a real admin session for [`DASH_UID`].
 ///
-/// Mints through `POST /auth/refresh` rather than `dev-login` on purpose (T-329 / T-341):
+/// Mints through `POST /auth/refresh` rather than `dev-login` on purpose:
 /// `dev-login` always issues `…001`, a shared id on the integration DB. Seeding
-/// caller-scoped rows against a different id than the bearer token is exactly how
-/// `/dashboard` 200 used to pass without ever executing the assignment branch.
+/// caller-scoped rows against a different id than the bearer token is exactly how a
+/// `/dashboard` 200 passes without ever executing the assignment branch.
 async fn setup() -> Option<(Router, String, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
@@ -240,18 +239,18 @@ fn deployments_reads_avoid_bare_star_and_swallowed_errors() {
     let bare_star = concat!("event_registrations.", "*");
     assert!(
         !src.contains(bare_star),
-        "T-341: member_service_record must not SELECT a bare star on event_registrations \
-         (bare-* class that 500'd dashboard)"
+        "member_service_record must not SELECT a bare star on event_registrations \
+         (the bare-* class that 500s the dashboard)"
     );
     let lookup = include_str!("../src/missions/services/mission_lookup.rs");
     let swallowed = concat!(".ok()", ".flatten()");
     assert!(
         !lookup.contains(swallowed),
-        "T-341: mission_title_terrain must not swallow errors via .ok().flatten()"
+        "mission_title_terrain must not swallow errors via .ok().flatten()"
     );
     assert!(
         lookup.contains("Result<Option<(String, TerrainType)>, sqlx::Error>"),
-        "T-341: mission_title_terrain must return Result so decode/SQL failures propagate"
+        "mission_title_terrain must return Result so decode/SQL failures propagate"
     );
 }
 
@@ -264,7 +263,7 @@ async fn dashboard_leaderboards_deployments_loa_audit() {
 
     let (eid, name, _em_id) = seed_owned_upcoming(&pool).await;
 
-    // Dashboard — null-safe aggregate + real next_event + real my_assignment (T-341).
+    // Dashboard — null-safe aggregate + real next_event + real my_assignment.
     let (st, body) = call(&app, "GET", "/api/v1/dashboard", &tok, None).await;
     assert_eq!(st, StatusCode::OK, "dashboard: {body}");
     assert!(body["recent_announcements"].is_array());
@@ -287,7 +286,7 @@ async fn dashboard_leaderboards_deployments_loa_audit() {
     assert!(next["terrain"].is_string(), "next_event: {next}");
 
     // Reachability pin: authenticating as DASH_UID while rows are owned by DASH_UID makes
-    // `WHERE assigned_to = $me` fire. Pre-T-341 this was empty under a vacuous 200.
+    // `WHERE assigned_to = $me` fire; a mismatched bearer leaves it empty under a vacuous 200.
     let assignment = body.get("my_assignment").cloned().unwrap_or(Value::Null);
     assert!(
         assignment.is_object(),

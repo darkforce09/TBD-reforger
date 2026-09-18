@@ -1,4 +1,4 @@
-//! T-940.6 — the 0025 audit triggers and the LISTEN/NOTIFY admin stream.
+//! The 0025 audit triggers and the LISTEN/NOTIFY admin stream.
 //!
 //! Anchor 2026-09-04: `handlers/admin/audit.rs:161` re-SELECTed `audit_logs` every 2 s per
 //! connected admin, and three actions wrote no audit row at all — event create, mission

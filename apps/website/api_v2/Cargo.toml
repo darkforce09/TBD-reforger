@@ -3,11 +3,11 @@ name = "website-api"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
-description = "TBD Reforger platform backend — Rust port of the Go API (T-145)."
+description = "TBD Reforger platform backend: Axum REST API and SSE realtime hub."
 license = "UNLICENSED"
 publish = false
 
-# One library crate holds every module; binaries: api (server) + import-registry (T-150 envelope ingest).
+# One library crate holds every module; binaries: api (server) + import-registry (envelope ingest).
 [lib]
 name = "website_api"
 path = "src/lib.rs"
@@ -38,7 +38,7 @@ jsonschema = { version = "0.46.10", default-features = false }
 # rust_crypto = pure-Rust HMAC/SHA backend for HS256 (no aws-lc-rs C dependency).
 jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
 rand = "0.10.2"
-# typify-generated contract types validate string patterns via regress (T-165.3).
+# typify-generated contract types validate string patterns via regress.
 regress = "0.10"
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
 rust_decimal = { version = "1.42.1", features = ["db-postgres"] }
@@ -57,9 +57,9 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 url = "2.5.8"
 uuid = { version = "1.23.4", features = ["v4", "serde"] }
-# Shared map-engine compute core (T-145) — the mission compiler (ORBAT + kit aliases; the mod-doc
-# flatten follows). One implementation for the backend + the wasm client. T-0xx Phase 2A folded
-# `website-mission-core` into this crate as its `data/scenario` module; default features are
-# `scenario` alone, which is the only tier with no graphics crate, no png, no rkyv and no flate2 —
-# the server compiles the mission domain and nothing else.
+# Shared map-engine compute core — the mission compiler (ORBAT + kit aliases; the mod-doc
+# flatten follows). One implementation for the backend + the wasm client. The scenario domain
+# lives in that crate's `data/scenario` module; default features are `scenario` alone, which is
+# the only tier with no graphics crate, no png, no rkyv and no flate2 — the server compiles the
+# mission domain and nothing else.
 website-map-engine = { path = "../map-engine" }

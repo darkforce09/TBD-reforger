@@ -15,10 +15,10 @@ use uuid::Uuid;
 mod common;
 mod telemetry_support;
 
-/// T-229 — a player whose `arma_id` resolves to no account must keep their row, and the 200 must
-/// stop implying the whole roster landed.
+/// A player whose `arma_id` resolves to no account must keep their row, and the 200 must not
+/// imply the whole roster landed.
 ///
-/// The invisibility, measured on a throwaway database before the fix: one POST carrying
+/// The invisibility, measured on a throwaway database: one POST carrying
 /// `kills=17 deaths=3 longest_kill_m=842 vehicles_destroyed=4` for an unlinked `arma_id` returned
 /// `{"match_id":"4dc322a3-…","players":1}`, wrote the row with `discord_id` NULL, and left
 /// `leaderboard_totals` with **zero** rows for that player (it filters
@@ -28,18 +28,17 @@ mod telemetry_support;
 ///
 /// The row is kept rather than rejected, and that is the decision this test pins. It is real
 /// telemetry — the `arma_id` is real and the match happened — and it is *recoverable*, because
-/// `ingest_link_confirm` claims exactly the `discord_id IS NULL` rows at link time (T-326). A 400
+/// `ingest_link_confirm` claims exactly the `discord_id IS NULL` rows at link time. A 400
 /// would also have no per-player shape: the transaction is atomic, so one unresolved player would
 /// reject the whole op. And the shipping mod implements no link flow at all
-/// (`TBD_ResultsReporter.c:23-35`, T-181.35), so an unresolved `arma_id` is currently *every*
+/// (`TBD_ResultsReporter.c:23-35`), so an unresolved `arma_id` is currently *every*
 /// player in *every* production match — which is why the last leg below, a roster with nobody
 /// linked, has to be a 200.
 ///
-/// **The backfill half of T-229 as filed is already closed by T-326**, and the link leg asserts it
-/// from this side on purpose: the ticket's premise was that "the upsert key includes `arma_id`, [so]
-/// linking later does not backfill", and the key is in fact exactly what lets the backfill find the
-/// row again. Pinning it here means a regression in the link-confirm handler fails the suite that owns the
-/// ingest contract depending on it.
+/// **The backfill belongs to `ingest_link_confirm`**, and the link leg asserts it from this
+/// side on purpose: the upsert key includes `arma_id`, and that key is exactly what lets the
+/// backfill find the row again. Pinning it here means a regression in the link-confirm handler
+/// fails the suite that owns the ingest contract depending on it.
 ///
 /// Two ingest calls only — the strict limiter is keyed on the peer IP, which is `0.0.0.0` for every
 /// test in this binary, so every test compiled into this file shares one 1/s + burst-10 bucket. The roster is built to
@@ -61,7 +60,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     const SRC: &str = "m-t229-unlinked";
     const CODE: &str = "922900";
 
-    // Same reasoning as the T-316 / T-347 / T-369 tests: `matches` does not cascade to
+    // Same reasoning as the sibling envelope tests: `matches` does not cascade to
     // `match_player_stats` and `leaderboard_totals` sums every row for a discord_id, so a second
     // run would double-count. Clear the stats first and keep this test's ids to itself.
     //
@@ -147,8 +146,8 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     };
     // `leaderboard_totals` is a materialized view refreshed in-request by every ingest, including
     // the ones concurrent tests in this binary are running. Refresh explicitly before reading it
-    // so an absence assertion cannot pass (or fail) on somebody else's timing — same reason the
-    // T-316 test does.
+    // so an absence assertion cannot pass (or fail) on somebody else's timing — the same reason
+    // the partial-reingest test refreshes.
     let mv_row = |pool: PgPool, discord: &'static str| async move {
         sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
             .execute(&pool)
@@ -243,10 +242,10 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
         "the linked player on the same roster is counted normally"
     );
 
-    // (4) The loss is now discoverable by an operator, not only by whoever reads the game
+    // (4) The loss is discoverable by an operator, not only by whoever reads the game
     // server's console. Info rather than Warn on purpose: with no link flow in the shipping mod
     // this fires on every production ingest, and an always-on warning is the false
-    // `server.low_fps` WARN that T-316 was filed to delete.
+    // `server.low_fps` WARN class all over again.
     let audit: (String, String, Option<String>) = sqlx::query_as(
         "SELECT severity::text, message, actor_id FROM audit_logs \
          WHERE action = 'match.unlinked_players' AND target_type = 'match' AND target_id = $1",
@@ -265,7 +264,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
         audit.1
     );
 
-    // (5) The backfill half of the ticket, already built by T-326: linking claims the historical
+    // (5) The backfill half, owned by link-confirm: linking claims the historical
     // rows, and both aggregates catch up. Note the sums — 17+5 kills and 3+1 deaths across the
     // two lines, one distinct match — so this proves the rows were claimed, not re-ingested.
     let (st, r) = post(
@@ -280,7 +279,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     assert_eq!(
         mv_row(pool.clone(), UNLINKED_DISCORD).await,
         Some((22, 4, 842, 5, 1)),
-        "T-326 backfill: the parked rows reach the leaderboard on link"
+        "backfill: the parked rows reach the leaderboard on link"
     );
     assert_eq!(
         deployments(pool.clone(), UNLINKED_DISCORD).await,
@@ -308,7 +307,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     clean(pool.clone()).await;
 }
 
-/// T-397 — `leaderboard_totals` ignores NULL deaths; it must not invent a measured zero.
+/// `leaderboard_totals` ignores NULL deaths; it must not invent a measured zero.
 ///
 /// Match A: counters absent → NULL deaths. Match B: full report 17/3. SUM(deaths) must be 3
 /// (NULL ignored), not 3+0. kd = 17/3 ≈ 5.67. RED: put `DEFAULT 0` back (or COALESCE NULL→0
@@ -412,10 +411,10 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
     clean(pool.clone()).await;
 }
 
-/// T-493 — the leaderboard must not collapse "nobody ever measured deaths" into "measured,
+/// The leaderboard must not collapse "nobody ever measured deaths" into "measured,
 /// and it was none". The **installed** view is ratcheted here too, not just the arithmetic.
 ///
-/// [`leaderboard_mv_does_not_invent_deaths_from_null`] above is the T-397 pin, and it uses a
+/// [`leaderboard_mv_does_not_invent_deaths_from_null`] above is the SUM pin, and it uses a
 /// *mixed* fixture: one counters-absent row beside a measured `17/3`. That is precisely why it
 /// cannot see this. `SUM` ignores NULL by definition, so `sum(COALESCE(deaths, 0))` and
 /// `COALESCE(sum(deaths), 0)` are **the same number on every fixture** — `0 + 3 = 3` — and
@@ -431,8 +430,8 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
 /// | B      | 1 × `kills=4, deaths=0` | `0`         | **4** — measured as none  |
 ///
 /// Both read `deaths = 0`. Only `kd_ratio` separates them, and a leaderboard that prints
-/// "0 deaths, KD 0.00" for player A has invented a scoreline nobody reported — the T-397
-/// failure mode wearing the aggregate's clothes.
+/// "0 deaths, KD 0.00" for player A has invented a scoreline nobody reported — the
+/// invented-zero failure mode wearing the aggregate's clothes.
 ///
 /// The second half reads the **live** view definition rather than the migration text. `0014`
 /// is applied and checksummed, so it can only be superseded, never edited; what a later
@@ -489,7 +488,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
     .await
     .unwrap();
 
-    // Same reasoning as the sibling T-397 tests: `matches` does not cascade to
+    // Same reasoning as the sibling NULL-deaths tests: `matches` does not cascade to
     // `match_player_stats`, and the view SUMs every row for a discord_id, so a second run
     // against a surviving database would double-count.
     let clean = |pool: PgPool| async move {
@@ -628,7 +627,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
     assert!(
         !lowered.contains("coalesce(deaths") && !lowered.contains("coalesce(s.deaths"),
         "COALESCE must not be applied to the `deaths` column inside the aggregate — that is what \
-         turns 'not measured' into a measured zero (T-397 / T-493):\n{viewdef}"
+         turns 'not measured' into a measured zero:\n{viewdef}"
     );
 
     clean(pool.clone()).await;

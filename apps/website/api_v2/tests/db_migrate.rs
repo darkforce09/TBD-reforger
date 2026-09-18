@@ -1,11 +1,10 @@
 //! Phase 1 gate — the sqlx migration runner reproduces the full schema.
 //!
-//! Skips unless `TEST_DATABASE_URL` is set. T-558: this binary no longer shares
-//! `MIGRATE_TEST_DATABASE_URL` / `tbd_gate_migrate` with `models_fromrow.rs` — it goes
-//! through [`common::require_test_database_url`] so it gets its own
-//! `<base>_db_migrate_it` database (T-534 shape). Provision already migrates from empty;
-//! the assertions below pin object counts, and the second `migrate` call pins idempotency.
-//! The byte-level parity vs the Go schema is proven separately by the G2 `pg_dump` diff.
+//! Skips unless `TEST_DATABASE_URL` is set. This binary goes through
+//! [`common::require_test_database_url`], so it owns its own `<base>_db_migrate_it`
+//! database. Provision already migrates from empty; the assertions below pin object counts,
+//! and the second `migrate` call pins idempotency. Byte-level schema parity is proven
+//! separately by the G2 `pg_dump` diff.
 
 mod common;
 
@@ -22,7 +21,7 @@ async fn migrate_creates_full_schema() {
     // Provision already migrated; a second apply must be a no-op and leave counts intact.
     database::migrate(&pool).await.expect("migrate");
 
-    // 30 base tables (29 Go-parity + registry_compat, T-068.9) + the sqlx
+    // 30 base tables (29 domain tables + registry_compat) + the sqlx
     // `_sqlx_migrations` bookkeeping table.
     let tables: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM information_schema.tables \

@@ -142,14 +142,14 @@ async fn mission_archive_blocked_by_upcoming_event() {
     )
     .await;
     let eid = e["id"].as_str().unwrap();
-    // The ORBAT is explicit, and the attach is now ASSERTED (T-227). `mk_mission` publishes a
-    // version with no ORBAT, and this setup used to attach it with an empty body and discard the
-    // status — silently materializing a **zero-slot** event mission. That attach is now a 409
-    // ("this mission's ORBAT describes no slots"), because such an operation seated nobody and
-    // yet refused nobody: capacity is `count(orbat_slots) = 0` and the registration guard read
+    // The ORBAT is explicit, and the attach status is ASSERTED. `mk_mission` publishes a
+    // version with no ORBAT, so attaching it with an empty body and a discarded status would
+    // silently materialize a **zero-slot** event mission. Such an attach is a 409
+    // ("this mission's ORBAT describes no slots"), because such an operation seats nobody and
+    // yet refuses nobody: capacity is `count(orbat_slots) = 0` and the registration guard reads
     // `capacity > 0 && registered >= capacity`, which at 0 is simply off. This test is about
-    // ARCHIVE BLOCKING and wants a real attached operation; discarding the status is what let
-    // its setup depend on that bug.
+    // ARCHIVE BLOCKING and wants a real attached operation; discarding the status is what would
+    // let its setup depend on that hole.
     let attach = format!(
         r#"{{"mission_id":"{id}","start_time":"2030-01-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"LX Alpha","slots":[{{"role":"SL"}}]}}]}}"#
     );
@@ -239,14 +239,11 @@ async fn editor_only_orbat_derivation() {
     assert_eq!(orbat["data"][0]["slots"][0]["role"], "SL");
 }
 
-/// T-262 renamed and re-aimed this test. It was `export_dangling_version_is_500`, and it
-/// pointed `missions.current_version_id` at a `gen_random_uuid()` before asserting the export
-/// answered 500 rather than a silent empty file.
-///
-/// `0018_foreign_keys.sql` adds `missions_current_version_id_fkey`, so that UPDATE is now
-/// refused by Postgres and the dangling state cannot be created through any path. The
-/// assertion therefore moves to the guarantee that replaced it — the write is rejected with
-/// SQLSTATE **23503** — which is stronger than the old one: the export cannot be silently
+/// `0018_foreign_keys.sql` adds `missions_current_version_id_fkey`, so pointing
+/// `missions.current_version_id` at a `gen_random_uuid()` is refused by Postgres and the
+/// dangling state cannot be created through any path. The assertion is therefore the
+/// guarantee that constraint provides — the write is rejected with SQLSTATE **23503** —
+/// which is stronger than asserting a 500 from the export: the export cannot be silently
 /// empty because the data it would read cannot be wrong in the first place.
 ///
 /// `missions/handlers/mission_export.rs`'s 500 arm is intentionally NOT removed. It still covers a row that
@@ -265,7 +262,7 @@ async fn export_dangling_version_is_refused_by_the_foreign_key() {
             .bind(id.parse::<Uuid>().unwrap())
             .execute(&pool)
             .await
-            .expect_err("T-262: current_version_id must not accept an absent mission_versions row");
+            .expect_err("current_version_id must not accept an absent mission_versions row");
     assert_eq!(
         err.as_database_error().and_then(|d| d.code()).as_deref(),
         Some("23503"),
@@ -352,10 +349,10 @@ async fn purge_removes_only_long_expired_tokens() {
 
     let fresh = format!("hash-fresh-{}", Uuid::new_v4());
     let stale = format!("hash-stale-{}", Uuid::new_v4());
-    // T-262: `refresh_tokens.discord_id` now REFERENCES `users(discord_id)` ON DELETE CASCADE,
-    // so the owner has to exist before a token can. This fixture used to invent
-    // `000000000000000007` out of thin air; the id is arbitrary to the purge window this test
-    // is actually about, so the fix is to make it real rather than to weaken the constraint.
+    // `refresh_tokens.discord_id` REFERENCES `users(discord_id)` ON DELETE CASCADE, so the
+    // owner has to exist before a token can. The id `000000000000000007` is arbitrary to the
+    // purge window this test is actually about, so the fixture makes it a real user rather
+    // than weakening the constraint.
     sqlx::query(
         "INSERT INTO users (discord_id, username) VALUES ('000000000000000007', 'purge fixture') \
          ON CONFLICT (discord_id) DO NOTHING",

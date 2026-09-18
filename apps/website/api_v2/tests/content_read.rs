@@ -132,8 +132,8 @@ async fn content_reads_and_wiki_upsert() {
     assert_eq!(st, StatusCode::UNAUTHORIZED);
 }
 
-/// T-443: cold gate must exercise the T-263 write path (`POST /vehicle-database`).
-/// GET-only coverage previously let the gate pass with `create_vehicle` unregistered.
+/// The cold gate must exercise the write path (`POST /vehicle-database`): GET-only coverage
+/// lets the gate pass with `create_vehicle` unregistered.
 #[tokio::test]
 async fn vehicle_database_create_round_trip() {
     let Some((app, tok)) = setup().await else {

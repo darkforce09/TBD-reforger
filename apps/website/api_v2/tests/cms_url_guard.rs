@@ -1,4 +1,4 @@
-//! **T-405 — `announcements.thumbnail_url` adopts T-391's scheme guard, on BOTH writers.**
+//! **`announcements.thumbnail_url` carries the HTTP scheme guard, on BOTH writers.**
 //!
 //! The unit tests beside the predicate (`core::text::http_url_guard`) prove the rule; the shared
 //! case table proves both Rust copies agree on it. These prove the **wiring** — that the predicate

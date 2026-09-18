@@ -10,7 +10,7 @@ use serde_json::Value;
 mod common;
 mod events_support;
 
-/// T-324 — two factions fielding a squad of the same name must render as two cards.
+/// Two factions fielding a squad of the same name must render as two cards.
 ///
 /// `get_orbat` grouped on the squad NAME alone, so a same-named squad in a second faction was
 /// folded into the first faction's card: one card, the first faction's label, both factions' slots
@@ -108,7 +108,7 @@ async fn orbat_groups_by_faction_and_squad() {
 ///
 /// Pre-fix, every row of the table below returned **201** and materialized nothing:
 /// `orbat_template_for_mission` answered `Vec::new()` for a missing version, a swallowed DB
-/// error and an unreadable `orbat` alike, and `add_event_mission` committed regardless (T-227).
+/// error and an unreadable `orbat` alike, and `add_event_mission` committed regardless.
 #[tokio::test]
 async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
     let _serial = DB_LOCK.lock().await;
@@ -197,15 +197,10 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
 
     // ── 2. `current_version_id` naming a row that does not exist.
     //
-    // T-262 CHANGED WHAT THIS SECTION CAN PROVE, AND THE CHANGE IS THE POINT. This used to
-    // write a `gen_random_uuid()` into `missions.current_version_id` and assert the attach
-    // answered **500** — "it is OUR data that is wrong, so it must not be quiet". That was the
-    // right assertion while the column had no foreign key; the original comment cited
-    // `0001_initial_schema.sql:370` as a bare `uuid` and called the state "reachable".
-    //
-    // It is not reachable any more. `0018_foreign_keys.sql` adds
+    // A dangling `missions.current_version_id` is not reachable. `0018_foreign_keys.sql` adds
     // `missions_current_version_id_fkey … ON DELETE SET NULL`, so Postgres refuses the write
-    // that used to create the dangling pointer. Asserting the 500 here would mean asserting
+    // that would create the dangling pointer. Asserting that the attach answers **500** on such
+    // a row — "it is OUR data that is wrong, so it must not be quiet" — would mean asserting
     // that a defect still exists.
     //
     // So the assertion moves down a layer to the thing that now guarantees it: the UPDATE is
@@ -222,7 +217,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
     .bind(&m)
     .execute(&pool)
     .await
-    .expect_err("T-262: missions.current_version_id must not accept a version that is absent");
+    .expect_err("missions.current_version_id must not accept a version that is absent");
     assert_eq!(
         err.as_database_error().and_then(|d| d.code()).as_deref(),
         Some("23503"),
@@ -249,9 +244,9 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
         "serde's own reason must survive to the client: {b}"
     );
 
-    // ── 4. A perfectly VALID payload that seats nobody — T-368's shape, and the one that needs
-    // no mistake at all. `input.orbat.is_empty()` cannot see it, because the squad list is not
-    // empty; only the slot count is. ──
+    // ── 4. A perfectly VALID payload that seats nobody — the shape that needs no mistake at
+    // all. `input.orbat.is_empty()` cannot see it, because the squad list is not empty; only
+    // the slot count is. ──
     let m = mission("T227 valid but empty").await;
     publish(
         &m,
@@ -296,11 +291,11 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
 
 /// A seatless operation is not an unlimited one, and `events.max_slots` is now a real bound.
 ///
-/// The registration guard read `capacity > 0 && registered >= capacity` — at `capacity == 0`
-/// that clause does not protect the comparison, it switches it off, so every seatless
-/// registration was accepted as `registered` without limit (T-227). `add_event_mission` now
-/// refuses to create a zero-slot mission, so the zero-capacity row here is **seeded directly**,
-/// which is also how the pre-fix rows and the dev seed arrive.
+/// A registration guard reading `capacity > 0 && registered >= capacity` does not protect the
+/// comparison at `capacity == 0`, it switches it off, so every seatless registration is
+/// accepted as `registered` without limit. `add_event_mission` refuses to create a zero-slot
+/// mission, so the zero-capacity row here is **seeded directly**, which is also how legacy rows
+/// and the dev seed arrive.
 #[tokio::test]
 async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event() {
     let _serial = DB_LOCK.lock().await;
@@ -513,14 +508,12 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
     );
 }
 
-/// T-284 — `DELETE …/slots/:id/assign` frees a claimed seat for leader/admin, and the dead
-/// `events.match_id` column is gone (link is `matches.event_id`).
+/// `DELETE …/slots/:id/assign` frees a claimed seat for leader/admin, and there is no
+/// `events.match_id` column (the link is `matches.event_id`).
 ///
-/// Pre-fix: the handler existed and was routed, but nothing in the SPA called it, and every
-/// Event SELECT still projected a forever-NULL `match_id`. This test is the API half of that
-/// cure — assign → clear → both `orbat_slots.assigned_to` and `event_registrations.slot_id`
-/// are null, enlisted without a reserve is forbidden, and `information_schema` shows no
-/// `events.match_id`.
+/// This is the API half of that contract — assign → clear → both `orbat_slots.assigned_to`
+/// and `event_registrations.slot_id` are null, enlisted without a reserve is forbidden, and
+/// `information_schema` shows no `events.match_id`.
 #[tokio::test]
 async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
     let _serial = DB_LOCK.lock().await;

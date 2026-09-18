@@ -14,15 +14,14 @@ mod common;
 mod telemetry_support;
 
 /// **The payload the shipping mod actually sends, reproduced byte-for-byte, asserted to be
-/// accepted (T-393).**
+/// accepted.**
 ///
-/// This fixture is the whole point of the ticket. T-316 made nine player fields required
-/// without checking the only client, and every test in this file built its own complete body,
-/// so nothing in the suite ever looked at what the game server puts on the wire. The result
-/// was arithmetic, not bad luck: the mod sends four keys, serde rejected on the first of the
-/// five it did not send, and **every match report from every production server 400'd** —
-/// match rows, per-player stats, attendance, user-stat recompute and leaderboard refresh, all
-/// dead on arrival, for as long as T-316 was deployed.
+/// This fixture is the whole point of the suite. Every other test in this file builds its own
+/// complete body, so without it nothing here looks at what the game server puts on the wire.
+/// The consequence is arithmetic, not bad luck: the mod sends four player keys, so a contract
+/// that requires a fifth makes serde reject on the first key the mod does not send, and
+/// **every match report from every production server 400s** — match rows, per-player stats,
+/// attendance, user-stat recompute and leaderboard refresh, all dead on arrival.
 ///
 /// # Source of truth for these bytes
 ///
@@ -48,9 +47,9 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    // Both arma_ids stay unlinked on purpose: `TBD_ResultsReporter.c:23-35` says no player has
-    // an `arma_id` in production until T-181.35 ships the link flow, so this is the real
-    // population, and the T-229 unlinked-reporting path is on the same code path as the fix.
+    // Both arma_ids stay unlinked on purpose: `TBD_ResultsReporter.c:23-35` says no player
+    // carries an `arma_id` in production until the link flow ships, so this is the real
+    // population, and the unlinked-reporting path is the same code path as a linked report.
     const A1: &str = "t393-arma-mod-a";
     const A2: &str = "t393-arma-mod-b";
     const EV: &str = "9f0f4c6e-1d3a-4e2b-8c77-2a5b6d4e9011";
@@ -74,10 +73,10 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     };
     clean(pool.clone()).await;
 
-    // T-585 — `0019_ingest_pointer_foreign_keys.sql` constrains `matches.event_id` and
-    // `matches.mission_id`, so the two ids the mod sends must now name rows that exist. Before
-    // it, this test posted pointers to nothing, got a 200, and stored a match whose `event_id`
-    // dangled — the exact silent-attribution-loss 0019 was written to end.
+    // `0019_ingest_pointer_foreign_keys.sql` constrains `matches.event_id` and
+    // `matches.mission_id`, so the two ids the mod sends must name rows that exist. Posting
+    // pointers to nothing would store a match whose `event_id` dangles — the exact
+    // silent attribution loss 0019 exists to end.
     //
     // **THE PAYLOAD BELOW IS UNCHANGED, DELIBERATELY.** The fix is to make its parents real, not
     // to re-aim the literal: the literal IS the contract this test guards, and editing it to
@@ -160,7 +159,7 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
         )
     );
 
-    // Both player rows exist with their identity core intact. T-940.4 folds the shipping
+    // Both player rows exist with their identity core intact. The flat fold turns the shipping
     // top-level `deaths` into a complete scoreline (zeros for fields the mod does not measure).
     // Identity-only re-ingest (no nested block and no flat keys) still writes no counters —
     // that is `absent_counters_are_not_a_write_on_reingest`.
@@ -210,16 +209,16 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
                 None
             ),
         ],
-        "T-940.4: shipping flat deaths fold into a complete scoreline"
+        "shipping flat deaths fold into a complete scoreline"
     );
 
-    // T-940.4 recovers the shipping `deaths` by folding the flat shape. Nested `counters`
-    // is still all-or-nothing when present; identity-only bodies still write no counters.
+    // The flat fold recovers the shipping `deaths`. Nested `counters` is all-or-nothing when
+    // present; identity-only bodies write no counters.
 
     assert_eq!(
         rows[0].3,
         Some(1),
-        "top-level deaths is stored via the flat fold (T-940.4)"
+        "top-level deaths is stored via the flat fold"
     );
 
     sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
@@ -230,14 +229,14 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     clean(pool.clone()).await;
 }
 
-/// **A counters block is all-or-nothing: a partial one is a 400 (T-393).**
+/// **A counters block is all-or-nothing: a partial one is a 400.**
 ///
-/// The split makes the *block* optional; it does not make the fields inside it optional. That
-/// distinction is the entire anti-corruption property. "No counters" is a legal statement
-/// meaning "I make no claim" and writes nothing; "some counters" is a sender that has half a
-/// scoreline and does not know it, and five silent zeros beside two real numbers is precisely
-/// the corrupt row T-316 was filed to kill. There is no `#[serde(default)]` inside
-/// `PlayerCountersInput`, so a missing key is a decode error, exactly as before.
+/// The *block* is optional; the fields inside it are not. That distinction is the entire
+/// anti-corruption property. "No counters" is a legal statement meaning "I make no claim" and
+/// writes nothing; "some counters" is a sender that has half a scoreline and does not know it,
+/// and five silent zeros beside two real numbers is precisely the corrupt row this contract
+/// refuses. There is no `#[serde(default)]` inside `PlayerCountersInput`, so a missing key is a
+/// decode error.
 #[tokio::test]
 async fn a_partial_counters_object_is_still_a_400() {
     let Some((app, pool)) = boot().await else {
@@ -315,7 +314,7 @@ async fn a_partial_counters_object_is_still_a_400() {
 
     // (2) All but one — the shape a sender produces after adding a field to the DB and
     // forgetting the wire. `is_command` is not a "counter" in the arithmetic sense, which is
-    // exactly why `GREATEST` was rejected in T-316 and why the block is all-or-nothing rather
+    // exactly why a `GREATEST` merge is wrong here and why the block is all-or-nothing rather
     // than field-by-field.
     let (st, r) = post(
         app.clone(),
@@ -331,9 +330,9 @@ async fn a_partial_counters_object_is_still_a_400() {
     );
     assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
 
-    // (3) The pre-T-393 flat body. T-940.4 folds it into nested counters when the nested
-    // block is absent, so this is a 200 that stores the stated scoreline (not a 400, and
-    // not a silent drop). Partial *nested* blocks above still 400.
+    // (3) The flat body. The handler folds it into nested counters when the nested block is
+    // absent, so this is a 200 that stores the stated scoreline (not a 400, and not a silent
+    // drop). Partial *nested* blocks above still 400.
     let (st, r) = post(
         app.clone(),
         body(format!(
@@ -341,7 +340,7 @@ async fn a_partial_counters_object_is_still_a_400() {
         )),
     )
     .await;
-    assert_eq!(st, StatusCode::OK, "legacy flat body folds: {r}");
+    assert_eq!(st, StatusCode::OK, "flat body folds: {r}");
     assert_eq!(
         read(pool.clone()).await,
         (9, 2, 0, 100, 1, false),
@@ -351,14 +350,14 @@ async fn a_partial_counters_object_is_still_a_400() {
     clean(pool.clone()).await;
 }
 
-/// **Absent counters are not a write — the T-316 property, restated (T-393).**
+/// **Absent counters are not a write.**
 ///
-/// This is the assertion that matters most in the file. The contract split would be worthless
-/// (and dangerous) if omitting the block merely meant "send zeros politely": the whole reason
-/// counters were made required was that an omission used to overwrite a real scoreline with
-/// `kills=0 … command_win=NULL`, which `refresh_leaderboard` then summed in the same request.
-/// After the split an omission writes *nothing at all* — the counters-absent SQL statement does
-/// not name those columns, so they are not read, not re-bound, and not rewritten.
+/// This is the assertion that matters most in the file. The optional block would be worthless
+/// (and dangerous) if omitting it merely meant "send zeros politely": an omission that wrote
+/// `kills=0 … command_win=NULL` would overwrite a real scoreline, and `refresh_leaderboard`
+/// would sum the zeros in the same request. An omission writes *nothing at all* — the
+/// counters-absent SQL statement does not name those columns, so they are not read, not
+/// re-bound, and not rewritten.
 ///
 /// The second POST deliberately changes `role_played`, and the test asserts that change landed.
 /// Without it the whole thing would be vacuous: a request that silently failed, or a handler
@@ -377,7 +376,7 @@ async fn absent_counters_are_not_a_write_on_reingest() {
     const EV: &str = "e-t393-noclaim";
 
     // Link the player so the leaderboard half of the property is observable too — an unowned
-    // row never reaches `leaderboard_totals` (T-229), so an unlinked player could not show that
+    // row never reaches `leaderboard_totals`, so an unlinked player could not show that
     // a zeroing would have propagated.
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
@@ -433,9 +432,8 @@ async fn absent_counters_are_not_a_write_on_reingest() {
     );
 
     // (2) The same row re-ingested with NO counters — the shipping mod's shape — and with a
-    // corrected role, so the write is provable. Under T-316 this body was a 400; before T-316
-    // it was a silent zeroing. It is now neither: it states a role and says nothing about the
-    // scoreline.
+    // corrected role, so the write is provable. This body is neither a 400 nor a silent
+    // zeroing: it states a role and says nothing about the scoreline.
     let (st, r) = call(
         &app,
         "POST",
@@ -456,9 +454,9 @@ async fn absent_counters_are_not_a_write_on_reingest() {
          silent loss"
     );
 
-    // (3) And the propagation the ticket is actually about: `leaderboard_totals` sums
-    // `match_player_stats`, so a zeroed row really would have reached the leaderboard inside
-    // the same request via `refresh_leaderboard`.
+    // (3) And the propagation this property protects: `leaderboard_totals` sums
+    // `match_player_stats`, so a zeroed row really would reach the leaderboard inside the
+    // same request via `refresh_leaderboard`.
     sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
         .execute(&pool)
         .await
@@ -478,10 +476,10 @@ async fn absent_counters_are_not_a_write_on_reingest() {
     clean(pool.clone()).await;
 }
 
-/// T-397 — INSERT without counters stores NULL, not 0.
+/// An INSERT without counters stores NULL, not 0.
 ///
-/// Pre-fix the counters-absent statement omitted the columns and DDL `DEFAULT 0` filled
-/// them. A stored 0 was a scored 0. RED: restore the omit-columns INSERT (or re-add
+/// A counters-absent statement that omitted the columns would let DDL `DEFAULT 0` fill them,
+/// and a stored 0 reads as a scored 0. RED: switch to an omit-columns INSERT (or re-add
 /// `NOT NULL DEFAULT 0`) and `deaths` comes back `Some(0)` — this test fails.
 #[tokio::test]
 async fn insert_without_counters_stores_null_not_zero() {

@@ -1,19 +1,18 @@
-//! Arma identity-link flow — port of the link half of `identity_integration_test.go`.
+//! Arma identity-link flow: create a code, confirm it over the service token, clash, unlink.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 //!
-//! # Fixture ownership (T-400) + DB target guard (T-381)
+//! # Fixture ownership + DB target guard
 //!
-//! Pre-fix this suite authenticated as the shared `dev-login` snowflake
-//! ([`common::DEV_LOGIN_USER`]), nulled that row's `arma_id` (errors swallowed by `let _`),
-//! then relinked it. `GET /me` computes `arma_linked` from the **database** row
-//! (`handlers/me.rs`), and `auth_refresh.rs` asserts `arma_linked == true` on that same
-//! shared id — so a concurrent `cargo test -p website-api` interleaved this setup ahead of
-//! auth_refresh and failed. Actors here now live in the T-400 private range and are minted
-//! via [`common::access_token`] (writes nothing on the shared row).
-//! T-381: [`common::require_test_database_url`] refuses `tbd_reforger` before any UPDATE/DELETE;
+//! Authenticating as the shared `dev-login` snowflake ([`common::DEV_LOGIN_USER`]) is forbidden
+//! here: `GET /me` computes `arma_linked` from the **database** row (`handlers/me.rs`), and
+//! `auth_refresh.rs` asserts `arma_linked == true` on that same shared id, so nulling that row's
+//! `arma_id` and relinking it interleaves ahead of auth_refresh under a concurrent
+//! `cargo test -p website-api` and fails it. Actors here live in a private snowflake range and
+//! are minted via [`common::access_token`] (writes nothing on the shared row).
+//! [`common::require_test_database_url`] refuses `tbd_reforger` before any UPDATE/DELETE;
 //! cleanup stays scoped to suite-owned discord_id / arma_id values (never the shared row).
 //!
-//! # Intra-suite seed race (T-516)
+//! # Intra-suite seed race
 //!
 //! `arma_link_flow` and `padded_arma_id_is_stored_trimmed_and_resolvable` both call
 //! [`setup`], which `seed_user`s ACTOR with placeholder `identity-link-seed-400001` before
@@ -22,7 +21,7 @@
 //! `ON CONFLICT … SET arma_id = EXCLUDED.arma_id` hits the same value still owned by any
 //! row (or the clash partner still holding `identity-link-seed-400002`). Isolated
 //! `--test identity_link` often passes; full `cargo test -p website-api` on the shared
-//! gate DB fails. Fix: [`DB_LOCK`] serialises the async tests, and `setup` releases the
+//! gate DB fails. [`DB_LOCK`] therefore serialises the async tests, and `setup` releases the
 //! seed placeholders before `seed_user` (same pattern as live arma ids).
 
 use axum::Router;
@@ -39,7 +38,8 @@ use website_api::core::http_router;
 mod common;
 
 /// Serialise DB-touching tests in this binary — both async tests share ACTOR /
-/// seed placeholders on one gate DB (see module docs §T-516). Pattern: `null_tolerance.rs`.
+/// seed placeholders on one gate DB (see the seed race in the module docs). Pattern:
+/// `null_tolerance.rs`.
 static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
@@ -47,28 +47,28 @@ static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
 const ACTOR: &str = "000000000000400001";
 /// Clash partner for the 409 path (same private range).
 const USER2: &str = "000000000000400002";
-/// T-351 padded-trim actor (T-400 private range). Must NOT be telemetry `PLAYER_DISCORD`
-/// (`…400003`) — that collision piles T-351 kills onto the telemetry leaderboard row (T-517).
+/// Padded-trim actor (private range). Must NOT be telemetry `PLAYER_DISCORD`
+/// (`…400003`) — that collision piles this suite's kills onto the telemetry leaderboard row.
 const PAD_ACTOR: &str = "000000000000400013";
 const ACTOR_ARMA: &str = "identity-link-arma-400001";
-/// Canonical (trimmed) Steam id for the T-351 pin.
+/// Canonical (trimmed) Steam id for the trim pin.
 const PAD_ARMA: &str = "identity-link-arma-padded-400013";
 /// Wire form that must NOT land in `users.arma_id` — spaces around the id.
 const PAD_ARMA_PADDED: &str = "  identity-link-arma-padded-400013  ";
-/// Placeholders `seed_user` writes before the unlink step — must be released first (T-516).
+/// Placeholders `seed_user` writes before the unlink step — must be released first.
 const SEED_ARMA_ACTOR: &str = "identity-link-seed-400001";
 const SEED_ARMA_USER2: &str = "identity-link-seed-400002";
 const SEED_ARMA_PAD: &str = "identity-link-seed-400013";
 const SVC: &str = "test-service-token";
 
 async fn setup() -> Option<(Router, AppState, PgPool)> {
-    // T-381: unset → skip; set-but-live-DB → panic before connect/UPDATE/DELETE.
+    // Unset → skip; set-but-live-DB → panic before connect/UPDATE/DELETE.
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
 
-    // Scoped cleanup only — never touch `common::DEV_LOGIN_USER`. Fail loud on SQL errors
-    // (the pre-fix `let _` swallowed unique-index / migrate races and left a poisoned row).
+    // Scoped cleanup only — never touch `common::DEV_LOGIN_USER`. Fail loud on SQL errors: a
+    // swallowed error hides a unique-index / migrate race and leaves a poisoned row behind.
     for q in [
         "DELETE FROM identity_link_codes WHERE discord_id = ANY($1)",
         "DELETE FROM refresh_tokens WHERE discord_id = ANY($1)",
@@ -85,7 +85,7 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
     }
     // Release live arma ids *and* seed placeholders (UNIQUE, non-partial). Without the
     // placeholders, a concurrent/prior `seed_user` still holding them trips
-    // `idx_users_arma_id` on the next `setup` (T-516).
+    // `idx_users_arma_id` on the next `setup`.
     sqlx::query("UPDATE users SET arma_id = NULL WHERE arma_id = ANY($1)")
         .bind(vec![
             ACTOR_ARMA.to_string(),
@@ -159,42 +159,42 @@ async fn call(
 }
 
 /// Class-R: this suite must never authenticate as / mutate the shared dev-login snowflake,
-/// and PAD_ACTOR must not collide with telemetry's PLAYER_DISCORD (T-517).
+/// and PAD_ACTOR must not collide with telemetry's PLAYER_DISCORD.
 #[test]
 fn actor_is_not_the_shared_dev_login_user() {
     assert_ne!(
         ACTOR,
         common::DEV_LOGIN_USER,
-        "identity_link must not use the shared DEV_LOGIN_USER — that races auth_refresh \
-         arma_linked (T-400)"
+        "identity_link must not use the shared DEV_LOGIN_USER — that races auth_refresh's \
+         arma_linked assertion"
     );
     assert_ne!(USER2, common::DEV_LOGIN_USER);
     assert_ne!(PAD_ACTOR, common::DEV_LOGIN_USER);
-    // T-517: hard-code telemetry PLAYER_DISCORD so a future re-collision fails loudly.
+    // Hard-code telemetry PLAYER_DISCORD so a future re-collision fails loudly.
     assert_ne!(
         PAD_ACTOR, "000000000000400003",
-        "PAD_ACTOR must not equal telemetry PLAYER_DISCORD (000000000000400003) — shared \
-         discord_id piles T-351 padded kills onto telemetry_ingest_closes_the_loop (T-517)"
+        "PAD_ACTOR must not equal telemetry PLAYER_DISCORD (000000000000400003) — a shared \
+         discord_id piles this suite's padded kills onto telemetry_ingest_closes_the_loop"
     );
     assert_ne!(PAD_ACTOR, ACTOR, "PAD_ACTOR must be distinct from ACTOR");
     assert_ne!(PAD_ACTOR, USER2, "PAD_ACTOR must be distinct from USER2");
     let src = include_str!("identity_link.rs");
-    // Ban the pre-fix shared-row alias without matching this assertion's own prose.
+    // Ban a shared-row alias without matching this assertion's own prose.
     assert!(
         !src.lines()
             .any(|l| l.trim_start().starts_with("const DEV_ID")),
         "identity_link must not reintroduce a shared-snowflake const alias"
     );
-    // Pre-fix swallowed cleanup nulled the shared row via bind $3. Needle is split so this
+    // A cleanup that nulls the shared row via bind $3 is forbidden. The needle is split so this
     // assert's own source does not contain the forbidden SQL as one literal.
     let forbidden = concat!("UPDATE users SET arma_id = NULL WHERE ", "discord_id = $3");
     assert!(
         !src.contains(forbidden),
-        "must not null arma_id via the old shared-row cleanup bind"
+        "must not null arma_id via a shared-row cleanup bind"
     );
     assert!(
         src.contains("require_test_database_url"),
-        "identity_link setup must call common::require_test_database_url (T-381)"
+        "identity_link setup must call common::require_test_database_url"
     );
 }
 
@@ -203,8 +203,8 @@ fn actor_is_not_the_shared_dev_login_user() {
 /// Deliberately narrow, and deliberately `Option`-returning: the caller turns "not found" into
 /// a loud failure. Returning `""` on a miss would make every `assert_ne!` in
 /// [`fixtures_do_not_collide_with_the_live_telemetry_player`] trivially pass — which is
-/// the exact shape of the defect T-518 is about, a check reporting success over an input it
-/// never actually examined.
+/// the exact shape of defect this suite guards against: a check reporting success over an input
+/// it never actually examined.
 fn parse_str_const(src: &str, name: &str) -> Option<String> {
     let needle = format!("const {name}:");
     let line = src.lines().find(|l| l.trim_start().starts_with(&needle))?;
@@ -213,15 +213,15 @@ fn parse_str_const(src: &str, name: &str) -> Option<String> {
     Some(value.to_string())
 }
 
-/// T-518 — bind the T-517 collision guard to telemetry's **live** fixture instead of to a
-/// hard-coded copy of the value it happened to hold in wave 45.
+/// Bind the collision guard to telemetry's **live** fixture instead of to a hard-coded copy of
+/// the value it happens to hold.
 ///
 /// [`actor_is_not_the_shared_dev_login_user`] above denies `000000000000400003`. That is a
-/// denylist of one historical id: it REDs if `PAD_ACTOR` moves back onto 400003, and stays
+/// denylist of one id: it REDs if `PAD_ACTOR` moves back onto 400003, and stays
 /// **green** if telemetry's `PLAYER_DISCORD` moves forward onto `PAD_ACTOR` (`…400013`). Same
-/// single collision, approached from the other side — and the side nothing was watching. The
-/// original T-517 failure (two suites sharing one `discord_id`, so T-351's padded kills pile
-/// onto `telemetry_ingest_closes_the_loop`'s leaderboard row) could return one-sided.
+/// single collision, approached from the other side — and the side nothing else watches. Two
+/// suites sharing one `discord_id`, so this suite's padded kills pile onto
+/// `telemetry_ingest_closes_the_loop`'s leaderboard row, is a one-sided failure otherwise.
 ///
 /// The cure is to *read* the other suite's fixture rather than remember it. `include_str!`
 /// pulls `tests/telemetry_server_status_ingest.rs` in at compile time, so this pin cannot drift
@@ -244,11 +244,11 @@ fn fixtures_do_not_collide_with_the_live_telemetry_player() {
         "could not find `const PLAYER_DISCORD: &str = \"…\";` in \
          tests/telemetry_server_status_ingest.rs — this pin \
          reads the live fixture instead of remembering it, so a rename must fail here loudly \
-         rather than silently guard nothing (T-518)",
+         rather than silently guard nothing",
     );
     let player_arma = parse_str_const(telemetry_src, "PLAYER_ARMA").expect(
         "could not find `const PLAYER_ARMA: &str = \"…\";` in \
-             tests/telemetry_server_status_ingest.rs (T-518)",
+             tests/telemetry_server_status_ingest.rs",
     );
     assert!(
         player_discord.len() >= 17 && player_discord.chars().all(|c| c.is_ascii_digit()),
@@ -260,14 +260,14 @@ fn fixtures_do_not_collide_with_the_live_telemetry_player() {
         "parsed PLAYER_ARMA is empty — same problem"
     );
 
-    // THE TICKET: the collision this file's setup can cause, in the direction the hard-coded
-    // denylist cannot see.
+    // The collision this file's setup can cause, in the direction the hard-coded denylist
+    // cannot see.
     for (label, discord) in [("PAD_ACTOR", PAD_ACTOR), ("ACTOR", ACTOR), ("USER2", USER2)] {
         assert_ne!(
             discord, player_discord,
             "{label} must not equal telemetry's live PLAYER_DISCORD ({player_discord}) — one \
-             discord_id shared across both suites piles T-351's padded kills onto \
-             telemetry_ingest_closes_the_loop's leaderboard row (T-517 / T-518)"
+             discord_id shared across both suites piles this suite's padded kills onto \
+             telemetry_ingest_closes_the_loop's leaderboard row"
         );
     }
     for (label, arma) in [
@@ -281,7 +281,7 @@ fn fixtures_do_not_collide_with_the_live_telemetry_player() {
         assert_ne!(
             arma, player_arma,
             "{label} collides with telemetry's live PLAYER_ARMA ({player_arma}) — arma_id is \
-             UNIQUE (idx_users_arma_id), so this is a cross-suite insert failure (T-518)"
+             UNIQUE (idx_users_arma_id), so this is a cross-suite insert failure"
         );
     }
 }
@@ -393,16 +393,15 @@ async fn arma_link_flow() {
     assert_eq!(body["error"], "arma id already linked to another account");
 }
 
-/// T-351 — pin `ingest_link_confirm`'s trim.
+/// Pin `ingest_link_confirm`'s trim.
 ///
-/// Pre-fix this suite only ever posted clean `"steam-xyz"` ids, so T-326's
-/// `req.arma_id.trim()` (`handlers/me.rs`) and T-316's ingest bind of
-/// `p.arma_id.trim()` were held by comments, not gates. A regression that stored the
-/// padded wire form would make the account read as linked while every future
-/// `WHERE arma_id = $1` miss — the exact catastrophe T-326 measured.
+/// A suite that only ever posts clean `"steam-xyz"` ids leaves `req.arma_id.trim()`
+/// (`handlers/me.rs`) and the ingest bind of `p.arma_id.trim()` held by comments, not
+/// gates. A regression that stored the padded wire form makes the account read as linked
+/// while every future `WHERE arma_id = $1` misses.
 ///
 /// This test posts the padded form, asserts the **stored** value is trimmed, proves
-/// the T-326 backfill claims pre-link orphan rows for that trimmed id, and proves a
+/// the backfill claims pre-link orphan rows for that trimmed id, and proves a
 /// subsequent match ingest resolves the account (linked=1).
 #[tokio::test]
 async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
@@ -512,7 +511,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
         "padded bytes must not land in users.arma_id"
     );
 
-    // T-326 claim: orphan rows for the trimmed id now belong to PAD_ACTOR.
+    // Backfill claim: orphan rows for the trimmed id now belong to PAD_ACTOR.
     let owned_after: Option<String> = sqlx::query_scalar(
         "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-t351'",
     )

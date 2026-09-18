@@ -1,5 +1,5 @@
-//! Gate G7a — the single-use rotating refresh token invariant (port of
-//! `auth_refresh_integration_test.go`). Drives the real router via `tower::oneshot`.
+//! Gate G7a — the single-use rotating refresh token invariant. Drives the real router via
+//! `tower::oneshot`.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 
 use axum::Router;

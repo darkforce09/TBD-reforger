@@ -1,4 +1,4 @@
-//! T-528 — GET /me and /me/link/status treat whitespace `arma_id` as unlinked.
+//! GET /me and /me/link/status treat whitespace `arma_id` as unlinked.
 //!
 //! # Owns expansion (called out)
 //!
@@ -27,7 +27,7 @@ mod common;
 static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
-/// Private actor — must not share `DEV_LOGIN_USER` or T-350's ACTOR.
+/// Private actor — must not share `DEV_LOGIN_USER` or the refresh suite's ACTOR.
 const ACTOR: &str = "000000000000528001";
 /// Stored whitespace-only `arma_id` (single space — ticket pin).
 const WS_ARMA: &str = " ";

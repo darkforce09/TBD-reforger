@@ -1,11 +1,11 @@
-//! T-529 — `ingest_event_roster` filters whitespace `arma_id` and emits btrimmed keys.
+//! `ingest_event_roster` filters whitespace `arma_id` and emits btrimmed keys.
 //!
 //! # Owns expansion (called out)
 //!
 //! Wave owns list is `operations/handlers/roster_ingest.rs` + `apps/website/api/tests/**`.
 //! This IT binary is the Class-R / IT half: plant a whitespace-only `users.arma_id` on an
 //! assigned seat and assert GET `/ingest/events/:id/roster` does **not** emit it as a seating
-//! key. Also pins that a padded real id emits the trimmed form (agree with T-350 /
+//! key. Also pins that a padded real id emits the trimmed form (agreeing with refresh /
 //! link-confirm / telemetry).
 
 use axum::Router;
@@ -25,7 +25,7 @@ mod common;
 static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
-/// Private actor — must not share `DEV_LOGIN_USER` or T-350/T-528 ranges.
+/// Private actor — must not share `DEV_LOGIN_USER` or the refresh / profile suite ranges.
 const ACTOR: &str = "000000000000529001";
 /// Stored whitespace-only `arma_id` (single space — ticket pin).
 const WS_ARMA: &str = " ";

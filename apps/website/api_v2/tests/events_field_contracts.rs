@@ -14,11 +14,11 @@ use events_support::{DB_LOCK, boot, call, token};
 mod common;
 mod events_support;
 
-/// T-348 — a whitespace-only `name_override` must not overwrite a real operation name.
+/// A whitespace-only `name_override` must not overwrite a real operation name.
 ///
-/// The write is an `UPDATE`, so this uses T-317's instrument: a seeded sentinel asserted **by
-/// value**, never "is not empty". `""` over `""` would look like success against the broken
-/// handler, and so would a length check against `"   "`.
+/// The write is an `UPDATE`, so this uses a seeded sentinel asserted **by value**, never "is
+/// not empty". `""` over `""` would look like success against a broken handler, and so would a
+/// length check against `"   "`.
 ///
 /// What makes the bug expensive is the breadth: a whitespace string is non-empty, so it defeats
 /// six separate `is_empty()` fallbacks at once — `operations/handlers/member_service_record.rs`, `dashboard.rs:79`,
@@ -254,7 +254,7 @@ async fn blank_name_override_does_not_overwrite_a_real_operation_name() {
     );
 }
 
-/// T-348 — `cms.rs`: a blank announcement title or body must be refused on both writes, and an
+/// `cms.rs`: a blank announcement title or body must be refused on both writes, and an
 /// unrecognised status must not silently become a draft.
 ///
 /// These cases live in `tests/events_field_contracts.rs` because they are the same guard as the
@@ -415,7 +415,7 @@ async fn blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_si
     }
 }
 
-/// T-260 — events carry per-event `server_id` + `modpack_id`.
+/// Events carry per-event `server_id` + `modpack_id`.
 ///
 /// Before: create/get/patch had zero such fields; Hub used global `/modpacks/current`.
 /// After: create binds them, hub GET echoes them, PATCH can set/clear, unknown ids 400,
@@ -431,7 +431,7 @@ async fn event_server_and_modpack_binding() {
     let enl = token(&app, "enlisted").await;
 
     // Seed a real server + modpack the advisory checks can accept. Private ids so concurrent
-    // suites cannot collide (T-334 pattern).
+    // suites cannot collide.
     let modpack_id: uuid::Uuid = sqlx::query_scalar(
         "INSERT INTO modpacks (name, version, total_size_bytes, workshop_url, is_current, created_at) \
          VALUES ('T260 Pack', '9.9.9', 42, 'https://example.invalid/t260', false, now()) \
@@ -582,7 +582,7 @@ async fn event_server_and_modpack_binding() {
     assert_eq!(nulls, (None, None), "cleared row must store NULL,NULL");
 }
 
-/// T-332 — PATCH clears briefing/banner via `""`, and a mission can be re-attached after detach.
+/// PATCH clears briefing/banner via `""`, and a mission can be re-attached after detach.
 ///
 /// Before: empty-string clear worked by accident (undocumented); duplicate attach of a still-
 /// attached mission 500'd on `idx_event_mission`; after detach there was no FE caller for

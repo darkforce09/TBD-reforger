@@ -1,28 +1,28 @@
-//! T-595 — `POST /admin/servers/:id/rcon` end to end, over a **real `AF_UNIX` socket**
-//! serving **T-289's real rendered agent**.
+//! `POST /admin/servers/:id/rcon` end to end, over a **real `AF_UNIX` socket**
+//! serving **the real rendered host agent**.
 //!
 //! # Why this suite exists in this shape
 //!
-//! T-595 turns T-269's unconditional `503` into 202 / 409 / 503 decided by a host agent. The
-//! failure mode that would make that worse than the 503 is a client that reports success over
+//! The endpoint answers 202 / 409 / 503 as decided by a host agent. The failure mode that would
+//! make that worse than a blanket `503` is a client that reports success over
 //! a verb it never confirmed — this program's signature defect, aimed at the one endpoint
-//! whose whole job is now to not do that. Unit tests on the mapping function cannot catch it,
+//! whose whole job is to not do that. Unit tests on the mapping function cannot catch it,
 //! because a mapping function tested against a hand-written `AgentReply` never proves the API
 //! can *obtain* one.
 //!
 //! So nothing here is mocked at the protocol boundary:
 //!
-//! * The agent is **rendered by `scripts/mod/deploy-staging.sh --render-agent`** — the same
+//! * The agent is **rendered by `cargo xtask deploy staging -- --render-agent`** — the same
 //!   function that renders it onto the host. Change the reply format there and this goes red.
 //! * The channel is a **real `UnixListener`**. Each accepted connection spawns the agent with
 //!   the socket on stdin and stdout, which is precisely what systemd's `Accept=yes` +
 //!   `StandardInput=socket` does in the shipped unit.
-//! * Only `systemctl` is a stub, for the reason T-289 gives in `agent_selftest()`: a dev box
+//! * Only `systemctl` is a stub, for the reason `agent_selftest()` gives: a dev box
 //!   has no `tbd-reforger.service`, so the real one would collapse every case to `unreachable`
 //!   and prove nothing; and the one host that has it is the live staging server. The stub is
 //!   what makes `active`, `failed` and `not-found` producible on demand.
 //!
-//! # The case that is the ticket
+//! # The case that matters most
 //!
 //! [`rejected_unit_that_systemctl_exited_zero_over_is_409`]. `systemctl --user restart` **exits
 //! 0 over a dead server** on this host (`docs/mod/STAGING-SERVER.md:246-250`). The stub is set
@@ -61,9 +61,9 @@ fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
-/// Render T-289's agent + a stub `systemctl`, once per test binary.
+/// Render the host agent + a stub `systemctl`, once per test binary.
 ///
-/// Rendering through `deploy-staging.sh` rather than copying the script is the point: this
+/// Rendering through the shipped renderer rather than copying the script is the point: this
 /// suite must fail if the shipped agent's wire format drifts from what
 /// `server_infrastructure::services::game_agent` parses. A vendored copy would keep passing
 /// while the real host
@@ -75,10 +75,10 @@ fn agent_dir() -> &'static Path {
         let out = std::env::temp_dir().join(format!("t595-agent-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&out);
 
-        // T-853: was `bash scripts/mod/deploy-staging.sh --render-agent <out>`. That script is now
-        // `cargo xtask deploy staging`. This test renders the agent with the REAL renderer rather
-        // than a fixture on purpose — a copy would keep passing while the thing actually deployed
-        // drifted — so the invocation had to move with it, not be stubbed out.
+        // The renderer is `cargo xtask deploy staging -- --render-agent <out>`. This test renders
+        // the agent with the REAL renderer rather than a fixture on purpose — a copy would keep
+        // passing while the thing actually deployed drifted — so the invocation tracks the
+        // renderer rather than being stubbed out.
         //
         // `cargo run` and not a prebuilt path: this test must work from a clean checkout and from
         // any worktree, and asking cargo is the only way to be sure the binary matches THIS tree.
@@ -90,21 +90,21 @@ fn agent_dir() -> &'static Path {
             .arg(&out)
             .current_dir(&root)
             .output()
-            .unwrap_or_else(|e| panic!("T-595: cannot run `cargo xtask deploy staging`: {e}"));
+            .unwrap_or_else(|e| panic!("cannot run `cargo xtask deploy staging`: {e}"));
         assert!(
             status.status.success(),
-            "T-595: `cargo xtask deploy staging -- --render-agent` failed ({}):\n{}\n{}",
+            "`cargo xtask deploy staging -- --render-agent` failed ({}):\n{}\n{}",
             status.status,
             String::from_utf8_lossy(&status.stdout),
             String::from_utf8_lossy(&status.stderr),
         );
         assert!(
             out.join("tbd-reforger-agent.sh").is_file(),
-            "T-595: the renderer produced no agent script in {}",
+            "the renderer produced no agent script in {}",
             out.display()
         );
 
-        // Stub systemctl, byte-for-byte T-289's own (`agent_selftest`). STUB_LOAD/STUB_ACTIVE
+        // Stub systemctl, byte-for-byte the one `agent_selftest` uses. STUB_LOAD/STUB_ACTIVE
         // are the unit's state; STUB_VERB_RC is what the verb returns — deliberately
         // independent, so "verb says OK, unit is dead" is expressible.
         let bin = out.join("bin");
@@ -165,7 +165,7 @@ struct AgentHarness {
 }
 
 impl AgentHarness {
-    /// Bind a socket and serve T-289's agent on it, one process per connection.
+    /// Bind a socket and serve the rendered agent on it, one process per connection.
     async fn start(name: &str, stub: Stub) -> Self {
         let dir = agent_dir();
         // sun_path is ~108 bytes — keep this short and out of the (deep) worktree path.
@@ -173,7 +173,7 @@ impl AgentHarness {
         let _ = std::fs::remove_file(&socket);
 
         let listener = tokio::net::UnixListener::bind(&socket)
-            .unwrap_or_else(|e| panic!("T-595: bind {}: {e}", socket.display()));
+            .unwrap_or_else(|e| panic!("bind {}: {e}", socket.display()));
 
         let script = dir.join("tbd-reforger-agent.sh");
         let path_env = format!(
@@ -208,7 +208,7 @@ impl AgentHarness {
                             let _ = c.wait().await;
                         });
                     }
-                    Err(e) => panic!("T-595: cannot spawn the agent: {e}"),
+                    Err(e) => panic!("cannot spawn the agent: {e}"),
                 }
             }
         });
@@ -296,7 +296,7 @@ async fn rcon_audit_row(pool: &PgPool, server_id: &str) -> (String, String) {
     assert_eq!(
         rows.len(),
         1,
-        "T-595: exactly one audit row per RCON request, got {rows:#?}"
+        "exactly one audit row per RCON request, got {rows:#?}"
     );
     rows.into_iter().next().expect("one row")
 }
@@ -306,16 +306,16 @@ async fn rcon_audit_row(pool: &PgPool, server_id: &str) -> (String, String) {
 /// **202.** The agent ran `restart` and re-read the unit as `active`.
 ///
 /// The audit row must be `info` and must say DELIVERED **and name the state**. A row that
-/// recorded the attempt ("attempted RCON … NOT delivered") over a restart that worked is
-/// T-269's placeholder outliving its premise, which is the defect this ticket closes.
+/// recorded the attempt ("attempted RCON … NOT delivered") over a restart that worked is a
+/// placeholder outliving its premise, which is the defect this suite closes.
 #[tokio::test]
 async fn accepted_restart_is_202_and_the_audit_row_records_the_outcome() {
     let agent = AgentHarness::start("accepted", Stub::unit("active")).await;
     let Some((app, pool)) = boot(&agent.path()).await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
-    let server = seed_server(&pool, "T-595 accepted").await;
+    let server = seed_server(&pool, "rcon accepted").await;
 
     let (status, body) =
         post_rcon(&app, &tok, &server, serde_json::json!({"action":"restart"})).await;
@@ -344,11 +344,11 @@ async fn accepted_restart_is_202_and_the_audit_row_records_the_outcome() {
     );
     assert!(
         !message.contains("attempted"),
-        "T-269's attempt-shaped wording must not survive a real delivery: {message}"
+        "attempt-shaped wording must not survive a real delivery: {message}"
     );
 }
 
-/// **409 — the ticket.** `systemctl` exits **0** and the unit is `failed`.
+/// **409 — the case that matters most.** `systemctl` exits **0** and the unit is `failed`.
 ///
 /// `docs/mod/STAGING-SERVER.md:246-250` documents this exact host doing this: with
 /// `a2sPort == bindPort` the engine logs "Unable to start replication" → "Game destroyed" and
@@ -359,10 +359,10 @@ async fn accepted_restart_is_202_and_the_audit_row_records_the_outcome() {
 async fn rejected_unit_that_systemctl_exited_zero_over_is_409() {
     let agent = AgentHarness::start("rejected", Stub::unit("failed")).await;
     let Some((app, pool)) = boot(&agent.path()).await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
-    let server = seed_server(&pool, "T-595 rejected").await;
+    let server = seed_server(&pool, "rcon rejected").await;
 
     let (status, body) =
         post_rcon(&app, &tok, &server, serde_json::json!({"action":"restart"})).await;
@@ -407,10 +407,10 @@ async fn agent_reporting_an_uninstalled_unit_is_503() {
     )
     .await;
     let Some((app, pool)) = boot(&agent.path()).await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
-    let server = seed_server(&pool, "T-595 notfound").await;
+    let server = seed_server(&pool, "rcon notfound").await;
 
     let (status, body) =
         post_rcon(&app, &tok, &server, serde_json::json!({"action":"restart"})).await;
@@ -432,10 +432,10 @@ async fn a_socket_with_no_listener_is_503_not_a_success() {
     let dead = std::env::temp_dir().join(format!("t595-dead-{}.sock", std::process::id()));
     let _ = std::fs::remove_file(&dead);
     let Some((app, pool)) = boot(&dead.to_string_lossy()).await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
-    let server = seed_server(&pool, "T-595 dead socket").await;
+    let server = seed_server(&pool, "rcon dead socket").await;
 
     let (status, body) =
         post_rcon(&app, &tok, &server, serde_json::json!({"action":"restart"})).await;
@@ -452,10 +452,10 @@ async fn a_socket_with_no_listener_is_503_not_a_success() {
 #[tokio::test]
 async fn an_unconfigured_socket_is_503_and_says_which_var_is_missing() {
     let Some((app, pool)) = boot("").await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
-    let server = seed_server(&pool, "T-595 unconfigured").await;
+    let server = seed_server(&pool, "rcon unconfigured").await;
 
     let (status, body) =
         post_rcon(&app, &tok, &server, serde_json::json!({"action":"restart"})).await;
@@ -482,7 +482,7 @@ async fn an_unconfigured_socket_is_503_and_says_which_var_is_missing() {
 async fn kick_change_map_and_custom_are_refused_as_unsupported_not_as_no_transport() {
     let agent = AgentHarness::start("unsupported", Stub::unit("active")).await;
     let Some((app, pool)) = boot(&agent.path()).await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
 
@@ -497,7 +497,7 @@ async fn kick_change_map_and_custom_are_refused_as_unsupported_not_as_no_transpo
             serde_json::json!({"action":"custom","command":"#shutdown"}),
         ),
     ] {
-        let server = seed_server(&pool, &format!("T-595 {label}")).await;
+        let server = seed_server(&pool, &format!("rcon {label}")).await;
         let (status, resp) = post_rcon(&app, &tok, &server, body).await;
         assert_eq!(
             status,
@@ -543,10 +543,10 @@ async fn the_client_waits_out_the_agents_dwell_instead_of_calling_it_unreachable
     )
     .await;
     let Some((app, pool)) = boot(&agent.path()).await else {
-        panic!("T-595: TEST_DATABASE_URL required — a skip here is a failure to have tested");
+        panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");
     };
     let tok = admin_token(&app).await;
-    let server = seed_server(&pool, "T-595 dwell").await;
+    let server = seed_server(&pool, "rcon dwell").await;
 
     let started = std::time::Instant::now();
     let (status, body) =

@@ -1,9 +1,8 @@
-//! T-233 — the derived combat figures on `GET /api/v1/me/deployments`, and the tripwire for the
+//! The derived combat figures on `GET /api/v1/me/deployments`, and the tripwire for the
 //! two figures that are not derivable at all. Skips without `TEST_DATABASE_URL`.
 //!
 //! Every number asserted here is checked against arithmetic written out in the comments, not
-//! against whatever the query happened to return. The point of the ticket was that a K/D which
-//! merely *appears* proves nothing — `2.45` appeared for a month.
+//! against whatever the query happened to return: a K/D that merely *appears* proves nothing.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -168,11 +167,11 @@ async fn derived_combat_figures_match_hand_computation() {
         // 200 response missing one of these is not reachable from *this* source tree — it means the
         // test binary was linked against a `website-api` that predates the handler change.
         //
-        // That is a real, measured failure mode, not a hypothetical: T-235 proved the shared
+        // That is a real, measured failure mode, not a hypothetical: a shared
         // `CARGO_TARGET_DIR` clobbers artifacts across worktrees under a *stable* filename hash, so
         // a fresh test object can link a stale rlib. A fresh database does not fix it — the wrong
-        // code is in the binary, not the data. Reproduced deliberately: this exact assertion, this
-        // exact line, against the pre-T-233 handler on a virgin DB.
+        // code is in the binary, not the data. It reproduces deliberately: this exact assertion,
+        // on this exact line, against a handler that does not build the six keys, on a virgin DB.
         assert!(
             obj.contains_key(key),
             "`{key}` missing from a 200 response, which this source tree cannot produce — \
@@ -306,7 +305,7 @@ async fn derived_combat_figures_match_hand_computation() {
     reset(&pool).await;
 }
 
-/// The tripwire for "favourite weapon" / "favourite asset" (the T-359 precedent).
+/// The tripwire for "favourite weapon" / "favourite asset".
 ///
 /// An assert-absent test. It pins the measured fact the removal rests on — nothing in this schema
 /// observes what a player carried or drove — and, more usefully, it fails the day someone adds the
@@ -407,7 +406,7 @@ async fn wipe_ingest(pool: &PgPool, arma: &str, src: &str) {
         .expect("wipe match");
 }
 
-/// T-940.4 golden: a complete pre-T-393 flat payload stores every counter, including kills.
+/// Golden: a complete flat payload stores every counter, including kills.
 /// Perturbation: `fold_flat_counters` skipping the kills field makes this assert red.
 #[tokio::test]
 async fn flat_counter_payload_stores_the_scoreline() {
@@ -434,7 +433,7 @@ async fn flat_counter_payload_stores_the_scoreline() {
     wipe_ingest(&pool, ARMA, SRC).await;
 }
 
-/// T-940.4: flat, nested, and both-shapes (nested + leftover flat) store identical rows.
+/// Flat, nested, and both-shapes (nested + leftover flat) store identical rows.
 /// Conflicting leftover flat is ignored — nested wins, no double count.
 #[tokio::test]
 async fn flat_and_nested_shapes_store_identical_rows() {
@@ -460,7 +459,7 @@ async fn flat_and_nested_shapes_store_identical_rows() {
     let nested = format!(
         r#"{{"match":{{"source_match_id":"{SRC_N}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_N}","role_played":"SL","source_event_id":"{EV}","counters":{counters}}}]}}"#
     );
-    // Reporter-after-T-940.4: nested + leftover flat deaths, with a conflicting leftover kills
+    // Reporter shape: nested + leftover flat deaths, with a conflicting leftover kills
     // that must NOT win.
     let both = format!(
         r#"{{"match":{{"source_match_id":"{SRC_B}","outcome":"success"}},"players":[{{"arma_id":"{ARMA_B}","role_played":"SL","source_event_id":"{EV}","kills":99,"deaths":99,"counters":{counters}}}]}}"#
@@ -488,7 +487,7 @@ async fn flat_and_nested_shapes_store_identical_rows() {
     wipe_ingest(&pool, ARMA_B, SRC_B).await;
 }
 
-/// T-940.4: the shipping reporter's deaths-only row stores deaths (not NULL), matching its
+/// The shipping reporter's deaths-only row stores deaths (not NULL), matching its
 /// nested equivalent (zeros for unmeasured fields).
 #[tokio::test]
 async fn reporter_deaths_only_matches_nested_equivalent() {
