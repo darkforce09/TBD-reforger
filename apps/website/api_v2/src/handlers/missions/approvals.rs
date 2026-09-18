@@ -315,7 +315,7 @@ pub async fn reject_mission(
 // constraints. Stated rather than implied.
 //
 // Not started here: the endpoint pair (`POST`/`GET /api/v1/missions/:id/comments`), which also
-// needs a route in `app.rs` and a model, and the two SPA halves above. `body` takes the T-218
+// needs a route in `core/http_router.rs` and a model, and the two SPA halves above. `body` takes the T-218
 // treatment — required field, `trim`, empty → 400 — for the reason `RejectInput` documents.
 
 #[cfg(test)]

@@ -46,11 +46,12 @@ use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
 use axum::http::{Request, StatusCode, header};
 use sqlx::PgPool;
-use website_api::app::durable_ratelimit::bucket_key;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::core::middleware::durable_ratelimit::bucket_key;
+use website_api::db;
 use website_api::middleware::{DURABLE_STRICT_BURST, DURABLE_STRICT_SCOPE};
 use website_api::state::AppState;
-use website_api::{app, db};
 
 use tower::ServiceExt;
 
@@ -76,7 +77,7 @@ async fn boot() -> Option<(PgPool, String)> {
 fn router_trusting(pool: PgPool, url: &str, trusted: &[&str]) -> Router {
     let mut cfg = Config::for_tests(url, "t625-secret");
     cfg.trusted_proxies = trusted.iter().map(|s| (*s).to_string()).collect();
-    app::router(AppState::new(pool, cfg))
+    http_router::router(AppState::new(pool, cfg))
 }
 
 /// One request from `peer`, optionally carrying an `X-Forwarded-For` chain.

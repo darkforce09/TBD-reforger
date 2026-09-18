@@ -36,25 +36,26 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         }
     }
 
-    // ── Shape assertions on app.rs ───────────────────────────────────────────────────────────
+    // ── Shape assertions on http_router.rs ───────────────────────────────────────────────────────────
     //
     // The extractor reads ONE function and prefixes ONE nest path; both are load-bearing, so both
     // are pinned. bash's `gate_require … "$APP_RS"` is a stat plus a content match, split here into
     // an explicit read plus `gate::require_str` for one reason: the script `cd`s to `$ROOT` and so
-    // printed `apps/website/api_v2/src/app.rs`, while xtask takes an absolute root and may be invoked
+    // printed `apps/website/api_v2/src/core/http_router.rs`, while xtask takes an absolute root and
+    // may be invoked
     // from any subdirectory. Reading first lets the missing-target `Finding` carry that same
     // relative path, with the same `Verdict` shapes.
     let nest = format!(".nest(\"{API_PREFIX}\", api_routes(");
     let pins: [(String, &str); 2] = [
         (
             format!(
-                "app.rs no longer defines `fn api_routes` — the route extractor in {SELF_REL} reads that function by name, so it is now parsing nothing. Re-point it before trusting any verdict."
+                "http_router.rs no longer defines `fn api_routes` — the route extractor in {SELF_REL} reads that function by name, so it is now parsing nothing. Re-point it before trusting any verdict."
             ),
             "fn api_routes",
         ),
         (
             format!(
-                "app.rs no longer nests api_routes at `{API_PREFIX}` — every @route tag in the crate is written with that prefix, so the extracted paths would all be wrong."
+                "http_router.rs no longer nests api_routes at `{API_PREFIX}` — every @route tag in the crate is written with that prefix, so the extracted paths would all be wrong."
             ),
             nest.as_str(),
         ),
@@ -68,7 +69,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         None => {
             // bash ran both `gate_require`s and both reported the same missing file, so both lines
             // print. Reproduced rather than collapsed: the second names the nest prefix, and a
-            // reader who has lost app.rs still needs to know both invariants exist.
+            // reader who has lost http_router.rs still needs to know both invariants exist.
             for (msg, _) in &pins {
                 let cause = NotRun::TargetMissing(PathBuf::from(APP_RS_REL));
                 o.push(Verdict::did_not_run(msg.clone(), Kind::Pin, cause).to_string());

@@ -1,7 +1,7 @@
 //! API server entrypoint — Rust port of `cmd/api/main.go`.
 //!
 //! Boot order (mirrors the Go `main`): load config → open pool (with backoff) →
-//! run migrations → build the router + middleware ([`website_api::app::router`])
+//! run migrations → build the router + middleware ([`website_api::core::http_router::router`])
 //! → serve on `:PORT` with graceful shutdown (SIGINT/SIGTERM). The `/api/v1` route
 //! tree + refresh-token purge task are wired in as later phases land.
 
@@ -9,8 +9,9 @@ use std::net::SocketAddr;
 
 use tracing_subscriber::EnvFilter;
 use website_api::config::Config;
+use website_api::core::http_router;
 use website_api::state::AppState;
-use website_api::{app, db, handlers, realtime, services};
+use website_api::{db, handlers, realtime, services};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -66,13 +67,13 @@ async fn main() -> anyhow::Result<()> {
     // on the auth/ingest surface, and nothing else removes them. Deleting an idle bucket can never
     // grant quota (it refills to full in ten seconds; the TTL is an hour), so this is reclamation
     // only — see `services::ratelimit_gc`. Sits here beside the leaderboard refresher exactly as
-    // `app::durable_ratelimit`'s wiring note asked.
+    // `core::middleware::durable_ratelimit`'s wiring note asked.
     let _rl_prune = services::start_rate_limit_prune(
         state.pool.clone(),
         services::RATE_LIMIT_BUCKET_TTL,
         services::RATE_LIMIT_PRUNE_INTERVAL,
     );
-    let app = app::router(state);
+    let app = http_router::router(state);
 
     let addr = format!("0.0.0.0:{port}");
     let listener = tokio::net::TcpListener::bind(&addr).await?;

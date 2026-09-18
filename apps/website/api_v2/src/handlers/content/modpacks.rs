@@ -4,7 +4,7 @@
 //! Before T-271 this file was GET-only: `modpack_mods` could not express a Reforger
 //! `game.mods[]` entry (no workshop_id / mod_guid / version), and the SPA page was
 //! fully MOCK with an in-memory Save. Writes live here; route registration is in
-//! [`crate::app`] (owns widen — same shape as T-263 vehicle POST).
+//! [`crate::core::http_router`] (owns widen — same shape as T-263 vehicle POST).
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};

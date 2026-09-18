@@ -8,7 +8,7 @@ fn rcon_path_tracks_app_rs() {
     let app_rs: &str = app_rs;
     assert!(
         app_rs.contains(r#""/admin/servers/{id}/rcon""#),
-        "app.rs must register POST /admin/servers/{{id}}/rcon"
+        "http_router.rs must register POST /admin/servers/{{id}}/rcon"
     );
     assert_eq!(
         admin_server_rcon_path("00000000-0000-4000-d000-000000000001"),

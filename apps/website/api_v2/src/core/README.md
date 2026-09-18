@@ -56,7 +56,7 @@ src/core/
 
 ## 2. Invariants & Key Architectural Rules
 
-### 2.1 The T-630 Rate-Limit Seam
+### 2.1 The Rate-Limit Seam
 `/map-assets` provides DEM terrain elevation, satellite orthophotos, and 3D world geometry to the Mission Editor and Planner. A single cold editor load requests up to 951 binary chunks. In `http_router.rs`, `/map-assets` is mounted strictly **outside and below** the rate-limiting layer, ensuring it is completely exempt from rate limiting while all other routes remain protected.
 
 ### 2.2 Prometheus Metrics (Zero Third-Party Lockfile Bloat)

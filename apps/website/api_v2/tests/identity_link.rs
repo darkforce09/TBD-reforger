@@ -32,8 +32,9 @@ use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -130,7 +131,7 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
     .unwrap_or_else(|e| panic!("identity_link unlink actor: {e}"));
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "identity-secret"));
-    let app = app::router(state.clone());
+    let app = http_router::router(state.clone());
     Some((app, state, pool))
 }
 

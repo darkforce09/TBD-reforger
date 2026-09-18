@@ -18,8 +18,9 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -65,7 +66,7 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
     .await;
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "factions-secret"));
-    let app = app::router(state.clone());
+    let app = http_router::router(state.clone());
     let maker = common::access_token(&state, "factions", MAKER, "mission_maker", true);
     let enlisted = common::access_token(&state, "factions", ENLISTED, "enlisted", true);
     Some((app, pool, maker, enlisted))

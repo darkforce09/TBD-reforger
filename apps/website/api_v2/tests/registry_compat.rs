@@ -18,9 +18,10 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::services::registry_import::{import_compat, import_items};
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -52,7 +53,7 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
             sqlx::query(q).bind(id).execute(&pool).await.expect("clean");
         }
     }
-    let app = app::router(AppState::new(
+    let app = http_router::router(AppState::new(
         pool.clone(),
         Config::for_tests(url, "registry-secret"),
     ));

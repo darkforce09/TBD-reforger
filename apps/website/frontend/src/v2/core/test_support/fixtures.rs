@@ -28,7 +28,10 @@ pub(crate) use golden;
 
 /// The API crate's router source, for guards that assert a frontend call has a route behind it.
 pub(crate) fn api_app_source() -> &'static str {
-    include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api_v2/src/app.rs"))
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../api_v2/src/core/http_router.rs"
+    ))
 }
 
 /// This crate's `Cargo.toml`, for guards that assert a dependency or feature is declared.

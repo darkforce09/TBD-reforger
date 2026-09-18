@@ -13,7 +13,8 @@ pub mod request_id;
 pub use auth::{AdminUser, AuthUser, LeaderUser, MissionMakerUser, ServiceAuth};
 pub use cors::cors;
 // T-578 — `RateLimitState` carries the durable (Postgres) tier alongside the in-memory one.
-// T-630 — `RATE_LIMIT_EXEMPT_MOUNT` is a router mount point, consumed only by `app::router`.
+// `RATE_LIMIT_EXEMPT_MOUNT` is a router mount point, consumed only by
+// `core::http_router::router`.
 pub use ratelimit::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, IpLimiter,
     RATE_LIMIT_EXEMPT_MOUNT, RateLimitState, STRICT_PREFIXES, rate_limit,

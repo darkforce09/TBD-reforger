@@ -11,8 +11,9 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -22,7 +23,7 @@ async fn boot() -> Option<Router> {
     let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
-    Some(app::router(AppState::new(
+    Some(http_router::router(AppState::new(
         pool,
         Config::for_tests(url, "misc-secret"),
     )))
@@ -995,7 +996,7 @@ async fn cors_reflects_allowed_origin_only() {
 // ══════════════════════════ §T-235 — servers admin CRUD ══════════════════════════
 //
 // `servers` rows are created, edited and deleted through `handlers/servers.rs`, whose POST / PUT /
-// DELETE routes are registered in `app::api_routes`. Those routes are what these tests exist to
+// DELETE routes are registered in `core::http_router::api_routes`. Those routes are what these tests exist to
 // hold: without them `GET /servers` serves an empty list on any production database and the Server
 // Intel page has nothing to render.
 //
@@ -1028,7 +1029,7 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
         .expect("clean servers");
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "servers-secret"));
-    let app = app::router(state.clone());
+    let app = http_router::router(state.clone());
     Some((app, pool, state))
 }
 
@@ -1396,7 +1397,7 @@ async fn servers_list_terrain_from_current_match_join() {
 }
 
 /// The writes are admin-only; the reads stay member-tier. Asserted against the tier the handler's
-/// own extractor enforces, so this holds however `app.rs` registers the routes.
+/// own extractor enforces, so this holds however `core/http_router.rs` registers the routes.
 #[tokio::test]
 async fn servers_writes_are_admin_only() {
     let Some((app, _, state)) = boot_servers("Tier").await else {

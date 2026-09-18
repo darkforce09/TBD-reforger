@@ -1,9 +1,9 @@
 //! T-280 — the database-backed half of the observability / durable-rate-limiting slice.
 //!
-//! # Why this file exists rather than `#[cfg(test)]` in `src/app.rs`
+//! # Why this file exists rather than `#[cfg(test)]` in `src/core/http_router.rs`
 //!
 //! Everything that can be proven in-process (the metrics registry, the exposition text,
-//! the cardinality cap, `/healthz` going red) lives in `src/app.rs` next to the code.
+//! the cardinality cap, `/healthz` going red) lives in `src/core/http_router.rs` next to the code.
 //! What is here needs a **real** database, and `common::t542_no_raw_test_database_url_reads_outside_common`
 //! (T-542 / T-558) forbids `src/**` from reading `TEST_DATABASE_URL` at all — a rule that
 //! exists because an in-crate DB test once read the operator's base URL raw and could have
@@ -13,9 +13,9 @@
 //! # What it proves
 //!
 //! 1. `/healthz` is **green** against a migrated database and its migration check reports a
-//!    real applied count — the other half of the red case pinned in `src/app.rs`.
+//!    real applied count — the other half of the red case pinned in `src/core/http_router.rs`.
 //! 2. `/metrics` reports a live database (`tbd_db_up 1`, non-zero pool gauges) — the same
-//!    gauges that read 0 against a dead pool in `src/app.rs`.
+//!    gauges that read 0 against a dead pool in `src/core/http_router.rs`.
 //! 3. `PgRateLimiter` **refuses at the limit and still refuses after a restart**, which is
 //!    the entire claim behind the word "durable"; the in-memory `IpLimiter` is exercised
 //!    beside it to pin the defect it replaces.
@@ -31,11 +31,14 @@ use axum::http::{Request, StatusCode};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
-use website_api::app::durable_ratelimit::{PgRateLimiter, RATE_LIMIT_BUCKETS_DDL, bucket_key};
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::core::middleware::durable_ratelimit::{
+    PgRateLimiter, RATE_LIMIT_BUCKETS_DDL, bucket_key,
+};
+use website_api::db;
 use website_api::middleware::IpLimiter;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -51,7 +54,7 @@ async fn pool_for(url: &str) -> PgPool {
 }
 
 fn app_with(pool: PgPool) -> Router {
-    app::router(AppState::new(
+    http_router::router(AppState::new(
         pool,
         Config::for_tests("postgres://unused", "t280-observability"),
     ))
@@ -94,7 +97,7 @@ fn value(body: &str, prefix: &str) -> Option<f64> {
 static BUCKET_TABLE: tokio::sync::OnceCell<()> = tokio::sync::OnceCell::const_new();
 
 /// Ensure the table [`PgRateLimiter`] needs. **This DDL is the deliverable for the
-/// migration owner** — `RATE_LIMIT_BUCKETS_DDL` is a `const` in `src/app.rs` precisely so
+/// migration owner** — `RATE_LIMIT_BUCKETS_DDL` is a `const` in `src/core/http_router.rs` precisely so
 /// the bytes proven here and the bytes that eventually land in
 /// `apps/website/api/migrations/` cannot drift.
 async fn ensure_bucket_table(pool: &PgPool) {
@@ -113,13 +116,13 @@ async fn ensure_bucket_table(pool: &PgPool) {
 /// `/healthz` green against a migrated database, and the migration check reading real
 /// numbers rather than reporting a constant.
 ///
-/// The red half — both checks `down`, 503 — is `app::tests::healthz_goes_red_when_the_
+/// The red half — both checks `down`, 503 — is `core::tests::http_router::healthz_goes_red_when_the_
 /// database_is_unreachable`. Neither is worth anything without the other: a probe that is
 /// always green and a probe that is always red are the same defect.
 ///
 /// **T-580** moved the detail behind `X-Service-Token`, so this now reads the probe *with* the
 /// token. The public shape (`{"status": …}` and nothing else) is asserted against a dead pool by
-/// `app::tests::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
+/// `core::tests::http_router::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
 /// [`healthz_public_shape_is_status_only_against_a_live_database`] below — a probe that discloses
 /// nothing only because it is failing would prove nothing.
 #[tokio::test]
@@ -191,7 +194,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
 
 /// T-580 — against a **live, healthy** database the public probe still discloses nothing.
 ///
-/// The dead-pool half lives in `src/app.rs`. Both are needed: a `/healthz` that reveals nothing
+/// The dead-pool half lives in `src/core/http_router.rs`. Both are needed: a `/healthz` that reveals nothing
 /// because it is 503-ing on every check has not been fixed, it has been broken, and this is the
 /// case where there is real detail to leak (a real version, a real uptime, real pool gauges and a
 /// real migration count — the four fields wave 69's verifier actually measured off the public

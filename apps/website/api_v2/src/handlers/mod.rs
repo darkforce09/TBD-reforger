@@ -1,12 +1,12 @@
 //! HTTP handlers — Rust port of `internal/handlers`, grouped by domain. Populated
-//! per phase; the `/api/v1` route tree is assembled in [`crate::app`].
+//! per phase; the `/api/v1` route tree is assembled in [`crate::core::http_router`].
 //!
 //! T-934.15 nested the 21 flat handler files into six domain directories. Where a
 //! domain directory carries a file of its own name (`auth/auth.rs`, …) the domain's
 //! `mod.rs` glob re-exports it, and the `pub use` façade below restores every other
 //! module at its old flat path — so `handlers::oauth::discord_login`,
 //! `handlers::servers::list_servers` and friends resolve exactly as before and
-//! [`crate::app`]'s route wiring is untouched. The shared helpers below stay here:
+//! [`crate::core::http_router`]'s route wiring is untouched. The shared helpers below stay here:
 //! they are the domain-neutral floor every domain sits on.
 
 pub mod admin;

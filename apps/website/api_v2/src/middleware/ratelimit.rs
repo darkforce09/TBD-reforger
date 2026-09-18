@@ -139,7 +139,7 @@
 //! ## Where the exemption attaches, and why it is not a path guess
 //!
 //! **Not here.** This middleware still has exactly one path predicate — `STRICT_PREFIXES` — and
-//! gains no second one. The exemption lives in [`crate::app::router`]: `Router::layer` wraps the
+//! gains no second one. The exemption lives in [`crate::core::http_router::router`]: `Router::layer` wraps the
 //! routes registered *before* it, so mounting `RATE_LIMIT_EXEMPT_MOUNT` on the line *after* the
 //! `rate_limit` layer leaves that service structurally outside the middleware. The limiter is never
 //! asked about a map asset, so it can never get the answer wrong.
@@ -165,8 +165,8 @@ use governor::clock::DefaultClock;
 use governor::state::keyed::DefaultKeyedStateStore;
 use governor::{Quota, RateLimiter};
 
-use crate::app::durable_ratelimit::{PgRateLimiter, bucket_key};
 use crate::config::{ProxyNet, parse_trusted_proxies};
+use crate::core::middleware::durable_ratelimit::{PgRateLimiter, bucket_key};
 use crate::middleware::json_error;
 use crate::state::AppState;
 
@@ -178,7 +178,7 @@ pub const STRICT_PREFIXES: [&str; 2] = ["/api/v1/auth/", "/api/v1/ingest/"];
 /// T-630 — the router mount point that is served **outside** [`rate_limit`] entirely.
 ///
 /// This is a **`Router::nest_service` argument**, not a request-path predicate. It is passed to
-/// axum once, at registration, in [`crate::app::router`]; nothing in this module compares it
+/// axum once, at registration, in [`crate::core::http_router::router`]; nothing in this module compares it
 /// against `req.uri().path()`, and nothing should. See the module header's `/map-assets` section
 /// for why the exemption is structural and what a `starts_with` version of it would get wrong.
 ///
@@ -798,7 +798,7 @@ mod tests {
     }
 
     /// **The seam.** `Router::layer` wraps the routes registered before it and nothing after, so
-    /// the entire T-630 exemption is one ordering fact in `app::router`: the `/map-assets`
+    /// the entire exemption is one ordering fact in `core::http_router::router`: the `/map-assets`
     /// `nest_service` comes *below* the `rate_limit` layer.
     ///
     /// `tests/t630_map_assets_exempt.rs` proves the behaviour through real HTTP, which is the
@@ -813,18 +813,18 @@ mod tests {
     fn the_exempt_mount_is_registered_below_the_rate_limit_layer() {
         const LAYER: &str = "RateLimitState::new(state.clone())";
         const MOUNT: &str = "RATE_LIMIT_EXEMPT_MOUNT";
-        let src = include_str!("../app.rs");
+        let src = include_str!("../core/http_router.rs");
 
         assert_eq!(
             src.matches(LAYER).count(),
             1,
-            "src/app.rs no longer contains exactly one `{LAYER}` — this pin cannot locate the \
+            "src/core/http_router.rs no longer contains exactly one `{LAYER}` — this pin cannot locate the \
              rate-limit layer, so it is not checking anything"
         );
         assert_eq!(
             src.matches(MOUNT).count(),
             1,
-            "src/app.rs no longer contains exactly one `{MOUNT}` — this pin cannot locate the \
+            "src/core/http_router.rs no longer contains exactly one `{MOUNT}` — this pin cannot locate the \
              exempt mount, so it is not checking anything"
         );
 
@@ -832,7 +832,7 @@ mod tests {
         let mount_at = src.find(MOUNT).expect("counted above");
         assert!(
             mount_at > layer_at,
-            "src/app.rs mounts {RATE_LIMIT_EXEMPT_MOUNT} at byte {mount_at}, ABOVE the rate-limit \
+            "src/core/http_router.rs mounts {RATE_LIMIT_EXEMPT_MOUNT} at byte {mount_at}, ABOVE the rate-limit \
              layer at byte {layer_at}. `Router::layer` wraps everything registered before it, so \
              the map-asset ServeDir is back inside the limiter and a Mission Creator boot is \
              paying T-629's backoff again. Move the `nest_service` back below the layer."
@@ -849,10 +849,10 @@ mod tests {
     #[test]
     fn the_exemption_does_not_cover_the_other_static_mount() {
         assert_ne!(RATE_LIMIT_EXEMPT_MOUNT, "/uploads");
-        let src = include_str!("../app.rs");
+        let src = include_str!("../core/http_router.rs");
         assert!(
             src.contains(r#"nest_service("/uploads", ServeDir::new("uploads"))"#),
-            "src/app.rs no longer mounts /uploads the way this test assumes — re-check that it is \
+            "src/core/http_router.rs no longer mounts /uploads the way this test assumes — re-check that it is \
              still registered ABOVE the rate-limit layer"
         );
         let uploads_at = src

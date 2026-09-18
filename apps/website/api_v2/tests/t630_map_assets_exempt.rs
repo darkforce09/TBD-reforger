@@ -44,9 +44,10 @@ use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::middleware::{DURABLE_STRICT_BURST, RATE_LIMIT_EXEMPT_MOUNT, STRICT_PREFIXES};
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -75,7 +76,7 @@ const BURST: usize = 200;
 
 /// The map-asset directory, resolved from the manifest rather than the process CWD.
 ///
-/// `Config::map_assets_dir` empty makes `app::router` fall back to `../../../packages/map-assets`,
+/// `Config::map_assets_dir` empty makes `http_router::router` fall back to `../../../packages/map-assets`,
 /// which is correct for the shipped binary and CWD-dependent for a test harness. Setting it
 /// explicitly is the same code path a deployment with `MAP_ASSETS_DIR` set takes.
 const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../packages/map-assets");
@@ -87,7 +88,7 @@ fn config_for(url: &str) -> Config {
 }
 
 fn router_for(pool: PgPool, url: &str) -> Router {
-    app::router(AppState::new(pool, config_for(url)))
+    http_router::router(AppState::new(pool, config_for(url)))
 }
 
 /// A pool that never reaches a server and gives up fast.
@@ -308,7 +309,7 @@ async fn the_other_static_mount_is_still_limited() {
 async fn the_spa_deployment_keeps_its_fallback_limited_and_its_isolation_headers() {
     let mut cfg = config_for("postgres://unused");
     cfg.spa_dist_dir = "/nonexistent-t630-dist".to_string();
-    let app = app::router(AppState::new(dead_pool(), cfg));
+    let app = http_router::router(AppState::new(dead_pool(), cfg));
     let ip = Ipv4Addr::new(10, 63, 6, 6);
 
     // 1. the SPA fallback is a limited route.

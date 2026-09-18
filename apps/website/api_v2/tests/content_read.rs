@@ -7,8 +7,9 @@ use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -22,7 +23,7 @@ async fn setup() -> Option<(Router, String)> {
     let _ = sqlx::query("DELETE FROM vehicle_databases WHERE name = 'content-test-vehicle'")
         .execute(&pool)
         .await;
-    let app = app::router(AppState::new(
+    let app = http_router::router(AppState::new(
         pool,
         Config::for_tests(url, "content-secret"),
     ));

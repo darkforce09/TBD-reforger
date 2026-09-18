@@ -5,10 +5,10 @@
 //! the corresponding Go package under `internal/`, preserving the wire contract
 //! verified in the ground-truth census.
 
-pub mod app;
 pub mod auth;
 pub mod config;
 pub mod contract;
+pub mod core;
 pub mod db;
 pub mod error;
 pub mod handlers;

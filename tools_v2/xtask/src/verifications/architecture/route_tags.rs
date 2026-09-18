@@ -15,7 +15,7 @@
 //!
 //! MEASURED CONSEQUENCE (T-586, found by T-576): `handlers/servers.rs` carried `@route` tags on
 //! THREE handlers — `create_server` (POST), `update_server` (PATCH), `deactivate_server` (DELETE) —
-//! that `app.rs` never registered. The whole admin server-CRUD triple was documented, tested and
+//! that `http_router.rs` never registered. The whole admin server-CRUD triple was documented, tested and
 //! unreachable, and nothing went red. In the other direction `submit_mission` was a live registered
 //! route carrying no tag at all. A documentation tag nobody checks is a claim, not a contract.
 //!
@@ -36,7 +36,7 @@
 //! A verifier that passes because it parsed zero inputs is the T-586 defect in a new hat, so the
 //! parse is checked against itself before any verdict is issued: every raw `@route` line must
 //! become exactly one parsed tuple; every `.route(` line must yield at least one registration;
-//! `app.rs` must still have the shape the extractor parses; and two sentinel routes present on both
+//! `http_router.rs` must still have the shape the extractor parses; and two sentinel routes present on both
 //! sides must survive the pipeline. Each is a FAIL, never a SKIP.
 //!
 //! ── WHAT THE PORT FIXES ──────────────────────────────────────────────────────────────────────
@@ -70,10 +70,10 @@
 //!   where the extractor they must re-point lives, and after T-853 that is this file; naming a
 //!   script the migration removes would be actively misleading. Reachable only once `fn api_routes`
 //!   has been renamed — never on a clean tree.
-//! * **Exit 2, not 1, when the check DID NOT RUN** (missing/unreadable `app.rs` or `src/`), as in
+//! * **Exit 2, not 1, when the check DID NOT RUN** (missing/unreadable `http_router.rs` or `src/`), as in
 //!   `sql_gates.rs` and `gate_t439.rs`. `Makefile:328` and `wave.sh:2562`/`:2833` test `rc -eq 0`,
 //!   so any nonzero is still FAIL there, and the bash headline stays verbatim on line 1 so a grep
-//!   for `FAIL: app.rs no longer …` still hits. A real A/B violation still exits **1**.
+//!   for `FAIL: http_router.rs no longer …` still hits. A real A/B violation still exits **1**.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -84,10 +84,11 @@ use regex::Regex;
 use verification_core::{Kind, NotRun, Pattern, Verdict, gate, scan};
 
 /// The router. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
-const APP_RS_REL: &str = "apps/website/api_v2/src/app.rs";
+const APP_RS_REL: &str = "apps/website/api_v2/src/core/http_router.rs";
 /// The tree swept for `@route` tags — the whole `src/`, not just `handlers/`.
 const SRC_DIR_REL: &str = "apps/website/api_v2/src";
-/// The nest prefix every `@route` tag is written against. Asserted, never assumed: if `app.rs`
+/// The nest prefix every `@route` tag is written against. Asserted, never assumed: if
+/// `http_router.rs`
 /// stops nesting `api_routes` here, every extracted path is silently wrong.
 const API_PREFIX: &str = "/api/v1";
 /// bash interpolated `$0`. See the module docs on the one deliberate text deviation.

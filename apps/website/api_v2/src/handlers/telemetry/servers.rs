@@ -6,12 +6,12 @@
 //! `GET /servers` returned an empty list on any production database forever and the Server Intel
 //! page had nothing to render. The reads below were correct and unreachable.
 //!
-//! **Route registration lives in [`crate::app`], which T-235 does not own.** The three handlers
+//! **Route registration lives in [`crate::core::http_router`].** The three handlers
 //! are written so that registration is one line per route and nothing else — the exact lines are
 //! in `tests/misc_integration.rs::servers_crud_registration`, which is both the lifecycle
 //! harness and the handoff. Auth tier is *not* set there: every write takes an
 //! [`crate::middleware::AdminUser`] extractor, so the tier travels with the handler and a
-//! registration typo cannot silently downgrade it (`app.rs:18` — "Auth tiers are enforced
+//! registration typo cannot silently downgrade it (`core/http_router.rs` — "Auth tiers are enforced
 //! per-handler by the extractor each takes").
 //!
 //! **Validation is at the boundary, not in the database.** The `servers` table has six columns and
@@ -392,7 +392,8 @@ fn validated_port(raw: i64) -> Result<i64, ApiError> {
 ///
 /// The check is therefore advisory rather than atomic — a modpack deleted between this SELECT and
 /// the INSERT would still dangle. That race is currently unreachable (the crate exposes no modpack
-/// write route at all: `app.rs` registers `/modpacks` and `/modpacks/current` as GET only), and
+/// write route at all: `core/http_router.rs` registers `/modpacks` and `/modpacks/current` as GET
+/// only), and
 /// closing it properly means adding the FK, which is a migration T-235 does not own.
 async fn require_modpack(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
     let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM modpacks WHERE id = $1")

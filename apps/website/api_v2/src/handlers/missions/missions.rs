@@ -2899,13 +2899,13 @@ mod tests {
             body.contains("mission.version.set_current"),
             "set_current_version must write an audit action distinct from create_version"
         );
-        // Route registration lives in app.rs (T-532 owns) — pin the path string here so a
+        // Route registration lives in core/http_router.rs — pin the path string here so a
         // handler without a route cannot Class-R green.
-        const APP: &str = include_str!("../../app.rs");
+        const APP: &str = include_str!("../../core/http_router.rs");
         assert!(
             APP.contains("/missions/{id}/versions/{vid}/set-current")
                 && APP.contains("set_current_version"),
-            "app.rs must register POST …/versions/{{vid}}/set-current → set_current_version"
+            "http_router.rs must register POST …/versions/{{vid}}/set-current → set_current_version"
         );
     }
 }

@@ -73,26 +73,26 @@ fn cms_paths_match_axum_routes() {
     let app_rs: &str = app_rs;
     assert!(
         app_rs.contains(r#""/cms/announcements""#),
-        "app.rs must register /cms/announcements"
+        "http_router.rs must register /cms/announcements"
     );
     // The listing must share the route the create uses; a create-only registration refuses it.
     assert!(
         app_rs.contains(
             "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
         ),
-        "app.rs must register GET+POST on /cms/announcements (perturbation: post-only)"
+        "http_router.rs must register GET+POST on /cms/announcements (perturbation: post-only)"
     );
     assert!(
         app_rs.contains(r#""/cms/announcements/{id}""#),
-        "app.rs must register PATCH|DELETE /cms/announcements/{{id}}"
+        "http_router.rs must register PATCH|DELETE /cms/announcements/{{id}}"
     );
     assert!(
         app_rs.contains(r#""/cms/announcements/{id}/push-discord""#),
-        "app.rs must register POST …/push-discord"
+        "http_router.rs must register POST …/push-discord"
     );
     assert!(
         app_rs.contains(r#""/cms/uploads""#),
-        "app.rs must still register POST /cms/uploads"
+        "http_router.rs must still register POST /cms/uploads"
     );
     assert_eq!(super::cms_uploads_path(), "/cms/uploads");
 }

@@ -9,7 +9,7 @@
 //! A bucket that has not been touched for [`RATE_LIMIT_BUCKET_TTL`] has, by definition, refilled
 //! to capacity: the strict policy refills one token per second into a ten-token bucket, so the
 //! worst case (a bucket left at zero) is full 10 seconds later, and the TTL is an hour. A full
-//! bucket and an absent bucket are indistinguishable to [`crate::app::durable_ratelimit::PgRateLimiter::check`]
+//! bucket and an absent bucket are indistinguishable to [`crate::core::middleware::durable_ratelimit::PgRateLimiter::check`]
 //! — the `INSERT … ON CONFLICT` path seeds a full bucket and spends from it, exactly as the update
 //! path would. So this is pure reclamation and can never hand a throttled client its quota back
 //! early. That property is what makes it safe to run on a timer with no coordination.
@@ -22,7 +22,7 @@ use std::time::Duration;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 
-use crate::app::durable_ratelimit::PgRateLimiter;
+use crate::core::middleware::durable_ratelimit::PgRateLimiter;
 
 /// Drop buckets untouched for an hour. See the module header for why this cannot grant quota:
 /// the strict bucket refills fully in ten seconds, so an hour-old row is a full row.

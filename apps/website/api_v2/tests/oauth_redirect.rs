@@ -7,14 +7,15 @@ use axum::http::{Request, StatusCode, header};
 use axum::response::Response;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::handlers::oauth::OAUTH_STATE_CLEAR;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 fn app() -> Router {
     // for_tests() has a blank Discord client_id → the "oauth_unconfigured" path.
     let pool = db::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
-    app::router(AppState::new(
+    http_router::router(AppState::new(
         pool,
         Config::for_tests("postgres://x/x", "oauth-secret"),
     ))
@@ -99,7 +100,7 @@ async fn discord_login_sets_oauth_state_cookie_when_configured() {
     cfg.discord_client_id = "test-client".into();
     cfg.discord_redirect_url = "http://localhost:8080/api/v1/auth/discord/callback".into();
     let pool = db::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
-    let resp = app::router(AppState::new(pool, cfg))
+    let resp = http_router::router(AppState::new(pool, cfg))
         .oneshot(
             Request::builder()
                 .uri("/api/v1/auth/discord/login")

@@ -1,9 +1,8 @@
--- T-578 — the table the durable rate limiter needs.
+-- The table the durable rate limiter needs.
 --
--- T-280 built `app::durable_ratelimit::PgRateLimiter` and proved it against a real database, but
--- deliberately did NOT wire it: the table belongs in a migration, and `migrations/` was another
--- slice's file that wave. It shipped instead as `const RATE_LIMIT_BUCKETS_DDL` in `src/app.rs`,
--- specifically so the bytes the tests prove and the bytes this migration lands cannot drift.
+-- `core::middleware::durable_ratelimit::PgRateLimiter` binds this shape, and declares it as
+-- `const RATE_LIMIT_BUCKETS_DDL` in `src/core/middleware/durable_ratelimit.rs`, specifically so
+-- the bytes the tests prove and the bytes this migration lands cannot drift.
 --
 -- The DDL below is that constant, verbatim. `t578_ratelimit::migration_0020_is_the_ddl_constant_
 -- verbatim` reads both and fails if they ever stop matching, so "the migration was edited but the

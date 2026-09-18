@@ -8,7 +8,7 @@
 //! called `check()`. That is the signature defect in its production form: the code exists, the
 //! protection does not.
 //!
-//! So every test here goes through `app::router` — the same router `bin/api.rs` serves — and the
+//! So every test here goes through `http_router::router` — the same router `bin/api.rs` serves — and the
 //! central one is [`refusal_survives_a_restart`]: spend the bucket on one router, build a second
 //! router with a **fresh in-memory limiter** over the same database, and require the very next
 //! request to be refused. A fresh `IpLimiter` cannot refuse a first request, so nothing but the
@@ -36,14 +36,15 @@ use axum::http::{Request, StatusCode, header};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
-use website_api::app::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, bucket_key};
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::core::middleware::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, bucket_key};
+use website_api::db;
 use website_api::middleware::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, STRICT_PREFIXES,
 };
 use website_api::services::{RATE_LIMIT_BUCKET_TTL, start_rate_limit_prune};
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -61,7 +62,7 @@ async fn boot() -> Option<(PgPool, String)> {
 }
 
 fn router_for(pool: PgPool, url: &str) -> Router {
-    app::router(AppState::new(pool, Config::for_tests(url, "t578-secret")))
+    http_router::router(AppState::new(pool, Config::for_tests(url, "t578-secret")))
 }
 
 /// One request from `ip`, with the `ConnectInfo` production always installs.

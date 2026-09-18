@@ -35,7 +35,7 @@ Domain Handler Dispatch
 ### `rate_limiter.rs` (<420 LOC)
 - **Purpose**: Sliding-window rate limiter keyed by client IP or authenticated user ID.
 - **Invariants**:
-  - Critical Seam (T-630): `/map-assets` static binary terrain tiles MUST be mounted below or outside this layer. Terrain tile bursts during Scenario Creator boots (up to 951 tiles) must never trigger 429 cascades.
+  - Critical Seam: `/map-assets` static binary terrain tiles MUST be mounted below or outside this layer. Terrain tile bursts during Scenario Creator boots (up to 951 tiles) must never trigger 429 cascades.
 
 ### `auth_guard.rs` (<350 LOC)
 - **Purpose**: Extracts and verifies JWT credentials from `Authorization: Bearer <token>` or HTTP-only cookies.

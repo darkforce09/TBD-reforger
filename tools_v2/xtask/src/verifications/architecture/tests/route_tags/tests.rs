@@ -36,13 +36,18 @@ impl Repo {
         p.push(format!("tbd-rt-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
         std::fs::create_dir_all(p.join("apps/website/api_v2/src/handlers/telemetry")).unwrap();
+        std::fs::create_dir_all(p.join("apps/website/api_v2/src/core")).unwrap();
         let r = Repo(p);
         r.app(APP);
         r.tags(TAGS);
         r
     }
     fn app(&self, body: &str) {
-        std::fs::write(self.0.join("apps/website/api_v2/src/app.rs"), body).unwrap();
+        std::fs::write(
+            self.0.join("apps/website/api_v2/src/core/http_router.rs"),
+            body,
+        )
+        .unwrap();
     }
     fn tags(&self, body: &str) {
         let p = self
@@ -73,7 +78,7 @@ fn clean_tree_passes_and_counts_exactly() {
     let all = Repo::new("clean").expect(
         0,
         &[
-            "checked 3 @route tag(s) against 3 registered route(s) in apps/website/api_v2/src/app.rs",
+            "checked 3 @route tag(s) against 3 registered route(s) in apps/website/api_v2/src/core/http_router.rs",
             "  none — all 3 tag(s) resolve to a registered route.",
             "  none — all 3 registered route(s) are documented.",
             "ROUTE-TAG CHECK: PASS",
@@ -91,7 +96,7 @@ fn a_tag_pointing_at_no_route_fails() {
     r.tags(&format!("{TAGS}\n{extra}"));
     r.expect(1, &[
             "  apps/website/api_v2/src/handlers/telemetry/servers.rs:11",
-            "      @route DELETE /api/v1/servers/{id}  ->  handler `deactivate_server` is NOT registered in apps/website/api_v2/src/app.rs on that method+path.",
+            "      @route DELETE /api/v1/servers/{id}  ->  handler `deactivate_server` is NOT registered in apps/website/api_v2/src/core/http_router.rs on that method+path.",
             "checked 4 @route tag(s) against 3 registered route(s)",
             "ROUTE-TAG CHECK: FAIL — 1 unwired tag(s), 0 undocumented route(s)",
         ]);
@@ -131,7 +136,7 @@ fn inputs_that_were_never_read_do_not_pass() {
     let all = out.join("\n");
     assert_eq!(code, 2, "a check that never ran must not exit 0:\n{all}");
     assert!(
-        all.contains("target file missing: apps/website/api_v2/src/app.rs"),
+        all.contains("target file missing: apps/website/api_v2/src/core/http_router.rs"),
         "{all}"
     );
     assert!(
@@ -158,7 +163,7 @@ fn a_broken_router_shape_is_a_failure_not_a_pass() {
     r.expect(
         1,
         &[
-            "app.rs no longer defines `fn api_routes`",
+            "http_router.rs no longer defines `fn api_routes`",
             SELF_REL,
             SHAPE_FAIL,
         ],
@@ -166,7 +171,10 @@ fn a_broken_router_shape_is_a_failure_not_a_pass() {
     r.app(&APP.replace(".nest(\"/api/v1\"", ".nest(\"/api/v2\""));
     r.expect(
         1,
-        &["app.rs no longer nests api_routes at `/api/v1`", SHAPE_FAIL],
+        &[
+            "http_router.rs no longer nests api_routes at `/api/v1`",
+            SHAPE_FAIL,
+        ],
     );
 }
 

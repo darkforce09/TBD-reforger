@@ -9,8 +9,9 @@ use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -27,7 +28,7 @@ async fn setup() -> Option<(Router, PgPool)> {
         .await
         .expect("cleanup");
     let cfg = Config::for_tests(url, "g7a-secret");
-    Some((app::router(AppState::new(pool.clone(), cfg)), pool))
+    Some((http_router::router(AppState::new(pool.clone(), cfg)), pool))
 }
 
 /// Extract a fragment param from a redirect Location. Token values are hex/JWT, so

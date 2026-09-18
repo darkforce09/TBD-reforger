@@ -60,8 +60,9 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 /// FP (1000, 2000) → TGT (2200, 1800) on an `M252 81mm`: the T-285 field report's own probe.
 /// 1217 m at 99.5°, which `services/mortar.rs` reaches on charge 2 — a solution with a
@@ -73,7 +74,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
-    let app = app::router(AppState::new(
+    let app = http_router::router(AppState::new(
         pool.clone(),
         Config::for_tests(url, "t587-secret"),
     ));

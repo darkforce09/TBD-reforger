@@ -30,8 +30,9 @@ use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 const SUITE: &str = "cms_announcement_body";
 const AUTHOR: &str = "Damage threshold: a < b & c > d";
@@ -46,7 +47,7 @@ async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
     db::migrate(&pool).await.expect("migrate");
     let mut cfg = Config::for_tests(url, "t239-secret");
     cfg.discord_webhook_url = webhook_url;
-    let app = app::router(AppState::new(pool.clone(), cfg));
+    let app = http_router::router(AppState::new(pool.clone(), cfg));
     Some((app, pool))
 }
 

@@ -93,7 +93,7 @@ fn admin_roles_sync_path_matches_live_api_route() {
     let live_registration = format!(r#".route("{ADMIN_ROLES_SYNC_PATH}""#);
     assert!(
         app_rs.contains(&live_registration),
-        "apps/website/api_v2/src/app.rs must register {live_registration}, …); \
+        "apps/website/api_v2/src/core/http_router.rs must register {live_registration}, …); \
          Personnel posts ADMIN_ROLES_SYNC_PATH"
     );
     assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");
@@ -107,15 +107,15 @@ fn admin_ban_and_warnings_paths_match_live_api_routes() {
     let app_rs: &str = app_rs;
     assert!(
         app_rs.contains(r#""/admin/users/{discordId}/ban""#),
-        "app.rs must register ban/unban on /admin/users/{{discordId}}/ban"
+        "http_router.rs must register ban/unban on /admin/users/{{discordId}}/ban"
     );
     assert!(
         app_rs.contains(r#""/admin/users/{discordId}/warnings""#),
-        "app.rs must register warnings on /admin/users/{{discordId}}/warnings"
+        "http_router.rs must register warnings on /admin/users/{{discordId}}/warnings"
     );
     assert!(
         app_rs.contains("unban_user"),
-        "app.rs ban route must wire DELETE to unban_user"
+        "http_router.rs ban route must wire DELETE to unban_user"
     );
     assert_eq!(admin_user_ban_path("42"), "/admin/users/42/ban");
     assert_eq!(admin_user_warnings_path("42"), "/admin/users/42/warnings");

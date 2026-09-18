@@ -634,12 +634,12 @@ mod tests {
             "list query_as window must contain `{filter}`"
         );
 
-        const APP: &str = include_str!("../../app.rs");
+        const APP: &str = include_str!("../../core/http_router.rs");
         assert!(
             APP.contains(
                 "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
             ),
-            "app.rs must MethodRouter GET+POST /cms/announcements"
+            "http_router.rs must MethodRouter GET+POST /cms/announcements"
         );
     }
 

@@ -15,8 +15,9 @@ use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -37,7 +38,7 @@ async fn boot() -> Option<(Router, AppState, PgPool)> {
     db::migrate(&pool).await.expect("migrate");
     let cfg = Config::for_tests(url, "t528-secret");
     let state = AppState::new(pool.clone(), cfg);
-    Some((app::router(state.clone()), state, pool))
+    Some((http_router::router(state.clone()), state, pool))
 }
 
 async fn cleanup(pool: &PgPool) {

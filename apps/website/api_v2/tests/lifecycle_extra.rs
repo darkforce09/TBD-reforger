@@ -11,9 +11,10 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 use website_api::config::Config;
+use website_api::core::http_router;
+use website_api::db;
 use website_api::services::purge_expired_refresh_tokens;
 use website_api::state::AppState;
-use website_api::{app, db};
 
 mod common;
 
@@ -23,7 +24,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
-    let app = app::router(AppState::new(
+    let app = http_router::router(AppState::new(
         pool.clone(),
         Config::for_tests(url, "lx-secret"),
     ));
