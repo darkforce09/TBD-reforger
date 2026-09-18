@@ -18,3 +18,7 @@ pub mod match_telemetry;
 pub mod missions;
 pub mod operations;
 pub mod server_infrastructure;
+
+#[cfg(test)]
+#[path = "tests/architecture_rules.rs"]
+mod architecture_rules;

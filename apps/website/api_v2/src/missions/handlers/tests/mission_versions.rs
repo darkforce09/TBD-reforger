@@ -2,6 +2,7 @@
 //! validator performs, plus source pins for the guards that run before an INSERT can land.
 
 use super::*;
+use website_map_engine::data::scenario::wire_safety::CargoPhys;
 
 const VERSIONS: &str = include_str!("../mission_versions.rs");
 const LIFECYCLE: &str = include_str!("../mission_lifecycle.rs");
@@ -196,10 +197,7 @@ fn set_current_version_repaints_tip_with_belonging_check() {
     let body = production
         .split("pub async fn set_current_version(")
         .nth(1)
-        .and_then(|s| {
-            s.split("pub(crate) async fn load_cargo_phys_catalog(")
-                .next()
-        })
+        .and_then(|s| s.split("pub(crate) async fn validate_payload(").next())
         .expect("set_current_version body");
     assert!(
         body.contains("can_edit(user, &m)"),

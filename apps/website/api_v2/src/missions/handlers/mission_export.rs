@@ -15,8 +15,8 @@ use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{MissionMakerUser, ServiceAuth};
 use crate::missions::contract::schema_validators::validate_mission_document;
-use crate::missions::handlers::mission_versions::load_cargo_phys_catalog;
 use crate::missions::models::mission::MissionVersion;
+use crate::missions::services::cargo_catalog::load_cargo_phys_catalog;
 use crate::missions::services::mission_compile::{
     COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileError,
     CompileFinding, ModMissionDocument, compile_diagnostics_rules_header,

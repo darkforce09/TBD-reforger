@@ -15,7 +15,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use website_map_engine::data::scenario::flatten::scan_editor_payload_types;
-use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
+use website_map_engine::data::scenario::wire_safety::CargoPhysCatalog;
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
@@ -25,6 +25,7 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AuthUser, MissionMakerUser};
 use crate::missions::contract::schema_validators::validate_mission_editor_payload_with_catalog;
 use crate::missions::models::mission::{Mission, MissionVersion};
+use crate::missions::services::cargo_catalog::load_cargo_phys_catalog;
 use crate::missions::services::mission_lookup::load_mission_or_404;
 use crate::missions::validation::access::{can_edit, can_view};
 use crate::missions::validation::semver::valid_semver;
@@ -262,48 +263,6 @@ pub async fn set_current_version(
     .await;
 
     Ok(Json(load_mission_or_404(&state.pool, &id).await?))
-}
-
-/// Phys attrs for the cargo-capacity walk — only the columns `scan_cargo_capacity` needs.
-#[derive(sqlx::FromRow)]
-struct CargoPhysRow {
-    resource_name: String,
-    display_name: String,
-    weight_kg: Option<f64>,
-    volume_cm3: Option<f64>,
-    max_weight_kg: Option<f64>,
-    max_volume_cm3: Option<f64>,
-}
-
-/// Load `CargoPhysCatalog` from the **current** modpack's `registry_items`.
-///
-/// The map engine carries no registry of its own, so Save supplies the table. Missing weights /
-/// maxima stay `None` (never invent — the same silence as an empty catalog). No current modpack or
-/// an empty table → empty catalog → the cargo walk is a no-op.
-pub(crate) async fn load_cargo_phys_catalog(pool: &PgPool) -> Result<CargoPhysCatalog, ApiError> {
-    let rows: Vec<CargoPhysRow> = sqlx::query_as(
-        "SELECT ri.resource_name, ri.display_name, \
-                ri.weight_kg, ri.volume_cm3, ri.max_weight_kg, ri.max_volume_cm3 \
-         FROM registry_items ri \
-         INNER JOIN modpacks m ON m.id = ri.modpack_id \
-         WHERE m.is_current = true",
-    )
-    .fetch_all(pool)
-    .await?;
-    let mut catalog = CargoPhysCatalog::with_capacity(rows.len());
-    for r in rows {
-        catalog.insert(
-            r.resource_name,
-            CargoPhys {
-                display_name: r.display_name,
-                weight_kg: r.weight_kg,
-                volume_cm3: r.volume_cm3,
-                max_weight_kg: r.max_weight_kg,
-                max_volume_cm3: r.max_volume_cm3,
-            },
-        );
-    }
-    Ok(catalog)
 }
 
 /// Validate a payload string against the editor schema (400 + details / 500).

@@ -13,20 +13,30 @@ fn production() -> &'static str {
 /// The live roster must load the Save phys catalog and compile through the catalogued gate.
 /// The empty-catalog `flatten_to_mod_document` seats over-capacity versions.
 ///
-/// RED: swap back to the no-arg flatten, or drop the catalog load.
+/// The catalog is the mission domain's one loader, reached through its services — a second copy
+/// here could drift from the table Save refuses against and seat a mission Save rejected, so the
+/// import is pinned alongside the call, and the shared loader's SQL is pinned with it.
+///
+/// RED: swap back to the no-arg flatten, drop the catalog load, or re-inline a local loader.
 #[test]
 fn roster_loads_cargo_phys_catalog() {
     let production = production();
+    assert!(
+        production
+            .contains("use crate::missions::services::cargo_catalog::load_cargo_phys_catalog;"),
+        "roster must reach the catalog through the mission domain's services"
+    );
+    assert!(
+        !production.contains("fn load_cargo_phys_catalog("),
+        "roster must not carry its own copy of the loader"
+    );
+
     let start = production
         .find("pub async fn ingest_event_roster(")
         .expect("ingest_event_roster must exist");
-    let after = &production[start..];
-    let body = after
-        .split("\n/// Phys attrs for the cargo-capacity walk")
-        .next()
-        .expect("ingest_event_roster must precede CargoPhysRow");
+    let body = &production[start..];
     assert!(
-        body.contains("load_cargo_phys_catalog"),
+        body.contains("load_cargo_phys_catalog(&state.pool)"),
         "roster must load registry phys into the catalog; got:\n{body}"
     );
     assert!(
@@ -38,6 +48,14 @@ fn roster_loads_cargo_phys_catalog() {
     assert!(
         !stripped.contains("flatten_to_mod_document("),
         "roster must not call the empty-catalog no-arg flatten; got:\n{body}"
+    );
+
+    const CATALOG: &str = include_str!("../../../missions/services/cargo_catalog.rs");
+    assert!(
+        CATALOG.contains("FROM registry_items ri")
+            && CATALOG.contains("INNER JOIN modpacks m ON m.id = ri.modpack_id")
+            && CATALOG.contains("WHERE m.is_current = true"),
+        "the shared loader must read the current modpack's registry_items"
     );
 }
 

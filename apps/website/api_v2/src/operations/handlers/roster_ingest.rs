@@ -9,13 +9,12 @@ use std::collections::{BTreeMap, HashMap};
 use axum::extract::{Path, State};
 use axum::response::Json;
 use serde_json::{Value, json};
-use sqlx::PgPool;
 use uuid::Uuid;
-use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::ServiceAuth;
+use crate::missions::services::cargo_catalog::load_cargo_phys_catalog;
 use crate::missions::services::mission_compile::flatten_to_mod_document_with_catalog;
 use crate::operations::models::event::EventMission;
 use crate::operations::services::event_lookup::load_event;
@@ -245,52 +244,6 @@ pub async fn ingest_event_roster(
         "missionId": mission_id,
         "assignments": assignments,
     })))
-}
-
-/// Phys attrs for the cargo-capacity walk — only the columns `scan_cargo_capacity` needs.
-///
-/// The mission domain holds a row of the same shape for its own compile path. Keep the SQL and
-/// the insert shape identical to it.
-#[derive(sqlx::FromRow)]
-struct CargoPhysRow {
-    resource_name: String,
-    display_name: String,
-    weight_kg: Option<f64>,
-    volume_cm3: Option<f64>,
-    max_weight_kg: Option<f64>,
-    max_volume_cm3: Option<f64>,
-}
-
-/// Load `CargoPhysCatalog` from the **current** modpack's `registry_items`.
-///
-/// Mirror of `missions::handlers::mission_versions::load_cargo_phys_catalog`, kept in this
-/// domain so the roster read depends on the mission domain's services and not on its handlers.
-/// Missing weights / maxima stay `None` (never invent). No current modpack / empty table →
-/// empty catalog → cargo walk is a no-op.
-async fn load_cargo_phys_catalog(pool: &PgPool) -> Result<CargoPhysCatalog, ApiError> {
-    let rows: Vec<CargoPhysRow> = sqlx::query_as(
-        "SELECT ri.resource_name, ri.display_name, \
-                ri.weight_kg, ri.volume_cm3, ri.max_weight_kg, ri.max_volume_cm3 \
-         FROM registry_items ri \
-         INNER JOIN modpacks m ON m.id = ri.modpack_id \
-         WHERE m.is_current = true",
-    )
-    .fetch_all(pool)
-    .await?;
-    let mut catalog = CargoPhysCatalog::with_capacity(rows.len());
-    for r in rows {
-        catalog.insert(
-            r.resource_name,
-            CargoPhys {
-                display_name: r.display_name,
-                weight_kg: r.weight_kg,
-                volume_cm3: r.volume_cm3,
-                max_weight_kg: r.max_weight_kg,
-                max_volume_cm3: r.max_volume_cm3,
-            },
-        );
-    }
-    Ok(catalog)
 }
 
 #[cfg(test)]
