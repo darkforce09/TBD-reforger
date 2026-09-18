@@ -8,4 +8,4 @@
 
 pub mod telemetry;
 
-pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards};
+pub use self::telemetry::{dashboard, leaderboards};

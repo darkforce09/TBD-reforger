@@ -1,59 +1,51 @@
-//! My Deployments + Leave of Absence — Rust port of `handlers/deployments.go`.
+//! The caller's own service record: aggregate combat figures, upcoming deployments, and past
+//! match participation, served by `GET /api/v1/me/deployments`.
 //!
-//! **T-233 — what this route can honestly report, and what it cannot.** The Deployments page
-//! rendered a K/D of `2.45` and a win rate of `68%` from two client-side constants
-//! (`frontend/src/deployments.rs:83-84`), so every player saw the same fabricated scoreline with
-//! no way to tell it from telemetry. Three of those four readouts resolve differently once the
-//! schema is actually consulted:
+//! **What this route can honestly report, and what it cannot.**
 //!
 //! - **K/D is real.** `match_player_stats` carries per-player `kills` / `deaths`
-//!   (`0001_initial_schema.sql:251-266`) and `leaderboard_totals` already aggregates them into
+//!   (`0001_initial_schema.sql:251-266`) and `leaderboard_totals` aggregates them into
 //!   `kd_ratio`. Served below, from the view.
 //! - **A general win rate is not derivable, and the near-miss is the dangerous part.**
 //!   `leaderboard_totals.command_win_rate` looks like the field you want and is not: its
 //!   denominator is `count(*) FILTER (WHERE is_command)`, so it is a **command** win rate over
 //!   matches where the player held a command slot, and `command_win` is a documented tri-state
-//!   where `NULL` means "not a command slot / not adjudicated" (`telemetry.rs:389-390`). It is
-//!   served under its real name for that reason — labelling it `win_rate` would rebuild the same
-//!   lie out of real numbers. A *general* win rate would need to know which side the player
-//!   fought for, and `match_player_stats` has no faction column; `matches.winning_faction` exists
-//!   with nothing per-player to compare it against. Not synthesised.
-//! - **Favourite weapon and favourite asset are not recorded anywhere.** Measured against
-//!   `information_schema` on a migrated DB, the only weapon-ish columns in the whole schema are
-//!   `fire_missions.weapon_system` (mortar-calculator input), `mission_armories.item_name` (what a
-//!   mission *offers*), `orbat_slots.loadout` (authored slot intent) and
-//!   `match_player_stats.vehicles_destroyed` (a count of vehicles the player *killed*, not one
-//!   they used). Nothing observes what a player actually carried or drove. The ingest contract
-//!   agrees — `PlayerStatInput` (`telemetry.rs:391-403`) has no weapon field. This is a
+//!   where `NULL` means "not a command slot / not adjudicated". It is served under its real name
+//!   for that reason — labelling it `win_rate` builds the same lie out of real numbers. A
+//!   *general* win rate needs to know which side the player fought for, and `match_player_stats`
+//!   has no faction column; `matches.winning_faction` exists with nothing per-player to compare
+//!   it against. Not synthesised.
+//! - **Favourite weapon and favourite asset are recorded nowhere.** The only weapon-ish columns
+//!   in the schema are `fire_missions.weapon_system` (mortar-calculator input),
+//!   `mission_armories.item_name` (what a mission *offers*), `orbat_slots.loadout` (authored slot
+//!   intent) and `match_player_stats.vehicles_destroyed` (a count of vehicles the player
+//!   *killed*, not one they used). Nothing observes what a player actually carried or drove, and
+//!   the ingest contract agrees — `PlayerStatInput` has no weapon field. This is a
 //!   data-collection gap in the mod, not a number to invent; `tests/deployments_combat.rs` is the
 //!   tripwire for the day a column arrives.
 //!
 //! **A figure nobody measured serialises as `null`, never as `0`.** `0.00` is a measurement claim
-//! — "we watched, and you scored nothing" — which is the same defect as `2.45` wearing a
-//! different mask, and the same one T-359 removed rather than defaulted. `0.0` is still sent when
-//! it was genuinely observed (a player with rows, no kills and no deaths), so the two cases stay
-//! distinguishable on the wire. Note this route deliberately diverges from
-//! `leaderboards.rs::get_user_stats`, which `unwrap_or`s an all-zero row for a player with no
-//! matches (`leaderboards.rs:127-141`) and so cannot tell them apart.
+//! — "we watched, and you scored nothing" — so an absent measurement never wears it. `0.0` is
+//! still sent when it was genuinely observed (a player with rows, no kills and no deaths), so the
+//! two cases stay distinguishable on the wire. This route deliberately diverges from
+//! `leaderboards::get_user_stats`, which `unwrap_or`s an all-zero row for a player with no matches
+//! and so cannot tell the two apart.
 
-use axum::extract::rejection::JsonRejection;
-use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
+use axum::extract::State;
 use axum::response::Json;
 use chrono::{DateTime, NaiveDate, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::core::http::pagination::PageParams;
-use crate::core::middleware::{AdminUser, AuthUser};
+use crate::core::middleware::AuthUser;
 use crate::core::wire_format::go_time;
 use crate::identity_and_access::services::user_lookup::load_user;
 use crate::missions::services::mission_lookup::mission_title_terrain;
 use crate::models::{Match, MatchPlayerStat};
-use crate::operations::models::{Event, EventMission, EventRegistration, LeaveRequest, OrbatSlot};
+use crate::operations::models::{Event, EventMission, EventRegistration, OrbatSlot};
 
 #[derive(Debug, Serialize)]
 struct DeploymentUpcoming {
@@ -89,25 +81,23 @@ struct ServiceRecord {
 /// Reading the view is deliberate. It is the crate's only definition of K/D and of the command win
 /// rate (`0001_initial_schema.sql:270-291`), it is what `/leaderboards` and `/users/:id/stats`
 /// already serve, and it is refreshed on every path that can change the rows underneath it: match
-/// ingest (`telemetry.rs:523`), identity link (`me.rs:459`) and unlink (`me.rs:259`). Recomputing
-/// the same two ratios with a second query here is precisely how the Deployments page and the
-/// Leaderboard come to disagree about one player — the two-definitions-drift failure that keeping
-/// **one** `recompute_user_stats` prevents (`services/user_stats.rs`; T-326 kept it `pub(super)`
-/// in `handlers/telemetry.rs`, T-336 moved it to the services layer). The refreshes
-/// are best-effort, so the view can lag a failed refresh; it lags identically for both readers,
-/// which is the property that matters.
+/// ingest, identity link and unlink. Recomputing the same two ratios with a second query here is
+/// precisely how the service record and the leaderboard come to disagree about one player — the
+/// two-definitions-drift failure that keeping **one** `recompute_user_stats` in the services layer
+/// prevents (`services/user_stats.rs`). The refreshes are best-effort, so the view can lag a
+/// failed refresh; it lags identically for both readers, which is the property that matters.
 ///
 /// The view also owns the divide-by-zero: `kd_ratio` is
 /// `CASE WHEN sum(deaths) = 0 THEN sum(kills) ELSE round(sum(kills) / sum(deaths), 2) END`, so a
 /// flawless player reads as their kill count and Postgres is never asked to divide by zero. Both
 /// ratios are `numeric` in the view and cast `::float8` on the way out, exactly as
-/// `leaderboards.rs::LB_SELECT` does.
+/// `leaderboards::LB_SELECT` does.
 #[derive(Debug, sqlx::FromRow)]
 struct CombatTotals {
     kills: i64,
     deaths: i64,
-    /// `NULL` when no measured `deaths` exist on any of this player's rows (T-397) — distinct
-    /// from a flawless measured aggregate (`sum(deaths)=0` → kd equals sum(kills)).
+    /// `NULL` when no measured `deaths` exist on any of this player's rows — distinct from a
+    /// flawless measured aggregate (`sum(deaths)=0` → kd equals sum(kills)).
     kd_ratio: Option<f64>,
     /// `NULL` when the player has never held a command slot: the view wraps the count in
     /// `NULLIF(count(*) FILTER (WHERE is_command), 0)`. That `NULL` is the **only** way to tell
@@ -133,10 +123,10 @@ pub async fn get_my_deployments(
 
     // Upcoming: my registrations on future missions within events.
     //
-    // Explicit columns (T-341) — never a bare star on event_registrations. That shape is the
-    // same class that 500'd `/dashboard` (T-329): today's only nullable column (`slot_id`)
-    // happens to map to `Option<Uuid>`, so the bug is latent. Spell the list so the next
-    // nullable column cannot land a silent 500.
+    // Explicit columns — never a bare star on event_registrations. That shape is the same class
+    // that 500'd `/dashboard`: today's only nullable column (`slot_id`) happens to map to
+    // `Option<Uuid>`, so the bug is latent. Spell the list so the next nullable column cannot land
+    // a silent 500.
     let regs: Vec<EventRegistration> = sqlx::query_as(
         "SELECT event_registrations.id, event_registrations.event_mission_id, \
          event_registrations.discord_id, event_registrations.slot_id, event_registrations.state, \
@@ -284,154 +274,13 @@ async fn load_event(pool: &sqlx::PgPool, id: Uuid) -> sqlx::Result<Option<Event>
         .await
 }
 
-/// Go's zero `time.Time` (`0001-01-01T00:00:00Z`) — used only for the unreachable
-/// orphan-match path (a MatchPlayerStat always references a real match).
+/// The wire-format zero timestamp `0001-01-01T00:00:00Z` that `core::wire_format::go_time`
+/// renders — used only for the unreachable orphan-match path (a `MatchPlayerStat` always
+/// references a real match).
 fn go_zero() -> DateTime<Utc> {
     NaiveDate::from_ymd_opt(1, 1, 1)
         .unwrap()
         .and_hms_opt(0, 0, 0)
         .unwrap()
         .and_utc()
-}
-
-// --- Leave of Absence ---
-
-/// LOA create body.
-///
-/// **`reason` is deliberately required — do not add `#[serde(default)]` to it (T-350).**
-/// Fourth instance of the T-218 / T-317 / T-343 shape: a defaulted `reason` turns `{}` or
-/// a missing key into an affirmative empty string that lands in `leave_requests.reason`.
-/// Dates keep `#[serde(default)]` so the existing empty-string date guard still owns that
-/// half; reason follows the ban/reject/warn contract instead.
-#[derive(Debug, Deserialize)]
-pub struct CreateLeaveInput {
-    #[serde(default)]
-    starts_on: String,
-    #[serde(default)]
-    ends_on: String,
-    reason: String,
-}
-
-/// `POST /api/v1/me/leave-requests` — file an LOA.
-///
-/// @route POST /api/v1/me/leave-requests
-pub async fn submit_leave(
-    State(state): State<AppState>,
-    user: AuthUser,
-    body: Result<Json<CreateLeaveInput>, JsonRejection>,
-) -> Result<(StatusCode, Json<LeaveRequest>), ApiError> {
-    let Json(input) =
-        body.map_err(|_| ApiError::bad_request("starts_on, ends_on and reason are required"))?;
-    if input.starts_on.is_empty() || input.ends_on.is_empty() {
-        return Err(ApiError::bad_request("starts_on and ends_on are required"));
-    }
-    // Whitespace-only is the same lie as no reason (T-218 house pattern). Trim once; store
-    // the trimmed form so the column and any future audit line cannot disagree.
-    let reason = input.reason.trim();
-    if reason.is_empty() {
-        return Err(ApiError::bad_request("reason is required"));
-    }
-    let (Ok(start), Ok(end)) = (
-        NaiveDate::parse_from_str(&input.starts_on, "%Y-%m-%d"),
-        NaiveDate::parse_from_str(&input.ends_on, "%Y-%m-%d"),
-    ) else {
-        return Err(ApiError::bad_request("dates must be YYYY-MM-DD"));
-    };
-    if end < start {
-        return Err(ApiError::bad_request(
-            "ends_on must be on or after starts_on",
-        ));
-    }
-
-    let loa: LeaveRequest = sqlx::query_as(
-        "INSERT INTO leave_requests (discord_id, starts_on, ends_on, reason, status, created_at) \
-         VALUES ($1, $2, $3, $4, 'pending', now()) RETURNING id, discord_id, starts_on, ends_on, COALESCE(reason, '') AS reason, status, reviewed_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
-    )
-    .bind(&user.discord_id)
-    .bind(start)
-    .bind(end)
-    .bind(reason)
-    .fetch_one(&state.pool)
-    .await?;
-    Ok((StatusCode::CREATED, Json(loa)))
-}
-
-/// `GET /api/v1/me/leave-requests` — the caller's LOA requests.
-///
-/// @route GET /api/v1/me/leave-requests
-pub async fn list_my_leave(
-    State(state): State<AppState>,
-    user: AuthUser,
-) -> Result<Json<Value>, ApiError> {
-    let loas: Vec<LeaveRequest> = sqlx::query_as(
-        "SELECT id, discord_id, starts_on, ends_on, COALESCE(reason, '') AS reason, status, reviewed_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM leave_requests WHERE discord_id = $1 ORDER BY created_at DESC",
-    )
-    .bind(&user.discord_id)
-    .fetch_all(&state.pool)
-    .await?;
-    Ok(Json(json!({ "data": loas })))
-}
-
-/// `GET /api/v1/admin/leave-requests` — LOA review queue (admin), pending first.
-///
-/// @route GET /api/v1/admin/leave-requests
-pub async fn list_all_leave(
-    State(state): State<AppState>,
-    _a: AdminUser,
-    Query(page): Query<PageParams>,
-) -> Result<Json<Value>, ApiError> {
-    let (limit, offset) = page.bounds();
-    let total: i64 = sqlx::query_scalar("SELECT count(*) FROM leave_requests")
-        .fetch_one(&state.pool)
-        .await?;
-    let loas: Vec<LeaveRequest> = sqlx::query_as(
-        "SELECT id, discord_id, starts_on, ends_on, COALESCE(reason, '') AS reason, status, reviewed_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM leave_requests ORDER BY (status::text = 'pending') DESC, created_at DESC \
-         LIMIT $1 OFFSET $2",
-    )
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(&state.pool)
-    .await?;
-    Ok(Json(
-        json!({ "data": loas, "total": total, "limit": limit, "offset": offset }),
-    ))
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ReviewLeaveInput {
-    #[serde(default)]
-    status: String,
-}
-
-/// `PATCH /api/v1/admin/leave-requests/:id` — approve/deny an LOA (admin).
-///
-/// @route PATCH /api/v1/admin/leave-requests/:id
-pub async fn review_leave(
-    State(state): State<AppState>,
-    admin: AdminUser,
-    Path(id): Path<String>,
-    body: Result<Json<ReviewLeaveInput>, JsonRejection>,
-) -> Result<Json<Value>, ApiError> {
-    let Ok(id) = Uuid::parse_str(&id) else {
-        return Err(ApiError::bad_request("invalid id"));
-    };
-    let Json(input) = body.map_err(|_| ApiError::bad_request("status required"))?;
-    if input.status.is_empty() {
-        return Err(ApiError::bad_request("status required"));
-    }
-    if input.status != "approved" && input.status != "denied" {
-        return Err(ApiError::bad_request("status must be approved or denied"));
-    }
-    let res = sqlx::query(
-        "UPDATE leave_requests SET status = $1::leave_status, reviewed_by = $2 WHERE id = $3",
-    )
-    .bind(&input.status)
-    .bind(&admin.0.discord_id)
-    .bind(id)
-    .execute(&state.pool)
-    .await?;
-    if res.rows_affected() == 0 {
-        return Err(ApiError::not_found("LOA not found"));
-    }
-    Ok(Json(json!({ "status": input.status })))
 }

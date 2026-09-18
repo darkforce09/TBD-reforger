@@ -5,7 +5,7 @@
 //! Wave owns list only the three handlers. This IT binary is the Class-R / IT half the
 //! ticket requires: refresh must mint `arma_linked=false` when the row holds
 //! whitespace-only `arma_id` (proves session issuance is not `is_some()`-only), and
-//! `POST /me/leave-requests` must 400 on whitespace `reason` (deployments.rs).
+//! `POST /me/leave-requests` must 400 on whitespace `reason` (operations/handlers/leave_requests.rs).
 //!
 //! The Discord callback shares
 //! [`website_api::identity_and_access::services::session_issuance::arma_id_is_linked`] — covered

@@ -81,9 +81,9 @@ const SERVICE_TOKEN: &str = "test-service-token";
 /// is meant to exercise, which is failure mode 2 above. Deliberately as small as possible;
 /// every other nullable column in the schema gets NULLed.
 const REACHABILITY_KEEP: &[&str] = &[
-    // `dashboard.rs` / `deployments.rs`: `WHERE orbat_slots.assigned_to = $me`.
+    // `dashboard.rs` / `operations/handlers/member_service_record.rs`: `WHERE orbat_slots.assigned_to = $me`.
     "orbat_slots.assigned_to",
-    // `deployments.rs` service history: `WHERE match_player_stats.discord_id = $me`.
+    // `operations/handlers/member_service_record.rs` service history: `WHERE match_player_stats.discord_id = $me`.
     "match_player_stats.discord_id",
 ];
 
@@ -142,7 +142,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     // administration::models::audit_log::AuditLog
     ("audit_logs", "actor_id"),
     ("audit_logs", "metadata"),
-    // models::admin::FireMission
+    // operations::models::fire_mission::FireMission
     ("fire_missions", "event_id"),
     // community_content::models::wiki::WikiPage
     ("wiki_pages", "updated_by"),
@@ -179,7 +179,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
 const KNOWN_OPEN: &[(&str, &str, &str)] = &[
     // EMPTY, and that is the point. Every entry this list ever held has been fixed rather than
     // tolerated: T-329 (dashboard.rs bare `*`), T-330 (approvals.rs updated_at), T-340
-    // (events.rs briefing + thumbnail_url), T-341 (deployments.rs bare `event_registrations.*`).
+    // (events.rs briefing + thumbnail_url), T-341 (operations/handlers/member_service_record.rs bare `event_registrations.*`).
     // T-531 pruned the last inert T-341 tolerance row once the scan stopped finding it.
     // BASELINE_CAP is 0, so the next entry cannot be added without raising it in a diff.
 ];
@@ -189,7 +189,7 @@ const KNOWN_OPEN: &[(&str, &str, &str)] = &[
 /// diff a reviewer sees.
 ///
 /// **Zero, as of T-531** (after T-341 closed the last open defect). Down from six → one (T-340
-/// merge left only the T-341 `deployments.rs` bare `*` row) → **0** once T-341 shipped and T-531
+/// merge left only the T-341 `operations/handlers/member_service_record.rs` bare `*` row) → **0** once T-341 shipped and T-531
 /// pruned the stale tolerance. The rest were fixed rather than tolerated — T-329 (dashboard bare
 /// `*`), T-330 (approvals `updated_at`), T-340 (events `briefing` + `thumbnail_url`).
 ///

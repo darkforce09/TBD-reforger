@@ -65,7 +65,7 @@ use website_api::core::database;
 use website_api::core::http_router;
 
 /// FP (1000, 2000) → TGT (2200, 1800) on an `M252 81mm`: the T-285 field report's own probe.
-/// 1217 m at 99.5°, which `services/mortar.rs` reaches on charge 2 — a solution with a
+/// 1217 m at 99.5°, which `website_map_engine::data::scenario::ballistics` reaches on charge 2 — a solution with a
 /// **non-zero** charge and a **non-zero** TOF, so a handler that wrote zeros could not pass by
 /// accident.
 const SAVE_BODY: &str = r#"{"weapon_system":"M252 81mm","fp_x":1000,"fp_y":2000,"tgt_x":2200,"tgt_y":1800,"fp_grid":"1000, 2000","target_grid":"2200, 1800","event_id":"EVENT"}"#;
@@ -109,9 +109,9 @@ async fn call(
 
 /// The stored row, straight out of the table.
 ///
-/// Deliberately **not** `models::FireMission` via `query_as`: that struct is what the handler
-/// deserialises into, so sharing it would let one wrong column name agree with itself on both
-/// sides. Naming the columns here means the test fails if the migration named them differently
+/// Deliberately **not** the `FireMission` model in `src/operations/models/fire_mission.rs` via
+/// `query_as`: that struct is what the handler deserialises into, so sharing it would let one
+/// wrong column name agree with itself on both sides. Naming the columns here means the test fails if the migration named them differently
 /// from what the handler binds.
 type StoredRow = (
     Option<f64>,

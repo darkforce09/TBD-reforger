@@ -43,7 +43,7 @@ fn validated_banner_image_url(raw: &str) -> Result<String, ApiError> {
 /// handles `""` correctly, so this is a write-side problem only.
 ///
 /// **Why refuse instead of trim.** `""` is the documented "no override" signal, and six
-/// separate fallbacks key on it: `deployments.rs:97`, `dashboard.rs:79`, `dashboard.rs:142`,
+/// separate fallbacks key on it: `operations/handlers/member_service_record.rs`, `dashboard.rs:79`, `dashboard.rs:142`,
 /// and the SPA's `event_hub.rs:200`, `orbat_selection.rs:71`, `event_manager.rs:831`. A
 /// whitespace string is non-empty, so it defeats all six at once — and because HTML collapses
 /// whitespace, the name does not render as a space, it renders as **nothing**. Measured, a

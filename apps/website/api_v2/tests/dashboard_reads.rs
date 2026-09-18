@@ -234,13 +234,13 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
 /// `mission_title_terrain` must turn this red without needing a schema change.
 #[test]
 fn t341_deployments_source_pins() {
-    let src = include_str!("../src/handlers/telemetry/deployments.rs");
+    let src = include_str!("../src/operations/handlers/member_service_record.rs");
     // Needle split so this assert's own source (and handler comments) do not contain the
     // forbidden SQL as one literal.
     let bare_star = concat!("event_registrations.", "*");
     assert!(
         !src.contains(bare_star),
-        "T-341: deployments must not SELECT a bare star on event_registrations \
+        "T-341: member_service_record must not SELECT a bare star on event_registrations \
          (bare-* class that 500'd dashboard)"
     );
     let lookup = include_str!("../src/missions/services/mission_lookup.rs");

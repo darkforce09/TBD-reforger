@@ -37,7 +37,7 @@ impl MissionOutcome {
 /// (T-325).** That is the house convention for this Go port, not an oversight: Go's `string`
 /// cannot hold NULL, so the port keeps the zero value and pushes the conversion into SQL.
 /// `tests/null_tolerance.rs` exists to hold that line ("NULL reads back as a zero value, 200 not
-/// 500"), and `handlers/deployments.rs:134` — the only read of this struct — coalesces all three.
+/// 500"), and `operations/handlers/member_service_record.rs` — the only read of this struct — coalesces all three.
 /// Measured against a real NULL: `GET /api/v1/me/deployments` serves **200**, and dropping the
 /// `COALESCE` fails the row with *"error occurred while decoding column `winning_faction`:
 /// unexpected null; try decoding as an `Option`"*. The safety lives in the query, not the type.
@@ -86,7 +86,7 @@ pub struct MatchPlayerStat {
     pub discord_id: Option<String>,
     pub arma_id: String,
     /// Nullable column, non-optional field — read sites must `COALESCE(role_played, '')`
-    /// (`handlers/deployments.rs:127` does; it is the only read of this struct). Kept a `String`
+    /// (`operations/handlers/member_service_record.rs` does; it is the only read of this struct). Kept a `String`
     /// for the same reason as `Match::winning_faction`, and with a stronger case: T-316 made
     /// `role_played` **required** on `PlayerStatInput` and binds it unconditionally through
     /// `EXCLUDED.role_played`, so the API itself can only ever write `''`. A NULL here can come

@@ -15,21 +15,21 @@ pub fn routes() -> Router<AppState> {
         // The caller's own deployment history and leave requests.
         .route(
             "/me/deployments",
-            get(crate::handlers::deployments::get_my_deployments),
+            get(handlers::member_service_record::get_my_deployments),
         )
         .route(
             "/me/leave-requests",
-            get(crate::handlers::deployments::list_my_leave)
-                .post(crate::handlers::deployments::submit_leave),
+            get(handlers::leave_requests::list_my_leave)
+                .post(handlers::leave_requests::submit_leave),
         )
         // Admin: LOA review console.
         .route(
             "/admin/leave-requests",
-            get(crate::handlers::deployments::list_all_leave),
+            get(handlers::leave_requests::list_all_leave),
         )
         .route(
             "/admin/leave-requests/{id}",
-            axum::routing::patch(crate::handlers::deployments::review_leave),
+            axum::routing::patch(handlers::leave_requests::review_leave),
         )
         // Events (campaign) + ORBAT + registration.
         .route(
@@ -84,14 +84,11 @@ pub fn routes() -> Router<AppState> {
         // Field tools — mortar ballistics and saved fire missions.
         .route(
             "/fire-missions/solve",
-            post(crate::handlers::field_tools::solve_fire),
+            post(handlers::fire_missions::solve_fire),
         )
-        .route(
-            "/fire-missions",
-            post(crate::handlers::field_tools::save_fire),
-        )
+        .route("/fire-missions", post(handlers::fire_missions::save_fire))
         .route(
             "/events/{id}/fire-missions",
-            get(crate::handlers::field_tools::list_event_fire_missions),
+            get(handlers::fire_missions::list_event_fire_missions),
         )
 }

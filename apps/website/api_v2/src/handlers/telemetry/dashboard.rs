@@ -125,7 +125,7 @@ pub async fn get_dashboard(
         // `orbat_slots.callsign`/`loadout`/`tag` are NULLABLE columns behind non-optional
         // `String` fields, so the nullable ones MUST be coalesced here — the column list is
         // spelled out for exactly that reason and is the same one the other six `OrbatSlot`
-        // read sites use (`deployments.rs:103`, `events.rs:841`/`1052`/`1245`/`1449`/`1505`).
+        // read sites use (`operations/handlers/member_service_record.rs`, `events.rs:841`/`1052`/`1245`/`1449`/`1505`).
         // A bare `orbat_slots.*` 500s the whole dashboard on a real NULL (T-329, measured:
         // *"error occurred while decoding column `tag`: unexpected null"* for the two
         // operator users holding a NULL-`tag` slot). Do NOT "fix" that by making the model

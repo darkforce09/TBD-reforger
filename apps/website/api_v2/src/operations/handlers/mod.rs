@@ -4,6 +4,9 @@
 pub mod event_create_update;
 pub mod event_listing;
 pub mod event_mission_attachment;
+pub mod fire_missions;
+pub mod leave_requests;
+pub mod member_service_record;
 pub mod orbat_view;
 pub mod roster_ingest;
 pub mod slot_assignment;

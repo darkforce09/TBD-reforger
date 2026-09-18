@@ -92,7 +92,7 @@ async fn reset(pool: &PgPool) {
 
 /// Seed one match plus the caller's stat line in it.
 ///
-/// A real `matches` row is inserted rather than an orphan stat row on purpose: `deployments.rs`
+/// A real `matches` row is inserted rather than an orphan stat row on purpose: `operations/handlers/member_service_record.rs`
 /// documents its zero-date branch as the "unreachable orphan-match path (a MatchPlayerStat always
 /// references a real match)", and a test that manufactures orphans would quietly make that comment
 /// false.
@@ -175,7 +175,7 @@ async fn derived_combat_figures_match_hand_computation() {
         assert!(
             obj.contains_key(key),
             "`{key}` missing from a 200 response, which this source tree cannot produce — \
-             `handlers/deployments.rs` builds it unconditionally. Almost certainly a stale link, \
+             `operations/handlers/member_service_record.rs` builds it unconditionally. Almost certainly a stale link, \
              not a logic bug: rebuild with a private CARGO_TARGET_DIR under /var/tmp and confirm \
              the binary is yours (`grep 'FROM leaderboard_totals WHERE discord_id' <test-binary>` \
              must hit) before believing this failure. Full response: {body}"
@@ -353,7 +353,7 @@ async fn no_column_records_what_a_player_actually_used() {
         found.is_empty(),
         "match_player_stats now has {found:?} — per-player equipment telemetry has landed. \
          Derive the favourite weapon/asset from it (most frequent across the player's rows), \
-         surface the fields on `GET /me/deployments` in `handlers/deployments.rs`, mirror them on \
+         surface the fields on `GET /me/deployments` in `operations/handlers/member_service_record.rs`, mirror them on \
          `dto.rs::Deployments` with a recaptured golden, restore the `FavLoadout` readouts in \
          `frontend/src/deployments.rs`, and delete this test. Until then those two panels have no \
          data source: `orbat_slots.loadout` is authored slot intent, not what was carried, and \

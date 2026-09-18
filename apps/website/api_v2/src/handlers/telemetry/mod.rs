@@ -1,14 +1,12 @@
-//! Telemetry domain — game-server ingest plus its read surfaces ([`leaderboards`],
-//! [`dashboard`], [`deployments`]) and [`field_tools`]. The same-named `telemetry.rs` is
-//! glob re-exported so `handlers::telemetry::*` paths hold.
+//! Telemetry domain — game-server match ingest plus its read surfaces, the [`dashboard`] summary
+//! and the [`leaderboards`] tables. The same-named `telemetry.rs` is glob re-exported so
+//! `handlers::telemetry::*` paths hold.
 
 // Deliberate inception: the domain keeps its same-named root handler file so every
-// pre-T-934.15 `handlers::telemetry::…` path resolves through the glob re-export below.
+// `handlers::telemetry::…` path resolves through the glob re-export below.
 #[allow(clippy::module_inception)]
 mod telemetry;
 pub use self::telemetry::*;
 
 pub mod dashboard;
-pub mod deployments;
-pub mod field_tools;
 pub mod leaderboards;

@@ -433,8 +433,8 @@ pub async fn ingest_server_status(
 /// to stay byte-identical to a value written untrimmed elsewhere; this column has exactly one
 /// writer (the INSERT below) and exactly one lookup-by-value (the SELECT below), both of which are
 /// now this function's return value. Nothing else in the repo compares against it —
-/// `handlers::deployments` and `models::Match` only carry the stored string outward, and the mod's
-/// `TBD_ResultsReporter` only sends it. A trimming *guard* with an untrimmed *bind* is exactly the
+/// `operations::handlers::member_service_record` and `models::Match` only carry the stored string
+/// outward, and the mod's `TBD_ResultsReporter` only sends it. A trimming *guard* with an untrimmed *bind* is exactly the
 /// bug being fixed, so the two moved together or not at all.
 fn source_match_key(raw: &Option<String>) -> Result<Option<&str>, ApiError> {
     match raw.as_deref() {
