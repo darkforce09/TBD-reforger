@@ -1,8 +1,17 @@
 # TBD Reforger Platform — Backend Architecture Plan
 
-> **ARCHIVE (T-145 / T-171).** This document is the original Go-era design plan. It is **not** the live backend.
+> **ARCHIVE.** This document is the original Go-era design plan. It is **not** the live backend.
 >
-> **Live API:** [`apps/website/api_v2/`](../../../apps/website/api_v2/) — Rust **Axum + sqlx**, pkg `website-api`. Handlers `api/src/handlers/`, models `api/src/models/`, migrations `api/migrations/`, seeds `api/seeds/`.
+> **Live API:** [`apps/website/api_v2/`](../../../apps/website/api_v2/) — Rust **Axum + sqlx**, crate
+> `website-api`. `src/` is `core/`, `background_workers/`, and eight domain directories
+> (`administration`, `command_center`, `community_content`, `identity_and_access`,
+> `match_telemetry`, `missions`, `operations`, `server_infrastructure`); each domain holds
+> `routes.rs`, `handlers/`, `services/` and `models/`. Migrations live in
+> `apps/website/api_v2/migrations/`, seeds in `apps/website/api_v2/seeds/`.
+>
+> **A new endpoint** goes in `src/<domain>/handlers/`, is registered in that domain's `routes.rs`,
+> and shared logic goes in that domain's `services/`. The live atlas is
+> [`apps/website/api_v2/README.md`](../../../apps/website/api_v2/README.md).
 >
 > **Run / status:** root [`CLAUDE.md`](../../../CLAUDE.md) · [`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md) · conventions [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
 >

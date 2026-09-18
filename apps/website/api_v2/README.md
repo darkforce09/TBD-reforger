@@ -1,110 +1,147 @@
-# Modernized Backend Architecture Blueprint (`apps/website/api_v2`)
+# `website-api` — the TBD Reforger backend
 
-Modernized, clean, and domain-driven backend architecture blueprint for the TBD Reforger platform suite.
+The Axum REST API and Server-Sent Events hub behind the web platform. It serves `/api/v1` to the
+Leptos single-page app and to the Enfusion game servers, exposes `/healthz` and `/metrics`, serves
+the uploaded media under `/uploads` and the terrain assets under `/map-assets`, and owns the
+Postgres schema through the SQL migrations in `migrations/`.
 
-Following the successful tooling consolidation in `tools_v2/` and frontend domain architecture in `apps/website/frontend/src/v2/`, this directory defines the **architectural blueprint and domain scaffolding** for transitioning `apps/website/api` into **ten strictly bounded, self-describing domain subsystems** with zero root clutter, zero ambiguous naming, and strict compliance with Monorepo Laws 1–8.
-
-> [!NOTE]
-> This directory serves as the architecture blueprint and scaffolding specification. It contains comprehensive domain documentation, structural blueprints, and boundary specifications without duplicating runtime code prior to phased migration.
+This document is the live atlas of the crate. The blueprint that the layout implements is
+[`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md); the pre-refactor catalog is
+[`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md).
 
 ---
 
-## 1. Top-Level Directory Topology
+## 1. `src/` layout
 
 ```text
-apps/website/api_v2/
-├── README.md                           <-- Architecture hub overview (this document)
-├── ARCHITECTURE_PLAN.md                <-- Phased blueprint specification & sub-router graph
-├── ANALYSIS_AND_INVENTORY.md           <-- Forensic catalog of all 78 legacy files & 108 routes
-│
-└── src/
-    ├── core/                           <-- Foundational runtime, HTTP router & state container
-    │   └── README.md
-    ├── operations/                     <-- Community operations, events, ORBAT & fire missions
-    │   └── README.md
-    ├── missions/                       <-- Scenarios, library, armory, and prefab catalogs
-    │   └── README.md
-    ├── server_infrastructure/          <-- Unified dedicated server registry, status & RCON
-    │   └── README.md
-    ├── administration/                 <-- User roster, permissions, disciplinary & audit logs
-    │   └── README.md
-    ├── match_telemetry/                <-- Ingame ticks, combat metrics, and AAR replays
-    │   └── README.md
-    ├── command_center/                 <-- Live community dashboard & ranked leaderboards
-    │   └── README.md
-    ├── identity_and_access/            <-- Discord OAuth2, token rotation & Arma link codes
-    │   └── README.md
-    ├── community_content/              <-- Announcements, CMS wiki, media uploads & modpacks
-    │   └── README.md
-    └── background_workers/             <-- Dedicated supervisors for all 6 background tickers
-        └── README.md
+src/
+├── lib.rs                      Crate root: the module tree and the architecture-rule test hook.
+├── bin/
+│   ├── api.rs                  Server entrypoint: config → pool → migrations → workers → router → serve.
+│   └── import_registry.rs      Offline ingest of registry envelopes into Postgres.
+├── core/                       Cross-cutting foundations. Imports no domain.
+├── background_workers/         The interval tasks the binary arms at boot. Imported only by `bin/api.rs`.
+├── administration/             Member roster, moderation actions, and the audit log.
+├── command_center/             Dashboard, leaderboards, and per-player statistics.
+├── community_content/          Announcements, wiki, vehicle database, modpacks, media uploads.
+├── identity_and_access/        Discord OAuth2, session tokens, the profile, the Arma link handshake.
+├── match_telemetry/            Game-server ingest: live status heartbeat and finished-match reports.
+├── missions/                   Scenario library, versions, armory, registries, approvals, export.
+├── operations/                 Event calendar, ORBAT slotting, service records, fire missions.
+├── server_infrastructure/      Dedicated-server registry, live status SSE, RCON console.
+└── tests/
+    └── architecture_rules.rs   Executable statements of the layout rules below, checked against `src/`.
 ```
 
-```mermaid
-graph TD
-    Client["Web Client / Enfusion Game Server"] --> Router["core/http_router.rs · Declarative Router (<150 LOC)"]
+Each of the ten module directories carries its own `README.md` with its responsibility, its public
+surface, and a complete listing of its files. Each of the eight domains has the same shape:
+`mod.rs`, `routes.rs`, `handlers/`, `services/`, `models/` (plus `contract/` and `validation/` in
+`missions/`).
 
-    Router --> Core["core/ · State, Database, Middleware, Observability"]
-    Router --> Ops["operations/ · Events, ORBAT, Gate G7b, Fire Missions"]
-    Router --> Miss["missions/ · Scenarios, Library, Armory, Compiler"]
-    Router --> Srv["server_infrastructure/ · Server CRUD, Intel, RCON"]
-    Router --> Admin["administration/ · Personnel, Disciplinary, Audit Logs"]
-    Router --> Telem["match_telemetry/ · Ingame Ticks, Combat, AAR"]
-    Router --> CC["command_center/ · Live Dashboard, Leaderboards"]
-    Router --> Auth["identity_and_access/ · Discord OAuth2, Tokens, Arma Link"]
-    Router --> Cont["community_content/ · Announcements, Wiki, Modpacks"]
+## 2. How the `/api/v1` table is composed
 
-    Workers["background_workers/ · Supervisors"] -->|Prune / Sweep / Sync| Core
-    Workers -->|Status Fan-out| Srv
-    Workers -->|Lifecycle| Ops
-    Workers -->|MV Refresh| CC
+Each domain owns exactly one `routes.rs` with a single `pub fn routes`, listing its own
+registrations. `core::http_router::api_v1_routes` merges the eight tables and nests the result
+under `/api/v1`; it adds no prefix of its own. **A public URL is therefore the literal written in
+the domain's `routes.rs`, with `/api/v1` in front of it** — `/missions/{id}` in `missions/routes.rs`
+is `GET /api/v1/missions/{id}`.
+
+Authorization tiers are enforced per handler by the extractor each one takes (`AuthUser`, the
+role-gated newtypes, `ServiceAuth`), not by merge order or by path prefix.
+
+`core::http_router::router` wraps that tree in the global middleware chain — outermost first:
+request id → access logging → Prometheus observation → panic recovery → CORS → body limit → rate
+limit. `/map-assets` is mounted *below* the rate-limit layer so cold terrain streaming is never
+limiter-bound; that seam is commented at its call site and pinned by tests.
+
+## 3. Placement rules
+
+**Dependency direction.** `core` imports no domain, with two exceptions:
+`core/application_state.rs` (it holds the Discord and webhook service instances) and
+`core/http_router.rs` (it merges the route tables). A domain's handlers, services and models never
+import another domain's **handlers** — cross-domain reuse goes through a service or a model.
+`background_workers` is imported only by `src/bin/api.rs`. `src/tests/architecture_rules.rs`
+enforces all of this against the source text, so a new file is covered the moment it is added.
+
+**Where shared logic lives.** Logic that more than one domain needs and that names no domain
+concept belongs on the shared floor in `core/`: offset pagination (`core::http::pagination`),
+Postgres SQLSTATE predicates (`core::database::postgres_errors`), the JSON wire formats
+(`core::wire_format`), HTML sanitation and the URL write-boundary guard (`core::text`), the outbound
+`429` retry (`core::http_client::retry_on_429`), and the token primitives
+(`core::authentication_primitives`).
+
+Logic that *does* name a domain concept stays in that domain's `services/`, and other domains call
+it there rather than re-deriving the query:
+
+| Shared operation | Home |
+|:---|:---|
+| `load_user` | `identity_and_access/services/user_lookup.rs` |
+| `load_mission`, `load_mission_or_404`, `mission_title_terrain` | `missions/services/mission_lookup.rs` |
+| `load_cargo_phys_catalog` | `missions/services/cargo_catalog.rs` |
+| `write_audit`, `actor_display_name` | `administration/services/audit_writer.rs` |
+| `load_modpack`, `load_current_modpack` | `community_content/services/modpack_lookup.rs` |
+| `publish_server_status`, `publish_all_server_statuses` | `server_infrastructure/services/status_broadcast.rs` |
+| Event effective status and transitions | `operations/services/event_status_rules.rs` |
+| Mortar ballistics (`solve_fire_mission`) | `apps/website/map-engine/src/data/scenario/ballistics/` |
+
+**Adding an endpoint.** Write the handler in `src/<domain>/handlers/`, register it in that domain's
+`routes.rs`, and put anything a second surface would need into that domain's `services/`.
+
+## 4. Test conventions
+
+- **Unit tests** live in a sibling file, declared from the production file as
+  `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. Inline `mod tests` blocks are rejected by
+  `src/tests/architecture_rules.rs`.
+- **Integration suites** are the top-level files under `tests/`. Cargo builds one test binary per
+  top-level `tests/*.rs`; shared support lives in `tests/common/` (a subdirectory, so it produces no
+  binary of its own) and is pulled in with `mod common;`.
+- Production files stay under 500 lines, test files under 1000 (`cargo xtask verify file-length`).
+- `cargo xtask verify route-tags` cross-checks the eight route tables against the tagged route
+  inventory in both directions, so a route cannot be added, moved or dropped unnoticed.
+
+## 5. The codegen contract
+
+`src/missions/contract/generated/` is `typify` output produced from
+`packages/tbd-schema/schema/*.json` by `cargo xtask ci schema-codegen`. Never hand-edit it: change
+the schema and regenerate. `cargo xtask ci verify-codegen-fresh` diffs the directory to prove the
+committed files match their schemas, and the directory is exempt from the prose rules in
+`src/tests/architecture_rules.rs` because its wording belongs to the generator.
+
+`src/missions/contract/loadout_projection.rs` is the one deliberate exception — `typify`'s output
+for the loadout-export root `oneOf` is lossy, so that model is hand-maintained beside the generated
+directory.
+
+The snake_case models under `src/<domain>/models/` are the API contract's source of truth; the
+frontend DTOs in `apps/website/frontend/src/v2/core/api/dto/` mirror them under golden-test parity.
+
+## 6. Running it
+
+Configuration is read from the environment at boot; `.env` holds the development values
+(`APP_ENV=development`, Postgres on port **5434**), and `.env.example` documents every variable.
+
+```bash
+cargo xtask db up              # Start local Postgres container
+cargo xtask db down            # Stop local Postgres container (keeps volume)
+cargo xtask db seed            # Apply development SQL seeds
+cargo xtask mk rust-api        # Axum API on :8080 (runs migrations on boot)
+cargo xtask mk leptos          # Leptos SPA on :3000 (Trunk release build)
+cargo xtask db test-it         # Rust backend integration tests (requires db up)
+cargo xtask ci ci-local        # Replay the full CI check suite locally
 ```
 
----
+With `APP_ENV=development`, `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted` mints a
+session without Discord — open it in a browser, or read `access_token` out of the `302` `Location`
+fragment for API testing.
 
-## 2. The Ten Domain Subsystems
+`SKIP_MIGRATE=1` keeps the binary from running migrations, for a harness that owns the schema of a
+shared database itself.
 
-| Domain Subsystem | Former Legacy Locations | Role & Boundary Responsibility | Target Models & Sibling Tests |
-|:---|:---|:---|:---|
-| **[`core/`](./src/core/)** | `app.rs`, `config.rs`, `db.rs`, `state.rs`, `error.rs`, `realtime.rs`, `middleware/` | Shared dependency container (`AppState`), Postgres connection pooling, schema migrations, Prometheus metrics, health probe, and global middleware pipeline. | `AppState`, `ApiError`, `Config`, `DbPoolConfig`, `Hub`, `RateLimitState` |
-| **[`operations/`](./src/operations/)** | `handlers/events/events.rs`, `handlers/telemetry/deployments.rs`, `handlers/telemetry/field_tools.rs` | Community operations lifecycle FSM, Concurrency Gate G7b slot reservations, ORBAT tree compilation, member service records, and CRUD persistence for saved mortar fire missions. | `Event`, `EventMission`, `OrbatSlot`, `EventRegistration`, `FireMission` |
-| **[`missions/`](./src/missions/)** | `handlers/missions/missions.rs`, `registry.rs`, `approvals.rs`, `services/mission_compile.rs`, `services/registry_import.rs` | Filterable scenario library, author review queue, CAD editor version snapshots, virtual arsenal catalog, item registry, compatibility graph, and flatten compiler bridge. | `Mission`, `MissionVersion`, `MissionArmory`, `RegistryItem`, `RegistryCompatEdge` |
-| **[`server_infrastructure/`](./src/server_infrastructure/)** | `handlers/telemetry/servers.rs`, `handlers/admin/admin.rs` (L709–841 RCON), `services/game_agent.rs` | Dedicated server lifecycle CRUD, modpack binding, live heartbeat telemetry, SSE status broadcasting, and host agent RCON console execution via Unix socket. | `Server`, `ServerIntelDto`, `ServerStatus`, `RconCommand`, `AgentAction` |
-| **[`administration/`](./src/administration/)** | `handlers/admin/admin.rs`, `handlers/admin/audit.rs`, `services/audit*.rs` | Personnel roster, warning issuance, ban enforcement, token revocation, role hierarchy resolution, and immutable administrative audit logs with formula injection prevention. | `User`, `UserRole`, `DiscordRole`, `Warning`, `AuditLog`, `AuditSeverity` |
-| **[`match_telemetry/`](./src/match_telemetry/)** | `handlers/telemetry/telemetry.rs` | High-frequency game-server heartbeat ingest, combat event scoring, match attribution, attendance backfill/retraction, and AAR replay streaming. | `Match`, `MatchPlayerStats`, `ServerStatusHistory`, `CombatEvent` |
-| **[`command_center/`](./src/command_center/)** | `handlers/telemetry/dashboard.rs`, `handlers/telemetry/leaderboards.rs` | Public operations command center: next operation bento card, live match status, current modpack info, ranked player/team leaderboards, and member service records. | `DashboardPulse`, `LeaderboardRow`, `UserStatsCard` |
-| **[`identity_and_access/`](./src/identity_and_access/)** | `handlers/auth/`, `auth/`, `services/discord.rs`, `services/role_sync.rs` | Discord OAuth2 exchange, cookie CSRF protection, host alignment verification, single-use rotating refresh tokens (Gate G7a), user settings, and 6-digit Arma account linking. | `UserProfile`, `Claims`, `RefreshToken`, `IdentityLinkCode` |
-| **[`community_content/`](./src/community_content/)** | `handlers/content/`, `services/webhook.rs` | Member announcement feed, CMS announcement management, Discord webhook embedding, multipart image uploads, wiki tactical doctrine articles, and modpack manifests. | `Announcement`, `WikiPage`, `Vehicle`, `Modpack`, `ModpackMod` |
-| **[`background_workers/`](./src/background_workers/)** | Inlined across `services/`, `handlers/events/`, `db.rs`, `realtime.rs` | Dedicated supervisory tickers for refresh token purging, rate limit bucket pruning, event lifecycle convergence, leaderboard MV refreshing, server status SSE fan-out, and role resync. | `WorkerSupervisor`, `LifecycleSweeper`, `LeaderboardRefresher` |
+## 7. Further reading
 
----
-
-## 3. Core Architectural Laws Enforced
-
-1. **Law 1 (Hard Gate — No Silent Deferrals)**:
-   - Full domain coverage across all 108 routes and 78 legacy files. Every route, extractor, database interaction, and invariant is preserved.
-2. **Law 3 (Clean Architecture Over Hacks)**:
-   - Resolves domain fragmentation: server CRUD and RCON console are unified in `server_infrastructure/`.
-   - Eliminates root clutter: grab-bag files (`app.rs`, `config.rs`, `db.rs`, `state.rs`, `error.rs`, `realtime.rs`) are structured into `core/`.
-   - Decouples mathematical ballistics (`services/mortar.rs`) from the API backend; interactive calculations belong in `website-map-engine`, while the API provides CRUD persistence.
-3. **Law 4 (Zero Context Needed for Directory & File Names)**:
-   - Every file and module clearly describes its live function. No ambiguous names like `app.rs`, `state.rs`, `me.rs`, or historical ticket prefixes (`gate_t*.rs`).
-4. **Law 5 (Categorize Primitives — Avoid Flat Dumps)**:
-   - Replaces the 98-route monolithic flat router in `app.rs` with domain sub-routers.
-   - Replaces the 15-file flat dump in `services/` with domain-owned services and dedicated `background_workers/`.
-5. **Law 6 (Strict Boundary Layers)**:
-   - API crate handles HTTP presentation, authorization, validation, persistence, and SSE fan-out.
-   - Core scenario compilation delegates strictly to `website-map-engine`.
-6. **Law 7 (File Size Limits & Test Placement)**:
-   - All production files are budgeted strictly **under 500 lines of code**.
-   - All test files are budgeted strictly **under 1000 lines of code**.
-   - **Zero inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
-7. **Law 8 (Present-Tense, Context-Free Code Documentation)**:
-   - All comments describe what the code does *now* and *why*. All historical transitions ("Rust port of Go", "T-343 sweep", "pre-T-349") are eliminated.
-
----
-
-## 4. Documentation Index
-
-- **[`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md)**: Technical blueprint, sub-router graph, rate-limit seam, and phased migration roadmap.
-- **[`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md)**: Exhaustive catalog of all 78 legacy files, exact line counts, the 17 monoliths >500 LOC, all 108 routes, database access patterns, and law violations.
+- [`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md) — the domain-decomposition blueprint, the
+  middleware hierarchy, and the rate-limit seam.
+- [`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md) — the pre-refactor inventory, kept for
+  reference.
+- `PHASE_1_HANDOFF.md` … `PHASE_5_HANDOFF.md` — the record of how the layout was reached and why
+  each piece sits where it does.
+- The ten module `README.md` files under `src/`.

@@ -4,6 +4,20 @@ Comprehensive technical blueprint, domain boundary specification, sub-router lay
 
 ---
 
+## 0. Current Layout
+
+This blueprint is implemented. `src/` is `lib.rs`, `bin/`, `core/`, `background_workers/`, the eight
+domain directories, and `tests/architecture_rules.rs`, which checks the boundary rules below against
+the source text on every test run.
+
+**[`README.md`](./README.md) is the live atlas of the crate** — the real file tree, how the
+`/api/v1` table is composed, the placement rules for shared logic, the test and codegen conventions,
+and the canonical commands. Each module directory under `src/` also carries its own `README.md`
+listing its files. Read those for what the code *is*; read the sections below for the reasoning that
+shaped it.
+
+---
+
 ## 1. Context & Architectural Goals
 
 The legacy backend (`apps/website/api`) accumulated severe structural issues:
@@ -49,23 +63,40 @@ graph TD
 
 ## 3. Sub-Router Architecture (<150 LOC Main Router)
 
-`core/http_router.rs` delegates all routes to modular per-domain sub-routers:
+`core/http_router.rs` delegates all routes to modular per-domain sub-routers. Each domain owns one
+`routes.rs` with a single `pub fn routes` listing its own registrations, and `api_v1_routes`
+**merges** the eight tables rather than nesting each behind a prefix.
+
+Merging, not nesting, is what keeps a public URL readable from the domain table that declares it: a
+domain's surface is not confined to one path prefix (`administration` registers under `/admin`,
+`missions` registers under `/missions`, `/approvals`, `/factions`, `/registry` and `/ingest`), so a
+per-domain `.nest()` would either fragment a domain across several sub-routers or force the URL to
+be reassembled from two places. With the merge, the path a caller reaches is the literal written in
+`routes.rs` with `/api/v1` in front of it, and `cargo xtask verify route-tags` can cross-check the
+tables against the route inventory in both directions.
+
+Authorization tiers are enforced per handler by the extractor each takes (`AuthUser`, the
+role-gated newtypes, `ServiceAuth`), not by merge order or path prefix.
 
 ```rust
+fn api_v1_routes(dev: bool, version_limit: usize) -> Router<AppState> {
+    Router::new()
+        .merge(crate::identity_and_access::routes(dev))
+        .merge(crate::operations::routes())
+        .merge(crate::missions::routes(version_limit))
+        .merge(crate::server_infrastructure::routes())
+        .merge(crate::administration::routes())
+        .merge(crate::match_telemetry::routes())
+        .merge(crate::command_center::routes())
+        .merge(crate::community_content::routes())
+}
+
 pub fn router(state: AppState) -> Router {
     let dev = state.cfg.is_development();
     let version_limit = state.cfg.mission_version_body_limit() as usize;
     let reg = Arc::new(observability::Registry::new());
 
-    let api_v1 = Router::new()
-        .nest("/auth", identity_and_access::router(dev))
-        .nest("/operations", operations::router())
-        .nest("/missions", missions::router(version_limit))
-        .nest("/servers", server_infrastructure::router())
-        .nest("/admin", administration::router())
-        .nest("/telemetry", match_telemetry::router())
-        .nest("/command-center", command_center::router())
-        .nest("/content", community_content::router());
+    let api_v1 = api_v1_routes(dev, version_limit);
 
     Router::new()
         .route("/healthz", get(observability::health_check_handler))
@@ -92,7 +123,8 @@ pub fn router(state: AppState) -> Router {
 
 ### 4.1 `core/` (Foundations & Application Lifecycle)
 - **`http_router.rs` (<150 LOC)**: Declarative assembly of the global middleware stack and domain sub-routers.
-- **`application_state.rs` (<100 LOC)**: `AppState` struct holding `PgPool`, `Arc<Config>`, `Arc<auth::Manager>`, `Arc<Hub>`, and rate-limiters.
+- **`application_state.rs` (<100 LOC)**: `AppState` struct holding `PgPool`, `Arc<Config>`, `Arc<authentication_primitives::Manager>`, `Arc<Hub>`, and rate-limiters.
+- **`authentication_primitives/` (<200 LOC per file)**: `jwt_manager.rs` (HS256 access-token issuance and verification), `token_hashing.rs` (opaque-token generation, SHA-256 storage hashing, constant-time comparison). These are credential *primitives*, not an identity feature: the `middleware::authentication` extractors verify every request with them, so they sit on the shared floor in `core/` rather than inside `identity_and_access/`, which would make `core` depend on a domain.
 - **`error_handling/` (<100 LOC)**: `ApiError` status mappings and canonical JSON envelope `{"error": "...", "details": ...}`.
 - **`configuration/` (<250 LOC per file)**: `mod.rs` (Config struct and loader), `proxy_network.rs` (CIDR parser and bitwise IP matching).
 - **`database/` (<200 LOC per file)**: `connection_pool.rs` (PgPool setup and backoff), `migration_runner.rs` (embedded SQL schema migrations).

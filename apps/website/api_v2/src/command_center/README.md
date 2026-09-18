@@ -1,60 +1,52 @@
-# Command Center Subsystem (`command_center/`)
+# `command_center/`
 
-Public community operations dashboard, real-time match pulse, ranked leaderboards, and member career service statistics.
+The platform's read surfaces: the home dashboard that composes many best-effort lookups into one
+response, the ranked community leaderboards, and a single player's aggregate statistics card.
+Everything here presents figures that other domains produce; the ingest that creates them belongs
+to `match_telemetry`, and the events they are attributed to belong to `operations`.
 
----
+The domain owns no models of its own — it projects rows from the domains it reads.
 
-## 1. Subsystem Topology & Responsibilities
+## Public surface
 
-The `command_center/` domain decouples user-facing presentation from raw telemetry ingest:
+- **`routes::routes()`** — the domain's `/api/v1` table, merged by `core::http_router::api_v1_routes`
+  and nested under `/api/v1`. The literals in `routes.rs` are the public URLs: `/dashboard`,
+  `/leaderboards`, `/users/{discordId}/stats`.
+- **`services::leaderboard_view::refresh_leaderboard`** — refreshes the `leaderboard_totals`
+  materialized view; the scheduled refresher in `background_workers` calls it.
+- **`services::user_stats`** — the denormalized `users.total_deployments` and
+  `users.attendance_rate` recompute, called after attendance changes.
+
+## Dependency rules
+
+- Handlers here never import another domain's handlers. The dashboard reaches other domains through
+  their services and models: `identity_and_access::services::user_lookup`,
+  `missions::services::mission_lookup`, `community_content::services::modpack_lookup`,
+  `community_content::models::announcement`, `operations::models`, and
+  `server_infrastructure::models::server`.
+- This domain imports `core`, the domains it reads, and `administration::services::audit_writer`
+  for the papertrail its privileged reads leave. Nothing in `core` imports it.
+- The materialized-view refresh has one home, `services/leaderboard_view.rs`, so the worker and the
+  best-effort recompute after a write run the same statement.
+
+## Files
 
 ```text
-src/command_center/
-├── README.md                           <-- Domain documentation (this document)
-├── routes.rs                           <-- /api/v1/dashboard & /api/v1/leaderboards sub-router (<60 LOC)
-│
-├── models/
-│   ├── mod.rs
-│   └── command_center.rs               <-- DashboardPulse, LeaderboardRow, UserStatsCard (<120 LOC)
-│
-├── handlers/
-│   ├── mod.rs
-│   ├── live_dashboard.rs               <-- Home bento aggregator: next op, slot, modpack, news (<220 LOC)
-│   ├── leaderboards.rs                 <-- Ranked player/team leaderboards with paging (<260 LOC)
-│   └── user_stats.rs                   <-- Individual player career statistics readout (<140 LOC)
-│
-├── services/
-│   └── user_stats.rs                   <-- Recalculates denormalized attendance rate & deployments (<135 LOC)
-│
-└── tests/                              <-- Non-inline sibling unit tests
-    ├── live_dashboard.rs
-    ├── leaderboards.rs
-    └── user_stats.rs
+mod.rs                                 Domain module tree; re-exports `routes`.
+routes.rs                              The `/api/v1` route table for the command center.
+handlers/
+  mod.rs                               The read surfaces: leaderboards, dashboard, stats card.
+  leaderboards.rs                      The ranked community leaderboard tables.
+  live_dashboard.rs                    Home dashboard aggregation: best-effort, null-safe lookups in one response.
+  user_stats_card.rs                   One player's aggregate statistics card.
+  tests/
+    leaderboards.rs                    Sibling unit tests for `leaderboards.rs`.
+services/
+  mod.rs                               Business logic behind the command center surfaces.
+  leaderboard_view.rs                  Refresh of the `leaderboard_totals` materialized view.
+  user_stats.rs                        Denormalized per-user deployment count and attendance rate.
 ```
 
----
-
-## 2. HTTP Route Catalog
-
-| Verb | Path | Handler | Auth Extractor | Description |
-|:---|:---|:---|:---|:---|
-| `GET` | `/api/v1/dashboard` | `live_dashboard::get_dashboard` | `AuthUser` | Single-query composite bento card: next operation, user's slot, server status, modpack, news. |
-| `GET` | `/api/v1/leaderboards` | `leaderboards::get_leaderboards` | `AuthUser` | Ranked community leaderboards (`kd`, `command_win`, `missions`, `longest_kill`, `team_kills`). |
-| `GET` | `/api/v1/users/{discordId}/stats`| `user_stats::get_user_stats` | `AuthUser` | Individual member service statistics readout from `leaderboard_totals` view. |
-
----
-
-## 3. Key Invariants & Query Architecture
-
-### 3.1 Materialized View Separation (`leaderboard_totals`)
-All leaderboard queries read strictly from the `leaderboard_totals` materialized view. This eliminates heavy aggregations over millions of combat ticks during page views. The view is refreshed periodically by the dedicated `background_workers::leaderboard_refresher` task.
-
-### 3.2 Deterministic Ordering Tie-Breaker
-To prevent pagination jitter where players with identical stats flip positions across page boundaries, every whitelisted `ORDER BY` clause appends a deterministic tie-breaker:
-```sql
-ORDER BY kd_ratio DESC, lt.discord_id ASC
-LIMIT $1 OFFSET $2
-```
-
-### 3.3 Dashboard Null Tolerance
-If no server is online, no match is in progress, or no operations are scheduled, `live_dashboard::get_dashboard` returns structured JSON `null` values for those bento tiles rather than failing the request with HTTP 500.
+Unit tests live in the sibling files above, declared from the production file as
+`#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. The dashboard and leaderboard reads are
+covered end to end by the integration suites under the crate's `tests/` directory.

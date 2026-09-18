@@ -37,8 +37,10 @@ Config: `apps/website/api_v2/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod 
 ## Confirm it's up
 
 ```bash
-curl -sf http://localhost:8080/api/v1/health
+curl -sf http://localhost:8080/healthz
 ```
+
+`/healthz` and `/metrics` are mounted at the root, outside the `/api/v1` tree.
 
 - API: http://localhost:8080
 - Web: http://127.0.0.1:3000
@@ -46,12 +48,24 @@ curl -sf http://localhost:8080/api/v1/health
 ## Contract codegen, validation & CI (T-123)
 
 ```bash
-cargo xtask ci schema-codegen    # → apps/website/api_v2/src/contract/generated/ (DO NOT hand-edit)
+cargo xtask ci schema-codegen    # → apps/website/api_v2/src/missions/contract/generated/ (DO NOT hand-edit)
 cargo xtask ci schema-validate   # packages/tbd-schema goldens
 cargo xtask ci verify-citations
 ```
 
 CI jobs: `website-api` + `website-frontend` (renamed from `rust-backend` / `website-leptos` at T-171). Path-filtered supplements: [`contracts.yml`](../../.github/workflows/contracts.yml), [`schema.yml`](../../.github/workflows/schema.yml).
+
+## Where backend code goes
+
+A new endpoint goes in `apps/website/api_v2/src/<domain>/handlers/`, is registered in that domain's
+`routes.rs`, and anything a second surface would need goes in that domain's `services/`. The eight
+domains are `administration`, `command_center`, `community_content`, `identity_and_access`,
+`match_telemetry`, `missions`, `operations`, `server_infrastructure`.
+
+`core::http_router::api_v1_routes` merges the eight route tables and nests the result under
+`/api/v1`, so a public URL is the literal in the domain's `routes.rs` with `/api/v1` in front of it.
+Full atlas: [`apps/website/api_v2/README.md`](../../apps/website/api_v2/README.md) and the
+`README.md` in each module directory under `src/`.
 
 ## Log in (no Discord needed)
 
@@ -101,7 +115,8 @@ string-compares it both times. Trailing slash, `127.0.0.1` vs `localhost`, `http
 all significant.
 
 Do **not** use the portal's URL generator. The app builds its own authorize URL and requests
-`identify guilds.members.read` (`apps/website/api_v2/src/services/discord.rs:15`). `guilds.members.read`
+`identify guilds.members.read` (`OAUTH_SCOPES` in
+`apps/website/api_v2/src/identity_and_access/services/discord_client.rs`). `guilds.members.read`
 returns only the caller's own membership in one guild, so **no bot and no bot token are involved**.
 
 ### 2. Align the host string (do this before you touch a browser)

@@ -1,5 +1,10 @@
 # Legacy API Forensic Analysis & Inventory Catalog
 
+> **This is the pre-refactor inventory, kept for reference.** Its census, line counts and proposed
+> destinations describe the source tree the refactor started from, not the one that shipped — for
+> the file names, route table and boundaries that exist today, read [`README.md`](./README.md) and
+> the module `README.md` files under `src/`.
+
 Exhaustive forensic analysis of the legacy backend (`apps/website/api`), capturing exact line counts, functional responsibilities, architectural violations, and target refactoring destinations under `apps/website/api_v2/`.
 
 ---
@@ -92,6 +97,11 @@ Full inventory of all 78 Rust files in `apps/website/api/src/`, totaling **30,81
 ---
 
 ## 2. Forensic Analysis of the 17 Monoliths (>500 LOC)
+
+The "Decomposition Target" names below are the proposal, not the shipped file names — several
+modules were split differently once the code was read in full. `src/missions/contract/`, for
+instance, is `schema_validators.rs` plus `zone_quantisation.rs` rather than a single
+`validate.rs`. The module `README.md` files under `src/` list what each directory actually holds.
 
 ### 1. `handlers/events/events.rs` (3,022 LOC)
 - **Primary Concerns**: Event CRUD, status derivation, background convergence ticker, Concurrency Gate G7b slot reservations, waitlists, ORBAT slot materialization, squad reservations, leader slot assignments, and server roster synchronization.

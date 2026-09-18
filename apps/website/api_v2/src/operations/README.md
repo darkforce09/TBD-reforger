@@ -1,81 +1,79 @@
-# Operations Subsystem (`operations/`)
+# `operations/`
 
-Community operations, event scheduling, ORBAT reservations, attendance records, member deployment service histories, and saved mortar fire missions.
+The community's scheduled activity: the event calendar and its dossier, the missions attached to an
+event, ORBAT slotting with squad reservation and leader assignment, the member directory a leader
+seats from, the roster a running game server reads, a member's own service record and leave
+requests, and the persisted mortar fire missions of the field tools.
 
----
+The ballistics themselves are not here — the charge tables and `solve_fire_mission` live in
+`website-map-engine::data::scenario::ballistics`, and the fire-mission handler calls that solver.
+This crate persists the solution.
 
-## 1. Subsystem Topology & Responsibilities
+## Public surface
 
-The `operations/` domain decomposes the massive 3,022 LOC `events.rs` monolith, re-homes member deployments from `telemetry/`, and adopts `FireMission` from `admin.rs` into focused, cohesive modules:
+- **`routes::routes()`** — the domain's `/api/v1` table, merged by
+  `core::http_router::api_v1_routes` and nested under `/api/v1`. The literals in `routes.rs` are the
+  public URLs: `/events`, `/events/{id}`, `/events/{id}/missions`, `/events/{id}/missions/{emid}`,
+  `/events/{id}/fire-missions`, `/event-missions/{emid}/orbat`, `/event-missions/{emid}/register`,
+  `/event-missions/{emid}/slots/{slotId}/assign`, `/event-missions/{emid}/squads/reserve`,
+  `/event-missions/{emid}/squads/release`, `/members`, `/me/deployments`, `/me/leave-requests`,
+  `/admin/leave-requests`, `/admin/leave-requests/{id}`, `/fire-missions`, `/fire-missions/solve`,
+  `/ingest/events/{id}/roster`.
+- **`services::event_status_rules`** — the effective-status SQL, the shared column list, and the
+  legal transition table. Every read, guard and sweep in the domain reasons about the same
+  derivation.
+- **`services::event_lookup`** — the canonical single-row reads (`load_event`, `load_em`).
+- **`services::event_lifecycle_sweep::sweep_once`** — the convergence pass the scheduled sweeper
+  calls, reachable from a test without a timer.
+- **`models::{event, fire_mission, leave_request}`** — the event container and its missions, the
+  ORBAT seats and squad reservations, the saved firing solution, and the leave-of-absence record.
+- `services/mod.rs` re-exports `OrbatSlotTemplate`, `OrbatSquadTemplate` and `parse_orbat_template`
+  from `website_map_engine::data::scenario::orbat`, so every handler that seats an ORBAT names one
+  path for the template shapes.
+
+## Dependency rules
+
+- Handlers here never import another domain's handlers; `src/tests/architecture_rules.rs` enforces
+  it across all eight domains.
+- This domain imports `core`, `missions::{models, services}` (mission lookup, title/terrain, the
+  cargo phys catalog), `identity_and_access::services` (the caller's account row),
+  `match_telemetry::models` (the match an attended deployment refers to) and
+  `administration::{models, services}` (the papertrail).
+- Nothing in `core` imports it.
+
+## Files
 
 ```text
-src/operations/
-├── README.md                           <-- Domain documentation (this document)
-├── routes.rs                           <-- /api/v1/events & /api/v1/event-missions sub-router (<90 LOC)
-│
-├── models/
-│   ├── mod.rs
-│   ├── event.rs                        <-- Event, EventMission, EventRegistration, OrbatSlot, LOA
-│   └── fire_mission.rs                 <-- FireMission model with all 17 columns (MOVED OUT OF ADMIN!)
-│
-├── handlers/
-│   ├── mod.rs
-│   ├── events_crud.rs                  <-- Operation creation, listing, dossier & soft-delete (<420 LOC)
-│   ├── event_lifecycle.rs              <-- State transitions (Scheduled -> Live -> Completed) (<360 LOC)
-│   ├── registration.rs                 <-- Concurrency Gate G7b: slot claims & waitlists (<390 LOC)
-│   ├── orbat_structure.rs              <-- Squad reservations, leader slot assignment, roster (<430 LOC)
-│   ├── deployments.rs                  <-- Member service records, stats, LOA review (<450 LOC)
-│   └── fire_missions.rs                <-- CRUD persistence for saved mortar fire missions (<290 LOC)
-│
-└── tests/                              <-- Non-inline sibling unit tests
-    ├── events_crud.rs
-    ├── event_lifecycle.rs
-    ├── registration.rs
-    ├── orbat_structure.rs
-    ├── deployments.rs
-    └── fire_missions.rs
+mod.rs                                 Domain module tree; re-exports `routes`.
+routes.rs                              The `/api/v1` route table for operations.
+handlers/
+  mod.rs                               One module per operations surface.
+  event_create_update.rs               Admin writes on the event container: create, patch, soft delete.
+  event_listing.rs                     The calendar list with per-event fill decoration, and the dossier read.
+  event_mission_attachment.rs          Attaching a mission to an event and detaching it again.
+  fire_missions.rs                     The mortar fire-mission calculator and the persisted solutions.
+  leave_requests.rs                    Leave of absence: filing, the member's own queue, and admin review.
+  member_service_record.rs             The caller's own record: combat figures, upcoming and past deployments.
+  orbat_view.rs                        The ORBAT read for one event mission and the member directory behind it.
+  roster_ingest.rs                     The identity → slot map a running game server seats players from.
+  slot_assignment.rs                   Leader and admin writes on an ORBAT: seat, clear, and squad moves.
+  slot_registration.rs                 Self-service registration: claiming a seat and taking the bench.
+  tests/
+    event_create_update.rs             Sibling unit tests for `event_create_update.rs`.
+    event_mission_attachment.rs        Sibling unit tests for `event_mission_attachment.rs`.
+    orbat_view.rs                      Sibling unit tests for `orbat_view.rs`.
+    roster_ingest.rs                   Sibling unit tests for `roster_ingest.rs`.
+services/
+  mod.rs                               Event status derivation and the lookups the handlers share.
+  event_lifecycle_sweep.rs             The convergence pass over the stored `events.status` column.
+  event_lookup.rs                      The canonical single-row reads for an event and an event mission.
+  event_status_rules.rs                Derived event status and the legal transitions between stored states.
+models/
+  mod.rs                               Operations-domain database and wire models.
+  event.rs                             The event container, its missions, and the ORBAT seats and squads.
+  fire_mission.rs                      The saved mortar firing solution model.
+  leave_request.rs                     Leave-of-absence requests and the review state they move through.
 ```
 
----
-
-## 2. HTTP Route Catalog
-
-| Verb | Path | Handler | Auth Extractor | Description |
-|:---|:---|:---|:---|:---|
-| `GET` | `/api/v1/events` | `events_crud::list_events` | `AuthUser` | Filterable operations list (upcoming, past, all). |
-| `POST` | `/api/v1/events` | `events_crud::create_event` | `AdminUser` | Create new operation container. |
-| `GET` | `/api/v1/events/{id}` | `events_crud::get_event` | `AuthUser` | Event Hub dossier with nested mission cards and armories. |
-| `PATCH` | `/api/v1/events/{id}` | `events_crud::update_event` | `AdminUser` | Partial update with lifecycle state transition validation. |
-| `DELETE` | `/api/v1/events/{id}` | `events_crud::delete_event` | `AdminUser` | Soft-delete operation (`deleted_at = now()`). |
-| `POST` | `/api/v1/events/{id}/missions` | `orbat_structure::add_event_mission` | `AdminUser` | Attach mission; snapshots and materializes ORBAT slots. |
-| `DELETE` | `/api/v1/events/{id}/missions/{emid}`| `orbat_structure::remove_event_mission`| `AdminUser` | Detach mission, cascading removal of registrations and slots. |
-| `GET` | `/api/v1/event-missions/{emid}/orbat`| `orbat_structure::get_orbat` | `AuthUser` | Grouped ORBAT tree by `(faction, squad)` with member display names. |
-| `POST` | `/api/v1/event-missions/{emid}/register`| `registration::register_for_event_mission`| `AuthUser` | **Gate G7b**: Lock row, release prior seat, claim slot or waitlist. |
-| `DELETE`| `/api/v1/event-missions/{emid}/register`| `registration::withdraw_from_event_mission`| `AuthUser` | Release seat, remove registration, auto-promote oldest waitlist. |
-| `PUT` | `/api/v1/event-missions/{emid}/slots/{slotId}/assign`| `orbat_structure::assign_slot`| `LeaderUser` | Squad leader or admin assigns member directly to slot. |
-| `DELETE`| `/api/v1/event-missions/{emid}/slots/{slotId}/assign`| `orbat_structure::clear_slot`| `LeaderUser` | Squad leader or admin unseats slot occupant. |
-| `POST` | `/api/v1/event-missions/{emid}/squads/reserve`| `orbat_structure::reserve_squad`| `LeaderUser` | Hold entire squad for designated assignment. |
-| `POST` | `/api/v1/event-missions/{emid}/squads/release`| `orbat_structure::release_squad`| `LeaderUser` | Release squad hold. |
-| `GET` | `/api/v1/members` | `orbat_structure::search_members` | `AuthUser` | Directory search for leader slot assignment. |
-| `GET` | `/api/v1/ingest/events/{id}/roster`| `orbat_structure::ingest_event_roster`| `ServiceAuth`| Dedicated server roster mapping `arma_id` to slot `uid`. |
-| `GET` | `/api/v1/me/deployments` | `deployments::get_my_deployments` | `AuthUser` | Member service record: upcoming signups, combat totals, past ops. |
-| `POST` | `/api/v1/me/leave-requests` | `deployments::submit_leave` | `AuthUser` | File Leave of Absence (LOA). |
-| `GET` | `/api/v1/me/leave-requests` | `deployments::list_my_leave` | `AuthUser` | List caller's submitted LOAs. |
-| `GET` | `/api/v1/admin/leave-requests` | `deployments::list_all_leave` | `AdminUser` | LOA administrative review queue. |
-| `PATCH` | `/api/v1/admin/leave-requests/{id}`| `deployments::review_leave` | `AdminUser` | Approve or deny LOA request. |
-| `POST` | `/api/v1/fire-missions` | `fire_missions::save_fire` | `AuthUser` | Compute and persist mortar firing solution to database. |
-| `GET` | `/api/v1/events/{id}/fire-missions` | `fire_missions::list_event_fire_missions`| `AuthUser` | Retrieve all saved mortar solutions for an event. |
-
----
-
-## 3. Key Invariants & Concurrency Rules
-
-### 3.1 Concurrency Gate G7b (`registration.rs`)
-Slot claims enforce a two-level transactional lock order:
-1. `SELECT ... FOR UPDATE` on `event_missions` to verify event mission state.
-2. `SELECT ... FOR UPDATE OF e` on `events` to serialize concurrent claims against the operation container.
-3. Atomic seat release: If the user already occupies a seat in the mission, the prior seat is cleared in the same transaction before claiming the new seat.
-4. If the target slot is occupied, the caller is placed on the FIFO waitlist. Withdrawal auto-promotes the oldest waitlist entry into the vacated slot.
-
-### 3.2 Relocation of `FireMission` Model
-`FireMission` is moved out of `models/admin.rs` into `operations/models/fire_mission.rs`. The 7 nullable coordinate and solution fields (`fp_x`, `fp_y`, `tgt_x`, `tgt_y`, `azimuth_mils`, `charge`, `time_of_flight_s`) serialize unconditionally as `null` when unset to inform clients of field presence without fabricating values.
+Unit tests live in the sibling files above, declared from the production file as
+`#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.

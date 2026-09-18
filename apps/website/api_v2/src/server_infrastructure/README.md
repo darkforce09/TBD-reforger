@@ -1,62 +1,65 @@
-# Server Infrastructure Subsystem (`server_infrastructure/`)
+# `server_infrastructure/`
 
-Unified dedicated server lifecycle management, modpack bindings, real-time heartbeat monitoring, SSE status streaming, and host agent RCON console execution.
+The dedicated-server fleet: the registry row that describes a server and the modpack it runs, the
+Server Intel reads, the Server-Sent Events feed carrying one server's live status, and the admin
+RCON console that delivers an operator command to the game host's control agent.
 
----
+Server *registration and presentation* live here; the heartbeat that writes a live status row comes
+in through `match_telemetry`'s ingest endpoint, and this domain publishes the result onto the SSE
+topic.
 
-## 1. Subsystem Topology & Responsibilities
+## Public surface
 
-The `server_infrastructure/` domain unifies server management and RCON, which were previously split across `handlers/telemetry/servers.rs`, `handlers/admin/admin.rs`, and `handlers/telemetry/leaderboards.rs`:
+- **`routes::routes()`** — the domain's `/api/v1` table, merged by
+  `core::http_router::api_v1_routes` and nested under `/api/v1`. The literals in `routes.rs` are the
+  public URLs: `/servers`, `/servers/{id}`, `/servers/{id}/status`, `/servers/{id}/status/stream`,
+  `/admin/servers/{id}/rcon`.
+- **`services::status_broadcast`** — `publish_server_status` (one server) and
+  `publish_all_server_statuses` (the scheduled republish the background worker calls). Both write to
+  the `server:{id}` topic on `core::realtime_hub`.
+- **`services::game_agent`** — the client for the game host's control agent, and the `AgentAction`
+  vocabulary the RCON console speaks.
+- **`models::server`** — `Server` (the registration), `ServerStatus` (the single hot status row),
+  and the time series those status rows are archived into.
+
+## Dependency rules
+
+- Handlers here never import another domain's handlers; `src/tests/architecture_rules.rs` enforces
+  it across all eight domains.
+- This domain imports `core`, `community_content::{models, services}` (the modpack a server is bound
+  to, resolved through `modpack_lookup`), `missions::models` (the mission a server is staged with)
+  and `administration::{models, services}` (the papertrail an RCON command and a registry write
+  leave).
+- Nothing in `core` imports it. The SSE topic layer itself is `core::realtime_hub`; the queries and
+  publishers that feed it are this domain's, so `core` names no server concept.
+
+## Files
 
 ```text
-src/server_infrastructure/
-├── README.md                           <-- Domain documentation (this document)
-├── routes.rs                           <-- /api/v1/servers & /api/v1/admin/servers sub-router (<70 LOC)
-│
-├── models/
-│   ├── mod.rs
-│   └── server.rs                       <-- Server, ServerStatus, ServerIntelDto, RconCommand (<120 LOC)
-│
-├── handlers/
-│   ├── mod.rs
-│   ├── server_registry.rs              <-- Dedicated server CRUD & modpack binding (<250 LOC)
-│   ├── health_monitor.rs               <-- Status queries & live SSE stream (<260 LOC)
-│   ├── modpack_binding.rs              <-- Modpack validation & prefetch helpers (<100 LOC)
-│   └── rcon_console.rs                 <-- Remote console execution (<250 LOC)
-│
-├── services/
-│   ├── game_agent.rs                   <-- Unix domain socket client communicating with host agent (<200 LOC)
-│   └── tests/game_agent.rs             <-- Sibling unit tests (<150 LOC)
-│
-└── tests/                              <-- Non-inline sibling unit tests
-    ├── server_registry.rs
-    ├── health_monitor.rs
-    └── rcon_console.rs
+mod.rs                                 Domain module tree; re-exports `routes`.
+routes.rs                              The `/api/v1` route table for server infrastructure.
+handlers/
+  mod.rs                               The intel reads, registry writes, live status stream, and RCON console.
+  rcon_command_parser.rs               The RCON request boundary: the wire body and the command it parses into.
+  rcon_console.rs                      The admin RCON console: deliver a validated command to the host agent.
+  server_intel.rs                      Server Intel reads: the `GET` half of the server surface.
+  server_registry.rs                   Registry writes: create, partially update, and deactivate a `servers` row.
+  server_status_stream.rs              The Server-Sent Events feed for one server's live status.
+  tests/
+    rcon_command_parser.rs             Sibling unit tests for `rcon_command_parser.rs`.
+    rcon_console.rs                    Sibling unit tests for `rcon_console.rs`.
+    server_intel.rs                    Sibling unit tests for `server_intel.rs`.
+services/
+  mod.rs                               The host-agent client and the status publishers.
+  game_agent.rs                        Client for the game host's control agent.
+  status_broadcast.rs                  The `server:{id}` SSE topic: the live-status query and its publishers.
+  tests/
+    game_agent.rs                      Sibling unit tests for `game_agent.rs`.
+    status_broadcast.rs                Sibling unit tests for `status_broadcast.rs`.
+models/
+  mod.rs                               Database and wire models for the dedicated-server fleet.
+  server.rs                            Registration, the single hot status row, and the status time series.
 ```
 
----
-
-## 2. HTTP Route Catalog
-
-| Verb | Path | Handler | Auth Extractor | Description |
-|:---|:---|:---|:---|:---|
-| `GET` | `/api/v1/servers` | `server_registry::list_servers` | `AuthUser` | List registered game servers with latest status snapshot and modpack. |
-| `POST` | `/api/v1/servers` | `server_registry::create_server`| `AdminUser` | Register dedicated server (validates IP, port, modpack binding). |
-| `PATCH` | `/api/v1/servers/{id}` | `server_registry::update_server`| `AdminUser` | Update server configuration or toggle active state. |
-| `DELETE`| `/api/v1/servers/{id}` | `server_registry::deactivate_server`| `AdminUser`| Soft-deactivate server (`is_active = false`). |
-| `GET` | `/api/v1/servers/{id}/status` | `health_monitor::get_server_status`| `AuthUser` | Fetch latest cached status row for specific server. |
-| `GET` | `/api/v1/servers/{id}/status/stream`| `health_monitor::stream_server_status`| `AuthUser` (SSE)| Real-time SSE server status feed (transferred from leaderboards). |
-| `POST` | `/api/v1/admin/servers/{id}/rcon` | `rcon_console::send_rcon` | `AdminUser` | Remote console execution via host agent Unix socket (replaces admin RCON). |
-
----
-
-## 3. Host Control Agent Architecture (`game_agent.rs`)
-
-The API communicates with Reforger dedicated game servers via a local Unix domain socket rendered by systemd (`tbd-reforger-agent.sock`):
-1. **Security by Operating System**: The socket lives at `$XDG_RUNTIME_DIR/tbd-reforger-agent.sock`, mode `0600`, owned by the service user. The OS permissions guarantee that only the backend process under the same UID can issue verbs.
-2. **Strict Protocol Verbs**: Commands (`status`, `start`, `stop`, `restart`) are serialized as single-line strings with immediate write half-close.
-3. **Structured Verdicts**: Responses decode into `AgentReply`:
-   - `accepted`: Command executed successfully; unit transitioned.
-   - `rejected`: Command refused by host agent (e.g., active match running).
-   - `unreachable`: Socket transport failed or agent timed out (20s timeout).
-4. **Audit Trail**: Every RCON command issues an immutable audit log row recording actor, server name, command detail, and outcome severity.
+Unit tests live in the sibling files above, declared from the production file as
+`#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.

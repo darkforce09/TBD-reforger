@@ -1,56 +1,56 @@
-# Background Workers Subsystem (`background_workers/`)
+# `background_workers/`
 
-Every interval task the API runs, armed in one place and owned by one supervisor.
+The long-running interval tasks the API binary spawns at boot and never awaits. Each one polls or
+recomputes something on a cadence so a quiet request path cannot leave shared state stale: expired
+credentials, drifted event status, a cold materialized view, an unpublished server status, or a
+Discord role change nobody signed in to trigger.
 
----
+A worker owns the *schedule*, not the work. The query or transaction each tick performs lives in
+the domain that owns the data, and the worker calls it — so the same operation is reachable from a
+handler or a test without going through a timer.
 
-## 1. Subsystem Topology
+## Public surface
+
+- **`spawn_all(&AppState) -> WorkerHandles`** — arms every worker once and logs the resolved
+  cadence of each. `src/bin/api.rs` calls it after migrations and before the router is built.
+- **`WorkerHandles`** — one handle per worker. Holding the struct keeps the set addressable (a
+  single handle can be aborted); dropping it detaches the tasks, which run until the runtime stops.
+- Each worker module also exports its interval constant or resolver, so tests and the boot log read
+  the same value the loop uses.
+
+## Dependency rules
+
+- `background_workers` is imported only by `src/bin/api.rs`. No domain and no part of `core` may
+  import it; `src/tests/architecture_rules.rs` enforces that.
+- Workers import `core` (for `AppState` and the pool) and the domain services that own the work.
+  They contain no SQL of their own beyond the loop's own bookkeeping.
+
+## Files
 
 ```text
-src/background_workers/
-├── README.md                           <-- Domain documentation (this document)
-├── mod.rs                              <-- Supervisor: `spawn_all(&AppState) -> WorkerHandles`
-├── token_purge_worker.rs               <-- Deletes long-expired refresh tokens (6h)
-├── ratelimit_cleanup_worker.rs         <-- Reclaims stale rate-limit buckets (1h)
-├── event_lifecycle_sweeper.rs          <-- Converges the stored `events.status` column (60s)
-├── discord_role_synchronizer.rs        <-- Re-resolves web roles from Discord snapshots (24h)
-├── leaderboard_refresher.rs            <-- Refreshes the `leaderboard_totals` MV (15m)
-├── server_status_publisher.rs          <-- Republishes `server_statuses` onto SSE (10s)
-│
-└── tests/                              <-- Non-inline sibling unit tests
-    ├── discord_role_synchronizer.rs
-    ├── leaderboard_refresher.rs
-    └── server_status_publisher.rs
+mod.rs                                 Module tree, `WorkerHandles`, and `spawn_all`.
+discord_role_synchronizer.rs           Scheduled Discord → web role resync.
+event_lifecycle_sweeper.rs             Scheduled convergence of the stored `events.status` column.
+leaderboard_refresher.rs               Scheduled refresh of the `leaderboard_totals` materialized view.
+ratelimit_cleanup_worker.rs            Garbage collection for the durable rate limiter's bucket table.
+server_status_publisher.rs             Scheduled republish of `server_statuses` rows onto their SSE topics.
+token_purge_worker.rs                  Scheduled hard-delete of refresh-token rows long past expiry.
+tests/
+  discord_role_synchronizer.rs         Sibling unit tests for `discord_role_synchronizer.rs`.
+  leaderboard_refresher.rs             Sibling unit tests for `leaderboard_refresher.rs`.
+  server_status_publisher.rs           Sibling unit tests for `server_status_publisher.rs`.
 ```
 
----
+Unit tests live in these sibling files, declared from the production file as
+`#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 
-## 2. Worker Schedules & Operations
+## Where each tick's work lives
 
-| Worker | Cadence | Mechanism | Work | Failure behaviour |
-|:---|:---|:---|:---|:---|
-| **`token_purge_worker`** | 6 h (`PURGE_INTERVAL`) | Boot sweep, then ticker. | `DELETE FROM refresh_tokens WHERE expires_at < now() - 7 days`. Revoked-but-unexpired rows stay — they are the reuse-detection tripwire. | Logged as error; next tick retries. |
-| **`ratelimit_cleanup_worker`** | 1 h (`RATE_LIMIT_PRUNE_INTERVAL`) | Boot prune, then ticker. | Deletes `rate_limit_buckets` rows untouched for `RATE_LIMIT_BUCKET_TTL`. A bucket that idle has already refilled, so this can never grant quota. | Logged as warning; next tick retries. |
-| **`event_lifecycle_sweeper`** | 60 s (`LIFECYCLE_INTERVAL`) | Ticker calling `operations::services::event_lifecycle_sweep::sweep_once`. | Under `pg_try_advisory_xact_lock`, moves started operations to `live` and operations past their end horizon to `completed`, auditing both. | Logged as error; next tick retries. |
-| **`discord_role_synchronizer`** | 24 h (`ROLE_RESYNC_INTERVAL_SECS`) | Boot pass, then ticker. | `identity_and_access::services::discord_role_sync::resync_all_roles` — re-resolves each user's web tier from stored `user_discord_roles` against current mappings. | Logged as error; next tick retries. |
-| **`leaderboard_refresher`** | 15 m (`LEADERBOARD_REFRESH_INTERVAL_SECS`) | Boot refresh, then ticker. | `REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals` (non-concurrent when unpopulated). | Logged as error; next tick retries. |
-| **`server_status_publisher`** | 10 s (`SERVER_STATUS_PUBLISH_INTERVAL_SECS`) | Boot poll, then ticker. | Reads `server_statuses` and publishes each row to the hub topic `server:{server_id}`. | Logged as error; next tick retries. |
-
-Every worker is a safety net for a request path that already does the same work in-request
-(ingest, OAuth login, admin sync). None of them is load-bearing: a late, skipped, or doubled
-tick changes no user-visible decision.
-
----
-
-## 3. Supervision & Boot
-
-`src/bin/api.rs` arms the whole set with one call:
-
-```rust
-let _workers = background_workers::spawn_all(&state);
-```
-
-`spawn_all` resolves the three env-tunable cadences, logs what each worker actually got, and
-returns [`WorkerHandles`] — one field per worker, so a caller can abort one without touching
-the others. Each worker runs in its own detached Tokio task and swallows tick failures into
-`tracing`, so no background failure can take the HTTP server down.
+| Worker | Work it schedules |
+|:---|:---|
+| `token_purge_worker` | `identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens` |
+| `discord_role_synchronizer` | `identity_and_access::services::discord_role_sync::resync_all_roles` |
+| `event_lifecycle_sweeper` | `operations::services::event_lifecycle_sweep::sweep_once` |
+| `leaderboard_refresher` | `command_center::services::leaderboard_view::refresh_leaderboard` |
+| `server_status_publisher` | `server_infrastructure::services::status_broadcast::publish_all_server_statuses` |
+| `ratelimit_cleanup_worker` | `core::middleware::durable_ratelimit::PgRateLimiter` bucket pruning |

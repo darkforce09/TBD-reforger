@@ -1,65 +1,59 @@
-# Match Telemetry Subsystem (`match_telemetry/`)
+# `match_telemetry/`
 
-High-frequency game-server heartbeat ingestion, combat event tracking, player statistics counters, event mission attendance attribution, and AAR replay streaming.
+The write half of the game-server channel: the live server-status heartbeat a running dedicated
+server posts, and the finished-match report it posts when a mission ends. Both endpoints are
+authenticated as a service rather than as a person, and both are idempotent — a re-ingest of the
+same `source_match_id` merges into the existing row and retracts the attendance the previous ingest
+attributed.
 
----
+Presenting these figures back to members is `command_center`; the server registry and its live SSE
+topic are `server_infrastructure`.
 
-## 1. Subsystem Topology & Responsibilities
+## Public surface
 
-The `match_telemetry/` domain isolates dedicated game-server telemetry ingestion from user-facing dashboard queries (which are re-homed to `command_center/`):
+- **`routes::routes()`** — the domain's `/api/v1` table, merged by
+  `core::http_router::api_v1_routes` and nested under `/api/v1`. The literals in `routes.rs` are the
+  public URLs: `/ingest/server-status`, `/ingest/match-results`.
+- **`models::match_record`** — `Match`, `MissionOutcome`, `MatchPlayerStat`: the stored record of a
+  finished match, projected by the leaderboards and the deployment history.
+
+The domain has no `services/` directory: the ingest work is transaction-shaped and runs inside the
+handlers, which split it into a parsing module, a contract module, the match upsert, and the
+attendance attribution so each file states one step.
+
+## Dependency rules
+
+- Handlers here never import another domain's handlers. `src/tests/architecture_rules.rs` enforces
+  it across all eight domains.
+- This domain imports `core`, `missions::models` (the mission a match played),
+  `server_infrastructure::{models, services}` (the server row and its status broadcast),
+  `command_center::services::user_stats` (the counters an ingest changes), and
+  `administration::{models, services}` (the papertrail).
+- Nothing in `core` imports it.
+
+## Files
 
 ```text
-src/match_telemetry/
-├── README.md                           <-- Domain documentation (this document)
-├── routes.rs                           <-- /api/v1/ingest sub-router (<60 LOC)
-│
-├── models/
-│   ├── mod.rs
-│   └── telemetry.rs                    <-- Match, MatchPlayerStats, ServerStatusHistory, CombatEvent (<160 LOC)
-│
-├── handlers/
-│   ├── mod.rs
-│   ├── server_heartbeat.rs             <-- Heartbeat tick receiver & low-FPS warnings (<250 LOC)
-│   ├── match_results.rs                <-- Combat event ingest & player counter updates (<320 LOC)
-│   ├── attendance_attribution.rs       <-- Event mission attendance backfill & retraction (<200 LOC)
-│   └── replay_streamer.rs              <-- AAR replay URL validation & tick streaming (<180 LOC)
-│
-└── tests/                              <-- Non-inline sibling unit tests
-    ├── server_heartbeat.rs
-    ├── match_results.rs
-    └── attendance_attribution.rs
+mod.rs                                 Domain module tree; re-exports `routes`.
+routes.rs                              The `/api/v1` route table for match telemetry.
+handlers/
+  mod.rs                               The two ingest endpoints and the steps they are composed from.
+  attendance_attribution.rs            Retract the prior attribution on re-ingest, then mark attendance.
+  ingest_parsing.rs                    Wire-value parsing and validation shared by both ingest handlers.
+  match_results.rs                     The finished-match report: roster validation and the write.
+  match_results_contract.rs            The wire contract of the match-results body and its per-player rows.
+  match_upsert.rs                      Idempotent write of the `matches` row: find by `source_match_id` or create.
+  server_heartbeat.rs                  The game server's live-status heartbeat and its partial update.
+  tests/
+    ingest_parsing.rs                  Sibling unit tests for `ingest_parsing.rs`.
+    match_results.rs                   Sibling unit tests for `match_results.rs`.
+    match_results_contract.rs          Sibling unit tests for `match_results_contract.rs`.
+    match_upsert.rs                    Sibling unit tests for `match_upsert.rs`.
+    server_heartbeat.rs                Sibling unit tests for `server_heartbeat.rs`.
+models/
+  mod.rs                               Match-telemetry database and wire models.
+  match_record.rs                      The match row, its outcome enum, and the per-player statistics row.
 ```
 
----
-
-## 2. HTTP Route Catalog
-
-| Verb | Path | Handler | Auth Extractor | Description |
-|:---|:---|:---|:---|:---|
-| `POST` | `/api/v1/ingest/server-status` | `server_heartbeat::ingest_server_status` | `ServiceAuth` | Upsert live server status, record history, warn on low-FPS threshold, fan out to SSE. |
-| `POST` | `/api/v1/ingest/match-results` | `match_results::ingest_match_results` | `ServiceAuth` | Ingest match completion stats, update player kill/death/TK counters, attribute attendance. |
-
----
-
-## 3. Key Invariants & Ingestion Rules
-
-### 3.1 Non-Destructive Heartbeat Merging (`COALESCE`)
-`server_heartbeat::ingest_server_status` receives periodic heartbeats from running game servers. To ensure an incomplete heartbeat (e.g. reporting player count without map coordinates) never overwrites existing state with default zeroes, the upsert query reads bind parameters against existing table columns:
-```sql
-INSERT INTO server_statuses (server_id, is_online, player_count, max_players, server_fps, ...)
-VALUES ($1, COALESCE($2, false), COALESCE($3, 0), ...)
-ON CONFLICT (server_id) DO UPDATE SET
-  is_online = COALESCE($2, server_statuses.is_online),
-  player_count = COALESCE($3, server_statuses.player_count),
-  server_fps = COALESCE($5::float8::numeric, server_statuses.server_fps),
-  ...
-```
-
-### 3.2 Low-FPS Edge Warning
-An audit log warning (`server.low_fps` at `AuditSeverity::Warn`) is edge-triggered strictly when server performance drops across the 20.0 FPS boundary (`prev_fps >= 20.0 && current_fps < 20.0`), preventing notification flooding on persistent degraded performance.
-
-### 3.3 Exact Attendance Attribution
-Attendance is marked `attended` in `event_registrations` strictly for the exact `(event_id, mission_id)` verified by the match result payload. If a match result is later retracted or re-pointed, `attendance_attribution::retract_attendance` safely resets registration states.
-
-### 3.4 Unlinked Player Retention
-If an Arma player is not yet linked to a Discord identity, their telemetry counters and kill events are preserved in `match_player_stats` under a null `discord_id`. When the player subsequently confirms their account link via `/ingest/link-confirm`, these historical stats are automatically backfilled.
+Unit tests live in the sibling files above, declared from the production file as
+`#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.

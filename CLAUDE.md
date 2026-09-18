@@ -28,7 +28,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 8. **Present-Tense, Context-Free Code Documentation**:
    Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, hardware/engine constraints). Never document historical transitions (no "rewritten from X", "fixed in Y"). Commit history owns history.
 9. **API & Contract Parity**:
-   - Backend Rust models (`apps/website/api_v2/src/models/`) are the snake_case API source of truth.
+   - Backend Rust models (`apps/website/api_v2/src/<domain>/models/`) are the snake_case API source of truth.
    - Contract types are generated from `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`.
    - Frontend DTOs (`apps/website/frontend/src/v2/core/api/dto.rs`) mirror models with strict R-api golden test parity.
 
@@ -71,12 +71,18 @@ apps/
 │   └── vanilla_reference/               <-- Reference: Extracted vanilla Reforger scripts and API docs
 └── website/                             <-- Web platform applications and engines
     ├── api_v2/                          <-- Axum + sqlx REST API and SSE backend (:8080)
-    │   └── src/
-    │       ├── auth/                    <-- Discord OAuth2, JWT issuance, session management
-    │       ├── handlers/                <-- Axum HTTP handlers (one module per resource)
-    │       ├── models/                  <-- Serde database & wire models (contract source of truth)
-    │       ├── services/                <-- Business logic core (missions, events, telemetry)
-    │       └── realtime.rs              <-- Server-Sent Events (SSE) broadcast hub
+    │   └── src/                         <-- Domain-driven backend: core + workers + eight domains
+    │       ├── core/                    <-- Composition root, config, database, middleware, observability, realtime hub, auth primitives
+    │       ├── background_workers/      <-- Interval tasks the API binary arms at boot
+    │       ├── administration/          <-- Member roster, moderation actions, audit log
+    │       ├── command_center/          <-- Dashboard, leaderboards, per-player statistics
+    │       ├── community_content/       <-- Announcements, wiki, vehicle database, modpacks, uploads
+    │       ├── identity_and_access/     <-- Discord OAuth2, session tokens, profile, Arma link handshake
+    │       ├── match_telemetry/         <-- Game-server ingest: status heartbeat and match results
+    │       ├── missions/                <-- Scenario library, versions, armory, registries, approvals
+    │       ├── operations/              <-- Event calendar, ORBAT slotting, service records, fire missions
+    │       ├── server_infrastructure/   <-- Dedicated-server registry, live status SSE, RCON console
+    │       └── tests/architecture_rules.rs <-- Executable layout rules checked against src/
     ├── frontend/                        <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000)
     │   └── src/v2/                      <-- Domain-driven frontend architecture
     │       ├── core/                    <-- Shared foundations across the frontend
