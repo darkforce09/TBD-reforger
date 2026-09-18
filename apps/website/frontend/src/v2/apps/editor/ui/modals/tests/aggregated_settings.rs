@@ -64,7 +64,7 @@ fn zones_and_settings_share_one_mission_schema_embed() {
     let settings = live_source(&super::source::production_source());
     let path = format!(
         "{}{}{}",
-        "/../../../packages/tbd-schema/schema/", "mission", ".schema.json"
+        "/../../../contracts_v2/definitions/", "mission", ".schema.json"
     );
     let embed = format!("\"{path}\"");
     assert_eq!(

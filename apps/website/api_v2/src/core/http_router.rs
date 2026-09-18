@@ -102,7 +102,7 @@ pub fn router(state: AppState) -> Router {
     // The *mount* is deliberately deferred to below the rate-limit layer. Only the directory is
     // resolved here.
     let map_assets = if state.cfg.map_assets_dir.is_empty() {
-        "../../../packages/map-assets".to_string()
+        "../../../assets_v2/terrains".to_string()
     } else {
         state.cfg.map_assets_dir.clone()
     };

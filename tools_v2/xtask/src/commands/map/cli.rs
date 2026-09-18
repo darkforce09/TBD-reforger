@@ -9,7 +9,7 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Building-blueprint ingest: profile TBD_Export → packages/map-assets, serde-validated
+    /// Building-blueprint ingest: profile TBD_Export → assets_v2/terrains, serde-validated
     /// against the BuildingBlueprint contract ([--src <dir>] [--filter <substr>]).
     #[command(name = "ingest-blueprints")]
     IngestBlueprints {
@@ -55,7 +55,7 @@ pub(crate) enum MapCmd {
         args: Vec<String>,
     },
     /// Emit the binary `.bvh` occlusion sidecar (COLL trimesh + BVH, deterministic bytes)
-    /// next to the blueprint JSON in packages/map-assets/everon/prefabs/buildings/
+    /// next to the blueprint JSON in assets_v2/terrains/everon/prefabs/buildings/
     /// (--mesh <file.xob> --slug <slug> [--out <dir>]).
     #[command(name = "bvh-emit")]
     BvhEmit {

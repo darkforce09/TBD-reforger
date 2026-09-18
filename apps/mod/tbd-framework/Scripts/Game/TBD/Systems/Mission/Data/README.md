@@ -1,6 +1,6 @@
 # Systems/Mission/Data
 
-Data models and deserialization structs mirroring the compiled mission schema (`packages/tbd-schema`).
+Data models and deserialization structs mirroring the compiled mission schema (`contracts_v2`).
 
 ### Roles & Responsibilities
 - `TBD_MissionSlotStruct.c`: Schema definitions for playable infantry slots, group hierarchies, and authored transforms.

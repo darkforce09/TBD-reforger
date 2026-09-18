@@ -27,7 +27,7 @@ use crate::missions::models::mission::{MissionDefaultOverride, MissionDefaultVal
 /// defaults, so the key list is derived from it here and never hardcoded — a hardcoded list rots
 /// the first time a `default` is added, removed or retuned in the schema.
 const MISSION_SCHEMA_SRC: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/mission.schema.json");
+    include_str!("../../../../../../contracts_v2/definitions/mission.schema.json");
 
 /// One schema-declared default: where an author writes it in a stored payload, and its value.
 struct SchemaDefaultKey {

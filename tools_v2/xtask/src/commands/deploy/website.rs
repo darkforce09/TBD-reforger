@@ -356,7 +356,7 @@ impl DeployCfg {
             .arg("--exclude=apps/website/api_v2/.env")
             .arg("--exclude=apps/website/api_v2/.tools/")
             .arg("--exclude=scripts/deploy/deploy.env")
-            .arg("--exclude=packages/map-assets/")
+            .arg("--exclude=assets_v2/terrains/")
             .arg("--exclude=apps/mod/crf_framework/")
             .arg("--exclude=apps/mod/vanilla_reference/")
             .arg("--exclude=apps/mod/playable_selector/")

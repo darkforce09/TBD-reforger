@@ -2,7 +2,7 @@ use super::tbd_sat_pure::{
     parse_tbd_sat_index_strict, pick_base_level, pick_base_level_for_limit, TbdSatIndex,
 };
 
-/// The live `packages/map-assets/everon/satellite/everon-sat.tbd-sat` index, read off the
+/// The live `assets_v2/terrains/everon/satellite/everon-sat.tbd-sat` index, read off the
 /// bundle on 2026-08-01: 14 levels from 12800² down to 1×1, `sourceMeta` (which the loader
 /// does not deserialize) dropped. Offsets and lengths are the real ones, so the strict
 /// validator below runs the same level-numbering / halving / coverage / terminator rules it

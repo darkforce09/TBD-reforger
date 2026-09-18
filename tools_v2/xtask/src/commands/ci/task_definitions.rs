@@ -85,7 +85,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "schema-codegen",
-        help: "Regenerate Rust contract types from packages/tbd-schema/schema via typify (T-165.3; loadout.rs is hand-maintained)",
+        help: "Regenerate Rust contract types from contracts_v2/schema via typify (T-165.3; loadout.rs is hand-maintained)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema codegen", false, codegen)],
@@ -177,22 +177,22 @@ pub static TASKS: &[Task] = &[
         lane: Lane::Ci,
         steps: &[
             // Coreutils `cp`, not `std::fs::copy`: the recipe's observable behaviour on a missing
-            // source is cp's own "cannot stat" diagnostic, and packages/map-assets/**/staging is
+            // source is cp's own "cannot stat" diagnostic, and assets_v2/terrains/**/staging is
             // gitignored scratch, so that miss is the COMMON path here, not the rare one.
             sh!(
-                "cp packages/map-assets/everon/staging/sap/everon-sap-ortho.pre-water.png packages/map-assets/everon/staging/sap/everon-sap-ortho.png"
+                "cp assets_v2/scratch/everon/sap/everon-sap-ortho.pre-water.png assets_v2/scratch/everon/sap/everon-sap-ortho.png"
             ),
             sh!("cargo run -q -p developer-tools --bin map -- reset-water-meta --terrain everon"),
             sh!("cargo run -q -p developer-tools --bin map -- analyze-water"),
             sh!("cargo run -q -p developer-tools --bin map -- composite-water"),
             sh!(
-                "cargo run -q -p developer-tools --bin map -- build-unified --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/satellite/everon-sat.tbd-sat --terrain everon"
+                "cargo run -q -p developer-tools --bin map -- build-unified --input assets_v2/scratch/everon/sap/everon-sap-ortho.png --out assets_v2/terrains/everon/satellite/everon-sat.tbd-sat --terrain everon"
             ),
             sh!(
                 "cargo run -q -p developer-tools --bin map -- patch-unified-bytes --terrain everon"
             ),
             sh!(
-                "cargo run -q -p developer-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless"
+                "cargo run -q -p developer-tools --bin map -- build-pyramid --input assets_v2/scratch/everon/sap/everon-sap-ortho.png --out assets_v2/terrains/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless"
             ),
             sh!("cargo run -q -p developer-tools --bin map -- verify-sap-ortho --terrain everon"),
             sh!("cargo run -q -p developer-tools --bin map -- verify-unified --terrain everon"),
@@ -209,7 +209,7 @@ pub static TASKS: &[Task] = &[
         steps: &[
             sh!("cargo run -q -p developer-tools --bin map -- build-cartographic --terrain everon"),
             sh!(
-                "cargo run -q -p developer-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/map/everon-map-ortho.png --out packages/map-assets/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256"
+                "cargo run -q -p developer-tools --bin map -- build-pyramid --input assets_v2/scratch/everon/map/everon-map-ortho.png --out assets_v2/terrains/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256"
             ),
             sh!(
                 "cargo run -q -p developer-tools --bin map -- patch-map-tiles-meta --terrain everon"
@@ -232,7 +232,7 @@ pub static TASKS: &[Task] = &[
         group: "map",
         lane: Lane::Ci,
         steps: &[sh!(
-            "git lfs pull --include packages/map-assets/everon/dem/everon-dem-16bit.png"
+            "git lfs pull --include assets_v2/terrains/everon/dem/everon-dem-16bit.png"
         )],
     },
     Task {
@@ -241,7 +241,7 @@ pub static TASKS: &[Task] = &[
         group: "map",
         lane: Lane::Ci,
         steps: &[sh!(
-            "git lfs pull --include packages/map-assets/everon/satellite/everon-sat.tbd-sat"
+            "git lfs pull --include assets_v2/terrains/everon/satellite/everon-sat.tbd-sat"
         )],
     },
     // ── build / test entry points ───────────────────────────────────────────────────────────

@@ -3,14 +3,15 @@ use super::*;
 pub fn map_object_golden(root: &Path) -> Result<u8> {
     let sroot = contracts_dir(root);
     let mo = |parts: &[&str]| -> PathBuf {
-        let mut p = sroot.join("golden/map-objects");
+        let mut p = sroot.join("fixtures/map");
         for x in parts {
             p = p.join(x);
         }
         p
     };
 
-    let enums = read_json(&sroot.join("schema/map-object-enums.schema.json"))?["$defs"].clone();
+    let enums =
+        read_json(&sroot.join("definitions/map-object-enums.schema.json"))?["$defs"].clone();
     let enum_vec = |name: &str| -> Vec<String> {
         enums[name]["enum"]
             .as_array()
@@ -321,7 +322,7 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
             "map-object-prefab.schema.json",
             "map-object-resolved.schema.json",
         ] {
-            let doc = read_json(&sroot.join("schema").join(f))?;
+            let doc = read_json(&sroot.join("definitions").join(f))?;
             let id = doc["$id"].as_str().unwrap_or_default().to_string();
             registered.push((id, doc));
         }

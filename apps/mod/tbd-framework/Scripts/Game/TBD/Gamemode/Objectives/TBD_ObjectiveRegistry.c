@@ -84,7 +84,7 @@
 //! == What this file CANNOT prove ==============================================================
 //! The gate is `cargo xtask mod compile`. `flatten.rs` emits NO `objectives[]` on `/compiled`
 //! (that is T-946.36, not this slice), so the only document that reaches this reader today is a
-//! hand-staged schemaVersion 1.3 one -- `packages/tbd-schema/golden-missions/schema-1_3-wire-fields.json`
+//! hand-staged schemaVersion 1.3 one -- `contracts_v2/fixtures/missions/valid/schema-1_3-wire-fields.json`
 //! is the staged case, the same precedent T-685 shipped against. Whether an objective actually
 //! READS differently to attacker and defender with two clients connected is a human checklist
 //! item and is written up as one. Nothing here claims a live wire it does not have.

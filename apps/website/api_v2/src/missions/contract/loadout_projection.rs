@@ -2,7 +2,7 @@
 //! `cargo xtask ci schema-codegen`: the generator's target list covers only the four schemas whose
 //! typify output is faithful.
 //!
-//! Source of truth: `packages/tbd-schema/schema/loadout-export.schema.json`.
+//! Source of truth: `contracts_v2/definitions/loadout-export.schema.json`.
 //!
 //! Generated output is provably lossy for this schema — it merges the versioned root `oneOf` into
 //! a single struct and emits empty `Wear {}` / `Equipment {}` because `patternProperties` is

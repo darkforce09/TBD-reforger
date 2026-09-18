@@ -1,9 +1,10 @@
 use super::*;
 
 const V1: &str =
-    include_str!("../../../../../../../packages/tbd-schema/registry/loadout-export.sample.json");
-const V2: &str =
-    include_str!("../../../../../../../packages/tbd-schema/registry/loadout-export.v2.sample.json");
+    include_str!("../../../../../../../contracts_v2/fixtures/registry/loadout-export.sample.json");
+const V2: &str = include_str!(
+    "../../../../../../../contracts_v2/fixtures/registry/loadout-export.v2.sample.json"
+);
 
 /// Value-level round-trip: parse → serialize → parse; the two JSON values must be EQUAL
 /// (key order irrelevant; null-vs-absent must be preserved — the double-Option contract).

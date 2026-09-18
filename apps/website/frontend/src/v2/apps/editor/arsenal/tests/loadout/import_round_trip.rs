@@ -47,7 +47,7 @@ mod t686 {
     #[test]
     fn the_compiled_in_schema_is_the_shipped_file() {
         let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../../packages/tbd-schema/schema/loadout-export.schema.json");
+            .join("../../../contracts_v2/definitions/loadout-export.schema.json");
         let on_disk = std::fs::read_to_string(&p).expect("read the shipped schema");
         assert_eq!(
             rules::LOADOUT_EXPORT_SCHEMA_JSON,

@@ -3,7 +3,7 @@
 //! Reads raw voxel dumps (`prefabs/dumps/<slug>_voxels.jsonl[.gz]`, written by the Workbench
 //! `dump` action) and runs ALL interpretation here: slab detection, per-band wall extraction,
 //! floor plates, masses, furniture — emitting schema-1.0.0 `BuildingBlueprint` JSON straight
-//! into `packages/map-assets/everon/prefabs/buildings/`. A heuristic tune is a `cargo run`,
+//! into `assets_v2/terrains/everon/prefabs/buildings/`. A heuristic tune is a `cargo run`,
 //! not a compile gate + Workbench restart + operator click.
 //!
 //! Usage: `--filter <substr> [--src <dir>] [--out <dir>] [--algo segments|grid]

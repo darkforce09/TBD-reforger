@@ -79,7 +79,7 @@ const EVERON_PREFABS: usize = 1623;
 const EVERON_INSTANCES: u64 = 1_216_066;
 
 fn everon() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../packages/map-assets/everon")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/terrains/everon")
 }
 
 fn everon_json_rows() -> Vec<PrefabRow> {

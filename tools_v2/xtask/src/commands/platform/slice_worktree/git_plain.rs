@@ -15,7 +15,7 @@ pub(super) fn git_plain(dir: &Path) -> Run {
 /// oracle symlinks were made, silently, with a real-looking "Preparing worktree" as the last line —
 /// so every worktree the factory produced was missing both proof lanes. MEASURED: 2 with hooks, 0
 /// without. **`filter.lfs.*`:** `GIT_LFS_SKIP_SMUDGE=1` alone is NOT enough, git still tries to
-/// SPAWN the filter, which does not exist here; agents never touch `packages/map-assets`, so LFS
+/// SPAWN the filter, which does not exist here; agents never touch `assets_v2/terrains`, so LFS
 /// files stay ~133-byte pointers, keeping worktrees cheap too.
 pub(super) fn git_lfs_safe(dir: &Path) -> Run {
     // Split on whitespace: none of these tokens contains a space, and the empty `=` values are
@@ -294,7 +294,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     }
 
     // Tempted to "fix" the LFS pointers? DON'T symlink them. Content is deliberately not smudged
-    // (see [`git_lfs_safe`]), so `packages/map-assets/**` arrives as ~133-byte pointers, which makes
+    // (see [`git_lfs_safe`]), so `assets_v2/terrains/**` arrives as ~133-byte pointers, which makes
     // `cargo xtask ci schema-validate` die in a worktree at `schema height-labels` ("PNG decode: Invalid PNG
     // signature") while passing on main — two agents burned real effort on that. Symlinking the real
     // assets DOES fix the target, and was tried and REVERTED: git then reports all 983 tracked files
@@ -302,7 +302,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     // Hiding that with `--skip-worktree` would make working-tree changes INVISIBLE, which in a
     // program merging unattended agent work silently loses a slice.
     println!(
-        "  note: packages/map-assets is LFS pointers here — run 'xtask schema validate', not 'cargo xtask ci schema-validate'"
+        "  note: assets_v2/terrains is LFS pointers here — run 'xtask schema validate', not 'cargo xtask ci schema-validate'"
     );
     println!("worktree: {r}/{dir}   branch: {branch}");
     Ok(0)

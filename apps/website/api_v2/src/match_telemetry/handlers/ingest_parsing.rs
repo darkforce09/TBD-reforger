@@ -84,7 +84,7 @@ pub(super) fn valid_terrain(s: &str) -> Option<TerrainType> {
 /// Map a wire terrain string onto the Postgres enum, or `None` when absent/blank/unknown.
 ///
 /// **Unknown names soft-fail to `None`; they do not 400 the report.** The mission schema
-/// constrains terrain to `^[a-z][a-z0-9_]*$` (`packages/tbd-schema/schema/mission.schema.json`),
+/// constrains terrain to `^[a-z][a-z0-9_]*$` (`contracts_v2/definitions/mission.schema.json`),
 /// so community missions legitimately carry names outside `everon|arland|custom`. Rejecting
 /// the whole match-results POST for that is the "production ingest 400s" failure mode for
 /// those senders. Soft-fails like [`parse_uuid_opt`] (heartbeat three-state), **not** like

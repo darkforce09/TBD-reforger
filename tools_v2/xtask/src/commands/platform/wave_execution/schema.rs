@@ -3,7 +3,7 @@
 //! Until this existed the gate validated NO schema at all. MEASURED on main at 33a7aa85:
 //! `grep -c 'xtask schema' scripts/platform/wave.sh` -> 0, and `grep -n schema` -> zero hits in
 //! 1249 lines. The eleven steps were cargo check / wasm32 / fmt / clippy x3 / test x3 / trunk /
-//! ticket registry; not one read anything under `packages/tbd-schema`.
+//! ticket registry; not one read anything under `contracts_v2`.
 //!
 //! Realised twice in one weekend:
 //!   * wave 4 printed `GATE: PASS  11/11` on a wave whose HEADLINE deliverable was T-241's
@@ -43,9 +43,9 @@
 //! and the executable table over in `mk_ci_tasks.rs`. Adding a tenth sub-gate to that table
 //! without adding it here still fails closed, which is the whole point of the tripwire.
 //!
-//! DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under packages/tbd-schema changed" is how
+//! DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under contracts_v2 changed" is how
 //! fmt and clippy came to examine nothing on T-244's diff, and it would be wrong on the facts
-//! anyway: these gates read `tools_v2/xtask/src/verifications/schemas/checks.rs`, `packages/tbd-schema/rules/`,
+//! anyway: these gates read `tools_v2/xtask/src/verifications/schemas/checks.rs`, `contracts_v2/rules/`,
 //! `apps/mod/tbd-framework/` and `docs/specs/**`. Nine sub-gates cost ~1.4 s warm.
 
 use std::path::{Path, PathBuf};
@@ -72,7 +72,7 @@ const EXTRA_GATES: &[&str] = &["citations"];
 
 /// DEM path `height-labels` (and `terrain-alignment`) decode. Probe is PNG magic, not byte size —
 /// size alone would green a truncated file and red a future compressor win.
-const DEM: &str = "packages/map-assets/everon/dem/everon-dem-16bit.png";
+const DEM: &str = "assets_v2/terrains/everon/dem/everon-dem-16bit.png";
 
 /// True iff THIS tree's Everon DEM is a real PNG (not a git-lfs pointer, not missing).
 fn dem_materialized() -> bool {

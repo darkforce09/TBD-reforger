@@ -1,4 +1,6 @@
-use super::{read_json, repo_root, schema_root};
+use developer_tools::repository_layout::mission_fixtures_valid_dir;
+
+use super::{read_json, repo_root};
 use serde_json::Value;
 
 /// The reader's three struct bodies, concatenated. Scoped to those so an identifier that
@@ -31,7 +33,7 @@ fn reader_struct_bodies() -> String {
 #[test]
 fn the_staged_1_3_golden_objectives_row_binds_to_the_reader() {
     let root = repo_root().expect("repo root");
-    let golden = read_json(&schema_root(&root).join("golden-missions/schema-1_3-wire-fields.json"))
+    let golden = read_json(&mission_fixtures_valid_dir(&root).join("schema-1_3-wire-fields.json"))
         .expect("staged 1.3 golden");
 
     let rows = golden

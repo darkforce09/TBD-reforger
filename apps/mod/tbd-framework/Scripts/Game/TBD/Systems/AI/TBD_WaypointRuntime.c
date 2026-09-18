@@ -24,7 +24,7 @@
 //!
 //! == The nine ATTR-FIELD-WP semantics, as the T-706 wire actually carries them ===============
 //! Eden listed nine attribute ids. T-706's `$defs/waypoint` is the contract this reader may
-//! consume (this slice must not touch packages/tbd-schema):
+//! consume (this slice must not touch contracts_v2):
 //!   ATTR-FIELD-WP-TYPE       -> `type` (required). Mapped onto a ScenarioFramework waypoint prefab.
 //!   ATTR-FIELD-WP-ORDER      -> array index. Waypoints are issued in document order.
 //!   ATTR-FIELD-WP-POSITION   -> `x` / `z` / optional `y` (metres ASL; same policy as slot.y).

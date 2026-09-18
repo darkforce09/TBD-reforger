@@ -4,7 +4,7 @@ use developer_tools::repository_layout::glyph_manifest_path;
 pub fn map_object_enums() -> Result<u8> {
     let root = repo_root()?;
     let sroot = schema_root(&root);
-    let enums = read_json(&sroot.join("schema/map-object-enums.schema.json"))?;
+    let enums = read_json(&sroot.join("definitions/map-object-enums.schema.json"))?;
     let defs = &enums["$defs"];
     let set = |name: &str| -> HashSet<String> {
         defs[name]["enum"]
@@ -69,7 +69,7 @@ pub fn map_object_enums() -> Result<u8> {
         }
     };
 
-    let prefabs = read_json(&sroot.join("golden/map-objects/map-object-prefabs-sample.json"))?;
+    let prefabs = read_json(&sroot.join("fixtures/map/map-object-prefabs-sample.json"))?;
     let prefab_count = prefabs.as_array().map(Vec::len).unwrap_or(0);
     for p in prefabs.as_array().into_iter().flatten() {
         check_row(
@@ -100,8 +100,7 @@ pub fn map_object_enums() -> Result<u8> {
         );
     }
 
-    let regions =
-        read_json(&sroot.join("golden/map-objects/map-object-regions-everon-sample.json"))?;
+    let regions = read_json(&sroot.join("fixtures/map/map-object-regions-everon-sample.json"))?;
     for reg in regions.as_array().into_iter().flatten() {
         let id = &reg["id"];
         if let Some(kind) = reg["kind"].as_str() {

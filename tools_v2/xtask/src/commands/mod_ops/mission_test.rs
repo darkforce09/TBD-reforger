@@ -13,7 +13,7 @@
 //! - Registry copy keeps bash's `cp … 2>/dev/null || true` (optional; silent on absence).
 //! - `json.dump(..., indent=2)` shape: pretty JSON, **no** trailing newline after `}`.
 //! - Golden lookup is `find … -name '<arg>.json' | head -1`; we walk + sort and take the first
-//!   match (unique basenames under `packages/tbd-schema` today — sorted first == find first).
+//!   match (unique basenames under `contracts_v2` today — sorted first == find first).
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -76,13 +76,13 @@ fn stage_golden(root: &Path, prof: &Path, cfg: &Path, name: &str) -> Result<u8> 
     let golden = match find_golden(&schema, &want) {
         Ok(Some(p)) => p,
         Ok(None) => {
-            eprintln!("no golden named '{name}' under packages/tbd-schema");
+            eprintln!("no golden named '{name}' under contracts_v2");
             return Ok(1);
         }
         Err(e) => {
             // Missing schema tree: bash `find` prints to stderr and still yields empty → same
             // operator-facing message as "not found".
-            eprintln!("no golden named '{name}' under packages/tbd-schema");
+            eprintln!("no golden named '{name}' under contracts_v2");
             let _ = e;
             return Ok(1);
         }
@@ -107,7 +107,7 @@ fn stage_golden(root: &Path, prof: &Path, cfg: &Path, name: &str) -> Result<u8> 
     Ok(0)
 }
 
-/// `find "$ROOT/packages/tbd-schema" -name "$1.json" | head -1` — sorted walk, first match.
+/// `find "$ROOT/contracts_v2" -name "$1.json" | head -1` — sorted walk, first match.
 fn find_golden(
     schema: &Path,
     want_name: &str,

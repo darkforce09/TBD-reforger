@@ -1,5 +1,5 @@
 //! T-165.4 — the semantic golden gate S2–S9 + S11–S15 (port of
-//! `packages/tbd-schema/scripts/verify-map-object-golden.mjs`). Shape validation (S1) lives in
+//! `contracts_v2/scripts/verify-map-object-golden.mjs`). Shape validation (S1) lives in
 //! `schema validate`; enum drift (S10) in `schema map-object-enums`. Uses the shared tbd-tools
 //! compute libs (geometry/density/forest) — the same code the world builder + phase gates run.
 use std::collections::{BTreeMap, HashMap, HashSet};

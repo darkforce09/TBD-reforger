@@ -85,7 +85,7 @@ pub(crate) enum TopCmd {
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
-    /// Schema/doc gates (T-165.1 ports of packages/tbd-schema/scripts/*.mjs)
+    /// Schema/doc gates (T-165.1 ports of contracts_v2/scripts/*.mjs)
     Schema {
         #[command(subcommand)]
         cmd: SchemaCmd,

@@ -10,7 +10,7 @@ pub(super) fn validate(
     v_mission: &jsonschema::Validator,
 ) -> Result<()> {
     println!("Golden missions:");
-    let missions_dir = sroot.join("golden-missions");
+    let missions_dir = sroot.join("fixtures/missions/valid");
     for f in sorted_json_files(&missions_dir)? {
         check(&f, v_mission, &read_json(&missions_dir.join(&f))?);
     }
@@ -240,14 +240,14 @@ pub(super) fn validate(
     }
 
     // ── T-181.36 — kit-aliases.json must mirror the registry it claims to be generated from ──
-    // `packages/tbd-schema/registry/kit-aliases.json` is the INVERSE table (ResourceName -> alias)
+    // `contracts_v2/rules/kit-aliases.json` is the INVERSE table (ResourceName -> alias)
     // that the mission-compile flatten uses, and its own header says it is generated from the mod
     // registry. Nothing enforced that. A kit added to one and not the other does not error: the
     // flatten silently falls back to the faction default kit, so an authored medic compiles into a
     // rifleman. Two definitions and no enforcement is exactly how they drift.
     println!("kit-aliases.json <-> spawn registry mirror (T-181.36):");
     {
-        let ka_path = sroot.join("registry/kit-aliases.json");
+        let ka_path = sroot.join("rules/kit-aliases.json");
         let ka = read_json(&ka_path)?;
         let reg_doc = read_json(&reg_path)?;
         let reg_kits: BTreeMap<String, String> = reg_doc["entries"]
@@ -323,7 +323,7 @@ pub(super) fn validate(
     // mission.schema.json and every positive golden still passes; these are what notice.
     // Each fixture is a wrapper, not a mission — see golden-missions-invalid/README.md.
     println!("Negative goldens (must FAIL — T-181.34):");
-    let neg_dir = sroot.join("golden-missions-invalid");
+    let neg_dir = sroot.join("fixtures/missions/invalid");
     for f in sorted_json_files(&neg_dir)? {
         let w = read_json(&neg_dir.join(&f))?;
         let (Some(gate), Some(at), Some(doc)) = (

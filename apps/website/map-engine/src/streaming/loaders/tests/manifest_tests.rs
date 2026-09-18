@@ -44,7 +44,7 @@ fn narrow_cells_reads_index() {
 }
 
 const EVERON_MANIFEST: &str =
-    include_str!("../../../../../../../packages/map-assets/everon/manifest.json");
+    include_str!("../../../../../../../assets_v2/terrains/everon/manifest.json");
 
 fn everon() -> Value {
     serde_json::from_str(EVERON_MANIFEST).expect("committed everon manifest is valid JSON")

@@ -1,4 +1,4 @@
-//! T-165.1 — the text/JSON schema gates, ported from `packages/tbd-schema/scripts/*.mjs`
+//! T-165.1 — the text/JSON schema gates, ported from `contracts_v2/scripts/*.mjs`
 //! (verify-contract-citations, verify-t090-spec-consistency, verify-n6-sentence,
 //! verify-n10-tile-budget, verify-map-object-enums, verify-type-inventory,
 //! verify-terrain-manifest, flatten-orbat-slots). Behavior parity with the Node originals:
@@ -17,6 +17,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::Value;
 
+use developer_tools::repository_layout::{
+    contract_catalogs_dir, contract_definitions_dir, definition_path, registry_fixtures_dir,
+};
+
 use crate::core::repository_root::find_repo_root as repo_root;
 
 /* ─────────────────────────── citations ─────────────────────────── */
@@ -31,9 +35,10 @@ use crate::core::repository_root::find_repo_root as repo_root;
 /// the per-extension breakdown in the summary makes their zeros visible evidence that the
 /// Go/Node eradication still holds.
 const CODE_EXTS: [&str; 7] = ["c", "go", "js", "mjs", "rs", "ts", "tsx"];
-/// Code roots whose contract citations must resolve, including both tooling trees.
-/// Markdown is excluded because prose examples are not code contract declarations.
-const SCAN_ROOTS: [&str; 3] = ["apps", "packages", "tools_v2"];
+/// Code roots whose contract citations must resolve: the applications and the tooling tree.
+/// Markdown is excluded because prose examples are not code contract declarations, and the
+/// contract and asset trees are excluded because they hold data, not code that declares a citation.
+const SCAN_ROOTS: [&str; 2] = ["apps", "tools_v2"];
 const IGNORE_DIRS: [&str; 6] = [
     "node_modules",
     "dist",

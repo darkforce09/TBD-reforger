@@ -43,7 +43,7 @@ use website_map_engine::world::architecture::blueprint::structure::BuildingBluep
 
 use super::batch::write_if_changed;
 
-/// Where the archive is written, relative to `packages/map-assets/<terrain>/`.
+/// Where the archive is written, relative to `assets_v2/terrains/<terrain>/`.
 pub const ARCHIVE_REL: &str = "prefabs/building_blueprints.rkyv";
 
 /// The built archive plus what the report needs to say about it.

@@ -8,14 +8,14 @@
 //! WHAT THIS USED TO BE, AND WHY IT WAS WRONG:
 //!
 //! ```text
-//! if git diff --name-only origin/main..HEAD | grep -q '^packages/map-assets/'; then refuse
+//! if git diff --name-only origin/main..HEAD | grep -q '^assets_v2/terrains/'; then refuse
 //! ```
 //!
 //! It matched the DIRECTORY and assumed everything under it was LFS. `.gitattributes` has never
 //! said that — LFS covers exactly three globs there:
 //!
 //! ```text
-//! packages/map-assets/**/*.png   **/*.r16   **/*.tbd-sat
+//! assets_v2/terrains/**/*.png   **/*.r16   **/*.tbd-sat
 //! ```
 //!
 //! Everything else beneath that tree is ordinary bytes. MEASURED 2026-07-31 while closing wave 74:
@@ -77,7 +77,7 @@
 //! ── T-943 — THE GUARD DEADLOCKED ON ITS OWN QUESTION, AND ANSWERED IT WHERE NOBODY ASKED. ────
 //!
 //! Two defects, both measured 2026-09-04 while closing wave 248 on `origin/main..HEAD` (28 commits,
-//! one of them T-090.12.2's 1,691 `packages/map-assets/everon/prefabs/blas/*.bvh`).
+//! one of them T-090.12.2's 1,691 `assets_v2/terrains/everon/prefabs/blas/*.bvh`).
 //!
 //! FIRST: THE PIPE. This function used to hand `check-attr` the whole path list —
 //! `child.stdin.take()?.write_all(&list.stdout)` — and only afterwards call `wait_with_output` to

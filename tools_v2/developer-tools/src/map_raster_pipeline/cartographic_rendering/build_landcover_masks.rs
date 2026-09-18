@@ -12,7 +12,7 @@ pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     let sap = map_scratch_dir(&root, "everon").join("sap/everon-sap-ortho.png"); // E2c-allow
     // Checkout-relative spelling of `sap`, quoted verbatim in the meta JSON's provenance field and
     // in the missing-source error, where an absolute host path would be noise.
-    let sap_rel = "packages/map-assets/everon/staging/sap/everon-sap-ortho.png"; // E2c-allow
+    let sap_rel = "assets_v2/scratch/everon/sap/everon-sap-ortho.png"; // E2c-allow
     if !sap.exists() {
         bail!(
             "build-landcover-mask: SAP ortho missing: {sap_rel}\nstaging/ is gitignored — restore it (cargo xtask ci map-water-everon rebuilds the water composite)."
@@ -328,7 +328,7 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
         "slice": "T-090.1.1.1",
         "source": "workbench-cartographic",
         "terrain": terrain,
-        "sourceRaster": "packages/map-assets/everon/staging/spike/TBD_SatExport_everon.tga",
+        "sourceRaster": "assets_v2/scratch/everon/spike/TBD_SatExport_everon.tga",
         "sourceDimensions": [source_px, source_px],
         "dimensions": [world_px, world_px],
         "worldBounds": [0, 0, world_px, world_px],
@@ -343,7 +343,7 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
                 "provenance": "T-090.1.1.1 — SAP ortho read-only; satellite bundle untouched",
             },
             "inlandWater": if has_water {
-                json!({ "mask": "packages/map-assets/everon/staging/sap/water-inland-mask.png", "color": "#2E5266", "provenance": "T-090.1.2.5.2 classifier (read-only reuse)" })
+                json!({ "mask": "assets_v2/scratch/everon/sap/water-inland-mask.png", "color": "#2E5266", "provenance": "T-090.1.2.5.2 classifier (read-only reuse)" })
             } else {
                 Value::Null
             },
@@ -362,7 +362,7 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
         out.parent().unwrap().join("map-ortho-meta.json"),
         serde_json::to_string_pretty(&meta)? + "\n",
     )?;
-    let out_rel = "packages/map-assets/everon/staging/map/everon-map-ortho.png"; // E2c-allow
+    let out_rel = "assets_v2/scratch/everon/map/everon-map-ortho.png"; // E2c-allow
     println!(
         "build-map-cartographic: OK {out_rel} ({world_px}² north-up, {drawn_records} road records / {drawn_verts} verts, water={has_water}, {}s)",
         meta["buildSeconds"]

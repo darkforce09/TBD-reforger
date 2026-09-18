@@ -281,7 +281,7 @@ fn optic_magazine_survive_a_dumb_forge_resave() {
 /// the schema gains a required key or closes another object, this test goes red.
 fn export_schema() -> serde_json::Value {
     let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../packages/tbd-schema/schema/loadout-export.schema.json");
+        .join("../../../contracts_v2/definitions/loadout-export.schema.json");
     serde_json::from_str(&std::fs::read_to_string(&p).expect("read loadout-export.schema.json"))
         .expect("parse loadout-export.schema.json")
 }

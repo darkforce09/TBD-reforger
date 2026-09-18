@@ -243,11 +243,11 @@ fn empty_params_serialise_to_no_keys_at_all() {
 fn the_authored_modes_are_the_editor_payload_schema_s_enum() {
     const PAYLOAD_SCHEMA: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/tbd-schema/schema/mission-editor-payload.schema.json"
+        "/../../../contracts_v2/definitions/mission-editor-payload.schema.json"
     ));
     const MISSION_SCHEMA: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/tbd-schema/schema/mission.schema.json"
+        "/../../../contracts_v2/definitions/mission.schema.json"
     ));
 
     let payload: Value = serde_json::from_str(PAYLOAD_SCHEMA).expect("payload schema parses");
@@ -286,7 +286,7 @@ fn the_authored_modes_are_the_editor_payload_schema_s_enum() {
 fn the_timeout_bounds_are_the_schema_s_own() {
     const MISSION_SCHEMA: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/tbd-schema/schema/mission.schema.json"
+        "/../../../contracts_v2/definitions/mission.schema.json"
     ));
     let mission: Value = serde_json::from_str(MISSION_SCHEMA).expect("mission schema parses");
     let t = &mission["$defs"]["winConditions"]["properties"]["timeoutMinutes"];

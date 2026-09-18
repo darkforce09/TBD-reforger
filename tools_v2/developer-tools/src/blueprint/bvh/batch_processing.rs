@@ -10,7 +10,7 @@
 //! building's local frame — socket bones from the parent model's XOB node table
 //! (`source: xobSocket`), else the prefab's `coords` / `angles` / `scale`
 //! (`prefabCoords`). Output: `buildings/<slug>.instances.json`, validated against
-//! `packages/tbd-schema/schema/building-instances.schema.json`.
+//! `contracts_v2/definitions/building-instances.schema.json`.
 //!
 //! `--scene <spec.json>` walks extra hand-placed roots (trees around the house) into
 //! `buildings/<slug>.scene.json` — the same document shape, `source: scene`.

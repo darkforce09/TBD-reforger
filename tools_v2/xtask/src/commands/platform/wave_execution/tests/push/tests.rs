@@ -97,7 +97,7 @@ fn path_list(n: usize) -> Vec<u8> {
     let mut v = Vec::new();
     for i in 0..n {
         v.extend_from_slice(
-            format!("packages/map-assets/everon/prefabs/blas/obj{i:06}.bvh").as_bytes(),
+            format!("assets_v2/terrains/everon/prefabs/blas/obj{i:06}.bvh").as_bytes(),
         );
         v.push(0);
     }

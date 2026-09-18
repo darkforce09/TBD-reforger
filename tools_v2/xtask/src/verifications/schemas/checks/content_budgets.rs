@@ -17,7 +17,7 @@ pub fn n6_sentence() -> Result<u8> {
         spec.join("t090_5_map_object_render_layer.md"),
         spec.join("t090_6_geometry_placement_audit.md"),
         spec.join("t090_world_object_glyphs.md"),
-        schema_root(&root).join("schema/map-object-prefab.schema.json"),
+        definition_path(&root, "map-object-prefab.schema.json"),
     ];
     let mut missing = Vec::new();
     for f in &files {

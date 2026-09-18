@@ -12,7 +12,7 @@ use std::fs;
 
 fn golden(name: &str) -> Value {
     let path = format!(
-        "{}/../../../packages/tbd-schema/golden/map-objects/{name}",
+        "{}/../../../contracts_v2/fixtures/map/{name}",
         env!("CARGO_MANIFEST_DIR")
     );
     serde_json::from_slice(&fs::read(&path).expect("read golden")).expect("parse golden")

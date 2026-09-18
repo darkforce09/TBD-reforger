@@ -140,7 +140,7 @@ pub(super) fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationS
 
 pub fn citations() -> Result<u8> {
     let root = repo_root()?;
-    let schema_dir = schema_root(&root).join("schema");
+    let schema_dir = contract_definitions_dir(&root);
     let CitationScan {
         citations,
         files_read,

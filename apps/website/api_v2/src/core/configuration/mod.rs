@@ -59,7 +59,7 @@ pub struct Config {
     /// = don't serve a SPA (dev uses `trunk serve`; the API is API-only).
     pub spa_dist_dir: String,
     /// The map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM /
-    /// basemap / world chunks). Empty defaults to `../../packages/map-assets` relative to the CWD.
+    /// basemap / world chunks). Empty defaults to `../../assets_v2/terrains` relative to the CWD.
     pub map_assets_dir: String,
 
     // Database

@@ -3,11 +3,11 @@ name: tbd-schema compatibility test
 on:
   push:
     paths:
-      - "packages/tbd-schema/**"
+      - "contracts_v2/**"
       - ".github/workflows/schema.yml"
   pull_request:
     paths:
-      - "packages/tbd-schema/**"
+      - "contracts_v2/**"
       - ".github/workflows/schema.yml"
 
 jobs:

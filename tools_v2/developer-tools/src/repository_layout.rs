@@ -17,12 +17,12 @@ use std::path::{Path, PathBuf};
 /// Root of the wire-contract tree: schema definitions, classification rules, live catalogs, and
 /// the golden fixtures every boundary is tested against.
 pub fn contracts_dir(root: &Path) -> PathBuf {
-    root.join("packages/tbd-schema")
+    root.join("contracts_v2")
 }
 
 /// Authoritative JSON Schema definitions. The codegen pipeline's input directory.
 pub fn contract_definitions_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("schema")
+    contracts_dir(root).join("definitions")
 }
 
 /// One schema definition by file name, e.g. `mission.schema.json`.
@@ -42,12 +42,12 @@ pub fn prefab_classify_path(root: &Path) -> PathBuf {
 
 /// Approved mission kit aliases, keyed by Enfusion resource name.
 pub fn kit_aliases_path(root: &Path) -> PathBuf {
-    contracts_dir(root).join("registry/kit-aliases.json")
+    contract_rules_dir(root).join("kit-aliases.json")
 }
 
 /// Live Workbench exports: production data the platform ingests, not test fixtures.
 pub fn contract_catalogs_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("registry")
+    contracts_dir(root).join("catalogs")
 }
 
 /// Flat item catalog exported from Workbench; drives the Virtual Arsenal.
@@ -64,22 +64,22 @@ pub fn registry_compat_catalog_path(root: &Path) -> PathBuf {
 
 /// Root of the committed fixture corpus.
 pub fn contract_fixtures_dir(root: &Path) -> PathBuf {
-    contracts_dir(root)
+    contracts_dir(root).join("fixtures")
 }
 
 /// Playable missions that must always parse, validate and compile.
 pub fn mission_fixtures_valid_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("golden-missions")
+    contract_fixtures_dir(root).join("missions/valid")
 }
 
 /// Deliberately malformed scenarios, each pinning one rejection gate.
 pub fn mission_fixtures_invalid_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("golden-missions-invalid")
+    contract_fixtures_dir(root).join("missions/invalid")
 }
 
 /// Spatial fixtures: object chunks, road networks, region derivations, terrain manifests.
 pub fn map_fixtures_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("golden/map-objects")
+    contract_fixtures_dir(root).join("map")
 }
 
 /// Committed forest-density fixtures, read when re-densifying without a Workbench export.
@@ -89,24 +89,24 @@ pub fn density_fixtures_dir(root: &Path) -> PathBuf {
 
 /// Item, loadout, faction and alias samples used by round-trip and validation tests.
 pub fn registry_fixtures_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("registry")
+    contract_fixtures_dir(root).join("registry")
 }
 
 /// Raw JSON payload samples as the game mod emits them.
 pub fn enfusion_sample_fixtures_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("enfusion")
+    contract_fixtures_dir(root).join("enfusion_samples")
 }
 
 /// Canonical voice-bridge IPC message samples.
 pub fn bridge_sample_fixtures_dir(root: &Path) -> PathBuf {
-    contracts_dir(root).join("bridge/samples")
+    contract_fixtures_dir(root).join("bridge_samples")
 }
 
 /* ─────────────────────────────── map assets ─────────────────────────────── */
 
 /// Root of the built-in terrain datasets, served at `/map-assets`.
 pub fn terrain_assets_dir(root: &Path) -> PathBuf {
-    root.join("packages/map-assets")
+    root.join("assets_v2/terrains")
 }
 
 /// One island's dataset directory.
@@ -126,7 +126,7 @@ pub fn terrain_manifest_path(root: &Path, terrain: &str) -> PathBuf {
 
 /// Tactical symbology atlases and marker sources, served at `/map-assets/glyphs`.
 pub fn glyph_assets_dir(root: &Path) -> PathBuf {
-    terrain_assets_dir(root).join("glyphs")
+    root.join("assets_v2/glyphs")
 }
 
 /// The glyph registry and its UV coordinate catalog.
@@ -139,7 +139,7 @@ pub fn glyph_manifest_path(root: &Path) -> PathBuf {
 /// Ignored by git. Pipeline stages write intermediates here; nothing downstream of an export may
 /// read from it, because a fresh clone does not have it.
 pub fn map_scratch_dir(root: &Path, terrain: &str) -> PathBuf {
-    terrain_dir(root, terrain).join("staging")
+    root.join("assets_v2/scratch").join(terrain)
 }
 
 #[cfg(test)]

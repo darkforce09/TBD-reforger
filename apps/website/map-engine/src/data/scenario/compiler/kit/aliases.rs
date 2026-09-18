@@ -8,7 +8,7 @@ use super::{Deserialize, HashMap, OnceLock};
 /// Canonical kit aliases raw value.
 pub(super) const KIT_ALIASES_RAW: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../packages/tbd-schema/registry/kit-aliases.json"
+    "/../../../contracts_v2/rules/kit-aliases.json"
 ));
 
 /// Domain representation of kit entry.

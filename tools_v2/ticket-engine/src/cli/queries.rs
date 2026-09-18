@@ -238,7 +238,7 @@ pub fn cmd_sparse_paths(registry: &Value, id: &str) -> Result<()> {
                 paths.insert("apps/mod".into());
             }
             "shared" => {
-                paths.insert("packages/tbd-schema".into());
+                paths.insert("contracts_v2".into());
             }
             "root" => {
                 // `Makefile` sat in this list until T-897 deleted it. Its successor is `tools_v2/xtask/`:

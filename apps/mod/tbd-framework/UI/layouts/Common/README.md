@@ -77,7 +77,7 @@ Read this table before authoring a new panel: if the shape is here, mount it; do
   into `TBD_UILayouts` (all five current textures are pinned; a new PNG is a bare path until its import). `TBD_UILayouts.LoadTexture` hides the widget and
   logs once when a texture is missing, so a not-yet-imported PNG costs a hidden slot, not a white
   quad. Sources: disc / inverse disc / fade / topo art from a scratch Node rasteriser; the Everon
-  hero is `ffmpeg -i packages/map-assets/everon/tiles/satellite/full.webp -vf "crop=4096:560:0:1600,scale=1024:140"`.
+  hero is `ffmpeg -i assets_v2/terrains/everon/tiles/satellite/full.webp -vf "crop=4096:560:0:1600,scale=1024:140"`.
 - **Icons are keys, and the textures are ours.** Image slots are fed by `TBD_UIIcons.Load(widget, key)`:
   our 64 px white-on-alpha PNGs under `UI/Textures/TBD/Icons/` first (38 Material Symbols keys,
   `TBD_Icon_<key>_UI.png`; the operator imports the batch and pins the GUIDs in `TBD_UIIcons`),

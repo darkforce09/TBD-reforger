@@ -429,8 +429,8 @@ pub fn analyze_water_sources() -> Result<u8> {
             "comparisonVsShip251": comparison,
         },
         "outputs": {
-            "inlandMaskPng": "packages/map-assets/everon/staging/sap/water-inland-mask.png (gitignored)",
-            "previewPng": "packages/map-assets/everon/staging/sap/water-spike-preview.png (gitignored)",
+            "inlandMaskPng": "assets_v2/scratch/everon/sap/water-inland-mask.png (gitignored)",
+            "previewPng": "assets_v2/scratch/everon/sap/water-spike-preview.png (gitignored)",
         },
     });
     std::fs::write(&out_json, serde_json::to_string_pretty(&spike)? + "\n")?;

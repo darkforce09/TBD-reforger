@@ -103,7 +103,7 @@ async fn req(
 fn golden_doc() -> Value {
     let raw = std::fs::read(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/tbd-schema/registry/faction-library.sample.json"
+        "/../../../contracts_v2/fixtures/registry/faction-library.sample.json"
     ))
     .expect("read faction golden");
     serde_json::from_slice(&raw).unwrap()

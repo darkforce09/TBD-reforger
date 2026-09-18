@@ -7,7 +7,7 @@ Status: the refactor is complete. `apps/website/api_v2/` is the backend crate (`
 - `src/`: `lib.rs`, `bin/{api,import_registry}.rs`, `core/`, `background_workers/`, eight domains (`administration`, `command_center`, `community_content`, `identity_and_access`, `match_telemetry`, `missions`, `operations`, `server_infrastructure`) each with `routes.rs`, `handlers/`, `services/`, `models/` as needed, and `tests/architecture_rules.rs`. One README per top-level module, generated from the tree. No file over 500 lines; unit tests live in sibling `tests/<file>.rs` modules.
 - `tests/`: 56 integration suite files, all under 1000 lines, subject-named, over `common/{database,http,fixtures,source_text}.rs` and per-family support modules (`telemetry_support`, `events_support`, `missions_support`, `router_boot_support`, `null_tolerance_support`); the support module's own checks run once in `test_support_self_checks.rs`.
 - `.coding-standards-allowlist.yaml`: zero `apps/website/api_v2` entries.
-- `packages/tbd-schema/schema/*.json` descriptions are present tense; `src/missions/contract/generated/` is regenerated from them and carries no doctest-shaped blocks.
+- `contracts_v2/definitions/*.json` descriptions are present tense; `src/missions/contract/generated/` is regenerated from them and carries no doctest-shaped blocks.
 - Documentation: `apps/website/api_v2/README.md` is the live atlas; `ARCHITECTURE_PLAN.md` opens with the current layout and the merge design; `ANALYSIS_AND_INVENTORY.md` is marked as the pre-refactor inventory; the repo `CLAUDE.md` atlas, the coding and documentation standards, the placement guide, the runbooks, the commit checklist, the backend roadmap, and the context handoff name the domain tree.
 
 ## Verification evidence

@@ -31,5 +31,5 @@ Logs under the session scratchpad `phase5/` (`5_1_*` to `5_4_*`).
 ## Follow-ups for Phase 6
 
 - Integration suites over 1000 lines: `tests/{telemetry, events, missions, misc_integration, null_tolerance}.rs` and `tests/common/mod.rs` (6.1 to 6.3); eleven ticket-prefixed suite files (6.4); 742 Law 8 hits under `tests/` (6.6).
-- `packages/tbd-schema/schema/mission-editor-payload.schema.json` still carries ticket ids in two other descriptions; they flow into `missions/contract/generated/mission_editor.rs` (exempt from the architecture rules). Rewrite them and regenerate in 6.5.
+- `contracts_v2/definitions/mission-editor-payload.schema.json` still carries ticket ids in two other descriptions; they flow into `missions/contract/generated/mission_editor.rs` (exempt from the architecture rules). Rewrite them and regenerate in 6.5.
 - Scaffold READMEs under every domain (including the empty `<domain>/tests/` and `identity_and_access/auth_primitives/` placeholders) describe the blueprint, not the tree; 6.7 rewrites or removes them.

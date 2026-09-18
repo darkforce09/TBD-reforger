@@ -54,7 +54,7 @@ fn meta() -> MissionMeta {
 
 const MISSION_SCHEMA_RAW: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../packages/tbd-schema/schema/mission.schema.json"
+    "/../../../contracts_v2/definitions/mission.schema.json"
 ));
 
 const LEDGER_FIXTURE: &str = r#"{
@@ -356,7 +356,7 @@ fn compiler_shaped_meta() -> MissionMeta {
 
 const COMPILER_SHAPED_GOLDEN: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json"
+    "/../../../contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json"
 ));
 
 fn golden_text(doc: &ModMissionDocument) -> String {
@@ -383,7 +383,7 @@ fn first_line_difference(expected: &str, actual: &str) -> Option<(usize, String,
 
 const BRIDGEHEAD_GOLDEN: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../packages/tbd-schema/golden-missions/bridgehead-at-levie.json"
+    "/../../../contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json"
 ));
 
 fn payload_with_briefings(briefings: serde_json::Value) -> Vec<u8> {

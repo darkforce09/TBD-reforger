@@ -94,7 +94,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "DO NOT REOPEN: T-090.1.2 decode/stitch/orientation (shipped @ c2730a3) unless verify-sap-ortho fails"
             );
             println!(
-                "ORTH: packages/map-assets/everon/staging/sap/everon-sap-ortho.png (12800² — already built; do NOT re-stitch)"
+                "ORTH: assets_v2/scratch/everon/sap/everon-sap-ortho.png (12800² — already built; do NOT re-stitch)"
             );
             println!(
                 "PREFLIGHT: git lfs pull && make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
@@ -172,7 +172,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "SCOPE: AGENT_COMMIT_CHECKLIST link, platform README, handoff artifact — docs only"
             );
-            println!("DO NOT: edit apps/website/, apps/mod/, packages/tbd-schema/ source");
+            println!("DO NOT: edit apps/website/, apps/mod/, contracts_v2/ source");
             println!(
                 "VERIFY: cargo run -q -p xtask -- ticket sync && cargo run -q -p xtask -- ticket check --strict"
             );
@@ -250,13 +250,13 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
         }
         ("T-091.1", _) => {
             println!(
-                "DO NOT: TBD_TerrainExportPlugin.c, Workbench, MCP terrain export, re-export everon-dem-16bit.png, anchor probes, or packages/map-assets/ edits"
+                "DO NOT: TBD_TerrainExportPlugin.c, Workbench, MCP terrain export, re-export everon-dem-16bit.png, anchor probes, or assets_v2/terrains/ edits"
             );
             println!(
                 "SCOPE (React-era, shipped; app retired at T-159.29.3): tactical-map/dem/* + DemController wiring"
             );
             println!(
-                "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
+                "REFERENCE (port, do not re-run): contracts_v2/scripts/lib/dem-sample.mjs"
             );
             println!(
                 "PREFLIGHT: cargo xtask ci lfs-dem && cargo run -q -p xtask -- ticket brief T-091"

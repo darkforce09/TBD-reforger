@@ -48,7 +48,7 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
 ///
 /// `frontend_tests_changed` originally scoped itself on `wasm_scope_touched` alone. But the
 /// suite compiles files from outside that graph through `include_str!`, and wave 255 itself
-/// changed one of them — `packages/tbd-schema/schema/mission.schema.json`, compiled by
+/// changed one of them — `contracts_v2/definitions/mission.schema.json`, compiled by
 /// `v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs` and asserted over by
 /// `zone_rule_fields_cover_the_whole_vocabulary`, which is documented to fail loudly on a new
 /// `$defs/zoneRules` key. A slice whose diff was only that file would have printed "frontend
@@ -79,7 +79,7 @@ fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
     assert!(
         frontend_include_input_touched(
             &root,
-            ["packages/tbd-schema/schema/mission.schema.json"].into_iter()
+            ["contracts_v2/definitions/mission.schema.json"].into_iter()
         ),
         "mission.schema.json is include_str!'d by the SPA and must put it in scope; \
          scoped inputs: {scoped:?}"

@@ -1,6 +1,6 @@
 -- registry_dev.sql
 -- Dev seed for the T-068 Virtual Arsenal registry catalog. Mirrors the T-068.1
--- Workbench export (packages/tbd-schema/registry/registry-items.workbench.json):
+-- Workbench export (contracts_v2/catalogs/registry-items.workbench.json):
 -- 21 real rows across five gear/character kinds (8 character, 4 gear_primary,
 -- 3 gear_uniform, 4 gear_vest, 2 gear_helmet), PLUS 4 T-800 vehicle rows so the
 -- Vehicles tab and ORBAT > Add Vehicle have something to author in a dev DB (the

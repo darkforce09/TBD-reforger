@@ -162,7 +162,7 @@ pick slot in LOBBY = **T-068.13**; production roster sync = **T-114**.
 ## Registry
 
 Shipped at `Data/registry.json` (vanilla POC aliases).  
-Spec: [`shared/tbd-schema/spikes/registry-poc-0.4.md`](../../../packages/tbd-schema/spikes/registry-poc-0.4.md) (historical spike).
+Spec: [`shared/tbd-schema/spikes/registry-poc-0.4.md`](../../../contracts_v2/spikes/registry-poc-0.4.md) (historical spike).
 
 Replace with TBD-Content export in Phase 1+.
 

@@ -1,7 +1,7 @@
 //! T-870 — port of `scripts/mod/bootstrap-staging-server.sh` → `cargo xtask mod bootstrap-staging`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`,
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`,
 //! `DEPLOY_ENV=scripts/deploy/deploy.env`.
 //!
 //! One-time staging-host discovery + mkdir. Does **not** install steamcmd / Arma — see

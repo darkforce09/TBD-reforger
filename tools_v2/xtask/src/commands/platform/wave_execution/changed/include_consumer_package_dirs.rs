@@ -9,7 +9,7 @@ pub fn include_consumer_package_dirs(orphan: &str) -> Vec<String> {
     let orphan_abs = realpath_m(Path::new(orphan));
     let re = regex::Regex::new(r#"include!\(\s*"([^"]+)"\s*\)"#).expect("static regex");
     let mut out = Vec::new();
-    for consumer in rs_files_under(&["apps", "packages", "tools_v2", "tools"]) {
+    for consumer in rs_files_under(&["apps", "tools_v2"]) {
         let Ok(body) = std::fs::read_to_string(&consumer) else {
             continue;
         };
@@ -99,7 +99,7 @@ pub fn workspace_members() -> Vec<String> {
 ///
 /// T-421's [`super::super::touch::touch_workspace`] invalidated every workspace `.rs` mtime but not the
 /// JSON/WGSL/SQL paths those macros pull in — same mtime-freshness hole, narrower blast radius.
-/// MEASURED 2026-07-27: repro on `packages/tbd-schema/schema/mission.schema.json` with `touch -r`
+/// MEASURED 2026-07-27: repro on `contracts_v2/definitions/mission.schema.json` with `touch -r`
 /// back to original mtime after a byte change: `cargo check -p map-engine-core --features
 /// doc,mission,world` in `target-gate-check` stayed rc 0 until the schema file itself was touched.
 ///

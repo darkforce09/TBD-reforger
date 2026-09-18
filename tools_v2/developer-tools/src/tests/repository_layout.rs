@@ -44,12 +44,22 @@ fn every_declared_location_exists_in_the_checkout() {
     }
 }
 
-/// The scratch tree is the one location that is deliberately absent from a fresh clone, so it is
-/// pinned by shape rather than existence: it must sit under the island it belongs to.
+/// Export scratch is deliberately absent from a fresh clone, so it is pinned by shape rather than
+/// existence: it is named for its island, and it sits OUTSIDE the terrain tree.
+///
+/// That separation is the invariant worth a test. The terrain tree is served wholesale at
+/// `/map-assets`, so scratch nested inside it would publish gigabytes of uncommitted export
+/// intermediates to every map client.
 #[test]
-fn export_scratch_belongs_to_its_island() {
+fn export_scratch_is_named_for_its_island_and_sits_outside_the_served_tree() {
     let root = find_repo_root().expect("active checkout");
-    assert!(map_scratch_dir(&root, "everon").starts_with(terrain_dir(&root, "everon")));
+    let scratch = map_scratch_dir(&root, "everon");
+    assert!(scratch.ends_with("everon"), "{}", scratch.display());
+    assert!(
+        !scratch.starts_with(terrain_assets_dir(&root)),
+        "{}",
+        scratch.display()
+    );
 }
 
 /// Locations are resolved against the caller's root, never an ambient one.

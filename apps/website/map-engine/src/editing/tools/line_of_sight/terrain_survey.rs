@@ -72,7 +72,7 @@ pub fn build_profile(shot: &LosShot) -> Vec<ProfileSample> {
 
 /// The Everon DEM coverage manifest (world box + raster dims) every walk here bounds itself to.
 /// Only the box and dims decide coverage — the injected sampler supplies elevation — so the height
-/// range is the published Everon band. Mirrors `packages/map-assets/everon/manifest.json`.
+/// range is the published Everon band. Mirrors `assets_v2/terrains/everon/manifest.json`.
 ///
 /// Public because the viewshed scheduler builds the same parameters [`compute_viewshed_for`] does
 /// and must bound its job to the SAME manifest.

@@ -1,7 +1,7 @@
 //! `cargo xtask map bvh-batch --all-prefabs` — T-090.12.2: the prefab BLAS library.
 //!
 //! Walks EVERY prefab of `objects/prefabs.json.gz` through the T-090.11.2 [`Walker`] straight out
-//! of the game paks and emits, under `packages/map-assets/<terrain>/prefabs/`:
+//! of the game paks and emits, under `assets_v2/terrains/<terrain>/prefabs/`:
 //!
 //! - `blas/<stem>.bvh` — one sidecar per distinct XOB (dedup by stem via the walker's asset
 //!   cache), shared across every prefab that uses the model;

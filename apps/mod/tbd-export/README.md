@@ -13,7 +13,7 @@ Mod GUID: `C3D4E5F6A7B89012` · ID `TBD_Export` · Dependencies: `58D0FB3206B6F8
 |---|---|
 | `Scripts/WorkbenchGame/MapExport/**` | The map-export plugins (terrain DEM / satellite / water / roads, vegetation, objects, props, infrastructure, buildings + blueprints, locations, registry / arsenal). `Plugins,TBD,…` in Workbench. |
 | `Scripts/WorkbenchGame/MapExport/Objects/Buildings/EMCP_WB_TbdBlueprint.c` | Net API handler that drives the blueprint recon / trace / parity extractors from `cargo xtask mcp call`. Lives outside `EnfusionMCP/` on purpose: the MCP's `wb_cleanup` deletes that directory. |
-| `Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, `TBD_RegistryScan.c` | Registry item export (`packages/tbd-schema/registry/registry-items.workbench.json`); use the `TBD_ExportJson` / `TBD_ExportPaths` aliases from `MapExport/Core`. |
+| `Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, `TBD_RegistryScan.c` | Registry item export (`contracts_v2/catalogs/registry-items.workbench.json`); use the `TBD_ExportJson` / `TBD_ExportPaths` aliases from `MapExport/Core`. |
 | `Scripts/Game/TBD/Export/*.c` | `TBD_RoadExportComponent` — runtime road-network exporter (game-mode component). |
 | `Prefabs/Systems/TBD_GameMode.et` (+ `.meta`) | Path-override of the framework prefab (same resource GUID `7A5B8572ECC15707`) that adds `TBD_RoadExportComponent`. This addon loads last, so its copy wins; the shipping prefab never carries the component. |
 | `Missions/TBD_Export_Everon.conf` | The export scenario (framework world `{F652B97A6F497348}worlds/TBD_Dev_POC.ent`, game mode `TBD`). |

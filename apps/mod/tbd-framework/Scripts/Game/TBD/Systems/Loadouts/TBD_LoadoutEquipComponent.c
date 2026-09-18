@@ -2,7 +2,7 @@
  * TBD_LoadoutEquipComponent.c - T-068.5 / T-068.5.1 Virtual Arsenal loadout equip test.
  *
  * Reads $profile:TBD_LoadoutTest.json (the web Arsenal "loadout-export.json" download,
- * packages/tbd-schema/schema/loadout-export.schema.json) and equips its four gear slots
+ * contracts_v2/definitions/loadout-export.schema.json) and equips its four gear slots
  * (primary / uniform / vest / helmet) onto a freshly spawned, otherwise-empty US character.
  *
  * T-068.5.1 — VISUAL FIX: the previous pass used SCR_InventoryStorageManagerComponent.TryInsertItem,

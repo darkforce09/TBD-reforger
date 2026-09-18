@@ -1,6 +1,6 @@
 //! T-165.8 — shared prefab classifier + raw-JSONL streaming (port of
 //! `scripts/map-assets/lib/classify-prefab.mjs`). ONE source of truth wrapping
-//! `packages/tbd-schema/rules/prefab-classify.json`: first rule whose
+//! `contracts_v2/rules/prefab-classify.json`: first rule whose
 //! `match.resourceNameContains` substring appears wins (rule order = priority; substring
 //! match case-sensitive); otherwise the file's `fallback` (kind=prop, class=unknown).
 

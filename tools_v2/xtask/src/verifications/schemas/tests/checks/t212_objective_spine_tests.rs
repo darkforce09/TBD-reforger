@@ -1,4 +1,4 @@
-use super::{count_mod_readers, read_json, repo_root, schema_root};
+use super::{count_mod_readers, definition_path, read_json, repo_root};
 use std::path::PathBuf;
 
 /// `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives` — the lane that owns objectives.
@@ -11,7 +11,7 @@ fn objectives_lane() -> PathBuf {
 /// Property names of one `#/$defs/<name>` object, in schema order.
 fn def_properties(name: &str) -> Vec<String> {
     let root = repo_root().expect("repo root");
-    let schema = read_json(&schema_root(&root).join("schema/mission.schema.json")).expect("schema");
+    let schema = read_json(&definition_path(&root, "mission.schema.json")).expect("schema");
     let props = schema
         .pointer(&format!("/$defs/{name}/properties"))
         .and_then(|v| v.as_object())

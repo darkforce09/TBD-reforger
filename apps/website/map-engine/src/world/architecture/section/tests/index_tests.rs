@@ -21,7 +21,7 @@ use crate::world::architecture::section::index::*;
 fn farmhouse() -> BvhSidecar {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh"
+        "/../../../assets_v2/terrains/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.bvh"
     );
     BvhSidecar::parse(&std::fs::read(path).expect("FarmHouse Wood sidecar"))
         .expect("parse FarmHouse Wood")

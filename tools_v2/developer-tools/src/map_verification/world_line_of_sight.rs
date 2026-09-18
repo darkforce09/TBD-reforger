@@ -10,7 +10,7 @@
 //! - `--dem`               also replay the `clearWorld` column: objects ∧ the 2 m DEM (terrain
 //!   sampled every metre along the pair through the editor's `DemManifest` sampler)
 //!
-//! Usage: `--cell <cx_cy> [--assets packages/map-assets/everon] [--census] [--probe a b]
+//! Usage: `--cell <cx_cy> [--assets assets_v2/terrains/everon] [--census] [--probe a b]
 //!         [--bench N] [--pairs <json>] [--glass-blocks] [--foliage-blocks] [--proxy-only]
 //!         [--min-agree F] [--dump-misses <jsonl>] [--dem]`
 

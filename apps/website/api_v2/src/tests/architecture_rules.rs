@@ -8,7 +8,7 @@
 //! **Two scopes are excluded from the walk.**
 //!
 //! * `missions/contract/generated/` — emitted by `cargo xtask ci schema-codegen` from
-//!   `packages/tbd-schema`. Its prose belongs to the generator, so the prose rules would only ever
+//!   `contracts_v2`. Its prose belongs to the generator, so the prose rules would only ever
 //!   report the generator's own habits at a file no one edits.
 //! * this file — it holds every forbidden token as a literal needle, so scanning it would make
 //!   each rule report itself.

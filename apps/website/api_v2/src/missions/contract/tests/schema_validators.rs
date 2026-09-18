@@ -114,7 +114,7 @@ fn mission_document_schema_compiles() {
 #[test]
 fn oversized_mission_document_is_rejected_on_byte_ceiling() {
     let mut doc: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../../../packages/tbd-schema/golden-missions/last-stand-at-montfort.json"
+        "../../../../../../../contracts_v2/fixtures/missions/valid/last-stand-at-montfort.json"
     ))
     .expect("golden");
     // Keep the document structurally valid so a missing size check would pass schema alone.

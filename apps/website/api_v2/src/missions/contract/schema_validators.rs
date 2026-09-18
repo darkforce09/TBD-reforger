@@ -1,7 +1,7 @@
 //! Runtime JSON-Schema validation for the mission domain, on the `jsonschema` crate
 //! (draft 2020-12).
 //!
-//! Schemas are embedded directly from the canonical `packages/tbd-schema/schema/` (no copy step),
+//! Schemas are embedded directly from the canonical `contracts_v2/definitions/` (no copy step),
 //! so the bytes validated here are the bytes the contract declares.
 //!
 //! The result contract is uniform across every entry point: `Ok(empty)` = valid,
@@ -18,17 +18,17 @@ use website_map_engine::data::scenario::wire_safety::{self, CargoPhysCatalog};
 use super::zone_quantisation::scan_authored_zones;
 
 const EDITOR_SCHEMA: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/mission-editor-payload.schema.json");
+    include_str!("../../../../../../contracts_v2/definitions/mission-editor-payload.schema.json");
 /// Shared with [`super::zone_quantisation`], which lifts `#/$defs/zone` out of these same bytes so
 /// the save boundary and the serve boundary cannot disagree about the zone vocabulary.
 pub(super) const MISSION_SCHEMA: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/mission.schema.json");
+    include_str!("../../../../../../contracts_v2/definitions/mission.schema.json");
 const REGISTRY_ITEMS_SCHEMA: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/registry-items.schema.json");
+    include_str!("../../../../../../contracts_v2/definitions/registry-items.schema.json");
 const REGISTRY_COMPAT_SCHEMA: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/registry-compat.schema.json");
+    include_str!("../../../../../../contracts_v2/definitions/registry-compat.schema.json");
 const FACTION_LIBRARY_SCHEMA: &str =
-    include_str!("../../../../../../packages/tbd-schema/schema/faction-library.schema.json");
+    include_str!("../../../../../../contracts_v2/definitions/faction-library.schema.json");
 
 /// Internal schema-compile failure (never returned for merely-invalid input).
 #[derive(Debug, thiserror::Error)]

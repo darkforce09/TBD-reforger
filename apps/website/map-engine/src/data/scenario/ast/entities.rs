@@ -269,7 +269,7 @@ pub struct ModOrbatFaction {
 /// One `radioPlan.nets[]` entry (`mission.schema.json#/$defs/net`) — see [`derive_radio_plan`] for where the values come from and what they do not claim.
 #[derive(Debug, Serialize)]
 pub struct ModNet {
-    /// `^net:[a-z0-9_]+$`. Unique within the document — the mod treats it as the stable channel key and the VOIP bridge keys voice channels on it (`packages/tbd-schema/bridge/bridge-contract.md` §radioPlan → voice net mapping).
+    /// `^net:[a-z0-9_]+$`. Unique within the document — the mod treats it as the stable channel key and the VOIP bridge keys voice channels on it (`contracts_v2/definitions/bridge-messages.md` §radioPlan → voice net mapping).
     pub id: String,
 
     /// Display name. Capped at [`MOD_MAX_LABEL_CHARS`] here so the mod never has to.

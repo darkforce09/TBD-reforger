@@ -1,7 +1,7 @@
 # T-251 — release image for the Axum `api` binary (`website-api`).
 #
 # Build from the **monorepo root** (required: `website-map-engine` path dep +
-# `packages/tbd-schema` compile-time `include_str!` embeds in validate.rs / kit.rs):
+# `contracts_v2` compile-time `include_str!` embeds in validate.rs / kit.rs):
 #
 #   docker build -f apps/website/Dockerfile -t tbd-website-api .
 #   # or:
@@ -32,8 +32,8 @@ RUN printf '%s\n' \
 COPY apps/website/api_v2 ./apps/website/api_v2
 COPY apps/website/map-engine ./apps/website/map-engine
 COPY apps/website/graphics-engine ./apps/website/graphics-engine
-COPY packages/tbd-schema/schema ./packages/tbd-schema/schema
-COPY packages/tbd-schema/registry/kit-aliases.json ./packages/tbd-schema/registry/kit-aliases.json
+COPY contracts_v2/schema ./contracts_v2/schema
+COPY contracts_v2/rules/kit-aliases.json ./contracts_v2/rules/kit-aliases.json
 
 ENV CARGO_TERM_COLOR=never
 RUN cargo build --release -p website-api --bin api \

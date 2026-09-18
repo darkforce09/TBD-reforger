@@ -30,12 +30,17 @@ const FIXTURE_CHUNK: &str = "2_12";
 const N_MIN_BUILDING_GLYPH_LOOKUP: usize = 15;
 
 fn map_assets() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../packages/map-assets")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/terrains")
+}
+
+/// Glyphs are shared by every terrain, so they sit beside the terrain tree rather than inside one.
+fn glyph_assets() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/glyphs")
 }
 
 fn glyph_keys_from_manifest() -> Vec<String> {
-    let raw = std::fs::read_to_string(map_assets().join("glyphs/manifest.json"))
-        .expect("glyphs manifest");
+    let raw =
+        std::fs::read_to_string(glyph_assets().join("manifest.json")).expect("glyphs manifest");
     let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
     let mut keys: Vec<String> = v["glyphs"]
         .as_object()
@@ -216,7 +221,7 @@ fn badge_glyph_indices(buf: &[u8]) -> Vec<u16> {
 }
 
 fn world_glyphs_atlas_keys() -> HashSet<String> {
-    let raw = std::fs::read_to_string(map_assets().join("glyphs/atlas/world-glyphs.json"))
+    let raw = std::fs::read_to_string(glyph_assets().join("atlas/world-glyphs.json"))
         .expect("world-glyphs.json");
     let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
     v["icons"]

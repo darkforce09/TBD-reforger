@@ -3,7 +3,7 @@ use developer_tools::repository_layout::{
     terrain_dir, terrain_manifest_path, terrain_registry_path,
 };
 
-/// The full contract-validation suite (port of `packages/tbd-schema/scripts/validate.mjs`):
+/// The full contract-validation suite (port of `contracts_v2/scripts/validate.mjs`):
 /// golden missions + registries + compat FK walkers + addon/variant provenance + bridge samples +
 /// terrain manifests/anchors + ENF-4 Enfusion DTO fixtures + the T-090.2 map-object goldens.
 /// Cross-file `$ref`s resolve through a `referencing::Registry` keyed by each schema's `$id`
@@ -11,8 +11,11 @@ use developer_tools::repository_layout::{
 pub fn validate_all() -> Result<u8> {
     let root = repo_root()?;
     let sroot = schema_root(&root);
-    let schema = |name: &str| read_json(&sroot.join("schema").join(name));
-    let reg_file = |name: &str| sroot.join("registry").join(name);
+    let schema = |name: &str| read_json(&definition_path(&root, name));
+    let reg_file = |name: &str| registry_fixtures_dir(&root).join(name);
+    // Live Workbench exports sit beside the fixtures, not among them: the arsenal the platform
+    // actually ingests must never be satisfiable by a sample file.
+    let catalog_file = |name: &str| contract_catalogs_dir(&root).join(name);
 
     // Register every map-object schema (plus mission for the ENF-4 pointers) by $id.
     let mut registered: Vec<(String, Value)> = Vec::new();
@@ -86,7 +89,7 @@ pub fn validate_all() -> Result<u8> {
     let v_compat = compile(&schema("registry-compat.schema.json")?)?;
     let v_loadout = compile(&schema("loadout-export.schema.json")?)?;
     let v_bridge = compile(&read_json(
-        &sroot.join("bridge/bridge-messages.schema.json"),
+        &sroot.join("definitions/bridge-messages.schema.json"),
     )?)?;
     let v_tmanifest = compile(&schema("terrain-manifest.schema.json")?)?;
     let v_anchors = compile(&schema("terrain-anchors.schema.json")?)?;
@@ -125,6 +128,7 @@ pub fn validate_all() -> Result<u8> {
 
     registry_validation::validate(
         &reg_file,
+        &catalog_file,
         &check,
         &failures,
         &v_registry,
@@ -159,7 +163,7 @@ pub fn validate_all() -> Result<u8> {
     );
 
     println!("Bridge message samples:");
-    let samples = sroot.join("bridge/samples");
+    let samples = sroot.join("fixtures/bridge_samples");
     for f in sorted_json_files(&samples)? {
         check(&f, &v_bridge, &read_json(&samples.join(&f))?);
     }
@@ -175,7 +179,7 @@ pub fn validate_all() -> Result<u8> {
     check(
         "locations-everon-sample.json",
         &v_locations,
-        &read_json(&sroot.join("golden/locations-everon-sample.json"))?,
+        &read_json(&sroot.join("fixtures/map/locations-everon-sample.json"))?,
     );
     let everon_loc = terrain_dir(&root, "everon").join("locations.json");
     if everon_loc.exists() {
@@ -214,7 +218,7 @@ pub fn validate_all() -> Result<u8> {
         })
         .map(|(id, _)| id.clone())
         .unwrap_or_default();
-    let enf = sroot.join("enfusion");
+    let enf = sroot.join("fixtures/enfusion_samples");
     for f in sorted_json_files(&enf)? {
         if !f.ends_with(".sample.json") {
             continue;
@@ -234,7 +238,7 @@ pub fn validate_all() -> Result<u8> {
         }
     }
 
-    let mo = sroot.join("golden/map-objects");
+    let mo = sroot.join("fixtures/map");
     println!("Map object prefabs (S9 — one row per buildingClass):");
     for (i, row) in read_json(&mo.join("map-object-prefabs-sample.json"))?
         .as_array()
@@ -412,7 +416,7 @@ pub fn validate_all() -> Result<u8> {
         }
         // `empty-warning-fields.json` is the deliberate all-keys-authored negative-control golden.
         // Still requires `entities` authored (valid mission key) even though it no longer warns.
-        let neg = read_json(&sroot.join("golden-missions/empty-warning-fields.json"))?;
+        let neg = read_json(&sroot.join("fixtures/missions/valid/empty-warning-fields.json"))?;
         for key in [
             "environment",
             "settings",
@@ -438,7 +442,7 @@ pub fn validate_all() -> Result<u8> {
             };
             if !present {
                 bad.push(format!(
-                    "golden-missions/empty-warning-fields.json no longer authors `{key}` — \
+                    "fixtures/missions/valid/empty-warning-fields.json no longer authors `{key}` — \
                      the runtime negative-control fixture drifted"
                 ));
             }

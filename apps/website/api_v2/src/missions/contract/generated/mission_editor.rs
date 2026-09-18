@@ -1,5 +1,5 @@
 // Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.
-// Source: packages/tbd-schema/schema/mission-editor-payload.schema.json — regenerate with: cargo xtask ci schema-codegen
+// Source: contracts_v2/definitions/mission-editor-payload.schema.json — regenerate with: cargo xtask ci schema-codegen
 
 /// Error types.
 pub mod error {

@@ -9,7 +9,7 @@ use std::fs;
 
 fn golden(name: &str) -> Value {
     let path = format!(
-        "{}/../../../packages/tbd-schema/golden/map-objects/{name}",
+        "{}/../../../contracts_v2/fixtures/map/{name}",
         env!("CARGO_MANIFEST_DIR")
     );
     serde_json::from_slice(&fs::read(&path).expect("read golden")).expect("parse golden")
@@ -56,7 +56,7 @@ const EVERON_VERTEX_FLOOR: usize = 2_000;
 
 fn everon_json_regions() -> Vec<LandCoverRegion> {
     let p = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../packages/map-assets/everon/objects/forest-regions.json.gz");
+        .join("../../../assets_v2/terrains/everon/objects/forest-regions.json.gz");
     let raw = fs::read(&p).unwrap_or_else(|e| panic!("{p:?}: {e}"));
     parse_regions_payload(&bytes_to_json(&raw).expect("regions decode"))
 }

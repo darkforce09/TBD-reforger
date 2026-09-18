@@ -115,7 +115,7 @@ enum Cmd {
         /// Apply the rebuild instead of only reporting drift.
         #[arg(long)]
         write: bool,
-        /// Write under this base instead of packages/map-assets/<terrain> (relative = repo root).
+        /// Write under this base instead of assets_v2/terrains/<terrain> (relative = repo root).
         #[arg(long)]
         out: Option<PathBuf>,
     },

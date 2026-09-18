@@ -37,7 +37,7 @@ which has to be told WHICH mission to serve.
   bash scripts/mod/run-playtest-server.sh --help    for the rest
   docs/mod/STAGING-SERVER.md                        for what the second client needs
 
-Offline? Add --mission-file=packages/tbd-schema/golden-missions/bridgehead-at-levie.json
+Offline? Add --mission-file=contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json
 to serve a golden from disk with no API running.\n";
 
 /// Entry for `xtask mod dev-server [args…]`.

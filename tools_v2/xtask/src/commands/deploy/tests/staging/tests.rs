@@ -75,6 +75,6 @@ fn paths_inline_the_three_fields_paths_sh_supplied() {
         p.mono_root.join(".ai/tickets/ROOT").is_file()
             || p.mono_root.join(".ai/tickets/registry.json").is_file()
     );
-    assert!(p.schema.ends_with("packages/tbd-schema"));
+    assert!(p.schema.ends_with("contracts_v2"));
     assert!(p.deploy_env.ends_with("scripts/deploy/deploy.env"));
 }

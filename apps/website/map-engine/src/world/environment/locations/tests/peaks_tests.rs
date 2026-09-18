@@ -268,7 +268,7 @@ fn everon_peaks_max_above_350() {
     use crate::world::terrain::dem::png::decode_png_to_meters;
     use std::path::PathBuf;
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../packages/map-assets/everon/dem/everon-dem-16bit.png");
+        .join("../../../assets_v2/terrains/everon/dem/everon-dem-16bit.png");
     if !root.exists() {
         return;
     }

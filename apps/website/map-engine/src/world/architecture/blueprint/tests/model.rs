@@ -12,7 +12,7 @@ use crate::world::architecture::blueprint::model::*;
 
 fn farmhouse() -> BuildingBlueprint {
     let json_str = include_str!(
-        "../../../../../../../../packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json"
+        "../../../../../../../../assets_v2/terrains/everon/prefabs/buildings/FarmHouse_E_1L01.json"
     );
     serde_json::from_str(json_str).expect("Valid blueprint JSON")
 }

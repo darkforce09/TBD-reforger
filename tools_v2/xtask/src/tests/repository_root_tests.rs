@@ -9,7 +9,7 @@ fn nested_tooling_directories_resolve_repository_and_fixtures() {
         let resolved = find_repo_root().expect("repository root");
         assert_eq!(resolved, root);
         for fixture in [
-            "packages/tbd-schema/schema/mission.schema.json",
+            "contracts_v2/definitions/mission.schema.json",
             "tools_v2/developer-tools/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
             "tools_v2/xtask/src/commands/platform/wave_execution/schema.rs",
             "scripts/mod/package.json",

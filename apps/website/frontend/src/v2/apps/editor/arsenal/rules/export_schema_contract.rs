@@ -8,7 +8,7 @@ use super::*;
 /// The shipped export schema, embedded so browser validation uses the same bytes.
 pub const LOADOUT_EXPORT_SCHEMA_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../packages/tbd-schema/schema/loadout-export.schema.json"
+    "/../../../contracts_v2/definitions/loadout-export.schema.json"
 ));
 
 /// Keywords this checker evaluates or treats as annotations.

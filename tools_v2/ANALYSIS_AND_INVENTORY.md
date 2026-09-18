@@ -86,7 +86,7 @@ These true verification checks belong in `tools_v2/xtask/src/verifications/`:
 ## 3. Analysis of Massive Files (>500 LOC)
 
 ### 3.1 `schema_gates.rs` (4,764 LOC, 203 KB)
-A monolithic port of `packages/tbd-schema/scripts/*.mjs`.
+A monolithic port of `contracts_v2/scripts/*.mjs`.
 
 **Decomposition Plan (<500 LOC per module under `tools_v2/xtask/src/verifications/schemas/`):**
 1. `contract_citations.rs` (~390 LOC): RFC-6901 JSON pointer validation.

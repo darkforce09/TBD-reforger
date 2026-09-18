@@ -120,7 +120,7 @@ mod render;
 pub struct Paths {
     /// `MONO_ROOT` — repo root. rsync source, and the base for every other path.
     pub mono_root: PathBuf,
-    /// `SCHEMA` — `packages/tbd-schema`, home of the golden missions the V1 step validates.
+    /// `SCHEMA` — `contracts_v2`, home of the golden missions the V1 step validates.
     pub schema: PathBuf,
     /// `DEPLOY_ENV` — `scripts/deploy/deploy.env`. Gitignored, rsync-excluded, dev-PC only.
     pub deploy_env: PathBuf,

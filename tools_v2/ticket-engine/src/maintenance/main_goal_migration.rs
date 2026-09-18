@@ -107,7 +107,7 @@ const FILLS: &[Fill] = &[
             "Missing z is a warn, never a fabricated value; no auto-fix writes anywhere.",
         ],
         current_state: &[
-            "Blocked on the T-090.3 export and the T-091 DEM being present; the object catalog lives under packages/map-assets/everon/objects.",
+            "Blocked on the T-090.3 export and the T-091 DEM being present; the object catalog lives under assets_v2/terrains/everon/objects.",
             "16-bit DEM quantization on slopes yields false positives; tilted and large props yield false negatives by design — deferred to T-090.6.",
         ],
         approach: &[
@@ -146,7 +146,7 @@ const FILLS: &[Fill] = &[
             "Mission Creator will expose AI inside the Eden-style editor; the AI must read the 1M+ object world base layer with Workbench-selection certainty.",
         ],
         requirement: &[
-            "ResolvedWorldObject is the exact AI tool shape, exactly as packages/tbd-schema/schema/map-object-resolved.schema.json defines it.",
+            "ResolvedWorldObject is the exact AI tool shape, exactly as contracts_v2/definitions/map-object-resolved.schema.json defines it.",
             "No parallel field names invented in frontend AI code; the schema is the single contract.",
         ],
         current_state: &[

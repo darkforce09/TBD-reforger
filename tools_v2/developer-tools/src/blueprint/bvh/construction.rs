@@ -5,7 +5,7 @@
 //! replays the Workbench parity oracle over either the COLL trimesh of a `.xob`
 //! (`--mesh`) or an emitted sidecar (`--sidecar`) — the two lanes must print identical
 //! numbers. `bvh-emit` writes the deterministic sidecar next to the blueprint JSON in
-//! `packages/map-assets/everon/prefabs/buildings/`.
+//! `assets_v2/terrains/everon/prefabs/buildings/`.
 //!
 //! Usage: `map bvh-parity (--mesh <file.xob> | --sidecar <file.bvh>) --pairs <parity.json>
 //!         [--record <i>] [--t-eps <meters>] [--dump-misses <path.jsonl>]

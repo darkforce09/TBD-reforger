@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: fetch map-assets (Everon — DEM + satellite + world objects for the fullmap/hillshade smokes)
-        run: git lfs pull --include "packages/map-assets/everon/**"
+        run: git lfs pull --include "assets_v2/terrains/everon/**"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # matches root rust-toolchain.toml / gate-env.json

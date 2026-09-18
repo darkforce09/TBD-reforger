@@ -21,7 +21,12 @@ const EVERON_PREFABS: usize = 1623;
 const FIXTURE_CHUNK: &str = "2_12";
 
 fn map_assets() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../packages/map-assets")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/terrains")
+}
+
+/// Glyphs are shared by every terrain, so they sit beside the terrain tree rather than inside one.
+fn glyph_assets() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/glyphs")
 }
 
 fn everon() -> PathBuf {
@@ -100,8 +105,8 @@ fn everon_archive_bytes() -> Vec<u8> {
 }
 
 fn glyph_keys() -> Vec<String> {
-    let raw = std::fs::read_to_string(map_assets().join("glyphs/manifest.json"))
-        .expect("glyphs manifest");
+    let raw =
+        std::fs::read_to_string(glyph_assets().join("manifest.json")).expect("glyphs manifest");
     let v: Value = serde_json::from_str(&raw).unwrap();
     let mut keys: Vec<String> = v["glyphs"]
         .as_object()

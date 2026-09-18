@@ -17,7 +17,7 @@ pub fn validate_file(target: &str) -> Result<u8> {
     };
 
     let root = repo_root()?;
-    let schema = read_json(&schema_root(&root).join("schema/mission.schema.json"))?;
+    let schema = read_json(&definition_path(&root, "mission.schema.json"))?;
     // T-450 — whole-document byte ceiling (mirrors TBD_MissionLoader.MISSION_FILE_MAX_BYTES).
     // Prefer the schema keyword so a drifted constant here fails closed rather than silently
     // accepting an oversized file that the mod would refuse.

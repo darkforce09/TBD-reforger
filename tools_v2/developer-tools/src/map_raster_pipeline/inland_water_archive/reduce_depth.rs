@@ -397,7 +397,7 @@ pub fn write_bathymetry(
 }
 
 /// Resolve `--terrain`: a directory path when it names one, else a terrain id under
-/// `packages/map-assets`.
+/// `assets_v2/terrains`.
 #[must_use]
 pub fn terrain_dir(terrain: &str) -> PathBuf {
     let as_path = PathBuf::from(terrain);

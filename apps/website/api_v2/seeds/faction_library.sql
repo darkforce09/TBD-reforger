@@ -9,7 +9,7 @@
 --
 -- Companion JSON (for humans / schema checks; SQL embeds the same bytes):
 --   seeds/faction_library.blufor.json
---   packages/tbd-schema/registry/faction-library.sample.json  (OPFOR golden)
+--   contracts_v2/fixtures/registry/faction-library.sample.json  (OPFOR golden)
 --
 -- Idempotent on (owner_id, name). Does NOT require the users row to exist
 -- first (user_factions.owner_id has no FK); rows become visible once

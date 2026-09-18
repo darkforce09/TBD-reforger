@@ -56,7 +56,7 @@ topo-grid art painted at 25 %), `HeroDim` (`HERO_DIM`, real alpha), `HeroFade` (
 tinted `HERO_FADE`, bottom 110 px), then the title / author / version rows sitting on the solid part
 of the fade (`m_iHeroGround = HERO_FADE`). Its top corners are rounded by inverse-disc masks (see
 `Common/README.md`, "A photo under round corners"). No rule under the hero: the first card starts
-16 px below it. Everon band source: `packages/map-assets/everon/tiles/satellite/full.webp`,
+16 px below it. Everon band source: `assets_v2/terrains/everon/tiles/satellite/full.webp`,
 `crop=4096:560:0:1600` → `1024x140` (move the crop by re-running the ffmpeg line in
 `Common/README.md`).
 

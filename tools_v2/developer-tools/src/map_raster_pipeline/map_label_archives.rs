@@ -123,7 +123,7 @@ pub fn write_map_labels_rkyv(path: &Path, archive: &MapLabelsArchive) -> Result<
 }
 
 /// Resolve the `--terrain` value: a directory path when it names one, else a terrain id under
-/// `packages/map-assets`.
+/// `assets_v2/terrains`.
 #[must_use]
 pub fn terrain_dir(terrain: &str) -> PathBuf {
     let as_path = PathBuf::from(terrain);

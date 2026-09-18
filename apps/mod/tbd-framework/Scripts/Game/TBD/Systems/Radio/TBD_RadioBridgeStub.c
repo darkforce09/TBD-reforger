@@ -5,7 +5,7 @@
 //! This file used to open "Every method below is a deliberate no-op". Most of them still are, and
 //! that is now a DESIGN POSITION rather than a placeholder:
 //!
-//!   * `packages/tbd-schema/bridge/bridge-contract.md` describes an external TBD Voice client
+//!   * `contracts_v2/definitions/bridge-messages.md` describes an external TBD Voice client
 //!     reached through a partner bridge mod. `TBD_MOD_DESIGN.md` §2 says `tbd-framework` takes NO
 //!     workshop dependencies, and §6 says radio must not follow CRF's route precisely because CRF
 //!     depends on the external CVON mod. There is no partner bridge in this repo and TBD must not

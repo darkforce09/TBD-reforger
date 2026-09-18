@@ -78,10 +78,10 @@ pub(super) fn instance_kinds_lockstep_failures(enums: &Value) -> Vec<String> {
 pub fn type_inventory() -> Result<u8> {
     let root = repo_root()?;
     let sroot = schema_root(&root);
-    let schema = read_json(&sroot.join("schema/map-object-type-inventory.schema.json"))?;
+    let schema = read_json(&sroot.join("definitions/map-object-type-inventory.schema.json"))?;
     let validator =
         jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
-    let enums = read_json(&sroot.join("schema/map-object-enums.schema.json"))?;
+    let enums = read_json(&sroot.join("definitions/map-object-enums.schema.json"))?;
 
     let mut failures: Vec<String> = Vec::new();
 
@@ -254,7 +254,7 @@ pub fn type_inventory() -> Result<u8> {
         }
     }
 
-    let golden = sroot.join("golden/map-objects/type-inventory-pending-everon.json");
+    let golden = sroot.join("fixtures/map/type-inventory-pending-everon.json");
     if golden.exists() {
         let inv = read_json(&golden)?;
         check(

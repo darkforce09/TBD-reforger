@@ -8,7 +8,7 @@ use website_map_engine::world::architecture::section::cutter::building_drawing;
 fn farmhouse() -> BuildingBlueprint {
     serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/map-assets/everon/prefabs/buildings/FarmHouse_E_1L01.json"
+        "/../../../assets_v2/terrains/everon/prefabs/buildings/FarmHouse_E_1L01.json"
     )))
     .expect("golden parses")
 }

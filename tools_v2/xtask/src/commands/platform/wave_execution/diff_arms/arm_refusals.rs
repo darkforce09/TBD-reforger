@@ -182,9 +182,9 @@ pub fn arm_push_guard(ctx: &Ctx) -> Vec<ArmResult> {
     let mut out = Vec::new();
 
     // CASE 1 — ordinary bytes under a tree the old guard matched by PATH. Must ALLOW (T-599).
-    let _ = std::fs::create_dir_all(repo.join("packages/map-assets/everon/objects"));
+    let _ = std::fs::create_dir_all(repo.join("assets_v2/terrains/everon/objects"));
     let _ = std::fs::write(
-        repo.join("packages/map-assets/everon/objects/type-inventory.json"),
+        repo.join("assets_v2/terrains/everon/objects/type-inventory.json"),
         "{}\n",
     );
     g(&["add", "-A"]);

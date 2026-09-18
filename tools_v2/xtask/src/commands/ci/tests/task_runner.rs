@@ -235,7 +235,7 @@ fn a_failing_leaf_fails_the_composite() {
 fn doc_layout_predicate_reproduces_finds_globs() {
     // `-path '*/docs/*.md'` — `*` crosses `/`, so depth is irrelevant on either side.
     assert!(is_forbidden_doc("apps/website/docs/spec.md"));
-    assert!(is_forbidden_doc("packages/tbd-schema/docs/a/b/c.md"));
+    assert!(is_forbidden_doc("contracts_v2/docs/a/b/c.md"));
     assert!(is_forbidden_doc("apps/mod/x/docs/y.md"));
     // `! -path '*/node_modules/*'`
     assert!(!is_forbidden_doc("apps/x/node_modules/p/docs/readme.md"));

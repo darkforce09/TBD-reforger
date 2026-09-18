@@ -168,7 +168,7 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
 /// its raster and re-reads it, asserting all 40,960,000 samples are identical and metres agree
 /// to within the `f32` rounding of the header's scale/offset.
 ///
-/// NOT `#[ignore]`, as of T-946. It was, because `packages/map-assets/**/*.png` is git-LFS and
+/// NOT `#[ignore]`, as of T-946. It was, because `assets_v2/terrains/**/*.png` is git-LFS and
 /// in a slice worktree the file is a 133-byte pointer — but a blanket ignore also hid it from
 /// the WAVE gate, which runs on main where the payload is real. The wave 238 verifier found
 /// that `test xtask+tbd-tools PASS` had covered the emitter's unit tests and not the one test
@@ -190,7 +190,7 @@ fn everon_elevation_dem_matches_the_shipped_png() {
         Ok(m) if m.len() <= LFS_POINTER_MAX => {
             println!(
                 "skip-lfs: {} is {} bytes — a git-LFS pointer, not the DEM. \
-                 Hydrate with `git lfs pull --include packages/map-assets/everon/dem/`",
+                 Hydrate with `git lfs pull --include assets_v2/terrains/everon/dem/`",
                 png.display(),
                 m.len()
             );

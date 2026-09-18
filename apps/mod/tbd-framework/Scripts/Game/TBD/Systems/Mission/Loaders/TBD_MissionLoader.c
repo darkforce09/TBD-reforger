@@ -31,7 +31,7 @@ class TBD_MissionCircleStruct
 //! ══ MEASURED LANDMINE — a null check is NOT a presence test ═════════════════════════════════
 //! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
 //! absent. Measured 2026-07-25 on a live world boot against
-//! `packages/tbd-schema/golden-missions/bridgehead-at-levie.json`, whose zone `z4` authors a
+//! `contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json`, whose zone `z4` authors a
 //! polygon and NO circle: `shape.circle` came back non-null with `x=0 z=0 r=0`, and zone `z5`,
 //! which authors no `rules` key at all, came back with a non-null `rules` object full of
 //! sentinels. So `if (shape.circle)` is ALWAYS TRUE and tells you nothing.

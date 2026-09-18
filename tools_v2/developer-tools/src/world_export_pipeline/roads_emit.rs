@@ -132,7 +132,7 @@ pub fn build_road_network_archive(terrain_dir: &Path) -> Result<RoadNetworkArchi
 }
 
 /// Resolve a `--terrain` value the way `build_roads_from_topo` resolves its `--out`: an explicit
-/// base wins, otherwise `packages/map-assets/<terrain>`.
+/// base wins, otherwise `assets_v2/terrains/<terrain>`.
 #[must_use]
 pub fn resolve_terrain_dir(terrain: &str, out_base: Option<&Path>) -> PathBuf {
     out_base.map_or_else(|| terrain_dir(&repo_root(), terrain), Path::to_path_buf)

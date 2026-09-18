@@ -399,8 +399,8 @@ fn seed() -> Result<u8> {
 /// the echo is reproduced exactly, tabs included.
 fn registry_import() -> Result<u8> {
     let web = web()?;
-    const ITEMS: &str = "../../../packages/tbd-schema/registry/registry-items.workbench.json";
-    const COMPAT: &str = "../../../packages/tbd-schema/registry/registry-compat.workbench.json";
+    const ITEMS: &str = "../../../contracts_v2/catalogs/registry-items.workbench.json";
+    const COMPAT: &str = "../../../contracts_v2/catalogs/registry-compat.workbench.json";
     echo(&format!(
         "cd {} && cargo run --bin import-registry -- \\\n\t--items {ITEMS} \\\n\t--compat {COMPAT}",
         web.rel

@@ -11,7 +11,7 @@
 //! appears: the spawner warn-skips a leaf the palette had offered, silently. So for every
 //! Objects-eligible workbench kind this derives the alias the frontend would, and requires a
 //! `prop:`/`comp:` row whose `guid` is exactly the workbench `resource_name`. Eligibility comes
-//! from `packages/tbd-schema/registry/registry-items.workbench.json` (`kind` in {crate, other},
+//! from `contracts_v2/catalogs/registry-items.workbench.json` (`kind` in {crate, other},
 //! non-abstract) — the export the API imports, so no live Workbench needed.
 //!
 //! ── THE DERIVATION IS A MIRROR, AND MIRRORS DRIFT ────────────────────────────────────────────
@@ -98,7 +98,7 @@ const KNOWN_CHECKPOINT_GUID: &str = "{E1D01D77D7F47EF3}PrefabsEditable/Auto/Comp
 /// Enfusion ResourceName shape: `{16 uppercase hex}` then a prefab path. Module docs explain why
 /// the anchors are `\A`/`\z` and not the script's `^`/`$`.
 const GUID_RE: &str = r"\A\{[0-9A-F]{16}\}[A-Za-z0-9/_.\-]+\z";
-/// `#/$defs/alias` shape from `packages/tbd-schema`. All seven namespaces are listed even though
+/// `#/$defs/alias` shape from `contracts_v2`. All seven namespaces are listed even though
 /// only `prop:`/`comp:` can be produced here — the script validated against the schema's full
 /// alternation, and narrowing it would be a behaviour change smuggled into a port.
 const ALIAS_RE: &str = r"\A(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+\z";

@@ -49,7 +49,7 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     );
     write(
         &root,
-        "packages/tbd-schema/w.ts",
+        "apps/website/frontend/w.ts",
         concat!(" * @contract", " good.schema.json#/$defs/item\n"),
     );
 
@@ -96,16 +96,11 @@ fn missing_scan_root_is_a_scope_failure_not_a_pass() {
 
     let scan = scan_citations(&root, &schemas).expect("scan");
     assert!(scan.problems.is_empty(), "the one citation resolves");
-    assert_eq!(scan.scope_errors.len(), 2, "tools_v2/ and packages/ absent");
+    assert_eq!(scan.scope_errors.len(), 1, "tools_v2/ absent");
     assert!(
         scan.scope_errors
             .iter()
             .any(|e| e.starts_with("scan root tools_v2/"))
-    );
-    assert!(
-        scan.scope_errors
-            .iter()
-            .any(|e| e.starts_with("scan root packages/"))
     );
     let _ = fs::remove_dir_all(&root);
 }

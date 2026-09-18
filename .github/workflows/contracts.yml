@@ -7,13 +7,13 @@ on:
   push:
     paths:
       - "apps/website/**"
-      - "packages/tbd-schema/**"
+      - "contracts_v2/**"
       - "apps/mod/**"
       - ".github/workflows/contracts.yml"
   pull_request:
     paths:
       - "apps/website/**"
-      - "packages/tbd-schema/**"
+      - "contracts_v2/**"
       - "apps/mod/**"
       - ".github/workflows/contracts.yml"
 

@@ -102,7 +102,7 @@ it there rather than re-deriving the query:
 ## 5. The codegen contract
 
 `src/missions/contract/generated/` is `typify` output produced from
-`packages/tbd-schema/schema/*.json` by `cargo xtask ci schema-codegen`. Never hand-edit it: change
+`contracts_v2/definitions/*.json` by `cargo xtask ci schema-codegen`. Never hand-edit it: change
 the schema and regenerate. `cargo xtask ci verify-codegen-fresh` diffs the directory to prove the
 committed files match their schemas, and the directory is exempt from the prose rules in
 `src/tests/architecture_rules.rs` because its wording belongs to the generator.

@@ -111,7 +111,7 @@ pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
         "seamRepair": "T-090.1.2.2",
         "seamRepairStrategy": format!("A-apron-bridge-{HW}px"),
         "seamRepairParams": { "halfWidthPx": HW, "anchorOffsetPx": ANCHOR, "interiorSeamsOnly": true },
-        "pngPath": "packages/map-assets/everon/staging/sap/everon-sap-ortho.png",
+        "pngPath": "assets_v2/scratch/everon/sap/everon-sap-ortho.png",
         "buildSeconds": elapsed,
         "generatedAt": generated_at,
     });

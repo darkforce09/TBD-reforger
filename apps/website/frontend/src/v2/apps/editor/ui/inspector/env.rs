@@ -24,7 +24,7 @@
 /// **Why they were removed rather than carried through.** There is no destination. The `missions`
 /// row has no `view_distance` / `thermals` column, so the  mirror cannot take them; the mod
 /// document struct and the schema would both have to grow a field; and neither word appears anywhere
-/// in `apps/mod` or `packages/tbd-schema` — the framework has no view-distance or thermals concept
+/// in `apps/mod` or `contracts_v2` — the framework has no view-distance or thermals concept
 /// to receive them, so even a widened schema would land the values in a document nothing reads. That
 /// is a mod feature (`executor: workbench`), not an editor fix. Meanwhile the design corpus
 /// (`engineering_plan.md`, `mission_creator_design.md`) has always described both as *auto-derived*

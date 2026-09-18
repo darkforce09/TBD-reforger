@@ -12,7 +12,7 @@ fn encode(cell_m: u16, cols: u16, rows: u16, channels: &[&[u16]]) -> Vec<u8> {
 
 fn everon_density_tiles() -> Vec<PathBuf> {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../packages/map-assets/everon/objects/density");
+        .join("../../../assets_v2/terrains/everon/objects/density");
     let rd = std::fs::read_dir(&dir).unwrap_or_else(|e| {
         panic!(
             "T-935.5: {} could not be read ({e}). The Class-R acceptance is all 625 committed \

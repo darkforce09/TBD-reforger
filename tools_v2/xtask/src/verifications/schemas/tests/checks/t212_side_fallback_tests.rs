@@ -1,4 +1,6 @@
-use super::{read_json, repo_root, schema_root, strip_enfusion_comments_and_strings};
+use developer_tools::repository_layout::mission_fixtures_valid_dir;
+
+use super::{read_json, repo_root, strip_enfusion_comments_and_strings};
 use std::fs;
 
 fn body(source: &str, signature: &str) -> String {
@@ -28,7 +30,7 @@ fn invalid_side_is_neutral_but_absent_and_valid_sides_keep_their_roles() {
     let registry = strip_enfusion_comments_and_strings(
         &fs::read_to_string(lane.join("TBD_ObjectiveRegistry.c")).expect("registry source"),
     );
-    let golden = read_json(&schema_root(&root).join("golden-missions/schema-1_3-wire-fields.json"))
+    let golden = read_json(&mission_fixtures_valid_dir(&root).join("schema-1_3-wire-fields.json"))
         .expect("staged golden");
     let row = &golden["objectives"][0];
     let mut program = String::from(

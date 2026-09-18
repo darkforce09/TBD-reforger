@@ -3,7 +3,7 @@
 //! Serves a built SPA with the SAME cross-origin-isolation headers the app expects
 //! (`crossOriginIsolated === true` for the wasm/SAB path). Any path without a file extension
 //! falls back to index.html (client routing). Optional same-origin `/api/` proxy (the Trunk
-//! `[[proxy]]` equivalent) and `/map-assets/` passthrough to the real packages/map-assets.
+//! `[[proxy]]` equivalent) and `/map-assets/` passthrough to the real assets_v2/terrains.
 
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;

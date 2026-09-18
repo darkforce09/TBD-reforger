@@ -161,9 +161,9 @@ fn g2_tofu_cell_is_painted_box() {
 #[test]
 fn g3_committed_label_data_no_tofu() {
     const LOCATIONS: &str =
-        include_str!("../../../../../../../packages/map-assets/everon/locations.json");
+        include_str!("../../../../../../../assets_v2/terrains/everon/locations.json");
     const ROAD_NAMES: &str =
-        include_str!("../../../../../../../packages/map-assets/everon/road-names.json");
+        include_str!("../../../../../../../assets_v2/terrains/everon/road-names.json");
 
     fn collect_names(v: &serde_json::Value, out: &mut Vec<String>) {
         match v {

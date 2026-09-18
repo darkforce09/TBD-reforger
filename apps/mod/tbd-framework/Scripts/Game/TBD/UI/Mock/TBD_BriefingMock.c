@@ -4,7 +4,7 @@
 //! parameters, markers, friendly/enemy assets, friendly/enemy uniforms). Where a mockup names a
 //! thing vanilla does not ship (BMP-2, T-72B, GAZ-66; the CDF / VDV uniforms) the row keeps the
 //! mockup's words and the 3D preview uses a vanilla prefab that exists on record
-//! (`packages/tbd-schema/registry/registry-items.workbench.json`, `Data/registry.json`), so the
+//! (`contracts_v2/catalogs/registry-items.workbench.json`, `Data/registry.json`), so the
 //! previews are real renders, not placeholders. Consumed only through `TBD_BriefingCatalog.Get()`.
 class TBD_BriefingMock
 {

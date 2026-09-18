@@ -1,7 +1,7 @@
 //! Phase B (building blueprints) — `cargo xtask map ingest-blueprints`.
 //!
 //! Copies Workbench-exported building blueprints from the profile export dir into
-//! `packages/map-assets/everon/prefabs/buildings/`, validating each file by a serde round-trip
+//! `assets_v2/terrains/everon/prefabs/buildings/`, validating each file by a serde round-trip
 //! through `map_engine_core::building_blueprint::BuildingBlueprint` (the exact contract the
 //! `/debug/building-viewer` bench and the LOS raycaster consume — a file that ingests is a file
 //! the viewer can render).

@@ -100,13 +100,13 @@ pub(super) fn cmd_push(root: &Path) -> u8 {
     let lfs = match &diff {
         Ok(o) => String::from_utf8_lossy(&o.stdout)
             .lines()
-            .filter(|l| l.starts_with("packages/map-assets/"))
+            .filter(|l| l.starts_with("assets_v2/terrains/"))
             .count(),
         Err(_) => 0,
     };
     if lfs != 0 {
         eprintln!(
-            "  REFUSING to bypass the LFS hook: {lfs} file(s) under packages/map-assets/ are in these"
+            "  REFUSING to bypass the LFS hook: {lfs} file(s) under assets_v2/terrains/ are in these"
         );
         eprintln!(
             "  commits and need real LFS objects uploaded. Install git-lfs, then: git push origin main"

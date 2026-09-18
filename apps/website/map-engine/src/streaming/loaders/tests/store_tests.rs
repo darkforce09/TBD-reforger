@@ -155,7 +155,7 @@ fn truncated_payloads_error_rather_than_reaching_the_wrong_parser() {
 #[test]
 fn committed_everon_roads_json_still_loads_through_the_sniff() {
     let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../packages/map-assets/everon/objects/roads.json.gz");
+        .join("../../../assets_v2/terrains/everon/objects/roads.json.gz");
     let bytes = std::fs::read(&p).unwrap_or_else(|e| panic!("{p:?}: {e}"));
     assert_eq!(&bytes[..2], &[0x1f, 0x8b], "committed roads must be gzip");
     let mut sniffed = WorldStore::new();
@@ -168,7 +168,7 @@ fn committed_everon_roads_json_still_loads_through_the_sniff() {
 #[test]
 fn full_island_census_matches_pinned_inventory() {
     let everon = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../packages/map-assets/everon");
+        .join("../../../assets_v2/terrains/everon");
     let objects = everon.join("objects");
     let read = |p: &std::path::Path| std::fs::read(p).unwrap_or_else(|e| panic!("{p:?}: {e}"));
 

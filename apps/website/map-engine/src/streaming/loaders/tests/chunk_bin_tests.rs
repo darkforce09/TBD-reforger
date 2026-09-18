@@ -21,7 +21,7 @@ const EVERON_CHUNKS: usize = 315;
 const EVERON_INSTANCE_FLOOR: usize = 1_200_000;
 
 fn everon() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../packages/map-assets/everon")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets_v2/terrains/everon")
 }
 
 fn encode_by_offset(cx: i16, cy: i16, c: &WorldChunk) -> Vec<u8> {

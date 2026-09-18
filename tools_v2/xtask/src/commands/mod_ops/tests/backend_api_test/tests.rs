@@ -6,7 +6,7 @@ fn paths_mirror_paths_sh() {
     let p = Paths::from_root(root);
     assert_eq!(p.web, PathBuf::from("/repo/apps/website/api_v2"));
     assert_eq!(p.mod_root, PathBuf::from("/repo/apps/mod"));
-    assert_eq!(p.schema, PathBuf::from("/repo/packages/tbd-schema"));
+    assert_eq!(p.schema, PathBuf::from("/repo/contracts_v2"));
 }
 
 #[test]

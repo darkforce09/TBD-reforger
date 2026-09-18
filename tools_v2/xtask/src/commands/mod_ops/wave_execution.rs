@@ -18,7 +18,7 @@
 //!   uses `parent_slice` — sub-slice path mismatch preserved.
 //! - Non-git dir under BASE that exists → `committed` (empty porcelain + `2>/dev/null`).
 //! - Status ACTION lines name `cargo run -q -p xtask -- mod wave …` (post-shell port).
-//! - Push bypasses pre-push with `--no-verify` only when no `packages/map-assets/` paths.
+//! - Push bypasses pre-push with `--no-verify` only when no `assets_v2/terrains/` paths.
 
 use std::io::{self, Write};
 use std::path::Path;

@@ -431,7 +431,7 @@ fn regen_compiler_shaped_fixture() {
         .expect("compiles");
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json"
+        "/../../contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json"
     );
     std::fs::write(path, golden_text(&doc)).expect("write golden");
     eprintln!("regenerated {path}");
@@ -453,7 +453,7 @@ fn compiler_shaped_golden_is_a_fresh_emitter_output() {
         first_line_difference(COMPILER_SHAPED_GOLDEN, &regenerated)
     {
         panic!(
-            "packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json is no \
+            "contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json is no \
                  longer this emitter's output.\n\
                  First difference at line {line}:\n  \
                  committed:   {expected}\n  \

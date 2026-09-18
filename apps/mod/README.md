@@ -74,7 +74,7 @@ cargo xtask mod test-phase1-api
 | [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) — the shipping addon; carries no `Scripts/WorkbenchGame/` |
 | [`tbd-export/`](tbd-export/) | Thin addon — map-export tooling only (`Scripts/WorkbenchGame/MapExport/**`, registry export plugins, road exporter, `TBD_Export_Everon.conf`). **Depends on** `TBD_Framework` + `TBD_EMCP`; not a mirror |
 | [`tbd-emcp/`](tbd-emcp/) | The committed enfusion-mcp Workbench Net API bridge handlers (`Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c`, MIT, from `enfusion-mcp@0.6.1`) |
-| [`packages/tbd-schema/`](../../packages/tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
+| [`contracts_v2/`](../../contracts_v2/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
 | [`apps/website/`](../website/) | Rust API + Leptos SPA |
 | `Tbd_framework/` | CRF reference only, **gitignored** — do not open in Workbench |
 | [`scripts/mod/`](../../scripts/mod/) | Workbench setup, server profile, dev server, staging deploy, MCP helpers, API tests |

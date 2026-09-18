@@ -47,7 +47,7 @@ pub(super) fn append_spatial_gates(
     {
         let mut errs = Vec::new();
         let v_instance = jsonschema::validator_for(&read_json(
-            &sroot.join("schema/map-object-instance.schema.json"),
+            &sroot.join("definitions/map-object-instance.schema.json"),
         )?)
         .map_err(|e| anyhow::anyhow!("compile: {e}"))?;
         let cx = chunk_sample["cx"].as_f64().unwrap_or(0.0);

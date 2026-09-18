@@ -1,7 +1,7 @@
 //! T-859 — port of `scripts/mod/manual-test.sh` → `cargo xtask mod manual-test`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`.
 //!
 //! PASS/FAIL/SKIP accounting and `== section ==` banners match bash byte-for-byte.
 //! On the live tree this gate ships **red** (legacy Go restspike + npm schema + missing
@@ -96,7 +96,7 @@ fn run_suite(root: &Path) -> u8 {
     let mut a = Acc::new();
 
     // --- 1. tbd-schema ---
-    section("packages/tbd-schema validation");
+    section("contracts_v2 validation");
     check_npm_validate(&p, &mut a);
     check_schema_artifacts(&p, &mut a);
 
@@ -160,15 +160,15 @@ fn check_npm_validate(p: &Paths, a: &mut Acc) {
 }
 
 fn check_schema_artifacts(p: &Paths, a: &mut Acc) {
-    let ok = p.schema.join("schema/mission.schema.json").is_file()
-        && p.schema.join("bridge/bridge-contract.md").is_file()
+    let ok = p.schema.join("definitions/mission.schema.json").is_file()
+        && p.schema.join("definitions/bridge-messages.md").is_file()
         && p.schema
-            .join("golden-missions/bridgehead-at-levie.json")
+            .join("fixtures/missions/valid/bridgehead-at-levie.json")
             .is_file();
     if ok {
         a.pass("schema + bridge + golden mission files exist");
     } else {
-        a.fail("missing packages/tbd-schema artifacts");
+        a.fail("missing contracts_v2 artifacts");
     }
 }
 

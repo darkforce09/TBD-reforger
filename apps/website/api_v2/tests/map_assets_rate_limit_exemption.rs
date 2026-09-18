@@ -78,10 +78,10 @@ const BURST: usize = 200;
 
 /// The map-asset directory, resolved from the manifest rather than the process CWD.
 ///
-/// `Config::map_assets_dir` empty makes `http_router::router` fall back to `../../../packages/map-assets`,
+/// `Config::map_assets_dir` empty makes `http_router::router` fall back to `../../../assets_v2/terrains`,
 /// which is correct for the shipped binary and CWD-dependent for a test harness. Setting it
 /// explicitly is the same code path a deployment with `MAP_ASSETS_DIR` set takes.
-const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../packages/map-assets");
+const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../assets_v2/terrains");
 
 fn config_for(url: &str) -> Config {
     let mut cfg = Config::for_tests(url, "t630-secret");

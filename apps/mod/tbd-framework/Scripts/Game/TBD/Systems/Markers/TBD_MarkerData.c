@@ -38,7 +38,7 @@
 //! `CRF_PlayerRplToOwnerManager.RpcDo_ShareMarker(array<int>)`), and probed here with a failing
 //! negative control on a bogus element type.
 //!
-//! This is not a hypothetical worry. `packages/tbd-schema/golden-missions/empty-warning-fields.json`
+//! This is not a hypothetical worry. `contracts_v2/fixtures/missions/valid/empty-warning-fields.json`
 //! — a COMMITTED, schema-valid fixture — carries a marker whose `icon` AND `label` are both the
 //! empty string. A delimited wire format would have shipped with that fixture already breaking it.
 //!

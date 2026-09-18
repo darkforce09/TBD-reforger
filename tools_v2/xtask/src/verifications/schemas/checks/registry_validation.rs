@@ -2,6 +2,7 @@ use super::*;
 
 pub(super) fn validate(
     reg_file: &dyn Fn(&str) -> PathBuf,
+    catalog_file: &dyn Fn(&str) -> PathBuf,
     check: &dyn Fn(&str, &jsonschema::Validator, &Value),
     failures: &std::cell::Cell<usize>,
     v_registry: &jsonschema::Validator,
@@ -22,7 +23,7 @@ pub(super) fn validate(
 
     println!("Registry items:");
     let items_sample = read_json(&reg_file("registry-items.sample.json"))?;
-    let items_wb = read_json(&reg_file("registry-items.workbench.json"))?;
+    let items_wb = read_json(&catalog_file("registry-items.workbench.json"))?;
     check("registry-items.sample.json", v_items, &items_sample);
     check("registry-items.workbench.json", v_items, &items_wb);
 
@@ -148,7 +149,7 @@ pub(super) fn validate(
         format!("referential integrity, {edges} edges"),
         bad,
     );
-    let compat_wb = read_json(&reg_file("registry-compat.workbench.json"))?;
+    let compat_wb = read_json(&catalog_file("registry-compat.workbench.json"))?;
     check("registry-compat.workbench.json", v_compat, &compat_wb);
     let (edges, bad) = edge_refs(&items_wb, &compat_wb);
     fk(

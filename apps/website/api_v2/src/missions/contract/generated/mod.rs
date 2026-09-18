@@ -1,5 +1,5 @@
 //! Generated cross-boundary type projections: `typify` output for
-//! `packages/tbd-schema/schema/*.json`.
+//! `contracts_v2/definitions/*.json`.
 //!
 //! DO NOT EDIT the per-schema files — regenerate them with `cargo xtask ci schema-codegen`, and
 //! the `verify-codegen-fresh` gate diffs this directory to prove they match their schemas. Lints

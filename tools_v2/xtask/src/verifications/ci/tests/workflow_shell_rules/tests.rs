@@ -8,7 +8,7 @@ fn cargo_xtask_is_allowlisted() {
 #[test]
 fn git_lfs_pull_is_allowlisted() {
     assert_eq!(
-        line_reason("git lfs pull --include packages/map-assets/everon/**"),
+        line_reason("git lfs pull --include assets_v2/terrains/everon/**"),
         None
     );
 }

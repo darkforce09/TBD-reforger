@@ -141,7 +141,7 @@ fn formation_offsets_are_distinct_per_schema_token_and_fall_back_to_column() {
 
     let schema = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/tbd-schema/schema/mission.schema.json"
+        "/../../../contracts_v2/definitions/mission.schema.json"
     ));
     let force = format!("{}{}", "force_to_", "formation");
     let offsets = format!("{}{}", "formation_", "offsets");

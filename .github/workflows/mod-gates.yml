@@ -48,7 +48,7 @@ name: mod-gates
 #          paths:
 #            - "apps/mod/**"
 #            - "scripts/mod/**"
-#            - "packages/tbd-schema/golden-missions/**"
+#            - "contracts_v2/fixtures/missions/valid/**"
 #            - ".github/workflows/mod-gates.yml"
 #
 # ── WHAT IS STILL NOT WIRED, AND WHY ───────────────────────────────────────────────────────

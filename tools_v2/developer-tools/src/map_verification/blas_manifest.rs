@@ -1,5 +1,5 @@
 //! `cargo xtask verify blas-manifest` — T-090.12.2: the prefab BLAS library under
-//! `packages/map-assets/everon/prefabs/` is complete and self-consistent.
+//! `assets_v2/terrains/everon/prefabs/` is complete and self-consistent.
 //!
 //! - `blas-manifest.json` validates against `blas-manifest.schema.json` and parses as
 //!   `BlasManifest`; its `blas` and `descriptors` lists are sorted (the SPA binary-searches them);

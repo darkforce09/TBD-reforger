@@ -82,7 +82,7 @@
 //!
 //! ── RULE 7 — THE WALL §2D ASKED FOR, AND EXACTLY WHAT IT CAN SEE ─────────────────────────────
 //!
-//! §2D: *"`world/` is immutable, streamed from `packages/map-assets`, cacheable, never persisted.
+//! §2D: *"`world/` is immutable, streamed from `assets_v2/terrains`, cacheable, never persisted.
 //! `data/` is mutable, undoable, CRDT-synced, persisted. They share the spatial index and nothing
 //! else. Do not let a `world/` type gain a `dirty` flag or a `data/` type gain a chunk id."*
 //!

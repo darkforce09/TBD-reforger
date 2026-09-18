@@ -2,7 +2,7 @@
 //! Position: `world` in the map engine.
 //! Signals & state: the static, immutable facts about the terrain being drawn.
 //! Invariants: nothing here is authored, undoable or persisted. It describes the ground.
-//! Streamed from `packages/map-assets`, cacheable, never persisted — a type in here must never
+//! Streamed from `assets_v2/terrains`, cacheable, never persisted — a type in here must never
 //! gain a `dirty` flag, and a `data/` type must never gain a chunk id.
 //!
 //! T-0xx Phase 2B: `terrain/`, `environment/` and `architecture/{blueprint,compound,section}`

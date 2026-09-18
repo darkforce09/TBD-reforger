@@ -11,7 +11,7 @@ pub fn map_glyphs() -> Result<u8> {
     let glyph_dir = glyph_assets_dir(&root);
     let manifest = read_json(&glyph_dir.join("manifest.json"))?;
     let glyphs = manifest["glyphs"].as_object().cloned().unwrap_or_default();
-    let prefabs = read_json(&sroot.join("golden/map-objects/map-object-prefabs-sample.json"))?;
+    let prefabs = read_json(&sroot.join("fixtures/map/map-object-prefabs-sample.json"))?;
 
     let mut errors: Vec<String> = Vec::new();
 

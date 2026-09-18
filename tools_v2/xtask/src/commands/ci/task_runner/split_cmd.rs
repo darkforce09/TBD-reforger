@@ -260,7 +260,11 @@ pub(super) fn verify_doc_layout() -> i32 {
             return 1;
         }
     };
-    let roots = [root.join("apps"), root.join("packages")];
+    let roots = [
+        root.join("apps"),
+        root.join("contracts_v2"),
+        root.join("assets_v2"),
+    ];
     let refs: Vec<&Path> = roots.iter().map(|p| p.as_path()).collect();
     let hits =
         verification_core::scan::walk_files(&refs, |p| is_forbidden_doc(&p.to_string_lossy()));

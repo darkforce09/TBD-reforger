@@ -76,7 +76,7 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     // T-583/T-594. The other half of the T-244 lesson above, and the half `schema` cannot reach.
     //
     // `gate_schema` validates the catalogue AS COMMITTED. It cannot tell you the committed
-    // catalogue disagrees with `packages/tbd-schema/rules/prefab-classify.json`, because a rule
+    // catalogue disagrees with `contracts_v2/rules/prefab-classify.json`, because a rule
     // edit changes NOTHING until the catalogue is rebuilt — and until T-278 the only rebuild path
     // needed a Workbench export that is gitignored and absent from every clone. So T-244's
     // `vehicle` rules went in, every gate stayed green, and the shipped artifact was stale for four

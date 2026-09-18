@@ -657,7 +657,7 @@ fn empty_settings_object_is_emitted_not_dropped() {
 fn golden_settings_reach_the_compiled_document() {
     const GOLDEN: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../packages/tbd-schema/golden-missions/last-stand-at-montfort.json"
+        "/../../../contracts_v2/fixtures/missions/valid/last-stand-at-montfort.json"
     ));
     let golden: serde_json::Value = serde_json::from_str(GOLDEN).expect("golden parses");
 

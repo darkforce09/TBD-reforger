@@ -1,7 +1,7 @@
 //! T-861 — port of `scripts/mod/setup-server-profile.sh` → `cargo xtask setup server-profile`.
 //!
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api_v2`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`.
 //!
 //! Builds a dedicated-server profile tree (`profile/TBD_BackendConfig.json`, mission fallback,
 //! optional registry). Acceptance is bash/port stdout+stderr+rc (+ tree modes/bytes) on a clean

@@ -35,7 +35,7 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
         println!("WARN  Using verification.example.json (not production anchors)");
         if strict {
             eprintln!(
-                "FAIL  --strict requires packages/map-assets/{terrain}/anchors/verification.json"
+                "FAIL  --strict requires assets_v2/terrains/{terrain}/anchors/verification.json"
             );
             return Ok(1);
         }

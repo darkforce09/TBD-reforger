@@ -59,7 +59,7 @@ pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
     let report = json!({
         "slice": "T-090.1.2.2",
         "terrain": terrain,
-        "orthoPath": "packages/map-assets/everon/staging/sap/everon-sap-ortho.png",
+        "orthoPath": "assets_v2/scratch/everon/sap/everon-sap-ortho.png",
         "gridPx": 256,
         "bandPx": 8,
         "thresholds": { "FILL_FLOOR": FILL_FLOOR, "REL_FLOOR": REL_FLOOR, "STEP_CAP": crate::world_export_pipeline::json_number_formatting::js_num(STEP_CAP), "DETAIL_MIN": crate::world_export_pipeline::json_number_formatting::js_num(DETAIL_MIN) },
