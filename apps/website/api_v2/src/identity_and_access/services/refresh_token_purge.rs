@@ -1,7 +1,8 @@
 //! Refresh-token retention.
 //!
-//! Deletes refresh-token rows more than 7 days past expiry. Revoked-but-unexpired
-//! rows are kept — they are the reuse-detection tripwire (see handlers::auth::refresh).
+//! Deletes refresh-token rows more than 7 days past expiry. Revoked-but-unexpired rows are
+//! kept — they are the reuse-detection tripwire that
+//! [`crate::identity_and_access::handlers::session_tokens::refresh`] trips on.
 //!
 //! The interval task that calls this lives in
 //! [`crate::background_workers::token_purge_worker`].

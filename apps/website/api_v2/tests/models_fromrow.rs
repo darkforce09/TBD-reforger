@@ -17,7 +17,8 @@ mod common;
 
 use uuid::Uuid;
 use website_api::core::database;
-use website_api::models::{MissionVersion, User, UserRole};
+use website_api::identity_and_access::models::user_account::{User, UserRole};
+use website_api::models::MissionVersion;
 use website_api::services::registry_import::import_items;
 
 #[tokio::test]

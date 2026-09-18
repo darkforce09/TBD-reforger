@@ -2462,7 +2462,7 @@ fn pair_slots(
 /// lookup). That is byte-identical to `TBD_PlayerIdentity.GetArmaId`, which is the ONLY
 /// thing the mod ever puts on the wire as an identity, and the only thing besides the dev
 /// seed that ever writes `users.arma_id` is `POST /api/v1/ingest/link-confirm`
-/// ([`crate::handlers::me::ingest_link_confirm`]) writing exactly that value. The results
+/// ([`crate::identity_and_access::handlers::arma_link_confirmation::ingest_link_confirm`]) writing exactly that value. The results
 /// ingest resolves the same column the same way
 /// (`SELECT discord_id FROM users WHERE arma_id = $1`, `handlers/telemetry.rs`).
 ///

@@ -14,7 +14,7 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::services::purge_expired_refresh_tokens;
+use website_api::identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens;
 
 mod common;
 

@@ -10,7 +10,7 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::handlers::oauth::OAUTH_STATE_CLEAR;
+use website_api::identity_and_access::handlers::oauth_host_guard::OAUTH_STATE_CLEAR;
 
 fn app() -> Router {
     // for_tests() has a blank Discord client_id → the "oauth_unconfigured" path.

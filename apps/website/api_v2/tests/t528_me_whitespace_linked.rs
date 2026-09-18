@@ -4,9 +4,11 @@
 //!
 //! Wave owns list is only `handlers/me.rs`. This IT binary is the Class-R / IT half
 //! the ticket requires: plant a whitespace-only `users.arma_id` and assert both
-//! endpoints report unlinked. Proves me.rs is not `is_some()`-only (T-350 finish).
+//! endpoints report unlinked. Proves the `/me` handlers are not `is_some()`-only.
 //!
-//! Helper: [`website_api::handlers::auth::arma_id_is_linked`] — same as refresh/oauth.
+//! Helper:
+//! [`website_api::identity_and_access::services::session_issuance::arma_id_is_linked`] — the same
+//! one refresh and the Discord callback use.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};

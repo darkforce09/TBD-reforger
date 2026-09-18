@@ -1,12 +1,12 @@
 use super::*;
 
-// ── Empty stored snowflakes = no snapshot (the T-185 `Unavailable` mirror) ──
+// ── Empty stored snowflakes = no snapshot (the `Unavailable` mirror) ──
 
 #[test]
 fn empty_stored_roles_are_no_snapshot_not_no_roles() {
-    // The admin-lockout regression: resync treating an empty `user_discord_roles`
-    // fetch as Authoritative([]) → resolve_role → Enlisted. Absence of stored
-    // snowflakes is Unavailable — skip, do not demote.
+    // The admin-lockout shape: resync treating an empty `user_discord_roles` fetch as an
+    // authoritative empty list → resolve_role → Enlisted. Absence of stored snowflakes is
+    // Unavailable — skip, do not demote.
     assert!(
         resync_ids_from_snapshot(&[]).is_none(),
         "no stored Discord roles must not be an authoritative empty list"

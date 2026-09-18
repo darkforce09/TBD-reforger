@@ -94,12 +94,12 @@ const REACHABILITY_KEEP: &[&str] = &[
 ///
 /// A nullable column that is NOT here and NOT `COALESCE`d is the T-329 bug.
 const OPTION_FIELDS: &[(&str, &str)] = &[
-    // models::user::User
+    // identity_and_access::models::user_account::User
     ("users", "arma_id"),
     ("users", "banned_by"),
     ("users", "banned_at"),
     ("users", "last_login_at"),
-    // models::user::RefreshToken
+    // identity_and_access::models::user_account::RefreshToken
     ("refresh_tokens", "revoked_at"),
     // models::content::Announcement
     ("announcements", "published_at"),

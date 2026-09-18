@@ -332,7 +332,8 @@ fn the_sql_lives_only_in_the_service() {
     );
     for handler in [
         include_str!("../src/handlers/telemetry/telemetry.rs"),
-        include_str!("../src/handlers/auth/me.rs"),
+        include_str!("../src/identity_and_access/handlers/arma_link_confirmation.rs"),
+        include_str!("../src/identity_and_access/handlers/arma_link_codes.rs"),
         include_str!("../src/handlers/telemetry/deployments.rs"),
     ] {
         assert!(

@@ -6,7 +6,7 @@
 
 use sqlx::PgPool;
 
-use crate::models::UserRole;
+use crate::identity_and_access::models::user_account::UserRole;
 
 /// Reconcile a user's Discord role snowflakes into `user_discord_roles` (unmapped
 /// ids are still stored so a later admin mapping + resync promotes them), then
@@ -38,12 +38,12 @@ pub async fn sync_roles(
 /// Re-resolve every user's web role from their stored Discord roles against current
 /// mappings (used after an admin remaps a role). Returns the number changed.
 ///
-/// **T-372 — empty stored snowflakes are not "enlisted".** A user with zero
-/// `user_discord_roles` rows has **no snapshot** (never OAuth'd, or promoted via
-/// PATCH / admin seed) — the same statement as [`RoleSnapshot::Unavailable`] in
-/// `handlers/oauth.rs` (T-185), not `Authoritative([])`. Skipping leaves their
-/// web role alone. Only a non-empty stored list is an authoritative input for
-/// [`resolve_role`].
+/// **Empty stored snowflakes are not "enlisted".** A user with zero `user_discord_roles`
+/// rows has **no snapshot** (never OAuth'd, or promoted via PATCH / admin seed) — the same
+/// statement as `RoleSnapshot::Unavailable` in
+/// [`crate::identity_and_access::handlers::discord_oauth`], not an authoritative empty list.
+/// Skipping leaves their web role alone. Only a non-empty stored list is an authoritative
+/// input for [`resolve_role`].
 pub async fn resync_all_roles(pool: &PgPool) -> sqlx::Result<i64> {
     let users: Vec<(String, UserRole)> =
         sqlx::query_as("SELECT discord_id, role FROM users WHERE deleted_at IS NULL")
@@ -58,7 +58,7 @@ pub async fn resync_all_roles(pool: &PgPool) -> sqlx::Result<i64> {
         .fetch_all(pool)
         .await?;
         // No snapshot ⇒ skip. Do not call resolve_role(empty) — that returns
-        // Enlisted and is the admin-lockout path this ticket closes.
+        // Enlisted, which is the admin-lockout path.
         let Some(ids) = resync_ids_from_snapshot(&role_ids) else {
             continue;
         };
@@ -75,13 +75,14 @@ pub async fn resync_all_roles(pool: &PgPool) -> sqlx::Result<i64> {
     Ok(updated)
 }
 
-/// Stored Discord snowflakes as a resync input — mirrors T-185 `RoleSnapshot`.
+/// Stored Discord snowflakes as a resync input — the same distinction `RoleSnapshot` draws
+/// for a live lookup.
 ///
 /// - `None` = **no snapshot** (empty table for this user). Must not demote.
 /// - `Some(ids)` = authoritative stored list; may resolve to enlisted when nothing
 ///   maps (real OAuth answer that wrote zero mapped roles, or remap cleared them).
 ///
-/// Do not `unwrap_or_default()` the `None` — that is exactly the T-372 bug.
+/// Do not `unwrap_or_default()` the `None` — that collapses the two cases back together.
 fn resync_ids_from_snapshot(role_ids: &[String]) -> Option<&[String]> {
     if role_ids.is_empty() {
         None
@@ -108,5 +109,5 @@ pub async fn resolve_role(pool: &PgPool, role_ids: &[String]) -> sqlx::Result<Us
 }
 
 #[cfg(test)]
-#[path = "tests/role_sync.rs"]
+#[path = "tests/discord_role_sync.rs"]
 mod tests;

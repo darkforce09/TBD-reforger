@@ -1,6 +1,5 @@
-//! Dev-login handler — Rust port of `handlers/dev.go`. Development-only shortcut
-//! that mints a session without Discord, redirecting to the SPA callback with the
-//! token fragment exactly like the real callback.
+//! Development-only login shortcut: mints a session without Discord, redirecting to the SPA
+//! callback with the token fragment exactly like the real callback.
 
 use axum::extract::{Query, State};
 use axum::response::Response;
@@ -8,13 +7,13 @@ use serde::Deserialize;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::handlers::auth::{issue_session, session_redirect};
+use crate::identity_and_access::services::session_issuance::{issue_session, session_redirect};
 
 /// Stable Discord snowflake for the local **admin** / default-role operator.
 ///
-/// T-387: each role gets its own discord_id (see [`discord_id_for_role`]). Pre-T-387 this
-/// single id was used for every role — `ON CONFLICT` rewrote `role` on the same row and
-/// `issue_session` stacked refresh families without revoking the prior one.
+/// Each role gets its own discord_id (see [`discord_id_for_role`]). Sharing one id across
+/// roles makes `ON CONFLICT` rewrite `role` on the same row and lets `issue_session` stack
+/// refresh families without revoking the prior one.
 const DEV_USER_ID: &str = "000000000000000001";
 
 const DEV_USER_ID_ENLISTED: &str = "000000000000000002";
@@ -64,7 +63,7 @@ pub async fn dev_login(
     State(state): State<AppState>,
     Query(q): Query<DevLoginQuery>,
 ) -> Result<Response, ApiError> {
-    // Registered only in development, but re-guard at request time like Go.
+    // Registered only in development, but re-guard at request time.
     if !state.cfg.is_development() {
         return Err(ApiError::not_found("not found"));
     }
@@ -77,14 +76,14 @@ pub async fn dev_login(
     let arma_id = arma_id_for_role(role);
 
     // Upsert the role's dedicated row. On conflict, only username/handle/role/last_login/updated
-    // change (matching Go's DoUpdates); avatar/arma stay as first inserted.
+    // change; avatar/arma stay as first inserted.
     //
-    // T-557: do NOT stamp a FIXED `arma_id` into this INSERT. `ON CONFLICT (discord_id)`
-    // arbitrates only that index; concurrent first-time inserts against a cold DB both
-    // take the INSERT path and the loser trips `idx_users_arma_id` (23505 → 500). NULL
-    // is allowed many times on that unique index, so the upsert itself cannot collide.
-    // T-387: per-role discord_id means concurrent *different* roles no longer rewrite one
-    // shared row; per-role arma_id keeps their COALESCE first-creates from racing each other.
+    // Do NOT stamp a FIXED `arma_id` into this INSERT. `ON CONFLICT (discord_id)` arbitrates
+    // only that index; concurrent first-time inserts against a cold DB both take the INSERT
+    // path and the loser trips `idx_users_arma_id` (23505 → 500). NULL is allowed many times
+    // on that unique index, so the upsert itself cannot collide. Per-role discord_id means
+    // concurrent *different* roles do not rewrite one shared row; per-role arma_id keeps their
+    // COALESCE first-creates from racing each other.
     sqlx::query(
         "INSERT INTO users \
          (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, \

@@ -148,7 +148,7 @@ const SUITE: &str = env!("CARGO_CRATE_NAME");
 /// `TEST_DATABASE_URL` is unset (the suite-skip path).
 static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
 
-/// The shared `dev-login` row's `arma_id`, pinned from `DEV_ARMA_ID` in `src/handlers/dev.rs`.
+/// The shared `dev-login` row's `arma_id`, pinned from `DEV_ARMA_ID` in `src/identity_and_access/handlers/developer_login.rs`.
 ///
 /// Kept honest by [`t534_dev_login_prime_literals_still_match_handler`] — if the handler's
 /// literal changes and this one does not, that Class-R goes red instead of the fixture quietly
@@ -428,7 +428,7 @@ fn t534_per_binary_database_name() {
 /// Handles `"…"`, `r"…"` / `r#"…"#` (any hash count), the `b` / `c` prefixes, and char
 /// literals `'x'` / `'\n'`. A `'` that introduces a **lifetime** (`&'static str`) opens
 /// nothing — that is the T-569 finding, and this module's own copy of the comment
-/// stripper still had the bug it names: on `src/handlers/dev.rs` the `'` of
+/// stripper still had the bug it names: on `src/identity_and_access/handlers/developer_login.rs` the `'` of
 /// `-> &'static str` opened a char span that ran to the `'` of `'Dev Operator'` sixty
 /// lines later, so every `//` comment in between survived "comment-stripped" source and
 /// brace depth over that span was fiction. [`rust_fn_body`] now needs that depth to be
@@ -1400,13 +1400,14 @@ fn users_insert_arma_id_value(code: &str) -> Option<String> {
 /// the fast, readable first failure that names the literals — not as the guarantee.
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
-    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/auth/dev.rs");
+    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src/identity_and_access/handlers/developer_login.rs");
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("T-534 Class-R: read {}: {e}", handler.display()));
     for needle in [DEV_LOGIN_USER, DEV_LOGIN_ARMA_ID] {
         assert!(
             src.contains(needle),
-            "T-534/T-557: src/handlers/auth/dev.rs no longer contains `{needle}`. The dev-login \
+            "T-534/T-557: src/identity_and_access/handlers/developer_login.rs no longer contains `{needle}`. The dev-login \
              prime in tests/common/mod.rs seeds that exact row; update both together."
         );
     }
@@ -1567,9 +1568,9 @@ fn t542_no_raw_test_database_url_reads_outside_common() {
 }
 
 /// The single identity `GET /auth/dev-login` mints for **every** role
-/// (`src/handlers/dev.rs:14`). It is shared by every suite that calls dev-login, and each
+/// (`src/identity_and_access/handlers/developer_login.rs `DEV_USER_ID``). It is shared by every suite that calls dev-login, and each
 /// call rewrites that row's `username`, `discord_handle`, `role` and `last_login_at`
-/// (`src/handlers/dev.rs:47-49`) — so a suite must never assume anything about this row
+/// (`src/identity_and_access/handlers/developer_login.rs `ON CONFLICT` branch`) — so a suite must never assume anything about this row
 /// beyond what its own most recent dev-login call just wrote.
 pub const DEV_LOGIN_USER: &str = "000000000000000001";
 
@@ -1582,17 +1583,17 @@ pub const DEV_LOGIN_USER: &str = "000000000000000001";
 ///
 /// # Correction: `dev_login` has no ban check (T-334, correcting T-365)
 ///
-/// T-365 recorded that dev-login returns no `Location` header because `auth.rs:147` 403s a
+/// T-365 recorded that dev-login returns no `Location` header because the token handler 403s a
 /// banned account. **That mechanism is false**, and it has now cost two derivations — do not
 /// derive it a third time. Verified against this tree:
 ///
-/// * `src/handlers/dev.rs:25-64` — `dev_login` never reads `is_banned`. Its upsert *writes*
+/// * `src/identity_and_access/handlers/developer_login.rs` — `dev_login` never reads `is_banned`. Its upsert *writes*
 ///   `is_banned = false` on insert, and the `ON CONFLICT` branch (`dev.rs:47-49`) does not
 ///   touch the column at all. It then calls `issue_session` unconditionally.
-/// * `src/handlers/auth.rs:35-47` — `issue_session` is `issue_access` + `issue_refresh`.
+/// * `src/identity_and_access/services/session_issuance.rs` — `issue_session` is `issue_access` + `issue_refresh`.
 ///   Neither loads the user row, so `is_banned` is never consulted on this path. A banned
 ///   shared row still gets a **302**.
-/// * `src/handlers/auth.rs:144-150` — the ban check lives in `refresh`, i.e.
+/// * `src/identity_and_access/handlers/session_tokens.rs` — the ban check lives in `refresh`, i.e.
 ///   `POST /auth/refresh`, and 403s `"account is banned"` there. That is the line T-365
 ///   cited; it is simply not on the dev-login path.
 ///
@@ -1644,14 +1645,14 @@ pub async fn dev_login_token(app: &Router, suite: &str, role: &str) -> String {
     let Some(location) = ctx.location else {
         let msg = ctx.report(
             "302 with no Location header. The redirect was built by something other than \
-             session_redirect (src/handlers/auth.rs:96-103).",
+             session_redirect (src/identity_and_access/services/session_issuance.rs).",
         );
         panic!("{msg}");
     };
     let Some((_, fragment)) = location.split_once('#') else {
         let msg = ctx.report(
             "Location carries no `#` fragment. auth_callback_url puts the tokens in the \
-             fragment (src/handlers/auth.rs:82-94); a fragment-less Location is an error \
+             fragment (src/identity_and_access/services/session_issuance.rs); a fragment-less Location is an error \
              redirect, and its `error=` query names the reason.",
         );
         panic!("{msg}");

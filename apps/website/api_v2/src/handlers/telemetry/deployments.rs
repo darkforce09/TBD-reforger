@@ -50,7 +50,7 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::{AdminUser, AuthUser};
 use crate::core::wire_format::go_time;
-use crate::handlers::load_user;
+use crate::identity_and_access::services::user_lookup::load_user;
 use crate::models::{
     Event, EventMission, EventRegistration, LeaveRequest, Match, MatchPlayerStat, OrbatSlot,
     TerrainType,

@@ -11,7 +11,7 @@ use std::time::Duration;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 
-use crate::services::role_sync::resync_all_roles;
+use crate::identity_and_access::services::discord_role_sync::resync_all_roles;
 
 /// Env var for the background Discord → web role resync cadence (seconds).
 ///

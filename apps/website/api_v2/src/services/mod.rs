@@ -2,20 +2,16 @@
 
 pub mod audit;
 pub mod audit_notify;
-pub mod discord;
 pub mod game_agent;
 pub mod mission_compile;
 pub mod mortar;
 pub mod registry_import;
-pub mod role_sync;
-pub mod token_purge;
 pub mod user_stats;
 pub mod webhook;
 
 pub use audit::write_audit;
 // T-940.6 — one `LISTEN audit_log` connection per pool, fanned out to every admin audit stream.
 pub use audit_notify::{AuditNotify, AuditSignal};
-pub use discord::DiscordService;
 // T-595 — the API half of T-289's host control channel.
 pub use game_agent::{AgentAction, AgentReply, AgentResult};
 pub use mission_compile::{
@@ -32,8 +28,6 @@ pub use mission_compile::{
 // Ported to the shared crate (T-145 Phase 2); re-exported so `crate::services::…` callers are unchanged.
 pub use mortar::{FireSolution, SolveError, solve_fire_mission};
 pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
-pub use role_sync::resync_all_roles;
-pub use token_purge::purge_expired_refresh_tokens;
 pub use website_map_engine::data::scenario::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
 };

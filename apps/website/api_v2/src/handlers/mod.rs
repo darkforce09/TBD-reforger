@@ -1,23 +1,19 @@
-//! HTTP handlers — Rust port of `internal/handlers`, grouped by domain. Populated
-//! per phase; the `/api/v1` route tree is assembled in [`crate::core::http_router`].
+//! HTTP handlers grouped by domain; the `/api/v1` route tree is assembled in
+//! [`crate::core::http_router`].
 //!
-//! T-934.15 nested the 21 flat handler files into six domain directories. Where a
-//! domain directory carries a file of its own name (`auth/auth.rs`, …) the domain's
-//! `mod.rs` glob re-exports it, and the `pub use` façade below restores every other
-//! module at its old flat path — so `handlers::oauth::discord_login`,
-//! `handlers::servers::list_servers` and friends resolve exactly as before and
-//! [`crate::core::http_router`]'s route wiring is untouched. The row loaders below stay here:
-//! they are the domain-neutral floor every domain sits on.
+//! Where a domain directory carries a file of its own name (`admin/admin.rs`, …) the
+//! domain's `mod.rs` glob re-exports it, and the `pub use` façade below restores every other
+//! module at a flat path, so `handlers::servers::list_servers` and friends resolve from one
+//! place. The row loaders below stay here: they are the domain-neutral floor the remaining
+//! domains sit on.
 
 pub mod admin;
-pub mod auth;
 pub mod content;
 pub mod events;
 pub mod missions;
 pub mod telemetry;
 
 pub use self::admin::audit;
-pub use self::auth::{dev, me, oauth};
 pub use self::content::{announcements, cms, modpacks, wiki};
 pub use self::events::factions;
 pub use self::missions::{approvals, registry};
@@ -26,25 +22,7 @@ pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards, ser
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::{Mission, User};
-
-/// Load a live user by Discord id (applies the soft-delete filter — one of the 4
-/// soft-deletable tables). Returns `None` if absent or deleted. The
-/// `attendance_rate::float8` cast decodes the `numeric` column into the model's `f64`.
-pub async fn load_user(pool: &PgPool, discord_id: &str) -> sqlx::Result<Option<User>> {
-    sqlx::query_as::<_, User>(
-        "SELECT discord_id, username, COALESCE(discord_handle, '') AS discord_handle, \
-         COALESCE(avatar_url, '') AS avatar_url, arma_id, COALESCE(arma_character, '') AS arma_character, \
-         role, is_banned, COALESCE(ban_reason, '') AS ban_reason, banned_by, banned_at, total_deployments, \
-         attendance_rate::float8 AS attendance_rate, last_login_at, \
-         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
-         COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
-         FROM users WHERE discord_id = $1 AND deleted_at IS NULL",
-    )
-    .bind(discord_id)
-    .fetch_optional(pool)
-    .await
-}
+use crate::models::Mission;
 
 /// Load a live mission by id (soft-delete filtered; `time_of_day::text` cast for the
 /// `time without time zone` column). Returns `None` if absent or deleted.
@@ -63,32 +41,32 @@ pub async fn load_mission(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<Missio
     .await
 }
 
-/// Resolve a display name for audit messages, falling back to the id (mirrors Go
-/// `h.username`). COALESCE tolerates a NULL username like GORM's `First` — defensively
-/// only, since `migrations/0001_initial_schema.sql:514` declares `username text NOT NULL`
-/// (writing NULL fails with SQLSTATE 23502).
+/// Resolve a display name for audit messages, falling back to the id. The COALESCE tolerates
+/// a NULL username defensively only, since `migrations/0001_initial_schema.sql:514` declares
+/// `username text NOT NULL` (writing NULL fails with SQLSTATE 23502).
 ///
-/// **T-366 — the guard below is `trim().is_empty()`, not `is_empty()`.** Every audit line in
-/// the crate takes its `actor_name` from here (14 call sites across `admin.rs`, `approvals.rs`,
-/// `cms.rs`, `field_tools.rs`, `me.rs`), so an untrimmed guard let a whitespace username
-/// *bypass the `discord_id` fallback that exists to prevent exactly this*. Measured pre-fix on
+/// **The guard below is `trim().is_empty()`, not `is_empty()`.** Every audit line in the crate
+/// takes its `actor_name` from here (14 call sites across `admin.rs`, `approvals.rs`,
+/// `cms.rs`, `field_tools.rs`, `arma_link_codes.rs`), so an untrimmed guard lets a whitespace
+/// username *bypass the `discord_id` fallback that exists to prevent exactly this*. Measured on
 /// `PATCH /admin/users/:id` with `username = '   '`: `audit_logs.actor_name` = `'   '` (length 3)
 /// and `message` = `"    set     role to admin"` — an audit line naming neither actor nor
 /// target. `user.ban`, `user.unban` and `user.warn` all produced the same. That is worse than a
 /// missing entry because it still looks like a record. `username = ''` already fell through
 /// correctly, which is what made the whitespace case a gap rather than a design choice.
 ///
-/// **Why trimming is safe *here* when T-326/T-343 showed it usually is not.** The rule those
-/// tickets established is that a trim on read must agree with the trim on write. Checked, not
-/// assumed:
+/// **Why trimming is safe *here* when it usually is not.** The rule is that a trim on read
+/// must agree with the trim on write. Checked, not assumed:
 /// - **No writer trims, so there is no counterpart to disagree with.** `users.username` has
-///   exactly two writers — `handlers/auth/oauth.rs:117` binds `du.display_name()` (Discord's
-///   `global_name`, else `username`) with no trim and no guard at any hop, and `handlers/auth/dev.rs`
-///   binds the literal `'Dev Operator'`. No CHECK constraint, no trigger, no `btrim` in SQL, and
-///   no request body anywhere in the crate carries a `username` field. `display_name()`
-///   (`services/discord.rs:113`) selects on `global_name.is_empty()`, so a Discord
-///   `global_name` of `"   "` wins that branch and is stored verbatim — this is the live path
-///   by which a blank-ish username actually arrives.
+///   exactly two writers — `identity_and_access/handlers/discord_oauth.rs` binds
+///   `du.display_name()` (Discord's `global_name`, else `username`) with no trim and no guard
+///   at any hop, and `identity_and_access/handlers/developer_login.rs` binds the literal
+///   `'Dev Operator'`. No CHECK constraint, no trigger, no `btrim` in SQL, and no request body
+///   anywhere in the crate carries a `username` field. `display_name()`
+///   (`identity_and_access/services/discord_user_profile.rs`) selects on whether `global_name`
+///   is blank, so a Discord `global_name` of `"   "` reaches `users.username` verbatim when
+///   that selection is not trim-aware — this is the live path by which a blank-ish username
+///   arrives.
 /// - **This value is never a key.** All 14 consumers pass it to `services::write_audit`'s
 ///   `actor_name` display column or interpolate it into `message`. `write_audit`'s `actor_id`
 ///   is bound separately from the caller's real `discord_id`, so audit-row identity never comes

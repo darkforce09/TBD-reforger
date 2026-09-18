@@ -58,7 +58,7 @@ const OTHER: &str = "000000000000334002";
 /// moves between seats (T-324). Same T-334 private range as [`OTHER`], and the id that
 /// used to collide with `tests/telemetry.rs`.
 const THIRD: &str = "000000000000334003";
-/// The identity `dev-login` mints for every role (`handlers::dev::DEV_USER_ID`).
+/// The identity `dev-login` mints for every role (`identity_and_access::handlers::developer_login::DEV_USER_ID`).
 ///
 /// Still shared with every other dev-login caller — that is inherent to the handler, not
 /// something this suite can namespace away. Nothing here asserts on that row's columns;

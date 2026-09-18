@@ -15,9 +15,11 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AdminUser;
 use crate::handlers::username;
-use crate::models::{AuditSeverity, UserRole};
+use crate::identity_and_access::models::user_account::UserRole;
+use crate::identity_and_access::services::discord_role_sync::resync_all_roles;
+use crate::models::AuditSeverity;
 use crate::services::game_agent::{self, AgentAction, AgentReply, AgentResult};
-use crate::services::{resync_all_roles, write_audit};
+use crate::services::write_audit;
 
 fn valid_role(s: &str) -> Option<UserRole> {
     match s {

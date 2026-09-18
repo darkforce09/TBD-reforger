@@ -16,7 +16,8 @@ use crate::core::realtime_hub::server_status_topic::publish_server_status;
 use crate::core::text::http_url_guard::is_http_url;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
 // T-336 — `recompute_user_stats` moved to `services::user_stats`; this file is a caller now,
-// not its owner. `handlers::me` calls the same one, which is the point.
+// not its owner. `identity_and_access::handlers::arma_link_confirmation` calls the same one,
+// which is the point.
 use crate::core::application_state::AppState;
 use crate::services::{recompute_user_stats, refresh_leaderboard_best_effort, write_audit};
 
@@ -693,7 +694,7 @@ pub struct MatchResultsInput {
 /// **A player whose `arma_id` resolves to no account keeps their row, and the 200 now says so
 /// out loud (T-229).** The row was never the problem; the *silence* was. `discord_id` on
 /// `match_player_stats` is a cached answer to "who owns this `arma_id`" (see
-/// `handlers::me::BACKFILL_MATCH_STATS`), `leaderboard_totals` filters
+/// `identity_and_access::handlers::arma_link_confirmation`'s `BACKFILL_MATCH_STATS`), `leaderboard_totals` filters
 /// `WHERE discord_id IS NOT NULL` (`0001_initial_schema.sql:289`) and `recompute_user_stats`
 /// counts only non-NULL rows — so an unresolved row is invisible to every aggregate on the
 /// platform while the endpoint reported `{"players": n}`, the *submitted* count, and nothing

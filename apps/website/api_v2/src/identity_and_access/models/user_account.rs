@@ -1,8 +1,9 @@
-//! Identity models — Rust port of `internal/models/user.go`.
+//! The identity account root and the rows that hang off it.
 //!
-//! Field order mirrors the Go structs (the wire contract); `omitempty` becomes
-//! `skip_serializing_if`; timestamps use the Go RFC3339Nano serializer. The GORM
-//! `DeletedAt` (json:"-") is omitted — soft delete is handled in the query layer.
+//! Field order and JSON keys are the wire contract: snake_case throughout, an absent value
+//! expressed as `skip_serializing_if`, and RFC3339Nano timestamps rendered through
+//! [`crate::core::wire_format`]. Soft-delete columns are absent from these structs — the
+//! filter is enforced in the query layer (`users` is one of the four soft-deletable tables).
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -23,7 +24,7 @@ pub enum UserRole {
 }
 
 impl UserRole {
-    /// The Postgres/JSON wire string (snake_case), matching Go's `string(role)`.
+    /// The Postgres/JSON wire string (snake_case).
     pub fn as_str(self) -> &'static str {
         match self {
             UserRole::Enlisted => "enlisted",
@@ -41,7 +42,7 @@ pub struct User {
     pub username: String,
     pub discord_handle: String,
     pub avatar_url: String,
-    /// Enfusion/Steam ID, `null` until linked (no `omitempty` in Go).
+    /// Enfusion/Steam ID, `null` until linked — serialized even when absent.
     pub arma_id: Option<String>,
     pub arma_character: String,
     pub role: UserRole,
@@ -97,7 +98,7 @@ pub struct IdentityLinkCode {
     pub created_at: DateTime<Utc>,
 }
 
-/// Opaque, rotating refresh credential stored hashed. `token_hash` is `json:"-"`.
+/// Opaque, rotating refresh credential stored hashed. `token_hash` never reaches the wire.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RefreshToken {
     pub id: Uuid,

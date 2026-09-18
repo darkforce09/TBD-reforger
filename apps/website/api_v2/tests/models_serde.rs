@@ -7,9 +7,8 @@
 use chrono::{TimeZone, Utc};
 use serde_json::json;
 use website_api::core::wire_format::go_time;
-use website_api::models::{
-    GameMode, MissionStatus, RegistrationState, User, UserRole, WeatherType,
-};
+use website_api::identity_and_access::models::user_account::{User, UserRole};
+use website_api::models::{GameMode, MissionStatus, RegistrationState, WeatherType};
 
 #[test]
 fn enum_values_are_snake_case() {

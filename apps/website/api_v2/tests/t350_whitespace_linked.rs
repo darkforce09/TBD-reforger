@@ -4,11 +4,12 @@
 //!
 //! Wave owns list only the three handlers. This IT binary is the Class-R / IT half the
 //! ticket requires: refresh must mint `arma_linked=false` when the row holds
-//! whitespace-only `arma_id` (proves auth.rs is not `is_some()`-only), and
+//! whitespace-only `arma_id` (proves session issuance is not `is_some()`-only), and
 //! `POST /me/leave-requests` must 400 on whitespace `reason` (deployments.rs).
 //!
-//! oauth.rs shares [`website_api::handlers::auth::arma_id_is_linked`] — covered by the
-//! unit pin in `handlers/auth.rs` plus the refresh IT below (same helper, same claim).
+//! The Discord callback shares
+//! [`website_api::identity_and_access::services::session_issuance::arma_id_is_linked`] — covered
+//! by the unit pin beside that helper plus the refresh IT below (same helper, same claim).
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -20,7 +21,7 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::handlers::auth::issue_refresh;
+use website_api::identity_and_access::services::session_issuance::issue_refresh;
 
 mod common;
 

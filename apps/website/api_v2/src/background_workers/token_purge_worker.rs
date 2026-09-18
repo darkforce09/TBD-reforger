@@ -9,7 +9,7 @@ use std::time::Duration;
 use sqlx::PgPool;
 use tokio::task::JoinHandle;
 
-use crate::services::token_purge::purge_expired_refresh_tokens;
+use crate::identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens;
 
 /// Re-sweep cadence after the immediate boot sweep.
 pub const PURGE_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);

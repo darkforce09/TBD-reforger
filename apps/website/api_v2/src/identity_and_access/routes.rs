@@ -8,35 +8,43 @@ use axum::Router;
 use axum::routing::{get, post};
 
 use crate::core::application_state::AppState;
-use crate::handlers;
+
+use super::handlers;
 
 /// `dev` gates the development-only login shortcut, which is registered only when the
 /// configuration reports a development environment.
 pub fn routes(dev: bool) -> Router<AppState> {
     let mut r = Router::new()
-        .route("/auth/discord/login", get(handlers::oauth::discord_login))
+        .route(
+            "/auth/discord/login",
+            get(handlers::discord_oauth::discord_login),
+        )
         .route(
             "/auth/discord/callback",
-            get(handlers::oauth::discord_callback),
+            get(handlers::discord_oauth::discord_callback),
         )
-        .route("/auth/refresh", post(handlers::auth::refresh))
-        .route("/auth/logout", post(handlers::auth::logout))
+        .route("/auth/refresh", post(handlers::session_tokens::refresh))
+        .route("/auth/logout", post(handlers::session_tokens::logout))
         .route(
             "/me",
-            get(handlers::me::get_me).patch(handlers::me::update_me),
+            get(handlers::member_profile::get_me).patch(handlers::member_profile::update_me),
         )
         .route(
             "/me/link",
-            post(handlers::me::create_link_code).delete(handlers::me::unlink),
+            post(handlers::arma_link_codes::create_link_code)
+                .delete(handlers::arma_link_codes::unlink),
         )
-        .route("/me/link/status", get(handlers::me::link_status))
+        .route(
+            "/me/link/status",
+            get(handlers::arma_link_codes::link_status),
+        )
         .route(
             "/ingest/link-confirm",
-            post(handlers::me::ingest_link_confirm),
+            post(handlers::arma_link_confirmation::ingest_link_confirm),
         );
     if dev {
         // Development-only login shortcut (also re-guards on env in-handler).
-        r = r.route("/auth/dev-login", get(handlers::dev::dev_login));
+        r = r.route("/auth/dev-login", get(handlers::developer_login::dev_login));
     }
     r
 }

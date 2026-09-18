@@ -56,16 +56,6 @@
   expires: 2027-01-31
 
 - rule: SIZE-3
-  path: apps/website/api_v2/src/handlers/auth/me.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/src/handlers/auth/oauth.rs
-  reason: T-145 Axum port; split follow-up
-  expires: 2027-01-31
-
-- rule: SIZE-3
   path: apps/website/api_v2/src/handlers/content/cms.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
@@ -98,11 +88,6 @@
 - rule: SIZE-3
   path: apps/website/api_v2/src/handlers/telemetry/telemetry.rs
   reason: T-145 Axum port; split follow-up
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/website/api_v2/src/services/discord.rs
-  reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
 - rule: SIZE-3

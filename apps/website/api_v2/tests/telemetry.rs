@@ -994,7 +994,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
 /// **The backfill half of T-229 as filed is already closed by T-326**, and the link leg asserts it
 /// from this side on purpose: the ticket's premise was that "the upsert key includes `arma_id`, [so]
 /// linking later does not backfill", and the key is in fact exactly what lets the backfill find the
-/// row again. Pinning it here means a regression in `handlers::me` fails the suite that owns the
+/// row again. Pinning it here means a regression in the link-confirm handler fails the suite that owns the
 /// ingest contract depending on it.
 ///
 /// Two ingest calls only — the strict limiter is keyed on the peer IP, which is `0.0.0.0` for every

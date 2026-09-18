@@ -14,7 +14,6 @@ pub mod faction;
 pub mod mission;
 pub mod registry;
 pub mod telemetry;
-pub mod user;
 
 pub use admin::*;
 pub use content::*;
@@ -23,4 +22,3 @@ pub use faction::*;
 pub use mission::*;
 pub use registry::*;
 pub use telemetry::*;
-pub use user::*;
