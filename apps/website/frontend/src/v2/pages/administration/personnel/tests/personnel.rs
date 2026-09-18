@@ -87,13 +87,14 @@ fn dossier_deployments_binds_total_deployments_not_em_dash() {
 #[test]
 fn admin_roles_sync_path_matches_live_api_route() {
     // This screen is the only caller of the route, so the check reads the live router source:
-    // a constant compared against itself would stay green while examining nothing.
+    // a constant compared against itself would stay green while examining nothing. The
+    // registration spans lines, so the quoted path string is matched.
     let src = crate::v2::core::test_support::fixtures::api_route_source();
     let src: &str = &src;
-    let live_registration = format!(r#".route("{ADMIN_ROLES_SYNC_PATH}""#);
+    let live_registration = format!(r#""{ADMIN_ROLES_SYNC_PATH}""#);
     assert!(
         src.contains(&live_registration),
-        "the api_v2 domain route tables must register {live_registration}, …); \
+        "the api_v2 domain route tables must register .route({live_registration}, …); \
          Personnel posts ADMIN_ROLES_SYNC_PATH"
     );
     assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");

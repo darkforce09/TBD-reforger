@@ -10,39 +10,37 @@ use axum::routing::{get, post};
 
 use crate::core::application_state::AppState;
 
+use super::handlers;
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/admin/audit-logs",
-            get(super::handlers::audit_logs::list_audit_logs),
+            get(handlers::audit_logs::list_audit_logs),
         )
         .route(
             "/admin/audit-logs/stream",
-            get(super::handlers::audit_logs::stream_audit_logs),
+            get(handlers::audit_logs::stream_audit_logs),
         )
         .route(
             "/admin/audit-logs/export.csv",
-            get(super::handlers::audit_logs::export_audit_logs_csv),
+            get(handlers::audit_logs::export_audit_logs_csv),
         )
-        .route(
-            "/admin/users",
-            get(super::handlers::personnel_roster::list_users),
-        )
+        .route("/admin/users", get(handlers::personnel_roster::list_users))
         .route(
             "/admin/users/{discordId}",
-            axum::routing::patch(super::handlers::role_management::update_user),
+            axum::routing::patch(handlers::role_management::update_user),
         )
         .route(
             "/admin/users/{discordId}/ban",
-            post(super::handlers::disciplinary::ban_user)
-                .delete(super::handlers::disciplinary::unban_user),
+            post(handlers::disciplinary::ban_user).delete(handlers::disciplinary::unban_user),
         )
         .route(
             "/admin/users/{discordId}/warnings",
-            post(super::handlers::disciplinary::issue_warning),
+            post(handlers::disciplinary::issue_warning),
         )
         .route(
             "/admin/roles/sync",
-            post(super::handlers::role_management::resync_roles),
+            post(handlers::role_management::resync_roles),
         )
 }
