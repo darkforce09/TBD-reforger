@@ -29,7 +29,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, hardware/engine constraints). Never document historical transitions (no "rewritten from X", "fixed in Y"). Commit history owns history.
 9. **API & Contract Parity**:
    - Backend Rust models (`apps/website/api_v2/src/<domain>/models/`) are the snake_case API source of truth.
-   - Contract types are generated from `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`.
+   - Contract types are generated from `contracts_v2/definitions/*.json` via `cargo xtask ci schema-codegen`.
    - Frontend DTOs (`apps/website/frontend/src/v2/core/api/dto/`) mirror models with strict R-api golden test parity.
 
 ---
@@ -165,9 +165,17 @@ tools_v2/                               <-- Tooling crates and phased architectu
 ├── xtask/                              <-- Live task runner (`cargo xtask`), checks and blueprint compiler
 └── developer-tools/                    <-- Future heavy CLI destination (documentation scaffold)
 
-packages/
-├── tbd-schema/                          <-- Canonical JSON schemas for missions, loadouts, ORBATs
-└── map-assets/                          <-- Terrain DEM, satellite imagery, and binary tile caches
+contracts_v2/                            <-- Every shape that crosses a network, process, or language boundary
+├── definitions/                         <-- Authoritative JSON Schemas (missions, arsenal, terrain, voice)
+├── rules/                               <-- Prefab classification and mission kit aliases
+├── catalogs/                            <-- Live Workbench exports the platform ingests
+└── fixtures/                            <-- Golden test data, positive and negative
+
+assets_v2/                               <-- Terrain datasets and map symbology
+├── terrains/                            <-- Built-in islands (Everon, Arland), served at /map-assets
+├── glyphs/                              <-- World-object glyph atlas and SVG sources
+├── scratch/                             <-- Local export intermediates (gitignored)
+└── storage_spec/                        <-- Production persistent volume specification
 
 docs/                                    <-- Architecture specs, UI surface specs, and runbooks
 .ai/tickets/                             <-- Ticket registry TOML files

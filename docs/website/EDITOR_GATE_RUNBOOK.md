@@ -189,7 +189,7 @@ When a smoke hangs/fails and the doctor doesn't already name it:
   `rpm-ostree status` (a Mesa/kernel bump correlating with "last worked").
 - **P2 — chrome's own stderr (decisive for a crash):** launch chromium on the served editor with
   `--enable-logging=stderr --v=1` and grep for `FATAL` / `SkFontMgr` / `Received signal`. Serve it with
-  `gate serve --dir apps/website/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets packages/map-assets`.
+  `gate serve --dir apps/website/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets_v2/terrains`.
 - **P3 — renderer thread state:** while hung, `/proc/<renderer-pid>/task/*/stat` field 3 (State) +
   `wchan` — all-R in a `swiftshader` thread = CPU-bound sync compile; D/S on a futex = GPU-IPC wait.
   Escalate to `gdb -p <pid> -batch -ex 'thread apply all bt'` (shows `.so` names even stripped).

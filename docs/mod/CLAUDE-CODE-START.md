@@ -85,7 +85,7 @@ cargo xtask mod dev-bootstrap  (auto-launch Workbench + daemon pre-warm)
 → wb_connect → asset_search / game_read / game_browse
 → implement export script in tbd-export
 → wb_reload → mod_validate → run export
-→ commit packages/tbd-schema/registry/registry-items.workbench.json
+→ commit contracts_v2/catalogs/registry-items.workbench.json
 → cargo xtask ci schema-validate
 ```
 

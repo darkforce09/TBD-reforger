@@ -8,7 +8,7 @@ alwaysApply: false
 
 > **EXCEPTION — PLATFORM FACTORY MODE (2026-07-26).** If the operator has put you in platform-factory
 > mode, this entire rule is **suspended for factory work**: slice agents you dispatch DO edit
-> `apps/**` and `packages/tbd-schema/**`, inside a slice worktree, scoped to the ticket's `owns`
+> `apps/**` and `contracts_v2/**`, inside a slice worktree, scoped to the ticket's `owns`
 > paths. See [`platform-factory-mode.mdc`](platform-factory-mode.mdc). Outside factory mode this rule
 > applies unchanged. **There is no Claude Code to hand off to any more** — in factory mode, do not
 > write a handoff artifact and stop; dispatch a slice agent.

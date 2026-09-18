@@ -21,13 +21,13 @@ The monorepo spans three hard boundaries:
 
 | Boundary | Language | Role |
 |----------|----------|------|
-| [`packages/tbd-schema`](../../packages/tbd-schema) | JSON Schema (draft 2020-12) | **The source of truth.** Declares every cross-boundary data contract. |
+| [`contracts_v2`](../../contracts_v2) | JSON Schema (draft 2020-12) | **The source of truth.** Declares every cross-boundary data contract. |
 | [`apps/website`](../../apps/website) | Rust: `api/` (Axum) + `frontend/` (Leptos) | API server + SPA. |
 | [`apps/mod`](../../apps/mod) | Enfusion / Enforce Script (`.c`) | The Arma Reforger game framework. |
 
 A single concept — a mission, a loadout, a registry item — is declared in **four** places (schema,
 Go struct, TS interface, Enforce DTO). **Go and TS contract projections are generated** from
-`packages/tbd-schema` (T-123); Enforce DTOs stay hand-written with `@contract` + golden fixtures
+`contracts_v2` (T-123); Enforce DTOs stay hand-written with `@contract` + golden fixtures
 (Enforce has no codegen). GORM models remain the snake_case DB/API source of truth. The result
 without tags: a developer reading an Enfusion DTO cannot mechanically discover which Go route feeds
 it or which schema defines it. **Architectural context is lost at every boundary crossing.** This
@@ -59,17 +59,17 @@ same diff. A stale doc comment is treated as a bug, not a cosmetic issue.
 ## 2. The contract ontology
 
 **Rule 2.1 — Single source of truth.** Every data shape that crosses a boundary is **defined
-once** in [`packages/tbd-schema/schema/*.json`](../../packages/tbd-schema/schema). Go structs, TS
+once** in [`contracts_v2/definitions/*.json`](../../contracts_v2/definitions). Go structs, TS
 interfaces, and Enforce DTOs are **projections** of a schema definition — never the origin of one.
 A new cross-boundary field is added to the schema **first**.
 
 **Rule 2.2 — A field's type is fixed by its schema definition.** Every projection MUST match the
 schema's declared type exactly. The rule is **scoped per artifact** — there are three version
 namespaces and they do not collide:
-- **Canonical mission document** ([`mission.schema.json`](../../packages/tbd-schema/schema/mission.schema.json),
+- **Canonical mission document** ([`mission.schema.json`](../../contracts_v2/definitions/mission.schema.json),
   consumed by the Enfusion mod loader): `schemaVersion` is a **string enum** (`"1.0"`, `"1.1"`).
   Every Go/TS/Enforce projection of a *canonical mission* MUST type it as a **string**.
-- **Editor payload** ([`mission-editor-payload.schema.json`](../../packages/tbd-schema/schema/mission-editor-payload.schema.json),
+- **Editor payload** ([`mission-editor-payload.schema.json`](../../contracts_v2/definitions/mission-editor-payload.schema.json),
   the `POST /missions/:id/versions` `json_payload` superset): `schemaVersion` is an **integer**
   (editor format version) — a distinct namespace from the canonical string.
 - **Export envelope** (`GET /missions/:id/export` / inject — `missionJSON`/`MissionExport`): carries
@@ -101,7 +101,7 @@ any language's comment syntax. They are verified in CI (§10).
 ### 3.1 Grammar
 
 ```
-@contract <schema-basename>#<json-pointer>   ; basename resolved under packages/tbd-schema/schema/
+@contract <schema-basename>#<json-pointer>   ; basename resolved under contracts_v2/definitions/
 @route    <METHOD> <path>                     ; e.g. GET /api/v1/registry
 @model    <go-type>                            ; e.g. models.User  (TS → Go GORM model)
 @consumer <lang>:<repo-relative-path>          ; lang ∈ {go, ts, enf}   (OPTIONAL)
@@ -109,7 +109,7 @@ any language's comment syntax. They are verified in CI (§10).
 
 - **`@contract`** — **REQUIRED** on any type that projects a tbd-schema definition. The
   `<schema-basename>` is the filename only (stable, greppable; resolved against
-  `packages/tbd-schema/schema/`). The `<json-pointer>` is an RFC 6901 pointer — `#/` for the
+  `contracts_v2/definitions/`). The `<json-pointer>` is an RFC 6901 pointer — `#/` for the
   root, `#/$defs/item` for a definition. Example: `@contract registry-items.schema.json#/$defs/item`.
 - **`@route`** — **REQUIRED** on (a) the Go handler that serves the route, (b) the TS query/
   mutation hook that calls it, and (c) the Enfusion REST call site that hits it. This is the
@@ -129,7 +129,7 @@ This concept exists in all three languages plus a route. Today it carries *ad-ho
 the standard makes them uniform. The schema definition:
 
 ```jsonc
-// packages/tbd-schema/schema/registry-items.schema.json  →  #/$defs/item
+// contracts_v2/definitions/registry-items.schema.json  →  #/$defs/item
 "item": {
   "required": ["resource_name", "display_name", "category", "kind"],   // snake_case items
   ...
@@ -180,7 +180,7 @@ export interface RegistryItem { resource_name: string; /* ... */ }
 **Enfusion producer** — [`TBD_RegistryItemsExportPlugin.c`](../../apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c) hand-writes the snake_case keys; its header cites the schema in prose. Standardize:
 
 ```cpp
-//! Workbench export → packages/tbd-schema/registry/registry-items.workbench.json
+//! Workbench export → contracts_v2/catalogs/registry-items.workbench.json
 //! @contract registry-items.schema.json#/
 class TBD_RegistryItemsExportPlugin { ... }
 ```
@@ -403,13 +403,13 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
 **Mandate**
 
 1. **Generated projections (shipped, Rust-only since T-159.29.3).** Contract types are **generated from**
-   `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`:
+   `contracts_v2/definitions/*.json` via `cargo xtask ci schema-codegen`:
    - Rust → `apps/website/api_v2/src/missions/contract/generated/` (DO NOT hand-edit).
    - Leptos SPA hand-writes `apps/website/frontend/src/v2/core/api/dto/` gated by R-api golden tests.
    - Enforce Script has no codegen tooling: Enforce DTOs stay hand-written but MUST carry
      `@contract` (§3/§6.4) **and** a golden fixture that round-trips through schema validate.
 2. **API runtime validation (shipped).** `CreateVersion` validates the incoming version payload
-   against [`mission-editor-payload.schema.json`](../../packages/tbd-schema/schema/mission-editor-payload.schema.json)
+   against [`mission-editor-payload.schema.json`](../../contracts_v2/definitions/mission-editor-payload.schema.json)
    **before persist** (`apps/website/api_v2/src/missions/contract/schema_validators.rs`),
    returning **400** on a malformed payload. It validates the **editor superset**, not the canonical
    `mission.schema.json` — those are different artifacts (see §2.2).
@@ -464,7 +464,7 @@ The gate prints its own scope on every run. Trust that line over this section if
 Pin: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 
 1. **Fixtures live crate-local** in `tests/fixtures/` beside their primary consumer.
-2. **Cross-crate contract data** lives in `packages/tbd-schema` (schema / golden / golden-missions / registry).
+2. **Cross-crate contract data** lives in `contracts_v2` (schema / golden / golden-missions / registry).
 3. **`.ai/artifacts/` is pipeline OUTPUT only** — never a load-bearing input (`include_str!` / gate reads forbidden).
 4. Byte-pinned goldens are excluded from editorconfig-checker (see `.editorconfig-checker.json`).
 

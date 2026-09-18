@@ -85,7 +85,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "schema-codegen",
-        help: "Regenerate Rust contract types from contracts_v2/schema via typify (T-165.3; loadout.rs is hand-maintained)",
+        help: "Regenerate Rust contract types from contracts_v2/definitions via typify (loadout_projection.rs is hand-maintained)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema codegen", false, codegen)],

@@ -30,7 +30,7 @@ fully in force for everything else, and nothing here is a general licence to wri
 
 | Rule | Normally | In factory mode |
 |---|---|---|
-| [`application-code-forbidden.mdc`](application-code-forbidden.mdc) | No Cursor edits under `apps/**`, `packages/tbd-schema/**` | **Slice agents MAY edit these** — inside a slice worktree, scoped to the ticket's `owns` paths |
+| [`application-code-forbidden.mdc`](application-code-forbidden.mdc) | No Cursor edits under `apps/**`, `contracts_v2/**` | **Slice agents MAY edit these** — inside a slice worktree, scoped to the ticket's `owns` paths |
 | [`cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) Mode C | "Code is Claude Code — output a handoff" | **You dispatch and integrate code yourself.** There is no Claude Code to hand off to |
 | [`tbd-platform.mdc`](tbd-platform.mdc) "work on `main` only — no branches" | True for single-ticket mode | **False here.** The factory uses `slice/T-XXX` branches in git worktrees under `.ai/artifacts/worktrees/`. That is the design, not a violation |
 

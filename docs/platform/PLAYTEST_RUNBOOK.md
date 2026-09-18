@@ -154,7 +154,7 @@ compiler. Author your own as well.
    - **slot B** — gear only, no cargo;
    - **slot C** — cargo only, no gear;
    - **slot D** — nothing (bare kit).
-   This is exactly the coverage `packages/tbd-schema/golden-missions/slot-loadout-coverage.json`
+   This is exactly the coverage `contracts_v2/fixtures/missions/valid/slot-loadout-coverage.json`
    encodes; open it if you want a worked example of every field's shape.
 4. **Save Version** (top strip). You need a saved version — `/compiled` 409s
    `no saved version to compile` without one

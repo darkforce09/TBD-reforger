@@ -58,7 +58,7 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
 5. **Push to GitHub after every wave** (`cargo xtask mod wave land` does it). Work must not be trapped on one
    machine. `git-lfs` is installed on neither the container nor the host and the `pre-push` hook
    exits 2 without it, so the push uses `--no-verify` — but ONLY after confirming no commit
-   touches `packages/map-assets/**` (the only LFS-tracked path). If one does, `cargo xtask mod wave push`
+   touches `assets_v2/terrains/**` (the only LFS-tracked path). If one does, `cargo xtask mod wave push`
    refuses rather than leaving the remote pointing at LFS objects that were never uploaded.
 6. **Verify green → automatically dispatch the next wave.** Do not wait to be asked.
 7. **Batch waves by file-disjointness.** The parallelism limit is file collisions, not Workbench.
@@ -252,7 +252,7 @@ distrobox-host-exec cargo test -p developer-tools --lib enf::
 
 `cargo xtask ci schema-validate` exits 2 on `PNG decode: Invalid PNG signature`. **Pre-existing and not a
 slice regression** — proved by stashing slice edits and re-running on a clean tree. Cause:
-`git-lfs` is not installed, so `packages/map-assets/everon/dem/everon-dem-16bit.png` is a 133-byte
+`git-lfs` is not installed, so `assets_v2/terrains/everon/dem/everon-dem-16bit.png` is a 133-byte
 LFS pointer rather than an image. The golden-mission checks inside that target still PASS; it is the
 later DEM step that dies. Not in the wave gate, so it does not block a wave — but do not mistake it
 for something a slice broke.

@@ -72,3 +72,4 @@ Keeping live catalogs out of `fixtures/` matters most: an ingest that silently f
 
 - **[`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md)**: The typify codegen pipeline, the schema evolution policy, and the CI gates that enforce both.
 - **[`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md)**: Every file here, what reads it, and what breaks without it.
+- **[`MIGRATION_HANDOFF.md`](./MIGRATION_HANDOFF.md)**: Where each legacy file went, and the validation record.

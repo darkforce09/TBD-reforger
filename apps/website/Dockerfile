@@ -32,7 +32,7 @@ RUN printf '%s\n' \
 COPY apps/website/api_v2 ./apps/website/api_v2
 COPY apps/website/map-engine ./apps/website/map-engine
 COPY apps/website/graphics-engine ./apps/website/graphics-engine
-COPY contracts_v2/schema ./contracts_v2/schema
+COPY contracts_v2/definitions ./contracts_v2/definitions
 COPY contracts_v2/rules/kit-aliases.json ./contracts_v2/rules/kit-aliases.json
 
 ENV CARGO_TERM_COLOR=never

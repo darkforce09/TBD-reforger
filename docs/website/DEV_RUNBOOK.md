@@ -49,7 +49,7 @@ curl -sf http://localhost:8080/healthz
 
 ```bash
 cargo xtask ci schema-codegen    # → apps/website/api_v2/src/missions/contract/generated/ (DO NOT hand-edit)
-cargo xtask ci schema-validate   # packages/tbd-schema goldens
+cargo xtask ci schema-validate   # contracts_v2 goldens
 cargo xtask ci verify-citations
 ```
 
@@ -295,8 +295,8 @@ cargo xtask db registry-import
 
 # Or explicit paths / prune:
 # cargo run --bin import-registry --manifest-path apps/website/api_v2/Cargo.toml -- \
-#   --items packages/tbd-schema/registry/registry-items.workbench.json \
-#   --compat packages/tbd-schema/registry/registry-compat.workbench.json \
+#   --items contracts_v2/catalogs/registry-items.workbench.json \
+#   --compat contracts_v2/catalogs/registry-compat.workbench.json \
 #   [--modpack <uuid>] [--prune]
 ```
 
@@ -317,20 +317,20 @@ curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
 
 ## Map assets (T-090 / T-091 / T-171)
 
-Corpus: `packages/map-assets/` — Everon ~1.3 GB on disk; **tracked in LFS = exactly 2 objects**:
+Corpus: `assets_v2/terrains/` — Everon ~1.3 GB on disk; **tracked in LFS = exactly 2 objects**:
 
 | Object | Size | Purpose |
 |--------|------|---------|
 | `everon/dem/everon-dem-16bit.png` | ~72 MB | DEM / hillshade / map-engine tests |
 | `everon/satellite/everon-sat.tbd-sat` | ~153 MB | Unified satellite basemap |
 
-`**/staging/` + `**/tiles/` are gitignored (rebuildable via the `cargo xtask ci map-*` tasks). `.gitattributes` LFS patterns: `packages/map-assets/**/*.{png,r16,tbd-sat}`.
+`**/staging/` + `**/tiles/` are gitignored (rebuildable via the `cargo xtask ci map-*` tasks). `.gitattributes` LFS patterns: `assets_v2/terrains/**/*.{png,r16,tbd-sat}`.
 
 | Consumer | Needs | Mechanism |
 |----------|-------|-----------|
 | CI `map-engine` job | DEM only | `git lfs pull --include …/everon-dem-16bit.png` |
 | CI other jobs | none | sat deliberately never dragged |
-| Local dev editor | DEM + sat | Axum `ServeDir` `/map-assets` (`MAP_ASSETS_DIR`, default `../../../packages/map-assets` from the `apps/website/api_v2/` CWD) ← Trunk proxy ← SPA `fetch("/map-assets/…")` |
+| Local dev editor | DEM + sat | Axum `ServeDir` `/map-assets` (`MAP_ASSETS_DIR`, default `../../../assets_v2/terrains` from the `apps/website/api_v2/` CWD) ← Trunk proxy ← SPA `fetch("/map-assets/…")` |
 | Gate harness | dist + optional map-assets | `gate serve --map-assets` |
 | Clone without LFS | degraded | manifest/JSON/chunks plain-git; DEM/sat 404 → no sat/hillshade |
 
@@ -342,7 +342,7 @@ cargo xtask ci lfs-sat   # ~153 MB — full satellite bundle
 # or: git lfs install && git lfs pull
 ```
 
-Each terrain has a `manifest.json` validated against [`terrain-manifest.schema.json`](../../packages/tbd-schema/schema/terrain-manifest.schema.json).
+Each terrain has a `manifest.json` validated against [`terrain-manifest.schema.json`](../../contracts_v2/definitions/terrain-manifest.schema.json).
 
 **Tile pyramid (optional):** not in git. Rebuild:
 
@@ -358,7 +358,7 @@ cargo xtask ci map-cartographic-verify
 
 **Forest canopy (T-176):** island forest highlight is **8 m TBDD canopy mass** (not the old 32 m Path B landcover forest wash). Clearings stay open. Retune tightness: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO`, then `cargo run -p developer-tools --bin world -- redensify --terrain everon` (committed-chunk path; no Workbench).
 
-See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick spill → `/var/tmp`.
+See [`assets_v2/terrains/README.md`](../../assets_v2/terrains/README.md). **Ops:** ImageMagick spill → `/var/tmp`.
 
 **Verify:**
 

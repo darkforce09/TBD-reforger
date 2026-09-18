@@ -8,7 +8,8 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 |------|----------|
 | [`apps/website/`](apps/website/) | Nest (T-171): [`api_v2/`](apps/website/api_v2/) Rust Axum + sqlx (`website-api`, compose, `.env`, seeds) · [`frontend/`](apps/website/frontend/) Leptos Trunk SPA (`website-frontend`) — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md) |
 | [`apps/mod/`](apps/mod/) | `tbd-framework` Enfusion scripts; `crf_framework/` (gitignored local reference) |
-| [`packages/tbd-schema/`](packages/tbd-schema/) | Mission JSON schema, golden missions, spikes |
+| [`contracts_v2/`](contracts_v2/) | Wire schemas, classification rules, live catalogs, golden fixtures |
+| [`assets_v2/`](assets_v2/) | Terrain datasets and map glyphs, served at `/map-assets` |
 | [`docs/specs/`](docs/specs/) | Design specs (Mission Creator, blueprints, UX) |
 | [`docs/platform/`](docs/platform/) | Platform runbooks and architecture |
 | [`docs/mod/`](docs/mod/) · [`docs/website/`](docs/website/) | App-specific docs |

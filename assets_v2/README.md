@@ -72,3 +72,4 @@ Each terrain ships every bulk asset in both its JSON and its binary encoding. Th
 - **[`terrains/README.md`](./terrains/README.md)**: The terrain registry and the built-in dataset contract.
 - **[`glyphs/README.md`](./glyphs/README.md)**: The world-object glyph atlas.
 - **[`storage_spec/README.md`](./storage_spec/README.md)**: The production persistent volume and its upload ingest gates.
+- **[`MIGRATION_HANDOFF.md`](./MIGRATION_HANDOFF.md)**: Where each legacy asset went, the Git LFS proof, and the outstanding host step.

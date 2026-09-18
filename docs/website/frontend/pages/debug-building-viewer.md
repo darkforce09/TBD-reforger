@@ -7,7 +7,7 @@
 ## Purpose
 
 Hyper-focused single-prefab test bench for the architectural blueprint pipeline: renders one
-building-blueprint JSON (`packages/tbd-schema/schema/building-blueprint.schema.json` contract,
+building-blueprint JSON (`contracts_v2/definitions/building-blueprint.schema.json` contract,
 produced by the Workbench extractor in `apps/mod/tbd-export`) and drives the 2.5D
 line-of-sight raycaster (`map_engine_core::building_blueprint::evaluate_los`) interactively.
 Exists so the operator can visually verify extractor output against the real prefab before the

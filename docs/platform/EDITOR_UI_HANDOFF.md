@@ -109,7 +109,7 @@ question.
 
 ### Rocks
 
-**The data already ships.** `packages/map-assets/everon/manifest.json` lists `P4_rocks` in
+**The data already ships.** `assets_v2/terrains/everon/manifest.json` lists `P4_rocks` in
 `importPhaseShipped` and carries a `rockLarge` entry in the type inventory. So this is a *render*
 gap, not an export gap — the chunks contain rocks and nothing draws them. Cheaper than it sounds.
 

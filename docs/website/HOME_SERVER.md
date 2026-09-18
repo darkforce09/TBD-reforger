@@ -249,7 +249,7 @@ rsync -avz --delete \
   --exclude 'apps/website/frontend/dist' \
   --exclude 'apps/website/.env' \
   --exclude 'target' \
-  --exclude 'packages/map-assets' \
+  --exclude 'assets_v2/terrains' \
   ./ "${TBD_SSH_HOST}:${TBD_REMOTE_DIR}/"
 ```
 
@@ -263,7 +263,7 @@ cd /home/sam/tbd/repo/apps/website/api_v2
 cargo build --release --bin api
 ```
 
-Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `packages/map-assets` initially; for full Mission Creator, sync or build assets separately and point `MAP_ASSETS_DIR` at them on the server.
+Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `assets_v2/terrains` initially; for full Mission Creator, sync or build assets separately and point `MAP_ASSETS_DIR` at them on the server.
 
 ---
 

@@ -320,7 +320,7 @@ This section covers Enfusion **code** behaviour. The networked-code **tags**
   DOCUMENTATION_STANDARDS.md §6–§7) on `.c` files. Gate: **CI-SCRIPT** (`cargo run -p xtask -- schema citations`).
 - **ENF-4 (Usability) — Every JSON-parsed DTO MUST have a golden fixture that validates.** Gate:
   **CI-SCRIPT** — the Enfusion DTO branch of `cargo xtask ci schema-validate`
-  (10 Backend `@contract` DTOs → `packages/tbd-schema/enfusion/*.sample.json`; live @ **T-125.4**).
+  (10 Backend `@contract` DTOs → `contracts_v2/fixtures/enfusion_samples/*.sample.json`; live @ **T-125.4**).
 
 **Process (from [`CLAUDE.md`](../../CLAUDE.md)):** do **not** edit `apps/mod` `.c` files unless a ticket
 slice explicitly assigns `claude-code` to that path, and **use `enfusion-mcp` before editing any `.c`

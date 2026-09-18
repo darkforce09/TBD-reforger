@@ -1,7 +1,7 @@
 # TBD Reforger — Play Area Warning UI Functional Reference Specification
 
 **Target Component:** `TBD_PlayAreaWarning` (In-Game HUD Overlay)  
-**Framework Alignment:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`), Server Enforcer (`TBD_PlayAreaComponent.c`), Zone Registry (`TBD_ZoneRegistry.c`), and Mission Schema (`packages/tbd-schema/`)  
+**Framework Alignment:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`), Server Enforcer (`TBD_PlayAreaComponent.c`), Zone Registry (`TBD_ZoneRegistry.c`), and Mission Schema (`contracts_v2/`)  
 **Design Standard:** Aegis UI Design System (`TBD_UITheme.c`)
 
 ---

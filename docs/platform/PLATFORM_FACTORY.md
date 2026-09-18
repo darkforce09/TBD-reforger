@@ -447,7 +447,7 @@ to the slice's own diff against `main`.
 4. **Then run an adversarial verify agent** against merged `main`. Its job is to find what the
    slice agents got wrong, not to confirm they were right. On T-181 this caught two live MAJORs.
 5. **Push after every landing group.** Work must not be trapped on one machine. `cargo xtask platform wave push`
-   refuses `--no-verify` if the range touches `packages/map-assets/**` (the only LFS-tracked path).
+   refuses `--no-verify` if the range touches `assets_v2/terrains/**` (the only LFS-tracked path).
 6. **Verify green → dispatch the next disjoint set automatically.** Do not wait to be asked.
 7. **Agents never self-ship.** They implement, gate-verify, and report. The command center owns
    `.ai/tickets/registry.json` and every status transition.
@@ -532,7 +532,7 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 | Mission Creator — data loss | 8 | `apps/website/frontend/src/` |
 | Website — server manager | 8 | `apps/website/api_v2/src/` |
 | Arsenal / loadouts | 7 | frontend + `flatten.rs` |
-| Data pipeline | 7 | `packages/tbd-schema/`, `tools/` |
+| Data pipeline | 7 | `contracts_v2/`, `tools/` |
 | End-to-end test lane | 6 | `scripts/mod/`, CI |
 | Discord | 6 | `apps/website/api_v2/src/` |
 | Infra / deploy | 6 | root, `docs/` |

@@ -17,7 +17,7 @@ from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
 - **Date:** Saturday 2026-08-22 — announced on the event website.
 - **Scale:** 20-40 players, internal test.
 - **Mission:** hand-written Mission JSON (e.g.
-  [`packages/tbd-schema/golden-missions/bridgehead-at-levie.json`](../../packages/tbd-schema/golden-missions/bridgehead-at-levie.json)),
+  [`contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json`](../../contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json)),
   served via `GET /api/missions/{id}/compiled` — **BLOCKED on T-092**: that route existed
   only in the Phase-0 REST spike backend (since removed); the current backend serves
   `/api/v1` only. Until T-092, the file fallback (`$profile:missions/{id}.json`) is the
@@ -55,9 +55,9 @@ from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
 - **Proposed date:** Saturday 2026-11-21 (after partner Phase 0.2 + Phase 3 integration).
 - **Scale:** 20+ players.
 - **Depends on:** partner VOIP capability matrix
-  ([`packages/tbd-schema/spikes/voip-capability-matrix.md`](../../packages/tbd-schema/spikes/voip-capability-matrix.md))
+  ([`contracts_v2/spikes/voip-capability-matrix.md`](../../contracts_v2/spikes/voip-capability-matrix.md))
   and the locked bridge contract
-  ([`packages/tbd-schema/bridge/bridge-contract.md`](../../packages/tbd-schema/bridge/bridge-contract.md)).
+  ([`contracts_v2/definitions/bridge-messages.md`](../../contracts_v2/definitions/bridge-messages.md)).
 
 ### Success criteria
 

@@ -14,8 +14,8 @@ The canonical home for each artifact class.
 | Data seed | `apps/website/api_v2/seeds/*.sql` (applied by root `cargo xtask db seed`; mock_data.sql manual-psql only) |
 | Editor/gate smoke | `tools_v2/developer-tools` (`gate` bin) wired through `cargo xtask mk leptos-gates` |
 | Test fixture | crate-local `tests/fixtures/` beside consumer; NEVER `.ai/artifacts/` |
-| Cross-crate contract golden | `packages/tbd-schema/{schema,golden,golden-missions,registry}/` |
-| Map asset | `packages/map-assets/<terrain>/` (LFS: dem png + sat .tbd-sat only; staging/tiles rebuildable local) |
+| Cross-crate contract golden | `contracts_v2/fixtures/{missions,map,registry}/` |
+| Map asset | `assets_v2/terrains/<terrain>/` (LFS: dem png + sat .tbd-sat only; staging/tiles rebuildable local) |
 | Ticket | `.ai/tickets/<id>.toml` + `cargo xtask ticket sync` (generated TICKET_*.md never hand-edited) |
 | Spec / doc | `docs/**` only — never `apps/**/docs` or `packages/**/docs` (verify-doc-layout enforces) |
 | Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `apps/mod/`) |

@@ -5,7 +5,7 @@
 - [`spectator_ui/spectator_death_and_kill_info.png`](./spectator_ui/spectator_death_and_kill_info.png)
 - [`spectator_ui/spectator_mines_playercount.png`](./spectator_ui/spectator_mines_playercount.png)  
 **System Domain:** One-Life Elimination Camera, Combat Forensics, Faction Attrition Telemetry & Hazard Tracking  
-**Framework Alignment:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`), Spectator Component (`CRF_SpectatorCamera.c`), and Mission Schema Settings (`packages/tbd-schema/`)
+**Framework Alignment:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`), Spectator Component (`CRF_SpectatorCamera.c`), and Mission Schema Settings (`contracts_v2/`)
 
 ---
 

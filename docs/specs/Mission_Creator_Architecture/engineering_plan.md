@@ -51,7 +51,7 @@ All already-present deps are reused: `zustand`, `@tanstack/react-query`, `@base-
    `internal/handlers/missions.go`.
 3. **Asset hosting** — top-down map tiles (Everon/Arland) and the 16-bit DEM heightmap for each
    terrain, served as static assets the engine can `fetch`. **Tickets:** **T-090.1** (aligned map tiles — tile pyramid not yet in repo),
-   **T-091** (DEM + Z-axis on place/move). **Everon DEM shipped** @ T-091.0 (`packages/map-assets/everon/dem/everon-dem-16bit.png`); tiles still pending.
+   **T-091** (DEM + Z-axis on place/move). **Everon DEM shipped** @ T-091.0 (`assets_v2/terrains/everon/dem/everon-dem-16bit.png`); tiles still pending.
 
 ---
 
@@ -538,7 +538,7 @@ parses ORBAT out of `MissionVersion.JSONPayload`:
 - `internal/handlers/events.go` `materializeSlots` expands each squad's slots into ORBAT
   records (`Faction, Callsign, Squad, Role, Loadout, Tag, SlotIndex`).
 
-**Save Version (T-062.1.1):** POST body is **editor-only** — `orbat[]` omitted; Go derives on event attach. Validated against [`mission-editor-payload.schema.json`](../../../packages/tbd-schema/schema/mission-editor-payload.schema.json) (int `schemaVersion`; T-123.5). **Export** and legacy versions still include explicit `orbat[]`. Extended keys the mod needs —
+**Save Version (T-062.1.1):** POST body is **editor-only** — `orbat[]` omitted; Go derives on event attach. Validated against [`mission-editor-payload.schema.json`](../../../contracts_v2/definitions/mission-editor-payload.schema.json) (int `schemaVersion`; T-123.5). **Export** and legacy versions still include explicit `orbat[]`. Extended keys the mod needs —
 `map`, `environment`, `objectives`, `vehicles`, `markers`, `loadouts`. Example skeleton:
 
 ```jsonc
