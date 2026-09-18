@@ -23,8 +23,9 @@ use crate::core::http::pagination::PageParams;
 use crate::core::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
 use crate::core::text::http_url_guard::is_http_url;
 use crate::core::wire_format::go_time;
+use crate::missions::models::mission::MissionArmory;
 use crate::models::{
-    Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot, RegistrationState,
+    Event, EventMission, EventStatus, OrbatReservation, OrbatSlot, RegistrationState,
 };
 use crate::services::{
     OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template,
@@ -1129,8 +1130,8 @@ pub async fn get_event(
         // `models::telemetry::Match` (T-325) for the recorded rejection.
         let Some((title, terrain, game_mode, briefing, thumbnail_url)): Option<(
             String,
-            crate::models::TerrainType,
-            crate::models::GameMode,
+            crate::missions::models::mission::TerrainType,
+            crate::missions::models::mission::GameMode,
             String,
             String,
         )> = sqlx::query_as(

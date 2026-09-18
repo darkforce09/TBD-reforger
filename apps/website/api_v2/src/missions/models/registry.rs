@@ -1,4 +1,5 @@
-//! Registry model — Rust port of `internal/models/registry.go`.
+//! Registry models: the flat per-modpack item catalog and the directed compatibility graph
+//! that says what goes in or on what.
 //!
 //! @contract registry-items.schema.json#/$defs/item
 
@@ -8,14 +9,14 @@ use uuid::Uuid;
 
 use crate::core::wire_format::go_time;
 
-/// Serde default for [`RegistryCompatEdge::qty`] — a row predating T-068.15.1 is one edge.
+/// Serde default for [`RegistryCompatEdge::qty`] — an edge with no stated multiplicity is one.
 fn default_edge_qty() -> i32 {
     1
 }
 
 /// One placeable/equipable engine item in a modpack's flat catalog. Unique per
 /// `(modpack_id, resource_name)`; `kind` holds the registry-items schema kind
-/// vocabulary (v3, T-068.10.2) as plain text — new kinds need no model/DDL change.
+/// vocabulary (v3) as plain text — new kinds need no model/DDL change.
 /// v3 metadata columns are nullable: v2 envelopes leave them NULL.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RegistryItem {
@@ -46,16 +47,16 @@ pub struct RegistryItem {
     /// Container volume capacity (MaxCumulativeVolume, cm³) when the item is a container.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub max_volume_cm3: Option<f64>,
-    /// Inventory UI grid width in cells (T-068.15.1; scanner-derived, VOLUME_PER_CELL=50, w=4).
+    /// Inventory UI grid width in cells (scanner-derived, VOLUME_PER_CELL=50, w=4).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub cargo_grid_w: Option<i32>,
-    /// Inventory UI grid height in cells (T-068.15.1; h = max(3, ceil(cells/4))).
+    /// Inventory UI grid height in cells (h = max(3, ceil(cells/4))).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub cargo_grid_h: Option<i32>,
     /// Addon ID this prefab was scanned from (joins the envelope addons[] scan set).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub addon: Option<String>,
-    /// Base weapon this row is a factory attachment/camo configuration of (T-068.10.5).
+    /// Base weapon this row is a factory attachment/camo configuration of.
     /// Pickers hide variant rows; NULL for base weapons and non-weapons.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub variant_of: Option<String>,
@@ -69,7 +70,7 @@ pub struct RegistryItem {
 
 /// One directed compatibility edge: `from_node` is the item that goes in/on,
 /// `to_node` the host that accepts it. Unique per `(modpack_id, from_node,
-/// to_node, edge_type, COALESCE(evidence, ''))` (T-068.15.1); `edge_type` holds
+/// to_node, edge_type, COALESCE(evidence, ''))`; `edge_type` holds
 /// the registry-compat schema edge vocabulary as plain text — new edge families
 /// need no model/DDL change.
 ///
@@ -83,7 +84,7 @@ pub struct RegistryCompatEdge {
     pub edge_type: String,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub evidence: String,
-    /// Edge multiplicity (T-068.15.1): the scanner emits `character_default_cargo`
+    /// Edge multiplicity: the scanner emits `character_default_cargo`
     /// once per `PrefabsToSpawn` entry; the importer aggregates duplicates here.
     /// 1 for every other edge family.
     #[serde(default = "default_edge_qty")]

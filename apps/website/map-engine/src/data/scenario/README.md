@@ -2,7 +2,8 @@
 
 The authored mission. Public mission interfaces: existing compiler import paths remain available
 while implementations live in the AST, compiler, extensions, and validation modules. `slot_line`
-formats plain-text ORBAT summaries.
+formats plain-text ORBAT summaries. `ballistics` computes mortar firing solutions from per-weapon
+charge tables.
 
 The aliases this module's `mod.rs` publishes (`orbat`, `compile`, `flatten`, `kit`, `validate`,
 `wire_safety`, `audio`, `weather`, `spawn_modules`, `tasks`, `win_conditions`, `radio_plan`,

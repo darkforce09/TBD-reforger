@@ -106,7 +106,7 @@ pub(super) fn walk_rust_sources(root: &Path) -> std::result::Result<Vec<PathBuf>
     scan::walk_files(&refs, |path| {
         path.extension().and_then(|ext| ext.to_str()) == Some("rs")
             // The contract generator owns this tree; source splits cannot maintain it.
-            && !path.starts_with(root.join("apps/website/api_v2/src/contract/generated"))
+            && !path.starts_with(root.join("apps/website/api_v2/src/missions/contract/generated"))
     })
 }
 

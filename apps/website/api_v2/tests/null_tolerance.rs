@@ -103,11 +103,11 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("refresh_tokens", "revoked_at"),
     // community_content::models::announcement::Announcement
     ("announcements", "published_at"),
-    // models::mission::Mission
+    // missions::models::mission::Mission
     ("missions", "current_version_id"),
     ("missions", "reviewed_by"),
     ("missions", "reviewed_at"),
-    // models::mission::MissionArmory — `null` = unlimited, a real third state.
+    // missions::models::mission::MissionArmory — `null` = unlimited, a real third state.
     ("mission_armories", "quantity"),
     // models::event::Event — `match_id` dropped at T-284 (dead weight; link is matches.event_id)
     ("events", "server_id"),  // T-260 Option<Uuid> — migration 0011
@@ -145,7 +145,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("fire_missions", "event_id"),
     // community_content::models::wiki::WikiPage
     ("wiki_pages", "updated_by"),
-    // models::registry::RegistryItem — every one of these is `Option`, and NULL means
+    // missions::models::registry::RegistryItem — every one of these is `Option`, and NULL means
     // "engine class default", which is a distinct state from any zero value.
     ("registry_items", "abstract"),
     ("registry_items", "arsenal_type"),

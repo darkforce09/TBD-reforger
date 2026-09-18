@@ -1,8 +1,9 @@
-//! T-165.3 — contract codegen: JSON Schema → Rust serde types via `typify`, replacing the Node
-//! `quicktype` pipeline (`packages/tbd-schema/scripts/codegen.mjs`). Four schemas are generated;
-//! `loadout.rs` is HAND-MAINTAINED since T-165.3 (the quicktype output was provably lossy — it
-//! merged the versioned `oneOf` and emitted empty `Wear{}`/`Equipment{}`) and is guarded by serde
-//! round-trip tests against the committed sample fixtures inside that file.
+//! Contract codegen: JSON Schema → Rust serde types via `typify`, with no Node in the pipeline.
+//! Four schemas are generated. The loadout-export model is NOT one of them — generated output for
+//! its versioned root `oneOf` is provably lossy (the branches merge and `Wear{}`/`Equipment{}` come
+//! out empty), so it is hand-maintained in
+//! `apps/website/api_v2/src/missions/contract/loadout_projection.rs` and guarded there by serde
+//! round-trip tests against the committed sample fixtures.
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -22,7 +23,7 @@ const TARGETS: [(&str, &str); 4] = [
 pub fn codegen() -> Result<u8> {
     let root = repo_root()?;
     let schema_dir = root.join("packages/tbd-schema/schema");
-    let out_dir = root.join("apps/website/api_v2/src/contract/generated");
+    let out_dir = root.join("apps/website/api_v2/src/missions/contract/generated");
     fs::create_dir_all(&out_dir)?;
 
     for (schema_file, module) in TARGETS {
@@ -49,9 +50,9 @@ pub fn codegen() -> Result<u8> {
         let out_path = out_dir.join(format!("{module}.rs"));
         fs::write(&out_path, banner + &body)?;
         rustfmt(&out_path)?;
-        println!("  {schema_file} -> src/contract/generated/{module}.rs");
+        println!("  {schema_file} -> src/missions/contract/generated/{module}.rs");
     }
-    println!("schema-codegen complete (loadout.rs is hand-maintained — see its header)");
+    println!("schema-codegen complete (loadout_projection.rs is hand-maintained — see its header)");
     Ok(0)
 }
 

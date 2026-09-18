@@ -129,7 +129,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-codegen-fresh",
-        help: "Fail if apps/website/api_v2/src/contract/generated is stale after schema-codegen",
+        help: "Fail if apps/website/api_v2/src/missions/contract/generated is stale after schema-codegen",
         group: "schema",
         lane: Lane::Ci,
         steps: &[Step::Native {

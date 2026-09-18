@@ -15,8 +15,8 @@ use serde::Serialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::contract::generated::{registry_compat, registry_items};
-use crate::contract::{
+use crate::missions::contract::generated::{registry_compat, registry_items};
+use crate::missions::contract::schema_validators::{
     ContractError, validate_registry_compat_envelope, validate_registry_items_envelope,
 };
 

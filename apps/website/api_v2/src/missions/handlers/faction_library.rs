@@ -1,4 +1,4 @@
-//! Faction library CRUD (T-153) — operator-authored reusable factions for the Mission
+//! Faction library CRUD — operator-authored reusable factions for the Mission
 //! Creator palette. Owner-scoped (mission_maker+): every route reads/writes only the
 //! caller's rows. The full faction document lives in `doc` jsonb and is validated
 //! against faction-library.schema.json on every write; `side`/`name` are projected out
@@ -14,11 +14,11 @@ use serde_json::Value;
 use sqlx::types::Json as SqlxJson;
 use uuid::Uuid;
 
-use crate::contract::validate_faction_library_doc;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::MissionMakerUser;
-use crate::models::UserFaction;
+use crate::missions::contract::schema_validators::validate_faction_library_doc;
+use crate::missions::models::faction::UserFaction;
 
 /// Validate the raw doc and project (side, name) out of it.
 fn validated_side_name(doc: &Value) -> Result<(String, String), ApiError> {
@@ -34,8 +34,8 @@ fn validated_side_name(doc: &Value) -> Result<(String, String), ApiError> {
     }
     // Safe unwraps: the schema just guaranteed both required string fields.
     // Schema minLength:1 is a LENGTH check only — "\t", "   ", and "USA " all validate
-    // (T-358). Without a content check here, those bytes land in the UNIQUE (owner_id, name)
-    // key and defeat ON CONFLICT / the clash SELECT (same class as wiki slug T-349).
+    // Without a content check here, those bytes land in the UNIQUE (owner_id, name) key and
+    // defeat ON CONFLICT / the clash SELECT (the same class as a blank-but-present wiki slug).
     // Generated TbdFactionLibraryEntryName also rejects only len < 1 — do not rely on it.
     let side = doc["side"].as_str().unwrap_or_default().to_string();
     let name = doc["name"].as_str().unwrap_or_default();

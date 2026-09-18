@@ -22,7 +22,7 @@ use crate::community_content::services::modpack_lookup::{ModpackDto, load_modpac
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
-use crate::models::TerrainType;
+use crate::missions::models::mission::TerrainType;
 use crate::server_infrastructure::models::server::{Server, ServerStatus};
 
 // Queries cast `inet`→text (`ip::text`) and `numeric`→f64 (`server_fps::float8`).

@@ -18,8 +18,11 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser};
 use crate::handlers::load_mission;
 use crate::handlers::missions::build_mission_doc;
-use crate::models::{FireMission, MissionStatus};
-use crate::services::{FireSolution, SolveError, solve_fire_mission};
+use crate::missions::models::mission::MissionStatus;
+use crate::models::FireMission;
+use website_map_engine::data::scenario::ballistics::{
+    FireSolution, SolveError, solve_fire_mission,
+};
 
 /// Staging dir for injected mission.json files (game-server bridge pickup).
 const MISSION_STAGE_DIR: &str = "missions";
@@ -32,7 +35,8 @@ const MISSION_STAGE_DIR: &str = "missions";
 /// genuinely optional, but they fail in two different ways and the fix differs accordingly.
 ///
 /// **`weapon_system` is a lookup key, and its default was the worst defect in the ticket.** It
-/// selects the muzzle-velocity table in [`crate::services::solve_fire_mission`], and
+/// selects the muzzle-velocity table in
+/// [`website_map_engine::data::scenario::ballistics::solve_fire_mission`], and
 /// `services/mortar.rs:46-52` answers an unknown weapon by *silently substituting*
 /// `DEFAULT_MORTAR`. So an absent, misspelled or padded weapon did not fail — it returned a
 /// complete, confident firing solution for a **different tube**. Measured on the pre-fix binary

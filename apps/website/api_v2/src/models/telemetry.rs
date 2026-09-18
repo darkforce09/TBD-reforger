@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::core::wire_format::{go_time, go_time_opt};
-use crate::models::TerrainType;
+use crate::missions::models::mission::TerrainType;
 
 /// Mission outcomes (Postgres ENUM `mission_outcome`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

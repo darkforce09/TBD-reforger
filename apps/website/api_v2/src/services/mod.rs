@@ -1,7 +1,6 @@
 //! Business-logic services shared across domains.
 
 pub mod mission_compile;
-pub mod mortar;
 pub mod registry_import;
 pub mod user_stats;
 
@@ -16,8 +15,6 @@ pub use mission_compile::{
     COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileFinding,
     compile_diagnostics_rules_header,
 };
-// Ported to the shared crate (T-145 Phase 2); re-exported so `crate::services::…` callers are unchanged.
-pub use mortar::{FireSolution, SolveError, solve_fire_mission};
 pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
 pub use website_map_engine::data::scenario::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,

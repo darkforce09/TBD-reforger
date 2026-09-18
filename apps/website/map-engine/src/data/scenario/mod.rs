@@ -18,6 +18,9 @@ pub mod validation;
 /// Plain-text ORBAT slot formatting.
 pub mod slot_line;
 
+/// Mortar ballistics: charge tables and firing solutions.
+pub mod ballistics;
+
 /// Expose ast :: factions as orbat at this domain boundary.
 pub use ast::factions as orbat;
 /// Expose compiler :: { compiler as compile , flatten , kit } at this domain boundary.

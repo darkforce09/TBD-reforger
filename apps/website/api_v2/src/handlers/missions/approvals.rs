@@ -16,7 +16,7 @@ use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AdminUser;
 use crate::core::wire_format::go_time;
 use crate::handlers::load_mission;
-use crate::models::{Mission, MissionStatus, TerrainType};
+use crate::missions::models::mission::{Mission, MissionStatus, TerrainType};
 
 /// The `list_approvals` projection.
 ///

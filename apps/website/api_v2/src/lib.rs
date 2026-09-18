@@ -10,7 +10,6 @@ pub mod administration;
 pub mod background_workers;
 pub mod command_center;
 pub mod community_content;
-pub mod contract;
 pub mod core;
 pub mod handlers;
 pub mod identity_and_access;

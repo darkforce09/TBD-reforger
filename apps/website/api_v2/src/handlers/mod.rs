@@ -11,14 +11,13 @@ pub mod events;
 pub mod missions;
 pub mod telemetry;
 
-pub use self::events::factions;
 pub use self::missions::{approvals, registry};
 pub use self::telemetry::{dashboard, deployments, field_tools, leaderboards};
 
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::models::Mission;
+use crate::missions::models::mission::Mission;
 
 /// Load a live mission by id (soft-delete filtered; `time_of_day::text` cast for the
 /// `time without time zone` column). Returns `None` if absent or deleted.

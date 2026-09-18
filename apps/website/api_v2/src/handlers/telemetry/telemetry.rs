@@ -15,7 +15,8 @@ use crate::core::database::postgres_errors::{is_foreign_key_violation, violated_
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::ServiceAuth;
 use crate::core::text::http_url_guard::is_http_url;
-use crate::models::{MissionOutcome, TerrainType};
+use crate::missions::models::mission::TerrainType;
+use crate::models::MissionOutcome;
 use crate::server_infrastructure::models::server::ServerStatus;
 use crate::server_infrastructure::services::status_broadcast::publish_server_status;
 // T-336 — `recompute_user_stats` moved to `services::user_stats`; this file is a caller now,

@@ -139,7 +139,7 @@ fn website_test_roots_are_walked_and_generated_contracts_are_excluded() {
     let d = TmpRepo::new("walk-coverage");
     let test = d.0.join("apps/website/api_v2/tests/integration.rs");
     let generated =
-        d.0.join("apps/website/api_v2/src/contract/generated/registry_items.rs");
+        d.0.join("apps/website/api_v2/src/missions/contract/generated/registry_items.rs");
     write_lines(&test, SIZE_3_TEST_MAX_LINES + 1);
     write_lines(&generated, SIZE_3_TEST_MAX_LINES + 1);
     let files = walk_rust_sources(&d.0).unwrap();

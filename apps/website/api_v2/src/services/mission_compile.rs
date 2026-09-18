@@ -8,7 +8,7 @@
 //!
 //! @contract mission.schema.json#/
 
-use crate::models::Mission;
+use crate::missions::models::mission::Mission;
 use website_map_engine::data::scenario::flatten::{self, MissionMeta};
 use website_map_engine::data::scenario::wire_safety::{self, CargoPhysCatalog};
 
@@ -134,9 +134,10 @@ pub fn flatten_to_mod_document_with_catalog(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::contract::validate::validate_mission_editor_payload_with_catalog;
-    use crate::contract::validate_mission_document;
-    use crate::models::{GameMode, MissionStatus, TerrainType, WeatherType};
+    use crate::missions::contract::schema_validators::{
+        validate_mission_document, validate_mission_editor_payload_with_catalog,
+    };
+    use crate::missions::models::mission::{GameMode, MissionStatus, TerrainType, WeatherType};
     use chrono::Utc;
     use serde_json::json;
     use uuid::Uuid;
@@ -805,7 +806,7 @@ mod tests {
 
     /// Same phys table + over-capacity numbers as Save's T-416 Class-R
     /// (`handlers::missions::over_capacity_cargo_is_refused_at_save_with_catalog` /
-    /// `contract::validate::over_capacity_cargo_is_a_save_time_finding_with_catalog`).
+    /// `contract::schema_validators::over_capacity_cargo_is_a_save_time_finding_with_catalog`).
     fn cargo_phys_catalog_fixture() -> CargoPhysCatalog {
         let mut catalog = CargoPhysCatalog::new();
         catalog.insert(

@@ -21,322 +21,32 @@ use website_map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalo
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
-use crate::contract::validate::validate_mission_editor_payload_with_catalog;
-use crate::contract::validate_mission_document;
 use crate::core::application_state::AppState;
 use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::{AdminUser, AuthUser, MissionMakerUser, ServiceAuth};
-use crate::core::text::http_url_guard::is_http_url;
 use crate::handlers::load_mission;
-use crate::models::{
-    GameMode, Mission, MissionArmory, MissionDefaultOverride, MissionDefaultValueBucket,
-    MissionStatus, MissionVersion, TerrainType, WeatherType,
+use crate::missions::contract::schema_validators::{
+    validate_mission_document, validate_mission_editor_payload_with_catalog,
+};
+use crate::missions::models::mission::{
+    Mission, MissionArmory, MissionDefaultOverride, MissionDefaultValueBucket, MissionStatus,
+    MissionVersion, TerrainType, WeatherType,
+};
+use crate::missions::validation::access::{can_edit, can_view};
+use crate::missions::validation::mission_fields::{
+    parse_range, valid_game_mode, valid_terrain, valid_time_of_day, valid_weather,
+    validated_mission_title, validated_thumbnail_url,
+};
+use crate::missions::validation::semver::valid_semver;
+use crate::missions::validation::version_payload::{
+    payload_title_for_row_mirror, reject_vacuous_version_payload,
 };
 use crate::services::{
     COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileError,
     CompileFinding, ModMissionDocument, compile_diagnostics_rules_header,
     flatten_to_mod_document_with_catalog, mission_terrain_key,
 };
-
-/// `missions.thumbnail_url`, validated at the write boundary. **T-413**, adopting T-405 /
-/// T-391's `is_http_url`.
-///
-/// Create hardcodes `thumbnail_url` to `''` and does not accept a body field — PATCH is the only
-/// HTTP writer. The sink is an `<img src>` (`frontend/src/missions.rs`); same absent-guard class
-/// as announcements before T-405.
-fn validated_thumbnail_url(raw: &str) -> Result<String, ApiError> {
-    let trimmed = raw.trim();
-    if trimmed.is_empty() || is_http_url(trimmed) {
-        return Ok(trimmed.to_string());
-    }
-    Err(ApiError::bad_request(
-        "thumbnail_url must be an absolute http:// or https:// URL",
-    ))
-}
-
-/// Mission `title` write guard — **T-363**.
-///
-/// CREATE used to gate on bare `is_empty()` (whitespace-only passed); PATCH had **no** guard, so
-/// `""` clobbered a real title. There is no CHECK/trigger on `missions.title`, and a blank sorts
-/// first in the in-game mission browser. Trim once, reject empty — same accept set on both writers.
-/// Stores the trimmed form (repair is intentional here: the column is display text, not a join key).
-fn validated_mission_title(raw: &str) -> Result<String, ApiError> {
-    let trimmed = raw.trim();
-    if trimmed.is_empty() {
-        return Err(ApiError::bad_request("title is required"));
-    }
-    Ok(trimmed.to_string())
-}
-
-/// Non-blank trimmed top-level `title` from a Save payload (T-375 wire emit) — **T-505**.
-///
-/// Used by [`create_version`] to mirror the authored title onto `missions.title`. Reuses
-/// [`validated_mission_title`] so the row write has the same non-blank trim guard as CREATE/PATCH.
-/// Absent / non-string / whitespace-only → `None` (leave the row title alone).
-fn payload_title_for_row_mirror(payload_str: &str) -> Option<String> {
-    let v: Value = serde_json::from_str(payload_str).ok()?;
-    let raw = v.get("title")?.as_str()?;
-    validated_mission_title(raw).ok()
-}
-
-/// **T-382.** Whether a version payload is vacuous — schema-valid but useless as `current_version_id`.
-///
-/// `mission-editor-payload.schema.json` has no top-level `required` / `minProperties`, so `{}`
-/// passes [`validate_payload`] (pinned in `contract/validate.rs`). `create_mission` deliberately
-/// stores that stub as `0.1.0`. Promoting the same shape (or any object with no editor graph and
-/// no placed content) through [`create_version`] used to move `current_version_id` with no recovery
-/// path — `/compiled` 409s (`CompileError::NoSlots`), orbat attach materialises zero slots, ingest
-/// roster omits the mission. Prior version rows survive in DB; **T-532** adds
-/// [`set_current_version`] so an author/admin can re-point the tip at a prior row.
-///
-/// "Empty" here is measured against the same surfaces that break:
-/// - `editor.slots` array (flatten / `ingest_list_missions` `jsonb_array_length` census)
-/// - non-empty top-level `orbat` (explicit ORBAT wins in `parse_orbat_template`)
-/// - non-empty `objectives` / `vehicles` / `markers` / `entities` (peers of
-///   `MissionDocCore::has_content`)
-/// - non-empty `editor.factions` / `squads` / `editorLayers` (authored structure without slots yet)
-///
-/// Explicit `editor.slots: []` is **not** vacuous — it is the draft skeleton ITs and WIP saves use
-/// before place. Schema `minItems` is deliberately **not** the fix (T-357: naive tightening would
-/// have 400'd live missions). Non-JSON returns `false` so [`validate_payload`] owns that message.
-fn version_payload_is_vacuous(payload: &str) -> bool {
-    let Ok(v) = serde_json::from_str::<Value>(payload) else {
-        return false;
-    };
-    let Some(obj) = v.as_object() else {
-        return true;
-    };
-    if let Some(orbat) = obj.get("orbat").and_then(Value::as_array)
-        && !orbat.is_empty()
-    {
-        return false;
-    }
-    for key in ["objectives", "vehicles", "markers", "entities"] {
-        if obj
-            .get(key)
-            .and_then(Value::as_array)
-            .is_some_and(|a| !a.is_empty())
-        {
-            return false;
-        }
-    }
-    match obj.get("editor").and_then(Value::as_object) {
-        Some(ed) => {
-            if ed.get("slots").is_some_and(Value::is_array) {
-                return false;
-            }
-            for key in ["factions", "squads", "editorLayers"] {
-                if ed
-                    .get(key)
-                    .and_then(Value::as_array)
-                    .is_some_and(|a| !a.is_empty())
-                {
-                    return false;
-                }
-            }
-            true
-        }
-        None => true,
-    }
-}
-
-/// T-382 write-time gate for [`create_version`] — 400 before INSERT / `current_version_id` update.
-fn reject_vacuous_version_payload(payload: &str) -> Result<(), ApiError> {
-    if version_payload_is_vacuous(payload) {
-        return Err(ApiError::bad_request(
-            "payload must include editor content (refusing empty payload as current version)",
-        ));
-    }
-    Ok(())
-}
-
-/// SemVer 2.0.0 core + optional pre-release / build — **T-363**.
-///
-/// `mission_versions.semver` is a plain `text` unique key; without a parse, `' 0.1.0 '` and
-/// `'0.1.0'` are distinct btree values, so the duplicate-version 409 never fires and the padded
-/// row becomes `current_version_id`. Trim-only would still admit `"1"`, `"1.2"`, `"banana"`.
-///
-/// This REJECTS; it does not trim or canonicalise. Live census before enforce (dev DB
-/// `tbd_reforger`, 2026-07-27): **133** `mission_versions` rows, **0** fail this predicate
-/// (nine distinct values, all `MAJOR.MINOR.PATCH` with no leading zeros / padding).
-fn valid_semver(s: &str) -> bool {
-    let core = match s.split_once('+') {
-        Some((core, build)) => {
-            if !semver_build(build) {
-                return false;
-            }
-            core
-        }
-        None => s,
-    };
-    let (core, pre) = match core.split_once('-') {
-        Some((core, pre)) => (core, Some(pre)),
-        None => (core, None),
-    };
-    if let Some(pre) = pre
-        && !semver_prerelease(pre)
-    {
-        return false;
-    }
-    let mut parts = core.split('.');
-    let Some(maj) = parts.next() else {
-        return false;
-    };
-    let Some(min) = parts.next() else {
-        return false;
-    };
-    let Some(pat) = parts.next() else {
-        return false;
-    };
-    if parts.next().is_some() {
-        return false;
-    }
-    semver_numeric_id(maj) && semver_numeric_id(min) && semver_numeric_id(pat)
-}
-
-/// Numeric identifier: `0` or `[1-9][0-9]*` — no leading zeros (SemVer 2.0 §2).
-fn semver_numeric_id(s: &str) -> bool {
-    if s.is_empty() || !s.bytes().all(|b| b.is_ascii_digit()) {
-        return false;
-    }
-    s == "0" || !s.starts_with('0')
-}
-
-/// Pre-release: dot-separated identifiers, each numeric (`0` / `[1-9][0-9]*`) or
-/// alphanumeric-with-hyphen containing at least one non-digit (SemVer 2.0 §9).
-fn semver_prerelease(s: &str) -> bool {
-    if s.is_empty() {
-        return false;
-    }
-    s.split('.').all(|id| {
-        if id.is_empty() {
-            return false;
-        }
-        if id.bytes().all(|b| b.is_ascii_digit()) {
-            return semver_numeric_id(id);
-        }
-        id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
-    })
-}
-
-/// Build metadata: dot-separated `[0-9a-zA-Z-]+` identifiers (SemVer 2.0 §10). Leading zeros OK.
-fn semver_build(s: &str) -> bool {
-    if s.is_empty() {
-        return false;
-    }
-    s.split('.')
-        .all(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'))
-}
-
-// --- enum validators (mirror Go valid*) ---
-
-fn valid_terrain(s: &str) -> Option<TerrainType> {
-    match s {
-        "everon" => Some(TerrainType::Everon),
-        "arland" => Some(TerrainType::Arland),
-        "custom" => Some(TerrainType::Custom),
-        _ => None,
-    }
-}
-fn valid_game_mode(s: &str) -> Option<GameMode> {
-    match s {
-        "pve_coop" => Some(GameMode::PveCoop),
-        "pvp" => Some(GameMode::Pvp),
-        "zeus" => Some(GameMode::Zeus),
-        _ => None,
-    }
-}
-/// Weather enum parse for CREATE / PATCH. Blank is **not** Clear.
-///
-/// **T-377.** `"" | "clear"` used to coerce blank → `Clear`, so PATCH `{"weather":""}` silently
-/// rewrote a stored `dense_fog` to `clear` and answered 200. The compile/flatten path
-/// (`flatten::apply_authored_environment` / `WEATHER_PRESETS`) treats `""` as not-authored and
-/// keeps the row — the two halves disagreed. Dropping `""` from the clear arm keeps PATCH
-/// rejecting blank (400 `invalid weather`) and compile falling through to the row.
-///
-/// **T-509.** CREATE is different: `CreateMissionInput.weather` is `#[serde(default)] String`, so
-/// an omitted JSON field deserializes as `""`. `create_mission` defaults that empty to
-/// `WeatherType::Clear` **before** calling this helper — the new-mission canonical default. This
-/// function itself must still return `None` for `""` so PATCH never silently rewrites.
-fn valid_weather(s: &str) -> Option<WeatherType> {
-    match s {
-        "clear" => Some(WeatherType::Clear),
-        "overcast" => Some(WeatherType::Overcast),
-        "heavy_rain" => Some(WeatherType::HeavyRain),
-        "dense_fog" => Some(WeatherType::DenseFog),
-        _ => None,
-    }
-}
-
-/// `HH:MM` or `HH:MM:SS` → the same string, bound verbatim to the `missions.time_of_day` `time`
-/// column; `None` when it is not a clock this platform can round-trip.
-///
-/// ── Why this exists (T-367, from T-366's driven 500s) ────────────────────────────────────────
-/// `time_of_day` reached `$N::time` with no validator of its own, so Postgres did the validating and
-/// its rejection surfaced as **HTTP 500 `{"error":"internal error"}`**. Driven on the live path:
-/// POST `"   "` / `"not-a-time"` / `"\t"` / `"25:00"` → 500 (POST's `is_empty()` guard is untrimmed,
-/// so whitespace walks straight through it); PATCH had no guard at all, so `""` 500'd there too.
-/// A caller cannot tell any of those from a genuine server fault.
-///
-/// ── Why it is NARROWER than the column, deliberately ────────────────────────────────────────
-/// Measured against Postgres 18 directly: `time` also accepts `24:00`, `0600`, `4:05 PM`, `allballs`,
-/// `06:00:00.5` and `06:00:60` (a leap second, silently normalised to `06:01:00`). Every one of those
-/// would store fine and then be unreadable to the editor: the SPA's clock parser
-/// (`eden_chrome::hhmm_to_minutes`) takes `HH:MM`/`HH:MM:SS` with `h <= 23`, `m <= 59`, `sec <= 59`,
-/// and T-192 exists because a value that parser cannot read parks the time-of-day scrubber at the
-/// 06:00 default **in silence** — an author who set 21:45 sees 06:00 after a reload. So "what the
-/// column accepts" is the wrong bar; the right one is "what the platform can round-trip", and this
-/// mirrors `hhmm_to_minutes` exactly so the two boundaries agree (T-346's lesson: the bug is
-/// DISAGREEMENT between two sites). It is stricter in one place only — every component must be ASCII
-/// digits, because Rust's `u32::from_str` accepts a leading `+` (`"+6:00"` would parse here and then
-/// be rejected by Postgres, which is the 500 all over again).
-///
-/// Blast radius measured before tightening: all **87** live `missions` rows are plain `HH:MM:SS` with
-/// zero sub-second components, and every producer that goes through this API emits `HH:MM` (the
-/// create dialog, `RowMirror::set_time` via `normalize_clock`) or `HH:MM:SS` (the row hydrate
-/// round-trip). The committed seeds `INSERT` directly and never touch this path. Nothing live is
-/// rejected.
-///
-/// Returns the input UNCHANGED rather than a canonical form: this layer stores the author's bytes
-/// verbatim, and normalising one side of a column two sites write is how T-346 happened. This
-/// REJECTS; it does not repair.
-fn valid_time_of_day(s: &str) -> Option<&str> {
-    let mut parts = s.split(':');
-    let h: u32 = digits(parts.next()?)?;
-    let m: u32 = digits(parts.next()?)?;
-    if let Some(sec) = parts.next()
-        && digits(sec)? > 59
-    {
-        return None;
-    }
-    if parts.next().is_some() || h > 23 || m > 59 {
-        return None;
-    }
-    Some(s)
-}
-
-/// One `HH`/`MM`/`SS` component: non-empty ASCII digits only. See [`valid_time_of_day`] on `+`.
-fn digits(part: &str) -> Option<u32> {
-    if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
-        return None;
-    }
-    part.parse().ok()
-}
-
-fn can_edit(u: &AuthUser, m: &Mission) -> bool {
-    m.author_id == u.discord_id || u.role == "admin"
-}
-fn can_view(u: &AuthUser, m: &Mission) -> bool {
-    m.status == MissionStatus::Live || can_edit(u, m)
-}
-
-fn parse_range(s: &str) -> Option<(i64, i64)> {
-    let (lo, hi) = s.split_once('-')?;
-    let lo: i64 = lo.trim().parse().ok()?;
-    let hi: i64 = hi.trim().parse().ok()?;
-    (lo <= hi).then_some((lo, hi))
-}
 
 /// Library list item: mission + denormalized author + bookmark state.
 #[derive(Debug, Serialize)]
@@ -2119,64 +1829,6 @@ impl MissionStatus {
 mod tests {
     use super::*;
 
-    /// The `time_of_day` accept set, pinned against behaviour MEASURED on Postgres 18 rather than
-    /// assumed — see [`valid_time_of_day`] for why the two columns of this table differ.
-    ///
-    /// The `false` rows split into two kinds, and both matter:
-    ///
-    /// * Postgres would REJECT them (`"   "`, `"not-a-time"`, `"25:00"`, `"06:60"`, `"+6:00"`, `""`).
-    ///   Each was a live **500** before T-367; each is now a 400. `"+6:00"` is the one Rust's
-    ///   `u32::from_str` would have let through on its own — it takes a leading `+`.
-    /// * Postgres would ACCEPT them (`"24:00"`, `"0600"`, `"4:05 PM"`, `"allballs"`,
-    ///   `"06:00:00.5"`, `"06:00:60"`). Those are refused on purpose: they store fine and are then
-    ///   unreadable to `eden_chrome::hhmm_to_minutes`, which parks the author's scrubber back at the
-    ///   06:00 default without saying anything. That is the T-192 bug, and letting one in through
-    ///   this door would recreate it.
-    #[test]
-    fn time_of_day_accepts_the_clocks_the_platform_can_round_trip() {
-        for (input, accepted) in [
-            // What every producer on this path actually emits.
-            ("06:00", true),
-            ("06:00:00", true),
-            ("6:00", true),
-            ("23:59:59", true),
-            ("00:00", true),
-            ("21:45:00", true),
-            // Postgres rejects these — each was a 500.
-            ("", false),
-            ("   ", false),
-            ("\t", false),
-            ("not-a-time", false),
-            ("25:00", false),
-            ("06:60", false),
-            ("+6:00", false),
-            (" 6:00", false),
-            ("06:00:", false),
-            ("06:00:00:00", false),
-            // Postgres ACCEPTS these; the editor cannot read them back.
-            ("24:00", false),
-            ("0600", false),
-            ("4:05 PM", false),
-            ("allballs", false),
-            ("06:00:00.5", false),
-            ("06:00:60", false),
-        ] {
-            assert_eq!(
-                valid_time_of_day(input).is_some(),
-                accepted,
-                "time_of_day {input:?}"
-            );
-        }
-    }
-
-    /// The value is stored as the author wrote it. This layer REJECTS; it does not repair — a
-    /// one-sided normalisation of a column two sites write is how T-346 happened.
-    #[test]
-    fn an_accepted_time_of_day_is_returned_verbatim() {
-        assert_eq!(valid_time_of_day("6:00"), Some("6:00"));
-        assert_eq!(valid_time_of_day("06:00:00"), Some("06:00:00"));
-    }
-
     /// T-408 Class-R: PATCH must require `MissionMakerUser`, same tier as create — demotion
     /// revokes edit. Ownership-outlives-role was the pre-fix omission and is deliberately
     /// rejected.
@@ -2492,34 +2144,6 @@ mod tests {
         );
     }
 
-    /// T-413 residual pin — thumbnail write guard must stay. Do not regress while wiring T-416.
-    #[test]
-    fn thumbnail_url_write_guard_still_present() {
-        const SRC: &str = include_str!("missions.rs");
-        assert!(SRC.contains("fn validated_thumbnail_url("));
-        assert!(SRC.contains("thumbnail_url must be an absolute http:// or https:// URL"));
-        assert!(validated_thumbnail_url("javascript:alert(1)").is_err());
-        assert!(validated_thumbnail_url("https://cdn.example/t.jpg").is_ok());
-        assert_eq!(validated_thumbnail_url("").unwrap(), "");
-    }
-
-    /// T-363 — CREATE + PATCH title: trim+non-empty. Empty / whitespace-only reject; padded
-    /// non-empty stores trimmed.
-    ///
-    /// RED: delete the `validated_mission_title` call from `update_mission` — the source pin fails.
-    /// RED: change the helper to bare `is_empty()` — `"   "` would pass and recreate the CREATE hole.
-    #[test]
-    fn mission_title_rejects_blank_and_whitespace_only() {
-        assert!(validated_mission_title("").is_err());
-        assert!(validated_mission_title("   ").is_err());
-        assert!(validated_mission_title("\t\n").is_err());
-        assert_eq!(
-            validated_mission_title("Op Red Dawn").unwrap(),
-            "Op Red Dawn"
-        );
-        assert_eq!(validated_mission_title("  padded  ").unwrap(), "padded");
-    }
-
     /// T-363 Class-R: both writers must call [`validated_mission_title`]. PATCH used to bind
     /// unbound; CREATE used bare `is_empty()`.
     #[test]
@@ -2553,32 +2177,6 @@ mod tests {
         );
     }
 
-    /// T-363 — SemVer 2.0 accept set. Live DB census (133 rows) was all `X.Y.Z` before enforce.
-    ///
-    /// RED: replace `valid_semver` with `!s.is_empty()` — padded / partial versions pass and the
-    /// unique-index hole reopens.
-    #[test]
-    fn semver_accepts_real_versions_only() {
-        for ok in [
-            "0.1.0",
-            "0.2.0",
-            "1.2.3",
-            "1.0.0-alpha",
-            "1.0.0-alpha.1",
-            "1.0.0-0.3.7",
-            "1.0.0+20130313144700",
-            "1.0.0-beta+exp.sha.5114f85",
-        ] {
-            assert!(valid_semver(ok), "expected accept {ok:?}");
-        }
-        for bad in [
-            "", "   ", " 0.1.0 ", "0.1.0 ", " 0.1.0", "1", "1.2", "banana", "01.2.3", "1.02.3",
-            "1.2.03", "v1.2.3", "1.2.3.4", "1.2.3-", "1.2.3+",
-        ] {
-            assert!(!valid_semver(bad), "expected reject {bad:?}");
-        }
-    }
-
     /// T-363 Class-R: `create_version` must call [`valid_semver`] before INSERT.
     #[test]
     fn create_version_guards_semver() {
@@ -2598,38 +2196,22 @@ mod tests {
         );
     }
 
-    /// T-377 — blank weather is not Clear. PATCH `{"weather":""}` must not rewrite dense_fog→clear.
-    ///
-    /// Aligns with compile/flatten: `""` is not-authored, not a Clear preset.
-    ///
-    /// RED: restore `"" | "clear"` in [`valid_weather`] — this assert fails (Some(Clear)).
-    #[test]
-    fn blank_weather_is_not_clear() {
-        assert_eq!(
-            valid_weather(""),
-            None,
-            "empty string must not coerce to WeatherType::Clear (T-377 silent dense_fog→clear)"
-        );
-        assert_eq!(valid_weather("clear"), Some(WeatherType::Clear));
-        assert_eq!(valid_weather("overcast"), Some(WeatherType::Overcast));
-        assert_eq!(valid_weather("heavy_rain"), Some(WeatherType::HeavyRain));
-        assert_eq!(valid_weather("dense_fog"), Some(WeatherType::DenseFog));
-        assert_eq!(valid_weather("blizzard"), None);
-        assert_eq!(valid_weather("   "), None);
-    }
-
-    /// T-377 Class-R: the clear arm must not include `""`. Source pin so a match-arm typo cannot
-    /// reintroduce the silent rewrite without failing this test.
+    /// T-377 Class-R: the clear arm must not include `""`, and both writers must route their
+    /// weather through the predicate. Source pin so a match-arm typo cannot reintroduce the silent
+    /// rewrite without failing this test. The predicate lives in
+    /// `missions::validation::mission_fields`; the handlers that call it live here, so this pin
+    /// reads both files.
     ///
     /// RED: change the clear arm back to `"" | "clear"` — this pin fails.
     #[test]
     fn valid_weather_clear_arm_excludes_empty_string() {
         const SRC: &str = include_str!("missions.rs");
+        const FIELDS: &str = include_str!("../../missions/validation/mission_fields.rs");
         let production = SRC
             .split("#[cfg(test)]")
             .next()
             .expect("missions.rs must have a #[cfg(test)] module");
-        let helper = production
+        let helper = FIELDS
             .split("fn valid_weather(s: &str)")
             .nth(1)
             .and_then(|s| s.split("fn valid_time_of_day(").next())
@@ -2744,70 +2326,15 @@ mod tests {
             create_version.contains("title = $3"),
             "create_version must UPDATE missions.title when mirroring; got:\n{create_version}"
         );
+        const VERSION_PAYLOAD: &str = include_str!("../../missions/validation/version_payload.rs");
         assert!(
-            production.contains("fn payload_title_for_row_mirror"),
+            VERSION_PAYLOAD.contains("fn payload_title_for_row_mirror"),
             "payload_title_for_row_mirror helper must exist"
         );
         assert!(
-            production.contains("validated_mission_title(raw)"),
+            VERSION_PAYLOAD.contains("validated_mission_title(raw)"),
             "row-mirror must reuse validated_mission_title (non-blank trim guard)"
         );
-    }
-
-    /// T-505 — extractor accepts trimmed non-blank, rejects blank/whitespace/absent.
-    #[test]
-    fn payload_title_for_row_mirror_nonblank_trim() {
-        assert_eq!(
-            payload_title_for_row_mirror(r#"{"title":"  Authored Op  "}"#).as_deref(),
-            Some("Authored Op")
-        );
-        assert_eq!(payload_title_for_row_mirror(r#"{"title":"   "}"#), None);
-        assert_eq!(payload_title_for_row_mirror(r#"{"title":""}"#), None);
-        assert_eq!(payload_title_for_row_mirror(r#"{"editor":{}}"#), None);
-        assert_eq!(payload_title_for_row_mirror("not-json"), None);
-    }
-
-    /// T-382 — vacuous vs draft-skeleton accept set. `{}` is the measured hole (schema-valid,
-    /// becomes `current_version_id`, no API rollback). Explicit `editor.slots` (even `[]`) is the
-    /// draft shape ITs / WIP saves use and must stay accepted.
-    ///
-    /// RED: make `version_payload_is_vacuous` always return `false` — empty cases below fail.
-    #[test]
-    fn version_payload_vacuous_rejects_empty_keeps_editor_skeleton() {
-        for empty in [
-            "{}",
-            r#"{"editor":{}}"#,
-            r#"{"title":"x"}"#,
-            r#"{"schemaVersion":1}"#,
-            r#"{"map":{"terrain":"everon"}}"#,
-            r#"{"environment":{}}"#,
-            r#"{"orbat":[]}"#,
-            "null",
-            "[]",
-        ] {
-            assert!(
-                version_payload_is_vacuous(empty),
-                "expected vacuous: {empty}"
-            );
-        }
-        for ok in [
-            r#"{"editor":{"slots":[]}}"#,
-            r#"{"editor":{"factions":[],"squads":[],"slots":[],"editorLayers":[]}}"#,
-            r#"{"schemaVersion":1,"editor":{"slots":[{"id":"s1"}]}}"#,
-            r#"{"orbat":[{"faction":"BLUFOR","callsign":"A","squad":"Alpha","slots":[]}]}"#,
-            r#"{"objectives":[{"id":"o1"}]}"#,
-            r#"{"vehicles":[{"id":"v1"}]}"#,
-            r#"{"markers":[{"id":"m1"}]}"#,
-            r#"{"entities":[{"id":"e1"}]}"#,
-            r#"{"editor":{"factions":[{"id":"f1","key":"BLUFOR","name":"US","squadIds":[]}]}}"#,
-        ] {
-            assert!(
-                !version_payload_is_vacuous(ok),
-                "expected non-vacuous: {ok}"
-            );
-        }
-        // Malformed JSON: not our message — validate_payload owns it.
-        assert!(!version_payload_is_vacuous("not-json"));
     }
 
     /// T-382 Class-R: `create_version` must call [`reject_vacuous_version_payload`] after
@@ -2854,19 +2381,6 @@ mod tests {
             !create.contains("reject_vacuous_version_payload"),
             "create_mission must keep allowing the empty stub payload"
         );
-    }
-
-    /// T-382 — helper surfaces a 400 with the refuse message (perturbation target).
-    #[test]
-    fn reject_vacuous_version_payload_is_bad_request() {
-        let err = reject_vacuous_version_payload("{}").expect_err("empty must 400");
-        assert_eq!(err.status, StatusCode::BAD_REQUEST);
-        assert!(
-            err.message.contains("empty payload"),
-            "error must name empty payload; got {:?}",
-            err.message
-        );
-        assert!(reject_vacuous_version_payload(r#"{"editor":{"slots":[]}}"#).is_ok());
     }
 
     /// T-532 Class-R: `set_current_version` must gate on `can_edit`, validate the target version

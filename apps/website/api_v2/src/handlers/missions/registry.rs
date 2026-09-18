@@ -23,7 +23,7 @@ use crate::community_content::models::modpack::Modpack;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::MissionMakerUser;
-use crate::models::{RegistryCompatEdge, RegistryItem};
+use crate::missions::models::registry::{RegistryCompatEdge, RegistryItem};
 
 /// Catalog / compat page size when the client asks for `limit` (T-427). Higher than the
 /// shared `PageParams` max of 100 so the editor can assemble ~1.8k items in a few shots
@@ -433,7 +433,7 @@ pub async fn list_registry_compat(
 #[cfg(test)]
 mod t427_registry_bounds {
     use super::*;
-    use crate::models::RegistryCompatEdge;
+    use crate::missions::models::registry::RegistryCompatEdge;
     use chrono::{TimeZone, Utc};
     use uuid::Uuid;
 

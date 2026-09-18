@@ -1,4 +1,5 @@
-//! Mission models — Rust port of `internal/models/mission.go`.
+//! Mission library models: the library row, its immutable version snapshots, the armory,
+//! the authored-default census rows, and bookmarks.
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -149,7 +150,7 @@ pub struct MissionArmory {
     pub sort_order: i64,
 }
 
-/// T-683 — one authored default key on `GET /api/v1/admin/mission-default-overrides`.
+/// One authored default key on `GET /api/v1/admin/mission-default-overrides`.
 ///
 /// The row answers, for a single schema-`default`-bearing key, "how often does an author
 /// change this away from what the mod would do if they wrote nothing?" — the query WOG could
@@ -157,13 +158,13 @@ pub struct MissionArmory {
 ///
 /// `default_value` and the `key` pointer are read FROM `mission.schema.json` at runtime (see
 /// [`crate::handlers::missions::schema_default_keys`]); nothing here is hardcoded, because the
-/// ticket's whole point is that the schema owns the defaults. The counts are over the LATEST
+/// schema owns the defaults and nothing else restates them. The counts are over the LATEST
 /// version of every mission (the `current_version_id` join, the same one the library reads).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MissionDefaultOverride {
     /// JSON-pointer-style path to the key inside a stored `zones[].rules` object, e.g.
     /// `zones[].rules.graceSeconds`. This is the AUTHORED (editor-payload) location, not the
-    /// compiled-document pointer — the two are distinct namespaces (T-357).
+    /// compiled-document pointer — the two are distinct namespaces.
     pub key: String,
     /// The `default` this key declares in `mission.schema.json` — the value an author gets by
     /// writing nothing. Carried verbatim as JSON so a string default (`"warn"`), a number
@@ -183,7 +184,7 @@ pub struct MissionDefaultOverride {
     pub histogram: Vec<MissionDefaultValueBucket>,
 }
 
-/// T-683 — one `(value, count)` bar of a [`MissionDefaultOverride`] histogram.
+/// One `(value, count)` bar of a [`MissionDefaultOverride`] histogram.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MissionDefaultValueBucket {
     /// A distinct authored value for the key (the default's value included when authors write

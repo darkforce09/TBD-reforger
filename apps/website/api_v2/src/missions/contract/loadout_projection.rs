@@ -1,9 +1,13 @@
-// HAND-MAINTAINED since T-165.3 (do edit — but keep the round-trip tests green).
-// Source of truth: packages/tbd-schema/schema/loadout-export.schema.json.
-// History: this file was quicktype-generated until T-165.3; that output was provably lossy —
-// it merged the versioned root `oneOf` into one struct and emitted empty `Wear {}` /
-// `Equipment {}` (patternProperties dropped). The faithful model below is guarded by
-// value-level round-trip tests against BOTH committed sample fixtures.
+//! The loadout-export document model. **Hand-maintained**, and deliberately absent from
+//! `cargo xtask ci schema-codegen`: the generator's target list covers only the four schemas whose
+//! typify output is faithful.
+//!
+//! Source of truth: `packages/tbd-schema/schema/loadout-export.schema.json`.
+//!
+//! Generated output is provably lossy for this schema — it merges the versioned root `oneOf` into
+//! a single struct and emits empty `Wear {}` / `Equipment {}` because `patternProperties` is
+//! dropped. The faithful model below is guarded instead by value-level round-trip tests against
+//! BOTH committed sample fixtures.
 
 use std::collections::BTreeMap;
 
@@ -134,44 +138,5 @@ mod double_option {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    const V1: &str =
-        include_str!("../../../../../../packages/tbd-schema/registry/loadout-export.sample.json");
-    const V2: &str = include_str!(
-        "../../../../../../packages/tbd-schema/registry/loadout-export.v2.sample.json"
-    );
-
-    /// Value-level round-trip: parse → serialize → parse; the two JSON values must be EQUAL
-    /// (key order irrelevant; null-vs-absent must be preserved — the double-Option contract).
-    fn round_trips(fixture: &str) {
-        let parsed: LoadoutExport = serde_json::from_str(fixture).expect("deserialize");
-        let re = serde_json::to_string(&parsed).expect("serialize");
-        let a: serde_json::Value = serde_json::from_str(fixture).unwrap();
-        let b: serde_json::Value = serde_json::from_str(&re).unwrap();
-        assert_eq!(a, b, "value round-trip drift");
-    }
-
-    #[test]
-    fn v1_sample_round_trips() {
-        round_trips(V1);
-        let LoadoutExport::V1(doc) = serde_json::from_str(V1).unwrap() else {
-            panic!("v1 fixture parsed as wrong version");
-        };
-        assert!(doc.gear.primary.is_some() && doc.gear.helmet.is_none());
-    }
-
-    #[test]
-    fn v2_sample_round_trips() {
-        round_trips(V2);
-        let LoadoutExport::V2(doc) = serde_json::from_str(V2).unwrap() else {
-            panic!("v2 fixture parsed as wrong version");
-        };
-        assert_eq!(doc.wear.len(), 8);
-        assert!(doc.weapons.iter().any(|w| w.slot_index == 0));
-        // The fixture's second weapon omits optic entirely — absent, not null.
-        let grenade = doc.weapons.iter().find(|w| w.slot_index == 3).unwrap();
-        assert!(grenade.optic.is_none() && grenade.attachments.is_none());
-    }
-}
+#[path = "tests/loadout_projection.rs"]
+mod tests;
