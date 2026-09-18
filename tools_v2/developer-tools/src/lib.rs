@@ -3,6 +3,7 @@
 pub mod blueprint;
 pub mod enfusion_pak;
 pub mod map_verification;
+pub mod repository_layout;
 pub mod repository_paths;
 
 pub const PROGRAM: &str = "T-165";
