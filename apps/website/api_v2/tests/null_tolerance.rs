@@ -6,7 +6,7 @@
 //! into SQL. `Option` is deliberately NOT the fix — `skip_serializing_if = "String::is_empty"`
 //! already omits the key for `""` byte-identically to an omitted `None`, so `Option` would add
 //! a second encoding of one state and break the committed goldens. The full rejection is
-//! recorded on `models::Match` (T-325). So: the safety lives in the query, and this file's job
+//! recorded on `match_telemetry::models::match_record::Match` (T-325). So: the safety lives in the query, and this file's job
 //! is to prove that no read site is missing it.
 //!
 //! **Why this file was rewritten (T-329).** The previous version was a hand-written list of 5
@@ -120,13 +120,13 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("event_registrations", "slot_id"),
     // operations::models::leave_request::LeaveRequest
     ("leave_requests", "reviewed_by"),
-    // models::telemetry::Match
+    // match_telemetry::models::match_record::Match
     ("matches", "source_match_id"),
     ("matches", "event_id"),
     ("matches", "mission_id"),
     ("matches", "terrain"),
     ("matches", "ended_at"),
-    // models::telemetry::MatchPlayerStat
+    // match_telemetry::models::match_record::MatchPlayerStat
     ("match_player_stats", "discord_id"),
     ("match_player_stats", "command_win"),
     // T-397 — counters are Option: NULL = not measured (distinct from scored 0).
@@ -943,7 +943,7 @@ async fn every_nullable_column_null_and_every_get_route_still_serves() {
     assert!(
         unexpected.is_empty(),
         "a nullable column decoded into a non-Option field. COALESCE it in the query — do NOT \
-         make the model field Option (see models::Match, T-325).\n  {}",
+         make the model field Option (see match_telemetry::models::match_record::Match, T-325).\n  {}",
         unexpected
             .iter()
             .map(|s| s.as_str())
@@ -1243,7 +1243,7 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
     assert!(
         new.is_empty(),
         "nullable column(s) read into a non-Option field. Fix by adding COALESCE to the query \
-         (NOT by making the model field Option — see models::Match, T-325). If the field really \
+         (NOT by making the model field Option — see match_telemetry::models::match_record::Match, T-325). If the field really \
          is Option<..>, add the pair to OPTION_FIELDS naming the model.\n  {}",
         new.iter()
             .map(|s| s.as_str())

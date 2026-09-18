@@ -112,7 +112,7 @@ fn pair_slots(
 /// seed that ever writes `users.arma_id` is `POST /api/v1/ingest/link-confirm`
 /// ([`crate::identity_and_access::handlers::arma_link_confirmation::ingest_link_confirm`]) writing exactly that value. The results
 /// ingest resolves the same column the same way
-/// (`SELECT discord_id FROM users WHERE arma_id = $1`, `handlers/telemetry/telemetry.rs`).
+/// (`SELECT discord_id FROM users WHERE arma_id = $1`, `match_telemetry/handlers/match_results.rs`).
 ///
 /// Any other column here — `discord_id`, `arma_character`, the `orbat_slots` UUID — would
 /// match nobody, forever, and the failure is INVISIBLE: an unmatched key simply never gets

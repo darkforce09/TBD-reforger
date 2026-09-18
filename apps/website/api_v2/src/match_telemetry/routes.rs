@@ -7,17 +7,17 @@
 use axum::Router;
 use axum::routing::post;
 
+use super::handlers;
 use crate::core::application_state::AppState;
-use crate::handlers;
 
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
             "/ingest/server-status",
-            post(handlers::telemetry::ingest_server_status),
+            post(handlers::server_heartbeat::ingest_server_status),
         )
         .route(
             "/ingest/match-results",
-            post(handlers::telemetry::ingest_match_results),
+            post(handlers::match_results::ingest_match_results),
         )
 }

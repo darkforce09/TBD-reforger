@@ -15,7 +15,6 @@ pub mod handlers;
 pub mod identity_and_access;
 pub mod match_telemetry;
 pub mod missions;
-pub mod models;
 pub mod operations;
 pub mod server_infrastructure;
 pub mod services;

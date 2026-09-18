@@ -3,12 +3,12 @@
 //! # What this file has to prove, and why it is shaped like this
 //!
 //! T-336 is a **pure relocation**: the function moved from `pub(super) fn` in
-//! `handlers/telemetry.rs` to `pub fn` in `services/user_stats.rs`, with the three statements
+//! the telemetry ingest handler to `pub fn` in `services/user_stats.rs`, with the three statements
 //! byte-identical. The ticket asks for two things, and they are different things.
 //!
 //! 1. **Reachability from where it should be.** This file `use`s
 //!    `website_api::services::recompute_user_stats` from *outside the crate*. That import does not
-//!    compile against the pre-T-336 tree at all — `pub(super)` in `handlers::telemetry` is not
+//!    compile against the pre-T-336 tree at all — `pub(super)` in the ingest handler module is not
 //!    reachable from an integration test — so the existence of this binary is the proof.
 //! 2. **Behaviour unchanged.** The numbers below are arithmetic written out in the comments, not
 //!    whatever the query returned: four matches (one of them a second stat line for the *same*
@@ -23,7 +23,7 @@
 use sqlx::PgPool;
 use uuid::Uuid;
 use website_api::core::database;
-// The T-336 reachability proof: `handlers::telemetry::recompute_user_stats` was `pub(super)`, so
+// The T-336 reachability proof: the ingest handler's `recompute_user_stats` was `pub(super)`, so
 // this line is the thing that could not be written before the move.
 use website_api::services::{recompute_user_stats, recompute_user_stats_best_effort};
 
@@ -331,7 +331,8 @@ fn the_sql_lives_only_in_the_service() {
         "services/user_stats.rs no longer owns the deployment count"
     );
     for handler in [
-        include_str!("../src/handlers/telemetry/telemetry.rs"),
+        include_str!("../src/match_telemetry/handlers/match_results.rs"),
+        include_str!("../src/match_telemetry/handlers/attendance_attribution.rs"),
         include_str!("../src/identity_and_access/handlers/arma_link_confirmation.rs"),
         include_str!("../src/identity_and_access/handlers/arma_link_codes.rs"),
         include_str!("../src/operations/handlers/member_service_record.rs"),

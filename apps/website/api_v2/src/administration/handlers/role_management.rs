@@ -54,7 +54,7 @@ pub async fn update_user(
     // untrimmed write here and no reachable bad state — only a debatable error message. Trimming
     // would *loosen* what the endpoint accepts, which is a product decision rather than a bug
     // fix, so it is not taken unilaterally. Counter-precedent worth knowing if that call is ever
-    // revisited: `handlers/telemetry/telemetry.rs` matches on a trimmed `outcome` before its enum
+    // revisited: `match_telemetry/handlers/match_results.rs` matches on a trimmed `outcome` before its enum
     // match, i.e. the crate is not unanimous on this.
     if input.role.is_empty() {
         return Err(ApiError::bad_request("role required"));

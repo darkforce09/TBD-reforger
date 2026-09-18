@@ -129,7 +129,7 @@ pub async fn get_dashboard(
         // A bare `orbat_slots.*` 500s the whole dashboard on a real NULL (T-329, measured:
         // *"error occurred while decoding column `tag`: unexpected null"* for the two
         // operator users holding a NULL-`tag` slot). Do NOT "fix" that by making the model
-        // fields `Option` — see the rejection recorded on `models::Match` (T-325). Every
+        // fields `Option` — see the rejection recorded on `match_telemetry::models::match_record::Match` (T-325). Every
         // column is table-qualified because the joins make `id`/`start_time` ambiguous.
         let slot: Option<OrbatSlot> = sqlx::query_as(
             "SELECT orbat_slots.id, orbat_slots.event_mission_id, orbat_slots.faction, \

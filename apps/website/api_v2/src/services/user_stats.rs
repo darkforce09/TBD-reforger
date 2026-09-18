@@ -4,12 +4,12 @@
 //! # Why this is a service and not a handler internal
 //!
 //! [`recompute_user_stats`] is the **sole writer** of those two columns. It shipped at T-326
-//! as `pub(super) fn` inside `handlers/telemetry.rs` because `handlers/me.rs` needed it at
+//! as `pub(super) fn` inside the telemetry ingest handler because `handlers/me.rs` needed it at
 //! identity-link time and `pub(super)` was the minimal unblock. T-326 explicitly refused to
 //! re-derive the SQL in `me.rs` — two definitions of "a deployment" drifting apart is the same
 //! silent-wrong-number failure the backfill was filed to fix — and that refusal is the whole
 //! argument for this file: a function two handlers depend on is a service, not a handler
-//! internal, and `handlers/telemetry.rs` is not a place other handlers should be reaching into.
+//! internal, and an ingest handler is not a place other handlers should be reaching into.
 //!
 //! **Nothing about the behaviour changed in the move.** The three statements, their bind order,
 //! the `count(DISTINCT match_id)` / `state::text = 'attended'` / `start_time <= now()` predicates

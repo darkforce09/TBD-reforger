@@ -286,8 +286,8 @@ pub async fn get_event(
         // Consistent with every other read of these columns, and with the write side: `PATCH
         // /missions/:id` binds `briefing`/`thumbnail_url` straight from the request, so the API
         // itself already stores `''`. NULL and `''` are one observable state; this makes the
-        // read agree. `Option` is NOT the fix — see `models::telemetry::Match` for the recorded
-        // rejection.
+        // read agree. `Option` is NOT the fix — see
+        // `match_telemetry::models::match_record::Match` for the recorded rejection.
         let Some((title, terrain, game_mode, briefing, thumbnail_url)): Option<(
             String,
             crate::missions::models::mission::TerrainType,

@@ -49,7 +49,7 @@ use url::Url;
 ///   not permission to interpolate the value anywhere.
 /// - **Nothing about `""`.** An empty string is not a URL and carries no scheme, so it is
 ///   simply `false` here. A caller for which empty means "no link" must test for that itself,
-///   before calling — see `handlers::telemetry::upsert_match`.
+///   before calling — see `match_telemetry::handlers::match_upsert::upsert_match`.
 ///
 /// # The sinks that use it
 ///
@@ -58,7 +58,7 @@ use url::Url;
 /// (`operations/handlers/event_create_update.rs`), `missions.thumbnail_url` (`missions/handlers/mission_lifecycle.rs`),
 /// `users.avatar_url` (`handlers/auth/oauth.rs`, which `format!`-builds a CDN URL out of an
 /// unvalidated Discord avatar hash), and `matches.replay_url`
-/// (`handlers::telemetry::upsert_match`, the worked example).
+/// (`match_telemetry::handlers::match_upsert::upsert_match`, the worked example).
 pub fn is_http_url(candidate: &str) -> bool {
     // Both checks run *before* the parser, because their entire purpose is to make the parse
     // agree with the stored bytes. `is_ascii_control` covers NUL, tab, CR and LF in one rule;
