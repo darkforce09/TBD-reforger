@@ -1594,3 +1594,300 @@ warnings`.
 ### Commands that could not run
 
 None. Every check of this phase ran in this environment.
+
+## P3 — Dead code
+
+This phase deletes code whose only reason to exist was a shell driver that no longer exists or a
+one-shot corpus migration that has already run. Every deletion carries a measurement taken on this
+checkout, and every capability that had a live caller was relocated before its neighbourhood went.
+
+### The verdict-diff harness
+
+`cargo xtask platform wave diff` compared this driver's stdout, stderr and exit code against
+`scripts/platform/wave.sh`. That script is absent from the checkout (`git ls-files scripts` lists
+eight deployment files, five MCP transcripts, two node manifests and two server profiles — no
+`.sh` anywhere), so every comparison arm refused before comparing. The two internal probes it
+carried, `base-probe` and `hold-lock`, were read by the harness's own noise-floor arm and by
+nothing else (`git grep -n 'hold-lock\|base-probe' tools_v2` named only `diff.rs`,
+`diff_arms/arm_noise_floor.rs:142,358` and the pre-`Ctx::enter` special case in `flush.rs`).
+
+Deleted, with the line count each carried:
+
+| File | Lines |
+|---|---|
+| `tools_v2/xtask/src/commands/platform/wave_execution/diff.rs` | 288 |
+| `tools_v2/xtask/src/commands/platform/wave_execution/diff_arms.rs` | 27 |
+| `tools_v2/xtask/src/commands/platform/wave_execution/diff_arms/arm_noise_floor.rs` | 450 |
+| `tools_v2/xtask/src/commands/platform/wave_execution/diff_arms/arm_refusals.rs` | 351 |
+| `tools_v2/xtask/src/commands/platform/wave_execution/diff_reclaim.rs` | 238 |
+
+No test file declared any of them (`git grep -n '#\[path = "tests/' wave_execution` lists fourteen
+declarations, none naming a diff module), so no test disappeared with them. The three `pub mod`
+lines at `wave_execution/mod.rs`, the `"diff"` dispatch arm and the pre-`Ctx::enter` `base-probe`
+special case in `flush.rs`, and the `diff <arm>` spelling in the `platform/cli.rs` argument
+documentation went in the same commit. `reclaim` stays: `reclaim::cmd_reclaim` is dispatched from
+`flush.rs` and keeps its tests. `UNKNOWN_HELP` names no arm of the harness, so nothing was removed
+from it; the one line that matched a `diff` substring search was the English word "different",
+reworded so the help text carries no such token.
+
+Three symbols the harness borrowed stay because other callers hold them: `ledger::LFS_NEUTRAL`
+(`land/close_ceremony.rs`, `ledger.rs`), `host::status_code` (six callers) and
+`base::prev_wave_close` (`gate/gate_dispatch.rs`, `base/demand_base_confirmation.rs`).
+
+### The bash bridge
+
+`cargo xtask deploy db emit-bash-fns` printed bash function definitions for wrappers to `eval`.
+`git grep -n 'emit-bash-fns\|emit_bash_fns' -- . ':!tools_v2'` is empty: nothing outside the crate
+named it, and the repository admits no shell. Deleted: `verify_dump.rs::emit_bash_fns` (31 lines),
+the `EmitBashFns` variant and its documentation line in `database_operations.rs`, the
+`pub use verify_dump::emit_bash_fns` re-export, and the dispatch arm in
+`database_operations/execution.rs`. No test called it
+(`git grep -rn 'emit_bash' tools_v2/xtask/src/commands/deploy/tests` is empty), so the deploy test
+count is unchanged. The three comments that described the bridge from a distance
+(`database_backup.rs:4,211`, `database_restore_drill.rs:7`) now describe what the code does.
+
+### Tests that compared against a deleted script
+
+Each of these copied a `.sh` file into a scratch tree and returned early when the file was absent.
+Since no `.sh` file exists in the checkout, each examined nothing on every run. Every one is
+replaced by a test of the live command's own usage text, so the surface each claimed to cover is
+still asserted.
+
+| Removed test | Replaced by |
+|---|---|
+| `commands::fetch::vanilla_api::tests::bash_index_miss_goes_red_first` | the Rust index-miss arm is already pinned by `index_miss_exits_1` |
+| `commands::fetch::vanilla_api::tests::bash_from_file_usage_goes_red_first` | `commands::fetch::vanilla_api::tests::from_file_usage_line_names_the_runnable_command` |
+| `commands::fetch::vanilla_source::tests::bash_empty_index_goes_red_first` | the Rust empty-index arm is already pinned by `empty_index_map_build_exits_1`; the usage line is pinned by `grep_usage_line_names_the_runnable_command` |
+| `commands::mod_ops::development_server::tests::the_missing_launcher_arm_is_discharged_not_deleted` | `commands::mod_ops::development_server::tests::usage_names_the_runnable_playtest_command` |
+
+Two tests keep their assertions under a name that describes them:
+
+| Old name | New name |
+|---|---|
+| `commands::fetch::vanilla_source::tests::curated_list_len_matches_bash` | `curated_list_holds_nineteen_entries` |
+| `commands::platform::slice_worktree::tests::usage_matches_the_bash_header` | `usage_spells_every_subcommand_as_a_runnable_command` |
+
+Making those replacements honest meant the usage strings themselves had to name a runnable
+command, so three production strings changed with them: `fetch/vanilla_api.rs` and
+`fetch/vanilla_source.rs` print `cargo xtask fetch vanilla-api` / `cargo xtask fetch
+vanilla-source` in their usage lines (the constant is now `USAGE_COMMAND`), and
+`platform/slice_worktree.rs::USAGE` spells its five subcommands through the live command instead
+of reproducing a shell header with a `set -euo pipefail` line and a trailing blank that a `sed`
+range once overshot into. `mod_ops/development_server.rs` loses the comment that claimed to retain
+an `is_executable` helper (no such function exists in that module), and its usage block and module
+documentation now describe the two outcomes the gate actually has.
+
+`git grep -n 'is_executable' tools_v2/xtask/src/commands/mod_ops` still reports nine lines. All
+nine are live checks on real executables — the Enfusion compile host (`compile_host.rs` and its two
+call sites), the playtest launcher (`playtest_server/usage_fail.rs`) and the world-boot service
+token resolver (`world_boot/resolve_service_token.rs` and its two call sites). None is in
+`development_server`, which is the module this phase was measuring; deleting the other three
+implementations would remove live behaviour, so they stay.
+
+### Finished ticket migrations
+
+Each verb was run on this checkout and the tree inspected afterwards.
+
+| Verb | Output | `git status --porcelain .ai docs` | Verdict |
+|---|---|---|---|
+| `ticket migrate-v2` | refuses on the first ticket file: `[scope] already carries domain — the tree is v2; migrate-v2 is one-shot` (exit 1) | empty | no-op; deleted |
+| `ticket quarantine-walls` | `0 summaries over cap; nothing to do` (exit 0) | empty | no-op; deleted |
+| `ticket backfill-stamps` | `0 tickets missing stamps; nothing to do` (exit 0) | empty | no-op; deleted |
+| `ticket estimate-tokens` | `0 shipped tickets missing token estimates; nothing to do` (exit 0) | empty | no-op; deleted |
+| `ticket migrate-main-goal` | `nothing to write — migration already ran (0 raw user_story carriers, 0 empty fill targets)` (exit 0) | empty | no-op; deleted |
+
+Relocated before the delete, because each has a live caller:
+
+- `SubjectCommit`, `mine_subjects`, `subject_ids` and `to_utc_z` (with the `format_utc_z` helper
+  they share) now live in `tools_v2/ticket-engine/src/cli/shipping/commit_subjects.rs`, re-exported
+  as `ticket_engine::cli::commit_subjects`. `cli/shipping.rs::cmd_stamp_sha` and
+  `metrics/estimates` are the callers.
+- `cmd_scope_histogram` is a read-only query and now lives in
+  `tools_v2/ticket-engine/src/cli/queries.rs`; the `scope-histogram` verb keeps working and its
+  help line describes the census instead of the migration it used to tail.
+- The shrink-only debt pins the plan expected inside the quarantine tests are not there:
+  `MIGRATION_LEGACY_PIN` lives at `tools_v2/ticket-engine/src/tests/store/mod.rs:90` and
+  `TITLE_DEBT_PIN` / `MAIN_GOAL_DEBT_PIN` at `model/scope.rs:128,139`, all read by
+  `validation/debt.rs`, all untouched by this phase. Nothing had to move.
+
+Deleted, with the line count each carried:
+
+| File | Lines |
+|---|---|
+| `tools_v2/ticket-engine/src/maintenance/mod.rs` | 5 |
+| `tools_v2/ticket-engine/src/maintenance/main_goal_migration.rs` | 260 |
+| `tools_v2/ticket-engine/src/maintenance/body_quarantine.rs` | 181 |
+| `tools_v2/ticket-engine/src/maintenance/tests/body_quarantine/mod.rs` | 62 |
+| `tools_v2/ticket-engine/src/maintenance/tests/body_quarantine/body_quarantine_tests.rs` | 125 |
+| `tools_v2/ticket-engine/src/maintenance/scope_migration/mod.rs` | 27 |
+| `tools_v2/ticket-engine/src/maintenance/scope_migration/classification.rs` | 158 |
+| `tools_v2/ticket-engine/src/maintenance/scope_migration/mapping.rs` | 236 |
+| `tools_v2/ticket-engine/src/maintenance/scope_migration/migration.rs` | 276 |
+| `tools_v2/ticket-engine/src/maintenance/scope_migration/tests/mod.rs` | 7 |
+| `tools_v2/ticket-engine/src/maintenance/scope_migration/tests/scope_mapping_tests.rs` | 140 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/mod.rs` | 53 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/application.rs` | 175 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/history.rs` | 159 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/interpolation.rs` | 128 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/planning.rs` | 250 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/tests/mod.rs` | 80 |
+| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/tests/timestamp_provenance_tests.rs` | 429 |
+
+With the tree gone, `pub mod maintenance;` leaves `ticket-engine/src/lib.rs`, the five clap variants
+leave `xtask/src/commands/ticket/cli.rs`, the five dispatch arms leave
+`xtask/src/commands/ticket/dispatch.rs`, and the whole `ticket_engine::maintenance` re-export block
+plus the `cmd_estimate_tokens` re-export leave `xtask/src/commands/ticket/mod.rs`.
+`metrics/estimates/storage.rs` loses `cmd_estimate_tokens` and the `print_report` it alone called
+(56 lines); the module's writeable core `run_estimates` and its planner stay, unchanged and still
+tested, as `ticket_engine::metrics::estimates` API.
+
+Five stale module names left `xtask/src/tests/tooling_dependency_boundaries.rs`'s negative list
+(`estimate_tokens`, `backfill_stamps`, `migrate_v2`, `migrate_main_goal`, `quarantine_walls`); the
+test still asserts that both ticket adapters delegate to `ticket_engine::`.
+
+Four refusal and comment sites told an operator to run a verb this phase deletes, so they were
+rewritten to name what actually repairs the ticket: `ops/transitions.rs:139,158` and
+`validation/shipping.rs:146,155` now say to hand-stamp a defensible date or to run
+`ticket stamp-sha <id> <sha>`. Three further comments describing the quarantine cutover
+(`ops/validation.rs`, `tests/store/mod.rs`, `validation/body.rs`) state the invariant without naming
+the deleted pass.
+
+### Tests removed, renamed and added
+
+Seventeen `ticket-engine` tests went with the migration tree; four of them assert behaviour that
+survives and were re-seated verbatim in
+`tools_v2/ticket-engine/src/cli/shipping/tests/commit_subjects_tests.rs`.
+
+| P0 inventory name | Outcome |
+|---|---|
+| `maintenance::body_quarantine::tests::body_quarantine_tests::parked_ticket_renders_canonically` | removed with the quarantine pass |
+| `maintenance::body_quarantine::tests::body_quarantine_tests::quarantine_moves_walls_reversibly_then_second_run_is_empty` | removed with the quarantine pass |
+| `maintenance::scope_migration::tests::scope_mapping_tests::chrome_map_is_deterministic_no_marker` | removed with the v1 scope mapper |
+| `maintenance::scope_migration::tests::scope_mapping_tests::chromeless_editor_is_owns_inferred_marked` | removed with the v1 scope mapper |
+| `maintenance::scope_migration::tests::scope_mapping_tests::editor_owns_inference_dominant_component` | removed with the v1 scope mapper |
+| `maintenance::scope_migration::tests::scope_mapping_tests::mod_feature_infers_from_enfusion_segments` | removed with the v1 scope mapper |
+| `maintenance::scope_migration::tests::scope_mapping_tests::multi_layer_takes_first` | removed with the v1 scope mapper |
+| `maintenance::scope_migration::tests::scope_mapping_tests::repo_xtask_component_prefix_rules` | removed with the v1 scope mapper |
+| `maintenance::scope_migration::tests::scope_mapping_tests::unmapped_shapes_refuse_naming_ticket` | removed with the v1 scope mapper |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::method2_descriptions_match_the_derivation` | removed with the stamp interpolator |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::odd_shipped_at_is_untouched_and_reported` | removed with the stamp backfill |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::scratch_backfill_mines_interpolates_and_is_idempotent` | removed with the stamp backfill |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::stray_date_shaped_shipped_at_resolves` | removed with the stamp backfill |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::mine_subjects_live_repo_smoke` | re-seated at `cli::shipping::commit_subjects::tests::mine_subjects_live_repo_smoke` |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::subject_id_boundary_pins` | re-seated at `cli::shipping::commit_subjects::tests::subject_id_boundary_pins` |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::utc_normalization` | re-seated at `cli::shipping::commit_subjects::tests::utc_normalization`, minus the two day-floor assertions whose subject went with the interpolator |
+| `maintenance::timestamp_backfill::tests::timestamp_provenance_tests::shape_predicates` | re-seated at `cli::shipping::commit_subjects::tests::shape_predicates`, minus the date-shape assertions whose predicate went with the backfill |
+
+`ticket-engine` therefore runs 200 library tests plus the compile-failure test, against a P0
+baseline of 213 plus one: 213 − 17 + 4 = 200. `xtask` runs 649 against a baseline of 650:
+650 − 4 removed + 3 added = 649, with two renames carrying their assertions across.
+
+### Acceptance
+
+| Command | Expected | Actual |
+|---|---|---|
+| `cargo xtask platform wave --help 2>&1 \| grep -c diff` | 0 | 0 |
+| `git grep -n '"diff"' tools_v2/xtask/src/commands/platform` | empty | five lines, all the `git` subcommand inside `git_stdout_lossy(&["diff", "--name-only", …])` (`base/demand_base_confirmation.rs:183`, `changed/changed_rs.rs:30,222,311`, `gate/gate_dispatch.rs:329`); zero are the wave verb, whose dispatch arm is gone |
+| `git grep -n 'diff_arms\|diff_reclaim\|cmd_diff' tools_v2` | empty | six lines, every one of them inside this document — the deletion table above and this row; adding `':!tools_v2/PHASE_FIVE_HANDOFF.md'`, or scoping to `'tools_v2/**/*.rs'`, is empty (exit 1) |
+| `cargo xtask ticket --help 2>&1 \| grep -c -E 'migrate-v2\|quarantine-walls\|backfill-stamps\|migrate-main-goal'` | 0 | 0 |
+| `cargo xtask ticket --help 2>&1 \| grep -c estimate-tokens` | 0 (its proof was empty) | 0 |
+| `cargo xtask deploy db --help 2>&1 \| grep -c emit-bash` | 0 | 0 |
+| `git grep -n -E 'exists\(\) *\{ *return' -- 'tools_v2/**/tests/*.rs' 'tools_v2/**/tests.rs'` | empty | empty (exit 1) |
+| `git grep -n 'is_executable' tools_v2/xtask/src/commands/mod_ops` | empty | nine lines, all live executable checks in `compile`, `compile_host`, `playtest_server` and `world_boot`; zero in `development_server` |
+| `cargo test -p xtask -p ticket-engine` | green | exit 0; xtask 649 passed, ticket-engine 200 passed plus 1 compile-failure test, 0 failed, 0 ignored |
+| `cargo clippy -p xtask -p ticket-engine --all-targets -- -D warnings` | clean | exit 0, no output |
+| `git status --porcelain .ai docs` | empty | empty |
+
+Three of those rows do not reach the value the plan predicted. Two cannot without deleting live
+code: `"diff"` is how every `git diff --name-only` call in the wave driver spells its subcommand,
+and `is_executable` is how four unrelated modules ask whether a binary on disk can be run. Both
+subjects the phase was aimed at — the wave `diff` verb and a vestigial helper in
+`development_server` — are gone, and the rows above record the measured remainder. The third is
+this document: the bulk-delete rule requires the deleted file names to be written down, so the
+record of a deletion is what the search now finds. Sources carry none of the three names.
+
+Also run: `cargo check --workspace --locked --all-targets` exits 0 (`ticketboard` consumes
+`ticket_engine`, so the engine's changed surface is proved across the workspace);
+`cargo xtask ticket check --strict` exits 0 with `check OK`, `TITLE_DEBT_PIN 0 == measured 0` and
+`MAIN_GOAL_DEBT_PIN 0 == measured 0`; `cargo xtask ticket sync` run twice leaves the second run with
+nothing further to write.
+
+### Found and fixed
+
+- `tools_v2/ticket-engine/src/ops/transitions.rs:139,158` and
+  `tools_v2/ticket-engine/src/validation/shipping.rs:146,155` — four live refusal messages told the
+  operator to run `ticket backfill-stamps`, the verb this phase deletes. Rewritten to name the
+  repair that exists: a deliberate hand-stamp, or `ticket stamp-sha <id> <sha>`.
+- `tools_v2/ticket-engine/src/ops/validation.rs:48`,
+  `tools_v2/ticket-engine/src/tests/store/mod.rs:75`,
+  `tools_v2/ticket-engine/src/validation/body.rs:5` — three comments explained a live invariant by
+  naming the one-shot quarantine verb. Each now states the invariant on its own terms.
+- `tools_v2/ticket-engine/src/ops/tests/status_and_shipping_tests.rs:184` — the assertion behind
+  `ship_refuses_created_at_less_pre_write` pinned the refusal's fix clause by the word `backfill`.
+  It now pins `hand-stamp`, the fix the message names, so the test still proves the refusal tells
+  the operator what to do rather than merely that it refused.
+- `tools_v2/xtask/src/commands/mod_ops/development_server.rs:65` — a comment claimed the module
+  retained `is_executable` "only for the tests that still pin the old shape"; the module contains no
+  such function. Comment removed with the tests it referred to.
+- `tools_v2/xtask/src/commands/mod_ops/development_server.rs:8-11` — the module documented an exit
+  code 3 for a missing launcher, an outcome the module cannot produce. The documented codes are now
+  the two it has.
+- `tools_v2/xtask/src/commands/mod_ops/cli.rs:50` — the `dev-server` help line described the verb as
+  a shim to a deleted `.sh` file; it now says what the verb does.
+- `tools_v2/xtask/src/commands/platform/wave_execution/flush.rs:77` — a doc comment justified an
+  empty-string return "because several refusal messages are asserted byte-for-byte by the diff
+  harness". The harness is deleted; the comment now states the invariant the empty string serves.
+- `tools_v2/xtask/src/commands/ci/tests/task_runner.rs:12` — the module comment spelled a skip guard
+  in code form while asserting that no test uses one, which made a mechanical search for such guards
+  report the sentence that forbids them. Same statement, prose form.
+- `docs/platform/token_estimate_factor.md:4,11` — the document pointed at
+  `cargo xtask ticket estimate-tokens` and at `xtask/src/estimate_tokens.rs`. The first is deleted
+  here and the second has not existed since the engine split; both now name the live generator
+  (`ticket stamp-sha`) and the live constant
+  (`tools_v2/ticket-engine/src/metrics/estimates/model.rs::TOKENS_PER_LOC`). The test that pins the
+  factor value in this document still passes.
+- `docs/TICKET_REGISTRY.md:820` — the generated view carried a program title that the ticket file has
+  not held since it was minted; `cargo xtask ticket sync` regenerates the line, and the refreshed
+  view lands with this commit so the generated surface and the corpus agree again.
+- `tools_v2/xtask/src/commands/fetch/tests/vanilla_api/tests.rs` and `…/vanilla_source/tests.rs` —
+  scratch directories were named after ticket identifiers; they are now named after the command
+  under test.
+
+### Found for P4
+
+- `tools_v2/xtask/src/commands/fetch/vanilla_api.rs:34-35` and
+  `tools_v2/xtask/src/commands/fetch/vanilla_source.rs:31-32` — the consumer list for these two
+  lines is already discharged: the constant is `USAGE_COMMAND` and prints the live `cargo xtask
+  fetch …` spelling. Only the module doc comment on line 1 of each file still names the old script.
+- `tools_v2/xtask/src/commands/mod_ops/development_server.rs:30-37` — likewise discharged; the usage
+  block names `cargo xtask mod playtest`.
+- `tools_v2/xtask/src/commands/platform/slice_worktree.rs:67-71` — likewise discharged; `USAGE`
+  spells the five subcommands through `cargo xtask platform slice-worktree --`.
+
+### Found for P8
+
+- `tools_v2/ticket-engine/src/metrics/estimates/storage.rs:50` (`run_estimates`) and
+  `tools_v2/ticket-engine/src/metrics/estimates/planning.rs:26` (`plan_estimates`, with
+  `EstimateReport`) have no in-tree caller once the `estimate-tokens` verb is gone. They remain
+  public `ticket_engine::metrics::estimates` API and are exercised by
+  `scratch_generator_cohorts_fallthrough_and_idempotence`,
+  `mutual_exclusion_and_marker_coherence` and
+  `summarize_by_agent_on_mixed_tree_equals_receipts_only`. If the prose-and-dead-code rules require
+  every public engine item to have an in-tree caller, the edit is: delete `planning.rs` and
+  `storage.rs::run_estimates`, then re-seat those three tests on `plan_estimate_for_id` plus
+  `write_estimate_file` (the incremental path `ticket stamp-sha` uses), which reaches the same
+  cohort widening, marker coherence and mutual-exclusion behaviour one ticket at a time.
+- `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs:84-87` — the doc comment above
+  `UNKNOWN_HELP` describes the constant as a `sed` range over a script "deleted at the end of this
+  port". Replace with what it is: the help text an unknown wave subcommand prints.
+- `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs:88-135` — `UNKNOWN_HELP` itself is
+  operator-facing text that still names `scripts/mod/wave.sh`, `scripts/mod/slice-collisions.py` and
+  `bash scripts/platform/wave.sh`, and dates its three corrections against a past program. The
+  command list in its tail is accurate and must survive the rewrite.
+- `tools_v2/xtask/src/commands/platform/slice_worktree.rs:44-51` — the `PROG` doc comment explains
+  the constant by narrating the script that used to be named there. The invariant to keep is that
+  usage and every guard refusal name one command, through this constant.
+
+### Commands that could not run
+
+None. Every check of this phase ran in this environment.

@@ -51,12 +51,9 @@ const BASE: &str = ".ai/artifacts/worktrees";
 /// the refusal fired correctly and then named a deleted script.
 const PROG: &str = "cargo xtask platform slice-worktree --";
 
-/// `usage()` in the bash is `sed -n '2,14p' "$0"` — it prints its own header back.
-///
-/// ODDITY PRESERVED: the range runs off the end of the header — line 13 is `set -euo pipefail` and
-/// line 14 is blank, so the usage a user sees ends with a shell directive and a trailing empty line
-/// (`2,12p` was plainly meant). Reproduced verbatim because the port is diffed byte-for-byte and
-/// `wave.sh` greps this; a port has no `$0` to `sed`, so `usage_matches_the_bash_header` pins it.
+/// What an unknown or empty subcommand prints: the lifecycle rule first, then every subcommand
+/// spelled the way the operator must retype it, through [`PROG`] — the same authority the guard
+/// refusals use, so usage and refusal can never name two different commands.
 const USAGE: &str = "\
 # Slice worktree lifecycle — see docs/mod/SLICE_WORKFLOW.md (operator-defined, binding).
 #
@@ -64,13 +61,11 @@ const USAGE: &str = "\
 # because they are the same slice's work. Three worktrees at a time; merge when all three are
 # complete; DELETE immediately after merging — leftover trees fill the disk.
 #
-#   bash scripts/mod/slice-worktree.sh new   T-181.7
-#   bash scripts/mod/slice-worktree.sh list
-#   bash scripts/mod/slice-worktree.sh merge T-181.7
-#   bash scripts/mod/slice-worktree.sh drop  T-181.7
-#   bash scripts/mod/slice-worktree.sh reap
-set -euo pipefail
-
+#   cargo xtask platform slice-worktree -- new   T-181.7
+#   cargo xtask platform slice-worktree -- list
+#   cargo xtask platform slice-worktree -- merge T-181.7
+#   cargo xtask platform slice-worktree -- drop  T-181.7
+#   cargo xtask platform slice-worktree -- reap
 ";
 
 /// Whether a missing oracle lane is fatal. See the licence/policy essay in `cmd_new`.

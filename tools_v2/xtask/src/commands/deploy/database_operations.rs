@@ -11,11 +11,9 @@
 //! - Identity (T-588): `dbname:` header + `_sqlx_migrations` TOC entry before the body read.
 //! - T-381 allow-list refuses `tbd_reforger` unless `--confirm` spells the name twice.
 //!
-//! This module does **not** source `gate-grep.sh` (T-880 parked). `_sqlx_migrations` probes use
-//! `verification_core::gate::probe_str` instead.
+//! `_sqlx_migrations` probes use `verification_core::gate::probe_str`.
 //!
-//! T-885…T-887 call this module from Rust directly. `emit-bash-fns` remains for any
-//! lingering external eval callers; the three deploy scripts no longer use it.
+//! T-885…T-887 call this module from Rust directly; there is no shell bridge.
 
 use std::env;
 use std::fs;
@@ -31,9 +29,6 @@ use verification_core::gate;
 /// Subcommands under `cargo xtask deploy db`.
 #[derive(Subcommand, Debug)]
 pub enum DeployDbCmd {
-    /// Emit bash function wrappers for backup/restore/drill until those scripts are ported.
-    #[command(name = "emit-bash-fns")]
-    EmitBashFns,
     /// T-381 restore-target guard (refuses `tbd_reforger` by default).
     #[command(name = "refuse-unsafe")]
     RefuseUnsafe {
@@ -145,7 +140,6 @@ pub(crate) use execution::warn;
 mod verify_dump;
 pub(crate) use verify_dump::count_db_rows;
 pub(crate) use verify_dump::database_exists;
-pub use verify_dump::emit_bash_fns;
 pub(crate) use verify_dump::verify_dump;
 
 #[cfg(test)]

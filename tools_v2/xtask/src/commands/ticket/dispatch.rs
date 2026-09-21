@@ -138,34 +138,9 @@ pub(crate) fn run(cmd: TicketCmd) -> Result<u8> {
             TicketCmd::Metrics { by } => {
                 cmd_metrics(&root, by.as_deref())?;
             }
-            // No load_registry on either arm: migrate-v2 must run BEFORE the tree
-            // parses as v2 (the registry loader would refuse the v1 files), and
-            // scope-histogram reads the typed corpus directly.
-            TicketCmd::MigrateV2 => {
-                cmd_migrate_v2(&root)?;
-            }
+            // No registry pre-load: the histogram reads the typed corpus directly.
             TicketCmd::ScopeHistogram => {
                 cmd_scope_histogram(&root)?;
-            }
-            // Like migrate-v2: no registry pre-load — the pass itself reloads and
-            // regenerates the sync surface after the write.
-            TicketCmd::QuarantineWalls => {
-                cmd_quarantine_walls(&root)?;
-            }
-            // No registry pre-load either: the miner reads git metadata + the
-            // typed corpus directly, and stamps feed no generated view.
-            TicketCmd::BackfillStamps => {
-                cmd_backfill_stamps(&root)?;
-            }
-            // Same shape as backfill-stamps: git metadata + typed corpus only;
-            // estimates and markers feed no generated view.
-            TicketCmd::EstimateTokens => {
-                cmd_estimate_tokens(&root)?;
-            }
-            // T-920.1: typed corpus only; main_goal and the body lists feed no
-            // generated view and no wave.lock input — no sync, no repack.
-            TicketCmd::MigrateMainGoal => {
-                cmd_migrate_main_goal(&root)?;
             }
         }
         Ok(0)

@@ -45,14 +45,13 @@ pub(super) fn validate_post_image(
             ));
         }
     }
-    // T-917.3: no op may write a NEW summary wall. Scoped to `changed` — the same
-    // don't-retro-police carve-out the fn header documents: after the one-shot
-    // `ticket quarantine-walls` pass the live tree carries no unquarantined wall, so
-    // this binds exactly on prose an op introduces (`add`/`add_child` summaries, or a
-    // future summary-editing verb). Nonempty `migration_legacy` exempts exactly the
-    // summary cap (quarantined tickets carry `summary := title`, which may itself
-    // exceed the cap); the field is minted only by the quarantine pass — a
-    // post-cutover mint is red in `ticket check`, not here (ops never set it).
+    // No op may write a NEW summary wall. Scoped to `changed` — the same
+    // don't-retro-police carve-out the fn header documents: the live tree carries no
+    // unquarantined wall, so this binds exactly on prose an op introduces (`add` /
+    // `add_child` summaries, or a summary-editing verb). Nonempty `migration_legacy`
+    // exempts exactly the summary cap (a parked ticket carries `summary := title`,
+    // which may itself exceed the cap); no op mints that field, and a mint dated after
+    // the quarantine cutover is red in `ticket check`, not here.
     // Work-only: program summaries are uncapped this pass (spec §Wall quarantine).
     for id in changed {
         if let Some(Ticket::Work(w)) = post.get(id)

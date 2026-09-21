@@ -2,6 +2,7 @@
 
 use super::*;
 use anyhow::Context;
+use std::collections::BTreeMap;
 
 pub fn unknown_ticket(id: &str) -> ! {
     eprintln!("Unknown ticket: {id}");
@@ -268,5 +269,60 @@ pub fn cmd_sparse_paths(registry: &Value, id: &str) -> Result<()> {
 pub fn cmd_gap_round_trip(root: &Path) -> Result<()> {
     test_gap_analysis_round_trip(root)?;
     println!("round-trip OK");
+    Ok(())
+}
+
+/// `ticket scope-histogram` — read-only census of the typed corpus: per domain/layer/component
+/// counts, per-surface counts, the "U surface-empty (scope ∈ estimated: E)" honesty counters per
+/// component bucket, and the work-ticket class distribution.
+pub fn cmd_scope_histogram(root: &Path) -> Result<()> {
+    let corpus = Corpus::load(root).map_err(anyhow::Error::msg)?;
+    let mut works = 0usize;
+    let mut programs = 0usize;
+    let mut buckets: BTreeMap<String, Vec<&crate::WorkTicket>> = BTreeMap::new();
+    let mut classes: BTreeMap<String, usize> = BTreeMap::new();
+    for t in corpus.tickets.values() {
+        match t {
+            Ticket::Program(_) => programs += 1,
+            Ticket::Work(w) => {
+                works += 1;
+                let key = match &w.scope.component {
+                    Some(c) => format!("{}/{}/{c}", w.scope.domain.as_str(), w.scope.layer),
+                    None => format!("{}/{}", w.scope.domain.as_str(), w.scope.layer),
+                };
+                buckets.entry(key).or_default().push(w);
+                *classes
+                    .entry(w.class.clone().unwrap_or_else(|| "(none)".into()))
+                    .or_default() += 1;
+            }
+        }
+    }
+    println!("scope histogram — {works} work tickets, {programs} programs");
+    for (key, tickets) in &buckets {
+        println!("{key}: {}", tickets.len());
+        let mut surfaces: BTreeMap<&str, usize> = BTreeMap::new();
+        let mut empty = 0usize;
+        let mut empty_marked = 0usize;
+        for w in tickets {
+            if w.scope.surface.is_empty() {
+                empty += 1;
+                if w.estimated.iter().any(|e| e == "scope") {
+                    empty_marked += 1;
+                }
+            }
+            for s in &w.scope.surface {
+                *surfaces.entry(s.as_str()).or_default() += 1;
+            }
+        }
+        if !surfaces.is_empty() {
+            let list: Vec<String> = surfaces.iter().map(|(s, n)| format!("{s} {n}")).collect();
+            println!("  surfaces: {}", list.join(", "));
+        }
+        if empty > 0 {
+            println!("  {empty} surface-empty (scope ∈ estimated: {empty_marked})");
+        }
+    }
+    let class_line: Vec<String> = classes.iter().map(|(c, n)| format!("{c} {n}")).collect();
+    println!("class distribution (work): {}", class_line.join(", "));
     Ok(())
 }

@@ -1,15 +1,17 @@
 # T-917.5 — Token estimate factor
 
-The declared constant the `diff_loc` token estimator multiplies by
-(`cargo xtask ticket estimate-tokens`; spec:
-[`t917_ticket_schema_v2.md`](t917_ticket_schema_v2.md) §Estimation ladder):
+The declared constant the `diff_loc` token estimator multiplies by. The estimator runs
+inside `cargo xtask ticket stamp-sha <id> <sha>`, which writes
+`.ai/tickets/estimates/<id>.json` for a shipped ticket that has no measured run receipt
+(spec: [`t917_ticket_schema_v2.md`](t917_ticket_schema_v2.md) §Estimation ladder):
 
 ```
 TOKENS_PER_LOC = 150
 ```
 
-Authority pattern: the Rust constant `xtask/src/estimate_tokens.rs::TOKENS_PER_LOC`
-is the value the generator and `ticket check` use; a test asserts this document
+Authority pattern: the Rust constant
+`tools_v2/ticket-engine/src/metrics/estimates/model.rs::TOKENS_PER_LOC` is the value the
+generator and `ticket check` use; a test asserts this document
 quotes it verbatim, and check refuses any `.ai/tickets/estimates/<id>.json` whose
 `factor` differs. Doc and code cannot drift silently.
 

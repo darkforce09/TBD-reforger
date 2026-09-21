@@ -24,7 +24,7 @@ pub(crate) enum PlatformCmd {
     Wave {
         /// `status` | `prep` | `gate [<base>|--slice T-nnn|--migrate-persist [audit|advance]]` |
         /// `test --slice T-nnn …` | `wave [--close]` | `verified <sha>` | `reclaim` |
-        /// `land [--bookkeeping]` | `revert <sha>` | `push` | `diff <arm>`  (default `status`).
+        /// `land [--bookkeeping]` | `revert <sha>` | `push`  (default `status`).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },

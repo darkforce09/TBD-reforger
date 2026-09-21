@@ -72,15 +72,14 @@ fn work(id: &str, status: Status) -> Ticket {
 /// may only ever shrink.
 const HAND_EDITED_NOT_CANONICAL: &[&str] = &[];
 
-/// T-917.3 shrink-only ratchet: the number of tickets carrying a nonempty
-/// `migration_legacy` — the walls the one-shot `cargo xtask ticket
-/// quarantine-walls` pass parked, measured on the live tree at the pass
+/// Shrink-only ratchet: the number of tickets carrying a nonempty `migration_legacy`
+/// — parked wall summaries awaiting decomposition, measured on the live tree
 /// (instrument: typed corpus scan, `!migration_legacy.is_empty()`). The
 /// `HAND_EDITED_NOT_CANONICAL` self-tightening pattern, red BOTH ways:
 ///
-/// - **Growth is impossible by rule**: new tickets never quarantine — a
-///   post-cutover mint is red in `ticket check` — the quarantine-mint
-///   tripwire, pinned by `quarantine_mint_past_cutover_is_red` — and the
+/// - **Growth is impossible by rule**: new tickets never park a wall — a
+///   post-cutover mint is red in `ticket check`, the quarantine-mint
+///   tripwire pinned by `quarantine_mint_past_cutover_is_red` — and the
 ///   ops post-image gate refuses new wall summaries outright, so nothing can
 ///   legitimately add a carrier. A count above the pin means somebody hand-minted
 ///   the field.

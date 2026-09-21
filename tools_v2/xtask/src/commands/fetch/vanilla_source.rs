@@ -28,8 +28,9 @@ use verification_core::proc::{self, Run};
 const BASE: &str = "https://arexplorer.zeroy.com";
 const UA: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-/// Historical `$0` in the bash `--grep` usage line (`bash scripts/mod/fetch-vanilla-source.sh`).
-const USAGE_SELF: &str = "scripts/mod/fetch-vanilla-source.sh";
+/// The command named in the `--grep` usage line, so the refusal tells the operator exactly what
+/// to retype.
+const USAGE_COMMAND: &str = "cargo xtask fetch vanilla-source";
 
 const CURATED: &[&str] = &[
     "SCR_BaseGameMode.c",
@@ -133,7 +134,7 @@ fn early_usage(args: &[String]) -> Option<u8> {
     if args.first().map(String::as_str) == Some("--grep") {
         let pat = args.get(1).map(String::as_str).unwrap_or("");
         if pat.is_empty() {
-            let _ = err_line(&format!("usage: {USAGE_SELF} --grep <pattern>"));
+            let _ = err_line(&format!("usage: {USAGE_COMMAND} --grep <pattern>"));
             return Some(2);
         }
     }

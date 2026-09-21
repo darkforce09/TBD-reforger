@@ -31,8 +31,9 @@ use verification_core::proc::{self, Run};
 const BASE: &str = "https://community.bistudio.com/wikidata/external-data/arma-reforger/ArmaReforgerScriptAPIPublic";
 const UA: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-/// Historical `$0` when invoked as `bash scripts/mod/fetch-vanilla-api.sh`.
-const USAGE_SELF: &str = "scripts/mod/fetch-vanilla-api.sh";
+/// The command named in the `--from-file` usage line, so the refusal tells the operator exactly
+/// what to retype.
+const USAGE_COMMAND: &str = "cargo xtask fetch vanilla-api";
 
 /// Entry for `xtask fetch vanilla-api` — `args` are tokens after the subcommand.
 pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
@@ -47,7 +48,7 @@ pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
 
     let classes = match resolve_classes(args)? {
         Classes::Usage => {
-            err_line(&format!("usage: {USAGE_SELF} --from-file <path>"))?;
+            err_line(&format!("usage: {USAGE_COMMAND} --from-file <path>"))?;
             return Ok(2);
         }
         Classes::List(c) => c,

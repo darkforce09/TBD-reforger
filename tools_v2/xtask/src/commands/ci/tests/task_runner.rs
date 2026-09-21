@@ -9,8 +9,8 @@
 //! constant, and [`doc_layout_predicate_reproduces_finds_globs`] pins the doc-layout rule by
 //! BEHAVIOUR rather than by message text.
 //!
-//! None of them is guarded by an `if !<path>.exists() { return }`, because a pin that returns
-//! early goes QUIET instead of red — the exact defect class this program exists to kill. `help`
+//! None of them skips itself when a path it wants is absent, because a pin that returns early
+//! goes QUIET instead of red — the exact defect class this program exists to kill. `help`
 //! renders FROM [`TASKS`], so there is no second copy of the help text left to drift.
 
 use super::*;

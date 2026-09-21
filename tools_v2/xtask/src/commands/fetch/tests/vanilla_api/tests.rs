@@ -1,10 +1,9 @@
 use super::*;
 use std::path::PathBuf;
-use std::process::Command;
 
 fn scratch(name: &str) -> PathBuf {
     let p = std::env::temp_dir().join(format!(
-        "t866-{name}-{}-{}",
+        "fetch-vanilla-api-{name}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -80,7 +79,7 @@ fn from_file_nonexistent_continues_rc0() {
         &root,
         &[
             "--from-file".into(),
-            "/tmp/t866-does-not-exist-xyz.txt".into(),
+            "/tmp/fetch-vanilla-api-does-not-exist-xyz.txt".into(),
         ],
     )
     .unwrap();
@@ -97,57 +96,14 @@ fn cache_hit_index_only_rc0() {
     let _ = fs::remove_dir_all(root);
 }
 
-/// Anti-vacuity: bash must go red on index miss before we trust parity.
+/// The `--from-file` refusal prints ONE usage line and it names the command the operator must
+/// retype, not an implementation path — a usage line that names something unrunnable sends the
+/// reader nowhere.
 #[test]
-fn bash_index_miss_goes_red_first() {
-    let sh =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts/mod/fetch-vanilla-api.sh");
-    if !sh.exists() {
-        return;
-    }
-    let root = scratch("bash-red");
-    fs::create_dir_all(root.join("scripts/mod")).unwrap();
-    fs::copy(&sh, root.join("scripts/mod/fetch-vanilla-api.sh")).unwrap();
-    let bin = root.join("bin");
-    fs::create_dir_all(&bin).unwrap();
-    let stub = bin.join("curl");
-    fs::write(&stub, "#!/bin/bash\nexit 1\n").unwrap();
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mut perms = fs::metadata(&stub).unwrap().permissions();
-        perms.set_mode(0o755);
-        fs::set_permissions(&stub, perms).unwrap();
-    }
-    let path = format!("{}:/usr/bin:/bin", bin.display());
-    let out = Command::new("bash")
-        .arg("scripts/mod/fetch-vanilla-api.sh")
-        .current_dir(&root)
-        .env("PATH", &path)
-        .output()
-        .expect("bash");
-    assert_ne!(out.status.code(), Some(0), "bash must go red on index miss");
-    assert_eq!(out.status.code(), Some(1));
-    let _ = fs::remove_dir_all(root);
-}
-
-#[test]
-fn bash_from_file_usage_goes_red_first() {
-    let sh =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts/mod/fetch-vanilla-api.sh");
-    if !sh.exists() {
-        return;
-    }
-    let root = scratch("bash-usage");
-    seed_index(&root);
-    fs::create_dir_all(root.join("scripts/mod")).unwrap();
-    fs::copy(&sh, root.join("scripts/mod/fetch-vanilla-api.sh")).unwrap();
-    let out = Command::new("bash")
-        .arg("scripts/mod/fetch-vanilla-api.sh")
-        .arg("--from-file")
-        .current_dir(&root)
-        .output()
-        .expect("bash");
-    assert_eq!(out.status.code(), Some(2));
-    let _ = fs::remove_dir_all(root);
+fn from_file_usage_line_names_the_runnable_command() {
+    assert_eq!(USAGE_COMMAND, "cargo xtask fetch vanilla-api");
+    assert_eq!(
+        format!("usage: {USAGE_COMMAND} --from-file <path>"),
+        "usage: cargo xtask fetch vanilla-api --from-file <path>"
+    );
 }

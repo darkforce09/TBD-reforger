@@ -64,9 +64,6 @@ use anyhow::Result;
 pub mod base;
 pub mod changed;
 pub mod db;
-pub mod diff;
-pub mod diff_arms;
-pub mod diff_reclaim;
 pub mod gate;
 pub mod host;
 pub mod land;
@@ -92,7 +89,7 @@ pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmati
 #
 # WHY THIS EXISTS SEPARATELY FROM scripts/mod/wave.sh
 # ---------------------------------------------------
-# Same shape, different physics. The mod program gates on the Enfusion compiler and a real
+# Same shape, unlike gates. The mod program gates on the Enfusion compiler and a real
 # headless game boot. This program gates on cargo and trunk. Three things had to change, and
 # each is a measured correction to how T-181 ran — not a preference:
 #

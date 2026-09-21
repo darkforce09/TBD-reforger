@@ -2,10 +2,10 @@
 
 use super::*;
 
-/// T-917.3 quarantine cutover — the one-shot `ticket quarantine-walls` pass ran on
-/// history created BEFORE this date; a work ticket carrying `migration_legacy` with a
-/// later `created_at` is a NEW ticket minting the field, which is red (new tickets
-/// never quarantine — they write the ten typed body fields). Bare-date string
+/// The quarantine cutover — every parked wall in the corpus belongs to history created
+/// BEFORE this date; a work ticket carrying `migration_legacy` with a later
+/// `created_at` is a NEW ticket minting the field, which is red (new tickets never park
+/// a wall — they write the ten typed body fields). Bare-date string
 /// comparison is sound: stamps are validated RFC 3339 UTC (`...T..:..:..Z`), which
 /// sorts lexically, and any stamp on/after the cutover day compares greater than the
 /// bare date by the prefix rule.

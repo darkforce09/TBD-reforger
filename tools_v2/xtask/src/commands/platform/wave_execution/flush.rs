@@ -72,9 +72,8 @@ pub fn git_stdout_lossy(args: &[&str]) -> String {
 
 /// `git rev-parse --short <rev>`, or the input unchanged when git cannot resolve it.
 ///
-/// The bash interpolated `$(git rev-parse --short "$x")` straight into messages, so a failure
-/// rendered as an EMPTY string mid-sentence. Preserved: an unresolvable rev yields `""` here too,
-/// because several refusal messages are asserted byte-for-byte by the diff harness.
+/// An unresolvable rev yields `""`, so a refusal message interpolating it renders with an empty
+/// span rather than failing: the message still names which rev it could not resolve by position.
 pub fn short(rev: &str) -> String {
     git_stdout(&["rev-parse", "--short", rev]).unwrap_or_default()
 }
@@ -345,22 +344,6 @@ pub(super) fn disown_ambient_target_dir() {
 
 pub fn run(args: &[String]) -> Result<u8> {
     disown_ambient_target_dir();
-    // Internal probe used by the base arm: print the derived wave base and nothing else.
-    // Must NOT go through Ctx::enter — Host::detect prints a five-line HOST-shell banner on
-    // stderr, and the bash side of that arm is the extracted `prev_wave_close` functions, which
-    // never print it. Measured T-902: 11/11 "mismatches" were that banner sitting between the
-    // SHA and the disavowal skip; the SHAs themselves were identical.
-    if args.first().map(String::as_str) == Some("diff")
-        && args.get(1).map(String::as_str) == Some("base-probe")
-    {
-        return Ok(match base::prev_wave_close() {
-            Some(s) => {
-                crate::wprintln!("{s}");
-                0
-            }
-            None => 1,
-        });
-    }
     let ctx = Ctx::enter()?;
     let cmd = args.first().map(String::as_str).unwrap_or("status");
     let rest: Vec<String> = args.iter().skip(1).cloned().collect();
@@ -407,8 +390,6 @@ pub fn run(args: &[String]) -> Result<u8> {
         "land" => land::cmd_land(&ctx, &rest),
         "revert" => land::cmd_revert(&ctx, rest.first().map(String::as_str).unwrap_or("")),
         "push" => push::cmd_push(&ctx),
-        // T-853 addition, not in the bash: the verdict-diff harness. See [`diff`].
-        "diff" => diff::cmd_diff(&ctx, &rest),
         _ => {
             println!("{UNKNOWN_HELP}");
             1

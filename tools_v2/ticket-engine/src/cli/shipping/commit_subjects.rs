@@ -1,7 +1,20 @@
-//! History.
+//! Ticket ids mined out of commit subjects.
+//!
+//! `stamp-sha` and the token estimator both need the same question answered: which commits claim
+//! this ticket, and when did each land. One git pass answers it for the whole corpus, so neither
+//! caller invents its own id-matching rule or its own date normalisation.
 
-use super::*;
-use anyhow::Context;
+use anyhow::{Context, Result, bail};
+use regex::Regex;
+use std::collections::BTreeMap;
+use std::path::Path;
+use std::process::Command;
+use std::sync::LazyLock;
+
+use time::format_description::well_known::Rfc3339;
+use time::{OffsetDateTime, UtcOffset};
+
+use crate::validate_rfc3339_utc;
 
 /// One subject commit naming a ticket id. Per-id lists are oldest→newest.
 #[derive(Debug, Clone)]
@@ -11,13 +24,14 @@ pub struct SubjectCommit {
     pub date_utc: String,
 }
 
-pub(super) static ID_TOKEN: LazyLock<Regex> =
+static ID_TOKEN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"T-[0-9]+(?:\.[0-9]+)*").expect("id token regex"));
 
 /// Extract boundary-matched ticket ids from one commit subject, deduped, in order.
 /// Maximal munch supplies the trailing boundary (the id is followed by a non-id
-/// character or end); the leading guard refuses an ASCII-alphanumeric predecessor.
-pub(super) fn subject_ids(subject: &str) -> Vec<String> {
+/// character or end); the leading guard refuses an ASCII-alphanumeric predecessor,
+/// so `XT-90` is not a claim on `T-90`.
+pub fn subject_ids(subject: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for m in ID_TOKEN.find_iter(subject) {
         if m.start() > 0 {
@@ -34,10 +48,10 @@ pub(super) fn subject_ids(subject: &str) -> Vec<String> {
     out
 }
 
-/// Render an instant as canonical whole-second UTC `Z` (xtask's `time` dep carries
-/// only the `parsing` feature, so the format is written by hand and then proven
-/// through `validate_rfc3339_utc` — the two cannot disagree silently).
-pub(super) fn format_utc_z(t: OffsetDateTime) -> String {
+/// Render an instant as canonical whole-second UTC `Z` (the `time` dependency carries only the
+/// `parsing` feature, so the format is written by hand and then proven through
+/// [`validate_rfc3339_utc`] — the two cannot disagree silently).
+fn format_utc_z(t: OffsetDateTime) -> String {
     format!(
         "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
         t.year(),
@@ -49,8 +63,8 @@ pub(super) fn format_utc_z(t: OffsetDateTime) -> String {
     )
 }
 
-/// Any-offset RFC 3339 → UTC `Z` (whole seconds).
-pub(super) fn to_utc_z(rfc3339: &str) -> Result<String> {
+/// Any-offset RFC 3339 → UTC `Z` (whole seconds). A naive date-time refuses.
+pub fn to_utc_z(rfc3339: &str) -> Result<String> {
     let parsed = OffsetDateTime::parse(rfc3339, &Rfc3339)
         .with_context(|| format!("not an RFC 3339 date-time: {rfc3339:?}"))?;
     let s = format_utc_z(parsed.to_offset(UtcOffset::UTC));
@@ -58,22 +72,7 @@ pub(super) fn to_utc_z(rfc3339: &str) -> Result<String> {
     Ok(s)
 }
 
-pub(super) fn parse_utc(stamp: &str) -> Result<OffsetDateTime> {
-    OffsetDateTime::parse(stamp, &Rfc3339).with_context(|| format!("parse stamp {stamp:?}"))
-}
-
-/// Day-precision floor: `YYYY-MM-DDT00:00:00Z`.
-pub(super) fn day_floor(t: OffsetDateTime) -> String {
-    let t = t.to_offset(UtcOffset::UTC);
-    format!(
-        "{:04}-{:02}-{:02}T00:00:00Z",
-        t.year(),
-        u8::from(t.month()),
-        t.day()
-    )
-}
-
-/// Mine every id-mentioning subject commit from main history (HEAD). One git pass;
+/// Mine every id-mentioning subject commit from the checked-out history (HEAD). One git pass;
 /// per-id lists come back oldest→newest.
 pub fn mine_subjects(root: &Path) -> Result<BTreeMap<String, Vec<SubjectCommit>>> {
     let out = Command::new("git")
@@ -116,44 +115,6 @@ pub fn mine_subjects(root: &Path) -> Result<BTreeMap<String, Vec<SubjectCommit>>
     Ok(map)
 }
 
-pub(super) fn short_sha(full: &str) -> String {
-    full.chars().take(8).collect()
-}
-
-/// `shipped_at` value read through BOTH arms (work field / program status).
-pub(super) fn shipped_sha_of(t: &Ticket) -> Option<String> {
-    match t {
-        Ticket::Work(w) => w.shipped_at.clone(),
-        Ticket::Program(p) => {
-            if let Status::Shipped { shipped_at, .. } = &p.status {
-                shipped_at.clone()
-            } else {
-                None
-            }
-        }
-    }
-}
-
-pub(super) fn stamps_of(t: &Ticket) -> (Option<&str>, Option<&str>) {
-    match t {
-        Ticket::Work(w) => (w.created_at.as_deref(), w.completed_at.as_deref()),
-        Ticket::Program(p) => (p.created_at.as_deref(), p.completed_at.as_deref()),
-    }
-}
-
-pub(super) fn estimated_of(t: &Ticket) -> &[String] {
-    match t {
-        Ticket::Work(w) => &w.estimated,
-        Ticket::Program(p) => &p.estimated,
-    }
-}
-
-pub(super) fn is_date_shaped(v: &str) -> bool {
-    let b = v.as_bytes();
-    b.len() == 10
-        && b[4] == b'-'
-        && b[7] == b'-'
-        && b.iter()
-            .enumerate()
-            .all(|(i, c)| matches!(i, 4 | 7) || c.is_ascii_digit())
-}
+#[cfg(test)]
+#[path = "tests/commit_subjects_tests.rs"]
+mod tests;

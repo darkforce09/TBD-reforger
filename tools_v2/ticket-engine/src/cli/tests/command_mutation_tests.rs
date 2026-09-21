@@ -523,7 +523,7 @@ fn stamp_sha_end_to_end_scratch_cycle() {
     let root = scratch_registry("stamp-sha-e2e");
     let mut registry = load_registry(&root).expect("scratch registry loads");
     let now = "2026-08-15T10:00:00Z";
-    let subjects: BTreeMap<String, Vec<crate::maintenance::timestamp_backfill::SubjectCommit>> =
+    let subjects: BTreeMap<String, Vec<crate::cli::commit_subjects::SubjectCommit>> =
         BTreeMap::new();
     let sha_loc: BTreeMap<String, u64> = [("beefbeef00".to_string(), 20)].into_iter().collect();
 

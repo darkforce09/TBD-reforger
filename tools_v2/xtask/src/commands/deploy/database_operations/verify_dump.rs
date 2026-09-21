@@ -288,35 +288,3 @@ pub(crate) fn database_exists(db: &str) -> Result<bool> {
     let out: String = stdout.chars().filter(|c| !c.is_whitespace()).collect();
     Ok(out == "1")
 }
-
-/// Print bash function definitions that forward to `cargo xtask deploy db …`.
-///
-/// Legacy bash bridge. T-885…T-887 call Rust helpers directly; no remaining in-tree
-/// `eval` caller after backup-drill.sh deletion. Kept so external wrappers do not break.
-/// No new `.sh` library file — inventory shrinks only when a script is deleted.
-pub fn emit_bash_fns() -> String {
-    // Resolve via `cargo run -q` so cargo status lines do not leak into script stderr.
-    // die()/exit in the old sourced lib killed THIS shell; a child xtask exit alone would
-    // not — wrappers that map to die/exit must `exit` the caller on failure.
-    r#"# T-884 bridge — db-common.sh → cargo xtask deploy db (do not add a new .sh lib)
-die() { echo "FATAL: $*" >&2; exit 1; }
-info() { echo "==> $*"; }
-warn() { echo "WARN: $*" >&2; }
-_tbd_xtask_db() { cargo run -q -p xtask -- deploy db "$@"; }
-tbd_resolve_runtime() { :; } # runtime resolved inside xtask on each call
-tbd_require_container() { _tbd_xtask_db require-container || exit $?; }
-tbd_require_pg_tool() { _tbd_xtask_db require-pg-tool "$1" || exit $?; }
-tbd_database_name_from_url() { _tbd_xtask_db database-name-from-url "$1"; }
-tbd_is_safe_scratch_database_name() { _tbd_xtask_db is-safe-scratch --db "$1"; }
-tbd_refuse_unsafe_restore_target() { _tbd_xtask_db refuse-unsafe --db "$1" ${2:+--confirm "$2"} || exit $?; }
-tbd_verify_dump() {
-	local file="$1" min_rows="${2:-1}" expect_db="${3:-}"
-	_tbd_xtask_db verify-dump --file "$file" --min-rows "$min_rows" --expect-db "$expect_db"
-}
-tbd_count_db_rows() { _tbd_xtask_db count-rows --db "$1"; }
-tbd_database_exists() { _tbd_xtask_db database-exists --db "$1"; }
-tbd_ct() { _tbd_xtask_db ct -- "$@"; }
-tbd_ct_i() { _tbd_xtask_db ct-i -- "$@"; }
-"#
-    .to_string()
-}

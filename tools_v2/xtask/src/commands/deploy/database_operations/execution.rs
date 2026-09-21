@@ -2,10 +2,6 @@ use super::*;
 
 pub fn run(cmd: DeployDbCmd) -> Result<u8> {
     match cmd {
-        DeployDbCmd::EmitBashFns => {
-            print!("{}", emit_bash_fns());
-            Ok(0)
-        }
         DeployDbCmd::RefuseUnsafe { db, confirm } => {
             refuse_unsafe_restore_target(&db, confirm.as_deref())?;
             Ok(0)

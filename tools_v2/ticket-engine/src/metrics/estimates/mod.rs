@@ -11,7 +11,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::maintenance::timestamp_backfill::{SubjectCommit, is_sha_shaped, mine_subjects};
+use crate::cli::commit_subjects::SubjectCommit;
+use crate::is_sha_shaped;
 use walkdir::WalkDir;
 
 mod model;
@@ -41,7 +42,7 @@ use incremental::members_from_existing;
 
 mod storage;
 
-pub use storage::{cmd_estimate_tokens, run_estimates};
+pub use storage::run_estimates;
 
 #[cfg(test)]
 use storage::render_estimate;

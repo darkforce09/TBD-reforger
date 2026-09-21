@@ -181,7 +181,7 @@ fn ship_refuses_created_at_less_pre_write() {
     for id in ["T-3", "T-4"] {
         let err = ship(&mut c, id, CLOCK).expect_err("created_at-less must refuse");
         assert!(
-            err.contains(id) && err.contains("created_at") && err.contains("backfill"),
+            err.contains(id) && err.contains("created_at") && err.contains("hand-stamp"),
             "must name ticket, field and fix: {err}"
         );
     }

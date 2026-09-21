@@ -24,8 +24,8 @@ use brief::VALID_TICKET_STATUSES;
 mod queries;
 
 pub use queries::{
-    cmd_gap_round_trip, cmd_list, cmd_milestone, cmd_next, cmd_plan_batch, cmd_prompt, cmd_show,
-    cmd_sparse_paths, require_ticket, unknown_ticket,
+    cmd_gap_round_trip, cmd_list, cmd_milestone, cmd_next, cmd_plan_batch, cmd_prompt,
+    cmd_scope_histogram, cmd_show, cmd_sparse_paths, require_ticket, unknown_ticket,
 };
 
 mod mutation_support;
@@ -34,6 +34,7 @@ use mutation_support::{load_corpus, refresh_wave_lock, refuse_verbatim, reload_r
 
 mod shipping;
 
+pub use shipping::commit_subjects;
 pub use shipping::{cmd_ship, cmd_ship_opt, cmd_stamp_sha, stamp_sha_with_inputs};
 
 mod readiness;

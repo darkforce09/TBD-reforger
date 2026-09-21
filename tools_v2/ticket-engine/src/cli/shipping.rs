@@ -2,6 +2,10 @@
 
 use super::*;
 
+pub mod commit_subjects;
+
+use commit_subjects::{SubjectCommit, mine_subjects};
+
 pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     cmd_ship_opt(root, registry, id, true)
 }
@@ -80,7 +84,7 @@ pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) 
 /// and estimate files feed no generated view and are not wave.lock inputs (the byte
 /// tripwire at the end proves the latter every run).
 pub fn cmd_stamp_sha(root: &Path, id: &str, sha: &str) -> Result<()> {
-    let subjects = crate::maintenance::timestamp_backfill::mine_subjects(root)?;
+    let subjects = mine_subjects(root)?;
     let sha_loc = crate::metrics::estimates::collect_numstat(root)?;
     for line in stamp_sha_with_inputs(
         root,
@@ -101,10 +105,7 @@ pub fn stamp_sha_with_inputs(
     root: &Path,
     id: &str,
     sha: &str,
-    subjects: &std::collections::BTreeMap<
-        String,
-        Vec<crate::maintenance::timestamp_backfill::SubjectCommit>,
-    >,
+    subjects: &std::collections::BTreeMap<String, Vec<SubjectCommit>>,
     sha_loc: &std::collections::BTreeMap<String, u64>,
     now_utc: &str,
 ) -> Result<Vec<String>> {

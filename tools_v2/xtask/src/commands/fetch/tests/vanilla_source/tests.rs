@@ -1,10 +1,9 @@
 use super::*;
 use std::path::PathBuf;
-use std::process::Command;
 
 fn scratch(name: &str) -> PathBuf {
     let p = std::env::temp_dir().join(format!(
-        "t862-{name}-{}-{}",
+        "fetch-vanilla-source-{name}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -64,35 +63,21 @@ fn help_is_filename_miss_rc0() {
     let _ = fs::remove_dir_all(root);
 }
 
+/// The curated default set is a fixed spine of nineteen entries; a silent addition or removal
+/// changes what a bare `fetch vanilla-source` mirrors.
 #[test]
-fn curated_list_len_matches_bash() {
+fn curated_list_holds_nineteen_entries() {
     assert_eq!(CURATED.len(), 19);
 }
 
-/// Anti-vacuity: bash side must go red on the empty-index fixture before we trust parity.
+/// The `--grep` refusal prints ONE usage line and it names the command the operator must retype,
+/// not an implementation path — a usage line that names something unrunnable sends the reader
+/// nowhere.
 #[test]
-fn bash_empty_index_goes_red_first() {
-    let sh =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts/mod/fetch-vanilla-source.sh");
-    // Script may already be deleted after land — skip if absent (post-delete unit run).
-    if !sh.exists() {
-        return;
-    }
-    let root = scratch("bash-red");
-    let cache = root.join("apps/mod/vanilla_reference/source_html");
-    fs::create_dir_all(root.join("scripts/mod")).unwrap();
-    fs::copy(&sh, root.join("scripts/mod/fetch-vanilla-source.sh")).unwrap();
-    fs::write(cache.join("files.html"), "no hrefs here\n").unwrap();
-    let out = Command::new("bash")
-        .arg(root.join("scripts/mod/fetch-vanilla-source.sh"))
-        .arg("NoSuch.c")
-        .output()
-        .expect("bash");
-    assert_ne!(
-        out.status.code(),
-        Some(0),
-        "bash must go red on empty index"
+fn grep_usage_line_names_the_runnable_command() {
+    assert_eq!(USAGE_COMMAND, "cargo xtask fetch vanilla-source");
+    assert_eq!(
+        format!("usage: {USAGE_COMMAND} --grep <pattern>"),
+        "usage: cargo xtask fetch vanilla-source --grep <pattern>"
     );
-    assert_eq!(out.status.code(), Some(1));
-    let _ = fs::remove_dir_all(root);
 }

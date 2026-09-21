@@ -47,7 +47,7 @@ pub(crate) enum ModCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Shim → run-playtest-server.sh (T-871 port of run-dev-server.sh)
+    /// Argument gate in front of `mod playtest`; bare invocation prints usage and exits 2
     #[command(name = "dev-server", disable_help_flag = true)]
     DevServer {
         /// Passthrough to run-playtest-server.sh (`--mission-id=…`, `--admin=…`, …).

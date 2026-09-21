@@ -143,7 +143,7 @@ pub(super) fn check_ship_gate(root: &Path) -> Vec<String> {
             if value.is_none() && !marked(field) {
                 errors.push(format!(
                     "{id}: shipped without {field} — the ship gate requires all three stamps; \
-                     mine it (`ticket backfill-stamps`) or stamp it deliberately"
+                     stamp it deliberately with a date the commit history supports"
                 ));
             }
         }
@@ -151,8 +151,7 @@ pub(super) fn check_ship_gate(root: &Path) -> Vec<String> {
             Some(v) if crate::is_sha_shaped(v) => {}
             Some(v) => errors.push(format!(
                 "{id}: shipped_at {v:?} is not a commit SHA (7-40 lowercase hex) — a stamp \
-                 must name the landing commit; delete the bogus value and re-mine \
-                 (`ticket backfill-stamps`) or stamp the real SHA (`ticket stamp-sha`)"
+                 must name the landing commit; stamp the real SHA (`ticket stamp-sha <id> <sha>`)"
             )),
             None if marked("shipped_at") => {
                 // Rule split: with a nonempty estimate_note this is the legal

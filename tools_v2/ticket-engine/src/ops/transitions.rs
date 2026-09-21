@@ -135,9 +135,8 @@ pub fn set_status(
 ///
 /// 1. `ship` stamps `completed_at` (this op) and REFUSES pre-write when `created_at`
 ///    is absent — that stamp can never arrive later honestly (`created_at` is minted
-///    by `ticket add` at birth; an old un-stamped ticket needs a backfill first —
-///    `ticket backfill-stamps` for shipped history, a deliberate hand-stamp for a
-///    pre-T-913 ticket being shipped today);
+///    by `ticket add` at birth, so an un-stamped ticket needs a deliberate hand-stamp
+///    naming a date the operator can defend);
 /// 2. the operator commits — only now does the landing SHA exist;
 /// 3. `ticket stamp-sha <id> <sha>` ([`stamp_sha`]) closes `shipped_at` and the token
 ///    estimate.
@@ -155,8 +154,7 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
         return Err(format!(
             "refusing ship {id}: created_at is absent — the ship gate requires it and ship cannot \
              invent a birth date; created_at is minted by `ticket add`, so an old un-stamped \
-             ticket needs a backfill first (`ticket backfill-stamps` mines shipped history; a \
-             live pre-stamp ticket gets a deliberate hand-stamp)"
+             ticket needs a deliberate hand-stamp: its file's first-commit author date in UTC"
         ));
     }
     // T-920.1 (t920 spec Decisions log #2, shipped row): a FUTURE ship carries the

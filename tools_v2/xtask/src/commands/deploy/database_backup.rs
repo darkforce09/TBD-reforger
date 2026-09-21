@@ -1,7 +1,7 @@
 //! T-885 — port of `scripts/deploy/backup-db.sh` → `cargo xtask deploy db backup`.
 //!
 //! Verified `pg_dump -Fc` + count-based retention + `--verify-only`. Calls
-//! [`crate::commands::deploy::database_operations`] helpers directly (no `emit-bash-fns` on this path).
+//! [`crate::commands::deploy::database_operations`] helpers directly.
 //!
 //! Closed fail-opens: none introduced here — dump stays on `.part` until
 //! [`crate::commands::deploy::database_operations::verify_dump`] holds; promotion is the only success path.
@@ -208,8 +208,8 @@ fn run_backup(db: &str, out: &str, keep: u64, min_rows: u64) -> Result<u8> {
         path: part_path.clone(),
     };
 
-    // bash oddity after T-884: TBD_RUNTIME array is unset (emit-bash-fns stubs resolve), so
-    // `${TBD_RUNTIME[*]}` prints empty. Match that rather than inventing a display change.
+    // `TBD_RUNTIME` is informational only — the runtime is resolved per call inside this
+    // binary — so an unset variable displays as an empty span rather than a guess.
     let runtime_display = env::var("TBD_RUNTIME").unwrap_or_default();
     info(&format!(
         "database   {db} (container {}, runtime {runtime_display})",

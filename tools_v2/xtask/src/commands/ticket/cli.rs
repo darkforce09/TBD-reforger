@@ -137,36 +137,8 @@ pub(crate) enum TicketCmd {
         #[arg(long)]
         by: Option<String>,
     },
-    /// T-917.2: THE schema-v2 cutover — one-shot v1→v2 rewrite of every ticket file
-    /// (flat scope, class triage, estimated markers), kept for corroboration.
-    #[command(name = "migrate-v2")]
-    MigrateV2,
-    /// T-917.2: per-domain/layer/component/surface counts + surface-empty honesty
-    /// counters + class distribution, from the typed corpus (read-only).
+    /// Read-only census of the typed corpus: per-domain/layer/component/surface counts,
+    /// surface-empty honesty counters, and the work-ticket class distribution.
     #[command(name = "scope-histogram")]
     ScopeHistogram,
-    /// T-917.3: wall quarantine pass 1 — move every work-ticket summary over the
-    /// 40-word cap verbatim into migration_legacy[] (byte-reversible, proved per
-    /// file), summary := title. Idempotent by emptiness; regenerates the sync surface.
-    #[command(name = "quarantine-walls")]
-    QuarantineWalls,
-    /// T-917.4: stamp backfill — mine created_at/completed_at/shipped_at for every
-    /// shipped ticket from exact-id boundary-matched commit subjects (UTC-normalized),
-    /// id-interpolation fallback where no subjects exist; every derived stamp marked
-    /// in estimated[]. One-shot, idempotent by emptiness.
-    #[command(name = "backfill-stamps")]
-    BackfillStamps,
-    /// T-917.5: token estimates — every SHIPPED ticket with neither a run receipt
-    /// under metrics/<id>/ nor an estimates/<id>.json gets one: diff_loc (LOC changed
-    /// across its subject commits × the documented factor, bookkeeping paths
-    /// excluded) with cohort_median fallback. Writes .ai/tickets/estimates/<id>.json
-    /// + the "tokens" estimated[] marker. One-shot, idempotent by emptiness.
-    #[command(name = "estimate-tokens")]
-    EstimateTokens,
-    /// T-920.1: one-shot user_story → main_goal on-disk migration (load parses the
-    /// alias, write_back emits main_goal in the same canonical slot) plus the
-    /// same-land live-ready body fills, derived from each ticket's plan document.
-    /// Idempotent: fills only all-empty targets, migrates only raw carriers.
-    #[command(name = "migrate-main-goal")]
-    MigrateMainGoal,
 }

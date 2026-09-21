@@ -4,7 +4,7 @@
 //! (`tbd_drill_probe`, etc.). Live `tbd_reforger` is dump SOURCE only — never a restore target
 //! (T-381 via [`crate::commands::deploy::database_operations::refuse_unsafe_restore_target`]).
 //!
-//! Calls `deploy_db_backup` / `deploy_db_restore` in-process (no `emit-bash-fns`).
+//! Calls `deploy_db_backup` / `deploy_db_restore` in-process.
 
 use std::env;
 use std::fs;

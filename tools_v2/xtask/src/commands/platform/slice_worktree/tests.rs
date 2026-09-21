@@ -107,31 +107,27 @@ fn pins_the_sed_regex_oddities() {
     assert_eq!(parent_slice(""), "");
 }
 
+/// The usage text every operator reads on a mistyped subcommand must be runnable as printed:
+/// one line per subcommand, each spelled with the live command, and the set of spelled
+/// subcommands equal to the set the dispatcher accepts. Asserted unconditionally — a usage
+/// block that examines nothing is how a refusal ends up naming a command that cannot be run.
 #[test]
-fn usage_matches_the_bash_header() {
-    // ODDITY PIN. `sed -n '2,14p'` overshoots by two lines, so what a user sees ends with a
-    // shell directive AND A TRAILING BLANK LINE. Asserted STRUCTURALLY and unconditionally, not
-    // only against the script: the first draft did only that, the script was not on the
-    // expected path, it SILENTLY SKIPPED, and the missing blank line shipped until the harness
-    // caught it — a test that quietly examines nothing is the defect tbd-gate exists to make
-    // unrepresentable.
-    let lines: Vec<&str> = USAGE.lines().collect();
-    assert_eq!(lines.len(), 13, "sed prints lines 2..14 inclusive");
-    assert_eq!(lines[11], "set -euo pipefail");
-    assert_eq!(lines[12], "", "line 14 is blank and sed prints it");
-    assert!(USAGE.ends_with("set -euo pipefail\n\n"), "{USAGE:?}");
-    // While the script still exists, prove the embedded copy has not drifted from it.
-    let xtask = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let sh = xtask
-        .parent()
-        .expect("tools_v2")
-        .parent()
-        .unwrap()
-        .join("scripts/mod/slice-worktree.sh");
-    if let Ok(body) = fs::read_to_string(&sh) {
-        let want: Vec<&str> = body.lines().skip(1).take(13).collect();
-        assert_eq!(USAGE, want.join("\n") + "\n", "usage drifted from the bash");
-    }
+fn usage_spells_every_subcommand_as_a_runnable_command() {
+    let spelled: Vec<&str> = USAGE
+        .lines()
+        .filter_map(|l| l.trim_start().strip_prefix('#'))
+        .filter_map(|l| l.trim_start().strip_prefix(PROG))
+        .map(|rest| rest.split_whitespace().next().unwrap_or(""))
+        .collect();
+    assert_eq!(
+        spelled,
+        vec!["new", "list", "merge", "drop", "reap"],
+        "{USAGE:?}"
+    );
+    assert!(
+        !USAGE.contains(".sh") && !USAGE.contains("set -euo"),
+        "usage names only runnable commands: {USAGE:?}"
+    );
 }
 
 #[test]

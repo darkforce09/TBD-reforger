@@ -3,7 +3,6 @@
 
 pub mod cli;
 mod encoding;
-pub mod maintenance;
 pub mod metrics;
 pub mod ops;
 #[cfg(test)]
