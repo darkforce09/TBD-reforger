@@ -109,6 +109,7 @@ use crate::core::repository_root::find_repo_root;
 
 pub mod ab;
 pub mod recipes;
+pub mod repair_migration_checksum;
 pub mod selftest;
 pub mod test_it;
 
@@ -150,6 +151,7 @@ pub(crate) const LANE_COMMANDS: &[&str] = &[
     "registry-import",
     "test-it",
     "selftest",
+    "repair-migration-checksum",
 ];
 
 /// `rust-test-it`'s base database (Makefile:205-207, literal).
@@ -215,6 +217,16 @@ pub enum DbCmd {
     TestIt,
     /// T-556 acceptance harness: bash-vs-port arms, each with its own RED proof.
     Selftest,
+    /// Repoint a recorded migration checksum after a comments-only edit to an applied migration.
+    #[command(name = "repair-migration-checksum")]
+    RepairMigrationChecksum {
+        /// Limit the repair to one migration version (e.g. `--version 21`).
+        #[arg(long)]
+        version: Option<i64>,
+        /// Repoint even when the applied bytes are not recoverable from this checkout's history.
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 pub fn run(cmd: DbCmd) -> Result<u8> {
@@ -253,6 +265,9 @@ pub fn run(cmd: DbCmd) -> Result<u8> {
         },
         DbCmd::RegistryImport => registry_import(),
         DbCmd::TestIt => test_it::run(),
+        DbCmd::RepairMigrationChecksum { version, force } => {
+            repair_migration_checksum::run(version, force)
+        }
         DbCmd::Selftest => selftest::run(),
     }
 }

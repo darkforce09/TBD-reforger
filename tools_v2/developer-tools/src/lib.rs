@@ -1,6 +1,7 @@
 //! Browser automation, Enfusion assets, and spatial compilation tools.
 
 pub mod blueprint;
+pub mod content_digest;
 pub mod enfusion_pak;
 pub mod map_verification;
 pub mod repository_layout;
