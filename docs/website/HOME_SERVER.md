@@ -248,12 +248,21 @@ rsync -avz --delete \
   --exclude 'apps/website/frontend/node_modules' \
   --exclude 'apps/website/frontend/dist' \
   --exclude 'apps/website/api_v2/.env' \
+  --exclude 'apps/website/api_v2/.tools/' \
+  --exclude 'scripts/deploy/deploy.env' \
   --exclude 'target' \
   --exclude 'assets_v2/terrains' \
   --exclude 'assets_v2/scratch' \
   --exclude 'packages' \
   ./ "${TBD_SSH_HOST}:${TBD_REMOTE_DIR}/"
 ```
+
+This list is maintained by hand and exists only for a first sync, before `cargo xtask deploy
+website` can run on the box. **The authoritative set is the deploy's own** — print it with
+`cargo xtask deploy website --dry-run` and prefer that command once the server is reachable.
+Two of these entries are secrets: `apps/website/api_v2/.env` is the server's own configuration
+(rsyncing a dev copy overwrites it, and `--delete` is in this command), and
+`scripts/deploy/deploy.env` holds `TBD_SSH_PASS` and `TBD_GAME_SERVER_TOKEN`.
 
 `assets_v2/scratch` is ~1.5 GB of gitignored local export output; before the asset relocation it
 sat inside the terrain tree and the one exclusion covered both. `packages` no longer exists in the
