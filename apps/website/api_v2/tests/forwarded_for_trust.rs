@@ -73,7 +73,7 @@ async fn boot() -> Option<(PgPool, String)> {
     Some((pool, url))
 }
 
-/// A router whose config trusts exactly `trusted` — the one line this ticket makes load-bearing.
+/// A router whose config trusts exactly `trusted` — the one line that is load-bearing here.
 fn router_trusting(pool: PgPool, url: &str, trusted: &[&str]) -> Router {
     let mut cfg = Config::for_tests(url, "forwarded-secret");
     cfg.trusted_proxies = trusted.iter().map(|s| (*s).to_string()).collect();

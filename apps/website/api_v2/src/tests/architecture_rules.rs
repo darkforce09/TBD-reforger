@@ -10,8 +10,8 @@
 //! * `missions/contract/generated/` — emitted by `cargo xtask ci schema-codegen` from
 //!   `contracts_v2`. Its prose belongs to the generator, so the prose rules would only ever
 //!   report the generator's own habits at a file no one edits.
-//! * this file — it holds every forbidden token as a literal needle, so scanning it would make
-//!   each rule report itself.
+//! * the rule files under `tests/` — this one and `prose_rules.rs` — which hold every forbidden
+//!   token as a literal needle, so scanning them would make each rule report itself.
 //!
 //! **The import rules read code lines only.** A rustdoc intra-doc link (`//!` / `///`) naming a
 //! path creates no compile-time dependency: it is a pointer for a reader, and the crate uses them
@@ -35,8 +35,9 @@ const DOMAINS: [&str; 8] = [
 /// Codegen output: exempt from the prose rules (see the module header).
 const GENERATED_SUBTREE: &str = "missions/contract/generated";
 
-/// This file, relative to `src/` — excluded from its own scans.
-const THIS_FILE: &str = "tests/architecture_rules.rs";
+/// The rule files, relative to `src/` — excluded from the scans, since each holds every forbidden
+/// token as a literal needle.
+const RULE_FILES: [&str; 2] = ["tests/architecture_rules.rs", "tests/prose_rules.rs"];
 
 /// Floor for a full-tree scan. The crate holds well over 200 source files; a walk that returns
 /// fewer than this has lost the tree (wrong root, a silent read error) and every rule below it
@@ -71,7 +72,9 @@ fn collect_rust_sources(dir: &Path, files: &mut Vec<(PathBuf, String)>) {
             if !path.ends_with(GENERATED_SUBTREE) {
                 collect_rust_sources(&path, files);
             }
-        } else if path.extension().is_some_and(|ext| ext == "rs") && relative(&path) != THIS_FILE {
+        } else if path.extension().is_some_and(|ext| ext == "rs")
+            && !RULE_FILES.contains(&relative(&path).as_str())
+        {
             let text = std::fs::read_to_string(&path)
                 .unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
             files.push((path, text));

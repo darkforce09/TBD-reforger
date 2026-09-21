@@ -26,7 +26,7 @@ static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
 
 /// Private actor — must not share `DEV_LOGIN_USER` or the refresh / profile suite ranges.
 const ACTOR: &str = "000000000000529001";
-/// Stored whitespace-only `arma_id` (single space — ticket pin).
+/// Stored whitespace-only `arma_id` (single space).
 const WS_ARMA: &str = " ";
 /// Unique non-whitespace seed released before we overwrite with WS_ARMA / padded.
 const SEED_ARMA: &str = "roster-ws-seed-arma-1";

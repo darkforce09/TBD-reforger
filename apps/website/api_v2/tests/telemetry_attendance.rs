@@ -199,7 +199,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     assert_eq!(
         read_state(pool.clone()).await,
         "attended",
-        "THE TICKET: the corrected event_id must reach the attendance UPDATE"
+        "the corrected event_id must reach the attendance UPDATE"
     );
     // A row set but derived numbers left short would be half a fix: `recompute_user_stats`
     // runs after the commit and re-counts `state = 'attended'` over past registrations.
@@ -365,11 +365,11 @@ async fn attendance_marks_only_the_played_event_mission() {
     .unwrap();
     assert_eq!(
         state_played, "attended",
-        "THE TICKET: the played mission's registration must flip to attended"
+        "the played mission's registration must flip to attended"
     );
     assert_eq!(
         state_other, "registered",
-        "THE TICKET / RED: the unplayed sibling must stay registered — pre-fix both were attended"
+        "the unplayed sibling must stay registered — a join on the event alone marks both attended"
     );
 
     // The roster-collapse side effect: decorate/dashboard only count registered|waitlisted.
@@ -634,7 +634,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
     assert_eq!(
         state(pool.clone(), em_1).await,
         "registered",
-        "THE TICKET / RED: with no match left pointing at EV1, the attendance it granted must be \
+        "with no match left pointing at EV1, the attendance it granted must be \
          retracted — otherwise both registrations stay `attended` and attendance_rate inflates \
          to 100%"
     );

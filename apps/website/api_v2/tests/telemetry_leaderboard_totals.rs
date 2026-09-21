@@ -187,7 +187,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     assert_eq!(st, StatusCode::OK, "ingest with unresolved players: {r}");
     let match_id = r["match_id"].as_str().unwrap().to_string();
 
-    // THE TICKET: the response no longer reports only the submitted count.
+    // The response still reports the submitted count.
     assert_eq!(r["players"], 4, "still the submitted count, unchanged");
     assert_eq!(r["linked"], 1);
     assert_eq!(r["unlinked"], 3, "player LINES with no owner");
@@ -579,7 +579,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
     let a = row(pool.clone(), DISCORD_A).await;
     let b = row(pool.clone(), DISCORD_B).await;
 
-    // THE TICKET. Both players report `deaths = 0`; only `kd_ratio` says which of the two is a
+    // Both players report `deaths = 0`; only `kd_ratio` says which of the two is a
     // scoreline somebody actually measured.
     assert_eq!(
         a.1, 0,
@@ -588,7 +588,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
     assert_eq!(b.1, 0, "player B measured 0 deaths");
     assert_eq!(
         a.2, None,
-        "THE TICKET / RED: an all-unmeasured row set must leave kd_ratio NULL, not 0 — got {:?}. \
+        "an all-unmeasured row set must leave kd_ratio NULL, not 0 — got {:?}. \
          With the FILTER guard removed this is Some(0.0), which reads on the leaderboard as a \
          scoreline nobody reported.",
         a.2

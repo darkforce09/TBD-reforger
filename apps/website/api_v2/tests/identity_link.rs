@@ -4,7 +4,8 @@
 //! # Fixture ownership + DB target guard
 //!
 //! Authenticating as the shared `dev-login` snowflake ([`common::DEV_LOGIN_USER`]) is forbidden
-//! here: `GET /me` computes `arma_linked` from the **database** row (`handlers/me.rs`), and
+//! here: `GET /me` computes `arma_linked` from the **database** row
+//! (`identity_and_access::handlers::member_profile`), and
 //! `auth_refresh.rs` asserts `arma_linked == true` on that same shared id, so nulling that row's
 //! `arma_id` and relinking it interleaves ahead of auth_refresh under a concurrent
 //! `cargo test -p website-api` and fails it. Actors here live in a private snowflake range and
@@ -396,7 +397,8 @@ async fn arma_link_flow() {
 /// Pin `ingest_link_confirm`'s trim.
 ///
 /// A suite that only ever posts clean `"steam-xyz"` ids leaves `req.arma_id.trim()`
-/// (`handlers/me.rs`) and the ingest bind of `p.arma_id.trim()` held by comments, not
+/// (`identity_and_access::handlers::arma_link_codes`) and the ingest bind of `p.arma_id.trim()`
+/// held by comments, not
 /// gates. A regression that stored the padded wire form makes the account read as linked
 /// while every future `WHERE arma_id = $1` misses.
 ///

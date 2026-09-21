@@ -351,7 +351,8 @@ pub async fn id_on_default_missions_page1(
     id: &str,
 ) -> bool {
     let sep = if uri_base.contains('?') { '&' } else { '?' };
-    // Explicit limit=20 matches `ListQuery` default (`handlers/missions.rs`); omit would
+    // Explicit limit=20 matches the `ListQuery` default (`missions::handlers::mission_library`);
+    // omit would
     // also be 20, but spelling it makes the page-1 contract obvious in failures.
     let uri = format!("{uri_base}{sep}limit=20&offset=0");
     let (st, b) = call(app, "GET", &uri, Some(bearer), None, None).await;

@@ -22,3 +22,7 @@ pub mod server_infrastructure;
 #[cfg(test)]
 #[path = "tests/architecture_rules.rs"]
 mod architecture_rules;
+
+#[cfg(test)]
+#[path = "tests/prose_rules.rs"]
+mod prose_rules;

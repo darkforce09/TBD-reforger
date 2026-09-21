@@ -150,7 +150,7 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
         "counters untouched"
     );
 
-    // The ticket's propagation claim, checked at the source: `leaderboard_totals` sums
+    // The propagation claim, checked at the source: `leaderboard_totals` sums
     // `match_player_stats`, so a zeroed row really would have reached the leaderboard.
     // (`users` does NOT — it carries no kill/death columns at all.)
     sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
@@ -464,7 +464,7 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
     .unwrap();
     assert_eq!(
         stored.0, None,
-        "THE TICKET: an unknown terrain stores NULL — it must never be guessed onto a known pin"
+        "an unknown terrain stores NULL — it must never be guessed onto a known pin"
     );
     // The degrade must be *only* the terrain. If anything else went missing, "soft-fail" would
     // just be a quieter way to lose the report.
