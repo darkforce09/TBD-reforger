@@ -63,3 +63,43 @@ fn rsync_argv_keeps_source_and_destination_last() {
     assert_eq!(argv[argv.len() - 2], "/repo/");
     assert_eq!(argv[argv.len() - 1], "sam@h:/home/sam/tbd/repo/");
 }
+
+#[test]
+fn asset_probe_distinguishes_the_three_layouts() {
+    use asset_preflight::{AssetLayout, classify};
+    assert_eq!(classify(0), AssetLayout::Ready);
+    assert_eq!(classify(10), AssetLayout::Legacy);
+    assert_eq!(classify(11), AssetLayout::Absent);
+    // An unreachable host (ssh's own 255) must not read as any layout verdict.
+    assert_eq!(classify(255), AssetLayout::Indeterminate(255));
+    assert_eq!(classify(12), AssetLayout::Indeterminate(12));
+}
+
+#[test]
+fn asset_probe_checks_both_locations_under_the_remote_dir() {
+    let script = asset_preflight::probe_script("/home/sam/tbd/repo");
+    assert!(script.contains("cd '/home/sam/tbd/repo'"));
+    assert!(script.contains("assets_v2/terrains"));
+    assert!(script.contains("packages/map-assets"));
+}
+
+/// Only the legacy layout and an unreadable probe stop the deploy. A host with no asset tree at
+/// all is a library-only site, which HOME_SERVER documents as a supported cutover.
+#[test]
+fn only_a_legacy_or_unreadable_layout_refuses_the_deploy() {
+    use asset_preflight::{AssetLayout, report};
+    let dir = "/home/sam/tbd/repo";
+    assert!(report(AssetLayout::Ready, dir).is_ok());
+    assert!(report(AssetLayout::Absent, dir).is_ok());
+    assert!(report(AssetLayout::Legacy, dir).is_err());
+    assert!(report(AssetLayout::Indeterminate(255), dir).is_err());
+}
+
+#[test]
+fn the_remediation_names_every_directory_that_must_move() {
+    let fix = asset_preflight::remediation("/home/sam/tbd/repo");
+    assert!(fix.contains("mkdir -p assets_v2/terrains"));
+    for moved in ["everon", "arland", "terrain-registry.json"] {
+        assert!(fix.contains(moved), "remediation omits {moved}");
+    }
+}

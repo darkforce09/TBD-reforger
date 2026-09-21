@@ -67,6 +67,16 @@ services:
       DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
+      # The image contains the binary and nothing else, and the runtime stage sets no WORKDIR, so
+      # the API's CWD-relative asset fallback resolves to a path that does not exist inside the
+      # container. Both directories are therefore bind-mounted below and named absolutely here.
+      MAP_ASSETS_DIR: /srv/assets/terrains
+      GLYPH_ASSETS_DIR: /srv/assets/glyphs
+    volumes:
+      # Read-only: the API serves these, it never writes them. The terrain tree is the server's own
+      # copy (the deploy rsync excludes it); the glyph atlas arrives with the rsync.
+      - ../../assets_v2/terrains:/srv/assets/terrains:ro
+      - ../../assets_v2/glyphs:/srv/assets/glyphs:ro
 
 volumes:
   tbd_staging_pgdata:

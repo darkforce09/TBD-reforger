@@ -111,6 +111,8 @@ pub fn router(state: AppState) -> Router {
     } else {
         state.cfg.glyph_assets_dir.clone()
     };
+    warn_if_missing("MAP_ASSETS_DIR", &map_assets);
+    warn_if_missing("GLYPH_ASSETS_DIR", &glyph_assets);
 
     // Serve the Leptos SPA statically when SPA_DIST_DIR is set (unset in dev, where `trunk serve`
     // owns the SPA). A no-extension path falls back to index.html
@@ -201,3 +203,24 @@ pub fn router(state: AppState) -> Router {
 #[cfg(test)]
 #[path = "tests/http_router.rs"]
 mod tests;
+
+/// Warns at router build when an asset root does not exist.
+///
+/// `ServeDir::new` performs no I/O, and both defaults are relative to the process working
+/// directory, so a root that is absent — or resolved from the wrong CWD — is indistinguishable at
+/// request time from a file that was never there: HTTP 404, nothing logged. That failure mode is
+/// quiet enough to survive a deployment, so name it at startup, where it is actionable.
+fn warn_if_missing(env_var: &str, dir: &str) {
+    if std::path::Path::new(dir).is_dir() {
+        return;
+    }
+    let resolved = std::env::current_dir()
+        .map(|cwd| cwd.join(dir))
+        .unwrap_or_else(|_| std::path::PathBuf::from(dir));
+    tracing::warn!(
+        env_var,
+        configured = dir,
+        resolved = %resolved.display(),
+        "asset directory does not exist; every request under its mount will 404 — set it to an absolute path"
+    );
+}

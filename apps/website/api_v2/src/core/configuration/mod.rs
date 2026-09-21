@@ -59,10 +59,12 @@ pub struct Config {
     /// = don't serve a SPA (dev uses `trunk serve`; the API is API-only).
     pub spa_dist_dir: String,
     /// The map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM /
-    /// basemap / world chunks). Empty defaults to `../../assets_v2/terrains` relative to the CWD.
+    /// basemap / world chunks). Empty defaults to `../../../assets_v2/terrains` relative to the
+    /// CWD, which is correct only when the process runs from `apps/website/api_v2/`. Production
+    /// sets this to an absolute path — see `scripts/deploy/tbd-website-api.service`.
     pub map_assets_dir: String,
     /// The glyph dir served at `/map-assets/glyphs` (the tactical marker atlas, shared by every
-    /// terrain). Empty defaults to `../../assets_v2/glyphs` relative to the CWD.
+    /// terrain). Empty defaults to `../../../assets_v2/glyphs` relative to the CWD.
     pub glyph_assets_dir: String,
 
     // Database

@@ -1,0 +1,48 @@
+; The website API unit. `cargo xtask deploy website` restarts this by name
+; (TBD_WEBSITE_SYSTEMD_UNIT, default tbd-website-api.service) after building the release binary
+; on the server.
+;
+; Install: substitute TBD_REPO_DIR_PLACEHOLDER for the deploy's TBD_REMOTE_DIR (no leading slash
+; in the placeholder — the slash is already in the paths below), drop the result at
+; ~/.config/systemd/user/tbd-website-api.service, then:
+;   systemctl --user daemon-reload && systemctl --user enable --now tbd-website-api.service
+;
+; ── WHY THE ASSET DIRECTORIES ARE SET EXPLICITLY ────────────────────────────────────────────
+;
+; The API falls back to `../../../assets_v2/terrains` and `../../../assets_v2/glyphs`, resolved
+; against the PROCESS WORKING DIRECTORY. That default is correct exactly when the process runs
+; from `apps/website/api_v2/`, which is where a developer runs it; it is wrong from anywhere
+; else, and `ServeDir` performs no I/O when constructed, so a wrong root produces a 404 per
+; request and nothing at all in the journal.
+;
+; Both are therefore pinned to absolute paths here rather than left to the CWD. WorkingDirectory
+; is set to the crate directory too, so the two agree and neither is load-bearing alone.
+;
+; The terrain tree is NOT rsynced by the deploy (it is ~590 MB of LFS content); the server keeps
+; its own copy and `cargo xtask deploy website` refuses to run if it is missing. The glyph atlas
+; IS rsynced — it is 188 KB and tracked.
+
+[Unit]
+Description=TBD Reforger website API
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/docs/website/HOME_SERVER.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER/apps/website/api_v2
+
+; Server-only secrets. Never rsynced from a dev PC — the deploy excludes this path.
+EnvironmentFile=/TBD_REPO_DIR_PLACEHOLDER/apps/website/api_v2/.env
+
+; Served at /map-assets and /map-assets/glyphs. See the note above before changing either.
+Environment=MAP_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets_v2/terrains
+Environment=GLYPH_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets_v2/glyphs
+
+ExecStart=/TBD_REPO_DIR_PLACEHOLDER/target/release/api
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

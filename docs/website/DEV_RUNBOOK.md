@@ -324,7 +324,7 @@ Corpus: `assets_v2/terrains/` — Everon ~1.3 GB on disk; **tracked in LFS = exa
 | `everon/dem/everon-dem-16bit.png` | ~72 MB | DEM / hillshade / map-engine tests |
 | `everon/satellite/everon-sat.tbd-sat` | ~153 MB | Unified satellite basemap |
 
-`**/staging/` + `**/tiles/` are gitignored (rebuildable via the `cargo xtask ci map-*` tasks). `.gitattributes` LFS patterns: `assets_v2/terrains/**/*.{png,r16,tbd-sat}`.
+`assets_v2/scratch/` + `assets_v2/terrains/**/tiles/` are gitignored (rebuildable via the `cargo xtask ci map-*` tasks). The export scratch is a **sibling** of the served tree, not nested inside it, so `/map-assets` cannot reach it. `.gitattributes` LFS patterns: `assets_v2/terrains/**/*.{png,r16,tbd-sat}`.
 
 | Consumer | Needs | Mechanism |
 |----------|-------|-----------|

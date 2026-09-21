@@ -31,6 +31,7 @@ use verification_core::verdict::NotRun;
 
 use crate::core::repository_root::find_repo_root;
 
+pub mod asset_preflight;
 pub mod rsync_argv;
 
 /// Historical usage block — kept byte-identical to the bash `usage()` heredoc.
@@ -185,6 +186,11 @@ impl DeployCfg {
     fn execute(&self) -> Result<u8> {
         println!("==> deploy-website → {}:{}", self.host, self.remote_dir);
 
+        println!("==> preflight: remote map assets");
+        if let Err(code) = self.check_remote_assets() {
+            return Ok(code);
+        }
+
         println!(
             "==> rsync (excludes secrets, build artifacts, the terrain + scratch asset trees, \
              the legacy packages/ tree, oracle lanes)"
@@ -335,6 +341,20 @@ impl DeployCfg {
             }
             Err(e) => Err(not_run_exit(&e)),
         }
+    }
+
+    /// Asks the server where its map assets live, before the `--delete` rsync runs.
+    ///
+    /// Refuses the deploy when the server is still on the pre-relocation layout, because this build
+    /// would answer every `/map-assets` request with a 404 and log nothing about why.
+    fn check_remote_assets(&self) -> Result<(), u8> {
+        let script = asset_preflight::probe_script(&self.remote_dir);
+        if self.dry_run {
+            println!("[dry-run] ssh … {script}");
+            return Ok(());
+        }
+        let code = self.ssh_cmd_status(&["bash", "-lc", &script])?;
+        asset_preflight::report(asset_preflight::classify(code), &self.remote_dir)
     }
 
     fn rsync_to_remote(&self) -> Result<(), u8> {

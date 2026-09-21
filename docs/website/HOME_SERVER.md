@@ -250,8 +250,16 @@ rsync -avz --delete \
   --exclude 'apps/website/.env' \
   --exclude 'target' \
   --exclude 'assets_v2/terrains' \
+  --exclude 'assets_v2/scratch' \
+  --exclude 'packages' \
   ./ "${TBD_SSH_HOST}:${TBD_REMOTE_DIR}/"
 ```
+
+`assets_v2/scratch` is ~1.5 GB of gitignored local export output; before the asset relocation it
+sat inside the terrain tree and the one exclusion covered both. `packages` no longer exists in the
+repo, and is excluded so that `--delete` cannot remove a server still holding its assets at the old
+`packages/map-assets` path. Note that `assets_v2/glyphs` is deliberately **not** excluded — it is
+188 KB, and the API has no other source for it.
 
 Then on the **server**:
 
@@ -263,7 +271,18 @@ cd /home/sam/tbd/repo/apps/website/api_v2
 cargo build --release --bin api
 ```
 
-Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `assets_v2/terrains` initially; for full Mission Creator, sync or build assets separately and point `MAP_ASSETS_DIR` at them on the server.
+Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `assets_v2/terrains` initially — `/map-assets` then 404s, which `cargo xtask deploy website` warns about and allows. For full Mission Creator, sync or build the terrain tree separately on the server at `assets_v2/terrains`, and set both `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to absolute paths (the unit below does this).
+
+If the server still holds its assets at the pre-relocation `packages/map-assets`, move them once — `cargo xtask deploy website` refuses to deploy until you do, and prints these commands:
+
+```bash
+cd /home/sam/tbd/repo
+mkdir -p assets_v2/terrains
+mv packages/map-assets/everon \
+   packages/map-assets/arland \
+   packages/map-assets/terrain-registry.json \
+   assets_v2/terrains/
+```
 
 ---
 
@@ -278,25 +297,18 @@ curl -sf http://127.0.0.1:8080/healthz
 curl -sf http://127.0.0.1:8080/api/v1/health   # if exposed; else /healthz only
 ```
 
-User systemd unit sketch (`~/.config/systemd/user/tbd-website-api.service`):
+User systemd unit: [`scripts/deploy/tbd-website-api.service`](../../scripts/deploy/tbd-website-api.service). Substitute `TBD_REPO_DIR_PLACEHOLDER` for your `TBD_REMOTE_DIR` and install it:
 
-```ini
-[Unit]
-Description=TBD Reforger website API
-After=network-online.target docker.service
-Wants=network-online.target
-
-[Service]
-Type=simple
-WorkingDirectory=/home/sam/tbd/repo/apps/website
-EnvironmentFile=/home/sam/tbd/repo/apps/website/.env
-ExecStart=/home/sam/tbd/repo/apps/website/target/release/api
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
+```bash
+sed "s|TBD_REPO_DIR_PLACEHOLDER|${TBD_REMOTE_DIR#/}|g" \
+  scripts/deploy/tbd-website-api.service \
+  > ~/.config/systemd/user/tbd-website-api.service
 ```
+
+It sets `WorkingDirectory` to `apps/website/api_v2` and pins `MAP_ASSETS_DIR` / `GLYPH_ASSETS_DIR`
+to absolute paths. Both matter: the API resolves its asset defaults against the working directory,
+and `ServeDir` never checks that the root exists, so a wrong CWD serves 404 for every map asset
+without logging anything.
 
 ```bash
 systemctl --user daemon-reload

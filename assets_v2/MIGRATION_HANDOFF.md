@@ -55,9 +55,29 @@ Served through the gate harness with `--map-assets assets_v2/terrains`:
 
 `cargo test -p website-api --test map_assets_rate_limit_exemption` (9 tests) additionally proves through the real router that a 200-request burst — five times the global limit — to one file from each directory returns 200 throughout, while `/uploads` and the API routes still refuse.
 
-## 5. Outstanding: the deployment host
+## 5. The deployment host
 
-Production sets no `MAP_ASSETS_DIR`, and `cargo xtask deploy website` excludes the asset tree from its rsync, so the server keeps its own copy at the old path. The next deployment must either move that directory to `assets_v2/terrains` plus `assets_v2/glyphs`, or set `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR`. Until then a deployed build looks in the new location and answers every map asset with a 404.
+Resolved in the deploy path; one manual step remains on the server.
+
+The answer turned out to be *both* halves, not either. The API's defaults resolve against its
+working directory, and neither production runtime satisfies them — the container has no WORKDIR and
+no asset copy, and the host unit runs from `apps/website`, three levels below which is outside the
+repo. `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are therefore pinned to absolute paths on the unit
+(`scripts/deploy/tbd-website-api.service`, now version-controlled) and on the compose `api` service,
+which also gains read-only bind mounts because its image ships only the binary.
+
+The terrain tree itself still has to move on the server, once. `cargo xtask deploy website` now
+probes for it before the rsync and refuses the deploy if the host is still on the old layout,
+printing the exact `mv`. It does not move the data itself: that is ~590 MB of production content,
+and a refused deploy is a better outcome than a half-finished automatic move.
+
+A host with no asset tree at all warns and proceeds — a library-only site never requests
+`/map-assets`.
+
+Separately, the rsync's `--exclude=packages/map-assets/` had been rewritten to
+`--exclude=assets_v2/terrains/` as a literal substitution. Because the exclude list of a `--delete`
+rsync is also a delete guard, that rewrite left the server's own asset copy unprotected while also
+pushing 1.5 GB of local scratch. Both are fixed.
 
 ## 6. Documentation
 
