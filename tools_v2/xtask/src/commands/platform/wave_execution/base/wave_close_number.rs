@@ -90,7 +90,7 @@ pub fn prev_wave_close() -> Option<String> {
 /// TOML. Every boundary BEFORE the cutover has no lock blob there, and refusing to read those
 /// revisions would demote every historical wave close from "corroborated" to "demand operator
 /// confirmation" — so an absent or unparseable lock blob falls back to the historical TSV
-/// readers in [`super::super::legacy_plan`], the one module allowed to name the dead files. History is
+/// readers in [`super::super::archived_wave_plans`], the one module allowed to name the dead files. History is
 /// immutable and TSV-shaped; a reader of history may name that shape.
 ///
 /// T-618: takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2
@@ -127,7 +127,7 @@ pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
         }
         return Vec::new();
     }
-    super::super::legacy_plan::tickets_at(rev, n)
+    super::super::archived_wave_plans::tickets_at(rev, n)
 }
 
 /// Of these tickets, which does the registry AS OF A REVISION not call shipped (or cancelled)?
@@ -142,7 +142,7 @@ pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
 pub fn wave_ledger_unshipped_at(ctx: &Ctx, rev: &str, tickets: &[String]) -> Option<String> {
     let _ = ctx;
     let repo = std::path::Path::new(".");
-    let by = ticket_engine::registry::legacy_storage::status_map_at_rev(repo, rev)?;
+    let by = ticket_engine::registry::ticket_status_history::status_map_at_rev(repo, rev)?;
     let open: Vec<&str> = tickets
         .iter()
         .filter(|t| {

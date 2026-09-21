@@ -14,8 +14,9 @@ const MINI_VOCAB: &str = "[repo.docs]\n";
 fn scratch_dir(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("tbd-tickets-store-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(".ai/tickets")).expect("mkdir scratch tickets dir");
-    fs::write(dir.join(crate::vocab::VOCAB_REL), MINI_VOCAB).expect("write scratch vocab");
+    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR))
+        .expect("mkdir scratch tickets dir");
+    fs::write(dir.join(crate::repository::SCOPE_VOCAB), MINI_VOCAB).expect("write scratch vocab");
     dir
 }
 

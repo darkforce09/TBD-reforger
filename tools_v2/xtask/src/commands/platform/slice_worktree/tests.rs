@@ -53,7 +53,7 @@ fn scratch(name: &str) -> PathBuf {
 }
 
 fn tree(root: &Path, slice: &str) -> PathBuf {
-    root.join(BASE).join(slice)
+    root.join(WORKTREES_DIR).join(slice)
 }
 
 fn branch_exists(root: &Path, slice: &str) -> bool {
@@ -113,7 +113,8 @@ fn pins_the_sed_regex_oddities() {
 /// block that examines nothing is how a refusal ends up naming a command that cannot be run.
 #[test]
 fn usage_spells_every_subcommand_as_a_runnable_command() {
-    let spelled: Vec<&str> = USAGE
+    let usage = usage();
+    let spelled: Vec<&str> = usage
         .lines()
         .filter_map(|l| l.trim_start().strip_prefix('#'))
         .filter_map(|l| l.trim_start().strip_prefix(PROG))
@@ -122,11 +123,11 @@ fn usage_spells_every_subcommand_as_a_runnable_command() {
     assert_eq!(
         spelled,
         vec!["new", "list", "merge", "drop", "reap"],
-        "{USAGE:?}"
+        "{usage:?}"
     );
     assert!(
-        !USAGE.contains(".sh") && !USAGE.contains("set -euo"),
-        "usage names only runnable commands: {USAGE:?}"
+        !usage.contains(".sh") && !usage.contains("set -euo"),
+        "usage names only runnable commands: {usage:?}"
     );
 }
 
@@ -139,7 +140,10 @@ fn unknown_and_empty_subcommands_print_usage_and_exit_2() {
         assert_eq!(dispatch(&root, &[cmd.to_string()]).unwrap(), 2, "`{cmd}`");
     }
     assert_eq!(dispatch(&root, &[]).unwrap(), 2, "no arguments at all");
-    assert!(!root.join(BASE).exists(), "usage must not create the base");
+    assert!(
+        !root.join(WORKTREES_DIR).exists(),
+        "usage must not create the base"
+    );
 }
 
 #[test]
@@ -318,12 +322,15 @@ fn reap_guards_every_destructive_case_in_one_pass() {
     assert_eq!(cmd_new(&root, "T-909").unwrap(), 0);
     commit(&tree(&root, "T-909"), "a.txt", "a");
     // 4. NO BRANCH — a bare directory. Plus a README.md, which the `*/` glob must not match.
-    fs::create_dir_all(root.join(BASE).join("T-911")).unwrap();
-    fs::write(root.join(BASE).join("README.md"), "docs").unwrap();
+    fs::create_dir_all(root.join(WORKTREES_DIR).join("T-911")).unwrap();
+    fs::write(root.join(WORKTREES_DIR).join("README.md"), "docs").unwrap();
     // 5. LOCKED and merged — GUARD 3, git's own refusal (`worktree remove` needs `--force
     //    --force` for a locked tree, and even `drop`'s single `--force` would not be enough).
     landed(&root, "T-913");
-    assert_eq!(g(&root, &format!("worktree lock {BASE}/T-913")).0, 0);
+    assert_eq!(
+        g(&root, &format!("worktree lock {WORKTREES_DIR}/T-913")).0,
+        0
+    );
     // 6. MERGED and CLEAN — the one that must actually be reaped. NON-VACUITY for all of the
     //    above: without this the test would pass on a `cmd_reap` that did nothing at all.
     landed(&root, "T-910");
@@ -339,7 +346,7 @@ fn reap_guards_every_destructive_case_in_one_pass() {
     assert!(inflight.exists(), "GUARD 1: uncommitted work destroyed");
     assert!(branch_exists(&root, "T-907") && branch_exists(&root, "T-909"));
     assert!(branch_exists(&root, "T-913"));
-    let readme = root.join(BASE).join("README.md");
+    let readme = root.join(WORKTREES_DIR).join("README.md");
     assert!(readme.exists(), "the `*/` glob matched README.md");
     assert!(!tree(&root, "T-910").exists(), "reap never reaps anything");
     assert!(!branch_exists(&root, "T-910"));

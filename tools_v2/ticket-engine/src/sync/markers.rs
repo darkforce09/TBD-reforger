@@ -70,7 +70,7 @@ pub(super) fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
         ));
     }
     inject_marker_block(
-        &root.join("docs/specs/Mission_Creator_Architecture/ROADMAP.md"),
+        &root.join(crate::repository::documentation::ROADMAP),
         NEXT_MARKER_START,
         NEXT_MARKER_END,
         &lines.join("\n"),

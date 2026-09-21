@@ -77,7 +77,9 @@ fn prompt_for(id: &str, spec: &str) -> String {
 
 /// Where the agent runs: the slice worktree when it exists, else the repo root.
 fn run_cwd(root: &Path, id: &str) -> PathBuf {
-    let wt = root.join(".ai/artifacts/worktrees").join(id);
+    let wt = root
+        .join(crate::core::repository_layout::WORKTREES_DIR)
+        .join(id);
     if wt.is_dir() { wt } else { root.to_path_buf() }
 }
 

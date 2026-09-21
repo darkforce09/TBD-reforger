@@ -4,65 +4,53 @@ use serde_json::Value;
 use std::fs;
 use std::path::Path;
 
-use crate::repository::registry_path;
+use crate::repository::{self, TICKETS_DIR};
 
 pub type Registry = Value;
 
-pub fn load_json_monolith(path: &Path) -> Result<Registry> {
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))
-}
-
+/// The whole registry as one `Value`, however the ticket files on disk are shaped.
+///
+/// A tree whose files carry the typed schema projects through [`typed_projection`]; an
+/// untyped tree loads through [`ticket_file_storage`]. Neither present means the caller is not
+/// looking at a registry, which refuses rather than yielding an empty one: an empty registry
+/// reads as "no tickets" to every consumer, and that is a silent wrong answer.
 pub fn load_registry(root: &Path) -> Result<Registry> {
     if crate::registry::typed_projection::tree_is_phase2(root) {
         return crate::registry::typed_projection::load_phase2_tree(root);
     }
-    let json = registry_path(root);
-    let has_toml = crate::registry::legacy_storage::root_marker_path(root).is_file()
-        || json
-            .parent()
-            .map(|d| {
-                d.read_dir().ok().is_some_and(|rd| {
-                    rd.filter_map(|e| e.ok()).any(|e| {
-                        let n = e.file_name();
-                        let n = n.to_string_lossy();
-                        n.starts_with("T-") && n.ends_with(".toml")
-                    })
-                })
+    let tickets_dir = root.join(TICKETS_DIR);
+    let has_toml = repository::is_repo_root(root)
+        || tickets_dir.read_dir().ok().is_some_and(|rd| {
+            rd.filter_map(|e| e.ok()).any(|e| {
+                let n = e.file_name();
+                let n = n.to_string_lossy();
+                n.starts_with("T-") && n.ends_with(".toml")
             })
-            .unwrap_or(false);
+        });
     if has_toml {
-        return crate::registry::legacy_storage::load_toml_tree(root);
-    }
-    if json.is_file() {
-        return load_json_monolith(&json);
+        return crate::registry::ticket_file_storage::load_toml_tree(root);
     }
     anyhow::bail!(
-        "no ticket registry (ROOT/T-*.toml or registry.json) under {}",
+        "no ticket registry ({TICKETS_DIR}/ROOT or {TICKETS_DIR}/T-*.toml) under {}",
         root.display()
     )
 }
 
-/// Phase-1 / migration writer ONLY since T-916.2. The live phase-2 tree is written exclusively
-/// by the typed ops (`crate::ops` + `Corpus::write_back` in `cmds.rs`); this fn REFUSES
-/// phase-2 trees so `phase2::save_tree` — and with it the Value round-trip through
-/// `value_to_ticket` and the stale-file delete pass — can never come back as a second writer.
-/// No live caller remains (the mutators were rewired); kept for the write-path pin test and
-/// any future phase-1 migration replay.
+/// Write a whole registry back as ticket files — and REFUSE to do so on a typed tree.
+///
+/// The live tree is typed, and its one writer is `crate::ops` over [`crate::Corpus`], which
+/// touches exactly the files an operation names. This whole-tree writer would be a second one,
+/// and a second writer is how a mangled `children` list once erased child files. The refusal is
+/// the point; the pins around it assert that no mutator can reach here.
 #[allow(dead_code)]
 pub fn save_registry(root: &Path, data: &Registry) -> Result<()> {
     if crate::registry::typed_projection::tree_is_phase2(root) {
         anyhow::bail!(
-            "save_registry on a phase-2 tree: registry mutations go through the tbd-tickets \
-             typed ops (T-916.2); phase2::save_tree is migration/test-only"
+            "save_registry on a typed tree: ticket mutations go through the typed ops, which \
+             write one file per changed ticket"
         );
     }
-    crate::registry::legacy_storage::save_toml_tree(root, data)?;
-    let json = registry_path(root);
-    if json.is_file() {
-        fs::remove_file(&json).with_context(|| format!("remove {}", json.display()))?;
-    }
-    Ok(())
+    crate::registry::ticket_file_storage::save_toml_tree(root, data)
 }
 
 #[allow(dead_code)]
@@ -182,10 +170,6 @@ pub fn tickets(reg: &Registry) -> &[Value] {
         .map(|a| a.as_slice())
         .unwrap_or(&[])
 }
-
-// `tickets_mut` / `ticket_by_id_mut` died with T-916.2: no code path mutates the Value
-// projection anymore — writers go through `crate::ops` on the typed corpus, and the
-// Value is reloaded from disk afterwards (read-only from that point on).
 
 pub fn ticket_by_id<'a>(reg: &'a Registry, tid: &str) -> Option<&'a Value> {
     tickets(reg)
@@ -323,10 +307,11 @@ pub fn slice_handoff_path(t: &Value, slice_id: Option<&str>) -> String {
         .or_else(|| opt_str(t, "active_slice").map(|s| s.to_string()))
         .unwrap_or_else(|| str_field(t, "id"));
     let slug = slice_id_to_artifact_slug(&sid);
-    format!(".ai/artifacts/{slug}_claude_code_handoff.md")
+    repository::handoff_doc(&slug)
 }
 
-pub mod legacy_storage;
+pub mod ticket_file_storage;
+pub mod ticket_status_history;
 pub mod typed_projection;
 
 pub mod shipping_status;

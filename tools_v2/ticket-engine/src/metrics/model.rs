@@ -3,15 +3,8 @@
 use super::*;
 use anyhow::Context;
 
-/// Receipt tree, relative to the repo root. Deliberately OUTSIDE the ticket TOMLs and the
-/// wave lock — parallel lands touch disjoint `<id>/` subtrees and never a shared file.
-pub const METRICS_DIR_REL: &str = ".ai/tickets/metrics";
-
-/// The committed schema every run file must satisfy.
-pub const METRICS_SCHEMA_REL: &str = ".ai/tickets/metrics.schema.json";
-
 pub fn metrics_root(root: &Path) -> PathBuf {
-    root.join(METRICS_DIR_REL)
+    root.join(crate::repository::METRICS_DIR)
 }
 
 /// The required token observation. `total` is ALWAYS the four-way sum; `reasoning` is a

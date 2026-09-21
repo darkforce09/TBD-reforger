@@ -22,9 +22,7 @@ pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
                 None => match std::env::var_os("PWD") {
                     Some(pwd) => {
                         let p = PathBuf::from(pwd);
-                        if p.join(".ai/tickets/ROOT").is_file()
-                            || p.join(".ai/tickets/registry.json").is_file()
-                        {
+                        if ticket_engine::repository::is_repo_root(&p) {
                             p
                         } else {
                             find_repo_root()?

@@ -30,7 +30,7 @@ pub fn cmd_get(registry: &Value, id: &str, field: Option<&str>) -> Result<()> {
 }
 
 pub fn cmd_config(root: &Path, registry: &Value, key: &str) -> Result<()> {
-    let queue_path = root.join(".ai/tickets/queue.json");
+    let queue_path = root.join(crate::repository::QUEUE_JSON);
     let data: Value = if queue_path.is_file() {
         serde_json::from_str(&fs::read_to_string(&queue_path)?)?
     } else {
@@ -39,7 +39,7 @@ pub fn cmd_config(root: &Path, registry: &Value, key: &str) -> Result<()> {
     let defaults = [
         ("batch_size", "10"),
         ("concurrency", "3"),
-        ("worktree_base", ".ai/artifacts/worktrees"),
+        ("worktree_base", crate::repository::WORKTREES_DIR),
         ("git_base", "main"),
     ];
     if let Some(v) = data.get(key) {
@@ -74,7 +74,7 @@ pub fn cleanup_targets(root: &Path, registry: &Value, id: &str) -> Result<Cleanu
         .map(|s| s.to_string())
         .unwrap_or_else(|| format!("ticket/{id}"));
     // resolve worktree base
-    let queue_path = root.join(".ai/tickets/queue.json");
+    let queue_path = root.join(crate::repository::QUEUE_JSON);
     let data: Value = if queue_path.is_file() {
         serde_json::from_str(&fs::read_to_string(&queue_path)?)?
     } else {
@@ -83,7 +83,7 @@ pub fn cleanup_targets(root: &Path, registry: &Value, id: &str) -> Result<Cleanu
     let base = data
         .get("worktree_base")
         .and_then(|v| v.as_str())
-        .unwrap_or(".ai/artifacts/worktrees");
+        .unwrap_or(crate::repository::WORKTREES_DIR);
     let wt = if Path::new(base).is_absolute() {
         Path::new(base).join(format!("TBD-{id}"))
     } else {
@@ -114,7 +114,7 @@ pub fn cmd_run(
     let mut ready = vec![];
     // replicate ready-ids
     {
-        let queue_path = root.join(".ai/tickets/queue.json");
+        let queue_path = root.join(crate::repository::QUEUE_JSON);
         let data: Value = if queue_path.is_file() {
             serde_json::from_str(&fs::read_to_string(&queue_path)?)?
         } else {
@@ -170,7 +170,7 @@ pub fn cmd_run(
 }
 
 pub(super) fn cmd_config_value(root: &Path, registry: &Value, key: &str) -> String {
-    let queue_path = root.join(".ai/tickets/queue.json");
+    let queue_path = root.join(crate::repository::QUEUE_JSON);
     let data: Value = if queue_path.is_file() {
         serde_json::from_str(&fs::read_to_string(&queue_path).unwrap_or_default())
             .unwrap_or(json!({}))
@@ -190,7 +190,7 @@ pub(super) fn cmd_config_value(root: &Path, registry: &Value, key: &str) -> Stri
     match key {
         "batch_size" => "10".into(),
         "concurrency" => "3".into(),
-        "worktree_base" => ".ai/artifacts/worktrees".into(),
+        "worktree_base" => crate::repository::WORKTREES_DIR.into(),
         "git_base" => "main".into(),
         _ => "".into(),
     }

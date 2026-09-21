@@ -14,13 +14,13 @@ fn repo_root() -> PathBuf {
 fn scratch_root(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("tbd-estimates-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(".ai/tickets")).expect("mkdir scratch");
+    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).expect("mkdir scratch");
     fs::write(
-        dir.join(".ai/tickets/scope-vocab.toml"),
+        dir.join(crate::repository::SCOPE_VOCAB),
         "[repo.docs]\n\n[website.backend]\n\n[website.frontend]\n",
     )
     .expect("vocab");
-    for rel in [ESTIMATES_SCHEMA_REL, crate::metrics::METRICS_SCHEMA_REL] {
+    for rel in [ESTIMATES_SCHEMA, crate::repository::METRICS_SCHEMA] {
         fs::copy(repo_root().join(rel), dir.join(rel)).expect("copy schema");
     }
     dir

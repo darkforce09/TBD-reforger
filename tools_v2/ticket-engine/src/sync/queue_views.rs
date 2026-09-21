@@ -87,7 +87,10 @@ pub(super) fn generate_milestones_md(registry: &Value) -> String {
         AUTO_HEADER.to_string(),
         "# Milestones (generated from tickets)".into(),
         "".into(),
-        "Scheduling detail: [`docs/mod/MILESTONES.md`](mod/MILESTONES.md).".into(),
+        format!(
+            "Scheduling detail: [`{0}`](mod/MILESTONES.md).",
+            crate::repository::documentation::MOD_MILESTONES
+        ),
         "".into(),
     ];
     for milestone in ["M1", "M2"] {

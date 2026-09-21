@@ -218,7 +218,10 @@ pub fn run(warn_only: bool) -> Result<u8> {
             nope(
                 &mut c,
                 "wave lock",
-                "cargo xtask wave check failed — stale or missing .ai/tickets/wave.lock",
+                &format!(
+                    "cargo xtask wave check failed — stale or missing {}",
+                    ticket_engine::repository::WAVE_LOCK
+                ),
             );
         }
     }

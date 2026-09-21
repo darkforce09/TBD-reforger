@@ -35,7 +35,11 @@ pub(super) fn run(lanes: &Lanes, log: &mut Log) -> u8 {
         log.say("Oracles are reference-only. Design-mirror them; never copy them.");
         log.say("  CRF              — Arma Public License; read, cite, do not vendor.");
         log.say(EPILOGUE_PS);
-        log.say("See docs/mod/TBD_MOD_DESIGN.md §2 and docs/mod/SLICE_WORKFLOW.md §Oracle lanes.");
+        log.say(format!(
+            "See {} §2 and {} §Oracle lanes.",
+            crate::core::repository_layout::documentation::MOD_DESIGN,
+            crate::core::repository_layout::documentation::SLICE_WORKFLOW_RUNBOOK
+        ));
         return 1;
     }
     log.say("no-oracle-leak: PASS (CRF + PlayableSelector)");

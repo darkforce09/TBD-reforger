@@ -13,15 +13,15 @@ fn fixture(name: &str) -> Value {
 fn scratch(tag: &str) -> PathBuf {
     let tmp = std::env::temp_dir().join(format!("tbd-metrics-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);
-    fs::create_dir_all(tmp.join(".ai/tickets")).expect("mk scratch");
+    fs::create_dir_all(tmp.join(crate::repository::TICKETS_DIR)).expect("mk scratch");
     // The real committed schema, so scratch trees validate exactly like the repo.
     let schema = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("tools_v2/xtask has a parent")
         .parent()
         .expect("repo root")
-        .join(METRICS_SCHEMA_REL);
-    fs::copy(&schema, tmp.join(METRICS_SCHEMA_REL)).expect("copy schema");
+        .join(METRICS_SCHEMA);
+    fs::copy(&schema, tmp.join(METRICS_SCHEMA)).expect("copy schema");
     tmp
 }
 

@@ -49,6 +49,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
+pub mod archived_wave_plans;
 pub mod base;
 pub mod changed;
 pub mod db;
@@ -56,7 +57,6 @@ pub mod gate;
 pub mod host;
 pub mod land;
 pub mod ledger;
-pub mod legacy_plan;
 pub mod lock;
 pub mod migrate;
 pub mod push;
@@ -71,8 +71,15 @@ pub mod verdict;
 
 /// The help an unknown `platform wave` subcommand prints: what the lifecycle is, the three
 /// decisions that shape it, and every command it accepts.
-pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmatic form of docs/platform/PLATFORM_FACTORY.md.
-#
+pub fn unknown_help() -> String {
+    format!(
+        "# Platform wave lifecycle — the programmatic form of {}.\n{UNKNOWN_HELP_BODY}",
+        crate::core::repository_layout::documentation::PLATFORM_FACTORY_RUNBOOK
+    )
+}
+
+/// Everything the help prints after its first line.
+const UNKNOWN_HELP_BODY: &str = r##"#
 # THREE DECISIONS THIS LIFECYCLE IS BUILT ON
 # ------------------------------------------
 # Slices here are Rust, gated on cargo and trunk. Each decision below is a measured
@@ -220,7 +227,7 @@ impl Ctx {
         // The committed lock IS the plan: one file, one writer. There is no env override, and
         // with the TSVs; the generation floor died with them — landed generations live in the
         // lock's wave 0, so waves 1+ are open work only.
-        let plan = ticket_engine::wave_lock::LOCK_REL.to_string();
+        let plan = ticket_engine::repository::WAVE_LOCK.to_string();
 
         // `git rev-parse --path-format=absolute --git-common-dir`, falling back to
         // `<root>/.git` when git cannot answer.
@@ -265,8 +272,8 @@ impl Ctx {
 
         Ok(Ctx {
             plan,
-            registry: ".ai/tickets".into(),
-            worktrees: ".ai/artifacts/worktrees".into(),
+            registry: ticket_engine::repository::TICKETS_DIR.into(),
+            worktrees: crate::core::repository_layout::WORKTREES_DIR.into(),
             gate_timeout: host.timeout_secs,
             gate_trunk_target: envd(
                 "TBD_GATE_TRUNK_TARGET",

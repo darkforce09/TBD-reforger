@@ -203,6 +203,43 @@ pub fn map_scratch_dir(root: &Path, terrain: &str) -> PathBuf {
     root.join("assets_v2/scratch").join(terrain)
 }
 
+/* ─────────────────────────────── checkout root ─────────────────────────────── */
+
+/// The file whose presence marks a checkout root. [`crate::repository_paths::find_repo_root`]
+/// stops its upward walk here, so a worktree nested under another checkout resolves to itself.
+/// `ticket_engine::repository::ROOT_MARKER` is the same path spelled in the other foundational
+/// crate, for the reason that module header gives.
+pub const ROOT_MARKER: &str = ".ai/tickets/ROOT";
+
+/* ─────────────────────────────── enfusion source index ─────────────────────────────── */
+
+/// The symbol index built over Enfusion sources: one table per lane, read by every citation,
+/// lookup and capability query. Pipeline output, not a committed input.
+pub const ENF_INDEX_DIR: &str = ".ai/artifacts/enf-index";
+
+/// The upstream-framework symbol table inside [`ENF_INDEX_DIR`], which the lookup, directory
+/// census and capability join all read by default.
+pub const CRF_SYMBOL_TABLE: &str = ".ai/artifacts/enf-index/crf_symbols.tsv";
+
+/* ─────────────────────────────── export operation logs ─────────────────────────────── */
+
+/// Where the world-export pipeline writes its per-terrain operation log and type inventory, and
+/// where its verifiers read them back.
+pub const OPERATIONS_LOG_DIR: &str = ".ai/artifacts";
+
+/// One terrain's export operation log: every stage that ran, with what it produced.
+pub fn export_operations_log(root: &Path, terrain: &str) -> PathBuf {
+    root.join(OPERATIONS_LOG_DIR)
+        .join(format!("map_export_{terrain}.json"))
+}
+
+/// One terrain's object type inventory: every world-object type the export saw, and its census
+/// status.
+pub fn object_type_inventory(root: &Path, terrain: &str) -> PathBuf {
+    root.join(OPERATIONS_LOG_DIR)
+        .join(format!("type_inventory_{terrain}.json"))
+}
+
 /* ─────────────────────────────── analysis artifacts ─────────────────────────────── */
 
 /// Committed decision records for the inland-water classifier: the water and source spikes the
@@ -230,6 +267,23 @@ pub fn aerial_orthophoto_artifacts_dir(root: &Path) -> PathBuf {
 /// [`CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR`] under a checkout root.
 pub fn cartographic_rendering_artifacts_dir(root: &Path) -> PathBuf {
     root.join(CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR)
+}
+
+/// Documents the tools read or name in what they print.
+///
+/// Relocating the documentation tree rewrites this module and nothing else in the crate.
+pub mod documentation {
+    /// Game-mod documentation. `enf citations` walks it and resolves every `@idx lane#Symbol`
+    /// citation in it against the symbol index.
+    pub const MOD_DOCS_DIR: &str = "docs/mod";
+
+    /// The hand-authored verdict table `enf capability` joins the upstream symbol index against,
+    /// so a framework file nobody has triaged is a build error rather than an oversight.
+    pub const CAPABILITY_VERDICTS: &str = "docs/mod/capability_verdicts.tsv";
+
+    /// Known wedge modes of the headless editor gate, and the recipe for each — named by the
+    /// font-cache diagnostic when it cannot explain what it found.
+    pub const EDITOR_GATE_RUNBOOK: &str = "docs/website/EDITOR_GATE_RUNBOOK.md";
 }
 
 #[cfg(test)]

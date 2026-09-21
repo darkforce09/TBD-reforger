@@ -304,14 +304,14 @@ pub(super) fn repack_after_land(ctx: &Ctx) -> u8 {
         "status",
         "--porcelain",
         "--",
-        ticket_engine::wave_lock::LOCK_REL,
+        ticket_engine::repository::WAVE_LOCK,
     ]);
     if dirty.trim().is_empty() {
         return 0;
     }
     super::super::flush();
     let ok = std::process::Command::new("git")
-        .args(["add", "--", ticket_engine::wave_lock::LOCK_REL])
+        .args(["add", "--", ticket_engine::repository::WAVE_LOCK])
         .status()
         .map(|s| s.success())
         .unwrap_or(false)
@@ -432,11 +432,12 @@ pub fn cmd_verified(ctx: &Ctx, sha: &str) -> u8 {
         wprintln!("not a sha: {sha}");
         return 1;
     }
-    let _ = std::fs::create_dir_all(ctx.root.join(".ai/artifacts"));
+    let _ = std::fs::create_dir_all(ctx.root.join(ticket_engine::repository::ARTIFACTS_DIR));
     let full = git_stdout_lossy(&["rev-parse", sha]);
     // `git rev-parse "$sha" > file` writes the sha AND its trailing newline.
     let _ = std::fs::write(
-        ctx.root.join(".ai/artifacts/last-verified"),
+        ctx.root
+            .join(crate::core::repository_layout::LAST_VERIFIED_MARKER),
         format!("{full}\n"),
     );
     wprintln!("recorded: adversarial verifier examined {}", short(sha));

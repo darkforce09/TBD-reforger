@@ -25,17 +25,17 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 
-/// The dead plan paths — as git blob paths for history reads, and as working-tree paths for
-/// exactly one migration run.
-pub const LEGACY_PLANS: [&str; 2] = ["docs/platform/wave_plan.tsv", "docs/mod/wave_plan.tsv"];
+use crate::repository::documentation::ARCHIVED_WAVE_PLANS;
 
 pub fn any_tsv_present(root: &Path) -> bool {
-    LEGACY_PLANS.iter().any(|rel| root.join(rel).is_file())
+    ARCHIVED_WAVE_PLANS
+        .iter()
+        .any(|rel| root.join(rel).is_file())
 }
 
 /// Delete both TSVs from the working tree — called exactly once, by the migration repack.
 pub fn delete_tsvs(root: &Path) -> Result<()> {
-    for rel in LEGACY_PLANS {
+    for rel in ARCHIVED_WAVE_PLANS {
         let p = root.join(rel);
         if p.is_file() {
             std::fs::remove_file(&p).with_context(|| p.display().to_string())?;
@@ -50,7 +50,7 @@ pub fn delete_tsvs(root: &Path) -> Result<()> {
 /// exactly as the TSV-era parsers dropped them.
 pub fn working_tree_rows(root: &Path) -> Result<Vec<(String, String)>> {
     let mut rows = Vec::new();
-    for rel in LEGACY_PLANS {
+    for rel in ARCHIVED_WAVE_PLANS {
         let p = root.join(rel);
         if !p.is_file() {
             continue;
@@ -85,7 +85,7 @@ fn parse_rows(text: &str) -> Vec<(String, String)> {
 pub fn tickets_at(root: &Path, rev: &str, n: i64) -> Vec<String> {
     let want = n.to_string();
     let mut out = Vec::new();
-    for rel in LEGACY_PLANS {
+    for rel in ARCHIVED_WAVE_PLANS {
         let blob =
             super::history::git_in(root, &["show", &format!("{rev}:{rel}")]).unwrap_or_default();
         for l in blob.lines() {
@@ -119,5 +119,5 @@ pub fn tickets_at(root: &Path, rev: &str, n: i64) -> Vec<String> {
 }
 
 #[cfg(test)]
-#[path = "tests/legacy_plan/mod.rs"]
+#[path = "tests/archived_wave_plans/mod.rs"]
 mod tests;

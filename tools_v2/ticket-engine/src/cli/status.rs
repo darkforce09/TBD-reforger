@@ -8,7 +8,7 @@ pub fn cmd_ready_ids(
     limit: Option<usize>,
     stream: Option<&str>,
 ) -> Result<()> {
-    let queue_path = root.join(".ai/tickets/queue.json");
+    let queue_path = root.join(crate::repository::QUEUE_JSON);
     let data: Value = if queue_path.is_file() {
         serde_json::from_str(&fs::read_to_string(&queue_path)?)?
     } else {
@@ -95,7 +95,7 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
     // post-state, not the pre-mutation Value.
     reload_registry(root, registry)?;
     let queue = generate_queue_json(registry);
-    write_json_ascii(&root.join(".ai/tickets/queue.json"), &queue)?;
+    write_json_ascii(&root.join(crate::repository::QUEUE_JSON), &queue)?;
     // T-912.2: `set-status cancelled` (and `shipped`) must repack or `wave check` goes red on a
     // correct registry. Run for EVERY status — a demotion out of the dispatchable set (queued →
     // idea/deferred) strands the id in the lock's open waves just as surely as a cancel, and a

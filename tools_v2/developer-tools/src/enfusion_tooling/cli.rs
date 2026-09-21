@@ -33,7 +33,7 @@ enum Cmd {
         lane: String,
         #[arg(long)]
         root: PathBuf,
-        #[arg(long, default_value = ".ai/artifacts/enf-index")]
+        #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         out: PathBuf,
     },
     /// Carve vanilla Enfusion source out of the shipped .pak archives.
@@ -49,15 +49,15 @@ enum Cmd {
     Apidoc {
         #[arg(long, default_value = "apps/mod/vanilla_reference/apidoc")]
         src: PathBuf,
-        #[arg(long, default_value = ".ai/artifacts/enf-index")]
+        #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         out: PathBuf,
     },
     /// Verify every `@idx lane#Symbol` citation in the docs resolves against an index.
     /// Exits 1 on any unresolved citation — hallucinated APIs fail the build.
     Citations {
-        #[arg(long, default_value = "docs/mod")]
+        #[arg(long, default_value = crate::repository_layout::documentation::MOD_DOCS_DIR)]
         docs: PathBuf,
-        #[arg(long, default_value = ".ai/artifacts/enf-index")]
+        #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         index_dir: PathBuf,
     },
     /// Extract vanilla scripts from the paks BY NAME via the pak file table.
@@ -86,21 +86,21 @@ enum Cmd {
     /// Resolve a symbol to `file:line`. Exits 1 when it does not exist.
     Lookup {
         symbol: String,
-        #[arg(long, default_value = ".ai/artifacts/enf-index/crf_symbols.tsv")]
+        #[arg(long, default_value = crate::repository_layout::CRF_SYMBOL_TABLE)]
         index: PathBuf,
     },
     /// Join the CRF index against the hand-authored verdict table.
     /// Exits 1 if any CRF file has no verdict (UNTRIAGED) — a forgotten capability
     /// must be a build error, not an oversight.
     Capability {
-        #[arg(long, default_value = ".ai/artifacts/enf-index")]
+        #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         index_dir: PathBuf,
-        #[arg(long, default_value = "docs/mod/capability_verdicts.tsv")]
+        #[arg(long, default_value = crate::repository_layout::documentation::CAPABILITY_VERDICTS)]
         verdicts: PathBuf,
     },
     /// Symbol counts per directory — where a subsystem actually lives.
     Dirs {
-        #[arg(long, default_value = ".ai/artifacts/enf-index/crf_symbols.tsv")]
+        #[arg(long, default_value = crate::repository_layout::CRF_SYMBOL_TABLE)]
         index: PathBuf,
         #[arg(long, default_value_t = 4)]
         depth: usize,

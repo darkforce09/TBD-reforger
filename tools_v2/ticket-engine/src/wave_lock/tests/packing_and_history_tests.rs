@@ -146,7 +146,7 @@ fn check_reds_on_perturbed_owns_and_edges_and_stale_membership() {
 
     // Perturb owns without repack → red.
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["zzz.rs"], &[], "queued"),
     )
     .unwrap();
@@ -156,7 +156,7 @@ fn check_reds_on_perturbed_owns_and_edges_and_stale_membership() {
         "owns perturbation must be red: {errs:?}"
     );
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["a.rs"], &[], "queued"),
     )
     .unwrap();
@@ -164,7 +164,7 @@ fn check_reds_on_perturbed_owns_and_edges_and_stale_membership() {
 
     // Remove a depends_on edge without repack → red.
     fs::write(
-        dir.join(".ai/tickets/T-2.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-2.toml"),
         work("T-2", 20, &["b.rs"], &[], "queued"),
     )
     .unwrap();
@@ -174,7 +174,7 @@ fn check_reds_on_perturbed_owns_and_edges_and_stale_membership() {
         "edge removal must be red: {errs:?}"
     );
     fs::write(
-        dir.join(".ai/tickets/T-2.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-2.toml"),
         work("T-2", 20, &["b.rs"], &["T-1"], "queued"),
     )
     .unwrap();
@@ -182,7 +182,7 @@ fn check_reds_on_perturbed_owns_and_edges_and_stale_membership() {
 
     // Ship without repack → membership + wave 0 red.
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["a.rs"], &[], "shipped"),
     )
     .unwrap();
@@ -216,7 +216,7 @@ fn reorder_changes_open_waves_only_never_wave_zero() {
     assert_eq!(before.tickets_in_wave(1), vec!["T-1".to_string()]);
     // Swap the two open orders.
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 40, &["a.rs"], &[], "queued"),
     )
     .unwrap();
@@ -249,7 +249,7 @@ fn a_wave_freezes_its_whole_set_only_when_repacked_after_the_last_ship() {
     };
     let write = |dir: &Path, rows: &[(String, String)]| {
         for (name, body) in rows {
-            fs::write(dir.join(".ai/tickets").join(name), body).unwrap();
+            fs::write(dir.join(crate::repository::TICKETS_DIR).join(name), body).unwrap();
         }
     };
     let set_of = |lock: &WaveLock| -> Vec<Vec<String>> {
@@ -597,7 +597,7 @@ fn full_ship_freezes_the_wave_into_emptied_and_open_waves_number_past_it() {
 
     // Ship ALL of wave 42 (its whole set is T-1), then the ship-hook repack.
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["a.rs"], &[], "shipped"),
     )
     .unwrap();
@@ -647,7 +647,7 @@ fn partial_ship_records_no_emptied_entry() {
         vec!["T-1".to_string(), "T-2".to_string()]
     );
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["a.rs"], &[], "shipped"),
     )
     .unwrap();

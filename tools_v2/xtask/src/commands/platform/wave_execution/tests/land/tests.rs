@@ -146,7 +146,7 @@ fn close_scratch(tag: &str) -> PathBuf {
     git(&dir, &["add", "--", "c0.txt"]);
     git(&dir, &["commit", "-q", "-m", "wave 41 CLOSED — prior wave"]);
     ticket_engine::wave_lock::repack_quiet(&dir).unwrap();
-    git(&dir, &["add", "--", ticket_engine::wave_lock::LOCK_REL]);
+    git(&dir, &["add", "--", ticket_engine::repository::WAVE_LOCK]);
     git(&dir, &["commit", "-q", "-m", "wave.lock: baseline"]);
     dir
 }
@@ -350,7 +350,7 @@ fn emptied_scratch(tag: &str, n: usize, ship: usize) -> PathBuf {
     git(&dir, &["add", "--", "c0.txt"]);
     git(&dir, &["commit", "-q", "-m", "wave 41 CLOSED — prior wave"]);
     ticket_engine::wave_lock::repack_quiet(&dir).unwrap();
-    git(&dir, &["add", "--", ticket_engine::wave_lock::LOCK_REL]);
+    git(&dir, &["add", "--", ticket_engine::repository::WAVE_LOCK]);
     git(&dir, &["commit", "-q", "-m", "wave.lock: baseline"]);
     for i in 1..=ship {
         std::fs::write(

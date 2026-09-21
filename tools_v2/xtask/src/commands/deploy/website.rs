@@ -227,8 +227,9 @@ impl DeployCfg {
             repository_layout::CADDYFILE
         );
         println!(
-            "==> unit: {} is installed by hand (see docs/website/HOME_SERVER.md Phase D)",
-            systemd_unit::template_for(&self.systemd_unit)
+            "==> unit: {} is installed by hand (see {} Phase D)",
+            systemd_unit::template_for(&self.systemd_unit),
+            crate::core::repository_layout::documentation::HOME_SERVER_RUNBOOK
         );
         println!(
             "    Every deployment template lives in {}",
@@ -420,7 +421,10 @@ fn require_var(map: &HashMap<String, String>, key: &str, line: u32) -> Result<St
 fn refuse_prairielearn(label: &str, value: &str) -> Result<(), u8> {
     if value.to_ascii_lowercase().contains("prairielearn") {
         eprintln!("Refusing to deploy: {label} must not contain 'prairielearn' (got: {value})");
-        eprintln!("TBD lives under /home/sam/tbd/ only — see docs/website/HOME_SERVER.md.");
+        eprintln!(
+            "TBD lives under /home/sam/tbd/ only — see {}.",
+            crate::core::repository_layout::documentation::HOME_SERVER_RUNBOOK
+        );
         return Err(1);
     }
     Ok(())
@@ -433,7 +437,10 @@ fn require_tbd_remote_prefix(raw: &str) -> Result<(), u8> {
     }
     if dir.contains("..") {
         eprintln!("Refusing to deploy: TBD_REMOTE_DIR must not contain '..' (got: {raw})");
-        eprintln!("TBD_REMOTE_DIR must be under /home/sam/tbd/ — see docs/website/HOME_SERVER.md.");
+        eprintln!(
+            "TBD_REMOTE_DIR must be under /home/sam/tbd/ — see {}.",
+            crate::core::repository_layout::documentation::HOME_SERVER_RUNBOOK
+        );
         return Err(1);
     }
     let allowed = "/home/sam/tbd";

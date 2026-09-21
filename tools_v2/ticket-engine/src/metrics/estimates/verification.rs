@@ -27,23 +27,23 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     let mut seen: BTreeSet<String> = BTreeSet::new();
     let dir = estimates_root(root);
     if dir.is_dir() {
-        let schema_path = root.join(ESTIMATES_SCHEMA_REL);
+        let schema_path = root.join(ESTIMATES_SCHEMA);
         let schema_text = match fs::read_to_string(&schema_path) {
             Ok(t) => t,
             Err(e) => {
                 return vec![format!(
-                    "missing estimates schema (required while {ESTIMATES_DIR_REL}/ exists): \
-                     {ESTIMATES_SCHEMA_REL} ({e})"
+                    "missing estimates schema (required while {ESTIMATES_DIR}/ exists): \
+                     {ESTIMATES_SCHEMA} ({e})"
                 )];
             }
         };
         let schema: Value = match serde_json::from_str(&schema_text) {
             Ok(v) => v,
-            Err(e) => return vec![format!("parse {ESTIMATES_SCHEMA_REL}: {e}")],
+            Err(e) => return vec![format!("parse {ESTIMATES_SCHEMA}: {e}")],
         };
         let validator = match jsonschema::validator_for(&schema) {
             Ok(v) => v,
-            Err(e) => return vec![format!("compile {ESTIMATES_SCHEMA_REL}: {e}")],
+            Err(e) => return vec![format!("compile {ESTIMATES_SCHEMA}: {e}")],
         };
         for ent in WalkDir::new(&dir).sort_by_file_name().into_iter().flatten() {
             if !ent.file_type().is_file() {
@@ -57,7 +57,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
                 .to_string();
             if path.parent() != Some(dir.as_path()) {
                 errors.push(format!(
-                    "{rel}: estimate files live flat at {ESTIMATES_DIR_REL}/<id>.json — unexpected subdirectory"
+                    "{rel}: estimate files live flat at {ESTIMATES_DIR}/<id>.json — unexpected subdirectory"
                 ));
                 continue;
             }
@@ -112,7 +112,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
             if rec.factor != TOKENS_PER_LOC {
                 errors.push(format!(
                     "{rel}: factor {} != the documented constant {TOKENS_PER_LOC} \
-                     ({FACTOR_DOC_REL}) — recalibration is regeneration, never a hand-edit",
+                     ({TOKEN_ESTIMATE_FACTOR_DOC}) — recalibration is regeneration, never a hand-edit",
                     rec.factor
                 ));
             }
@@ -121,7 +121,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
                     "{rel}: measured receipt(s) exist under {}/{stem}/ — receipt and estimate \
                      are mutually exclusive; delete the estimate file in the commit that lands \
                      the receipt",
-                    crate::metrics::METRICS_DIR_REL
+                    crate::repository::METRICS_DIR
                 ));
             }
             match corpus.get(&stem) {
@@ -154,7 +154,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     for (id, t) in &corpus.tickets {
         if estimated_of(t).iter().any(|e| e == "tokens") && !seen.contains(id) {
             errors.push(format!(
-                "{id}: estimated[] lists tokens but {ESTIMATES_DIR_REL}/{id}.json does not \
+                "{id}: estimated[] lists tokens but {ESTIMATES_DIR}/{id}.json does not \
                  exist — the marker and the estimate file must appear together"
             ));
         }

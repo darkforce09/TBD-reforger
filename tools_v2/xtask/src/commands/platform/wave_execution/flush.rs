@@ -391,7 +391,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         "revert" => land::cmd_revert(&ctx, rest.first().map(String::as_str).unwrap_or("")),
         "push" => push::cmd_push(&ctx),
         _ => {
-            println!("{UNKNOWN_HELP}");
+            println!("{}", unknown_help());
             1
         }
     };

@@ -248,8 +248,7 @@ pub fn census_types(terrain: &str) -> Result<u8> {
         inv["censusStatus"].as_str().unwrap_or("")
     );
     std::fs::write(
-        root.join(".ai/artifacts")
-            .join(format!("type_inventory_{terrain}.json")),
+        crate::repository_layout::object_type_inventory(&root, terrain),
         serde_json::to_string_pretty(&inv)? + "\n",
     )?;
     Ok(0)

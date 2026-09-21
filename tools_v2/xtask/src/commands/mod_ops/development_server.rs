@@ -1,7 +1,7 @@
 //! `cargo xtask mod dev-server` — the argument gate in front of the playtest launcher.
 //!
 //! It starts nothing itself: with arguments it hands them to
-//! [`crate::commands::mod_ops::playtest_server`], and with none it prints [`USAGE`] and exits 2,
+//! [`crate::commands::mod_ops::playtest_server`], and with none it prints [`usage`] and exits 2,
 //! because a dedicated server told no mission boots into LOADING and stays there looking healthy.
 //!
 //! Exit codes:
@@ -17,7 +17,15 @@ use anyhow::Result;
 use crate::core::repository_root::find_repo_root;
 
 /// What a bare `cargo xtask mod dev-server` prints before exiting 2.
-const USAGE: &str = "\
+fn usage() -> String {
+    format!(
+        "{USAGE_HEAD}  {:<34} for what the second client needs\n{USAGE_TAIL}",
+        crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
+    )
+}
+
+/// Everything the usage prints before the runbook pointer.
+const USAGE_HEAD: &str = "\
 cargo xtask mod dev-server starts nothing on its own — it hands its arguments to
 cargo xtask mod playtest, which has to be told WHICH mission to serve.
 
@@ -29,8 +37,10 @@ cargo xtask mod playtest, which has to be told WHICH mission to serve.
                  command answers \"TBD: admin only.\" and no admin command can be tested.
 
   cargo xtask mod playtest --help    for the rest
-  docs/mod/STAGING-SERVER.md         for what the second client needs
+";
 
+/// Everything the usage prints after the runbook pointer.
+const USAGE_TAIL: &str = "
 Offline? Add --mission-file=contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json
 to serve a golden from disk with no API running.\n";
 
@@ -44,7 +54,7 @@ pub fn run(args: &[String]) -> Result<u8> {
 pub fn run_with_root(_root: &Path, args: &[String]) -> Result<u8> {
     // No arguments is the one refusal this gate owns: usage on stderr, rc 2.
     if args.is_empty() {
-        eprint!("{USAGE}");
+        eprint!("{}", usage());
         return Ok(2);
     }
 

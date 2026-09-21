@@ -6,15 +6,16 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::repository::WAVE_LOCK;
 use crate::{StatusName, Ticket};
 
+pub mod archived_wave_plans;
 pub mod collisions;
 pub mod history;
-pub mod legacy_plan;
 
 mod model;
 
-pub use model::{LOCK_REL, LOCK_VERSION, LockWave, TicketView, WaveLock, lock_path};
+pub use model::{LOCK_VERSION, LockWave, TicketView, WaveLock, lock_path};
 
 use model::HEADER;
 

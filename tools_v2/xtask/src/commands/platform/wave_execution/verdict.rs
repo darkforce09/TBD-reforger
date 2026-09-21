@@ -42,11 +42,9 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use serde::{Deserialize, Serialize};
 
-/// Receipt tree, relative to the MAIN checkout. See note 1 in the module header: relative to
-/// `main_root`, NOT to `ctx.root`, or the gate and `land` write and read different directories.
-pub const VERDICTS_DIR_REL: &str = ".ai/artifacts/verdicts";
+use crate::core::repository_layout::VERDICTS_DIR;
+use serde::{Deserialize, Serialize};
 
 /// The green verdict — the exact token [`super::lock::GateState::verdict`] prints.
 pub const PASS: &str = "PASS";
@@ -81,7 +79,7 @@ impl Verdict {
 
 /// `<main_root>/.ai/artifacts/verdicts`.
 pub fn verdicts_dir(main_root: &Path) -> PathBuf {
-    main_root.join(VERDICTS_DIR_REL)
+    main_root.join(VERDICTS_DIR)
 }
 
 /// The receipt path for one slice, or an error when `slice` is not a bare ticket id.
@@ -258,7 +256,7 @@ pub fn land_refusal(main_root: &Path, slice: &str, landing_sha: &str) -> Option<
         Ok(Some(rec)) => rec,
         Ok(None) => {
             return Some(format!(
-                "land: no gate verdict for {slice} under {VERDICTS_DIR_REL}/ — no gate has run on it\n      \
+                "land: no gate verdict for {slice} under {VERDICTS_DIR}/ — no gate has run on it\n      \
                  run the slice gate from the slice's WORKTREE, then land:\n      \
                  {hint}"
             ));

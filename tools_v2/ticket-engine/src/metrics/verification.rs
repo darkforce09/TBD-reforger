@@ -11,23 +11,23 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     if !dir.is_dir() {
         return vec![];
     }
-    let schema_path = root.join(METRICS_SCHEMA_REL);
+    let schema_path = root.join(METRICS_SCHEMA);
     let schema_text = match fs::read_to_string(&schema_path) {
         Ok(t) => t,
         Err(e) => {
             return vec![format!(
-                "missing metrics schema (required while {METRICS_DIR_REL}/ exists): \
-                 {METRICS_SCHEMA_REL} ({e})"
+                "missing metrics schema (required while {METRICS_DIR}/ exists): \
+                 {METRICS_SCHEMA} ({e})"
             )];
         }
     };
     let schema: Value = match serde_json::from_str(&schema_text) {
         Ok(v) => v,
-        Err(e) => return vec![format!("parse {METRICS_SCHEMA_REL}: {e}")],
+        Err(e) => return vec![format!("parse {METRICS_SCHEMA}: {e}")],
     };
     let validator = match jsonschema::validator_for(&schema) {
         Ok(v) => v,
-        Err(e) => return vec![format!("compile {METRICS_SCHEMA_REL}: {e}")],
+        Err(e) => return vec![format!("compile {METRICS_SCHEMA}: {e}")],
     };
 
     let mut errors = Vec::new();

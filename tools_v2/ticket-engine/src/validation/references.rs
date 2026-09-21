@@ -1,6 +1,10 @@
-//! References.
+//! References between tickets, and between tickets and the documents they cite.
 
 use super::*;
+
+use crate::repository::documentation::{
+    ARCHIVED_WAVE_PLAN_READERS, SCAN_EXEMPT_PREFIXES, STALE_TICKET_ID_SCAN_ROOTS,
+};
 
 /// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
@@ -67,58 +71,6 @@ pub(super) fn fossil_needles() -> [String; 3] {
     ]
 }
 
-/// Paths where a fossil mention is genuinely historical. Every entry carries its reason; keep
-/// this list TIGHT — a live doc that names the TSV as current truth gets UPDATED, not listed.
-pub(super) const FOSSIL_ALLOWLIST: &[(&str, &str)] = &[
-    (
-        ".ai/artifacts/",
-        "pipeline output — frozen run reports and verify logs",
-    ),
-    (
-        ".ai/tickets/",
-        "ticket notes/summaries narrate the TSV era; owns cells may name deleted paths",
-    ),
-    (
-        "docs/TICKET_",
-        "generated views (ticket sync) — they quote ticket prose verbatim",
-    ),
-    (
-        "docs/platform/SHIPPED_HISTORY.md",
-        "the shipped-history archive describes past states in past commits",
-    ),
-    (
-        "docs/platform/t911_ticket_registry_redesign.md",
-        "T-911 program spec — approved design text, written while the TSVs lived",
-    ),
-    (
-        "docs/platform/t912_wave_lockfile.md",
-        "this program's own spec names the files it deletes",
-    ),
-    (
-        "docs/platform/GROK_WAVE_130_HANDOFF.md",
-        "past kickoff doc for a finished wave — a snapshot, not a runbook",
-    ),
-    (
-        "docs/platform/WAVE209_GROK_KICKOFF.md",
-        "past kickoff doc for a finished wave — a snapshot, not a runbook",
-    ),
-    (
-        "tools_v2/ticket-engine/src/wave_lock/legacy_plan.rs",
-        "the ONE module allowed to name the dead files: git-show history reads for pre-cutover \
-         wave-close corroboration plus the one-shot migration",
-    ),
-    (
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c",
-        "T-181-era lane note in an Enfusion comment; mod scripts are workbench-gated (D5), not \
-         agent-editable from a platform slice",
-    ),
-    (
-        "apps/website/api_v2/migrations/0011_events_server_modpack.sql",
-        "committed migrations are checksum-frozen (db_migrate persist audits them); editing one \
-         to reword a comment is the a843905f incident",
-    ),
-];
-
 pub(super) fn fossil_paths_check(root: &Path) -> Vec<String> {
     let needles = fossil_needles();
     let mut cmd = std::process::Command::new("git");
@@ -150,13 +102,17 @@ pub(super) fn fossil_paths_check(root: &Path) -> Vec<String> {
         if path.is_empty() {
             continue;
         }
-        if FOSSIL_ALLOWLIST.iter().any(|(p, _)| path.starts_with(p)) {
+        if ARCHIVED_WAVE_PLAN_READERS
+            .iter()
+            .any(|(p, _)| path.starts_with(p))
+        {
             continue;
         }
         errors.push(format!(
-            "dead wave-plan reference in {path} — the TSVs and their env knobs died at T-912.2; \
-             read .ai/tickets/wave.lock (historical mentions belong on the allowlist in \
-             tools_v2/ticket-engine/src/validation/references.rs, with a reason)"
+            "archived wave-plan reference in {path} — the wave plan is {}; a mention that is \
+             genuinely about the past belongs on ARCHIVED_WAVE_PLAN_READERS in \
+             tools_v2/ticket-engine/src/repository.rs, with its reason",
+            crate::repository::WAVE_LOCK
         ));
     }
     errors
@@ -164,13 +120,10 @@ pub(super) fn fossil_paths_check(root: &Path) -> Vec<String> {
 
 pub(super) fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
     let mut hits: HashMap<String, Vec<String>> = HashMap::new();
-    let scan_roots: Vec<PathBuf> = vec![
-        root.join("docs"),
-        root.join("docs/specs"),
-        root.join(".ai/tickets/queue.json"),
-        root.join("CLAUDE.md"),
-        root.join("README.md"),
-    ];
+    let scan_roots: Vec<PathBuf> = STALE_TICKET_ID_SCAN_ROOTS
+        .iter()
+        .map(|rel| root.join(rel))
+        .collect();
     for base in scan_roots {
         let files: Vec<PathBuf> = if base.is_file() {
             vec![base]
@@ -189,7 +142,7 @@ pub(super) fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
                 Ok(r) => r.to_string_lossy().replace('\\', "/"),
                 Err(_) => continue,
             };
-            if EXEMPT_SCAN_PREFIXES
+            if SCAN_EXEMPT_PREFIXES
                 .iter()
                 .any(|p| rel.starts_with(p) || rel.contains(p))
             {

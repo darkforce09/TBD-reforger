@@ -13,7 +13,7 @@ fn worktree_root() -> PathBuf {
 fn scratch_tickets_dir(tag: &str) -> (PathBuf, PathBuf) {
     let tmp = std::env::temp_dir().join(format!("{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);
-    let dir = tmp.join(".ai/tickets");
+    let dir = tmp.join(crate::repository::TICKETS_DIR);
     fs::create_dir_all(&dir).unwrap();
     fs::write(
             dir.join("scope-vocab.toml"),

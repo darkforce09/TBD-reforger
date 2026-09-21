@@ -19,7 +19,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> u8 {
             cmd_prep(root, w)
         }
         _ => {
-            print!("{UNKNOWN_HELP}");
+            print!("{}", unknown_help());
             let _ = io::stdout().flush();
             2
         }
@@ -145,7 +145,7 @@ pub(super) fn parent_slice(s: &str) -> String {
 }
 
 pub(super) fn tree_state(root: &Path, slice: &str) -> TreeState {
-    let d = root.join(BASE).join(parent_slice(slice));
+    let d = root.join(WORKTREES_DIR).join(parent_slice(slice));
     if !d.is_dir() {
         return TreeState::Absent;
     }

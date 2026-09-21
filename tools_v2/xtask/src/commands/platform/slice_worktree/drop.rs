@@ -6,7 +6,7 @@ pub(super) fn cmd_drop(root: &Path, slice_arg: &str, third: &str) -> Result<u8> 
         return Ok(2);
     }
     let slice = parent_slice(slice_arg);
-    let dir = format!("{BASE}/{slice}");
+    let dir = format!("{WORKTREES_DIR}/{slice}");
     let branch = format!("slice/{slice}");
     let abs_dir = root.join(&dir);
     let forced = third == "--force";
@@ -111,7 +111,7 @@ pub(super) fn cmd_reap(root: &Path) -> Result<u8> {
         let refname = format!("refs/heads/{b}");
         // The bash's `$d` carries a TRAILING SLASH from the `*/` glob and interpolates it straight
         // into `git worktree remove "$d"`. Rebuilt so git sees an identical argument.
-        let d_slash = format!("{BASE}/{s}/");
+        let d_slash = format!("{WORKTREES_DIR}/{s}/");
 
         if gp(root, &["show-ref", "--verify", "--quiet", &refname])?.code != 0 {
             println!("kept   {s} (no branch)");
@@ -201,13 +201,13 @@ pub(super) fn cmd_reap(root: &Path) -> Result<u8> {
     Ok(0)
 }
 
-/// The bash's `for d in "$BASE"/*/` — subdirectories only, in glob (byte-sorted) order.
+/// The bash's `for d in "$WORKTREES_DIR"/*/` — subdirectories only, in glob (byte-sorted) order.
 ///
-/// Two behaviours ride on that `*/` suffix: `BASE/README.md` is a FILE and is not matched, and when
+/// Two behaviours ride on that `*/` suffix: `WORKTREES_DIR/README.md` is a FILE and is not matched, and when
 /// the glob matches nothing bash leaves the literal pattern in `$d`, which `[ -d "$d" ] || continue`
 /// discards — an empty iterator is the same. `-d` and `is_dir()` both follow symlinks.
 pub(super) fn slice_dirs(root: &Path) -> Vec<PathBuf> {
-    let Ok(rd) = fs::read_dir(root.join(BASE)) else {
+    let Ok(rd) = fs::read_dir(root.join(WORKTREES_DIR)) else {
         return Vec::new();
     };
     let mut v: Vec<PathBuf> = rd

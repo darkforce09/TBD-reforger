@@ -296,6 +296,7 @@ pub(super) fn print_wedge_hint() {
         "    • verify the resolved chromium is the FULL chrome build (not chrome-headless-shell)"
     );
     println!(
-        "    • see docs/website/EDITOR_GATE_RUNBOOK.md (known wedge modes + the P0–P6 recipe)"
+        "    • see {} (known wedge modes + the P0–P6 recipe)",
+        crate::repository_layout::documentation::EDITOR_GATE_RUNBOOK
     );
 }

@@ -271,7 +271,7 @@ pub(super) fn verify_doc_layout() -> i32 {
     match hits {
         Ok(found) if found.is_empty() => 0,
         Ok(_) => {
-            println!("{DOC_LAYOUT_MSG}");
+            println!("{}", doc_layout_refusal());
             1
         }
         Err(nr) => {

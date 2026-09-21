@@ -1,6 +1,14 @@
 //! Runtime checkout discovery for command inputs and repository fixtures.
+//!
+//! This walk is deliberately the second implementation of the one `ticket_engine::repository`
+//! performs. Both crates are foundational: the structural rules forbid either from depending on
+//! a workspace crate, so the alternative to two copies is an inverted dependency. The copies are
+//! identical in behaviour — stop at the ticket-registry root marker, refuse when the walk reaches
+//! the filesystem root — and each names the other.
 use anyhow::{Context, Result, bail};
 use std::path::PathBuf;
+
+use crate::repository_layout::ROOT_MARKER;
 
 pub fn find_repo_root() -> Result<PathBuf> {
     find_from(std::env::current_dir().context("cwd")?)
@@ -8,13 +16,11 @@ pub fn find_repo_root() -> Result<PathBuf> {
 
 fn find_from(mut current: PathBuf) -> Result<PathBuf> {
     loop {
-        if current.join(".ai/tickets/ROOT").is_file()
-            || current.join(".ai/tickets/registry.json").is_file()
-        {
+        if current.join(ROOT_MARKER).is_file() {
             return Ok(current);
         }
         if !current.pop() {
-            bail!("could not find repo root (.ai/tickets/ROOT)");
+            bail!("could not find repo root ({ROOT_MARKER})");
         }
     }
 }

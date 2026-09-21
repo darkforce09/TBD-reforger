@@ -119,7 +119,10 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     }
 
     println!();
-    println!("Next steps (manual — see docs/mod/STAGING-SERVER.md):");
+    println!(
+        "Next steps (manual — see {}):",
+        crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
+    );
     println!("  1. steamcmd +app_update 1890870 on server");
     println!(
         "  2. Create apps/website/api_v2/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)"

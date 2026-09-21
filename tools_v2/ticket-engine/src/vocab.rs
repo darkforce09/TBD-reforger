@@ -13,13 +13,10 @@
 //! nothing); scratch TREES that go through `Corpus::load` must carry a minimal file.
 
 use crate::ScopeV2;
+use crate::repository::SCOPE_VOCAB;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
-
-/// The vocabulary file, relative to the repo root (same constant as
-/// `xtask::vocab_check::VOCAB_REL` — the path is part of the T-917.1 contract).
-pub const VOCAB_REL: &str = ".ai/tickets/scope-vocab.toml";
 
 type LayerTable = BTreeMap<String, Vec<String>>;
 
@@ -35,15 +32,15 @@ impl ScopeVocab {
     /// naming the path (fail-closed — the T-917.2 cutover made scope legality
     /// load-bearing for every corpus load).
     pub fn load(root: &Path) -> Result<Self, String> {
-        let path = root.join(VOCAB_REL);
+        let path = root.join(SCOPE_VOCAB);
         if !path.is_file() {
             return Err(format!(
                 "missing scope vocabulary (required for every corpus load since T-917.2): {}",
                 path.display()
             ));
         }
-        let text = fs::read_to_string(&path).map_err(|e| format!("read {VOCAB_REL}: {e}"))?;
-        Self::parse(&text).map_err(|e| format!("{VOCAB_REL}: {e}"))
+        let text = fs::read_to_string(&path).map_err(|e| format!("read {SCOPE_VOCAB}: {e}"))?;
+        Self::parse(&text).map_err(|e| format!("{SCOPE_VOCAB}: {e}"))
     }
 
     /// Lenient tree read: every level must be a table (or a surface string array at
@@ -97,12 +94,12 @@ impl ScopeVocab {
         let domain = scope.domain.as_str();
         let Some(layers) = self.tree.get(domain) else {
             return Err(format!(
-                "{id}: scope domain \"{domain}\" has no table in {VOCAB_REL}"
+                "{id}: scope domain \"{domain}\" has no table in {SCOPE_VOCAB}"
             ));
         };
         let Some(components) = layers.get(&scope.layer) else {
             return Err(format!(
-                "{id}: scope layer \"{domain}.{}\" is not in {VOCAB_REL}",
+                "{id}: scope layer \"{domain}.{}\" is not in {SCOPE_VOCAB}",
                 scope.layer
             ));
         };
@@ -113,14 +110,14 @@ impl ScopeVocab {
         };
         let Some(surfaces) = components.get(component) else {
             return Err(format!(
-                "{id}: scope component \"{domain}.{}.{component}\" is not in {VOCAB_REL}",
+                "{id}: scope component \"{domain}.{}.{component}\" is not in {SCOPE_VOCAB}",
                 scope.layer
             ));
         };
         for s in &scope.surface {
             if !surfaces.iter().any(|v| v == s) {
                 return Err(format!(
-                    "{id}: scope surface \"{s}\" is not under \"{domain}.{}.{component}\" in {VOCAB_REL}",
+                    "{id}: scope surface \"{s}\" is not under \"{domain}.{}.{component}\" in {SCOPE_VOCAB}",
                     scope.layer
                 ));
             }

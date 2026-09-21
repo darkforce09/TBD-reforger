@@ -3,22 +3,13 @@
 use super::*;
 use anyhow::Context;
 
-/// Tokens per LOC changed — the declared constant pending calibration. Derivation
-/// (measured ONCE, T-915/T-916 program: ~2.4M subagent output-tokens over ~16k LOC)
-/// lives in [`FACTOR_DOC_REL`]; a test asserts the doc quotes this value verbatim.
+/// Tokens per changed line of code. The measurement behind the number, and the cohorts it was
+/// taken over, live in [`crate::repository::documentation::TOKEN_ESTIMATE_FACTOR_DOC`]; a test
+/// asserts that document quotes this value verbatim, so the two cannot drift.
 pub const TOKENS_PER_LOC: u64 = 150;
 
-/// The factor's document of record.
-pub const FACTOR_DOC_REL: &str = "docs/platform/token_estimate_factor.md";
-
-/// Estimate tree, relative to the repo root — deliberately OUTSIDE `metrics/`.
-pub const ESTIMATES_DIR_REL: &str = ".ai/tickets/estimates";
-
-/// The committed schema every estimate file must satisfy.
-pub const ESTIMATES_SCHEMA_REL: &str = ".ai/tickets/estimates.schema.json";
-
 pub fn estimates_root(root: &Path) -> PathBuf {
-    root.join(ESTIMATES_DIR_REL)
+    root.join(crate::repository::ESTIMATES_DIR)
 }
 
 /// The WIDENED cohort key actually used — only the fields that constrained the

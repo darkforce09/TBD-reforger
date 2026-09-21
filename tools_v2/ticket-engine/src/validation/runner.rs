@@ -121,7 +121,7 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
         }
     }
 
-    let roadmap = root.join("docs/specs/Mission_Creator_Architecture/ROADMAP.md");
+    let roadmap = root.join(crate::repository::documentation::ROADMAP);
     if roadmap.is_file() {
         let text = fs::read_to_string(&roadmap).unwrap_or_default();
         if !text.contains(NEXT_MARKER_START) || !text.contains(NEXT_MARKER_END) {
@@ -139,7 +139,7 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
         for (path, matches) in hits {
             errors.push(format!("Legacy ID in {path}: {} match(es)", matches.len()));
         }
-        let gap = gap_analysis_path(root);
+        let gap = root.join(crate::repository::documentation::GAP_ANALYSIS);
         if gap.is_file() {
             let text = fs::read_to_string(&gap).unwrap_or_default();
             if text.contains("| priority |") || PRIORITY_P.is_match(&text) {

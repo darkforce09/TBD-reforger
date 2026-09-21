@@ -8,8 +8,8 @@ fn worktree_root() -> PathBuf {
 fn scratch(tag: &str, content: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("t917-vocab-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
-    fs::write(dir.join(VOCAB_REL), content).unwrap();
+    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
+    fs::write(dir.join(SCOPE_VOCAB), content).unwrap();
     dir
 }
 

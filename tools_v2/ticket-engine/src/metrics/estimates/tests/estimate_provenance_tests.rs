@@ -4,11 +4,11 @@ use super::*;
 /// The doc also names the three LOC exclusions the miner enforces.
 #[test]
 fn factor_constant_is_pinned_in_the_doc() {
-    let doc = fs::read_to_string(repo_root().join(FACTOR_DOC_REL)).expect("factor doc");
+    let doc = fs::read_to_string(repo_root().join(TOKEN_ESTIMATE_FACTOR_DOC)).expect("factor doc");
     let marker = format!("TOKENS_PER_LOC = {TOKENS_PER_LOC}");
     assert!(
         doc.contains(&marker),
-        "{FACTOR_DOC_REL} must quote the constant verbatim: {marker:?}"
+        "{TOKEN_ESTIMATE_FACTOR_DOC} must quote the constant verbatim: {marker:?}"
     );
     assert!(
         doc.contains("pending calibration"),
@@ -17,7 +17,7 @@ fn factor_constant_is_pinned_in_the_doc() {
     for needle in [".ai/", "docs/TICKET_", "Cargo.lock"] {
         assert!(
             doc.contains(needle),
-            "{FACTOR_DOC_REL} must document the {needle} LOC exclusion"
+            "{TOKEN_ESTIMATE_FACTOR_DOC} must document the {needle} LOC exclusion"
         );
     }
 }
@@ -63,7 +63,7 @@ fn median_is_deterministic() {
 /// key, all-key), one red per rule.
 #[test]
 fn estimates_schema_red_green() {
-    let text = fs::read_to_string(repo_root().join(ESTIMATES_SCHEMA_REL)).expect("schema");
+    let text = fs::read_to_string(repo_root().join(ESTIMATES_SCHEMA)).expect("schema");
     let schema: Value = serde_json::from_str(&text).expect("schema parses");
     let validator = jsonschema::validator_for(&schema).expect("schema compiles");
     let diff = |extra: fn(&mut Value)| {
@@ -233,7 +233,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
     assert_eq!(report.e_diff_loc + report.c_cohort_median, 9);
 
     // Exact bytes: sorted keys, 2-space pretty, trailing newline.
-    let t1 = fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-001.json"))).unwrap();
+    let t1 = fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-001.json"))).unwrap();
     assert_eq!(
         t1,
         "{\n  \"derived_from_shas\": [\n    \"aaaa111122223333\"\n  ],\n  \"factor\": 150,\n  \"generated_at\": \"2026-08-15T00:00:00Z\",\n  \"id\": \"T-001\",\n  \"loc_changed\": 10,\n  \"source\": \"diff_loc\",\n  \"tokens_estimated\": 1500\n}\n"
@@ -241,7 +241,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
     // T-004: L0 cohort (chore, repo, docs) has exactly the 3 members
     // 1500/3000/4500 → median 3000, full key recorded.
     let t4: EstimateRecord = serde_json::from_str(
-        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-004.json"))).unwrap(),
+        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-004.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(t4.tokens_estimated, 3000);
@@ -257,7 +257,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
     // T-006: (feature, website, backend) empty → (feature, website) 1 →
     // (feature) 1 → all 4 members {1500,3000,4500,6000} → 3750, key {}.
     let t6: EstimateRecord = serde_json::from_str(
-        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-006.json"))).unwrap(),
+        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-006.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(t6.tokens_estimated, 3750);
@@ -273,14 +273,14 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
     );
     // T-007 fell through: cohort_median in its (chore, repo, docs) cohort.
     let t7: EstimateRecord = serde_json::from_str(
-        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-007.json"))).unwrap(),
+        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-007.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(t7.source, "cohort_median");
     assert_eq!(t7.tokens_estimated, 3000);
     // T-008 (class-less program): straight to the all-key.
     let t8: EstimateRecord = serde_json::from_str(
-        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-008.json"))).unwrap(),
+        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-008.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(
@@ -293,17 +293,13 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
     );
     // T-008.1 (zero-subject child WITH class+scope): its own L0 cohort.
     let t81: EstimateRecord = serde_json::from_str(
-        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-008.1.json"))).unwrap(),
+        &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-008.1.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(t81.tokens_estimated, 3000);
     assert_eq!(t81.cohort_size, Some(3));
     // T-009 (receipt): NO estimate file, NO marker.
-    assert!(
-        !root
-            .join(format!("{ESTIMATES_DIR_REL}/T-009.json"))
-            .exists()
-    );
+    assert!(!root.join(format!("{ESTIMATES_DIR}/T-009.json")).exists());
 
     let reread = Corpus::load(&root).expect("reload");
     for id in ["T-001", "T-004", "T-006", "T-007", "T-008", "T-008.1"] {
@@ -323,13 +319,13 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
     assert!(check_as_errors(&root).is_empty(), "tree must be green");
 
     // Idempotence: the second pass finds nothing and changes nothing.
-    let before = fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-004.json"))).unwrap();
+    let before = fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-004.json"))).unwrap();
     let second = run_estimates(&root, &subjects, &sha_loc, "2026-08-16T00:00:00Z").expect("second");
     assert!(second.records.is_empty(), "second run must find nothing");
     assert_eq!(second.already_estimated, 9);
     assert_eq!(second.with_receipt, 1);
     assert_eq!(
-        fs::read_to_string(root.join(format!("{ESTIMATES_DIR_REL}/T-004.json"))).unwrap(),
+        fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-004.json"))).unwrap(),
         before,
         "existing estimates are never rewritten"
     );
@@ -344,7 +340,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
 #[test]
 fn planted_estimate_inside_metrics_reds_the_metrics_walker() {
     let root = scratch_root("collision");
-    let dir = root.join(crate::metrics::METRICS_DIR_REL).join("T-001");
+    let dir = root.join(crate::repository::METRICS_DIR).join("T-001");
     fs::create_dir_all(&dir).unwrap();
     let est = EstimateRecord {
         cohort: None,
@@ -393,7 +389,7 @@ fn mutual_exclusion_and_marker_coherence() {
     assert!(check_as_errors(&root).is_empty(), "coherent tree is green");
 
     // A receipt lands for the same id → red naming BOTH trees.
-    let rdir = root.join(crate::metrics::METRICS_DIR_REL).join("T-001");
+    let rdir = root.join(crate::repository::METRICS_DIR).join("T-001");
     fs::create_dir_all(&rdir).unwrap();
     fs::write(rdir.join("r.json"), "{}").unwrap();
     let errs = check_as_errors(&root);
@@ -405,11 +401,11 @@ fn mutual_exclusion_and_marker_coherence() {
         "{}",
         errs[0]
     );
-    fs::remove_dir_all(root.join(crate::metrics::METRICS_DIR_REL)).unwrap();
+    fs::remove_dir_all(root.join(crate::repository::METRICS_DIR)).unwrap();
     assert!(check_as_errors(&root).is_empty());
 
     // Marker without file → red naming ticket + the missing path.
-    let est_path = root.join(format!("{ESTIMATES_DIR_REL}/T-001.json"));
+    let est_path = root.join(format!("{ESTIMATES_DIR}/T-001.json"));
     let est_bytes = fs::read_to_string(&est_path).unwrap();
     fs::remove_file(&est_path).unwrap();
     let errs = check_as_errors(&root);
@@ -474,8 +470,9 @@ fn business_rules_red() {
     fs::write(dir.join("T-001.json"), diff_json("T-001", 149, 1490, NOW)).unwrap();
     let errs = check_as_errors(&root);
     assert!(
-        errs.iter()
-            .any(|e| e.contains("factor 149") && e.contains("150") && e.contains(FACTOR_DOC_REL)),
+        errs.iter().any(|e| e.contains("factor 149")
+            && e.contains("150")
+            && e.contains(TOKEN_ESTIMATE_FACTOR_DOC)),
         "{errs:?}"
     );
     // Broken arithmetic.

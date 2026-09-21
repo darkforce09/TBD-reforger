@@ -10,7 +10,8 @@ const CLOCK: &str = "2026-08-14T12:00:00Z";
 fn scratch_root(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("tbd-tickets-ops-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(".ai/tickets")).expect("mkdir scratch tickets dir");
+    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR))
+        .expect("mkdir scratch tickets dir");
     dir
 }
 

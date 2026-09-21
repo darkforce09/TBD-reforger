@@ -233,7 +233,10 @@ pub fn run(root: &Path, argv: &[String]) -> Result<u8> {
             bail!("--check needs a ticket id");
         };
         let Some(t) = by_id.get(want.as_str()) else {
-            bail!("{want} is not an open ticket in {}", wave_lock::LOCK_REL);
+            bail!(
+                "{want} is not an open ticket in {}",
+                crate::repository::WAVE_LOCK
+            );
         };
         let bad: Vec<&str> = rows
             .iter()
@@ -281,7 +284,7 @@ pub fn run(root: &Path, argv: &[String]) -> Result<u8> {
         // the missing-lock refusal above is the failure case. Exit 0, but SAY SO.
         println!(
             "no open tickets in {} — every planned ticket is parked at wave 0. Nothing to dispatch.",
-            wave_lock::LOCK_REL
+            crate::repository::WAVE_LOCK
         );
         warn_unplanned(&views, &lock);
         return Ok(0);

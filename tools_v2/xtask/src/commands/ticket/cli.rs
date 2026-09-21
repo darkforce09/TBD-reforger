@@ -68,7 +68,7 @@ pub(crate) enum TicketCmd {
     },
     Ship {
         id: String,
-        /// Skip the wave.lock refresh so a whole wave can be shipped and then repacked
+        /// Skip the wave-lock refresh so a whole wave can be shipped and then repacked
         /// ONCE — a wave repacked per-id dissolves before any repack sees it fully landed, and
         /// never forms the pending entry `wave --close` needs. Run `cargo xtask wave repack`
         /// after the last id of the wave.
@@ -90,9 +90,9 @@ pub(crate) enum TicketCmd {
     MarkReady {
         id: String,
         spec: Option<String>,
-        /// Plan ready-gate: path to this ticket's own plan document; defaults
-        /// to docs/plans/<id-lowercased-dots-to-underscores>_plan.md and must exist
-        /// on disk (copy docs/plans/TEMPLATE.md).
+        /// Plan ready-gate: path to this ticket's own plan document. Defaults to the
+        /// derived path under the plans directory, which must already exist — copy the
+        /// plan template to it. The refusal names both paths in full.
         plan: Option<String>,
     },
     #[command(name = "advance-slice")]
@@ -130,8 +130,8 @@ pub(crate) enum TicketCmd {
     Clean {
         id: String,
     },
-    /// Report per-run receipts from `.ai/tickets/metrics/` (elapsed + token
-    /// sums come from the real files; a broken file is an ERROR, never `tokens=0`).
+    /// Report per-run receipts from the metrics tree: elapsed and token sums come from the
+    /// receipt files, and a broken file is an ERROR rather than a reported zero.
     Metrics {
         /// Group sums (`agent` is the only supported key)
         #[arg(long)]

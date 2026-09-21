@@ -5,7 +5,6 @@ use anyhow::{Result, bail};
 use serde_json::{Value, json};
 
 use crate::registry::*;
-use crate::repository::gap_analysis_path;
 use crate::sync::gap_analysis::sync_gap_analysis_ticket_column;
 use crate::validation::constants::*;
 use std::collections::{BTreeMap, HashSet};

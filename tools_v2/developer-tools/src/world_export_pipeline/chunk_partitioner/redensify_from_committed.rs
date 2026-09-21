@@ -330,9 +330,7 @@ pub fn build_roads_from_topo_opt(
         "points": records.iter().map(|r| r.points.len()).sum::<usize>(),
     });
     if ops_log {
-        let ops_path = repo_root()
-            .join(".ai/artifacts")
-            .join(format!("map_export_{terrain}.json"));
+        let ops_path = crate::repository_layout::export_operations_log(&repo_root(), terrain);
         let mut ops: Value = if ops_path.exists() {
             serde_json::from_str(&std::fs::read_to_string(&ops_path)?)?
         } else {

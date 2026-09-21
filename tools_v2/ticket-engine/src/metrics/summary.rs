@@ -53,7 +53,7 @@ pub fn cmd_metrics(root: &Path, by: Option<&str>) -> Result<()> {
     }
     let runs = load_all_runs(root)?;
     if runs.is_empty() {
-        println!("(no run files under {METRICS_DIR_REL}/)");
+        println!("(no run files under {METRICS_DIR}/)");
         return Ok(());
     }
     if by == Some("agent") {

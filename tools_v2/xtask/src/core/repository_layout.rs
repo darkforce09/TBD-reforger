@@ -40,6 +40,63 @@ pub const DEV_SERVER_PROFILE: &str =
 /// `cargo xtask mcp consume` to pin the exit code of every response shape without a Workbench.
 pub const MCP_TRANSCRIPT_FIXTURES_DIR: &str = "tools_v2/xtask/fixtures/mcp";
 
+/* ───────────────────────── the ticket domain's own locations ───────────────────────── */
+
+// The registry, the wave lock and the artifact tree belong to the ticket domain, which spells
+// them once in `ticket_engine::repository`. They are re-exported here so every xtask path
+// resolves through this one module, without a second spelling of any of them existing.
+#[allow(unused_imports)] // each is the one spelling of its path for the whole crate
+pub use ticket_engine::repository::{
+    LAST_VERIFIED_MARKER, ROOT_MARKER, VERDICTS_DIR, WAVE_LOCK, WORKTREES_DIR,
+};
+
+/// Documents xtask reads, walks or names in what it prints.
+///
+/// Relocating the documentation tree rewrites this module and nothing else in the crate; a
+/// runbook that moves is one edit here rather than a hunt through help text and refusals.
+pub mod documentation {
+    /// A one-line marker an operator drops in while the factory packs a wave, so the wave gate
+    /// can report which wave is being packed without being told.
+    pub const FACTORY_PACK_WAVE: &str = "docs/platform/factory_pack_wave";
+
+    /// Specifications the schema checks read: the mission-creator architecture set.
+    pub const SPECIFICATION_DOCS_DIR: &str = "docs/specs/Mission_Creator_Architecture";
+
+    /// The frontend roadmap, whose slice headers must agree with the registry.
+    pub const FRONTEND_ROADMAP: &str = "docs/website/frontend/ROADMAP.md";
+
+    /// The frontend document index, whose entries must resolve.
+    pub const FRONTEND_INDEX: &str = "docs/website/frontend/INDEX.md";
+
+    /// The mission editor's surface specification.
+    pub const MISSION_EDITOR_SURFACE: &str = "docs/website/frontend/pages/mission-editor.md";
+
+    /// The starting instructions an agent working on the game mod reads first.
+    pub const MOD_AGENT_START: &str = "docs/mod/CLAUDE-CODE-START.md";
+
+    /// Where documentation belongs, named by the refusal that fires when markdown is committed
+    /// inside an application or asset tree instead.
+    pub const LAYOUT_TARGET_DIR: &str = "docs/website/";
+
+    /// Installing and operating the website host: units, Caddy, backups.
+    pub const HOME_SERVER_RUNBOOK: &str = "docs/website/HOME_SERVER.md";
+
+    /// Standing up and operating the dedicated game server.
+    pub const STAGING_SERVER_RUNBOOK: &str = "docs/mod/STAGING-SERVER.md";
+
+    /// The slice worktree lifecycle the mod wave driver automates.
+    pub const SLICE_WORKFLOW_RUNBOOK: &str = "docs/mod/SLICE_WORKFLOW.md";
+
+    /// The platform wave lifecycle `cargo xtask platform wave` automates.
+    pub const PLATFORM_FACTORY_RUNBOOK: &str = "docs/platform/PLATFORM_FACTORY.md";
+
+    /// The mod's design authority, including the upstream-code oracle lanes.
+    pub const MOD_DESIGN: &str = "docs/mod/TBD_MOD_DESIGN.md";
+
+    /// How to run the spawn-determinism gate, which needs a live Workbench.
+    pub const SPAWN_DETERMINISM_RUNBOOK: &str = "docs/mod/SPAWN_DETERMINISM.md";
+}
+
 #[cfg(test)]
 #[path = "../tests/repository_layout_tests.rs"]
 mod tests;

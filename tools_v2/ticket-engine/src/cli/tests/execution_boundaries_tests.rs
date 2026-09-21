@@ -76,7 +76,10 @@ fn executor_failure_stops_the_batch() {
 #[test]
 fn cleanup_resolution_preserves_defaults_and_performs_no_deletion() {
     let fixture = Fixture::new();
-    let target = fixture.0.join(".ai/artifacts/worktrees/TBD-T-001");
+    let target = fixture
+        .0
+        .join(crate::repository::WORKTREES_DIR)
+        .join("TBD-T-001");
     fs::create_dir_all(&target).unwrap();
     fs::write(target.join("keep.txt"), "retained").unwrap();
     let resolved = cleanup_targets(&fixture.0, &executable_registry(), "T-001").unwrap();
@@ -91,10 +94,10 @@ fn cleanup_resolution_preserves_defaults_and_performs_no_deletion() {
 #[test]
 fn cleanup_resolution_preserves_absolute_base_and_explicit_branch() {
     let fixture = Fixture::new();
-    fs::create_dir_all(fixture.0.join(".ai/tickets")).unwrap();
+    fs::create_dir_all(fixture.0.join(crate::repository::TICKETS_DIR)).unwrap();
     let base = fixture.0.join("custom-worktrees");
     fs::write(
-        fixture.0.join(".ai/tickets/queue.json"),
+        fixture.0.join(crate::repository::QUEUE_JSON),
         serde_json::to_vec(&json!({"worktree_base": base})).unwrap(),
     )
     .unwrap();

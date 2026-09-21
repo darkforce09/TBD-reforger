@@ -310,7 +310,7 @@ fn ship_leaves_unrelated_parent_active() {
 #[test]
 fn mark_ready_backfills_and_gates() {
     let root = scratch_root("mark-ready");
-    fs::create_dir_all(root.join("docs/plans")).unwrap();
+    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
     fs::write(root.join("docs/plans/t-1_plan.md"), "# plan\n").unwrap();
     fs::write(root.join("docs/plans/t-2_plan.md"), "# plan\n").unwrap();
@@ -372,7 +372,7 @@ fn mark_ready_backfills_and_gates() {
 #[test]
 fn mark_ready_refuses_empty_ready_tier_fields() {
     let root = scratch_root("mark-ready-tier");
-    fs::create_dir_all(root.join("docs/plans")).unwrap();
+    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
     fs::write(root.join("docs/plans/t-3_plan.md"), "# plan\n").unwrap();
     let mut c = Corpus::new(&root);
@@ -556,7 +556,7 @@ fn post_image_main_goal_gate_on_changed_live_work() {
 #[test]
 fn mark_ready_plan_gate_refuses_and_resolves() {
     let root = scratch_root("mark-ready-plan");
-    fs::create_dir_all(root.join("docs/plans")).unwrap();
+    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
     let mut c = Corpus::new(&root);
     c.tickets.insert(
@@ -625,7 +625,7 @@ fn mark_ready_refuses_missing_spec_and_missing_file() {
 #[test]
 fn mark_ready_without_order_refuses() {
     let root = scratch_root("mark-ready-order");
-    fs::create_dir_all(root.join("docs/plans")).unwrap();
+    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
     fs::write(root.join("docs/plans/t-1_plan.md"), "# plan\n").unwrap();
     let mut c = Corpus::new(&root);

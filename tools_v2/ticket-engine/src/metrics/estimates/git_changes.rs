@@ -4,14 +4,18 @@ use super::*;
 use anyhow::Context;
 
 // ── LOC mining (the diff_loc input) ────────────────────────────────────────────────────
-/// The bookkeeping exclusion (documented in [`FACTOR_DOC_REL`]): paths whose churn
-/// is registry/sync/lockfile noise, not implementation work. Matched against the
-/// raw numstat path text (rename syntax `old => new` is matched as-is; `.ai/...`
-/// renames keep their prefix, so the rule still holds).
+/// The bookkeeping exclusion, documented in [`TOKEN_ESTIMATE_FACTOR_DOC`]: paths whose churn is
+/// registry, sync and lockfile noise rather than implementation work. Matched against the raw
+/// numstat path text — rename syntax `old => new` is matched as-is, and a rename inside an
+/// excluded tree keeps that tree's prefix, so the rule still holds.
 pub fn is_excluded_path(path: &str) -> bool {
-    path.starts_with(".ai/")
-        || (path.starts_with("docs/TICKET_") && path.ends_with(".md"))
-        || path == "Cargo.lock"
+    use crate::repository::documentation::{
+        GENERATED_QUEUE_VIEW_PREFIX, NUMSTAT_EXCLUDED_PREFIXES,
+    };
+    NUMSTAT_EXCLUDED_PREFIXES.iter().any(|prefix| {
+        path.starts_with(prefix)
+            && (*prefix != GENERATED_QUEUE_VIEW_PREFIX || path.ends_with(".md"))
+    }) || path == "Cargo.lock"
         || path.ends_with("/Cargo.lock")
 }
 

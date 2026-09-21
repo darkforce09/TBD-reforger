@@ -7,7 +7,9 @@ fn repo_root() -> std::path::PathBuf {
 }
 
 fn parse_file(root: &Path, id: &str) -> Ticket {
-    let text = std::fs::read_to_string(root.join(format!(".ai/tickets/{id}.toml"))).unwrap();
+    let text =
+        std::fs::read_to_string(root.join(format!("{}/{id}.toml", crate::repository::TICKETS_DIR)))
+            .unwrap();
     parse_ticket_toml(&text).unwrap_or_else(|e| panic!("{id}: {e}"))
 }
 

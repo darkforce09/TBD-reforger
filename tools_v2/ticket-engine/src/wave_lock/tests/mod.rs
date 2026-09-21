@@ -5,7 +5,7 @@ use std::fs;
 fn scratch(tag: &str, files: &[(&str, &str)]) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("t912-lock-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    let tickets = dir.join(".ai/tickets");
+    let tickets = dir.join(crate::repository::TICKETS_DIR);
     fs::create_dir_all(&tickets).unwrap();
     fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
     // T-917.2: `Corpus::load` resolves scope legality fail-closed — every scratch
@@ -107,7 +107,7 @@ fn dissolved_by_id(name: &str) -> std::path::PathBuf {
     );
     for (id, order, owns) in [("T-1", 10, "a.rs"), ("T-2", 20, "b.rs")] {
         fs::write(
-            dir.join(format!(".ai/tickets/{id}.toml")),
+            dir.join(format!("{}/{id}.toml", crate::repository::TICKETS_DIR)),
             work(id, order, &[owns], &[], "shipped"),
         )
         .unwrap();

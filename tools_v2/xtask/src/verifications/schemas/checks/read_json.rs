@@ -10,7 +10,7 @@ pub(super) fn schema_root(root: &Path) -> PathBuf {
 }
 
 pub(super) fn spec_dir(root: &Path) -> PathBuf {
-    root.join("docs/specs/Mission_Creator_Architecture")
+    root.join(crate::core::repository_layout::documentation::SPECIFICATION_DOCS_DIR)
 }
 
 /// Print a FAIL header + errors and return exit code 1; or the OK line and 0.

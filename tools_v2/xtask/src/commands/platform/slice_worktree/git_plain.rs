@@ -155,7 +155,7 @@ pub(super) fn dispatch(root: &Path, args: &[String]) -> Result<u8> {
         // The `*)` arm, which catches the EMPTY command too — and `create`, a spelling the factory
         // docs warn about twice, so it prints usage rather than doing anything.
         _ => {
-            print!("{USAGE}");
+            print!("{}", usage());
             Ok(2)
         }
     }
@@ -175,7 +175,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     } else {
         slice_arg.to_string()
     };
-    let dir = format!("{BASE}/{slice}");
+    let dir = format!("{WORKTREES_DIR}/{slice}");
     let branch = format!("slice/{slice}");
     let abs_dir = root.join(&dir);
 
@@ -185,7 +185,8 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     if abs_dir.is_dir() {
         println!("already exists: {dir} (re-checking oracles)");
     } else {
-        fs::create_dir_all(root.join(BASE)).with_context(|| format!("mkdir -p {BASE}"))?;
+        fs::create_dir_all(root.join(WORKTREES_DIR))
+            .with_context(|| format!("mkdir -p {WORKTREES_DIR}"))?;
         // Branch from the CURRENT main tip so the agent gets the committed factory.
         let refname = format!("refs/heads/{branch}");
         let have = gp(root, &["show-ref", "--verify", "--quiet", &refname])?;
@@ -366,7 +367,7 @@ pub(super) fn cmd_merge(root: &Path, slice_arg: &str) -> Result<u8> {
     // `slice/T-181.7` and never says so. Preserved; `sub_slice_shares_the_parent_tree` pins it.
     let slice = parent_slice(slice_arg);
     let branch = format!("slice/{slice}");
-    let dir = format!("{BASE}/{slice}");
+    let dir = format!("{WORKTREES_DIR}/{slice}");
     let abs_dir = root.join(&dir);
     if !abs_dir.is_dir() {
         eprintln!("no worktree at {dir}");

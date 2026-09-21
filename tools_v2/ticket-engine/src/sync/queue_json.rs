@@ -40,7 +40,7 @@ pub fn generate_queue_json(registry: &Value) -> Value {
         "_comment": comment,
         "batch_size": 10,
         "concurrency": 3,
-        "worktree_base": ".ai/artifacts/worktrees",
+        "worktree_base": crate::repository::WORKTREES_DIR,
         "git_base": "main",
         "tickets": tickets_out,
     })

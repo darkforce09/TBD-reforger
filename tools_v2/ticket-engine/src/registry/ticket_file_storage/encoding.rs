@@ -1,4 +1,4 @@
-//! Encoding.
+//! The on-disk encoding of one ticket: JSON value to TOML text and back.
 
 use super::*;
 use anyhow::Context;
@@ -10,11 +10,11 @@ pub(super) const ORD_KEY: &str = "__ord";
 pub(super) const KEYS_KEY: &str = "__keys";
 
 pub fn tickets_dir(root: &Path) -> PathBuf {
-    root.join(".ai/tickets")
+    root.join(crate::repository::TICKETS_DIR)
 }
 
 pub fn root_marker_path(root: &Path) -> PathBuf {
-    tickets_dir(root).join("ROOT")
+    root.join(crate::repository::ROOT_MARKER)
 }
 
 pub fn parent_toml_path(root: &Path, id: &str) -> PathBuf {

@@ -207,8 +207,16 @@ fn land_stamp_two_tickets_touches_only_metrics_never_ticket_tomls() {
         String::from_utf8_lossy(&out.stdout).into_owned()
     };
     git(&["init", "-q"]);
-    fs::write(tmp.join(".ai/tickets/T-990.toml"), "id = \"T-990\"\n").unwrap();
-    fs::write(tmp.join(".ai/tickets/T-991.toml"), "id = \"T-991\"\n").unwrap();
+    fs::write(
+        tmp.join(crate::repository::TICKETS_DIR).join("T-990.toml"),
+        "id = \"T-990\"\n",
+    )
+    .unwrap();
+    fs::write(
+        tmp.join(crate::repository::TICKETS_DIR).join("T-991.toml"),
+        "id = \"T-991\"\n",
+    )
+    .unwrap();
     write_run_file(
         &tmp,
         &rec(

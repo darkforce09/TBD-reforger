@@ -11,14 +11,14 @@ use std::path::{Path, PathBuf};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 use walkdir::WalkDir;
+
+use crate::repository::{METRICS_DIR, METRICS_SCHEMA};
+
 pub mod estimates;
 
 mod model;
 
-pub use model::{
-    METRICS_DIR_REL, METRICS_SCHEMA_REL, RunRecord, TokensConsumed, elapsed_sec, metrics_root,
-    validate_record,
-};
+pub use model::{RunRecord, TokensConsumed, elapsed_sec, metrics_root, validate_record};
 
 mod token_usage;
 

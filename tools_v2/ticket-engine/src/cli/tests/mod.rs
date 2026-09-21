@@ -61,36 +61,37 @@ fn scratch_registry(tag: &str) -> PathBuf {
     use crate::{Domain, ProgramTicket, ScopeV2, Status, Ticket, WorkTicket};
     let dir = std::env::temp_dir().join(format!("t916-cmds-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
+    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
     fs::create_dir_all(dir.join("docs")).unwrap();
     fs::write(
-        dir.join(".ai/tickets/ROOT"),
+        dir.join(crate::repository::ROOT_MARKER),
         "# ticket-registry root marker\n",
     )
     .unwrap();
     // The real schema: a stub would silently weaken the very preflight these tests keep
     // in front of the typed ops.
     fs::copy(
-        worktree_root().join(".ai/tickets/schema.json"),
-        dir.join(".ai/tickets/schema.json"),
+        worktree_root().join(crate::repository::SCHEMA),
+        dir.join(crate::repository::SCHEMA),
     )
     .unwrap();
-    fs::write(dir.join(".ai/tickets/scope-vocab.toml"), "[repo.docs]\n").unwrap();
+    fs::write(dir.join(crate::repository::SCOPE_VOCAB), "[repo.docs]\n").unwrap();
     // T-917.5/.6: the estimates schema rides along so a stamp-sha-generated
     // estimate validates under the REAL contract inside the scratch too.
     fs::copy(
-        worktree_root().join(crate::metrics::estimates::ESTIMATES_SCHEMA_REL),
-        dir.join(crate::metrics::estimates::ESTIMATES_SCHEMA_REL),
+        worktree_root().join(crate::repository::ESTIMATES_SCHEMA),
+        dir.join(crate::repository::ESTIMATES_SCHEMA),
     )
     .unwrap();
     fs::write(dir.join("docs/spec.md"), "# spec\n").unwrap();
     fs::write(dir.join("docs/child-spec.md"), "# child spec\n").unwrap();
     // T-917.6 plan ready-gate: every ready-class WORK ticket carries a plan that
     // exists on disk (the live-tree contract this fixture must now mirror).
-    fs::create_dir_all(dir.join("docs/plans")).unwrap();
+    fs::create_dir_all(dir.join(crate::repository::documentation::PLANS_DIR)).unwrap();
     for plan in ["t-001_1_plan.md", "t-002_plan.md"] {
         fs::write(
-            dir.join("docs/plans").join(plan),
+            dir.join(crate::repository::documentation::PLANS_DIR)
+                .join(plan),
             "# plan\n\n## Context\n\n## Approach\n\n## Risks\n\n## Verification\n",
         )
         .unwrap();
@@ -239,15 +240,17 @@ fn scratch_registry(tag: &str) -> PathBuf {
 
 fn parse_scratch_ticket(root: &Path, id: &str) -> crate::Ticket {
     crate::parse_ticket_toml(
-        &fs::read_to_string(root.join(format!(".ai/tickets/{id}.toml"))).unwrap(),
+        &fs::read_to_string(root.join(format!("{}/{id}.toml", crate::repository::TICKETS_DIR)))
+            .unwrap(),
     )
     .unwrap_or_else(|e| panic!("{id}: {e}"))
 }
 
 fn queue_rows(root: &Path) -> Vec<(String, String)> {
-    let queue: Value =
-        serde_json::from_str(&fs::read_to_string(root.join(".ai/tickets/queue.json")).unwrap())
-            .unwrap();
+    let queue: Value = serde_json::from_str(
+        &fs::read_to_string(root.join(crate::repository::QUEUE_JSON)).unwrap(),
+    )
+    .unwrap();
     queue["tickets"]
         .as_array()
         .unwrap()

@@ -43,11 +43,11 @@ fn counted_shape_from_live_file() {
 fn missing_file_is_red_naming_path() {
     let dir = std::env::temp_dir().join(format!("t917-vocab-missing-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
+    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
     let errs = check_as_errors(&dir);
     assert_eq!(errs.len(), 1, "exactly one missing-file error: {errs:?}");
     assert!(
-        errs[0].contains("missing") && errs[0].contains(VOCAB_REL),
+        errs[0].contains("missing") && errs[0].contains(SCOPE_VOCAB),
         "must name the required path: {}",
         errs[0]
     );
@@ -65,18 +65,18 @@ fn duplicate_surface_red_names_file_parent_value() {
     );
 
     let planted = GREEN.replace("\"map_canvas\", \"toolbelt\"", "\"toolbelt\", \"toolbelt\"");
-    fs::write(dir.join(VOCAB_REL), &planted).unwrap();
+    fs::write(dir.join(SCOPE_VOCAB), &planted).unwrap();
     let errs = check_as_errors(&dir);
     assert_eq!(errs.len(), 1, "one duplicate-surface error: {errs:?}");
     assert!(
-        errs[0].contains(VOCAB_REL)
+        errs[0].contains(SCOPE_VOCAB)
             && errs[0].contains("website.frontend.mission_creator")
             && errs[0].contains("duplicate surface \"toolbelt\""),
         "must name file + parent + value: {}",
         errs[0]
     );
 
-    fs::write(dir.join(VOCAB_REL), GREEN).unwrap();
+    fs::write(dir.join(SCOPE_VOCAB), GREEN).unwrap();
     assert!(check_as_errors(&dir).is_empty(), "restore must be green");
     fs::remove_dir_all(&dir).unwrap();
 }
@@ -101,7 +101,7 @@ fn unsorted_keys_are_red_per_level() {
     );
 
     fs::write(
-        dir.join(VOCAB_REL),
+        dir.join(SCOPE_VOCAB),
         "[website.shell]\nnav = []\n\n[website.frontend]\nmission_creator = []\n",
     )
     .unwrap();
@@ -112,7 +112,7 @@ fn unsorted_keys_are_red_per_level() {
     );
 
     fs::write(
-        dir.join(VOCAB_REL),
+        dir.join(SCOPE_VOCAB),
         "[website.frontend]\nmission_creator = []\n\n[engine.core]\n",
     )
     .unwrap();
@@ -151,7 +151,7 @@ fn empty_values_are_red() {
         "empty surface string must be red: {errs:?}"
     );
 
-    fs::write(dir.join(VOCAB_REL), "[website.frontend]\n\"\" = []\n").unwrap();
+    fs::write(dir.join(SCOPE_VOCAB), "[website.frontend]\n\"\" = []\n").unwrap();
     let errs = check_as_errors(&dir);
     assert!(
         errs.iter()
@@ -172,7 +172,7 @@ fn duplicate_component_key_is_parse_red() {
     let errs = check_as_errors(&dir);
     assert_eq!(errs.len(), 1, "one parse error: {errs:?}");
     assert!(
-        errs[0].contains(VOCAB_REL) && errs[0].contains("TOML parse"),
+        errs[0].contains(SCOPE_VOCAB) && errs[0].contains("TOML parse"),
         "duplicate key must surface as a parse red naming the file: {}",
         errs[0]
     );
@@ -193,7 +193,7 @@ fn wrong_value_shapes_are_red() {
     );
 
     fs::write(
-        dir.join(VOCAB_REL),
+        dir.join(SCOPE_VOCAB),
         "[website.frontend]\nmission_creator = \"map_canvas\"\n",
     )
     .unwrap();
@@ -206,7 +206,7 @@ fn wrong_value_shapes_are_red() {
     );
 
     fs::write(
-        dir.join(VOCAB_REL),
+        dir.join(SCOPE_VOCAB),
         "[website.frontend]\nmission_creator = [7]\n",
     )
     .unwrap();

@@ -11,10 +11,10 @@ pub(super) static PRIORITY_P: LazyLock<Regex> =
 pub(super) const SCHEMA_ERROR_CAP: usize = 100;
 
 pub(super) fn ticket_schema_path(root: &Path) -> PathBuf {
-    root.join(".ai/tickets/schema.json")
+    root.join(crate::repository::SCHEMA)
 }
 
-/// Validate `registry` against Draft 2020-12 `.ai/tickets/schema.json`.
+/// Validate `registry` against the Draft 2020-12 ticket schema.
 /// Missing/unreadable/uncompilable schema is itself a hard failure (never silent skip).
 pub fn validate_registry_schema(root: &Path, registry: &Value) -> Vec<String> {
     let path = ticket_schema_path(root);

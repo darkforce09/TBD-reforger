@@ -6,7 +6,7 @@ pub const FORBIDDEN_PHANTOM_IDS: &[&str] = &[
     "T-044", "T-051",
 ];
 
-/// Note: en-dashes U+2013 in P0–P2 / P0–P3 (matches Python STRICT_LEGACY exactly).
+/// En-dashes U+2013 in `P0–P2` and `P0–P3`: the documents spell them that way.
 pub const STRICT_LEGACY: &str = concat!(
     r"\bP[0-3]-[0-9]{2}\b|\bP[0-3]-0[0-9]\b",
     r"|Eden P[0-3]|Eden P0|P0–P2|P0-P3|P0–P3",
@@ -17,14 +17,6 @@ pub const STRICT_LEGACY: &str = concat!(
     r"|\bA-0[0-9]\b|\bB-0[0-9]\b|\bC-0[0-9]\b",
     r#"|\"gap\":\s*\"P[0-3]-"#,
 );
-
-pub const EXEMPT_SCAN_PREFIXES: &[&str] = &[
-    ".ai/artifacts/eden-wiki/",
-    "frontend/src/stitch-exports/",
-    "docs/specs/macOS_Blueprints/",
-    "docs/specs/Mission_Creator_Mock_Up/",
-    ".stitch-backup-exports/",
-];
 
 pub const NEXT_MARKER_START: &str = "<!-- ticket-sync:next:start -->";
 pub const NEXT_MARKER_END: &str = "<!-- ticket-sync:next:end -->";

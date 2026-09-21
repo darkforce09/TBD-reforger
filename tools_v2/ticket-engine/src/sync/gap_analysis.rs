@@ -6,7 +6,7 @@ use std::path::Path;
 use std::sync::LazyLock;
 
 use crate::registry::{str_field, tickets};
-use crate::repository::gap_analysis_path;
+use crate::repository::documentation::GAP_ANALYSIS;
 
 static CHECKMARK_TICKET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"✅\s*(T-\d{3})").unwrap());
 static SEP_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\|\s*-+\s*\|").unwrap());
@@ -120,7 +120,7 @@ fn write_gap_tables(doc: &GapDoc, ticket_column: bool) -> String {
 }
 
 pub fn test_gap_analysis_round_trip(root: &Path) -> Result<()> {
-    let path = gap_analysis_path(root);
+    let path = root.join(GAP_ANALYSIS);
     if !path.is_file() {
         return Ok(());
     }
@@ -195,7 +195,7 @@ fn lookup_ticket_for_gap(registry: &Value, eden_id: &str, tbd_id: &str, gap_note
 
 pub fn sync_gap_analysis_ticket_column(root: &Path, registry: &Value) -> Result<()> {
     test_gap_analysis_round_trip(root)?;
-    let path = gap_analysis_path(root);
+    let path = root.join(GAP_ANALYSIS);
     if !path.is_file() {
         return Ok(());
     }

@@ -23,7 +23,7 @@ fn write_registry(root: &Path, slice_plan: &str) {
         close = r#"}}]}"#,
     );
     let v: serde_json::Value = serde_json::from_str(&body).unwrap();
-    ticket_engine::registry::legacy_storage::save_toml_tree(root, &v).unwrap();
+    ticket_engine::registry::ticket_file_storage::save_toml_tree(root, &v).unwrap();
 }
 
 /// A stub `.ai/tickets/wave.lock` — the T-912.2 successor to the stub TSVs these tests wrote.
@@ -87,7 +87,7 @@ fn land_refuses_dirty_worktree() {
         .args(["init", "-q"])
         .current_dir(&root)
         .status();
-    let wt = root.join(BASE).join("T-181.99");
+    let wt = root.join(WORKTREES_DIR).join("T-181.99");
     fs::create_dir_all(&wt).unwrap();
     let _ = Command::new("git")
         .args(["init", "-q"])

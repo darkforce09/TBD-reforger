@@ -137,7 +137,7 @@ pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
 /// The program-wide cartographic aggregator: committed slice logs plus live sub-verifiers.
 pub fn verify_cartographic() -> Result<u8> {
     let root = repo_root();
-    let artifacts = root.join(".ai/artifacts");
+    let artifacts = root.join(crate::repository_layout::OPERATIONS_LOG_DIR);
     let failures = std::cell::Cell::new(0usize);
     macro_rules! pass {
         ($($a:tt)*) => { println!("  PASS  {}", format!($($a)*)) };

@@ -270,7 +270,8 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
             "[SKIP] V2–V4 API smoke — routes BLOCKED on T-092 (not in current backend; would 404)."
         );
         println!(
-            "       Set TBD_RUN_T092_SMOKE=1 to force once T-092 ships. See docs/mod/STAGING-SERVER.md."
+            "       Set TBD_RUN_T092_SMOKE=1 to force once those routes ship. See {}.",
+            crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
         );
     } else if cli.dry_run {
         println!("[dry-run] curl mission + roster + 401 on server localhost");

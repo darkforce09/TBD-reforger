@@ -33,7 +33,7 @@ Where the measured value differs from the value recorded in the plan, the measur
 | `cargo xtask verify file-length` | exit 0; scanned 2529 `.rs` files, 0 violations |
 | `cargo xtask ci ci-local` | exit 0; every step green: editorconfig, the four language bans, engine layers, rust fmt, clippy and build, the wasm build, the backend integration suite of 294 tests against the running database, coding standards, document layout, the Leptos build, schema validation, contract citations, the staging compose-path check, the mission upload size-gate check and the schema-parity check. The size-gate check prints its own RED proofs of non-vacuity, which are part of its PASS |
 
-Test totals per target: developer-tools library 254 passed and 4 ignored, its six binaries carrying no tests; ticket-engine library 213 passed plus 1 compile-failure test; ticketboard 170 passed and 3 ignored; verification-core library 68 passed plus 1 documentation test; xtask 650 passed. The 1364 names behind those totals are listed under `Baseline test inventory` at the end of this document, so a later phase can show that a renamed test is the same test and that no live test disappeared; a phase that renames a test updates its line there.
+Test totals per target: developer-tools library 254 passed and 4 ignored, its six binaries carrying no tests; ticket-engine library 213 passed plus 1 compile-failure test; ticketboard 170 passed and 3 ignored; verification-core library 68 passed plus 1 documentation test; xtask 650 passed. The names behind those totals are listed under `Test inventory` at the end of this document, so a later phase can show that a renamed test is the same test and that no live test disappeared; a phase that renames a test updates its line there.
 
 ### Environment
 
@@ -71,9 +71,9 @@ This phase measures and edits no code, so it fixes nothing. Everything it found 
 | `git status --porcelain` before the commit | only the new handoff file | only `tools_v2/PHASE_FIVE_HANDOFF.md` (`?? ` unstaged, `A  ` staged) |
 | `git status --porcelain` after the commit | empty | empty |
 
-## Baseline test inventory
+## Test inventory
 
-The 1364 test functions the five tooling crates run at the baseline commit, one per line as `target | test path`. A phase that renames a test updates its line here, so the list keeps naming the tests that exist.
+The 1361 test functions the five tooling crates run, one per line as `target | test path`. A phase that renames, adds or deletes a test updates this list, so it keeps naming the tests that exist.
 
 ```text
 developer_tools | blueprint::archive_emit::tests::archive_boot_splits_the_whole_corpus_and_never_censuses_a_blocking_prefab
@@ -209,6 +209,10 @@ developer_tools | enfusion_tooling::apidoc::tests::parses_index_rows
 developer_tools | enfusion_tooling::apidoc::tests::strips_entities
 developer_tools | enfusion_tooling::citations::tests::extracts_markers
 developer_tools | enfusion_tooling::citations::tests::ignores_prose_without_markers
+developer_tools | enfusion_tooling::enfusion_mcp_entrypoint::tests::a_root_without_an_installed_package_falls_through_to_the_download_tier
+developer_tools | enfusion_tooling::enfusion_mcp_entrypoint::tests::an_installed_package_resolves_to_the_pinned_module
+developer_tools | enfusion_tooling::enfusion_mcp_entrypoint::tests::every_source_has_a_self_describing_label
+developer_tools | enfusion_tooling::enfusion_mcp_entrypoint::tests::the_process_pattern_is_the_escaped_installed_module_suffix
 developer_tools | enfusion_tooling::refuse_empty_tests::refuse_empty_write_ok_when_nonempty
 developer_tools | enfusion_tooling::refuse_empty_tests::refuse_empty_write_reds_on_empty
 developer_tools | enfusion_tooling::source::tests::demangles_doxygen_names
@@ -253,8 +257,8 @@ developer_tools | map_verification::terrain_manifest::tests::a_row_shape_this_bu
 developer_tools | map_verification::terrain_manifest::tests::dangling_binary_paths_are_rejected_one_by_one
 developer_tools | map_verification::terrain_manifest::tests::every_binary_block_is_accepted_when_its_paths_exist
 developer_tools | map_verification::terrain_manifest::tests::live_pod_row_doc_matches_the_rust_pod
-developer_tools | map_verification::terrain_manifest::tests::pod_row_doc_reds_on_a_shifted_offset_and_on_a_missing_block
 developer_tools | map_verification::terrain_manifest::tests::occluder_init_still_fetches_the_blas_manifest_for_hot_chunks
+developer_tools | map_verification::terrain_manifest::tests::pod_row_doc_reds_on_a_shifted_offset_and_on_a_missing_block
 developer_tools | map_verification::terrain_manifest::tests::the_live_everon_manifest_declares_the_cutover_blocks_and_passes
 developer_tools | map_verification::world_line_of_sight::tests::cell_18_0_loads_with_no_proxy_rows_and_names_the_farmhouse
 developer_tools | map_verification::world_line_of_sight::tests::farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture
@@ -265,6 +269,7 @@ developer_tools | map_verification::world_line_of_sight::tests::world_parity_wor
 developer_tools | repository_layout::tests::every_declared_location_exists_in_the_checkout
 developer_tools | repository_layout::tests::export_scratch_is_named_for_its_island_and_sits_outside_the_served_tree
 developer_tools | repository_layout::tests::locations_resolve_against_the_given_root
+developer_tools | repository_layout::tests::the_enfusion_mcp_entrypoint_sits_inside_its_npm_package_directory
 developer_tools | repository_paths::tests::compiler_fixtures_resolve_from_root_crate_and_source_directory
 developer_tools | repository_paths::tests::missing_repository_marker_is_an_error
 developer_tools | world_export_pipeline::binary_emit::tests::empty_chunk_is_a_bare_header
@@ -334,6 +339,10 @@ developer_tools | world_export_pipeline::vegetation_density::tests::encode_decod
 developer_tools | world_export_pipeline::vegetation_density::tests::sample_corners_reads_the_corner_of_a_world_position
 developer_tools | world_export_pipeline::vegetation_density::tests::seeded_random_corner_partition_identity
 developer_tools | world_export_pipeline::vegetation_density::tests::synthetic_tile_emit_decode_round_trip
+ticket_engine | cli::shipping::commit_subjects::tests::mine_subjects_live_repo_smoke
+ticket_engine | cli::shipping::commit_subjects::tests::shape_predicates
+ticket_engine | cli::shipping::commit_subjects::tests::subject_id_boundary_pins
+ticket_engine | cli::shipping::commit_subjects::tests::utc_normalization
 ticket_engine | cli::tests::command_mutation_tests::add_refuses_invalid_registry_without_write
 ticket_engine | cli::tests::command_mutation_tests::advance_slice_refuses_invalid_registry_without_write
 ticket_engine | cli::tests::command_mutation_tests::child_ship_end_to_end_typed_path
@@ -364,23 +373,6 @@ ticket_engine | encoding::tests::encoding_roundtrip_tests::timestamps_roundtrip_
 ticket_engine | encoding::tests::encoding_roundtrip_tests::user_story_alias_parses_and_emits_main_goal
 ticket_engine | encoding::tests::encoding_roundtrip_tests::v1_nested_scope_refuses
 ticket_engine | encoding::tests::encoding_roundtrip_tests::v2_keys_land_in_canonical_slots
-ticket_engine | maintenance::body_quarantine::tests::body_quarantine_tests::parked_ticket_renders_canonically
-ticket_engine | maintenance::body_quarantine::tests::body_quarantine_tests::quarantine_moves_walls_reversibly_then_second_run_is_empty
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::chrome_map_is_deterministic_no_marker
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::chromeless_editor_is_owns_inferred_marked
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::editor_owns_inference_dominant_component
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::mod_feature_infers_from_enfusion_segments
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::multi_layer_takes_first
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::repo_xtask_component_prefix_rules
-ticket_engine | maintenance::scope_migration::tests::scope_mapping_tests::unmapped_shapes_refuse_naming_ticket
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::method2_descriptions_match_the_derivation
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::mine_subjects_live_repo_smoke
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::odd_shipped_at_is_untouched_and_reported
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::scratch_backfill_mines_interpolates_and_is_idempotent
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::shape_predicates
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::stray_date_shaped_shipped_at_resolves
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::subject_id_boundary_pins
-ticket_engine | maintenance::timestamp_backfill::tests::timestamp_provenance_tests::utc_normalization
 ticket_engine | metrics::estimates::tests::estimate_provenance_tests::business_rules_red
 ticket_engine | metrics::estimates::tests::estimate_provenance_tests::collect_numstat_live_repo_smoke
 ticket_engine | metrics::estimates::tests::estimate_provenance_tests::estimates_schema_red_green
@@ -450,26 +442,29 @@ ticket_engine | ops::tests::status_and_shipping_tests::ship_refuses_created_at_l
 ticket_engine | ops::tests::status_and_shipping_tests::ship_refuses_empty_ready_tier_fields
 ticket_engine | ops::tests::status_and_shipping_tests::stamp_sha_writes_noops_and_refuses
 ticket_engine | proptest_roundtrip::parse_render_work_queued_roundtrip
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::derive_next_id_is_max_plus_one
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::dual_read_json_then_toml
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::frozen_27_matches_live_corpus
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::no_ticket_lost_set_equality
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::on_disk_keys_are_mapped_or_allowed_new
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::perturb_summary_makes_cmp_red
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::ticket_file_key_set_matches_consts
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::toml_roundtrip_is_byte_identical_to_canonical_monolith
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::user_story_alias_maps_to_main_goal
-ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::write_live_toml_tree
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::cancelled_counts_as_shipped
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::registry_poisons_on_a_ticket_without_an_id
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::registry_unreadable_is_not_shipped
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::program_children_parse_as_work_and_their_parents_list_them
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::mutators_never_reach_the_value_writer_pin
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::ready_class_tickets_carry_spec_main_goal_and_acceptance
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::derive_next_id_is_max_plus_one
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::frozen_27_matches_live_corpus
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::no_ticket_lost_set_equality
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::on_disk_keys_are_mapped_or_allowed_new
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::perturb_summary_makes_cmp_red
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::ticket_file_key_set_matches_consts
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::toml_roundtrip_is_byte_identical_to_the_registry_document
+ticket_engine | registry::ticket_file_storage::tests::ticket_file_storage_tests::user_story_alias_maps_to_main_goal
+ticket_engine | registry::ticket_status_history::tests::dual_read_json_then_toml
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::engine_scope_table_projects_to_the_engine_domain
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::mutators_never_reach_the_value_writer_pin
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::program_children_parse_as_work_and_their_parents_list_them
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::ready_class_tickets_carry_spec_main_goal_and_acceptance
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::shipped_ticket_keeps_its_shipped_at_commit
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::targets_from_scope_v2_outputs
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::value_to_ticket_accepts_ticket_to_value_output
+ticket_engine | repository::tests::a_handoff_document_lands_in_the_artifact_tree
+ticket_engine | repository::tests::a_plan_path_is_the_lowercased_id_under_the_plans_directory
+ticket_engine | repository::tests::every_ticket_target_has_a_sparse_checkout_set
+ticket_engine | repository::tests::the_root_sparse_set_carries_the_task_surface
 ticket_engine | store::tests::corpus_storage_tests::corpus_roundtrip_real_tree_byte_identical
 ticket_engine | store::tests::corpus_storage_tests::delete_files_refuses_live_ids
 ticket_engine | store::tests::corpus_storage_tests::derive_next_parent_id_ignores_children
@@ -518,9 +513,9 @@ ticket_engine | validation::vocabulary::tests::vocabulary_shape_tests::unsorted_
 ticket_engine | validation::vocabulary::tests::vocabulary_shape_tests::wrong_value_shapes_are_red
 ticket_engine | vocab::tests::vocabulary_resolution_tests::legality_walks_the_tree
 ticket_engine | vocab::tests::vocabulary_resolution_tests::missing_file_refuses_naming_path
+ticket_engine | wave_lock::archived_wave_plans::tests::archived_wave_plan_parsing_tests::parse_rows_drops_comments_header_blanks_and_short_lines
 ticket_engine | wave_lock::collisions::tests::collision_source_tests::facts_come_from_ticket_files
 ticket_engine | wave_lock::collisions::tests::collision_source_tests::hardcoded_dep_tables_stay_deleted
-ticket_engine | wave_lock::legacy_plan::tests::legacy_plan_parsing_tests::parse_rows_drops_comments_header_blanks_and_short_lines
 ticket_engine | wave_lock::tests::emptied_wave_tests::check_reds_on_a_perturbed_emptied_entry_until_restored
 ticket_engine | wave_lock::tests::emptied_wave_tests::lock_without_an_emptied_section_parses_and_renders_without_one
 ticket_engine | wave_lock::tests::emptied_wave_tests::two_emptied_waves_pend_ascending_and_open_waves_number_past_both
@@ -534,12 +529,12 @@ ticket_engine | wave_lock::tests::packing_and_history_tests::compile_render_is_d
 ticket_engine | wave_lock::tests::packing_and_history_tests::dependent_packs_strictly_after_unshipped_dependency
 ticket_engine | wave_lock::tests::packing_and_history_tests::full_ship_freezes_the_wave_into_emptied_and_open_waves_number_past_it
 ticket_engine | wave_lock::tests::packing_and_history_tests::head_itself_as_the_marker_counts
+ticket_engine | wave_lock::tests::packing_and_history_tests::lock_without_a_wave_base_parses_as_zero
 ticket_engine | wave_lock::tests::packing_and_history_tests::missing_lock_is_a_did_not_run_refusal
 ticket_engine | wave_lock::tests::packing_and_history_tests::no_marker_tree_keeps_base_zero_and_waves_from_one
 ticket_engine | wave_lock::tests::packing_and_history_tests::numbering_seats_on_the_highest_claim_not_the_newest_marker
 ticket_engine | wave_lock::tests::packing_and_history_tests::overlapping_owns_never_share_a_wave
 ticket_engine | wave_lock::tests::packing_and_history_tests::partial_ship_records_no_emptied_entry
-ticket_engine | wave_lock::tests::packing_and_history_tests::lock_without_a_wave_base_parses_as_zero
 ticket_engine | wave_lock::tests::packing_and_history_tests::reorder_changes_open_waves_only_never_wave_zero
 ticket_engine | wave_lock::tests::packing_and_history_tests::repack_continues_the_close_marker_ledger
 ticket_engine | wave_lock::tests::packing_and_history_tests::reserving_freezes_the_lost_set_and_the_open_wave_numbers_past_it
@@ -547,7 +542,6 @@ ticket_engine | wave_lock::tests::packing_and_history_tests::reserving_refuses_a
 ticket_engine | wave_lock::tests::packing_and_history_tests::shallow_clone_refuses_base_derivation
 ticket_engine | wave_lock::tests::packing_and_history_tests::stale_base_reds_check_until_repack
 ticket_engine | wave_lock::tests::packing_and_history_tests::wave_zero_is_baseline_union_parked_minus_reopened
-trybuild | compile_fail_mod_has_no_frontend_layer
 ticketboard | app::tests::back_collapses_the_viewer_column_only
 ticketboard | app::tests::right_pane_gate_is_total_and_degrades_honestly
 ticketboard | app::tests::viewer_width_persistence_model
@@ -721,6 +715,8 @@ ticketboard | waves::tests::lane_tsv_format_is_n_tab_id_lines
 ticketboard | waves::tests::lanes_render_the_lock_verbatim_never_sorted
 ticketboard | waves::tests::lock_id_without_ticket_file_is_flagged
 ticketboard | waves::tests::unplanned_is_pure_set_arithmetic
+trybuild | compile_fail_mod_has_no_frontend_layer
+verification_core (doc) | tools_v2/verification-core/src/lib.rs - (line 35)
 verification_core | gate::tests::a_directory_target_is_missing_not_unreadable
 verification_core | gate::tests::ban_fails_when_present
 verification_core | gate::tests::ban_holds_when_absent
@@ -782,13 +778,13 @@ verification_core | scan::tests::grep_lines_on_a_missing_file_is_did_not_run
 verification_core | scan::tests::grep_lines_reports_one_based_line_numbers
 verification_core | scan::tests::non_utf8_bytes_do_not_abort_the_scan
 verification_core | scan::tests::walks_recursively_and_deterministically
+verification_core | verdict::tests::a_missing_target_names_the_file_and_the_six_space_continuation
 verification_core | verdict::tests::ban_and_pin_differ_only_in_the_noun
 verification_core | verdict::tests::exit_codes_separate_did_not_run_from_failed
 verification_core | verdict::tests::held_renders_nothing
-verification_core | verdict::tests::the_binary_exit_code_collapses_both_failure_kinds_to_one
 verification_core | verdict::tests::renders_a_bare_failure_as_one_headline
-verification_core | verdict::tests::a_missing_target_names_the_file_and_the_six_space_continuation
 verification_core | verdict::tests::signal_death_is_did_not_run_never_failed
+verification_core | verdict::tests::the_binary_exit_code_collapses_both_failure_kinds_to_one
 xtask | commands::agent_context::guards::tests::bare_file_read_is_denied
 xtask | commands::agent_context::guards::tests::capped_search_is_allowed
 xtask | commands::agent_context::guards::tests::git_is_never_touched
@@ -813,8 +809,8 @@ xtask | commands::ci::task_runner::tests::list_gates_equals_the_wave_gate_consta
 xtask | commands::db::milestone_announcement::tests::bad_database_url_forwards_psql_rc
 xtask | commands::db::milestone_announcement::tests::missing_env_continues_then_no_psql
 xtask | commands::db::milestone_announcement::tests::no_psql_no_container_exits_1
-xtask | commands::db::milestone_announcement::tests::paths_pin_web_under_apps_website_api
 xtask | commands::db::milestone_announcement::tests::sql_matches_former_heredoc_len
+xtask | commands::db::milestone_announcement::tests::the_api_directory_resolves_against_the_given_root
 xtask | commands::db::operations::ab::tests::make_error_lines_are_told_from_recipe_output
 xtask | commands::db::operations::ab::tests::norm_only_erases_ids
 xtask | commands::db::operations::recipes::tests::expand_covers_web_and_compose_and_nothing_else
@@ -833,7 +829,7 @@ xtask | commands::db::operations::selftest::tests::baseline_covers_every_rendere
 xtask | commands::db::operations::selftest::tests::frozen_baseline_matches_the_port
 xtask | commands::db::operations::test_it::tests::a_failing_suite_still_reports_its_own_rc
 xtask | commands::db::operations::test_it::tests::reap_select_is_the_makefile_pattern
-xtask | commands::db::operations::test_it::tests::t381_refuses_the_live_database
+xtask | commands::db::operations::test_it::tests::the_guard_refuses_the_live_database
 xtask | commands::db::operations::tests::lane_commands_match_the_clap_enum
 xtask | commands::debug::direct_join::tests::arm_logdir_exits_err
 xtask | commands::debug::direct_join::tests::arm_nocursor_exits_err
@@ -904,16 +900,16 @@ xtask | commands::deploy::staging::tests::empty_string_value_is_rejected_like_ba
 xtask | commands::deploy::staging::tests::flags_accumulate
 xtask | commands::deploy::staging::tests::missing_value_stops_with_two
 xtask | commands::deploy::staging::tests::oddity_flag_is_eaten_as_a_value
-xtask | commands::deploy::staging::tests::paths_inline_the_three_fields_paths_sh_supplied
+xtask | commands::deploy::staging::tests::paths_resolve_against_the_running_checkout
 xtask | commands::deploy::staging::tests::unknown_option_short_circuits_before_help
-xtask | commands::deploy::staging::tests::usage_matches_the_captured_baseline
+xtask | commands::deploy::staging::tests::usage_names_the_runnable_command_and_every_mode_flag
 xtask | commands::deploy::website::tests::asset_probe_checks_the_registry_file_and_the_legacy_directory
 xtask | commands::deploy::website::tests::asset_probe_distinguishes_the_three_layouts
 xtask | commands::deploy::website::tests::only_a_legacy_or_unreadable_layout_refuses_the_deploy
 xtask | commands::deploy::website::tests::prairielearn_case_insensitive
 xtask | commands::deploy::website::tests::remote_prefix_rejects_escape_and_outside
 xtask | commands::deploy::website::tests::rsync_argv_keeps_source_and_destination_last
-xtask | commands::deploy::website::tests::rsync_excludes_the_asset_scratch_and_legacy_trees
+xtask | commands::deploy::website::tests::rsync_excludes_the_secrets_asset_and_scratch_trees
 xtask | commands::deploy::website::tests::the_checksum_repair_runs_in_the_remote_checkout_against_the_staging_container
 xtask | commands::deploy::website::tests::the_remediation_names_every_directory_that_must_move
 xtask | commands::deploy::website::tests::the_remote_plan_ends_with_the_checksum_repair_and_the_state_move
@@ -921,18 +917,17 @@ xtask | commands::deploy::website::tests::the_state_move_targets_the_unit_state_
 xtask | commands::deploy::website::tests::the_unit_install_command_renders_the_shipped_template_for_the_remote_dir
 xtask | commands::deploy::website::tests::the_unit_template_declares_the_state_directory_the_deploy_moves_into
 xtask | commands::deploy::website::tests::usage_mentions_dry_run
-xtask | commands::fetch::vanilla_api::tests::bash_from_file_usage_goes_red_first
-xtask | commands::fetch::vanilla_api::tests::bash_index_miss_goes_red_first
 xtask | commands::fetch::vanilla_api::tests::cache_hit_index_only_rc0
 xtask | commands::fetch::vanilla_api::tests::doxy_name_mangles_underscores
 xtask | commands::fetch::vanilla_api::tests::from_file_missing_arg_exits_2
 xtask | commands::fetch::vanilla_api::tests::from_file_nonexistent_continues_rc0
+xtask | commands::fetch::vanilla_api::tests::from_file_usage_line_names_the_runnable_command
 xtask | commands::fetch::vanilla_api::tests::index_miss_exits_1
-xtask | commands::fetch::vanilla_source::tests::bash_empty_index_goes_red_first
-xtask | commands::fetch::vanilla_source::tests::curated_list_len_matches_bash
+xtask | commands::fetch::vanilla_source::tests::curated_list_holds_nineteen_entries
 xtask | commands::fetch::vanilla_source::tests::empty_index_map_build_exits_1
 xtask | commands::fetch::vanilla_source::tests::grep_empty_pattern_exits_2
 xtask | commands::fetch::vanilla_source::tests::grep_missing_pattern_exits_2
+xtask | commands::fetch::vanilla_source::tests::grep_usage_line_names_the_runnable_command
 xtask | commands::fetch::vanilla_source::tests::help_is_filename_miss_rc0
 xtask | commands::map::terrain_export::tests::parse_phase_and_default
 xtask | commands::map::terrain_export::tests::parse_terrain_from_env_when_no_positional
@@ -940,14 +935,15 @@ xtask | commands::map::terrain_export::tests::parse_unknown_arg
 xtask | commands::map::terrain_export::tests::parse_usage_when_no_terrain
 xtask | commands::mcp::call::tests::emit_requests_embeds_tool_and_args
 xtask | commands::mcp::call::tests::usage_when_tool_missing
-xtask | commands::mcp::call_selftest::tests::bash_chomp_strips_trailing_newlines
+xtask | commands::mcp::call_selftest::tests::trailing_newlines_are_stripped_so_a_blank_body_reads_as_empty
 xtask | commands::mcp::daemon::tests::status_stopped_when_no_socket
 xtask | commands::mcp::daemon::tests::usage_rejects_unknown_action
 xtask | commands::mcp::netapi::tests::request_and_response_framing_round_trip
-xtask | commands::mcp::smoke::tests::bash_chomp_strips_all_trailing_newlines
-xtask | commands::mcp::smoke::tests::both_tools_fail_arm_matches_bash
-xtask | commands::mcp::smoke::tests::one_tool_empty_arm_matches_bash
-xtask | commands::mcp::smoke::tests::stub_green_arm_matches_bash
+xtask | commands::mcp::smoke::tests::an_empty_body_with_a_zero_exit_code_is_a_failure
+xtask | commands::mcp::smoke::tests::every_tool_answering_non_empty_is_the_only_green
+xtask | commands::mcp::smoke::tests::every_tool_is_attempted_when_the_first_one_fails
+xtask | commands::mcp::smoke::tests::trailing_newlines_are_stripped_so_a_blank_body_reads_as_empty
+xtask | commands::mcp::workbench_logs::file_cli_tests::file_equals_empty_parses_via_clap
 xtask | commands::mcp::workbench_logs::tests::errors_present_fail
 xtask | commands::mcp::workbench_logs::tests::file_equals_empty_is_environment_rc3
 xtask | commands::mcp::workbench_logs::tests::file_missing_sentinel_is_usage_rc3
@@ -966,7 +962,7 @@ xtask | commands::mod_ops::compile::tests::no_server_is_rc3
 xtask | commands::mod_ops::compile::tests::workbench_tooling_guard_reports_the_dir_and_what_is_in_it
 xtask | commands::mod_ops::development_bootstrap::tests::port_open_rejects_non_numeric_needle
 xtask | commands::mod_ops::development_server::tests::no_args_is_rc2
-xtask | commands::mod_ops::development_server::tests::the_missing_launcher_arm_is_discharged_not_deleted
+xtask | commands::mod_ops::development_server::tests::usage_names_the_runnable_playtest_command
 xtask | commands::mod_ops::mission_test::tests::backend_and_stage_round_trip
 xtask | commands::mod_ops::mission_test::tests::missing_config_exits_1
 xtask | commands::mod_ops::mission_test::tests::set_mission_id_no_trailing_newline
@@ -1017,7 +1013,7 @@ xtask | commands::mod_ops::playtest_server::tests::bare_and_lone_dashes_are_unkn
 xtask | commands::mod_ops::playtest_server::tests::defaults_match_the_bash_variable_block
 xtask | commands::mod_ops::playtest_server::tests::empty_values_are_carried_not_dropped
 xtask | commands::mod_ops::playtest_server::tests::guid_is_read_out_of_a_real_gproj_shape
-xtask | commands::mod_ops::playtest_server::tests::help_is_byte_identical_to_the_captured_baseline
+xtask | commands::mod_ops::playtest_server::tests::help_opens_with_the_runnable_command_and_lists_every_option
 xtask | commands::mod_ops::playtest_server::tests::help_position_decides_the_exit_code
 xtask | commands::mod_ops::playtest_server::tests::help_text_matches_the_options_we_parse
 xtask | commands::mod_ops::playtest_server::tests::scenario_extraction_stops_at_the_comma_and_the_quote
@@ -1062,7 +1058,7 @@ xtask | commands::platform::slice_worktree::tests::pins_the_sed_regex_oddities
 xtask | commands::platform::slice_worktree::tests::reap_guards_every_destructive_case_in_one_pass
 xtask | commands::platform::slice_worktree::tests::sub_slice_shares_the_parent_tree
 xtask | commands::platform::slice_worktree::tests::unknown_and_empty_subcommands_print_usage_and_exit_2
-xtask | commands::platform::slice_worktree::tests::usage_matches_the_bash_header
+xtask | commands::platform::slice_worktree::tests::usage_spells_every_subcommand_as_a_runnable_command
 xtask | commands::platform::wave_execution::base::tests::the_four_accepted_suffixes_and_nothing_else
 xtask | commands::platform::wave_execution::base::tests::the_plan_speaks_for_a_wave_that_has_already_emptied
 xtask | commands::platform::wave_execution::base::tests::the_prefilter_and_the_authority_agree_on_the_delimiters
@@ -1167,8 +1163,8 @@ xtask | commands::setup::server_profile::tests::token_from_env_strips_quotes_and
 xtask | commands::setup::staging_server::tests::arm_missing_host_exits_1
 xtask | commands::setup::staging_server::tests::arm_prairielearn_exits_1
 xtask | commands::setup::staging_server::tests::defaults_fill_when_unset
-xtask | commands::setup::staging_server::tests::deploy_env_path_is_paths_sh_pin
-xtask | commands::setup::staging_server::tests::prairielearn_match_is_case_sensitive_like_bash
+xtask | commands::setup::staging_server::tests::the_deploy_file_resolves_against_the_given_root
+xtask | commands::setup::staging_server::tests::the_prairielearn_refusal_is_case_sensitive
 xtask | commands::setup::workbench_linux::tests::clean_tree_symlinks_and_prints
 xtask | commands::setup::workbench_linux::tests::missing_gproj_exits_1
 xtask | commands::setup::workbench_linux::tests::missing_steam_tree_exits_1
@@ -1201,13 +1197,15 @@ xtask | core::host_execution::tests::on_the_metal_commands_run_directly_and_need
 xtask | core::host_execution::tests::the_bridge_really_crosses_the_container_wall
 xtask | core::host_execution::tests::the_refusal_is_the_bash_heredoc
 xtask | core::host_execution::tests::trailing_version_is_grep_o_anchored_at_end
+xtask | core::repository_layout::tests::every_committed_location_exists_in_the_checkout
+xtask | core::repository_layout::tests::every_file_sits_inside_the_directory_that_describes_it
+xtask | core::repository_layout::tests::the_deploy_secrets_file_sits_beside_its_example
 xtask | core::repository_root::tests::nested_tooling_directories_resolve_repository_and_fixtures
 xtask | core::test_environment::tests::prepend_dir_keeps_usr_bin
-xtask | commands::mcp::workbench_logs::file_cli_tests::file_equals_empty_parses_via_clap
 xtask | tooling_dependency_boundaries::foundational_engines_have_no_workspace_dependencies
-xtask | tooling_dependency_boundaries::the_tooling_tree_holds_its_executables_manifests_and_layout_modules
 xtask | tooling_dependency_boundaries::inline_module_detection_handles_nested_syntax_without_matching_source_strings
 xtask | tooling_dependency_boundaries::structural_limits_distinguish_scenarios_and_separate_tests
+xtask | tooling_dependency_boundaries::the_tooling_tree_holds_its_executables_manifests_and_layout_modules
 xtask | tooling_dependency_boundaries::ticket_implementations_have_one_owner
 xtask | tooling_dependency_boundaries::tooling_crates_have_no_file_size_exemptions
 xtask | tooling_dependency_boundaries::tooling_dependency_direction_is_enforced
@@ -1268,14 +1266,14 @@ xtask | verifications::ci::schema_parity::tests::live_shaped_pins_hold
 xtask | verifications::ci::schema_parity::tests::live_source_owners_satisfy_the_runtime_gate
 xtask | verifications::ci::schema_parity::tests::missing_wave_fails
 xtask | verifications::ci::schema_parity::tests::schema_job_without_ci_local_schema_fails
-xtask | verifications::ci::schema_parity::tests::t468_stays_off_the_dispatch_table_it_polices
 xtask | verifications::ci::schema_parity::tests::task_echoes_name_the_same_gates_as_the_wave_consts
 xtask | verifications::ci::schema_parity::tests::the_live_task_table_satisfies_the_recipe_pins
-xtask | verifications::ci::schema_parity::tests::the_make_spelling_no_longer_satisfies_the_ci_pin
+xtask | verifications::ci::schema_parity::tests::the_make_spelling_does_not_satisfy_the_ci_pin
+xtask | verifications::ci::schema_parity::tests::this_gate_stays_off_the_dispatch_table_it_polices
 xtask | verifications::ci::schema_parity::tests::verify_consts_are_the_cargo_spelling
 xtask | verifications::ci::schema_parity::tests::wave_commented_run_does_not_satisfy
 xtask | verifications::ci::schema_parity::tests::wave_hollow_both_paths_required
-xtask | verifications::ci::schema_parity::tests::wave_hollow_t456_true_fails
+xtask | verifications::ci::schema_parity::tests::wave_hollow_checkrun_argv_fails
 xtask | verifications::ci::schema_parity::tests::wave_suffix_smuggles_fail_pin
 xtask | verifications::ci::workflow_shell::tests::ampersand_background_is_red
 xtask | verifications::ci::workflow_shell::tests::cargo_fmt_and_true_is_red
@@ -1439,7 +1437,6 @@ xtask | verifications::schemas::checks::unread_wire_field_tests::comments_and_st
 xtask | verifications::schemas::checks::unread_wire_field_tests::nonzero_baselines_explain_the_pre_existing_identifier
 xtask | verifications::schemas::checks::unread_wire_field_tests::stripper_removes_line_block_and_string_bodies
 xtask | verifications::schemas::checks::unread_wire_field_tests::unread_gate_fires_when_a_reader_appears
-verification_core (doc) | tools_v2/verification-core/src/lib.rs - (line 42)
 ```
 
 ## P1 — Agent instructions and tracked root ghosts
@@ -1541,7 +1538,7 @@ and the count is restated here as evidence rather than as a durable property of 
 | Test files renamed | `verifications/schemas/tests/checks/{objective_spine,side_fallback,staged_golden}_tests.rs`, declared from `verifications/schemas/checks.rs` |
 | Test file moved and renamed | `developer-tools/src/map_raster_pipeline/tests/map_labels/map_labels_tests.rs`; `.../tests/satellite_archive_container/container_tests.rs`, with the emptied `tests/tbds_v2/` gone |
 | Test directories renamed | `world_export_pipeline/tests/enfusion_texture_decoder/`, `world_export_pipeline/tests/json_number_formatting/`, each named for the module that declares it |
-| Documents corrected | `tools_v2/verification-core/README.md` described a `tests/` directory holding a file that never existed; it now describes the layout that exists. The `Baseline test inventory` in this document carries the eleven renamed test paths |
+| Documents corrected | `tools_v2/verification-core/README.md` described a `tests/` directory holding a file that never existed; it now describes the layout that exists. The `Test inventory` in this document carries the eleven renamed test paths |
 
 Removing the four README-only directories removes no behaviour: no source file, test, fixture
 loader or build script reads any of the four paths. The only other mentions in the tree are three
@@ -2280,7 +2277,7 @@ gates do not serialise against each other.
 ### Baseline test renames
 
 Twelve test functions were named after a ticket number or after a driver that no longer exists.
-Each is renamed to say what it asserts, and each carries its line in `Baseline test inventory`
+Each is renamed to say what it asserts, and each carries its line in `Test inventory`
 above, edited in place so the inventory stays a complete roster:
 
 | Crate and module | Name now |
@@ -2682,3 +2679,180 @@ example the inventory does not list.
 ### Commands that could not run
 
 None. Every command of this phase ran unmodified in this environment.
+
+## P7 — Repository path modules
+
+Each of the three tooling crates now owns exactly one module that spells the repository paths it
+reads outside its own tree, and `xtask` and `ticketboard` consume the ticket domain's rather than
+declaring their own. No production file in `tools_v2/` or `apps/ticketboard/` spells a `.ai/`,
+`docs/` or `documentation_v2/` path anywhere else.
+
+### The three modules
+
+| Module | What it owns |
+|---|---|
+| `tools_v2/ticket-engine/src/repository.rs` | The registry directory and its root marker, the ticket schema, the scope vocabulary, the wave lock, the dispatch queue, the receipt and estimate trees with their schemas, the artifact tree, the worktree base, the last-verified marker, the verdict directory, the handoff document name, the sparse-checkout sets, and a `documentation` submodule holding every path under the documentation tree |
+| `tools_v2/xtask/src/core/repository_layout.rs` | The deployment and server-profile trees it already owned, plus a re-export of the five ticket-domain locations xtask reads, plus a `documentation` submodule: the wave-packing marker, the specification directory, the four authority documents, the document-layout target, and the six runbooks printed in messages |
+| `tools_v2/developer-tools/src/repository_layout.rs` | The contract and asset trees it already owned, plus the checkout root marker, the Enfusion symbol index and its upstream symbol table, the export operation-log directory with a function per artifact it holds, and a `documentation` submodule: the mod documentation directory, the capability verdict table and the editor-gate runbook |
+
+### What changed
+
+**`tools_v2/ticket-engine/`**
+
+- `src/repository.rs` rewritten as above. It gains `is_repo_root`, so a caller holding a directory
+  confirms it without a second spelling of the marker, and loses `registry_path` and
+  `gap_analysis_path`.
+- Every path literal in the crate — production and the scratch trees the tests build — now reads
+  from those items. Synthetic sample paths in test data (`docs/spec.md`, `docs/x.md`) stay
+  literals: they name files that do not exist and are not repository locations.
+- `validation/vocabulary.rs` and `vocab.rs` each declared the vocabulary path; both now read
+  `repository::SCOPE_VOCAB`. The same collapse applied to the wave lock, the metrics and estimate
+  trees and their schemas, and the token-estimate factor document.
+- The ticket-file storage module and its test file now stand at `registry/ticket_file_storage/`,
+  and the status-at-a-revision reader it contained at `registry/ticket_status_history.rs`, with its
+  own sibling test file. The archived-wave-plan reader stands at `wave_lock/archived_wave_plans.rs`
+  with its test directory. Each moved with `git mv`, so history follows.
+- The JSON-monolith read path is gone: `registry::load_json_monolith` and the `json.is_file()` arm
+  of `load_registry`, and the root walk's second marker. `save_registry` keeps its refusal and
+  drops the file removal that followed it. The one remaining reader of that file reads git
+  revisions, and derives its path from the ticket directory rather than spelling it.
+- `cli/brief.rs` loses the per-ticket switch — forty printed lines of guidance keyed on ticket
+  identifiers. The brief now prints the ticket's own `spec`, `plan`, `owns`, `main_goal`, the five
+  body fields, its citations and its acceptance.
+- `cli/queries.rs` reads the sparse-checkout sets from `repository::SPARSE_CHECKOUT_SETS`; the
+  `root` set is the registry, the artifact tree, the documentation tree, `tools_v2`, `.cargo`,
+  `README.md` and `CLAUDE.md`.
+- `validation/references.rs` reads its scan roots, its exempt prefixes and its archived-wave-plan
+  reader list from the documentation submodule.
+- New sibling test file `src/tests/repository_layout_tests.rs`: four pins over the layout module,
+  including that every ticket target vocabulary word has a sparse-checkout set.
+
+**`tools_v2/xtask/`**
+
+- `const BASE` in `commands/mod_ops/wave_execution.rs` and `commands/platform/slice_worktree.rs`,
+  and the literals in `platform/preflight/ok.rs`, `platform/slice_execution.rs` and
+  `wave_execution/mod.rs`, all read `repository_layout::WORKTREES_DIR`. Same for the last-verified
+  marker and the verdict directory.
+- The three root probes in `commands/fetch/dispatch.rs`, `platform/preflight/ok.rs` and
+  `commands/deploy/tests/staging/tests.rs` call `ticket_engine::repository::is_repo_root`.
+- Help and refusal text that names a document is built from the constant: the two wave-lifecycle
+  help blocks, the slice-worktree usage, the dev-server usage, the document-layout refusal, the
+  deployment and staging messages, the upstream-leak advice and the spawn-determinism preflight.
+- The archived-wave-plan shim stands at `wave_execution/archived_wave_plans.rs`, and the module
+  list it sits in is sorted again.
+- `verifications/schemas/checks/specification_consistency.rs` gate 10 answered from a hardcoded
+  slice identifier whenever the registry read failed. It now propagates an unreadable registry as a
+  refusal, and reports having nothing to check when the program records no active slice — which is
+  the live state, so the gate had been comparing the hub header against a frozen identifier.
+- `src/tests/tooling_dependency_boundaries.rs` asserts three layout modules exist, not two.
+
+**`tools_v2/developer-tools/`**
+
+- `repository_paths.rs` loses the second root marker and reads the one in `repository_layout.rs`.
+  Its header states why the walk is deliberately the second implementation of the ticket domain's.
+- The `enf` defaults, the operation-log writers and readers, and the font diagnostic's runbook
+  pointer all resolve through the layout module. `enf --help` and every subcommand default are
+  byte-identical to before.
+
+**`apps/ticketboard/`**
+
+- Its six local path constants — the ticket directory, the scope vocabulary, the roadmap, the
+  lock file name, and the estimate and receipt subdirectories — are deleted; every production path
+  reads `ticket_engine::repository`. The two
+  empty-state strings that named a directory became functions that name it from the constant.
+- The eighteen inline `#[cfg(test)] mod tests { … }` blocks are extracted to
+  `apps/ticketboard/src/tests/<module>_tests.rs`, declared with `#[path]`, as Law 7 requires. Test
+  module paths are unchanged, so every test keeps its name: 173 before, 173 after.
+- `detail.rs`, `verbs.rs` and `viewer.rs` fall under 500 lines once their tests move out, so their
+  three SIZE-3 rows leave `.coding-standards-allowlist.yaml`. `app.rs`, `board.rs`, `estimates.rs`,
+  `metrics.rs` and `mutate.rs` keep theirs.
+
+**`documentation_v2/ARCHITECTURE_PLAN.md`** §4 is no longer a per-file pin table. It names the
+three `documentation` submodules and what each owns, adds `docs/platform/factory_pack_wave` to the
+retire-or-move list, and states that Phase 1 of that blueprint is three module edits plus the
+`.ai/tickets` citation rewrite.
+
+### Acceptance
+
+| Command | Expected | Actual |
+|---|---|---|
+| Path literals outside the three layout modules, production files only | empty | 0 lines |
+| Tooling-tree literals outside the two layout modules | the api_v2 Caddyfile pin and the xtask repository-root test pin | 3 lines: those two plus the structural-rules assertion that the npm package directory exists |
+| The historical registry file name under `tools_v2` and `apps/ticketboard` | only the module that reads git history | 28 lines verbatim, none of them the ticket registry: restricted to the ticket directory's own path the count is 0, and the only module naming that file is `registry/ticket_status_history.rs`, which derives the path from the ticket directory rather than spelling it. The 28 name three live and correctly named files — the mod's object registry, the terrain registry, and a frontend API golden |
+| Renamed module names anywhere | empty | 0 lines |
+| Ticket identifiers in `cli/brief.rs` | 0 | 0 |
+| `cargo test -p ticket-engine -p xtask -p developer-tools -p ticketboard` | green | exit 0; ticket-engine 203 plus 1 compile-failure test, xtask 652, developer-tools 259 and 4 ignored, ticketboard 170 and 3 ignored |
+| `cargo xtask ticket check --strict` | OK | exit 0, `check OK` |
+| `cargo xtask ticket sync` twice, then `git status --porcelain docs .ai` | empty | exit 0 both times; status empty after each |
+| `cargo xtask wave check` | OK | exit 0; 78 open tickets in 19 waves, 1247 parked at wave 0 |
+| `cargo run -p developer-tools --bin enf -- --help` | defaults unchanged | exit 0; `citations` still defaults to `docs/mod` and `.ai/artifacts/enf-index` |
+| `cargo clippy -p ticket-engine -p xtask -p developer-tools -p verification-core -p ticketboard --all-targets -- -D warnings` | clean | exit 0 |
+| `cargo fmt --check` | clean | exit 0 |
+| `cargo check --workspace --locked` | clean | exit 0 |
+| `cargo xtask verify file-length` | OK | exit 0; scanned 2543 `.rs` files, 0 violations |
+| `cargo xtask schema specification-consistency` | OK | exit 0; 11 of 12 gates pass, gate 10 reports it had nothing to check |
+| `cargo xtask ticket sparse-paths <a root-target ticket>` | names `tools_v2` and `.cargo`, never `scripts` or `xtask` | No ticket in the registry carries a `targets` field, so every ticket resolves to the default `website` set: `sparse-paths` on a live ticket prints `.github` and `apps/website`. The `root` set is asserted directly by `repository::tests::the_root_sparse_set_carries_the_task_surface`, and reading `SPARSE_CHECKOUT_SETS` shows `tools_v2` and `.cargo` present and neither `scripts` nor `xtask` |
+
+### Found and fixed
+
+- `tools_v2/ticket-engine/src/registry/typed_projection.rs:1-13` — the header described a deleted
+  one-shot migrator and pointed at a file that no longer exists. It now says what the module does.
+- `tools_v2/ticket-engine/src/registry/mod.rs:174-176` — a comment whose whole content was the
+  removal of two functions. Deleted.
+- `tools_v2/ticket-engine/src/registry/tests/shipping_status/…` wrote its scratch fixture as
+  a file named like the deleted ticket monolith. Renamed to `shipping_status.json`.
+- `tools_v2/xtask/src/commands/platform/slice_worktree.rs:1-45` — the header and the command
+  constant's documentation described a byte-for-byte port of a deleted shell script, named two
+  more deleted scripts, and stated a condition about that script's deletion that has been
+  false since the script went. Rewritten to what the module does and why its guards exist.
+- `tools_v2/xtask/src/commands/mod_ops/wave_execution.rs:1-21` — same class: a header describing a
+  port, a deleted script and a deleted plan format. Rewritten.
+- `tools_v2/xtask/src/commands/mod_ops/playtest_server/usage_fail.rs:145-147` — a comment claiming
+  the root walk looks for the deleted registry file. It looks for the root marker.
+- `.coding-standards-allowlist.yaml:6` — said the frontend's oversized files "are split in Phase
+  3C", a phase name that means nothing in this tree. It now states the fact.
+- `tools_v2/PHASE_FIVE_HANDOFF.md` — the test inventory had drifted from the tree: tests deleted
+  with the finished migrations, tests relocated out of them, tests added by the script-elimination
+  pass, renames from the public-surface pass, and one documentation-test line number. It is
+  regenerated from the live list, and the section is named `Test inventory`, since its stated
+  purpose is to keep naming the tests that exist.
+- `apps/ticketboard/` carried eighteen inline test modules — the Law 7 violation named above, fixed
+  with the extraction.
+
+### Found for P8
+
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:203-216` — `API_SLICE_SPEC` is an
+  `#[allow(dead_code)]` constant holding a specification for work in another crate, kept only so a
+  text search finds it, and its documentation attributes it to a deleted shell script by line
+  number. It also names `docs/website/HOME_SERVER.md:282`, a documentation pin with a line number.
+  Either delete the constant and let the specification live in a ticket, or move it to one; the
+  `#[allow(dead_code)]` says plainly that nothing reads it.
+- `tools_v2/xtask/src/verifications/schemas/checks/specification_consistency.rs` names one program
+  identifier (`MAP_TERRAIN_PROGRAM`) and reads specification files whose names carry that
+  identifier. The constant is the subject of the check rather than provenance, so the prose rule
+  needs the same explicit carve-out the retained names get, or the check needs to resolve the
+  program from the registry by another key.
+- `tools_v2/developer-tools/src/map_raster_pipeline/cartographic_rendering/build_tile_pyramid.rs:151`
+  reads committed verify logs named after a ticket (`t152_<n>_verify_log.md`). The logs are frozen
+  records; the identifier in the production `format!` is not.
+- `tools_v2/ticket-engine/src/cli/mutations.rs:121,153,155` and `cli/readiness.rs:21` qualify the
+  refusal strings with an adjective the prose rule forbids. The live fact is that those exact
+  strings are the refusals; the adjective is the only thing that has to go.
+- `tools_v2/ticket-engine/src/registry/typed_projection.rs:126-132,196-205` — the documentation on
+  the Value write path still carries ticket identifiers as provenance and a measured incident
+  narrated in the past tense. The invariants under both (the write path refuses, the stale-file
+  pass is gone) are what to keep.
+
+### Found for P9
+
+- `apps/ticketboard/Cargo.toml:1-11` and `src/main.rs` name the crate's design document and its
+  shipping ticket in their headers, which the root-document pass covers.
+
+### Found for P10
+
+- The verification matrix's historical-registry-file row cannot be read verbatim: three live files carry
+  that name (the mod's object registry, the terrain registry and a frontend API golden). Restricting it to the ticket directory's own file name gives the
+  ticket-registry answer, which is 0.
+- `cargo xtask verify file-length` now scans 2543 `.rs` files against the 2529 recorded at the
+  baseline. The rise is the test files the last two phases extracted from inline modules, not a
+  widened walk: the pinned directories are unchanged.

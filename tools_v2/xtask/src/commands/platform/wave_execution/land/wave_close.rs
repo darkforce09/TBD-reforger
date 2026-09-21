@@ -128,7 +128,9 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     }
     wprintln!("wave {w}: all tickets shipped ✓");
 
-    let marker = ctx.root.join(".ai/artifacts/last-verified");
+    let marker = ctx
+        .root
+        .join(crate::core::repository_layout::LAST_VERIFIED_MARKER);
     let vsha = std::fs::read_to_string(&marker)
         .ok()
         .and_then(|s| s.lines().next().map(str::to_string))

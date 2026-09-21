@@ -63,8 +63,9 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
         "tools_v2/developer-tools/Cargo.toml",
         "tools_v2/verification-core/Cargo.toml",
         "tools_v2/ticket-engine/Cargo.toml",
-        // The two modules that own every repository path a crate spells, and the node package
+        // The three modules that own every repository path a crate spells, and the node package
         // that sits outside all four crate roots so no crate walk treats it as source.
+        "tools_v2/ticket-engine/src/repository.rs",
         "tools_v2/xtask/src/core/repository_layout.rs",
         "tools_v2/developer-tools/src/repository_layout.rs",
         "tools_v2/enfusion_mcp_node_package/package.json",

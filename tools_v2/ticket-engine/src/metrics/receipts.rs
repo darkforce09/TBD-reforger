@@ -41,9 +41,8 @@ pub(super) fn read_record(path: &Path) -> Result<RunRecord> {
 /// alone is wrong here: `…-1.json` sorts BEFORE `….json` because `-` < `.`.
 pub fn latest_run_file(root: &Path, id: &str) -> Result<(PathBuf, RunRecord)> {
     let dir = metrics_root(root).join(id);
-    let entries = fs::read_dir(&dir).with_context(|| {
-        format!("no slice-run receipt directory for {id} under {METRICS_DIR_REL}/")
-    })?;
+    let entries = fs::read_dir(&dir)
+        .with_context(|| format!("no slice-run receipt directory for {id} under {METRICS_DIR}/"))?;
     let mut runs: Vec<(String, usize, String, PathBuf, RunRecord)> = Vec::new();
     for ent in entries {
         let path = ent?.path();
@@ -60,7 +59,7 @@ pub fn latest_run_file(root: &Path, id: &str) -> Result<(PathBuf, RunRecord)> {
     runs.sort_by(|a, b| (&a.0, a.1, &a.2).cmp(&(&b.0, b.1, &b.2)));
     runs.pop()
         .map(|(_, _, _, path, rec)| (path, rec))
-        .with_context(|| format!("no slice-run receipt for {id} under {METRICS_DIR_REL}/"))
+        .with_context(|| format!("no slice-run receipt for {id} under {METRICS_DIR}/"))
 }
 
 /// Does `id` have at least one run receipt on disk?
@@ -86,7 +85,7 @@ pub fn land_receipt_refusal(root: &Path, ids: &[String], bookkeeping: bool) -> O
         return None;
     }
     Some(format!(
-        "land: no slice-run receipt under {METRICS_DIR_REL}/ for: {}\n      \
+        "land: no slice-run receipt under {METRICS_DIR}/ for: {}\n      \
          a factory land requires the harness receipt — produce one with \
          `cargo xtask platform slice-run <id>`;\n      \
          for command-center/manual bookkeeping lands pass --bookkeeping \

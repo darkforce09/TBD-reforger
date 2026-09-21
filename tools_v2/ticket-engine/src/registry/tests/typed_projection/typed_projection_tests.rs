@@ -160,12 +160,12 @@ fn value_to_ticket_accepts_ticket_to_value_output() {
 
 /// The write path is the typed one. Two facts, pinned together:
 ///
-/// 1. `registry::save_registry` REFUSES a phase-2 tree (in-memory probe against the live
-///    root — nothing is written on the refusal path), so `save_tree` / `value_to_ticket`
-///    are unreachable as writers even if a caller sneaks back;
-/// 2. no module under `cli/` — the mutator surface — names `save_registry` at all: every
-///    verb writes through `crate::ops` + `Corpus::write_back`. The needle is assembled at
-///    runtime so this test's own source cannot satisfy the search it performs.
+/// 1. `registry::save_registry` REFUSES a typed tree — an in-memory probe against the live root,
+///    which writes nothing on the refusal path — so `save_tree` and `value_to_ticket` are
+///    unreachable as writers even if a caller finds its way back to them;
+/// 2. no module under `cli/`, the mutator surface, names `save_registry` at all: every verb
+///    writes through `crate::ops` and `Corpus::write_back`. The needle is assembled at runtime
+///    so this test's own source cannot satisfy the search it performs.
 #[test]
 fn mutators_never_reach_the_value_writer_pin() {
     let root = repo_root();
@@ -174,10 +174,10 @@ fn mutators_never_reach_the_value_writer_pin() {
     }
     let reg = crate::registry::load_registry(&root).expect("load live registry");
     let err = crate::registry::save_registry(&root, &reg)
-        .expect_err("save_registry must refuse a phase-2 tree");
+        .expect_err("save_registry must refuse a typed tree");
     let msg = format!("{err:#}");
     assert!(
-        msg.contains("typed ops") && msg.contains("migration/test-only"),
+        msg.contains("typed ops") && msg.contains("one file per changed ticket"),
         "refusal must name the typed path: {msg}"
     );
 

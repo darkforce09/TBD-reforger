@@ -19,7 +19,7 @@ fn two_emptied_waves_pend_ascending_and_open_waves_number_past_both() {
     assert_eq!(first.tickets_in_wave(44), vec!["T-3".to_string()]);
 
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["a.rs"], &[], "shipped"),
     )
     .unwrap();
@@ -28,7 +28,7 @@ fn two_emptied_waves_pend_ascending_and_open_waves_number_past_both() {
     assert_eq!(mid.emptied[0].n, 42);
 
     fs::write(
-        dir.join(".ai/tickets/T-2.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-2.toml"),
         work("T-2", 20, &["a.rs"], &[], "shipped"),
     )
     .unwrap();
@@ -92,7 +92,7 @@ fn check_reds_on_a_perturbed_emptied_entry_until_restored() {
     );
     repack_quiet(&dir).unwrap();
     fs::write(
-        dir.join(".ai/tickets/T-1.toml"),
+        dir.join(crate::repository::TICKETS_DIR).join("T-1.toml"),
         work("T-1", 10, &["a.rs"], &[], "shipped"),
     )
     .unwrap();

@@ -401,7 +401,7 @@ fn remove_cascade_end_to_end_on_disk() {
     let out = remove(&mut c, "T-1", true, CLOCK).expect("cascade");
     c.write_back(&out.changed).expect("write changed");
     c.delete_files(&out.deleted).expect("delete files");
-    let left: Vec<String> = fs::read_dir(root.join(".ai/tickets"))
+    let left: Vec<String> = fs::read_dir(root.join(crate::repository::TICKETS_DIR))
         .unwrap()
         .filter_map(|e| e.ok())
         .map(|e| e.file_name().to_string_lossy().to_string())

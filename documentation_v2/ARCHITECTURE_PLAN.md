@@ -145,43 +145,55 @@ Immediately following this pass, `cargo xtask ticket check` executes. Because `x
 
 ---
 
-## 4. Codebase Hardcoded Path Pins Audit (live tree, 2026-09-21)
+## 4. Where the codebase spells documentation paths
 
-Every `docs/` literal reachable at runtime, found with `grep -rn '"docs/' --include=*.rs tools_v2 apps` (test files excluded). The crates this section used to name (`crates/tbd-tickets`, `xtask/src/check.rs`, `tools/tbd-tools`) no longer exist; the pins moved with them.
+Every crate that reads or names a path under `docs/` resolves it through exactly one module.
+Nothing else in `tools_v2/` or `apps/ticketboard/` spells such a path, which the closure plan's
+verification matrix holds at zero. **Phase 1 of this cutover is therefore three module edits plus
+the `.ai/tickets` citation rewrite**, not a survey of call sites.
 
-### 4.1 `tools_v2/ticket-engine/` — the ticket domain
-| Pin | Today | Target |
-|:---|:---|:---|
-| `src/ops/readiness.rs:9` `default_plan_path` | `docs/plans/{id}_plan.md` | `documentation_v2/tickets/plans/{id}_plan.md` |
-| `src/validation/readiness.rs:33` (hint text) | `docs/plans/TEMPLATE.md` | `documentation_v2/tickets/plans/TEMPLATE.md` |
-| `src/validation/references.rs:165-169` `scan_legacy_ids` | walks `docs/specs` | walks `documentation_v2/tickets/specs` |
-| `src/validation/references.rs:82-102` allow-listed references | `docs/TICKET_*`, `docs/platform/SHIPPED_HISTORY.md`, `t911…`, `t912…`, `GROK_WAVE_130_HANDOFF.md`, `WAVE209_GROK_KICKOFF.md` | drop the `docs/TICKET_` entry with the retired queues; the rest follow their files (`documentation_v2/platform/…`, `documentation_v2/tickets/specs/…`) |
-| `src/validation/constants.rs:24-25` excluded trees | `docs/specs/macOS_Blueprints/`, `docs/specs/Mission_Creator_Mock_Up/` | the `visual_reference/` directories under `documentation_v2/website/frontend/` |
-| `src/validation/runner.rs:124` roadmap | `docs/specs/Mission_Creator_Architecture/ROADMAP.md` | `documentation_v2/tickets/specs/ROADMAP.md` |
-| `src/repository.rs:21` `gap_analysis_path` | `docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md` | `documentation_v2/tickets/specs/gap_analysis.md` |
-| `src/sync/runner.rs:18-38` `ticket sync` outputs | `docs/TICKET_REGISTRY.md`, `TICKET_LEAD.md`, `TICKET_DEV_QUEUE.md`, `TICKET_BRAINSTORM.md`, `TICKET_MOD_QUEUE.md`, `MILESTONES.md` | **retired** with the queues: remove the command (and its `CLAUDE.md` line) or make it refuse with the pointer to `apps/ticketboard` |
-| `src/cli/brief.rs:70-148` printed `RESUME:` / `SPEC:` lines | `docs/specs/…`, `docs/platform/…` | `documentation_v2/tickets/specs/…`, `documentation_v2/platform/…` |
+### 4.1 `tools_v2/ticket-engine/src/repository.rs` — `pub mod documentation`
 
-### 4.2 `tools_v2/xtask/`
-| Pin | Today | Target |
-|:---|:---|:---|
-| `src/verifications/schemas/checks/read_json.rs:12` `spec_dir` | `docs/specs/Mission_Creator_Architecture` | `documentation_v2/tickets/specs` |
-| `src/commands/ci/task_runner.rs` `DOC_LAYOUT_MSG` + `task_definitions.rs` help | "use docs/website/ instead" | "use documentation_v2/website/ instead" |
+Owns the tree root, the plan directory and its template, the derived per-ticket plan path, the
+specification directory, the roadmap, the gap analysis, the token-estimate factor document, the
+five generated ticket queue views and their shared prefix, the two milestone views, the
+stale-identifier scan roots and the trees that scan skips, the estimator's excluded path prefixes,
+and the archived wave plans. `apps/ticketboard/` consumes these items rather than declaring its
+own, so the board and the checker can never disagree about where a document is.
 
-### 4.3 `tools_v2/developer-tools/`
-| Pin | Today | Target |
-|:---|:---|:---|
-| `src/enfusion_tooling/cli.rs:58` `enf citations --docs` default | `docs/mod` | `documentation_v2/mod` |
-| `src/enfusion_tooling/cli.rs:97` `enf capability --verdicts` default | `docs/mod/capability_verdicts.tsv` | `documentation_v2/mod/tbd_framework/capability_verdicts.tsv` |
-| `src/browser_testing/diagnostics/check_fonts.rs:299` (message) | `docs/website/EDITOR_GATE_RUNBOOK.md` | `documentation_v2/website/EDITOR_GATE_RUNBOOK.md` |
+Two items do **not** move with the tree:
+
+- `ARCHIVED_WAVE_PLANS` names two files that exist only at historical revisions, read through
+  `git show`. A revision keeps the spelling it was committed with.
+- `ARCHIVED_WAVE_PLAN_READERS` lists paths where naming those files is a statement about the
+  past; its `docs/` entries follow their own files.
+
+### 4.2 `tools_v2/xtask/src/core/repository_layout.rs` — `pub mod documentation`
+
+Owns the wave-packing marker `docs/platform/factory_pack_wave` (a live four-byte pin), the
+specification directory the schema checks read, the four authority
+documents the consistency check walks, the target directory the document-layout refusal names, and
+every runbook path printed in a message: the home-server, staging-server, slice-workflow,
+platform-factory, mod-design and spawn-determinism documents.
+
+### 4.3 `tools_v2/developer-tools/src/repository_layout.rs` — `pub mod documentation`
+
+Owns the mod documentation directory `enf citations` walks, the capability verdict table
+`enf capability` joins against, and the editor-gate runbook the font diagnostic names.
 
 ### 4.4 `apps/ticketboard/`
-| Pin | Today | Target |
-|:---|:---|:---|
-| `src/watch.rs:125` `ROADMAP_REL` | `docs/specs/Mission_Creator_Architecture/ROADMAP.md` | `documentation_v2/tickets/specs/ROADMAP.md` |
 
-### 4.5 Retired pins
-The frontend `include_str!` of `gap_analysis.md` this section used to list no longer exists in `apps/website/frontend/src/`; nothing in the API or frontend crates reads `docs/` at build time.
+Declares no documentation path of its own. The roadmap it watches and the documentation tree it
+scans for sync targets come from `ticket_engine::repository::documentation`.
+
+### 4.5 Paths to retire or move with the tree
+
+- `docs/platform/factory_pack_wave` — an operator marker, not a document. It moves out of the
+  documentation tree entirely; `xtask::core::repository_layout::documentation::FACTORY_PACK_WAVE`
+  is the one edit.
+- The six generated ticket queue views (`docs/TICKET_*.md`, `docs/MILESTONES.md`) retire with
+  `ticket sync`, whose reader is `apps/ticketboard`.
+- Nothing in the API or frontend crates reads `docs/` at build time.
 
 ### 4.6 Rules and standards that name `docs/`
 `docs/platform/DOCUMENTATION_STANDARDS.md` (§8.2 paths), `docs/platform/WHERE_DOES_X_GO.md` (Spec / doc row), `docs/website/AGENT_COMMIT_CHECKLIST.md`, and root `CLAUDE.md` all say specs live under `docs/**`; they move in Phase 3 and are rewritten in the same commit.
@@ -204,7 +216,7 @@ graph TD
     P4 --> P5
 ```
 
-1. **Phase 1: Codebase Path Pin Preparation**: Update every pin in §4 — `tools_v2/ticket-engine`, `tools_v2/xtask`, `tools_v2/developer-tools`, `apps/ticketboard` — and retire `ticket sync` (its six generated queues are replaced by `apps/ticketboard`). `cargo test -p ticket-engine -p xtask -p developer-tools` must pass against fixtures that use the new paths.
+1. **Phase 1: Codebase Path Pin Preparation**: Edit the three `documentation` submodules named in §4.1–4.3 and rewrite the `.ai/tickets` citations, then retire `ticket sync` (its six generated queues are replaced by `apps/ticketboard`). No other production file spells a documentation path, so there is no fourth edit. `cargo test -p ticket-engine -p xtask -p developer-tools -p ticketboard` must pass against fixtures that use the new paths.
 2. **Phase 2: Automated Ticket Reference Rewriting**: Execute the rewriter in §3.2 across `.ai/tickets/*.toml`, then `cargo xtask ticket check`: it verifies every `spec`/`plan` path on disk, so a stranded citation fails here, before any file moves.
    - **Phase 2b: Refresh the drifted hub documents.** The hub documents already in `documentation_v2/` were derived from `docs/` on 2026-09-16. For each source in `ANALYSIS_AND_INVENTORY.md` §6, diff `git log --since=2026-09-16 -p -- <source>` against its `documentation_v2/` counterpart and carry the change over. Known cases: the four `runbooks/*.md` (deploy preflight, exclude set, migration-checksum repair, dev-login), every hub that names `packages/` (now `contracts_v2/` or `assets_v2/`), and `website/` pages whose surface specs changed.
 3. **Phase 3: Atomic Filesystem Merge** (into the tree that already exists):

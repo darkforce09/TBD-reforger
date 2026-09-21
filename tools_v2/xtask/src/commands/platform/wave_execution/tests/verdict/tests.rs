@@ -57,7 +57,7 @@ fn a_non_canonical_slice_id_is_told_the_truth_not_to_re_gate() {
 fn a_receipt_round_trips_through_disk() {
     let root = scratch("roundtrip");
     let path = write_at(&root, "T-924", SHA, PASS, AT).expect("write");
-    assert_eq!(path, root.join(VERDICTS_DIR_REL).join("T-924.json"));
+    assert_eq!(path, root.join(VERDICTS_DIR).join("T-924.json"));
     let got = read(&root, "T-924").expect("read").expect("present");
     assert_eq!(
         got,
@@ -77,7 +77,7 @@ fn the_receipt_is_exactly_the_three_contract_fields() {
     let root = scratch("fields");
     write_at(&root, "T-924", SHA, PASS, AT).expect("write");
     let text =
-        std::fs::read_to_string(root.join(VERDICTS_DIR_REL).join("T-924.json")).expect("read raw");
+        std::fs::read_to_string(root.join(VERDICTS_DIR).join("T-924.json")).expect("read raw");
     let v: serde_json::Value = serde_json::from_str(&text).expect("parse");
     let obj = v.as_object().expect("object");
     let mut keys: Vec<&str> = obj.keys().map(String::as_str).collect();
@@ -92,7 +92,7 @@ fn the_receipts_directory_hides_itself_from_git() {
     // "dirty", so the slice can never land. The `*` matches `.gitignore` itself.
     let root = scratch("gitignore");
     write_at(&root, "T-924", SHA, PASS, AT).expect("write");
-    let ignore = root.join(VERDICTS_DIR_REL).join(".gitignore");
+    let ignore = root.join(VERDICTS_DIR).join(".gitignore");
     assert_eq!(
         std::fs::read_to_string(&ignore).expect("ignore file"),
         "*\n"
@@ -103,7 +103,7 @@ fn the_receipts_directory_hides_itself_from_git() {
 fn a_lost_ignore_file_is_rewritten_on_the_next_gate() {
     let root = scratch("reignore");
     write_at(&root, "T-924", SHA, PASS, AT).expect("write");
-    let ignore = root.join(VERDICTS_DIR_REL).join(".gitignore");
+    let ignore = root.join(VERDICTS_DIR).join(".gitignore");
     std::fs::remove_file(&ignore).expect("rm ignore");
     write_at(&root, "T-924", SHA, PASS, AT).expect("rewrite");
     assert_eq!(
@@ -155,7 +155,7 @@ fn land_refuses_a_red_receipt() {
 fn an_unrecognised_verdict_string_is_not_green() {
     // "not FAIL" is not "green". A receipt hand-edited to `"verdict": "ok"` must refuse.
     let root = scratch("bogus");
-    let dir = root.join(VERDICTS_DIR_REL);
+    let dir = root.join(VERDICTS_DIR);
     std::fs::create_dir_all(&dir).expect("mkdir");
     std::fs::write(
         dir.join("T-924.json"),
@@ -171,7 +171,7 @@ fn an_unreadable_receipt_is_a_refusal_not_an_absence() {
     // Flattening a parse error into "no receipt" would be honest here but not everywhere: the
     // point is that a receipt this build cannot understand never reads as green.
     let root = scratch("corrupt");
-    let dir = root.join(VERDICTS_DIR_REL);
+    let dir = root.join(VERDICTS_DIR);
     std::fs::create_dir_all(&dir).expect("mkdir");
     std::fs::write(dir.join("T-924.json"), "{ not json").expect("write");
     let r = land_refusal(&root, "T-924", SHA).expect("must refuse");
@@ -182,7 +182,7 @@ fn an_unreadable_receipt_is_a_refusal_not_an_absence() {
 #[test]
 fn an_extra_field_is_refused_rather_than_ignored() {
     let root = scratch("unknown-field");
-    let dir = root.join(VERDICTS_DIR_REL);
+    let dir = root.join(VERDICTS_DIR);
     std::fs::create_dir_all(&dir).expect("mkdir");
     std::fs::write(
         dir.join("T-924.json"),

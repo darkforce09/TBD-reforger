@@ -1,4 +1,4 @@
-//! Legacy storage for the ticket domain.
+//! Ticket files on disk: one `T-<id>.toml` per ticket, encoded, written and read back.
 
 use anyhow::{Result, bail};
 
@@ -21,10 +21,6 @@ pub use storage::{corpus_ids, load_toml_tree, on_disk_ids, save_toml_tree};
 mod key_contract;
 
 pub use key_contract::{ALLOWED_NEW, ENCODING_C_KEYS, FROZEN_27, union_ticket_keys};
-
-mod history;
-
-pub use history::status_map_at_rev;
 
 #[cfg(test)]
 #[path = "tests/mod.rs"]

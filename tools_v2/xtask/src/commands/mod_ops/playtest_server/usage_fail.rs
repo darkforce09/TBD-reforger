@@ -142,9 +142,8 @@ pub fn run(args: &[String]) -> Result<u8> {
         Parsed::Opts(o) => *o,
     };
 
-    // ROOT. bash derived it from `$0`'s directory (`dirname $0/../..`); we walk up from the cwd for
-    // `.ai/tickets/registry.json`, which is how every other ported gate finds it. Both land on the
-    // checkout the operator is standing in.
+    // ROOT: the upward walk from the cwd for the ticket-registry root marker, the way every
+    // command in this binary finds it, so it lands on the checkout the operator is standing in.
     let root = find_repo_root()?;
     let host = Host::detect();
     Ok(main_with(&root, &home, &host, opts))

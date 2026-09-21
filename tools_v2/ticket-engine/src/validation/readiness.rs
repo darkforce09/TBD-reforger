@@ -29,8 +29,9 @@ pub(super) fn check_plan_ready_gate(root: &Path) -> Vec<String> {
         let status = w.status.name().as_str();
         match w.plan.as_deref().map(str::trim) {
             None | Some("") => errors.push(format!(
-                "{id}: {status} work ticket without a plan — ready-class requires plan \
-                 (docs/plans/TEMPLATE.md; `ticket mark-ready {id} <spec> [plan]` defaults it)"
+                "{id}: {status} work ticket without a plan — ready-class requires plan ({}; \
+                 `ticket mark-ready {id} <spec> [plan]` defaults it)",
+                crate::repository::documentation::PLAN_TEMPLATE
             )),
             Some(p) => {
                 if !root.join(p).is_file() {

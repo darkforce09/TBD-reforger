@@ -1,16 +1,14 @@
-#![allow(dead_code)] // save_tree/value_to_ticket stay compiled for the write-path pins
-//! T-911.2 phase-2 tree helpers: the parents-only `Value` projection the read verbs
-//! (brief/show/get/sync/queue.json) still consume, plus the retired Value write path
-//! kept only for its regression pins.
+#![allow(dead_code)] // the Value write path stays compiled so its refusal pins can run
+//! Parents-only `Value` projection of the ticket tree.
 //!
-//! T-917.2 NOTE — the phase-1→phase-2 one-shot migrator (`migrate_live_tree`,
-//! `map_value`, `infer_scope`, `override_scope`, the per-id override table, the
-//! T-090-family ready fills and the T-674/T-675 synthetic children) was DELETED at the
-//! schema-v2 cutover, not cfg-demoted: it compiled against the v1 `Scope` enum tree,
-//! which no longer exists — compile-time physics, the same force that made the cutover
-//! a single commit. Its successor (v1 Value → v2 Value) lives in
-//! `tools_v2/xtask/src/migrate_v2.rs`, retained one-shot for corroboration like
-//! `wave/legacy_plan.rs`.
+//! The read verbs that render tickets — brief, show, get, sync, the queue view — consume a
+//! `Value` rather than the typed corpus, and this module builds it. Children are deliberately
+//! absent: the projection answers "what does the registry look like", and a child's fields live
+//! inside its parent's `slice_plan`.
+//!
+//! The Value WRITE path beside it is not the writer. `crate::ops` over `crate::Corpus` owns every
+//! mutation; [`save_tree`] stays compiled only so the pins that assert it refuses a typed tree
+//! have something to call.
 
 use crate::{Domain, ScopeV2, Ticket, TicketFile, parse_ticket_toml, render_ticket_toml};
 use anyhow::{Context, Result, bail};
@@ -23,7 +21,7 @@ pub fn is_phase2_text(text: &str) -> bool {
 }
 
 pub fn tree_is_phase2(root: &Path) -> bool {
-    let dir = crate::registry::legacy_storage::tickets_dir(root);
+    let dir = crate::registry::ticket_file_storage::tickets_dir(root);
     let Ok(rd) = std::fs::read_dir(&dir) else {
         return false;
     };
@@ -156,7 +154,7 @@ pub fn value_to_ticket(v: &Value) -> Result<Ticket> {
 }
 
 pub fn load_phase2_tree(root: &Path) -> Result<Value> {
-    let dir = crate::registry::legacy_storage::tickets_dir(root);
+    let dir = crate::registry::ticket_file_storage::tickets_dir(root);
     let mut tickets = Vec::new();
     let mut rows = Vec::new();
     for ent in std::fs::read_dir(&dir)? {
@@ -166,7 +164,7 @@ pub fn load_phase2_tree(root: &Path) -> Result<Value> {
         if !name.starts_with("T-") || !name.ends_with(".toml") {
             continue;
         }
-        if !crate::registry::legacy_storage::is_parent_id(name.trim_end_matches(".toml")) {
+        if !crate::registry::ticket_file_storage::is_parent_id(name.trim_end_matches(".toml")) {
             continue;
         }
         let text = std::fs::read_to_string(ent.path())?;
@@ -187,7 +185,7 @@ pub fn load_phase2_tree(root: &Path) -> Result<Value> {
     for (_, _, v) in rows {
         tickets.push(v);
     }
-    let next_id = crate::registry::legacy_storage::derive_next_id(&tickets);
+    let next_id = crate::registry::ticket_file_storage::derive_next_id(&tickets);
     Ok(serde_json::json!({
         "next_id": next_id,
         "tickets": tickets,
@@ -205,7 +203,7 @@ pub fn load_phase2_tree(root: &Path) -> Result<Value> {
 ///
 /// Write encoding-C parents from the in-memory registry. Existing child files are kept.
 pub fn save_tree(root: &Path, registry: &Value) -> Result<()> {
-    let dir = crate::registry::legacy_storage::tickets_dir(root);
+    let dir = crate::registry::ticket_file_storage::tickets_dir(root);
     std::fs::create_dir_all(&dir)?;
     let tickets = registry
         .get("tickets")

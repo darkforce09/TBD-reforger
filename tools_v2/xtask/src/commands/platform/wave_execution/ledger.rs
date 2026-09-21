@@ -188,17 +188,22 @@ pub fn has_work(id: &str) -> bool {
 /// stopped running and 27 tickets landed unverified before the operator noticed. A trigger that
 /// depends on remembering a boundary that no longer exists is not a trigger.
 ///
-/// `.ai/artifacts/last-verified` holds the sha the last verifier examined. Debt is the count of
+/// The last-verified marker holds the sha the last verifier examined. Debt is the count of
 /// platform tickets marked shipped since. Nagging at 8, which is one wave's width.
 pub fn verify_debt(ctx: &Ctx) -> String {
-    let marker = ctx.root.join(".ai/artifacts/last-verified");
+    let marker = ctx
+        .root
+        .join(crate::core::repository_layout::LAST_VERIFIED_MARKER);
     let base = std::fs::read_to_string(&marker)
         .ok()
         .and_then(|s| s.lines().next().map(str::to_string))
         .map(|s| s.chars().filter(|c| !c.is_whitespace()).collect::<String>())
         .unwrap_or_default();
     if base.is_empty() {
-        return "unknown (no .ai/artifacts/last-verified)".into();
+        return format!(
+            "unknown (no {})",
+            crate::core::repository_layout::LAST_VERIFIED_MARKER
+        );
     }
     let log = git_stdout(&[
         "-C",

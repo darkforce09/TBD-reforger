@@ -15,8 +15,8 @@ pub(super) fn cmd_land(root: &Path) -> u8 {
     for s in wave_slices(root, &w) {
         if tree_state(root, &s) == TreeState::Dirty {
             eprintln!("REFUSING: {s} worktree has uncommitted changes.");
-            // bash oddity: BASE/$s not parent_slice; status --short redirected to stderr
-            let d = root.join(BASE).join(&s);
+            // bash oddity: WORKTREES_DIR/$s not parent_slice; status --short redirected to stderr
+            let d = root.join(WORKTREES_DIR).join(&s);
             if let Ok(o) = Command::new("git")
                 .args(["-C", d.to_str().unwrap_or(""), "status", "--short"])
                 .output()

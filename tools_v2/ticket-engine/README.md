@@ -6,14 +6,13 @@ Self-contained ticket storage, validation, command services, generated views, sc
 
 - `model`, `encoding`, `vocab`, and `timestamp`: public ticket types, canonical TOML, scope resolution, and UTC timestamps. Existing crate-root exports remain stable.
 - `store` and `ops`: fail-closed corpus loading, validated post-images, and surgical atomic file replacement.
-- `registry`: read-only projections, historical status lookup, and compatibility formats. Legacy writers refuse the live typed format.
+- `registry`: ticket files on disk, read-only value projections, and ticket statuses at a past revision. The whole-tree writer refuses a typed tree, so the typed operations are the only writer.
 - `validation`: schema, vocabulary, ownership, body, readiness, shipping, hierarchy, accounting, debt, and repository-reference checks.
 - `cli`: briefs, queries, mutations, shipping, batch selection, and configuration.
 - `sync`: six Markdown views, queue JSON, roadmap markers, and gap-analysis ticket columns.
-- `wave_lock`: dependency packing, collision selection, deterministic lock files, drift checks, reservations, and historical plan decoding.
+- `wave_lock`: dependency packing, collision selection, deterministic lock files, drift checks, reservations, and decoding of the archived wave plans at the revisions that still carry them.
 - `metrics`: measured receipts, elapsed time, token accounting, and derived estimates.
-- `maintenance`: ticket migrations, timestamp provenance, and body quarantine.
-- `repository`: explicit ticket paths and active-checkout root discovery.
+- `repository`: every repository path the crate reads or writes, spelled once, with a `documentation` submodule for the ones under the documentation tree; plus checkout-root discovery. `xtask` and `ticketboard` resolve those paths from here.
 
 ## Host interfaces
 

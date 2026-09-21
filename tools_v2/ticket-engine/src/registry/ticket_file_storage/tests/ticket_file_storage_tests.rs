@@ -6,7 +6,7 @@ fn frozen_27_matches_live_corpus() {
     if crate::registry::typed_projection::tree_is_phase2(&root) {
         return;
     }
-    let v = load_json_or_toml(&root).expect("load");
+    let v = load_toml_tree(&root).expect("load");
     let got = union_ticket_keys(&v);
     let expect: BTreeSet<String> = FROZEN_27.iter().map(|s| (*s).to_string()).collect();
     assert_eq!(got, expect, "corpus keys drifted from FROZEN_27");
@@ -161,19 +161,19 @@ fn user_story_alias_maps_to_main_goal() {
 }
 
 #[test]
-fn toml_roundtrip_is_byte_identical_to_canonical_monolith() {
+fn toml_roundtrip_is_byte_identical_to_the_registry_document() {
     let root = repo_root();
-    let (parsed, gold) = canonical_monolith(&root);
+    let (parsed, gold) = canonical_registry_document(&root);
     let n = parsed
         .get("tickets")
         .and_then(Value::as_array)
         .map(|a| a.len())
         .expect("tickets[]");
-    assert!(n > 0, "cutover monolith has no tickets");
+    assert!(n > 0, "the registry document has no tickets");
 
-    let tmp = root.join("target").join("phase1-toml-roundtrip");
+    let tmp = root.join("target").join("ticket-file-roundtrip");
     let _ = fs::remove_dir_all(&tmp);
-    fs::create_dir_all(tmp.join(".ai/tickets")).unwrap();
+    fs::create_dir_all(tmp.join(crate::repository::TICKETS_DIR)).unwrap();
     save_toml_tree(&tmp, &parsed).expect("save toml tree");
     let reloaded = load_toml_tree(&tmp).expect("load toml tree");
     let emitted = format_json_unicode_preserve(&reloaded).expect("emit");
@@ -202,12 +202,7 @@ fn toml_roundtrip_is_byte_identical_to_canonical_monolith() {
 #[test]
 fn no_ticket_lost_set_equality() {
     let root = repo_root();
-    let json_path = tickets_dir(&root).join("registry.json");
-    let v = if json_path.is_file() {
-        load_json_monolith(&json_path).unwrap()
-    } else {
-        load_toml_tree(&root).unwrap()
-    };
+    let v = load_toml_tree(&root).unwrap();
     let (parents, all) = corpus_ids(&v);
     let n = parents.len();
     assert_eq!(
@@ -215,20 +210,11 @@ fn no_ticket_lost_set_equality() {
         Some(n),
         "tickets[].len must equal parent-id set size (measured, not hardcoded)"
     );
-    if json_path.is_file() {
-        let tmp = root.join("target").join("phase1-id-set");
-        let _ = fs::remove_dir_all(&tmp);
-        fs::create_dir_all(tmp.join(".ai/tickets")).unwrap();
-        save_toml_tree(&tmp, &v).unwrap();
-        let disk: BTreeSet<String> = on_disk_ids(&tmp).unwrap().into_iter().collect();
-        assert_eq!(
-            disk, all,
-            "on-disk ids must equal parent∪slice_plan∪slices (N={n} parents)"
-        );
-    } else {
-        let disk: BTreeSet<String> = on_disk_ids(&root).unwrap().into_iter().collect();
-        assert_eq!(disk, all, "on-disk ids must equal parent∪slice_plan∪slices");
-    }
+    let disk: BTreeSet<String> = on_disk_ids(&root).unwrap().into_iter().collect();
+    assert_eq!(
+        disk, all,
+        "on-disk ids must equal the union of parents, slice plans and slices"
+    );
 }
 
 #[test]
@@ -241,148 +227,6 @@ fn derive_next_id_is_max_plus_one() {
     assert_eq!(derive_next_id(&t), 911);
     let planted = vec![serde_json::json!({"id": "T-950"})];
     assert_eq!(derive_next_id(&planted), 951);
-}
-
-#[test]
-fn write_live_toml_tree() {
-    if std::env::var("TBD_PHASE1_WRITE").ok().as_deref() != Some("1") {
-        return;
-    }
-    let root = repo_root();
-    let json_path = tickets_dir(&root).join("registry.json");
-    if !json_path.is_file() {
-        return;
-    }
-    let v = load_json_monolith(&json_path).unwrap();
-    save_toml_tree(&root, &v).unwrap();
-    let reloaded = load_toml_tree(&root).unwrap();
-    let emitted = format_json_unicode_preserve(&reloaded).unwrap();
-    let gold = format_json_unicode_preserve(&v).unwrap();
-    assert_eq!(
-        emitted, gold,
-        "refusing to delete: emit is not byte-identical to canonical monolith"
-    );
-    fs::write(root_marker_path(&root), "# ticket-registry root marker\n").unwrap();
-    fs::remove_file(&json_path).unwrap();
-    assert!(!json_path.exists());
-    assert!(root_marker_path(&root).is_file());
-}
-
-#[test]
-fn dual_read_json_then_toml() {
-    use std::process::Command;
-    let tmp = repo_root().join("target").join("phase1-dual-read");
-    let _ = fs::remove_dir_all(&tmp);
-    fs::create_dir_all(tmp.join(".ai/tickets")).unwrap();
-    let git = |args: &[&str]| {
-        Command::new("git")
-            .args(args)
-            .current_dir(&tmp)
-            .env("GIT_AUTHOR_NAME", "tbd")
-            .env("GIT_AUTHOR_EMAIL", "tbd@test")
-            .env("GIT_COMMITTER_NAME", "tbd")
-            .env("GIT_COMMITTER_EMAIL", "tbd@test")
-            .status()
-            .unwrap()
-    };
-    git(&["init", "-q"]);
-    git(&["checkout", "-q", "-b", "main"]);
-    let json =
-        r#"{"tickets":[{"id":"T-AAA","status":"shipped"},{"id":"T-BBB","status":"queued"}]}"#;
-    fs::write(tmp.join(".ai/tickets/registry.json"), json).unwrap();
-    git(&["add", "."]);
-    git(&["commit", "-q", "-m", "A json"]);
-    let sha_a = String::from_utf8(
-        Command::new("git")
-            .args(["rev-parse", "HEAD"])
-            .current_dir(&tmp)
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap()
-    .trim()
-    .to_string();
-
-    fs::remove_file(tmp.join(".ai/tickets/registry.json")).unwrap();
-    fs::write(tmp.join(".ai/tickets/ROOT"), "#\n").unwrap();
-    let aaa = serde_json::json!({"id":"T-AAA","status":"shipped"});
-    let bbb = serde_json::json!({"id":"T-BBB","status":"shipped"});
-    fs::write(
-        tmp.join(".ai/tickets/T-AAA.toml"),
-        ticket_to_toml_string(&aaa, 0).unwrap(),
-    )
-    .unwrap();
-    fs::write(
-        tmp.join(".ai/tickets/T-BBB.toml"),
-        ticket_to_toml_string(&bbb, 1).unwrap(),
-    )
-    .unwrap();
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "B toml"]);
-    let sha_b = String::from_utf8(
-        Command::new("git")
-            .args(["rev-parse", "HEAD"])
-            .current_dir(&tmp)
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap()
-    .trim()
-    .to_string();
-
-    let map_at = |rev: &str| -> Option<std::collections::HashMap<String, String>> {
-        crate::registry::legacy_storage::status_map_at_rev(&tmp, rev)
-    };
-
-    let a = map_at(&sha_a).expect("json rev");
-    assert_eq!(a.get("T-AAA").map(String::as_str), Some("shipped"));
-    assert_eq!(a.get("T-BBB").map(String::as_str), Some("queued"));
-    let ids = ["T-AAA", "T-BBB"];
-    let open_a: Vec<_> = ids
-        .iter()
-        .copied()
-        .filter(|t| {
-            !matches!(
-                a.get(*t).map(String::as_str),
-                Some("shipped") | Some("cancelled")
-            )
-        })
-        .collect();
-    assert_eq!(open_a, ["T-BBB"]);
-
-    let b = map_at(&sha_b).expect("toml rev");
-    let open_b: Vec<_> = ids
-        .iter()
-        .copied()
-        .filter(|t| {
-            !matches!(
-                b.get(*t).map(String::as_str),
-                Some("shipped") | Some("cancelled")
-            )
-        })
-        .collect();
-    assert!(open_b.is_empty(), "both shipped at B");
-
-    fs::remove_dir_all(tmp.join(".ai/tickets")).unwrap();
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "C empty"]);
-    let sha_c = String::from_utf8(
-        Command::new("git")
-            .args(["rev-parse", "HEAD"])
-            .current_dir(&tmp)
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap()
-    .trim()
-    .to_string();
-    assert!(
-        map_at(&sha_c).is_none(),
-        "neither form must refuse, not empty map"
-    );
 }
 
 #[test]

@@ -55,10 +55,10 @@ fn legality_walks_the_tree() {
 fn missing_file_refuses_naming_path() {
     let dir = std::env::temp_dir().join(format!("t917-vocab-lib-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
+    std::fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
     let err = ScopeVocab::load(&dir).unwrap_err();
     assert!(err.contains("scope-vocab.toml"), "{err}");
-    std::fs::write(dir.join(VOCAB_REL), MINI).unwrap();
+    std::fs::write(dir.join(SCOPE_VOCAB), MINI).unwrap();
     let v = ScopeVocab::load(&dir).expect("present file loads");
     assert_eq!(
         v.surfaces_of("website", "frontend", "mission_creator"),

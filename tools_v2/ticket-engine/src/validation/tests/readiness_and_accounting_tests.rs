@@ -152,7 +152,7 @@ fn honesty_counters_fixture_math() {
     };
     // T-001: receipt, measured stamps.
     fs::write(dir.join("T-001.toml"), shipped("T-001", "")).unwrap();
-    let rdir = tmp.join(".ai/tickets/metrics/T-001");
+    let rdir = tmp.join(crate::repository::METRICS_DIR).join("T-001");
     fs::create_dir_all(&rdir).unwrap();
     fs::write(rdir.join("r.json"), "{}").unwrap();
     // T-002: diff_loc estimate, git_subject-mined stamps.
@@ -181,7 +181,7 @@ fn honesty_counters_fixture_math() {
             "id = \"T-005\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"queued\"\norder = 11\nowns = [\"a.rs\"]\nestimated = [\"created_at\"]\ncreated_at = \"2026-07-01T10:00:00Z\"\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n",
         )
         .unwrap();
-    let est_dir = tmp.join(".ai/tickets/estimates");
+    let est_dir = tmp.join(crate::repository::ESTIMATES_DIR);
     fs::create_dir_all(&est_dir).unwrap();
     fs::write(
             est_dir.join("T-002.json"),

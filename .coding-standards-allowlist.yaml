@@ -3,7 +3,7 @@
 # A test file has a tests/ path component or an _tests.rs basename.
 # SIZE-3 entries require a reason and a YYYY-MM-DD expiry. MC-perf applies only to SIZE-2.
 # Missing paths fail the gate. Generated API contracts are excluded from the source walk.
-# The frontend has no SIZE-3 exceptions; its oversized files are split in Phase 3C.
+# The frontend carries no SIZE-3 exceptions.
 
 - rule: SIZE-3
   path: apps/ticketboard/src/app.rs
@@ -12,11 +12,6 @@
 
 - rule: SIZE-3
   path: apps/ticketboard/src/board.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/ticketboard/src/detail.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 
@@ -32,16 +27,6 @@
 
 - rule: SIZE-3
   path: apps/ticketboard/src/mutate.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/ticketboard/src/verbs.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31
-
-- rule: SIZE-3
-  path: apps/ticketboard/src/viewer.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31
 

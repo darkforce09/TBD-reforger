@@ -142,8 +142,15 @@ pub struct Task {
 /// `verify-doc-layout`'s failure text. Names the trees the walk actually covers (`apps`,
 /// `contracts_v2`, `assets_v2` — see `split_cmd::verify_doc_layout`), so the message and the
 /// behaviour cannot disagree about where a `docs/` subtree is forbidden.
-pub const DOC_LAYOUT_MSG: &str = "FORBIDDEN: markdown under apps/**/docs/, contracts_v2/**/docs/ or \
-                                  assets_v2/**/docs/ — use docs/website/ instead";
+/// What the document-layout refusal prints: the trees markdown may not be committed under, and
+/// where it belongs instead.
+pub fn doc_layout_refusal() -> String {
+    format!(
+        "FORBIDDEN: markdown under apps/**/docs/, contracts_v2/**/docs/ or assets_v2/**/docs/ — \
+         use {} instead",
+        crate::core::repository_layout::documentation::LAYOUT_TARGET_DIR
+    )
+}
 
 // The table lives next door, split at the data/behaviour seam to keep both files inside SIZE-1.
 // It is pure data: `run_task` below is its only interpreter.

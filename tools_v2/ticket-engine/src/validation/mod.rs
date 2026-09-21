@@ -1,7 +1,6 @@
 //! Validation for the ticket domain.
 
 use crate::registry::*;
-use crate::repository::gap_analysis_path;
 use crate::sync::gap_analysis::test_gap_analysis_round_trip;
 use crate::validation::constants::*;
 use anyhow::Result;

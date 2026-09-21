@@ -28,12 +28,13 @@ fn no_args_is_rc2() {
 /// and the two flags without which the server boots into a healthy-looking, unplayable state.
 #[test]
 fn usage_names_the_runnable_playtest_command() {
+    let usage = usage();
     assert!(
-        USAGE.contains("cargo xtask mod playtest --mission-id=<id> [--admin=<identityId>]"),
-        "{USAGE:?}"
+        usage.contains("cargo xtask mod playtest --mission-id=<id> [--admin=<identityId>]"),
+        "{usage:?}"
     );
     assert!(
-        !USAGE.contains(".sh"),
-        "usage names only runnable commands: {USAGE:?}"
+        !usage.contains(".sh"),
+        "usage names only runnable commands: {usage:?}"
     );
 }

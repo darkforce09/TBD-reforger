@@ -150,7 +150,7 @@ pub fn cmd_prompt(
 }
 
 pub fn cmd_list(root: &Path, registry: &Value) -> Result<()> {
-    let queue_path = root.join(".ai/tickets/queue.json");
+    let queue_path = root.join(crate::repository::QUEUE_JSON);
     let data = if queue_path.is_file() {
         serde_json::from_str(&fs::read_to_string(&queue_path)?)?
     } else {
@@ -226,38 +226,21 @@ pub fn cmd_plan_batch(registry: &Value) -> Result<()> {
     Ok(())
 }
 
+/// The directories a sparse checkout needs to execute `id`: the workflow definitions every
+/// target needs, plus one set per target the ticket names.
 pub fn cmd_sparse_paths(registry: &Value, id: &str) -> Result<()> {
     let t = require_ticket(registry, id);
     let mut paths = std::collections::BTreeSet::new();
     paths.insert(".github".to_string());
     for tgt in slice_targets(t) {
-        match tgt.as_str() {
-            "website" => {
-                paths.insert("apps/website".into());
-            }
-            "mod" => {
-                paths.insert("apps/mod".into());
-            }
-            "shared" => {
-                paths.insert("contracts_v2".into());
-            }
-            "root" => {
-                // `Makefile` sat in this list until T-897 deleted it. Its successor is `tools_v2/xtask/`:
-                // a root slice needs that checked out or `cargo xtask` cannot build, which is
-                // now the whole task surface rather than a 504-line file at the top level.
-                for p in [
-                    "scripts",
-                    ".ai/tickets",
-                    "docs",
-                    ".ai/artifacts",
-                    "xtask",
-                    "README.md",
-                    "CLAUDE.md",
-                ] {
-                    paths.insert(p.into());
-                }
-            }
-            _ => {}
+        let Some((_, set)) = crate::repository::SPARSE_CHECKOUT_SETS
+            .iter()
+            .find(|(name, _)| *name == tgt)
+        else {
+            continue;
+        };
+        for p in *set {
+            paths.insert((*p).to_string());
         }
     }
     for p in paths {

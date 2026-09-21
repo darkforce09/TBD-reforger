@@ -109,7 +109,7 @@ pub fn stamp_sha_with_inputs(
     sha_loc: &std::collections::BTreeMap<String, u64>,
     now_utc: &str,
 ) -> Result<Vec<String>> {
-    let lock_path = root.join(".ai/tickets/wave.lock");
+    let lock_path = root.join(crate::repository::WAVE_LOCK);
     let lock_before = fs::read(&lock_path).ok();
     let mut corpus = load_corpus(root)?;
     if corpus.get(id).is_none() {
@@ -135,14 +135,14 @@ pub fn stamp_sha_with_inputs(
     if crate::metrics::has_receipt(root, id) {
         lines.push(format!(
             "{id}: measured receipt(s) under {}/{id}/ — no estimate generated",
-            crate::metrics::METRICS_DIR_REL
+            crate::repository::METRICS_DIR
         ));
     } else {
         let existing = crate::metrics::estimates::load_existing(root)?;
         if existing.contains_key(id) {
             lines.push(format!(
                 "{id}: {}/{id}.json already exists — estimate untouched",
-                crate::metrics::estimates::ESTIMATES_DIR_REL
+                crate::repository::ESTIMATES_DIR
             ));
         } else {
             let subject_shas: Vec<String> = subjects
@@ -199,8 +199,9 @@ pub fn stamp_sha_with_inputs(
     let lock_after = fs::read(&lock_path).ok();
     if lock_before != lock_after {
         bail!(
-            ".ai/tickets/wave.lock bytes changed — stamps and estimates are not lock inputs; \
-             stamp-sha perturbed something it must not"
+            "{} bytes changed — stamps and estimates are not lock inputs; stamp-sha \
+             perturbed something it must not",
+            crate::repository::WAVE_LOCK
         );
     }
     Ok(lines)

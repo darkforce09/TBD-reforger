@@ -15,12 +15,12 @@ use crate::cli::commit_subjects::SubjectCommit;
 use crate::is_sha_shaped;
 use walkdir::WalkDir;
 
+use crate::repository::documentation::TOKEN_ESTIMATE_FACTOR_DOC;
+use crate::repository::{ESTIMATES_DIR, ESTIMATES_SCHEMA};
+
 mod model;
 
-pub use model::{
-    CohortKey, ESTIMATES_DIR_REL, ESTIMATES_SCHEMA_REL, EstimateRecord, FACTOR_DOC_REL,
-    TOKENS_PER_LOC, estimates_root, validate_estimate,
-};
+pub use model::{CohortKey, EstimateRecord, TOKENS_PER_LOC, estimates_root, validate_estimate};
 
 mod git_changes;
 

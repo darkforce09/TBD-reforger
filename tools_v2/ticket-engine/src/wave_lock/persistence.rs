@@ -45,7 +45,7 @@ pub fn write(root: &Path, lock: &WaveLock) -> Result<()> {
 /// bookkeeping hook, and `platform wave land`'s final step). Same writer as `wave repack`;
 /// wave 0 baseline carries over from the previous lock when one exists.
 pub fn repack_quiet(root: &Path) -> Result<WaveLock> {
-    if crate::wave_lock::legacy_plan::any_tsv_present(root) {
+    if crate::wave_lock::archived_wave_plans::any_tsv_present(root) {
         return migrate_from_tsv(root);
     }
     // The previous committed lock is BOTH carries: its wave 0 is the parked baseline, and its
@@ -63,7 +63,7 @@ pub fn repack_quiet(root: &Path) -> Result<WaveLock> {
 /// [`repack_quiet`] with a pending-close reservation (`reserved_entry`). Same writer, same
 /// carries; the reservation is the one input the tickets themselves can no longer supply.
 pub fn repack_reserving(root: &Path, reserve: &[String]) -> Result<WaveLock> {
-    if crate::wave_lock::legacy_plan::any_tsv_present(root) {
+    if crate::wave_lock::archived_wave_plans::any_tsv_present(root) {
         bail!(
             "wave repack --reserve: this tree still has the wave-plan TSVs, so the repack is the              one-shot migration — migrate first, then reserve"
         );
@@ -84,7 +84,7 @@ pub fn repack_reserving(root: &Path, reserve: &[String]) -> Result<WaveLock> {
 pub(super) fn migrate_from_tsv(root: &Path) -> Result<WaveLock> {
     let views = load_views(root)?;
     let by_id: BTreeMap<&str, &TicketView> = views.iter().map(|v| (v.id.as_str(), v)).collect();
-    let rows = crate::wave_lock::legacy_plan::working_tree_rows(root)?;
+    let rows = crate::wave_lock::archived_wave_plans::working_tree_rows(root)?;
 
     let mut label_order: Vec<&str> = Vec::new();
     let mut groups: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
@@ -121,7 +121,7 @@ pub(super) fn migrate_from_tsv(root: &Path) -> Result<WaveLock> {
         Vec::new(),
     );
     write(root, &lock)?;
-    crate::wave_lock::legacy_plan::delete_tsvs(root)?;
+    crate::wave_lock::archived_wave_plans::delete_tsvs(root)?;
     Ok(lock)
 }
 
@@ -149,7 +149,7 @@ pub(super) fn summary(lock: &WaveLock) -> String {
 }
 
 pub fn cmd_repack(root: &Path, reserve: &[String]) -> Result<u8> {
-    let migrated = crate::wave_lock::legacy_plan::any_tsv_present(root);
+    let migrated = crate::wave_lock::archived_wave_plans::any_tsv_present(root);
     let lock = if reserve.is_empty() {
         repack_quiet(root)?
     } else {
@@ -166,6 +166,6 @@ pub fn cmd_repack(root: &Path, reserve: &[String]) -> Result<u8> {
             e.tickets.join(" ")
         );
     }
-    println!("wrote {}: {}", LOCK_REL, summary(&lock));
+    println!("wrote {}: {}", WAVE_LOCK, summary(&lock));
     Ok(0)
 }

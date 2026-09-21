@@ -34,15 +34,14 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The vocabulary file, relative to the repo root.
-pub const VOCAB_REL: &str = ".ai/tickets/scope-vocab.toml";
+use crate::repository::SCOPE_VOCAB;
 
 /// The closed domain set — the only legal top-level tables, sorted. Changes ~never
 /// (spec §Scope v2: "`domain` stays a closed Rust enum").
 pub const DOMAINS: [&str; 5] = ["engine", "mod", "repo", "schema", "website"];
 
 pub fn vocab_path(root: &Path) -> PathBuf {
-    root.join(VOCAB_REL)
+    root.join(crate::repository::SCOPE_VOCAB)
 }
 
 /// Validate the vocabulary file's shape. Every error names the file, the path into the
@@ -53,12 +52,12 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     let path = vocab_path(root);
     if !path.is_file() {
         return vec![format!(
-            "missing scope vocabulary (required for ticket check since T-917.1): {VOCAB_REL}"
+            "missing scope vocabulary (required for ticket check since T-917.1): {SCOPE_VOCAB}"
         )];
     }
     let text = match fs::read_to_string(&path) {
         Ok(t) => t,
-        Err(e) => return vec![format!("{VOCAB_REL}: unreadable ({e})")],
+        Err(e) => return vec![format!("{SCOPE_VOCAB}: unreadable ({e})")],
     };
     validate_vocab_text(&text)
 }
@@ -70,26 +69,26 @@ fn validate_vocab_text(text: &str) -> Vec<String> {
         Ok(v) => v,
         // `message()` keeps the error one line (Display of toml::de::Error embeds a
         // multi-line source snippet). Duplicate keys land here, named by the parser.
-        Err(e) => return vec![format!("{VOCAB_REL}: TOML parse: {}", e.message())],
+        Err(e) => return vec![format!("{SCOPE_VOCAB}: TOML parse: {}", e.message())],
     };
     let mut errors = Vec::new();
     let Some(domains) = value.as_table() else {
         return vec![format!(
-            "{VOCAB_REL}: top level: must be a table of domains"
+            "{SCOPE_VOCAB}: top level: must be a table of domains"
         )];
     };
     check_keys(domains, "top level", &mut errors);
     for (domain, dv) in domains {
         if !DOMAINS.contains(&domain.as_str()) {
             errors.push(format!(
-                "{VOCAB_REL}: top level: unknown domain \"{domain}\" (closed set: {})",
+                "{SCOPE_VOCAB}: top level: unknown domain \"{domain}\" (closed set: {})",
                 DOMAINS.join(", ")
             ));
             continue;
         }
         let Some(layers) = dv.as_table() else {
             errors.push(format!(
-                "{VOCAB_REL}: {domain}: domain must be a table of layers"
+                "{SCOPE_VOCAB}: {domain}: domain must be a table of layers"
             ));
             continue;
         };
@@ -98,7 +97,7 @@ fn validate_vocab_text(text: &str) -> Vec<String> {
             let lpath = format!("{domain}.{layer}");
             let Some(components) = lv.as_table() else {
                 errors.push(format!(
-                    "{VOCAB_REL}: {lpath}: layer must be a table of `component = [surfaces]` \
+                    "{SCOPE_VOCAB}: {lpath}: layer must be a table of `component = [surfaces]` \
                      keys (a component-free layer is a bare [{lpath}] header)"
                 ));
                 continue;
@@ -108,7 +107,7 @@ fn validate_vocab_text(text: &str) -> Vec<String> {
                 let cpath = format!("{lpath}.{component}");
                 let Some(surfaces) = cv.as_array() else {
                     errors.push(format!(
-                        "{VOCAB_REL}: {cpath}: component must be an array of surface strings"
+                        "{SCOPE_VOCAB}: {cpath}: component must be an array of surface strings"
                     ));
                     continue;
                 };
@@ -116,15 +115,15 @@ fn validate_vocab_text(text: &str) -> Vec<String> {
                 for surface in surfaces {
                     let Some(s) = surface.as_str() else {
                         errors.push(format!(
-                            "{VOCAB_REL}: {cpath}: surface entries must be strings \
+                            "{SCOPE_VOCAB}: {cpath}: surface entries must be strings \
                              (got {surface})"
                         ));
                         continue;
                     };
                     if s.is_empty() {
-                        errors.push(format!("{VOCAB_REL}: {cpath}: empty surface value"));
+                        errors.push(format!("{SCOPE_VOCAB}: {cpath}: empty surface value"));
                     } else if seen.contains(&s) {
-                        errors.push(format!("{VOCAB_REL}: {cpath}: duplicate surface \"{s}\""));
+                        errors.push(format!("{SCOPE_VOCAB}: {cpath}: duplicate surface \"{s}\""));
                     } else {
                         seen.push(s);
                     }
@@ -142,13 +141,13 @@ fn check_keys(table: &toml::map::Map<String, toml::Value>, path: &str, errors: &
     let keys: Vec<&str> = table.keys().map(String::as_str).collect();
     for key in &keys {
         if key.is_empty() {
-            errors.push(format!("{VOCAB_REL}: {path}: empty key"));
+            errors.push(format!("{SCOPE_VOCAB}: {path}: empty key"));
         }
     }
     for pair in keys.windows(2) {
         if pair[0] >= pair[1] {
             errors.push(format!(
-                "{VOCAB_REL}: {path}: keys not sorted ascending (\"{}\" then \"{}\")",
+                "{SCOPE_VOCAB}: {path}: keys not sorted ascending (\"{}\" then \"{}\")",
                 pair[0], pair[1]
             ));
         }

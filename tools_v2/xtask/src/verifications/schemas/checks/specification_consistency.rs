@@ -23,6 +23,10 @@ pub(super) fn live_xtask_task_names() -> HashSet<String> {
     out
 }
 
+/// The program whose specification set these gates read, and whose active slice gate 10
+/// compares the hub header against.
+const MAP_TERRAIN_PROGRAM: &str = "T-090";
+
 pub fn specification_consistency() -> Result<u8> {
     let root = repo_root()?;
     let spec = spec_dir(&root);
@@ -43,6 +47,7 @@ pub fn specification_consistency() -> Result<u8> {
 
     let mut failures: Vec<String> = Vec::new();
     let mut fail = |gate: &str, msg: String| failures.push(format!("[{gate}] {msg}"));
+    let mut skipped: Vec<&str> = Vec::new();
 
     let window_has = |text: &str, i: usize, radius: usize, re: &regex::Regex| -> bool {
         let lo = i.saturating_sub(radius);
@@ -279,10 +284,10 @@ pub fn specification_consistency() -> Result<u8> {
         spec.join("ROADMAP.md"),
         spec.join("agent_execution.md"),
         spec.join("engineering_plan.md"),
-        root.join("docs/website/frontend/ROADMAP.md"),
-        root.join("docs/website/frontend/INDEX.md"),
-        root.join("docs/website/frontend/pages/mission-editor.md"),
-        root.join("docs/mod/CLAUDE-CODE-START.md"),
+        root.join(crate::core::repository_layout::documentation::FRONTEND_ROADMAP),
+        root.join(crate::core::repository_layout::documentation::FRONTEND_INDEX),
+        root.join(crate::core::repository_layout::documentation::MISSION_EDITOR_SURFACE),
+        root.join(crate::core::repository_layout::documentation::MOD_AGENT_START),
     ];
     let mut gate8: Vec<(String, String)> = corpus.clone();
     for p in authority {
@@ -322,24 +327,32 @@ pub fn specification_consistency() -> Result<u8> {
         fail("9", "t090_eden_ai_world_object_schema.md: still says \"move/delete this object\" (mutation is Workbench-only)".to_string());
     }
 
-    // Gate 10 — hub header names the registry active slice.
-    let mut active_slice = "T-090.1.2.5".to_string();
-    if let Ok(reg) = ticket_engine::registry::load_registry(&root)
-        && let Some(t090) = reg["tickets"]
-            .as_array()
-            .and_then(|a| a.iter().find(|t| t["id"] == "T-090"))
-        && let Some(s) = t090["active_slice"].as_str()
-    {
-        active_slice = s.to_string();
-    }
-    let header: String = hub.chars().take(800).collect();
-    if !header.contains(&active_slice) {
-        fail(
-            "10",
-            format!(
-                "t090_091_map_terrain_program.md: header does not name {active_slice} as the active slice"
-            ),
-        );
+    // Gate 10 — the hub header must name the active slice the registry records. The registry is
+    // the only authority for which slice that is: an unreadable one refuses the whole check
+    // rather than letting this gate compare the header against a frozen identifier.
+    let registry = ticket_engine::registry::load_registry(&root)
+        .context("specification-consistency gate 10 reads the active slice from the registry")?;
+    let active_slice = registry["tickets"]
+        .as_array()
+        .and_then(|a| a.iter().find(|t| t["id"] == MAP_TERRAIN_PROGRAM))
+        .and_then(|t| t["active_slice"].as_str());
+    match active_slice {
+        Some(slice) => {
+            let header: String = hub.chars().take(800).collect();
+            if !header.contains(slice) {
+                fail(
+                    "10",
+                    format!(
+                        "t090_091_map_terrain_program.md: header does not name {slice} as the active slice"
+                    ),
+                );
+            }
+        }
+        // No active slice means there is no claim for the header to agree with. Reported, never
+        // folded into the pass line.
+        None => skipped.push(
+            "10 (the map-terrain program records no active slice for the hub header to name)",
+        ),
     }
 
     // Gate 11.
@@ -389,9 +402,13 @@ pub fn specification_consistency() -> Result<u8> {
 
     if failures.is_empty() {
         println!(
-            "specification-consistency: OK ({} spec files + authority docs, all 12 gates pass)",
-            specification_files.len()
+            "specification-consistency: OK ({} spec files + authority docs, {} of 12 gates pass)",
+            specification_files.len(),
+            12 - skipped.len()
         );
+        for s in &skipped {
+            println!("  gate {s} had nothing to check");
+        }
         Ok(0)
     } else {
         eprintln!("specification-consistency: FAIL ({})", failures.len());

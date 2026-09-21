@@ -4,7 +4,7 @@ use super::*;
 fn set_status_refuses_empty_without_write() {
     // T-383 Class-R: empty status must not overwrite a live registry field.
     let root = worktree_root();
-    let registry_path = root.join(".ai/tickets/T-001.toml");
+    let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
     let mut registry = load_registry(&root).expect("load tip registry");
     let status_before = opt_str(require_ticket(&registry, "T-001"), "status")
@@ -34,7 +34,7 @@ fn set_status_refuses_empty_without_write() {
 fn set_status_refuses_invalid_enum_without_write() {
     // T-383 Class-R: invalid enum must not overwrite a live registry field.
     let root = worktree_root();
-    let registry_path = root.join(".ai/tickets/T-001.toml");
+    let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
     let mut registry = load_registry(&root).expect("load tip registry");
 
@@ -56,7 +56,7 @@ fn set_status_refuses_invalid_enum_without_write() {
 #[test]
 fn set_status_refuses_invalid_registry_without_write() {
     let root = worktree_root();
-    let registry_path = root.join(".ai/tickets/T-001.toml");
+    let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
     let mut registry = red_registry(&root);
 
@@ -103,7 +103,7 @@ fn mark_ready_refuses_invalid_registry() {
 #[test]
 fn add_refuses_invalid_registry_without_write() {
     let root = worktree_root();
-    let registry_path = root.join(".ai/tickets/T-001.toml");
+    let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
     let mut registry = red_registry(&root);
     let next_before = registry
@@ -156,7 +156,7 @@ fn add_refuses_invalid_registry_without_write() {
 #[test]
 fn remove_refuses_invalid_registry_without_write() {
     let root = worktree_root();
-    let registry_path = root.join(".ai/tickets/T-001.toml");
+    let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
     let mut registry = red_registry(&root);
     let tickets_before = tickets(&registry).len();
@@ -190,7 +190,7 @@ fn advance_slice_refuses_invalid_registry_without_write() {
     // T-459: advance-slice must share the add/remove preflight — red registry
     // never mutates active_slice in-memory or on disk.
     let root = worktree_root();
-    let registry_path = root.join(".ai/tickets/T-001.toml");
+    let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
     let mut registry = red_registry(&root);
 
@@ -325,7 +325,7 @@ fn the_batch_waiver_never_swallows_a_missing_lock() {
     let root = scratch_registry("ship-batch-nolock");
     let registry = load_registry(&root).expect("scratch registry loads");
     crate::wave_lock::repack_quiet(&root).expect("baseline lock");
-    let lock_path = root.join(crate::wave_lock::LOCK_REL);
+    let lock_path = root.join(crate::repository::WAVE_LOCK);
     fs::remove_file(&lock_path).expect("remove the lock");
 
     let raw = crate::validation::check(&root, &registry, false);
@@ -345,7 +345,7 @@ fn ship_no_repack_leaves_the_lock_untouched_until_the_next_repack() {
     let root = scratch_registry("ship-no-repack");
     let mut registry = load_registry(&root).expect("scratch registry loads");
     crate::wave_lock::repack_quiet(&root).expect("baseline lock");
-    let lock_path = root.join(crate::wave_lock::LOCK_REL);
+    let lock_path = root.join(crate::repository::WAVE_LOCK);
     let before = fs::read_to_string(&lock_path).expect("lock on disk");
     assert!(
         before.contains("\"T-002\""),
@@ -405,7 +405,9 @@ fn ship_regenerates_docs_from_post_state_reload_pin() {
         !queue_rows(&root).iter().any(|(id, _)| id == "T-002"),
         "queue.json regenerated from the POST-state must drop the shipped ticket"
     );
-    let reg_md = fs::read_to_string(root.join("docs/TICKET_REGISTRY.md")).unwrap();
+    let reg_md =
+        fs::read_to_string(root.join(crate::repository::documentation::TICKET_REGISTRY_VIEW))
+            .unwrap();
     assert!(
         reg_md
             .lines()
@@ -563,7 +565,11 @@ fn stamp_sha_end_to_end_scratch_cycle() {
         Ticket::Program(_) => panic!("work"),
     }
     let est: crate::metrics::estimates::EstimateRecord = serde_json::from_str(
-        &fs::read_to_string(root.join(".ai/tickets/estimates/T-002.json")).unwrap(),
+        &fs::read_to_string(
+            root.join(crate::repository::ESTIMATES_DIR)
+                .join("T-002.json"),
+        )
+        .unwrap(),
     )
     .unwrap();
     assert_eq!(est.source, "diff_loc");
@@ -586,12 +592,13 @@ fn stamp_sha_end_to_end_scratch_cycle() {
     );
 
     // Re-stamp same sha: no-op (bytes untouched), estimate untouched.
-    let before = fs::read_to_string(root.join(".ai/tickets/T-002.toml")).unwrap();
+    let before =
+        fs::read_to_string(root.join(crate::repository::TICKETS_DIR).join("T-002.toml")).unwrap();
     let lines = stamp_sha_with_inputs(&root, "T-002", "beefbeef00", &subjects, &sha_loc, now)
         .expect("re-stamp same sha");
     assert!(lines.iter().any(|l| l.contains("no-op")), "{lines:?}");
     assert_eq!(
-        fs::read_to_string(root.join(".ai/tickets/T-002.toml")).unwrap(),
+        fs::read_to_string(root.join(crate::repository::TICKETS_DIR).join("T-002.toml")).unwrap(),
         before,
         "no-op must not rewrite the ticket"
     );

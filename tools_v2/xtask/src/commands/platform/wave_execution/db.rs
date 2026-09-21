@@ -38,8 +38,8 @@ fn psql_argv(ctx: &Ctx, db: &str, flags: &[&str], sql: &str) -> Vec<String> {
 ///
 /// T-490: do NOT derive N from `current_wave` when a packing counter exists. `current_wave` is the
 /// lowest plan wave with any deferred/open ticket — a Wave-3 deferral pins `tbd_gate_w3` forever
-/// while the factory is packing Wave 35. Prefer `docs/platform/factory_pack_wave` (positive
-/// integer, bumped on promote) so residue isolation tracks packing progress.
+/// while the factory is packing Wave 35. Prefer the packing marker (positive integer, bumped
+/// on promote) so residue isolation tracks packing progress.
 pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
     let mut w: Option<String> = None;
     if let Ok(v) = std::env::var("TBD_GATE_WAVE")
@@ -48,7 +48,9 @@ pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
         w = Some(v);
     }
     if w.is_none() {
-        let pack_file = ctx.root.join("docs/platform/factory_pack_wave");
+        let pack_file = ctx
+            .root
+            .join(crate::core::repository_layout::documentation::FACTORY_PACK_WAVE);
         if pack_file.is_file() {
             // Single integer, optional trailing whitespace/newline. Reject empty, zero,
             // non-numeric.

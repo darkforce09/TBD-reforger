@@ -70,7 +70,7 @@ fn flags_accumulate() {
 #[test]
 fn paths_resolve_against_the_running_checkout() {
     let p = Paths::resolve().expect("repo root");
-    assert!(p.mono_root.join(".ai/tickets/ROOT").is_file());
+    assert!(ticket_engine::repository::is_repo_root(&p.mono_root));
     assert!(p.schema.ends_with("contracts_v2"));
     assert!(
         p.deploy_env

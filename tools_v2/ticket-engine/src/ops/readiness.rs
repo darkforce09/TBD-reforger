@@ -2,12 +2,9 @@
 
 use super::*;
 
-/// The T-917.6 per-ticket plan-path convention (spec §Plan documents): lowercase id,
-/// dots to underscores — `T-917.6` → `docs/plans/t-917_6_plan.md`. [`mark_ready`]
-/// defaults an unset `plan` to this path; the S.6 plan docs land at exactly these
-/// paths so the default resolves.
+/// A ticket's own plan document. [`mark_ready`] defaults an unset `plan` field to this path.
 pub fn default_plan_path(id: &str) -> String {
-    format!("docs/plans/{}_plan.md", id.to_lowercase().replace('.', "_"))
+    crate::repository::documentation::plan_path(id)
 }
 
 /// `cmd_mark_ready` semantics: set `spec` when the argument is nonempty; refuse when
@@ -83,10 +80,10 @@ pub fn mark_ready(
     let plan_path = c.root().join(&resolved_plan);
     if !plan_path.is_file() {
         return Err(format!(
-            "Plan file not found: {} — nothing goes ready without its own plan document \
-             (T-917.6 ready-gate); copy docs/plans/TEMPLATE.md to {resolved_plan} and fill \
-             the four sections",
-            plan_path.display()
+            "Plan file not found: {} — nothing goes ready without its own plan document; copy \
+             {} to {resolved_plan} and fill the four sections",
+            plan_path.display(),
+            crate::repository::documentation::PLAN_TEMPLATE
         ));
     }
     for dep in depends_on_of(&snapshot) {

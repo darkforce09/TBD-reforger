@@ -8,7 +8,7 @@ use super::*;
 #[test]
 fn corpus_roundtrip_real_tree_byte_identical() {
     let root = repo_root();
-    let dir = root.join(".ai/tickets");
+    let dir = root.join(crate::repository::TICKETS_DIR);
     assert!(dir.is_dir(), "live tree missing at {}", dir.display());
     let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
@@ -247,9 +247,13 @@ fn next_child_id_direct_extensions_only() {
 fn load_refuses_naming_broken_file() {
     let root = scratch_dir("broken-load");
     let good = render_ticket_toml(&work("T-001", Status::Idea)).unwrap();
-    fs::write(root.join(".ai/tickets/T-001.toml"), good).unwrap();
     fs::write(
-        root.join(".ai/tickets/T-002.toml"),
+        root.join(crate::repository::TICKETS_DIR).join("T-001.toml"),
+        good,
+    )
+    .unwrap();
+    fs::write(
+        root.join(crate::repository::TICKETS_DIR).join("T-002.toml"),
         "id = \"T-002\"\nkind = \"nope\"\n",
     )
     .unwrap();
@@ -262,7 +266,11 @@ fn load_refuses_naming_broken_file() {
 fn load_refuses_id_filename_mismatch() {
     let root = scratch_dir("stem-mismatch");
     let text = render_ticket_toml(&work("T-001", Status::Idea)).unwrap();
-    fs::write(root.join(".ai/tickets/T-777.toml"), text).unwrap();
+    fs::write(
+        root.join(crate::repository::TICKETS_DIR).join("T-777.toml"),
+        text,
+    )
+    .unwrap();
     let err = Corpus::load(&root).expect_err("stem mismatch must refuse the load");
     assert!(err.contains("T-777") && err.contains("T-001"), "{err}");
 }
@@ -279,7 +287,7 @@ fn load_refuses_vocab_illegal_scope_and_missing_vocab() {
     };
     w.scope.layer = "ghost_layer".into();
     fs::write(
-        root.join(".ai/tickets/T-001.toml"),
+        root.join(crate::repository::TICKETS_DIR).join("T-001.toml"),
         render_ticket_toml(&Ticket::Work(w)).unwrap(),
     )
     .unwrap();
@@ -290,13 +298,13 @@ fn load_refuses_vocab_illegal_scope_and_missing_vocab() {
     );
 
     fs::write(
-        root.join(".ai/tickets/T-001.toml"),
+        root.join(crate::repository::TICKETS_DIR).join("T-001.toml"),
         render_ticket_toml(&work("T-001", Status::Idea)).unwrap(),
     )
     .unwrap();
     Corpus::load(&root).expect("legal scope loads");
 
-    fs::remove_file(root.join(crate::vocab::VOCAB_REL)).unwrap();
+    fs::remove_file(root.join(crate::repository::SCOPE_VOCAB)).unwrap();
     let err = Corpus::load(&root).expect_err("missing vocab must refuse");
     assert!(err.contains("scope-vocab.toml"), "{err}");
 }
@@ -310,12 +318,13 @@ fn write_back_is_surgical_and_clean() {
     c.tickets
         .insert("T-001".into(), work("T-001", Status::Queued { order: 10 }));
     c.write_back(&["T-001".into()]).expect("write");
-    let on_disk = fs::read_to_string(root.join(".ai/tickets/T-001.toml")).unwrap();
+    let on_disk =
+        fs::read_to_string(root.join(crate::repository::TICKETS_DIR).join("T-001.toml")).unwrap();
     assert_eq!(
         on_disk,
         render_ticket_toml(c.get("T-001").unwrap()).unwrap()
     );
-    let leftovers: Vec<_> = fs::read_dir(root.join(".ai/tickets"))
+    let leftovers: Vec<_> = fs::read_dir(root.join(crate::repository::TICKETS_DIR))
         .unwrap()
         .filter_map(|e| e.ok())
         .map(|e| e.file_name().to_string_lossy().to_string())
