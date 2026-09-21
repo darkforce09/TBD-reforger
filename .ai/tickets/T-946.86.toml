@@ -4,15 +4,11 @@ title = "Wire the wave 255 dead code into production"
 summary = "T-946.82/.83/.84/.85 in one slice: Z gizmo commits elevation, multi-select drop moves the set, the tactical draw trigger exists, and save refuses duplicate slot ids."
 class = "bug"
 status = "ready"
-parent = "T-946"
-created_at = "2026-09-07T23:10:11Z"
 order = 7538
-priority = 1
 spec = "docs/specs/audit_2026_09/t946_86_wave255_dead_code.md"
 plan = "docs/plans/t-946_86_plan.md"
 executor = "claude-code"
-main_goal = "Four features wave 255 shipped are reachable from the running editor instead of having zero callers."
-notes = '''
+notes = """
 FILED 2026-09-08 at wave 256 pre-dispatch. Supersedes T-946.82, T-946.83, T-946.84 and T-946.85, all
 four cancelled into this row, and closes T-946.69 (the tactical draw path finding that T-946.84 says
 T-939.1 was told to fold in and did not).
@@ -30,7 +26,10 @@ top_strip.rs and help_modal.rs; it has been told not to add a tactical-draw entr
 
 REPORT-T-939.1.md claimed a Phase Line button was added in the outliner header. Commit d164435caa5a shows
 no such button. Treat every "already wired" claim in this area as unproven until grepped.
-'''
+"""
+priority = 1
+parent = "T-946"
+main_goal = "Four features wave 255 shipped are reachable from the running editor instead of having zero callers."
 context = [
     "T-946.82: gestures.rs writes z_drag at :626-627 and never borrows it in onpointermove (:374) or onpointerup (:832).",
     "set_pointer_capture at gestures.rs:628 has no matching release on that arm, so pointer capture strands.",
@@ -44,15 +43,13 @@ context = [
     "T-946.85: duplicate_slot_ids (operations/slot_ids.rs:4) has 0 production callers; save_now (commands_hotkeys.rs:955-1010) never checks.",
     "The upload twin check_duplicate_slot_ids_in_payload (mission_library.rs:1519) is private and DISAGREES: slot_ids.rs:32 gates on doc.slot_exists, it does not.",
 ]
-current_state = [
-    "Four functions shipped in wave 255 with unit tests and zero production call sites; the features they implement are unreachable in the running editor.",
-]
 requirement = [
     "The Z gizmo arm advances on pointermove, updates the readout through set_z_drag_readout, commits elevation on pointerup inside one undo group, and releases pointer capture.",
     "Dropping a multi-selection in the outliner moves every selected row in one batched transaction, not just the anchor.",
     "A production control invokes begin_tactical_draw, so the tactical draw path is reachable; follow the zones_panel.rs:37-44 precedent.",
     "save_now refuses a document with duplicate slot ids, naming the callsign and the id, using duplicate_slot_ids rather than a second private twin.",
 ]
+current_state = ["Four functions shipped in wave 255 with unit tests and zero production call sites; the features they implement are unreachable in the running editor."]
 approach = [
     "Verify each of the four on main first: grep the call sites, paste the zero counts, and drive the editor to show the feature is dead.",
     "Wire .82 and .85 in their existing owner files; keep .83 inside outliner_drag.rs and outliner_tree.rs so operations.rs stays untouched.",
@@ -79,6 +76,7 @@ citations = [
     "slot_ids.rs:4",
     "commands_hotkeys.rs:955",
 ]
+created_at = "2026-09-07T23:10:11Z"
 owns = [
     "apps/website/frontend/Cargo.toml",
     "apps/website/frontend/src/editor/canvas/gizmo_z.rs",
@@ -100,4 +98,10 @@ owns = [
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
-surface = ["map_canvas", "outliner", "tools", "ops_undo", "doc_store"]
+surface = [
+    "map_canvas",
+    "outliner",
+    "tools",
+    "ops_undo",
+    "doc_store",
+]

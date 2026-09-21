@@ -5,14 +5,11 @@ summary = "TBD_EntityState applies allowDamage and showModel only when bound tru
 class = "feature"
 status = "idea"
 parent = "T-946"
+verify = ["authored allowDamage=false and showModel=false must apply; stamina skip remains logged not invented"]
 created_at = "2026-09-06T21:45:32Z"
-
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c",
-]
-verify = [
-    "authored allowDamage=false and showModel=false must apply; stamina skip remains logged not invented",
 ]
 
 [scope]

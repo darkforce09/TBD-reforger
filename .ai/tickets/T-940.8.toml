@@ -1,15 +1,16 @@
 id = "T-940.8"
 kind = "work"
-parent = "T-940"
 title = "Vehicles: PUT, PATCH, DELETE routes and DTOs"
 summary = "Vehicle handlers move from wiki.rs into a new content/vehicles.rs that adds update, patch and soft-delete routes, with matching frontend DTOs."
 class = "feature"
 status = "ready"
 order = 8120
-priority = 1
 spec = "docs/specs/audit_2026_09/t940_website_platform.md"
 plan = "docs/plans/t-940_8_plan.md"
 executor = "claude-code"
+priority = 1
+depends_on = ["T-940.2"]
+parent = "T-940"
 main_goal = "Vehicle records are editable and removable through the API."
 context = [
     "Anchor 2026-09-04: app.rs:628 routes get(list_vehicles).post(create_vehicle) only; the handlers live in handlers/content/wiki.rs:47 and :208.",
@@ -21,9 +22,7 @@ requirement = [
     "app.rs routes /vehicles/{id} to put, patch and delete; wiki.rs loses the vehicle handlers.",
     "core/dto.rs mirrors VehicleUpdate and VehiclePatch; deleted vehicles vanish from list; an unknown PATCH field is rejected.",
 ]
-current_state = [
-    "Two vehicle handlers inside wiki.rs; no mutation route beyond create.",
-]
+current_state = ["Two vehicle handlers inside wiki.rs; no mutation route beyond create."]
 approach = [
     "Verify on main: an integration test sending PUT /vehicles/{id} gets 405; paste the red.",
     "Move the handlers; add the three routes with tests; mirror the DTOs.",
@@ -38,7 +37,6 @@ acceptance = [
     "PUT replaces a vehicle, PATCH changes only the given fields, DELETE hides it from list; each returns the stored row.",
     "wiki.rs no longer contains vehicle handlers and the wiki routes still pass their tests.",
 ]
-depends_on = ["T-940.2"]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/api/src/app.rs",

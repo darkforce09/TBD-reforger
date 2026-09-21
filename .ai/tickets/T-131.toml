@@ -5,12 +5,13 @@ summary = "Mission Creator tool that plans routes on the exported road graph: cl
 class = "feature"
 status = "ready"
 order = 7990
-priority = 3
 spec = "docs/platform/tbd_north_star_backlog.md"
 plan = "docs/plans/t-131_plan.md"
 executor = "claude-code"
-main_goal = "Two clicks on roads yield a snapped route with length and elevation profile."
 notes = "2026-09-05: depends_on re-pointed from T-090 (program, ready) to T-935.6 (roads rkyv emit + zero-copy loader). tools/mod.rs is shared with T-129 and world/mod.rs with T-067.1 → different waves."
+priority = 3
+depends_on = ["T-935.6"]
+main_goal = "Two clicks on roads yield a snapped route with length and elevation profile."
 context = [
     "Anchor 2026-09-05: world/roads.rs has RoadSegment (:28), parse_roads_payload (:85) and centerline extraction; no graph or path search exists.",
     "editor/tools/ has los_tool.rs, ruler_tool.rs and select_tool.rs as the tool pattern; T-935.6 replaces the roads emit and packs earlier.",
@@ -20,9 +21,7 @@ requirement = [
     "New tools/route_planner.rs (registered in tools/mod.rs): waypoint clicks, snapped path render, distance readout and DEM elevation profile.",
     "Path search on the everon graph completes under 50 ms in a native test.",
 ]
-current_state = [
-    "No road graph, no path search, no route tool.",
-]
+current_state = ["No road graph, no path search, no route tool."]
 approach = [
     "Graph plus Dijkstra with tests on a synthetic grid and the everon roads fixture; then the tool with wasm tests.",
     "Perturbation: break endpoint snapping; the connectivity test goes red; restore, touch, green.",
@@ -37,7 +36,6 @@ acceptance = [
     "Two clicks on roads produce a snapped route with its length and elevation profile.",
     "The everon road graph is connected within each road class and paths are found under 50 ms.",
 ]
-depends_on = ["T-935.6"]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
     "apps/website/frontend/src/editor/tools/route_planner.rs",

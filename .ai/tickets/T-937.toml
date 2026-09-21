@@ -5,10 +5,10 @@ summary = "Fixes the audit's S2 findings in the mission editor data layer: nativ
 class = "bug"
 status = "queued"
 order = 7699
-priority = 0
 spec = "docs/specs/audit_2026_09/t937_editor_data_layer.md"
 plan = "docs/plans/t-937_plan.md"
 executor = "claude-code"
+priority = 0
 children = [
     "T-937.1",
     "T-937.2",

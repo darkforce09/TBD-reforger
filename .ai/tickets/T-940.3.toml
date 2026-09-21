@@ -1,16 +1,17 @@
 id = "T-940.3"
 kind = "work"
-parent = "T-940"
 title = "Reschedule cascades to event missions; delete hides schedule"
 summary = "Rescheduling an event shifts every event_missions.start_time by the same delta, and soft-deleting a mission hides its schedule entries and withdraws their registrations instead of orphaning them."
 class = "bug"
 status = "ready"
-notes = "2026-09-05 wave 248 (T-940.6): mission.delete and event.slot_kick audit rows carry actor_id NULL (missions.rs:836, events.rs:2214 stamp no actor); this slice SET LOCALs app.actor_id before the soft-delete / slot clear."
 order = 8100
-priority = 1
 spec = "docs/specs/audit_2026_09/t940_website_platform.md"
 plan = "docs/plans/t-940_3_plan.md"
 executor = "claude-code"
+notes = "2026-09-05 wave 248 (T-940.6): mission.delete and event.slot_kick audit rows carry actor_id NULL (missions.rs:836, events.rs:2214 stamp no actor); this slice SET LOCALs app.actor_id before the soft-delete / slot clear."
+priority = 1
+depends_on = ["T-940.2"]
+parent = "T-940"
 main_goal = "Event and mission schedules never disagree after an edit."
 context = [
     "Anchor 2026-09-04: events.rs:1338-1340 reschedules the event only; no UPDATE event_missions exists in events.rs.",
@@ -23,9 +24,7 @@ requirement = [
     "delete_mission sets hidden_at on its event_missions rows and withdraws their registrations with a system reason.",
     "Schedule listings exclude hidden rows.",
 ]
-current_state = [
-    "Reschedule touches events only; delete_mission leaves event_missions and registrations untouched.",
-]
+current_state = ["Reschedule touches events only; delete_mission leaves event_missions and registrations untouched."]
 approach = [
     "Verify on main: an integration test rescheduling by two hours leaves event_missions.start_time unchanged; paste the red.",
     "Write the migration; cascade in both handlers; filter listings.",
@@ -40,7 +39,6 @@ acceptance = [
     "Soft-deleting a mission hides its schedule entries and marks their registrations withdrawn.",
     "Listing an event's missions never shows a hidden entry.",
 ]
-depends_on = ["T-940.2"]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/api/src/handlers/events/events.rs",

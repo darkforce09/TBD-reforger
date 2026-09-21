@@ -5,14 +5,9 @@ summary = "audio_emitters.rs is registered in panels/mod.rs but settings_modal.r
 class = "feature"
 status = "idea"
 parent = "T-946"
+verify = ["Mission Settings dialog must render the audio emitter list and music cue table"]
 created_at = "2026-09-07T00:30:02Z"
-
-owns = [
-    "apps/website/frontend/src/editor/panels/settings_modal.rs",
-]
-verify = [
-    "Mission Settings dialog must render the audio emitter list and music cue table",
-]
+owns = ["apps/website/frontend/src/editor/panels/settings_modal.rs"]
 
 [scope]
 domain = "repo"

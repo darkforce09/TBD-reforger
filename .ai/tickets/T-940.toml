@@ -5,10 +5,10 @@ summary = "Fixes the audit's S5 findings in apps/website/api: waitlist seats, re
 class = "bug"
 status = "queued"
 order = 6999
-priority = 0
 spec = "docs/specs/audit_2026_09/t940_website_platform.md"
 plan = "docs/plans/t-940_plan.md"
 executor = "claude-code"
+priority = 0
 children = [
     "T-940.1",
     "T-940.2",

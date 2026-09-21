@@ -5,12 +5,13 @@ summary = "Post-event replay: T-940.13 telemetry events → a replay endpoint re
 class = "feature"
 status = "ready"
 order = 8210
-priority = 3
 spec = "docs/platform/tbd_north_star_backlog.md"
 plan = "docs/plans/t-136_plan.md"
 executor = "claude-code"
-main_goal = "A finished match can be scrubbed on the map with unit positions over time."
 notes = "2026-09-05: T-116/T-119 shipped (dropped; T-940.13 is the live precondition). pages/telemetry/ does not exist — the page lives under pages/public/. pages/public/mod.rs is shared with T-132 → different waves. The 3D viewer stretch is not in this ticket's acceptance."
+priority = 3
+depends_on = ["T-940.13"]
+main_goal = "A finished match can be scrubbed on the map with unit positions over time."
 context = [
     "Anchor 2026-09-05: handlers/telemetry/deployments.rs:83 carries aar_replay_url; pages/public/deployments.rs:478 renders it; no replay endpoint or page exists.",
     "T-940.13 (packs earlier) adds combat, medical and vehicle telemetry events; T-116/T-119 (shipped) are the ingest base.",
@@ -20,9 +21,7 @@ requirement = [
     "New pages/public/aar_replay.rs (registered in pages/public/mod.rs): map scrubber with play/pause and speed; deployments.rs links aar_replay_url to it.",
     "A match with no events returns an empty timeline, not an error.",
 ]
-current_state = [
-    "Backend placeholders exist (aar_replay_url); the pipeline from events to a scrubber is not built.",
-]
+current_state = ["Backend placeholders exist (aar_replay_url); the pipeline from events to a scrubber is not built."]
 approach = [
     "Endpoint with a fixture match (tests: ordering, paging, empty); then the page with wasm tests; then the link.",
     "Perturbation: unsorted timeline; the ordering test goes red; restore, touch, green.",
@@ -37,7 +36,6 @@ acceptance = [
     "A finished match can be scrubbed on the map with unit positions over time.",
     "Deployments link to the replay; a match without events shows an empty scrubber.",
 ]
-depends_on = ["T-940.13"]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
     "apps/website/frontend/src/pages/public/deployments.rs",

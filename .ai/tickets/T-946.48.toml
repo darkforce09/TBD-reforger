@@ -5,16 +5,13 @@ summary = "T-654 filters typed MissionLoader arrays; objectives[] and editorTrig
 class = "feature"
 status = "idea"
 parent = "T-946"
+verify = ["a variant-excluded objective and editorTrigger must not arm when the variant is inactive"]
 created_at = "2026-09-07T00:30:01Z"
-
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c",
-]
-verify = [
-    "a variant-excluded objective and editorTrigger must not arm when the variant is inactive",
 ]
 
 [scope]

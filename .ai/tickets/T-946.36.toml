@@ -5,14 +5,9 @@ summary = "Editor flatten drops missionParams, group AI fields, and vehicle lock
 class = "feature"
 status = "idea"
 parent = "T-946"
+verify = ["flatten_to_mod_document of a 1.3 payload must emit missionParams[] and group/vehicle state fields"]
 created_at = "2026-09-06T20:45:23Z"
-
-owns = [
-    "crates/map-engine-core/src/mission/flatten.rs",
-]
-verify = [
-    "flatten_to_mod_document of a 1.3 payload must emit missionParams[] and group/vehicle state fields",
-]
+owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
 [scope]
 domain = "repo"

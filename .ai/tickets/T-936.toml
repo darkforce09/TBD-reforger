@@ -5,10 +5,10 @@ summary = "Win/loss framework, task state machine with HUD, editable radio nets,
 class = "feature"
 status = "queued"
 order = 7449
-priority = 1
 spec = "docs/specs/audit_2026_09/t936_mission_logic.md"
 plan = "docs/plans/t-936_plan.md"
 executor = "claude-code"
+priority = 1
 children = [
     "T-936.1",
     "T-936.2",

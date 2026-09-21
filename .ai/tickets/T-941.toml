@@ -5,10 +5,10 @@ summary = "Fixes the audit's S6 findings in apps/mod/tbd-framework: safestart ar
 class = "bug"
 status = "queued"
 order = 7579
-priority = 0
 spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
 plan = "docs/plans/t-941_plan.md"
 executor = "claude-code"
+priority = 0
 children = [
     "T-941.1",
     "T-941.2",

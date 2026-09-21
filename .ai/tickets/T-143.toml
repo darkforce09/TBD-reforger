@@ -5,12 +5,16 @@ summary = "Ship the T-935.9 water mask to the editor: a placement guard refuses 
 class = "feature"
 status = "ready"
 order = 8070
-priority = 3
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 plan = "docs/plans/t-143_plan.md"
 executor = "claude-code"
-main_goal = "Nobody places a squad in the sea by accident, and water geometry comes from the source entities."
 notes = "2026-09-05: depends_on re-pointed from T-090 (program, ready) to T-935.9 (creates water.rs) and T-305 (pak offsets); state/operations.rs is shared with T-141 → different waves. Full source trail in .ai/artifacts/t090_1_2_5_2_source_spike.json."
+priority = 3
+depends_on = [
+    "T-935.9",
+    "T-305",
+]
+main_goal = "Nobody places a squad in the sea by accident, and water geometry comes from the source entities."
 context = [
     "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a); minor mask misses acceptable.",
     "Anchor 2026-09-05: T-935.9 creates world/water.rs (is_water, depth_m) and packs earlier; T-305 fixes pak.rs offsets; no placement guard exists in state/operations.",
@@ -20,9 +24,7 @@ requirement = [
     "pak.rs gains an entity-layer reader for Eden water entities (lakes, rivers, ponds with surface_y) feeding the water.rs vectors.",
     "water.rs exposes body_kind(x, z) used by the guard.",
 ]
-current_state = [
-    "Water is an appearance classifier; nothing stops placing a squad in the sea; water.rs and the corrected pak reader do not exist yet.",
-]
+current_state = ["Water is an appearance classifier; nothing stops placing a squad in the sea; water.rs and the corrected pak reader do not exist yet."]
 approach = [
     "Guard first with a synthetic mask (tests: ocean refused, lake warned, override honoured); then the pak entity reader with a fixture; then body_kind.",
     "Perturbation: the guard ignores ocean; its test goes red; restore, touch, green.",
@@ -36,10 +38,6 @@ verify = [
 acceptance = [
     "Placing a unit in the ocean is refused with a message; in a lake it warns and can be overridden.",
     "The water vector layer comes from Eden water entities read through the corrected pak reader.",
-]
-depends_on = [
-    "T-935.9",
-    "T-305",
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [

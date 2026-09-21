@@ -5,12 +5,16 @@ summary = "Per-building floor slice in the Mission Creator map: a floor selector
 class = "feature"
 status = "ready"
 order = 7980
-priority = 3
 spec = "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md"
 plan = "docs/plans/t-129_plan.md"
 executor = "claude-code"
-main_goal = "An author knows and controls which floor of a building they are editing."
 notes = "2026-09-05: depends_on re-pointed from T-090 (program, ready) to T-090.11 (shipped) and T-935.8, which rewrites the shared occluder_host.rs loader. tools/mod.rs is shared with T-131 → different waves. Renumbered from T-126."
+priority = 3
+depends_on = [
+    "T-090.11",
+    "T-935.8",
+]
+main_goal = "An author knows and controls which floor of a building they are editing."
 context = [
     "Anchor 2026-09-05: world_assets/occluder_host.rs loads blas-manifest.json, descriptors/*.json and *.bvh (:52/:107/:134); descriptor.rs:52 has no floor or storey field.",
     "T-090.11 (shipped) is the map-reference dependency; T-935.8 rewrites the occluder loader and packs earlier.",
@@ -20,9 +24,7 @@ requirement = [
     "occluder_host.rs exposes per-building floor bands to the tool; the render clips geometry above the active floor.",
     "Placement inside a building records the floor band's z, not the roof.",
 ]
-current_state = [
-    "No floor concept exists; a unit placed inside a building lands on the roof or the ground.",
-]
+current_state = ["No floor concept exists; a unit placed inside a building lands on the roof or the ground."]
 approach = [
     "Derive floor bands in occluder_host.rs; write the tool; wasm test: a 3-band building yields floors 0..2 and a floor-1 placement gets its band z.",
     "Perturbation: return one band for every building; the test goes red; restore, touch, green.",
@@ -35,10 +37,6 @@ verify = [
 acceptance = [
     "Selecting a multi-floor building shows its floor count and the map clips to the chosen floor.",
     "A unit placed on floor 1 exports with floor-1 z.",
-]
-depends_on = [
-    "T-090.11",
-    "T-935.8",
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [

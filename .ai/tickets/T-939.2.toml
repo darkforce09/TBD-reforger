@@ -1,59 +1,14 @@
 id = "T-939.2"
 kind = "work"
-parent = "T-939"
 title = "Attributes: batch faction and squad reassign"
 summary = "The Attributes modal gains a faction selector and an editable squad picker that apply to every selected slot in one undo group through a new reassign operation."
 class = "feature"
 status = "ready"
 order = 7870
-priority = 2
 spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
 plan = "docs/plans/t-939_2_plan.md"
 executor = "claude-code"
-main_goal = "Authors move many slots to another faction or squad from one dialog."
-context = [
-    "Anchor 2026-09-04: panels/attributes_modal.rs:1864-1872 shows the squad read-only; faction appears only as asset-id text at :1546-1607 and :1749-1842.",
-    "Depends on T-937.2 (undo groups, state/operations/batch.rs): the batch applies inside with_batch so one Ctrl+Z reverts it.",
-    "state/operations.rs is shared with T-937.2 and T-937.5; this slice packs after them.",
-    "Related, not re-minted: T-309 faction squads, T-141 slot naming.",
-    "Wave 256 pre-dispatch 2026-09-08: anchors re-verified exact; with_batch is batch.rs:11 re-exported at operations.rs:46; the multi-selection is already materialised as targets at attributes_modal.rs:408 via attrs_multi_ids (attrs.rs:488).",
-    "SIDE KEYS ARE DERIVED, NOT STORED: resolve_slot_side_key (store.rs:6941-6966) walks squadId -> factionId -> key, memoised by SideKeyMemo (store.rs:360,439,923).",
-    "store.rs joined owns 2026-09-08: move_slot_to_squad (store.rs:1138) GCs the emptied source squad at :1187-1196, so requirement 3 needs an additive keep-source entry point.",
-]
-requirement = [
-    "New state/operations/reassign.rs (registered in operations.rs): reassign_slots(ids, target) moves slot ids between squad slotIds lists; the derived side key follows and SideKeyMemo is invalidated.",
-    "attributes_modal.rs: a faction selector listing the mission's factions and a squad picker for the chosen faction; both act on the whole selection.",
-    "Slots leaving a squad never delete it implicitly; an emptied squad keeps its row, its place in faction.squadIds, and its attached vehicles.",
-    "A squad of another faction is refused with a named reason in the modal.",
-]
-current_state = [
-    "attributes_modal.rs:1864-1872 renders the squad name as text; no faction control; no multi-slot operation exists under state/operations/.",
-]
-approach = [
-    "Verify on main: a test asserting the modal offers no faction control and no squad control; paste the red.",
-    "Write reassign.rs with unit tests over a doc fixture: moves, cross-faction refusal, emptied squad survives with vehicles, derived side key follows. Wrap the apply in with_batch.",
-    "Perturbation: route the batch through the GC-ing move_slot_to_squad; the emptied-squad test must go red on deleted vehicles; restore, touch, green.",
-]
-verify = [
-    "cargo xtask mk ci-local-leptos",
-    "cargo xtask mk leptos-gates",
-    "cargo xtask platform wave gate --slice T-939.2",
-]
-acceptance = [
-    "Selecting five slots and choosing another faction moves all five; the outliner shows them under the new faction.",
-    "One Ctrl+Z after a batch reassign restores every moved slot.",
-    "Choosing a squad from a different faction is refused with a visible reason.",
-]
-depends_on = ["T-937.2"]
-created_at = "2026-09-05T02:33:18Z"
-owns = [
-    "apps/website/frontend/src/editor/panels/attributes_modal.rs",
-    "apps/website/frontend/src/editor/state/operations/reassign.rs",
-    "apps/website/frontend/src/editor/state/operations.rs",
-    "crates/map-engine-core/src/doc/store.rs",
-]
-
-notes = '''
+notes = """
 WAVE 256 PRE-DISPATCH, 2026-09-08 — command-centre corrections, all measured against main at f71d2d0b2.
 
 owns WIDENED +1: crates/map-engine-core/src/doc/store.rs. move_slot_to_squad (store.rs:1138) is the only
@@ -82,10 +37,55 @@ reachable from both owned frontend files. The multi-selection is already materia
 attributes_modal.rs:408-412 via attrs_multi_ids (attrs.rs:488-513). Faction and squad lists come from
 orbat_manager_snapshot (entity.rs:1995); FactionRow (panels/outliner.rs:343-350) carries key and ordered
 squad_ids, which is what the picker and the cross-faction refusal need.
-'''
+"""
+priority = 2
+depends_on = ["T-937.2"]
+parent = "T-939"
+main_goal = "Authors move many slots to another faction or squad from one dialog."
+context = [
+    "Anchor 2026-09-04: panels/attributes_modal.rs:1864-1872 shows the squad read-only; faction appears only as asset-id text at :1546-1607 and :1749-1842.",
+    "Depends on T-937.2 (undo groups, state/operations/batch.rs): the batch applies inside with_batch so one Ctrl+Z reverts it.",
+    "state/operations.rs is shared with T-937.2 and T-937.5; this slice packs after them.",
+    "Related, not re-minted: T-309 faction squads, T-141 slot naming.",
+    "Wave 256 pre-dispatch 2026-09-08: anchors re-verified exact; with_batch is batch.rs:11 re-exported at operations.rs:46; the multi-selection is already materialised as targets at attributes_modal.rs:408 via attrs_multi_ids (attrs.rs:488).",
+    "SIDE KEYS ARE DERIVED, NOT STORED: resolve_slot_side_key (store.rs:6941-6966) walks squadId -> factionId -> key, memoised by SideKeyMemo (store.rs:360,439,923).",
+    "store.rs joined owns 2026-09-08: move_slot_to_squad (store.rs:1138) GCs the emptied source squad at :1187-1196, so requirement 3 needs an additive keep-source entry point.",
+]
+requirement = [
+    "New state/operations/reassign.rs (registered in operations.rs): reassign_slots(ids, target) moves slot ids between squad slotIds lists; the derived side key follows and SideKeyMemo is invalidated.",
+    "attributes_modal.rs: a faction selector listing the mission's factions and a squad picker for the chosen faction; both act on the whole selection.",
+    "Slots leaving a squad never delete it implicitly; an emptied squad keeps its row, its place in faction.squadIds, and its attached vehicles.",
+    "A squad of another faction is refused with a named reason in the modal.",
+]
+current_state = ["attributes_modal.rs:1864-1872 renders the squad name as text; no faction control; no multi-slot operation exists under state/operations/."]
+approach = [
+    "Verify on main: a test asserting the modal offers no faction control and no squad control; paste the red.",
+    "Write reassign.rs with unit tests over a doc fixture: moves, cross-faction refusal, emptied squad survives with vehicles, derived side key follows. Wrap the apply in with_batch.",
+    "Perturbation: route the batch through the GC-ing move_slot_to_squad; the emptied-squad test must go red on deleted vehicles; restore, touch, green.",
+]
+verify = [
+    "cargo xtask mk ci-local-leptos",
+    "cargo xtask mk leptos-gates",
+    "cargo xtask platform wave gate --slice T-939.2",
+]
+acceptance = [
+    "Selecting five slots and choosing another faction moves all five; the outliner shows them under the new faction.",
+    "One Ctrl+Z after a batch reassign restores every moved slot.",
+    "Choosing a squad from a different faction is refused with a visible reason.",
+]
+created_at = "2026-09-05T02:33:18Z"
+owns = [
+    "apps/website/frontend/src/editor/panels/attributes_modal.rs",
+    "apps/website/frontend/src/editor/state/operations/reassign.rs",
+    "apps/website/frontend/src/editor/state/operations.rs",
+    "crates/map-engine-core/src/doc/store.rs",
+]
 
 [scope]
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
-surface = ["attr_panel", "ops_undo"]
+surface = [
+    "attr_panel",
+    "ops_undo",
+]

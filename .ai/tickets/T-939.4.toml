@@ -1,15 +1,16 @@
 id = "T-939.4"
 kind = "work"
-parent = "T-939"
 title = "Arrange tools in context menu with shortcuts"
 summary = "Align and distribute appear in the canvas context menu and get keyboard chords in the editor keydown, with the top-strip Arrange menu as the shared source of entries."
 class = "feature"
 status = "ready"
 order = 7890
-priority = 2
 spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
 plan = "docs/plans/t-939_4_plan.md"
 executor = "claude-code"
+priority = 2
+depends_on = ["T-939.1"]
+parent = "T-939"
 main_goal = "Arrange tools are reachable by right-click and by keyboard."
 context = [
     "Anchor 2026-09-04: panels/top_strip.rs:249-252 holds the Arrange menu (T-645), gated on selection >= 1 at :378-380; panels/context_menu.rs lacks these entries.",
@@ -34,9 +35,7 @@ requirement = [
     "mission_editor.rs keydown gains chords for align left/right/top/bottom and distribute horizontal/vertical as thin callers.",
     "help_modal.rs lists the new chords.",
 ]
-current_state = [
-    "Arrange lives only in the top-strip menu; no context-menu entry; no chord; no help row.",
-]
+current_state = ["Arrange lives only in the top-strip menu; no context-menu entry; no chord; no help row."]
 approach = [
     "Verify on main: a test asserting the context menu has no Arrange entry and the keydown ignores the align chord; paste the red.",
     "Extract the entry list in top_strip.rs; render it in context_menu.rs; add the keydown arms; add the help rows.",
@@ -54,7 +53,6 @@ acceptance = [
     "Visual capture waits for required non-streaming data and loaded consumers within a bounded timeout; missing or malformed fixtures and dispatch failures produce errors.",
     "Actual capture-path tests reject loading and error snapshots, including delayed CMS, missing fixtures and malformed payloads; cached Server Intel explicitly excludes live-stream proof.",
 ]
-depends_on = ["T-939.1"]
 created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/frontend/src/editor/panels/context_menu.rs",
@@ -78,4 +76,7 @@ owns = [
 domain = "website"
 layer = "frontend"
 component = "mission_creator"
-surface = ["top_strip", "map_canvas"]
+surface = [
+    "top_strip",
+    "map_canvas",
+]

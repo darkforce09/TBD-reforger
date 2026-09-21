@@ -5,12 +5,13 @@ summary = "Axum websocket at /missions/{id}/sync relays yrs updates and awarenes
 class = "feature"
 status = "ready"
 order = 8220
-priority = 2
 spec = "docs/specs/ideas/t295_realtime_collab.md"
 plan = "docs/plans/t-295_plan.md"
 executor = "claude-code"
-main_goal = "Two browsers editing one mission converge live, and a stale save is refused instead of overwriting."
 notes = "2026-09-05: T-222 is shipped (dropped in favour of T-190, which this builds on). realtime/ is a new directory registered in api/src/lib.rs; persist.rs and state/mod.rs are shared with T-937.4 and T-190 → packs after both."
+priority = 2
+depends_on = ["T-190"]
+main_goal = "Two browsers editing one mission converge live, and a stale save is refused instead of overwriting."
 context = [
     "Anchor 2026-09-05: yrs is wired to IndexedDB only; api/Cargo.toml:27 axum 0.8.9 without the ws feature; no realtime module; app.rs:751/:757 versions routes.",
     "POST /versions is a bare INSERT whose only 409 is a reused semver; T-190 (packs earlier) adds the read-merge-write path in persist.rs this reuses.",
@@ -20,9 +21,7 @@ requirement = [
     "New frontend state/collab_sync.rs (registered in state/mod.rs): connects on editor open, applies remote updates, sends local ones; persist.rs debounce unchanged.",
     "POST /missions/{id}/versions takes base_version_id; mismatch returns 409 with the current head.",
 ]
-current_state = [
-    "No websocket anywhere; no yrs-sync dependency; the only 409 is a reused semver.",
-]
+current_state = ["No websocket anywhere; no yrs-sync dependency; the only 409 is a reused semver."]
 approach = [
     "Server room and relay with an integration test (two clients converge); then client sync; then the concurrency check.",
     "Perturbation: drop the base_version check; the 409 test goes red; restore, touch, green.",
@@ -37,7 +36,6 @@ acceptance = [
     "Two browsers editing one mission see each other's changes within a second and converge to one document.",
     "Saving a version over a newer head is refused with 409 naming the head.",
 ]
-depends_on = ["T-190"]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
     "apps/website/frontend/src/editor/state/persist.rs",

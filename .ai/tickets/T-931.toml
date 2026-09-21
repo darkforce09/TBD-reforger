@@ -16,12 +16,8 @@ context = [
     "W210 eye-pass future ask: seat zoom viz.",
     "Operator explicit defer not now (2026-08-19 wave 211 prep).",
 ]
-requirement = [
-    "When un-deferred: zoom-in shows seat glyphs numbers and crewed occupancy.",
-]
-current_state = [
-    "No seat-zoom viz; T-819 hides crewed slots from map.",
-]
+requirement = ["When un-deferred: zoom-in shows seat glyphs numbers and crewed occupancy."]
+current_state = ["No seat-zoom viz; T-819 hides crewed slots from map."]
 approach = ["Parked until operator un-defers."]
 verify = ["N/A while deferred."]
 citations = [

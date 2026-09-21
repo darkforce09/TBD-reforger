@@ -5,14 +5,11 @@ summary = "T-941.5 clamps SpectatorComponent to 2000 m but TBD_SpectatorHost sti
 class = "feature"
 status = "idea"
 parent = "T-946"
+verify = ["a host with spectator max range 0 must leash at 2000 m, never unlimited"]
 created_at = "2026-09-07T01:00:00Z"
-
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorHost.c",
     "apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorHost.c",
-]
-verify = [
-    "a host with spectator max range 0 must leash at 2000 m, never unlimited",
 ]
 
 [scope]

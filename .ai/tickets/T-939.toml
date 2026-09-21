@@ -5,10 +5,10 @@ summary = "Fixes the audit's S4 findings in the mission editor UI: outliner mult
 class = "feature"
 status = "queued"
 order = 7859
-priority = 1
 spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
 plan = "docs/plans/t-939_plan.md"
 executor = "claude-code"
+priority = 1
 children = [
     "T-939.1",
     "T-939.2",

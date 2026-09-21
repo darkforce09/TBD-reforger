@@ -6,7 +6,8 @@ class = "chore"
 status = "deferred"
 order = 5070
 executor = "claude-code"
-notes = """deferred 2026-09-05 by command center per EDITOR_FACTORY_FOR_CURSOR.md §1 "Not dispatchable — T-825 — operator design session, not a slice"; reopen when the operator runs the session.
+notes = """
+deferred 2026-09-05 by command center per EDITOR_FACTORY_FOR_CURSOR.md §1 "Not dispatchable — T-825 — operator design session, not a slice"; reopen when the operator runs the session.
 
 the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed | operator restated the rule a THIRD time at the wave-205 eye-pass (markers un-clickable on map); T-838 extracts the marker half as actionable
 

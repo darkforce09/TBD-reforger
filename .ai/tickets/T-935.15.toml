@@ -8,10 +8,7 @@ order = 7990
 spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
 plan = "docs/plans/t-935_15_plan.md"
 executor = "claude-code"
-priority = 1
-parent = "T-935"
-main_goal = "Panning never fetches, allocates or evicts because the camera crossed a line on a grid."
-notes = '''
+notes = """
 STATUS queued AND ORDER 7535 -> 7990 ON 2026-09-08, wave 256 pre-dispatch. This row is now an UMBRELLA;
 its children carry the work. It was packed for wave 256 and pulled after a feasibility pass measured that
 no single agent can deliver its acceptance from its eight owns:
@@ -34,7 +31,10 @@ no single agent can deliver its acceptance from its eight owns:
 The ticket's own approach line and docs/plans/t-935_15_plan.md:31 both already said to split it before
 dispatch. T-935.16 owns tools/tbd-tools/src/world/build.rs and world_assets/world_host.rs too and cannot
 share a wave with the children that own them.
-'''
+"""
+priority = 1
+parent = "T-935"
+main_goal = "Panning never fetches, allocates or evicts because the camera crossed a line on a grid."
 context = [
     "Operator decision 2026-09-07: get rid of chunking. Rationale, verbatim: the pattern was inherited from a fifteen-year-old game engine and is not a method that should be considered in 2026.",
     "Chunking exists to bound PARSE cost. T-935.1-.3 made the payload POD and loaded it with bytemuck cast_slice, so decode is effectively free and the reason is gone.",

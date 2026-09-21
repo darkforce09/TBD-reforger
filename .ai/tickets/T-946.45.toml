@@ -5,14 +5,9 @@ summary = "weather_timeline.rs is registered in panels/mod.rs but settings_modal
 class = "feature"
 status = "idea"
 parent = "T-946"
+verify = ["Mission Settings dialog must render the weather timeline keyframe list"]
 created_at = "2026-09-07T01:30:02Z"
-
-owns = [
-    "apps/website/frontend/src/editor/panels/settings_modal.rs",
-]
-verify = [
-    "Mission Settings dialog must render the weather timeline keyframe list",
-]
+owns = ["apps/website/frontend/src/editor/panels/settings_modal.rs"]
 
 [scope]
 domain = "repo"

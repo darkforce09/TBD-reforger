@@ -5,10 +5,11 @@ summary = "The NOTIFY-driven audit stream fetches id > last_id, so a row whose t
 class = "bug"
 status = "queued"
 order = 8900
-priority = 2
 spec = "docs/specs/audit_2026_09/t944_audit_stream_race.md"
 plan = "docs/plans/t-944_plan.md"
 executor = "claude-code"
+priority = 2
+depends_on = ["T-940.6"]
 main_goal = "Every committed audit row reaches an open stream exactly once, even under concurrent writers or a silent network loss."
 context = [
     "Found by the T-940.6 slice report (wave 248, landed f5f7abc10) and disclosed, not fixed, because a fix widens the stream contract.",
@@ -35,7 +36,6 @@ acceptance = [
     "A late-committing audit row is streamed exactly once; no row is skipped or duplicated across a concurrent-writer test.",
     "With the DB socket silently dropped, the stream falls back to polling within the heartbeat deadline and recovers after redial.",
 ]
-depends_on = ["T-940.6"]
 created_at = "2026-09-05T16:47:42Z"
 owns = [
     "apps/website/api/src/handlers/admin/audit.rs",
