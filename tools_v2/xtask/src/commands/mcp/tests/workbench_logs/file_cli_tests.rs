@@ -1,3 +1,6 @@
+//! Argument-shape tests for `cargo xtask mcp wb-logs`: the empty-value spellings of `--file`
+//! must reach this command's own exit codes instead of clap's.
+
 use crate::cli::{Cli, TopCmd};
 use crate::commands::mcp::cli::McpCmd;
 use clap::Parser;
@@ -6,7 +9,8 @@ use std::path::PathBuf;
 
 #[test]
 fn file_equals_empty_parses_via_clap() {
-    // Regression pin: PathBufValueParser used to reject `--file=` with clap rc=2.
+    // `PathBufValueParser` rejects an empty value with clap rc=2; `parse_file_arg` accepts it
+    // so `--file=` becomes this command's ENVIRONMENT (3), not a clap usage error.
     let args = crate::commands::mcp::workbench_logs::preprocess_cli_args(
         ["xtask", "mcp", "wb-logs", "--file="]
             .into_iter()

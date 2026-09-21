@@ -1,7 +1,7 @@
-//! T-935.10 — the `TBDS` **version 2** satellite container (spec §3.5): a 32-byte
-//! `TbdsHeader` carrying `index_len`, then an rkyv `TbdSatIndexV2`, then the tile payload.
+//! The `TBDS` **version 2** satellite container (spec §3.5): a 32-byte `TbdsHeader` carrying
+//! `index_len`, then an rkyv `TbdSatIndexV2`, then the tile payload.
 //!
-//! It replaces v1's hand-packed JSON offset table with a *validated* archive, and it exists as a
+//! Its index is a validated archive rather than v1's hand-packed JSON offset table, and it is a
 //! module of its own because `super::satellite_archive` is already a SIZE-1 file: the writer, the reader
 //! and the geometry every one of them derives live here, and `satellite_archive.rs` keeps only the call
 //! sites (CODING_STANDARDS SIZE-1/3 — allowlisted giants grow by call sites, not by features).
@@ -145,7 +145,7 @@ pub(crate) fn tbds_v2_bytes(index: &TbdSatIndexV2, blocks: &[TileBuf]) -> Result
     Ok(file)
 }
 
-/// The v2 (rkyv index) bundle checks (T-935.10). `None` = fatal; the message is already pushed.
+/// The v2 (rkyv index) bundle checks. `None` = fatal; the message is already pushed.
 pub(crate) fn verify_bundle_v2(buf: &[u8], errors: &mut Vec<String>) -> Option<BundleSummary> {
     match read_bundle_v2(buf) {
         Ok(s) => Some(s),
@@ -283,5 +283,5 @@ impl AlignedArchive {
 }
 
 #[cfg(test)]
-#[path = "tests/tbds_v2/t935_10.rs"]
-mod t935_10;
+#[path = "tests/satellite_archive_container/container_tests.rs"]
+mod container_tests;

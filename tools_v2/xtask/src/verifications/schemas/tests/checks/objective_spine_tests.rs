@@ -1,3 +1,6 @@
+//! Every `$defs/objective` property must be spelled as an identifier somewhere in the objectives
+//! lane, so the typed spine stays readable rather than decaying into a dead container.
+
 use super::{count_mod_readers, definition_path, read_json, repo_root};
 use std::path::PathBuf;
 
@@ -44,7 +47,7 @@ fn objective_spine_is_read_in_the_objectives_lane() {
         unread.is_empty(),
         "$defs/objective properties with NO identifier under {}: {unread:?}\n\
          JsonLoadContext binds by member name, so an unspelled property is unreadable. \
-         Either the reader lost a field, or the schema grew one T-212's reader has not \
+         Either the reader lost a field, or the schema grew one the reader has not \
          taken up yet.",
         lane.display()
     );

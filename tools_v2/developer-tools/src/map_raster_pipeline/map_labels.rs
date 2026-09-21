@@ -1,8 +1,6 @@
-//! T-165.9 — label exporters: `export-locations.mjs` + `lib/locations-export.mjs`
-//! (locations.json from staged raw JSONL) and `export-height-labels.mjs` (height-labels.json
-//! — NATIVELY RESTORED: the Node exporter depended on the React-era wasm pkg deleted at
-//! T-159.29.3; this port runs the same math on `map_engine_core::dem` directly, exactly like
-//! the T-165.4 height-labels gate restoration).
+//! The map label exporters: `locations.json` from staged raw JSONL, and `height-labels.json`
+//! computed directly from the terrain elevation model through
+//! `website_map_engine::world::environment::locations::peaks`.
 
 use std::path::PathBuf;
 
@@ -38,8 +36,8 @@ const REQUIRED_EVERON_TOWNS: [&str; 7] = [
 /* ─────────────────────────── height-labels export (native restore) ─────────────────────────── */
 
 #[cfg(test)]
-#[path = "tests/map_labels/t537_tests.rs"]
-mod t537_tests;
+#[path = "tests/map_labels/map_labels_tests.rs"]
+mod map_labels_tests;
 
 #[path = "map_labels/importance_by_name.rs"]
 mod importance_by_name;

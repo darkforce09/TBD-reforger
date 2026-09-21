@@ -1,3 +1,8 @@
+//! Version 2 `TBDS` container contracts: a v2 bundle carries the same tiles at the same rects as
+//! the v1 bundle built from one source, a malformed index (short length, a grid disagreeing with
+//! `tile_px`, an unknown tile format) is refused rather than read, and the v2 geometry derivation
+//! reproduces the committed Everon tiling.
+
 use serde_json::Value;
 
 use super::*;

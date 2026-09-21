@@ -1,6 +1,6 @@
-//! T-165.8 — JS-semantics JSON writers. `JSON.stringify` prints integral f64 as integers
-//! (5 not 5.0) — every number that flows into an artifact goes through `js_num` so compact
-//! and pretty output byte-match the Node pipeline.
+//! JSON number writers with JavaScript semantics: an integral f64 prints as an integer (5, not
+//! 5.0). Every number that flows into an export artifact goes through `js_num`, so the committed
+//! artifacts stay byte-comparable whatever produced them.
 
 use serde_json::{Number, Value};
 
@@ -57,13 +57,13 @@ pub fn js_normalize(v: &mut Value) {
     }
 }
 
-/// `Math.round(v * 1000) / 1000` — 3-dp rounding for the uniform scale (T-090.12.1).
+/// `Math.round(v * 1000) / 1000` — 3-decimal-place rounding for the uniform scale.
 pub fn round3(v: f64) -> f64 {
     js_math_round(v * 1000.0) / 1000.0
 }
 
-/// T-090.12.1 — true when the full-transform trailers are all identity after rounding, so the
-/// chunk row is written 5-wide (byte-identical to the v1 catalogue) instead of 8-wide.
+/// True when the full-transform trailers are all identity after rounding, so the chunk row is
+/// written 5-wide (byte-identical to the v1 catalogue) instead of 8-wide.
 #[must_use]
 pub fn trailers_trivial(pitch: f64, roll: f64, scale: f64) -> bool {
     pitch == 0.0 && roll == 0.0 && scale == 1.0
@@ -93,5 +93,5 @@ pub fn chunk_row_values(
 }
 
 #[cfg(test)]
-#[path = "tests/jsval/transform_row_tests.rs"]
+#[path = "tests/json_number_formatting/transform_row_tests.rs"]
 mod transform_row_tests;

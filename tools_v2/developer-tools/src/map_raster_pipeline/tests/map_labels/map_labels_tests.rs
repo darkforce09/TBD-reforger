@@ -1,3 +1,6 @@
+//! The label exporters refuse an empty label set before touching the output file, so a failed
+//! extraction cannot silently overwrite a good export with nothing.
+
 use super::super::refuse_empty_write;
 
 #[test]

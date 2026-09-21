@@ -1,3 +1,7 @@
+//! Chunk row width and number rounding: a row with trivial pitch/roll/scale trailers writes five
+//! values, any non-trivial trailer widens it to eight, and rounding follows JavaScript's
+//! half-up `Math.round` at the declared number of places.
+
 use super::*;
 
 #[test]

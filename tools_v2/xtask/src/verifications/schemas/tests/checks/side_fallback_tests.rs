@@ -1,3 +1,7 @@
+//! Executes the objective side-validation and framing branches through a small native shim, so
+//! the per-viewer role, title and task text are proven by running the control flow rather than by
+//! reading it. This is source simulation, not Enfusion JSON loading or a two-client RPC proof.
+
 use developer_tools::repository_layout::mission_fixtures_valid_dir;
 
 use super::{read_json, repo_root, strip_enfusion_comments_and_strings};
@@ -137,7 +141,7 @@ for (const string zone : {"", "blufor", "opfor"}) {
         }
     }
 }
-std::cout << "T-212 source simulation: " << checked << " cases, " << failures << " failures\n";
+std::cout << "objective side fallback simulation: " << checked << " cases, " << failures << " failures\n";
 return failures == 0 ? 0 : 1;
 }
 "#,

@@ -22,10 +22,6 @@ fn main() -> ExitCode {
 }
 
 #[cfg(test)]
-#[path = "tests/main/t857_wb_logs_file_cli.rs"]
-mod t857_wb_logs_file_cli;
-
-#[cfg(test)]
 #[path = "tests/tooling_dependency_boundaries.rs"]
 mod tooling_dependency_boundaries;
 

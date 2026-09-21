@@ -1,8 +1,10 @@
+//! Decoder contracts: a known BC7 block decodes to independently produced pixels, bad block
+//! dimensions are rejected, and an LZ4 chunk round-trips.
+
 use super::*;
 
-/// The vendored bc7.test.mjs golden, ported verbatim: a varied 4×4 BC7 block from
-/// Eden_1174 mip0; EXPECT_RGB produced by an INDEPENDENT decoder (Pillow) — guards the
-/// decoder against wrong layout, not a circular self-check.
+/// A varied 4×4 BC7 block from Eden_1174 mip 0. `expect_rgb` comes from an INDEPENDENT decoder,
+/// so this guards the decoder against a wrong layout instead of checking it against itself.
 #[test]
 fn bc7_decodes_known_block() {
     let block: Vec<u8> = (0..16)

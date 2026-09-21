@@ -240,14 +240,14 @@ developer_tools | map_raster_pipeline::map_label_archives::tests::everon_towns_p
 developer_tools | map_raster_pipeline::map_label_archives::tests::road_names_without_geometry_are_refused
 developer_tools | map_raster_pipeline::map_label_archives::tests::terrain_dir_takes_an_id_or_a_directory
 developer_tools | map_raster_pipeline::map_label_archives::tests::the_written_file_reads_back_through_access_checked
-developer_tools | map_raster_pipeline::map_labels::t537_tests::height_labels_refuse_empty_contract
+developer_tools | map_raster_pipeline::map_labels::map_labels_tests::height_labels_refuse_empty_contract
 developer_tools | map_raster_pipeline::refuse_empty_tests::refuse_empty_write_ok_when_nonempty
 developer_tools | map_raster_pipeline::refuse_empty_tests::refuse_empty_write_reds_on_empty
-developer_tools | map_raster_pipeline::satellite_archive_container::t935_10::a_grid_that_disagrees_with_tile_px_is_rejected
-developer_tools | map_raster_pipeline::satellite_archive_container::t935_10::an_index_len_one_byte_short_is_rejected
-developer_tools | map_raster_pipeline::satellite_archive_container::t935_10::an_unknown_tile_format_is_rejected
-developer_tools | map_raster_pipeline::satellite_archive_container::t935_10::the_v2_derivation_reproduces_the_committed_everon_tiling
-developer_tools | map_raster_pipeline::satellite_archive_container::t935_10::v1_and_v2_carry_the_same_tiles_at_the_same_rects
+developer_tools | map_raster_pipeline::satellite_archive_container::container_tests::a_grid_that_disagrees_with_tile_px_is_rejected
+developer_tools | map_raster_pipeline::satellite_archive_container::container_tests::an_index_len_one_byte_short_is_rejected
+developer_tools | map_raster_pipeline::satellite_archive_container::container_tests::an_unknown_tile_format_is_rejected
+developer_tools | map_raster_pipeline::satellite_archive_container::container_tests::the_v2_derivation_reproduces_the_committed_everon_tiling
+developer_tools | map_raster_pipeline::satellite_archive_container::container_tests::v1_and_v2_carry_the_same_tiles_at_the_same_rects
 developer_tools | map_verification::terrain_manifest::tests::a_chunks_dir_holding_no_bin_is_dangling
 developer_tools | map_verification::terrain_manifest::tests::a_row_shape_this_build_cannot_read_is_refused
 developer_tools | map_verification::terrain_manifest::tests::dangling_binary_paths_are_rejected_one_by_one
@@ -1203,7 +1203,7 @@ xtask | core::host_execution::tests::the_refusal_is_the_bash_heredoc
 xtask | core::host_execution::tests::trailing_version_is_grep_o_anchored_at_end
 xtask | core::repository_root::tests::nested_tooling_directories_resolve_repository_and_fixtures
 xtask | core::test_environment::tests::prepend_dir_keeps_usr_bin
-xtask | t857_wb_logs_file_cli::file_equals_empty_parses_via_clap
+xtask | commands::mcp::workbench_logs::file_cli_tests::file_equals_empty_parses_via_clap
 xtask | tooling_dependency_boundaries::foundational_engines_have_no_workspace_dependencies
 xtask | tooling_dependency_boundaries::heavy_package_has_one_owner_and_preserves_executable_names
 xtask | tooling_dependency_boundaries::inline_module_detection_handles_nested_syntax_without_matching_source_strings
@@ -1430,10 +1430,10 @@ xtask | verifications::schemas::checks::instance_kind_lockstep_tests::instance_k
 xtask | verifications::schemas::checks::instance_kind_lockstep_tests::instance_kinds_order_is_the_emitted_bykind_order
 xtask | verifications::schemas::checks::instance_kind_lockstep_tests::lockstep_reds_when_the_enum_and_the_array_disagree
 xtask | verifications::schemas::checks::instance_kind_lockstep_tests::lockstep_reds_when_the_enums_are_unreadable
-xtask | verifications::schemas::checks::t212_objective_spine_tests::objective_spine_is_read_in_the_objectives_lane
-xtask | verifications::schemas::checks::t212_objective_spine_tests::the_lane_scan_can_still_report_zero
-xtask | verifications::schemas::checks::t212_side_fallback_tests::invalid_side_is_neutral_but_absent_and_valid_sides_keep_their_roles
-xtask | verifications::schemas::checks::t212_staged_golden_tests::the_staged_1_3_golden_objectives_row_binds_to_the_reader
+xtask | verifications::schemas::checks::objective_spine_tests::objective_spine_is_read_in_the_objectives_lane
+xtask | verifications::schemas::checks::objective_spine_tests::the_lane_scan_can_still_report_zero
+xtask | verifications::schemas::checks::side_fallback_tests::invalid_side_is_neutral_but_absent_and_valid_sides_keep_their_roles
+xtask | verifications::schemas::checks::staged_golden_tests::the_staged_1_3_golden_objectives_row_binds_to_the_reader
 xtask | verifications::schemas::checks::unread_wire_field_tests::all_1_3_fields_are_unread_on_the_live_tree
 xtask | verifications::schemas::checks::unread_wire_field_tests::comments_and_string_literals_do_not_count_as_readers
 xtask | verifications::schemas::checks::unread_wire_field_tests::nonzero_baselines_explain_the_pre_existing_identifier
@@ -1516,6 +1516,80 @@ The plan's row R9 counted 56 lines at the baseline. After this phase it counts 1
 - `docs/tools/editor_capture.md:7` — narrates a port, carries a ticket identifier, names the old crate spelling and names the deleted smoke module. `:43` names the old crate spelling. The plan's P9 block lists this file at lines 7-8 and 44; the live lines are 7 and 43.
 - `docs/platform/token_estimate_factor.md:1` carries a ticket identifier in its title and `:11` names a module path that does not exist; the constant lives under `tools_v2/ticket-engine/src/metrics/estimates/`. The plan's P9 block lists lines 4 and 11; line 4 holds the command and spec link, which are correct, and the title on line 1 is the second line to change.
 - `documentation_v2/tools/README.md:3`, `documentation_v2/tools/developer_tools/README.md:3,14`, `documentation_v2/runbooks/testing_and_ci.md:30` — all four name the old crate spelling or a source path under a directory that does not exist; `documentation_v2/tools/README.md:3` also narrates the move.
+
+### Commands that could not run
+
+None. Every check of this phase ran in this environment.
+
+## P2 — Ghost directories, husk directories, ticket-named test files
+
+The tooling tree now holds no empty directory, no directory whose only content is a README
+describing files that are not there, and no test file or test directory named after a ticket. Git
+tracks no directories, so the empty-directory sweep is local hygiene: a fresh clone never has them,
+and the count is restated here as evidence rather than as a durable property of the repository.
+
+### What changed
+
+| Change | Paths |
+|---|---|
+| Empty directories deleted | 138 directories under `tools_v2/`, all untracked, none holding a tracked file, none named by any `#[path]` attribute |
+| Build residue deleted | `tools_v2/ticket-engine/wip/` (trybuild stderr output; the `wip/` rule stays in `tools_v2/ticket-engine/.gitignore` so it is ignored again the moment a stderr mismatch regenerates it) |
+| External tool logs deleted | `enfusion_unpacker.log`, `scripts/mod/enfusion_unpacker.log` — output of an unpacker that runs outside this repository; `git grep enfusion_unpacker tools_v2` returns nothing. Their two lines in the local `.git/info/exclude` are gone with them |
+| README-only directories removed from the index and disk | `tools_v2/developer-tools/tests/`, `tools_v2/developer-tools/test_fixtures/mcp/`, `tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge/`, `tools_v2/verification-core/tests/` — `git ls-files` showed exactly one `README.md` in each before removal |
+| Crate constant deleted | `tools_v2/developer-tools/src/lib.rs` — the `PROGRAM` constant carried a ticket identifier as its value and had no reader; the module list is one alphabetical block under a crate doc comment naming the six binaries it serves |
+| Test file moved and renamed | `tools_v2/xtask/src/tests/main/t857_wb_logs_file_cli.rs` → `tools_v2/xtask/src/commands/mcp/tests/workbench_logs/file_cli_tests.rs`, declared from `commands/mcp/workbench_logs.rs` beside that module's other test file; `tools_v2/xtask/src/tests/main/` is gone and `main.rs` no longer declares it |
+| Test files renamed | `verifications/schemas/tests/checks/{objective_spine,side_fallback,staged_golden}_tests.rs`, declared from `verifications/schemas/checks.rs` |
+| Test file moved and renamed | `developer-tools/src/map_raster_pipeline/tests/map_labels/map_labels_tests.rs`; `.../tests/satellite_archive_container/container_tests.rs`, with the emptied `tests/tbds_v2/` gone |
+| Test directories renamed | `world_export_pipeline/tests/enfusion_texture_decoder/`, `world_export_pipeline/tests/json_number_formatting/`, each named for the module that declares it |
+| Documents corrected | `tools_v2/verification-core/README.md` described a `tests/` directory holding a file that never existed; it now describes the layout that exists. The `Baseline test inventory` in this document carries the eleven renamed test paths |
+
+Removing the four README-only directories removes no behaviour: no source file, test, fixture
+loader or build script reads any of the four paths. The only other mentions in the tree are three
+destination cells in `tools_v2/ANALYSIS_AND_INVENTORY.md`, recorded below.
+
+### Acceptance
+
+| Command | Expected | Actual |
+|---|---|---|
+| `find tools_v2 -type d -empty \| wc -l` | 0 | 0 |
+| `git ls-files tools_v2 \| grep -E '/[^/]*t[0-9]{3}' \| grep -v 'fixtures/'` | empty | empty, exit 1 |
+| `git grep -n -E '#\[path = "[^"]*(t[0-9]{3}\|tbds_v2\|tests/edds\|tests/jsval)[^"]*"\]' -- tools_v2` | empty | empty, exit 1 |
+| `test ! -e tools_v2/developer-tools/tests && test ! -e tools_v2/verification-core/tests && test ! -e tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge && test ! -e tools_v2/developer-tools/test_fixtures/mcp` | exit 0 | exit 0 |
+| `grep -c PROGRAM tools_v2/developer-tools/src/lib.rs` | 0 | 0 |
+| `cargo test -p xtask -p developer-tools` | green, no live test lost | exit 0; developer-tools 254 passed, 0 failed, 4 ignored; xtask 650 passed, 0 failed — both equal to the baseline |
+
+Test identity, proved mechanically rather than asserted: `cargo test -p xtask -p developer-tools --
+--list` reports 908 test paths and the baseline inventory holds 908 for the same two crates.
+Comparing the two sorted lists, exactly eleven paths differ on each side, and they pair one to one
+by function name — every moved test keeps its `fn` name, and nothing else moved. After updating
+those eleven lines, the inventory and the live list are identical with no remaining difference.
+
+Two further checks over the crates this phase edits, both clean: `cargo fmt -p xtask -p
+developer-tools --check` and `cargo clippy -p xtask -p developer-tools --all-targets -- -D
+warnings`.
+
+### Found and fixed
+
+- `tools_v2/xtask/src/commands/mcp/workbench_logs.rs:1-16,28,37-46,48-55,92,124,179,211,216,237,323,391` — the module doc, the printed usage banner and eight inline comments named a deleted shell script and narrated that script's behaviour. The banner is the command's own `--help` text, so it told every reader to run a file that does not exist; it now spells `cargo xtask mcp wb-logs`. No test pins that text. Two printed failure lines claimed `grep` exited with a status although the command runs no `grep` process; they now say the probe errored. One user-visible line dated a stale build by calendar month and now names what the data shows: flat tags without subsystem tags.
+- `tools_v2/xtask/src/commands/mcp/cli.rs:19,26,30,33,43,49,66` — seven `--help` strings, six carrying a ticket identifier and five naming a deleted shell script as the thing the subcommand is a port of. They are the text `cargo xtask mcp --help` prints.
+- `tools_v2/xtask/src/verifications/schemas/checks.rs` — the module doc named eight deleted Node scripts; twenty-three comment lines carried ticket identifiers; one doc comment named the crate by a spelling that no longer exists and claimed neither the wave gate nor CI runs its tests, which is no longer true; another named the module path `tools_v2/developer-tools/src/world/INSTANCE_KINDS`, which is nowhere in the workspace — the twin is `developer_tools::world_export_pipeline::INSTANCE_KINDS`; one named a deleted shell script as the discipline it follows. Every invariant, measurement and refusal reason is kept; only the narrative around them is gone.
+- `tools_v2/developer-tools/src/map_raster_pipeline/map_labels.rs:1-5` — the header named three deleted Node exporters and resolved elevation through `map_engine_core`, a crate spelling that does not exist; the live path is `website_map_engine::world::environment::locations::peaks`.
+- `tools_v2/developer-tools/src/map_raster_pipeline/satellite_archive_container.rs:1,148`, `world_export_pipeline/enfusion_texture_decoder.rs:1-6,74,149`, `world_export_pipeline/json_number_formatting.rs:1-3,60,65` — ticket identifiers and references to deleted Node sources, including a header that told the reader to consult one of them for the container format. The format is now described where the decoder is.
+- `tools_v2/xtask/src/verifications/schemas/tests/checks/objective_spine_tests.rs:47` — a ticket identifier inside an assertion message. `side_fallback_tests.rs:140` — a ticket identifier inside the printed banner of the simulated program the test compiles and runs.
+- Every moved test file gained a module doc comment saying what it proves, since its file name no longer carries that meaning implicitly.
+- `tools_v2/verification-core/README.md` — the document framed the crate as a phase-one implementation with a target architecture still to come, described a `proc/` directory that does not exist, described a `tests/` directory holding `proc_tests.rs` that never existed, and named the crate by a path under a directory that does not exist. It now describes the layout, the four-outcome verdict and the exit contract as they are.
+- `.git/info/exclude` — besides the two unpacker log lines, the entry for the zero-byte checkpoint file removed in the previous phase named a path with no writer anywhere in the tree and nothing on disk. All three lines are gone. The file is local to this checkout and is not part of the commit.
+
+### Found for P6
+
+- `tools_v2/verification-core/README.md` §1 — the layout block lists `src/proc.rs` as the single process module because that is what exists. When `proc.rs` splits into `proc/{mod,runner,stream,lookup}.rs` and the seven inline test modules move to `src/tests/`, extend that block with those files; the rest of the document needs no change.
+
+### Found for P8
+
+- `tools_v2/xtask/src/commands/debug/remote_logs/execution.rs:104-105,143` — the hand-synced twin of the workbench-log vocabulary still carries the comment `probe_str is infallible today; keep the bash "did not execute" arm` and prints `grep exited ?` on a path that runs no `grep` process. Replace both with the wording now at `tools_v2/xtask/src/commands/mcp/workbench_logs.rs:178-179,211`, so the two stay hand-synced.
+- `tools_v2/xtask/src/commands/mcp/call.rs:29` and `tools_v2/xtask/src/commands/mcp/daemon.rs:30` — each `USAGE` constant tells the user to run a deleted shell script. Replace with `usage: cargo xtask mcp call <tool> '<json-args>'` and `usage: cargo xtask mcp daemon {start|stop|status|restart|stop-all}`; no test pins either string.
+- `tools_v2/ANALYSIS_AND_INVENTORY.md:182,184` — the two destination cells name `tools_v2/developer-tools/test_fixtures/mcp/` and `tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge/package.json`, both removed in this phase; the settled destinations are `tools_v2/xtask/fixtures/mcp/` and `tools_v2/enfusion_mcp_node_package/`. `:189` repeats the first of the two. `:191` states the repository root retains `tools/` and `packages/`; neither directory exists. These four lines are inside the document this phase rewrites wholesale, and the rewrite has to state the destinations that the move actually used, so they are listed rather than patched ahead of it.
+- `tools_v2/developer-tools/src/world_export_pipeline/mod.rs:26-35` — the doc comment for `INSTANCE_KINDS` carries two ticket identifiers, narrates a three-copy history, and names `build.rs` and `aux.rs`; `aux.rs` exists nowhere in the workspace and no `build.rs` sits in this crate. The live invariant to keep is that one const holds the census bucket order and that a classified prefab with no bucket is a hard failure rather than a missing row.
 
 ### Commands that could not run
 

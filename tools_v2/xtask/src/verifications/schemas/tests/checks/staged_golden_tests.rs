@@ -1,3 +1,7 @@
+//! Every key the hand-staged schemaVersion 1.3 golden authors under `objectives[]` must be
+//! declared as a member of the objective reader's structs: JsonLoadContext binds by member name,
+//! so a key the structs do not declare is simply absent at runtime.
+
 use developer_tools::repository_layout::mission_fixtures_valid_dir;
 
 use super::{read_json, repo_root};

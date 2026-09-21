@@ -1,19 +1,19 @@
-//! T-857 — port of `scripts/mod/mcp-wb-logs.sh` → `cargo xtask mcp wb-logs`.
+//! `cargo xtask mcp wb-logs` — reads a Workbench Play console log and reports whether the
+//! spawn pipeline actually ran.
 //!
-//! Four outcomes (preserved exactly): 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
-//! Usage / bad flags go to 3 (not 1/2) so a mistype cannot read as a spawn verdict.
+//! Four outcomes: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT. Usage and bad flags return 3,
+//! never 1 or 2, so a mistyped invocation cannot be read as a spawn verdict.
 //!
-//! Fail-opens closed vs bash:
-//! - `grep -c PAT 2>/dev/null || true` on the tagged-line count collapsed a read/pattern
-//!   error into `0` (stale / unloaded). We count after a successful read; an unreadable
-//!   log is ENVIRONMENT (3), same as a missing file.
-//! - Display extract used `grep -E … 2>/dev/null`; we print matching lines from the same
-//!   in-memory text used for the verdict (no silent empty extract on a read error).
-//!   An invalid user extract pattern is ENVIRONMENT (bash would hide the regex error).
+//! An unreadable log is ENVIRONMENT (3), the same as a missing one: a log that was never
+//! examined says nothing about the mod, so a read error must never collapse into a zero
+//! tagged-line count and read as FAIL. The display extract prints from the same in-memory
+//! text the verdict is computed over, so the dump and the verdict cannot disagree, and an
+//! invalid user extract pattern is ENVIRONMENT rather than a silently empty extract.
 //!
-//! Preserved oddity: loadout / assigned probes treat any non-0 status as the soft branch
-//! (note / PARTIAL), matching bash `if [ "$status" = "0" ]` — including a hypothetical
-//! DidNotRun. Vocabulary is a HAND-SYNCED COPY of remote-logs; do not invent a shared lib.
+//! The loadout and assigned probes take the soft branch (note / PARTIAL) on anything other
+//! than a confirmed match, including a probe that did not execute. The log vocabulary is a
+//! hand-synced copy of the one in `commands::debug::remote_logs`; the two stay in step by
+//! hand rather than through a shared library.
 
 use std::ffi::OsString;
 use std::fs;
@@ -25,7 +25,7 @@ use anyhow::Result;
 use verification_core::gate::probe_str;
 use verification_core::pattern::Pattern;
 
-/// Hand-synced with `gate_remote_log_grep` / former remote-log-grep.sh — EDIT BOTH.
+/// Hand-synced with the same vocabulary in `commands::debug::remote_logs` — EDIT BOTH.
 const PAT_TAGGED: &str = r"\[TBD\]\[";
 const PAT_MISSION: &str = r"\[TBD\]\[Mission\] loaded id=";
 const PAT_SLOTS: &str = r"\[TBD\]\[Slots\] Slot-";
@@ -34,25 +34,26 @@ const PAT_ERRORS: &str = r"Can.t compile|Unknown class .TBD_|RequestSpawn failed
 const PAT_LOADOUT: &str = r"\[TBD\]\[Loadout\]\[Slot\]";
 const DEFAULT_EXTRACT: &str = r"\[TBD\]|SpawnLogic|assigned slot";
 
-/// Byte-identical to bash `sed -n '2,9p'` of former `mcp-wb-logs.sh` (wave-219 parity).
+/// Printed on `--help` and on a `--file` with no value; both return ENVIRONMENT (3).
 const USAGE: &str = "\
-# mcp-wb-logs.sh — grep the latest Workbench Play console.log for TBD spawn diagnostics and
-# assert the spawn pipeline actually ran. Run after MCP wb_play (and optional sleep) —
-# enfusion-mcp has no wb_log tool, so this is the read-back half of a wb_play loop.
+# cargo xtask mcp wb-logs — grep the latest Workbench Play console.log for TBD spawn
+# diagnostics and assert the spawn pipeline actually ran. Run after MCP wb_play (and an
+# optional sleep): enfusion-mcp has no wb_log tool, so this is the read-back half of a
+# wb_play loop.
 #
 # Usage:
-#   mcp-wb-logs.sh [extended-grep-pattern]     # latest Workbench log; pattern filters DISPLAY only
-#   mcp-wb-logs.sh --file <path> [pattern]     # verdict over a specific log file (no Workbench)
-#   mcp-wb-logs.sh --selftest                  # prove the verdict logic can FAIL";
+#   cargo xtask mcp wb-logs [extended-grep-pattern]   # latest Workbench log; pattern filters DISPLAY only
+#   cargo xtask mcp wb-logs --file <path> [pattern]   # verdict over a specific log file (no Workbench)
+#   cargo xtask mcp wb-logs --selftest                # prove the verdict logic can FAIL";
 
-/// clap's `PathBufValueParser` rejects empty (`--file=` / `--file ''`) with rc=2.
-/// Accept empty so we can map those shapes to bash's ENVIRONMENT / usage (rc=3).
+/// clap's `PathBufValueParser` rejects empty (`--file=` / `--file ''`) with rc=2. Accepting
+/// empty here keeps those shapes inside this command's own ENVIRONMENT / usage exit (3).
 pub fn parse_file_arg(s: &str) -> Result<PathBuf, String> {
     Ok(PathBuf::from(s))
 }
 
-/// Bash: `--file ''` → usage; `--file=` → ENVIRONMENT empty path. Clap collapses both to
-/// empty, so rewrite a following empty argv token to the bare-`--file` sentinel.
+/// `--file ''` prints usage; `--file=` reports an empty path as ENVIRONMENT. clap collapses
+/// both to an empty value, so a following empty argv token becomes the bare-`--file` sentinel.
 pub fn preprocess_cli_args(mut args: Vec<OsString>) -> Vec<OsString> {
     let Some(i) = args.iter().position(|a| a == "wb-logs") else {
         return args;
@@ -89,7 +90,7 @@ pub fn run(
     }
     let extract = pattern.as_deref().unwrap_or(DEFAULT_EXTRACT);
     if let Some(path) = file {
-        // `__MISSING__` = bare `--file` or `--file ''` (after preprocess) → bash usage.
+        // `__MISSING__` = bare `--file` or `--file ''` (after preprocess) → usage.
         // Empty path = `--file=` → check_log → ENVIRONMENT "no such log file: ".
         if path.as_os_str() == "__MISSING__" {
             println!("{USAGE}");
@@ -121,8 +122,7 @@ fn check_log(log: &Path, extract: &str) -> u8 {
             return env_fail(&format!("no such log file: {}", log.display()));
         }
         Err(e) => {
-            // Closed fail-open: bash `grep -c … 2>/dev/null || true` would have treated this
-            // as tagged=0 / FAIL. An unreadable log was never examined → ENVIRONMENT.
+            // An unreadable log was never examined, so it must not count as tagged=0 / FAIL.
             return env_fail(&format!("could not read log file {}: {e}", log.display()));
         }
     };
@@ -155,11 +155,10 @@ fn check_log(log: &Path, extract: &str) -> u8 {
     if tagged == 0 {
         println!("FAIL: zero '[TBD][' subsystem-tagged lines — the current mod never logged.");
         println!(
-            "      Flat '[TBD] …' lines only = a stale (June-era) build; none at all = the mod"
+            "      Flat '[TBD] …' lines only = a build older than subsystem tags; none at all ="
         );
-        println!(
-            "      is not loaded in this session. Either way the pipeline under test did not run."
-        );
+        println!("      the mod is not loaded in this session. Either way the pipeline under test");
+        println!("      did not run.");
         fail = true;
     }
 
@@ -176,8 +175,8 @@ fn check_log(log: &Path, extract: &str) -> u8 {
                 false
             }
             Err(_) => {
-                // probe_str is infallible today; keep the bash "did not execute" arm.
-                println!("FAIL: {label} — grep exited ?; the check did not execute.");
+                // probe_str cannot fail today; the arm keeps the verdict honest if it ever can.
+                println!("FAIL: {label} — the probe errored; the check did not execute.");
                 false
             }
         }
@@ -208,12 +207,12 @@ fn check_log(log: &Path, extract: &str) -> u8 {
         }
         Ok(false) => println!("ok   no compile or spawn-logic errors"),
         Err(_) => {
-            println!("FAIL: error scan exited ?; the check did not execute.");
+            println!("FAIL: the error scan errored; the check did not execute.");
             fail = true;
         }
     }
 
-    // Soft branch: bash treats any non-0 status as the note (includes DidNotRun).
+    // Soft branch: anything but a confirmed match is the note, including DidNotRun.
     match probe_str(&pat_loadout, &text) {
         Ok(true) => {
             let n = count_matching_lines(&pat_loadout, &text);
@@ -234,7 +233,7 @@ fn check_log(log: &Path, extract: &str) -> u8 {
         return 1;
     }
 
-    // Soft branch: bash `if [ "$status" = "0" ]` — non-0 (incl. DidNotRun) → PARTIAL.
+    // Soft branch: anything but a confirmed match is PARTIAL, including DidNotRun.
     match probe_str(&pat_assigned, &text) {
         Ok(true) => {
             println!("PASS: slot bodies built and a player was assigned a slot.");
@@ -256,7 +255,7 @@ fn cmd_selftest() -> u8 {
         }
     };
 
-    // (a) stale June build — flat tags, both dead strings. MUST fail.
+    // (a) build older than subsystem tags — flat tags only. MUST fail.
     write_log(
         &tmp.join("stale.log"),
         &[
@@ -320,7 +319,6 @@ fn cmd_selftest() -> u8 {
 }
 
 fn expect(name: &str, want: u8, file: &Path) -> bool {
-    // bash: check_log >/dev/null 2>&1 — quiet path, same exit codes.
     let rc = check_log_quiet(file);
     if rc == want {
         println!("ok   selftest {name} -> {rc}");
@@ -388,7 +386,7 @@ fn cmd_latest(extract: &str) -> u8 {
     check_log(&latest_dir.join("console.log"), extract)
 }
 
-/// `ls -td DIR/logs_* | head -1` over Proton then native — first dir with any match wins.
+/// Newest `logs_*` directory, searching Proton then native — the first root with any match wins.
 fn latest_log_dir(candidates: &[&Path]) -> Option<PathBuf> {
     for d in candidates {
         if !d.is_dir() {
@@ -443,3 +441,7 @@ fn write_log(path: &Path, lines: &[&str]) {
 #[cfg(test)]
 #[path = "tests/workbench_logs/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests/workbench_logs/file_cli_tests.rs"]
+mod file_cli_tests;

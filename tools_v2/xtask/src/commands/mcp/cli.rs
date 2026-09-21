@@ -16,21 +16,21 @@ pub(crate) enum McpCmd {
     /// Probe AF_UNIX socket connectability (exit 0/1)
     #[command(name = "probe-sock")]
     ProbeSock { sock: String },
-    /// Daemon-first JSON-RPC tool call (T-860 port of mcp-call.sh).
+    /// Daemon-first JSON-RPC tool call.
     /// Exit: 0 success · 1 usage/empty · 2 init-failed · 3 tool error · 4 timeout.
     Call {
         tool: Option<String>,
         /// JSON object; defaults to `{}` when omitted or empty.
         args_json: Option<String>,
     },
-    /// Offline MCP call-path selftest (T-865 port of mcp-call-selftest.sh).
+    /// Offline MCP call-path selftest.
     /// Exit: 0 ALL PASS · 1 any arm failed.
     #[command(name = "selftest")]
     Selftest,
-    /// Live wb_connect + wb_state smoke (T-877 port of mcp-smoke.sh).
+    /// Live wb_connect + wb_state smoke.
     /// Exit: 0 OK · 1 FAIL.
     Smoke,
-    /// T-090.11.3 — raw Workbench NET API call (`<APIFunc> [json]`, e.g.
+    /// Raw Workbench NET API call (`<APIFunc> [json]`, e.g.
     /// `EMCP_WB_TbdBlueprint {"action":"recon","filter":"FarmHouse_E_1L01_Wood"}`).
     /// Exit: 0 ok (JSON on stdout) · 1 usage · 2 cannot connect · 3 Workbench error.
     Wbcall {
@@ -40,13 +40,13 @@ pub(crate) enum McpCmd {
         #[arg(long, default_value_t = 600)]
         timeout: u64,
     },
-    /// setsid + AF_UNIX socket lifecycle (T-888 port of mcp-daemon.sh).
+    /// setsid + AF_UNIX socket lifecycle.
     /// Exit: 0 success · 1 stopped/fail · 2 usage.
     Daemon {
         /// start|stop|status|restart|stop-all (default: status)
         action: Option<String>,
     },
-    /// Grep latest Workbench Play console.log for TBD spawn diagnostics (T-857).
+    /// Grep latest Workbench Play console.log for TBD spawn diagnostics.
     /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "wb-logs", disable_help_flag = true)]
     WbLogs {
@@ -63,7 +63,7 @@ pub(crate) enum McpCmd {
         /// Prove the verdict logic can FAIL
         #[arg(long)]
         selftest: bool,
-        /// Usage (exit 3 — matches former mcp-wb-logs.sh)
+        /// Usage (exit 3, never a spawn verdict)
         #[arg(short = 'h', long = "help")]
         help: bool,
         /// Display extract pattern only (does not affect the verdict)

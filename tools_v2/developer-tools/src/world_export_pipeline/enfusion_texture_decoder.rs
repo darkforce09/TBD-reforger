@@ -1,9 +1,9 @@
-//! T-165.8 — Enfusion `_supertexture.edds` decoder (port of `scripts/map-assets/decode-edds.mjs`;
-//! BC7 via the pure-Rust `bcdec_rs` — replaces the vendored bcdec.wasm + JS glue).
+//! Enfusion `_supertexture.edds` decoder, BC7 through the pure-Rust `bcdec_rs`.
 //!
-//! See the .mjs header for the cracked pipeline: EDDS header (dxgiFormat u32LE @ 0x48, 99 =
-//! BC7_UNORM_SRGB), chunk table @ 0x5c ([4B tag][u32LE len], tag ∈ {COPY, "LZ4 "}), mip
-//! record i side = 1<<i (mip0 = last/largest), COPY = raw BC7, LZ4 = `[u32LE size][u32 _][block]`.
+//! The container: an EDDS header whose `dxgiFormat` is a u32LE at 0x48 (99 = BC7_UNORM_SRGB), a
+//! chunk table at 0x5c of `[4B tag][u32LE len]` records with tag ∈ {`COPY`, `LZ4 `}, and mip
+//! record `i` at side `1 << i` so mip 0 is the last and largest. A `COPY` chunk holds raw BC7;
+//! an `LZ4 ` chunk holds `[u32LE size][u32 _][block]`.
 
 use anyhow::{Result, bail};
 
@@ -71,7 +71,7 @@ pub fn parse_edds(buf: &[u8]) -> EddsInfo {
     EddsInfo { dxgi, recs }
 }
 
-/// LZ4 raw-block decompressor (byte-identical port of the proven .mjs implementation).
+/// LZ4 raw-block decompressor for the `LZ4 ` chunk payload.
 pub fn lz4_block(src: &[u8], dst_size: usize) -> Result<Vec<u8>> {
     let mut out = vec![0u8; dst_size];
     let mut s = 0usize;
@@ -146,8 +146,7 @@ pub fn mip0_side(mip_count: usize) -> usize {
     1 << (mip_count - 1)
 }
 
-/// Decode a full BC7 surface (w×h, /4 dims) to RGBA8 — the vendor/bc7.mjs contract, on
-/// pure-Rust `bcdec_rs` instead of the wasm build.
+/// Decode a full BC7 surface (w×h, both divisible by 4) to RGBA8 through `bcdec_rs`.
 pub fn decode_bc7(bc7: &[u8], w: usize, h: usize) -> Result<Vec<u8>> {
     if !w.is_multiple_of(4) || !h.is_multiple_of(4) {
         bail!("BC7 dims must be /4, got {w}x{h}");
@@ -222,5 +221,5 @@ pub fn list_eden_cells(vfs: &PakVfs) -> Vec<(u32, String)> {
 }
 
 #[cfg(test)]
-#[path = "tests/edds/tests.rs"]
+#[path = "tests/enfusion_texture_decoder/tests.rs"]
 mod tests;
