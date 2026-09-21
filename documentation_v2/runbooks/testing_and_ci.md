@@ -27,7 +27,7 @@ cargo xtask ci ci-local
 
 ## 2. Headless Chrome CDP Gates (`cargo xtask mk leptos-gates`)
 
-The repository includes a headless Chrome DevTools Protocol (CDP) test harness (`tools/tbd-tools/src/bin/gate.rs`) for end-to-end frontend verification.
+The repository includes a headless Chrome DevTools Protocol (CDP) test harness (`tools_v2/developer-tools/src/bin/gate.rs`) for end-to-end frontend verification.
 
 ```bash
 cargo xtask mk leptos-gates

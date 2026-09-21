@@ -1,4 +1,4 @@
-# T-917.5 — Token estimate factor
+# Token estimate factor
 
 The declared constant the `diff_loc` token estimator multiplies by. The estimator runs
 inside `cargo xtask ticket stamp-sha <id> <sha>`, which writes
@@ -17,8 +17,8 @@ quotes it verbatim, and check refuses any `.ai/tickets/estimates/<id>.json` whos
 
 ## Derivation — a single measured-once anchor, not a calibration
 
-The only tokens-per-LOC pair on record is this repo's own T-915/T-916 program
-(ticketboard GUI + typed ops, ~7 slices, shipped 2026-08-14):
+The only tokens-per-LOC pair on record is this repository's own ticketboard program
+(GUI + typed ops, ~7 slices, shipped 2026-08-14):
 
 - ~2,400,000 subagent output-tokens consumed (orchestration overhead excluded);
 - ~15,000–20,000 LOC changed across the program's commits.
@@ -35,7 +35,7 @@ mutation.
 ## What counts as a changed LOC
 
 `loc_changed` = insertions + deletions summed from `git log --numstat` over the
-ticket's exact-id boundary-matched subject commits (the T-917.4 miner's lists),
+ticket's exact-id boundary-matched subject commits (the miner's lists),
 EXCLUDING:
 
 - any path under `.ai/` (registry/ticket bookkeeping),
@@ -51,4 +51,4 @@ is counted in that method's tally.
 
 Estimates live at `.ai/tickets/estimates/<id>.json` — never inside
 `.ai/tickets/metrics/` — and are never summed with measured receipts
-(spec §estimates-outside-metrics; the T-913 honesty rule).
+(spec §estimates-outside-metrics; the honesty rule that measured and estimated never mix).

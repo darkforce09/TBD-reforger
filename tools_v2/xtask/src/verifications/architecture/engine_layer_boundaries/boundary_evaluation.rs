@@ -32,7 +32,7 @@ pub(super) fn evaluate(
     o.push(RULE1_HEAD.to_string());
     let path_use = Pattern::literal(MAP_ENGINE_PATH);
     let mut breaches: Vec<String> = Vec::new();
-    match scan::grep_lines(&path_use, &sources) {
+    match scan::matching_lines(&path_use, &sources) {
         Ok(hits) => breaches.extend(hits.iter().map(|h| rel(repo_root, h))),
         Err(cause) => return refuse(&mut o, "engine-layers rule 1 scan", cause),
     }
@@ -40,7 +40,7 @@ pub(super) fn evaluate(
     // "website-map-engine" }` renames the crate, and every `use r::…` then spells something this
     // gate has never heard of. A `#` line is a comment — naming the other crate in prose is not a
     // dependency edge.
-    match scan::grep_lines(&Pattern::literal(MAP_ENGINE_PKG), &manifest_files) {
+    match scan::matching_lines(&Pattern::literal(MAP_ENGINE_PKG), &manifest_files) {
         Ok(hits) => breaches.extend(
             hits.iter()
                 .filter(|h| !h.line.trim_start().starts_with('#'))
@@ -58,7 +58,7 @@ pub(super) fn evaluate(
 
     // ── rule 2 ───────────────────────────────────────────────────────────────────────────────
     o.push(RULE2_HEAD.to_string());
-    let nouns: Vec<String> = match scan::grep_lines(&decl, &sources) {
+    let nouns: Vec<String> = match scan::matching_lines(&decl, &sources) {
         Ok(hits) => hits.iter().map(|h| rel(repo_root, h)).collect(),
         Err(cause) => return refuse(&mut o, "engine-layers rule 2 scan", cause),
     };
@@ -72,7 +72,7 @@ pub(super) fn evaluate(
 
     // ── rule 3a ──────────────────────────────────────────────────────────────────────────────
     o.push(RULE3A_HEAD.to_string());
-    let vocab_hits = match scan::grep_lines(&vocab, &map_sources) {
+    let vocab_hits = match scan::matching_lines(&vocab, &map_sources) {
         Ok(hits) => hits,
         Err(cause) => return refuse(&mut o, "engine-layers rule 3a scan", cause),
     };
@@ -95,7 +95,7 @@ pub(super) fn evaluate(
 
     // ── rule 3b ──────────────────────────────────────────────────────────────────────────────
     o.push(RULE3B_HEAD.to_string());
-    let gpu_hits = match scan::grep_lines(&gpu, &map_sources) {
+    let gpu_hits = match scan::matching_lines(&gpu, &map_sources) {
         Ok(hits) => hits,
         Err(cause) => return refuse(&mut o, "engine-layers rule 3b scan", cause),
     };
@@ -117,7 +117,7 @@ pub(super) fn evaluate(
 
     // ── rule 4 ───────────────────────────────────────────────────────────────────────────────
     o.push(RULE4_HEAD.to_string());
-    let iso_hits = match scan::grep_lines(&scenario_iso, &scenario_files) {
+    let iso_hits = match scan::matching_lines(&scenario_iso, &scenario_files) {
         Ok(hits) => hits,
         Err(cause) => return refuse(&mut o, "engine-layers rule 4 scan", cause),
     };
@@ -143,7 +143,7 @@ pub(super) fn evaluate(
     // Hard zero, no allowlist. See the module docs for why the subject is one directory and not
     // the crate, and why the matcher is the bare word inside it.
     o.push(RULE5_HEAD.to_string());
-    let dom_hits: Vec<String> = match scan::grep_lines(&dom, &editing_files) {
+    let dom_hits: Vec<String> = match scan::matching_lines(&dom, &editing_files) {
         Ok(hits) => hits.iter().map(|h| rel(repo_root, h)).collect(),
         Err(cause) => return refuse(&mut o, "engine-layers rule 5 scan", cause),
     };
@@ -162,14 +162,14 @@ pub(super) fn evaluate(
     // ── rule 6 ───────────────────────────────────────────────────────────────────────────────
     o.push(RULE6_HEAD.to_string());
     let mut direct: Vec<String> = Vec::new();
-    match scan::grep_lines(&graphics_import, &front_sources) {
+    match scan::matching_lines(&graphics_import, &front_sources) {
         Ok(hits) => direct.extend(hits.iter().map(|h| rel(repo_root, h))),
         Err(cause) => return refuse(&mut o, "engine-layers rule 6 scan", cause),
     }
     // The manifest arm closes rule 1's hole from the other side: a renamed dependency
     // (`g = { package = "website-graphics-engine" }`) makes every `use g::…` invisible to the
     // source arm. A `#` line is a comment — naming the renderer in prose is not an edge.
-    match scan::grep_lines(&Pattern::literal(GRAPHICS_PKG), &front_manifest) {
+    match scan::matching_lines(&Pattern::literal(GRAPHICS_PKG), &front_manifest) {
         Ok(hits) => direct.extend(
             hits.iter()
                 .filter(|h| !h.line.trim_start().starts_with('#'))
@@ -195,14 +195,14 @@ pub(super) fn evaluate(
     // wall coming down, and reporting it as two rules would let half of it read green.
     o.push(RULE7_HEAD.to_string());
     let mut wall: Vec<String> = Vec::new();
-    match scan::grep_lines(&data_side, &data_files) {
+    match scan::matching_lines(&data_side, &data_files) {
         Ok(hits) => wall.extend(
             hits.iter()
                 .map(|h| format!("  data/ names the world — {}", rel(repo_root, h))),
         ),
         Err(cause) => return refuse(&mut o, "engine-layers rule 7 data scan", cause),
     }
-    match scan::grep_lines(&world_side, &world_files) {
+    match scan::matching_lines(&world_side, &world_files) {
         Ok(hits) => wall.extend(
             hits.iter()
                 .map(|h| format!("  world/ names the document — {}", rel(repo_root, h))),

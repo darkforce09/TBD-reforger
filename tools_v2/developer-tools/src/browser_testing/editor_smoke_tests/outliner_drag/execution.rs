@@ -15,7 +15,7 @@ pub(crate) async fn run(dist: &str) -> Result<u8> {
         let posts = intercept(&h.page).await?;
         h.page.navigate(&h.url(&format!("/missions/{ID}/edit?force=webgl&sat=preview"))).await?;
         fixture_ready(&h.page,&format!("{SEL_READY} && {HIST_READY} && typeof window.__editorCommands === 'object' && window.__missionDoc.slot_count() === 5")).await?;
-        eval(&h.page,"window.__t94686Events=[]; for(const type of ['pointerdown','pointermove','pointerup','gotpointercapture','lostpointercapture']) window.addEventListener(type,e=>{window.__t94686Events.push({type,id:e.pointerId,buttons:e.buttons,x:e.clientX,y:e.clientY,target:e.target.tagName,capture:e.target.hasPointerCapture?.(e.pointerId)});if(window.__t94686Events.length>12)window.__t94686Events.shift();},true)").await?;
+        eval(&h.page,"window.__outlinerDragEvents=[]; for(const type of ['pointerdown','pointermove','pointerup','gotpointercapture','lostpointercapture']) window.addEventListener(type,e=>{window.__outlinerDragEvents.push({type,id:e.pointerId,buttons:e.buttons,x:e.clientX,y:e.clientY,target:e.target.tagName,capture:e.target.hasPointerCapture?.(e.pointerId)});if(window.__outlinerDragEvents.length>12)window.__outlinerDragEvents.shift();},true)").await?;
         settle().await;
         let mut checks = Map::new();
         checks.insert("document_focused_and_boot_settled".into(),json!(eval_bool(&h.page,"document.hasFocus() && !document.querySelector('.mc-load-fill')").await?));

@@ -50,10 +50,10 @@ pub fn profile_payload(env: &Env) -> String {
 
 /// The V2–V4 API smoke payload.
 ///
-/// These hit the game-server REST routes (`/api/missions/:id/compiled`,
-/// `/api/game/.../roster`). Those existed only in the Phase-0 REST spike backend, since removed —
-/// the current backend serves `/api/v1` only, so these curls 404 and would abort the deploy.
-/// Skipped by default; `TBD_RUN_T092_SMOKE=1` forces it anyway.
+/// These curl the unversioned game-server REST routes (`/api/missions/:id/compiled`,
+/// `/api/game/.../roster`). The backend serves `/api/v1` only, so both answer 404 and the payload
+/// would abort the deploy at its first `|| exit 1`. It is therefore skipped by default;
+/// `TBD_RUN_GAME_SERVER_REST_SMOKE=1` runs it anyway.
 pub fn smoke_payload(env: &Env) -> String {
     format!(
         "set -euo pipefail\n\

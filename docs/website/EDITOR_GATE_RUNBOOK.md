@@ -57,7 +57,7 @@ A capture that could not be fed cannot be accepted, because `accept` captures th
 - **API on :8080** (`cargo xtask mk rust-api`) for the `hydrate` / `mutations` smokes. Most smokes don't need it.
 - **map-assets** (LFS) for `fullmap` / `hillshade` (the full satellite + DEM + world objects).
 - **`?force=webgl&sat=preview`** — the smokes pin the WebGL2/SwiftShader backend (`EDIT_PATH`); the
-  default WebGPU/lavapipe path is unreliable headless (`smokes.rs` §force=webgl). `sat=preview` avoids
+  default WebGPU/lavapipe path is unreliable headless (`editor_smoke_tests.rs` §force=webgl). `sat=preview` avoids
   the 205 MB satellite fetch except in `fullmap`.
 
 ## Known wedge modes
@@ -69,7 +69,7 @@ A capture that could not be fed cannot be accepted, because `accept` captures th
 2. **Orphaned chrome starving the next smoke.** A crashed run can leave renderer/gpu children pegging
    every core under software GL (`cdp.rs` process-group note). The doctor scans for these; kill with
    `pkill -9 -f chrome-headless-shell; pkill -9 -f 'chrome-linux64/chrome'`.
-3. **Memory pressure.** SwiftShader thrashes under a low RAM ceiling (`smokes.rs` §force=webgl). The
+3. **Memory pressure.** SwiftShader thrashes under a low RAM ceiling (`editor_smoke_tests.rs` §force=webgl). The
    doctor checks `MemAvailable` + cgroup limits.
 4. **Font-fallback crash, part two — the BROWSER process (KB-002b / T-320).** The same
    `SkFontMgr_FontConfigInterface.cpp:163 "Not implemented"` `SK_ABORT`, reached from the **full
@@ -138,7 +138,7 @@ A capture that could not be fed cannot be accepted, because `accept` captures th
   still wedges, `Browser::recent_output()` will for the first time show what chrome said about it.
 - **`innerText` returns the text CSS *renders*, so `text-transform: uppercase` is applied.** An
   assertion against `'Attached Missions'` fails against a rendered `'ATTACHED MISSIONS'`. Not
-  hypothetical for this gate: `smokes::render_check` matches `--expect` against
+  hypothetical for this gate: `editor_smoke_tests::render_check` matches `--expect` against
   `document.body.innerText`, and both "Attached Missions" headings (`events.rs:398`,
   `event_manager.rs:1206`) carry the Tailwind `uppercase` class. MEASURED on the pinned chromium: a
   `text-transform: uppercase` element yields `innerText` `"ATTACHED MISSIONS"` and `textContent`
@@ -152,8 +152,8 @@ A capture that could not be fed cannot be accepted, because `accept` captures th
   `document.querySelector('aside')` returns whichever comes first in the DOM regardless of which is
   displayed — not a stable thing to assert on. Select on a discriminating class or scope to a
   landmark. Also part of T-232's 26/44.
-- **`render-check` never proxies `/api`.** `smokes::render_check` builds its `Harness` with
-  `api_proxy: None` (`smokes.rs`), so an `/api/v1/...` fetch falls through to the SPA index.html
+- **`render-check` never proxies `/api`.** `editor_smoke_tests::render_check` builds its `Harness`
+  with `api_proxy: None` (`mutations.rs`), so an `/api/v1/...` fetch falls through to the SPA index.html
   instead of a backend. Harmless for the editor route — verified: it boots, installs
   `__missionDoc` / `__missionPersist` / `__missionBackup` and answers `--assert-js` — but a probe that
   needs real API data cannot use `render-check` today. Wiring an `--api-proxy` through

@@ -66,9 +66,7 @@ The forensic audit identified multiple layers of obsolete technology residue tha
 2. **Go Backend Residue** (Superseded by Rust Axum + SQLx in T-145/T-171):
    - `docs/website/backend/ROADMAP.md`: references `user.go`, `auth.go`, `missions.go`, GORM, `golang-migrate`.
    - `docs/website/backend/architecture.md`: references `Go (chi router)`, `lib/pq` (Postgres schema definitions remain active).
-3. **Obsolete Ticket Tooling Residue**:
-   - `docs/website/TAGS.md`: references old `registry.json` and `./scripts/ticket sync`.
-4. **Circular & Redundant Stubs**:
+3. **Circular & Redundant Stubs**:
    - `Claude_Context_Handoff.md`, `BACKEND_ARCHITECTURE.md`, `REGISTRATION_FLOW_DESIGN.md`, `docs/platform/context_handoff.md`.
 
 ## 5. Master Relocation Catalog (All 821 Files)

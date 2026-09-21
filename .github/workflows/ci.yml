@@ -84,7 +84,7 @@ jobs:
       # local-only, so this is the only push-triggered check of the density grid and the world
       # export unit tests.
       # `working-directory: .` for the same reason as the fmt step: the job default is
-      # apps/website/api_v2, and `-p` alone would resolve against that package's directory.
+      # apps/website/api_v2, and `cargo xtask` resolves the repository root from its own cwd.
       # AHEAD of the DB-backed `test` step deliberately. Steps stop at the first failure, so behind
       # it a Postgres-service red would decide whether the density invariant was checked at all.
       # This lane needs no database, no LFS and no wasm target; nothing about it should wait on one

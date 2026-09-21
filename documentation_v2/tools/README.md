@@ -1,6 +1,6 @@
 # Repository Tooling Suite (`tools_v2/`)
 
-Documentation for the repository tooling, build orchestration, and verification infrastructure, mirroring `tools_v2/` (the former `tools/tbd-tools` suite lives in `tools_v2/developer-tools/`).
+Documentation for the repository tooling, build orchestration, and verification infrastructure, mirroring `tools_v2/`.
 
 ## Tooling Subsystems
 - `tools_v2/xtask/`: Declarative task runner (`cargo xtask`), CI verification gates, database management.

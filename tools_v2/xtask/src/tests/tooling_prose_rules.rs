@@ -366,7 +366,7 @@ fn every_rust_file_named_in_prose_exists() {
 fn every_rule_fires_on_a_line_that_breaks_it() {
     // Assembled the way the needles are, so the fixture does not put a live offender in this file.
     let fixture = format!(
-        "// see {}{} for why\n{} {}{} the old {}{} crate\n{}\n{}{}{} first\n// the whole point of {}{}\n",
+        "// see {}{} for why\n{} {}{} the old {}{} crate\n{}\n{}{}{}{} first\n// the whole point of {}{}\n",
         "T-",
         "123.4",
         "//!",
@@ -376,7 +376,8 @@ fn every_rule_fires_on_a_line_that_breaks_it() {
         "-engine-core",
         "let path = \"docs/specs/whatever.md\";",
         "// run ",
-        "scripts/mod/compile",
+        "scripts",
+        "/mod/compile",
         ".sh",
         "hostrun",
         ".rs",

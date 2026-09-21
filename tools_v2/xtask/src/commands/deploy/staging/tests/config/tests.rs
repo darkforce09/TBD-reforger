@@ -32,7 +32,7 @@ pub(crate) fn base() -> Env {
         modpack_url: String::new(),
         modpack_token: String::new(),
         workshop_mod_name: "TBD_Framework".into(),
-        run_t092_smoke: false,
+        run_game_server_rest_smoke: false,
         ssh_pass: None,
         ssh_identity_file: None,
     }

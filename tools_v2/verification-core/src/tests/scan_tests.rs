@@ -65,10 +65,10 @@ fn a_file_root_is_accepted_directly() {
 }
 
 #[test]
-fn grep_lines_reports_one_based_line_numbers() {
+fn matching_lines_reports_one_based_line_numbers() {
     let d = TmpDir::new("grep");
     let f = d.file("x.rs", "first\nSELECT * FROM users\nthird\n");
-    let hits = grep_lines(
+    let hits = matching_lines(
         &Pattern::regex("SELECT \\* FROM").unwrap(),
         std::slice::from_ref(&f),
     )
@@ -80,10 +80,10 @@ fn grep_lines_reports_one_based_line_numbers() {
 }
 
 #[test]
-fn grep_lines_finds_every_occurrence() {
+fn matching_lines_finds_every_occurrence() {
     let d = TmpDir::new("multi");
     let f = d.file("y.rs", "hit\nmiss\nhit\n");
-    let hits = grep_lines(&Pattern::literal("hit"), &[f]).unwrap();
+    let hits = matching_lines(&Pattern::literal("hit"), &[f]).unwrap();
     assert_eq!(
         hits.iter().map(|h| h.line_no).collect::<Vec<_>>(),
         vec![1, 3]
@@ -91,8 +91,8 @@ fn grep_lines_finds_every_occurrence() {
 }
 
 #[test]
-fn grep_lines_on_a_missing_file_is_did_not_run() {
-    let got = grep_lines(
+fn matching_lines_on_a_missing_file_is_did_not_run() {
+    let got = matching_lines(
         &Pattern::literal("x"),
         &[PathBuf::from("/nonexistent/tbd/z.rs")],
     );
@@ -105,6 +105,6 @@ fn non_utf8_bytes_do_not_abort_the_scan() {
     let d = TmpDir::new("binary");
     let p = d.0.join("odd.rs");
     std::fs::write(&p, [b'h', b'i', 0xff, b'\n', b'x', b'\n']).unwrap();
-    let hits = grep_lines(&Pattern::literal("x"), &[p]).unwrap();
+    let hits = matching_lines(&Pattern::literal("x"), &[p]).unwrap();
     assert_eq!(hits.len(), 1);
 }

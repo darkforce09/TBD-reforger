@@ -1,36 +1,32 @@
-//! Ticketboard — native egui projection of the `.ai/tickets/` registry (T-915).
+//! Ticketboard — a native egui projection of the `.ai/tickets/` registry.
 //!
-//! Every `T-*.toml` (parents AND children) is parsed through `tbd-tickets` and
-//! rendered as a status board with a full-field detail panel, plus (T-915.2)
-//! verbatim wave lanes off `wave.lock`, a program tree, composable filters, and
-//! the owns-collision explainer, plus (T-915.3) the trust banner —
-//! `cargo xtask ticket check --strict` as a streamed subprocess, a notify file
-//! watch with debounced auto-reload, and the git-dirty chip. T-915.4 adds the
-//! mutation UI: every write shells `cargo xtask ticket <verb>` as a subprocess
-//! (single-flight queue, CAS guard, verbatim refusals, no auto-repack ever) —
-//! the app itself writes no ticket bytes; its only direct file writes are the
-//! preferences (picked repo root, T-920.2 viewer-column width) in eframe
-//! Storage in the user config dir. T-915.5 adds
-//! the metrics dashboard over the `.ai/tickets/metrics/` run receipts: explicit
-//! no-receipts state, per-ticket / per-agent token + elapsed aggregations, and
-//! named error rows for malformed files — never zeros for missing data. T-918.2
-//! adds provenance rendering — measured vs estimated, NEVER summed: stamp rows
-//! carry the `~` glyph + verbatim estimate_note tooltip, the detail panel gains
-//! a "tokens (estimated)" row off `.ai/tickets/estimates/<id>.json`, and the
-//! Metrics tab gains the structurally separate "Estimated (historical)" panel
-//! (per-class / per-domain; estimates have no agent). T-918.4 adds the in-app
-//! markdown viewer: spec/plan/`.md`-citation clicks render the document in a
-//! right-pane egui_commonmark view — read-only, repo-root-fenced, worker-thread
-//! reads, raw-text fallback with a naming note — with external-open kept as the
-//! secondary action. T-920.2 reshapes both right-pane surfaces: main_goal (then
-//! summary) renders label-free in the detail header directly under the title
-//! and the body sections start at context; the viewer becomes a third COLUMN
-//! beside the detail panel (both visible; Back collapses just the column; its
-//! width drag-resizable and persisted in eframe Storage; narrow windows degrade
-//! to the viewer alone); cards gain a main_goal hover tooltip.
-//! Design authority: `docs/platform/t915_ticketboard_design.md` +
-//! `docs/platform/t917_ticket_schema_v2.md` §Provenance + B.4 +
-//! `docs/platform/t920_body_obligations.md` §Board changes.
+//! Every `T-*.toml`, parents AND children, is parsed through `ticket-engine` and rendered as a
+//! status board with a full-field detail panel, verbatim wave lanes off `wave.lock`, a program
+//! tree, composable filters and the owns-collision explainer.
+//!
+//! The trust banner runs `cargo xtask ticket check --strict` as a streamed subprocess and pairs it
+//! with a notify file watch (debounced auto-reload) and a git-dirty chip. Every mutation shells
+//! `cargo xtask ticket <verb>` as a subprocess behind a single-flight queue and a compare-and-set
+//! guard, surfacing refusals verbatim and never repacking on its own: the app writes no ticket
+//! bytes itself. Its only direct file writes are the preferences — picked repository root and
+//! viewer-column width — in eframe Storage under the user config directory.
+//!
+//! The metrics dashboard reads the `.ai/tickets/metrics/` run receipts and reports per-ticket and
+//! per-agent token and elapsed aggregations, an explicit no-receipts state, and named error rows
+//! for malformed files; missing data never renders as a zero. Provenance stays separated:
+//! measured and estimated values are NEVER summed, stamp rows carry the `~` glyph with the
+//! verbatim estimate note as a tooltip, the detail panel shows a "tokens (estimated)" row off
+//! `.ai/tickets/estimates/<id>.json`, and the Metrics tab keeps a structurally separate
+//! "Estimated (historical)" panel broken down per class and per domain (estimates have no agent).
+//!
+//! Clicking a spec, a plan or a `.md` citation opens the document in the in-app markdown viewer: a
+//! read-only `egui_commonmark` view fenced to the repository root, read on a worker thread, with a
+//! raw-text fallback carrying a naming note and external-open as the secondary action. The right
+//! pane holds two surfaces: the detail panel renders `main_goal` (else `summary`) label-free
+//! directly under the title with the body sections starting at context, and the viewer is a third
+//! COLUMN beside it — both visible at once, Back collapses only the column, its width is
+//! drag-resizable and persisted in eframe Storage, and narrow windows degrade to the viewer alone.
+//! Cards carry a `main_goal` hover tooltip.
 
 mod app;
 mod board;

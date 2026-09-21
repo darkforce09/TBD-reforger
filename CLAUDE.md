@@ -150,20 +150,24 @@ apps/
             ├── shaders/                 <-- WGSL shader source code and compilation helpers
             └── text/                    <-- MSDF and bitmap glyph atlas texture rendering
 
-tools/
-└── tbd-tools/                           <-- Heavy async Rust CLI suite:
-    ├── enf                              <-- Enfusion pak unpacker and script source extractor
-    ├── gate                             <-- Headless CDP Chrome gate test harness
-    ├── mcpd                             <-- Enfusion MCP broker daemon
-    ├── world                            <-- World object and terrain chunk processing pipeline
-    ├── map                              <-- Image optimization and satellite tile pipeline
-    └── capture                          <-- Headless map snapshot utility
-
-tools_v2/                               <-- Tooling crates and phased architecture scaffold
-├── verification-core/                  <-- Fail-closed assertions, process isolation, and locking
-├── ticket-engine/                      <-- Typed tickets, canonical TOML, transactional storage
-├── xtask/                              <-- Live task runner (`cargo xtask`), checks and blueprint compiler
-└── developer-tools/                    <-- Future heavy CLI destination (documentation scaffold)
+tools_v2/                               <-- Every developer tool in the repository; four crates plus one npm package
+├── verification-core/                  <-- Fail-closed verdicts, pattern scans, process isolation, repository verification lock
+├── ticket-engine/                      <-- Ticket corpus storage, validation, generated views, wave lock, metrics, repository paths
+├── developer-tools/                    <-- Heavy async CLI suite, blueprint compiler, map verification
+│   ├── src/bin/                        <-- Executables: enf, gate, mcpd, world, map, capture
+│   │   ├── enf                         <-- Enfusion pak unpacker and script source extractor
+│   │   ├── gate                        <-- Headless CDP Chrome gate test harness
+│   │   ├── mcpd                        <-- Enfusion MCP broker daemon
+│   │   ├── world                       <-- World object and terrain chunk processing pipeline
+│   │   ├── map                         <-- Image optimization and satellite tile pipeline
+│   │   └── capture                     <-- Headless map snapshot utility
+│   ├── fixtures/dom_oracle/            <-- Frozen editor DOM goldens the route-drift gate compares against
+│   └── test_fixtures/blueprint/        <-- Prefab and world-object inputs for the blueprint compiler tests
+├── xtask/                              <-- `cargo xtask` command router, repository verifications, platform execution
+│   ├── deploy/                         <-- deploy.env.example, Caddyfile.website, systemd/ units and timers
+│   ├── dedicated_server_profiles/      <-- Dedicated-server JSON profiles for playtest and world boot
+│   └── fixtures/mcp/                   <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
+└── enfusion_mcp_node_package/          <-- Pinned enfusion-mcp npm package (node_modules gitignored)
 
 contracts_v2/                            <-- Every shape that crosses a network, process, or language boundary
 ├── definitions/                         <-- Authoritative JSON Schemas (missions, arsenal, terrain, voice)
@@ -177,7 +181,8 @@ assets_v2/                               <-- Terrain datasets and map symbology
 ├── scratch/                             <-- Local export intermediates (gitignored)
 └── storage_spec/                        <-- Production persistent volume specification
 
-docs/                                    <-- Architecture specs, UI surface specs, and runbooks
+docs/                                    <-- Architecture specs, UI surface specs, and runbooks (authoritative)
+documentation_v2/                        <-- Blueprint for a reorganised documentation tree; tools read `docs/`
 .ai/tickets/                             <-- Ticket registry TOML files
 ```
 

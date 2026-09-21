@@ -38,5 +38,5 @@ This flat symmetry eliminates arbitrary subfolders (`existing/`, `ideas/`, `fact
 ## 3. Code & Tooling Mapping
 - **Crate**: `tools_v2/ticket-engine/` (Domain model, parser, `ops::default_plan_path`)
 - **Desktop Viewer**: `apps/ticketboard/` (In-memory ticket index, reactive inotify file watching, in-app spec reader)
-- **Validation**: `tools_v2/xtask/src/check.rs` (Ready-gate four-section check, on-disk existence assertions)
+- **Validation**: `tools_v2/ticket-engine/src/validation/` (ready-gate four-section check, on-disk existence assertions), run by `cargo xtask ticket check`
 - **Ticket Registry**: `.ai/tickets/*.toml`

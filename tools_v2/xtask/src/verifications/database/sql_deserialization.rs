@@ -92,7 +92,7 @@ pub fn verify_no_select_star(repo_root: &Path) -> Result<u8> {
 }
 
 fn fetch(pattern: &Pattern, files: &[std::path::PathBuf]) -> Result<Vec<Hit>> {
-    match scan::grep_lines(pattern, files) {
+    match scan::matching_lines(pattern, files) {
         Ok(hits) => Ok(hits),
         Err(cause) => {
             // Reuse the same refusal shape rather than inventing a second one.

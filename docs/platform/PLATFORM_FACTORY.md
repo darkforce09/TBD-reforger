@@ -523,7 +523,7 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 
 | Area | Tickets | Where |
 |---|---:|---|
-| Contract / `flatten` | 14 | `crates/map-engine-core/src/mission/` |
+| Contract / `flatten` | 14 | `apps/website/map-engine/src/data/scenario/` |
 | Website — dead pages | 14 | `apps/website/frontend/src/` |
 | Mission Creator — authoring | 12 | `apps/website/frontend/src/` |
 | Website — event lifecycle | 11 | `apps/website/api_v2/src/` |

@@ -6,13 +6,13 @@ Every shipped feature, active slice, and queued/deferred item uses a **`T-0xx`**
 
 | Resource | Purpose |
 |----------|---------|
-| [`tickets/registry.json`](../../.ai/tickets/registry.json) | Canonical ticket rows (status, order, spec path, program) |
+| [`.ai/tickets/T-*.toml`](../../.ai/tickets/) | Canonical ticket rows (status, order, spec path, program); the tree root is marked by `.ai/tickets/ROOT` |
 | [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY.md) | Full generated table — all tickets |
 | [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) | Lead dashboard — **ready**, **active**, next queued |
 | [`docs/TICKET_DEV_QUEUE.md`](../TICKET_DEV_QUEUE.md) | Claude Code implementation queue |
-| [`tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md) | Edit registry → `./scripts/ticket sync` workflow |
+| [`tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md) | Edit ticket → `cargo xtask ticket sync` workflow |
 
-After changing `registry.json`, run **`./scripts/ticket sync`** from monorepo root and commit registry + generated views together. Never hand-edit root `docs/TICKET_*.md` or the `<!-- ticket-sync:status -->` block in root `CLAUDE.md`.
+After changing a ticket, run **`cargo xtask ticket sync`** from the repository root and commit the ticket file and the generated views together. Never hand-edit `docs/TICKET_*.md`.
 
 ## What T-0xx means
 
@@ -22,19 +22,19 @@ After changing `registry.json`, run **`./scripts/ticket sync`** from monorepo ro
 | **T-0xx.y** | Sub-slice within a ticket (e.g. **T-067.0** viewport cull, **T-067.1** lazy RAM @ 1M) |
 | **T-0xx.y.z** | Hotfix sub-slice (e.g. **T-060.1.4** mid-upload socket reset) |
 
-**Status values** (in registry): `idea` → `queued` → `ready` → `shipped` | `deferred` | `cancelled`.
+**Status values** (in each ticket file): `idea` → `queued` → `ready` → `shipped` | `deferred` | `cancelled`.
 
-**Programs:** `platform`, `backend`, `eden`, `scale`, `infra` — see registry `program` column.
+**Programs:** `platform`, `backend`, `eden`, `scale`, `infra` — see each ticket's `program` field.
 
 ## Domain ROADMAPs
 
-Planning narrative lives in domain ROADMAPs; ticket IDs live in the registry.
+Planning narrative lives in domain ROADMAPs; ticket IDs live in the ticket files.
 
 | Domain | ROADMAP |
 |--------|---------|
-| Platform hub | [`docs/README.md`](README.md) |
+| Platform hub | [`docs/website/README.md`](README.md) |
 | Frontend | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
-| Backend | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
+| Backend | [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) |
 
 Supporting MC specs use **descriptive snake_case** filenames: `t067_spatial_chunks.md`, `engineering_plan.md`, `agent_execution.md`.
@@ -67,14 +67,14 @@ Full shipped scale-program table: [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY
 
 ## T-0xx vs engineering phases
 
-[`CLAUDE.md`](../../CLAUDE.md) **T-029–T-040** = git milestones for the MC shell.  
-[`engineering_plan.md`](../specs/Mission_Creator_Architecture/engineering_plan.md) phases 0–9 = engineering design — not 1:1 with ticket order.
+Ticket IDs are git milestones — one tag per ship; [`TICKET_REGISTRY.md`](../TICKET_REGISTRY.md) lists them all.
+[`engineering_plan.md`](../specs/Mission_Creator_Architecture/engineering_plan.md) phases 0–9 are engineering design — not 1:1 with ticket order.
 
 ## Adding or changing tickets
 
-1. Edit [`tickets/registry.json`](../../.ai/tickets/registry.json).
-2. `./scripts/ticket sync` (regenerates `TICKET_*.md`, `CLAUDE.md` status block, queue).
-3. `./scripts/ticket check` (or `cargo xtask ticket check --strict` before doc-only merges).
+1. Edit the ticket's [`.ai/tickets/T-*.toml`](../../.ai/tickets/) file.
+2. `cargo xtask ticket sync` (regenerates `docs/TICKET_*.md` and the queue).
+3. `cargo xtask ticket check --strict`.
 4. Sync narrative docs per [`AGENT_COMMIT_CHECKLIST.md`](AGENT_COMMIT_CHECKLIST.md).
 
-Do **not** invent a new prefix. If work is not shipped, keep it **`queued`**, **`ready`**, or **`deferred`** in the registry — never reuse a shipped T-ID for new scope.
+Do **not** invent a new prefix. If work is not shipped, keep it **`queued`**, **`ready`**, or **`deferred`** in its ticket file — never reuse a shipped T-ID for new scope.

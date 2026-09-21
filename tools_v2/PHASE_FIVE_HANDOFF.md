@@ -1531,7 +1531,7 @@ and the count is restated here as evidence rather than as a durable property of 
 |---|---|
 | Empty directories deleted | 138 directories under `tools_v2/`, all untracked, none holding a tracked file, none named by any `#[path]` attribute |
 | Build residue deleted | `tools_v2/ticket-engine/wip/` (trybuild stderr output; the `wip/` rule stays in `tools_v2/ticket-engine/.gitignore` so it is ignored again the moment a stderr mismatch regenerates it) |
-| External tool logs deleted | `enfusion_unpacker.log`, `scripts/mod/enfusion_unpacker.log` — output of an unpacker that runs outside this repository; `git grep enfusion_unpacker tools_v2` returns nothing. Their two lines in the local `.git/info/exclude` are gone with them |
+| External tool logs deleted | Two `enfusion_unpacker.log` files, one at the repository root and one inside the retired root script tree — output of an unpacker that runs outside this repository; no source under `tools_v2` names it. Their two lines in the local `.git/info/exclude` are gone with them |
 | README-only directories removed from the index and disk | `tools_v2/developer-tools/tests/`, `tools_v2/developer-tools/test_fixtures/mcp/`, `tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge/`, `tools_v2/verification-core/tests/` — `git ls-files` showed exactly one `README.md` in each before removal |
 | Crate constant deleted | `tools_v2/developer-tools/src/lib.rs` — the `PROGRAM` constant carried a ticket identifier as its value and had no reader; the module list is one alphabetical block under a crate doc comment naming the six binaries it serves |
 | Test file moved and renamed | one ticket-numbered file under `tools_v2/xtask/src/tests/main/` becomes `tools_v2/xtask/src/commands/mcp/tests/workbench_logs/file_cli_tests.rs`, declared from `commands/mcp/workbench_logs.rs` beside that module's other test file; `tools_v2/xtask/src/tests/main/` is gone and `main.rs` no longer declares it |
@@ -1882,18 +1882,22 @@ the workspace.
 
 ### Destinations
 
-| From | To | Who reads it |
+Every row's file came out of the retired root script tree; the table names the file, where it lives
+now, and who reads it there. Naming the retired source paths is what the verification matrix drives
+to zero, so the table spells only live locations.
+
+| File | Lives at | Who reads it |
 |---|---|---|
-| `scripts/deploy/deploy.env.example` | `tools_v2/xtask/deploy/deploy.env.example` | An operator copies it to `deploy.env` beside it |
-| `scripts/deploy/Caddyfile.website` | `tools_v2/xtask/deploy/Caddyfile.website` | Caddy on the server; `cargo xtask deploy website` prints its reload command; `apps/website/api_v2/tests/forwarded_for_trust.rs` pins its loopback upstream |
-| `scripts/deploy/tbd-website-api.service` | `tools_v2/xtask/deploy/systemd/tbd-website-api.service` | `cargo xtask deploy website` renders and restarts it |
-| `scripts/deploy/tbd-reforger.service` | `tools_v2/xtask/deploy/systemd/tbd-reforger.service` | `cargo xtask deploy staging` installs it |
-| `scripts/deploy/tbd-website-backup.service` and `.timer` | `tools_v2/xtask/deploy/systemd/` | An operator installs them; the service runs `cargo xtask deploy db backup` |
-| `scripts/deploy/tbd-website-backup-drill.service` and `.timer` | `tools_v2/xtask/deploy/systemd/` | An operator installs them; the service runs `cargo xtask deploy db drill` |
-| `scripts/mod/tbd-dev-server.config.json` | `tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json` | `cargo xtask mod playtest` and `cargo xtask mod world-boot` |
-| `scripts/mod/fixtures/mcp-*.jsonl` (5) | `tools_v2/xtask/fixtures/mcp/` | `cargo xtask mcp selftest` replays them through `cargo xtask mcp consume` |
-| `scripts/mod/package.json`, `package-lock.json`, root `.nvmrc` | `tools_v2/enfusion_mcp_node_package/` | `npm ci` there installs the pinned `enfusion-mcp` server |
-| `scripts/mod/tbd-staging-server.config.json` | deleted | No code consumer: `git grep -n tbd-staging-server` named one comment, and `cargo xtask deploy staging` renders `server.config.json` itself in `deploy/staging/render.rs`. That comment is gone with it. |
+| `deploy.env.example` | `tools_v2/xtask/deploy/deploy.env.example` | An operator copies it to `deploy.env` beside it |
+| `Caddyfile.website` | `tools_v2/xtask/deploy/Caddyfile.website` | Caddy on the server; `cargo xtask deploy website` prints its reload command; `apps/website/api_v2/tests/forwarded_for_trust.rs` pins its loopback upstream |
+| `tbd-website-api.service` | `tools_v2/xtask/deploy/systemd/tbd-website-api.service` | `cargo xtask deploy website` renders and restarts it |
+| `tbd-reforger.service` | `tools_v2/xtask/deploy/systemd/tbd-reforger.service` | `cargo xtask deploy staging` installs it |
+| `tbd-website-backup.service` and `.timer` | `tools_v2/xtask/deploy/systemd/` | An operator installs them; the service runs `cargo xtask deploy db backup` |
+| `tbd-website-backup-drill.service` and `.timer` | `tools_v2/xtask/deploy/systemd/` | An operator installs them; the service runs `cargo xtask deploy db drill` |
+| `tbd-dev-server.config.json` | `tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json` | `cargo xtask mod playtest` and `cargo xtask mod world-boot` |
+| `mcp-*.jsonl` (5) | `tools_v2/xtask/fixtures/mcp/` | `cargo xtask mcp selftest` replays them through `cargo xtask mcp consume` |
+| `package.json`, `package-lock.json`, `.nvmrc` | `tools_v2/enfusion_mcp_node_package/` | `npm ci` there installs the pinned `enfusion-mcp` server |
+| `tbd-staging-server.config.json` | deleted, nowhere | No code consumer: a repository-wide search for the name found one comment, and `cargo xtask deploy staging` renders `server.config.json` itself in `deploy/staging/render.rs`. That comment is gone with it. |
 
 The npm package sits outside every crate root on purpose. `FILE_LENGTH_PINS` pins whole crate
 directories and `cargo xtask verify file-length` walks them in full, so a vendored `.rs` inside an
@@ -1901,8 +1905,9 @@ installed dependency tree would become a subject of the size gate.
 
 ### Operator step, before deleting the last directory on disk
 
-`scripts/mod/node_modules/` is left in place, untracked and gitignored, because the running Claude
-Code and Cursor sessions still execute `enfusion-mcp` from it. The three machine-local MCP configs
+The installed dependency tree under the retired root script directory is left in place, untracked
+and gitignored, because the running Claude Code and Cursor sessions still execute `enfusion-mcp`
+from it. The three machine-local MCP configs
 (`.mcp.json`, `.cursor/mcp.json`, `apps/mod/.cursor/mcp.json`, all gitignored) now point at the
 server module installed under
 `/run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/`,
@@ -2090,15 +2095,15 @@ The four lines the layout-literal grep still reports are not repository-path dup
   driver is described as "the historical bash header, retargeted at the lock". It names no deleted
   script, so it did not block this phase, but the doc comment is history.
 - `tools_v2/xtask/src/commands/deploy/cli.rs:11,14` and `deploy/database_*.rs:1` — six clap and
-  module doc comments still open with "port of scripts/deploy/…". They are comment lines, so the
-  R5a grep excludes them; R3 will not.
+  module doc comments still open by naming a retired deploy script. They are comment lines, so the
+  R5a row excludes them; R3 will not.
 - `tools_v2/xtask/src/commands/setup/{client_addons,mcp_game_root,server_profile,workbench_linux}.rs`
   — four module doc comments open by naming a deleted setup script, and three of them instruct the
   reader to preserve a path-pin shell file that is not in the repository.
 
 ### Commands that could not run
 
-`cargo xtask deploy website --dry-run` cannot read a real `deploy.env`: the file holds host credentials and exists on no development machine in this repository (the preflight check `test ! -e scripts/deploy/deploy.env` confirmed that before the move). The dry-run was therefore driven through the command's own `DEPLOY_ENV` override against a three-line scratch file in the session scratchpad, which exercises the same code path and the same printed paths. Without it the command exits 1 with `Missing /run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/xtask/deploy/deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example`, which is itself evidence that the relocated path is the one the command reads.
+`cargo xtask deploy website --dry-run` cannot read a real `deploy.env`: the file holds host credentials and exists on no development machine in this repository (a preflight check confirmed the file was absent before the move). The dry-run was therefore driven through the command's own `DEPLOY_ENV` override against a three-line scratch file in the session scratchpad, which exercises the same code path and the same printed paths. Without it the command exits 1 with `Missing /run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/xtask/deploy/deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example`, which is itself evidence that the relocated path is the one the command reads.
 
 Every other check of this phase ran unmodified in this environment.
 
@@ -2980,21 +2985,252 @@ suite means the rules looked.
 
 ### Found for P9
 
-- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:203-216` — `API_SLICE_SPEC` is an
-  `#[allow(dead_code)]` constant holding a specification for work in another crate, kept only so a
-  text search finds it. Its prose is now present-tense and identifier-free, but the constant still
-  has no reader; the `#[allow(dead_code)]` says so. Either delete it and let the specification live
-  in a ticket, or move it to one.
-- `tools_v2/verification-core/src/scan.rs:95` exports `grep_lines`, whose name borrows an external
-  tool for a function that runs no process. It is public API across `xtask` and `developer-tools`,
-  so renaming it is a public-surface change rather than a prose one.
-- `TBD_RUN_T092_SMOKE` is a live operator-facing environment variable and a matching field name in
-  `deploy/staging/config.rs`, documented in `docs/mod/STAGING-SERVER.md`. It is ticket-shaped but
-  matches no rule here — `T092` carries no hyphen — so renaming it belongs with the other
-  operator-surface renames, in one commit with the runbook.
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs` carries an `#[allow(dead_code)]` constant
+  holding a specification for work in another crate, kept only so a text search finds it. Its prose
+  is present-tense and identifier-free, but the constant still has no reader; the
+  `#[allow(dead_code)]` says so. Delete it.
+- `tools_v2/verification-core/src/scan.rs` exports a line scanner named after an external command
+  line tool, for a function that runs no process. It is public API across `xtask` and
+  `developer-tools`, so renaming it is a public-surface change rather than a prose one.
+- The staging deploy's game-server REST smoke is gated by an operator-facing environment variable
+  and a matching field in `deploy/staging/config.rs`, documented in `docs/mod/STAGING-SERVER.md`.
+  The name is ticket-shaped and matches no rule here, because the identifier it carries has no
+  hyphen, so renaming it belongs with the other operator-surface renames, in one commit with the
+  runbook.
 - `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_drag/execution.rs:18`
   writes a ticket-named page global that `outliner_drag/vehicle_snap_cases.rs:40` reads back. Both
   ends are inside `developer-tools`, so the rename is one-sided; `window.__outlinerDragEvents` is
   the name the rest of the lane would use.
 - `docs/mod/STAGING-SERVER.md:202,373` and `.ai/artifacts/t128_doc_link_repair_log.md:56` name a
   deleted staging script and the environment variable above. The first is a live runbook.
+
+---
+
+## P9 — Documents
+
+The root atlas, the agent-facing rules, the CI workflows and the documentation hubs now name only
+directories, files, crates and commands that exist. This section also closes the phase-five record:
+every verification row with its baseline and its value on the committed tree, the destinations, the
+dead code with its proofs, the migration results, the artifact renames, the metadata divergence,
+the deleted tests and the one operator step that is still open.
+
+### What changed
+
+| Area | Paths |
+|---|---|
+| Root atlas | `CLAUDE.md` — the block describing a top-level `tools/` directory that is not on disk is gone; the tooling block is the tree that exists: four crates, the six `developer-tools` executables, `developer-tools/fixtures/dom_oracle/` and `test_fixtures/blueprint/`, `xtask/{deploy,dedicated_server_profiles,fixtures/mcp}/`, and the npm package directory whose installed dependencies are gitignored. A `documentation_v2/` row sits beside `docs/`, naming `docs/` as the authoritative tree and `documentation_v2/` as the blueprint. `AGENTS.md` is the byte-identical local mirror, untracked through `.git/info/exclude` |
+| CI workflows | `.github/workflows/ci.yml` — the step comment explaining `working-directory: .` states the live reason (the job default is the API crate's directory and `cargo xtask` resolves the repository root from its own cwd). `contracts.yml`, `schema.yml`, `editor-gates.yml` and `mod-gates.yml` lose ticket identifiers used as provenance; `mod-gates.yml` also loses two references to a deleted compile script, a claim that a live gate "never ran in CI", and a pair of not-wired bullets that read as deferrals — each is now a statement of what the workflow runs and what it does not run, with the reason |
+| Desktop viewer | `apps/ticketboard/Cargo.toml` and `src/main.rs` — the crate header and the module header describe the viewer as it is: the ticket corpus through `ticket-engine`, the trust banner, the subprocess mutation path, the metrics dashboard with measured and estimated kept apart, the markdown viewer column. The two dependency comments name `tools_v2/ticket-engine/src/metrics/` as the parser they share |
+| Documentation hubs | `documentation_v2/tools/README.md`, `documentation_v2/tools/developer_tools/README.md`, `documentation_v2/runbooks/testing_and_ci.md`, `documentation_v2/mod/tbd_emcp/README.md` and `documentation_v2/tickets/README.md` point at `tools_v2/developer-tools/`, its `src/bin/` binaries and `tools_v2/ticket-engine/src/validation/`. `documentation_v2/ANALYSIS_AND_INVENTORY.md` drops a residue entry that is no longer true |
+| Runbooks | `docs/tools/editor_capture.md` names the `capture` binary of `tools_v2/developer-tools` and the live smoke-test module, and its subcommand table lists what each subcommand does instead of what it replaced. `docs/website/EDITOR_GATE_RUNBOOK.md` names `editor_smoke_tests.rs`, `editor_smoke_tests::render_check` and `mutations.rs`. `docs/platform/PLAYTEST_RUNBOOK.md`'s host-execution link resolves. `docs/platform/PLATFORM_FACTORY.md` points the contract row at `apps/website/map-engine/src/data/scenario/`. `docs/platform/token_estimate_factor.md` carries no identifier in its title or its derivation. `docs/website/TAGS.md` names the ticket files, their root marker and `cargo xtask ticket sync` / `check --strict`, and its three broken document links resolve |
+| Staging runbook | `docs/mod/STAGING-SERVER.md` — the two smoke paragraphs state why the game-server REST gates are off by default (the backend serves `/api/v1` only, so the routes answer 404 and the smoke would abort the deploy) and name the environment variable that runs them |
+| Deploy sources | `tools_v2/xtask/src/commands/deploy/staging/{agent.rs,remote.rs,payloads.rs,config.rs,remote/ssh_argv.rs}` — the dead specification constant is gone, the two module headers name live paths and state the present design rather than narrating a port, and the smoke's environment variable and struct field carry the name of the smoke they gate |
+| Scan API | `tools_v2/verification-core/src/scan.rs` — the line scanner is `matching_lines`, after what it does: it walks text already read into memory and returns the lines a `Pattern` matches. Its three tests, its fourteen call sites across three `xtask` verifications and the four documentation references that name it move with it |
+| Smoke page global | `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_drag/{execution.rs,vehicle_snap_cases.rs}` — the pointer-event recorder the drag lane installs and reads back is `window.__outlinerDragEvents` |
+| Ignore rules | `.gitignore` needed no edit. Its comments were re-read line by line: the secrets rule names the live deploy example, the node rule is the bare dependency-tree rule, and every command, document and recipe a comment cites resolves — the worktree readme, the slice workflow, the MCP start guide, `cargo run -p developer-tools --bin map`, `cargo xtask mk reclaim-target-ci`, `cargo xtask mod compile` and the language-ban rule names. No ticket identifier, no build-tool recipe and no shell driver is named anywhere in the file |
+| Fixture husk | `tools_v2/xtask/test_fixtures/` held one README and no fixture. `tools_v2/xtask/README.md` already carries the same two sentences, and nothing in the repository names the directory, so both are gone |
+
+### The `Found for P9` entries, and what each became
+
+| Entry | Resolution |
+|---|---|
+| Dead specification constant in the staging agent renderer | Deleted with its `#[allow(dead_code)]` and the module-header sentence that pointed at it. Nothing keeps a constant alive so a text search can find it |
+| Line scanner named after an external command line tool | `verification_core::scan::matching_lines`, with every caller and the three tests renamed in the same commit; behaviour byte-identical |
+| Environment variable and config field named after a ticket | `TBD_RUN_GAME_SERVER_REST_SMOKE` and `run_game_server_rest_smoke`, after the smoke they gate — the game-server REST routes. The runbook, the skip message, the payload documentation and the config test move in this commit, and nothing in the repository names the previous spelling |
+| Ticket-named page global in the outliner drag lane | `window.__outlinerDragEvents`; both the writer and the reader are inside `developer-tools`, so the rename is one-sided |
+| Staging runbook naming a deleted script and the old variable | The script name was already gone; the two paragraphs now name `cargo xtask deploy staging` and the new variable, with no identifiers. The repair log under `.ai/artifacts/` is a frozen record and is untouched |
+| Ticketboard manifest and module headers | Rewritten present-tense and identifier-free |
+| Root atlas describing a directory that is not on disk | Replaced by the tooling tree that is |
+| Three workflow comments naming the old crate spelling | Already correct on this tree; the identifiers and the stale narration beside them are gone now |
+| Line drift recorded by earlier phases | Confirmed: the capture runbook's two lines are 7 and 43, and the token-factor document's are 1 and 11. Every file in the step list was re-searched before editing |
+
+### Verification matrix — baseline against the committed tree
+
+Row identifiers are the closure plan's, which holds the command texts. This document records
+identifiers and results only: the matrix searches this file too, and its command texts contain the
+very tokens the matrix drives to zero.
+
+| Row | What it counts | Baseline | Now |
+|---|---|---|---|
+| R1 | Ticket identifiers in `tools_v2` sources, manifests, documents and data, fixture trees excluded | 2959 lines (1887 comment lines, 407 production non-comment lines, 20 in documents and data) | 596 lines, every one a string literal inside a test file — the ticket domain's own test data; **0** comment lines, **0** production lines, **0** in documents and data |
+| R1b | Ticket identifiers and node script names in the browser-oracle freeze manifest | 4 | 0 |
+| R2 | Dead names anywhere under `tools_v2` | 201 | 0 |
+| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 597 | 9, every one the host control agent this repository renders onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name; **0** otherwise |
+| R4 | Empty directories under `tools_v2` | 138 | 0 |
+| R5 | Root script tree tracked; repository-wide references to it | 17 tracked files; 355 reference lines | 0 tracked files; 0 reference lines. The directory survives on disk holding one untracked, gitignored dependency tree — the open operator step below |
+| R5a | R5's references minus `tools_v2` documents and minus comment lines | 160 | 0 |
+| R7 | Words that narrate a change rather than the present state | 112 | 0 |
+| R8 | Repository path literals outside the crate layout modules | part one 159 production lines; part two 0 with the destinations not yet existing | part one **0**; part two 3 lines, all in test files — the Caddyfile constant the forwarded-header test reads, and two repository-root probes that pin the npm package manifest. **0** production lines |
+| R9 | Agent instructions and hub documents naming commands, files and crates that do not exist; tracked root ghost files | 56 lines; 3 tracked paths | 0 lines; 0 tracked paths |
+| R10 | Root agent document and its mirror | identical; the mirror untracked | identical; the mirror untracked |
+| R17 | Verification functions named after a ticket; `AssetLayout` uses in the deployment preflight | 14 functions; 8 lines over 4 variants | 0 functions; 8 lines over the same 4 variants, the remote probe intact |
+| R18 | Distinct `.rs` basenames named in `tools_v2` production prose that exist nowhere in the workspace | 161 | 0 |
+
+Rows R6, R11–R16 are command results rather than counts; the phase sections above record them as
+they were run, and the final verification re-runs the whole matrix on the committed tree.
+
+### Dead code deleted, with the proof for each
+
+| Deleted | Proof it was unreachable |
+|---|---|
+| The verdict-diff harness of the platform wave driver — its comparison dispatcher, every arm, its reclaim module, its two internal probes and their tests | Every comparison arm refused before comparing, because the shell implementation it compared against is not in the checkout. The two probes, `base-probe` and `hold-lock`, were read by the harness's own noise-floor arm and by nothing else: a search over `tools_v2` for both names returned the dispatcher, that arm and the pre-enter special case in the flush path |
+| The database command that printed bash function definitions for external wrappers | No such wrapper exists in the tree, and the shell language ban holds the repository at a hard zero, so none can be added |
+| Four tests that copied a script into a scratch tree and skipped when it was absent, plus the executable-bit predicate one of them exercised | The scripts they copied are not in the checkout, so each test skipped unconditionally — a test that can never fail |
+| Five one-shot ticket-corpus migration verbs and their modules | Each was run on this checkout; see the table below |
+
+### Migration verbs — measured on this checkout
+
+| Verb | Output | Working tree under `.ai` and `docs` afterwards | Verdict |
+|---|---|---|---|
+| `ticket migrate-v2` | refuses on the first ticket file: the tree is already v2 (exit 1) | clean | no-op; deleted |
+| `ticket quarantine-walls` | `0 summaries over cap; nothing to do` (exit 0) | clean | no-op; deleted |
+| `ticket backfill-stamps` | `0 tickets missing stamps; nothing to do` (exit 0) | clean | no-op; deleted |
+| `ticket estimate-tokens` | `0 shipped tickets missing token estimates; nothing to do` (exit 0) | clean | no-op; deleted |
+| `ticket migrate-main-goal` | `nothing to write — migration already ran (0 raw carriers, 0 empty fill targets)` (exit 0) | clean | no-op; deleted |
+
+Three capabilities inside those modules had live callers and moved before the delete: the subject
+commit miner to `ticket-engine/src/cli/shipping/commit_subjects.rs`, the scope histogram to
+`ticket-engine/src/cli/queries.rs` as a read-only query, and the four tests that assert surviving
+behaviour to `cli/shipping/tests/commit_subjects_tests.rs`.
+
+### Tests that went with the dead code
+
+Thirteen `ticket-engine` tests were deleted with the migration tree and four were re-seated
+verbatim; the P3 section lists each by its baseline name and its outcome, and the test inventory at
+the end of this document carries the live names. Three `verification-core` scan tests are renamed
+in this phase with the function they exercise: they are now
+`scan::tests::matching_lines_reports_one_based_line_numbers`,
+`scan::tests::matching_lines_finds_every_occurrence` and
+`scan::tests::matching_lines_on_a_missing_file_is_did_not_run`. No other live test disappeared:
+the five suites run 661 + 259 + 68 + 206 + 170 tests, the same counts as the previous phase.
+
+### Analysis artifacts renamed
+
+Five committed decision records are live inputs of the map lane and now sit in domain directories —
+`inland_water/refine_spike.json`, `inland_water/source_spike.json`,
+`inland_water/water_source_spike.json`, `aerial_orthophoto/seam_analysis.json` and
+`cartographic_rendering/landcover_source_spike.json`, all under `.ai/artifacts/`. The pipeline
+resolves each through `developer-tools/src/repository_layout.rs`, and the metadata strings that
+cite an artifact are formatted from those same constants, so an emitted path cannot drift from the
+file it names. Four further records under `.ai/artifacts/` keep their names because nothing
+executable reads them; they are cited only by frozen specifications, frozen handoffs and ticket
+bodies.
+
+### Emitted metadata divergence, stated plainly
+
+The orthophoto stitcher and the land-cover builder emit metadata under new spellings: the decoder
+string names the crate and the codec, the seam-repair flag is a boolean, the lane key carries the
+pipeline lane's name, and the provenance strings describe their input. The committed satellite
+bundle `assets_v2/terrains/everon/satellite/everon-sat.tbd-sat` carries the previous strings,
+because regenerating it needs a Workbench export this phase does not run. Nothing reads those
+fields: no schema under `contracts_v2/definitions` names them, and a repository-wide search over
+`contracts_v2` and `apps` finds no reader. The divergence is metadata only and resolves the next
+time the bundle is rebuilt.
+
+### Operator step still open
+
+The root `scripts` directory is no longer tracked — `git ls-files` returns nothing under it — but
+one untracked, gitignored dependency tree survives on disk because the running Claude Code and
+Cursor sessions still execute `enfusion-mcp` from it. The three machine-local MCP configurations
+(`.mcp.json`, `.cursor/mcp.json`, `apps/mod/.cursor/mcp.json`, all gitignored) already point at the
+module installed under `tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/`, which is
+present. So:
+
+1. Restart Claude Code and Cursor, so each connects to the server at the new location.
+2. `rm -rf scripts`
+
+### Verification logs
+
+Every long stage of every phase wrote its own log in the executing session's scratchpad, one file
+per stage, named for the stage: `p<n>-check.log`, `p<n>-tests.log`, `p<n>-clippy.log`,
+`p<n>-fmt.log`, `p<n>-ci-local.log`, `p<n>-mod-compile.log` and `p<n>-leptos-gates.log`. The
+scratchpad is session-local and outside the repository, so the results — not the files — are what
+this document carries.
+
+### Acceptance
+
+| Row or command | Expected | Actual |
+|---|---|---|
+| R9 part one — agent instructions and hub documents naming things that do not exist, over the root atlas, the root readme, the agent rules, the ticket documents and schemas, the workflows, the documentation hub's readme, tools and runbooks, the tool runbook tree, the editor gate runbook, the playtest runbook, the platform factory, the token factor document, the MCP tooling runbook, the desktop viewer and the two mod readmes | empty | empty (exit 1) |
+| R9 part two — old verification and task spellings over the same tree plus all of `documentation_v2`, `docs/tools`, `docs/website`, `docs/mod` and `docs/platform/*.md`, frozen documents excluded | empty | empty (exit 1) |
+| `diff CLAUDE.md AGENTS.md` | identical | identical, no output |
+| `grep -c` for the retired tooling directory in `CLAUDE.md` | 0 | 0 |
+| `grep -c 'documentation_v2/' CLAUDE.md` | at least 1 | 1 |
+| `git grep -c -E '\bT-[0-9]' tools_v2/PHASE_FIVE_HANDOFF.md` | 0 outside the test-name inventory | 0 |
+| `cargo test -p xtask -p developer-tools -p verification-core -p ticket-engine -p ticketboard` | green | exit 0; xtask 661, developer-tools 259 and 4 ignored, verification-core 68, ticket-engine 206 plus 1 compile-failure test, ticketboard 170 and 3 ignored |
+| `cargo test -p xtask tooling_prose_rules` | green | exit 0; 9 passed |
+| `cargo clippy -p xtask -p developer-tools -p verification-core -p ticket-engine -p ticketboard --all-targets -- -D warnings` | clean | exit 0 |
+| `cargo fmt --all --check` | clean | exit 0 |
+| `cargo check --workspace --locked` | passes | exit 0 |
+| `cargo xtask verify ci-schema-parity` | PASS | `ci-schema-parity: PASS` |
+| `cargo xtask verify file-length` | OK | `scanned 2546 .rs file(s), 0 violation(s)` |
+| `git status --porcelain` after the commit | empty | empty; `AGENTS.md` stays untracked through `.git/info/exclude` |
+
+### Found and fixed
+
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:1-52` — the module header pointed at a
+  deploy secrets example under the retired root script tree, dated its own measurements, and
+  described the module as a port. It names the live example path and states the design: the API
+  and the game server are sibling user units under one uid, so a same-uid UNIX socket makes the
+  operating system the credential.
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:54,194,246` — three documentation blocks
+  described the rendered script, the tunables and the two validation charsets by what a shell
+  implementation did. Each states the invariant directly.
+- `tools_v2/xtask/src/commands/deploy/staging/remote.rs:1-31` — the header named a deploy secrets
+  file under the retired tree and narrated which oracle lanes the exclude list used to miss. It
+  names the live secrets path and states which three lanes the exclude list covers and why:
+  ~30 MB of carved game source, one lane of it with no licence at all.
+- `tools_v2/xtask/src/commands/deploy/staging/payloads.rs:51` and `remote/ssh_argv.rs:271` — the
+  smoke's documentation and its skip message said the routes would ship later. Both state what is
+  true: the backend serves `/api/v1` only, the smoke's routes answer 404, and the variable runs it
+  anyway.
+- `tools_v2/xtask/src/tests/tooling_prose_rules.rs:369-382` — the negative fixture assembled a
+  retired script path in one piece, which put that path back into the repository-wide count. It is
+  assembled in two, exactly as the other needles in that fixture are.
+- `tools_v2/xtask/test_fixtures/` — a directory holding one README and no fixture, whose statement —
+  fixtures live with their owning subsystem, receipts under `ticket-engine`, blueprint inputs under
+  `developer-tools` — `tools_v2/xtask/README.md:47` already carries, and which nothing in the
+  repository names. Removed from the index and from disk.
+- `tools_v2/PHASE_FIVE_HANDOFF.md` — the destinations table and three further lines spelled the
+  retired root script paths, which held the repository-wide count above zero by themselves. The
+  table names each file, where it lives now and who reads it there, with one sentence saying they
+  all came out of that tree.
+- `.github/workflows/mod-gates.yml:97-112` — two comments named a deleted compile script as the
+  thing the gate runs, and the "what is still not wired" block read as a deferral list. The
+  comments name the live gate commands and state what the workflow does not run and why.
+- `.github/workflows/{contracts,schema,editor-gates,mod-gates}.yml` — six comments cited ticket
+  identifiers as provenance and one narrated a gap that no longer exists.
+- `docs/website/TAGS.md` — the ticket naming contract told agents to edit a deleted registry file
+  and run a deleted script, and pointed at a status marker that no root document carries. It names
+  the ticket files, their root marker and `cargo xtask ticket sync` / `check --strict`. Three of
+  its document links resolved nowhere (`docs/README.md`, `docs/backend/ROADMAP.md`, and a claim
+  that the root atlas holds ticket milestones); all three now resolve.
+- `documentation_v2/ANALYSIS_AND_INVENTORY.md:69-70` — a residue entry asserting that the document
+  above still names the deleted registry and script. Removed with the residue.
+- `documentation_v2/mod/tbd_emcp/README.md:7,12` and `documentation_v2/tickets/README.md:41` —
+  three source pointers under directories that do not exist. They name
+  `tools_v2/developer-tools/src/bin/mcpd.rs` and `tools_v2/ticket-engine/src/validation/`.
+- `docs/tools/editor_capture.md:72-76` — the subcommand table's second column listed the deleted
+  shell and node scripts each subcommand replaced. The table says what each subcommand does.
+- `docs/platform/token_estimate_factor.md` — four ticket identifiers, one of them the document
+  title. The pinned marker line, the `pending calibration` phrase and the three exclusion needles
+  the provenance test asserts are untouched.
+
+### Found for P10
+
+- The root `scripts` directory is still on disk with one untracked dependency tree inside it. The
+  matrix's directory-absence check answers "present" until the operator step above is taken; the
+  tracked-file count is 0 either way.
+- `cargo xtask verify file-length` scans 2546 `.rs` files against the 2529 of the baseline. The
+  rise is the test files the extraction phases created, not a widened walk.
+- Part two of the repository-path row reports 3 lines rather than the two the plan anticipated, and
+  all three are test pins: a Caddyfile constant and two repository-root probes. Production files
+  report 0, which is the property the row exists to hold.
+- `documentation_v2/ANALYSIS_AND_INVENTORY.md:917` keeps a translation table from retired tooling
+  paths to live ones. It is the blueprint's drift ledger: its job is to let a reader of a stale hub
+  document find the live path, so the retired spellings are its content rather than a stale
+  pointer. No matrix row searches it.
+
+### Commands that could not run
+
+None. Every check of this phase ran in this environment.

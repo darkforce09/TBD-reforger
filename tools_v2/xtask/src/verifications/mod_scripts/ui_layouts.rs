@@ -251,7 +251,7 @@ fn bound_widget_names(script_dir: &Path) -> Result<BTreeSet<String>, NotRun> {
     let finder_line =
         Pattern::regex(r#"(FindAnyWidget|Find|FindText|FindHandlerOn)\("[A-Za-z_][A-Za-z0-9_]*""#)
             .expect("static pattern compiles");
-    let hits: Vec<Hit> = scan::grep_lines(&finder_line, &files)?;
+    let hits: Vec<Hit> = scan::matching_lines(&finder_line, &files)?;
 
     let mut names: BTreeSet<String> = BTreeSet::new();
     for hit in &hits {
@@ -268,7 +268,7 @@ fn bound_widget_names(script_dir: &Path) -> Result<BTreeSet<String>, NotRun> {
 fn declared_widget_names(layouts: &[PathBuf]) -> Result<BTreeSet<String>, NotRun> {
     let name_line =
         Pattern::regex(r#"^[ \t]*Name "[A-Za-z_][A-Za-z0-9_]*""#).expect("static pattern compiles");
-    let hits = scan::grep_lines(&name_line, layouts)?;
+    let hits = scan::matching_lines(&name_line, layouts)?;
     Ok(hits.iter().filter_map(|h| declared_name(&h.line)).collect())
 }
 

@@ -1,6 +1,6 @@
-# Heavy Asynchronous CLI Suite (`tools/developer_tools/`)
+# Heavy Asynchronous CLI Suite (`tools_v2/developer-tools/`)
 
-`tbd-tools` is a high-performance asynchronous Rust CLI suite providing compiler pipelines, browser automation test harnesses, and binary asset processors.
+`developer-tools` is a high-performance asynchronous Rust CLI suite providing compiler pipelines, browser automation test harnesses, and binary asset processors.
 
 ## Binaries
 - `gate`: Headless Chrome DevTools Protocol (CDP) test runner, gate doctor preflight, and V-suite DOM assertions.
@@ -11,4 +11,4 @@
 - `capture`: Headless ANGLE/Vulkan canvas snapshot capture utility.
 
 ## Code Mapping
-- Source: `tools/tbd-tools/`
+- Source: `tools_v2/developer-tools/`

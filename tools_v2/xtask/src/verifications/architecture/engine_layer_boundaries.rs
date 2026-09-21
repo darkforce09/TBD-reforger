@@ -187,7 +187,7 @@
 //! `crate::verifications::database::sql_deserialization::report_did_not_run`.
 //!
 //! The second vacuity hole is subtler and is guarded separately: a root that *exists* and is
-//! *empty*. `walk_files` would return `Ok(vec![])`, `grep_lines` would find nothing, and the gate
+//! *empty*. `walk_files` would return `Ok(vec![])`, `matching_lines` would find nothing, and the gate
 //! would report a clean wall over zero bytes of source. So the scanned file count is printed, and
 //! zero Rust files is a hard FAIL rather than a pass.
 //!

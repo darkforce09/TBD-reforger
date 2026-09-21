@@ -90,7 +90,7 @@ pub struct Env {
     pub modpack_url: String,
     pub modpack_token: String,
     pub workshop_mod_name: String,
-    pub run_t092_smoke: bool,
+    pub run_game_server_rest_smoke: bool,
     pub ssh_pass: Option<String>,
     pub ssh_identity_file: Option<String>,
 }
@@ -261,7 +261,7 @@ impl Env {
             modpack_url: get("TBD_MODPACK_URL"),
             modpack_token: get("TBD_MODPACK_TOKEN"),
             workshop_mod_name: def("TBD_WORKSHOP_MOD_NAME", "TBD_Framework"),
-            run_t092_smoke: def("TBD_RUN_T092_SMOKE", "0") == "1",
+            run_game_server_rest_smoke: def("TBD_RUN_GAME_SERVER_REST_SMOKE", "0") == "1",
             ssh_pass: map.get("TBD_SSH_PASS").filter(|v| !v.is_empty()).cloned(),
             ssh_identity_file: map
                 .get("TBD_SSH_IDENTITY_FILE")

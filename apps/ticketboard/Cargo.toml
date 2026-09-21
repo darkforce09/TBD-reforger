@@ -1,14 +1,14 @@
-# Ticketboard — native egui projection of the ticket registry (T-915).
+# Ticketboard — native egui projection of the ticket registry.
 #
 # Parses every .ai/tickets/T-*.toml via `ticket-engine` and renders a status board +
-# detail panel; T-915.4 mutations shell `cargo xtask ticket <verb>` subprocesses —
+# detail panel; every mutation shells a `cargo xtask ticket <verb>` subprocess —
 # the app itself writes NO ticket bytes anywhere under the repo; the only direct
 # file write is the preference store (eframe Storage in the user config dir,
 # "persistence").
 #
-# egui/eframe (with winit/wgpu) is a first-time dependency family for this workspace —
-# a named supply-chain and build-time event (docs/platform/t915_ticketboard_design.md
-# §Framework). Keep this tree lean on purpose: no tokio.
+# egui/eframe (with winit/wgpu) is this workspace's only window-and-GPU dependency
+# family outside the browser engines, so it is a deliberate supply-chain and
+# build-time cost. Keep this tree lean on purpose: no tokio.
 [package]
 name = "ticketboard"
 version = "0.1.0"
@@ -46,14 +46,13 @@ rfd = "0.17.2"
 # ticket-engine already use, so the verbatim lock render can never disagree with the
 # writer on TOML dialect. Both crates were already in the workspace graph.
 serde = { version = "1", features = ["derive"] }
-# T-915.5 metrics dashboard: run-receipt JSON parse. Already in the workspace lock
-# (1.0.150) — zero new supply chain; the same parser `ticket check` reads the
-# receipts with, so the mirror can never disagree on JSON dialect.
+# The metrics dashboard's run-receipt JSON parse. Workspace-resolved, and the same parser
+# `ticket check` reads the receipts with, so the two can never disagree on JSON dialect.
 serde_json = "1"
 ticket-engine = { path = "../../tools_v2/ticket-engine" }
-# T-915.5 elapsed derivation (finished − started at query time): the same
-# RFC 3339 parser ticket-engine and tools_v2/xtask/src/metrics.rs use (workspace-resolved
-# 0.3.53, zero new supply chain), so elapsed can never disagree with the checker.
+# Elapsed derivation (finished − started at query time): the same RFC 3339 parser
+# tools_v2/ticket-engine/src/metrics/ uses (workspace-resolved), so elapsed can never
+# disagree with the checker.
 time = { version = "0.3", features = ["parsing"] }
 toml = "0.8"
 

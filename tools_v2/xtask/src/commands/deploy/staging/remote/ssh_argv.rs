@@ -265,10 +265,10 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
 
     // ── V2–V4 API smoke ─────────────────────────────────────────────────────────────────────
     println!("==> API smoke (V2–V4)");
-    if !env.run_t092_smoke {
+    if !env.run_game_server_rest_smoke {
         println!("[SKIP] V2–V4 API smoke — routes not in the current backend; would 404.");
         println!(
-            "       Set TBD_RUN_T092_SMOKE=1 to force once those routes ship. See {}.",
+            "       Set TBD_RUN_GAME_SERVER_REST_SMOKE=1 to run it anyway. See {}.",
             crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
         );
     } else if cli.dry_run {

@@ -92,7 +92,7 @@ fn collect(
 }
 
 /// Every line in `files` matching `pattern`, in file then line order.
-pub fn grep_lines(pattern: &Pattern, files: &[PathBuf]) -> Result<Vec<Hit>, NotRun> {
+pub fn matching_lines(pattern: &Pattern, files: &[PathBuf]) -> Result<Vec<Hit>, NotRun> {
     let mut hits = Vec::new();
     for path in files {
         let text = match std::fs::read(path) {

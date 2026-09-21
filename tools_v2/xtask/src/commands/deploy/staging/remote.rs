@@ -1,34 +1,31 @@
-//! ssh / rsync / compose / systemd transport and the deploy pipeline (bash lines 1524–1889).
+//! ssh / rsync / compose / systemd transport and the deploy pipeline.
 //!
-//! ── NOTHING IN THIS FILE HAS BEEN EXECUTED ───────────────────────────────────────────────────
+//! ── NOTHING IN THIS FILE RUNS OUTSIDE A LIVE DEPLOY ──────────────────────────────────────────
 //!
-//! `scripts/deploy/deploy.env` is absent on every machine this port was written on — it is
-//! gitignored AND rsync-excluded by design, so the credential exists only on a developer's PC.
-//! Every function below that spawns `ssh`, `rsync`, `docker compose`, `systemctl` or `curl` is
-//! therefore **structurally faithful and live-unverified**. What IS verified:
+//! `tools_v2/xtask/deploy/deploy.env` is absent on every development machine — it is gitignored
+//! AND rsync-excluded by design, so the credential exists only on the operator's PC. Every
+//! function below that spawns `ssh`, `rsync`, `docker compose`, `systemctl` or `curl` is
+//! therefore live-unverified. What IS verified:
 //!
 //! * the exact program + argument vector, in order, for every spawn — `tests`;
 //! * the exact stdin payload for every `ssh … bash -s` heredoc — `tests`;
 //! * the four-outcome exit-code read of `mod remote-logs` — `v6_verdict` + `tests`;
-//! * the whole `--dry-run` walk, which is byte-diffed against the bash baseline and never opens a
-//!   socket (see the note on [`Runner`]).
+//! * the whole `--dry-run` walk, which opens no socket (see the note on [`Runner`]).
 //!
 //! What is NOT verified: whether a real `ssh` accepts these argv, whether the remote `bash -s`
 //! payloads behave on the host, whether `docker compose` is reachable there, and whether the boot
-//! wait loop's timing assumptions hold. Those were never true of the bash either — the bash was
-//! only ever exercised by the operator running a live deploy — so this is a statement about the
-//! test environment, not a regression.
+//! wait loop's timing assumptions hold. Only the operator running a live deploy exercises those,
+//! so this is a statement about the test environment, not about the code.
 //!
 //! ── THE EXCLUDE LIST IS A LICENCE BOUNDARY, NOT AN OPTIMISATION ──────────────────────────────
 //!
 //! EXCLUDE EVERY ORACLE LANE, not just CRF. These are read-only reference trees; the
 //! server only ever runs `apps/mod/tbd-framework` (see the addon symlink), so shipping them is
-//! pure licence exposure for zero benefit. `crf_framework` was already excluded, but
-//! `vanilla_reference` and `playable_selector` were NOT — and in the MAIN checkout (which is what
-//! deploys) they are real directories, not the worktree symlinks, so ~30 MB of carved Bohemia game
-//! source was being rsynced to staging on every deploy. `playable_selector` has NO LICENCE AT ALL,
-//! so copying it to a server is redistribution we have no permission for. Anyone adding a fourth
-//! oracle lane adds it here too.
+//! pure licence exposure for zero benefit. The exclude list therefore names `crf_framework`,
+//! `vanilla_reference` and `playable_selector`: in the MAIN checkout (which is what deploys) all
+//! three are real directories, not the worktree symlinks, and together they hold ~30 MB of carved
+//! Bohemia game source. `playable_selector` has NO LICENCE AT ALL, so copying it to a server is
+//! redistribution we have no permission for. Anyone adding a fourth oracle lane adds it here too.
 
 use std::fs;
 use std::io::{self, Write};

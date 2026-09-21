@@ -199,7 +199,7 @@ alongside it, so it serves **the deployed checkout**, not the Workshop copy (T-6
 that config mode "requires a Workshop publish" is **false**: it was measured on `-addons`.
 **`-addons` is not `-addonsDir`, and that distinction is the whole fix (T-604).**
 
-> **Status (2026-07-02, T-128): gates V2–V4 are BLOCKED on T-092.** `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster` existed only in the Phase-0 REST spike backend, since removed — the current backend serves `/api/v1` only, so those curls return **404** (not 200, and no 401 auth gate). The 2026-06-14 pass ran against the spike. Real game-server routes ship with **T-092** ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)); until then `cargo xtask deploy staging` **skips** the V2–V4 smoke unless `TBD_RUN_T092_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
+> **Gates V2–V4 are off by default.** They curl `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster`. The backend serves `/api/v1` only, so both answer **404** — not 200, and with no 401 auth gate — and the smoke would abort the deploy at its first check. `cargo xtask deploy staging` therefore **skips** the V2–V4 smoke unless `TBD_RUN_GAME_SERVER_REST_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
 
 **Do not touch PrairieLearn:** all TBD paths live under `/home/sam/tbd/` only. Never deploy to `/home/sam/prairielearn/`.
 
@@ -370,7 +370,7 @@ cargo xtask deploy staging
 cargo xtask deploy staging --dry-run   # preview only
 ```
 
-Flow: validate mission JSON → rsync → profile + addon symlink → Docker rebuild → API smoke (**skipped by default until T-092** — `TBD_RUN_T092_SMOKE=1` to force) → restart game server → remote log grep.
+Flow: validate mission JSON → rsync → profile + addon symlink → Docker rebuild → API smoke (**skipped by default** — `TBD_RUN_GAME_SERVER_REST_SMOKE=1` runs it) → restart game server → remote log grep.
 
 ---
 

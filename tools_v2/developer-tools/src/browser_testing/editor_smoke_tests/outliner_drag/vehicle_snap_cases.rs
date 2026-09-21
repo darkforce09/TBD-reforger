@@ -37,7 +37,7 @@ pub(super) async fn vehicle_snap_cases(page: &Page, checks: &mut Map<String, Val
             )
             .await?;
         }
-        eprintln!("outliner-drag {name} before release: {}",eval(page,"({chip:document.querySelector('[data-transform-widget] text')?.textContent,capture:document.querySelector('canvas').parentElement.hasPointerCapture(1),ids:JSON.parse(window.__editorSelection.ids()),events:window.__t94686Events})").await?);
+        eprintln!("outliner-drag {name} before release: {}",eval(page,"({chip:document.querySelector('[data-transform-widget] text')?.textContent,capture:document.querySelector('canvas').parentElement.hasPointerCapture(1),ids:JSON.parse(window.__editorSelection.ids()),events:window.__outlinerDragEvents})").await?);
         mouse(
             page,
             "mouseReleased",

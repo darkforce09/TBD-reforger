@@ -2,22 +2,16 @@
 //!
 //! WHAT THIS IS. `POST /api/v1/admin/servers/:id/rcon` answers 503 `RCON_NO_TRANSPORT`
 //! (the RCON console handler) because the API has no channel to the game host. This module renders
-//! the host half of that channel. The API half is a separate slice — the bash carried a full
-//! specification for it in a 70-line comment block; it is kept verbatim in
-//! [`API_SLICE_SPEC`] rather than summarised away, because it is the only written record of a
-//! design decision (same-uid UNIX socket beats a credential column) that a future reader will
-//! otherwise re-litigate.
+//! the host half of that channel; the API half lives in `apps/website/api_v2`.
 //!
 //! ── THE FACT THAT DECIDES THE DESIGN ─────────────────────────────────────────────────────────
 //!
-//! The game server is a **separate host**. That is true of the
-//! DEVELOPER'S PC and false of the API. Re-measured on main 2026-07-31: `docs/mod/
-//! STAGING-SERVER.md:3` puts "API + Postgres and Arma Reforger dedicated server" on
-//! `sam@192.168.0.140`; `scripts/deploy/deploy.env.example:17` gives ONE ssh host for BOTH deploy
-//! scripts; `docs/website/HOME_SERVER.md:282-304` makes the API
-//! `~/.config/systemd/user/tbd-website-api.service`; this port restarts
-//! `tbd-reforger.service` through the same `systemctl --user`; and `TBD_BACKEND_URL` defaults to
-//! `http://127.0.0.1:8080` — the mod reaches the API on LOOPBACK.
+//! The game server shares a host with the API. `docs/mod/STAGING-SERVER.md` puts "API + Postgres
+//! and Arma Reforger dedicated server" on one machine; `tools_v2/xtask/deploy/deploy.env.example`
+//! gives ONE ssh host for both the website deploy and the staging deploy;
+//! `docs/website/HOME_SERVER.md` makes the API `~/.config/systemd/user/tbd-website-api.service`;
+//! this command restarts `tbd-reforger.service` through the same `systemctl --user`; and
+//! `TBD_BACKEND_URL` defaults to `http://127.0.0.1:8080` — the mod reaches the API on LOOPBACK.
 //!
 //! So the API process and the game server are SIBLING `systemctl --user` units, same uid (`sam`),
 //! same user systemd manager, same `$XDG_RUNTIME_DIR`. Only Postgres is in Docker.
@@ -32,21 +26,20 @@
 //!   (the RCON console handler) carries operator-supplied free text — that is remote code execution
 //!   with an admin checkbox in front of it. It is also not possible on the box: `deploy.env` is
 //!   gitignored AND rsync-excluded, so the credential exists only on a developer's PC.
-//! * BattlEye / Reforger RCON over UDP. Re-measured: `ss -lntu` binds only :8080 / :3000 / :5434
+//! * BattlEye / Reforger RCON over UDP. `ss -lntu` on the host binds only :8080 / :3000 / :5434
 //!   (+ :5432) — 19999 is never bound; the renderer emits NO `rcon` key and `"battlEye": false`.
 //!   DECISIVE: RCON only reaches a server that is ALREADY RUNNING. It structurally cannot do
-//!   `start`, which is half this ticket's title.
+//!   `start`, which is half of what this agent exists to deliver.
 //! * A queued-command table the mod polls. Needs a migration plus mod-side polling that does not
 //!   exist — and a dead server polls nothing, so again it cannot `start`.
 //!
 //! ── WHY THE AGENT RE-READS THE UNIT, WHICH IS THE ENTIRE POINT ───────────────────────────────
 //!
 //! `systemctl --user restart tbd-reforger.service` EXITS 0 OVER A SERVER THAT IS DEAD. Not
-//! hypothetical on this host — `docs/mod/STAGING-SERVER.md:246-250` documents it: with `-a2sPort`
+//! hypothetical on this host — `docs/mod/STAGING-SERVER.md` documents it: with `-a2sPort`
 //! equal to `-bindPort` the engine logs "Unable to start replication" → "Game destroyed" and
-//! "exits status 0, so `Restart=on-failure` does NOT restart it". The deploy path has always run
-//! that restart and then `sleep 8` without ever checking — a tool reporting success over a server
-//! it never examined, which is this program's signature defect, already live in this file.
+//! exits status 0, so `Restart=on-failure` does NOT restart it. A restart followed by a bare
+//! `sleep 8` therefore reports success over a server it never examined.
 //!
 //! So the agent NEVER derives its answer from the exit status of the verb. It runs the verb,
 //! waits out the dwell, and RE-READS the unit's LoadState/ActiveState from systemd.
@@ -58,10 +51,9 @@ use std::path::Path;
 use anyhow::Result;
 use verification_core::{Pattern, Verdict};
 
-/// The rendered agent, byte-for-byte the bash `<<'AGENT_EOF'` heredoc.
+/// The agent script, rendered byte-for-byte onto the game host.
 ///
-/// The heredoc delimiter was QUOTED, so bash performed no substitution inside it: the agent
-/// script is byte-identical on every host and the per-server addressing lives in the systemd
+/// The script is byte-identical on every host and the per-server addressing lives in the systemd
 /// unit, which is systemd's own place for it. This constant therefore has no `{}` formatting and
 /// must not grow any.
 ///
@@ -199,71 +191,7 @@ case "$ACTION" in
 esac
 "##;
 
-/// The API-side specification the bash carried inline (lines 597–666), preserved verbatim.
-///
-/// It is a `const` rather than a comment so that `grep -r "WHAT THE API SLICE MUST BUILD"` keeps
-/// working for whoever picks up the API half, exactly as it did against the shell script.
-#[allow(dead_code)]
-pub const API_SLICE_SPEC: &str = "\
-── WHAT THE API SLICE MUST BUILD ────────────────────────────────────────────
-
-apps/website/api_v2/** is NOT this slice's to touch. The host half above is complete and
-proven; the API half is mechanical from here.
-
-1. CONFIG — one new var in apps/website/api_v2/src/core/configuration/mod.rs:
-      game_agent_socket: env::var(\"GAME_AGENT_SOCKET\").unwrap_or_default()
-   Empty = no transport, and `send_rcon` keeps answering 503. Fail closed. Populate it in
-   the API's systemd unit (docs/website/HOME_SERVER.md:282) as %t/tbd-reforger-agent.sock.
-
-2. CLIENT — new apps/website/api_v2/src/services/game_agent.rs. No new dependency: tokio is
-   already in the tree and `tokio::net::UnixStream` is all this needs.
-      pub enum AgentAction { Status, Start, Stop, Restart }   // Display -> the wire verb
-      #[derive(Deserialize)] pub struct AgentReply {
-          pub ok: bool, pub action: String, pub result: AgentResult,
-          pub state: String, pub detail: String }
-      #[derive(Deserialize)] #[serde(rename_all=\"lowercase\")]
-      pub enum AgentResult { Accepted, Rejected, Unreachable }
-      pub async fn send(sock: &Path, a: AgentAction) -> anyhow::Result<AgentReply>
-   Body: connect, write \"<verb>\\n\", read exactly one line, serde_json::from_str.
-   TIMEOUT MUST EXCEED THE DWELL — the agent sleeps TBD_AGENT_DWELL_S (default 8) before
-   answering start/restart, on purpose. Use 20s. A timeout shorter than the dwell would
-   turn every honest slow answer into a false \"unreachable\".
-
-3. HANDLER — the API's `send_rcon` (currently ends in the
-   unconditional Err(SERVICE_UNAVAILABLE, RCON_NO_TRANSPORT) at :628). Map the validated
-   RconCommand, then map the reply — the mapping is three-way, because that is the delivery
-   result the operator asked for:
-      RconCommand::Restart                   -> AgentAction::Restart
-      RconCommand::Kick / ChangeMap / Custom -> STILL 503, unchanged (see SCOPE GAP)
-      AgentResult::Accepted    -> 202 {\"accepted\":true,\"delivered\":true,\"state\":<state>}
-      AgentResult::Rejected    -> 409 — the agent ran it and the unit did NOT get there
-      AgentResult::Unreachable -> 503 RCON_NO_TRANSPORT
-      transport error/timeout  -> 503, same shape
-   THE AUDIT ROW MUST RECORD THE OUTCOME, NOT THE ATTEMPT — that is the specific defect
-   the audit calls out. Write it AFTER the agent answers, Info on Accepted and Warn otherwise,
-   with the observed `state` in the detail.
-
-4. ADDRESSING — for THIS deployment nothing is needed in the `servers` table: one host, one
-   socket, path from config. The migration becomes REQUIRED the moment a second game host
-   exists, and then it is:
-      ALTER TABLE servers ADD COLUMN agent_socket text;   -- local socket path, or
-      ALTER TABLE servers ADD COLUMN agent_endpoint text; -- host:port for a remote agent
-   plus a real credential column for the remote case, because the OS stops vouching for the
-   peer the moment the channel leaves the box.
-
-── SCOPE GAP, DECIDED ───────────────────────────────────────────────────────
-
-* restart / start / stop / status are the unit's lifecycle. The agent covers them completely
-  and safely, and only these four are reachable over the socket.
-* change_map and custom need a live admin channel INTO a running server. Nothing in this repo
-  has one. Either is strictly larger than this ticket and must not be smuggled into the agent
-  — the agent's safety argument rests entirely on it accepting no free text.
-* kick CANNOT BE BUILT AT ALL YET: `RconInput` has no player field, so
-  apps/website/frontend/src/server_control.rs:44 posts a bare {\"action\":\"kick\"} that names
-  nobody. That is a UI + model gap, upstream of any transport question.
-";
-
-/// The agent's tunables. All five were `: "${VAR:=default}"` in the bash.
+/// The agent's five tunables, each read from an environment variable with a default.
 #[derive(Debug, Clone)]
 pub struct AgentEnv {
     /// Unit the agent controls. Interpolated into `Environment=` in the `@.service`.
@@ -314,8 +242,8 @@ impl AgentEnv {
     /// them to a charset that cannot carry a newline, a quote or a directive: fail closed rather
     /// than emit a unit file whose meaning depends on someone's env var.
     ///
-    /// Note the two charsets DIFFER (`@` is legal in a unit name — it is systemd's template
-    /// separator — and not in the socket file name). That is the bash's distinction, kept.
+    /// Note the two charsets DIFFER: `@` is legal in a unit name — it is systemd's template
+    /// separator — and illegal in the socket file name.
     pub fn validate_names(&self) -> Result<(), u8> {
         let unit_ok = !self.unit.is_empty()
             && self

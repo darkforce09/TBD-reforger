@@ -291,7 +291,7 @@ pub(super) fn grep_visible(bytes: &[u8]) -> &[u8] {
 
 /// `grep -n`'s numbering: 1-based, split on `\n` only.
 ///
-/// Not [`scan::grep_lines`], which uses `str::lines` and therefore **strips a trailing `\r`**.
+/// Not [`scan::matching_lines`], which uses `str::lines` and therefore **strips a trailing `\r`**.
 /// grep keeps it, and `tbd-framework` does hold a CRLF file the Workbench MCP bridge wrote, so the
 /// difference is one commit away from being observable.
 pub(super) fn numbered(bytes: &[u8]) -> Vec<(usize, String)> {

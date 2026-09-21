@@ -1,14 +1,14 @@
 # editor-capture — screenshot the Mission Creator headless
 
-Drives the live editor over CDP and captures both the DOM chrome and the wgpu map. Written
-2026-08-01 for the editor UI/UX program; see
+Drives the live editor over CDP and captures both the DOM chrome and the wgpu map. It serves the
+editor UI/UX program; see
 [`.ai/artifacts/editor_ui_program_plan.md`](../../.ai/artifacts/editor_ui_program_plan.md).
 
-Ported to Rust at T-661 (the `capture` subcommand on the `tbd-tools` crate — same CDP plumbing as
-the gate harness `smokes`); the Node/shell versions were removed to clear the `no-node`/`no-shell`
-language gates. Chrome launch, the ANGLE/Vulkan flags, the KB-002 font-cache workaround and the
-teardown are all inside the Rust binary now (via `cdp::launch_with_gpu(_, GpuBackend::Vulkan, _)`),
-so there is no wrapper script to run.
+It is the `capture` binary of `tools_v2/developer-tools`, on the same CDP plumbing as the gate
+harness in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`. Chrome launch, the
+ANGLE/Vulkan flags, the KB-002 font-cache workaround and the teardown all live inside that binary
+(via `cdp::launch_with_gpu(_, GpuBackend::Vulkan, _)`), so there is no wrapper script to run and
+the `no-node` / `no-shell` language gates stay at zero.
 
 ```bash
 # stack must be up: cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos-debug
@@ -40,9 +40,10 @@ ERROR:ui/gfx/platform_font_skia.cc:258] Could not find any font: , sans
 ```
 
 This is KB-002 in [`EDITOR_GATE_RUNBOOK.md`](../website/EDITOR_GATE_RUNBOOK.md); the gate
-harness solves it the same way in `tbd-tools` `doctor::gate_font_cache_dir()`.
+harness solves it the same way in `developer-tools`
+`browser_testing::diagnostics::gate_font_cache_dir()`.
 
-**2. `--use-angle=vulkan`, never swiftshader and never `gl`.** All three were tried:
+**2. `--use-angle=vulkan`, never swiftshader and never `gl`.** All three modes behave differently:
 
 | Mode | Result |
 |---|---|
@@ -50,8 +51,8 @@ harness solves it the same way in `tbd-tools` `doctor::gate_font_cache_dir()`.
 | `--use-angle=gl` | `RenderEngine::create: webgl2 not available or canvas already in use` — engine never starts |
 | **`--use-angle=vulkan`** | **Boots. Satellite basemap up, 12800² with 14 mips, `maxTextureDimension2D = 16384`.** |
 
-Note the swiftshader path is what surfaced the boot-overlay defect (T-631 draft) — the engine dies
-and the bar sits at `50% · 71.9 MB / 71.9 MB` with no failure state.
+The swiftshader path exposes the boot-overlay defect: the engine dies and the bar sits at
+`50% · 71.9 MB / 71.9 MB` with no failure state.
 
 **3. The map must be read off the canvas, not the compositor.** Headless chrome logs
 `Failed to initialize vulkan surface`, and `Page.captureScreenshot` — with **either** `fromSurface`
@@ -68,11 +69,11 @@ canvas.
 All three are `cargo run -q -p developer-tools --bin capture -- <sub> …` (via `distrobox-host-exec` — bare
 `cargo` fails on GLIBC in the container). Source: `tools_v2/developer-tools/src/browser_testing/screen_capture.rs`.
 
-| Subcommand | Was | What it does |
-|---|---|---|
-| `shot <out.png> <url> <waitMs> [url waitMs …]` | `run_shot_gpu.sh` + `cdp2.mjs` | Launches chrome (ANGLE/Vulkan), waits for CDP, navigates the steps, polls the boot overlay out, dumps console + page diagnostics, captures chrome (`Page.captureScreenshot`) and — with `--canvas` — the map (`toDataURL`), then tears chrome down. Flags: `--canvas`, `--hide-overlay`. |
-| `zoomsweep <prefix> <mission-id> <z,z,…>` | `zoomsweep.mjs` | Boots the editor, then for each zoom calls `window.__editorCamSet(6400,6400,z)`, settles, reads the wgpu canvas → `<prefix>_z<z>.png`. **See the `__editorCamSet` caveat below — it panics the engine headless.** |
-| `crop <img> <x> <y> <w> <h> [scale] [out]` | `crop.sh` | Crops a region (nearest-neighbour upscale by `scale`) so it can be Read at full detail. The Read tool downscales anything over ~190,000 px, which makes small UI text unreadable — keep `W × H × SCALE²` under that. Ported to the `image` crate (no ffmpeg/python). |
+| Subcommand | What it does |
+|---|---|
+| `shot <out.png> <url> <waitMs> [url waitMs …]` | Launches chrome (ANGLE/Vulkan), waits for CDP, navigates the steps, polls the boot overlay out, dumps console + page diagnostics, captures chrome (`Page.captureScreenshot`) and — with `--canvas` — the map (`toDataURL`), then tears chrome down. Flags: `--canvas`, `--hide-overlay`. |
+| `zoomsweep <prefix> <mission-id> <z,z,…>` | Boots the editor, then for each zoom calls `window.__editorCamSet(6400,6400,z)`, settles, reads the wgpu canvas → `<prefix>_z<z>.png`. **See the `__editorCamSet` caveat below — it panics the engine headless.** |
+| `crop <img> <x> <y> <w> <h> [scale] [out]` | Crops a region (nearest-neighbour upscale by `scale`) so it can be Read at full detail. The Read tool downscales anything over ~190,000 px, which makes small UI text unreadable — keep `W × H × SCALE²` under that. It uses the `image` crate, so there is no ffmpeg or python dependency. |
 
 ## Caveats
 

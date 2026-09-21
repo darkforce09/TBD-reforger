@@ -1,15 +1,15 @@
 name: mod-gates
 
-# T-209 — the Enfusion compile gate + the headless world boot, in CI.
+# The Enfusion compile gate + the headless world boot, in CI.
 #
 # ── WHY THIS IS A SEPARATE WORKFLOW ON A SELF-HOSTED RUNNER ────────────────────────────────
 # `cargo xtask mod compile` and `cargo xtask mod world-boot` are the best regression instruments
-# in this repo and neither ran in CI. They cannot run on a GitHub-hosted runner, and not for a
-# reason a clever workflow can engineer around: both drive the real **Arma Reforger dedicated
-# server** binary (`ArmaReforgerServer`) from the Steam depot for appid 1890870. That is a ~10 GB
-# download behind a Steam login, it is not redistributable, and the mod also needs the committed
-# `resourceDatabase.rdb` to match the script tree. So the honest options were a self-hosted runner
-# or nothing, and this is the self-hosted runner.
+# in this repo, and they cannot run on a GitHub-hosted runner — not for a reason a clever workflow
+# can engineer around: both drive the real **Arma Reforger dedicated server** binary
+# (`ArmaReforgerServer`) from the Steam depot for appid 1890870. That is a ~10 GB download behind a
+# Steam login, it is not redistributable, and the mod also needs the committed
+# `resourceDatabase.rdb` to match the script tree. The honest options are a self-hosted runner or
+# nothing, so this workflow takes the self-hosted runner.
 #
 # The cheap half — `cargo xtask mod world-boot --selftest`, which needs no engine — is NOT here. It runs in
 # **ci.yml** (`mod-gates-hosted`) on every push, where it belongs. Read the two together.
@@ -51,14 +51,13 @@ name: mod-gates
 #            - "contracts_v2/fixtures/missions/valid/**"
 #            - ".github/workflows/mod-gates.yml"
 #
-# ── WHAT IS STILL NOT WIRED, AND WHY ───────────────────────────────────────────────────────
-#   * `cargo xtask mod world-boot --compiled` — the only gate that feeds real
-#     compiler output to the real Enfusion parser, and the one that would have caught T-181.46 on
-#     day one. It additionally needs Postgres up, `cargo xtask mk rust-api` serving, and the API's SERVICE_TOKEN,
-#     none of which exist on a bare runner. Wiring it means standing a full stack up inside this
-#     job; it is a ticket of its own, not a line in this one.
-#   * `--mission=<golden>` sweeps across every golden. Same runner, but ~25 s each; belongs on a
-#     nightly of its own once this one has proven stable.
+# ── WHAT THIS WORKFLOW DOES NOT RUN, AND WHY ───────────────────────────────────────────────
+#   * `cargo xtask mod world-boot --compiled` — the only gate that feeds real compiler output to
+#     the real Enfusion parser. On top of the engine it needs Postgres up, `cargo xtask mk
+#     rust-api` serving, and the API's SERVICE_TOKEN; a bare runner has none of the three, so
+#     running it here means standing a full stack up inside this job.
+#   * `--mission=<golden>` sweeps across every golden. Same runner, ~25 s each, so a sweep costs
+#     more wall clock than a nightly compile gate is meant to.
 on:
   schedule:
     - cron: "0 5 * * *" # nightly ~05:00 UTC, an hour before editor-gates so they do not overlap
@@ -95,21 +94,19 @@ jobs:
         run: cargo xtask mod compile-preflight
 
       # THE INSTRUMENT BEFORE THE VERDICT. A gate that has never been seen to fail is not a gate,
-      # so prove compile.sh still rejects deliberately broken source before trusting it to bless
-      # the real tree. `--selftest` stages an extra addon calling an undefined symbol and must
-      # come back with exit 1.
+      # so prove the compile gate still rejects deliberately broken source before trusting it to
+      # bless the real tree. `--selftest` stages an extra addon calling an undefined symbol and
+      # must come back with exit 1.
       #
-      # T-901: classification is `cargo xtask mod compile-selftest`. Only Enfusion exit 1 is a
-      # pass; 0 (gate is blind), 2 (no verdict), and 3 (environment — no server) print SELFTEST
-      # FAIL and exit 1. YAML must not treat any nonzero as success.
+      # `cargo xtask mod compile-selftest` classifies that run. Only Enfusion exit 1 is a pass;
+      # 0 (gate is blind), 2 (no verdict), and 3 (environment — no server) print SELFTEST FAIL and
+      # exit 1. YAML must not treat any nonzero as success.
       - name: compile gate SELFTEST — prove the gate still catches a broken .c
         run: cargo xtask mod compile-selftest
 
-      # The real thing. Called directly rather than through a wrapper, for one reason that used
-      # to be about GNU make: it reported its OWN status 2 for any failed recipe, flattening the
-      # 1-vs-3 (code vs environment) distinction into a single uninformative code — the precise
-      # confusion the exit-code contract in compile.sh exists to prevent. The wrapper target is
-      # `cargo run -q -p xtask -- mod compile`, so nothing is duplicated by calling it here.
+      # The real thing, called directly so the gate's own exit code reaches YAML intact: the
+      # 1-vs-3 distinction (code failure vs environment failure) is the whole contract, and any
+      # wrapper that collapses nonzero codes into one destroys it.
       #
       # First run on a fresh runner also calibrates `.compile-vanilla-baseline` (a vanilla-only
       # boot, ~4 s). actions/checkout cleans ignored files, so that recalibration happens every
