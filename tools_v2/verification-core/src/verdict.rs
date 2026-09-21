@@ -205,13 +205,13 @@ impl Verdict {
         }
     }
 
-    /// Legacy two-outcome status: `Held` 0, everything else 1.
+    /// Collapses the four outcomes to exit 0/1: `Held` is 0, everything else is 1.
     ///
-    /// **Only for ports that must diff byte-identically against a bash script whose exit contract
-    /// callers already depend on** — `gate_ban`/`gate_require` returned 1 for both failure kinds.
-    /// Named the long way round so that choosing it is visible in review rather than a `!held()`
-    /// nobody notices. New code wants [`Verdict::into_exit`].
-    pub fn into_exit_legacy_binary(self) -> i32 {
+    /// **Only for gates whose callers already depend on a two-outcome exit contract.** Named the
+    /// long way round so that choosing it is visible in review rather than a `!held()` nobody
+    /// notices — it throws away the distinction between "failed" and "did not run". New code
+    /// wants [`Verdict::into_exit`].
+    pub fn into_binary_exit_code(self) -> i32 {
         match self {
             Verdict::Held => 0,
             Verdict::Failed(_) | Verdict::DidNotRun(..) => 1,
@@ -290,10 +290,10 @@ mod tests {
     #[test]
     fn legacy_binary_exit_matches_gate_grep() {
         // gate_ban/gate_require returned 1 for BOTH failure kinds; ports pin that.
-        assert_eq!(Verdict::Held.into_exit_legacy_binary(), 0);
-        assert_eq!(Verdict::failed("x").into_exit_legacy_binary(), 1);
+        assert_eq!(Verdict::Held.into_binary_exit_code(), 0);
+        assert_eq!(Verdict::failed("x").into_binary_exit_code(), 1);
         let dnr = Verdict::did_not_run("x", Kind::Pin, NotRun::ToolAbsent("grep".into()));
-        assert_eq!(dnr.into_exit_legacy_binary(), 1);
+        assert_eq!(dnr.into_binary_exit_code(), 1);
     }
 
     #[test]

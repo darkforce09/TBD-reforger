@@ -1,14 +1,13 @@
-//! T-165.5 — the browser-injected JS payloads, byte-copied from the (since-deleted) Node harness.
+//! The browser-injected JS payloads.
 //!
-//! PROVENANCE + HARD RULE (T-165 plan, V-golden byte-parity): these strings are the exact
-//! template-literal bodies of the Node driver's `freeze.js` (`FREEZE_SRC`) and `dom.js`
-//! (`DOM_SERIALIZER_SRC`); the driver itself was deleted at T-165.6, so these consts ARE the
-//! source of truth. They execute inside V8 via `Page.addScriptToEvaluateOnNewDocument`; the
-//! harness only ferries them. The frozen V-suite goldens (tools_v2/developer-tools/fixtures/t159/
-//! oracle-freeze/) were serialized by THIS exact serializer source — never re-implement or
-//! "clean up" these payloads natively, or the byte-identity contract with the goldens breaks.
+//! HARD RULE — byte parity with the frozen goldens: these two consts ARE the source of truth for
+//! what the browser runs. They execute inside V8 via `Page.addScriptToEvaluateOnNewDocument`; the
+//! harness only ferries them. The goldens under
+//! `tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze/` were serialized by THIS exact
+//! serializer source, so never re-implement or "clean up" these payloads natively: a native
+//! rewrite breaks the byte-identity contract with goldens that cannot be regenerated.
 
-/// `freeze.js` — determinism payload (fixed clock, seeded RNG, animation kill), document-start.
+/// The determinism payload — fixed clock, seeded RNG, animation kill — injected at document start.
 pub const FREEZE_SRC: &str = r#"
 (() => {
   const T0 = 1700000000000; // fixed epoch (2023-11-14T22:13:20Z)
@@ -35,7 +34,7 @@ pub const FREEZE_SRC: &str = r#"
 
   const inject = () => {
     const s = document.createElement('style');
-    s.setAttribute('data-t159-freeze', '1');
+    s.setAttribute('data-dom-oracle-freeze', '1');
     s.textContent = '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important;scroll-behavior:auto!important}';
     (document.head || document.documentElement).appendChild(s);
   };
@@ -44,15 +43,15 @@ pub const FREEZE_SRC: &str = r#"
 })();
 "#;
 
-/// `dom.js` — the V-gate normalized DOM + computed-style serializer
-/// (`window.__t159SerializeDom`). See dom.js header for the normalization contract.
+/// The normalized-DOM and computed-style serializer the oracle calls as
+/// `window.__domOracleSerialize`. Its normalization contract is stated in the payload itself:
+/// the style properties it records, the tags it skips, and the whitespace collapse.
 ///
-/// NOTE on escapes: the .js file lives inside a JS template literal, so its source escapes
-/// `\s` as `\\s` — the browser receives single-backslash `\s`. This Rust raw string holds the
-/// POST-UNESCAPE bytes (what V8 actually received), i.e. `\s+` and `/\s+/g`, keeping the wire
-/// bytes identical to the Node harness.
+/// NOTE on escapes: this raw string holds the bytes V8 receives, so a whitespace class is the
+/// single-backslash `\s+` and `/\s+/g`. Anything that double-escapes them changes the wire bytes
+/// and therefore every golden.
 pub const DOM_SERIALIZER_SRC: &str = r#"
-window.__t159SerializeDom = function (selector, exclude) {
+window.__domOracleSerialize = function (selector, exclude) {
   const STYLE_PROPS = [
     'display', 'position', 'visibility', 'opacity',
     'color', 'background-color',
@@ -79,7 +78,7 @@ window.__t159SerializeDom = function (selector, exclude) {
   const rewriteRefs = (v) => v.split(/\s+/).filter(Boolean).map(idx).join(' ');
 
   function walk(el) {
-    if (SKIP.has(el.tagName) || el.getAttribute('data-t159-freeze') === '1') return null;
+    if (SKIP.has(el.tagName) || el.getAttribute('data-dom-oracle-freeze') === '1') return null;
     const cs = getComputedStyle(el);
     const style = {};
     for (const p of STYLE_PROPS) style[p] = cs.getPropertyValue(p);

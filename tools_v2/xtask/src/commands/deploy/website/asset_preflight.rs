@@ -15,8 +15,8 @@
 pub enum AssetLayout {
     /// `assets_v2/terrains` is populated (its registry is present). Nothing to do.
     Ready,
-    /// The pre-relocation `packages/map-assets` is still the only copy.
-    Legacy,
+    /// The server's older `packages/map-assets` tree is still the only copy.
+    OldPackagesTree,
     /// Neither exists. Legitimate for a library-only host that never serves the map.
     Absent,
     /// The probe itself did not answer — unreachable host, missing remote directory, ssh failure.
@@ -24,7 +24,7 @@ pub enum AssetLayout {
 }
 
 /// Exit code the probe uses for "still on the old layout".
-const LEGACY: i32 = 10;
+const OLD_PACKAGES_TREE: i32 = 10;
 /// Exit code the probe uses for "no asset tree at all".
 const ABSENT: i32 = 11;
 
@@ -39,7 +39,7 @@ pub fn probe_script(remote_dir: &str) -> String {
     format!(
         "cd '{remote_dir}' 2>/dev/null || exit 12; \
          if [ -f {TERRAIN_TREE_MARKER} ]; then exit 0; fi; \
-         if [ -d packages/map-assets ]; then exit {LEGACY}; fi; \
+         if [ -d packages/map-assets ]; then exit {OLD_PACKAGES_TREE}; fi; \
          exit {ABSENT}"
     )
 }
@@ -47,7 +47,7 @@ pub fn probe_script(remote_dir: &str) -> String {
 pub fn classify(code: i32) -> AssetLayout {
     match code {
         0 => AssetLayout::Ready,
-        LEGACY => AssetLayout::Legacy,
+        OLD_PACKAGES_TREE => AssetLayout::OldPackagesTree,
         ABSENT => AssetLayout::Absent,
         other => AssetLayout::Indeterminate(other),
     }
@@ -89,7 +89,7 @@ pub fn report(layout: AssetLayout, remote_dir: &str) -> Result<(), u8> {
             );
             Ok(())
         }
-        AssetLayout::Legacy => {
+        AssetLayout::OldPackagesTree => {
             eprintln!(
                 "ERROR: {remote_dir}/assets_v2/terrains is missing, but the pre-relocation \
                  packages/map-assets is present."

@@ -2,8 +2,8 @@ use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum MapCmd {
-    /// Classify staged Workbench export for TERRAIN / PHASE (T-869).
-    /// Args mirror `export-terrain.sh` (unknown tokens → rc=1; missing raw → rc=2).
+    /// Classify a staged Workbench export for TERRAIN / PHASE.
+    /// Unknown tokens exit 1; a missing staged raw export exits 2.
     #[command(name = "export-terrain", disable_help_flag = true)]
     ExportTerrain {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -62,11 +62,11 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-090.11.2 — walk a building prefab's closure straight out of the game paks: the
+    /// Walk a building prefab's closure straight out of the game paks: the
     /// shell sidecar (v2, kinds from COLL game materials), one BLAS per child model under
     /// prefabs/blas/, and `<slug>.instances.json` (--prefab <Prefabs/…/X.et> [--slug <s>]
     /// [--out <dir>] [--paks <dir>] [--extract <dir>] [--scene <spec.json>]
-    /// [--kind <record>=<kind>]… [--dry-run]). T-090.12.2: `--all-prefabs [--terrain everon]
+    /// [--kind <record>=<kind>]… [--dry-run]). `--all-prefabs [--terrain everon]
     /// [--only-kind K]… [--limit N] [--hot N] [--dry-run]` walks every catalogue prefab into
     /// prefabs/descriptors/<pid>.json + the shared BLAS library + prefabs/blas-manifest.json.
     #[command(name = "bvh-batch")]
@@ -74,7 +74,7 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-090.11.2 — print what the XOB decoder sees: string table, node records + sockets,
+    /// Print what the XOB decoder sees: string table, node records + sockets,
     /// COLL records with layer preset and per-material triangle runs, kinds histogram
     /// (<file.xob | in-pak path> [--paks <dir>] [--extract <dir>] [--strings]
     /// [--kind <record>=<kind>]…).
@@ -90,9 +90,9 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-090.11.3 — match every `xobSocket` instance against a Workbench recon dump
+    /// Match every `xobSocket` instance against a Workbench recon dump
     /// (`--instances <slug>.instances.json --recon <slug>_children.json`); exit 1 on any
-    /// mismatch over 2 cm / 1° or an unmatched instance. T-090.12.1: `--world-row --chunk
+    /// mismatch over 2 cm / 1° or an unmatched instance. `--world-row --chunk
     /// <cx_cy.json.gz> --prefabs <prefabs.json.gz>` also places every matched child through the
     /// committed chunk row and compares with the recon worldPos (the wire-v2 transform pin).
     #[command(name = "instances-verify")]
@@ -100,7 +100,7 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-090.11.3 — rank the 48 Euler-composition hypotheses against a recon sample of a
+    /// Rank the 48 Euler-composition hypotheses against a recon sample of a
     /// tilted parent with a rotated child (`--fixture <json>`); exit 1 unless
     /// `Rigid::from_enfusion` (Y·X·Z, positive signs) wins.
     #[command(name = "rotation-pin")]
@@ -108,7 +108,7 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-090.12.3 — the world occluder on the committed catalogue: `--cell <cx_cy> [--census]
+    /// The world occluder on the committed catalogue: `--cell <cx_cy> [--census]
     /// [--probe a b] [--bench N] [--pairs <world_parity.json>] [--glass-blocks]
     /// [--foliage-blocks] [--proxy-only] [--min-agree F] [--dump-misses <jsonl>]`.
     #[command(name = "world-los")]

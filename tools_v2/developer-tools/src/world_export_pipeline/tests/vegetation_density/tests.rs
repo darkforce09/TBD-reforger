@@ -31,7 +31,7 @@ fn everon_density_tiles() -> Vec<std::path::PathBuf> {
 ///
 /// Decode each tile with the new `cast_slice` decoder and re-emit it through the *unchanged*
 /// `encode_tbdd`; the result must be the file, byte for byte. This is the independent half of
-/// the parity pin in `map_engine_core::geometry::tbdd`: that one proves the two decoders agree
+/// the parity pin in `website_map_engine::world`: that one proves the two decoders agree
 /// with each other, this one proves the pair still agrees with what is on disk — the emitter
 /// and the decoder could have drifted together and neither test alone would notice.
 #[test]
@@ -241,9 +241,9 @@ fn sample_corners_reads_the_corner_of_a_world_position() {
     assert_eq!(sample_corners(&[], 0, 0.0, 0.0), 0);
 }
 
-/// T-298 — SplitMix64, the reference constant set, inlined.
+/// SplitMix64, the reference constant set, inlined.
 ///
-/// `tbd-tools` carries no `rand` dependency and a partition pin is not a reason to grow the
+/// `developer-tools` carries no `rand` dependency and a partition pin is not a reason to grow the
 /// dependency graph. Seeded once below, so the 64 grids are the *same* 64 grids on every
 /// machine and in CI: a randomized test that cannot be reproduced from its own source is a
 /// test whose red nobody can act on.
@@ -283,17 +283,15 @@ impl Rng {
     }
 }
 
-/// T-298 — the corner partition identity, seeded and randomized over 64 grids.
+/// The corner partition identity, seeded and randomized over 64 grids.
 ///
 /// `corner_partition_identity` above is ONE sample: one world size, one hand-built lattice of
 /// 1000 points, none of them on a window seam, none outside the world (so the clamp is never
 /// exercised) and never sliced back out per chunk. It is also, with
-/// `encode_decode_round_trip_and_fixture`, the whole of this module's coverage — and until
-/// T-298 both ran in NO workflow (ci.yml had no tbd-tools step; the wave gate's
-/// `test xtask+tbd-tools` is local-only and the mod gate scopes itself to `enf::`), which is
-/// how the stale `401` in the test above sat red from T-176 to T-597, four weeks. This is the
-/// sweep that goes with the CI lane: fixed seed, 64 pseudo-random worlds, three oracles that
-/// each fail for a different reason.
+/// `encode_decode_round_trip_and_fixture`, the whole of this module's coverage, and the
+/// `developer-tools-test` CI job plus the wave gate's `test xtask+developer-tools` step are what
+/// run it. This is the sweep that goes with the CI lane: fixed seed, 64 pseudo-random worlds,
+/// three oracles that each fail for a different reason.
 #[test]
 fn seeded_random_corner_partition_identity() {
     // The world exporter's chunk side (module doc: corner (i,j) of chunk (cx,cy) sits at

@@ -175,11 +175,11 @@ fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
     );
 }
 
-/// T-985 — archive boot must still fetch blas-manifest.json for `.hot`. The defect was
-/// `if init_from_archive { return; }` before that fetch. Restore the early return and this
-/// test goes red.
+/// Archive boot must still fetch blas-manifest.json for `.hot`: an early `return` on the
+/// archive branch, placed before that fetch, leaves hot chunks without their manifest. Put such a
+/// return back and this test goes red.
 #[test]
-fn t985_occluder_init_still_fetches_blas_manifest_for_hot() {
+fn occluder_init_still_fetches_the_blas_manifest_for_hot_chunks() {
     let root = repo_root().expect("repo root");
     let src = fs::read_to_string(
         root.join("apps/website/map-engine/src/streaming/loaders/occluder_loader.rs"),

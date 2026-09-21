@@ -46,17 +46,15 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
     match (active.as_str(), tid.as_str()) {
         ("T-090.1.2.2", _) => {
             println!(
-                "SCOPE: SAP cell seam repair — analyze 256 m grid edges, feather/blend in stitch-sap-ortho.mjs, rebuild lossless z0–6 pyramid"
+                "SCOPE: SAP cell seam repair — analyze 256 m grid edges, feather/blend in the map lane's stitch-sap-ortho stage, rebuild lossless z0–6 pyramid"
             );
             println!(
                 "DO NOT REOPEN: T-090.1.2 decode contract, T-090.1.2.1 lossless pyramid encode (reuse --lossless rebuild)"
             );
-            println!(
-                "PREFLIGHT: git lfs pull && make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
-            );
+            println!("PREFLIGHT: git lfs pull && cargo run -q -p xtask -- ticket brief T-090");
             println!("HANDOFF: .ai/artifacts/t090_1_2_2_claude_code_handoff.md");
             println!(
-                "VERIFY: analyze-sap-seams + verify-sap-seams + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid + cargo xtask ci verify-terrain"
+                "VERIFY: cargo run -p developer-tools --bin map -- analyze-sap-seams, then verify-sap-seams, verify-sap-ortho and verify-pyramid --expect-lossless; then cargo xtask ci verify-terrain"
             );
             println!("MANUAL: S1 operator seam location invisible at max zoom");
         }
@@ -74,7 +72,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
         }
         ("T-090.1.2.5", _) => {
             println!(
-                "SCOPE: satellite water — ocean + inland on SAP ortho; P0 mask spike, composite-water-ortho.mjs, lossless pyramid rebuild"
+                "SCOPE: satellite water — ocean + inland on SAP ortho; P0 mask spike, the map lane's composite-water stage, lossless pyramid rebuild"
             );
             println!("DEPENDS: run after T-090.1.2.2 seam ortho when possible");
             println!("HANDOFF: .ai/artifacts/t090_1_2_5_claude_code_handoff.md");
@@ -82,13 +80,13 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
             );
             println!(
-                "VERIFY: water spike + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid"
+                "VERIFY: water spike, then cargo run -p developer-tools --bin map -- verify-sap-ortho and verify-pyramid --expect-lossless"
             );
             println!("MANUAL: W1 coast water; W2 inland lakes/rivers");
         }
         ("T-090.1.2.1", _) => {
             println!(
-                "SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — build-tile-pyramid.sh --lossless, verify VP8L, manifest maxZoom 6"
+                "SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — map build-pyramid --lossless, verify VP8L, manifest maxZoom 6"
             );
             println!(
                 "DO NOT REOPEN: T-090.1.2 decode/stitch/orientation (shipped @ c2730a3) unless verify-sap-ortho fails"
@@ -96,12 +94,10 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "ORTH: assets_v2/scratch/everon/sap/everon-sap-ortho.png (12800² — already built; do NOT re-stitch)"
             );
-            println!(
-                "PREFLIGHT: git lfs pull && make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
-            );
+            println!("PREFLIGHT: git lfs pull && cargo run -q -p xtask -- ticket brief T-090");
             println!("HANDOFF: .ai/artifacts/t090_1_2_1_claude_code_handoff.md");
             println!(
-                "VERIFY: node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon && EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon && cargo xtask ci verify-terrain && cargo xtask mk ci-local-leptos"
+                "VERIFY: cargo run -p developer-tools --bin map -- verify-sap-ortho --terrain everon && cargo run -p developer-tools --bin map -- verify-pyramid --terrain everon --expect-lossless && cargo xtask ci verify-terrain && cargo xtask mk ci-local-leptos"
             );
             println!(
                 "MANUAL: L1 max-zoom field/road pixel-sharp; L2 north-up; L3 alignment; L4 ≥55 fps"
@@ -159,7 +155,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!("SCOPE: tsconfig strict:true + eslint @contract/@model enforcement + fixes")
         }
         ("T-125.4", _) => println!(
-            "SCOPE: @route on all handlers; error-handling; Enfusion DTO fixture gate in validate.mjs"
+            "SCOPE: @route on all handlers; error-handling; Enfusion DTO fixture gate in cargo xtask schema validate"
         ),
         ("T-125.5", _) => println!("SCOPE: .editorconfig + optional Prettier"),
         ("T-125.6", _) => {
@@ -206,9 +202,11 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
         }
         ("T-123.6", _) => {
             println!(
-                "SCOPE: CI — revive exported, eslint jsdoc, verify-contract-citations.mjs, schema.yml"
+                "SCOPE: CI — revive exported, eslint jsdoc, cargo xtask verify route-tags, schema.yml"
             );
-            println!("VERIFY: local golangci-lint + FE lint + citation script exit 0");
+            println!(
+                "VERIFY: local golangci-lint + FE lint + cargo xtask verify route-tags exit 0"
+            );
         }
         ("T-123.3", _) => {
             println!(
@@ -224,9 +222,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "DO NOT REOPEN: T-091 dem/* + ydoc Z wiring (shipped @ dde589e) unless regression"
             );
-            println!(
-                "PREFLIGHT: make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
-            );
+            println!("PREFLIGHT: cargo run -q -p xtask -- ticket brief T-090");
         }
         ("T-091.2", _) => {
             println!(
@@ -255,7 +251,9 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "SCOPE (React-era, shipped; app retired at T-159.29.3): tactical-map/dem/* + DemController wiring"
             );
-            println!("REFERENCE (port, do not re-run): contracts_v2/scripts/lib/dem-sample.mjs");
+            println!(
+                "REFERENCE (already ported, do not re-run): apps/website/map-engine/src/world/terrain/dem/sampling.rs"
+            );
             println!(
                 "PREFLIGHT: cargo xtask ci lfs-dem && cargo run -q -p xtask -- ticket brief T-091"
             );

@@ -1,15 +1,13 @@
-//! T-165.6 — the editor CDP smokes + auxiliary browser gates (ports of the 19 Node driver
-//! scripts that lived under the t159_gates driver/ dir until T-165.6 deleted it). One async fn
-//! per script; the `gate` bin
-//! exposes `gate smoke <name>`, the ordered `gate editor-suite` (the Makefile glob
-//! replacement), `gate r-auth`, and `gate render-check`.
+//! The editor CDP smokes plus the auxiliary browser gates. One async fn per scenario; the `gate`
+//! bin exposes `gate smoke <name>`, the ordered `gate editor-suite`, `gate r-auth` and
+//! `gate render-check`.
 //!
-//! Shared contract with the Node harness (per-script headers preserved on each fn):
+//! Harness contract:
 //! - trusted CDP Input events (mouse moves carry button:none with the held bit in `buttons`;
-//!   key chords are rawKeyDown+keyUp ONLY — the T-159.22.1 double-fire contract)
+//!   key chords are rawKeyDown+keyUp ONLY, so a chord fires once and not twice)
 //! - panic capture over console/log/exception events (`/panic|unreachable|already mapped/i`)
-//! - JSON verdict on stdout; exit 0 pass · 1 fail · 2 usage/scenario error (3 = driver error
-//!   for r-auth/render-check, matching the Node scripts' exit maps)
+//! - JSON verdict on stdout; exit 0 pass · 1 fail · 2 usage/scenario error (3 = driver error for
+//!   r-auth/render-check)
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex as StdMutex};
@@ -27,7 +25,7 @@ const DIST_DEFAULT: &str = "apps/website/frontend/dist";
 /// Default editor path for the suite. `sat=preview` keeps smokes off the 152 MB full TBDS GET
 /// (which freezes headless CDP mid-suite once `/map-assets` is live).
 ///
-/// `force=webgl` (T-166): pin the software **WebGL2/SwiftShader** backend. The default
+/// `force=webgl`: pin the software **WebGL2/SwiftShader** backend. The default
 /// WebGPU/lavapipe path is unreliable headless under memory pressure — its rAF render loop
 /// intermittently stalls the page main thread long enough that a `Runtime.evaluate` (e.g. the
 /// `__editorSelection.probe()` centering call) never returns, wedging the suite. `arsenal` is
@@ -37,7 +35,8 @@ const DIST_DEFAULT: &str = "apps/website/frontend/dist";
 const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
 const SEED_N: i64 = 8; // must match mission_doc.rs `SEED_N`
 
-/// The Makefile glob `driver/*_editor.mjs` in shell-sort order (selfcheck sorts first).
+/// The full editor suite, `selfcheck` first (it proves the harness itself works) and the rest in
+/// name order.
 pub const EDITOR_SUITE: [&str; 21] = [
     "selfcheck",
     "arsenal",
@@ -51,18 +50,19 @@ pub const EDITOR_SUITE: [&str; 21] = [
     "hydrate",
     "keyboard-settings",
     "marquee-drag",
+    "outliner-drag",
     "outliner-palette",
     "pan",
     "persist",
     "save-dialog-rect",
     "save-export",
     "select",
-    "t946-86",
     "undo",
     "virtual-outliner",
 ];
 
-/// Locked T-166 sat bundle size — full GET of this body must never happen under `?sat=preview`.
+/// The full satellite bundle size — a full GET of this body must never happen under
+/// `?sat=preview`.
 const SAT_FULL_BYTES: u64 = 152_713_114;
 
 struct Harness {
@@ -82,9 +82,8 @@ impl Harness {
         api_proxy: Option<String>,
         init_scripts: &[&str],
     ) -> Result<Harness> {
-        // Font cache: `cdp::launch` pins `XDG_CACHE_HOME` on the chromium child (T-339 / T-362).
-        // Process-wide `ensure_gate_font_cache` still runs from `gate` main (T-354) for doctor
-        // inherit-path probes.
+        // Font cache: `cdp::launch` pins `XDG_CACHE_HOME` on the chromium child. Process-wide
+        // `ensure_gate_font_cache` still runs from `gate` main for doctor inherit-path probes.
         let srv = start_server(
             ServeConfig {
                 dir: PathBuf::from(dist),
@@ -95,7 +94,7 @@ impl Harness {
         )
         .await?;
         let browser = cdp::launch(debug_port, &[]).await?;
-        // T-843 — always seed mission_maker/admin before any smoke navigates the editor.
+        // Always seed mission_maker/admin before any smoke navigates the editor.
         let auth_seed = editor_auth_seed()?;
         let mut scripts: Vec<&str> = Vec::with_capacity(init_scripts.len() + 1);
         scripts.push(auth_seed.as_str());
@@ -138,7 +137,7 @@ impl Harness {
 
     async fn shutdown(self) {
         // Reap chrome (SIGTERM → wait → SIGKILL) + drop its profile dir BEFORE the next smoke,
-        // so the debug port + profile lock free deterministically (T-166 suite-hang fix).
+        // so the debug port + profile lock free deterministically and the suite cannot hang.
         self.browser.shutdown().await;
         self.srv.close().await;
     }
@@ -161,35 +160,34 @@ const MODAL_OPEN: &str =
 
 const BACKEND: &str = "http://127.0.0.1:8080";
 
-/// render-check.mjs — generic "does this built SPA render X" liveness check.
+/// Generic "does this built SPA render X" liveness check.
 /// Exit map: 0 pass · 1 fail · 2 usage · 3 driver error (mapped by the bin).
 pub struct RenderCheckArgs {
     pub dir: String,
     pub path: String,
     pub expect: String,
     pub assert_js: Option<String>,
-    /// Inject the v-suite admin localStorage seed before boot (T-172 behavioral probes on
-    /// auth-gated pages).
+    /// Inject the v-suite admin localStorage seed before boot, for probes on auth-gated pages.
     pub seed_auth: bool,
     pub port: u16,
     pub debug_port: u16,
-    /// Upstream for `/api` (T-339 / T-387). Without this, `--seed-auth` leaves a half-hydrated
+    /// Upstream for `/api`. Without this, `--seed-auth` leaves a half-hydrated
     /// session (`user` from localStorage, `/me` fails → `access_token` None → signed-out UI).
     /// `None` defaults to `BACKEND` so probes reach a live API when one is on :8080.
     pub api_proxy: Option<String>,
-    /// T-090.12.5 — full-viewport PNG written after `assert_js` settled (`None` = no shot). The
-    /// screenshot is evidence only: it never affects the verdict.
+    /// Full-viewport PNG written after `assert_js` settled (`None` = no shot). The screenshot is
+    /// evidence only: it never affects the verdict.
     pub shot: Option<std::path::PathBuf>,
-    /// T-090.12.5 — `/map-assets/` passthrough root (`None` = the SPA fallback answers assets).
+    /// `/map-assets/` passthrough root (`None` = the SPA fallback answers assets).
     pub map_assets: Option<std::path::PathBuf>,
-    /// T-090.12.5 — extra pre-boot inject (a JS file), evaluated on every new document after
-    /// the freeze and the optional `--seed-auth` seed.
+    /// Extra pre-boot inject (a JS file), evaluated on every new document after the freeze and
+    /// the optional `--seed-auth` seed.
     pub inject_js: Option<std::path::PathBuf>,
-    /// T-090.12.5 — leave the clock and RNG alone (wall-time measurements; never goldens).
+    /// Leave the clock and RNG alone (wall-time measurements; never goldens).
     pub no_freeze: bool,
 }
 
-/// T-173 — in-page perf probe: rAF frame sampler + longtask observer + counter diffs around four
+/// In-page perf probe: rAF frame sampler + longtask observer + counter diffs around four
 /// scripted gesture scenarios (pan / zoom / settle-thrash / bench). Synthetic DOM events (not CDP
 /// `Input.*`): CDP round-trips can't sustain one-move-per-frame cadence, and the editor's
 /// capture-phase container listeners accept untrusted events. Returns one JSON string.

@@ -22,7 +22,7 @@ fn recipe_body_stops_at_the_next_target() {
     assert_eq!(recipe_body(mk, "seed"), vec!["yes"]);
 }
 
-/// The rendered `seed` lane is the gate_t444 contract: five files, wiki last.
+/// The rendered `seed` lane is the contract `verify wiki-seeds` pins: five files, wiki last.
 #[test]
 fn seed_recipe_keeps_all_five_appliers_in_order() {
     let all = rendered_recipes();
@@ -31,6 +31,6 @@ fn seed_recipe_keeps_all_five_appliers_in_order() {
     assert!(seed[0].ends_with("< seeds/discord_roles.sql"));
     assert!(
         seed[4].ends_with("< seeds/wiki_pages.sql"),
-        "gate_t444 pins the wiki seed to this recipe"
+        "`verify wiki-seeds` pins the wiki seed to this lane"
     );
 }

@@ -1,24 +1,24 @@
-//! T-165.5 — `gate`: the Rust CDP gate harness CLI (replaces the Node driver entrypoints).
+//! `gate` — the CDP gate harness CLI.
 //!
 //!   `gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]`
 //!   `gate s-routes`
 //!   `gate serve --dir <dist> [--port 5198] [--api-proxy http://127.0.0.1:8080] [--map-assets dir]`
 //!
-//! Exit codes mirror the Node harness: 0 green · 1 gate fail · 2 usage · 3 driver error.
+//! Exit codes: 0 green · 1 gate fail · 2 usage · 3 driver error.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use crate::browser_testing::diagnostics as doctor;
 use crate::browser_testing::dom_oracle as vsuite;
-use crate::browser_testing::editor_smoke_tests as smokes;
+use crate::browser_testing::editor_smoke_tests;
 use crate::browser_testing::route_drift as sroutes;
 use crate::browser_testing::server as serve;
 use crate::repository_layout::MapAssetMounts;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "gate", about = "T-159/T-165 CDP gate harness")]
+#[command(name = "gate", about = "CDP gate harness")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -26,10 +26,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// V-suite frozen-oracle DOM gate (gate_v_suite.mjs port)
+    /// V-suite frozen-oracle DOM gate
     #[command(name = "v-suite")]
     VSuite {
-        /// verify | accept  (freeze retired at T-171 — the React oracle is non-regenerable)
+        /// verify | accept  (there is no freeze mode: the reference oracle is non-regenerable)
         mode: String,
         #[arg(long, default_value = "apps/website/frontend/dist")]
         leptos_dir: PathBuf,
@@ -38,10 +38,10 @@ enum Cmd {
         #[arg(long, default_value = "")]
         note: String,
     },
-    /// Route-table drift gate (extract-leptos-routes.mjs port)
+    /// Route-table drift gate
     #[command(name = "s-routes")]
     SRoutes,
-    /// One editor/live smoke by name (smoke_*_editor.mjs ports; see EDITOR_SUITE)
+    /// One editor/live smoke by name (see EDITOR_SUITE)
     Smoke {
         /// selfcheck|arsenal|attributes|cur|doc|editor|fullmap|hillshade|hydrate|keyboard-settings|
         /// marquee-drag|outliner-palette|pan|persist|save-export|select|undo|mutations
@@ -51,13 +51,13 @@ enum Cmd {
         #[arg(long)]
         path: Option<String>,
     },
-    /// All 17 editor smokes in the Makefile glob order (first failure stops)
+    /// The whole editor suite in EDITOR_SUITE order (first failure stops)
     #[command(name = "editor-suite")]
     EditorSuite {
         #[arg(long)]
         dist: Option<String>,
     },
-    /// T-177 — fail-fast editor-gate preflight: pins + RAM/orphans + a ~15 s liveness probe.
+    /// Fail-fast editor-gate preflight: pins + RAM/orphans + a ~15 s liveness probe.
     /// A prerequisite of `cargo xtask mk leptos-gates`; a wedge fails here with a diagnosis, not a 130 s hang.
     Doctor {
         #[arg(long)]
@@ -66,13 +66,13 @@ enum Cmd {
         #[arg(long)]
         strict: bool,
     },
-    /// R-auth single-flight refresh gate (gate_r_auth.mjs port; LEPTOS_DIST env respected)
+    /// R-auth single-flight refresh gate (LEPTOS_DIST env respected)
     #[command(name = "r-auth")]
     RAuth {
         #[arg(long)]
         dist: Option<String>,
     },
-    /// Generic SPA render liveness check (render-check.mjs port)
+    /// Generic SPA render liveness check
     #[command(name = "render-check")]
     RenderCheck {
         #[arg(long)]
@@ -90,11 +90,11 @@ enum Cmd {
         port: u16,
         #[arg(long, default_value_t = 9337)]
         debug_port: u16,
-        /// Proxy `/api` to a live backend (T-339). Default in `render_check` is
+        /// Proxy `/api` to a live backend. Default in `render_check` is
         /// `http://127.0.0.1:8080` when omitted — required for `--seed-auth` to fully hydrate.
         #[arg(long)]
         api_proxy: Option<String>,
-        /// T-090.12.5 — write a full-viewport PNG of the page AFTER `--assert-js` settled (the
+        /// Write a full-viewport PNG of the page AFTER `--assert-js` settled (the
         /// live-check evidence rig: one URL + one probe script = one screenshot).
         #[arg(long)]
         shot: Option<PathBuf>,
@@ -103,17 +103,17 @@ enum Cmd {
         /// is taken from this directory's `glyphs` sibling, which is how the repository ships it.
         #[arg(long)]
         map_assets: Option<PathBuf>,
-        /// T-090.12.5 — a JS file evaluated on every new document BEFORE the SPA boots (peer of
+        /// A JS file evaluated on every new document BEFORE the SPA boots (peer of
         /// `--seed-auth` for a caller-built seed, e.g. a real dev-login session).
         #[arg(long)]
         inject_js: Option<PathBuf>,
-        /// T-090.12.5 — skip the determinism freeze (fixed clock / seeded RNG) so a probe can
+        /// Skip the determinism freeze (fixed clock / seeded RNG) so a probe can
         /// measure real wall time (the frozen `performance.now` would collapse a budgeted rAF
         /// pass into one frame). Screenshots taken this way are NOT golden-comparable.
         #[arg(long, default_value_t = false)]
         no_freeze: bool,
     },
-    /// Static SPA server with COOP/COEP (serve.mjs CLI port)
+    /// Static SPA server with COOP/COEP
     Serve {
         #[arg(long)]
         dir: PathBuf,
@@ -127,9 +127,9 @@ enum Cmd {
 }
 
 pub fn run() -> ExitCode {
-    // T-339 / T-354 — pin the gate font cache in the single-threaded prologue, before any
+    // Pin the gate font cache in the single-threaded prologue, before any
     // tokio task exists. `cdp::launch` also sets `XDG_CACHE_HOME` on the chromium child
-    // (T-362); this covers doctor inherit-path probes (`check_fonts`) that deliberately do not
+    // this covers doctor inherit-path probes (`check_fonts`) that deliberately do not
     // force their own env.
     doctor::ensure_gate_font_cache();
     let cli = Cli::parse();
@@ -151,10 +151,12 @@ pub fn run() -> ExitCode {
                 .await
             }
             Cmd::SRoutes => sroutes::run(),
-            Cmd::Smoke { name, dist, path } => smokes::run_smoke(&name, dist, path).await,
-            Cmd::EditorSuite { dist } => smokes::editor_suite(dist).await,
+            Cmd::Smoke { name, dist, path } => {
+                editor_smoke_tests::run_smoke(&name, dist, path).await
+            }
+            Cmd::EditorSuite { dist } => editor_smoke_tests::editor_suite(dist).await,
             Cmd::Doctor { dist, strict } => doctor::run(dist, strict).await,
-            Cmd::RAuth { dist } => smokes::r_auth(dist).await,
+            Cmd::RAuth { dist } => editor_smoke_tests::r_auth(dist).await,
             Cmd::RenderCheck {
                 dir,
                 path,
@@ -169,7 +171,7 @@ pub fn run() -> ExitCode {
                 inject_js,
                 no_freeze,
             } => {
-                smokes::render_check(&smokes::RenderCheckArgs {
+                editor_smoke_tests::render_check(&editor_smoke_tests::RenderCheckArgs {
                     dir,
                     path,
                     expect,

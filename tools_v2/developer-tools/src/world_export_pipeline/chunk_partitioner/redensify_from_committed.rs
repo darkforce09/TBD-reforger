@@ -251,10 +251,10 @@ pub fn build_roads_from_topo_opt(
     let road_class = |ty: u8| -> Option<&'static str> {
         match ty {
             TOPO_AIRFIELD => Some("runway"),
-            TOPO_RIVER => Some("highway_paved"),
-            TOPO_STREAM => Some("road_paved"),
-            TOPO_ROAD_A => Some("road_dirt"),
-            TOPO_ROAD_B => Some("track"),
+            TOPO_MAIN_HIGHWAY => Some("highway_paved"),
+            TOPO_SECONDARY_ASPHALT => Some("road_paved"),
+            TOPO_GRAVEL_COUNTRY_ROAD => Some("road_dirt"),
+            TOPO_FARM_TRACK => Some("track"),
             _ => None,
         }
     };

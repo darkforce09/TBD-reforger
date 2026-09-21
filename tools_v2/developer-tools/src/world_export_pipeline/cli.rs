@@ -13,7 +13,7 @@ use crate::world_export_pipeline::{
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "world", about = "T-090 world-export pipeline (Rust)")]
+#[command(name = "world", about = "World-export pipeline")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -26,9 +26,9 @@ enum Cmd {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// decode-edds.mjs CLI: cell N -> raw RGBA on stdout, meta on stderr
+    /// Decode one supertexture cell: cell N -> raw RGBA on stdout, meta on stderr
     EddsCell { n: u32 },
-    /// export-terrain.sh phase gate (registry importPhaseMax check)
+    /// Export phase gate: refuse a phase above the registry importPhaseMax
     PhaseGate {
         #[arg(long)]
         terrain: String,

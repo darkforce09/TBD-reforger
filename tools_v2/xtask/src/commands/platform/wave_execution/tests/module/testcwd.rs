@@ -5,12 +5,10 @@ static CWD_LOCK: Mutex<()> = Mutex::new(());
 
 /// Run `f` with the cwd pinned — the READER half of this module's contract.
 ///
-/// T-946. The module doc above already states the rule ("every test that moves it must hold
-/// ONE lock"), but only the movers held it: a fixture helper resolving `find_repo_root()`
-/// from the cwd took no lock at all, so it could still land inside a scratch tree mid-chdir.
-/// Measured 2026-09-05 in the wave 248 gate, `test xtask+tbd-tools`:
-/// `world_parity_world_column_clears_its_floor_when_the_dem_is_present` failed NotFound on a
-/// committed fixture, 3/4 runs in the gate's cold target dir and never in isolation.
+/// The module doc above states the rule ("every test that moves it must hold ONE lock"), and it
+/// binds readers too: a fixture helper resolving `find_repo_root()` from the cwd without the lock
+/// can land inside a scratch tree mid-chdir and fail NotFound on a committed fixture — a race that
+/// shows up in a cold shared target dir and never in isolation.
 ///
 /// Resolve UNDER the lock and keep the absolute path: the answer stays valid after the lock
 /// is released, so readers hold it for a path walk and nothing longer. Callers must not

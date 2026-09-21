@@ -19,7 +19,7 @@ fn database_name_from_url_parses_ascii_path() {
 }
 
 #[test]
-fn safe_scratch_allow_list_matches_t381() {
+fn safe_scratch_allow_list_admits_scratch_names_and_refuses_the_live_database() {
     assert!(is_safe_scratch_database_name("rust_it"));
     assert!(is_safe_scratch_database_name("tbd_gate_it"));
     assert!(is_safe_scratch_database_name("tbd_wave6_cold"));

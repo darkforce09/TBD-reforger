@@ -15,7 +15,10 @@ use super::catalog_emit;
 use super::classify::Classifier;
 use super::forest_smoothing;
 use super::json_number_formatting::{js_num, round2};
-use super::topo::{TOPO_AIRFIELD, TOPO_RIVER, TOPO_ROAD_A, TOPO_ROAD_B, TOPO_STREAM, decode_topo};
+use super::topo::{
+    TOPO_AIRFIELD, TOPO_FARM_TRACK, TOPO_GRAVEL_COUNTRY_ROAD, TOPO_MAIN_HIGHWAY,
+    TOPO_SECONDARY_ASPHALT, decode_topo,
+};
 use crate::browser_testing::server::repo_root;
 use crate::enfusion_pak::PakVfs;
 use crate::world_export_pipeline::forest_contours as forest;

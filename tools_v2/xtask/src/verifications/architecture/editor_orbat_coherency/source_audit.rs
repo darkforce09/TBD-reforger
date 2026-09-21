@@ -1,30 +1,29 @@
 use super::*;
 
-pub fn verify_t180(repo_root: &Path) -> Result<u8> {
-    // bash's `fail()` exits 1 on the spot under `set -e`: the first failure ends the run, and both
-    // halves below keep the script's order.
+pub fn verify_editor_orbat_coherency(repo_root: &Path) -> Result<u8> {
+    // Fail-fast: the first failure ends the run, and the two halves below keep their order.
     if let Err(msg) = static_checks(repo_root) {
         return Ok(fail(&msg));
     }
     if let Err(msg) = cargo_checks(repo_root) {
         return Ok(fail(&msg));
     }
-    println!("verify-t180: ALL PASS");
+    println!("editor-orbat-coherency: ALL PASS");
     Ok(0)
 }
 
-/// bash `ok()` — stdout.
+/// An `ok` line — stdout.
 pub(super) fn ok(msg: &str) {
-    println!("verify-t180 OK: {msg}");
+    println!("editor-orbat-coherency OK: {msg}");
 }
 
-/// bash `fail()` — stderr, then `exit 1`. Stdout is flushed first: it is a `LineWriter` so the
-/// order already holds, but every caller merges the two streams with `2>&1` and the diff contract
-/// should not rest on a buffering policy.
+/// A `FAIL` line — stderr, then exit 1. Stdout is flushed first: it is a `LineWriter` so the
+/// order already holds, but every caller merges the two streams and the output contract should
+/// not rest on a buffering policy.
 pub(super) fn fail(msg: &str) -> u8 {
     let _ = std::io::stdout().flush();
-    eprintln!("verify-t180 FAIL: {msg}");
-    1 // Verdict::into_exit_legacy_binary()'s code, chosen deliberately — see the module docs.
+    eprintln!("editor-orbat-coherency FAIL: {msg}");
+    1 // Verdict::into_binary_exit_code()'s code, chosen deliberately — see the module docs.
 }
 
 pub(super) fn static_checks(root: &Path) -> Result<(), String> {
@@ -33,7 +32,7 @@ pub(super) fn static_checks(root: &Path) -> Result<(), String> {
         let refs: Vec<&Path> = files.iter().map(|p| p.as_path()).collect();
         match pattern(pat, *ci) {
             Some(p) => translate(gate::ban(msg, &p, &refs), msg, root, Kind::Ban)?,
-            // A pattern this file cannot compile is bash's `grep -E` rejecting it: exit 2.
+            // A pattern this file cannot compile is reported the way a matcher error is: 2.
             None => return Err(tool_status(msg, 2)),
         }
         ok(ok_line);
@@ -60,13 +59,13 @@ pub(super) fn pattern(pat: &str, ci: bool) -> Option<Pattern> {
     }
 }
 
-/// Render a [`Verdict`] as the line bash printed for the same input. Exhaustive on purpose:
+/// Render a [`Verdict`] as the operator-facing line for that input. Exhaustive on purpose:
 /// [`Verdict`] has no `bool` conversion, so "did not run" cannot be folded into "passed" here by
 /// accident, and a new `NotRun` variant in the library breaks this arm rather than going green.
 pub(super) fn translate(v: Verdict, msg: &str, root: &Path, kind: Kind) -> Result<(), String> {
     match v {
         Verdict::Held => Ok(()),
-        // bash: `fail "$msg"` — the bare message, for a violated ban and an absent pin alike.
+        // The bare message, for a violated ban and an absent pin alike.
         Verdict::Failed(_) => Err(msg.to_string()),
         Verdict::DidNotRun(NotRun::TargetMissing(p), _) => {
             let path = p.strip_prefix(root).unwrap_or(&p).display();
@@ -76,9 +75,9 @@ pub(super) fn translate(v: Verdict, msg: &str, root: &Path, kind: Kind) -> Resul
             };
             Err(format!("{msg} — target file missing: {path}. {why}"))
         }
-        // All the library can otherwise report here is a file that exists and could not be read —
-        // exactly the input on which `grep -E` errors and exits 2. `ToolAbsent` is unreachable now:
-        // the matcher is compiled in, which is the T-620 class retired rather than asserted.
+        // All the library can otherwise report here is a file that exists and could not be read,
+        // which is a matcher error: 2. `ToolAbsent` is unreachable — the matcher is compiled in,
+        // so that failure class is retired rather than asserted against.
         Verdict::DidNotRun(..) => Err(tool_status(msg, 2)),
     }
 }
@@ -91,8 +90,8 @@ pub(super) fn tool_status(msg: &str, status: i32) -> String {
 }
 
 pub(super) fn cargo_checks(root: &Path) -> Result<(), String> {
-    // bash: `export PATH="${HOME}/.cargo/bin:${PATH}"`. Kept because the cargo half runs only on
-    // the host, where cargo is a rustup shim under $HOME rather than on a system PATH.
+    // `$HOME/.cargo/bin` is prepended because the cargo half runs only on the host, where cargo
+    // is a rustup shim under $HOME rather than on a system PATH.
     let inherited = std::env::var("PATH").unwrap_or_default();
     let path = match std::env::var("HOME") {
         Ok(home) => format!("{home}/.cargo/bin:{inherited}"),
@@ -115,8 +114,8 @@ pub(super) fn cargo_checks(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// bash's `$*` inside `fail` — the pin's arguments joined by a space, quoting lost, so
-/// `--features "doc mission"` renders as `--features doc mission`.
+/// The pin's arguments joined by a space, quoting dropped, so `--features "scenario store"`
+/// renders as `--features scenario store`.
 pub(super) fn shown(args: &[&str]) -> String {
     args[1..].join(" ")
 }
@@ -132,9 +131,8 @@ pub(super) fn cargo_test_pin(root: &Path, path_env: &str, args: &[&str]) -> Resu
         .env("PATH", path_env);
     match run.merged_output() {
         Ok(verification_core::proc::Merged { code, text, .. }) => {
-            // bash: `printf '%s\n' "$out"`, where `$(…)` has already stripped EVERY trailing
-            // newline. That is why libtest's blank line after `test result:` never appears between
-            // two pins in the log — load-bearing for the diff, not cosmetic.
+            // EVERY trailing newline is stripped, which is why libtest's blank line after
+            // `test result:` never appears between two pins in the log.
             println!("{}", text.trim_end_matches('\n'));
             classify(&label, code, &text)
         }
@@ -142,16 +140,15 @@ pub(super) fn cargo_test_pin(root: &Path, path_env: &str, args: &[&str]) -> Resu
     }
 }
 
-/// The two deliberate deviations from bash, both unreachable while cargo runs at all.
+/// Names the two states a single "exited N" line would misreport, both unreachable while cargo
+/// runs at all.
 ///
-/// bash captured `out="$(cargo test … 2>&1)" || status=$?` and reported every non-zero status the
-/// same way: `cargo test … exited N`. That is wrong twice over. **A child killed by SIGKILL has no
-/// exit code** — the shell synthesises 128+n and the `case` arm reads 137 as an ordinary numeric
-/// failure, so under parallel worktrees "the OOM killer shot the gate" was reported as "the gate
-/// found a problem"; and an absent cargo produced `exited 127`, the exact sentence the T-216 header
-/// spends thirty lines explaining is a lie. Both are named here instead. The exit status is still
-/// 1, so `cargo xtask verify t180` behaves identically; only the text differs, on inputs bash misdescribed.
-/// Exhaustive: a new `NotRun` variant is a compile error, not a silent default.
+/// **A child killed by SIGKILL has no exit code**: reporting a synthesised 128+n as an ordinary
+/// numeric failure turns "the OOM killer shot the gate" into "the gate found a problem". And an
+/// absent cargo reported as `exited 127` is the same tool-absent lie this gate exists to refuse.
+/// Both are named causes here. The exit status is still 1, so callers behave identically; only
+/// the text differs, on the inputs a bare status misdescribes. Exhaustive: a new `NotRun` variant
+/// is a compile error, not a silent default.
 pub(super) fn not_run_clause(cause: &NotRun) -> String {
     let tail = "Refusing to report OK on a check that did not execute.";
     match cause {
@@ -172,15 +169,15 @@ pub(super) fn not_run_clause(cause: &NotRun) -> String {
 
 /// The three `cargo_test_pin` verdicts, as a pure function of what cargo returned.
 ///
-/// Split from the spawn so the T-424 arms are testable without a two-minute build — the whole point
-/// of the wrapper is the case where cargo exits **0**, and a test that had to compile
-/// map-engine-core to reach it would not get written.
+/// Split from the spawn so its arms are testable without a two-minute build — the whole point of
+/// the wrapper is the case where cargo exits **0**, and a test that had to compile the map engine
+/// to reach it would not get written.
 pub(super) fn classify(label: &str, status: i32, out: &str) -> Result<(), String> {
     if status != 0 {
         return Err(format!("cargo test {label} exited {status}"));
     }
-    // bash used sed+awk, not grep, "so pipefail cannot abort before we classify: no result line and
-    // '0 passed' are different failures and both must be loud." They stay separate here.
+    // "No result line" and "0 passed" are different failures and both must be loud, so they are
+    // classified separately.
     let counts = passed_counts(out);
     if counts.is_empty() {
         return Err(format!(
@@ -197,12 +194,10 @@ pub(super) fn classify(label: &str, status: i32, out: &str) -> Result<(), String
     Ok(())
 }
 
-/// Port of `sed -n 's/.*test result:.* \([0-9][0-9]*\) passed.*/\1/p'` — one entry per matching
-/// LINE, because bash counted the lines with `wc -l` and summed them with `awk` and the two counts
-/// answer different questions. `regex::Regex` rather than [`Pattern`]: this is a parse needing a
-/// capture group, not a gate, and the per-line loop makes `multi_line` moot. The leading `.*` is
-/// greedy in both engines, so a line carrying two `N passed` yields the LAST — reproduced, not
-/// tidied away.
+/// One entry per matching LINE: how many result lines there are and how many tests they sum to
+/// answer different questions, and both are used. `regex::Regex` rather than [`Pattern`]: this is
+/// a parse needing a capture group, not a gate, and the per-line loop makes `multi_line` moot.
+/// The leading `.*` is greedy, so a line carrying two `N passed` yields the LAST.
 pub(super) fn passed_counts(out: &str) -> Vec<u64> {
     let re = Regex::new(r"test result:.* ([0-9][0-9]*) passed").expect("literal pattern compiles");
     out.lines()

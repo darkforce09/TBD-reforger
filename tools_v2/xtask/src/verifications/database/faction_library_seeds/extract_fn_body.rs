@@ -1,14 +1,13 @@
 use super::*;
 
-/// The `{ … }` body of a shell function, by brace counting.
+/// The `{ … }` body of a function, by brace counting.
 ///
 /// The one place a raw [`regex::Regex`] is used instead of [`Pattern`]: this needs the match
 /// *offset*, and `Pattern` deliberately exposes only `is_match`. `(?m)^name\(\)` is a line anchor,
 /// which is what `Pattern` builds with anyway.
 ///
-/// Brace counting ignores quotes and heredocs, exactly as the script did. In `wave.sh` that holds
-/// because its function bodies are balanced; a `"}"` inside a string would truncate the body early,
-/// which fails CLOSED — a shorter body cannot contain the invocation.
+/// Brace counting ignores quotes: a `"}"` inside a string would truncate the body early, which
+/// fails CLOSED — a shorter body cannot contain the invocation.
 pub(super) fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Result<Option<&'a str>> {
     let opener = regex::Regex::new(&format!(
         r"(?m)^(?:pub\s+)?fn {}\s*\(",
@@ -17,7 +16,7 @@ pub(super) fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Result<Option<
     let Some(m) = opener.find(src) else {
         return Ok(None);
     };
-    // T-902: rust `pub fn name(` — signature may span lines (`-> u8 {`). Find the body brace.
+    // A signature may span lines (`-> u8 {`), so find the body brace after the `fn name(` match.
     let Some(brace) = src[m.start()..].find('{') else {
         return Ok(None);
     };
@@ -61,19 +60,20 @@ pub(super) fn borrow<'a>(seeds: &'a [&'static str]) -> Vec<&'a str> {
     seeds.to_vec()
 }
 
-/// Delete the VERIFY_STEPS t440 row. T-902: one shared table, so zero copies remain.
+/// Delete the faction-library-seeds row from VERIFY_STEPS. One shared table, so zero copies
+/// remain afterwards.
 ///
 /// The count check is the arm's own integrity test: if the row is still present, nothing was
 /// actually removed; if it was never present, the proof would pass for the wrong reason.
 pub(super) fn delete_first_wave_run(wave: &str) -> Option<String> {
     let Some(idx) = wave.find(WAVE_RUN_LINE) else {
-        eprintln!("RED3 setup failed: gate.rs T-440 VERIFY_STEPS row not found");
+        eprintln!("RED3 setup failed: gate.rs VERIFY_STEPS row not found");
         return None;
     };
     let out = format!("{}{}", &wave[..idx], &wave[idx + WAVE_RUN_LINE.len()..]);
     let left = out.matches(WAVE_RUN_LINE).count();
     if left != 0 {
-        eprintln!("RED3 setup failed: expected 0 remaining t440 rows, got {left}");
+        eprintln!("RED3 setup failed: expected 0 remaining rows, got {left}");
         return None;
     }
     Some(out)
@@ -90,7 +90,7 @@ pub(super) fn red(passed: bool, still_passed: &str, expected: &str, failed: &mut
     }
 }
 
-/// bash's `FAIL: missing $PATH` + a six-space hint, with a typed cause behind it.
+/// A `missing <path>` headline plus a six-space hint, with a typed cause behind it.
 pub(super) fn missing(path: &Path, hint: String) -> Verdict {
     Verdict::DidNotRun(
         NotRun::TargetMissing(path.to_path_buf()),
@@ -104,7 +104,7 @@ pub(super) fn missing(path: &Path, hint: String) -> Verdict {
 /// Print an unlabelled verdict (the pre-flights) and return the script's `exit 1`.
 pub(super) fn emit(verdict: Verdict) -> u8 {
     println!("{verdict}");
-    u8::try_from(verdict.into_exit_legacy_binary()).unwrap_or(1)
+    u8::try_from(verdict.into_binary_exit_code()).unwrap_or(1)
 }
 
 /// Print a verdict in the heredoc's labelled form: `FAIL (label): headline`, then six-space detail.

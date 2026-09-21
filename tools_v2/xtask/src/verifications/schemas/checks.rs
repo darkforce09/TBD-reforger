@@ -298,7 +298,7 @@ mod object_type_inventory;
 pub use object_type_inventory::type_inventory;
 
 mod specification_consistency;
-pub use specification_consistency::t090_specs;
+pub use specification_consistency::specification_consistency;
 
 mod kit_registry_references;
 use kit_registry_references::dangling_kits;

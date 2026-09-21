@@ -4,7 +4,7 @@ use super::*;
 pub fn run(args: &[String]) -> Result<u8> {
     match parse_args(args) {
         Err(a) => {
-            eprintln!("compile.sh: unknown arg '{a}'");
+            eprintln!("mod compile: unknown arg '{a}'");
             Ok(2)
         }
         Ok(Parse::Help) => {
@@ -143,7 +143,7 @@ pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
     if let Some(probe) = &opts.probe_dir
         && !probe.is_dir()
     {
-        eprintln!("compile.sh: --probe dir not found: {}", probe.display());
+        eprintln!("mod compile: --probe dir not found: {}", probe.display());
         return 2;
     }
 
@@ -155,7 +155,7 @@ pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
     let run_dir = match mktemp_dir("tbd-compile") {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("compile.sh: could not create run dir: {e}");
+            eprintln!("mod compile: could not create run dir: {e}");
             return 2;
         }
     };
@@ -164,7 +164,7 @@ pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
     let code = match compile_inner(root, &mod_src, &server_dir, &run_dir, opts, max_wait) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("compile.sh: internal error: {e}");
+            eprintln!("mod compile: internal error: {e}");
             2
         }
     };
@@ -210,7 +210,7 @@ pub(super) fn compile_inner(
             .collect();
         cs.sort();
         if cs.is_empty() {
-            eprintln!("compile.sh: no .c files in {}", probe.display());
+            eprintln!("mod compile: no .c files in {}", probe.display());
             return Ok(2);
         }
         let pd = run_dir.join("addons/tbd-probe");

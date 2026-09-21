@@ -1,33 +1,27 @@
-//! Comment-contract gates for the Enfusion mod (T-853 port of the `verify-t*-*-comments.sh`
-//! family; T-452 first).
+//! Comment contract: `TBD_PlayerIdentity` must not claim `#tbd link` is unimplemented.
 //!
-//! ── WHAT THESE GATES ARE ─────────────────────────────────────────────────────────────────────
+//! ── WHAT THIS GATE IS ────────────────────────────────────────────────────────────────────────
 //!
 //! A doc comment that describes shipped behaviour as unimplemented is a lie that costs the next
-//! reader a wasted investigation. T-452 fixed one in `TBD_PlayerIdentity.c` (it still claimed
-//! `#tbd link` was future T-181.35 work after T-181.35 shipped), and T-296 fixed the same lie in
-//! `ResultsReporter`. These gates are the perturbation guards that stop the lie coming back:
+//! reader a wasted investigation, and invites someone to "implement" a thing that already exists.
+//! `#tbd link` ships; this gate is the perturbation guard that stops the old claim coming back —
 //! a set of **bans** on the retired phrasings and a set of **truth pins** a rewrite must not drop.
+//! [`crate::verifications::mod_scripts::results_reporter_identity_comments`] is its sibling: same
+//! shape, different file, different lies.
 //!
-//! ── WHY THE SCRIPT SELF-PROVES, AND WHY THE PORT KEEPS THAT ──────────────────────────────────
+//! ── THE GATE PROVES IT CAN STILL FAIL ────────────────────────────────────────────────────────
 //!
-//! T-556 found this script dead AND broken: three bans in the `if rg …; then FAIL=1; fi` shape,
-//! with `rg` installed nowhere, so each ban "reported clean having compared nothing". The repair
-//! was not just to fix the search — it was to make the gate prove it can still fail. Every ban is
+//! A ban written as `if <search> PATTERN FILE; then fail; fi` reports clean when the search tool
+//! is absent, having compared nothing. Here the matcher is compiled in
+//! ([`verification_core::Pattern`]) so that state is unreachable, and on top of that every ban is
 //! re-run against a copy of the file with the lie reintroduced, and every pin against a copy with
-//! the pin deleted; if a perturbed copy still passes, the gate is not discriminating and that is
-//! itself a failure.
+//! the pin deleted. If a perturbed copy still passes, the gate is not discriminating and that is
+//! itself a failure. The printed RED/GREEN proof lines are the operator's evidence of teeth.
 //!
-//! That discipline is the whole reason this file is worth porting rather than deleting, so it is
-//! preserved exactly — including the printed RED/GREEN proof lines, which are the operator's
-//! evidence that the gate has teeth.
-//!
-//! One thing does improve. Bash had to `mktemp` a perturbed copy for each of the seven
-//! perturbations and `trap` the cleanup. Here the source is a `String` and the perturbations are
-//! string operations, so there are no temp files to leak, nothing to trap, and no chance of a
-//! perturbation escaping into the working tree. `assert_contract` takes `&str`, so the live file
-//! and a perturbed copy go through the identical code path — which is what makes the RED proof
-//! meaningful in the first place.
+//! Perturbations are string operations on a `String`, so there are no temp files to leak and no
+//! way for one to escape into the working tree. `assert_contract` takes `&str`, so the live file
+//! and a perturbed copy travel the identical code path — which is what makes a RED proof mean
+//! anything.
 
 use std::path::Path;
 
@@ -36,7 +30,7 @@ use verification_core::{Pattern, Verdict, gate};
 
 /// The retired phrasings. Each is banned, and each is re-introduced once as a RED proof.
 ///
-/// `(pattern, is_literal, message)` — mirroring bash's `-F` flag per ban.
+/// `(pattern, is_literal, message)` — `is_literal` picks [`Pattern::literal`] over a regex.
 type Ban = (&'static str, bool, &'static str);
 
 const BANS: &[Ban] = &[
@@ -46,7 +40,7 @@ const BANS: &[Ban] = &[
         "PlayerIdentity still claims the mod does not implement link-confirm",
     ),
     // The em dash and [[:space:]] class mean the same thing to the regex crate as they did in
-    // ERE; the pattern is byte-for-byte the one T-452 shipped.
+    // A regex: the alternation is what makes both phrasings of the retired claim one ban.
     (
         r"does not implement it yet[[:space:]]*—[[:space:]]*that is T-181\.35|that is T-181\.35",
         false,
@@ -67,7 +61,7 @@ const PINS: &[&str] = &[
     "ENGINE-resolved identity is still not a LINKED one",
 ];
 
-/// The exact lie text reintroduced for each RED proof, in bash's order.
+/// The exact lie text reintroduced for each RED proof, in ban order.
 ///
 /// Deliberately NOT the ban patterns themselves: ban 2 is a regex alternation and ban 3 is a
 /// prefix, so the perturbation has to be a sentence a human might actually write.
@@ -78,7 +72,7 @@ const LIES: &[&str] = &[
 ];
 
 const TARGET: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_PlayerIdentity.c";
-const LABEL: &str = "verify-t452-player-identity-link-comments";
+const LABEL: &str = "player-identity-comments";
 
 /// Every ban and every pin, against one in-memory source. `Ok(())` when the contract holds.
 fn assert_contract(src: &str, label: &str) -> Result<Vec<Verdict>> {
@@ -107,7 +101,7 @@ fn assert_contract(src: &str, label: &str) -> Result<Vec<Verdict>> {
     Ok(broken)
 }
 
-pub fn verify_t452(repo_root: &Path) -> Result<u8> {
+pub fn verify_player_identity_comments(repo_root: &Path) -> Result<u8> {
     let file = repo_root.join(TARGET);
     let Ok(src) = std::fs::read_to_string(&file) else {
         println!("FAIL: missing {}", file.display());
@@ -134,7 +128,7 @@ pub fn verify_t452(repo_root: &Path) -> Result<u8> {
 
     // ── RED 4..7: each truth pin, removed one at a time ──────────────────────────────────────
     for pin in PINS {
-        // bash: `grep -vF -- "$pin" "$FILE"` — drop every line containing the pin.
+        // Drop every line containing the pin.
         let perturbed: String = src
             .lines()
             .filter(|l| !l.contains(pin))
@@ -148,9 +142,9 @@ pub fn verify_t452(repo_root: &Path) -> Result<u8> {
         }
     }
 
-    // The live file must still pass afterwards. In bash this guarded against a perturbation
-    // escaping into $FILE; here perturbations are Strings and cannot, but the assertion is kept
-    // because it also catches a bug in assert_contract itself being order-dependent.
+    // The live file must still pass afterwards. Perturbations are Strings and cannot escape into
+    // the file, but the assertion is kept because it also catches `assert_contract` itself being
+    // order-dependent.
     let after = assert_contract(&src, "live-restore")?;
     if after.is_empty() {
         println!("GREEN proof: live PlayerIdentity — no lies, all truth pins present → PASS");

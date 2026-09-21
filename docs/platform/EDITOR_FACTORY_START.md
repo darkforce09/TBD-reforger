@@ -127,7 +127,7 @@ file inside them has.
 The recurring defect in this codebase is **a tool reporting success over an input it never actually
 examined**. This program found it three more times in the wild: FNF's mission validator runs 14 of
 its 27 checks and has not verified that objectives exist for years; WOG's slot tagger has a regex
-that may never match; `cargo xtask verify t180` stayed green while six authored values were silently
+that may never match; `cargo xtask verify editor-orbat-coherency` stayed green while six authored values were silently
 dropped at compile.
 
 Treat any green you did not watch fail first as unproven. Every validation ticket in this program

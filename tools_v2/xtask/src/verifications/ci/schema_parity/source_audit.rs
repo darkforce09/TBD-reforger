@@ -4,7 +4,7 @@ pub(super) use crate::verifications::architecture::wave_gate_sources::WAVE_CHILD
 use crate::verifications::architecture::wave_gate_sources::wave_children_are_linked;
 
 /// Checks the CI recipe and both linked wave gate implementations, failing on unreadable inputs.
-pub fn verify_t468(repo_root: &Path) -> Result<u8> {
+pub fn verify_ci_schema_parity(repo_root: &Path) -> Result<u8> {
     let ci_path = repo_root.join(CI_REL);
     if !ci_path.is_file() {
         println!("FAIL: missing {}", ci_path.display());
@@ -38,10 +38,10 @@ pub fn verify_t468(repo_root: &Path) -> Result<u8> {
 
     let fail = run_pins(&src, Some(&wave));
     if fail != 0 {
-        println!("verify-t468-ci-schema-parity: FAIL");
+        println!("ci-schema-parity: FAIL");
         return Ok(1);
     }
-    println!("verify-t468-ci-schema-parity: PASS");
+    println!("ci-schema-parity: PASS");
     Ok(0)
 }
 
@@ -60,7 +60,7 @@ fn read_wave_source(path: &Path) -> Option<String> {
     }
 }
 
-/// Port of the Python pin block. Returns `0` when clean, `1` when any pin failed.
+/// Runs every pin. Returns `0` when clean, `1` when any pin failed.
 pub(super) fn run_pins(ci_src: &str, wave: Option<&str>) -> i32 {
     let stripped = strip_yaml_hash_comments(ci_src);
     let lines: Vec<&str> = stripped.lines().collect();
@@ -119,7 +119,7 @@ pub(super) fn run_pins(ci_src: &str, wave: Option<&str>) -> i32 {
         for r in &runs {
             println!("        - {r}");
         }
-        println!("      Pre-T-434 hole: validate + citations alone misses map-object-enums.");
+        println!("      validate + citations alone misses map-object-enums.");
         fail = 1;
     }
 
@@ -144,7 +144,7 @@ pub(super) fn run_pins(ci_src: &str, wave: Option<&str>) -> i32 {
 
     match wave {
         None => {
-            println!("FAIL: missing {WAVE_REL} (T-456/T-468 dual-path pin vacuous)");
+            println!("FAIL: missing {WAVE_REL} (the dual-path pin would be vacuous)");
             fail = 1;
         }
         Some(w) => {
@@ -166,16 +166,15 @@ pub(super) fn ci_run_is_good(run: &str) -> bool {
     normalised == GOOD_RUN || normalised == "cargo run -q -p xtask -- ci ci-local-schema"
 }
 
-/// THE RECIPE-BODY PINS, post-T-897 (see module docs for the before/after table).
+/// THE TASK-BODY PINS (see module docs for the table of subjects).
 ///
-/// Reads [`crate::commands::ci::task_runner::TASKS`] in-process. That is not a weaker subject than reading a file: the table
-/// is what `cargo xtask ci` executes, so hollowing it is the only way to hollow the tasks, and a
-/// hollowed row fails here. The old Makefile pins could only ever check TEXT that make happened
-/// to run; these check the thing that runs.
+/// Reads [`crate::commands::ci::task_runner::TASKS`] in-process. That is a stronger subject than a
+/// text file: the table is what `cargo xtask ci` executes, so hollowing it is the only way to
+/// hollow the tasks, and a hollowed row fails here.
 pub(super) fn task_pins() -> i32 {
     let mut fail = 0;
 
-    // Pin 1 — `ci-local-schema` must delegate to both halves of the T-434 set.
+    // Pin 1 — `ci-local-schema` must delegate to both halves of the schema set.
     match crate::commands::ci::task_runner::find("ci-local-schema") {
         None => {
             println!("FAIL: mk_ci::TASKS missing `ci-local-schema` (the CI pin would be vacuous)");
@@ -192,7 +191,7 @@ pub(super) fn task_pins() -> i32 {
             if missing.is_empty() {
             } else {
                 println!(
-                    "FAIL: `ci-local-schema` must invoke: {} (T-472: real Step::Task rows, \
+                    "FAIL: `ci-local-schema` must invoke: {} (real Step::Task rows, \
                      not an echo and not a comment)",
                     missing.join(", ")
                 );
@@ -205,26 +204,28 @@ pub(super) fn task_pins() -> i32 {
         }
     }
 
-    // Pin 2 — `verify-t456` must still carry the cargo verify call.
-    match crate::commands::ci::task_runner::find("verify-t456") {
+    // Pin 2 — `verify-mission-rest-size-limits` must still carry the cargo verify call.
+    match crate::commands::ci::task_runner::find("verify-mission-rest-size-limits") {
         None => {
-            println!("FAIL: mk_ci::TASKS missing `verify-t456` (T-467/T-476 pin vacuous)");
+            println!(
+                "FAIL: TASKS missing `verify-mission-rest-size-limits` (the pin would be vacuous)"
+            );
             fail = 1;
         }
         Some(t) => {
-            if !t
-                .steps
-                .iter()
-                .any(|s| crate::commands::ci::task_runner::step_echo(s) == Some(TASK_ECHO_T456))
-            {
-                println!("FAIL: `verify-t456` must invoke: {TASK_ECHO_T456}");
+            if !t.steps.iter().any(|s| {
+                crate::commands::ci::task_runner::step_echo(s)
+                    == Some(TASK_ECHO_MISSION_REST_SIZE_LIMITS)
+            }) {
+                println!(
+                    "FAIL: `verify-mission-rest-size-limits` must invoke: \
+                     {TASK_ECHO_MISSION_REST_SIZE_LIMITS}"
+                );
                 println!("      found steps:");
                 for s in t.steps {
                     println!("        {}", describe_step(s));
                 }
-                println!(
-                    "      T-476/T-486: exact echo, not a hollow Step::Cmd/echo and not a rename."
-                );
+                println!("      exact echo, not a hollow Step::Cmd and not a rename.");
                 fail = 1;
             }
         }
@@ -232,31 +233,31 @@ pub(super) fn task_pins() -> i32 {
 
     // Pin 3 — THE SELF-PIN. `ci-local` must reach this gate DIRECTLY.
     //
-    // T-489/T-881 circularity: routing t468 through a `Step::Task("verify-t468")` would let a
-    // hollowed dispatcher green the very tripwire that polices dispatch. So the row must carry an
-    // echoing step, and there must be no `verify-t468` task for anyone to reach instead.
+    // Routing this gate through a `Step::Task("verify-ci-schema-parity")` would let a hollowed
+    // dispatcher green the very tripwire that polices dispatch. So the row must carry an echoing
+    // step, and there must be no `verify-ci-schema-parity` task for anyone to reach instead.
     match crate::commands::ci::task_runner::find("ci-local") {
         None => {
-            println!("FAIL: mk_ci::TASKS missing `ci-local` (T-486 self-pin vacuous)");
+            println!("FAIL: TASKS missing `ci-local` (the self-pin would be vacuous)");
             fail = 1;
         }
         Some(t) => {
-            if !t
-                .steps
-                .iter()
-                .any(|s| crate::commands::ci::task_runner::step_echo(s) == Some(TASK_ECHO_T468))
-            {
-                println!("FAIL: `ci-local` must invoke `{TASK_ECHO_T468}` directly (T-486/T-489)");
+            if !t.steps.iter().any(|s| {
+                crate::commands::ci::task_runner::step_echo(s) == Some(TASK_ECHO_CI_SCHEMA_PARITY)
+            }) {
+                println!("FAIL: `ci-local` must invoke `{TASK_ECHO_CI_SCHEMA_PARITY}` directly");
                 println!("      found steps:");
                 for s in t.steps {
                     println!("        {}", describe_step(s));
                 }
                 fail = 1;
             }
-            if crate::commands::ci::task_runner::invoked_tasks(t).contains(&"verify-t468") {
+            if crate::commands::ci::task_runner::invoked_tasks(t)
+                .contains(&"verify-ci-schema-parity")
+            {
                 println!(
-                    "FAIL: `ci-local` reaches t468 through Step::Task(\"verify-t468\") — the \
-                     T-489 circularity is back"
+                    "FAIL: `ci-local` reaches this gate through \
+                     Step::Task(\"verify-ci-schema-parity\") — the circularity is back"
                 );
                 println!(
                     "      A hollowed dispatch table would then green the gate that polices it."
@@ -265,9 +266,9 @@ pub(super) fn task_pins() -> i32 {
             }
         }
     }
-    if crate::commands::ci::task_runner::find("verify-t468").is_some() {
+    if crate::commands::ci::task_runner::find("verify-ci-schema-parity").is_some() {
         println!(
-            "FAIL: mk_ci::TASKS grew a `verify-t468` row — T-489 requires t468 stay off the \
+            "FAIL: TASKS grew a `verify-ci-schema-parity` row — this gate stays off the \
              dispatch table it polices"
         );
         fail = 1;
@@ -276,8 +277,9 @@ pub(super) fn task_pins() -> i32 {
     fail
 }
 
-/// One [`crate::commands::ci::task_runner::Step`] in the evidence dump. the wave driver tails 15 lines of a failed gate, so the
-/// operator has to be able to see WHICH step was mistaken for an invocation.
+/// One [`crate::commands::ci::task_runner::Step`] in the evidence dump. The wave driver shows the
+/// last 15 lines of a failed gate, so the operator has to be able to see WHICH step was mistaken
+/// for an invocation.
 pub(super) fn describe_step(s: &crate::commands::ci::task_runner::Step) -> String {
     match crate::commands::ci::task_runner::step_echo(s) {
         Some(echo) => format!("'{}'", py_repr_ascii(echo)),
@@ -288,14 +290,17 @@ pub(super) fn describe_step(s: &crate::commands::ci::task_runner::Step) -> Strin
     }
 }
 
-/// Pin rust `gate_slice` + `cmd_gate` to VERIFY_STEPS rows + checkrun argv for t456/t468
-/// (gate_t440 dual-path discipline). Hollow `r.run(label, || 0)` must fail.
+/// Pin `gate_slice` + `cmd_gate` to their VERIFY_STEPS rows and to the checkrun argv. A hollow
+/// `r.run(label, || 0)` must fail.
 pub(super) fn wave_pins(wave: &str) -> i32 {
     let stripped = strip_hash_comments(wave);
     let mut fail = 0;
-    for (ticket, row) in [("T-456", ROW_T456), ("T-468", ROW_T468)] {
+    for (gate, row) in [
+        ("mission-rest-size-limits", ROW_MISSION_REST_SIZE_LIMITS),
+        ("ci-schema-parity", ROW_CI_SCHEMA_PARITY),
+    ] {
         if !stripped.contains(row) {
-            println!("FAIL: gate.rs VERIFY_STEPS missing {ticket} row (dual-path pin)");
+            println!("FAIL: gate.rs VERIFY_STEPS missing the {gate} row (dual-path pin)");
             fail = 1;
         }
     }
@@ -307,7 +312,7 @@ pub(super) fn wave_pins(wave: &str) -> i32 {
         };
         if !body.contains(VERIFY_LOOP) {
             println!(
-                "FAIL: gate.rs `{name}()` ({role}) does not iterate VERIFY_STEPS                  (T-456/T-468 dual-path pin)"
+                "FAIL: gate.rs `{name}()` ({role}) does not iterate VERIFY_STEPS (dual-path pin)"
             );
             fail = 1;
         }
@@ -321,8 +326,7 @@ pub(super) fn wave_pins(wave: &str) -> i32 {
     fail
 }
 
-/// Strip `#` comments outside quotes — same discipline as gate_t440 so a commented
-/// `run "T-456 …"` cannot satisfy the pin.
+/// Strip `#` and `//` comments outside quotes, so a commented-out row cannot satisfy a pin.
 pub(super) fn strip_hash_comments(text: &str) -> String {
     let chars: Vec<char> = text.chars().collect();
     let n = chars.len();
@@ -385,7 +389,7 @@ pub(super) fn strip_hash_comments(text: &str) -> String {
     out
 }
 
-/// Brace-balanced `{ … }` body of a shell function (gate_t440 precedent).
+/// Brace-balanced `{ … }` body of the named function.
 pub(super) fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str> {
     let opener = Regex::new(&format!(
         r"(?m)^(?:pub\s+)?fn {}\s*\(",
@@ -393,7 +397,7 @@ pub(super) fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str
     ))
     .expect("fn opener");
     let m = opener.find(src)?;
-    // T-902: rust `pub fn name(` — signature may span lines (`-> u8 {`).
+    // A signature may span lines, so the opening brace is found after the `fn name(` match.
     let brace = src[m.start()..].find('{')?;
     let start = m.start() + brace;
     let mut depth = 0i32;
@@ -412,7 +416,7 @@ pub(super) fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str
     None
 }
 
-/// Python `!r` for the ASCII recipe lines this gate dumps (tab → `\t`, single quotes).
+/// Python-`repr`-style escaping for the ASCII step lines this gate dumps (tab → `\t`, quotes).
 pub(super) fn py_repr_ascii(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('\t', "\\t")

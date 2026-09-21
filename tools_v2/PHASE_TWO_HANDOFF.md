@@ -7,16 +7,17 @@ implemented here.
 ## Live ownership and compatibility
 
 - `developer-tools` is a workspace member at `tools_v2/developer-tools`; its Rust
-  import is `developer_tools`. The previous `tools/tbd-tools` crate is absent.
+  import is `developer_tools`. It is the only heavy tooling crate in the workspace.
 - The six binary names remain `enf`, `gate`, `mcpd`, `world`, `map`, and `capture`.
   Direct Cargo invocations select `-p developer-tools`. Existing `cargo xtask`
-  command names, including the `ci tbd-tools-test` task alias, remain unchanged.
+  command names remain unchanged apart from the library-test task, now
+  `ci developer-tools-test`.
 - `developer_tools::blueprint` owns the compiler, ingestion, parity reporting,
   profile discovery, and its test suite. Its command entry points receive the
   active repository path and return `anyhow::Result<u8>`.
 - `developer_tools::map_verification` owns object goldens, labels, terrain
   manifests, BLAS manifests, and world line-of-sight verification. The terrain
-  subsystem and its tests are extracted from the larger schema-gates module.
+  subsystem and its tests sit beside the other map verifications.
 - `xtask` delegates through `commands/map` and `verifications/map_assets`. It has
   no direct map-engine dependency, including test dependencies. Map-engine remains
   a transitive dependency through `developer-tools`.
@@ -115,5 +116,5 @@ also predates this refactor. These prevent claiming that the entire repository i
 green; they are not Phase 2 regressions.
 
 The initial working-tree snapshot, baseline and final test logs, command logs,
-fixture hashes, and dependency metadata are in `/tmp/tbd-tools-phase-two/` locally.
-This handoff retains the results independently of those temporary files.
+fixture hashes, and dependency metadata were captured in a session scratch
+directory. This handoff retains the results independently of those files.

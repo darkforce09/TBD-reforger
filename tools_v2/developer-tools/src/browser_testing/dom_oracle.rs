@@ -1,14 +1,13 @@
-//! T-165.5 — the V-suite verify/accept gate (port of `driver/gate_v_suite.mjs`).
+//! The browser-oracle verify and accept gate.
 //!
-//! Captures the normalized DOM (the injected dom.js serializer — see `inject.rs` provenance)
-//! plus a PNG for every leaf route and diffs against the frozen goldens under
-//! `tools_v2/developer-tools/fixtures/t159/oracle-freeze/`. `verify` is the permanent V regression gate
-//! (the React oracle is deleted); `accept` re-sources one route's golden from the current
-//! Leptos dist with a recorded note. `freeze` was retired at T-171: the React dist it captured
-//! from is gone, and `apps/website/frontend/dist` is the LIVE Leptos dist — a re-freeze would
-//! overwrite the non-regenerable React oracle.
+//! Captures the normalized DOM — through the serializer `fixture_injection` injects — plus a PNG
+//! for every leaf route, and diffs both against the frozen goldens under
+//! `tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze/`. `verify` is the regression gate;
+//! `accept` re-sources ONE route's golden from the current `apps/website/frontend/dist` with a
+//! recorded note. There is no whole-tree re-freeze: the goldens are not regenerable from any dist
+//! this repository still builds, so a bulk overwrite would destroy the oracle it exists to check.
 //!
-//! Readiness = the freeze.js clock + fixture-intercepted fetches, then a stability loop:
+//! Readiness = the injected clock freeze plus fixture-intercepted fetches, then a stability loop:
 //! serialize until two consecutive captures are byte-identical. Viewport pinned 1440×900.
 //! Exit 0 = all routes green; 1 = any diff/missing; 3 = driver error (mapped in the bin).
 
@@ -35,7 +34,7 @@ pub struct Route {
 }
 
 /// Floor on accept-mode DOM size (`js_len` / manifest `bytes`). Committed goldens are
-/// ≥ ~3.4 KB (`callback.dom.json`); the SPA-failure sentinel from `inject.rs` is the
+/// ≥ ~3.4 KB (`callback.dom.json`); the SPA-failure sentinel the serializer returns is the
 /// 4-char literal `"null"`. Floor sits well below any real page and well above that stub.
 pub const MIN_ACCEPT_DOM_JS_LEN: usize = 256;
 

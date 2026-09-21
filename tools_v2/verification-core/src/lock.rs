@@ -1,39 +1,29 @@
 //! The gate lock — `flock(2)`, with "I failed to lock" made unrepresentable.
 //!
-//! ── THE T-406 DEFECT THIS TYPE EXISTS TO PREVENT ─────────────────────────────────────────────
+//! ── THE DEFECT THIS TYPE EXISTS TO PREVENT ───────────────────────────────────────────────────
 //!
-//! `wave.sh` serialises its expensive steps on one lock file so that two worktrees cannot build
-//! into the same paths at once. The bash version tracks success in a separate variable:
+//! `cargo xtask platform wave` serialises its expensive steps on one lock file so that two
+//! worktrees cannot build into the same paths at once. Tracking that in a separate success flag —
+//! a variable the acquiring function sets to 1 when it believes it succeeded — is the same shape
+//! as a gate that reports OK over an input it never examined: a failed lock (a full disk, say)
+//! leaves the flag set and the gate runs unserialised.
 //!
-//! ```text
-//! GATE_LOCK_HELD=0        # set to 1 by take_gate_lock on success
-//! ```
+//! Here there is no flag. [`GateLock`] has a private field and no public constructor, so **the
+//! only way to hold one is to have acquired it**, and a function that needs serialisation takes
+//! `&GateLock` as an argument. Forgetting to check is not something the type system will compile.
 //!
-//! and `wave.sh`'s own header records what went wrong with that (line ~337):
+//! ── ONE PATH, RESOLVED AGAINST THE PRIMARY REPO ──────────────────────────────────────────────
 //!
-//! > It is closed by the flock, not by anything here — which means it was only ever as good as the
-//! > lock ACTUALLY being held, and before T-406 it was not: `take_gate_lock` returned 0 after
-//! > failing to lock, so on a full disk (252 MB free) this ran unserialised.
-//!
-//! A success flag set by the function that is supposed to succeed is the same shape as a gate that
-//! reports OK over an input it never examined. Here there is no flag. [`GateLock`] has a private
-//! field and no public constructor, so **the only way to hold one is to have acquired it**, and a
-//! function that needs serialisation takes `&GateLock` as an argument. Forgetting to check is not
-//! something the type system will compile.
-//!
-//! ── INTEROP WITH THE BASH GATE ───────────────────────────────────────────────────────────────
-//!
-//! During the Phase 6 overlap a half-ported factory *will* run both implementations. `flock(1)`
-//! and `flock(2)` are the same primitive, so a Rust gate and a bash gate contend correctly as long
-//! as they name the same path — [`GATE_LOCK_RELPATH`] is that path, and it is repo-relative for
-//! the same reason `wave.sh` derives it from `git rev-parse --git-common-dir`: every linked
-//! worktree must resolve it to the PRIMARY repo, or the lock serialises nothing.
+//! `flock(1)` and `flock(2)` are the same primitive, so any process that names the same path
+//! contends correctly. [`GATE_LOCK_RELPATH`] is that path, and it is repo-relative because every
+//! linked worktree must resolve it to the PRIMARY repo (`git rev-parse --git-common-dir`), or the
+//! lock serialises nothing.
 //!
 //! ── ON EXHAUSTION, REFUSE ────────────────────────────────────────────────────────────────────
 //!
-//! `GATE_LOCK_MAX` is 3600s and its bash comment is explicit: *"give up (REFUSE, never run
-//! unserialised)"*. [`flock_exclusive`] returns [`NotRun::Timeout`] — which is a `DidNotRun`, not
-//! a `Failed`, because a gate that could not serialise did not examine a tree anyone can name.
+//! [`DEFAULT_MAX`] is 3600s, and reaching it is a refusal, never an unserialised run.
+//! [`flock_exclusive`] returns [`NotRun::Timeout`] — a `DidNotRun`, not a `Failed`, because a gate
+//! that could not serialise did not examine a tree anyone can name.
 
 use std::fs::{File, OpenOptions};
 use std::os::fd::AsRawFd;
@@ -42,15 +32,15 @@ use std::time::{Duration, Instant};
 
 use crate::verdict::NotRun;
 
-/// Repo-relative path of the shared gate lock, matching `wave.sh`'s `GATE_LOCK` default.
+/// Repo-relative path of the shared gate lock. `TBD_GATE_LOCK` overrides it.
 ///
 /// Resolve it against the **primary** repo root (`git rev-parse --git-common-dir`), never against
 /// a linked worktree's own root — a per-worktree lock file serialises nothing.
-pub const GATE_LOCK_RELPATH: &str = "target/.tbd-gate.lock";
+pub const GATE_LOCK_RELPATH: &str = "target/.repository-verification.lock";
 
-/// `wave.sh`'s `GATE_LOCK_POLL` — heartbeat interval while blocked.
+/// Heartbeat interval while blocked; `TBD_GATE_LOCK_POLL` overrides it.
 pub const DEFAULT_POLL: Duration = Duration::from_secs(30);
-/// `wave.sh`'s `GATE_LOCK_MAX` — refuse after this long.
+/// Refuse after this long; `TBD_GATE_LOCK_MAX` overrides it.
 pub const DEFAULT_MAX: Duration = Duration::from_secs(3600);
 
 /// Proof that an exclusive lock is currently held.
@@ -75,7 +65,7 @@ impl GateLock {
 /// `poll` while it waits.
 ///
 /// A gate that blocks silently for minutes is indistinguishable from a hung one, and this program
-/// runs unattended — hence the heartbeat, which `wave.sh` also does and for the same reason.
+/// runs unattended — hence the heartbeat.
 pub fn flock_exclusive(
     path: &Path,
     poll: Duration,
@@ -118,7 +108,7 @@ pub fn flock_exclusive(
         match err.raw_os_error() {
             // Held by someone else — the one case worth waiting on.
             Some(libc::EWOULDBLOCK) => {}
-            // Anything else (EIO, ENOLCK on a full disk — the exact T-406 trigger) means the lock
+            // Anything else (EIO, or ENOLCK on a full disk) means the lock
             // was NOT taken. Never fall through to "proceed anyway".
             _ => {
                 return Err(NotRun::ToolError {
@@ -150,7 +140,10 @@ mod tests {
 
     fn tmp_lock(name: &str) -> std::path::PathBuf {
         let mut p = std::env::temp_dir();
-        p.push(format!("tbd-gate-lock-{}-{name}", std::process::id()));
+        p.push(format!(
+            "verification-core-lock-{}-{name}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&p);
         p
     }
@@ -178,7 +171,7 @@ mod tests {
         );
         match second {
             Err(NotRun::Timeout { .. }) => {}
-            Ok(_) => panic!("TWO HOLDERS AT ONCE — this is the T-406 defect"),
+            Ok(_) => panic!("TWO HOLDERS AT ONCE — the lock serialised nothing"),
             Err(other) => panic!("expected Timeout, got {other:?}"),
         }
         drop(first);
@@ -202,7 +195,7 @@ mod tests {
 
     #[test]
     fn exhaustion_is_did_not_run_never_a_pass() {
-        // wave.sh: "give up (REFUSE, never run unserialised)".
+        // Give up rather than run unserialised.
         let p = tmp_lock("refuse");
         let _held = flock_exclusive(&p, DEFAULT_POLL, Duration::from_secs(5), |_| {}).unwrap();
         let got = flock_exclusive(
@@ -237,15 +230,15 @@ mod tests {
     }
 
     #[test]
-    fn interops_with_the_flock_command_used_by_wave_sh() {
-        // The Phase 6 overlap runs bash and Rust gates simultaneously. If these two do not
+    fn interops_with_the_flock_command() {
+        // Any process naming this path must contend with this lock. If `flock(1)` and this do not
         // contend, both "serialise" against nothing and the whole lock is decorative.
         let p = tmp_lock("interop");
         if crate::proc::which("flock").is_err() {
             eprintln!("skip: flock(1) not installed");
             return;
         }
-        // Hold the lock from a bash process exactly as wave.sh does (fd 9 + flock 9).
+        // Hold the lock from a shell process the ordinary way (fd 9 + flock 9).
         let script = format!("exec 9>{}; flock 9; sleep 3", p.display());
         let mut child = std::process::Command::new("sh")
             .arg("-c")

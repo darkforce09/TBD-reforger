@@ -11,7 +11,7 @@ fn repo() -> PathBuf {
 
 #[test]
 fn live_tree_holds() {
-    assert_eq!(verify_t437(&repo()).unwrap(), 0);
+    assert_eq!(verify_destroy_target_diagnostics(&repo()).unwrap(), 0);
 }
 
 #[test]

@@ -60,5 +60,8 @@ fn an_empty_source_fails_on_pins_not_bans() {
 /// The fail-closed direction: a moved or deleted target is not a pass.
 #[test]
 fn a_missing_target_does_not_read_as_pass() {
-    assert_eq!(verify_t296(Path::new("/nonexistent/tbd-853")).unwrap(), 1);
+    assert_eq!(
+        verify_results_reporter_identity_comments(Path::new("/nonexistent/tbd-853")).unwrap(),
+        1
+    );
 }

@@ -1,7 +1,9 @@
 use super::*;
 
+/// A ready-class ticket must carry all three prose fields, so the typed projection cannot hand a
+/// brief an empty spec, goal or acceptance list.
 #[test]
-fn ready_prose_on_t090_family() {
+fn ready_class_tickets_carry_spec_main_goal_and_acceptance() {
     let root = repo_root();
     if !tree_is_phase2(&root) {
         return;
@@ -42,7 +44,7 @@ fn ready_prose_on_t090_family() {
 }
 
 #[test]
-fn t159_23_shipped_at_pin() {
+fn shipped_ticket_keeps_its_shipped_at_commit() {
     let root = repo_root();
     if !tree_is_phase2(&root) {
         return;
@@ -66,8 +68,10 @@ fn t159_23_shipped_at_pin() {
     }
 }
 
+/// Parent and child agree in both directions: a child projects as work with its parent set, and
+/// the parent projects as a program that lists that child.
 #[test]
-fn mapper_minted_t674_t675_children() {
+fn program_children_parse_as_work_and_their_parents_list_them() {
     let root = repo_root();
     if !tree_is_phase2(&root) {
         return;
@@ -97,10 +101,9 @@ fn mapper_minted_t674_t675_children() {
     }
 }
 
-/// T-090.6 keeps its engine scope through the v2 cutover (the old per-id override
-/// table put it there; the v2 migrator maps `[scope.engine]` → domain engine).
+/// A ticket whose file carries a `[scope.engine]` table projects into [`Domain::Engine`].
 #[test]
-fn t090_6_is_engine_scope() {
+fn engine_scope_table_projects_to_the_engine_domain() {
     let root = repo_root();
     if !tree_is_phase2(&root) {
         return;
@@ -118,7 +121,7 @@ fn t090_6_is_engine_scope() {
     }
 }
 
-/// T-917.2: the target synthesis over v2 scopes keeps the exact v1 outputs.
+/// Target synthesis is a total function of the scope domain: one domain, one target list.
 #[test]
 fn targets_from_scope_v2_outputs() {
     let scope = |domain| ScopeV2 {
@@ -134,22 +137,19 @@ fn targets_from_scope_v2_outputs() {
     assert_eq!(targets_from_scope(&scope(Domain::Repo)), vec!["root"]);
 }
 
-/// T-912.2 regression pin, RETARGETED by T-916.2: `ticket_to_value` mirrors
-/// `children`/`active` into their legacy spellings, and `value_to_ticket` must accept its
-/// own output — the alias-vs-mirror clash made `duplicate field \`children\`` out of every
-/// loaded program and broke every registry mutator (`ticket ship T-905` → `save T-067`
-/// refuse, measured at the T-912.1 tip). Since T-916.2 no MUTATOR reaches
-/// `value_to_ticket` (see `mutators_never_reach_the_value_writer_pin`), but the mirrored
-/// Value is still what brief/show/get/sync/queue.json consume — this pin keeps the alias
-/// class dead on that read surface.
+/// `ticket_to_value` mirrors `children` and `active` into their second spellings, so
+/// `value_to_ticket` must accept its own output: a serde alias that clashes with a mirrored key
+/// raises `duplicate field` out of every loaded program and breaks the whole read surface.
+/// No mutator reaches `value_to_ticket` (see `mutators_never_reach_the_value_writer_pin`), but
+/// brief, show, get, sync and the queue view all consume the mirrored `Value`.
 #[test]
 fn value_to_ticket_accepts_ticket_to_value_output() {
     let root = repo_root();
     if !tree_is_phase2(&root) {
         return;
     }
-    // T-067 is the program the live failure named; round-trip the whole loaded registry so
-    // any ticket whose value carries mirrored keys is covered, not just one.
+    // Round-trip the whole loaded registry, so every ticket whose value carries mirrored keys is
+    // covered rather than one sampled program.
     let reg = load_phase2_tree(&root).expect("load phase2 tree");
     for t in reg["tickets"].as_array().expect("tickets") {
         let id = t["id"].as_str().unwrap_or("?");
@@ -158,14 +158,14 @@ fn value_to_ticket_accepts_ticket_to_value_output() {
     }
 }
 
-/// T-916.2 — the write path is the TYPED one. Two facts, pinned together:
+/// The write path is the typed one. Two facts, pinned together:
 ///
 /// 1. `registry::save_registry` REFUSES a phase-2 tree (in-memory probe against the live
 ///    root — nothing is written on the refusal path), so `save_tree` / `value_to_ticket`
 ///    are unreachable as writers even if a caller sneaks back;
-/// 2. `cmds.rs` — the mutator surface — no longer names `save_registry` at all: every
-///    verb writes through `crate::ops` + `Corpus::write_back`. Needle assembled at
-///    runtime (the T-912.1 tripwire trick) so this test's own source cannot satisfy it.
+/// 2. no module under `cli/` — the mutator surface — names `save_registry` at all: every
+///    verb writes through `crate::ops` + `Corpus::write_back`. The needle is assembled at
+///    runtime so this test's own source cannot satisfy the search it performs.
 #[test]
 fn mutators_never_reach_the_value_writer_pin() {
     let root = repo_root();
@@ -194,7 +194,7 @@ fn mutators_never_reach_the_value_writer_pin() {
     let needle = format!("save_{}", "registry");
     assert!(
         !cmds_src.contains(&needle),
-        "cmds.rs names `{needle}` again — mutators must write through tbd_tickets ops \
-         (T-916.2), never the Value round-trip"
+        "a module under cli/ names `{needle}` again — mutators must write through the typed \
+         ops surface, never the Value round-trip"
     );
 }

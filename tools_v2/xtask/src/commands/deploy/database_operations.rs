@@ -9,7 +9,7 @@
 //! - `pg_restore --list` alone is NOT verification — TOC lives at the head; truncated /
 //!   mid-file-corrupt dumps still pass `--list`. Check 5 runs `--data-only` and counts COPY rows.
 //! - Identity (T-588): `dbname:` header + `_sqlx_migrations` TOC entry before the body read.
-//! - T-381 allow-list refuses `tbd_reforger` unless `--confirm` spells the name twice.
+//! - The scratch allow-list refuses `tbd_reforger` unless `--confirm` spells the name twice.
 //!
 //! `_sqlx_migrations` probes use `verification_core::gate::probe_str`.
 //!
@@ -29,7 +29,7 @@ use verification_core::gate;
 /// Subcommands under `cargo xtask deploy db`.
 #[derive(Subcommand, Debug)]
 pub enum DeployDbCmd {
-    /// T-381 restore-target guard (refuses `tbd_reforger` by default).
+    /// Restore-target guard (refuses the live `tbd_reforger` database by default).
     #[command(name = "refuse-unsafe")]
     RefuseUnsafe {
         #[arg(long = "db")]
@@ -75,7 +75,7 @@ pub enum DeployDbCmd {
         #[arg(long = "expect-db", default_value = "")]
         expect_db: String,
     },
-    /// Verified pg_dump + retention prune (T-885 port of scripts/deploy/backup-db.sh).
+    /// Verified pg_dump + retention prune.
     #[command(name = "backup", disable_help_flag = true)]
     Backup {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -93,10 +93,10 @@ pub enum DeployDbCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Guarded pg_restore (T-886 port of scripts/deploy/restore-db.sh).
+    /// Guarded pg_restore.
     #[command(name = "restore")]
     Restore(crate::commands::deploy::database_restore::RestoreArgs),
-    /// Restore-into-scratch recoverability proof (T-887 port of scripts/deploy/backup-drill.sh).
+    /// Restore-into-scratch recoverability proof.
     #[command(name = "drill", disable_help_flag = true)]
     Drill {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
@@ -108,7 +108,7 @@ pub enum DeployDbCmd {
 
 // ─────────────────────────── container runtime ───────────────────────────
 
-// ─────────────────────────── T-381 restore target guard ───────────────────────────
+// ─────────────────────────── restore target guard ───────────────────────────
 
 // ─────────────────────────── dump verification ───────────────────────────
 

@@ -11,7 +11,7 @@
 - `src/verifications/` groups checks by architecture, licensing, prohibited languages, mod scripts, deployment, registries, database seeds, CI, schemas, and map assets. Map-asset checks delegate engine work to `developer-tools`.
 - `src/verifications/schemas/` separates contract citations, content budgets, object enums and type inventory, specification consistency, kit references, wire-field readers, glyphs, and schema validation.
 
-Command names are independent of implementation filenames. Ticket-number CLI spellings remain supported even where the corresponding verification file has a domain name.
+Each domain verification is spelled after the module that implements it: the module file name with underscores written as hyphens, and the entry function is `verify_` plus that module name. The language bans (`no-python`, `no-shell`, `no-node`, `ci-shell`) and `file-length` keep the names their CI jobs use, and several of them share one module because they walk one table.
 
 ## Development commands
 

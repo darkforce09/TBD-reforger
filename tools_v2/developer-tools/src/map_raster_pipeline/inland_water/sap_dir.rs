@@ -1,6 +1,8 @@
 use super::*;
 
-use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
+use crate::repository_layout::{
+    INLAND_WATER_ARTIFACTS_DIR, map_scratch_dir, terrain_dir, terrain_manifest_path,
+};
 
 pub(super) fn sap_dir() -> PathBuf {
     map_scratch_dir(&repo_root(), "everon").join("sap") // E2c-allow (Eden-only lane)
@@ -183,12 +185,11 @@ pub fn composite_water_ortho() -> Result<u8> {
     buf.save(&ortho_path)?;
 
     meta["waterComposite"] = json!({
-        "slice": "T-090.1.2.5",
-        "refineSlice": "T-090.1.2.5.2",
+        "lane": "inland-water composite",
         "oceanMaskSource": "dem-below-sea-level",
         "inlandMaskSource": "supertexture-water-appearance-dem-filtered + topo-road-subtraction (exact .topo road network guard; relaxed wet-channel stream class)",
-        "spikeArtifact": ".ai/artifacts/t090_1_2_5_water_source_spike.json",
-        "refineSpikeArtifact": ".ai/artifacts/t090_1_2_5_2_source_spike.json",
+        "spikeArtifact": format!("{INLAND_WATER_ARTIFACTS_DIR}/water_source_spike.json"),
+        "refineSpikeArtifact": format!("{INLAND_WATER_ARTIFACTS_DIR}/source_spike.json"),
         "palette": { "oceanBright": OCEAN_BRIGHT.map(js_num), "oceanDark": OCEAN_DARK.map(js_num), "inland": INLAND_COLOR.map(js_num) },
         "waterAlpha": WATER_ALPHA,
         "depthFullM": js_num(DEPTH_FULL_M),

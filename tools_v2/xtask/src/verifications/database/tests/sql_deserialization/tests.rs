@@ -24,6 +24,6 @@ fn allowlisted_tables_are_exempt() {
 #[test]
 fn a_missing_api_tree_does_not_read_as_clean() {
     // The bash `2>/dev/null || true` behaviour, inverted.
-    let code = verify_no_select_star(Path::new("/nonexistent/tbd-gate/repo")).unwrap();
+    let code = verify_no_select_star(Path::new("/nonexistent/verification/repo")).unwrap();
     assert_eq!(code, 2, "a scan that never ran must not exit 0");
 }

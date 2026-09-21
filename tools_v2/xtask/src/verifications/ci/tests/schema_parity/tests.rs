@@ -7,10 +7,10 @@ fn ci_ok() -> String {
     )
 }
 
-/// Dual-path fixture derived from the live gate.rs needles (T-902).
+/// Dual-path fixture derived from the live gate.rs needles.
 fn wave_ok() -> String {
     format!(
-        "const VERIFY_STEPS: &[(&str, &str)] = &[\n    {ROW_T456},\n    {ROW_T468},\n];\n\npub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {{\n    {VERIFY_LOOP} {{\n        r.run(label, || {{\n            checkrun(\n                ctx,\n                {CHECKRUN_ARGV},\n            )\n        }});\n    }}\n    0\n}}\n\npub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {{\n    {VERIFY_LOOP} {{\n        r.run(label, || {{\n            checkrun(\n                ctx,\n                {CHECKRUN_ARGV},\n            )\n        }});\n    }}\n    0\n}}\n"
+        "const VERIFY_STEPS: &[(&str, &str)] = &[\n    {ROW_MISSION_REST_SIZE_LIMITS},\n    {ROW_CI_SCHEMA_PARITY},\n];\n\npub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {{\n    {VERIFY_LOOP} {{\n        r.run(label, || {{\n            checkrun(\n                ctx,\n                {CHECKRUN_ARGV},\n            )\n        }});\n    }}\n    0\n}}\n\npub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {{\n    {VERIFY_LOOP} {{\n        r.run(label, || {{\n            checkrun(\n                ctx,\n                {CHECKRUN_ARGV},\n            )\n        }});\n    }}\n    0\n}}\n"
     )
 }
 
@@ -23,40 +23,45 @@ fn live_shaped_pins_hold() {
     assert_eq!(pins(&wave_ok()), 0);
 }
 
-/// THE THREE RECIPE-BODY PINS, against the LIVE table (T-897).
+/// THE THREE TASK-BODY PINS, against the LIVE table.
 ///
-/// They cannot be fixture-driven the way the Makefile pins were: `TASKS` is a `static`, so
-/// there is no perturbed copy to hand in. That is the point — the table this asserts on is the
-/// one `cargo xtask ci` runs, and `task_pins` is the same function the gate calls. Hollowing
-/// any of the three rows turns this red, which is the perturbation proof (`ci-local-schema`
-/// losing `verify-citations`, `verify-t456` losing its echo, `ci-local` losing its direct
-/// `verify t468` step — each was run by hand at T-897 and each RED'd here).
+/// They cannot be fixture-driven: `TASKS` is a `static`, so there is no perturbed copy to hand
+/// in. That is the point — the table this asserts on is the one `cargo xtask ci` runs, and
+/// `task_pins` is the same function the gate calls. Hollowing any of the three rows turns this
+/// red: `ci-local-schema` losing `verify-citations`, `verify-mission-rest-size-limits` losing
+/// its echo, or `ci-local` losing its direct `verify ci-schema-parity` step.
 #[test]
 fn the_live_task_table_satisfies_the_recipe_pins() {
     assert_eq!(task_pins(), 0);
 }
 
-/// T-489 by construction: no `verify-t468` row exists for `ci-local` to reach instead of the
-/// direct call. `task_pins` enforces this at runtime; asserting it here names why.
+/// No `verify-ci-schema-parity` row exists for `ci-local` to reach instead of the direct call.
+/// `task_pins` enforces this at runtime; asserting it here names why.
 #[test]
-fn t468_stays_off_the_dispatch_table_it_polices() {
-    assert!(crate::commands::ci::task_runner::find("verify-t468").is_none());
+fn this_gate_stays_off_the_dispatch_table_it_polices() {
+    assert!(crate::commands::ci::task_runner::find("verify-ci-schema-parity").is_none());
     let ci_local = crate::commands::ci::task_runner::find("ci-local").expect("ci-local row");
-    assert!(!crate::commands::ci::task_runner::invoked_tasks(ci_local).contains(&"verify-t468"));
     assert!(
-        ci_local
-            .steps
-            .iter()
-            .any(|s| crate::commands::ci::task_runner::step_echo(s) == Some(TASK_ECHO_T468))
+        !crate::commands::ci::task_runner::invoked_tasks(ci_local)
+            .contains(&"verify-ci-schema-parity")
     );
+    assert!(ci_local.steps.iter().any(|s| {
+        crate::commands::ci::task_runner::step_echo(s) == Some(TASK_ECHO_CI_SCHEMA_PARITY)
+    }));
 }
 
 /// The two echoes are the in-table spellings of the two cargo consts, and the tests would be
 /// worthless if they drifted apart silently.
 #[test]
 fn task_echoes_name_the_same_gates_as_the_wave_consts() {
-    assert!(VERIFY_T456.ends_with("verify t456") && TASK_ECHO_T456.ends_with("verify t456"));
-    assert!(VERIFY_T468.ends_with("verify t468") && TASK_ECHO_T468.ends_with("verify t468"));
+    assert!(
+        VERIFY_MISSION_REST_SIZE_LIMITS.ends_with("verify mission-rest-size-limits")
+            && TASK_ECHO_MISSION_REST_SIZE_LIMITS.ends_with("verify mission-rest-size-limits")
+    );
+    assert!(
+        VERIFY_CI_SCHEMA_PARITY.ends_with("verify ci-schema-parity")
+            && TASK_ECHO_CI_SCHEMA_PARITY.ends_with("verify ci-schema-parity")
+    );
 }
 
 #[test]
@@ -65,10 +70,10 @@ fn schema_job_without_ci_local_schema_fails() {
     assert_ne!(run_pins(ci, Some(&wave_ok())), 0);
 }
 
-/// The former `make ci-local-schema` spelling names a target that no longer exists, so it must
-/// no longer satisfy the CI pin — otherwise a stale workflow would read as covered.
+/// `make ci-local-schema` names a target that does not exist, so it must not satisfy the CI pin
+/// — otherwise a stale workflow would read as covered.
 #[test]
-fn the_make_spelling_no_longer_satisfies_the_ci_pin() {
+fn the_make_spelling_does_not_satisfy_the_ci_pin() {
     let ci = "jobs:\n  schema:\n    steps:\n      - run: make ci-local-schema\n  other:\n    steps:\n      - run: true\n";
     assert_ne!(run_pins(ci, Some(&wave_ok())), 0);
 }
@@ -88,13 +93,19 @@ fn ci_run_accepts_the_alias_and_the_long_form_only() {
 
 #[test]
 fn verify_consts_are_the_cargo_spelling() {
-    assert_eq!(VERIFY_T456, "cargo run -q -p xtask -- verify t456");
-    assert_eq!(VERIFY_T468, "cargo run -q -p xtask -- verify t468");
+    assert_eq!(
+        VERIFY_MISSION_REST_SIZE_LIMITS,
+        "cargo run -q -p xtask -- verify mission-rest-size-limits"
+    );
+    assert_eq!(
+        VERIFY_CI_SCHEMA_PARITY,
+        "cargo run -q -p xtask -- verify ci-schema-parity"
+    );
 }
 
-/// M2: hollow checkrun argv must RED.
+/// A hollow checkrun argv must RED.
 #[test]
-fn wave_hollow_t456_true_fails() {
+fn wave_hollow_checkrun_argv_fails() {
     let wave = wave_ok().replacen(CHECKRUN_ARGV, "&[]", 1);
     assert_ne!(pins(&wave), 0);
 }
@@ -107,7 +118,7 @@ fn wave_hollow_both_paths_required() {
     assert_ne!(pins(&wave), 0);
 }
 
-/// B1: extra argv entries must NOT satisfy the checkrun pin.
+/// Extra argv entries must NOT satisfy the checkrun pin.
 #[test]
 fn wave_suffix_smuggles_fail_pin() {
     let smuggled = r#"&["cargo", "run", "-q", "-p", "xtask", "--", "verify", name, "--help"]"#;
@@ -117,7 +128,11 @@ fn wave_suffix_smuggles_fail_pin() {
 
 #[test]
 fn wave_commented_run_does_not_satisfy() {
-    let wave = wave_ok().replacen(ROW_T456, &format!("// {ROW_T456}"), 1);
+    let wave = wave_ok().replacen(
+        ROW_MISSION_REST_SIZE_LIMITS,
+        &format!("// {ROW_MISSION_REST_SIZE_LIMITS}"),
+        1,
+    );
     assert_ne!(pins(&wave), 0);
 }
 
@@ -176,7 +191,7 @@ impl Drop for SourceFixture {
 #[test]
 fn live_source_owners_satisfy_the_runtime_gate() {
     let fixture = SourceFixture::live();
-    assert_eq!(verify_t468(&fixture.0).unwrap(), 0);
+    assert_eq!(verify_ci_schema_parity(&fixture.0).unwrap(), 0);
 }
 
 #[test]
@@ -184,7 +199,11 @@ fn each_missing_wave_child_fails_the_runtime_gate() {
     for (module, _) in source_audit::WAVE_CHILDREN {
         let fixture = SourceFixture::live();
         std::fs::remove_file(fixture.child(module)).unwrap();
-        assert_eq!(verify_t468(&fixture.0).unwrap(), 1, "missing {module}");
+        assert_eq!(
+            verify_ci_schema_parity(&fixture.0).unwrap(),
+            1,
+            "missing {module}"
+        );
     }
 }
 
@@ -198,7 +217,7 @@ fn facade_exports_cannot_replace_implementation_bodies() {
         )
         .unwrap();
     }
-    assert_eq!(verify_t468(&fixture.0).unwrap(), 1);
+    assert_eq!(verify_ci_schema_parity(&fixture.0).unwrap(), 1);
 }
 
 #[test]
@@ -214,7 +233,11 @@ fn disconnected_or_conditionally_disabled_children_fail() {
                 let facade = std::fs::read_to_string(&facade_path).unwrap();
                 assert!(facade.contains(&statement));
                 std::fs::write(&facade_path, facade.replacen(&statement, &replacement, 1)).unwrap();
-                assert_eq!(verify_t468(&fixture.0).unwrap(), 1, "disabled {statement}");
+                assert_eq!(
+                    verify_ci_schema_parity(&fixture.0).unwrap(),
+                    1,
+                    "disabled {statement}"
+                );
             }
         }
     }
@@ -228,6 +251,10 @@ fn each_hollowed_live_wave_body_fails_the_runtime_gate() {
         let source = std::fs::read_to_string(&path).unwrap();
         assert!(source.contains(CHECKRUN_ARGV));
         std::fs::write(path, source.replace(CHECKRUN_ARGV, "&[]")).unwrap();
-        assert_eq!(verify_t468(&fixture.0).unwrap(), 1, "hollowed {module}");
+        assert_eq!(
+            verify_ci_schema_parity(&fixture.0).unwrap(),
+            1,
+            "hollowed {module}"
+        );
     }
 }

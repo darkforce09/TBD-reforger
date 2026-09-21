@@ -105,7 +105,7 @@ pub fn build_unified_satellite(
             sm.insert(
                 "waterComposite".into(),
                 json!({
-                    "slice": wc["slice"], "oceanMaskSource": wc["oceanMaskSource"],
+                    "lane": wc["lane"], "oceanMaskSource": wc["oceanMaskSource"],
                     "inlandMaskSource": wc["inlandMaskSource"], "generatedAt": wc["generatedAt"],
                 }),
             );

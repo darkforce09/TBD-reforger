@@ -2,37 +2,36 @@ use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum SchemaCmd {
-    /// Contract codegen: JSON Schema → Rust via typify (T-165.3)
+    /// Contract codegen: JSON Schema → Rust via typify
     Codegen,
-    /// T-896: print the `schema-validate` sub-gate SET, one per line.
-    /// wave.sh's drift tripwire (wave.sh:1598) parses the Makefile recipe for this today; T-897
-    /// deletes that input, and this is its replacement — derived from the code that runs them.
+    /// Print the `schema-validate` sub-gate SET, one per line, derived from the code that runs
+    /// them, so the wave drift tripwire compares against the live gate list.
     #[command(name = "list-gates")]
     ListGates,
-    /// Full contract-validation suite (validate.mjs port — T-165.2)
+    /// Full contract-validation suite
     Validate,
-    /// Validate one mission JSON file or stdin (`-`) — validate-file.mjs port
+    /// Validate one mission JSON file or stdin (`-`)
     #[command(name = "validate-file")]
     ValidateFile { target: String },
-    /// @contract citation integrity (verify-contract-citations)
+    /// @contract citation integrity
     Citations,
-    /// T-090 spec-consistency gates 1-12 (verify-t090-spec-consistency)
-    #[command(name = "t090-specs")]
-    T090Specs,
+    /// Specification-consistency gates 1-12 over the Mission Creator specification corpus
+    #[command(name = "specification-consistency")]
+    SpecificationConsistency,
     /// N6 building-geometry sentence single-source
     N6,
     /// N10 tile-budget single-source
     N10,
-    /// Semantic golden gates S2-S9 + S11-S15 (verify-map-object-golden)
+    /// Semantic golden gates S2-S9 + S11-S15
     #[command(name = "map-object-golden")]
     MapObjectGolden,
-    /// Height-label gates G2-G6 + ASL oracle (verify-height-labels; native restore)
+    /// Height-label gates G2-G6 + ASL oracle
     #[command(name = "height-labels")]
     HeightLabels {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// DEM vs GetSurfaceY anchor alignment (verify-terrain-alignment)
+    /// DEM vs GetSurfaceY anchor alignment
     #[command(name = "terrain-alignment")]
     TerrainAlignment {
         #[arg(long, default_value = "everon")]
@@ -40,12 +39,12 @@ pub(crate) enum SchemaCmd {
         #[arg(long)]
         strict: bool,
     },
-    /// Locations gates G2-G7 (verify-locations)
+    /// Locations gates G2-G7
     Locations {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// Town-label gates (native rebuild on core importance_declutter)
+    /// Town-label gates over core importance_declutter
     #[command(name = "town-labels")]
     TownLabels {
         #[arg(long, default_value = "everon")]
@@ -53,7 +52,7 @@ pub(crate) enum SchemaCmd {
         #[arg(long, default_value_t = -2.0, allow_hyphen_values = true)]
         zoom: f64,
     },
-    /// Road-name gates (native rebuild on core road_labels)
+    /// Road-name gates over core road_labels
     #[command(name = "road-names")]
     RoadNames {
         #[arg(long, default_value = "everon")]
@@ -61,7 +60,7 @@ pub(crate) enum SchemaCmd {
         #[arg(long, default_value_t = 0.0)]
         zoom: f64,
     },
-    /// Glyph coverage gate GL-G1..G6 (verify-map-glyphs-manifest)
+    /// Glyph coverage gate GL-G1..G6
     #[command(name = "map-glyphs")]
     MapGlyphs,
     /// map-object enum single-source (GAP-M5)

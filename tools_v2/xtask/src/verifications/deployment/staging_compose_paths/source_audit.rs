@@ -1,30 +1,26 @@
 use super::*;
 
-/// Entry point. `0` when the contract holds, `1` for every failure — bash's binary status.
+/// Entry point. `0` when the contract holds, `1` for every failure.
 ///
-/// Deliberately NOT [`Verdict::into_exit`]'s three-way code. The script `exit 1`-ed for a missing
-/// `deploy-staging.sh` just as it did for a wrong `-f` path, and `wave.sh`, `cargo xtask verify t438` and
-/// `ci.yml mod-gates-hosted` all record pass/fail from that; returning 2 for a broken checkout
-/// would change what CI says in the commit that was supposed to change nothing. Widening it is
-/// T-853 Phase 7's call, made once for all gates.
+/// Deliberately NOT [`Verdict::into_exit`]'s three-way code: the wave gate and the `ci.yml`
+/// `mod-gates-hosted` job both record pass/fail from this status, so a 2 for a broken checkout
+/// would change what CI says. Widening the status is a decision for every gate at once.
 ///
-/// The missing-script arm is the one place the output *shape* differs from every other failure:
-/// bash `exit 1`-ed there before ever setting `FAIL`, so it printed `FAIL: missing …` and **no**
-/// `verify-…: FAIL` summary. Faithfully reproduced.
-pub fn verify_t438(repo_root: &Path) -> Result<u8> {
-    let script = repo_root.join(DEPLOY_SCRIPT);
+/// The missing-source arm is the one place the output *shape* differs from every other failure:
+/// it prints `FAIL: missing …` and **no** summary line, because there was nothing to summarise.
+pub fn verify_staging_compose_paths(repo_root: &Path) -> Result<u8> {
+    let source_path = repo_root.join(DEPLOY_SOURCE);
 
-    // bash: `if [[ ! -f "$FILE" ]]; then echo "FAIL: missing $FILE"; exit 1; fi`
+    // A missing render source is `FAIL: missing <path>`, then exit 1.
     //
-    // Hand-built rather than leaning on `gate::require`'s missing-target rendering: the library's
-    // text ("— target file missing: … / The pin could not run.") is better prose but is not what
-    // the script printed, and byte-identical output is the acceptance criterion. The CAUSE is
-    // still the typed one, so a caller matching the verdict sees `DidNotRun`, not a violation.
-    if !script.is_file() {
+    // Hand-built rather than leaning on `gate::require`'s missing-target rendering, so the message
+    // names this gate's subject rather than a generic pin. The CAUSE is still the typed one, so a
+    // caller matching the verdict sees `DidNotRun`, not a violation.
+    if !source_path.is_file() {
         let absent = Verdict::DidNotRun(
-            NotRun::TargetMissing(script.clone()),
+            NotRun::TargetMissing(source_path.clone()),
             Finding {
-                headline: format!("missing {}", script.display()),
+                headline: format!("missing {}", source_path.display()),
                 detail: Vec::new(),
             },
         );
@@ -34,8 +30,8 @@ pub fn verify_t438(repo_root: &Path) -> Result<u8> {
 
     let mut failed = false;
     for verdict in &audit(repo_root)? {
-        // `Verdict::Held` renders as the empty string; printing it would emit a blank line the
-        // bash never did. Skipped explicitly rather than relying on Display happening to be empty.
+        // `Verdict::Held` renders as the empty string; printing it would emit a blank line.
+        // Skipped explicitly rather than relying on Display happening to be empty.
         if matches!(verdict, Verdict::Held) {
             continue;
         }
@@ -51,82 +47,82 @@ pub fn verify_t438(repo_root: &Path) -> Result<u8> {
     Ok(0)
 }
 
-/// Every check, in the order the script printed them: the Python pin's findings, then the two
-/// on-disk file checks.
+/// Every check, in the order the report prints them: the compose-line pins, then the two on-disk
+/// file checks.
 ///
-/// Split out from [`verify_t438`] so the contract is testable against a scratch tree without
-/// capturing stdout — and returning a list rather than a first-failure because the script
-/// accumulated. That is deliberate on its part: an operator who has moved the compose file wants
-/// every place the move was missed in one run, not one more place per re-run.
+/// Split out from [`verify_staging_compose_paths`] so the contract is testable against a scratch
+/// tree without capturing stdout, and returning a LIST rather than stopping at the first failure:
+/// an operator who has moved the compose file wants every place the move was missed in one run,
+/// not one more place per re-run.
 pub(super) fn audit(repo_root: &Path) -> Result<Vec<Verdict>> {
-    let script = repo_root.join(DEPLOY_SCRIPT);
+    let source_path = repo_root.join(DEPLOY_SOURCE);
     let mut out = Vec::new();
 
-    // python: `src = open(path, encoding="utf-8").read()` — THE FAIL-QUIET THIS CLOSES. In the
-    // script this sat inside a command substitution, so any exception produced a traceback on
-    // stderr, an EMPTY `pin_out`, and a bare `verify-…: FAIL` with nothing on stdout explaining
-    // it. Here it is a named cause printed with the report. Status unchanged (still 1).
-    let source = match std::fs::read_to_string(&script) {
+    // An unreadable source is a NAMED cause printed with the report, never a bare non-zero status:
+    // a gate whose subject it could not open must not read as either a pass or an unexplained
+    // failure. Status is unchanged (still 1).
+    let source = match std::fs::read_to_string(&source_path) {
         Ok(text) => text,
-        Err(source) => {
+        Err(cause) => {
             out.push(Verdict::did_not_run(
-                format!("cannot read {}", script.display()),
+                format!("cannot read {}", source_path.display()),
                 Kind::Pin,
                 NotRun::Unreadable {
-                    path: script,
-                    source,
+                    path: source_path,
+                    source: cause,
                 },
             ));
-            // Fall through to the disk checks: bash ran them after a failed pin too, and the
-            // operator should still learn whether the compose file is where it belongs.
+            // Fall through to the disk checks: the operator should still learn whether the
+            // compose file is where it belongs.
             out.extend(compose_files_on_disk(repo_root));
             return Ok(out);
         }
     };
 
-    let stripped = strip_shell_comments(&source);
+    let stripped = strip_comments(&source);
     out.extend(pin_compose_lines(&stripped)?);
     out.extend(ban_cd_into_api(&stripped));
     out.extend(compose_files_on_disk(repo_root));
     Ok(out)
 }
 
-/// The Python `strip_shell_comments` state machine, transcribed character for character.
+/// The comment stripper the compose-line pins run on.
 ///
-/// WHY IT EXISTS: T-461 hole (1). Grepping the raw file for the good path counted a *comment*
-/// mentioning it as presence — and `deploy-staging.sh:1606` is exactly such a comment, two lines
-/// above the real invocation ("T-438: compose file lives at apps/website/docker-compose.staging.yml
-/// (T-251)"). The gate could not tell the contract being honoured from the contract being
-/// *described*. Everything downstream runs on the stripped text.
+/// WHY IT EXISTS: matching the raw source for the good path counts a *comment* mentioning it as
+/// presence, and a comment naming the compose file typically sits two lines above the real
+/// invocation. A gate that cannot tell the contract being honoured from the contract being
+/// *described* is not a gate. Everything downstream runs on the stripped text.
 ///
-/// ODDITIES PRESERVED ON PURPOSE — this is not a shell parser and must not become one, because its
-/// output is load-bearing for the byte-for-byte diff:
+/// It reads BOTH comment syntaxes — `//` for the Rust render source, `#` for the remote shell
+/// text that source embeds — from one pass, so a comment in either layer is stripped.
+///
+/// ODDITIES CARRIED ON PURPOSE — this is neither a Rust nor a shell parser and must not become
+/// one:
 ///
 /// * **`#` opens a comment anywhere outside quotes**, not only at a word boundary. Real `sh` reads
-///   `foo#bar` as one word; this eats `#bar`. Harmless (the machine only ever *removes* text, so
-///   it can only make a pin stricter) and it is what the baseline does.
-/// * **`//` opens a comment outside quotes** — C syntax, not shell, put there because T-461's
-///   finding mentioned `//` comments. The live hazard in a shell script is an unquoted URL:
-///   `https://host/x` loses everything from `//` on. Unreachable in today's `deploy-staging.sh`
-///   (its URLs are quoted); worth knowing before someone adds one.
+///   `foo#bar` as one word; this eats `#bar`. Harmless: the machine only ever *removes* text, so
+///   it can only make a pin stricter.
+/// * **`//` opens a comment outside quotes**, so a `//` comment in the audited source is stripped
+///   too. The hazard it brings is an unquoted URL: `https://host/x` loses everything from `//`
+///   on. Unreachable while the audited source quotes its URLs; worth knowing before one is added.
 /// * **A backslash escapes inside single quotes.** POSIX says it does not — `'a\'` is the two-char
 ///   string `a\`. This consumes `\'` as a pair, stays `in_squote`, and therefore stops stripping
 ///   comments for the whole rest of the file, which would let a `#`-commented good path count as
-///   presence again: the very hole T-461 closed. **Latent bug, carried knowingly**, pinned by
+///   presence again: exactly the hole this stripper exists to close. **Latent bug, carried
+///   knowingly**, pinned by
 ///   `tests::a_backslash_before_a_closing_single_quote_swallows_the_rest` so a fix is a deliberate
 ///   act with a red test rather than an accident.
-/// * **No heredoc, `$'…'` or line-continuation awareness.** `deploy-staging.sh` has several
-///   `<<'EOF'` blocks, walked as ordinary text. Worst case a compose line hidden in a heredoc goes
-///   unseen — and a compose line in a heredoc is not one this gate pins.
-pub(super) fn strip_shell_comments(text: &str) -> String {
-    // Indexed by code point, as Python's `text[i]` is — not by byte. The two agree on where the
-    // ASCII delimiters are, but transcribing the indices faithfully keeps the equivalence obvious.
+/// * **No heredoc, `$'…'` or line-continuation awareness.** A heredoc block is walked as ordinary
+///   text. Worst case a compose line hidden in one goes unseen — and a compose line in a heredoc
+///   is not one this gate pins.
+pub(super) fn strip_comments(text: &str) -> String {
+    // Indexed by code point, not by byte, so an index never lands mid-character.
     let src: Vec<char> = text.chars().collect();
     let n = src.len();
     let mut out = String::with_capacity(text.len());
     let mut i = 0usize;
-    // Never both true: the only place either is set clears the other, so the merged in-quote arm
-    // below is exactly the Python's two separate `if in_squote:` / `if in_dquote:` blocks.
+    // Never both true: the only place either is set clears the other, which is what lets the
+    // in-quote arm below be one merged branch rather than two.
     let mut in_squote = false;
     let mut in_dquote = false;
 
@@ -175,16 +171,14 @@ pub(super) fn strip_shell_comments(text: &str) -> String {
     out
 }
 
-/// python: the `for raw in stripped.splitlines()` classification loop.
+/// Split the stripped source into its dry-run compose line and its live one.
 ///
-/// LAST ONE WINS, faithfully: `dry_line`/`live_line` were plain assignments, so a second dry-run
-/// compose line later in the file silently replaced the first. Also faithful: a `docker compose -f`
-/// line mentioning neither key is ignored, so a *third* invocation could use the stale path
-/// unchallenged. Both are real holes; neither is this port's to close, because closing them
-/// changes the verdict on trees the baseline calls clean. Flagged for whoever owns T-438 next.
+/// LAST ONE WINS: each field is a plain assignment, so a second dry-run compose line later in the
+/// file replaces the first. Widening either to a list changes the verdict on trees this gate
+/// calls clean today, so it is a deliberate decision rather than a tidy-up.
 pub(super) fn classify(stripped: &str) -> Result<ComposeLines<'_>> {
-    // `grep -E 'docker\s+compose\s+-f'` in engine form. Matched per line, so `Pattern`'s
-    // multi-line anchoring is moot here — it is used for the compiled-in matcher, not the anchors.
+    // Matched per line, so `Pattern`'s multi-line anchoring is moot here — it is used for the
+    // compiled-in matcher, not the anchors.
     let compose = Pattern::regex(r"docker\s+compose\s+-f")?;
     let mut lines = ComposeLines {
         dry: None,
@@ -193,17 +187,14 @@ pub(super) fn classify(stripped: &str) -> Result<ComposeLines<'_>> {
     for raw in stripped.lines() {
         let line = raw.trim();
         // `probe_str`, not a bare `is_match`: this is a compound condition (match, THEN classify),
-        // exactly the shape `gate_probe_str` existed for, and the `?` stops a future fallible
-        // matcher from silently reading as "no match".
+        // and the `?` stops a future fallible matcher from silently reading as "no match".
         if !gate::probe_str(&compose, line).map_err(|cause| anyhow::anyhow!("{cause:?}"))? {
             continue;
         }
-        // T-853: classify by the PRESENCE or ABSENCE of the dry-run marker, not by a transport
-        // spelling. bash put the whole thing on one line — `ssh_cmd "… docker compose -f …"` — so
-        // `line.contains("ssh_cmd")` identified the live one. The Rust call spans several lines:
-        // `runner.ssh_ok(` is on one, the composed command string on another. A per-line marker
-        // therefore matches NEITHER, and the live line would have gone unclassified — a gate
-        // silently checking one of the two paths it exists to check.
+        // Classify by the PRESENCE or ABSENCE of the dry-run marker, not by a transport spelling:
+        // the live call spans several lines — `runner.ssh_ok(` on one, the composed command string
+        // on another — so a per-line transport marker matches NEITHER and the live line goes
+        // unclassified, leaving a gate that silently checks one of the two paths it exists for.
         //
         // Absence is exactly equivalent here and does not depend on how the command is dispatched:
         // there are two compose invocations, one guarded by `--dry-run` and one not. The
@@ -218,30 +209,30 @@ pub(super) fn classify(stripped: &str) -> Result<ComposeLines<'_>> {
     Ok(lines)
 }
 
-/// The quote-safe `-f` argument extractor —
-/// python: `re.compile(r"""-f\s+(?:'([^']+)'|"([^"]+)"|(\S+))""")`.
+/// The quote-safe `-f` argument extractor.
 ///
-/// Handles `-f 'a b.yml'`, `-f "a b.yml"` and bare `-f a.yml`, which is why the script reached for
-/// Python rather than `awk`/`cut`: a path containing a space truncates under field splitting.
+/// Handles `-f 'a b.yml'`, `-f "a b.yml"` and bare `-f a.yml`. The quoted alternatives are what
+/// make it quote-safe: a compose path containing a space truncates under plain field splitting,
+/// and a truncated path compares unequal to [`GOOD_PATH`] for the wrong reason.
 pub(super) fn f_regex() -> Result<Regex> {
     Ok(Regex::new(r#"-f\s+(?:'([^']+)'|"([^"]+)"|(\S+))"#)?)
 }
 
-/// python: `f_re.search(line)` + `next(g for g in m.groups() if g is not None)`.
+/// The first non-empty capture group of [`f_regex`] — the `-f` argument, whatever its quoting.
 ///
 /// `regex::Regex` directly rather than [`Pattern`]: this needs *captures*, and `Pattern` exposes
 /// only `is_match`. No anchors are involved, so the `^`/`$` line-semantics trap `Pattern` exists
 /// to prevent cannot arise here.
 ///
-/// ODDITY PRESERVED: the search is not tied to the `docker compose` occurrence, so it takes the
-/// FIRST `-f <arg>` anywhere on the line — `rm -f /tmp/x && docker compose -f good.yml` is judged
-/// on `/tmp/x`. Latent, unreachable in today's script, pinned in `tests`.
+/// ODDITY CARRIED KNOWINGLY: the search is not tied to the `docker compose` occurrence, so it
+/// takes the FIRST `-f <arg>` anywhere on the line — `rm -f /tmp/x && docker compose -f good.yml`
+/// is judged on `/tmp/x`. Unreachable on the audited source today, pinned in `tests`.
 pub(super) fn f_path<'a>(re: &Regex, line: &'a str) -> Option<&'a str> {
     let caps = re.captures(line)?;
     (1..=3).find_map(|g| caps.get(g)).map(|m| m.as_str())
 }
 
-/// The Python pin proper: every message it could print, in its exact order.
+/// The pin proper: every message it can print, in the order it prints them.
 ///
 /// Order is load-bearing — each message assumes the ones above it are shown too. "The paths
 /// diverge" only reads correctly beside the two "must be …" lines, and a tree where dry-run and
@@ -251,7 +242,7 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
     let f_re = f_regex()?;
     let mut out = Vec::new();
 
-    // python: `if dry_line is None` / `if live_line is None`
+    // An absent compose line is a failure, never a vacuous pass.
     if lines.dry.is_none() {
         out.push(Verdict::failed(
             "no dry-run docker compose -f line after comment strip",
@@ -266,9 +257,8 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
     let dry_path = lines.dry.and_then(|line| f_path(&f_re, line));
     let live_path = lines.live.and_then(|line| f_path(&f_re, line));
 
-    // python: "…has no parseable -f path:" — a line that matched `docker compose -f` but whose
-    // `-f` has no argument. Kept distinct from "wrong path" because the fix differs: a truncated
-    // edit, not a wrong destination.
+    // A line that matched `docker compose -f` but whose `-f` has no argument. Kept distinct from
+    // "wrong path" because the fix differs: a truncated edit, not a wrong destination.
     if let Some(line) = lines.dry
         && dry_path.is_none()
     {
@@ -286,8 +276,8 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
         ));
     }
 
-    // python: `if dry_path != good` / `if live_path != good` — THE HEADLINE CONTRACT, and the
-    // reason it is equality and not a substring test: a RELATIVE-ised `docker-compose.staging.yml`,
+    // THE HEADLINE CONTRACT. Equality, not a substring test: a RELATIVE-ised
+    // `docker-compose.staging.yml`,
     // a `../`-prefixed one and the api/ sibling are all simply "not GOOD_PATH". Each reports the
     // value actually found, so the operator can see which edit went wrong.
     if let Some(path) = dry_path
@@ -305,8 +295,8 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
         )));
     }
 
-    // python: the divergence check — T-461 hole (2) in one comparison. Even if a future edit
-    // relaxes what GOOD_PATH may be, the rehearsal and the real thing must never disagree: a dry
+    // The divergence check, in one comparison. Even if a future edit relaxes what GOOD_PATH may
+    // be, the rehearsal and the real thing must never disagree: a dry
     // run describing a deploy nobody is about to perform is worse than no dry run at all.
     if let (Some(dry), Some(live)) = (dry_path, live_path)
         && dry != live
@@ -317,7 +307,7 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
         ));
     }
 
-    // python: `if line and bad in line` — belt and braces over the equality checks above. Those
+    // Belt and braces over the equality checks above. Those
     // compare the extracted `-f` argument; this rejects the stale path ANYWHERE on the line: in an
     // `--env-file`, in a second `-f` (compose accepts overlays, and the later file wins for
     // conflicting keys), or in a `cd` sharing the line. `gate::ban_str` so the decision stays in
@@ -338,14 +328,14 @@ pub(super) fn pin_compose_lines(stripped: &str) -> Result<Vec<Verdict>> {
     Ok(out)
 }
 
-/// python: the two `cd '$TBD_REMOTE_DIR/apps/website/api_v2'` bans over the stripped source.
+/// The two `cd '$TBD_REMOTE_DIR/apps/website/api_v2'` bans over the stripped source.
 ///
 /// Not redundant with the `-f` pin: `cd api && docker compose -f docker-compose.staging.yml` puts
 /// a plausible-looking relative filename in front of the wrong directory. The `-f` argument alone
-/// cannot tell you which file compose opens; only the pair can. Two literals, because T-461's
-/// finding was that pinning one quoting style pins nothing.
+/// cannot tell you which file compose opens; only the pair can. Two literals, because pinning
+/// one quoting style pins nothing.
 pub(super) fn ban_cd_into_api(stripped: &str) -> Vec<Verdict> {
-    let base = script_basename();
+    let base = source_basename();
     vec![
         gate::ban_str(
             &format!("{base} still cds into apps/website/api_v2 (compose must not)"),
@@ -360,13 +350,13 @@ pub(super) fn ban_cd_into_api(stripped: &str) -> Vec<Verdict> {
     ]
 }
 
-/// bash: the `[[ ! -f "$COMPOSE" ]]` / `[[ -e "$STALE" ]]` pair.
+/// The two on-disk assertions: the good compose file exists, the stale one does not.
 ///
 /// Both `Failed`, never `DidNotRun`: here the file's *existence* IS the assertion, so a missing
-/// compose file is a check that ran and found a violation. (Contrast the missing
-/// `deploy-staging.sh` in [`verify_t438`], where absence blinds the gate and "did not run" is the
-/// honest answer.) Note bash used `-e`, not `-f`, for the stale path — carried over deliberately:
-/// a *directory* left at that path is just as much a leftover, and the wider test suits a ban.
+/// compose file is a check that ran and found a violation. (Contrast the missing deploy driver in
+/// [`verify_staging_compose_paths`], where absence blinds the gate and "did not run" is the honest
+/// answer.) The stale path is tested for ANY entry, not just a file: a *directory* left there is
+/// just as much a leftover, and the wider test suits a ban.
 pub(super) fn compose_files_on_disk(repo_root: &Path) -> Vec<Verdict> {
     let mut out = Vec::new();
     if !repo_root.join(GOOD_PATH).is_file() {
@@ -374,9 +364,8 @@ pub(super) fn compose_files_on_disk(repo_root: &Path) -> Vec<Verdict> {
     }
     // `symlink_metadata`, not `exists()`: `exists()` follows symlinks, so a *dangling* symlink at
     // the stale path would report absent. Symlinking the old location back is exactly how someone
-    // unblocks a one-off deploy, so it must trip the ban. (bash's `-e` follows symlinks too; this
-    // is the port's one deliberate strengthening, and it cannot change the verdict on any tree
-    // where the path is a real file or genuinely absent.)
+    // unblocks a one-off deploy, so it must trip the ban. This cannot change the verdict on any
+    // tree where the path is a real file or genuinely absent.
     if repo_root.join(BAD_PATH).symlink_metadata().is_ok() {
         out.push(Verdict::failed(format!(
             "unexpected {BAD_PATH} (stale path)"
@@ -385,17 +374,18 @@ pub(super) fn compose_files_on_disk(repo_root: &Path) -> Vec<Verdict> {
     out
 }
 
-/// The script's filename, as the two `cd` messages quote it. Derived from [`DEPLOY_SCRIPT`] so a
+/// The audited source's filename, as the two `cd` messages quote it. Derived from
+/// [`DEPLOY_SOURCE`] so a
 /// repoint cannot leave the prose naming a file that no longer exists.
-pub(super) fn script_basename() -> &'static str {
-    match DEPLOY_SCRIPT.rsplit_once('/') {
+pub(super) fn source_basename() -> &'static str {
+    match DEPLOY_SOURCE.rsplit_once('/') {
         Some((_, base)) => base,
-        None => DEPLOY_SCRIPT,
+        None => DEPLOY_SOURCE,
     }
 }
 
-/// A multi-line finding: headline plus six-space-indented continuations, which is both
-/// [`Finding`]'s rendering and the Python's `print(f"      {line}")`.
+/// A multi-line finding: headline plus six-space-indented continuations, which is how
+/// [`Finding`] renders.
 pub(super) fn detailed(headline: &str, detail: Vec<String>) -> Verdict {
     Verdict::Failed(Finding {
         headline: headline.to_string(),
@@ -403,9 +393,9 @@ pub(super) fn detailed(headline: &str, detail: Vec<String>) -> Verdict {
     })
 }
 
-/// Attach the Python's continuation lines to a verdict the library decided. Keeping the DECISION
-/// in `gate::*` and only the PROSE here is the point — a hand-rolled `if line.contains(BAD_PATH)`
-/// would re-open exactly the hole `tbd-gate` exists to close. `DidNotRun` passes through
+/// Attach continuation lines to a verdict the library decided. Keeping the DECISION in `gate::*`
+/// and only the PROSE here is the point — a hand-rolled `if line.contains(BAD_PATH)` would
+/// re-open exactly the fail-quiet hole `verification_core` exists to close. `DidNotRun` passes through
 /// untouched: its detail already names the cause, and a hint about the compose line would mislead
 /// when nothing was read.
 pub(super) fn with_detail(verdict: Verdict, detail: Vec<String>) -> Verdict {

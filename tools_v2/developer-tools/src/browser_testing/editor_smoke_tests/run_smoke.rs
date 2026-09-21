@@ -19,7 +19,7 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
         "pan" => smoke_pan(&dist, &path).await,
         "persist" => smoke_persist(&dist, &path).await,
         "select" => smoke_select(&dist, &path).await,
-        "t946-86" => outliner_drag::run(&dist).await,
+        "outliner-drag" => outliner_drag::run(&dist).await,
         "save-export" => smoke_save_export(&dist, &path).await,
         "save-dialog-rect" => smoke_save_dialog_rect(&dist, &path).await,
         "entrance-motion-rect" => smoke_entrance_motion_rect(&dist, &path).await,

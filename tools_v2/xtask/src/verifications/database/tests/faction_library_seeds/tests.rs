@@ -4,7 +4,7 @@ use super::*;
 /// applies to itself at runtime, at unit-test speed.
 const SEED_OK: &str = "-- starter library\nINSERT INTO user_factions (name, side)\n  VALUES ('US Army 1980s', 'BLUFOR');\n";
 /// Built from [`WAVE_RUN_LINE`] rather than hand-written, so the fixture cannot drift from
-/// the const the way it did when T-853 repointed the real call sites to `cargo xtask`.
+/// the const the way a hand-written copy of its contents would.
 fn wave_ok() -> String {
     format!(
         "const VERIFY_STEPS: &[(&str, &str)] = &[\n{WAVE_RUN_LINE}];\n\n\
@@ -14,7 +14,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {{\n    {VERIFY_LOOP} {{ let _ 
 }
 
 fn fails(seed: &str, seeds: &[&str], wave: &str) -> Vec<String> {
-    assert_t440_pins(seed, seeds, wave)
+    assert_faction_library_pins(seed, seeds, wave)
         .expect("constant patterns compile")
         .iter()
         .map(|verdict| match verdict {
@@ -29,7 +29,7 @@ fn live_inputs_hold() {
     assert!(fails(SEED_OK, SEEDS, &wave_ok()).is_empty());
 }
 
-/// RED 1, the T-478 headline defect: the name in a `--` comment must not satisfy the pin.
+/// RED 1: the name in a `--` comment must not satisfy the pin.
 #[test]
 fn comment_only_starter_name_is_not_a_seed() {
     let out = fails(
@@ -54,7 +54,7 @@ fn emptied_seed_fails_the_pin() {
     assert_eq!(fails("", SEEDS, &wave_ok()).len(), 1);
 }
 
-/// RED 2 and RED 2b, post-T-897: the seed must be a MEMBER of the list the seeder walks, and
+/// RED 2 and RED 2b: the seed must be a MEMBER of the list the seeder walks, and
 /// membership is by equality. Both fixtures are DERIVED from the live const.
 #[test]
 fn the_seeder_must_apply_the_file_not_merely_name_it() {
@@ -96,7 +96,8 @@ fn both_wave_paths_are_pinned() {
     let row_gone = wave_ok().replacen(WAVE_RUN_LINE, "", 1);
     let out = fails(SEED_OK, SEEDS, &row_gone);
     assert!(
-        out.iter().any(|h| h.contains("VERIFY_STEPS missing t440")),
+        out.iter()
+            .any(|h| h.contains("VERIFY_STEPS missing the faction-library-seeds row")),
         "{out:?}"
     );
 
@@ -104,7 +105,7 @@ fn both_wave_paths_are_pinned() {
     assert!(
         fails(SEED_OK, SEEDS, &commented)
             .iter()
-            .any(|h| h.contains("VERIFY_STEPS missing t440")),
+            .any(|h| h.contains("VERIFY_STEPS missing the faction-library-seeds row")),
         "commented row must not satisfy the pin"
     );
 
@@ -143,8 +144,8 @@ fn hash_stripper_respects_quotes() {
     assert_eq!(strip_hash_comments("\"a # b\""), "\"a # b\"");
     assert_eq!(strip_hash_comments("\t# only"), "\t");
     assert_eq!(
-        strip_hash_comments("    (\"t440\"), // gone\n"),
-        "    (\"t440\"), \n"
+        strip_hash_comments("    (\"wiki seeds\"), // gone\n"),
+        "    (\"wiki seeds\"), \n"
     );
     assert_eq!(strip_hash_comments("\"https://x\""), "\"https://x\"");
 }
@@ -238,7 +239,7 @@ fn copied_live_inputs() -> SourceFixture {
 #[test]
 fn live_entrypoint_reads_both_linked_wave_implementations() {
     let fixture = copied_live_inputs();
-    assert_eq!(verify_t440(fixture.path()).unwrap(), 0);
+    assert_eq!(verify_faction_library_seeds(fixture.path()).unwrap(), 0);
 }
 
 #[test]
@@ -254,7 +255,7 @@ fn missing_wave_implementation_fails_closed() {
             read_pair(&fixture.path().join(SEED_REL), &facade),
             Err(Verdict::DidNotRun(_, _))
         ));
-        assert_eq!(verify_t440(fixture.path()).unwrap(), 1);
+        assert_eq!(verify_faction_library_seeds(fixture.path()).unwrap(), 1);
     }
 }
 
@@ -276,7 +277,7 @@ fn disconnected_wave_implementation_fails_closed() {
                 read_pair(&fixture.path().join(SEED_REL), &facade),
                 Err(Verdict::Failed(_))
             ));
-            assert_eq!(verify_t440(fixture.path()).unwrap(), 1);
+            assert_eq!(verify_faction_library_seeds(fixture.path()).unwrap(), 1);
         }
     }
 }
@@ -295,7 +296,7 @@ fn hollowed_wave_implementation_cannot_borrow_the_other_paths_loop() {
         assert!(failures.iter().any(|failure| {
             failure.contains(function_name) && failure.contains("does not iterate VERIFY_STEPS")
         }));
-        assert_eq!(verify_t440(fixture.path()).unwrap(), 1);
+        assert_eq!(verify_faction_library_seeds(fixture.path()).unwrap(), 1);
     }
 }
 
@@ -317,5 +318,5 @@ fn linked_wave_inputs_preserve_universal_newline_reading() {
         std::fs::write(path, text.replace('\n', "\r\n")).unwrap();
     }
     assert_eq!(read_pair(&seed, &facade).unwrap(), expected);
-    assert_eq!(verify_t440(fixture.path()).unwrap(), 0);
+    assert_eq!(verify_faction_library_seeds(fixture.path()).unwrap(), 0);
 }

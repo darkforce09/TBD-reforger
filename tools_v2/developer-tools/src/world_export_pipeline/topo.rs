@@ -40,11 +40,17 @@ pub fn topo_terrain(terrain: &str) -> Option<TopoCfg> {
     }
 }
 
+/// On-disk `.topo` section codes. The numbers are the format's; the names say what the section
+/// actually carries on Everon, measured against the rendered network.
 pub const TOPO_AIRFIELD: u8 = 0;
-pub const TOPO_RIVER: u8 = 1; // legacy name — 12 m main asphalt highway (see build-roads header)
-pub const TOPO_STREAM: u8 = 2; // 8 m secondary asphalt
-pub const TOPO_ROAD_A: u8 = 3; // 4.5 m gravel/country
-pub const TOPO_ROAD_B: u8 = 5; // 1.75 m farm tracks / trails
+/// 12 m main asphalt highway.
+pub const TOPO_MAIN_HIGHWAY: u8 = 1;
+/// 8 m secondary asphalt.
+pub const TOPO_SECONDARY_ASPHALT: u8 = 2;
+/// 4.5 m gravel / country road.
+pub const TOPO_GRAVEL_COUNTRY_ROAD: u8 = 3;
+/// 1.75 m farm tracks and trails.
+pub const TOPO_FARM_TRACK: u8 = 5;
 
 const HEADER_LEN: usize = 0x18;
 

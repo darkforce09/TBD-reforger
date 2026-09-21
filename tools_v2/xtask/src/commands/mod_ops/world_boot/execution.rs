@@ -8,7 +8,7 @@ pub fn run(args: &[String]) -> Result<u8> {
     };
     if opts.selftest {
         let v = crate::commands::mod_ops::world_boot_verdict::cmd_selftest();
-        let t = t302_selftest();
+        let t = four_weapon_equip_selftest();
         return Ok(if v == 0 && t == 0 { 0 } else { 1 });
     }
     boot(&find_repo_root()?, opts)
@@ -264,7 +264,7 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
     let mut pass =
         crate::commands::mod_ops::world_boot_verdict::assess_log(&log_path, &scenario, mission_ctx);
     if opts.compiled {
-        pass = t302_assert(&text, true) && pass;
+        pass = assert_four_weapon_equip(&text, true) && pass;
     }
     if pass {
         println!("WORLD BOOT: PASS");

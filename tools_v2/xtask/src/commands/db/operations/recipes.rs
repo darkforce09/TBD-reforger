@@ -52,8 +52,7 @@ pub(crate) fn rendered_recipes() -> Vec<(&'static str, Vec<String>)> {
     ]
 }
 
-/// `gate_t444`'s `awk '/^target:/,/^[^#[:space:]]/'` recipe extractor, generalised over the
-/// target name.
+/// The body of one recipe, by target name: every line from the target header to the next one.
 ///
 /// Two make-isms are stripped because they are directives to make, not part of the command:
 /// `@` (do not echo) and `-` (ignore the exit status). Both are load-bearing elsewhere in this
@@ -81,8 +80,8 @@ pub(crate) fn recipe_body(makefile: &str, target: &str) -> Vec<String> {
             continue;
         }
         // A line starting with anything other than a comment or whitespace ends the recipe —
-        // i.e. the next target. (`gate_t444` notes the POSIX bracket-expression hazard that made
-        // the original awk class ambiguous; spelling the three characters out avoids it.)
+        // i.e. the next target. The three characters are spelled out rather than expressed as a
+        // bracket class, where a backslash escape would be ambiguous.
         if line
             .chars()
             .next()

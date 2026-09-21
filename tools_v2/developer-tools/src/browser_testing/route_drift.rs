@@ -15,7 +15,8 @@ use crate::browser_testing::server::repo_root;
 pub fn run() -> Result<u8> {
     let root = repo_root();
     let router = root.join("apps/website/frontend/src/router.rs");
-    let oracle_path = root.join("tools_v2/developer-tools/fixtures/t159/manifests/routes.csv");
+    let oracle_path =
+        root.join("tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv");
 
     let src =
         std::fs::read_to_string(&router).with_context(|| format!("read {}", router.display()))?;

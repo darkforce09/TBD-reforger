@@ -1,5 +1,4 @@
-//! T-439 — the Objects-palette alias ↔ spawn-registry census (T-853 port of
-//! `scripts/mod/verify-t439-objects-registry-aliases.sh`).
+//! The Objects-palette alias ↔ spawn-registry census.
 //!
 //! ── WHAT THE GATE IS FOR ─────────────────────────────────────────────────────────────────────
 //!
@@ -12,58 +11,43 @@
 //! Objects-eligible workbench kind this derives the alias the frontend would, and requires a
 //! `prop:`/`comp:` row whose `guid` is exactly the workbench `resource_name`. Eligibility comes
 //! from `contracts_v2/catalogs/registry-items.workbench.json` (`kind` in {crate, other},
-//! non-abstract) — the export the API imports, so no live Workbench needed.
+//! non-abstract) — the export the API imports, so no live Workbench is needed.
 //!
 //! ── THE DERIVATION IS A MIRROR, AND MIRRORS DRIFT ────────────────────────────────────────────
 //!
 //! [`derive_object_alias`] and [`object_alias_slug`] hand-copy `asset_catalog.rs` with no compiler
 //! joining the copies, deliberately: the point is to *independently* recompute what the frontend
 //! computes, and importing `website-frontend` would make the gate agree by construction and check
-//! nothing. The script had the same copy in Python for the same reason, guarded by the two
-//! `grep -q` pins this port keeps — so the derivation cannot be renamed away while the mirror
+//! nothing. Two pins guard the mirror, so the derivation cannot be renamed away while the copy
 //! here still describes the old one.
 //!
-//! ── WHAT THE PORT FIXES ──────────────────────────────────────────────────────────────────────
+//! ── A CHECK THAT DID NOT RUN IS NOT A PASS ───────────────────────────────────────────────────
 //!
-//! 1. **The Python interpreter is gone.** The script was a 90-line `python3 - <<'PY'` heredoc and
-//!    is line 34 of `scripts/python-inventory.txt` — the T-620 frozen debt list, whose header
-//!    records that the gate meant to enforce it had itself been greping with `rg` (installed
-//!    nowhere here) under `|| true`, so 127 read as "OK (none)" for four waves. Nothing is left
-//!    here whose absence could exit this gate 127.
-//! 2. **A structurally wrong registry is a verdict, not a traceback.** `wb["items"]`, `e["alias"]`
-//!    and `i["resource_name"]` were bare subscripts; a renamed key produced a `KeyError` trace.
-//!    Each is a `NotRun` — "could not run" is a different operator action from "found a
-//!    mismatch".
-//! 3. **`grep -q` misdiagnosis.** `if ! grep -q 'pub fn derive_object_alias' "$FE"` reads "pin
-//!    absent" (1), "file unreadable" (2) and "grep not installed" (127) as one sentence: a true
-//!    failure with a false cause, sending the next reader off to rewrite a function nobody
-//!    touched. [`gate::require`] separates them.
-//!
-//! Preserved because the script got it right: `set -euo pipefail`, no `2>/dev/null`, no `|| true`
-//! — one of the few `scripts/mod/` gates not born with the fail-open shape.
+//! A structurally wrong registry is a verdict, not a crash: `wb["items"]`, `e["alias"]` and
+//! `i["resource_name"]` are each a `NotRun` when the key is missing, because "could not run" is a
+//! different operator action from "found a mismatch". The same split applies to the two source
+//! pins: "pin absent", "file unreadable" and "matcher unavailable" are three sentences, not one
+//! true failure with a false cause that sends the next reader off to rewrite a function nobody
+//! touched. [`gate::require`] separates them.
 //!
 //! ── OUTPUT IS A CONTRACT ─────────────────────────────────────────────────────────────────────
 //!
-//! `wave.sh:2555` and `:2826` run the script in the slice and cold gates and `tail -15` it on
-//! failure, and T-853 accepts ports by diffing stdout. Two copied details look like mistakes and
-//! are not: the **two-space sample indent** (Python's `print("  sample:", …)`, where [`Finding`]
-//! would indent six, so those lines print raw), and **Python `repr()` of the sample lists** —
+//! Both wave gate drivers run this check and print the last 15 lines on failure. Two details look
+//! like mistakes and are not: the **two-space sample indent** (where [`Finding`] would indent six,
+//! so those lines print raw), and the **`repr()`-style rendering of the sample lists** —
 //! `['prop:x']`, tuples in parens, `None` for an absent `guid`, all in [`py_repr_value`]. A nicer
-//! format would be a diff. Two deviations are deliberate:
+//! format would be a diff.
 //!
-//! * **Exit 2, not 1, when the check did not run.** bash exits 1 both for "the registry is
-//!   missing" and for "the registry disagrees". Both `run()` helpers in `wave.sh` test `rc -eq 0`
-//!   / `rc -eq 124`, so any nonzero is still FAIL there — the resolution is free and a human can
-//!   see it. The bash headline stays verbatim on line 1 so a grep for `FAIL: missing …` still hits.
-//! * **`\A`/`\z` anchors instead of `^`/`$`.** [`Pattern`] forces `multi_line(true)` so ported
-//!   `grep` patterns keep line anchors — right for file scans, wrong for one token, where `^…$`
-//!   would let `"{DEADBEEF…}ok\nGARBAGE"` through. `\A…\z` is `re.fullmatch`, i.e. what
-//!   `re.match(…$)` means for a newline-free subject. Python's `$` also tolerates ONE trailing
-//!   newline; measured 2026-08-12 no eligible item contains one, so that gap is unreachable.
+//! **Exit 2, not 1, when the check did not run.** A caller that only tests `rc == 0` still reads
+//! FAIL, and a human gets the resolution for free. The headline stays on line 1 so a grep for
+//! `FAIL: missing …` still hits.
 //!
-//! No [`verification_core::Report`]: it prints every failure and the script does not — each check ends in
-//! `sys.exit(1)`, load-bearing because once the census count drifts the alias diffs below it are
-//! noise. Fail-fast order kept; the summary bash never printed stays out.
+//! **`\A`/`\z` anchors instead of `^`/`$`.** [`Pattern`] forces `multi_line(true)`, which is
+//! right for file scans and wrong for a single token, where `^…$` would let
+//! `"{DEADBEEF…}ok\nGARBAGE"` through. `\A…\z` is a full match of the whole subject.
+//!
+//! No [`verification_core::Report`]: it prints every failure, and this gate must not — once the
+//! census count drifts, the alias diffs below it are noise. Fail-fast order is the contract.
 
 use std::collections::HashMap;
 use std::io;
@@ -109,13 +93,13 @@ const FE_PINS: &[(&str, &str)] = &[
     ("KNOWN comp:checkpoint_small reverse-hit missing from map-engine assets.rs", POC_ALIAS),
 ];
 
-pub fn verify_t439(repo_root: &Path) -> Result<u8> {
+pub fn verify_object_registry_aliases(repo_root: &Path) -> Result<u8> {
     // The Objects-eligible census — the same export the API imports, so no live Workbench needed.
     let wb_path = registry_items_catalog_path(repo_root);
     let mod_path = repo_root.join(MOD_REL);
     let fe_path = repo_root.join(FE_REL);
 
-    // bash: `for f in "$WB" "$MOD" "$FE"; do [[ -f "$f" ]] || { echo "FAIL: missing $f"; exit 1; }`
+    // Every input must exist before anything is read: a missing one is `FAIL: missing <path>`.
     // Order and absolute paths preserved: `$ROOT` was absolute, so the printed path was too.
     for f in [&wb_path, &mod_path, &fe_path] {
         if !f.is_file() {
@@ -139,7 +123,7 @@ pub fn verify_t439(repo_root: &Path) -> Result<u8> {
     }
 }
 
-/// The Python half of the script. `Err` always means "the census could not run".
+/// The census proper. `Err` always means "the census could not run".
 fn census(wb_path: &Path, mod_path: &Path) -> Result<u8, Verdict> {
     let guid_re = compile(GUID_RE)?;
     let alias_re = compile(ALIAS_RE)?;
@@ -149,9 +133,9 @@ fn census(wb_path: &Path, mod_path: &Path) -> Result<u8, Verdict> {
     let items = json_array(&wb, wb_path, "items")?;
     let entries = json_array(&md, mod_path, "entries")?;
 
-    // python: `i.get("kind") in ("crate","other") and not i.get("abstract")` — `.get` on both, so
-    // a missing key is a miss, not an error. Measured 2026-08-12 `abstract` is only ever absent
-    // (1511) or `true` (346), never `false`; [`is_falsy`] still reproduces Python's full rule.
+    // Eligible items are `kind` in {crate, other} and not abstract; a missing key is a miss, not
+    // an error. Measured 2026-08-12, `abstract` is only ever absent (1511) or `true` (346), never
+    // `false`; [`is_falsy`] still spells out the whole rule.
     let eligible: Vec<&Value> = items
         .iter()
         .filter(|i| {
@@ -160,9 +144,9 @@ fn census(wb_path: &Path, mod_path: &Path) -> Result<u8, Verdict> {
         })
         .collect();
 
-    // python: `{e["alias"]: e for e in mod["entries"]}` — a LATER duplicate alias overwrites an
-    // earlier one and the counts below are over the deduplicated keys. Zero duplicates shipped
-    // (2026-08-12), but `insert` keeps the script's rule for the day there is one.
+    // Entries are indexed by alias: a LATER duplicate overwrites an earlier one, and the counts
+    // below are over the deduplicated keys. Zero duplicates shipped (2026-08-12), but `insert`
+    // keeps that rule for the day there is one.
     let mut by_alias: HashMap<&str, &Value> = HashMap::new();
     for (idx, e) in entries.iter().enumerate() {
         let alias = text_field(e, "alias", mod_path, &format!("entries[{idx}]"))?;
@@ -194,8 +178,8 @@ fn census(wb_path: &Path, mod_path: &Path) -> Result<u8, Verdict> {
             missing.push(alias);
             continue;
         };
-        // python: `ent.get("guid") != i["resource_name"]`. Absent, null and non-string all
-        // compare unequal to a str, so all three are mismatches, rendered `None` or their repr.
+        // The row's `guid` must equal the item's `resource_name`. Absent, null and non-string
+        // all compare unequal, so all three are mismatches, rendered `None` or their repr.
         if ent.get("guid").and_then(Value::as_str) != Some(resource_name) {
             guid_mismatch.push((alias, ent.get("guid").cloned(), resource_name.to_string()));
         }
@@ -241,11 +225,11 @@ fn census(wb_path: &Path, mod_path: &Path) -> Result<u8, Verdict> {
     }
 
     let pass = format!("prop={prop_n} comp={comp_n} missing=0 guid_mismatch=0");
-    println!("PASS: T-439 Objects aliases — eligible={n} {pass}");
+    println!("PASS: Objects palette aliases — eligible={n} {pass}");
     Ok(0)
 }
 
-/// Print a verdict, yield its code: [`verification_core::Report::check`] minus the summary bash never
+/// Print a verdict, yield its code: [`verification_core::Report::check`] minus the summary this
 /// printed. `Held` prints nothing, exactly as a passing `grep -q` printed nothing.
 fn emit(verdict: Verdict) -> u8 {
     let (code, finding) = match verdict {
@@ -257,11 +241,11 @@ fn emit(verdict: Verdict) -> u8 {
     code
 }
 
-/// python: `print(f"FAIL: …"); sys.exit(1)`.
+/// One `FAIL: …` headline, then exit 1.
 fn fail(headline: String) -> u8 {
     emit(Verdict::failed(headline))
 }
-/// The same, plus Python's two-space `  sample: […]` — `print("  sample:", …)`, not [`Finding`]'s
+/// The same, plus the two-space `  sample: […]` line — not [`Finding`]'s
 /// six-space continuation, so line 2 bypasses the renderer and is printed raw.
 fn fail_with_sample(headline: &str, sample: &str) -> u8 {
     let code = emit(Verdict::failed(headline));
@@ -269,7 +253,7 @@ fn fail_with_sample(headline: &str, sample: &str) -> u8 {
     code
 }
 
-/// bash's `echo "FAIL: missing $f"; exit 1`, with the refusal underneath. Hand-built rather than
+/// One `FAIL: missing <path>` line with the refusal underneath. Hand-built rather than
 /// [`Verdict::did_not_run`], which would append ` — target file missing: <path>` to a headline
 /// that already names it; the detail keeps the library's `TargetMissing` wording all the same.
 fn missing_target(path: &Path) -> Verdict {
@@ -291,7 +275,7 @@ fn compile(src: &str) -> Result<Pattern, Verdict> {
             status: 1,
             stderr,
         };
-        Verdict::did_not_run("T-439 pattern would not compile", Kind::Pin, cause)
+        Verdict::did_not_run("the alias pattern would not compile", Kind::Pin, cause)
     })
 }
 
@@ -304,7 +288,7 @@ fn shape_ok(pattern: &Pattern, subject: &str) -> bool {
 
 // Every structural surprise below is a DidNotRun, never a traceback.
 fn unread(path: &Path, source: io::Error) -> Verdict {
-    let msg = "the T-439 alias census could not read its input";
+    let msg = "the alias census could not read its input";
     let path = path.to_path_buf();
     Verdict::did_not_run(msg, Kind::Pin, NotRun::Unreadable { path, source })
 }
@@ -328,7 +312,7 @@ fn text_field<'a>(obj: &'a Value, field: &str, path: &Path, ctx: &str) -> Result
         .ok_or_else(|| malformed(path, format!("{ctx}: `{field}` is missing or not a string")))
 }
 
-/// Python truthiness, for `not i.get("abstract")`.
+/// Truthiness for `abstract`: absent, null, `false`, `0`, `""` and `[]` all mean "not abstract".
 fn is_falsy(v: Option<&Value>) -> bool {
     match v {
         None | Some(Value::Null) => true,
@@ -360,8 +344,8 @@ fn object_alias_slug(raw: &str) -> String {
     let mut out = String::with_capacity(raw.len());
     let mut prev_repl = false;
     for c in raw.to_lowercase().chars() {
-        // python: `c.isascii() and (c.islower() or c.isdigit())` — for ASCII exactly `[a-z0-9]`,
-        // which is what the frontend writes directly.
+        // ASCII lowercase letters and digits only — exactly `[a-z0-9]`, which is what the
+        // frontend writes directly.
         if c.is_ascii_lowercase() || c.is_ascii_digit() {
             out.push(c);
             prev_repl = false;
@@ -376,10 +360,10 @@ fn object_alias_slug(raw: &str) -> String {
     }
 }
 
-// Python `repr()` below, because the sample lines are a diffed contract.
-/// `repr()` of a Python 3 `str`. Quote selection is Python's: `'` unless the value contains `'`
-/// and no `"`. Escapes cover `\`, the active quote, `\t`/`\n`/`\r` and the ASCII control range.
-/// Python also escapes non-ASCII *non-printables* (Cc/Cf/Cs/Co/Cn/Zl/Zp/Zs) as `\uXXXX`; measured
+// Python-`repr()`-style rendering below, because the sample lines are a scraped contract.
+/// `repr()` of a string: `'` quotes unless the value contains `'` and no `"`. Escapes cover `\`,
+/// the active quote, `\t`/`\n`/`\r` and the ASCII control range.
+/// Non-ASCII *non-printables* (Cc/Cf/Cs/Co/Cn/Zl/Zp/Zs) would render as `\uXXXX`; measured
 /// 2026-08-12 all 333 eligible display and resource names are printable ASCII, so that branch is
 /// unreachable on real data and is left out rather than implemented wrong.
 fn py_repr_str(s: &str) -> String {
@@ -410,19 +394,19 @@ fn py_repr_str(s: &str) -> String {
 /// `repr()` of a decoded JSON value, for the `ent.get("guid")` slot.
 fn py_repr_value(v: Option<&Value>) -> String {
     match v {
-        // Both an absent key and an explicit `null` reach Python's `.get` as `None`.
+        // Both an absent key and an explicit `null` render as `None`.
         None | Some(Value::Null) => "None".to_string(),
         Some(Value::Bool(true)) => "True".to_string(),
         Some(Value::Bool(false)) => "False".to_string(),
         Some(Value::Number(n)) => n.to_string(),
         Some(Value::String(s)) => py_repr_str(s),
-        // A list/dict here is corruption no schema permits; the JSON form is close enough to
-        // Python's nested repr and, unlike a panic, still lets the FAIL land.
+        // A list/dict here is corruption no schema permits; the JSON form is close enough to a
+        // nested repr and, unlike a panic, still lets the FAIL land.
         Some(other) => other.to_string(),
     }
 }
 
-/// python: `print("  sample:", xs[:n])` — the repr of a truncated list.
+/// `  sample: […]` — the repr of a truncated list.
 fn py_sample<T>(items: &[T], n: usize, render: impl Fn(&T) -> String) -> String {
     let rendered: Vec<String> = items.iter().take(n).map(render).collect();
     format!("[{}]", rendered.join(", "))

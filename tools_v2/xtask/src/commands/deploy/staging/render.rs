@@ -61,9 +61,8 @@ pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
         }
         fetch_modpack_url(env)
     } else {
-        // LEGACY: synthesize the same document shape from the env var so there is one renderer and
-        // one validator, not two divergent code paths. The bash built this with python3's
-        // `json.dump` (call site 1 of 14); the field order is that dict's insertion order.
+        // The single-mod env fallback: synthesize the same document shape from the env var so
+        // there is one renderer and one validator, not two divergent code paths.
         let mut mod0 = Map::new();
         mod0.insert("name".into(), Value::String(env.workshop_mod_name.clone()));
         mod0.insert(
@@ -74,14 +73,16 @@ pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
         let mut doc = Map::new();
         doc.insert(
             "name".into(),
-            Value::String("(legacy TBD_WORKSHOP_MOD_ID env, not a database modpack)".into()),
+            Value::String("(TBD_WORKSHOP_MOD_ID env, not a database modpack)".into()),
         );
         doc.insert("version".into(), Value::String(String::new()));
         doc.insert("mods".into(), Value::Array(vec![Value::Object(mod0)]));
-        println!("  modpack source: LEGACY env TBD_WORKSHOP_MOD_ID (no modpack configured)");
+        println!(
+            "  modpack source: single-mod env fallback TBD_WORKSHOP_MOD_ID (no modpack configured)"
+        );
         Ok((
             Value::Object(doc).to_string(),
-            "LEGACY TBD_WORKSHOP_MOD_ID".to_string(),
+            "single-mod env fallback (TBD_WORKSHOP_MOD_ID)".to_string(),
         ))
     }
 }

@@ -8,9 +8,10 @@ fn enums() -> serde_json::Value {
     .expect("enums schema")
 }
 
-/// The guard that would have caught T-244 the day it landed, on the copy that feeds I1.
+/// `INSTANCE_KINDS` — the copy that feeds I1 — must name exactly the kinds the enums schema
+/// declares, so a kind added to one and not the other cannot reach a shipped catalogue.
 #[test]
-fn instance_kinds_match_enums_schema_and_tbd_tools() {
+fn instance_kinds_match_the_enums_schema_and_the_crate_array() {
     let f = instance_kinds_lockstep_failures(&enums());
     assert!(f.is_empty(), "INSTANCE_KINDS is not in lockstep:\n  {f:#?}");
 }

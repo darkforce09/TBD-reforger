@@ -69,7 +69,7 @@ fn rsync_argv_keeps_source_and_destination_last() {
 fn asset_probe_distinguishes_the_three_layouts() {
     use asset_preflight::{AssetLayout, classify};
     assert_eq!(classify(0), AssetLayout::Ready);
-    assert_eq!(classify(10), AssetLayout::Legacy);
+    assert_eq!(classify(10), AssetLayout::OldPackagesTree);
     assert_eq!(classify(11), AssetLayout::Absent);
     // An unreachable host (ssh's own 255) must not read as any layout verdict.
     assert_eq!(classify(255), AssetLayout::Indeterminate(255));
@@ -111,7 +111,7 @@ fn only_a_legacy_or_unreadable_layout_refuses_the_deploy() {
     let dir = "/home/sam/tbd/repo";
     assert!(report(AssetLayout::Ready, dir).is_ok());
     assert!(report(AssetLayout::Absent, dir).is_ok());
-    assert!(report(AssetLayout::Legacy, dir).is_err());
+    assert!(report(AssetLayout::OldPackagesTree, dir).is_err());
     assert!(report(AssetLayout::Indeterminate(255), dir).is_err());
 }
 

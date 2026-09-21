@@ -35,7 +35,7 @@
 //! * `TBD_MODPACK_JSON` — path to a file holding a `GET /modpacks/current` response body. Works
 //!   TODAY, and is the supported path right now.
 //! * `TBD_MODPACK_URL` — fetch that same document over HTTP. Needs `TBD_MODPACK_TOKEN`.
-//! * Neither → LEGACY single-mod render from `TBD_WORKSHOP_MOD_ID`, which now goes through the
+//! * Neither → the single-mod env fallback `TBD_WORKSHOP_MOD_ID`, which goes through the
 //!   SAME renderer and the SAME validator, so there is exactly one place that can emit
 //!   `game.mods[]`.
 //!
@@ -300,8 +300,8 @@ impl Env {
         match self.server_mode.as_str() {
             "addons" => {}
             "config" => {
-                // T-288: TBD_WORKSHOP_MOD_ID is the LEGACY single-mod source and is only required
-                // when no modpack document is configured — a modpack carries its own workshop ids.
+                // TBD_WORKSHOP_MOD_ID is the single-mod env fallback and is only required when
+                // no modpack document is configured — a modpack carries its own workshop ids.
                 if self.workshop_mod_id.is_empty()
                     && self.modpack_json.is_empty()
                     && self.modpack_url.is_empty()
@@ -400,7 +400,7 @@ impl Env {
             format!("modpack API {}", self.modpack_url)
         } else {
             format!(
-                "LEGACY single mod TBD_WORKSHOP_MOD_ID={} (no modpack configured)",
+                "single-mod env fallback TBD_WORKSHOP_MOD_ID={} (no modpack configured)",
                 self.workshop_mod_id
             )
         }

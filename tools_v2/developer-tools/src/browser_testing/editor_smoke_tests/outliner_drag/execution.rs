@@ -123,7 +123,7 @@ pub(crate) async fn run(dist: &str) -> Result<u8> {
         settle().await;
         checks.insert("stale_tactical_selection_does_not_eat_delete".into(),json!(eval_i64(&h.page,"window.__missionDoc.slot_count()").await?==4));
 
-        eprintln!("t946-86 primary fixture: {}",json!({"checks":checks,"preview":chip,"z_delta":delta,"five_moved":moved,"tactical_count":count}));
+        eprintln!("outliner-drag primary fixture: {}",json!({"checks":checks,"preview":chip,"z_delta":delta,"five_moved":moved,"tactical_count":count}));
 
         h.page.navigate(&h.url(&format!("/missions/{MIXED_ID}/edit?force=webgl&sat=preview"))).await?;
         fixture_ready(&h.page,&format!("{SEL_READY} && {HIST_READY} && window.__missionDoc.slot_count()===5")).await?;
@@ -137,17 +137,17 @@ pub(crate) async fn run(dist: &str) -> Result<u8> {
         settle().await;
         let text=eval_str(&h.page,"document.body.textContent").await?;
         checks.insert("duplicate_save_refused_before_request".into(),json!(*posts.lock().unwrap()==0 && text.contains("Alpha") && text.contains("roof-0") && text.contains("more than once")));
-        eprintln!("t946-86 duplicate fixture: {}",json!({"checks":checks,"posts":*posts.lock().unwrap(),"text":text}));
+        eprintln!("outliner-drag duplicate fixture: {}",json!({"checks":checks,"posts":*posts.lock().unwrap(),"text":text}));
 
         h.page.navigate(&h.url(&format!("/missions/{LARGE_ID}/edit?force=webgl&sat=preview"))).await?;
         fixture_ready(&h.page,&format!("{SEL_READY} && window.__missionDoc.slot_count()===5 && !!document.querySelector('[data-testid=outliner-window-scroller]')")).await?;
         settle().await;
         outside_drop_cases(&h.page,&mut checks,"windowed").await?;
-        eprintln!("t946-86 windowed fixture: {}",json!({"checks":checks}));
+        eprintln!("outliner-drag windowed fixture: {}",json!({"checks":checks}));
 
         checks.insert("no_browser_panics".into(),json!(h.no_panics()));
         let pass=checks.values().all(|v|v==true);
-        println!("{}",json!({"smoke":"t946-86","pass":pass,"checks":checks,"panics":h.panics_head(),"z_delta":delta,"preview":chip,"five_moved":moved,"tactical_count":count}));
+        println!("{}",json!({"smoke":"outliner-drag","pass":pass,"checks":checks,"panics":h.panics_head(),"z_delta":delta,"preview":chip,"five_moved":moved,"tactical_count":count}));
         Ok::<u8,anyhow::Error>(if pass {0} else {1})
     }.await;
     h.shutdown().await;

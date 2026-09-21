@@ -42,5 +42,8 @@ fn every_pin_is_discriminating() {
 
 #[test]
 fn a_missing_target_does_not_read_as_pass() {
-    assert_eq!(verify_t452(Path::new("/nonexistent/tbd-853")).unwrap(), 1);
+    assert_eq!(
+        verify_player_identity_comments(Path::new("/nonexistent/tbd-853")).unwrap(),
+        1
+    );
 }

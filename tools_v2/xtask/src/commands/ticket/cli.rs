@@ -44,7 +44,7 @@ pub(crate) enum TicketCmd {
         #[arg(long, default_value = "")]
         summary: String,
     },
-    /// T-916.2: mint the next free dotted child under an existing parent.
+    /// Mint the next free dotted child under an existing parent.
     #[command(name = "add-child")]
     AddChild {
         parent: String,
@@ -68,18 +68,18 @@ pub(crate) enum TicketCmd {
     },
     Ship {
         id: String,
-        /// T-946: skip the wave.lock refresh so a whole wave can be shipped and then repacked
+        /// Skip the wave.lock refresh so a whole wave can be shipped and then repacked
         /// ONCE — a wave repacked per-id dissolves before any repack sees it fully landed, and
         /// never forms the pending entry `wave --close` needs. Run `cargo xtask wave repack`
         /// after the last id of the wave.
         #[arg(long)]
         no_repack: bool,
     },
-    /// T-917.6: step 3 of the ship lifecycle — after the landing commit exists, write
+    /// Step 3 of the ship lifecycle — after the landing commit exists, write
     /// its SHA onto the shipped ticket (`shipped_at`, both storage arms) and close the
-    /// token accounting (generates the diff_loc estimate when neither a receipt nor an
+    /// token accounting (estimates from the landed line count when neither a receipt nor an
     /// estimate exists; cohort_median at zero included LOC). Re-stamping the same sha
-    /// is a no-op; a different sha refuses (shipped_at is never overwritten). Flow:
+    /// is a no-op; another sha refuses (shipped_at is never overwritten). Flow:
     /// `ticket ship <id>` → commit → `ticket stamp-sha <id> $(git rev-parse --short HEAD)`.
     #[command(name = "stamp-sha")]
     StampSha {
@@ -90,7 +90,7 @@ pub(crate) enum TicketCmd {
     MarkReady {
         id: String,
         spec: Option<String>,
-        /// T-917.6 plan ready-gate: path to this ticket's own plan document; defaults
+        /// Plan ready-gate: path to this ticket's own plan document; defaults
         /// to docs/plans/<id-lowercased-dots-to-underscores>_plan.md and must exist
         /// on disk (copy docs/plans/TEMPLATE.md).
         plan: Option<String>,
@@ -130,7 +130,7 @@ pub(crate) enum TicketCmd {
     Clean {
         id: String,
     },
-    /// T-913.2: report per-run receipts from `.ai/tickets/metrics/` (elapsed + token
+    /// Report per-run receipts from `.ai/tickets/metrics/` (elapsed + token
     /// sums come from the real files; a broken file is an ERROR, never `tokens=0`).
     Metrics {
         /// Group sums (`agent` is the only supported key)

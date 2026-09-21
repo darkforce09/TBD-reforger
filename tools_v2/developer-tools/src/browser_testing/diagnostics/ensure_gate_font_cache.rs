@@ -198,7 +198,7 @@ pub(super) fn tool_version(bin: &str, arg: &str) -> Option<String> {
 /// `gate doctor`. `strict` promotes drift warnings to failures; a liveness failure is ALWAYS a hard
 /// fail (exit 1) so `cargo xtask mk leptos-gates` is blocked with a diagnosis rather than wedging.
 pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
-    println!("== gate doctor (T-177 editor-gate preflight)");
+    println!("== gate doctor (editor-gate preflight)");
     ensure_gate_font_cache();
     let manifest = match load_manifest() {
         Ok(m) => Some(m),

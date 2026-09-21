@@ -89,7 +89,7 @@ tools_v2/
   - Defines the non-collapsing four-outcome `Verdict` enum: `Held`, `Failed(Finding)`, `DidNotRun(NotRun, Finding)`.
   - Fail-closed text scanning and multi-line regex matching.
   - Process execution with process group signal isolation (`libc::killpg`) and concurrent I/O pipe drains.
-  - Repository-level flocking (`target/.tbd-gate.lock`) to serialize concurrent CI runs.
+  - Repository-level flocking (`target/.repository-verification.lock`) to serialize concurrent CI runs.
 - **Invariants:**
   - Zero internal monorepo dependencies.
   - Never implements `From<bool>` for `Verdict` (preventing "did not run" from collapsing into "passed").

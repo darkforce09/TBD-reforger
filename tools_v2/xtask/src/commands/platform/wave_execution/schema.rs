@@ -1,51 +1,28 @@
-//! ── SCHEMA (T-420) ──────────────────────────────────────────────────────────────────────────
+//! ── SCHEMA ──────────────────────────────────────────────────────────────────────────────────
 //!
-//! Until this existed the gate validated NO schema at all. MEASURED on main at 33a7aa85:
-//! `grep -c 'xtask schema' scripts/platform/wave.sh` -> 0, and `grep -n schema` -> zero hits in
-//! 1249 lines. The eleven steps were cargo check / wasm32 / fmt / clippy x3 / test x3 / trunk /
-//! ticket registry; not one read anything under `contracts_v2`.
+//! The wave gate's schema step. It runs the SET of contract sub-gates, not one of them.
 //!
-//! Realised twice in one weekend:
-//!   * wave 4 printed `GATE: PASS  11/11` on a wave whose HEADLINE deliverable was T-241's
-//!     mission.schema.json change. The only evidence that schema was valid is that T-241's own
-//!     agent ran the validator and said so. Agent reports are evidence, not testimony.
-//!   * T-244 (wave 5) added a `vehicle` kind and would have merged with `make schema-validate` RED.
-//!     Its slice gate passed for the worst possible reason: its diff is 0 `.rs` files, so fmt and
-//!     clippy are change-scoped and examined nothing whatsoever.
-//!
-//! WHY THIS IS NOT ONE LINE OF `cargo xtask schema validate`, WHICH IS THE OBVIOUS FIX AND IS
-//! VACUOUS. MEASURED 2026-07-26 against T-244's schema commit 25d551b6, from a detached probe
-//! worktree:
-//! ```text
-//!     schema validate          rc=0   <- the obvious one-liner. GREEN.
-//!     schema map-object-enums  rc=1   <- "prefab-classify rule[68]: kind 'vehicle' has no
-//!                                        class-enum mapping" (x5)
-//! ```
-//! A `run "schema" hostrun cargo xtask schema validate` step would therefore have printed PASS over
-//! the exact change that motivated this function: `validate` is the golden-mission/registry suite
-//! and never opens prefab-classify.json. That is this program's signature defect — a tool reporting
-//! success over an input it never examined — reproduced BY the fix for it. The step must run the
-//! SET.
+//! WHY NOT A SINGLE `cargo xtask schema validate`, WHICH IS THE OBVIOUS SHAPE AND IS VACUOUS:
+//! `validate` is the golden-mission/registry suite and never opens `prefab-classify.json`, so a
+//! contract change that adds an object kind with no class-enum mapping passes `validate` with
+//! rc=0 while `schema map-object-enums` exits 1 on it. A one-liner step would print PASS over the
+//! exact class of change this step exists to catch — a tool reporting success over an input it
+//! never examined.
 //!
 //! The set is `cargo xtask ci schema-validate` plus `cargo xtask ci verify-citations`, i.e.
-//! `cargo xtask ci ci-local-schema`. NOT ci.yml: its `schema` job was `validate` + `citations`
-//! only, so CI had the same hole and would not have caught T-244 either.
+//! `cargo xtask ci ci-local-schema`.
 //!
-//! ── T-897: WHERE THE CROSS-CHECK'S SECOND SOURCE LIVES NOW ──────────────────────────────────
+//! ── THE CROSS-CHECK'S SECOND SOURCE ─────────────────────────────────────────────────────────
 //!
-//! Until T-897 the tripwire below parsed the root `Makefile`'s `schema-validate` recipe, with
-//! `std::fs::read_to_string("Makefile")` returning `Vec::new()` on any read error — a FAIL-OPEN
-//! whose only saving grace was that an empty parse was refused a few lines further down. T-897
-//! deletes the Makefile, so that input is gone. The successor is [`crate::commands::ci::task_runner::TASKS`]' own
-//! `schema-validate` row, read through [`crate::commands::ci::task_runner::validate_gate_names`] — the same list
-//! `cargo xtask schema list-gates` prints and, more to the point, the same list `run_task`
-//! actually executes. Two independent sources are still being diffed: [`VALIDATE_GATES`] here,
-//! and the executable table over in `mk_ci_tasks.rs`. Adding a tenth sub-gate to that table
-//! without adding it here still fails closed, which is the whole point of the tripwire.
+//! The tripwire below diffs two independent lists of the sub-gate names: [`VALIDATE_GATES`] here,
+//! and [`crate::commands::ci::task_runner::TASKS`]' own `schema-validate` row read through
+//! [`crate::commands::ci::task_runner::validate_gate_names`] — the same list
+//! `cargo xtask schema list-gates` prints and the same list `run_task` executes. Adding a sub-gate
+//! to that table without adding it here fails closed, which is the whole point.
 //!
-//! DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under contracts_v2 changed" is how
-//! fmt and clippy came to examine nothing on T-244's diff, and it would be wrong on the facts
-//! anyway: these gates read `tools_v2/xtask/src/verifications/schemas/checks.rs`, `contracts_v2/rules/`,
+//! DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under contracts_v2 changed" would examine
+//! nothing on a diff of zero contract files, and it would be wrong on the facts anyway: these
+//! gates read `tools_v2/xtask/src/verifications/schemas/checks.rs`, `contracts_v2/rules/`,
 //! `apps/mod/tbd-framework/` and `docs/specs/**`. Nine sub-gates cost ~1.4 s warm.
 
 use std::path::{Path, PathBuf};
@@ -53,10 +30,9 @@ use std::path::{Path, PathBuf};
 use super::{Ctx, host};
 use crate::wprintln;
 
-/// `GATE_SCHEMA_VALIDATE_GATES` must equal `cargo xtask ci schema-validate`'s sub-gate SET (order
-/// = the `TASKS` row). `citations` comes from `verify-citations` / `ci-local-schema` and is
-/// layered on after the tripwire. `height-labels` stays in VALIDATE_GATES even when a worktree
-/// skips running it.
+/// Must equal `cargo xtask ci schema-validate`'s sub-gate SET, in the `TASKS` row's order.
+/// `citations` comes from `verify-citations` / `ci-local-schema` and is layered on after the
+/// tripwire. `height-labels` stays in this list even when a worktree skips running it.
 const VALIDATE_GATES: &[&str] = &[
     "validate",
     "map-object-golden",
@@ -64,7 +40,7 @@ const VALIDATE_GATES: &[&str] = &[
     "height-labels",
     "map-object-enums",
     "type-inventory",
-    "t090-specs",
+    "specification-consistency",
     "n6",
     "n10",
 ];
@@ -96,13 +72,12 @@ pub fn task_validate_gates() -> Vec<String> {
 }
 
 pub fn gate_schema(ctx: &Ctx) -> i32 {
-    // DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently, and the way
-    // it rots is precisely this ticket: `schema-validate` grows a tenth sub-gate, nobody adds it
-    // here, and the wave gate goes on printing PASS over whatever that gate checks. Diff the SET
-    // against the executable task table every run and refuse when they disagree — including
-    // PARTIAL reads. T-420 only refused an EMPTY parse; a blank/`#`/continuation mid-recipe
-    // narrowed the old awk output while GNU make still ran all nine, and the one-way ⊆ check
-    // stayed green over the hole. T-897 moved the second source off the (now deleted) Makefile.
+    // DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently: when
+    // `schema-validate` grows a tenth sub-gate and nobody adds it here, the wave gate goes on
+    // printing PASS over whatever that gate checks. Diff the SET against the executable task table
+    // every run and refuse when they disagree — including PARTIAL reads. Refusing only an EMPTY
+    // read is not enough: a truncated list still passes a one-way ⊆ check while the task runs
+    // sub-gates this step never hears about.
     let mk_gates = task_validate_gates();
     if mk_gates.is_empty() {
         wprintln!(
@@ -157,32 +132,19 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
 
     // ---- make sure the xtask we are about to trust is THIS tree's ----
     //
-    // A PRIVATE TARGET DIR, and it is not theoretical — it was MEASURED while this step was being
-    // written, on this machine, with three sibling slices live:
-    //   21:01:54  target/debug/xtask rebuilt by ANOTHER worktree (T-244, which owns
-    //             tools_v2/xtask/schema_gates.rs this wave). `grep -ac vehicleClass target/debug/xtask` -> 2.
-    //   21:0x     from THIS worktree, whose xtask sources contain zero `vehicleClass`:
-    //               $ cargo build -p xtask        ->  Finished `dev` profile ... in 0.09s
-    //               $ cargo run -q -p xtask -- schema map-object-golden
-    //                 FAIL  S3 — prefabs-sample: no prefab example for kind 'vehicle'
-    // MECHANISM: cargo's freshness test is "is any source NEWER than the artifact?". T-244's
-    // schema_gates.rs is mtime 21:02:39; this tree's copy is 20:57:04, older than the 21:01:54
-    // artifact — so cargo calls it fresh, never rebuilds, and `cargo run` executes the sibling's
-    // binary. The clobber is one-directional and therefore easy to miss.
+    // A PRIVATE TARGET DIR. Cargo's freshness test is "is any source NEWER than the artifact?", so
+    // sibling worktrees sharing `target/` clobber each other: a neighbour rebuilds `target/debug/
+    // xtask` from ITS sources, this tree's older sources then look fresh against that newer
+    // artifact, and `cargo run` executes the neighbour's binary with no rebuild and no warning.
+    // The clobber is one-directional and therefore easy to miss.
     //
-    // ONE dir, not one per tree (a per-ticket dir grows without bound at ~1.7 GB each), plus a
+    // ONE dir, not one per tree (a per-tree dir grows without bound at ~1.7 GB each), plus a
     // CONTENT stamp: when this tree's xtask *and its path deps* hash differently from whatever last
-    // built here, the dir is thrown away and rebuilt. T-420 stamped only tools_v2/xtask/src + tools_v2/xtask/Cargo.toml
-    // + Cargo.lock while xtask depends on tbd-tools and map-engine-core BY PATH — two slice trees
-    // could share GATE_SCHEMA_TARGET with the same stamp while map-engine-core differed (T-422
-    // defect 3). Content, not mtime — mtime is the thing that lied.
+    // built here, the dir is thrown away and rebuilt. Every crate xtask depends on BY PATH must be
+    // a stamp root, or two trees can share this target dir under one stamp while a path dep
+    // differs. Content, not mtime — mtime is the thing that lies.
     let stamp_roots = [
         "tools_v2/xtask/src",
-        // T-0xx Phase 2A: `apps/website/mission-core/src` was a fourth root here and is gone —
-        // the crate folded into `apps/website/map-engine/src/data`, which this root already
-        // covers. Leaving the dead path in place would have been harmless; dropping it without
-        // checking that the content moved INTO a listed root is how the stamp silently loses an
-        // input, which is T-422 defect 3 all over again.
         "apps/website/map-engine/src",
         "tools_v2/developer-tools/src",
     ];
@@ -196,11 +158,12 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     }
     if srcs.is_empty() {
         wprintln!(
-            "schema: found no stamp inputs under tools_v2/xtask/ + map-engine-core/ + tbd-tools/ — cannot tell whose binary would run."
+            "schema: found no stamp inputs under {} — cannot tell whose binary would run.",
+            stamp_roots.join(" + ")
         );
         return 1;
     }
-    // `LC_ALL=C sort` — byte order, so the concatenation is stable across locales.
+    // Byte order, so the concatenation is stable across locales.
     srcs.sort_by(|a, b| {
         a.as_os_str()
             .as_encoded_bytes()

@@ -1,5 +1,5 @@
-//! `map` — the T-165.9 map-asset image pipeline CLI (ports of the scripts/map-assets image
-//! lane). Exit codes mirror the Node scripts.
+//! `map` — the map-asset image pipeline CLI: satellite and cartographic rasters, tile pyramids,
+//! glyph atlases, map labels and the inland-water lane.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -11,7 +11,7 @@ use crate::map_raster_pipeline::{
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "map", about = "T-090 map-asset image pipeline (Rust)")]
+#[command(name = "map", about = "Map-asset image pipeline")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -19,12 +19,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// verify-unified-satellite.mjs port
+    /// Verify the unified satellite bundle against its manifest
     VerifyUnified {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// verify-tile-pyramid.mjs port (VIEW=map via --view-map; EXPECT_LOSSLESS=1 via --expect-lossless)
+    /// Verify a tile pyramid (the Map view via --view-map; lossless encoding via --expect-lossless)
     VerifyPyramid {
         #[arg(long, default_value = "everon")]
         terrain: String,
@@ -33,19 +33,19 @@ enum Cmd {
         #[arg(long)]
         expect_lossless: bool,
     },
-    /// build-glyph-atlas.mjs port (SVG → lossless-WebP atlas + Deck mapping)
+    /// Build the glyph atlas: SVG → lossless-WebP atlas + symbol mapping
     BuildGlyphAtlas,
-    /// build-landcover-mask.mjs port
+    /// Build the land-cover mask from the stitched orthophoto
     BuildLandcover {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// build-map-cartographic.mjs port (TGA + tints + water + resvg roads)
+    /// Build the cartographic ortho: TGA + tints + water + rendered roads
     BuildCartographic {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// build-tile-pyramid.sh port (XYZ WebP levels + full.webp)
+    /// Build an XYZ WebP tile pyramid plus full.webp
     BuildPyramid {
         #[arg(long)]
         input: PathBuf,
@@ -64,7 +64,7 @@ enum Cmd {
         #[arg(long)]
         flip_v: bool,
     },
-    /// export-locations.mjs port
+    /// Export the locations label set for a terrain
     ExportLocations {
         #[arg(long, default_value = "everon")]
         terrain: String,
@@ -73,72 +73,72 @@ enum Cmd {
         #[arg(long)]
         dry_run: bool,
     },
-    /// export-height-labels.mjs port (native core restore — wasm pkg is gone)
+    /// Export the height-label set for a terrain
     ExportHeightLabels {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// T-935.7 — locations/map_labels.rkyv from locations.json + height-labels.json +
+    /// Emit `locations/map_labels.rkyv` from locations.json + height-labels.json +
     /// road-names.json (dual emission; the JSON files stay). `--terrain` takes a terrain id or a
     /// terrain directory.
     LabelsRkyv {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// T-935.9 — `water/water_vectors.rkyv` + `water/bathymetry.tbd-bath` from the Workbench
+    /// Emit `water/water_vectors.rkyv` + `water/bathymetry.tbd-bath` from the Workbench
     /// inland-water export in `assets_v2/scratch/<terrain>/water`. `--terrain` takes a terrain id,
     /// or a directory whose export sits under its own `scratch/water`.
     Water {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// map-water step: drop the waterComposite meta block (was a `node -e` one-liner)
+    /// map-water step: drop the waterComposite meta block
     ResetWaterMeta {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// map-water step: manifest unified.bytes = bundle size (was a `node -e` one-liner)
+    /// map-water step: set manifest unified.bytes to the bundle size
     PatchUnifiedBytes {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// map-cartographic step: tiles.map source/encoding patch (was a `node -e` one-liner)
+    /// map-cartographic step: patch the manifest tiles.map source and encoding
     PatchMapTilesMeta {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// verify-t152-cartographic.mjs port (program-wide aggregator)
-    VerifyT152,
-    /// analyze-water-sources.mjs port (inland-water classifier → mask + spike JSON)
+    /// Program-wide cartographic aggregator: slice logs + the live sub-verifiers
+    VerifyCartographic,
+    /// Inland-water classifier: mask + source-spike JSON
     AnalyzeWater,
-    /// composite-water-ortho.mjs port (ocean/inland tint over the SAP ortho, in place)
+    /// Composite the ocean/inland tint over the stitched ortho, in place
     CompositeWater,
-    /// verify-sap-seams.mjs port
+    /// Verify the stitched ortho carries no visible cell seams
     VerifySapSeams {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// analyze-sap-seams.mjs port
+    /// Measure the stitched ortho's cell seams and write the analysis artifact
     AnalyzeSapSeams {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// verify-sap-ortho.mjs port
+    /// Verify the stitched ortho against its metadata
     VerifySapOrtho {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// stitch-sap-ortho.mjs port (pak → 12800² north-up ortho + seam bridge)
+    /// Stitch the supertexture cells: pak → 12800² north-up ortho + seam bridge
     StitchSapOrtho {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// blend-sap-seams.mjs CLI port (bridge the existing ortho in place)
+    /// Bridge the seams of the existing ortho, in place
     BlendSapSeams {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// build-unified-satellite.mjs port
+    /// Build the unified satellite container from a source raster
     BuildUnified {
         #[arg(long)]
         input: PathBuf,
@@ -148,7 +148,7 @@ enum Cmd {
         terrain: String,
         #[arg(long, default_value_t = 8192)]
         tile_threshold: usize,
-        /// T-935.10 — TBDS container version: 2 (32-byte header + rkyv TbdSatIndexV2, the
+        /// TBDS container version: 2 (32-byte header + rkyv TbdSatIndexV2, the
         /// default) or 1 (the hand-packed JSON table `everon-sat.tbd-sat` is committed as).
         #[arg(long, default_value_t = satellite_archive_container::DEFAULT_CONTAINER_VERSION)]
         container_version: u16,
@@ -222,7 +222,9 @@ fn run() -> anyhow::Result<ExitCode> {
         Cmd::PatchMapTilesMeta { terrain } => Ok(ExitCode::from(
             cartographic_rendering::patch_map_tiles_meta(&terrain)?,
         )),
-        Cmd::VerifyT152 => Ok(ExitCode::from(cartographic_rendering::verify_t152()?)),
+        Cmd::VerifyCartographic => Ok(ExitCode::from(
+            cartographic_rendering::verify_cartographic()?
+        )),
         Cmd::AnalyzeWater => Ok(ExitCode::from(inland_water::analyze_water_sources()?)),
         Cmd::CompositeWater => Ok(ExitCode::from(inland_water::composite_water_ortho()?)),
         Cmd::VerifySapSeams { terrain } => Ok(ExitCode::from(aerial_orthophoto::verify_sap_seams(

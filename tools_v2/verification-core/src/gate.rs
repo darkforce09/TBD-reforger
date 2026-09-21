@@ -123,7 +123,11 @@ mod tests {
     impl Tmp {
         fn new(name: &str, body: &str) -> Tmp {
             let mut p = std::env::temp_dir();
-            p.push(format!("tbd-gate-{}-{}", std::process::id(), name));
+            p.push(format!(
+                "verification-core-gate-{}-{}",
+                std::process::id(),
+                name
+            ));
             let mut f = std::fs::File::create(&p).unwrap();
             f.write_all(body.as_bytes()).unwrap();
             Tmp(p)
@@ -183,7 +187,7 @@ mod tests {
         let v = ban(
             "no evil",
             &pat("evil"),
-            &[Path::new("/nonexistent/tbd-gate/nope")],
+            &[Path::new("/nonexistent/verification-core/nope")],
         );
         assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
         assert_ne!(v.into_exit(), 0, "a check that did not run must not exit 0");
@@ -194,7 +198,7 @@ mod tests {
         let v = require(
             "must pin",
             &pat("x"),
-            &[Path::new("/nonexistent/tbd-gate/nope")],
+            &[Path::new("/nonexistent/verification-core/nope")],
         );
         assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
     }
@@ -211,7 +215,7 @@ mod tests {
         let v = ban(
             "no evil",
             &pat("evil"),
-            &[f.path(), Path::new("/nonexistent/tbd-gate/x")],
+            &[f.path(), Path::new("/nonexistent/verification-core/x")],
         );
         assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
     }

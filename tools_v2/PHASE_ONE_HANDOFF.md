@@ -21,7 +21,7 @@ below; those failures prevent a claim that the whole workspace is green.
   [editor_capture.md](../docs/tools/editor_capture.md).
 
 The Cargo alias, public domain types, serialized ticket data, dependency versions,
-dependency checksums, binary names, and shared `target/.tbd-gate.lock` are preserved.
+dependency checksums, binary names, and the shared repository verification lock are preserved.
 Cargo.lock changes only the two package names and their dependency references.
 Existing working-tree changes were retained during relocation. The phase-one
 commit excludes the pre-existing edits to ticket checking, status markers, view

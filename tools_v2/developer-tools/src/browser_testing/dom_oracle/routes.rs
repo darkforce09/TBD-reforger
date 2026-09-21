@@ -105,7 +105,7 @@ fn record_missing(record: &Arc<Mutex<Vec<MissingFixture>>>, entry: MissingFixtur
 }
 
 pub(super) fn gold_dir() -> PathBuf {
-    repo_root().join("tools_v2/developer-tools/fixtures/t159/oracle-freeze")
+    repo_root().join("tools_v2/developer-tools/fixtures/dom_oracle/oracle-freeze")
 }
 
 /// The localStorage auth seed — the stored VALUE is built with the same key order as the
@@ -238,7 +238,7 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
             page.evaluate(SETTLE, true).await?;
             // Scope = the app root's first child (see gate_v_suite.mjs for the toaster note).
             let v = page
-                .evaluate("__t159SerializeDom('#root>:first-child', null)", false)
+                .evaluate("__domOracleSerialize('#root>:first-child', null)", false)
                 .await?;
             dom = v
                 .as_str()

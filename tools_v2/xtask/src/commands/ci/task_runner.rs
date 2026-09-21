@@ -85,24 +85,24 @@ use verification_core::verdict::NotRun;
 
 use crate::core::repository_root::find_repo_root;
 
-/// Who owns a row. Recorded because three slices are porting the Makefile at once and the answer
-/// decides what a merge does with the row.
+/// Which lane a row belongs to. `cargo xtask help` prints the tag beside the row so an operator
+/// can tell a gate step from a one-line wrapper at a glance.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Lane {
-    /// T-896 — this slice.
+    /// A CI row: this table owns both the name and the steps.
     Ci,
-    /// The make target was already a 1:1 alias for a `cargo xtask` command that predates T-853.
+    /// A one-line wrapper on an existing `cargo xtask verify …` command.
     Alias,
-    /// Another slice's lane, carried so this lane's composites genuinely run. See §2.
-    Borrowed(&'static str),
+    /// A build or database row, carried here so the CI composites genuinely run it.
+    Borrowed,
 }
 
 /// One recipe line.
 ///
-/// `silent` mirrors make's `@` prefix: without it make echoes the expanded line before running
+/// `silent` suppresses the echo: without it the runner prints the expanded line before running
 /// it, and that echo is the operator's progress trace through an eleven-step gate.
 pub enum Step {
-    /// `$(MAKE) <target>` — recurse into the same [`TASKS`] row the standalone command runs.
+    /// Recurse into the same [`TASKS`] row the standalone command runs.
     Task(&'static str),
     /// A child process. ONE datum: the make-expanded recipe line. It is both what gets echoed and
     /// what gets spawned ([`split_cmd`]), so the trace and the execution cannot disagree — a

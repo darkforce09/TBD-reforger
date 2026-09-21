@@ -1,6 +1,8 @@
 use super::*;
 
-use crate::repository_layout::{terrain_dir, terrain_manifest_path};
+use crate::repository_layout::{
+    INLAND_WATER_ARTIFACTS_DIR, inland_water_artifacts_dir, terrain_dir, terrain_manifest_path,
+};
 
 #[allow(clippy::too_many_lines)]
 pub fn analyze_water_sources() -> Result<u8> {
@@ -11,8 +13,9 @@ pub fn analyze_water_sources() -> Result<u8> {
     let manifest: Value = serde_json::from_str(&std::fs::read_to_string(
         terrain_manifest_path(&root, "everon"), // E2c-allow
     )?)?;
-    let out_json = root.join(".ai/artifacts/t090_1_2_5_2_source_spike.json");
-    let prev_spike = root.join(".ai/artifacts/t090_1_2_5_1_refine_spike.json");
+    let artifacts = inland_water_artifacts_dir(&root);
+    let out_json = artifacts.join("source_spike.json");
+    let prev_spike = artifacts.join("refine_spike.json");
     let out_mask = sap.join("water-inland-mask.png");
     let out_preview = sap.join("water-spike-preview.png");
     let t0 = std::time::Instant::now();
@@ -381,14 +384,16 @@ pub fn analyze_water_sources() -> Result<u8> {
         });
     }
     let spike = json!({
-        "slice": "T-090.1.2.5.2",
-        "parent": "T-090.1.2.5 + .2.5.1 spikes: .ai/artifacts/t090_1_2_5_water_source_spike.json / t090_1_2_5_1_refine_spike.json (shipped history, unchanged)",
+        "lane": "inland-water source analysis",
+        "parent": format!(
+            "the water source and refine spikes: {INLAND_WATER_ARTIFACTS_DIR}/water_source_spike.json and {INLAND_WATER_ARTIFACTS_DIR}/refine_spike.json (both unchanged by this run)"
+        ),
         "generatedAt": iso_from_system_time(std::time::SystemTime::now()),
         "decision": {
             "verdict": "G1-B — Eden.topo carries the full ROAD network but NO hydro layer; exact road-corridor SUBTRACTION removes the path/ditch FP class deterministically, enabling a safe wet-channel relaxation that closes the hill-stream/gully FN gap",
             "oceanMask": "A-dem-below-sea-level (UNCHANGED)",
             "inlandMask": "appearance classes (compact + grey-river + wet-channel) computed on the ROAD-SUBTRACTED pixel field; wet-channel relaxed (operator call: carved gully watercourses read as water even when seasonally dry)",
-            "automation": "fully offline: pak (.topo + supertextures) + committed DEM → cargo xtask ci map-water-everon; terrain-parameterized (operator one-button requirement) — T-165.9 Rust",
+            "automation": "fully offline: pak (.topo + supertextures) + committed DEM → cargo xtask ci map-water-everon; terrain-parameterized (operator one-button requirement)",
             "forbiddenMethodsAttestation": "No hand-painted lakes, no AI-generated rivers, no solid rectangles. The subtraction layer is the engine's own map-geometry road network decoded from Eden.topo; water acceptance remains engine-rendered supertexture appearance + engine DEM filters.",
         },
         "params": {

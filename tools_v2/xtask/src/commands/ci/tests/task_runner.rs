@@ -28,10 +28,9 @@ fn root() -> PathBuf {
 
 /// `ci-local`'s steps, in order, as `Step::Task` names plus the echo of anything that is not one.
 ///
-/// THE SUCCESSOR PIN. `ci-local` is the local replay of `ci.yml`, and the way it goes wrong is
-/// silent subtraction: a step is dropped, the composite still exits 0, and the gate it used to run
-/// stops running with nothing going red. The Makefile parity test caught that by diffing against
-/// the recipe; with no recipe left, the list is frozen HERE.
+/// `ci-local` is the local replay of `ci.yml`, and the way it goes wrong is silent subtraction: a
+/// step is dropped, the composite still exits 0, and the gate that step ran stops running with
+/// nothing going red. The step list is frozen HERE so a subtraction is a failing test.
 fn step_names(t: &Task) -> Vec<String> {
     t.steps
         .iter()
@@ -61,11 +60,11 @@ fn ci_local_step_set_is_frozen() {
             "verify-coding-standards",
             "ci-local-leptos",
             "ci-local-schema",
-            "verify-t438",
-            "verify-t456",
-            // T-489/T-881: a direct call, deliberately NOT Step::Task("verify-t468"). `gate_t468`
+            "verify-staging-compose-paths",
+            "verify-mission-rest-size-limits",
+            // A direct call, deliberately NOT Step::Task("verify-ci-schema-parity"). That gate
             // enforces the same thing at runtime; this pins the ORDER and the full set with it.
-            "cargo xtask verify t468",
+            "cargo xtask verify ci-schema-parity",
         ],
         "ci-local lost or gained a step — a dropped step silently stops running a gate"
     );
@@ -73,13 +72,11 @@ fn ci_local_step_set_is_frozen() {
 
 #[test]
 fn list_gates_equals_the_wave_gate_constant() {
-    // The Makefile-parity test above dies with the Makefile. THIS one is the one that has to
-    // survive: `gate_schema` refuses to report PASS unless its hardcoded set agrees
-    // with a parse of the recipe, and T-897 takes that recipe away. `xtask schema list-gates` is
-    // the replacement input, so it must equal the constant TODAY — otherwise the repoint would
-    // hand the tripwire a set nobody had ever compared, which is the failure it exists to catch.
-    // T-902: bash GATE_SCHEMA_VALIDATE_GATES died with wave.sh. Second source is
-    // VALIDATE_GATES in schema.rs — the same pin gate_schema diffs against the task table.
+    // `gate_schema` refuses to report PASS unless its hardcoded set agrees with the live task
+    // table, and `xtask schema list-gates` is what prints that table's sub-gate set. The second
+    // source is VALIDATE_GATES in schema.rs — the same pin gate_schema diffs against. They must
+    // be equal here, or the tripwire is handed a set nobody has ever compared, which is exactly
+    // the failure it exists to catch.
     let body = std::fs::read_to_string(
         root().join("tools_v2/xtask/src/commands/platform/wave_execution/schema.rs"),
     )
@@ -148,11 +145,11 @@ fn ci_local_runs_the_leaves_not_a_copy_of_them() {
             "verify-coding-standards",
             "ci-local-leptos",
             "ci-local-schema",
-            "verify-t438",
-            "verify-t456",
-            // T-489/T-881: direct, never `Step::Task` — the tripwire that polices hollow recipes
-            // must not be reachable only through the dispatcher it polices.
-            "cargo xtask verify t468",
+            "verify-staging-compose-paths",
+            "verify-mission-rest-size-limits",
+            // Direct, never `Step::Task` — the tripwire that polices hollow task bodies must not
+            // be reachable only through the dispatcher it polices.
+            "cargo xtask verify ci-schema-parity",
         ]
     );
 }
@@ -183,12 +180,11 @@ fn task(name: &'static str, steps: Vec<Step>) -> Task {
 
 /// A composite whose leaf fails must fail, and must not run the steps after it.
 ///
-/// T-489's `@true` defect and T-556's "a passing run is not evidence" are the same lesson: the
-/// only way to believe a green composite is to have watched a red one. The synthetic table is
-/// the real recursion — `run_task_in` is what `run_task` calls.
+/// A passing run is not evidence: the only way to believe a green composite is to have watched a
+/// red one. The synthetic table is the real recursion — `run_task_in` is what `run_task` calls.
 #[test]
 fn a_failing_leaf_fails_the_composite() {
-    let marker = std::env::temp_dir().join(format!("t896-after-{}", std::process::id()));
+    let marker = std::env::temp_dir().join(format!("task-runner-after-{}", std::process::id()));
     let _ = std::fs::remove_file(&marker);
     let touch = format!("touch {}", marker.display());
 

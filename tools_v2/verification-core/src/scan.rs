@@ -142,7 +142,10 @@ mod tests {
     impl TmpDir {
         fn new(name: &str) -> TmpDir {
             let mut p = std::env::temp_dir();
-            p.push(format!("tbd-gate-scan-{}-{name}", std::process::id()));
+            p.push(format!(
+                "verification-core-scan-{}-{name}",
+                std::process::id()
+            ));
             let _ = std::fs::remove_dir_all(&p);
             std::fs::create_dir_all(&p).unwrap();
             TmpDir(p)
@@ -163,7 +166,9 @@ mod tests {
     #[test]
     fn a_missing_root_is_did_not_run_not_zero_hits() {
         // THE DEFECT. `grep -rn ... 2>/dev/null || true` reads a renamed directory as "clean".
-        let got = walk_files(&[Path::new("/nonexistent/tbd-gate/scan")], |_| true);
+        let got = walk_files(&[Path::new("/nonexistent/verification-core/scan")], |_| {
+            true
+        });
         assert!(matches!(got, Err(NotRun::TargetMissing(_))));
     }
 

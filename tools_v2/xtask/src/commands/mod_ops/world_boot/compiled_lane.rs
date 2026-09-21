@@ -184,7 +184,7 @@ pub(super) fn compiled_lane(
 }
 
 #[rustfmt::skip]
-pub(super) fn t302_assert(text: &str, print: bool) -> bool {
+pub(super) fn assert_four_weapon_equip(text: &str, print: bool) -> bool {
     let mut ok = 0usize; let mut bad = 0usize; let mut seen = [false; 4];
     for line in text.lines() {
         let Some(rest) = line.split("[TBD][Equip] slot=").nth(1) else { continue };
@@ -193,32 +193,32 @@ pub(super) fn t302_assert(text: &str, print: bool) -> bool {
             ok += 1; seen[slot] = true;
         } else if rest.contains("result=") { bad += 1; }
     }
-    let pass = ok == T302_EQUIP_OK && bad == 0 && seen == [true, true, true, true];
+    let pass = ok == EXPECTED_EQUIP_OK && bad == 0 && seen == [true, true, true, true];
     if print {
-        if pass { println!("  ok    T-302 four-weapon equip ({ok} ok, slots 0-3)"); }
-        else { println!("  FAIL  T-302 four-weapon equip: ok={ok} other={bad} slots={seen:?} (want ok={T302_EQUIP_OK} other=0 slots 0-3)"); }
+        if pass { println!("  ok    four-weapon equip ({ok} ok, slots 0-3)"); }
+        else { println!("  FAIL  four-weapon equip: ok={ok} other={bad} slots={seen:?} (want ok={EXPECTED_EQUIP_OK} other=0 slots 0-3)"); }
     }
     pass
 }
 
 #[rustfmt::skip]
-pub(super) fn t302_selftest() -> u8 {
-    println!("==> T-302 four-weapon equip assertion");
+pub(super) fn four_weapon_equip_selftest() -> u8 {
+    println!("==> four-weapon equip assertion");
     let g = "[TBD][Equip] slot=0 weapon={3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et result=ok\n[TBD][Equip] slot=1 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=ok\n[TBD][Equip] slot=2 weapon={1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et result=ok\n[TBD][Equip] slot=3 weapon={E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et result=ok\n";
     let mut rc = 0u8;
-    if !t302_assert(g, true) { rc = 1; }
+    if !assert_four_weapon_equip(g, true) { rc = 1; }
     let three: String = g.lines().take(3).collect::<Vec<_>>().join("\n");
-    if t302_assert(&three, false) { println!("  FAIL  T-302 selftest accepted 3 weapons"); rc = 1; }
-    else { println!("  ok    T-302 selftest rejects 3 weapons"); }
+    if assert_four_weapon_equip(&three, false) { println!("  FAIL  four-weapon equip selftest accepted 3 weapons"); rc = 1; }
+    else { println!("  ok    four-weapon equip selftest rejects 3 weapons"); }
     let r = g.replace("slot=1 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=ok", "slot=0 weapon={9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et result=replaced");
-    if t302_assert(&r, false) { println!("  FAIL  T-302 selftest accepted a replaced line"); rc = 1; }
-    else { println!("  ok    T-302 selftest rejects replaced"); }
+    if assert_four_weapon_equip(&r, false) { println!("  FAIL  four-weapon equip selftest accepted a replaced line"); rc = 1; }
+    else { println!("  ok    four-weapon equip selftest rejects replaced"); }
     rc
 }
 
 #[rustfmt::skip]
 pub(super) fn seed_fixture_body() -> String {
-    // T-302 four-weapon proof lives on sl_ar (Unarmed so each row inserts, result=ok).
+    // The four-weapon proof lives on sl_ar (Unarmed so each row inserts, result=ok).
     let v = json!({
         "title": FIXTURE_TITLE, "terrain": "everon", "game_mode": "pvp", "weather": "clear",
         "time_of_day": "05:30", "max_players": 8,

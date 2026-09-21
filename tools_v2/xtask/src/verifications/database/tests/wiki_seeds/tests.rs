@@ -48,9 +48,8 @@ impl Drop for Tree {
     }
 }
 
-/// EVERY fixture below is DERIVED from [`SEEDS`], never transcribed. A hand-written copy of
-/// the const is how `gate_t440`'s fixtures drifted and cost seven test failures earlier in
-/// this program: the copy stayed green while the thing it claimed to mirror had moved.
+/// EVERY fixture below is DERIVED from [`SEEDS`], never transcribed. A hand-written copy of the
+/// const drifts from the thing it claims to describe: the copy stays green while the const moves.
 fn seeds_without(entry: &str) -> Vec<&'static str> {
     SEEDS.iter().copied().filter(|s| *s != entry).collect()
 }
@@ -104,14 +103,17 @@ fn a_missing_seed_file_does_not_read_as_pass() {
     let t = Tree::new("no-seed");
     let v = t.verdict();
     assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
-    assert!(text(&v).contains("T-444 requires apps/website/api_v2/seeds/wiki_pages.sql"));
-    assert_eq!(verify_t444(&t.0).unwrap(), 1);
+    assert!(text(&v).contains("requires apps/website/api_v2/seeds/wiki_pages.sql"));
+    assert_eq!(verify_wiki_seeds(&t.0).unwrap(), 1);
 }
 
 /// A whole repo root that does not exist at all: still not a pass.
 #[test]
 fn a_nonexistent_repo_root_does_not_read_as_pass() {
-    assert_eq!(verify_t444(Path::new("/nonexistent/tbd-t444")).unwrap(), 1);
+    assert_eq!(
+        verify_wiki_seeds(Path::new("/nonexistent/tbd-t444")).unwrap(),
+        1
+    );
 }
 
 #[test]
@@ -132,9 +134,8 @@ fn a_seed_without_the_v_suite_slug_is_caught() {
     assert!(text(&v).contains("does not contain 'field-manual'"));
 }
 
-/// The stdout contract. `wave.sh` prints `tail -15` of a failed step, so the failure body is
-/// operator-facing evidence and pinned here. Re-baselined at T-897 when the subject moved off
-/// the Makefile recipe onto `crate::commands::db::operations::SEEDS`.
+/// The stdout contract. The wave gate prints the last 15 lines of a failed step, so the failure
+/// body is operator-facing evidence and pinned here. Re-baseline it whenever the subject moves.
 #[test]
 fn failure_text_is_pinned() {
     let t = Tree::good("bytes");

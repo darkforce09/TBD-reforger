@@ -1,23 +1,10 @@
-//! T-180.10 — the permanent Class-R coherency gate for ORBAT + Eden placement (T-853 port of
-//! `scripts/verify-t180-coherency.sh`). Fail-fast, over map-engine-core, website-frontend and
-//! map-engine-render.
+//! The permanent Class-R coherency gate for ORBAT + Eden placement, over the map engine and the
+//! frontend. Fail-fast.
 //!
-//! ── WHY THIS PORT CLOSES A LOOP ──────────────────────────────────────────────────────────────
+//! ── A SEARCH THAT DID NOT RUN IS NOT A PASS ──────────────────────────────────────────────────
 //!
-//! **T-216 fixed the four-outcome defect in THIS script first**, in wave 5, inline — and the fix
-//! did not propagate. `scripts/mod/lib/gate-grep.sh` was extracted as a library precisely because
-//! every `verify-t*.sh` written afterwards was born with the same two holes, and `tools_v2/verification-core`
-//! exists because a bash library can ask its callers to remember but cannot make them. So the gate
-//! that first got it right is now built on the typed version of its own lesson: [`gate::ban`] /
-//! [`gate::require`] hand back a [`Verdict`] with no `bool` conversion, and the `translate` match
-//! is exhaustive — a cause added to `NotRun` breaks this file at compile time instead of quietly
-//! becoming a pass. The three findings below are the script's own, carried over rather than
-//! summarised: they record measurements nobody should have to re-take.
-//!
-//! ── 1. `grep -E`, NOT `rg`, AND THE STATUS IS READ (T-216) ───────────────────────────────────
-//!
-//! The three bans below used to read `if rg -n PAT FILE >/dev/null 2>&1; then fail; fi`. That form
-//! reports OK for three different outcomes and can tell only one of them apart:
+//! A ban written as `if <search> PATTERN FILE >/dev/null; then fail; fi` reports OK for three
+//! different outcomes and can tell only one of them apart:
 //!
 //! ```text
 //!   exit 0    match found            -> ban violated        -> correctly FAILED
@@ -27,53 +14,47 @@
 //! ```
 //!
 //! The last two are this program's signature defect — a tool reporting success over an input it
-//! never examined — living inside the script written to catch it. MEASURED 2026-07-26: `rg` is
-//! present in the dev container and ABSENT on the host, and cargo runs only on the host (glibc 2.36
-//! vs 2.39, E0463), so every host run printed three OK lines for bans that had executed no
-//! comparison at all; renaming `slots_gpu.rs` produced the same false green by the other route.
-//! bash's cure was `grep -E` (present on both sides of that bridge) plus reading the raw status.
-//! This port removes the search tool outright: [`Pattern`] is the `regex` crate compiled in with
-//! `multi_line(true)`, so `^`/`$` stay LINE anchors exactly as in ERE while exit 127 stops being
-//! reachable for the matcher at all. The patterns are byte-identical to the script's — `\(`, `\[`
-//! and `|` mean the same in both engines — and every check names explicit files, so ripgrep's
-//! recursion and gitignore defaults were never in play.
+//! never examined — living inside the check written to catch it. MEASURED 2026-07-26: a search
+//! tool present in the dev container and ABSENT on the host turns every host run into three OK
+//! lines for bans that executed no comparison at all; renaming a scanned file produces the same
+//! false green by the other route.
 //!
-//! ── 2. `--features "doc mission"`, NOT `doc` ALONE (T-216) ───────────────────────────────────
+//! So there is no external matcher here. [`Pattern`] is the `regex` crate compiled in with
+//! `multi_line(true)`, so `^`/`$` stay LINE anchors and "tool absent" is unreachable.
+//! [`gate::ban`] / [`gate::require`] hand back a [`Verdict`] with no `bool` conversion, and the
+//! `translate` match is exhaustive — a cause added to `NotRun` breaks this file at compile time
+//! instead of quietly becoming a pass. Every check names explicit files, so no recursive search
+//! and no ignore-file default is in play.
 //!
-//! `doc/store.rs`'s own tests call `crate::mission::compile::compile_payload` (store.rs:2589, 2601,
-//! 2909, 2932 — the hydrate/compile round-trips T-344 added) and `mission` is a separate feature
-//! gate at `lib.rs:23`, so `--features doc` cannot COMPILE the lib test target (`error[E0433]:
-//! cannot find mission in crate` ×4). `set -euo pipefail` killed the script on the FIRST of the
-//! seven doc-feature lines, so the tint/links lane, the derive gates, the compile boundary and the
-//! whole website-frontend block had not run since T-344 — reproduced on main at `33a7aa85`. Adding
-//! `mission` cannot weaken the gate: strictly more code compiled, selectors unchanged, one shared
-//! test binary instead of a second feature set.
+//! ── `--features "doc mission"`, NOT `doc` ALONE ──────────────────────────────────────────────
 //!
-//! ── 3. A SELECTOR THAT MATCHES NOTHING IS NOT A PASS (T-424) ─────────────────────────────────
+//! `doc/store.rs`'s own tests call `crate::mission::compile::compile_payload`, and `mission` is a
+//! separate feature gate, so `--features doc` cannot COMPILE the lib test target (`error[E0433]:
+//! cannot find mission in crate`). Adding `mission` cannot weaken the gate: strictly more code
+//! compiled, selectors unchanged, one shared test binary instead of a second feature set.
 //!
-//! `cargo test --lib <selector>` exits 0 when the filter matches NOTHING. Measured 2026-07-27:
-//! `cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere`
-//! → `0 passed; 277 filtered out`, rc=0. Every selector here was once a bare `cargo test`, so a
-//! typo or a rename printed `verify-t180 OK` having run zero assertions — the same defect as the
-//! `if rg` bans. `classify` sums every `test result: … N passed` line and fails on 0, and
-//! separately on no result line at all.
+//! ── A SELECTOR THAT MATCHES NOTHING IS NOT A PASS ────────────────────────────────────────────
+//!
+//! `cargo test --lib <selector>` exits 0 when the filter matches NOTHING. MEASURED 2026-07-27:
+//! a selector naming no test printed `0 passed; 277 filtered out`, rc=0. A typo or a rename would
+//! therefore print OK having run zero assertions — the same defect as the bans above. `classify`
+//! sums every `test result: … N passed` line and fails on 0, and separately on no result line at
+//! all.
 //!
 //! ── OUTPUT IS A CONTRACT, AND SO IS THE EXIT CODE ────────────────────────────────────────────
 //!
-//! `Makefile:341` (`cargo xtask verify t180`) is the only executable caller, and T-853 accepts ports by
-//! diffing stdout+stderr. So failures print bash's text verbatim — one `verify-t180 FAIL: …` line
-//! on **stderr**, `ok` lines on stdout — not [`verification_core::Finding`]'s two-line render, and the exit
-//! status is [`Verdict::into_exit_legacy_binary`]'s **1** for both failure kinds rather than the
-//! four-outcome 2 that [`crate::verifications::registry::object_registry_aliases`] chose. Two deviations are deliberate and reachable only
-//! when cargo itself does not run: see `not_run_clause`.
+//! Failures print one `editor-orbat-coherency FAIL: …` line on **stderr** and `ok` lines on
+//! stdout — not [`verification_core::Finding`]'s two-line render — and the exit status is
+//! [`Verdict::into_binary_exit_code`]'s **1** for both failure kinds, rather than the
+//! four-outcome 2 that [`crate::verifications::registry::object_registry_aliases`] chose. Two
+//! deviations are deliberate and reachable only when cargo itself does not run: see
+//! `not_run_clause`.
 //!
-//! **The output is not reproducible run to run, and never was.** Two consecutive warm runs of the
-//! *bash script* on 2026-08-12 differed on 9 of 803 lines, every one a wall-clock reading
-//! (`Finished … in 0.07s` vs `0.06s`); cold runs add `Compiling <crate>` lines whose ORDER is the
-//! build scheduler's, and `Running unittests` embeds `$CARGO_TARGET_DIR`. Nothing here can fix that
-//! — it is cargo's own stdout passed through. Acceptance therefore diffs bash against Rust back to
-//! back in one warm target dir with `in <float>s` normalised. The ordering that IS ours — checks,
-//! `ok` lines, pin order — comes from the static tables below, never from a directory walk.
+//! **The output is not reproducible run to run.** Two consecutive warm runs differ on wall-clock
+//! readings (`Finished … in 0.07s` vs `0.06s`); cold runs add `Compiling <crate>` lines whose
+//! ORDER is the build scheduler's, and `Running unittests` embeds `$CARGO_TARGET_DIR`. That is
+//! cargo's own stdout passed through. The ordering that IS ours — checks, `ok` lines, pin order —
+//! comes from the static tables below, never from a directory walk.
 
 use std::io::Write;
 use std::path::Path;
@@ -83,9 +64,9 @@ use regex::Regex;
 use verification_core::{NotRun, Pattern, Verdict, gate};
 
 // ── Targets, relative to the repo root ───────────────────────────────────────────────────────
-// bash `cd "$ROOT"` first and passed these relative, so a "target file missing" line printed the
-// relative path. Reproduced by joining onto `repo_root` to read and stripping back for the message,
-// rather than mutating this process's cwd — tests run in parallel threads.
+// A "target file missing" line prints the RELATIVE path, so these are joined onto `repo_root` to
+// read and stripped back for the message, rather than mutating this process's cwd — tests run in
+// parallel threads.
 #[cfg(test)]
 const EDITOR_OPS: &str =
     "apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs";
@@ -205,8 +186,8 @@ const BANS: &[BanRow] = &[
      "no Standardization UI strings"),
 ];
 
-/// The three side-tint pins, all in `slots_gpu.rs`, all sharing one `ok` line. The RGBA triples are
-/// the T-180 Class-R lock — BLUFOR/OPFOR/INDFOR must stay three visually distinct colours — and the
+/// The three side-tint pins, all in `slots_gpu.rs`, all sharing one `ok` line. The RGBA triples
+/// are the Class-R lock — BLUFOR/OPFOR/INDFOR must stay three visually distinct colours — and the
 /// literal spacing is part of the pin, so reformatting the array is a change the gate should see.
 #[rustfmt::skip]
 const PINS: &[(&str, &str)] = &[
@@ -218,24 +199,22 @@ const PINS: &[(&str, &str)] = &[
 const MEC: &str = "website-map-engine";
 const MER: &str = "website-map-engine";
 const FE: &str = "website-frontend";
-/// T-0xx Phase 2A folded `website-mission-core` into `website-map-engine`, so `MC` names the same
-/// package as `MEC` / `MER`. They stay apart because the FEATURE tier differs, and that is what
-/// these rows actually pin.
+/// `MC` names the same package as `MEC` / `MER`. They stay apart because the FEATURE tier
+/// differs, and that is what these rows actually pin.
 ///
-/// One argv element, not two — and bash's `$*` re-joins it with a space, so the failure text reads
-/// `--features scenario store`. Reproduced by `shown`.
+/// One argv element, not two, so the failure text reads `--features scenario store`. Rendered by
+/// `shown`.
 const MC: &str = "website-map-engine";
-/// Was `compiler doc`; the fold renamed both axes.
+/// The mission-authoring feature tier.
 const MSN: Option<&str> = Some("scenario store");
-/// The map-engine rows used to ride the crate default, which WAS
-/// `render terrain formats streaming`. The default is now `scenario` alone, so the old set has to
-/// be named: `render` reaches streaming -> io -> world -> bvh transitively, which is all of it.
-/// Without this the four graphics pins would select zero tests and pass vacuously.
+/// The crate default is `scenario` alone, so the graphics tier has to be named: `render` reaches
+/// streaming -> io -> world -> bvh transitively, which is all of it. Without this the four
+/// graphics pins would select zero tests and pass vacuously.
 const MEF: Option<&str> = Some("render");
 const NOF: Option<&str> = None;
 
 /// One `cargo_test_pin`: package, `--features` value, `--lib`?, selector, and the `ok` line to
-/// print after it — `Some` only on the row that closes a section, exactly where bash's `ok` sat.
+/// print after it — `Some` only on the row that closes a section.
 #[rustfmt::skip]
 type PinRow = (&'static str, Option<&'static str>, bool, &'static str, Option<&'static str>);
 
@@ -260,24 +239,23 @@ const CARGO_PINS: &[PinRow] = &[
     (MC, MSN, true, "derive_empty_loadout", None),
     (MC, MSN, true, "derives_from_editor_sorted", None),
     (MC, MSN, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
-    // ── T-216 — THE COMPILE BOUNDARY. Read this before trimming the list above. ──────────────
-    // Every selector up to here proves the editor can AUTHOR a T-180 value (doc::place_orbat,
-    // doc::store), that the map can DRAW it (slots_gpu, map-engine-render), or that the ORBAT
-    // derive keeps it (mission::orbat, mission::compile). Not one named a test in
-    // `mission::flatten`, so the gate never crossed the edge where the document is handed to the
-    // game server, and six values crossed nothing: a squad's leaderSlotId, a slot's tag / callsign
-    // / rank / stance, and the whole vehicle roster. Measured 2026-07-26: a payload authoring all
-    // six compiles to a document carrying none, with this gate printing ALL PASS. A gate is worth
-    // nothing until you know what it looked at. These two are that missing edge — the ledger walks
-    // each value from the saved payload to the serialized wire against mission.schema.json, so when
-    // the contract widens (T-242) the newly-legal key's row turns red and the dead feature becomes
-    // visible work; the second pins the compiled slot's key set, so nothing is added to or removed
-    // from the website<->mod interface in silence.
+    // ── THE COMPILE BOUNDARY. Read this before trimming the list above. ─────────────────────
+    // Every selector up to here proves the editor can AUTHOR an ORBAT value (doc::place_orbat,
+    // doc::store), that the map can DRAW it (slots_gpu), or that the ORBAT derive keeps it
+    // (mission::orbat, mission::compile). None of them crosses the edge where the document is
+    // handed to the game server. MEASURED 2026-07-26 without these two rows: a payload authoring
+    // a squad's leaderSlotId, a slot's tag / callsign / rank / stance and the whole vehicle roster
+    // compiles to a document carrying none of them, with this gate printing ALL PASS. A gate is
+    // worth nothing until you know what it looked at. These two rows are that missing edge — the
+    // ledger walks each value from the saved payload to the serialized wire against
+    // mission.schema.json, so a widened contract turns the newly-legal key's row red and the dead
+    // feature becomes visible work; the second pins the compiled slot's key set, so nothing is
+    // added to or removed from the website<->mod interface in silence.
     (MC, MSN, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
     (MC, MSN, true, "a_compiled_slot_carries_exactly_these_keys", None),
-    // T-482: the vehicle-floor test lives behind #[cfg(feature = "store")] (the MissionDocCore
-    // writer round-trip in flatten.rs), so scenario-only matches 0 tests and this pin FAILs. Aligned with
-    // the place_/attach_vehicle pins above rather than weakened.
+    // The vehicle-floor test lives behind #[cfg(feature = "store")] (the MissionDocCore writer
+    // round-trip in flatten.rs), so a scenario-only feature set matches 0 tests and this pin
+    // FAILs. Aligned with the place_/attach_vehicle pins above rather than weakened.
     (MC, MSN, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
         Some("compile-boundary ledger + compiled-slot key set + vehicle contract floor")),
     // E / F / G / H / I — FE. A bin crate, so no `--lib`: its tests live in src/main.rs.
@@ -291,15 +269,14 @@ const CARGO_PINS: &[PinRow] = &[
 
 // ── Static bans and pins ─────────────────────────────────────────────────────────────────────
 
-/// Which of bash's two "target file missing" sentences a check prints. `ban` and `require` worded
-/// it differently, both wordings are scraped, so the difference survives the port.
+/// Which "target file missing" sentence a check prints. `ban` and `require` word it differently
+/// and both wordings are scraped by operators, so the difference is preserved.
 enum Kind {
     Ban,
     Pin,
 }
 
-/// bash's `ban` continuation, spelled out on one line because a backslash-newline inside a
-/// double-quoted bash string vanishes — the printed message never wrapped, and the diff knows it.
+/// The `ban` continuation, on one line: the printed message never wraps.
 const BAN_MISSING: &str =
     "The ban could not run, and a moved or deleted file must not read as a clean result.";
 
@@ -310,7 +287,7 @@ const BAN_MISSING: &str =
 mod tests;
 
 mod source_audit;
-pub use source_audit::verify_t180;
+pub use source_audit::verify_editor_orbat_coherency;
 
 #[cfg(test)]
 use source_audit::{classify, not_run_clause, passed_counts, shown, static_checks};

@@ -51,10 +51,10 @@ fn two_emptied_waves_pend_ascending_and_open_waves_number_past_both() {
 }
 
 #[test]
-fn pre_t925_lock_without_emptied_parses_and_empty_section_renders_invisible() {
-    // Old-lock compat: the serde default reads every pre-T-925 blob, and an EMPTY section
-    // must not touch the render at all — `emptied = []` after the `[[waves]]` tables would
-    // not even be valid TOML, and the committed lock must repack byte-identically.
+fn lock_without_an_emptied_section_parses_and_renders_without_one() {
+    // A lock blob that predates the section still parses through the serde default, and an EMPTY
+    // section must not touch the render at all — `emptied = []` after the `[[waves]]` tables
+    // would not even be valid TOML, and the committed lock must repack byte-identically.
     let text =
         "version = 1\nmax_concurrent = 8\npack_last = []\nwaves = []\n\n[owns]\n\n[depends_on]\n";
     let lock = parse(text).unwrap();

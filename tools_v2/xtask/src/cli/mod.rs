@@ -16,13 +16,13 @@ use crate::commands::wave::cli::WaveLockCmd;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-// T-896: `disable_help_subcommand` frees the `help` name for the successor to `cargo xtask help`. The
-// Makefile's help target is how anyone discovers the task surface, and T-897 deletes it; clap's
-// auto-generated `help` lists CLI *groups*, not tasks, so it is not that successor. `--help`,
-// `-h` and `xtask <group> --help` are untouched — only the `xtask help <group>` spelling moves.
+// `disable_help_subcommand` frees the `help` name for `cargo xtask help`, which lists the TASK
+// surface. Clap's auto-generated `help` lists CLI *groups*, not tasks, so it cannot serve that
+// role. `--help`, `-h` and `xtask <group> --help` are untouched — only `xtask help <group>` is
+// this crate's own.
 #[command(
     name = "xtask",
-    about = "TBD Reforger workspace tasks (T-161 ticket + T-162 MCP/debug)",
+    about = "TBD Reforger workspace tasks",
     disable_help_subcommand = true
 )]
 pub(crate) struct Cli {
@@ -37,12 +37,12 @@ pub(crate) enum TopCmd {
         #[command(subcommand)]
         cmd: TicketCmd,
     },
-    /// MCP JSON-RPC helpers (formerly scripts/mod/lib/mcp-*.py)
+    /// MCP JSON-RPC helpers for the Enfusion Workbench bridge
     Mcp {
         #[command(subcommand)]
         cmd: McpCmd,
     },
-    /// Debug helpers (T-868: debug direct-join; T-162 primitives)
+    /// Debug helpers: server-join probes and their primitives
     Debug {
         #[command(subcommand)]
         cmd: DebugCmd,
@@ -52,62 +52,61 @@ pub(crate) enum TopCmd {
         #[command(subcommand)]
         cmd: ReproCmd,
     },
-    /// Mod / Workbench gates (T-853 shell→xtask ports)
+    /// Mod / Workbench gates
     Mod {
         #[command(subcommand)]
         cmd: ModCmd,
     },
-    /// Home-server / website deploy drivers (T-853 shell→xtask ports)
+    /// Home-server / website deploy drivers
     Deploy {
         #[command(subcommand)]
         cmd: DeployCmd,
     },
-    /// Local database lane (T-894 port of the Makefile's db-* / seed / test-it targets)
+    /// Local database lane: up / down / seed / migrate / test-it
     Db {
         #[command(subcommand)]
         cmd: crate::commands::db::operations::DbCmd,
     },
-    /// Local / dedicated-server profile setup (T-853 shell→xtask ports)
+    /// Local / dedicated-server profile setup
     Setup {
         #[command(subcommand)]
         cmd: SetupCmd,
     },
-    /// Fetch helpers (T-853 shell→xtask ports)
+    /// Fetch helpers for vanilla sources and API docs
     Fetch {
         #[command(subcommand)]
         cmd: FetchCmd,
     },
-    /// Map-asset pipeline helpers (T-853 shell→xtask ports)
+    /// Map-asset pipeline helpers
     Map {
         #[command(subcommand)]
         cmd: MapCmd,
     },
-    /// Print a top-level registry.json field (e.g. next_id)
+    /// Print a top-level ticket-ledger field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
-    /// Schema/doc gates (T-165.1 ports of contracts_v2/scripts/*.mjs)
+    /// Schema and specification gates over contracts_v2
     Schema {
         #[command(subcommand)]
         cmd: SchemaCmd,
     },
-    /// T-165.10 closure verifies + generators
+    /// Repository verifications: language bans, contracts, gates
     Verify {
         #[command(subcommand)]
         cmd: VerifyCmd,
     },
-    /// Code generators (T-165.10)
+    /// Code generators
     Gen {
         #[command(subcommand)]
         cmd: GenCmd,
     },
-    /// Max file-disjoint dispatch set (T-620 port of scripts/platform/slice-collisions.py).
-    /// Flags mirror the original: [--repack] [--check] [TICKET...]
+    /// Max file-disjoint dispatch set: [--repack] [--check] [TICKET...]
     #[command(name = "slice-collisions")]
     SliceCollisions {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// The wave lockfile — `.ai/tickets/wave.lock`, compiled from the tickets (T-912.2).
+    /// The wave lockfile — `.ai/tickets/wave.lock`, compiled from the tickets.
     ///
     /// NOT the lifecycle drivers: `platform wave` runs the platform factory and `mod wave` the
     /// mod program; this group owns the PLAN those drivers read. `repack` is the only legal
@@ -117,7 +116,7 @@ pub(crate) enum TopCmd {
         #[command(subcommand)]
         cmd: WaveLockCmd,
     },
-    /// Platform factory helpers (T-853 shell→xtask ports)
+    /// Platform factory helpers
     Platform {
         #[command(subcommand)]
         cmd: PlatformCmd,
@@ -127,22 +126,19 @@ pub(crate) enum TopCmd {
         #[command(subcommand)]
         cmd: AiCmd,
     },
-    /// Makefile target equivalents (T-853 Phase 3). `cargo xtask mk <target> [--dry-run]`.
+    /// Build and dev-server lane. `cargo xtask mk <target> [--dry-run]`.
     ///
-    /// Trailing var-args rather than a `Subcommand` enum on purpose: the three Phase-3 lanes were
-    /// ported in parallel worktrees, and a shared clap enum here would have been a three-way merge
-    /// conflict per target. In the event each lane picked its own shape — `db` (T-894) is a proper
-    /// subcommand enum, `mk` (T-895) is this, `ci`/`help` (T-896) are their own — and all three
-    /// coexist. T-897 unifies them when it deletes the Makefile and there is one surface to design
-    /// against instead of three moving ones.
+    /// Trailing var-args rather than a `Subcommand` enum: the target list lives in
+    /// `commands::build::recipes::TARGETS`, which `mk` with no argument prints, so a second copy
+    /// of it as clap variants would be a list that rots.
     #[command(name = "mk", disable_help_flag = true)]
     Mk {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-896: the Makefile's CI / composite / map lane. No target lists the lane.
+    /// The CI / composite / map task lane. No target lists the lane.
     Ci { target: Option<String> },
-    /// T-896: the task surface — successor to `cargo xtask help`.
+    /// The task surface: every `cargo xtask ci|mk|db` task with its help line.
     #[command(name = "help")]
     Help,
 }

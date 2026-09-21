@@ -1,12 +1,10 @@
-//! T-869 — port of `scripts/map-assets/export-terrain.sh`
-//! → `cargo xtask map export-terrain`.
-//!
-//! Data-only Map Engine v2 export orchestrator (no raster / tile pyramid):
-//! 1. `tbd-tools` `world phase-gate`
+//! `cargo xtask map export-terrain` — the data-only Map Engine export orchestrator (no raster
+//! and no tile pyramid):
+//! 1. `world phase-gate`
 //! 2. staged `raw-entities.jsonl` present? else operator instructions + exit 2
 //! 3. `world build-objects` then `world build-roads`
 //!
-//! Exit codes (bash contract): 0 built · 1 bad args / failed build · 2 staged raw missing.
+//! Exit codes: 0 built · 1 bad args / failed build · 2 staged raw missing.
 //!
 //! Cargo child output is non-reproducible across cold/warm caches — acceptance uses the
 //! §Non-reproducible normalised back-to-back recipe from `t853_shell_to_xtask_waves.md`.
@@ -33,7 +31,9 @@ pub fn run(args: &[String]) -> Result<u8> {
 pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
     let (terrain, phase) = match parse_args(args) {
         Parse::Usage => {
-            eprintln!("usage: export-terrain.sh <terrain> [--phase Pn]   (or TERRAIN env)");
+            eprintln!(
+                "usage: cargo xtask map export-terrain <terrain> [--phase Pn]   (or TERRAIN env)"
+            );
             return Ok(1);
         }
         Parse::Unknown(arg) => {

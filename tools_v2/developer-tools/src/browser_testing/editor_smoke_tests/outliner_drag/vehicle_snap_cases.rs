@@ -37,7 +37,7 @@ pub(super) async fn vehicle_snap_cases(page: &Page, checks: &mut Map<String, Val
             )
             .await?;
         }
-        eprintln!("t946-86 {name} before release: {}",eval(page,"({chip:document.querySelector('[data-transform-widget] text')?.textContent,capture:document.querySelector('canvas').parentElement.hasPointerCapture(1),ids:JSON.parse(window.__editorSelection.ids()),events:window.__t94686Events})").await?);
+        eprintln!("outliner-drag {name} before release: {}",eval(page,"({chip:document.querySelector('[data-transform-widget] text')?.textContent,capture:document.querySelector('canvas').parentElement.hasPointerCapture(1),ids:JSON.parse(window.__editorSelection.ids()),events:window.__t94686Events})").await?);
         mouse(
             page,
             "mouseReleased",
@@ -59,7 +59,7 @@ pub(super) async fn vehicle_snap_cases(page: &Page, checks: &mut Map<String, Val
                 .unwrap()
         };
         eprintln!(
-            "t946-86 {name}: {}",
+            "outliner-drag {name}: {}",
             json!({"selected":selected,"before_z":z(&before),"after_z":z(&after),"expected_delta":expected,"before_depth":d,"after_depth":depth(page).await?,"status":eval_str(page,"document.body.innerText.slice(-1500)").await?})
         );
         checks.insert(
@@ -98,7 +98,7 @@ pub(super) async fn outside_drop_cases(
         let released=eval_bool(page,"(() => { const b=[...document.querySelectorAll('aside button')].find(b=>(b.getAttribute('aria-label')||'').includes('Recovery destination')); if(!b)return false; b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:1,button:0})); return true; })()").await?;
         settle().await;
         eprintln!(
-            "t946-86 {prefix} {event}: {}",
+            "outliner-drag {prefix} {event}: {}",
             json!({"armed":armed,"released":released,"depth_before":d,"depth_after":depth(page).await?,"layers_same":payload(page).await?["editor"]["editorLayers"]==before["editor"]["editorLayers"],"buttons":eval(page,"[...document.querySelectorAll('aside button')].map(b=>b.getAttribute('aria-label')).filter(Boolean)").await?})
         );
         checks.insert(
@@ -155,7 +155,7 @@ pub(super) async fn z_lifecycle_cases(page: &Page, checks: &mut Map<String, Valu
         }
         settle().await;
         eprintln!(
-            "t946-86 lifecycle {event}: {}",
+            "outliner-drag lifecycle {event}: {}",
             json!({"armed":armed,"unrelated_ignored":unrelated_ignored,"depth_before":d,"depth_after":depth(page).await?,"positions_unchanged":same_positions(&before,&payload(page).await?),"dom":eval(page,"({chip:document.querySelector('[data-transform-widget] text')?.textContent,capture:document.querySelector('canvas').parentElement.hasPointerCapture(1)})").await?})
         );
         mouse(
@@ -189,7 +189,7 @@ pub(super) async fn orbat_cases(page: &Page, checks: &mut Map<String, Value>) ->
     let before = payload(page).await?;
     let opened = click_selector(page, "[aria-label='ORBAT Manager']").await?;
     settle().await;
-    eprintln!("t946-86 ORBAT DOM: {}",eval(page,"({rows:[...document.querySelectorAll('[role=button]')].map(e=>e.getAttribute('aria-label')),names:[...document.querySelectorAll('span')].filter(e=>/Bravo|Charlie/.test(e.textContent)).map(e=>e.textContent)})").await?);
+    eprintln!("outliner-drag ORBAT DOM: {}",eval(page,"({rows:[...document.querySelectorAll('[role=button]')].map(e=>e.getAttribute('aria-label')),names:[...document.querySelectorAll('span')].filter(e=>/Bravo|Charlie/.test(e.textContent)).map(e=>e.textContent)})").await?);
     let d = depth(page).await?;
     let drop=row_drag(page,"document.querySelector('[role=button][aria-label=Rifleman]')","[...document.querySelectorAll('span')].find(e=>e.textContent.startsWith('Bravo ('))?.parentElement").await?;
     settle().await;
@@ -200,7 +200,7 @@ pub(super) async fn orbat_cases(page: &Page, checks: &mut Map<String, Value>) ->
         .and_then(|s| s["slotIds"].as_array())
         .map_or(0, Vec::len);
     eprintln!(
-        "t946-86 ORBAT drop: {}",
+        "outliner-drag ORBAT drop: {}",
         json!({"opened":opened,"dispatched":drop,"moved":n,"depth_before":d,"depth_after":depth(page).await?,"squads":moved["editor"]["squads"]})
     );
     checks.insert(
@@ -277,7 +277,7 @@ pub(super) async fn mixed_orbat_cases(page: &Page, checks: &mut Map<String, Valu
             json!(input_focused && reachable && moved == 5 && depth(page).await? == d + 1),
         );
         eprintln!(
-            "t946-86 {name}: {}",
+            "outliner-drag {name}: {}",
             json!({"points":points,"moved":moved,"before":before["editor"]["squads"],"after":after["editor"]["squads"],"events":eval(page,"window.__mixedEvents").await?})
         );
         key_chord(page, "Escape", "Escape", 0, 27).await?;
@@ -378,7 +378,7 @@ pub(super) async fn orbat_cancel_cases(h: &Harness, checks: &mut Map<String, Val
             );
         }
         eprintln!(
-            "t946-86 ORBAT {mode}: {}",
+            "outliner-drag ORBAT {mode}: {}",
             json!({"blur_observer":eval(page,"window.__r86BlurSeen").await?,"direct_release_inert":direct_inert,"moved":moved,"depth":depth(page).await?})
         );
         key_chord(page, "Escape", "Escape", 0, 27).await?;

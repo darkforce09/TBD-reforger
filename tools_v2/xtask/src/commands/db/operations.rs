@@ -61,10 +61,9 @@
 //!
 //! ── ODDITIES PRESERVED (reproduce, pin, document — not silently "improved") ───────────────────
 //!
-//! - `seed:` applies five SQL files in a fixed order; `gate_t444` pinned the wiki entry to that
-//!   recipe. [`SEEDS`] keeps the order. **T-897 repointed `gate_t444` — and `gate_t440` — at
-//!   [`SEEDS`]**, which is why both survived the Makefile's deletion instead of evaporating with
-//!   it. Editing this list moves two Class-R gates; that is deliberate, not incidental.
+//! - `seed` applies five SQL files in a fixed order, and [`SEEDS`] keeps that order. Two Class-R
+//!   gates — `verify wiki-seeds` and `verify faction-library-seeds` — pin their entry against this
+//!   list, so editing it moves both; that is deliberate, not incidental.
 //! - `rust-test-it` hardcodes `podman` (not `$(COMPOSE)`), the container name `tbd_reforger_db`,
 //!   the user `tbd`, the maintenance database `tbd_reforger`, and the URL `localhost:5434`. The
 //!   port keeps all five as defaults but routes the runtime/container/user through
@@ -135,10 +134,9 @@ pub(crate) const SEEDS: &[&str] = &[
 /// Every `cargo xtask db <cmd>` spelling, in [`DbCmd`] order.
 ///
 /// A second list beside the clap enum, deliberately: clap owns the PARSE, this owns the NAMES for
-/// callers that have to resolve a citation without one — `schema_gates`' gate 7 checks that a
-/// spec's `cargo xtask db …` reference names something real, now that the Makefile it used to
-/// resolve `make …` against is gone. `lane_commands_match_the_clap_enum` diffs the two, so the
-/// copy cannot rot silently.
+/// callers that have to resolve a citation without one — `schema specification-consistency`
+/// checks that a spec's `cargo xtask db …` reference names something real.
+/// `lane_commands_match_the_clap_enum` diffs the two, so the copy cannot rot silently.
 pub(crate) const LANE_COMMANDS: &[&str] = &[
     "up",
     "down",

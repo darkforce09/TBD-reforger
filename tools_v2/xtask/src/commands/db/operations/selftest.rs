@@ -28,12 +28,12 @@
 //!
 //! ── WHY THE ARMS USE A THROWAWAY COMPOSE PROJECT AND A SCRATCH DATABASE BASE ─────────────────
 //!
-//! Sibling slices (T-895 build lane, T-896 ci lane) run against the SAME host: the same
-//! `tbd_reforger_db` container and the same postgres. `db down` on the shared project, or a reap
-//! of `rust_it_%_it` while a sibling's suite is mid-run, would corrupt their acceptance runs and
-//! look like a defect in their code. So arm 6 drives a private compose project
-//! (`target-mk-db-selftest/`, its own container name, port 5499 and volume) and arm 4 uses a
-//! `tbd_gate_t894*` base, which no other lane's pattern matches.
+//! Sibling lanes run against the SAME host: the same `tbd_reforger_db` container and the same
+//! postgres. `db down` on the shared project, or a reap of `rust_it_%_it` while a sibling's suite
+//! is mid-run, would corrupt their runs and look like a defect in their code. So arm 6 drives a
+//! private compose project (`target-mk-db-selftest/`, its own container name, port 5499 and
+//! volume) and arm 4 uses a `tbd_gate_selftest_arm4*` base, which no other lane's pattern
+//! matches.
 
 use std::fs;
 use std::path::Path;
@@ -101,16 +101,16 @@ const BASELINE: &[(&str, &[&str])] = &[
 /// Anything else after a pinned prefix is drift and fails arm 2.
 const ALLOWED_TAIL: &str = " | while read -r db; do \\\n\t[ -n \"$db\" ] || continue; \\\n\tpodman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS $db WITH (FORCE);\" >/dev/null; \\\ndone";
 
-/// Scratch base for arm 4. `tbd_gate*` is on the T-381 allow-list and is matched by no other
-/// lane's reap pattern (`make rust-test-it` reaps `rust_it\_%\_it`).
-const ARM4_BASE: &str = "tbd_gate_t894";
+/// Scratch base for arm 4. `tbd_gate*` is on the test-database allow-list and is matched by no
+/// other lane's reap pattern (`rust-test-it` reaps `rust_it\_%\_it`).
+const ARM4_BASE: &str = "tbd_gate_selftest_arm4";
 
 pub fn run() -> Result<u8> {
     let root = find_repo_root()?;
     let mut report = Report::new("T-894 db lane");
     report.check(arm_frozen_baseline());
     report.check(arm_makefile_pin(&root));
-    report.check(arm_t381_refusal());
+    report.check(arm_live_database_refusal());
     report.check(arm_reap());
     report.check(arm_reap_fail_open());
     report.check(arm_compose_parity(&root));
@@ -147,15 +147,15 @@ fn arm_frozen_baseline() -> Verdict {
     Verdict::Held
 }
 
-// ── arm 2: the LIVE Makefile still says the same thing ───────────────────────────────────────
+// ── arm 2: a Makefile, should one return, still says the same thing ──────────────────────────
 
 fn arm_makefile_pin(root: &Path) -> Verdict {
     let path = root.join("Makefile");
     let Ok(text) = fs::read_to_string(&path) else {
-        // EXPIRY, not a fail-open: T-897 deletes this file on purpose. Arm 1 keeps the pin —
-        // it compares the port against a literal that does not live in the Makefile.
+        // EXPIRY, not a fail-open: the checkout carries no Makefile, and arm 1 keeps the pin —
+        // it compares these recipes against a frozen literal held here, not in a Makefile.
         println!(
-            "arm 2 SKIPPED — no {} (T-897 deleted it); arm 1 remains the pin",
+            "arm 2 SKIPPED — no {} in the checkout; arm 1 remains the pin",
             path.display()
         );
         return Verdict::Held;
@@ -193,9 +193,9 @@ fn arm_makefile_pin(root: &Path) -> Verdict {
     Verdict::Held
 }
 
-// ── arm 3: T-381 refuses the live database, end to end ───────────────────────────────────────
+// ── arm 3: the scratch allow-list refuses the live database, end to end ──────────────────────
 
-fn arm_t381_refusal() -> Verdict {
+fn arm_live_database_refusal() -> Verdict {
     let Ok(exe) = std::env::current_exe() else {
         return Verdict::failed("arm 3: cannot locate the running xtask binary");
     };
@@ -208,10 +208,10 @@ fn arm_t381_refusal() -> Verdict {
     };
     if m.code == 0 {
         return Verdict::failed(
-            "arm 3: `TBD_IT_BASE_DB=tbd_reforger db test-it` exited 0 — the T-381 guard is GONE",
+            "arm 3: `TBD_IT_BASE_DB=tbd_reforger db test-it` exited 0 — the scratch allow-list guard is GONE",
         );
     }
-    for needle in ["REFUSING", "T-381", "tbd_reforger"] {
+    for needle in ["REFUSING", "scratch allow-list", "tbd_reforger"] {
         if !m.text.contains(needle) {
             return Verdict::failed(format!(
                 "arm 3: the refusal no longer mentions `{needle}`:\n      {}",

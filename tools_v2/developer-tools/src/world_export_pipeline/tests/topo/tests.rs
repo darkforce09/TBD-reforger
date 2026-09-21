@@ -44,12 +44,16 @@ fn a_buffer_shorter_than_the_header_is_an_error() {
 #[test]
 fn one_section_with_one_record_decodes_end_to_end() {
     let mut buf = header(1, 1);
-    buf.extend(record(TOPO_ROAD_A, &[100.0, 200.0, 300.0, 400.0], &[7]));
+    buf.extend(record(
+        TOPO_GRAVEL_COUNTRY_ROAD,
+        &[100.0, 200.0, 300.0, 400.0],
+        &[7],
+    ));
     let topo = parse_topo(&buf, &CFG).expect("parses");
     assert_eq!(topo.section_count, 1);
     assert_eq!(topo.per_section, 1);
     assert_eq!(topo.records.len(), 1);
-    assert_eq!(topo.records[0].rec_type, TOPO_ROAD_A);
+    assert_eq!(topo.records[0].rec_type, TOPO_GRAVEL_COUNTRY_ROAD);
     assert_eq!(topo.records[0].verts, vec![100.0, 200.0, 300.0, 400.0]);
     assert_eq!(topo.records[0].attrs, vec![7]);
     assert_eq!(topo.consumed, buf.len());
@@ -61,7 +65,11 @@ fn one_section_with_one_record_decodes_end_to_end() {
 #[test]
 fn a_record_outside_the_world_stops_the_parse_with_its_offset() {
     let mut buf = header(1, 1);
-    buf.extend(record(TOPO_ROAD_A, &[-5000.0, 0.0, 0.0, 0.0], &[]));
+    buf.extend(record(
+        TOPO_GRAVEL_COUNTRY_ROAD,
+        &[-5000.0, 0.0, 0.0, 0.0],
+        &[],
+    ));
     let err = parse_topo(&buf, &CFG).expect_err("out of range");
     assert!(format!("{err:#}").contains("section 0 record 0"), "{err:#}");
 }

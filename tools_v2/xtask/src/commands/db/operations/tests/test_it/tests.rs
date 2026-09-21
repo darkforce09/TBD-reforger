@@ -10,15 +10,18 @@ fn reap_select_is_the_makefile_pattern() {
     );
 }
 
-/// T-381: the guard is the only thing between a stray env var and the dev database.
+/// The guard is the only thing between a stray env var and the dev database.
 #[test]
-fn t381_refuses_the_live_database() {
+fn the_guard_refuses_the_live_database() {
     // SAFETY: single-threaded assertion on this module's own knob.
     unsafe { std::env::set_var("TBD_IT_BASE_DB", "tbd_reforger") };
     let got = guarded_base();
     unsafe { std::env::remove_var("TBD_IT_BASE_DB") };
     let msg = got.expect_err("tbd_reforger must be refused");
-    assert!(msg.contains("T-381"), "refusal must cite T-381: {msg}");
+    assert!(
+        msg.contains("scratch allow-list"),
+        "refusal must name the allow-list: {msg}"
+    );
     assert!(msg.contains("tbd_reforger"));
     assert_eq!(
         guarded_base().unwrap(),

@@ -1,6 +1,8 @@
 use super::*;
 
-use crate::repository_layout::{terrain_dir, terrain_manifest_path};
+use crate::repository_layout::{
+    aerial_orthophoto_artifacts_dir, terrain_dir, terrain_manifest_path,
+};
 
 pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
     if terrain != "everon" {
@@ -8,7 +10,7 @@ pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
         return Ok(1);
     }
     let ortho_path = sap_dir().join("everon-sap-ortho.png");
-    let out_path = repo_root().join(".ai/artifacts/t090_1_2_2_seam_analysis.json");
+    let out_path = aerial_orthophoto_artifacts_dir(&repo_root()).join("seam_analysis.json");
     eprintln!("analyze-sap-seams: decoding {} …", ortho_path.display());
     let ortho = image_operations::load_png_rgb(&ortho_path)?;
     let res = analyze_seams(&ortho);
@@ -57,7 +59,7 @@ pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
     }
 
     let report = json!({
-        "slice": "T-090.1.2.2",
+        "lane": "aerial-orthophoto seam analysis",
         "terrain": terrain,
         "orthoPath": "assets_v2/scratch/everon/sap/everon-sap-ortho.png",
         "gridPx": 256,

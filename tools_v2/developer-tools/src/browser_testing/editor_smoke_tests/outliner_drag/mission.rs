@@ -87,7 +87,7 @@ pub(super) async fn intercept(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
     let dialog_page = page.clone();
     tokio::spawn(async move {
         while let Some(dialog) = dialogs.recv().await {
-            eprintln!("t946-86 dialog: {}", dialog["type"]);
+            eprintln!("outliner-drag dialog: {}", dialog["type"]);
             let _ = dialog_page
                 .send("Page.handleJavaScriptDialog", json!({"accept":true}))
                 .await;

@@ -95,7 +95,7 @@ pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
         format!("{}Z", &full[..19])
     };
     let meta = json!({
-        "slice": "T-090.1.2",
+        "lane": "aerial-orthophoto stitch",
         "source": "sap-supertexture-stitch",
         "captureMethodId": 6,
         "terrain": terrain,
@@ -107,8 +107,8 @@ pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
         "cellPx": cell_px,
         "cellMeters": enfusion_texture_decoder::CELL_M,
         "gridMapping": "row-major N=y*50+x; cell gridY=0 = world Z=0 (south); assembled north-up (south at image bottom)",
-        "decoder": "tbd-tools world::edds (bcdec_rs BC7 + Rust LZ4) — T-165.9",
-        "seamRepair": "T-090.1.2.2",
+        "decoder": "developer-tools enfusion_texture_decoder (BC7 + LZ4)",
+        "seamRepair": true,
         "seamRepairStrategy": format!("A-apron-bridge-{HW}px"),
         "seamRepairParams": { "halfWidthPx": HW, "anchorOffsetPx": ANCHOR, "interiorSeamsOnly": true },
         "pngPath": "assets_v2/scratch/everon/sap/everon-sap-ortho.png",
@@ -151,7 +151,7 @@ pub fn blend_sap_seams_cli(terrain: &str) -> Result<u8> {
     image_operations::save_png_rgb(&png_path, &ortho)?;
     if meta_path.exists() {
         let mut meta: Value = serde_json::from_str(&std::fs::read_to_string(&meta_path)?)?;
-        meta["seamRepair"] = json!("T-090.1.2.2");
+        meta["seamRepair"] = json!(true);
         meta["seamRepairStrategy"] = json!(format!("A-apron-bridge-{HW}px"));
         meta["seamRepairParams"] =
             json!({ "halfWidthPx": HW, "anchorOffsetPx": ANCHOR, "interiorSeamsOnly": true });

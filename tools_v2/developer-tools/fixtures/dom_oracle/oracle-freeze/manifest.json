@@ -3,7 +3,7 @@
   "distSha256": "2aa6a2f251e9d3439f7bd0f5ffb49ffd65bd604282c391997f88ad751fb8472a",
   "viewport": "1440x900",
   "excluded": {
-    "/missions/:id/edit": "editor gate = the 15 CDP smokes (smoke_*_editor.mjs)"
+    "/missions/:id/edit": "covered by the editor CDP smoke suite instead"
   },
   "scope": "#root>:first-child — the app UI root on both apps; React's empty sonner toaster portal (#root 2nd child) is outside the frozen scope",
   "routes": [
@@ -21,7 +21,7 @@
       "bytes": 120901,
       "sha256": "bdd5f21265c4f26d3dd0ff84486cc064d487542628b3f3c5a30140b75d9d2cbe",
       "goldenSource": "leptos",
-      "acceptedDelta": "T-159 oracle froze the React dist on 2026-07-17 with no operations data behind it, so the next-op card captured its \"NO UPCOMING OPS\" empty state. GET__dashboard.json and GET__me__deployments.json feed the card, which now names the scheduled operation and counts down to it. Fixture-fed, not a UI change."
+      "acceptedDelta": "The oracle froze the reference dist on 2026-07-17 with no operations data behind it, so the next-op card captured its \"NO UPCOMING OPS\" empty state. GET__dashboard.json and GET__me__deployments.json feed the card, which now names the scheduled operation and counts down to it. Fixture-fed, not a UI change."
     },
     {
       "slug": "approvals",
@@ -48,7 +48,7 @@
       "bytes": 117495,
       "sha256": "90057dd22d674181b50775fa9506d192b591620fe769a9bc45cb4967f55989b8",
       "goldenSource": "leptos",
-      "acceptedDelta": "T-159.25, carried forward: React's ContentManager pre-filled a hardcoded mock briefing (\"Operation Blue Storm Briefing\", published switch on), and the first Leptos accept recorded the manager starting empty because no /cms/announcements fixture existed. GET__cms__announcements.json now supplies the live-shaped list — four published rows and one draft, ordered pinned-first then most recently updated — so the manager renders its real populated state. React reference kept at content.react.dom.json."
+      "acceptedDelta": "The reference ContentManager pre-filled a hardcoded mock briefing (\"Operation Blue Storm Briefing\", published switch on), and the first Leptos accept recorded the manager starting empty because no /cms/announcements fixture existed. GET__cms__announcements.json now supplies the live-shaped list — four published rows and one draft, ordered pinned-first then most recently updated — so the manager renders its real populated state. React reference kept at content.react.dom.json."
     },
     {
       "slug": "eventmgr",
@@ -150,7 +150,7 @@
       "bytes": 152235,
       "sha256": "74947efc96df2700544c0c596f889aa1fee1e48006de18863a611cb529a38e62",
       "goldenSource": "leptos",
-      "acceptedDelta": "T-173 P4, carried forward: the /missions scrollport lost backdrop-blur-xl because the per-frame re-blur caused scroll lag, and the glass tint moved to a static z-0 layer behind the composited scroller — that is the relative-to-absolute and children-count difference here. The catalogue itself is fed by GET__missions.json. React reference kept at missions.react.dom.json."
+      "acceptedDelta": "The /missions scrollport drops backdrop-blur-xl because the per-frame re-blur caused scroll lag, and the glass tint moved to a static z-0 layer behind the composited scroller — that is the relative-to-absolute and children-count difference here. The catalogue itself is fed by GET__missions.json. React reference kept at missions.react.dom.json."
     },
     {
       "slug": "missionview",

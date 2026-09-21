@@ -345,7 +345,7 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     // The agent is enabled via its SOCKET, never its service: socket activation means the agent
     // process only exists for the lifetime of one connection, so there is no long-lived listener
     // to leak, wedge, or restart.
-    println!("==> host control agent (T-289)");
+    println!("==> host control agent");
     if !agent_env.install {
         println!("[SKIP] agent install — TBD_INSTALL_AGENT=1 to enable.");
         println!("       Preview the exact bytes with: --render-agent <dir>");

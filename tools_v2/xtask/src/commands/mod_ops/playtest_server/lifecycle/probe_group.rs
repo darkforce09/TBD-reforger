@@ -206,7 +206,7 @@ pub fn claim_lock(paths: &RunPaths, o: &Opts) -> Result<LockGuard, u8> {
     if !owner.is_empty() && local_pid_is_alive(&owner) {
         eprintln!();
         eprintln!(
-            "REFUSING: another run-playtest-server.sh (pid {owner}) already owns {}.",
+            "REFUSING: another playtest server (pid {owner}) already owns {}.",
             paths.run_dir
         );
         eprintln!("  Stop it first (Ctrl-C in its terminal) and let it print that it stopped.");

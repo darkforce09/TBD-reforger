@@ -13,8 +13,8 @@ use crate::verifications::language_bans::python_scripts::verify_no_python;
 use crate::verifications::language_bans::shell_scripts::verify_no_shell;
 use crate::verifications::map_assets::map_object_golden;
 use crate::verifications::schemas::checks::{
-    citations, map_glyphs, map_object_enums, n6_sentence, n10_tile_budget, t090_specs,
-    type_inventory, validate_all,
+    citations, map_glyphs, map_object_enums, n6_sentence, n10_tile_budget,
+    specification_consistency, type_inventory, validate_all,
 };
 
 pub static TASKS: &[Task] = &[
@@ -24,10 +24,9 @@ pub static TASKS: &[Task] = &[
         help: "Full CI gate locally — mirrors ci.yml (run `cargo xtask db up` first)",
         group: "CI",
         lane: Lane::Ci,
-        // T-489/T-881: the last step is NOT `Step::Task("verify-t468")`. t468 is the tripwire that
-        // pins other gates' recipe bodies against being hollowed, so routing it through the very
-        // dispatch it polices would let a hollowed dispatcher green it. Direct call, as ci-local
-        // and ci.yml already do for the same stated reason (Makefile:493).
+        // The last step is NOT `Step::Task("verify-ci-schema-parity")`. That gate pins other
+        // gates' step bodies against being hollowed, so routing it through the dispatch it
+        // polices would let a hollowed dispatcher green it. ci.yml calls it directly too.
         steps: &[
             Step::Task("verify-editorconfig"),
             Step::Task("verify-no-python"),
@@ -35,17 +34,21 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-no-shell"),
             Step::Task("verify-ci-shell"),
             // Grouped with the language gates rather than the build lanes: like them it is a
-            // seconds-long source scan, and it guards a wall (map-engine -> graphics-engine, one
-            // way) that nothing in the compiler enforces. ENGINE_SPLIT_PROGRAM §5 requires it here
-            // and in ci.yml — a rule nobody is stopped by is not a rule.
+            // seconds-long source scan, and it guards a one-way wall (map-engine ->
+            // graphics-engine) that nothing in the compiler enforces. ENGINE_SPLIT_PROGRAM §5
+            // requires it here and in ci.yml — a rule nobody is stopped by is not a rule.
             Step::Task("verify-engine-layers"),
             Step::Task("rust-ci"),
             Step::Task("verify-coding-standards"),
             Step::Task("ci-local-leptos"),
             Step::Task("ci-local-schema"),
-            Step::Task("verify-t438"),
-            Step::Task("verify-t456"),
-            xt!("cargo xtask verify t468", true, x_t468),
+            Step::Task("verify-staging-compose-paths"),
+            Step::Task("verify-mission-rest-size-limits"),
+            xt!(
+                "cargo xtask verify ci-schema-parity",
+                true,
+                x_ci_schema_parity
+            ),
         ],
     },
     Task {
@@ -60,7 +63,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "schema-validate",
-        help: "Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency) + T-152.16 height labels",
+        help: "Validate golden missions + map-object contracts (enums + glyphs + spec consistency) + height labels",
         group: "schema",
         lane: Lane::Ci,
         steps: &[
@@ -78,7 +81,11 @@ pub static TASKS: &[Task] = &[
                 map_object_enums
             ),
             xt!("cargo xtask schema type-inventory", false, type_inventory),
-            xt!("cargo xtask schema t090-specs", false, t090_specs),
+            xt!(
+                "cargo xtask schema specification-consistency",
+                false,
+                specification_consistency
+            ),
             xt!("cargo xtask schema n6", false, n6_sentence),
             xt!("cargo xtask schema n10", false, n10_tile_budget),
         ],
@@ -92,7 +99,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-citations",
-        help: "Verify @contract citations in apps/ packages/ tools_v2/ code — NOT docs/ prose (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port, T-611 scope)",
+        help: "Verify @contract citations in apps/ and tools_v2/ code — NOT docs/ prose (DOCUMENTATION_STANDARDS §10)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema citations", false, citations)],
@@ -138,7 +145,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "ci-chrome",
-        help: "T-901: install pinned Chrome-for-Testing (editor-gates.yml)",
+        help: "Install the pinned Chrome-for-Testing build (editor-gates.yml)",
         group: "CI",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -147,7 +154,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "editor-api-boot",
-        help: "T-901: build+spawn website-api and wait on /healthz (editor-gates.yml)",
+        help: "Build and spawn website-api, then wait on /healthz (editor-gates.yml)",
         group: "CI",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -156,15 +163,15 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "website-api-test",
-        help: "T-901: cargo test in apps/website/api_v2 (honours TEST_DATABASE_URL)",
+        help: "cargo test in apps/website/api_v2 (honours TEST_DATABASE_URL)",
         group: "build",
         lane: Lane::Ci,
         steps: &[sh!("cd apps/website/api_v2 && cargo test")],
     },
     // The library suite runs without database, browser, or asset prerequisites.
     Task {
-        name: "tbd-tools-test",
-        help: "T-298: cargo test -p developer-tools --lib (density:: + world:: unit tests; no DB/LFS)",
+        name: "developer-tools-test",
+        help: "cargo test -p developer-tools --lib (density:: + world:: unit tests; no DB/LFS)",
         group: "build",
         lane: Lane::Ci,
         steps: &[sh!("cargo test -p developer-tools --lib")],
@@ -172,13 +179,13 @@ pub static TASKS: &[Task] = &[
     // ── map lane ────────────────────────────────────────────────────────────────────────────
     Task {
         name: "map-water-everon",
-        help: "One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify (T-090.1.2.5.2)",
+        help: "One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify",
         group: "map",
         lane: Lane::Ci,
         steps: &[
-            // Coreutils `cp`, not `std::fs::copy`: the recipe's observable behaviour on a missing
+            // Coreutils `cp`, not `std::fs::copy`: the step's observable behaviour on a missing
             // source is cp's own "cannot stat" diagnostic, and assets_v2/scratch/ is gitignored,
-            // so that miss is the COMMON path here, not the rare one.
+            // so a miss is the COMMON path here.
             sh!(
                 "cp assets_v2/scratch/everon/sap/everon-sap-ortho.pre-water.png assets_v2/scratch/everon/sap/everon-sap-ortho.png"
             ),
@@ -203,7 +210,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "map-cartographic-everon",
-        help: "One-button Everon Map view (stylized cartographic): staging ortho → pyramid → manifest patch → verify (T-090.1.1)",
+        help: "One-button Everon Map view (stylized cartographic): staging ortho → pyramid → manifest patch → verify",
         group: "map",
         lane: Lane::Ci,
         steps: &[
@@ -219,7 +226,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "map-cartographic-verify",
-        help: "Verify the Everon Map pyramid (complete z0–6 + manifest agreement, T-090.1.1)",
+        help: "Verify the Everon Map pyramid (complete z0–6 + manifest agreement)",
         group: "map",
         lane: Lane::Ci,
         steps: &[sh!(
@@ -262,17 +269,17 @@ pub static TASKS: &[Task] = &[
             Step::Task("leptos-build"),
         ],
     },
-    // ── aliases: the make target was already a thin wrapper on an existing xtask command ─────
+    // ── aliases: one-line wrappers on an existing `cargo xtask verify …` command ────────────
     Task {
         name: "verify-no-python",
-        help: "T-904 hard zero — same TrackedLanguageBan table as verify-no-shell (.py / python3)",
+        help: "LANG-2 hard zero — same TrackedLanguageBan table as verify-no-shell (.py / python3)",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-python", false, verify_no_python)],
     },
     Task {
         name: "verify-no-node",
-        help: "zero tracked .mjs/.cjs; no node/npx invocation in a scanned file",
+        help: "zero tracked Node script files (mjs/cjs); no node/npx invocation in a scanned file",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-node", false, verify_no_node)],
@@ -290,31 +297,39 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-no-shell",
-        help: "T-904 hard zero — no tracked shell/Make/Python/Node-script paths (no inventory)",
+        help: "LANG-1 hard zero — no tracked shell/Make/Python/Node-script paths",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-shell", false, verify_no_shell)],
     },
     Task {
         name: "verify-ci-shell",
-        help: "T-901 — every GitHub Actions run: is cargo xtask or a short pre-cargo allowlist",
+        help: "Every GitHub Actions run: is cargo xtask or a short pre-cargo allowlist",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify ci-shell", false, verify_ci_shell)],
     },
     Task {
-        name: "verify-t438",
-        help: "T-438/T-461 deploy-staging compose path (website/, not api/)",
+        name: "verify-staging-compose-paths",
+        help: "deploy staging resolves the compose file under website/, not api/",
         group: "verify",
         lane: Lane::Alias,
-        steps: &[xt!("cargo xtask verify t438", true, x_t438)],
+        steps: &[xt!(
+            "cargo xtask verify staging-compose-paths",
+            true,
+            x_staging_compose_paths
+        )],
     },
     Task {
-        name: "verify-t456",
-        help: "T-456/T-460 mission REST body size gate before ParseMissionJson",
+        name: "verify-mission-rest-size-limits",
+        help: "mission REST body size gate runs before ParseMissionJson",
         group: "verify",
         lane: Lane::Alias,
-        steps: &[xt!("cargo xtask verify t456", true, x_t456)],
+        steps: &[xt!(
+            "cargo xtask verify mission-rest-size-limits",
+            true,
+            x_mission_rest_size_limits
+        )],
     },
     Task {
         name: "verify-terrain",
@@ -336,7 +351,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-terrain-strict",
-        help: "Full anchor alignment gate (T-091.0 GetSurfaceY DEM + anchors)",
+        help: "Full anchor alignment gate (GetSurfaceY DEM + anchors)",
         group: "verify",
         lane: Lane::Ci,
         steps: &[
@@ -352,12 +367,12 @@ pub static TASKS: &[Task] = &[
             ),
         ],
     },
-    // ── borrowed: T-895's build lane / T-894's db lane. See §2. ──────────────────────────────
+    // ── borrowed rows: the build lane and the db lane, carried so the composites above run. ──
     Task {
         name: "rust-ci",
         help: "Rust CI gate locally — fmt + clippy + build + test-it (mirrors the ci.yml rust-backend job)",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[
             Step::Task("rust-fmt"),
             Step::Task("rust-clippy"),
@@ -368,9 +383,9 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "rust-fmt",
-        help: "Check Rust formatting (FMT-1 analog); workspace --all covers tools_v2/xtask/tbd-tools (T-297)",
+        help: "Check Rust formatting (FMT-1 analog); workspace --all covers every tools_v2 crate",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[
             sh!("cd apps/website/api_v2 && cargo fmt --check"),
             sh!("cargo fmt --all --check"),
@@ -380,7 +395,7 @@ pub static TASKS: &[Task] = &[
         name: "rust-clippy",
         help: "Lint Rust with clippy (deny warnings; GO-2..8 analog)",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[sh!(
             "cd apps/website/api_v2 && cargo clippy --all-targets -- -D warnings"
         )],
@@ -389,26 +404,25 @@ pub static TASKS: &[Task] = &[
         name: "rust-build",
         help: "Build the Rust backend (all targets)",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[sh!("cd apps/website/api_v2 && cargo build --all-targets")],
     },
     Task {
         name: "rust-test",
         help: "Run Rust unit tests (no DB)",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[sh!("cd apps/website/api_v2 && cargo test --lib --bins")],
     },
     Task {
         name: "wasm-ci",
-        help: "Fmt + clippy + test the map-engine core/render crates (T-145/T-151; T-418 dropped map-engine-wasm)",
+        help: "Fmt + clippy + test the map-engine and graphics-engine crates",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
-        // The engine split created `website-graphics-engine` and this lane did not learn about it,
-        // so 54 files of renderer compiled in CI only as a transitive dependency of the frontend:
-        // never fmt-checked, never clippied, and its 41 tests never run. A crate the pipeline does
-        // not name is a crate the pipeline does not gate — it is added to all four steps, wasm32
-        // included, because the browser half is where it actually ships.
+        lane: Lane::Borrowed,
+        // A crate the pipeline does not name is a crate the pipeline does not gate: compiled in
+        // CI only as a transitive dependency, never fmt-checked, never clippied, its tests never
+        // run. Both engine crates are named in all four steps, wasm32 included, because the
+        // browser half is where they ship.
         steps: &[
             sh!("cargo fmt --check -p website-map-engine -p website-graphics-engine"),
             sh!(
@@ -423,9 +437,9 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "ci-local-leptos",
-        help: "CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors ci.yml website-frontend clippy --all-targets; T-752)",
+        help: "CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors the ci.yml website-frontend job)",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[
             sh!("cargo fmt -p website-frontend --check"),
             sh!("cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets"),
@@ -437,19 +451,17 @@ pub static TASKS: &[Task] = &[
         name: "leptos-build",
         help: "Release-build the Leptos SPA into apps/website/frontend/dist",
         group: "build",
-        lane: Lane::Borrowed("T-895"),
+        lane: Lane::Borrowed,
         steps: &[sh!("cd apps/website/frontend && trunk build --release")],
     },
     Task {
         name: "rust-test-it",
         help: "Run Rust integration tests against a fresh dedicated DB (needs `cargo xtask db up` @ :5434)",
         group: "db",
-        lane: Lane::Borrowed("T-894"),
-        // T-894 owns the real port (the `while read -r db` reaper over psql output is the one
-        // piece of genuinely non-trivial shell in the Makefile). Verbatim `/bin/sh -c` until then
-        // — see Step::Shell. `ignore_err` on the DROP is make's leading `-`; the last line is
-        // `@`-silenced. `\t` inside the reaper is where make's backslash-continuations were: sh
-        // treats it as the separator it already was, so the pipeline is unchanged.
+        lane: Lane::Borrowed,
+        // `/bin/sh -c`, because the `while read -r db` reaper over psql output is the one step
+        // here whose shape is genuinely a shell pipeline. `ignore_err` on the DROP lets a missing
+        // database pass.
         steps: &[
             Step::Shell {
                 silent: false,
@@ -475,19 +487,13 @@ pub static TASKS: &[Task] = &[
     },
 ];
 
-/* ─────────────────────────────── in-process leaf adapters ─────────────────────────────── */
-// `fn` pointers cannot capture, and these four leaves take the repo root. One-liners rather than
-// a boxed closure so the table stays a `static` and `help` needs no allocation.
+// In-process leaf adapters. `fn` pointers cannot capture, and these leaves take an argument, so
+// the table stays a `static` and `help` needs no allocation.
 
-#[path = "task_definitions/x_height_labels.rs"]
-mod x_height_labels;
-use x_height_labels::x_engine_layers;
-use x_height_labels::x_height_labels;
-use x_height_labels::x_no_select_star;
-use x_height_labels::x_route_tags;
-use x_height_labels::x_t438;
-use x_height_labels::x_t456;
-use x_height_labels::x_t468;
-use x_height_labels::x_terrain_alignment;
-use x_height_labels::x_terrain_alignment_strict;
-use x_height_labels::x_terrain_manifest;
+#[path = "task_definitions/verification_dispatch.rs"]
+mod verification_dispatch;
+use verification_dispatch::{
+    x_ci_schema_parity, x_engine_layers, x_height_labels, x_mission_rest_size_limits,
+    x_no_select_star, x_route_tags, x_staging_compose_paths, x_terrain_alignment,
+    x_terrain_alignment_strict, x_terrain_manifest,
+};

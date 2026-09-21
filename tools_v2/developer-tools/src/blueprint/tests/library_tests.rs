@@ -301,11 +301,11 @@ fn only_kind_and_limit_select_rows() {
     assert_eq!(lib.descriptors[0].prefab_id, 5);
 }
 
-/// The committed library reproduces the T-090.11 farmhouse: the descriptor's root is the shell
+/// The committed library reproduces the farmhouse compound: the descriptor's root is the shell
 /// (its sidecar byte-identical to the committed `buildings/FarmHouse_E_1L01_Wood.bvh`) and every
 /// record of `FarmHouse_E_1L01_Wood.instances.json` is in the descriptor unchanged.
 #[test]
-fn committed_farmhouse_descriptor_reproduces_the_t090_11_instances() {
+fn committed_farmhouse_descriptor_reproduces_its_instances_file() {
     use website_map_engine::world::architecture::compound::instances::InstancesFile;
     let root = crate::repository_paths::test_repo_root();
     let prefabs = terrain_dir(&root, "everon").join("prefabs");

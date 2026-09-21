@@ -134,8 +134,8 @@ pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
     Ok(0)
 }
 
-/// verify-t152-cartographic.mjs port — slice-log checks + committed-data sub-verifiers.
-pub fn verify_t152() -> Result<u8> {
+/// The program-wide cartographic aggregator: committed slice logs plus live sub-verifiers.
+pub fn verify_cartographic() -> Result<u8> {
     let root = repo_root();
     let artifacts = root.join(".ai/artifacts");
     let failures = std::cell::Cell::new(0usize);
@@ -146,10 +146,10 @@ pub fn verify_t152() -> Result<u8> {
         ($($a:tt)*) => {{ failures.set(failures.get() + 1); println!("  FAIL  {}", format!($($a)*)); }};
     }
 
-    println!("verify-t152-cartographic: slice logs (G1 subset)");
+    println!("verify-cartographic: slice logs (G1 subset)");
     for i in 0..10 {
         let path = artifacts.join(format!("t152_{i}_verify_log.md"));
-        let label = format!("T-152.{i}");
+        let label = format!("slice log {i}");
         if !path.exists() {
             failm!("{label} missing {}", path.display());
             continue;
@@ -191,17 +191,21 @@ pub fn verify_t152() -> Result<u8> {
         );
     }
 
-    let run_make = |target: &str, envs: &[(&str, &str)]| {
-        let mut cmd = std::process::Command::new("make");
-        cmd.arg(target).current_dir(&root);
-        for (k, v) in envs {
-            cmd.env(k, v);
-        }
-        let r = cmd.output().expect("spawn make");
+    let run_world = |args: &[&str]| {
+        let label = format!(
+            "cargo run -p developer-tools --bin world -- {}",
+            args.join(" ")
+        );
+        let r = std::process::Command::new("cargo")
+            .args(["run", "-q", "-p", "developer-tools", "--bin", "world", "--"])
+            .args(args)
+            .current_dir(&root)
+            .output()
+            .expect("spawn cargo");
         if r.status.success() {
-            pass!("make {target} exit 0");
+            pass!("{label} exit 0");
         } else {
-            failm!("make {target} exit {}", r.status.code().unwrap_or(1));
+            failm!("{label} exit {}", r.status.code().unwrap_or(1));
             let err = String::from_utf8_lossy(&r.stderr);
             let tail: Vec<&str> = err.trim().lines().rev().take(8).collect();
             for l in tail.iter().rev() {
@@ -224,34 +228,29 @@ pub fn verify_t152() -> Result<u8> {
         }
     };
 
-    println!("\nverify-t152-cartographic: glyph atlas (.2)");
-    run_make("map-glyphs-verify", &[]);
-    println!("\nverify-t152-cartographic: export artifacts (G6 subset)");
-    run_make("map-export-validate", &[]);
-    println!("\nverify-t152-cartographic: P5_props phase census (.4)");
-    run_make(
-        "map-verify-phase",
-        &[("TERRAIN", "everon"), ("PHASE", "P5_props")],
-    ); // E2c-allow
-    println!("\nverify-t152-cartographic: locations (.6)");
+    println!("\nverify-cartographic: glyph atlas");
+    run_cargo(&["schema", "map-glyphs"]);
+    println!("\nverify-cartographic: export artifacts (G6 subset)");
+    run_world(&["validate-exports"]);
+    println!("\nverify-cartographic: P5_props phase census");
+    run_world(&["verify-phase", "--terrain", "everon", "--phase", "P5_props"]); // E2c-allow
+    println!("\nverify-cartographic: locations");
     run_cargo(&["schema", "locations", "--terrain", "everon"]); // E2c-allow
-    println!("\nverify-t152-cartographic: height labels (.7)");
+    println!("\nverify-cartographic: height labels");
     run_cargo(&["schema", "height-labels", "--terrain", "everon"]); // E2c-allow
-    println!("\nverify-t152-cartographic: town labels (.8)");
+    println!("\nverify-cartographic: town labels");
     run_cargo(&["schema", "town-labels", "--terrain", "everon", "--zoom=-2"]); // E2c-allow
-    println!("\nverify-t152-cartographic: road names (.9)");
+    println!("\nverify-cartographic: road names");
     run_cargo(&["schema", "road-names", "--terrain", "everon", "--zoom", "0"]); // E2c-allow
 
-    println!("\nverify-t152-cartographic: wasm telemetry (L5)");
-    println!(
-        "  SKIP  wasm size guard — retired with the React wasm pkg at T-159.29.3 (cargo xtask mk wasm-ci owns the crates)"
-    );
+    println!("\nverify-cartographic: wasm telemetry");
+    println!("  SKIP  wasm size guard — `cargo xtask mk wasm-ci` owns the engine crates");
 
     println!();
     if failures.get() > 0 {
-        eprintln!("verify-t152-cartographic: FAIL ({})", failures.get());
+        eprintln!("verify-cartographic: FAIL ({})", failures.get());
         return Ok(1);
     }
-    println!("verify-t152-cartographic: OK");
+    println!("verify-cartographic: OK");
     Ok(0)
 }

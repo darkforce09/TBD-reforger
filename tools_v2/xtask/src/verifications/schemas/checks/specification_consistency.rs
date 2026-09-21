@@ -23,20 +23,20 @@ pub(super) fn live_xtask_task_names() -> HashSet<String> {
     out
 }
 
-pub fn t090_specs() -> Result<u8> {
+pub fn specification_consistency() -> Result<u8> {
     let root = repo_root()?;
     let spec = spec_dir(&root);
     let read = |p: PathBuf| -> Result<String> {
         fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))
     };
 
-    let mut t090_files: Vec<String> = fs::read_dir(&spec)?
+    let mut specification_files: Vec<String> = fs::read_dir(&spec)?
         .filter_map(|e| e.ok())
         .map(|e| e.file_name().to_string_lossy().to_string())
         .filter(|n| n.starts_with("t090") && n.ends_with(".md"))
         .collect();
-    t090_files.sort();
-    let corpus: Vec<(String, String)> = t090_files
+    specification_files.sort();
+    let corpus: Vec<(String, String)> = specification_files
         .iter()
         .map(|n| Ok((n.clone(), read(spec.join(n))?)))
         .collect::<Result<_>>()?;
@@ -223,7 +223,6 @@ pub fn t090_specs() -> Result<u8> {
         "verify-citations",
         "verify-map-object-enums",
         "verify-type-inventory",
-        "verify-t090-specs",
         "verify-n6",
         "verify-n10",
         "verify-terrain-manifest",
@@ -392,12 +391,12 @@ pub fn t090_specs() -> Result<u8> {
 
     if failures.is_empty() {
         println!(
-            "verify-t090-specs: OK ({} spec files + authority docs, all 12 gates pass)",
-            t090_files.len()
+            "specification-consistency: OK ({} spec files + authority docs, all 12 gates pass)",
+            specification_files.len()
         );
         Ok(0)
     } else {
-        eprintln!("verify-t090-specs: FAIL ({})", failures.len());
+        eprintln!("specification-consistency: FAIL ({})", failures.len());
         for f in &failures {
             eprintln!("  {f}");
         }

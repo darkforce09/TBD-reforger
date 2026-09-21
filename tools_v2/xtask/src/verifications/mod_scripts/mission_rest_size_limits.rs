@@ -1,28 +1,23 @@
-//! T-456 / T-460 — OnBackendFetchSuccess must refuse oversized REST bodies before
-//! ParseMissionJson, using the same `MISSION_FILE_MAX_BYTES` ceiling as LoadFromProfileFile
-//! (T-853 / T-881 port of `scripts/mod/verify-t456-mission-rest-size-gate.sh`).
+//! `OnBackendFetchSuccess` must refuse oversized REST bodies before `ParseMissionJson`, using the
+//! same `MISSION_FILE_MAX_BYTES` ceiling as `LoadFromProfileFile`.
 //!
-//! T-460 (Wave 22 adversarial): prior Class-R was false-green —
-//!   (1) a `//` comment containing `MISSION_FILE_MAX_BYTES` counted as the size check
-//!       before ParseMissionJson;
-//!   (2) only the IsMissionBodyWithinCap signature was required — `return true;` greens.
-//! This gate strips comments before the order assert, requires a live
-//! `IsMissionBodyWithinCap(` call before `ParseMissionJson(`, and pins the helper body to
+//! Two false-green shapes this gate is built to refuse:
+//!   (1) a `//` comment containing `MISSION_FILE_MAX_BYTES` counting as the size check before
+//!       `ParseMissionJson`;
+//!   (2) requiring only the `IsMissionBodyWithinCap` signature, which a `return true;` satisfies.
+//!
+//! So the gate strips comments before the order assert, requires a live `IsMissionBodyWithinCap(`
+//! call before `ParseMissionJson(`, and pins the helper body to
 //! `Length() <= MISSION_FILE_MAX_BYTES`.
 //!
-//! ── WHAT THE PORT REMOVES ────────────────────────────────────────────────────────────────────
+//! ── RED ARMS CANNOT FAIL OPEN ────────────────────────────────────────────────────────────────
 //!
-//! 1. **`python3`, entirely — four call sites.** One comment stripper and three RED setup
-//!    transforms. The script was on `scripts/python-inventory.txt` solely for those; the
-//!    inventory line goes with them (same commit as T-468).
-//! 2. **`2>/dev/null`-shaped fail-opens on compound probes.** Bash `gate_probe_str` statuses
-//!    above 1 are mapped to an explicit DidNotRun-style FAIL. In-process [`gate::probe_str`]
-//!    cannot return a tool error; the message arm is retained so a future fallible probe keeps
-//!    the fail-closed contract.
-//! 3. **`mktemp` scribble.** RED arms are in-memory string transforms; live files are never
-//!    written.
+//! The RED arms are in-memory string transforms; live files are never written. A probe that cannot
+//! answer is an explicit fail, never a pass: [`gate::probe_str`] cannot return a tool error today,
+//! and the arm that would report one is kept so a future fallible probe stays fail-closed.
 //!
-//! Output + binary 0/1 status are a contract (`wave.sh` tails failures; T-853 diffs stdout).
+//! Output and the binary 0/1 status are a contract: the wave gate prints the last 15 lines of a
+//! failed step.
 
 use std::path::Path;
 
@@ -34,8 +29,8 @@ const FILE_REL: &str =
     "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionLoader.c";
 
 /// Entry point. `0` when live pins hold and every RED proof bit; `1` on any failure; `2` when a
-/// RED arm cannot be set up (`sys.exit(2)` under bash `set -e`).
-pub fn verify_t456(repo_root: &Path) -> Result<u8> {
+/// RED arm cannot be set up, which is a gate that did not run rather than one that found nothing.
+pub fn verify_mission_rest_size_limits(repo_root: &Path) -> Result<u8> {
     let file = repo_root.join(FILE_REL);
     if !file.is_file() {
         println!("FAIL: missing {}", file.display());
@@ -127,14 +122,14 @@ pub fn verify_t456(repo_root: &Path) -> Result<u8> {
     }
 
     if failed {
-        println!("verify-t456-mission-rest-size-gate: FAIL");
+        println!("mission-rest-size-limits: FAIL");
         return Ok(1);
     }
-    println!("verify-t456-mission-rest-size-gate: PASS");
+    println!("mission-rest-size-limits: PASS");
     Ok(0)
 }
 
-/// Port of bash `assert_rest_size_gate`. Returns `true` when every pin held.
+/// Runs every pin over one source text. Returns `true` when all of them held.
 fn assert_rest_size_gate(src: &str, label: &str) -> Result<bool> {
     let raw_body = extract_success(src);
     if raw_body.is_empty() {
@@ -156,7 +151,7 @@ fn assert_rest_size_gate(src: &str, label: &str) -> Result<bool> {
         return Ok(false);
     }
 
-    // T-460: size check must be a live IsMissionBodyWithinCap( call before ParseMissionJson(
+    // The size check must be a live IsMissionBodyWithinCap( call before ParseMissionJson(
     let check_line = first_line_matching(&stripped, "IsMissionBodyWithinCap(");
     let parse_line = first_line_matching(&stripped, "ParseMissionJson(");
     match (check_line, parse_line) {
@@ -375,7 +370,7 @@ fn red2_relocate_after_parse(src: &str) -> std::result::Result<String, String> {
     )
     .expect("red2 block");
     let Some(m) = block_re.find(src) else {
-        return Err("RED2 setup failed: could not find T-456 REST size-gate block".to_string());
+        return Err("RED2 setup failed: could not find the REST size-gate block".to_string());
     };
     let gate_block = m.as_str().to_string();
     let src_wo = format!("{}\n{}", &src[..m.start()], &src[m.end()..]);

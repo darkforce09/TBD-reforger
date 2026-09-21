@@ -110,7 +110,7 @@ fn mod_source_label_names_the_actual_source() {
     // The bash printed only `modId=$TBD_WORKSHOP_MOD_ID`, which read as "the mod list is fine"
     // on a run whose mod list came from nowhere near the operator's modpack.
     let mut e = base();
-    assert!(e.mod_source_label().starts_with("LEGACY single mod"));
+    assert!(e.mod_source_label().starts_with("single-mod env fallback"));
     e.modpack_url = "https://x/y".into();
     assert_eq!(e.mod_source_label(), "modpack API https://x/y");
     e.modpack_json = "/p.json".into();

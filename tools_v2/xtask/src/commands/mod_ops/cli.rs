@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum ModCmd {
-    /// Assert a TBD dedicated-server console.log shows a HEALTHY boot (T-855).
+    /// Assert a TBD dedicated-server console.log shows a HEALTHY boot.
     /// Exit: 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "remote-logs")]
     RemoteLogs {
@@ -14,7 +14,7 @@ pub(crate) enum ModCmd {
         #[arg(long)]
         selftest: bool,
     },
-    /// Spawn/equip determinism (T-856 port of tbd-spawn-determinism.sh)
+    /// Spawn/equip determinism over a recorded server log
     #[command(name = "spawn-determinism")]
     SpawnDeterminism {
         /// Fail-fast: Workbench Net API must already be listening (exit 2 if not)
@@ -28,19 +28,19 @@ pub(crate) enum ModCmd {
         /// World resource path (default worlds/TBD_Dev_POC.ent)
         world: Option<String>,
     },
-    /// Workbench play + log grep for slot spawn (T-873 port of tbd-spawn-verify.sh)
+    /// Workbench play + log scan for slot spawn
     #[command(name = "spawn-verify")]
     SpawnVerify {
         /// Verdict-logic selftest via mcp wb-logs (no Workbench)
         #[arg(long)]
         selftest: bool,
-        /// Extended-grep display filter (default: T-612 tag/event pattern)
+        /// Extended-regex display filter (default: the TBD tag/event pattern)
         pattern: Option<String>,
     },
-    /// Manual mod/website test suite (T-859 port of manual-test.sh)
+    /// Manual mod/website test suite
     #[command(name = "manual-test")]
     ManualTest,
-    /// TBD mod/Workbench MCP bootstrap (T-863 port of tbd-dev-bootstrap.sh)
+    /// TBD mod/Workbench MCP bootstrap
     #[command(name = "dev-bootstrap")]
     DevBootstrap {
         /// Passthrough flags (`--api`, `--server`); unknown tokens ignored like bash.
@@ -50,46 +50,46 @@ pub(crate) enum ModCmd {
     /// Argument gate in front of `mod playtest`; bare invocation prints usage and exits 2
     #[command(name = "dev-server", disable_help_flag = true)]
     DevServer {
-        /// Passthrough to run-playtest-server.sh (`--mission-id=…`, `--admin=…`, …).
+        /// Passthrough to the playtest server (`--mission-id=…`, `--admin=…`, …).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Switch Workbench profile missionId / stage a golden (T-864 port of test-mission.sh)
+    /// Switch Workbench profile missionId / stage a golden
     #[command(name = "test-mission")]
     TestMission {
         /// Golden basename (no .json), `backend`, or omit to show current
         target: Option<String>,
     },
-    /// One-time staging-host discovery + mkdir (T-870 port of bootstrap-staging-server.sh)
+    /// One-time staging-host discovery + mkdir
     #[command(name = "bootstrap-staging")]
     BootstrapStaging,
-    /// Insert pinned Milestone #1 website announcement (T-872 port of seed-milestone-announcement.sh)
+    /// Insert the pinned Milestone #1 website announcement
     #[command(name = "seed-announcement")]
     SeedAnnouncement,
-    /// Phase-1 game-server API smoke (T-874 port of test-phase1-api.sh)
+    /// Game-server API smoke over the mod bridge
     #[command(name = "test-phase1-api")]
     TestPhase1Api,
-    /// T-853: dedicated playtest server lifecycle (port of run-playtest-server.sh)
+    /// Dedicated playtest server lifecycle
     #[command(name = "playtest", disable_help_flag = true)]
     Playtest {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Headless Enfusion compile gate (T-891 port of compile.sh)
+    /// Headless Enfusion compile gate
     #[command(name = "compile", disable_help_flag = true)]
     Compile {
         /// Passthrough flags (`--selftest`, `--keep-logs`, `--probe=DIR`, `-h`/`--help`).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Prove the compile gate still rejects a broken .c — passes ONLY on its exit 1 (T-897 port
-    /// of the Makefile's `mod-compile-selftest` rc classification).
+    /// Prove the compile gate still rejects a broken .c — passes ONLY on its exit 1, so a gate
+    /// that has stopped classifying exit codes cannot green this.
     #[command(name = "compile-selftest")]
     CompileSelftest,
-    /// T-901: loud preflight that the dedicated server + resourceDatabase.rdb exist (mod-gates.yml).
+    /// Loud preflight that the dedicated server + resourceDatabase.rdb exist (mod-gates.yml).
     #[command(name = "compile-preflight")]
     CompilePreflight,
-    /// Headless game-mode boot + roll-call (T-892 port of world-boot.sh).
+    /// Headless game-mode boot + roll-call.
     /// Exit: 0 PASS · 1 CODE · 2 usage · 3 ENVIRONMENT.
     #[command(name = "world-boot", disable_help_flag = true)]
     WorldBoot {
@@ -97,7 +97,7 @@ pub(crate) enum ModCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-181 mod wave driver (T-890 port of scripts/mod/wave.sh — NOT platform/wave.sh).
+    /// The mod program wave driver — NOT the platform factory (`platform wave`).
     #[command(name = "wave", disable_help_flag = true)]
     Wave {
         /// `status` | `gate` | `land` | `prep [N]` | `push` (default status).

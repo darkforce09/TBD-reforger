@@ -24,31 +24,31 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T452 => {
-                crate::verifications::mod_scripts::player_identity_comments::verify_t452(
+            VerifyCmd::PlayerIdentityComments => {
+                crate::verifications::mod_scripts::player_identity_comments::verify_player_identity_comments(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T296 => {
-                crate::verifications::mod_scripts::results_reporter_identity_comments::verify_t296(
+            VerifyCmd::ResultsReporterIdentityComments => {
+                crate::verifications::mod_scripts::results_reporter_identity_comments::verify_results_reporter_identity_comments(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T439 => {
-                crate::verifications::registry::object_registry_aliases::verify_t439(
+            VerifyCmd::ObjectRegistryAliases => {
+                crate::verifications::registry::object_registry_aliases::verify_object_registry_aliases(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T444 => {
-                crate::verifications::database::wiki_seeds::verify_t444(&find_repo_root()?)?
+            VerifyCmd::WikiSeeds => {
+                crate::verifications::database::wiki_seeds::verify_wiki_seeds(&find_repo_root()?)?
             }
             VerifyCmd::NoCrfLeak => {
                 crate::verifications::licensing::upstream_code_leaks::verify_crf_leak(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T180 => {
-                crate::verifications::architecture::editor_orbat_coherency::verify_t180(
+            VerifyCmd::EditorOrbatCoherency => {
+                crate::verifications::architecture::editor_orbat_coherency::verify_editor_orbat_coherency(
                     &find_repo_root()?,
                 )?
             }
@@ -60,29 +60,29 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
             VerifyCmd::UiLayouts => {
                 crate::verifications::mod_scripts::ui_layouts::verify_ui_layouts(&find_repo_root()?)?
             }
-            VerifyCmd::T437 => {
-                crate::verifications::mod_scripts::destroy_target_diagnostics::verify_t437(
+            VerifyCmd::DestroyTargetDiagnostics => {
+                crate::verifications::mod_scripts::destroy_target_diagnostics::verify_destroy_target_diagnostics(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T438 => {
-                crate::verifications::deployment::staging_compose_paths::verify_t438(
+            VerifyCmd::StagingComposePaths => {
+                crate::verifications::deployment::staging_compose_paths::verify_staging_compose_paths(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T440 => crate::verifications::database::faction_library_seeds::verify_t440(
+            VerifyCmd::FactionLibrarySeeds => crate::verifications::database::faction_library_seeds::verify_faction_library_seeds(
                 &find_repo_root()?,
             )?,
             VerifyCmd::NoPython => {
                 crate::verifications::language_bans::python_scripts::verify_no_python()?
             }
-            VerifyCmd::T456 => {
-                crate::verifications::mod_scripts::mission_rest_size_limits::verify_t456(
+            VerifyCmd::MissionRestSizeLimits => {
+                crate::verifications::mod_scripts::mission_rest_size_limits::verify_mission_rest_size_limits(
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::T468 => {
-                crate::verifications::ci::schema_parity::verify_t468(&find_repo_root()?)?
+            VerifyCmd::CiSchemaParity => {
+                crate::verifications::ci::schema_parity::verify_ci_schema_parity(&find_repo_root()?)?
             }
             VerifyCmd::EngineLayers => {
                 crate::verifications::architecture::engine_layer_boundaries::verify_engine_layers(

@@ -1,9 +1,9 @@
 use super::*;
 
-use crate::repository_layout::map_scratch_dir;
+use crate::repository_layout::{CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR, map_scratch_dir};
 
-/// build-landcover-mask.mjs port — classification at CLASS_PX (nearest sample), close-then-
-/// open morphology, soft-edge masks + meta JSON.
+/// Classify the stitched orthophoto into land-cover masks: classification at CLASS_PX (nearest
+/// sample), close-then-open morphology, soft-edge masks + meta JSON.
 pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     if terrain != "everon" {
         bail!("build-landcover-mask: no SAP source registered for terrain \"{terrain}\"");
@@ -78,7 +78,7 @@ pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     write_mask(&bright, &bright_out)?;
     let frac = |c: u64| js_num((c as f64 / n as f64 * 10000.0).round() / 10000.0);
     let meta = json!({
-        "slice": "T-090.1.1.1",
+        "lane": "cartographic landcover",
         "source": sap_rel,
         "classPx": CLASS_PX,
         "thresholds": {
@@ -325,36 +325,36 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
     image_operations::save_png_rgb(&out, &world)?;
 
     let meta = json!({
-        "slice": "T-090.1.1.1",
+        "lane": "cartographic landcover",
         "source": "workbench-cartographic",
         "terrain": terrain,
         "sourceRaster": "assets_v2/scratch/everon/spike/TBD_SatExport_everon.tga",
         "sourceDimensions": [source_px, source_px],
         "dimensions": [world_px, world_px],
         "worldBounds": [0, 0, world_px, world_px],
-        "upscale": format!("{source_px}->{world_px} Lanczos (documented upscale, slice spec §1) — T-165.9 Rust"),
+        "upscale": format!("{source_px}->{world_px} Lanczos (documented upscale, slice spec §1)"),
         "orientation": "north-up (TGA top origin preserved; no flips on this path)",
         "overlays": {
             "landCover": {
-                "source": "build-landcover-mask (SAP appearance heuristic, L1) — T-165.9 Rust",
+                "source": "build-landcover-mask (SAP appearance heuristic, L1)",
                 "thresholds": landcover.meta["thresholds"],
                 "fractions": landcover.meta["fractions"],
                 "style": { "open": { "color": "#CDC6A3", "alpha": 0.7 }, "forest": { "color": "#37502D", "alpha": 0.8 } },
-                "provenance": "T-090.1.1.1 — SAP ortho read-only; satellite bundle untouched",
+                "provenance": "SAP ortho read-only; satellite bundle untouched",
             },
             "inlandWater": if has_water {
-                json!({ "mask": "assets_v2/scratch/everon/sap/water-inland-mask.png", "color": "#2E5266", "provenance": "T-090.1.2.5.2 classifier (read-only reuse)" })
+                json!({ "mask": "assets_v2/scratch/everon/sap/water-inland-mask.png", "color": "#2E5266", "provenance": "inland-water classifier output (read-only reuse)" })
             } else {
                 Value::Null
             },
             "roads": {
-                "source": "world::topo (.topo vector network) — T-165.9 Rust",
+                "source": "world::topo (.topo vector network)",
                 "records": drawn_records,
                 "vertices": drawn_verts,
                 "style": { "0": { "color": "#9aa3a2", "width": 20 }, "1": { "color": "#b0452b", "width": 10 }, "2": { "color": "#c8823c", "width": 8 }, "3": { "color": "#ded6bd", "width": 5 }, "5": { "color": "#7a7466", "width": 3 } },
             },
         },
-        "spikeArtifact": ".ai/artifacts/t090_1_1_1_source_spike.json",
+        "spikeArtifact": format!("{CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR}/landcover_source_spike.json"),
         "buildSeconds": started.elapsed().as_secs(),
         "generatedAt": iso_from_system_time(std::time::SystemTime::now()),
     });

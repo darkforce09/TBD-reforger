@@ -1,30 +1,26 @@
-//! T-437 / T-474 — Destroy-target inert diagnostics must not claim entities[] never spawn
-//! (T-853 / T-854 port of `scripts/mod/verify-t437-destroy-inert-diagnostics.sh`).
+//! Destroy-target inert diagnostics must not claim `entities[]` never spawn.
 //!
-//! After T-254, `TBD_MissionDocumentStruct` models `entities[]` and `SpawnMissionEntities` places
-//! resolvable rows. Operator-facing strings that still blame a build that "does not spawn/model
-//! entities[]" are lies. T-474 closed four false-green classes (paraphrased lies, collapsed
-//! DiagnoseEmpty returns with pins only in comments, renamed fn with name only in a comment,
-//! unresolved-alias registry pin moved to a comment). This gate strips `//` / `/* */` before
-//! structural pins, requires a live fn definition + three return-string arms, broadens forbidden
-//! paraphrases, and RED→GREEN-proves each attack on every run.
+//! `TBD_MissionDocumentStruct` models `entities[]` and `SpawnMissionEntities` places resolvable
+//! rows, so an operator-facing string that still blames a build that "does not spawn/model
+//! entities[]" is a lie that costs the next reader a wasted investigation.
 //!
-//! ── WHAT THE PORT REMOVES ────────────────────────────────────────────────────────────────────
+//! Four false-green classes this gate is built to refuse: a paraphrased lie; a collapsed
+//! `DiagnoseEmpty` whose returns are pinned only in comments; a renamed function whose old name
+//! survives only in a comment; and an unresolved-alias registry pin moved into a comment. So the
+//! gate strips `//` and `/* */` before every structural pin, requires a live fn definition plus
+//! three return-string arms, bans a broad set of paraphrases, and RED→GREEN-proves each attack on
+//! every run.
 //!
-//! 1. **`python3`, entirely — seven call sites.** Two heredocs (scan + registry pins) and five RED
-//!    setup transforms. The script was on `scripts/python-inventory.txt` solely for those; the
-//!    inventory line goes with them.
-//! 2. **Five `2>/dev/null` fail-opens on the RED arms.** Each RED proof read
-//!    `if scan_forbidden_file|assert_registry_pins … 2>/dev/null; then "still passed" else
-//!    "FAIL (expected)"`. A crash / unreadable TMP / absent `python3` (127) exited non-zero and
-//!    was indistinguishable from "the pin correctly rejected the perturbation", with the traceback
-//!    swallowed. Here checks return [`Verdict`]: Held / Failed / DidNotRun cannot be confused, and
-//!    a DidNotRun on a RED arm fails the gate with a distinct message (not "expected").
-//! 3. **`mktemp` + `trap` scribble risk.** Perturbations are in-memory string transforms; FAIL
-//!    lines that named `$TMP` still print a `/tmp/tmp.*` display path so clean-tree acceptance
-//!    normalises the same way bash-vs-bash did. Live files are never written.
+//! ── RED ARMS CANNOT FAIL OPEN ────────────────────────────────────────────────────────────────
 //!
-//! Output + binary 0/1 status are a contract (`wave.sh` tails failures; T-853 diffs stdout).
+//! Each RED proof perturbs the source in memory and requires the pin to reject it. Those arms
+//! return a [`Verdict`], so Held / Failed / DidNotRun cannot be confused: a DidNotRun on a RED arm
+//! fails the gate with its own message rather than reading as "the pin correctly rejected it".
+//! Perturbations are in-memory string transforms — live files are never written — while FAIL lines
+//! still print a `/tmp/tmp.*` display path so a clean-tree run reads like the file it describes.
+//!
+//! Output and the binary 0/1 status are a contract: the wave gate prints the last 15 lines of a
+//! failed step.
 
 use std::path::{Path, PathBuf};
 
@@ -138,7 +134,7 @@ mod source_audit;
 use source_audit::assert_registry_pins;
 use source_audit::read_text;
 use source_audit::scan_forbidden;
-pub use source_audit::verify_t437;
+pub use source_audit::verify_destroy_target_diagnostics;
 
 mod strip_c_comments;
 use strip_c_comments::assert_other_pins;

@@ -74,7 +74,7 @@ use verification_core::{Pattern, Verdict};
 /// compiled binary through rsync and rebuilding it per host arch, to replace 100 lines that need
 /// nothing but `systemctl show`.
 const AGENT_SH: &str = r##"#!/usr/bin/env bash
-# TBD Reforger host control agent (T-289) — RENDERED by scripts/mod/deploy-staging.sh.
+# TBD Reforger host control agent — RENDERED by `cargo xtask deploy staging`.
 # Do not edit on the host; edit the renderer and redeploy.
 #
 # Contract: read ONE line from stdin, write ONE line of JSON to stdout.
@@ -91,7 +91,7 @@ const AGENT_SH: &str = r##"#!/usr/bin/env bash
 # SECURITY. There is deliberately NO passthrough verb. The request is filtered to [a-z]
 # and then matched against a fixed four-element set, so no operator-supplied text — and no
 # shell metacharacter — can reach a command. `custom` and `change_map` from RconInput have
-# no representation here BY DESIGN; see the scope note in deploy-staging.sh.
+# no representation here BY DESIGN; the renderer's module header carries the scope note.
 set -uo pipefail
 
 UNIT="${TBD_AGENT_UNIT:-}"
@@ -101,7 +101,7 @@ ACTION="unknown"
 
 # The only variable content in the output is $detail. Restrict it to a charset containing
 # no JSON metacharacter, so this hand-rolled JSON cannot emit an invalid document — the
-# failure deploy-staging.sh's own header warns about. Every other field is from a fixed set.
+# failure this header warns about. Every other field is from a fixed set.
 emit() {
   local ok="$1" result="$2" state="$3" detail="$4"
   detail="$(printf '%s' "$detail" | tr -cd 'A-Za-z0-9 ._:/@=-' | cut -c1-200)"

@@ -56,10 +56,9 @@ use crate::commands::build::recipes::{Step, rust_api, rust_build};
 /// $(TBD_REPO_ROOT)/target`. That self-reference is the half of the check that survives a
 /// refactor: the behavioural probe below can be satisfied by an accident (a stray environment
 /// variable, a `.cargo/config.toml` that happens to agree today), while the source pin says the
-/// formula is still written down where it belongs. Deleting the self-reference when the pin moved
-/// out of the Makefile would have evaporated the check — the exact shape of `verify-t440` reading
-/// its own `wave.sh` call sites, which cost 7 test failures in this program when the const and the
-/// call site were changed apart.
+/// formula is still written down where it belongs. Deleting the self-reference when the pin moves
+/// would evaporate the check — the same shape as a gate reading its own call sites, where the
+/// const and the call site can be changed apart.
 ///
 /// So it moves WITH the pin, and `tests::pin_marker_is_present_in_this_file` derives its fixture
 /// FROM this const (via `include_str!`) so the two cannot drift.

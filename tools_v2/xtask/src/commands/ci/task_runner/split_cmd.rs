@@ -1,7 +1,7 @@
 use super::*;
 
-/// A recipe line split into `(cwd, argv)`. `cd <dir> && <cmd>` is make's idiom for "run this in
-/// that directory" and is the only shell construct this lane's own lines use.
+/// A recipe line split into `(cwd, argv)`. `cd <dir> && <cmd>` means "run this in that
+/// directory" and is the only shell construct this lane's own lines use.
 pub fn split_cmd(line: &str) -> (Option<&str>, Vec<&str>) {
     if let Some(rest) = line.strip_prefix("cd ")
         && let Some((dir, tail)) = rest.split_once(" && ")
@@ -17,10 +17,10 @@ pub fn find(name: &str) -> Option<&'static Task> {
 
 /// The command line a step ECHOES, or `None` for the shapes that echo nothing.
 ///
-/// T-897: `gate_t468` used to pin the Makefile's `verify-t456:` / `verify-t468:` recipe BODIES
-/// against being hollowed to `@true`. Those recipes are gone; this table is their successor, and
-/// this accessor is how that gate reads it. [`Step::Native`] is deliberately `None` — it carries
-/// no command line to pin, which is exactly why no `verify-*` row uses that shape.
+/// `verify ci-schema-parity` pins the `verify-mission-rest-size-limits` and `ci-local` rows
+/// against being hollowed, and this accessor is how it reads them. [`Step::Native`] is
+/// deliberately `None` — it carries no command line to pin, which is exactly why no `verify-*`
+/// row uses that shape.
 pub fn step_echo(s: &Step) -> Option<&'static str> {
     match s {
         Step::Cmd { line, .. } => Some(line),
@@ -295,8 +295,7 @@ pub(super) fn verify_doc_layout() -> i32 {
 /// carrying help text), so it POINTS at them rather than transcribing a third copy that would
 /// rot. `cargo xtask mk` and `cargo xtask db --help` each list their own.
 pub fn help() -> i32 {
-    println!("TBD Reforger — `cargo xtask` task surface (T-853/T-897: the root Makefile is gone;");
-    println!("this replaces `make help`. Run `cargo xtask ci <task>`).");
+    println!("TBD Reforger — `cargo xtask` task surface. Run `cargo xtask ci <task>`.");
     for group in ["CI", "schema", "verify", "map", "build", "db"] {
         let rows: Vec<&Task> = TASKS.iter().filter(|t| t.group == group).collect();
         if rows.is_empty() {
@@ -307,13 +306,13 @@ pub fn help() -> i32 {
             let tag = match t.lane {
                 Lane::Ci => String::new(),
                 Lane::Alias => " [alias]".to_string(),
-                Lane::Borrowed(who) => format!(" [{who}]"),
+                Lane::Borrowed => " [borrowed]".to_string(),
             };
             println!("  \x1b[36m{:<22}\x1b[0m {}{}", t.name, t.help, tag);
         }
     }
-    println!("\n  [alias]  already a `cargo xtask verify …` command; the make name was a wrapper.");
-    println!("  [T-89x]  that slice's lane — carried here so this lane's composites really run.");
+    println!("\n  [alias]     a one-line wrapper on an existing `cargo xtask verify …` command.");
+    println!("  [borrowed]  the build or database lane — carried so the CI composites really run.");
     println!("\nThe other two lanes list themselves — they are not reprinted here, because a copy");
     println!("of a list is a list that rots:");
     println!(

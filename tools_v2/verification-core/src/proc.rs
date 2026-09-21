@@ -280,8 +280,8 @@ impl Run {
     /// [`Run::output`] drains the two streams into two separate `String`s, which discards the
     /// interleaving. Joining them afterwards invents an order that the child never produced.
     ///
-    /// MEASURED 2026-08-12 while porting `verify-t180-coherency.sh` (T-853): that gate runs 25
-    /// `cargo test` invocations and diffs its whole 803-line output against the bash original.
+    /// MEASURED 2026-08-12 on `verify editor-orbat-coherency`: that gate runs 25 `cargo test`
+    /// invocations and its whole 803-line output is a scraped contract.
     /// Cargo writes `Running unittests …` to **stderr** and libtest writes `running N tests` to
     /// **stdout**. Every package in that gate happens to have exactly one test target today, so
     /// stderr-then-stdout coincidentally matches — and would stop matching the day any package
@@ -628,7 +628,10 @@ mod tests {
     fn timeout_kills_the_whole_process_group() {
         // The grandchild outlives its parent unless the GROUP is killed. Marker file proves it:
         // if the tree survived, the sleep completes and writes.
-        let marker = std::env::temp_dir().join(format!("tbd-gate-pg-{}", std::process::id()));
+        let marker = std::env::temp_dir().join(format!(
+            "verification-core-process-group-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_file(&marker);
         let script = format!("( sleep 2; touch {} ) & sleep 30", marker.display());
         let got = Run::new("sh")

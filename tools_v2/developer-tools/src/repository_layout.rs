@@ -203,6 +203,35 @@ pub fn map_scratch_dir(root: &Path, terrain: &str) -> PathBuf {
     root.join("assets_v2/scratch").join(terrain)
 }
 
+/* ─────────────────────────────── analysis artifacts ─────────────────────────────── */
+
+/// Committed decision records for the inland-water classifier: the water and source spikes the
+/// classifier writes and the refine spike it compares the current run against.
+pub const INLAND_WATER_ARTIFACTS_DIR: &str = ".ai/artifacts/inland_water";
+
+/// Committed decision records for the aerial orthophoto lane: the seam analysis the stitcher's
+/// seam verifier writes.
+pub const AERIAL_ORTHOPHOTO_ARTIFACTS_DIR: &str = ".ai/artifacts/aerial_orthophoto";
+
+/// Committed decision records for the cartographic lane: the land-cover source spike the mask
+/// builder cites in the ortho metadata it emits.
+pub const CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR: &str = ".ai/artifacts/cartographic_rendering";
+
+/// [`INLAND_WATER_ARTIFACTS_DIR`] under a checkout root.
+pub fn inland_water_artifacts_dir(root: &Path) -> PathBuf {
+    root.join(INLAND_WATER_ARTIFACTS_DIR)
+}
+
+/// [`AERIAL_ORTHOPHOTO_ARTIFACTS_DIR`] under a checkout root.
+pub fn aerial_orthophoto_artifacts_dir(root: &Path) -> PathBuf {
+    root.join(AERIAL_ORTHOPHOTO_ARTIFACTS_DIR)
+}
+
+/// [`CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR`] under a checkout root.
+pub fn cartographic_rendering_artifacts_dir(root: &Path) -> PathBuf {
+    root.join(CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR)
+}
+
 #[cfg(test)]
 #[path = "tests/repository_layout.rs"]
 mod tests;

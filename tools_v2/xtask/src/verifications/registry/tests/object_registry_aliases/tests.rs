@@ -54,7 +54,7 @@ fn perturb(name: &str, f: Edit) -> u8 {
     let mut doc: Value = serde_json::from_str(&raw).unwrap();
     f(doc["entries"].as_array_mut().unwrap());
     let fx = Fixture::new(name, Some(doc.to_string()));
-    verify_t439(&fx.0).unwrap()
+    verify_object_registry_aliases(&fx.0).unwrap()
 }
 
 fn row(es: &[Value], pred: impl Fn(&str) -> bool) -> usize {
@@ -66,7 +66,7 @@ fn row(es: &[Value], pred: impl Fn(&str) -> bool) -> usize {
 
 #[test]
 fn the_real_registry_holds() {
-    assert_eq!(verify_t439(&repo()).unwrap(), 0);
+    assert_eq!(verify_object_registry_aliases(&repo()).unwrap(), 0);
 }
 
 /// T-556 anti-vacuity: a gate that cannot fail is indistinguishable from one that checks
@@ -105,7 +105,7 @@ fn perturbing_the_registry_turns_the_pass_red() {
     let gutted = Fixture::new("gutfe", None);
     std::fs::write(gutted.0.join(FE_REL), "// nothing to see here\n").unwrap();
     assert_eq!(
-        verify_t439(&gutted.0).unwrap(),
+        verify_object_registry_aliases(&gutted.0).unwrap(),
         1,
         "a gutted mirror went green"
     );
@@ -117,15 +117,31 @@ fn perturbing_the_registry_turns_the_pass_red() {
 fn inputs_that_were_never_examined_do_not_read_as_pass() {
     let absent = Fixture::new("absent", None);
     absent.drop_file(MOD_REL);
-    assert_eq!(verify_t439(&absent.0).unwrap(), 2, "absent registry");
+    assert_eq!(
+        verify_object_registry_aliases(&absent.0).unwrap(),
+        2,
+        "absent registry"
+    );
     let no_fe = Fixture::new("nofe", None);
     no_fe.drop_file(FE_REL);
-    assert_eq!(verify_t439(&no_fe.0).unwrap(), 2, "absent frontend mirror");
+    assert_eq!(
+        verify_object_registry_aliases(&no_fe.0).unwrap(),
+        2,
+        "absent frontend mirror"
+    );
     let garbage = Fixture::new("garbage", Some("{ this is not json".into()));
-    assert_eq!(verify_t439(&garbage.0).unwrap(), 2, "unparseable registry");
+    assert_eq!(
+        verify_object_registry_aliases(&garbage.0).unwrap(),
+        2,
+        "unparseable registry"
+    );
     // The Python `mod["entries"]` KeyError path, now a verdict rather than a stack trace.
     let bare = Fixture::new("noentries", Some(r#"{"registryVersion": 1}"#.into()));
-    assert_eq!(verify_t439(&bare.0).unwrap(), 2, "no entries array");
+    assert_eq!(
+        verify_object_registry_aliases(&bare.0).unwrap(),
+        2,
+        "no entries array"
+    );
 }
 
 #[test]

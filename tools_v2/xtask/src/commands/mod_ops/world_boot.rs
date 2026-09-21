@@ -17,7 +17,7 @@ use serde_json::{Value, json};
 use crate::commands::mod_ops::world_boot_verdict::MissionCtx;
 use crate::core::repository_root::find_repo_root;
 
-const FIXTURE_TITLE: &str = "T-186 compiled-boot fixture";
+const FIXTURE_TITLE: &str = "compiled-boot fixture";
 const SERVER_REL: &str = ".local/share/Steam/steamapps/common/Arma Reforger Server";
 
 struct Opts {
@@ -71,7 +71,7 @@ impl Drop for RunState {
 }
 
 #[rustfmt::skip]
-const T302_EQUIP_OK: usize = 4; // perturb to 3 → `mod world-boot --selftest` RED
+const EXPECTED_EQUIP_OK: usize = 4; // perturb to 3 → `mod world-boot --selftest` RED
 
 mod execution;
 use execution::api_doc_fail;
@@ -80,13 +80,13 @@ use execution::api_http_fail;
 pub use execution::run;
 
 mod compiled_lane;
+use compiled_lane::assert_four_weapon_equip;
 use compiled_lane::compiled_lane;
+use compiled_lane::four_weapon_equip_selftest;
 use compiled_lane::kill_run;
 use compiled_lane::poll_for_log;
 use compiled_lane::spawn_server;
 use compiled_lane::sweep_fixture_missions;
-use compiled_lane::t302_assert;
-use compiled_lane::t302_selftest;
 use compiled_lane::write_server_json;
 
 mod resolve_service_token;

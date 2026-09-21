@@ -20,7 +20,8 @@
 //! ```
 //!
 //! Four steps narrow, not the two first blamed: touch_changed, wasm32 (frontend), fmt (changed) and
-//! the trunk conditional. `test xtask+tbd-tools` and the other unconditional steps are unaffected.
+//! the trunk conditional. `test xtask+developer-tools` and the other unconditional steps are
+//! unaffected.
 //!
 //! WHY DERIVE-AND-VERIFY RATHER THAN "MAKE THE BASE MANDATORY".
 //! Mandatory moves the computation to the operator — the same operator who got it wrong, and who

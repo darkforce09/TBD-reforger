@@ -79,14 +79,13 @@
 //!
 //! ── DELIBERATE DEVIATIONS (everything else is byte-for-byte) ─────────────────────────────────
 //!
-//! * **`$0` in the two shape-pin messages** becomes [`SELF_REL`]. That sentence tells the reader
-//!   where the extractor they must re-point lives, and after T-853 that is this file; naming a
-//!   script the migration removes would be actively misleading. Reachable only once
-//!   [`MERGE_FN`] has been renamed — never on a clean tree.
-//! * **Exit 2, not 1, when the check DID NOT RUN** (missing/unreadable `http_router.rs` or `src/`), as in
-//!   `sql_gates.rs` and `gate_t439.rs`. `Makefile:328` and `wave.sh:2562`/`:2833` test `rc -eq 0`,
-//!   so any nonzero is still FAIL there, and the bash headline stays verbatim on line 1 so a grep
-//!   for `FAIL: http_router.rs no longer …` still hits. A real A/B violation still exits **1**.
+//! * **[`SELF_REL`] in the two shape-pin messages** tells the reader where the extractor they
+//!   must re-point lives, which is this file. Reachable only once [`MERGE_FN`] has been renamed —
+//!   never on a clean tree.
+//! * **Exit 2, not 1, when the check DID NOT RUN** (missing or unreadable `http_router.rs` or
+//!   `src/`), as in the other verifications that separate the two. Callers that only test
+//!   `rc == 0` still read FAIL, and the headline stays on line 1 so a grep for
+//!   `FAIL: http_router.rs no longer …` still hits. A real A/B violation exits **1**.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;

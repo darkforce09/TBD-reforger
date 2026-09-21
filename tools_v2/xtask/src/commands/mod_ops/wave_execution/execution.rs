@@ -189,7 +189,7 @@ pub(super) fn cmd_status(root: &Path) -> u8 {
     let Some(w) = current_wave(root) else {
         return 2;
     };
-    println!("═══ T-181 wave status ═══");
+    println!("═══ mod wave status ═══");
     if w == "done" {
         println!(
             "ALL PLANNED WAVES SHIPPED. Next: queue mod tickets and `cargo xtask wave repack`, or close the program."

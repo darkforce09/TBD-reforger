@@ -48,7 +48,7 @@ pub fn run() -> Result<u8> {
 /// `find_repo_root` land there. That chdir is process-wide: every other test thread walking from
 /// the cwd at that instant (`map_blueprint::tests::fixture`, `map_world_los` pins) resolved the
 /// throwaway root — which carries a `.ai/tickets/ROOT` marker — and failed with NotFound. Measured
-/// 2026-09-05, wave 248 full gate, `test xtask+tbd-tools`: reproducible 2/2 in the gate's cold
+/// 2026-09-05, wave 248 full gate, `test xtask+developer-tools`: reproducible 2/2 in the gate's cold
 /// target dir, never in isolation.
 pub fn run_in(root: &Path) -> Result<u8> {
     let home = std::env::var("HOME").context("HOME is unset (bash set -u would fail)")?;

@@ -36,9 +36,9 @@ const FOREST_TINT: ([f64; 3], f64) = ([0x37 as f64, 0x50 as f64, 0x2d as f64], 0
 
 /* ─────────────────────────── build-tile-pyramid ─────────────────────────── */
 
-/* ─────────────────────────── Makefile inline-patch helpers (were `node -e`) ─────────────────────────── */
+/* ─────────────────────────── manifest inline-patch helpers ─────────────────────────── */
 
-/* ─────────────────────────── verify-t152-cartographic ─────────────────────────── */
+/* ─────────────────────────── verify-cartographic ─────────────────────────── */
 
 #[path = "cartographic_rendering/build_landcover_masks.rs"]
 mod build_landcover_masks;
@@ -52,4 +52,4 @@ pub use build_tile_pyramid::build_tile_pyramid;
 pub use build_tile_pyramid::patch_map_tiles_meta;
 pub use build_tile_pyramid::patch_unified_bytes;
 pub use build_tile_pyramid::reset_water_meta;
-pub use build_tile_pyramid::verify_t152;
+pub use build_tile_pyramid::verify_cartographic;

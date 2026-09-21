@@ -14,15 +14,15 @@ struct TmpRepo(PathBuf);
 impl TmpRepo {
     fn new(name: &str) -> TmpRepo {
         let mut p = std::env::temp_dir();
-        p.push(format!("tbd-t899-{}-{name}", std::process::id()));
+        p.push(format!("xtask-file-length-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
         for rel in FILE_LENGTH_PINS {
             std::fs::create_dir_all(p.join(rel)).unwrap();
-            std::fs::write(p.join(rel).join("lib.rs"), "fn t899() {}\n").unwrap();
+            std::fs::write(p.join(rel).join("lib.rs"), "fn placeholder() {}\n").unwrap();
         }
         std::fs::write(
             p.join(".coding-standards-allowlist.yaml"),
-            "# T-899 test fixture\n",
+            "# file-length test fixture\n",
         )
         .unwrap();
         TmpRepo(p)
@@ -39,7 +39,7 @@ fn walk_is_nonempty_anti_vacuity() {
     let files = walk_rust_sources(&this_repo()).expect("walk must run");
     assert!(
         !files.is_empty(),
-        "T-899: a zero-file walk is the defect this ticket closes"
+        "a zero-file walk must never read as a pass"
     );
     assert!(
         files

@@ -566,9 +566,10 @@ fn no_marker_tree_keeps_base_zero_and_waves_from_one() {
 }
 
 #[test]
-fn pre_t914_lock_without_wave_base_parses_as_zero() {
-    // The serde default that keeps pre-T-914 lock blobs (read at historical revisions by
-    // wave_plan_tickets_at) and the raw-TOML stubs in mod_wave_tests parsing.
+fn lock_without_a_wave_base_parses_as_zero() {
+    // The serde default that keeps lock blobs without the key parsing: the ones
+    // `wave_plan_tickets_at` reads at historical revisions, and the raw-TOML stubs in the mod
+    // wave tests.
     let text =
         "version = 1\nmax_concurrent = 8\npack_last = []\nwaves = []\n\n[owns]\n\n[depends_on]\n";
     let lock = parse(text).unwrap();

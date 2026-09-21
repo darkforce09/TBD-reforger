@@ -1,3 +1,9 @@
+//! Zero-argument adapters for the verifications a [`super::TASKS`] row runs in-process.
+//!
+//! A `Step::Xtask` holds a plain `fn() -> Result<u8>` pointer, which cannot capture; each adapter
+//! here supplies the one argument its verification needs — the repository root, or the terrain the
+//! CI lane always checks.
+
 use super::*;
 
 pub(super) fn x_height_labels() -> anyhow::Result<u8> {
@@ -30,14 +36,18 @@ pub(super) fn x_engine_layers() -> anyhow::Result<u8> {
     )
 }
 
-pub(super) fn x_t438() -> anyhow::Result<u8> {
-    crate::verifications::deployment::staging_compose_paths::verify_t438(&find_repo_root()?)
+pub(super) fn x_staging_compose_paths() -> anyhow::Result<u8> {
+    crate::verifications::deployment::staging_compose_paths::verify_staging_compose_paths(
+        &find_repo_root()?,
+    )
 }
 
-pub(super) fn x_t456() -> anyhow::Result<u8> {
-    crate::verifications::mod_scripts::mission_rest_size_limits::verify_t456(&find_repo_root()?)
+pub(super) fn x_mission_rest_size_limits() -> anyhow::Result<u8> {
+    crate::verifications::mod_scripts::mission_rest_size_limits::verify_mission_rest_size_limits(
+        &find_repo_root()?,
+    )
 }
 
-pub(super) fn x_t468() -> anyhow::Result<u8> {
-    crate::verifications::ci::schema_parity::verify_t468(&find_repo_root()?)
+pub(super) fn x_ci_schema_parity() -> anyhow::Result<u8> {
+    crate::verifications::ci::schema_parity::verify_ci_schema_parity(&find_repo_root()?)
 }

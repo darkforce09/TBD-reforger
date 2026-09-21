@@ -1,7 +1,7 @@
 use super::*;
 
 pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8> {
-    use website_map_engine::world::terrain::dem::manifest::DemManifest;
+    use website_map_engine::world::terrain::dem::manifest::{DemManifest, PixelCoord};
     use website_map_engine::world::terrain::dem::sampling::sample_elevation_meters;
     use website_map_engine::world::terrain::dem::sampling::world_to_pixel;
     const MIN_ANCHORS_STRICT: usize = 10;
@@ -141,8 +141,8 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
             eprintln!("FAIL  {id}: ({x}, {z}) outside worldBounds");
             failures += 1;
         }
-        let pc = world_to_pixel(x, z, &dm);
-        let (u, vv) = (pc.px / (w as f64 - 1.0), pc.py / (h as f64 - 1.0));
+        let PixelCoord { px, py, .. } = world_to_pixel(x, z, &dm);
+        let (u, vv) = (px / (w as f64 - 1.0), py / (h as f64 - 1.0));
         if !(0.0..=1.0).contains(&u) || !(0.0..=1.0).contains(&vv) {
             eprintln!("FAIL  {id}: normalized (u,v)=({u},{vv}) outside [0,1]");
             failures += 1;

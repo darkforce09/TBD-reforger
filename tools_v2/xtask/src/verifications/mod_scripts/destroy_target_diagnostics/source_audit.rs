@@ -2,7 +2,7 @@ use super::*;
 
 /// Entry point. `0` when live pins hold and every RED proof bit; `1` on any failure; `2` when a
 /// RED arm cannot be set up (`sys.exit(2)` under bash `set -e`).
-pub fn verify_t437(repo_root: &Path) -> Result<u8> {
+pub fn verify_destroy_target_diagnostics(repo_root: &Path) -> Result<u8> {
     let paths = Paths::resolve(repo_root);
     for p in paths.all() {
         if !p.is_file() {
@@ -160,10 +160,10 @@ pub fn verify_t437(repo_root: &Path) -> Result<u8> {
     }
 
     if failed {
-        println!("verify-t437-destroy-inert-diagnostics: FAIL");
+        println!("destroy-target-diagnostics: FAIL");
         return Ok(1);
     }
-    println!("verify-t437-destroy-inert-diagnostics: PASS");
+    println!("destroy-target-diagnostics: PASS");
     Ok(0)
 }
 
@@ -187,7 +187,7 @@ pub(super) fn read_text(path: &Path) -> Result<String, Verdict> {
 
 pub(super) fn emit(v: Verdict) -> u8 {
     println!("{v}");
-    u8::try_from(v.into_exit_legacy_binary()).unwrap_or(1)
+    u8::try_from(v.into_binary_exit_code()).unwrap_or(1)
 }
 
 pub(super) fn emit_labelled(v: &Verdict, label: &str) {

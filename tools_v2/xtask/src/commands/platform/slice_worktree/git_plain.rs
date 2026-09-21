@@ -415,12 +415,10 @@ pub(super) fn cmd_merge(root: &Path, slice_arg: &str) -> Result<u8> {
         return Ok(2);
     }
 
-    // ODDITY: the message is hard-coded to `T-181:` whatever program the slice belongs to, so the
-    // platform factory's merges are all tagged with the mod program's ticket. Preserved — `reap`'s
-    // `git log --grep` keys off `slice/<id>` in git's auto-generated "Merge branch" line, not off
-    // this prefix, so changing it would rewrite history for no gain.
+    // `reap`'s `git log --grep` keys off `slice/<id>` in git's auto-generated "Merge branch"
+    // line, not off this subject, so the subject carries only the branch it merged.
     // ODDITY: nothing checks that HEAD is `main`. This merges into whatever is checked out.
-    let msg = format!("T-181: merge {branch}\n\nCo-Authored-By: Claude <noreply@anthropic.com>");
+    let msg = format!("merge {branch}\n\nCo-Authored-By: Claude <noreply@anthropic.com>");
     let code = pt(root, &["merge", "--no-ff", &branch, "-m", &msg])?;
     if code != 0 {
         return Ok(code as u8); // bash `set -e`

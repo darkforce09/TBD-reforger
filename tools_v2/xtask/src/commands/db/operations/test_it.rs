@@ -59,7 +59,7 @@ pub(crate) fn reap_select(base: &str) -> String {
     )
 }
 
-/// `TBD_IT_BASE_DB` or the Makefile's literal `rust_it`, refused unless the T-381 allow-list
+/// `TBD_IT_BASE_DB`, defaulting to `rust_it`, refused unless the scratch-database allow-list
 /// accepts it. Returns the refusal text so callers can print it AND tests can assert on it.
 pub(crate) fn guarded_base() -> Result<String, String> {
     let base = std::env::var("TBD_IT_BASE_DB")
@@ -72,7 +72,7 @@ pub(crate) fn guarded_base() -> Result<String, String> {
     Err(format!(
         "\
 ───────────────────────────────────────────────────────────────────────
-REFUSING to run the integration suite against database `{base}` (T-381 allow-list).
+REFUSING to run the integration suite against database `{base}` (scratch allow-list).
 
   Allowed without confirmation: rust_it, tbd_gate*, *_cold, *_it, *_probe
 
@@ -205,7 +205,7 @@ pub(crate) fn reap(base: &str) -> Result<u8> {
         }
         if !dbc::is_safe_scratch_database_name(db) {
             eprintln!(
-                "REFUSING to drop `{db}` — outside the T-381 allow-list (rust_it, tbd_gate*, *_cold, *_it, *_probe)."
+                "REFUSING to drop `{db}` — outside the scratch allow-list (rust_it, tbd_gate*, *_cold, *_it, *_probe)."
             );
             worst = 1;
             continue;

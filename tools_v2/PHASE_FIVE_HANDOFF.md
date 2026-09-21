@@ -91,7 +91,7 @@ developer_tools | blueprint::hull::tests::cube_hull_is_twelve_outward_triangles
 developer_tools | blueprint::hull::tests::prism_like_trunk_hull_closes
 developer_tools | blueprint::hull::tests::tetrahedron_and_degenerate_inputs
 developer_tools | blueprint::library::tests::blas_dedup_by_stem_manifest_entries_and_hot_order
-developer_tools | blueprint::library::tests::committed_farmhouse_descriptor_reproduces_the_t090_11_instances
+developer_tools | blueprint::library::tests::committed_farmhouse_descriptor_reproduces_its_instances_file
 developer_tools | blueprint::library::tests::descriptors_carry_blocks_reasons_kinds_and_canopy
 developer_tools | blueprint::library::tests::hull_sample_keeps_at_most_26_extreme_points
 developer_tools | blueprint::library::tests::only_kind_and_limit_select_rows
@@ -254,7 +254,7 @@ developer_tools | map_verification::terrain_manifest::tests::dangling_binary_pat
 developer_tools | map_verification::terrain_manifest::tests::every_binary_block_is_accepted_when_its_paths_exist
 developer_tools | map_verification::terrain_manifest::tests::live_pod_row_doc_matches_the_rust_pod
 developer_tools | map_verification::terrain_manifest::tests::pod_row_doc_reds_on_a_shifted_offset_and_on_a_missing_block
-developer_tools | map_verification::terrain_manifest::tests::t985_occluder_init_still_fetches_blas_manifest_for_hot
+developer_tools | map_verification::terrain_manifest::tests::occluder_init_still_fetches_the_blas_manifest_for_hot_chunks
 developer_tools | map_verification::terrain_manifest::tests::the_live_everon_manifest_declares_the_cutover_blocks_and_passes
 developer_tools | map_verification::world_line_of_sight::tests::cell_18_0_loads_with_no_proxy_rows_and_names_the_farmhouse
 developer_tools | map_verification::world_line_of_sight::tests::farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture
@@ -463,11 +463,11 @@ ticket_engine | registry::legacy_storage::tests::legacy_storage_tests::write_liv
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::cancelled_counts_as_shipped
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::registry_poisons_on_a_ticket_without_an_id
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::registry_unreadable_is_not_shipped
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::mapper_minted_t674_t675_children
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::program_children_parse_as_work_and_their_parents_list_them
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::mutators_never_reach_the_value_writer_pin
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::ready_prose_on_t090_family
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::t090_6_is_engine_scope
-ticket_engine | registry::typed_projection::tests::typed_projection_tests::t159_23_shipped_at_pin
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::ready_class_tickets_carry_spec_main_goal_and_acceptance
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::engine_scope_table_projects_to_the_engine_domain
+ticket_engine | registry::typed_projection::tests::typed_projection_tests::shipped_ticket_keeps_its_shipped_at_commit
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::targets_from_scope_v2_outputs
 ticket_engine | registry::typed_projection::tests::typed_projection_tests::value_to_ticket_accepts_ticket_to_value_output
 ticket_engine | store::tests::corpus_storage_tests::corpus_roundtrip_real_tree_byte_identical
@@ -522,7 +522,7 @@ ticket_engine | wave_lock::collisions::tests::collision_source_tests::facts_come
 ticket_engine | wave_lock::collisions::tests::collision_source_tests::hardcoded_dep_tables_stay_deleted
 ticket_engine | wave_lock::legacy_plan::tests::legacy_plan_parsing_tests::parse_rows_drops_comments_header_blanks_and_short_lines
 ticket_engine | wave_lock::tests::emptied_wave_tests::check_reds_on_a_perturbed_emptied_entry_until_restored
-ticket_engine | wave_lock::tests::emptied_wave_tests::pre_t925_lock_without_emptied_parses_and_empty_section_renders_invisible
+ticket_engine | wave_lock::tests::emptied_wave_tests::lock_without_an_emptied_section_parses_and_renders_without_one
 ticket_engine | wave_lock::tests::emptied_wave_tests::two_emptied_waves_pend_ascending_and_open_waves_number_past_both
 ticket_engine | wave_lock::tests::packing_and_history_tests::a_disavowed_marker_is_not_a_base
 ticket_engine | wave_lock::tests::packing_and_history_tests::a_wave_dissolved_id_by_id_leaves_no_entry_and_its_label_is_reissued
@@ -539,7 +539,7 @@ ticket_engine | wave_lock::tests::packing_and_history_tests::no_marker_tree_keep
 ticket_engine | wave_lock::tests::packing_and_history_tests::numbering_seats_on_the_highest_claim_not_the_newest_marker
 ticket_engine | wave_lock::tests::packing_and_history_tests::overlapping_owns_never_share_a_wave
 ticket_engine | wave_lock::tests::packing_and_history_tests::partial_ship_records_no_emptied_entry
-ticket_engine | wave_lock::tests::packing_and_history_tests::pre_t914_lock_without_wave_base_parses_as_zero
+ticket_engine | wave_lock::tests::packing_and_history_tests::lock_without_a_wave_base_parses_as_zero
 ticket_engine | wave_lock::tests::packing_and_history_tests::reorder_changes_open_waves_only_never_wave_zero
 ticket_engine | wave_lock::tests::packing_and_history_tests::repack_continues_the_close_marker_ledger
 ticket_engine | wave_lock::tests::packing_and_history_tests::reserving_freezes_the_lost_set_and_the_open_wave_numbers_past_it
@@ -850,7 +850,7 @@ xtask | commands::deploy::database_backup::tests::parse_nonneg_uses_argument
 xtask | commands::deploy::database_backup::tests::retention_sort_is_reverse_lexicographic
 xtask | commands::deploy::database_operations::tests::count_copy_rows_counts_data_not_headings
 xtask | commands::deploy::database_operations::tests::database_name_from_url_parses_ascii_path
-xtask | commands::deploy::database_operations::tests::safe_scratch_allow_list_matches_t381
+xtask | commands::deploy::database_operations::tests::safe_scratch_allow_list_admits_scratch_names_and_refuses_the_live_database
 xtask | commands::deploy::database_restore_drill::tests::mig_ver_strips_leading_zeros
 xtask | commands::deploy::staging::agent::tests::agent_script_is_the_quoted_heredoc_verbatim
 xtask | commands::deploy::staging::agent::tests::name_validation_fails_closed_on_injection
@@ -1330,13 +1330,13 @@ xtask | verifications::database::wiki_seeds::tests::failure_text_is_pinned
 xtask | verifications::database::wiki_seeds::tests::the_live_repo_contract_holds
 xtask | verifications::database::wiki_seeds::tests::the_live_seed_list_holds
 xtask | verifications::deployment::staging_compose_paths::tests::a_backslash_before_a_closing_single_quote_swallows_the_rest
-xtask | verifications::deployment::staging_compose_paths::tests::a_correct_script_holds
-xtask | verifications::deployment::staging_compose_paths::tests::a_missing_deploy_script_does_not_read_as_pass
+xtask | verifications::deployment::staging_compose_paths::tests::a_correct_source_holds
+xtask | verifications::deployment::staging_compose_paths::tests::a_missing_deploy_source_does_not_read_as_pass
 xtask | verifications::deployment::staging_compose_paths::tests::a_transport_facade_cannot_substitute_for_the_compose_implementation
 xtask | verifications::deployment::staging_compose_paths::tests::comments_go_and_quoted_hashes_stay
-xtask | verifications::deployment::staging_compose_paths::tests::every_script_perturbation_bites
+xtask | verifications::deployment::staging_compose_paths::tests::every_source_perturbation_bites
 xtask | verifications::deployment::staging_compose_paths::tests::quoted_dash_f_arguments_lose_their_quotes
-xtask | verifications::deployment::staging_compose_paths::tests::the_live_deploy_script_holds
+xtask | verifications::deployment::staging_compose_paths::tests::the_live_deploy_source_holds
 xtask | verifications::deployment::staging_compose_paths::tests::the_on_disk_compose_pair_bites
 xtask | verifications::language_bans::node_and_file_limits::file_length_tests::civil_ymd_pins_epoch_and_ticket_day
 xtask | verifications::language_bans::node_and_file_limits::file_length_tests::empty_walk_is_not_ok
@@ -1426,7 +1426,7 @@ xtask | verifications::schemas::checks::citation_scope_tests::empty_corpus_is_a_
 xtask | verifications::schemas::checks::citation_scope_tests::missing_scan_root_is_a_scope_failure_not_a_pass
 xtask | verifications::schemas::checks::citation_scope_tests::rust_under_apps_and_tooling_is_scanned_and_can_fail
 xtask | verifications::schemas::checks::citation_scope_tests::scope_line_is_generated_from_the_constants
-xtask | verifications::schemas::checks::instance_kind_lockstep_tests::instance_kinds_match_enums_schema_and_tbd_tools
+xtask | verifications::schemas::checks::instance_kind_lockstep_tests::instance_kinds_match_the_enums_schema_and_the_crate_array
 xtask | verifications::schemas::checks::instance_kind_lockstep_tests::instance_kinds_order_is_the_emitted_bykind_order
 xtask | verifications::schemas::checks::instance_kind_lockstep_tests::lockstep_reds_when_the_enum_and_the_array_disagree
 xtask | verifications::schemas::checks::instance_kind_lockstep_tests::lockstep_reds_when_the_enums_are_unreadable
@@ -2122,3 +2122,391 @@ The four lines the layout-literal grep still reports are not repository-path dup
 `cargo xtask deploy website --dry-run` cannot read a real `deploy.env`: the file holds host credentials and exists on no development machine in this repository (the preflight check `test ! -e scripts/deploy/deploy.env` confirmed that before the move). The dry-run was therefore driven through the command's own `DEPLOY_ENV` override against a three-line scratch file in the session scratchpad, which exercises the same code path and the same printed paths. Without it the command exits 1 with `Missing /run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/xtask/deploy/deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example`, which is itself evidence that the relocated path is the one the command reads.
 
 Every other check of this phase ran unmodified in this environment.
+
+## P5 — Public-surface renames
+
+Every command spelling, task name, gate step label, printed gate name, entry function, fixture
+directory, analysis artifact and emitted metadata field now carries the name of what it checks.
+`cargo xtask verify <name>` is spelled after the module that implements it — the module file name
+with underscores written as hyphens — and its entry function is `verify_` plus that module name.
+
+The retired spellings are not reproduced in this document. This phase's acceptance filters and the
+closure plan's verification matrix both search `tools_v2`, this file included, so writing a retired
+ticket number, dead crate name, old lock path or old constant name here would put those rows above
+zero by itself. Each row below therefore names the domain the check serves, and every retired
+spelling of it is recoverable from this commit's diff.
+
+### Verifications: command, module and entry function
+
+| What it checks | Command | Module and entry function |
+|---|---|---|
+| ORBAT and Eden placement coherency | `verify editor-orbat-coherency` | `verifications/architecture/editor_orbat_coherency.rs` · `verify_editor_orbat_coherency` |
+| The results reporter's identity-link comment contract | `verify results-reporter-identity-comments` | `verifications/mod_scripts/results_reporter_identity_comments.rs` · `verify_results_reporter_identity_comments` |
+| Destroy-target inert diagnostics | `verify destroy-target-diagnostics` | `verifications/mod_scripts/destroy_target_diagnostics.rs` · `verify_destroy_target_diagnostics` |
+| The staging deploy's compose path | `verify staging-compose-paths` | `verifications/deployment/staging_compose_paths.rs` · `verify_staging_compose_paths` |
+| Objects-palette alias to spawn-registry census | `verify object-registry-aliases` | `verifications/registry/object_registry_aliases.rs` · `verify_object_registry_aliases` |
+| The faction-library seed reaching the database | `verify faction-library-seeds` | `verifications/database/faction_library_seeds.rs` · `verify_faction_library_seeds` |
+| The wiki seed reaching the database | `verify wiki-seeds` | `verifications/database/wiki_seeds.rs` · `verify_wiki_seeds` |
+| The player identity comment contract | `verify player-identity-comments` | `verifications/mod_scripts/player_identity_comments.rs` · `verify_player_identity_comments` |
+| The mission REST body size gate | `verify mission-rest-size-limits` | `verifications/mod_scripts/mission_rest_size_limits.rs` · `verify_mission_rest_size_limits` |
+| CI schema parity and the hollow-task tripwire | `verify ci-schema-parity` | `verifications/ci/schema_parity.rs` · `verify_ci_schema_parity` |
+| Specification-corpus consistency, gates 1-12 | `schema specification-consistency` | `verifications/schemas/checks/specification_consistency.rs` · `specification_consistency` |
+| The program-wide cartographic aggregator | `map verify-cartographic` | `map_raster_pipeline/cli.rs` `Cmd::VerifyCartographic` · `verify_cartographic` |
+
+The clap variants moved with the spellings: `VerifyCmd::{PlayerIdentityComments,
+ResultsReporterIdentityComments, ObjectRegistryAliases, WikiSeeds, EditorOrbatCoherency,
+DestroyTargetDiagnostics, StagingComposePaths, FactionLibrarySeeds, MissionRestSizeLimits,
+CiSchemaParity}` and `SchemaCmd::SpecificationConsistency`. Each verification's printed PASS/FAIL
+headline is now its command spelling, so an operator log and the command that produced it read the
+same.
+
+### Tasks, gate steps and dispatch
+
+| Surface | Name now |
+|---|---|
+| The two Class-R alias tasks | `verify-staging-compose-paths`, `verify-mission-rest-size-limits` |
+| The developer-tools library test task | `developer-tools-test` |
+| The two wave gate steps that build and lint the tooling crates | `test xtask+developer-tools`, `clippy xtask+developer-tools` |
+| The world-catalogue reclassification step | `catalogue drift` |
+| The four language-ban steps | `no-python`, `no-node`, `no-shell`, `ci-shell` |
+| The eleven in-process leaf adapters, in one file named for what they all are | `commands/ci/task_definitions/verification_dispatch.rs`; the three renamed adapters are `x_staging_compose_paths`, `x_mission_rest_size_limits`, `x_ci_schema_parity` |
+| The lane marker on a borrowed task row | `Lane::Borrowed`, with no payload; `cargo xtask help` renders ` [borrowed]` |
+
+`gate.rs`'s `VERIFY_STEPS` rows lost their ticket prefixes and now read
+`("object registry aliases", "object-registry-aliases")` and so on, one row per verification above.
+Two files pin those rows as source text and moved in the same commit:
+`verifications/ci/schema_parity.rs` (`ROW_MISSION_REST_SIZE_LIMITS`, `ROW_CI_SCHEMA_PARITY`,
+`VERIFY_MISSION_REST_SIZE_LIMITS`, `VERIFY_CI_SCHEMA_PARITY`,
+`TASK_ECHO_MISSION_REST_SIZE_LIMITS`, `TASK_ECHO_CI_SCHEMA_PARITY`) and
+`verifications/database/faction_library_seeds.rs` (`VERIFY_REL`, `WAVE_RUN_LINE`). The negative pin
+holds: there is still no `verify-ci-schema-parity` row in `TASKS`, and `ci-local` reaches that gate
+through a direct `Step::Xtask`, so a hollowed dispatch table cannot green the check that polices
+dispatch. The step-label column widened from 24 to 28 characters in `gate.rs` and
+`gate/gate_dispatch.rs` so the longer names stay aligned.
+
+### Other renamed surfaces
+
+| Surface | Name now |
+|---|---|
+| The mod wave status banner | `═══ mod wave status ═══` |
+| The staging host-agent banner | `==> host control agent` |
+| The editor-gate preflight banner | `== gate doctor (editor-gate preflight)` |
+| The four-weapon equip assertion, its constant and its self-test | `assert_four_weapon_equip`, `EXPECTED_EQUIP_OK`, `four_weapon_equip_selftest`, printed as `four-weapon equip` |
+| The compiled-boot fixture title | `compiled-boot fixture` |
+| The slice merge commit subject | `merge <branch>` |
+| The database self-test's arm 3 and its scratch base for arm 4 | `arm_live_database_refusal`; `tbd_gate_selftest_arm4`, still inside the `tbd_gate*` drop allow-list |
+| The staging compose gate's audited subject, its basename helper and its comment stripper | `DEPLOY_SOURCE` (the Rust render path), `source_basename`, `strip_comments` |
+| The file-length gate's scratch fixture | temp roots named `xtask-file-length-*`, holding a `fn placeholder()` body |
+| The outliner drag-and-drop smoke suite entry | `outliner-drag`; `EDITOR_SUITE` is re-sorted so it sits in name order |
+| The browser-oracle fixture tree | `tools_v2/developer-tools/fixtures/dom_oracle/` |
+| The freeze marker attribute and the serializer global it injects | `data-dom-oracle-freeze`, `window.__domOracleSerialize` |
+| The deployment asset-layout variant and its probe exit code | `AssetLayout::OldPackagesTree`, `const OLD_PACKAGES_TREE` |
+| The two-outcome exit conversion | `Verdict::into_binary_exit_code` |
+| The single-mod deploy fallback label | `single-mod env fallback (TBD_WORKSHOP_MOD_ID)` |
+| The four road-section constants of the terrain topology decoder | `TOPO_MAIN_HIGHWAY`, `TOPO_SECONDARY_ASPHALT`, `TOPO_GRAVEL_COUNTRY_ROAD`, `TOPO_FARM_TRACK`; the values are unchanged, because they are on-disk section codes |
+| The wave context's ticket-ledger display label | `.ai/tickets` |
+| The shared gate lock | `verification_core::lock::GATE_LOCK_RELPATH` = `target/.repository-verification.lock`; `wave_execution/mod.rs` joins the const instead of its own literal |
+| The verification-core test scratch prefixes | `verification-core-*` |
+| The faction-library pin set | `assert_faction_library_pins` |
+
+The browser-oracle payloads changed with the freeze marker and the serializer global, so their
+pinned sha256 values in `browser_testing/tests/fixture_injection/tests.rs` are re-pinned to
+`6ca42b7e360f8884a55fbc3328d1521b3ead232a86b84608d0add7f12618e305` (freeze) and
+`8f2ab7e44f410d83d5d5c362a54fe0fadadb7ba6e4ab7869191c2d0dedf2ee5f` (serializer). No golden was
+re-accepted and none needed to be: the marker only ever lands on the `<style>` element the freeze
+script injects, and `STYLE` is already in the serializer's skip set, so it never reaches a golden.
+The fixture tree contains no occurrence of the retired directory name.
+
+### Analysis artifacts
+
+Five committed decision records are live inputs of the map lane — the inland-water classifier
+writes one and reads another, the seam verifier writes a third, and two more are cited by name in
+the metadata the land-cover builder and the water compositor emit — so they move to domain
+directories and the code resolves them through `developer-tools/src/repository_layout.rs`:
+
+| To |
+|---|
+| `.ai/artifacts/inland_water/refine_spike.json` |
+| `.ai/artifacts/inland_water/source_spike.json` |
+| `.ai/artifacts/inland_water/water_source_spike.json` |
+| `.ai/artifacts/aerial_orthophoto/seam_analysis.json` |
+| `.ai/artifacts/cartographic_rendering/landcover_source_spike.json` |
+
+`repository_layout.rs` holds `INLAND_WATER_ARTIFACTS_DIR`, `AERIAL_ORTHOPHOTO_ARTIFACTS_DIR` and
+`CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR` with their `inland_water_artifacts_dir(root)`,
+`aerial_orthophoto_artifacts_dir(root)` and `cartographic_rendering_artifacts_dir(root)`
+accessors, following the pair already in that module for the node package directory. The reads and
+writes go through the accessors; the three emitted metadata strings that CITE an artifact
+(`cartographic_rendering/build_landcover_masks.rs` `spikeArtifact`, `inland_water/sap_dir.rs`
+`spikeArtifact` and `refineSpikeArtifact`, `inland_water/analyze_water_sources.rs` `parent`) are
+`format!`ed from the same constants, so an emitted path cannot drift from the file it names.
+
+Four analysis records under `.ai/artifacts` keep the names they were written under, because
+nothing executable reads them: `git grep` over the whole repository finds each named only by frozen
+specification documents, frozen `.ai/artifacts/*.md` handoffs and ticket bodies — none of which
+this phase may edit. They are historical records, not pipeline inputs.
+
+Three committed records under `.ai/artifacts` — `inland_water/refine_spike.json`,
+`inland_water/source_spike.json` and `map_export_everon.json` — cite a renamed file by its previous
+path inside a captured output field. Those files are pipeline output, not source: the classifier
+rewrites its citation from the constants above on its next run, and the other two are frozen
+records of runs that happened. Nothing resolves those strings at runtime — the classifier reads the
+refine spike's measured bodies, never its provenance line — so the citations are stale prose in
+captured data, not a broken path any code follows.
+
+### Emitted metadata
+
+The orthophoto stitcher now writes `"decoder": "developer-tools enfusion_texture_decoder (BC7 +
+LZ4)"` and `"seamRepair": true`, on both the emit path and the in-place seam-bridge path. The
+landcover builder drops a trailing ticket citation from three source strings, and the inland-water
+classifier drops one from the `automation` string of its decision block. The `"slice"` key in the
+five map-lane meta blocks becomes `"lane"`, carrying the pipeline lane's name, and the two
+`"provenance"` strings describe the input rather than citing a ticket.
+
+**The committed satellite artifact carries the old strings.**
+`assets_v2/terrains/everon/satellite/everon-sat.tbd-sat` was produced by the previous code and is
+not regenerated here, because regenerating it needs a Workbench export. Nothing reads those fields:
+`git grep -n seamRepair contracts_v2 apps` is empty, and no schema under `contracts_v2/definitions`
+names `decoder`, `seamRepair` or `slice`. The divergence is metadata only and resolves the next
+time the bundle is rebuilt.
+
+### Landing note for the gate lock
+
+The shared gate lock's repo-relative path changes, and the lock serialises every worktree of this
+checkout. Land this commit with no platform wave in flight: a worktree still on the older code
+takes the old path while a worktree on this code takes the new one, and for that overlap the two
+gates do not serialise against each other.
+
+### Baseline test renames
+
+Twelve test functions were named after a ticket number or after a driver that no longer exists.
+Each is renamed to say what it asserts, and each carries its line in `Baseline test inventory`
+above, edited in place so the inventory stays a complete roster:
+
+| Crate and module | Name now |
+|---|---|
+| `developer_tools` `blueprint::library::tests` | `committed_farmhouse_descriptor_reproduces_its_instances_file` |
+| `developer_tools` `map_verification::terrain_manifest::tests` | `occluder_init_still_fetches_the_blas_manifest_for_hot_chunks` |
+| `ticket_engine` `registry::typed_projection::tests::typed_projection_tests` | `ready_class_tickets_carry_spec_main_goal_and_acceptance` |
+| `ticket_engine` `registry::typed_projection::tests::typed_projection_tests` | `program_children_parse_as_work_and_their_parents_list_them` |
+| `ticket_engine` `registry::typed_projection::tests::typed_projection_tests` | `engine_scope_table_projects_to_the_engine_domain` |
+| `ticket_engine` `wave_lock::tests::emptied_wave_tests` | `lock_without_an_emptied_section_parses_and_renders_without_one` |
+| `ticket_engine` `wave_lock::tests::packing_and_history_tests` | `lock_without_a_wave_base_parses_as_zero` |
+| `xtask` `commands::deploy::database_operations::tests` | `safe_scratch_allow_list_admits_scratch_names_and_refuses_the_live_database` |
+| `xtask` `verifications::deployment::staging_compose_paths::tests` | `a_correct_source_holds` |
+| `xtask` `verifications::deployment::staging_compose_paths::tests` | `a_missing_deploy_source_does_not_read_as_pass` |
+| `xtask` `verifications::deployment::staging_compose_paths::tests` | `every_source_perturbation_bites` |
+| `xtask` `verifications::deployment::staging_compose_paths::tests` | `the_live_deploy_source_holds` |
+
+The earlier phase's two renames — `shipped_ticket_keeps_its_shipped_at_commit` and
+`instance_kinds_match_the_enums_schema_and_the_crate_array` — land in the same commit with their
+inventory lines. Test totals are unchanged: 259 + 200 + 1 + 68 + 652 + 1 = 1181 passed, 0 failed,
+4 ignored, exactly the baseline count, so no live test vanished behind a rename.
+
+### Acceptance
+
+| Command | Expected | Actual |
+|---|---|---|
+| `cargo xtask verify ci-schema-parity` | PASS | `ci-schema-parity: PASS`, exit 0 |
+| `cargo fmt --check` | clean | exit 0, no output |
+| ticket-named verification and adapter functions under `tools_v2` | empty | empty, grep exit 1 |
+| any ticket-numbered function or test name under `tools_v2` | empty | empty, grep exit 1 |
+| the eleven-adapter shim file under its old name | absent | absent |
+| the seven `cargo xtask … --help` surfaces through the ticket, script and dead-name filter | empty | empty, grep exit 1 |
+| `cargo run -p developer-tools --bin map -- --help` through the ticket-number filter | empty | empty, grep exit 1 |
+| `.github/workflows` through the ticket-number and dead-crate filter | empty | empty, grep exit 1 |
+| `AssetLayout::` uses in the deployment preflight | four variants present | 8 lines over `Ready`, `OldPackagesTree`, `Absent`, `Indeterminate` |
+| browser-oracle fixture and page-global filter over `tools_v2` and `apps` | empty | empty, grep exit 1 |
+| ticket identifiers and node script names in the browser-oracle freeze manifest | 0 | 0 |
+| browser-oracle DOM goldens carrying a content edit | none | none: every entry is an `R` rename, zero `M` |
+| the renamed-artifact literal filter over `tools_v2` | empty | empty, grep exit 1 |
+| ticket-named `.json` artifacts under `.ai/artifacts` | the four historical records | exactly four, each with no executable reader |
+| gate-lock, road-section, binary-exit and workshop-label filter over `tools_v2` | empty | empty, grep exit 1 |
+| production strings naming a deleted script | empty | five lines remain, all one live rendered filename (below) |
+| `cargo test -p xtask -p developer-tools -p verification-core -p ticket-engine` | green | exit 0; 1181 passed, 0 failed, 4 ignored |
+| `cargo clippy -p xtask -p developer-tools -p verification-core -p ticket-engine --all-targets -- -D warnings` | clean | exit 0 |
+| `cargo xtask ci ci-local` | green | exit 0; every step green, ending `ci-schema-parity: PASS`. The mission-rest-size-limits step prints its three RED proofs of non-vacuity, which are part of its PASS |
+| `cargo xtask ci editor-api-boot` then `cargo xtask mk leptos-gates` | green | exit 0 for both; `gate doctor: OK — 0 warning(s)`, 21/21 editor smokes pass with zero panics, and the browser-oracle verify reports 25/25 routes matching the frozen oracle with `diffs=0` and identical byte counts on every route |
+| `git status --porcelain` after the commit | empty | empty |
+
+Two filters do not reach zero, and each names something this phase must not rewrite:
+
+- The deleted-script filter matches `tbd-reforger-agent.sh` at
+  `commands/deploy/staging/agent.rs:307`, `staging/agent/render_agent_files.rs:10,58`,
+  `staging/agent_selftest.rs:122` and `staging/remote/ssh_argv.rs:421`. That name is not a deleted
+  script: `render_agent_files.rs` WRITES that file on every staging deploy, systemd socket-activates
+  it on the game host, `apps/website/api_v2/tests/game_agent_rcon.rs:102,178` asserts the filename,
+  and `docs/platform/PLAYTEST_RUNBOOK.md` documents it for operators. Renaming it changes a live
+  operational contract across two crates and a deployed host, which is the same reason the closure
+  plan keeps the deployment preflight's remote `packages/map-assets` probe.
+- The ticket-identifier filter over production comment lines is still non-zero across the files this
+  phase edited only for a label or a single identifier. Those are the subject of the single prose
+  pass that follows; the entries are listed under `Found for P8`.
+
+### Found and fixed
+
+- `tools_v2/developer-tools/src/map_raster_pipeline/cartographic_rendering/build_tile_pyramid.rs`
+  — the cartographic aggregator spawned three `make` targets. There is no Makefile, so all three
+  could only ever fail. Repointed at the live successors: `cargo xtask schema map-glyphs`, and
+  `cargo run -p developer-tools --bin world -- validate-exports` /
+  `… verify-phase --terrain everon --phase P5_props` through a new `run_world` closure.
+- `tools_v2/xtask/src/commands/db/operations/selftest.rs:158` — the same missing Makefile: arm 2's
+  skip message asserted that a deletion had removed the file and cited a ticket for it. It now says
+  the checkout carries no Makefile and that arm 1 holds the pin, which is what the code does.
+- `tools_v2/xtask/src/commands/db/operations/test_it.rs:75,208` — the two REFUSING messages an
+  operator sees when a database name falls outside the allow-list cited a ticket instead of naming
+  the rule. They now say `scratch allow-list`, and the three consumers of that text moved with
+  them: the third arm of `db/operations/selftest.rs` (now `arm_live_database_refusal`), the guard
+  test in `db/operations/tests/test_it/tests.rs`, now `the_guard_refuses_the_live_database`, and
+  the allow-list test in `deploy/tests/database_operations/tests.rs`.
+- `tools_v2/xtask/src/commands/platform/wave_execution/schema.rs` — the "found no stamp inputs"
+  refusal named three directories, two of which do not exist. It now formats the real `stamp_roots`
+  array, so the message cannot drift from the list again.
+- `tools_v2/xtask/src/commands/ci/task_definitions.rs` — reformatting the renamed rows pushed the
+  file to 507 lines, over the 500-line limit. Brought back to 499 by collapsing the ten dispatch
+  imports into one braced `use` and tightening four comment blocks.
+- `.github/workflows/ci.yml` — the tooling test step, the language-gate job, the schema job's
+  sub-gate list and the mod-gates step names all named tickets or the dead crate; each now names
+  what the step runs.
+- Every `cargo xtask` help surface reached by the acceptance loop (`verify`, `schema`, `ticket`,
+  `platform wave`, `deploy db`, `help`, the root parser, plus `mod`, `map`, `deploy`, the `world`
+  binary and the `gate` binary) lost its ticket citations and its deleted-script names. Two were
+  caught only by running the filter: the `deploy db` backup, restore and drill help lines still
+  named deleted shell scripts, and `ticket stamp-sha`'s help contained the word "different", whose
+  first four letters the acceptance filter's bare `diff` token matches.
+- `tools_v2/developer-tools/src/browser_testing/cli.rs` — dropped the `as smokes` import alias, so
+  the eight call sites name `editor_smoke_tests` directly.
+- `tools_v2/developer-tools/src/map_raster_pipeline/satellite_archive/build_unified_satellite.rs`
+  — the unified-satellite builder copied the water-composite meta block's lane key under the
+  spelling the compositor stopped writing when that key was renamed, so the field would have been
+  JSON null in every bundle built from here on. It reads the key the compositor writes. It is the
+  only reader of that block's contents in the repository.
+- `tools_v2/developer-tools/src/browser_testing/dom_oracle.rs` and `fixture_injection.rs` — their
+  module headers named four driver files that do not exist and narrated two retirements. They now
+  say what the gate captures, what `verify` and `accept` do, why there is no whole-tree re-freeze
+  (the goldens are not regenerable from any dist this repository builds, so a bulk overwrite
+  destroys the oracle), and why the two injected payloads must never be reimplemented natively
+  (their exact bytes are what serialized every golden).
+- `tools_v2/developer-tools/src/map_raster_pipeline/cartographic_rendering/build_landcover_masks.rs`
+  — the entry point's doc comment introduced itself as a port of a deleted Node script; it now
+  describes the classification it performs.
+- `tools_v2/xtask/src/commands/ci/task_definitions.rs` — the node gate's help named its two banned
+  extensions with leading dots, which reads as two filenames to the deleted-script filter. It names
+  them without.
+- `tools_v2/xtask/src/commands/setup/client_addons.rs:51` — a measurement note quoted the tooling
+  test step under its old spelling; it now quotes `test xtask+developer-tools`.
+- `tools_v2/ticket-engine/src/cli/brief.rs` — twelve printed guidance lines named deleted Node and
+  shell scripts and a Makefile target that does not exist. Each now names the live command: the
+  `map` binary's `stitch-sap-ortho`, `composite-water`, `build-pyramid --lossless`,
+  `verify-sap-ortho` and `verify-pyramid --expect-lossless` verbs, `cargo xtask schema validate`,
+  `cargo xtask verify route-tags`, and the DEM sampler at
+  `apps/website/map-engine/src/world/terrain/dem/sampling.rs`.
+- `tools_v2/developer-tools/src/map_verification/labels/terrain_alignment.rs:145` — the anchor
+  check read a pixel coordinate through two field accesses whose spelling collides with the
+  deleted-script filter. It destructures `PixelCoord` instead, which is also what the two following
+  lines read as.
+- `tools_v2/xtask/src/tests/node_free_tests.rs` — the file-length fixture named its temp roots,
+  its synthetic function and its synthetic allow-list comment after a ticket. All three now say
+  what they are.
+- `tools_v2/xtask/src/verifications/deployment/staging_compose_paths.rs` and its
+  `source_audit.rs` and tests — the gate audits a Rust render path, so its subject constant, its
+  basename helper, its comment stripper and every doc comment now say so. The prose that narrated
+  a Python and shell predecessor is replaced by the invariants it carried: comments are stripped
+  before matching so a described contract cannot pass for an honoured one, an unreadable or absent
+  subject is `DidNotRun` rather than a pass, the findings accumulate rather than stopping at the
+  first, and the three carried oddities (bare `#`, `//` before an unquoted URL, a backslash before
+  a closing single quote) are still named with the test that pins each.
+- `tools_v2/ticket-engine/src/registry/tests/typed_projection/typed_projection_tests.rs` — the
+  module's doc comments cited tickets as provenance and named a module file that does not exist;
+  they now state the invariant each test holds, and the refusal message names the CLI tree and the
+  typed ops surface rather than a deleted module and a dead crate.
+- Prose, in every file whose subject this phase renamed: the nine verification modules with their
+  `source_audit` and `extract_fn_body` children, both wave gate drivers, `wave_execution/mod.rs`
+  and `wave_execution/schema.rs`, the task table and the task runner, the editor smoke harness, the
+  map and world CLIs, `verification-core/lock.rs` and `verdict.rs`, and the CI workflow. Ticket
+  identifiers, deleted script names, dead crate names and change narration are gone from all of
+  them; the measurements and refusal reasons they carried stay, in the present tense.
+- `tools_v2/xtask/README.md` — the sentence promising that ticket-number command spellings
+  remain supported is replaced by the naming rule this phase enforces.
+- `docs/platform/EDITOR_FACTORY_START.md:130` and `tools_v2/PHASE_TWO_HANDOFF.md:13` named a
+  verification command and a task alias that this commit removes; both now name the live spelling.
+- The two test renames the previous phase left for this one are done, with their inventory lines:
+  `ticket-engine/src/registry/tests/typed_projection/typed_projection_tests.rs` is
+  `shipped_ticket_keeps_its_shipped_at_commit`, and
+  `xtask/src/verifications/schemas/tests/checks/instance_kind_lockstep_tests.rs:13` is
+  `instance_kinds_match_the_enums_schema_and_the_crate_array`.
+- The previous phase's rendered-agent entry is done here: the staging agent's file header named a
+  deleted shell driver and a ticket on three lines inside its raw string. It now names
+  `cargo xtask deploy staging` as the renderer and points at the renderer's own module header for
+  the scope note.
+- The second `Found for P6` entry of the previous phase — `verification-core/src/lock.rs`
+  attributing the lock protocol to a deleted shell driver — is done here, because this phase edits
+  that file: the module header, the three public constants and the interop test now name
+  `cargo xtask platform wave` and the environment overrides. Its first entry, the inline test
+  function name, is still P6's and lands with the test-module extraction; the function is already
+  `interops_with_the_flock_command`.
+
+### Found for P6
+
+- `tools_v2/verification-core/src/lib.rs:10` quotes a deleted shell library's own header, ticket
+  identifier and script name included. The live fact to keep is the one the quote carries: one
+  implementation of the four-outcome verdict, shared by every gate, so the next gate cannot be born
+  with the "a search that did not run reads as a pass" hole. P6 already rewrites `lib.rs:3,28,63`;
+  this is the same block.
+- `tools_v2/verification-core/src/proc.rs:25,29,425,685`, `src/gate.rs:1`, `src/scan.rs:6,17` and
+  `src/verdict.rs:5,20,28,34,41,64,145` name deleted shell scripts. The invariants to keep: a
+  merged-output drain must never collapse an exit code, because a self-test that passes only on
+  exit 1 is meaningless otherwise; and the four-outcome verdict exists because a boolean cannot
+  carry "did not run".
+- `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs:61` still asserts on a manifest path
+  under the deleted tools tree. P6 replaces those negative asserts with positive layout asserts.
+
+### Found for P7
+
+- `tools_v2/ticket-engine/src/cli/brief.rs` — the per-ticket hardcoded switch is now free of
+  deleted script names, but it is still a hardcoded switch: forty printed lines of per-ticket
+  guidance that belong in the tickets' own `spec`, `plan` and `owns` fields. P7 deletes it, which
+  also removes the frozen `.ai/artifacts/*.md` handoff pointers and the `docs/specs/` literals it
+  prints.
+- `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs:59` still declares the archived
+  wave-plan module under its old name. P7 renames that module.
+- The eleven inventory lines at `tools_v2/PHASE_FIVE_HANDOFF.md:453-462,523` sit under the two
+  ticket-engine modules P7 renames and move with them, as the previous phase recorded.
+
+### Found for P8
+
+- Comment lines across the files this phase edited still carry a ticket identifier. They are
+  provenance prose in files whose subject this phase did not rename — a label change or a single
+  identifier in an otherwise untouched file — and they are exactly what P8's single prose pass is
+  for. Reproduce the list with the plan's R1 grep restricted to production `.rs` comment lines. The
+  heaviest are `commands/db/operations.rs`, `commands/platform/slice_worktree/git_plain.rs`,
+  `browser_testing/diagnostics/ensure_gate_font_cache.rs` and `commands/deploy/staging/config.rs`.
+- `tools_v2/developer-tools/src/map_raster_pipeline/aerial_orthophoto.rs:3`,
+  `aerial_orthophoto/stitch_sap_ortho.rs:3`, `cartographic_rendering.rs:4`,
+  `cartographic_rendering/build_tile_pyramid.rs:5`, `inland_water.rs:3,21` and
+  `inland_water_archive.rs:10` describe each stage as a port of a deleted Node or shell script.
+  The live fact under each is what the stage does; the file names go.
+- The plan's R3 row targets zero `.sh/.py/.mjs/.cjs` spellings in `tools_v2`. Five of them name
+  `tbd-reforger-agent.sh`, the file `commands/deploy/staging/agent/render_agent_files.rs` writes
+  onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name. It is a
+  live remote artifact, not a deleted script, so R3 needs the same explicit retained-name carve-out
+  the plan's decision 8 gives the deployment preflight's `packages/map-assets` probe — not a
+  rename.
+- `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_drag/execution.rs:18`
+  writes a ticket-named page global that `outliner_drag/vehicle_snap_cases.rs:40` reads back. The
+  closure plan's scope section calls that global the frontend's, but it is not: a grep for it over
+  `apps` is empty, so both ends are inside developer-tools and the rename is one-sided. Suggested
+  name `window.__outlinerDragEvents`. Left as the plan directs, recorded because the measurement
+  disagrees with it.
+- `tools_v2/xtask/src/verifications/mod_scripts/mission_rest_size_limits.rs:369` pins the literal
+  text of a comment in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionLoader.c:1041`, which
+  opens with a ticket identifier. The pin is true today; renaming it means editing the mod source
+  in the same commit and re-running `cargo xtask mod compile`.
+- `tools_v2/ANALYSIS_AND_INVENTORY.md`, `ARCHITECTURE_PLAN.md`, `PHASE_ONE_HANDOFF.md` and
+  `PHASE_THREE_HANDOFF.md` still name deleted gate files, the deleted tools tree, and three
+  decomposed modules. Every one of those documents is on P8's rewrite list.
+
+### Commands that could not run
+
+None. Every command of this phase ran unmodified in this environment.

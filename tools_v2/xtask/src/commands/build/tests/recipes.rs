@@ -8,7 +8,7 @@ use super::*;
 use crate::commands::build::recipes::*;
 
 /// The self-reference, pinned. The fixture is `include_str!` of this very file, so it is
-/// DERIVED from [`PIN_SOURCE_MARKER`] and the two cannot drift — the T-440 lesson.
+/// DERIVED from [`PIN_SOURCE_MARKER`] so the two cannot drift.
 #[test]
 fn pin_marker_is_present_in_this_file() {
     let src = include_str!("../../../core/cargo_target_directory.rs");

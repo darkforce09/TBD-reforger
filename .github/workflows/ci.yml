@@ -5,8 +5,7 @@ name: ci
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
 # The website-api/map-engine/website-frontend jobs are all cargo gates (fmt + clippy -D + build +
-# test) since the T-145 Go→Rust and T-159 React→Leptos cutovers; contracts.yml stays the
-# path-filtered citations/codegen supplement.
+# test); contracts.yml stays the path-filtered citations/codegen supplement.
 on:
   push:
     branches: [main]
@@ -21,30 +20,23 @@ permissions:
   contents: read
 
 jobs:
-  # --- backend: Rust 1.95 + Postgres 18 — the sole backend after the T-145 Go->Rust
-  # cutover. fmt (FMT-1) + clippy (GO-2..8 analog) + build + integration tests (TEST-1). ---
+  # --- backend: Rust 1.95 + Postgres 18 — the sole backend.
+  # fmt (FMT-1) + clippy (GO-2..8 analog) + build + integration tests (TEST-1). ---
   website-api:
     name: website-api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # T-597: the service database is `rust_it`, NOT `tbd_reforger`. Read before renaming it.
+    # The service database is `rust_it`, NOT `tbd_reforger`. Read before renaming it.
     #
-    # T-534 gives each test binary its own database, derived from whatever `TEST_DATABASE_URL`
-    # names (`<base>_<suite>_it`), and T-381's guard —
-    # `apps/website/api_v2/tests/common/database.rs is_safe_test_database_name` — hard-REFUSES the
+    # Each test binary gets its own database, derived from whatever `TEST_DATABASE_URL` names
+    # (`<base>_<suite>_it`), and the guard in
+    # `apps/website/api_v2/tests/common/database.rs is_safe_test_database_name` hard-REFUSES the
     # literal name `tbd_reforger` before anything can connect, create or drop. That guard is
     # correct and deliberate: it is the only thing standing between an exported
     # `TEST_DATABASE_URL=…/tbd_reforger` and a wiped live dev database. It is not to be widened.
     #
-    # So CI, which had shipped `tbd_reforger` in both the service env and TEST_DATABASE_URL since
-    # T-145 (`9cc7a161`, 2026-07-06 — this note said T-534, which is three weeks and two tickets
-    # off; `git log -S tbd_reforger -- .github/workflows/ci.yml` puts the name on the Rust job the
-    # day that job was created, T-534 only derived the per-binary `<base>_<suite>_it` names on top
-    # of it, and T-381 on 07-27 is what turned a working name into a refused one), was the side
-    # that was wrong: every DB-backed website-api test panicked at
-    # `assert_test_database_url`, and the `test` step below has been RED on every push since T-381.
     # `rust_it` is the allow-list's first entry (`name == "rust_it"`) and is exactly what
-    # `cargo xtask db test-it` uses, so CI and the local replay now name the same base.
+    # `cargo xtask db test-it` uses, so CI and the local replay name the same base.
     #
     # This name has to exist as a REAL database, not just a URL: `resolve_and_provision` connects
     # to the base URL to issue `CREATE DATABASE <base>_<suite>_it`. Hence POSTGRES_DB and the
@@ -74,8 +66,8 @@ jobs:
           toolchain: "1.95.0"
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      # T-453: workspace --all (matches `cargo xtask mk rust-fmt` / T-297). Job default cwd is
-      # apps/website/api_v2 — override so xtask/tbd-tools drift cannot slip past CI.
+      # workspace --all (matches `cargo xtask mk rust-fmt`). Job default cwd is
+      # apps/website/api_v2 — override so tools_v2 drift cannot slip past CI.
       - name: fmt (FMT-1 analog — workspace --all)
         working-directory: .
         run: cargo xtask mk rust-fmt
@@ -87,33 +79,31 @@ jobs:
         env:
           SQLX_OFFLINE: "true"
         run: cargo xtask mk rust-build
-      # T-298: tbd-tools ran in NO workflow. `grep -n tbd-tools .github/workflows/ci.yml` matched
-      # ONE COMMENT (the fmt note above) and no step, the mod gate scopes itself to `--lib enfusion_tooling::`,
-      # and the wave gate's `test xtask+tbd-tools` is local-only — so on push, nothing checked the
-      # density grid and `density::tests::corner_partition_identity` sat red from T-176 to T-597.
+      # The developer-tools library suite. The mod gate scopes itself to
+      # `--lib enfusion_tooling::` and the wave gate's `test xtask+developer-tools` step is
+      # local-only, so this is the only push-triggered check of the density grid and the world
+      # export unit tests.
       # `working-directory: .` for the same reason as the fmt step: the job default is
       # apps/website/api_v2, and `-p` alone would resolve against that package's directory.
       # AHEAD of the DB-backed `test` step deliberately. Steps stop at the first failure, so behind
-      # it a Postgres-service red would decide whether the density invariant was checked at all —
-      # and that step is exactly the one with the history (T-381/T-597). This lane needs no
-      # database, no LFS and no wasm target; nothing about it should wait on one that does.
+      # it a Postgres-service red would decide whether the density invariant was checked at all.
+      # This lane needs no database, no LFS and no wasm target; nothing about it should wait on one
+      # that does.
       # Quoted like the verify-ci-shell step below: `density:: ` is a colon-space, which YAML
-      # reads as a mapping value inside a plain scalar. `verify ci-shell` caught it, unparseable
-      # YAML being a FAIL there and not an empty result.
-      - name: "tbd-tools lib tests (T-298 — density:: + world::)"
+      # reads as a mapping value inside a plain scalar; `verify ci-shell` fails on unparseable
+      # YAML rather than returning an empty result.
+      - name: "developer-tools lib tests (density:: + world::)"
         working-directory: .
-        run: cargo xtask ci tbd-tools-test
-      # T-597: `rust_it`, matching the `services.db` POSTGRES_DB above and Makefile:207.
-      # The old `tbd_reforger` here is what T-381's guard refused — see the services block.
+        run: cargo xtask ci developer-tools-test
+      # `rust_it`, matching the `services.db` POSTGRES_DB above and the `rust-test-it` task.
       - name: test (TEST-1 analog)
         env:
           TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/rust_it?sslmode=disable
           SQLX_OFFLINE: "true"
         run: cargo xtask ci website-api-test
 
-  # --- map-engine: the T-151 crate gates (fmt + clippy native/wasm32 + native tests) ---
-  # T-151.11.4 (audit F-09): these gates previously ran only locally (`xtask mk wasm-ci`).
-  # T-164: core tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
+  # --- map-engine: the engine crate gates (fmt + clippy native/wasm32 + native tests) ---
+  # The crate's tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
   # `lfs: true` checkout would drag the 206 MB satellite bundle every run).
   map-engine:
     name: map-engine (wasm-ci)
@@ -125,17 +115,17 @@ jobs:
         run: git lfs pull --include assets_v2/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
+          toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask mk wasm-ci
 
-  # --- website-frontend: the Rust/Leptos SPA — THE frontend after the T-159.29.3 React deletion ---
+  # --- website-frontend: the Rust/Leptos SPA ---
   # fmt + clippy(wasm32) + native tests + trunk release build. The editor S/V/R/T smokes + the
-  # frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS; they run
-  # in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path PRs) — T-177
-  # closed the old "run locally per stream" gap. `gate doctor` fails those fast if the env drifts.
+  # frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
+  # they run in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path
+  # PRs). `gate doctor` fails those fast if the env drifts.
   website-frontend:
     name: website-frontend (Leptos SPA)
     runs-on: ubuntu-latest
@@ -144,7 +134,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
+          toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
@@ -154,17 +144,17 @@ jobs:
       - name: fmt + clippy(wasm32) + test + trunk (ci-local-leptos)
         run: cargo xtask mk ci-local-leptos
 
-  # --- schema: the full schema-validate set + citations (T-434) ---
+  # --- schema: the full schema-validate set + citations ---
   # Class-R parity: this job MUST match `xtask ci schema-validate` + `xtask ci verify-citations`
   # (i.e. `xtask ci ci-local-schema`). Sub-gate SET = the schema-validate step of
   # `cargo xtask platform wave gate`, same order as the task row:
   #   validate map-object-golden map-glyphs height-labels map-object-enums
-  #   type-inventory t090-specs n6 n10  (+ citations)
-  # Pre-T-434 hole: only `schema validate` + `citations` — would not have caught T-244
-  # (map-object-enums RED while validate stayed GREEN). Do not narrow back to validate-only.
-  # T-468 tripwire: `cargo xtask verify t468` asserts this job's `run:` stays
-  # `cargo xtask ci ci-local-schema` (wired into wave.sh gate_slice + cmd_gate).
-  # T-165.2: all steps are Rust (xtask) — no Node in this job.
+  #   type-inventory specification-consistency n6 n10  (+ citations)
+  # `schema validate` + `citations` alone is a hole: map-object-enums goes RED while validate
+  # stays GREEN. Do not narrow back to validate-only.
+  # `cargo xtask verify ci-schema-parity` asserts this job's `run:` stays
+  # `cargo xtask ci ci-local-schema`, and is itself wired into both wave gate drivers.
+  # All steps are Rust (xtask) — no Node in this job.
   # height-labels needs the Everon DEM (LFS, ~72 MB); pull ONLY that object (same pattern
   # as the map-engine job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
   schema:
@@ -177,14 +167,14 @@ jobs:
         run: git lfs pull --include assets_v2/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
+          toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
       - uses: Swatinem/rust-cache@v2
       - name: schema-validate + citations (cargo xtask ci ci-local-schema)
         run: cargo xtask ci ci-local-schema
 
   # --- editorconfig: FMT-2 whitespace gate across the whole repo (root .editorconfig) ---
-  # Dedicated job (mirrors `xtask ci verify-editorconfig`). T-901: no setup-go — xtask installs
-  # the pinned checker if needed and runs it from the repo root. Excludes live in
+  # Dedicated job (mirrors `xtask ci verify-editorconfig`). No setup-go — xtask installs the
+  # pinned checker if needed and runs it from the repo root. Excludes live in
   # .editorconfig-checker.json.
   editorconfig:
     name: editorconfig (FMT-2)
@@ -199,23 +189,18 @@ jobs:
       - name: editorconfig-checker (repo root)
         run: cargo xtask ci verify-editorconfig
 
-  # --- language gates: which language new tooling may be written in (T-620 / T-621 / T-904) ---
+  # --- language gates: which language new tooling may be written in ---
   #
-  # THE POINT OF THIS JOB IS THAT IT EXISTS. `verify-no-python` was written in T-162 and wired into
-  # exactly two places: one Makefile target and `ci-local`, the local replay nothing runs by
-  # default. `grep verify-no-python .github/workflows/*.yml` returned NOTHING for four waves, so a
-  # gate that was RED THE ENTIRE TIME — on the factory's own collision analyser — never once
-  # blocked a push, and the wave gate reported 28/28 straight over it.
+  # THE POINT OF THIS JOB IS THAT IT EXISTS. A language gate wired only into the local replay that
+  # nothing runs by default blocks no push at all, and can sit red for waves while the wave gate
+  # reports a clean sweep over it. A rule nobody is stopped by is not a rule, so all of them run
+  # here, on every push and PR, unfiltered.
   #
-  # A rule nobody is stopped by is not a rule. All three run here, on every push and PR, unfiltered.
-  #
-  #   verify-no-python  T-162 + T-620 + T-904. Alias of the TrackedLanguageBan table (hard zero).
-  #                     Historically a RATCHETED interpreter check that greped with `rg` until
-  #                     T-620 — a binary installed nowhere — and `|| true` turned "command not
-  #                     found" into "OK (none)". Fail-closed now; inventories deleted at T-904.
-  #   verify-no-node    T-165.10. Zero tracked .mjs/.cjs; node only as the enfusion-mcp floor.
-  #   verify-no-shell   T-621 + T-904. Same table as no-python: any tracked shell/Make/Python/
-  #                     Node-script path fails. No inventory. New tooling goes in xtask (LANG-1).
+  #   verify-no-python  Alias of the TrackedLanguageBan table (hard zero). Fail-closed: a missing
+  #                     tool is a FAIL, never an "OK (none)".
+  #   verify-no-node    Zero tracked .mjs/.cjs; node only as the enfusion-mcp floor.
+  #   verify-no-shell   Same table as no-python: any tracked shell/Make/Python/Node-script path
+  #                     fails. New tooling goes in xtask (LANG-1).
   #
   # Needs cargo (two of the three are xtask) but no database, no LFS and no wasm target, so it is a
   # cheap job that fails fast and early rather than riding on the back of the 25-minute API job.
@@ -224,9 +209,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # fetch-depth: 0 IS needed since T-914: `ticket check` derives wave.lock's wave_base
-      # from the close-marker ledger in git history, and a shallow clone is a loud refusal
-      # (never a silent base-0), so depth-1 here is a guaranteed red.
+      # fetch-depth: 0 IS needed: `ticket check` derives wave.lock's wave_base from the
+      # close-marker ledger in git history, and a shallow clone is a loud refusal (never a silent
+      # base-0), so depth-1 here is a guaranteed red.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -234,15 +219,15 @@ jobs:
         with:
           toolchain: "1.95.0"
       - uses: Swatinem/rust-cache@v2
-      - name: verify-no-python (T-162 + T-620 + T-904 — language ban alias)
+      - name: verify-no-python (language ban alias)
         run: cargo xtask verify no-python
-      - name: verify-no-node (T-165.10)
+      - name: verify-no-node
         run: cargo xtask verify no-node
       - name: verify-file-length (SIZE-3)
         run: cargo xtask verify file-length
-      - name: verify-no-shell (T-621 + T-904 language ban)
+      - name: verify-no-shell (language ban)
         run: cargo xtask verify no-shell
-      - name: "verify-ci-shell (T-901 — GitHub Actions run: blocks)"
+      - name: "verify-ci-shell (GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
       # ENGINE_SPLIT_PROGRAM §5 rules 1 and 2 (phase 1F), 3b (2B), 3a (2C), 4 and 7 (2D). The split gave
       # apps/website/graphics-engine a one-way dependency arrow (map-engine -> graphics-engine)
@@ -254,37 +239,30 @@ jobs:
       # seconds. Rules 5 and 6 police a tree phase 3 has not built yet.
       - name: verify-engine-layers (ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b, 4, 7)
         run: cargo xtask verify engine-layers
-      # T-853. The registry is the source of truth for the whole ticket pipeline and NOTHING
-      # validated it on push — `grep -rn 'ticket check' .github/` returned empty, so a malformed
-      # 1.5 MB registry.json could reach main and only surface when the next agent tried to read
-      # it. Not hypothetical: `next_id` was found stale by 7 (846, while T-846..T-852 all already
-      # existed), so `ticket add` minted a DUPLICATE id and only a hand-run of this check caught
+      # The ticket registry is the source of truth for the whole ticket pipeline, so a malformed
+      # or duplicate-id registry that reaches main surfaces only when the next agent tries to read
       # it. Lives in this job because it is the same shape as the language gates — seconds long,
       # reads the working tree, fails fast instead of riding a 25-minute job.
-      - name: ticket registry check (T-853 — schema + duplicate ids)
+      - name: ticket registry check (schema + duplicate ids)
         run: cargo xtask ticket check --strict
 
-  # --- mod gates, HOSTED PORTION (T-209) ---
+  # --- mod gates, HOSTED PORTION ---
   # `cargo xtask mod compile` and `cargo xtask mod world-boot` are the mod's only regression
-  # instruments, and until T-209 neither ran in CI at all — 33k lines of Enfusion with nothing
-  # checking them on push. Both need the Arma Reforger DEDICATED SERVER present on the machine,
+  # instruments over 33k lines of Enfusion. Both need the Arma Reforger DEDICATED SERVER
+  # present on the machine,
   # which a GitHub-hosted runner does not have and cannot practicably install (a ~10 GB Steam
   # depot behind a login), so the gates that need the engine run in **mod-gates.yml** on a
   # self-hosted runner. Everything that genuinely runs WITHOUT the engine runs here instead, in
   # the required unfiltered per-push gate, because that is where it belongs:
   #
-  #   * `cargo xtask mod world-boot --selftest` — replays the fail-closed triage against 10 committed log
-  #     fixtures (2 must pass, 8 must fail). Pure bash over text; 0.12 s measured, no engine, no
-  #     network. This is the part that actually regresses: every one of those 8 fixtures is an
-  #     escape the wave-4 verifier got PAST an earlier revision of the triage, including one that
-  #     differed only in the case of `Scripts/Game/`. Whoever next widens a grep in that function
-  #     now has a machine telling them what they broke.
-  #   * (T-891/T-892) compile.sh + world-boot.sh ported to xtask — no bash -n step remains.
-  #     Weak on purpose (it is not shellcheck, which is not installed anywhere in this program and
-  #     would be red on arrival unverified), but it is the difference between finding a typo here
-  #     and finding it when the nightly mod gate cannot start.
+  #   * `cargo xtask mod world-boot --selftest` — replays the fail-closed triage against 10
+  #     committed log fixtures (2 must pass, 8 must fail). Text only; 0.12 s measured, no engine,
+  #     no network. This is the part that actually regresses: each failing fixture is an escape a
+  #     narrower triage lets through, including one that differs only in the case of
+  #     `Scripts/Game/`. Whoever next widens a match in that function has a machine telling them
+  #     what they broke.
   #
-  # DELIBERATELY NOT HERE: `compile.sh --selftest`. It launches the engine. There is no honest way
+  # DELIBERATELY NOT HERE: the compile self-test. It launches the engine. There is no honest way
   # to run it hosted, and a stubbed version would be a green check for doing nothing — the single
   # most expensive thing a CI job can be. It runs in mod-gates.yml, where a real server exists.
   mod-gates-hosted:
@@ -293,16 +271,14 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      # T-891/T-892: both scripts deleted; syntax is Rust (clippy) + world-boot --selftest below.
       - name: world-boot verdict logic (cargo xtask mod world-boot --selftest)
         run: cargo xtask mod world-boot --selftest
-      # T-467: Class-R siblings for wave.sh-wired verifies (same tasks as ci-local).
-      - name: T-438 deploy-staging compose path (cargo xtask verify t438)
-        run: cargo xtask verify t438
-      - name: T-456 mission REST size gate (cargo xtask verify t456)
-        run: cargo xtask verify t456
-      # T-485: T-468 tripwire (hollow verify-t456/t468 recipes + ci-local-schema pin).
-      # T-489/T-881: invoke DIRECTLY, never through a dispatch row named after this gate —
-      # a hollowed indirection must not green CI (the self-pin only runs when the gate does).
-      - name: T-468 CI schema parity + hollow recipe tripwire (direct cargo, T-489/T-881)
-        run: cargo xtask verify t468
+      # Class-R siblings of the wave gate's verify steps — the same tasks ci-local runs.
+      - name: staging compose path (cargo xtask verify staging-compose-paths)
+        run: cargo xtask verify staging-compose-paths
+      - name: mission REST size limits (cargo xtask verify mission-rest-size-limits)
+        run: cargo xtask verify mission-rest-size-limits
+      # Invoke DIRECTLY, never through a dispatch row named after this gate — a hollowed
+      # indirection must not green CI, and the self-pin only runs when the gate does.
+      - name: CI schema parity + hollow recipe tripwire (direct cargo)
+        run: cargo xtask verify ci-schema-parity
