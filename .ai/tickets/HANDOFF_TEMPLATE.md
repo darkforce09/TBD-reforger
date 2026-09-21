@@ -34,7 +34,7 @@ Copy this skeleton when Cursor creates a new handoff (Mode B).
 | Forbidden | Why |
 |-----------|-----|
 | … | … |
-| Edit docs/registry | Cursor sync after merge |
+| Edit docs or ticket files | Cursor sync after merge |
 
 **Do not reopen:** {shipped slices @ sha}
 
@@ -51,8 +51,8 @@ N. Tag **T-0xx.Y**
 ## Preflight
 
 \`\`\`bash
-git pull && git lfs pull  # (map-assets-link retired at T-159.29.3 — Trunk/backend serve map-assets)
-./scripts/ticket brief T-0xx
+git pull && git lfs pull  # Trunk and the API serve /map-assets straight from assets_v2/
+cargo xtask ticket brief T-0xx
 \`\`\`
 
 ---
@@ -101,8 +101,3 @@ N. **Ready for Cursor doc sync.**
 | P0 analysis JSON shape | — | ✓ | step 1 in DO |
 | Copy-paste block | — | — | ✓ |
 
----
-
-## Historical note
-
-T-091.2 handoff @ `dde589e` used an inline prompt — valid for its era. **New slices** use spec §Claude Code prompt + this handoff template.

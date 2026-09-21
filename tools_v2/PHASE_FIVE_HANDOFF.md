@@ -1441,3 +1441,82 @@ xtask | verifications::schemas::checks::unread_wire_field_tests::stripper_remove
 xtask | verifications::schemas::checks::unread_wire_field_tests::unread_gate_fires_when_a_reader_appears
 verification_core (doc) | tools_v2/verification-core/src/lib.rs - (line 42)
 ```
+
+## P1 — Agent instructions and tracked root ghosts
+
+Every file that tells an agent what to do now names only commands, files and crates that exist, and the repository root carries no tracked build or checkpoint junk. The command texts for this phase's checks live in the closure plan's P1 block, not here: two of the four search for tokens the verification matrix drives to zero across `tools_v2` documents, and this document is inside that search.
+
+### What changed
+
+| Path | Change |
+|---|---|
+| `.cursor/rules/tbd-platform.mdc` | Ticket store is the per-ticket TOML files beside the `ROOT` marker; sync, check and run are `cargo xtask ticket` verbs; the absolute home-directory root becomes "the repository root"; the sentence about a status marker block in the root agent document goes, because no such marker exists; the layout line names the two engine crates; the five document links resolve from `.cursor/rules/`; the factory-mode paragraph drops its authorization date |
+| `.cursor/rules/application-code-forbidden.mdc` | Application code ships through `cargo xtask ticket run`; the factory exception states the present rule instead of narrating how it came about |
+| `.cursor/rules/class-r-plans.mdc` | The brief command is a `cargo xtask` verb reading the ticket's own file; census evidence is `assets_v2/terrains/`; the smoke-evidence pin is the editor smoke-test directory under developer-tools; the engine type authority is `website-map-engine` at `apps/website/map-engine`; research loop R7 is stated as parity with an implementation that lives only in git history, with no ticket identifiers standing in for surfaces |
+| `.cursor/rules/claude-prompt-delivery.mdc` | Brief and prompt are `cargo xtask ticket` verbs; the prompt-standard link resolves from `.cursor/rules/`; the worked example uses the same identifier placeholders as the templates it points at |
+| `.cursor/rules/cursor-agent-workflow.mdc` | The agent-split table names the ticket files and the `cargo xtask` verbs; the prompt-standard link resolves from `.cursor/rules/`; Mode F states the rule without narrating a budget that ran out; the audit section links the audit document at its real path; the file had the same pre-flight heading twice with two different bodies — they are now one pre-flight section and one thread-flow block |
+| `.cursor/rules/acceptance-gates-reproducible.mdc`, `no-duplicate-slice-agents.mdc`, `platform-factory-mode.mdc` | The rules keep their reason and lose the incident narration and the ticket identifiers that carried it |
+| `.ai/tickets/AI_PLAYBOOK.md` | Every pipeline verb is `cargo xtask ticket`; the source of truth is the per-ticket TOML files; the never-hand-edit list names the roadmap marker block that exists and drops the one that does not; the lifecycle table describes ticket files rather than rows of a deleted monolith; the ship recipe links the commit checklist at its real path |
+| `.ai/tickets/CLAUDE_CODE_PROMPT.md` | Every pipeline verb is `cargo xtask ticket`; the prompt skeleton's language gate becomes a layer gate over the three live crates — engine primitives, map engine, Leptos frontend — replacing a gate written for a TypeScript view layer that is not in the tree; the do-not list names the ticket files |
+| `.ai/tickets/SPEC_TEMPLATE.md`, `.ai/tickets/HANDOFF_TEMPLATE.md` | Same verb rewrite; the spec template's verify block runs the frontend check recipe instead of an npm build that has no package; the handoff template loses its closing historical note |
+| `.ai/tickets/README.md` | States the live implementation — the `ticket` subcommand backed by the `ticket-engine` crate — and spells every verb as `cargo xtask ticket`; the monolith-cutover paragraph and the "Makefile" block (there is no Makefile, and its last line aliased a command to itself) are gone |
+| `.ai/tickets/metrics.schema.json`, `estimates.schema.json`, `schema.json` | Descriptions name the validating modules under `tools_v2/ticket-engine/src/metrics/` and `.../metrics/estimates/`, and the engine crate by its real name; titles and descriptions carry no ticket identifiers |
+| `README.md` | The root layout table gains a `tools_v2/` row naming the four crates and the task runner, the `.ai/` row names the ticket files and the wave lock, the website row names the two engine crates, and the closing section about archived upstream repositories is gone |
+| `.gitignore` | New rule `node_modules/` under a present-tense comment; the comments on the target directories, the compile baselines, the per-slice target trees and the raster-tool rule state what the rule does instead of which ticket introduced it |
+| `docs/platform/PLATFORM_FACTORY.md` | Two state-ownership sentences named the deleted ticket monolith; they name the per-ticket TOML files |
+| `node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json`, `temp.json` | Removed from the index and from disk |
+
+The removal is covered: the whole tracked node tree was that one file, a test-duration cache keyed by TypeScript test paths that no longer exist, and `temp.json` was zero bytes. A repository-wide search for either name outside the tree itself returns no consumer — the only other mentions of the cache's tool are notes inside shipped ticket files, which are records rather than readers.
+
+### Acceptance
+
+| Check | Expected | Actual |
+|---|---|---|
+| No agent instruction, playbook, schema or root readme invokes the deleted ticket shim or names the deleted ticket monolith (plan P1 acceptance 1, over `.cursor`, the ticket documents and data, and the root readme) | empty | empty, exit 1 |
+| `git ls-files node_modules temp.json` | empty | empty, 0 paths |
+| `git check-ignore -v node_modules` | names the new rule | `.gitignore:61:node_modules/	node_modules`, exit 0 |
+| `cargo xtask ticket check --strict` | OK | `check OK`, exit 0; the ten command-shaped-acceptance warnings it prints are properties of ticket files this phase does not touch and match the baseline |
+| No rule file names the deleted smoke module, the deleted engine crate spelling, the deleted asset tree or an absolute home-directory root (plan P1 acceptance 4, over `.cursor/rules`) | empty | empty, exit 1 |
+
+Two further checks, run because this phase's goal is that these files name only things that exist:
+
+| Check | Actual |
+|---|---|
+| Every path token of the form `dir/file.ext` in `.cursor/rules` and the ticket documents exists on disk | the only misses are template placeholders (`t0xx`, `tXXX`, `path/to/…`, `docs/specs/.../…`) and the search pattern's own truncation of the rule-file extension |
+| Every relative markdown link in `.cursor/rules/*.mdc` and `.ai/tickets/*.md` resolves from its own directory | no dangling links |
+
+The plan's row R9 counted 56 lines at the baseline. After this phase it counts 16, all of them in files that later phases own; they are listed below.
+
+### Found and fixed
+
+- `.cursor/rules/cursor-agent-workflow.mdc:87` and `:103` — the same heading twice with two different pre-flight bodies, so which one bound was undefined. Merged into one pre-flight section; the numbered thread flow that sat under the first heading is now its own section.
+- `.cursor/rules/cursor-agent-workflow.mdc:117` — the audit document was named without a path and does not sit at the repository root. It now links `docs/platform/CODEBASE_AUDIT_2026.md`.
+- `.ai/tickets/AI_PLAYBOOK.md:37` and `.ai/tickets/SPEC_TEMPLATE.md:65` — the link label read `docs/AGENT_COMMIT_CHECKLIST.md`, which does not exist; the link target was already the real `docs/website/AGENT_COMMIT_CHECKLIST.md`. Labels corrected.
+- `.ai/tickets/AI_PLAYBOOK.md:9` — the never-hand-edit list named a marker block in the root agent document. No such marker exists anywhere in the tree; the roadmap marker it also named does exist. The list now names only the roadmap block, with its path.
+- `.ai/tickets/SPEC_TEMPLATE.md:6` — the authority line linked a file in this directory that does not exist. It now names the ticket's own TOML file.
+- `.ai/tickets/SPEC_TEMPLATE.md:54` — the verify block ran an npm build and lint in a `frontend` directory that has no package manifest. It runs the frontend check recipe.
+- `.ai/tickets/README.md:38-46` — a "Makefile" section (the repository has no Makefile) whose last line described a command as an alias for itself.
+- `.ai/tickets/CLAUDE_CODE_PROMPT.md:53-60,110-123` — the mandatory prompt gate described a React and TypeScript view layer, a state library and a deck oracle, none of which are in the tree, and pointed work at a crate path that does not exist. Rewritten as the layer gate the repository laws actually state, over the three crates that exist.
+- `docs/platform/PLATFORM_FACTORY.md:148,453` — the live factory runbook named the deleted ticket monolith as the thing the command center owns. No phase of the plan lists these two lines, and the matrix requires them at zero, so they are fixed here.
+
+### Found for P4
+
+- `.gitignore:10-11` and `:24-25` — the secrets rule and the node-dependency rule still point into the root script tree. They are correct until the files move, so they move with them: rewrite both to the new destinations in the same commit as the move. The new bare `node_modules/` rule added here already covers a node dependency tree at any depth, so the second of those two rules can simply be deleted rather than repointed, and the node dependency directory beside the relocated package manifest needs no rule of its own.
+- `CLAUDE.md:212` — the deployment comment names the secrets file at its current path; repoint it with the move.
+
+### Found for P5
+
+- `.github/workflows/ci.yml:103` and `:105` — the step name and the task it runs still carry the old crate spelling, and the step name also carries a ticket identifier. Both change with the task rename; the step name becomes a plain description.
+
+### Found for P9
+
+- `CLAUDE.md:153-160` — the atlas block describes a top-level `tools/` directory that does not exist on disk at all.
+- `.github/workflows/ci.yml:78,90,92` — three comments name the old crate spelling; the one at `:90` also carries a ticket identifier and narrates what CI used to miss.
+- `apps/ticketboard/Cargo.toml:55` — the comment names a module path that does not exist; the parser lives under `tools_v2/ticket-engine/src/metrics/`.
+- `docs/tools/editor_capture.md:7` — narrates a port, carries a ticket identifier, names the old crate spelling and names the deleted smoke module. `:43` names the old crate spelling. The plan's P9 block lists this file at lines 7-8 and 44; the live lines are 7 and 43.
+- `docs/platform/token_estimate_factor.md:1` carries a ticket identifier in its title and `:11` names a module path that does not exist; the constant lives under `tools_v2/ticket-engine/src/metrics/estimates/`. The plan's P9 block lists lines 4 and 11; line 4 holds the command and spec link, which are correct, and the title on line 1 is the second line to change.
+- `documentation_v2/tools/README.md:3`, `documentation_v2/tools/developer_tools/README.md:3,14`, `documentation_v2/runbooks/testing_and_ci.md:30` — all four name the old crate spelling or a source path under a directory that does not exist; `documentation_v2/tools/README.md:3` also narrates the move.
+
+### Commands that could not run
+
+None. Every check of this phase ran in this environment.

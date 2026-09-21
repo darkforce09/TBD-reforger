@@ -5,21 +5,21 @@ alwaysApply: true
 
 # TBD Reforger platform
 
-- Read [`CLAUDE.md`](CLAUDE.md) first — status, run commands, conventions, agent roles.
+- Read [`CLAUDE.md`](../../CLAUDE.md) first — status, run commands, conventions, agent roles.
 - **HARD GATE:** Read [`.cursor/rules/cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) — step phrases, three modes, forbidden code edits.
 - **HARD GATE:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — never defer/fold in-scope work unless the operator **explicitly** says to defer that piece.
-- Repo root: `$HOME/Projects/TBD-Reforger/` (this checkout may also appear as `/var/home/...` — same tree). Mission Creator specs: `docs/specs/Mission_Creator_Architecture/`.
-- Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`). Conventions pin: [`docs/platform/WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md).
+- Every path in this file is relative to the repository root. Mission Creator specs: [`docs/specs/Mission_Creator_Architecture/`](../../docs/specs/Mission_Creator_Architecture/).
+- Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`) · `apps/website/map-engine/` (pkg `website-map-engine`) · `apps/website/graphics-engine/` (pkg `website-graphics-engine`). Conventions pin: [`docs/platform/WHERE_DOES_X_GO.md`](../../docs/platform/WHERE_DOES_X_GO.md).
 - Frontend surface specs: `docs/website/frontend/` only — never under `apps/**/docs` (verify-doc-layout enforces).
-- Ticket source of truth: `.ai/tickets/registry.json`. After edits run `./scripts/ticket sync` and `./scripts/ticket check`. Work on **`main` only** — no `ticket/T-0xx` branches.
-- Do not hand-edit generated `docs/TICKET_*.md` or `<!-- ticket-sync:status -->` markers in CLAUDE.md.
-- **Cursor:** docs, brainstorm, registry, spec markdown (`executor: cursor-docs` slices).
-- **Claude Code:** application code only for slices with `executor: claude-code` (via `./scripts/ticket run`).
+- Ticket source of truth: one `.ai/tickets/T-*.toml` file per ticket, beside the `.ai/tickets/ROOT` marker. After edits run `cargo xtask ticket sync` and `cargo xtask ticket check`. Work on **`main` only** — no `ticket/T-0xx` branches.
+- Do not hand-edit generated `docs/TICKET_*.md`.
+- **Cursor:** docs, brainstorm, ticket files, spec markdown (`executor: cursor-docs` slices).
+- **Claude Code:** application code only for slices with `executor: claude-code` (via `cargo xtask ticket run`).
 - **Executor gate:** stop if active slice is `workbench`, `human`, or `ci` — wait for human completion.
 - Git: commit directly to `main` only; tag commits `T-0xx`; end with `Co-Authored-By` trailer.
-- **PLATFORM FACTORY MODE (2026-07-26) overrides the three lines above.** When the operator says "run
+- **PLATFORM FACTORY MODE overrides the three lines above.** When the operator says "run
   the factory" / "dispatch wave N", **Cursor owns application code** via slice agents, work happens on
   `slice/T-XXX` branches in worktrees (the "`main` only, no branches" line above does **not** apply to
-  the factory), and `executor: claude-code` means "any AI coding agent may take this" — Grok now fills
-  that role. See [`platform-factory-mode.mdc`](platform-factory-mode.mdc) and
-  [`docs/platform/FACTORY_FOR_CURSOR.md`](docs/platform/FACTORY_FOR_CURSOR.md).
+  the factory), and `executor: claude-code` means "any AI coding agent may take this". See
+  [`platform-factory-mode.mdc`](platform-factory-mode.mdc) and
+  [`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md).

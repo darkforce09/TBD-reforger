@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Ticket run metrics — one JSON receipt per slice run (T-913.2)",
-  "description": "Files live at .ai/tickets/metrics/<ticket-id>/<ts>-<sha>.json, one per run, never a jsonl. tokens_consumed is REQUIRED and total must equal input+output+cache_read+cache_write (reasoning is a sibling observation, never summed). finished/outcome/git_sha are stamps `platform wave land` writes; elapsed is derived (finished - started) at query time, never stored. Validated by `ticket check` via xtask/src/metrics.rs, which also enforces the RFC 3339 UTC rule from crates/tbd-tickets.",
+  "title": "Ticket run metrics — one JSON receipt per slice run",
+  "description": "Files live at .ai/tickets/metrics/<ticket-id>/<ts>-<sha>.json, one per run, never a jsonl. tokens_consumed is REQUIRED and total must equal input+output+cache_read+cache_write (reasoning is a sibling observation, never summed). finished/outcome/git_sha are stamps `platform wave land` writes; elapsed is derived (finished - started) at query time, never stored. Validated by `ticket check` via tools_v2/ticket-engine/src/metrics/, which also enforces the RFC 3339 UTC rule of ticket-engine.",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "agent", "started", "tokens_consumed"],

@@ -17,8 +17,8 @@ Locate/map code → cheap default + `cavecrew-investigator` — **not** Grok. Gr
 
 | Agent | Owns | Must NOT |
 |-------|------|----------|
-| **Cursor (you)** | Plan review, critique, docs, `.ai/tickets/registry.json`, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `./scripts/ticket sync` | Application code in `apps/website/api_v2/`, `apps/website/frontend/`, `apps/mod/`, `contracts_v2/` (except schema doc-only) |
-| **Claude Code** | Application code on `executor: claude-code` slices via `./scripts/ticket run` (on **`main`**) | Documentation, registry, ticket sync |
+| **Cursor (you)** | Plan review, critique, docs, the `.ai/tickets/T-*.toml` files, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `cargo xtask ticket sync` | Application code in `apps/website/api_v2/`, `apps/website/frontend/`, `apps/mod/`, `contracts_v2/` (except schema doc-only) |
+| **Claude Code** | Application code on `executor: claude-code` slices via `cargo xtask ticket run` (on **`main`**) | Documentation, ticket files, ticket sync |
 
 **Executor gate:** Only act on slices where `executor` is `cursor-docs` or `claude-code`. If `workbench`, `human`, or `ci` — **stop and wait**.
 
@@ -48,9 +48,9 @@ You babble; that's fine. **Classify intent** from the message — never require 
 - "Write the ticket", "set it up", "queue it", "make the handoff", "do the docs"
 - "Ok looks good", "approved", "yeah do that", "set up claude", "prep for claude code"
 - After Mode A back-and-forth, user agrees and wants registry + spec + handoff
-- "Document this for claude", "same as we always do", "like T-091"
+- "Document this for claude", "same as we always do", "like the last ticket"
 
-**Allowed:** ONE ticket (default), spec, `.ai/artifacts/*_handoff.md`, audit report if approved, registry, ticket sync, CLAUDE.md pointer. Prompt in spec §Claude Code prompt per [`CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
+**Allowed:** ONE ticket (default), spec, `.ai/artifacts/*_handoff.md`, audit report if approved, registry, ticket sync, CLAUDE.md pointer. Prompt in spec §Claude Code prompt per [`CLAUDE_CODE_PROMPT.md`](../../.ai/tickets/CLAUDE_CODE_PROMPT.md).
 
 **FORBIDDEN:** App source edits. Batch many tickets unless user explicitly asks.
 
@@ -62,15 +62,14 @@ You babble; that's fine. **Classify intent** from the message — never require 
 - "Fix C1", "implement", "ship the hotfix", "run the ticket"
 - "Implement the plan" without prior Mode B ticket
 
-**Default response:** Code is **Claude Code** — output handoff or say `./scripts/ticket run`. Do not patch `.rs`/`.c` under `apps/website/{api,frontend}/` or `apps/mod/` unless user **clearly** overrides: *"Cursor, you write the code"*.
+**Default response:** Code is **Claude Code** — output handoff or say `cargo xtask ticket run`. Do not patch `.rs`/`.c` under `apps/website/{api,frontend}/` or `apps/mod/` unless user **clearly** overrides: *"Cursor, you write the code"*.
 
 ### Mode F — Platform factory (Cursor IS the code owner)
 
-**Added 2026-07-26 — this SUPERSEDES Mode C for platform-factory work.** If the operator says "run
-the factory" / "dispatch wave N" / "continue the factory", or names a platform wave or ticket
-(T-245, T-247, …), you are in **factory mode**. There is no Claude Code to hand off to — its token
-budget ran out mid-program. You dispatch slice agents into git worktrees, integrate, gate, run an
-adversarial verifier, triage, and push.
+**This SUPERSEDES Mode C for platform-factory work.** If the operator says "run
+the factory" / "dispatch wave N" / "continue the factory", or names a platform wave or a platform
+ticket id, you are in **factory mode**. Factory mode has no Claude Code to hand off to: you dispatch
+slice agents into git worktrees, integrate, gate, run an adversarial verifier, triage, and push.
 
 Read [`platform-factory-mode.mdc`](platform-factory-mode.mdc), then the runbook
 [`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md). Do **not** infer
@@ -86,7 +85,16 @@ factory mode from a vague "implement this" — ask one line if it is not explici
 
 ## Pre-flight (before ANY edit)
 
-State **Mode A/B/C** and list **every path** you will touch. App paths under `apps/` → default **stop** unless Mode C with explicit Cursor override.
+Before writing files, state **Mode (A/B/C)** and list **every path** you will touch.
+
+If the list includes any of:
+- `apps/website/api_v2/src/**`
+- `apps/website/frontend/src/**` (live Leptos SPA — Claude-owned)
+- `apps/mod/**`
+
+and Mode is not explicit user-authorized code → **STOP**.
+
+## Typical thread flow
 
 ```text
 1. User → Cursor: paste Claude plan (often rambling — still Mode A)
@@ -100,22 +108,11 @@ State **Mode A/B/C** and list **every path** you will touch. App paths under `ap
 9. After merge: Cursor doc sync if needed
 ```
 
-## Pre-flight (before ANY edit)
-
-If about to write files, state **Mode (A/B/C)** and list **every path** you will touch.
-
-If the list includes any of:
-- `apps/website/api_v2/src/**`
-- `apps/website/frontend/src/**` (live Leptos SPA — Claude-owned)
-- `apps/mod/**`
-
-and Mode is not explicit user-authorized code → **STOP**.
-
 ## Codebase audit / tech-debt
 
-- **Default: ONE ticket, ALL fixes in one Claude pass** — do not split into T-122/T-123/… unless user asks.
-- Cursor: `CODEBASE_AUDIT_2026.md` + registry + handoff. Claude: all code fixes (+ may append verify/shipped notes to audit doc).
-- Parallel with T-090.1 OK when files don't overlap.
+- **Default: ONE ticket, ALL fixes in one Claude pass** — do not split into several sibling tickets unless user asks.
+- Cursor: [`docs/platform/CODEBASE_AUDIT_2026.md`](../../docs/platform/CODEBASE_AUDIT_2026.md) + ticket files + handoff. Claude: all code fixes (+ may append verify/shipped notes to audit doc).
+- Running in parallel with another ticket is OK when the file sets do not overlap.
 
 ## Commits
 

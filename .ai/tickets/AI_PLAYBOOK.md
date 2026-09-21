@@ -1,78 +1,79 @@
 # Ticket AI Playbook
 
-**Audience:** Cursor (Composer 2.5) — ticket operator. **Source of truth:** [`registry.json`](registry.json).
+**Audience:** Cursor (Composer 2.5) — ticket operator. **Source of truth:** one `T-*.toml` file per ticket in this directory, beside the [`ROOT`](ROOT) marker.
 
 ## Golden rule
 
-Edit **`tickets/registry.json`** → run **`./scripts/ticket sync`** → run **`./scripts/ticket check`** → commit registry + all generated files together.
+Edit the ticket's **`T-*.toml`** → run **`cargo xtask ticket sync`** → run **`cargo xtask ticket check`** → commit the ticket file and every generated file together.
 
-Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADMAP marker block, gap_analysis ticket column.
+Never hand-edit: `queue.json`, `docs/TICKET_*.md`, the `<!-- ticket-sync:next -->` block in [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md), the gap_analysis ticket column.
 
 ## HARD — No deferrals without operator word
 
 Do not put "fold forward", "deferred to later slice", or self-authored Out-of-scope into specs /
 handoffs / finish plans unless the **operator explicitly** authorized that deferral in-thread.
-Complete-outcome asks ("replace React", "finish the port") mean **finish**, not MVP + appendix.
+Complete-outcome asks ("replace the whole surface", "finish the port") mean **finish**, not a thin
+first pass plus an appendix.
 Rule: [`.cursor/rules/no-silent-deferrals.mdc`](../../.cursor/rules/no-silent-deferrals.mdc).
 
 ## Status lifecycle
 
-| You say | Registry change |
-|---------|-----------------|
-| Add idea | `status: idea`, full context fields, **no order** |
-| Promote to backlog | `status: queued`, assign `order` |
-| Write spec | Create `tNNN_*.md`, set `spec`, `status: ready` |
-| T-067.0 done | Update `active_slice` to T-067.1 or `status: shipped` |
-| Ship T-066 | `status: shipped`, clear `active_slice`, sync |
-| Cancel T-078 | `status: cancelled` — never delete row |
-| Reorder wiki first | Lower T-085 `order` below T-086 |
+| You say | Ticket file change |
+|---------|--------------------|
+| Add idea | `status = "idea"`, full context fields, **no order** |
+| Promote to backlog | `status = "queued"`, assign `order` |
+| Write spec | Create `tNNN_*.md`, set `spec`, `status = "ready"` |
+| Slice done | Advance `active_slice` to the next child, or `status = "shipped"` |
+| Ship a ticket | `status = "shipped"`, clear `active_slice`, sync |
+| Cancel a ticket | `status = "cancelled"` — never delete the file |
+| Reorder | Lower one ticket's `order` below its sibling's |
 
 ## Recipes
 
 ### Ship a ticket
 
 1. Human verified merge + build/lint pass
-2. Set row `status: shipped`, remove `active_slice`
-3. `./scripts/ticket sync`
-4. Update narrative docs per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md)
+2. Set the ticket file's `status = "shipped"`, remove `active_slice`
+3. `cargo xtask ticket sync`
+4. Update narrative docs per [`docs/website/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md)
 
 ### Mark ready for Claude Code
 
 ```bash
-./scripts/ticket mark-ready T-068 docs/specs/Mission_Creator_Architecture/t068_asset_registry.md
-./scripts/ticket run
+cargo xtask ticket mark-ready T-068 docs/specs/Mission_Creator_Architecture/t068_asset_registry.md
+cargo xtask ticket run
 ```
 
 **Prompt standard:** [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md) · handoff skeleton: [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md)
 
 1. Write slice spec + §Claude Code prompt (fenced block in spec — **not** only in SEND_TO_CLAUDE).
 2. Write `.ai/artifacts/{slug}_claude_code_handoff.md`.
-3. Optional thin `.ai/artifacts/{slug}_SEND_TO_CLAUDE.md` → points at `./scripts/ticket prompt ID`.
-4. Human sends: `./scripts/ticket prompt T-0xx` → paste into Claude Code.
+3. Optional thin `.ai/artifacts/{slug}_SEND_TO_CLAUDE.md` → points at `cargo xtask ticket prompt ID`.
+4. Human sends: `cargo xtask ticket prompt T-0xx` → paste into Claude Code.
 
 ### Brainstorm (speech-to-text friendly)
 
-1. `./scripts/ticket add "Outliner search" --program eden --surfaces LEFT --impact ui`
+1. `cargo xtask ticket add "Outliner search" --program eden --surfaces LEFT --impact ui`
 2. Review `docs/TICKET_BRAINSTORM.md`
 3. When promoted: assign `order`, write spec, `mark-ready`
 
 ### Developer brief
 
 ```bash
-./scripts/ticket brief T-067
+cargo xtask ticket brief T-0xx
 ```
 
 ## Executor gate
 
-**CRITICAL:** `./scripts/ticket run` only executes slices with `executor: claude-code`. Rows with `workbench`, `human`, `cursor-docs`, or `ci` are skipped or handled by the matching agent.
+**CRITICAL:** `cargo xtask ticket run` only executes slices with `executor: claude-code`. Slices with `workbench`, `human`, `cursor-docs`, or `ci` are skipped or handled by the matching agent.
 
 | Executor | Agent | Scope |
 |----------|-------|-------|
 | `claude-code` | Claude Code | `apps/website/{api,frontend}/` code on **`main`** |
-| `cursor-docs` | Cursor | specs, registry, `./scripts/ticket sync` |
-| `workbench` / `human` | Human | `mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) |
+| `cursor-docs` | Cursor | specs, ticket files, `cargo xtask ticket sync` |
+| `workbench` / `human` | Human | `apps/mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) |
 
-Handoff: mark slice ready → correct executor implements → `./scripts/ticket advance-slice` or `./scripts/ticket done`.
+Handoff: mark slice ready → correct executor implements → `cargo xtask ticket advance-slice` or `cargo xtask ticket done`.
 
 ## Claude Code plan → Cursor review → ticket (HARD)
 
@@ -83,7 +84,7 @@ Infer **intent**, not exact phrases. Rough map:
 | Intent | Mode | Cursor does |
 |--------|------|-------------|
 | "What do you think of this plan?" + paste | A | Critique + Claude revise prompt. No files. |
-| "Ok / set it up / write the ticket / like T-091" | B | One ticket + spec + handoff + sync. No code. |
+| "Ok / set it up / write the ticket / like the last one" | B | One ticket + spec + handoff + sync. No code. |
 | "Fix it / implement / ship" | C | Handoff → Claude Code. Cursor does not patch app source. |
 
 If unclear: one question — *review only, or write ticket + handoff?*
@@ -98,13 +99,13 @@ If unclear: one question — *review only, or write ticket + handoff?*
 | [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) | Lead dashboard |
 | [`docs/TICKET_DEV_QUEUE.md`](../../docs/TICKET_DEV_QUEUE.md) | Claude Code ready queue |
 | [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) | Mod / Workbench queue |
-| [`docs/MILESTONES.md`](../../docs/MILESTONES.md) | M1/M2 gate from registry |
-| [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md) | Ideas + deferred |
+| [`docs/MILESTONES.md`](../../docs/MILESTONES.md) | M1/M2 gate from the ticket files |
+| [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md) | Ideas + deprioritized |
 
 ## Validation
 
 ```bash
 cargo xtask ticket sync
 cargo xtask ticket check          # structural
-cargo xtask ticket check --strict   # zero legacy P/FD/BE/Track IDs
+cargo xtask ticket check --strict   # adds the pre-T id scan, the gap-analysis column check, the honesty counters
 ```

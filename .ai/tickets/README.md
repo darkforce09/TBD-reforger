@@ -2,10 +2,8 @@
 
 **Source of truth:** one `T-*.toml` file per parent and per child, plus the [`ROOT`](ROOT) marker. Files are encoding C (flat `status` + sibling `order`, `[scope.*]` tables, `kind = "program"|"work"`). Never hand-edit generated `docs/TICKET_*.md`.
 
-**Monolith cutover:** last commit that contained `.ai/tickets/registry.json` is `5035931ce80324db81d84fb9535433689d72f208` (`git show 5035931ce80324db81d84fb9535433689d72f208:.ai/tickets/registry.json`).
-
-**Implementation (T-161 / T-883):** `cargo run -q -p xtask -- ticket …` (shell shim deleted).
-No Python ticket libs remain.
+**Implementation:** the `ticket` subcommand of `xtask`, backed by the `ticket-engine` crate at
+`tools_v2/ticket-engine/`. Every verb below is a `cargo xtask ticket …` call.
 
 **Work model (locked):** all ticket work lands on **`main`** — no `ticket/T-0xx` branches or worktrees as the default. See root [`CLAUDE.md`](../../CLAUDE.md).
 
@@ -13,37 +11,29 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
 ## KISS summary
 
-1. **Composer 2.5 / Cursor** — edit the relevant `T-*.toml`, write specs, `cargo run -q -p xtask -- ticket sync`
-2. **Mark ready** — `cargo run -q -p xtask -- ticket mark-ready T-068 path/to/t068_....md`
-3. **Implement** — `cargo run -q -p xtask -- ticket run` (or `cargo xtask ticket run`) on **`main`**
+1. **Composer 2.5 / Cursor** — edit the relevant `T-*.toml`, write specs, `cargo xtask ticket sync`
+2. **Mark ready** — `cargo xtask ticket mark-ready T-068 path/to/t068_....md`
+3. **Implement** — `cargo xtask ticket run` on **`main`**
 4. **Verify** — human checks gates / smoke
-5. **Done** — `cargo run -q -p xtask -- ticket done T-068` (marks shipped + sync)
+5. **Done** — `cargo xtask ticket done T-068` (marks shipped + sync)
 6. **Docs** — Cursor syncs narrative docs on `main`
 
 ## Commands
 
 | Command | What it does |
 |---------|----------------|
-| `cargo run -q -p xtask -- ticket sync` | Regenerate all derived outputs |
-| `cargo run -q -p xtask -- ticket check [--strict]` | Validate registry + outputs |
-| `cargo run -q -p xtask -- ticket list` | Show dev queue (from registry) |
-| `cargo run -q -p xtask -- ticket mark-ready ID [SPEC]` | Mark ready in registry + sync |
-| `cargo run -q -p xtask -- ticket run` | Up to `batch_size` Claude Code runs (`claude-code` slices) |
-| `cargo run -q -p xtask -- ticket done ID` | Mark shipped + sync |
-| `cargo run -q -p xtask -- ticket brief ID` | Developer handoff card |
-| `cargo run -q -p xtask -- ticket prompt ID [--slice SLICE]` | Print Claude Code prompt from slice spec |
-| `cargo run -q -p xtask -- ticket show ID` | One ticket card |
-| `cargo run -q -p xtask -- ticket next` | Active slice + next queued |
+| `cargo xtask ticket sync` | Regenerate all derived outputs |
+| `cargo xtask ticket check [--strict]` | Validate the ticket files + generated outputs |
+| `cargo xtask ticket list` | Show the dev queue |
+| `cargo xtask ticket mark-ready ID [SPEC]` | Mark ready in the ticket file + sync |
+| `cargo xtask ticket run` | Up to `batch_size` Claude Code runs (`claude-code` slices) |
+| `cargo xtask ticket done ID` | Mark shipped + sync |
+| `cargo xtask ticket brief ID` | Developer handoff card |
+| `cargo xtask ticket prompt ID [--slice SLICE]` | Print Claude Code prompt from slice spec |
+| `cargo xtask ticket show ID` | One ticket card |
+| `cargo xtask ticket next` | Active slice + next queued |
 
-## Makefile
-
-```bash
-cargo xtask ticket sync
-cargo xtask ticket check
-cargo xtask ticket check --strict
-cargo xtask ticket run          # alias for cargo xtask ticket run
-cargo xtask ticket list
-```
+`cargo xtask ticket --help` lists the full verb set, including the reporting queries.
 
 ## Status values
 
@@ -56,7 +46,7 @@ cargo xtask ticket list
 | `review` | Ready for human verify |
 | `shipped` | Done |
 | `deferred` | Deprioritized |
-| `cancelled` | Dropped — row kept |
+| `cancelled` | Dropped — the ticket file stays |
 
 ## Logs
 

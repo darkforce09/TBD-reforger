@@ -11,7 +11,7 @@ When the user asks for prompts to send to Claude Code — including parallel str
 
 ### Single slice
 
-One fenced block containing the **entire** prompt (use `═══` sections per [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md)). Brief one-line intro above the block is OK; **do not** split the prompt across prose paragraphs.
+One fenced block containing the **entire** prompt (use `═══` sections per [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../.ai/tickets/CLAUDE_CODE_PROMPT.md)). Brief one-line intro above the block is OK; **do not** split the prompt across prose paragraphs.
 
 ### Parallel streams (e.g. two independent slices both on `main`)
 
@@ -34,12 +34,12 @@ Default is **main-only** (no `ticket/T-0xx` worktrees). Preflight bash may be a 
 
 ## Source of truth
 
-Build from: slice spec §Claude Code prompt, `.ai/artifacts/*_handoff.md`, `./scripts/ticket brief`. If `./scripts/ticket prompt` fails (no § in spec), **still** output the full handoff-derived block — do not tell user to run the script instead of pasting.
+Build from: slice spec §Claude Code prompt, `.ai/artifacts/*_handoff.md`, `cargo xtask ticket brief`. If `cargo xtask ticket prompt` fails (no § in spec), **still** output the full handoff-derived block — do not tell the user to run the command instead of pasting.
 
 ## Example shape (parallel)
 
 ```markdown
-# Stream A — T-090.1.1 Map cartographic view
+# Stream A — T-0xx.Y {slice title}
 
 **CWD:** repo root (`main`)
 
@@ -47,7 +47,7 @@ Build from: slice spec §Claude Code prompt, `.ai/artifacts/*_handoff.md`, `./sc
 {full prompt — PREFLIGHT, READ, PROBLEM, DO, DO NOT, VERIFY, RETURN}
 ```
 
-# Stream B — T-068.11 Compiler loadout export
+# Stream B — T-0yy.Z {slice title}
 
 **CWD:** repo root (`main`)
 

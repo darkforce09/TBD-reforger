@@ -5,7 +5,7 @@ alwaysApply: true
 
 # No duplicate slice / worktree agents (HARD)
 
-**Paid for three times already (T-860 wave 220).** Launching a "fresh" or "redo" agent while another is still bound to the same ticket/worktree races the tree, doubles cost, and enrages the operator. This is not a soft preference.
+Launching a "fresh" or "redo" agent while another is still bound to the same ticket/worktree races the tree, doubles cost, and enrages the operator. This is not a soft preference.
 
 ## Forbidden
 
@@ -29,4 +29,4 @@ alwaysApply: true
 
 ## Operator override (only legal exception)
 
-The operator must **explicitly** say to kill/replace that agent, e.g. "kill T-860 and start a new one" / "interrupt and replace". Silence, anger about delay, or your own impatience is **not** override.
+The operator must **explicitly** say to kill/replace that agent, e.g. "kill T-XXX and start a new one" / "interrupt and replace". Silence, anger about delay, or your own impatience is **not** override.

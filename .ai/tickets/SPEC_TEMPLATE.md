@@ -3,7 +3,7 @@
 **Ticket:** T-0xx  
 **Status:** Spec ready — code pending  
 **Git tag on ship:** **T-0xx**  
-**Authority:** [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · [`tickets/registry.json`](registry.json)
+**Authority:** [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · the ticket's own `T-0xx.toml` in this directory
 
 **Agent roles (locked):** **Cursor Composer 2.5** authors and syncs all documentation. **Claude Code reads this spec and implements code only** — return verify output to Cursor; do **not** edit docs.
 
@@ -51,7 +51,7 @@
 ## Verify
 
 ```bash
-cd frontend && npm run build && npm run lint
+cargo xtask mk ci-local-leptos
 # cargo xtask db test-it  # if backend touched
 ```
 
@@ -62,7 +62,7 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (Cursor Composer 2.5 — after human merge)
 
-On ship: run `./scripts/ticket ship T-0xx`; update narrative docs per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md).
+On ship: run `cargo xtask ticket ship T-0xx`; update narrative docs per [`docs/website/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md).
 
 ---
 
@@ -73,16 +73,16 @@ When marking a slice ready for Claude Code:
 1. Write this spec (problem, locked decisions, verify, manual acceptance).
 2. Write `.ai/artifacts/{slug}_claude_code_handoff.md` — [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md).
 3. Add **§Claude Code prompt** below using the skeleton in [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md).
-4. Optional: `.ai/artifacts/{slug}_SEND_TO_CLAUDE.md` — one line: run `./scripts/ticket prompt T-0xx`.
-5. Registry: `active_slice`, `slice_plan.{id}.status: ready`, `./scripts/ticket sync`.
+4. Optional: `.ai/artifacts/{slug}_SEND_TO_CLAUDE.md` — one line: run `cargo xtask ticket prompt T-0xx`.
+5. Ticket file: `active_slice`, `slice_plan.{id}.status = "ready"`, then `cargo xtask ticket sync`.
 
-**Do not** put the only copy of the prompt in SEND_TO_CLAUDE — `./scripts/ticket run` reads the spec.
+**Do not** put the only copy of the prompt in SEND_TO_CLAUDE — `cargo xtask ticket run` reads the spec.
 
 ---
 
 ## Claude Code prompt — T-0xx (copy-paste)
 
-**Format:** [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md). **Extract:** `./scripts/ticket prompt T-0xx`
+**Format:** [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md). **Extract:** `cargo xtask ticket prompt T-0xx`
 
 ```
 Read CLAUDE.md first.
@@ -90,8 +90,8 @@ Read CLAUDE.md first.
 Implement **T-0xx** — {one-line title}.
 
 ═══ PREFLIGHT ═══
-  git pull && cargo xtask mk ci-local-leptos  # (map-assets-link retired at T-159.29.3)
-  ./scripts/ticket brief T-0xx
+  git pull && cargo xtask mk ci-local-leptos
+  cargo xtask ticket brief T-0xx
 
 ═══ READ (in order — spec wins on conflict) ═══
   1. .ai/artifacts/t0xx_claude_code_handoff.md
@@ -110,7 +110,7 @@ Implement **T-0xx** — {one-line title}.
   1. …
 
 ═══ DO NOT ═══
-  - Edit docs/**, registry, docs/TICKET_*.md, CLAUDE status markers
+  - Edit docs/**, the .ai/tickets/T-*.toml files, docs/TICKET_*.md
 
 ═══ VERIFY (all exit 0) ═══
   cargo xtask mk ci-local-leptos

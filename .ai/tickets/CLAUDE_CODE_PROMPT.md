@@ -1,6 +1,6 @@
 # Claude Code prompt standard
 
-**Audience:** Cursor (docs/handoffs) · **Consumer:** Claude Code · **`./scripts/ticket run`**
+**Audience:** Cursor (docs/handoffs) · **Consumer:** Claude Code · **`cargo xtask ticket run`**
 
 One contract, three files. Prompts drift when each chat reinvents the send-off — this doc fixes that.
 
@@ -12,11 +12,10 @@ One contract, three files. Prompts drift when each chat reinvents the send-off �
 |-------|------|------|------------|
 | **1. Spec** | `docs/specs/**/t0xx_*.md` | Source of truth — problem, locked decisions, verify gates, acceptance | Cursor |
 | **2. Handoff** | `.ai/artifacts/t0xx_claude_code_handoff.md` | Context, preflight, execution phases, file map, return contract | Cursor |
-| **3. Send-off** | `.ai/artifacts/t0xx_SEND_TO_CLAUDE.md` | **Optional** one-liner for humans — points at `./scripts/ticket prompt` | Cursor |
+| **3. Send-off** | `.ai/artifacts/t0xx_SEND_TO_CLAUDE.md` | **Optional** one-liner for humans — points at `cargo xtask ticket prompt` | Cursor |
 
 **Canonical prompt text lives in the spec** under `## Claude Code prompt — {SLICE_ID}` (fenced block).  
-`./scripts/ticket run` and `./scripts/ticket prompt ID` extract that block via the Rust
-`xtask` ticket prompt command (`cargo xtask ticket prompt …`).
+`cargo xtask ticket run` and `cargo xtask ticket prompt ID` extract that block from the spec.
 
 **Do not** put implementation detail only in SEND_TO_CLAUDE — it will rot. SEND_TO_CLAUDE is a bookmark, not a second spec.
 
@@ -29,7 +28,7 @@ Use **exact section headers** (`═══ … ═══`) so prompts are scannab
 ````markdown
 ## Claude Code prompt — T-0xx.Y (copy-paste)
 
-Authority: this spec + handoff. **Do not edit docs/registry.**
+Authority: this spec + handoff. **Do not edit docs or ticket files.**
 
 ```
 Read CLAUDE.md first.
@@ -37,13 +36,13 @@ Read CLAUDE.md first.
 Implement **T-0xx.Y** — {one-line title}.
 
 ═══ PREFLIGHT ═══
-  git pull && git lfs pull  # (map-assets-link retired at T-159.29.3 — Trunk/backend serve map-assets)
-  ./scripts/ticket brief T-0xx
+  git pull && git lfs pull  # Trunk and the API serve /map-assets straight from assets_v2/
+  cargo xtask ticket brief T-0xx
 
 ═══ READ (in order — spec wins on conflict) ═══
   1. .ai/artifacts/t0xx_claude_code_handoff.md
   2. docs/specs/.../t0xx_slice_spec.md
-  {optional: 3. path/to/key/source.ts — only if handoff lists it}
+  {optional: 3. path/to/key/source.rs — only if handoff lists it}
 
 ═══ PROBLEM ═══
   {2–4 sentences. What's broken. What layer (ortho / FE / API).}
@@ -51,14 +50,15 @@ Implement **T-0xx.Y** — {one-line title}.
 ═══ SHIPPED (do not reopen) ═══
   {Parent slices @ commit — one line each}
 
-═══ LANGUAGE GATE (T-151 / map-engine — MANDATORY) ═══
-  Rust OWNS: geometry, LOD, residency, SoA→GPU sync, selection/drag/cluster GPU policy,
-  camera math, spatial indexes, pack helpers, shaders.
-  TypeScript ONLY: React mount, pointer/DOM events, Zustand UI state, thin wasm calls,
-  canvas atlas *pixels* if needed, Deck oracle until T-151.9.
-  STOP IF: about to add engine policy / sync / pack / LOD / camera math in .ts/.tsx
-  → put it in crates/map-engine-* instead. Do not "just finish in TS".
-  LOC budget: {list TS files + max lines, e.g. wgpuSlots.ts ≤ 60}
+═══ LAYER GATE (engine crates vs Leptos view — MANDATORY) ═══
+  website-graphics-engine OWNS: pipelines, shaders, bind groups, draw batching. Zero map concepts.
+  website-map-engine OWNS: geometry, LOD, residency, SoA→GPU sync, selection/drag/cluster policy,
+  camera math, spatial indexes, terrain formats, the mission document model. Zero Leptos.
+  website-frontend ONLY: view components, routing, pointer/keyboard events translated into engine
+  commands, and the canvas mount.
+  STOP IF: about to add engine policy / streaming / LOD / camera math under frontend/src/v2/
+  → put it in apps/website/map-engine instead. Do not "just finish it in the view layer".
+  LOC budget: {list frontend files + max lines, e.g. canvas_mount.rs ≤ 60}
 
 ═══ LOCKED ═══
   {Max 8 bullets — pointer: full table in spec §Locked decisions}
@@ -71,15 +71,15 @@ Implement **T-0xx.Y** — {one-line title}.
   N. Tag **T-0xx.Y** · commit prefix **T-0xx.Y:**
 
 ═══ DO NOT ═══
-  - Edit docs/**, `.ai/tickets/registry.json`, `docs/TICKET_*.md`, CLAUDE status markers
-  - Grow fat wgpu*Controller / *Bridge business logic in TypeScript
+  - Edit docs/**, the `.ai/tickets/T-*.toml` files, `docs/TICKET_*.md`
+  - Grow engine policy inside a frontend bridge or controller module
   - Defer / "fold forward" / invent Out-of-scope for in-scope work unless the operator
     explicitly said "defer X" / "skip X" (see .cursor/rules/no-silent-deferrals.mdc)
   - {slice-specific forbidden items}
 
 ═══ VERIFY (all exit 0) ═══
   {bash block — copy from spec §Verify / Rebuild}
-  {include wc -l on budgeted TS files when LANGUAGE GATE applies}
+  {include wc -l on budgeted frontend files when the LAYER GATE applies}
 
 ═══ MANUAL ═══
   {Acceptance IDs — one line each, e.g. S1: …}
@@ -98,30 +98,31 @@ Implement **T-0xx.Y** — {one-line title}.
 | Section | Max length | Notes |
 |---------|------------|-------|
 | PROBLEM | 4 sentences | No history essays — handoff has context |
-| **LANGUAGE GATE** | Required on **T-151.x** | Omit only for pure docs / non-map-engine tickets |
+| **LAYER GATE** | Required on any engine or editor ticket | Omit only for pure docs / non-engine tickets |
 | LOCKED | 8 bullets | Rest stays in spec table |
 | DO | 3–12 numbered steps | P0 analysis gates first when applicable; **Rust first** |
-| DO NOT | Always include doc ban | Plus **no fat TS engine policy** on T-151 |
+| DO NOT | Always include doc ban | Plus **no engine policy in the view layer** on engine tickets |
 | VERIFY | Copy spec verbatim | Same commands CI/human will run; **LOC budgets** when gated |
 | MANUAL | One line per acceptance ID | Match spec table IDs exactly |
 | RETURN | Fixed boilerplate | Always end with **Ready for Cursor doc sync.** |
 
 ---
 
-## T-151 language gate (why Grok/Claude drift)
+## Layer gate (why engine work drifts into the view layer)
 
-Models default to editing the React/TS files they already have open. That produced W6–W7.x
-fat controllers (`wgpuSlots.ts` ~500+ LOC) and broke zoom/selection that were fine in Rust.
+Models edit the file they already have open. On an engine ticket that is the Leptos component,
+so streaming, LOD and camera policy grows a second home in `frontend/src/v2/` and the two copies
+disagree. The boundary is a repo law (CLAUDE.md §1.6), not a preference.
 
 **Cursor (Mode B) must:**
 
-1. Put `═══ LANGUAGE GATE ═══` in **every** T-151.x copy-paste prompt (no exceptions).
-2. List **explicit TS LOC budgets** in VERIFY (`wc -l … ≤ N`).
-3. Prefer DO steps that name **Rust crates first**, then “thin TS adapter”.
-4. In DO NOT: ban growing `wgpu*Controller` / pack/LOD/sync policy in `.ts`.
-5. If a hotfix is needed: **fix in Rust** (or collapse to Rust) — do not add another TS policy layer.
+1. Put `═══ LAYER GATE ═══` in **every** engine or editor copy-paste prompt (no exceptions).
+2. List **explicit frontend LOC budgets** in VERIFY (`wc -l … ≤ N`).
+3. Prefer DO steps that name **the engine crate first**, then the thin view adapter.
+4. In DO NOT: ban growing streaming / LOD / camera policy under `frontend/src/v2/`.
+5. If a hotfix is needed: **fix it in the engine crate** — do not add a second policy layer.
 
-**Executor must STOP and ask** if the only way they see to ship is “add 100+ lines of TS policy”.
+**Executor must STOP and ask** if the only way they see to ship is 100+ lines of view-layer policy.
 
 ---
 
@@ -137,21 +138,21 @@ Naming: slice `T-090.1.2.2` → `.ai/artifacts/t090_1_2_2_claude_code_handoff.md
 ## Operator workflow
 
 ```bash
-# 1. Cursor: spec + handoff + prompt section in spec; registry active_slice set; ticket sync
+# 1. Cursor: spec + handoff + prompt section in spec; ticket active_slice set; ticket sync
 
 # 2. Human: print prompt
-./scripts/ticket prompt T-090              # uses active_slice spec
-./scripts/ticket prompt T-090 --slice T-090.1.2.3   # explicit slice
+cargo xtask ticket prompt T-090              # uses active_slice spec
+cargo xtask ticket prompt T-090 --slice T-090.1.2.3   # explicit slice
 
 # 3. Paste into Claude Code OR
-./scripts/ticket run                       # extracts prompt from slice spec (ready tickets)
+cargo xtask ticket run                     # extracts prompt from slice spec (ready tickets)
 
 # 4. After merge: tell Cursor "doc sync for T-0xx.Y"
 ```
 
 ---
 
-## Anti-patterns (why prompts drifted)
+## Anti-patterns
 
 | Bad | Good |
 |-----|------|
@@ -161,7 +162,7 @@ Naming: slice `T-090.1.2.2` → `.ai/artifacts/t090_1_2_2_claude_code_handoff.md
 | Cursor writes app code in the prompt | DO section references spec tasks |
 | Missing RETURN contract | Always SHA + tag + **Ready for Cursor doc sync.** |
 | Parallel streams in prose | **Two (or N) full fenced blocks** — see [`.cursor/rules/claude-prompt-delivery.mdc`](../../.cursor/rules/claude-prompt-delivery.mdc) |
-| T-151 engine logic in TypeScript | **LANGUAGE GATE** + Rust crates first; TS LOC budget in VERIFY |
+| Engine logic in the Leptos view layer | **LAYER GATE** + engine crate first; frontend LOC budget in VERIFY |
 
 ---
 

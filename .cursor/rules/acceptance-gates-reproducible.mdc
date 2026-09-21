@@ -6,10 +6,10 @@ alwaysApply: true
 # Acceptance gates must be reproducible + pinned + fail-fast
 
 A gate is only worth trusting if it runs the same way every time and tells you loudly when it can't.
-This rule exists because the editor CDP gate (`cargo xtask mk leptos-gates`) once depended on unpinned external
-state and **hung 130 s with a cryptic error** instead of failing fast — turning a routine ticket into a
-multi-hour reverse-engineering session (T-177; root cause: `chrome-headless-shell` FATAL-crashing on
-font fallback). Binds **every** agent (Claude Code, Cursor, Fable) and every human.
+A gate that leans on unpinned dev-machine state does neither: the editor CDP gate
+(`cargo xtask mk leptos-gates`) hangs for minutes on a cryptic browser fault instead of failing fast,
+and a routine ticket becomes a reverse-engineering session. Binds **every** agent (Claude Code,
+Cursor, Fable) and every human.
 
 ## Rules
 

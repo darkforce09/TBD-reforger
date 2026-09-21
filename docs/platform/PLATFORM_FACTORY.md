@@ -145,8 +145,8 @@ cargo xtask slice-collisions                # the dispatch set, + any UNPLANNED 
 > `--repack` is for a plan that has genuinely rotted, on a copy, with the oracle checked afterwards.
 
 State lives in: [`wave.lock`](../../.ai/tickets/wave.lock) (what runs together — compiled by
-`cargo xtask wave repack`, checked by `cargo xtask wave check`) · `.ai/tickets/registry.json`
-(every ticket's full history — **the summaries are the handoff**, read the ones you are dispatching)
+`cargo xtask wave repack`, checked by `cargo xtask wave check`) · the `.ai/tickets/T-*.toml` files
+(every ticket's full record — **the summaries are the handoff**, read the ones you are dispatching)
 · this file (process) · [`frontend_data_provenance.md`](frontend_data_provenance.md) (which render
 sites are real vs mock — saves a 150k-token re-derivation).
 
@@ -450,7 +450,7 @@ to the slice's own diff against `main`.
    refuses `--no-verify` if the range touches `assets_v2/terrains/**` (the only LFS-tracked path).
 6. **Verify green → dispatch the next disjoint set automatically.** Do not wait to be asked.
 7. **Agents never self-ship.** They implement, gate-verify, and report. The command center owns
-   `.ai/tickets/registry.json` and every status transition.
+   the `.ai/tickets/T-*.toml` files and every status transition.
 8. **Agents leave their tree green** and put throwaway probes in `/tmp`, never in the source tree.
 9. **EVERY agent runs on Opus 5 — no exceptions, restated 2026-07-26.**
    Slice agents, adversarial verifiers, fix agents, throwaway research agents alike. Pass

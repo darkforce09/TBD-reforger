@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "TBD Ticket Registry",
-  "description": "In-memory registry shape after T-917.2 schema v2 (flat 4-level scope, class, typed body, provenance keys). On-disk form is T-*.toml.",
+  "description": "In-memory registry shape: flat 4-level scope, class, typed body, provenance keys. On-disk form is one T-*.toml file per ticket.",
   "type": "object",
   "required": ["next_id", "tickets"],
   "additionalProperties": false,
@@ -16,7 +16,7 @@
     "ticketId": {
       "type": "string",
       "pattern": "^T-[0-9]{3}(\\.[0-9]+)*$",
-      "description": "Parent ids (T-068, T-441) and dotted slice ids (T-068.15, T-181.3.1)."
+      "description": "Parent ids (T-0xx) and dotted slice ids (T-0xx.15, T-0xx.3.1)."
     },
     "ticketIdList": {
       "type": "array",
@@ -30,7 +30,7 @@
       "type": "string",
       "format": "date-time",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|\\+00:00)$",
-      "description": "T-913.1 lifecycle stamp: RFC 3339 UTC only (Z or +00:00, uppercase T). Deep field-range validation happens in tbd-tickets on load; malformed values refuse the tree."
+      "description": "Lifecycle stamp: RFC 3339 UTC only (Z or +00:00, uppercase T). Deep field-range validation happens in ticket-engine on load; malformed values refuse the tree."
     },
     "executor": {
       "type": "string",
