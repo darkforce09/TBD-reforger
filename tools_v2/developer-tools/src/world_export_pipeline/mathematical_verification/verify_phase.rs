@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::{terrain_dir, terrain_registry_path};
+use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_registry_path};
 
 /// The full verify-phase gate run. Returns the process exit code.
 pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
@@ -14,7 +14,7 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
     let terrain_dir = terrain_dir(&root, terrain);
     let objects_dir = terrain_dir.join("objects");
     let chunks_dir = objects_dir.join("chunks");
-    let staging = terrain_dir.join("staging/export");
+    let staging = map_scratch_dir(&root, terrain).join("export");
     let raw_path = staging.join("raw-entities.jsonl");
     if !raw_path.exists() {
         eprintln!(

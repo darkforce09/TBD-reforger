@@ -5,7 +5,7 @@
 //! ---------------------------
 //! `contracts_v2/rules/prefab-classify.json` says it in its own description: *"EDITING
 //! THIS FILE CHANGES NOTHING UNTIL THE CATALOGUE IS REBUILT."* The only rebuild path was
-//! `world build-objects`, which hard-requires `assets_v2/terrains/<terrain>/staging/export/
+//! `world build-objects`, which hard-requires `assets_v2/scratch/<terrain>/export/
 //! raw-entities.jsonl` — a ~1.2M-row Workbench export that is **gitignored** (`.gitignore:18`)
 //! and absent from every clone. So a rule edit is unverifiable and unshippable by anyone who is
 //! not sitting in front of Workbench, and `cargo xtask map export-terrain` exits 2 for everybody else.

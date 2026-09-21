@@ -146,7 +146,7 @@ pub fn census_spike(terrain: &str) -> Result<u8> {
         "censusStatus": "partial",
         "generatedAt": generated_at,
         "importPhaseMax": "spike_subregion",
-        "sourceExportPath": "staging/spike/raw-entities.jsonl",
+        "sourceExportPath": format!("assets_v2/scratch/{terrain}/spike/raw-entities.jsonl"),
         "levels": { "uniquePrefabs": all_prefabs.len(), "totalInstances": total_instances },
         "byKind": by_kind_out,
         "byBuildingClass": by_building_class,
@@ -234,7 +234,7 @@ pub fn census_types(terrain: &str) -> Result<u8> {
         }
         if spike.exists() {
             println!(
-                "map-census: {terrain} censusStatus=pending_export — T-090.3.0 spike subregion export present (staging/spike); full-map census still pending (expected)"
+                "map-census: {terrain} censusStatus=pending_export — T-090.3.0 spike subregion export present (assets_v2/scratch/{terrain}/spike); full-map census still pending (expected)"
             );
             return Ok(0);
         }

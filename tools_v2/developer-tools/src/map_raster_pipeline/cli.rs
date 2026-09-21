@@ -86,7 +86,8 @@ enum Cmd {
         terrain: String,
     },
     /// T-935.9 — `water/water_vectors.rkyv` + `water/bathymetry.tbd-bath` from the Workbench
-    /// inland-water staging export. `--terrain` takes a terrain id or a terrain directory.
+    /// inland-water export in `assets_v2/scratch/<terrain>/water`. `--terrain` takes a terrain id,
+    /// or a directory whose export sits under its own `scratch/water`.
     Water {
         #[arg(long, default_value = "everon")]
         terrain: String,

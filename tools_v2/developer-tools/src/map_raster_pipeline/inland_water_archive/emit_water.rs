@@ -12,7 +12,7 @@ pub fn emit_water(terrain: &str) -> Result<u8> {
         eprintln!("water: no terrain directory at {}", dir.display());
         return Ok(1);
     }
-    let staging = dir.join(STAGING_WATER);
+    let staging = scratch_dir(terrain).join(STAGING_WATER);
     if !staging.is_dir() {
         eprintln!(
             "water: no staging export at {} — run the Workbench inland-water exporter first",

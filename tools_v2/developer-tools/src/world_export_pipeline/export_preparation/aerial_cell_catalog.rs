@@ -1,7 +1,8 @@
 use super::*;
 use crate::repository_layout::map_scratch_dir;
 
-/// Enumerate Everon SAP supertexture cells → staging/sap/cell-catalog.json (fast index; the
+/// Enumerate Everon SAP supertexture cells → assets_v2/scratch/<terrain>/sap/cell-catalog.json
+/// (fast index; the
 /// full decode + fail-fast lives in the stitch step).
 pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
     use super::super::enfusion_texture_decoder::{

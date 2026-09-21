@@ -24,13 +24,18 @@ impl Scratch {
             std::process::id(),
             std::thread::current().id()
         ));
-        std::fs::create_dir_all(p.join(STAGING_WATER)).expect("mkdir scratch");
+        std::fs::create_dir_all(p.join("scratch").join(STAGING_WATER)).expect("mkdir scratch");
         Self(p)
+    }
+
+    /// Where `emit_water` will look for the export: through the same resolver it uses.
+    fn staging(&self) -> PathBuf {
+        scratch_dir(self.0.to_str().expect("utf8")).join(STAGING_WATER)
     }
 
     /// Write the four staging files, then run the whole `emit_water` CLI path over them.
     fn stage(&self, depth: &str, mask: &str, meta: &str, vectors: &str) -> &Path {
-        let s = self.0.join(STAGING_WATER);
+        let s = self.staging();
         std::fs::write(s.join(DEPTH_TXT), depth).expect("depth");
         std::fs::write(s.join(MASK_TXT), mask).expect("mask");
         std::fs::write(s.join(META_JSON), meta).expect("meta");
@@ -355,7 +360,7 @@ fn an_export_with_no_water_at_all_is_refused() {
 fn a_missing_terrain_or_staging_directory_exits_one() {
     assert_eq!(emit_water("/nonexistent/terrain/xyzzy").expect("no dir"), 1);
     let s = Scratch::new("nostaging");
-    std::fs::remove_dir_all(s.0.join(STAGING_WATER)).expect("drop staging");
+    std::fs::remove_dir_all(s.staging()).expect("drop staging");
     assert_eq!(
         emit_water(s.0.to_str().expect("utf8")).expect("no staging"),
         1
@@ -370,4 +375,20 @@ fn terrain_dir_takes_an_id_or_a_directory() {
     );
     let here = repo_root();
     assert_eq!(terrain_dir(here.to_str().expect("utf8")), here);
+}
+
+/// The export scratch is a sibling of the served tree, never nested inside it — for a terrain id
+/// through the repository layout, and for a directory argument under its own `scratch/`.
+#[test]
+fn scratch_dir_pairs_with_terrain_dir_without_nesting_inside_it() {
+    assert_eq!(
+        scratch_dir("everon"),
+        crate::repository_layout::map_scratch_dir(&repo_root(), "everon")
+    );
+    assert!(!scratch_dir("everon").starts_with(terrain_dir("everon")));
+    let here = repo_root();
+    assert_eq!(
+        scratch_dir(here.to_str().expect("utf8")),
+        here.join("scratch")
+    );
 }

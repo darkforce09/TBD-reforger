@@ -1,5 +1,7 @@
 use super::*;
-use crate::repository_layout::{terrain_assets_dir, terrain_dir, terrain_registry_path};
+use crate::repository_layout::{
+    map_scratch_dir, terrain_assets_dir, terrain_dir, terrain_registry_path,
+};
 
 pub fn validate_export_artifacts() -> Result<u8> {
     let root = repo_root();
@@ -294,8 +296,8 @@ pub fn validate_export_artifacts() -> Result<u8> {
     }
 
     let other = terrains.iter().find(|t| {
-        !terrain_dir(&root, t["terrainId"].as_str().unwrap_or(""))
-            .join("staging/export/raw-entities.jsonl")
+        !map_scratch_dir(&root, t["terrainId"].as_str().unwrap_or(""))
+            .join("export/raw-entities.jsonl")
             .exists()
     });
     match other {

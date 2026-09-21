@@ -406,3 +406,18 @@ pub fn terrain_dir(terrain: &str) -> PathBuf {
     }
     repository_layout::terrain_dir(&repo_root(), terrain)
 }
+
+/// The export scratch that pairs with `--terrain`: `assets_v2/scratch/<id>` for a terrain id, or
+/// `<dir>/scratch` when the argument names a directory.
+///
+/// A directory argument is a self-contained fixture root, and it keeps the repository's split in
+/// miniature: served outputs at its top level, gitignored intermediates under `scratch/`. Nothing
+/// downstream of an export may read from here, because a fresh clone does not have it.
+#[must_use]
+pub fn scratch_dir(terrain: &str) -> PathBuf {
+    let as_path = PathBuf::from(terrain);
+    if as_path.is_dir() {
+        return as_path.join("scratch");
+    }
+    repository_layout::map_scratch_dir(&repo_root(), terrain)
+}

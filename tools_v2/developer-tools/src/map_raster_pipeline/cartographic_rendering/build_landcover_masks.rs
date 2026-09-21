@@ -15,7 +15,7 @@ pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     let sap_rel = "assets_v2/scratch/everon/sap/everon-sap-ortho.png"; // E2c-allow
     if !sap.exists() {
         bail!(
-            "build-landcover-mask: SAP ortho missing: {sap_rel}\nstaging/ is gitignored — restore it (cargo xtask ci map-water-everon rebuilds the water composite)."
+            "build-landcover-mask: SAP ortho missing: {sap_rel}\nassets_v2/scratch/ is gitignored — restore it (cargo xtask ci map-water-everon rebuilds the water composite)."
         );
     }
     let out_dir = map_scratch_dir(&root, "everon").join("map"); // E2c-allow
@@ -189,7 +189,7 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
     let (world_px, source_px) = (12800usize, 4096usize);
     if !tga.exists() {
         eprintln!(
-            "build-map-cartographic: source raster missing: {}\nstaging/ is gitignored (local scratch) — regenerate via the Workbench export.",
+            "build-map-cartographic: source raster missing: {}\nassets_v2/scratch/ is gitignored — regenerate via the Workbench export.",
             tga.display()
         );
         return Ok(1);

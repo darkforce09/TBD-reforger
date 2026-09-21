@@ -1,5 +1,20 @@
-//! T-165.8 — Enfusion `.topo` decoder (port of `scripts/map-assets/decode-topo.mjs`).
-//! See the .mjs header for the cracked format; y = NORTH-UP IMAGE metres.
+//! Enfusion `.topo` decoder — the terrain's road and airfield polylines, read from the pak VFS.
+//!
+//! The format, all little-endian:
+//!
+//! ```text
+//! 0x00  16 bytes   unused here
+//! 0x10  u32        section count (≥ 1; section 1 is the full-detail set this decoder keeps)
+//! 0x14  u32        record count of section 1
+//! 0x18  records of section 1, then for each further section: u32 record count, records
+//!
+//! record: u8 type · u32 n · n × (f32 x, f32 y) · u32 k · k × u32 attribute
+//! ```
+//!
+//! `x` is world metres east; `y` is north-up IMAGE metres. A record is rejected when its vertex
+//! count is zero or absurd, when its first or last vertex lies outside the world by more than
+//! 2 km, or when it runs past the buffer — the parser stops at the first such record rather than
+//! guess where the next one starts.
 
 use anyhow::{Result, anyhow, bail};
 
@@ -33,6 +48,7 @@ pub const TOPO_ROAD_B: u8 = 5; // 1.75 m farm tracks / trails
 
 const HEADER_LEN: usize = 0x18;
 
+#[derive(Debug)]
 pub struct TopoRecord {
     pub rec_type: u8,
     /// Interleaved [x0, y0, x1, y1, …] — x world metres east, y north-up IMAGE metres.
@@ -40,6 +56,7 @@ pub struct TopoRecord {
     pub attrs: Vec<u32>,
 }
 
+#[derive(Debug)]
 pub struct Topo {
     pub world_size_m: f64,
     pub section_count: u32,
@@ -100,14 +117,36 @@ pub fn decode_topo(vfs: &PakVfs, terrain: &str) -> Result<Topo> {
         anyhow!("no topo config for terrain \"{terrain}\" (add it to topo_terrain)")
     })?;
     let buf = vfs.read_file(cfg.topo_path)?;
-    let section_count = u32le(&buf, 0x10);
-    let per_section = u32le(&buf, 0x14);
+    parse_topo(&buf, &cfg)
+}
+
+/// Decode `.topo` bytes. Separate from the VFS read so the format can be exercised on a buffer.
+pub fn parse_topo(buf: &[u8], cfg: &TopoCfg) -> Result<Topo> {
+    if buf.len() < HEADER_LEN {
+        bail!(
+            "topo parse broke: {} is {} bytes, shorter than the {HEADER_LEN}-byte header",
+            cfg.topo_path,
+            buf.len()
+        );
+    }
+    let section_count = u32le(buf, 0x10);
+    let per_section = u32le(buf, 0x14);
+    // Section 1 is the payload; a file that declares none of it is not a topo this decoder
+    // knows, and reporting that beats indexing into an empty section list.
+    if section_count == 0 {
+        bail!(
+            "topo parse broke: {} declares 0 sections in its header ({} bytes) — not a .topo this \
+             decoder understands; check the pak build behind ENFUSION_GAME_PATH",
+            cfg.topo_path,
+            buf.len()
+        );
+    }
 
     let mut sections: Vec<Vec<TopoRecord>> = Vec::with_capacity(section_count as usize);
     let mut pos = HEADER_LEN;
     for s in 0..section_count {
         let expect = if s > 0 {
-            let e = u32le(&buf, pos);
+            let e = u32le(buf, pos);
             pos += 4;
             e
         } else {
@@ -115,7 +154,7 @@ pub fn decode_topo(vfs: &PakVfs, terrain: &str) -> Result<Topo> {
         };
         let mut records = Vec::with_capacity(expect as usize);
         for r in 0..expect {
-            let Some((rec, next)) = parse_record(&buf, pos, cfg.world_size_m) else {
+            let Some((rec, next)) = parse_record(buf, pos, cfg.world_size_m) else {
                 bail!("topo parse broke: section {s} record {r} @0x{pos:x}");
             };
             records.push(rec);
@@ -133,3 +172,7 @@ pub fn decode_topo(vfs: &PakVfs, terrain: &str) -> Result<Topo> {
         consumed: pos,
     })
 }
+
+#[cfg(test)]
+#[path = "tests/topo/tests.rs"]
+mod tests;

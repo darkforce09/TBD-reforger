@@ -1,7 +1,7 @@
 //! T-935.9 — `map water`: the two water binaries, from the Workbench staging export.
 //!
-//! * `water/water_vectors.rkyv` — a `WaterVectorsArchive` built from
-//!   `staging/water/TBD_InlandWaterExport_vectors.json` (lake rings, river centrelines, pond
+//! * `water/water_vectors.rkyv` — a `WaterVectorsArchive` built from the export scratch's
+//!   `water/TBD_InlandWaterExport_vectors.json` (lake rings, river centrelines, pond
 //!   rings), each carrying the still-water surface height a ring of 2D points cannot say.
 //! * `water/bathymetry.tbd-bath` — the `TBDB` mip pyramid (spec §3.3) built from the two ASCII
 //!   rasters `TBD_InlandWaterExport_{depth,mask}.txt`.
@@ -53,8 +53,10 @@ use website_map_engine::world::terrain::water::vectors::downsample_index;
 
 use crate::browser_testing::server::repo_root;
 
-/// Terrain-relative staging directory the Workbench export lands in (gitignored).
-pub const STAGING_WATER: &str = "staging/water";
+/// Where the Workbench inland-water export lands, relative to the export scratch: under
+/// `assets_v2/scratch/<terrain>/` for a terrain id, under `<dir>/scratch/` for a directory
+/// argument (see [`scratch_dir`]). Gitignored either way.
+pub const STAGING_WATER: &str = "water";
 /// Staging source: the vector export (lakes + rivers + inland bodies).
 pub const VECTORS_JSON: &str = "TBD_InlandWaterExport_vectors.json";
 /// Staging source: grid dimensions and the depth quantisation.
@@ -154,6 +156,7 @@ use reduce_depth::pad4;
 pub use reduce_depth::parse_meta;
 use reduce_depth::reduce_depth;
 use reduce_depth::reduce_mask;
+pub use reduce_depth::scratch_dir;
 pub use reduce_depth::terrain_dir;
 pub use reduce_depth::write_bathymetry;
 pub use reduce_depth::write_water_vectors;

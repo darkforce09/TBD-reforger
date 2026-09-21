@@ -270,7 +270,7 @@ pub fn type_inventory() -> Result<u8> {
         if spike.exists() {
             let inv = read_json(&spike)?;
             check(
-                &format!("{t}/staging/spike/type-inventory-spike.json"),
+                &format!("assets_v2/scratch/{t}/spike/type-inventory-spike.json"),
                 &inv,
                 None,
                 &mut failures,

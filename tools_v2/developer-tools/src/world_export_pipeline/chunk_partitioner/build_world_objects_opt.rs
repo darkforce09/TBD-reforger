@@ -239,7 +239,9 @@ pub fn build_world_objects_opt(
     inventory.insert("importPhaseMax".into(), json!(phase));
     inventory.insert(
         "sourceExportPath".into(),
-        json!("staging/export/raw-entities.jsonl"),
+        json!(format!(
+            "assets_v2/scratch/{terrain}/export/raw-entities.jsonl"
+        )),
     );
     inventory.insert(
         "levels".into(),
