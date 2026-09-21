@@ -389,7 +389,7 @@ fn prune_ttl_is_longer_than_a_full_refill() {
 /// lands" cannot diverge. That guarantee is worth nothing unless something reads both and
 /// compares them, which is what this does.
 #[test]
-fn migration_0020_is_the_ddl_constant_verbatim() {
+fn migration_0021_is_the_ddl_constant_verbatim() {
     let sql = include_str!("../migrations/0021_rate_limit_buckets.sql");
     assert!(
         sql.contains(RATE_LIMIT_BUCKETS_DDL),

@@ -192,6 +192,7 @@ Configuration lives in `apps/website/api_v2/.env` (`APP_ENV=development`, Postgr
 cargo xtask db up              # Start local Postgres container
 cargo xtask db down            # Stop local Postgres container (keeps volume)
 cargo xtask db seed            # Apply development SQL seeds
+cargo xtask db repair-migration-checksum --version N  # Repoint a checksum after a comments-only edit to an applied migration
 
 # Development Servers
 cargo xtask mk rust-api        # Axum API on :8080 (runs migrations on boot)
@@ -207,6 +208,10 @@ cargo xtask mod compile        # Compile check Enfusion mod scripts
 # Ticket Registry
 cargo xtask ticket check       # Validate ticket registry structure
 cargo xtask ticket sync        # Regenerate ticket views and roadmaps
+
+# Deployment (scripts/deploy/deploy.env)
+cargo xtask deploy website --dry-run  # Print the plan: asset preflight, rsync excludes, remote steps
+cargo xtask deploy website     # Rsync, build the API + SPA on the server, restart the unit
 ```
 
 ### Dev Login (No Discord Required)

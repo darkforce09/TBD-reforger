@@ -283,6 +283,24 @@ cargo xtask db up && cargo xtask db seed
 
 Dev data is reseedable; mock missions are optional (see below).
 
+## `migration N was previously applied but has been modified`
+
+The API refuses to boot with this after an applied migration file changes in any way — `sqlx`
+hashes the whole file, comments included, and compares it against `_sqlx_migrations.checksum`.
+The schema is not necessarily wrong; a rewritten comment trips it too. Do not reset the volume for
+this.
+
+```bash
+cargo xtask db repair-migration-checksum --version N
+```
+
+The command recovers the bytes the database applied from the migration's git history, compares
+them with the current file with comments stripped, and repoints the row only when the statements are
+identical. A real DDL change is refused with a diff — that needs a new migration. A checkout without
+the applied bytes in its history (a deploy target has no `.git/`) is refused unless `--force`, which
+says a human verified the edit by hand. `tests/migrations_are_immutable.rs` pins every migration's
+hash so the edit fails CI before it reaches a database.
+
 ## Registry catalog (T-068 / T-150 / T-068.9)
 
 **Dev seed** (`cargo xtask db seed` → `apps/website/api_v2/seeds/registry_dev.sql`) is the thin 21-row smoke set.

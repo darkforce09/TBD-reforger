@@ -123,6 +123,7 @@ Configuration is read from the environment at boot; `.env` holds the development
 cargo xtask db up              # Start local Postgres container
 cargo xtask db down            # Stop local Postgres container (keeps volume)
 cargo xtask db seed            # Apply development SQL seeds
+cargo xtask db repair-migration-checksum --version N  # Repoint a checksum after a comments-only edit to an applied migration
 cargo xtask mk rust-api        # Axum API on :8080 (runs migrations on boot)
 cargo xtask mk leptos          # Leptos SPA on :3000 (Trunk release build)
 cargo xtask db test-it         # Rust backend integration tests (requires db up)
@@ -135,6 +136,11 @@ fragment for API testing.
 
 `SKIP_MIGRATE=1` keeps the binary from running migrations, for a harness that owns the schema of a
 shared database itself.
+
+Applied migrations are immutable: `sqlx` compares each file's SHA-384 against the hash it recorded
+when the migration ran, comments included, and `tests/migrations_are_immutable.rs` pins every file so
+an edit fails CI before it stops a database. A comments-only edit to an applied file is repointed with
+`cargo xtask db repair-migration-checksum`; a changed statement needs a new migration.
 
 ## 7. Further reading
 
