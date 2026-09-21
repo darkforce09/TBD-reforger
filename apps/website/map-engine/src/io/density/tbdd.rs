@@ -45,7 +45,7 @@ pub struct TbddHeader {
 const _: () = assert!(
     core::mem::size_of::<TbddHeader>() == TBDD_HEADER_BYTES,
     "TbddHeader is the TBDD wire header and MUST be exactly 16 bytes: 625 committed everon density \
-     tiles, `developer_tools::density::TBDD_FILE_BYTES` and every payload offset are computed from it."
+     tiles, `developer_tools::world_export_pipeline::vegetation_density::TBDD_FILE_BYTES` and every payload offset are computed from it."
 );
 const _: () = assert!(
     core::mem::align_of::<TbddHeader>() == 2,

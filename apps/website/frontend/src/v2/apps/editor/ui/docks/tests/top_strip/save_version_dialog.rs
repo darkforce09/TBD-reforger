@@ -133,7 +133,7 @@ fn traps_tab_within_the_dialog_subtree() {
 /// A class-string pin CANNOT catch that class of failure — the offending classes were all present
 /// and correct; the geometry was wrong because of an ancestor. So the AUTHORITATIVE guard is now
 /// the live-Chrome rect smoke `smoke_save_dialog_rect` (`gate smoke save-dialog-rect`) in
-/// `tools_v2/developer-tools/src/smokes.rs` (real `getBoundingClientRect`, both viewports, in the wave
+/// `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs` (real `getBoundingClientRect`, both viewports, in the wave
 /// gate). This test remains only as a cheap source-scrub sentinel: it holds the centering classes
 /// in place and forbids the upward-anchored (`top-full`) regression — but it does NOT and cannot
 /// prove on-screen-ness. Never re-add a "by construction" claim here. `live_source` (classes).

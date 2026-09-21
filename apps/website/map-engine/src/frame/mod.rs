@@ -54,7 +54,7 @@ pub mod upload;
 // is allowed at one named seam rather than at its three call sites. `LanePool` and
 // `ReadbackLane` are GPU buffer bookkeeping that belongs to graphics-engine and lives there;
 // this crate has to *name* them only because `RenderEngine` holds them, and `RenderEngine`
-// did not cross in Phase 1. See `tools_v2/xtask/src/gate_engine_layers.rs` for the pinned list.
+// did not cross in Phase 1. See `tools_v2/xtask/src/verifications/architecture/engine_layer_boundaries.rs` for the pinned list.
 pub use website_graphics_engine::device::buffers;
 
 /// Pipelines.
@@ -71,7 +71,7 @@ pub use website_graphics_engine::pipeline as pipelines;
 // T-0xx Phase 2C, §2C.1 Kind C. Everything the renderer's `frame` module publishes that this
 // crate consumes, enumerated. **The eight `pub use` lines below are the only places in
 // `website-map-engine` that spell the path they spell** — gate rule 3a in
-// `tools_v2/xtask/src/gate_engine_layers.rs` pins that in both directions, at exactly eight, so a ninth
+// `tools_v2/xtask/src/verifications/architecture/engine_layer_boundaries.rs` pins that in both directions, at exactly eight, so a ninth
 // import is a diff to this list and a lost one is a stale pin. The 38 call sites that used to
 // spell it for themselves now read `use crate::frame::DrawBatch;`. (The pin counts the
 // re-exports and not this prose on purpose: a gate that fails on a typo fix in a comment is a

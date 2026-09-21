@@ -81,7 +81,7 @@ pub fn require(msg: &str, pattern: &Pattern, files: &[&Path]) -> Verdict {
 
 /// `pattern` must NOT appear in an in-memory subject.
 ///
-/// No [`NotRun`] path exists: the subject is already in hand, so there is nothing that could fail
+/// No `NotRun` path exists: the subject is already in hand, so there is nothing that could fail
 /// to be examined. Returning a `Verdict` anyway keeps every gate in one vocabulary.
 pub fn ban_str(msg: &str, pattern: &Pattern, subject: &str) -> Verdict {
     if pattern.is_match(subject) {

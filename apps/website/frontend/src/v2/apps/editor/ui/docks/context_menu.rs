@@ -15,7 +15,9 @@ pub use menu_entries::{ContextItem, MenuEntry};
 mod menu_state;
 pub use menu_state::{resolve_target, MenuState, MenuTake, MenuTarget};
 mod menu_geometry;
-use menu_geometry::{menu_axis_position, menu_scroll_top, MENU_BOUNDS};
+use menu_geometry::MENU_BOUNDS;
+#[cfg(any(target_arch = "wasm32", test))]
+use menu_geometry::{menu_axis_position, menu_scroll_top};
 #[cfg(target_arch = "wasm32")]
 use menu_geometry::{place_context_menu, reveal_menu_row};
 pub use menu_geometry::{selectable_indices, step_highlight};

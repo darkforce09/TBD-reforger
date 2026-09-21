@@ -1,6 +1,6 @@
 # Unified tooling
 
-All four crates are live. Phases one through three are implemented; phase four remains the broader xtask and developer-tools decomposition.
+All four crates are live. xtask separates command domains, shared core helpers, and repository verifications. Developer-tools groups browser, Enfusion, raster, world export, and blueprint processing by responsibility.
 
 - `verification-core`: fail-closed assertions, process isolation, and repository locking; no workspace dependencies.
 - `ticket-engine`: typed storage and operations, validation, generated views, registry compatibility, ticket maintenance, wave scheduling/history, receipts, and estimates; no workspace dependencies.
@@ -9,4 +9,4 @@ All four crates are live. Phases one through three are implemented; phase four r
 
 Ticketboard consumes ticket-engine’s existing public model and operation interfaces. Agent invocation, worktree cleanup, and platform-wave orchestration remain in xtask.
 
-See [the architecture plan](ARCHITECTURE_PLAN.md), [phase-two evidence](PHASE_TWO_HANDOFF.md), and [phase-three evidence](PHASE_THREE_HANDOFF.md).
+See [the architecture plan](ARCHITECTURE_PLAN.md), [phase-two evidence](PHASE_TWO_HANDOFF.md), [phase-three evidence](PHASE_THREE_HANDOFF.md), and [phase-four status and evidence](PHASE_FOUR_HANDOFF.md).

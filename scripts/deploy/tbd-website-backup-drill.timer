@@ -2,7 +2,7 @@
 
 [Unit]
 Description=TBD website — weekly backup restore drill
-Documentation=file://tools_v2/xtask/src/deploy_db_drill.rs
+Documentation=file://tools_v2/xtask/src/commands/deploy/database_restore_drill.rs
 
 [Timer]
 ; Sunday 04:10, ~50 minutes after the nightly backup, so it drills a dump that was just

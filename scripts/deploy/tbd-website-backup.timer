@@ -2,7 +2,7 @@
 
 [Unit]
 Description=TBD website — nightly verified PostgreSQL backup
-Documentation=file://tools_v2/xtask/src/deploy_db_backup.rs
+Documentation=file://tools_v2/xtask/src/commands/deploy/database_backup.rs
 
 [Timer]
 ; 03:20 local, off the hour. Nothing else in this repo is scheduled, so the offset is only

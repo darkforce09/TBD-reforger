@@ -1,55 +1,51 @@
-# Developer Tools (`tools_v2/developer-tools`)
+# Developer tools
 
-## Phase-two implementation
+`developer-tools` supplies the `developer_tools` Rust library and six executables: `enf`, `gate`, `mcpd`, `world`, `map`, and `capture`. Thin entrypoints in `src/bin/` call subsystem CLI modules; executable names do not depend on module names.
 
-This is the live heavy-tooling package, imported as `developer_tools`. Executables retain their names: `enf`, `gate`, `mcpd`, `world`, `map`, and `capture`.
+## Executables
 
-- `src/blueprint`: voxel interpretation, mesh extraction, BVH compilation, ingestion, and parity reporting.
-- `src/enfusion_pak`: shared FORM/PAC1 parser, payload reader, and explicit world/blueprint filesystem policies.
-- `src/map_verification`: object goldens, labels, terrain manifests, BLAS manifests, and world line-of-sight checks.
-- `test_fixtures/blueprint`: byte-preserved blueprint, prefab, and world-parity fixtures.
-- Browser, map, world, and Enfusion tooling retain their existing module layout and fixtures.
+- `enf`: Enfusion source extraction, indexing, symbol queries, API documentation, citations, and capability checks.
+- `gate`: Chromium/CDP diagnostics, route checks, DOM verification, and editor smoke scenarios.
+- `mcpd`: persistent Unix-socket broker for serialized Enfusion NetAPI requests.
+- `world`: exported world preparation, object partitioning, catalogs, terrain, roads, and mathematical validation.
+- `map`: aerial orthophotos, satellite archives, cartographic images, inland water, and labels.
+- `capture`: browser-based editor image capture and zoom sweeps.
 
-Map command entry points accept the active repository path and return the existing exit-code result. The crate does not depend on `xtask`. The structure below is the later decomposition target, not a description of every live directory.
+For example, build the executables or inspect their command syntax with:
 
----
-
-## 1. Directory Structure & Subsystems
-
-```text
-tools_v2/developer-tools/
-├── Cargo.toml                           <-- tokio, axum, image, bcdec_rs, website-map-engine
-├── src/
-│   ├── lib.rs                           <-- Library root
-│   ├── bin/                             <-- 6 dedicated binary entrypoints (<250 LOC each)
-│   ├── browser_testing/                 <-- Headless Chrome DevTools Protocol (CDP) test harness
-│   ├── enfusion_tooling/                <-- Script indexer, symbol scanner, apidoc scraper
-│   ├── enfusion_pak/                    <-- UNIFIED .pak archive reader & VFS (deduplicated)
-│   ├── blueprint/                       <-- (Relocated from xtask/src/map_blueprint) 3D mesh & BVH
-│   ├── map_raster_pipeline/             <-- Aerial orthophoto, satellite pyramids, cartography
-│   └── world_export_pipeline/           <-- 512m chunking, DEM elevation, road graphs, gates
-└── tests/                               <-- Extracted test suites
+```bash
+cargo build --locked -p developer-tools --bins
+cargo run --locked -p developer-tools --bin enf -- --help
+cargo run --locked -p developer-tools --bin world -- --help
+cargo run --locked -p developer-tools --bin map -- --help
 ```
 
----
+## Source layout
 
-## 2. Binary Entrypoints (`src/bin/`)
+- `src/browser_testing/` owns Chromium/CDP lifecycle, the static server and API proxy, browser diagnostics, DOM oracles, route drift, screen capture, fixture injection, and editor smoke tests. Shared harness helpers and individual scenarios live under `editor_smoke_tests/`.
+- `src/enfusion_tooling/` owns source extraction, indexing, symbol scanning, API documentation, capability checks, citations, and the MCP broker implementation.
+- `src/enfusion_pak/` implements shared Enfusion archive parsing and payload access with explicit filesystem policies for world exports and blueprint compilation.
+- `src/map_raster_pipeline/` owns aerial orthophotos, satellite archive containers, cartographic rendering, image operations, inland-water classification and emission, and map-label generation.
+- `src/world_export_pipeline/` owns export preparation and validation, object census and classification, chunk partitioning and emission, prefab catalogs, road networks, vegetation density, forest contours and smoothing, texture decoding, and mathematical verification.
+- `src/blueprint/` groups mesh decoding, voxel processing, architectural analysis, BVH construction and batch processing, and archive emission. Ingestion and parity reporting provide the corresponding library entrypoints.
+- `src/map_verification/` implements engine-backed object goldens, label checks, terrain and BLAS manifest checks, and world line-of-sight verification.
+- `src/repository_paths.rs` resolves repository paths; `src/timestamp_formatting.rs` provides shared timestamp formatting.
 
-| Binary | Previous Name | Responsibility |
-|---|---|---|
-| **`browser_test_runner`** | `src/bin/gate.rs` | Headless Chrome DevTools Protocol (CDP) test harness for WebGL2/WebGPU editor routes. |
-| **`screen_capture`** | `src/bin/capture.rs` | Headless editor canvas snapshot and zoom sweep utility. |
-| **`enfusion_oracle`** | `src/bin/enf.rs` | Unpacks game scripts, indexes symbols, extracts class members from Doxygen. |
-| **`mcp_broker`** | `src/bin/mcpd.rs` | Persistent AF_UNIX socket broker serializing requests to Enfusion NetAPI. |
-| **`map_pipeline`** | `src/bin/map.rs` | 2D aerial orthophoto stitching, water mask tinting, satellite tile pyramids. |
-| **`world_pipeline`** | `src/bin/world.rs` | Macro world export: 512m chunk partitioning, road network graphs, DEM processing. |
+## Interfaces and fixtures
 
----
+The crate depends on `website-map-engine` for spatial and asset contracts and does not depend on `xtask`. Repository commands call the public blueprint and map-verification entrypoints. Command adapters pass the active repository path and retain each entrypoint's result and exit-code contract.
 
-## 3. Subsystem Descriptions
+`test_fixtures/blueprint/` contains blueprint, prefab, and world-parity fixtures. Binary formats, schema versions, numeric constants, operation order, thresholds, and deterministic emitted bytes are compatibility contracts. Tests compare expected assets and invariants; module moves must preserve those checks and their fixture resolution.
 
-- **`browser_testing/`**: Drives the headless Chromium instance over WebSockets via CDP. Spawns the static Leptos SPA server and API reverse proxy, executes DOM regression tests (`dom_oracle/`, formerly `vsuite.rs`), verifies route drift (`route_drift/`, formerly `sroutes.rs`), and runs the 21-scenario editor smoke test suite.
-- **`enfusion_pak/`**: Consolidated, high-performance Enfusion `.pak` virtual filesystem reader. Unifies the previously duplicated readers in `tbd-tools/src/world/pak.rs` and `xtask/src/map_blueprint/pak.rs`.
-- **`blueprint/`**: Relocated from `xtask/src/map_blueprint/` (13,409 LOC, 32 files). Decodes binary `.xob` 3D model meshes, raymarches triangles into voxel occupancy grids, detects walls, floor slabs, and plates, and compiles 3D BVH collision acceleration trees.
-- **`map_raster_pipeline/`**: Renames cryptic legacy modules (`sap.rs` → `aerial_orthophoto/`, `tbds_v2.rs` → `satellite_container/`, `water.rs` → `inland_water/`, `labels.rs` → `map_labels/`).
-- **`world_export_pipeline/`**: Decomposes legacy monoliths (`aux.rs` 1,644 LOC, `build.rs` 1,407 LOC, `gates.rs` 1,290 LOC, `forest_smooth.rs` 1,244 LOC) into focused single-responsibility modules <500 LOC.
+## Validation and file limits
+
+```bash
+cargo test --locked -p developer-tools -- --test-threads=1
+cargo check --locked -p developer-tools --all-targets
+cargo fmt -p developer-tools --check
+cargo xtask mk leptos-gates
+```
+
+The library suite exercises local fixtures and algorithms. Browser gates additionally require the browser environment and application services checked by the gate doctor; they are required separately from `cargo xtask ci ci-local`.
+
+Unit tests live in separate sibling test files, declared with `#[cfg(test)]` and `#[path = "tests/…"]`. Production files must stay below 500 lines and test files below 1,000 lines. Binary entrypoints must stay below 250 lines; editor smoke scenario files must stay below 450 lines. Inline test modules are prohibited. Structural tests in `xtask` enforce these limits and the tooling dependency boundaries.

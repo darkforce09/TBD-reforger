@@ -24,7 +24,7 @@
 //! `is_ok()`, and no `PartialEq<bool>`. There is no expression that turns it into a two-way
 //! branch by accident. A caller must `match`, and `match` is exhaustive, so **"the check did not
 //! run" cannot be silently folded into "the check passed" — that is now a compile error rather
-//! than a code review.** Adding a variant to [`NotRun`] later breaks every incomplete `match` in
+//! than a code review.** Adding a variant to `NotRun` later breaks every incomplete `match` in
 //! the workspace, which is the propagation mechanism gate-grep.sh wanted and could not have.
 //!
 //! ── ON OUTPUT COMPATIBILITY ──────────────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@
 //!
 //! 1. **"The check did not run" folded into "the check passed."** [`Verdict`] has no `bool`
 //!    conversion of any kind, so the four outcomes cannot collapse into two by accident. Adding a
-//!    [`NotRun`] variant later breaks every incomplete `match` in the workspace — propagation the
+//!    `NotRun` variant later breaks every incomplete `match` in the workspace — propagation the
 //!    bash library wanted and could not enforce.
 //! 2. **The search tool going absent.** The matcher is the `regex` crate, compiled in. Exit 127 —
 //!    the T-620 defect that kept `verify-no-python` green for four waves — is no longer reachable

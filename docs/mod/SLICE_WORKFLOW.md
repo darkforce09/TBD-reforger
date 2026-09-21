@@ -220,15 +220,15 @@ these as *real directories*, so a missing exclude ships the whole tree. Measured
 `crf_framework` was excluded, and every deploy was rsyncing **3,797** carved Bohemia source files
 to staging.
 
-**Adding an oracle lane means three edits, not one:** the link step in `tools_v2/xtask/src/slice_worktree.rs`, the
-prefix in `tools_v2/xtask/src/gate_crf_leak.rs`, and the `--exclude` in `cargo xtask deploy staging`. A lane missing any
+**Adding an oracle lane means three edits, not one:** the link step in `tools_v2/xtask/src/commands/platform/slice_worktree.rs`, the
+prefix in `tools_v2/xtask/src/verifications/licensing/upstream_code_leaks.rs`, and the `--exclude` in `cargo xtask deploy staging`. A lane missing any
 of the three is a liability, not a convenience.
 
 ## The environment fact every prompt must carry
 
 Agent shells run inside a **`debian:12` podman container**: glibc 2.36, **no C toolchain**. The real
 machine is Bazzite/Fedora (glibc 2.43, gcc). Prefix builds/game binaries with `distrobox-host-exec`
-(or `cargo xtask` / the Rust bridge in `tools_v2/xtask/src/hostrun.rs`).
+(or `cargo xtask` / the Rust bridge in `tools_v2/xtask/src/core/host_execution.rs`).
 
 - in-container `cargo build` → `linker cc not found`
 - host-built binary in-container → `GLIBC_2.39 not found`
@@ -245,7 +245,7 @@ distrobox-host-exec cargo run -q -p developer-tools --bin enf -- capability    #
 distrobox-host-exec cargo run -q -p developer-tools --bin enf -- citations        # every @idx resolves
 distrobox-host-exec cargo xtask verify no-crf-leak   # no oracle code in prod (CRF + PlayableSelector)
 distrobox-host-exec ./scripts/ticket check    # registry valid
-distrobox-host-exec cargo test -p developer-tools --lib enf::
+distrobox-host-exec cargo test -p developer-tools --lib enfusion_tooling::
 ```
 
 ## Known-broken, unrelated to slices

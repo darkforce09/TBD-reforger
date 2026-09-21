@@ -66,7 +66,7 @@ canvas.
 ## Subcommands
 
 All three are `cargo run -q -p developer-tools --bin capture -- <sub> …` (via `distrobox-host-exec` — bare
-`cargo` fails on GLIBC in the container). Source: `tools_v2/developer-tools/src/capture.rs`.
+`cargo` fails on GLIBC in the container). Source: `tools_v2/developer-tools/src/browser_testing/screen_capture.rs`.
 
 | Subcommand | Was | What it does |
 |---|---|---|
