@@ -345,11 +345,13 @@ journalctl --user -u tbd-website-api -f
 `sqlx` hashes each migration file whole, comments included, and compares it against the hash it
 recorded when the migration ran. An edit to an applied migration's comments therefore stops every
 database that applied it — production included — although the schema is untouched. Do not reset
-the database. On the server:
+the database. `cargo xtask deploy website` runs the repair on the server for every applied
+migration before it restarts the unit, so a deploy that reaches the restart has already repointed
+them; if a boot still refuses, run it by hand on the server:
 
 ```bash
 cd /home/sam/tbd/repo
-cargo xtask db repair-migration-checksum --version N --force
+TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force
 ```
 
 `--force` is required on the server: the command proves an edit was comments-only by recovering the

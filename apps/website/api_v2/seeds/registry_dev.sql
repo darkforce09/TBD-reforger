@@ -1,12 +1,12 @@
 -- registry_dev.sql
--- Dev seed for the T-068 Virtual Arsenal registry catalog. Mirrors the T-068.1
+-- Dev seed for the Virtual Arsenal registry catalog. Mirrors the
 -- Workbench export (contracts_v2/catalogs/registry-items.workbench.json):
 -- 21 real rows across five gear/character kinds (8 character, 4 gear_primary,
--- 3 gear_uniform, 4 gear_vest, 2 gear_helmet), PLUS 4 T-800 vehicle rows so the
+-- 3 gear_uniform, 4 gear_vest, 2 gear_helmet), PLUS 4 vehicle rows so the
 -- Vehicles tab and ORBAT > Add Vehicle have something to author in a dev DB (the
 -- Workbench export carried no vehicle kind, which read as "No placeable vehicles"
 -- even after a correct seed). Idempotent and self-contained so `cargo xtask db seed` works
--- WITHOUT cmd/seed's mock_data.sql: it upserts the current modpack FK first.
+-- WITHOUT mock_data.sql: it upserts the current modpack FK first.
 --
 -- modpack_id = the mock current modpack (mock_data.sql), the modpacks.is_current
 -- row used by GET /api/v1/registry's default resolution.
@@ -39,7 +39,7 @@ INSERT INTO registry_items (modpack_id, resource_name, display_name, category, k
 ('00000000-0000-4000-a000-000000000001', '{725C5E1C75CADAF4}Prefabs/Characters/Vests/Vest_M69/Vest_M69_M81woodland.et', 'M69 Vest (M81 Woodland)', 'NATO/Vest', 'gear_vest', 19),
 ('00000000-0000-4000-a000-000000000001', '{FE5C49069C2499D9}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover.et', 'PASGT Helmet (Cover)', 'NATO/Helmet', 'gear_helmet', 20),
 ('00000000-0000-4000-a000-000000000001', '{E685A8D337D36204}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover_w_goggles.et', 'PASGT Helmet (Cover + Goggles)', 'NATO/Helmet', 'gear_helmet', 21),
--- T-800 — vehicle rows: without these the Vehicles palette and ORBAT > Add Vehicle
+-- Vehicle rows: without these the Vehicles palette and ORBAT > Add Vehicle
 -- have nothing placeable in a dev DB (kind = 'vehicle', so `registry_vehicle_options`
 -- and `build_vehicle_catalog_tree` both pick them up; category groups them under the
 -- US Army folder like the character rows). Real BLUFOR/US_Army prefab GUIDs.

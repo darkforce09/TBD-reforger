@@ -123,7 +123,7 @@ Configuration is read from the environment at boot; `.env` holds the development
 cargo xtask db up              # Start local Postgres container
 cargo xtask db down            # Stop local Postgres container (keeps volume)
 cargo xtask db seed            # Apply development SQL seeds
-cargo xtask db repair-migration-checksum --version N  # Repoint a checksum after a comments-only edit to an applied migration
+cargo xtask db repair-migration-checksum [--version N]  # Repoint the checksums of comments-only edits to applied migrations
 cargo xtask mk rust-api        # Axum API on :8080 (runs migrations on boot)
 cargo xtask mk leptos          # Leptos SPA on :3000 (Trunk release build)
 cargo xtask db test-it         # Rust backend integration tests (requires db up)

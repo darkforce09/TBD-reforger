@@ -1,8 +1,9 @@
--- T-068.15.1: cargo capacity export — grid columns + compat edge multiplicity.
+-- Cargo capacity export: grid columns + compat edge multiplicity.
 --
 -- registry_items: inventory UI grid (cells) derived by the Workbench scanner
 -- (registry-items.schema.json cargo_grid_w/h; VOLUME_PER_CELL_CM3=50, width 4,
 -- min height 3). Nullable: absent when the prefab has no readable capacity.
+
 ALTER TABLE registry_items
     ADD COLUMN cargo_grid_w integer,
     ADD COLUMN cargo_grid_h integer;

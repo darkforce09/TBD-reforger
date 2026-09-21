@@ -1,25 +1,24 @@
--- T-940.6 — audit rows the handlers never wrote, and the NOTIFY the admin stream now waits on.
+-- Audit rows written by row triggers, and the NOTIFY the admin stream waits on.
 --
--- Anchor 2026-09-04: `handlers/admin/audit.rs:161` re-SELECTed `audit_logs` every 2 s per connected
--- admin, and three actions produced no audit row at all: event create (`INSERT INTO events`,
--- events.rs `create_event`), mission soft-delete (`UPDATE missions SET deleted_at = now()`,
--- missions.rs:836 `delete_mission`) and slot kick (`UPDATE event_registrations SET slot_id = NULL`,
--- events.rs:2214 `clear_slot`). Those handler files belong to T-940.1/.2/.3/.12 this wave, so the
--- rows come from row triggers here — which also means they cannot drift from the write path:
--- whatever sets the column writes the row, the REST handler included.
+-- Three actions write their audit rows through triggers rather than through the handlers —
+-- event create (`INSERT INTO events`), mission soft-delete (`UPDATE missions SET deleted_at =
+-- now()`) and slot kick (`UPDATE event_registrations SET slot_id = NULL`) — which also means the
+-- rows cannot drift from the write path: whatever sets the column writes the row, the REST
+-- handler included. And every `audit_logs` insert announces itself, so the admin stream pushes
+-- instead of polling the table.
 --
 -- 1. `audit_logs_notify` — AFTER INSERT ON audit_logs → `pg_notify('audit_log', id)`. Every audit
---    row announces itself, whether `services::write_audit` or a trigger below inserted it.
---    `services/audit_notify.rs` holds the one `LISTEN audit_log` connection per pool and the SSE
---    stream fetches `id > last_id` on each announcement; its 2 s poll survives only as the fallback
---    while that connection is down.
+--    row announces itself, whether `administration::services::audit_writer::write_audit` or a
+--    trigger below inserted it. `administration::services::audit_notifier` holds the one
+--    `LISTEN audit_log` connection per pool and the SSE stream fetches `id > last_id` on each
+--    announcement; its 2 s poll survives only as the fallback while that connection is down.
 -- 2. `audit_event_created` — AFTER INSERT ON events → `event.create`, actor = `created_by`.
 -- 3. `audit_mission_deleted` — AFTER UPDATE OF deleted_at ON missions, on the NULL → NOT NULL edge
 --    only (a repeated soft-delete or a restore writes nothing) → `mission.delete`.
 -- 4. `audit_slot_kicked` — AFTER UPDATE OF slot_id ON event_registrations, on the NOT NULL → NULL
---    edge only → `event.slot_kick`. Taking a seat writes nothing; a withdraw is a DELETE
---    (events.rs:2036) and never fires it; deleting the ORBAT slot reaches the same edge through
---    0018's `ON DELETE SET NULL` and is audited too — the occupant lost the seat either way.
+--    edge only → `event.slot_kick`. Taking a seat writes nothing; a withdraw is a DELETE and never
+--    fires it; deleting the ORBAT slot reaches the same edge through 0018's `ON DELETE SET NULL`
+--    and is audited too — the occupant lost the seat either way.
 --
 -- Actor: only the events row carries who acted (`created_by`). `delete_mission` and `clear_slot`
 -- stamp nothing the trigger could read, so those rows carry actor_id NULL / actor_name '' and name
@@ -27,7 +26,6 @@
 --
 -- Everything is CREATE OR REPLACE / DROP IF EXISTS so a re-run of this file is a no-op.
 
--- ── 1. Every audit row announces itself ───────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION public.audit_logs_notify() RETURNS trigger
 LANGUAGE plpgsql AS $$
@@ -43,7 +41,7 @@ CREATE TRIGGER audit_logs_notify
     FOR EACH ROW EXECUTE FUNCTION public.audit_logs_notify();
 
 -- ── 2. The one writer the three row triggers share ─────────────────────────────────────────────
--- Mirrors `services::write_audit`'s INSERT column for column; `actor_name` is resolved from
+-- Mirrors `audit_writer::write_audit`'s INSERT column for column; `actor_name` is resolved from
 -- `users.username` the way the handlers do, '' when there is no actor.
 
 CREATE OR REPLACE FUNCTION public.audit_trigger_write(

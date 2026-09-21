@@ -20,7 +20,7 @@
 //! # The three pieces this module depends on
 //!
 //! * the table — `migrations/0021_rate_limit_buckets.sql`, which is [`RATE_LIMIT_BUCKETS_DDL`]
-//!   verbatim (pinned by `tests/durable_rate_limit.rs::migration_0020_is_the_ddl_constant_verbatim`,
+//!   verbatim (pinned by `tests/durable_rate_limit.rs::migration_0021_is_the_ddl_constant_verbatim`,
 //!   so the bytes the tests prove and the bytes the migration lands cannot drift);
 //! * the wiring — [`crate::core::middleware::RateLimitState`], mounted by
 //!   [`crate::core::http_router::router`]. The L1 `IpLimiter`s stay in front, narrowed to the

@@ -1,8 +1,9 @@
--- T-153: operator-authored reusable faction library. One row per faction; the full
+-- Operator-authored reusable faction library. One row per faction; the full
 -- faction document (side, name, role templates with optional SlotLoadout v2, vehicle
 -- pool) lives in `doc` jsonb validated against faction-library.schema.json on write.
 -- side/name are projected into columns for listing/uniqueness; owner_id = discord_id
 -- (same key as missions.author_id).
+
 CREATE TABLE IF NOT EXISTS public.user_factions (
     id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     owner_id text NOT NULL,

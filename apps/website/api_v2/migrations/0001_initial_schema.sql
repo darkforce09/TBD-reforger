@@ -1,8 +1,7 @@
--- T-145 Phase 1 — initial schema (FROZEN REFERENCE, do not hand-edit).
--- Generated from `pg_dump --schema-only` of the Go pipeline (00-05 raw SQL +
--- GORM AutoMigrate) — the authoritative DB/wire contract. Verified byte-equal to
--- the Go schema by the G2 round-trip diff. Future schema changes add NEW migration
--- files on top of this one; never edit this file.
+-- Initial schema: the platform's baseline tables, enums, indexes and views — the frozen starting
+-- point every later migration builds on. Never edit this file; a schema change adds a NEW
+-- migration on top of it.
+
 
 
 

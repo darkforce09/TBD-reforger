@@ -298,7 +298,8 @@ The schema is not necessarily wrong; a rewritten comment trips it too. Do not re
 this.
 
 ```bash
-cargo xtask db repair-migration-checksum --version N
+cargo xtask db repair-migration-checksum --version N   # one migration
+cargo xtask db repair-migration-checksum               # every applied migration whose file changed
 ```
 
 The command recovers the bytes the database applied from the migration's git history, compares

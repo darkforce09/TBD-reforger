@@ -1,35 +1,24 @@
--- T-262 — the schema's first foreign keys.
+-- The schema's foreign keys.
 --
--- VERIFIED ON MAIN BEFORE WRITING A LINE. `grep -rniE 'foreign key|references'` over
--- apps/website/api/migrations/ returns exactly ONE hit, and it is the comment in
--- 0011_events_server_modpack.sql:14 citing this ticket. Every relationship below was
--- unconstrained free text or a bare uuid until this file.
+-- Until this file, every relationship below was unconstrained free text or a bare uuid. What
+-- that cost, measured in the tree rather than asserted:
 --
--- ── WHAT THAT COST, MEASURED IN THE TREE RATHER THAN ASSERTED ────────────────────────────────
---
---   * `handlers/events.rs::remove_event_mission` (~line 862) deletes `event_registrations` and
---     `orbat_slots` for the detached mission and **does not touch `orbat_reservations`**. Every
---     mission detached from an event since the endpoint shipped has left its squad reservations
---     behind, keyed to an `event_mission_id` that no longer exists. Constraint 4 below fixes
---     that with no handler edit; the perturbation section proves the cascade fires.
---   * `handlers/events.rs:538-541` documents a 500 whose sole cause is a missing FK —
---     "`missions.current_version_id` carries **no foreign key** … so a mission can name a
---     version row that does not exist". Constraint 18.
---   * `handlers/servers.rs:588-604` refuses to implement a server purge at all, in prose, and
---     names the blocker: "removing a row safely means deleting the two dependent rows in one
---     transaction, and that belongs with the migration that adds the missing `ON DELETE`
---     foreign keys". Constraints 10 and 11 are that migration.
+--   * `remove_event_mission` deletes `event_registrations` and `orbat_slots` for the detached
+--     mission and does not touch `orbat_reservations`. Every mission detached from an event
+--     left its squad reservations behind, keyed to an `event_mission_id` that no longer exists.
+--     Constraint 4 below fixes that with no handler edit.
+--   * `missions.current_version_id` could name a version row that does not exist, and the
+--     event dossier answered that with a 500. Constraint 18.
+--   * A server row could not be purged safely: removing it means deleting the two dependent
+--     rows in one transaction, which belongs with the migration that adds the missing
+--     `ON DELETE` foreign keys. Constraints 10 and 11 are that migration.
 --
 -- ── WHAT THIS FILE DELIBERATELY DOES NOT DO ─────────────────────────────────────────────────
 --
--- It does not make `DELETE /api/v1/events/:id` cascade. That handler
--- (`handlers/events.rs::delete_event`) writes `deleted_at = now()` and nothing else, while the
--- SPA's confirm dialog (`frontend/src/event_manager.rs:985`) tells the operator "The operation,
--- its attached missions' ORBATs, and all registrations are removed. This cannot be undone."
--- The dialog is wrong about the handler, and the handler is not this slice's file. The FK that
--- would make the dialog true — `event_missions.event_id … ON DELETE CASCADE` — is constraint 1,
--- so the day that handler is changed to a hard delete the cascade is already in place and
--- correct. Reported, not fixed here.
+-- It does not make `DELETE /api/v1/events/:id` cascade. That handler (`delete_event`) writes
+-- `deleted_at = now()` and nothing else. The FK that would make a hard delete cascade —
+-- `event_missions.event_id … ON DELETE CASCADE` — is constraint 1, so the day that handler is
+-- changed to a hard delete the cascade is already in place and correct.
 --
 -- ═══ THE INVENTORY ═══════════════════════════════════════════════════════════════════════════
 --
@@ -53,9 +42,9 @@
 --     12  match_player_stats.match_id         → matches(id)
 --
 --    2/3/4 are exactly what `remove_event_mission` does by hand, minus the bug: it deletes the
---    first two and forgets the third. 8 is what `handlers/modpacks.rs::delete_modpack` does by
---    hand. Where the handler already cascades, the constraint agrees with it; where it forgets,
---    the constraint finishes the job.
+--    first two and forgets the third. 8 is what `delete_modpack` does by hand. Where the handler
+--    already cascades, the constraint agrees with it; where it forgets, the constraint finishes
+--    the job.
 --
 -- B. REFERENCE → RESTRICT. A pointer between two independently-owned entities, where the crate
 --    ALREADY refuses the delete in a handler and answers 409. The constraint is the same answer
@@ -63,13 +52,13 @@
 --    tool, a script).
 --
 --     13  event_missions.mission_id           → missions(id)
---            `missions.rs::delete_mission` counts `event_missions` and 409s if any exist.
+--            `delete_mission` counts `event_missions` and 409s if any exist.
 --     14  registry_items.modpack_id           → modpacks(id)
 --     15  servers.required_modpack_id         → modpacks(id)
 --     16  events.modpack_id                   → modpacks(id)
---            `modpacks.rs::delete_modpack` counts all three of the above and 409s.
+--            `delete_modpack` counts all three of the above and 409s.
 --     17  events.server_id                    → servers(id)
---            `servers.rs::deactivate_server` never hard-deletes, so this can only fire against
+--            `deactivate_server` never hard-deletes, so this can only fire against
 --            a manual DELETE — which is precisely the caller the handler cannot reach.
 --
 --    RESTRICT rather than the NO ACTION default on purpose: NO ACTION defers its check to the
@@ -81,18 +70,17 @@
 -- C. NULLABLE POINTER → SET NULL. The referencing row survives its target; the pointer does not.
 --
 --     18  missions.current_version_id         → mission_versions(id)
---            The 500 at events.rs:538. A mission with no published version is a legal, handled
---            state (409 "publish a version"); a mission naming a version that is not there is
---            not. SET NULL converts the second into the first.
+--            A mission with no published version is a legal, handled state (409 "publish a
+--            version"); a mission naming a version that is not there is not. SET NULL converts
+--            the second into the first.
 --     19  event_registrations.slot_id         → orbat_slots(id)
---            `events.rs:1540` calls this column and `orbat_slots.assigned_to` "a denormalised
---            duplicate". When a seat row goes, the registration stays (the person is still
---            registered) and becomes bench/waitlist-shaped, which is a state the readers
---            already handle. CASCADE here would silently unregister people when a leader
---            re-materialises an ORBAT.
+--            This column and `orbat_slots.assigned_to` are a denormalised pair. When a seat row
+--            goes, the registration stays (the person is still registered) and becomes
+--            bench/waitlist-shaped, which is a state the readers already handle. CASCADE here
+--            would silently unregister people when a leader re-materialises an ORBAT.
 --
--- D. IDENTITY. The three columns the ticket names — `assigned_to`, `discord_id`, `reserved_by` —
---    plus the three other tables of the same shape. THE RULE, and it is narrow on purpose:
+-- D. IDENTITY. The association columns `assigned_to`, `discord_id`, `reserved_by`, plus the
+--    three other tables of the same shape. THE RULE, and it is narrow on purpose:
 --
 --        constrain a discord_id ONLY when the row is a pure ASSOCIATION — its whole content is
 --        "this user ↔ this thing" and it is written by an authenticated session about itself.
@@ -110,12 +98,12 @@
 --    23 is the one with a security consequence: a refresh token outliving its user is a live
 --    credential for an account that no longer exists.
 --
---    Nothing in the crate deletes a `users` row today — there is no `DELETE FROM users`, and
---    nothing writes `users.deleted_at` either, though readers check it. So these six ON DELETE
---    actions are unreachable through the API as it stands; their value today is the INSERT-side
---    check, and their value tomorrow is that the first user-deletion feature to be written
---    cannot ship the orphan bug. Stated rather than implied, because "the cascade is tested" and
---    "the cascade is reachable from a route" are different claims and only the first is true.
+--    Nothing in the crate deletes a `users` row — there is no `DELETE FROM users`, and nothing
+--    writes `users.deleted_at` either, though readers check it. So these six ON DELETE actions
+--    are unreachable through the API as it stands; their value today is the INSERT-side check,
+--    and their value tomorrow is that the first user-deletion feature to be written cannot ship
+--    the orphan bug. Stated rather than implied, because "the cascade is tested" and "the
+--    cascade is reachable from a route" are different claims and only the first is true.
 --
 -- ═══ THE ABSTENTIONS — twenty-one relationships examined and left alone ══════════════════════
 --
@@ -132,7 +120,7 @@
 --     that is not actively wrong is NO ACTION, and a constraint whose delete behaviour is "refuse
 --     everything" buys nothing here: every one of these columns is written from an authenticated
 --     extractor, so the referent already exists by construction. Eleven constraints for zero
---     delete semantics and zero new guarantees is the over-constraining this ticket warns about.
+--     delete semantics and zero new guarantees is over-constraining.
 --
 -- (ii) DOCUMENTS OWNED BY A USER — user_factions.owner_id, leave_requests.discord_id,
 --     warnings.discord_id. These are association-shaped but carry a BODY (a faction library, a
@@ -143,43 +131,31 @@
 --
 -- (iii) EXTERNAL IDENTITY — match_player_stats.discord_id, identity_link_codes.discord_id.
 --     `discord_id` here is a Discord snowflake that may not correspond to a local user yet. That
---     is the designed state, not a defect: `0001_initial_schema.sql:289` filters the leaderboard
---     with `WHERE discord_id IS NOT NULL`, T-326's link-confirm exists to *claim* those rows
---     later, and `identity_link_codes` is by definition minted before the identity is bound.
+--     is the designed state, not a defect: the leaderboard filters with
+--     `WHERE discord_id IS NOT NULL`, link-confirm exists to *claim* those rows later, and
+--     `identity_link_codes` is by definition minted before the identity is bound.
 --
 -- (iv) POINTERS TAKEN VERBATIM FROM A REQUEST BODY WITH NO EXISTENCE CHECK — matches.event_id,
 --     matches.mission_id, server_statuses.current_match_id, fire_missions.event_id.
---     THIS IS THE MOST IMPORTANT ABSTENTION AND THE ONLY ONE I CHANGED MY MIND ON.
---     There is no SQLSTATE 23503 handler anywhere in the crate — `handlers/mod.rs:51` has
---     `is_unique_violation` (23505) and nothing else — so an FK violation reaches the client as
---     a **500**. All four columns are bound straight from a payload:
---       `telemetry.rs::upsert_match` binds event_id/mission_id with no lookup;
---       `telemetry.rs::ingest_server_status` binds `parse_uuid_opt(input.current_match_id)`;
---       `field_tools.rs:246-254` parses `event_id` and explicitly comments that a wrong one
---       makes the fire mission invisible — it knows, and still does not check.
---     Constraining these turns "one attribution pointer is wrong" into "the entire match ingest
---     500s and the scoreline is lost", on an endpoint with no human in the loop. The match row
---     itself is valuable; only the pointer is bad. The right fix is a 400/409 in those handlers,
---     and once it exists these four become safe — filed, not done here (not my files).
---     `matches.mission_id` is independently blocked: `seeds/content_golden.sql:362` inserts a
---     match naming mission `…c000-000000000001`, which that same file does not insert until
---     line 454, and `persist_seed` (wave.sh:1278) feeds the seed statement-by-statement in
---     autocommit — so even DEFERRABLE INITIALLY DEFERRED would not save it. A migration that
---     makes the golden seed unloadable breaks every fresh environment; wave.sh:1284 has an error
---     message for exactly that, and I would have earned it.
+--     Constraining one of these needs a handler that maps SQLSTATE 23503 onto a 400 naming the
+--     pointer; without it a violation reaches the client as a **500**, and on the match ingest —
+--     an endpoint with no human in the loop — "one attribution pointer is wrong" becomes "the
+--     entire scoreline is lost". The match row itself is valuable; only the pointer is bad. 0019
+--     adds the first three once `match_telemetry::handlers::ingest_parsing::foreign_key_error`
+--     exists; `fire_missions.event_id` waits for the same arm in its own handler.
 --
 --     `server_statuses.server_id` (constraint 10) is the one column of this shape that IS
 --     constrained, and the difference is what the unconstrained write produces. A heartbeat for
 --     an unknown server writes a `server_statuses` row that `list_servers` — which drives off
---     `servers` — can never read: garbage, invisible, accumulating forever, and named as a
---     defect in `handlers/servers.rs:588-591`. Failing loudly beats writing that.
+--     `servers` — can never read: garbage, invisible, accumulating forever. Failing loudly beats
+--     writing that.
 --
 -- (v) user_discord_roles.discord_role_id → discord_roles. NOT constrained, and this one would
---     have broken production login. `services/role_sync.rs:31-49` stores every snowflake Discord
---     returns, and its own doc comment says why: "unmapped ids are still stored so a later admin
---     mapping + resync promotes them". An unmapped role HAS NO `discord_roles` ROW. The FK would
---     have made `sync_roles` fail for any member holding a role the admin has not mapped yet —
---     i.e. the OAuth callback, for most of the guild.
+--     break production login. `identity_and_access::services::discord_role_sync` stores every
+--     snowflake Discord returns, and its own doc comment says why: unmapped ids are still stored
+--     so a later admin mapping + resync promotes them. An unmapped role HAS NO `discord_roles`
+--     ROW. The FK would make `sync_roles` fail for any member holding a role the admin has not
+--     mapped yet — i.e. the OAuth callback, for most of the guild.
 --
 -- ═══ ON DELETE ONLY — NO `ON UPDATE` ════════════════════════════════════════════════════════
 --
@@ -193,10 +169,9 @@
 -- A `NOT VALID` + later `VALIDATE CONSTRAINT` split exists to avoid holding a lock while a huge
 -- child table is scanned. It cannot help here and would cost something real:
 --
---   * sqlx runs one migration file in ONE transaction, and `persist_apply_one` (wave.sh:1264)
---     wraps the psql path in `BEGIN … COMMIT` for the same reason. Both halves of a split inside
---     this file would hold their locks to the same COMMIT, so the split buys exactly nothing
---     unless the VALIDATE lands in a LATER migration file.
+--   * sqlx runs one migration file in ONE transaction. Both halves of a split inside this file
+--     would hold their locks to the same COMMIT, so the split buys exactly nothing unless the
+--     VALIDATE lands in a LATER migration file.
 --   * Putting the VALIDATE in a later file ships a window — one release, maybe more — in which
 --     the constraint is recorded but existing rows were never checked. `NOT VALID` still
 --     enforces on new writes, so the window would hide precisely the pre-existing orphans this
@@ -206,21 +181,17 @@
 --     servers) it is a single sequential scan measured in milliseconds on anything this platform
 --     has produced. Every other child is bounded by content the operator authors by hand.
 --
--- ═══ NEUTRALISE FIRST, THEN ENFORCE — THE T-555 LESSON ══════════════════════════════════════
+-- ═══ NEUTRALISE FIRST, THEN ENFORCE ═════════════════════════════════════════════════════════
 --
--- 0017 died on arrival on every populated database because it created a unique index without
--- deduplicating the rows already there. ADDING A FOREIGN KEY TO A TABLE THAT HOLDS ORPHANS
--- FAILS IDENTICALLY, and migrations run on boot (`bin/api.rs:26`), so that is a dead API rather
--- than a failed deploy step. So the shape is 0010's and 0017's: make the offending rows
--- non-offending FIRST, in the same transaction, recording what was taken, then apply the DDL.
+-- ADDING A FOREIGN KEY TO A TABLE THAT HOLDS ORPHANS FAILS, and migrations run on boot, so that
+-- is a dead API rather than a failed deploy step. So the shape is 0010's and 0017's: make the
+-- offending rows non-offending FIRST, in the same transaction, recording what was taken, then
+-- apply the DDL.
 --
--- MEASURED, not assumed: `tbd_gate_migrate_persist` — the populated database the gate never
--- drops — was cloned and censused across all 46 candidate relationships on 2026-07-30. Zero
--- orphans, in all 46. That is a fact about ONE database. Production and the operator's dev DB
--- were not examined (the live `tbd_reforger` is off limits mid-session), and a cleanup that only
--- runs where I could look is not a cleanup. The steps below are therefore written to match zero
--- rows on a clean database and to be correct on a dirty one, and they were proven against a
--- database DELIBERATELY SEEDED WITH ORPHANS, not against the clean one.
+-- The steps below match zero rows on a clean database and are correct on a dirty one: they were
+-- proven against a database DELIBERATELY SEEDED WITH ORPHANS (each `ADD CONSTRAINT` was first
+-- shown to be REJECTED with 23503 when the sweep above it was removed), not only against a clean
+-- census.
 --
 -- WHY A NEW QUARANTINE TABLE AND NOT 0010's `url_quarantine`. 0010 states the reuse argument
 -- ("one table beats four") and 0017 took it. It does not stretch to this job: `url_quarantine`
@@ -352,7 +323,7 @@ DELETE FROM public.mission_bookmarks x
  WHERE NOT EXISTS (SELECT 1 FROM public.missions p WHERE p.id = x.mission_id);
 
 -- AFTER the mission_versions sweep above, so it also catches a pointer this file just broke.
--- This is the 500 at handlers/events.rs:538 — a mission naming a version that is not there.
+-- This is the event dossier's 500 — a mission naming a version that is not there.
 INSERT INTO public.fk_orphans (table_name, relationship, action, row_data, ticket)
 SELECT 'missions', 'missions.current_version_id -> mission_versions.id', 'nulled', to_jsonb(x), 'T-262'
   FROM public.missions x
@@ -417,8 +388,8 @@ UPDATE public.events x SET modpack_id = NULL
 -- §5  Servers → statuses, history; and the event's server pointer.
 -- ═════════════════════════════════════════════════════════════════════════════════════════════
 
--- The rows handlers/servers.rs:588-591 predicted: a heartbeat from a host whose server row is
--- gone, invisible to every read endpoint, accumulating.
+-- Rows a heartbeat from a host whose server row is gone leaves behind: invisible to every read
+-- endpoint, accumulating.
 INSERT INTO public.fk_orphans (table_name, relationship, action, row_data, ticket)
 SELECT 'server_statuses', 'server_statuses.server_id -> servers.id', 'deleted', to_jsonb(x), 'T-262'
   FROM public.server_statuses x
@@ -526,8 +497,8 @@ DELETE FROM public.mission_bookmarks x
 -- index Postgres runs the referential-action query as a sequential scan ONCE PER DELETED PARENT
 -- ROW, which is what turns a modpack delete into N scans of the registry.
 --
--- Parents that are genuinely hard-deleted: `modpacks` (modpacks.rs:483), `orbat_slots` and
--- `event_missions` (events.rs:878/882). Everything else this file references is soft-deleted
+-- Parents that are genuinely hard-deleted: `modpacks` (`delete_modpack`), `orbat_slots` and
+-- `event_missions` (`remove_event_mission`). Everything else this file references is soft-deleted
 -- (`events`, `missions`, `users`) or deactivated in place (`servers`), so its ON DELETE action
 -- is not on a hot path and an index would be write cost for nothing.
 --
@@ -546,7 +517,7 @@ DELETE FROM public.mission_bookmarks x
 CREATE INDEX IF NOT EXISTS idx_event_registrations_slot_id
     ON public.event_registrations USING btree (slot_id);
 
--- `modpacks` is hard-deleted by handlers/modpacks.rs:483. Neither of these two columns appears
+-- `modpacks` is hard-deleted by `delete_modpack`. Neither of these two columns appears
 -- in any index in 0001-0017.
 CREATE INDEX IF NOT EXISTS idx_servers_required_modpack_id
     ON public.servers USING btree (required_modpack_id);

@@ -1,12 +1,12 @@
 -- Seed: discord_roles — maps Discord guild role snowflakes to web permission tiers.
 --
--- This is DATA, not schema, so it is NOT run by the boot migration pipeline
--- (internal/db/db.go). Apply it explicitly after the DB is up and migrated:
+-- This is DATA, not schema, so it is NOT run by the boot migration pipeline.
+-- Apply it explicitly after the DB is up and migrated:
 --
 --   cargo xtask db seed                       # applies this file via the compose db
---   # or: podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
+--   # or: podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger < apps/website/api_v2/seeds/discord_roles.sql
 --
--- How resolution works (see internal/services/role_sync.go::resolveRole):
+-- How resolution works (`identity_and_access::services::discord_role_sync::resolve_role`):
 --   * A user's web role is the mapped_role of their HIGHEST-priority matching row.
 --   * mapped_role NULL = cosmetic (no permission grant).
 --   * A user with no matching mapped row falls back to 'enlisted' (the default),
@@ -16,9 +16,8 @@
 -- .env). For a different guild, replace them with that guild's role snowflakes.
 -- Idempotent: re-running updates name/mapped_role/priority in place.
 --
--- Squad Leader / leader (priority 30): NOT seeded. The previous row used the
--- placeholder snowflake 1517290000000000000 (T-247 / T-428). No real guild role
--- id is committed in-repo (see docs/website/DEV_RUNBOOK.md §5). After a login,
+-- Squad Leader / leader (priority 30): NOT seeded — no real guild role id is
+-- committed in-repo (see docs/website/DEV_RUNBOOK.md §5). After a login,
 -- read snowflakes from user_discord_roles and INSERT the real mapping:
 --
 --   INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority)
@@ -28,11 +27,11 @@
 --         mapped_role = EXCLUDED.mapped_role,
 --         priority = EXCLUDED.priority;
 --
--- Then POST /api/v1/admin/roles/sync (or wait for the T-428 nightly resync).
+-- Then POST /api/v1/admin/roles/sync (or wait for the nightly resync).
 --
--- T-487: clear the orphan placeholder from dirty DBs. INSERT no longer seeds it
--- (T-428), but re-cargo xtask db seed must DELETE leftovers so Squad Leader/leader does not
--- linger after a seed refresh.
+-- The DELETE below clears the placeholder snowflake 1517290000000000000 an earlier
+-- version of this seed inserted for Squad Leader/leader, so a seed refresh does not
+-- leave it lingering.
 
 DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000';
 

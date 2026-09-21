@@ -1,8 +1,9 @@
--- T-068.9: engine-derived compatibility edges between registry items
+-- Engine-derived compatibility edges between registry items
 -- (registry-compat.schema.json#/$defs/edge), modpack-scoped like registry_items.
 -- Nodes are full Enfusion resource_name strings (graph identity — no FK, matching
 -- the registry_items precedent). edge_type is plain text so new edge families ship
 -- via a schema-enum bump alone, with no DDL change.
+
 CREATE TABLE registry_compat (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     modpack_id uuid NOT NULL,

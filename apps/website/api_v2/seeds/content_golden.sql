@@ -1,4 +1,4 @@
--- content_golden.sql — T-194
+-- content_golden.sql — the populated content golden
 --
 -- THE POPULATED CONTENT GOLDEN. This is the database state that the committed
 -- fixture corpus at apps/website/frontend/tests/fixtures/api/ was captured from.
@@ -43,9 +43,9 @@
 --      "upcoming" stops being upcoming, bump §6/§8 and recapture — do not switch
 --      to now(), that breaks rule 1.
 --
---   5. SECTION ORDER IS A FOREIGN-KEY ORDER, NOT A NARRATIVE ONE (T-585). Every
---      statement here is fed to psql INDIVIDUALLY, IN AUTOCOMMIT
---      (`persist_seed`, wave.sh:1278), so a row may only name a parent that an
+--   5. SECTION ORDER IS A FOREIGN-KEY ORDER, NOT A NARRATIVE ONE. Every
+--      statement here is fed to psql INDIVIDUALLY, IN AUTOCOMMIT by the seed
+--      applier, so a row may only name a parent that an
 --      EARLIER statement already inserted. `DEFERRABLE INITIALLY DEFERRED` does
 --      not help — there is no enclosing transaction to defer to. Two forward
 --      references lived here undetected until migration `0019` constrained the
@@ -73,9 +73,7 @@
 -- total_deployments / attendance_rate are the denormalized counters that
 -- GET /me/deployments reports as total_operations / attendance_rate.
 --
--- T-590: this used to say they were "set here to agree with the 17
--- match_player_stats rows seeded in §7". That was wrong twice over. §7 seeds
--- ELEVEN match_player_stats rows (lines 491-543), and only TWO of them belong to
+-- §7 seeds ELEVEN match_player_stats rows, and only TWO of them belong to
 -- this user -- which is why service_history in the captured
 -- GET__me__deployments.json golden has exactly two entries. total_deployments is
 -- a standalone denormalized career counter; it is NOT derived from the seeded
@@ -117,13 +115,13 @@ ON CONFLICT (id) DO UPDATE SET
 -- briefing IS '' AND NOT NULL, AND THAT IS LOad-BEARING. `missions.briefing` and
 -- `missions.thumbnail_url` are both nullable, and every mission query in the
 -- codebase COALESCEs them to '' — except the dossier lookup inside get_event
--- (handlers/events.rs, `SELECT title, terrain, game_mode, briefing,
+-- (`operations::handlers::event_listing`, `SELECT title, terrain, game_mode, briefing,
 -- thumbnail_url FROM missions`), which decodes straight into String. A NULL in
 -- either column there takes the ENTIRE Event Hub down with
 --   500 "error occurred while decoding column 3: unexpected null"
 -- The API's own create path always writes '' so it never hits this, but a seed
 -- or a hand-written row does. Empty string is what the API writes, so empty
--- string is what this file writes — see the T-194 report for the bug.
+-- string is what this file writes.
 INSERT INTO missions (id, title, author_id, terrain, game_mode, weather, time_of_day,
                       max_players, status, thumbnail_url, briefing, created_at, updated_at)
 VALUES ('512d8658-7025-4a70-94e9-a1b44a7aa155', 'Operation Byte Parity', '000000000000000001',
@@ -225,7 +223,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ═══════════════════════════════════════════════════════════════════════════
 -- §3  Servers. GET /servers is `{data:[{...server, status, required_modpack}]}`.
 --
---     THE `server_statuses` ROWS ARE IN §7, NOT HERE (rule 5, T-585). The
+--     THE `server_statuses` ROWS ARE IN §7, NOT HERE (rule 5). The
 --     primary server's status names a `matches` row, `matches` names a §6
 --     mission, and 0019 constrains both — so the status INSERT has to run after
 --     both, and it is the last statement of §7. The three servers stay here
@@ -235,7 +233,7 @@ ON CONFLICT (id) DO NOTHING;
 --     frame therefore serializes as `58.7`, NOT `58`. The seeded values are
 --     deliberately fractional — an integral 60.0 would hide the frontend DTO's
 --     `server_fps: i64` from the fixture, which is exactly how that mismatch
---     shipped in the first place. See the T-194 report.
+--     shipped in the first place.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 INSERT INTO servers (id, name, ip, port, required_modpack_id, is_active) VALUES
@@ -358,7 +356,7 @@ ON CONFLICT (id) DO UPDATE SET
 --     separate query over `status='pending_approval'` — that queue is empty
 --     unless at least one mission sits in that state, which is §6's other job.
 --
---     ORDERING (rule 5, T-585): this section used to be §7, AFTER the matches.
+--     ORDERING (rule 5): this section sits ahead of the matches.
 --     `matches` names mission …c000-000000000001 from this block, and 0019
 --     constrains `matches.mission_id`, so the missions have to land first.
 --
@@ -461,9 +459,9 @@ ON CONFLICT DO NOTHING;
 --     The final statement in this file refreshes the MV; without it the
 --     leaderboard stays empty no matter how many stat rows exist.
 --
---     ORDERING (rule 5, T-585): this section used to be §6, ahead of the
---     missions, and `server_statuses` used to sit in §3 beside the servers.
---     Both were forward references, and 0019 turns both into hard errors:
+--     ORDERING (rule 5): this section sits after the missions, and
+--     `server_statuses` sits here rather than in §3 beside the servers.
+--     Both would otherwise be forward references, which 0019 turns into hard errors:
 --       * `matches.mission_id` names a §6 mission → §6/§7 swapped.
 --       * `server_statuses.current_match_id` names …f000-000000000003 below →
 --         the status row moved down here, after the match it points at. The
@@ -484,8 +482,8 @@ VALUES
   -- Still running: no ended_at, outcome pending, no replay. This is the match id
   -- the primary server reports as current_match_id — the `server_statuses`
   -- INSERT that names it is the last statement in this section, below.
-  -- '' (not NULL) for winning_faction / aar_replay_url — T-331 / 0009 comment: same
-  -- canonical empty as telemetry.rs COALESCE($8, '') so NOT NULL can land.
+  -- '' (not NULL) for winning_faction / aar_replay_url — the canonical empty (0015):
+  -- the create path COALESCEs to '', so NOT NULL holds.
   ('00000000-0000-4000-f000-000000000003', 'rf-match-20260726-01', NULL,
    '512d8658-7025-4a70-94e9-a1b44a7aa155', 'everon',
    '2026-07-26 04:32:00+00', NULL, 'pending', '', '', '2026-07-26 04:32:10+00')
@@ -691,11 +689,10 @@ VALUES
   -- entries and the ORBAT selector has to render a faction split at all.
   ('00000000-0000-4000-5000-000000000014', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Team Leader', 'AK-74 + Optic', 'TL', 0, NULL, NULL),
-  -- T-331: was double-seated with BLUFOR/Alpha#1 above on the same discord_id
-  -- 000000000000000005. Registration §9 names the earlier seat (…0005). Keep
-  -- assigned_to NULL so this seed stays compatible with idx_orbat_slots_em_assigned
-  -- (0017 / T-511: UNIQUE (event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL).
-  -- Legacy two-seat test seed in events.rs was retired with that index.
+  -- Free seat: registration §9 names this member's earlier seat (…0005), and
+  -- idx_orbat_slots_em_assigned (0017: UNIQUE (event_mission_id, assigned_to)
+  -- WHERE assigned_to IS NOT NULL) allows one seat per member, so assigned_to
+  -- stays NULL here.
   ('00000000-0000-4000-5000-000000000015', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Designated Marksman', 'SVD', 'DMR', 1,
    NULL, NULL),

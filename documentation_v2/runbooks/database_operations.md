@@ -11,7 +11,7 @@ Migrations reside in `apps/website/api_v2/migrations/` and follow strictly monot
 
 - **Execution**: Migrations run automatically on Axum API startup via `sqlx::migrate!()`.
 - **Integrity**: Each migration runs in a transaction. The `_sqlx_migrations` table records applied checksums.
-- **Rules**: Migrations are append-only. Never edit an existing migration file that has already shipped to staging or production — `sqlx` hashes the whole file, so even a comment change stops every database that applied it. `tests/migrations_are_immutable.rs` pins each file's checksum; a comments-only edit that has already shipped is repointed with `cargo xtask db repair-migration-checksum`, never by editing `_sqlx_migrations` by hand.
+- **Rules**: Migrations are append-only for statements — a shipped migration's DDL and data changes are never edited; the schema moves with a new migration. `sqlx` hashes the whole file, so even a comment change stops every database that applied it: `tests/migrations_are_immutable.rs` pins each file's checksum, a comments-only edit updates that pin, and `cargo xtask db repair-migration-checksum` repoints every database that applied the old bytes (the deploy runs it on the server before restarting the unit) — never by editing `_sqlx_migrations` by hand.
 
 ---
 

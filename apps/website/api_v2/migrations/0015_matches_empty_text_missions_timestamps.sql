@@ -1,28 +1,24 @@
--- T-331: close two NULL holes that were diagnosed but blocked on seeds/migrations.
+-- Two NULL holes closed at the schema.
 --
 -- 1) matches.winning_faction / matches.aar_replay_url
---    DDL already drafted as a comment at the foot of 0009_role_played_not_null.sql
---    (:56-60). It could not land there because seeds/content_golden.sql inserted
---    literal NULL into those columns under ON CONFLICT DO UPDATE — a backfill-only
---    migration was self-defeating. The seed now writes '' (three edits). Apply the
---    constraint here in the same landing.
---    Semantically '' is canonical: the mod omits winning_faction when there is no
---    winner; telemetry.rs create already COALESCE($8, ''). Do NOT touch
---    match_player_stats.command_win (NULL is a real third state).
+--    0009 explains why '' is canonical: the mod omits winning_faction when there is no
+--    winner, and the create path already COALESCEs to ''. It could not constrain them
+--    because the golden seed of the time inserted literal NULL into those columns under
+--    ON CONFLICT DO UPDATE — a backfill-only migration was self-defeating. The seed now
+--    writes '', so the constraint lands here in the same landing.
+--    Do NOT touch match_player_stats.command_win (NULL is a real third state).
 --
 -- 2) missions.created_at / missions.updated_at
---    0001_initial_schema.sql:374-375 declared them nullable with no DEFAULT, unlike
---    0003_registry_compat / 0006_user_factions (DEFAULT now() NOT NULL). Hand-written
---    INSERTs that omit the columns store NULL; T-330 needed a three-link COALESCE
---    terminating in the Go zero time because both ends can be NULL. Backfill, then
+--    The initial schema declared them nullable with no DEFAULT, unlike the later tables
+--    (DEFAULT now() NOT NULL). Hand-written INSERTs that omit the columns store NULL, and
+--    every reader needed a COALESCE chain because both ends could be NULL. Backfill, then
 --    DEFAULT now() + NOT NULL.
 --
--- 3) Partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to
---    IS NOT NULL was deferred here at T-331: content_golden double-seat was already
---    fixed, but tests/events.rs still seeded legacy two-seat state for T-318 recovery,
---    and a partial unique cannot be DEFERRABLE. That index landed later in
---    0017_orbat_slots_assigned_partial_unique.sql (T-511), which also retired the
---    two-seat seed.
+-- 3) The partial unique index on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to
+--    IS NOT NULL is 0017's: a partial unique index cannot be DEFERRABLE, and the seats a
+--    populated database already double-booked have to be freed in the same transaction that
+--    creates it.
+
 
 UPDATE matches SET winning_faction = '' WHERE winning_faction IS NULL;
 UPDATE matches SET aar_replay_url = '' WHERE aar_replay_url IS NULL;

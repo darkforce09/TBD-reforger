@@ -1,32 +1,32 @@
--- T-405 — retire the stored `javascript:` payloads T-391 could not reach.
+-- Quarantine and clear the non-http(s) values stored in `matches.aar_replay_url`.
 --
--- T-391 shipped `services::text::is_http_url` and enforced it at `upsert_match`, so no NEW
--- non-http(s) value can enter `matches.aar_replay_url` through the API. It could do nothing about
--- rows that were already there, and `frontend/src/deployments.rs` binds that column into an
--- `<a href>` — so until this runs, a pre-guard `javascript:` URL is still one click from executing.
--- T-405 also guards the render sink, which is the belt to this migration's braces: the sink stops
--- a bad value being *rendered*, this stops one being *stored*. Neither makes the other redundant.
+-- `core::text::http_url_guard::is_http_url` is enforced at `upsert_match`, so no NEW non-http(s)
+-- value can enter the column through the API. Rows written before that guard existed can still
+-- hold a `javascript:` URL, and the service record binds the column into an `<a href>` — until
+-- this runs, such a value is one click from executing. The frontend also guards the render sink,
+-- which is the belt to this migration's braces: the sink stops a bad value being *rendered*, this
+-- stops one being *stored*. Neither makes the other redundant.
 --
 -- ── QUARANTINE, NOT DELETE ────────────────────────────────────────────────────────────────────
 --
 -- Every offending value is copied into `url_quarantine` before the column is NULLed. That is what
--- makes it safe for the predicate below to be as strict as it is: the instruction was to be
--- conservative about destroying legitimate data, and the honest way to honour that is to destroy
--- nothing rather than to guess leniently and leave live payloads behind. A false positive here
--- costs one `UPDATE ... FROM url_quarantine` to undo; a false negative costs an XSS.
+-- makes it safe for the predicate below to be as strict as it is: the honest way to be
+-- conservative about destroying legitimate data is to destroy nothing rather than to guess
+-- leniently and leave live payloads behind. A false positive here costs one
+-- `UPDATE ... FROM url_quarantine` to undo; a false negative costs an XSS.
 --
 -- The table is deliberately generic (`table_name` / `column_name` / `row_id`). Four more columns
--- share this exact defect and are filed as follow-ups — `announcements.thumbnail_url`,
--- `events.banner_image_url`, `missions.thumbnail_url`, `users.avatar_url` — and each will want to
--- quarantine the same way. One table beats four.
+-- carry URLs the same way — `announcements.thumbnail_url`, `events.banner_image_url`,
+-- `missions.thumbnail_url`, `users.avatar_url` — and a backfill of any of them quarantines the
+-- same way. One table beats four.
 --
 -- ── THE PREDICATE, AND WHERE IT DISAGREES WITH THE RUST GUARD ─────────────────────────────────
 --
--- `looks_like_http_url` is an APPROXIMATION of `services::text::is_http_url`. It has to be: the
--- Rust guard runs a full WHATWG URL parser, and Postgres has no such thing. The name says
--- "looks like" rather than "is" for that reason. The divergences are enumerated here and PINNED
--- BY A TEST — `apps/website/api/tests/aar_replay_url_backfill.rs` runs this function and the Rust
--- guard over the same shared case table and fails if the disagreement set changes.
+-- `looks_like_http_url` is an APPROXIMATION of `core::text::http_url_guard::is_http_url`. It has
+-- to be: the Rust guard runs a full WHATWG URL parser, and Postgres has no such thing. The name
+-- says "looks like" rather than "is" for that reason. The divergences are enumerated here and
+-- PINNED BY A TEST — `tests/aar_replay_url_backfill.rs` runs this function and the Rust guard
+-- over the same shared case table and fails if the disagreement set changes.
 --
 -- The two are exactly equivalent on the only thing that can execute — THE SCHEME — and on the
 -- characters that can make a browser perceive a different scheme than the one stored (ASCII
@@ -91,10 +91,10 @@ CREATE TABLE IF NOT EXISTS public.url_quarantine (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_url_quarantine_row
     ON public.url_quarantine USING btree (table_name, column_name, row_id);
 
--- The SQL half of `services::text::is_http_url`. Kept as a FUNCTION rather than inlined into the
--- UPDATE for two reasons: the backfills for the other four columns will reuse it verbatim instead
--- of copy-pasting a regex, and a function is a thing a test can call directly — which is how the
--- divergence list above stays honest instead of aspirational.
+-- The SQL half of `core::text::http_url_guard::is_http_url`. Kept as a FUNCTION rather than
+-- inlined into the UPDATE for two reasons: a backfill of another URL column reuses it verbatim
+-- instead of copy-pasting a regex, and a function is a thing a test can call directly — which is
+-- how the divergence list above stays honest instead of aspirational.
 CREATE OR REPLACE FUNCTION public.looks_like_http_url(candidate text)
 RETURNS boolean
 LANGUAGE sql

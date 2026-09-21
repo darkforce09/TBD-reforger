@@ -1,6 +1,7 @@
--- T-068.10.2: registry-items v3 — per-item classification metadata + mod provenance.
+-- Registry items v3: per-item classification metadata + mod provenance.
 -- All columns nullable: v2 envelopes (no fields) import unchanged; the v3 exporter
 -- fills them. kind stays untyped text (v3 kinds need no DDL).
+
 ALTER TABLE public.registry_items
     ADD COLUMN IF NOT EXISTS abstract boolean,
     ADD COLUMN IF NOT EXISTS arsenal_type text,
