@@ -1,19 +1,18 @@
-//! T-866 — port of `scripts/mod/fetch-vanilla-api.sh` → `cargo xtask fetch vanilla-api`.
+//! `cargo xtask fetch vanilla-api` — mirror Bohemia's Arma Reforger Script API reference.
 //!
-//! Mirrors Bohemia's official Arma Reforger Script API (Doxygen HTML) into
-//! `apps/mod/vanilla_reference/apidoc/`. Index-only by default; optional class names or
-//! `--from-file`. Pages are cached and never refetched when non-empty.
+//! Doxygen HTML lands in `apps/mod/vanilla_reference/apidoc/`. Index only by default; class
+//! names or `--from-file` fetch pages too. A cached page that is non-empty is never refetched.
 //!
-//! Preserved oddities (byte-for-byte with bash):
-//! - Browser UA required (wiki 403s curl's default).
-//! - Class-page HTTP misses print `MISS` and are ignored (`|| true`); index miss exits 1.
-//! - `--from-file` with a missing path prints usage and exits 2; a nonexistent file path
-//!   prints grep's error and continues with an empty class list (rc 0).
-//! - Doxygen mangling: `_` → `__` in filenames (`SCR_BaseGameMode` →
-//!   `interfaceSCR__BaseGameMode.html`).
+//! Three behaviours worth knowing before reading the code:
+//! - A browser user agent is required: the upstream host answers 403 to curl's default.
+//! - A missing class page prints `MISS` and does not fail the run — a name that no longer
+//!   exists upstream is information, not a broken mirror. A missing INDEX exits 1: without it
+//!   nothing can be fetched and an empty mirror would look like a successful one.
+//! - Doxygen mangles `_` to `__` in file names, so `SCR_BaseGameMode` is stored as
+//!   `interfaceSCR__BaseGameMode.html`.
 //!
-//! Curl via [`verification_core::proc::Run`]. Offline arms prefer fixture/cache hits; live network
-//! uses the same curl recipe when a page is absent (`TBD_FETCH_DELAY`, default 0.3 s).
+//! Curl runs through [`verification_core::proc::Run`]. Offline runs answer from the cache; a
+//! page that is absent is fetched with the same recipe, `TBD_FETCH_DELAY` (default 0.3 s) apart.
 //!
 //! `TBD_FETCH_VANILLA_API_CURL` — optional absolute path to a curl binary, checked before
 //! `proc::which("curl")`. Production leaves it unset. Tests use it instead of mutating `PATH`

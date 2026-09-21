@@ -1,4 +1,4 @@
-; T-577 — nightly verified database backup for the TBD website.
+; Nightly verified database backup for the TBD website.
 ;
 ; A USER unit, not root cron, to match the API: `cargo xtask deploy website` restarts
 ; `tbd-website-api.service` via `systemctl --user`, and `cargo xtask deploy staging`
@@ -9,8 +9,9 @@
 ; Install (on the deploy host, as the deploy user):
 ;   mkdir -p ~/.config/systemd/user
 ;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
-;       scripts/deploy/tbd-website-backup.service > ~/.config/systemd/user/tbd-website-backup.service
-;   cp scripts/deploy/tbd-website-backup.timer ~/.config/systemd/user/
+;       tools_v2/xtask/deploy/systemd/tbd-website-backup.service \
+;       > ~/.config/systemd/user/tbd-website-backup.service
+;   cp tools_v2/xtask/deploy/systemd/tbd-website-backup.timer ~/.config/systemd/user/
 ;   systemctl --user daemon-reload
 ;   systemctl --user enable --now tbd-website-backup.timer
 ;   loginctl enable-linger $USER        # REQUIRED: without it the timer stops at logout
@@ -18,24 +19,19 @@
 ; Verify:  systemctl --user list-timers tbd-website-backup.timer
 ;          journalctl --user -u tbd-website-backup.service -n 50
 ;
-; ── T-588 — why the placeholder is an ABSOLUTE path (the leading `/`) ─────────────────
-; It used to be the bare token `TBD_REPO_DIR_PLACEHOLDER`, which made this committed file
-; FAIL `systemd-analyze verify --user` with "WorkingDirectory= path is not absolute" — a
-; hard error on an artefact that is correct for what it is. Verifying the template and
-; verifying an installation gave the same red, so the honest signal and the noise were
-; indistinguishable, and the documented answer was "ignore it", which is how a check stops
-; being read at all.
-;
-; `/TBD_REPO_DIR_PLACEHOLDER` is a syntactically valid absolute path, so the committed
-; template verifies clean; the `sed` above matches the leading slash too, so the rendered
-; unit is byte-identical to what it was before.
+; ── Why the placeholder is an ABSOLUTE path (the leading `/`) ────────────────────────
+; `systemd-analyze verify --user` rejects a `WorkingDirectory=` that is not absolute, so a
+; bare `TBD_REPO_DIR_PLACEHOLDER` would make this committed template fail verification even
+; though the template is correct for what it is. `/TBD_REPO_DIR_PLACEHOLDER` is a
+; syntactically valid absolute path, so the template verifies clean, and the `sed` above
+; matches the leading slash so the rendered unit carries the real repository path.
 ;
 ; This does NOT let a naive `cp`-install pass silently. The unit starts, fails at once, and
 ; names the placeholder in the journal:
 ;   Changing to the requested working directory "/TBD_REPO_DIR_PLACEHOLDER": No such file
 ;   or directory
-; — louder and more self-explanatory than the old failure, and raised at the point where it
-; is actionable. Do not "tidy up" the leading slash.
+; — the failure is self-explanatory and is raised at the point where it is actionable. Do
+; not "tidy up" the leading slash.
 
 [Unit]
 Description=TBD website — verified PostgreSQL backup

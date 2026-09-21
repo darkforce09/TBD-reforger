@@ -80,7 +80,7 @@
 //! `Configure` takes a focus point and nothing else has to move.
 //!
 //! ── MEASURED ────────────────────────────────────────────────────────────────────────────────
-//! Every API below is proved by `scripts/mod/compile.sh --probe` against a negative control that
+//! Every API below is proved by `cargo xtask mod compile --probe` against a negative control that
 //! FAILED on invented names (`BaseWorld.GetLobbyOverlookBox`, `Game.SpawnLobbyGhost`,
 //! `SCR_PlayerController.ClearInitialMainEntity` — all three reported "Undefined function").
 //! `BaseWorld.GetBoundBox(out vector, out vector)` is additionally already in production use in

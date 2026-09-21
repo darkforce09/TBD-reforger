@@ -1,4 +1,4 @@
-//! `mcpd` — the persistent enfusion-mcp broker + offline stub (T-165.7).
+//! `mcpd` — the persistent enfusion-mcp broker + offline stub.
 //!
 //! The broker spawns one enfusion-mcp child,
 //! initializes it once (paying the ~35 s index load a single time), and serves tools/call
@@ -9,8 +9,8 @@
 //! ```text
 //!   mcpd --socket <path> [--pidfile <path>]
 //! ```
-//!   Env: ENFUSION_MCP_BIN (resolved by mcp-daemon.sh; .js/.mjs entries run under node,
-//!        anything else execs directly), MCP_DAEMON_IDLE (s, default 1800; 0=never),
+//!   Env: ENFUSION_MCP_BIN (set by `cargo xtask mcp daemon` to the entry it resolved; see
+//!        [`crate::enfusion_tooling::enfusion_mcp_entrypoint`]), MCP_DAEMON_IDLE (s, default 1800; 0=never),
 //!        MCP_DAEMON_MAX_LIFE (s, default 14400; 0=disabled), MCP_CALL_TIMEOUT (s, default
 //!        180), MCP_DEBUG=1.
 //!
@@ -37,6 +37,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{UnixListener, UnixStream};
 use tokio::process::{Child, ChildStdin, Command};
 use tokio::sync::{Mutex, oneshot};
+
+use crate::enfusion_tooling::enfusion_mcp_entrypoint;
 
 fn env_secs(key: &str, default: u64) -> u64 {
     std::env::var(key)
@@ -146,29 +148,6 @@ fn run_stub() -> ExitCode {
 
 /* ───────────────────────────── broker ───────────────────────────── */
 
-/// `.js`/`.mjs` entries run under node; anything else execs directly (T-165.7 — the Node
-/// driver used to hardcode `node <entry>`, which broke native runners like the mcpd stub).
-fn resolve_runner() -> (String, Vec<String>) {
-    if let Ok(bin) = std::env::var("ENFUSION_MCP_BIN")
-        && !bin.is_empty()
-        && PathBuf::from(&bin).exists()
-    {
-        return if bin.ends_with(".js") || bin.ends_with(".mjs") {
-            ("node".into(), vec![bin])
-        } else {
-            (bin, vec![])
-        };
-    }
-    // Pinned node_modules entry relative to scripts/mod/ (the .mjs used import.meta.url;
-    // the binary resolves from the repo root instead).
-    let pinned = crate::browser_testing::server::repo_root()
-        .join("scripts/mod/node_modules/enfusion-mcp/dist/index.js");
-    if pinned.exists() {
-        return ("node".into(), vec![pinned.to_string_lossy().into_owned()]);
-    }
-    ("npx".into(), vec!["-y".into(), "enfusion-mcp".into()])
-}
-
 struct Broker {
     sock: PathBuf,
     pidfile: PathBuf,
@@ -203,8 +182,13 @@ impl Broker {
 
     /// Spawn + initialize the enfusion-mcp child; register the stdout reader.
     async fn start_child(self: &Arc<Self>) -> anyhow::Result<()> {
-        let (prog, args) = resolve_runner();
-        dlog!("spawning {prog} {}", args.join(" "));
+        let runner = enfusion_mcp_entrypoint::resolve(&crate::browser_testing::server::repo_root());
+        let (prog, args) = (runner.program, runner.args);
+        dlog!(
+            "spawning {prog} {} ({})",
+            args.join(" "),
+            runner.source.label()
+        );
         let mut child = Command::new(&prog)
             .args(&args)
             .stdin(std::process::Stdio::piped())

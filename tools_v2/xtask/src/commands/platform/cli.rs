@@ -3,23 +3,23 @@ use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum PlatformCmd {
-    /// T-853: slice worktree lifecycle (port of scripts/mod/slice-worktree.sh)
+    /// Slice worktree lifecycle: create, list, reap and merge per-ticket git worktrees.
     #[command(name = "slice-worktree", disable_help_flag = true)]
     SliceWorktree {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Unattended-run assertions (T-889 port of scripts/platform/preflight.sh)
+    /// Assertions an unattended run must satisfy before it starts.
     Preflight {
-        /// Never exit non-zero (report only) — mirrors bash `--warn`
+        /// Report every finding but always exit 0.
         #[arg(long)]
         warn: bool,
     },
-    /// Platform wave lifecycle (T-853 port of scripts/platform/wave.sh).
+    /// Platform wave lifecycle: Rust slices, gated on cargo and trunk.
     ///
-    /// NOT `scripts/mod/wave.sh` — that is `cargo xtask mod wave` (T-890). Same shape, different
-    /// physics; the two drivers get sibling names under their own program groups rather than one
-    /// of them squatting the bare verb.
+    /// The mod program has its own wave driver at `cargo xtask mod wave`, gated on the Enfusion
+    /// compiler and a headless game boot. Same shape, different physics, so each lives under its
+    /// own program group rather than one of them taking the bare verb.
     #[command(name = "wave", disable_help_flag = true)]
     Wave {
         /// `status` | `prep` | `gate [<base>|--slice T-nnn|--migrate-persist [audit|advance]]` |
@@ -28,7 +28,7 @@ pub(crate) enum PlatformCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// T-913.2: run ONE slice through the agent CLI and write its run receipt under
+    /// Run ONE slice through the agent CLI and write its run receipt under
     /// `.ai/tickets/metrics/<id>/`. Exit-0-without-usage FAILS the run (no file, never
     /// tokens 0). `ticket run` delegates here per ready slice.
     #[command(name = "slice-run")]

@@ -142,8 +142,8 @@ Then promote and create worktrees:
 
 ```bash
 for t in T-245 T-247 T-248; do
-  distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket set-status $t ready"
-  bash scripts/mod/slice-worktree.sh new $t          # subcommand is `new`, NOT `create`
+  distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask ticket set-status $t ready"
+  cargo xtask platform slice-worktree -- new $t      # subcommand is `new`, NOT `create`
 done
 git worktree list          # all three must show the same commit as main
 ```
@@ -212,7 +212,7 @@ report which file and why — do not widen silently. Siblings running right now 
    verdict back over correct source. Measured twice. Check the file, do not believe the tool.
 4. COMMIT EARLY AND OFTEN. Budget is tight and you may be stopped mid-flight. Committed work
    survives; uncommitted work is lost. Leave the tree COMMITTED AND CLEAN whenever you pause.
-5. cargo / rustfmt / xtask / make / ./scripts/ticket DO NOT RUN IN THIS CONTAINER (glibc 2.36 vs
+5. cargo / rustfmt / xtask DO NOT RUN IN THIS CONTAINER (glibc 2.36 vs
    host 2.39, E0463). Route each through distrobox-host-exec, passing env explicitly because it does
    NOT forward the environment:
      distrobox-host-exec env CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target sh -c 'cd <worktree> && cargo check -p <pkg>'
@@ -417,8 +417,8 @@ Edit `.ai/tickets/registry.json` directly (append an object with the same fields
 give it a nonempty `owns`, run `cargo xtask wave repack` (the compiler packs every open ticket), then:
 
 ```bash
-distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket sync"
-distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket check"   # must print "check OK"
+distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask ticket sync"
+distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask ticket check"   # must print "check OK"
 ```
 
 ---
@@ -428,9 +428,9 @@ distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && 
 ```bash
 # 1. Mark the three shipped.
 for t in T-245 T-247 T-248; do
-  distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket set-status $t shipped"
+  distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask ticket set-status $t shipped"
 done
-distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && ./scripts/ticket sync"
+distrobox-host-exec sh -c "cd /run/media/system/Disk_2/Projects/TBD-Reforger && cargo xtask ticket sync"
 
 # 2. Commit the bookkeeping (registry + plan + the docs `sync` regenerated).
 git -c filter.lfs.process= -c filter.lfs.required=false add .ai/tickets docs/ CLAUDE.md
@@ -441,7 +441,7 @@ git -c filter.lfs.process= -c filter.lfs.required=false commit   # message: see 
 cargo xtask platform wave push
 
 # 4. Teardown.
-for t in T-245 T-247 T-248; do bash scripts/mod/slice-worktree.sh drop $t; done
+for t in T-245 T-247 T-248; do cargo xtask platform slice-worktree -- drop $t; done
 cargo xtask platform wave reclaim
 distrobox-host-exec podman exec tbd_reforger_db psql -U tbd -d postgres -c "DROP DATABASE IF EXISTS tbd_wave6_cold WITH (FORCE);"
 cargo xtask platform preflight      # must return to PASS
@@ -466,10 +466,10 @@ Co-Authored-By: Grok <noreply@x.ai>
 | `CARGO_TARGET_DIR` unset in every fresh shell | `export CARGO_TARGET_DIR=/run/media/system/Disk_2/Projects/TBD-Reforger/target` |
 | `git status` / `git add` can abort — git-lfs absent while `filter.lfs.process` is set | `git -c filter.lfs.process= -c filter.lfs.required=false …` |
 | `git push` fails on the pre-push hook | `cargo xtask platform wave push` |
-| `slice-worktree.sh create` prints usage and exits 2 | The subcommand is **`new`** |
+| `platform slice-worktree -- create` prints usage and exits 2 | The subcommand is **`new`** |
 | The shared `tbd_gate_it` DB reds the gate | Fresh cold DB + `TBD_GATE_DB`, every gate |
 | A `git checkout` restore does not re-trigger a cargo rebuild | `touch` the file after restoring. The **green** half of a perturbation loop can be stale |
-| **`rg` does not exist anywhere** — it is a shell *function* injected by the agent harness, so a gate using it passes only when an AI runs it (T-556) | Use `grep -E` and read the exit status (0/1/2/127), or the helpers in `scripts/mod/lib/gate-grep.sh`. Never `if rg …; then fail; fi` |
+| **`rg` does not exist anywhere** — it is a shell *function* injected by the agent harness, so a gate using it passes only when an AI runs it (T-556) | Use `grep -E` and read the exit status (0/1/2/127), or `verification_core::gate::{require, ban}`. Never `if rg …; then fail; fi` |
 | `cargo xtask ci ci-local` | **Never.** Red for weeks for unrelated reasons; 15–40 min |
 | A rate-limited subagent reports `completed` | Treat a rate-limit/reset string as a **FAILURE**, not a finished agent |
 
@@ -491,7 +491,7 @@ Do not improvise through any of these:
 
 ## 13. Sequenced work — do not merge these into one pass
 
-Three tickets lived in `scripts/platform/wave.sh` (deleted at T-902) and were **deliberately ordered**. Doing them
+Three tickets live in the platform wave driver and are **deliberately ordered**. Doing them
 together produces one unreviewable diff in the tool that judges everything else.
 
 | Order | Ticket | What |

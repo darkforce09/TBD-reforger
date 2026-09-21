@@ -42,7 +42,7 @@ pub(crate) enum DebugCmd {
         #[arg(long)]
         a2s_json: String,
     },
-    /// Orchestrator formerly scripts/mod/debug-direct-join.sh (T-868).
+    /// Orchestrator: runs every probe below and prints one summary.
     #[command(name = "direct-join")]
     DirectJoin {
         /// Run id written into the NDJSON block (default: user-repro).

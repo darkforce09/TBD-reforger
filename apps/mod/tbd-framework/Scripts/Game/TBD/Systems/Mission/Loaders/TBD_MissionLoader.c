@@ -1124,7 +1124,7 @@ class TBD_MissionLoader
 			//
 			// And there is a second, entirely legitimate way to arrive here that the old text
 			// mislabelled as a fault: a mission STAGED on disk on purpose (a golden via
-			// `scripts/mod/test-mission.sh`, or `world-boot.sh --mission=`). A golden's `msn_*` id
+			// `cargo xtask mod world-boot --mission=`). A golden's `msn_*` id
 			// is not a uuid, so the backend rejects its SHAPE with 400 before ever looking for it.
 			// That is the discriminator — a 400 means this id was never a backend mission, so the
 			// profile file is the intended source, not a stale leftover.

@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "enfusion-mcp": {
-      "command": "npx",
-      "args": ["-y", "enfusion-mcp"],
+      "command": "node",
+      "args": [
+        "/run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js"
+      ],
       "env": {
         "ENFUSION_GAME_PATH": "/home/Samuel/.cache/enfusion-mcp-root",
         "ENFUSION_WORKBENCH_PATH": "/home/Samuel/.local/share/Steam/steamapps/common/Arma Reforger Tools",

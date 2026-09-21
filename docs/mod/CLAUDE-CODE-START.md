@@ -14,7 +14,7 @@
 
 **Next Claude Code:** **T-090.5.5** only — `treePropLayer.ts` + `world-trees` / `world-props` IconLayer glyphs (501k trees indexed in worker). Single lane. Plan §7 row T-090.5.5 · spec [`t090_5_map_object_render_layer.md`](../specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md).
 
-**Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
+**Workspace:** monorepo root (`TBD-Reforger/`). Every mod command is a `cargo xtask mod` subcommand; run from repo root:
 
 ```bash
 cargo xtask mod dev-bootstrap
@@ -32,7 +32,7 @@ cargo xtask deploy staging --dry-run
 `cargo xtask mod dev-bootstrap` is the **single entrypoint** — Claude Code runs it at the start of every mod slice. It:
 
 1. Builds MCP pak symlink farm (`cargo xtask setup mcp-game-root`)
-2. Runs `npm ci` in `scripts/mod/` when `enfusion-mcp` is not installed (pinned @ 0.6.1)
+2. Runs `npm ci` in `tools_v2/enfusion_mcp_node_package/` when `enfusion-mcp` is not installed (pinned @ 0.6.1)
 3. (no handler copy — the `EnfusionMCP/` handlers are committed in `apps/mod/tbd-emcp/`)
 4. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910 -gproj <repo>/apps/mod/tbd-export/addon.gproj` — skips the project picker; wait up to **180s**)
 5. **Pre-warms the MCP daemon** (one-time ~35 s index load)

@@ -209,7 +209,7 @@ cargo xtask mod compile        # Compile check Enfusion mod scripts
 cargo xtask ticket check       # Validate ticket registry structure
 cargo xtask ticket sync        # Regenerate ticket views and roadmaps
 
-# Deployment (scripts/deploy/deploy.env)
+# Deployment (tools_v2/xtask/deploy/deploy.env)
 cargo xtask deploy website --dry-run  # Print the plan: asset preflight, rsync excludes, remote steps
 cargo xtask deploy website     # Rsync, build the API + SPA on the server, restart the unit
 ```

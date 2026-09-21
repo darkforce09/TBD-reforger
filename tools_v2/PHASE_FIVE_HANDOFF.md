@@ -1891,3 +1891,234 @@ nothing further to write.
 ### Commands that could not run
 
 None. Every check of this phase ran in this environment.
+
+## P4 — scripts/ elimination
+
+Git tracks no `scripts/` directory. Every file it held now sits beside the command that reads it,
+every consumer resolves that location through one named constant, and the three duplicated
+`enfusion-mcp` resolvers are one function whose installed-module path is spelled exactly once in
+the workspace.
+
+### Destinations
+
+| From | To | Who reads it |
+|---|---|---|
+| `scripts/deploy/deploy.env.example` | `tools_v2/xtask/deploy/deploy.env.example` | An operator copies it to `deploy.env` beside it |
+| `scripts/deploy/Caddyfile.website` | `tools_v2/xtask/deploy/Caddyfile.website` | Caddy on the server; `cargo xtask deploy website` prints its reload command; `apps/website/api_v2/tests/forwarded_for_trust.rs` pins its loopback upstream |
+| `scripts/deploy/tbd-website-api.service` | `tools_v2/xtask/deploy/systemd/tbd-website-api.service` | `cargo xtask deploy website` renders and restarts it |
+| `scripts/deploy/tbd-reforger.service` | `tools_v2/xtask/deploy/systemd/tbd-reforger.service` | `cargo xtask deploy staging` installs it |
+| `scripts/deploy/tbd-website-backup.service` and `.timer` | `tools_v2/xtask/deploy/systemd/` | An operator installs them; the service runs `cargo xtask deploy db backup` |
+| `scripts/deploy/tbd-website-backup-drill.service` and `.timer` | `tools_v2/xtask/deploy/systemd/` | An operator installs them; the service runs `cargo xtask deploy db drill` |
+| `scripts/mod/tbd-dev-server.config.json` | `tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json` | `cargo xtask mod playtest` and `cargo xtask mod world-boot` |
+| `scripts/mod/fixtures/mcp-*.jsonl` (5) | `tools_v2/xtask/fixtures/mcp/` | `cargo xtask mcp selftest` replays them through `cargo xtask mcp consume` |
+| `scripts/mod/package.json`, `package-lock.json`, root `.nvmrc` | `tools_v2/enfusion_mcp_node_package/` | `npm ci` there installs the pinned `enfusion-mcp` server |
+| `scripts/mod/tbd-staging-server.config.json` | deleted | No code consumer: `git grep -n tbd-staging-server` named one comment, and `cargo xtask deploy staging` renders `server.config.json` itself in `deploy/staging/render.rs`. That comment is gone with it. |
+
+The npm package sits outside every crate root on purpose. `FILE_LENGTH_PINS` pins whole crate
+directories and `cargo xtask verify file-length` walks them in full, so a vendored `.rs` inside an
+installed dependency tree would become a subject of the size gate.
+
+### Operator step, before deleting the last directory on disk
+
+`scripts/mod/node_modules/` is left in place, untracked and gitignored, because the running Claude
+Code and Cursor sessions still execute `enfusion-mcp` from it. The three machine-local MCP configs
+(`.mcp.json`, `.cursor/mcp.json`, `apps/mod/.cursor/mcp.json`, all gitignored) now point at the
+server module installed under
+`/run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/`,
+which is installed and verified present. So:
+
+1. Restart Claude Code and Cursor, so each connects to the server at the new path.
+2. `rm -rf scripts`
+
+### One entrypoint resolver
+
+`tools_v2/developer-tools/src/enfusion_tooling/enfusion_mcp_entrypoint.rs` holds
+`resolve(repo_root) -> EnfusionMcpCommand` and `process_pattern()`. The tiers are unchanged and
+now named rather than numbered: an `ENFUSION_MCP_BIN` that exists, the module installed by
+`npm ci`, a copy in npm's download cache, then `npx -y enfusion-mcp`. The three resolvers it
+replaces are:
+
+- `tools_v2/xtask/src/commands/mcp/call.rs` — `resolve_runner` and its `scripts_mod()` root,
+- `tools_v2/xtask/src/commands/mcp/daemon.rs` — `resolve_bin`, its cache walk and its `pkill`
+  pattern, which is now `process_pattern()` derived from the same constant,
+- `tools_v2/developer-tools/src/enfusion_tooling/mcp_broker.rs` — `resolve_runner`.
+
+The daemon's cache tier now sorts its hits, as the call path already did, so two machines with the
+same cache resolve the same file. The broker gains the cache tier it lacked; it is the tier the
+daemon would have handed it through `ENFUSION_MCP_BIN` anyway.
+
+### Single sources of truth
+
+`tools_v2/xtask/src/core/repository_layout.rs` (new, declared from `core/mod.rs`): `DEPLOY_DIR`,
+`DEPLOY_ENV`, `DEPLOY_ENV_EXAMPLE`, `CADDYFILE`, `SYSTEMD_UNITS_DIR`, `WEBSITE_API_UNIT`,
+`DEDICATED_SERVER_PROFILES_DIR`, `DEV_SERVER_PROFILE`, `MCP_TRANSCRIPT_FIXTURES_DIR`. Its tests
+(`tools_v2/xtask/src/tests/repository_layout_tests.rs`) assert every committed location exists in
+a checkout, that the secrets file is the example minus `.example`, and that each file constant
+lies inside the directory constant describing its kind.
+
+`tools_v2/developer-tools/src/repository_layout.rs` gains `ENFUSION_MCP_NODE_PACKAGE_DIR`,
+`ENFUSION_MCP_ENTRYPOINT` and the two functions that resolve them against a root. A test asserts
+the entrypoint lies under the package directory, so a half-landed relocation cannot leave `npm ci`
+installing where no runner looks.
+
+Two derivations removed a duplicated literal each:
+`deploy/website/systemd_unit.rs::default_unit_name()` derives the default unit name from
+`WEBSITE_API_UNIT`'s file name, and `template_for(unit)` derives a unit's template from
+`SYSTEMD_UNITS_DIR` plus that unit's own name — so a deploy pointed at another unit through
+`TBD_WEBSITE_SYSTEMD_UNIT` now prints that unit's template rather than the API's.
+
+### What changed, by area
+
+- xtask commands: `deploy/website.rs` (+ new `deploy/website/help_text.rs`, `website/systemd_unit.rs`,
+  `website/rsync_argv.rs`), `deploy/staging.rs`, `deploy/staging/{config,remote/ssh_argv,boot/read_addon_guid}.rs`,
+  `debug/{cli,probes,direct_join}.rs`, `debug/remote_logs.rs` + `remote_logs/execution.rs`,
+  `setup/staging_server.rs`, `mcp/{call,daemon,smoke,call_selftest}.rs`,
+  `mod_ops/{development_bootstrap,playtest_server,compile/execution,world_boot/execution}.rs`,
+  `mod_ops/playtest_server/usage_fail.rs`, `fetch/{vanilla_api,vanilla_source}.rs`,
+  `db/milestone_announcement.rs`, `platform/cli.rs`, `platform/wave_execution/mod.rs`,
+  `verifications/language_bans/node_and_file_limits.rs` + `verify_no_node.rs`,
+  `commands/{ci/task_definitions,verify/cli}.rs`.
+- xtask tests: `tests/{repository_root_tests,repository_layout_tests}.rs`,
+  `deploy/tests/{website,staging}/tests.rs`, `deploy/staging/tests/remote/tests.rs`,
+  `debug/tests/direct_join/tests.rs`, `setup/tests/staging_server/tests.rs`,
+  `db/tests/milestone_announcement/tests.rs`, `mcp/tests/{smoke,call_selftest}/tests.rs`,
+  `mod_ops/tests/{wave_execution,playtest_server/tests}.rs`,
+  `verifications/language_bans/tests/python_scripts/tests.rs`.
+- developer-tools: `enfusion_tooling/{mod,cli,mcp_broker,source}.rs`, the new
+  `enfusion_tooling/enfusion_mcp_entrypoint.rs` and its tests, `repository_layout.rs` and its tests.
+- verification-core: `src/verdict.rs` (one synthetic test subject renamed off a deleted-script shape).
+- apps: `apps/website/api_v2/{tests/forwarded_for_trust.rs,.env.example,PHASE_1_HANDOFF.md}`,
+  `api_v2/src/core/{configuration/mod,middleware/durable_ratelimit,observability/health_probe}.rs`,
+  `apps/website/{Dockerfile,docker-compose.staging.yml}`,
+  `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_3.rs`,
+  `apps/mod/{.gitignore,README.md}`, `apps/mod/tbd-emcp/README.md`,
+  `apps/mod/tbd-framework/README.md`, and five EnfScript comments under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/` (pure ASCII edits).
+- root and configuration: `.gitignore`, `.mcp.json`, `.cursor/mcp.json`, `apps/mod/.cursor/mcp.json`,
+  `.world-boot-warning-baseline`, `CLAUDE.md`, `.github/workflows/{ci,mod-gates}.yml`.
+- documents: `tools_v2/{README.md,xtask/deploy/README.md}`, `assets_v2/MIGRATION_HANDOFF.md`,
+  `documentation_v2/{ANALYSIS_AND_INVENTORY.md,runbooks/deployment.md}`,
+  `docs/website/{HOME_SERVER,DEV_RUNBOOK}.md`,
+  `docs/platform/{PLAYTEST_RUNBOOK,PLATFORM_FACTORY,FACTORY_FOR_CURSOR,EDITOR_FACTORY_FOR_CURSOR,EDITOR_FACTORY_START,CODING_STANDARDS,MONOREPO_MIGRATION,tbd_north_star_backlog}.md`,
+  `docs/mod/{STAGING-SERVER,MCP_TOOLING,CLAUDE-CODE-START,SPAWN_DETERMINISM,SLICE_WORKFLOW,vanilla_carve_coverage,MILESTONES}.md`.
+
+### Acceptance
+
+| Command | Result |
+|---|---|
+| `git ls-files scripts \| wc -l` | 0 |
+| `find scripts -type f -not -path '*/node_modules/*' \| wc -l` | 0 |
+| R5a grep (comment lines and `tools_v2/*.md` excluded) | 0 lines |
+| `git check-ignore -v tools_v2/xtask/deploy/deploy.env` | `.gitignore:11:tools_v2/xtask/deploy/deploy.env` |
+| `git check-ignore -v tools_v2/enfusion_mcp_node_package/node_modules` | `.gitignore:58:node_modules/` |
+| the three MCP configs resolve to an existing entrypoint | three `ok` lines |
+| `git grep -c -F` over the installed-module path, scoped to `tools_v2` | 1 — `tools_v2/developer-tools/src/repository_layout.rs`, the only file in the workspace that spells it. This document deliberately does not, so the count stays exact. |
+| layout-literal grep over `tools_v2 apps` | 4 lines, each accounted for below |
+| `cargo check --workspace --locked` | exit 0 |
+| `cargo test -p xtask -p developer-tools -p verification-core` | exit 0 — xtask 652 passed, developer-tools 259 passed (4 ignored), verification-core 68 passed; 0 failed |
+| `cargo test -p website-api --test forwarded_for_trust` | exit 0 — 8 passed, 0 failed |
+| `cargo xtask deploy website --dry-run` | exit 0 with `DEPLOY_ENV` pointed at a scratch file (no `deploy.env` exists on this machine). Prints `==> unit: tools_v2/xtask/deploy/systemd/tbd-website-api.service is installed by hand`, `--exclude=tools_v2/xtask/deploy/deploy.env`, and the Caddy reload against `tools_v2/xtask/deploy/Caddyfile.website` |
+| `cargo xtask mcp selftest` | `mcp-call-selftest: ALL PASS (20)`, exit 0 |
+| `cargo xtask verify no-node` | exit 0 — `OK (none)` for each of the three checks; the walked root is `.github` |
+| `cargo xtask verify file-length` | exit 0 — scanned 2513 `.rs` files, 0 violations. The baseline was 2529 at P0 and 2508 after P3's deletions; P4 adds exactly the five `.rs` files listed above and deletes none |
+| `cargo xtask mod world-boot --selftest` | `SELFTEST OK`, exit 0; every negative fixture still rejected |
+| `cargo xtask mod compile` | exit 0 — `OK: compiled clean`, 5804 files, 11643 classes, 0 warnings in TBD sources |
+
+The four lines the layout-literal grep still reports are not repository-path duplicates:
+
+- `apps/website/api_v2/tests/forwarded_for_trust.rs:398` — the Caddyfile path, spelled once in that
+  test and used by both its `include_str!` neighbour and its failure message. `website-api` cannot
+  depend on xtask, so this is the one place outside the two layout modules that may name it.
+- `tools_v2/xtask/src/tests/repository_root_tests.rs:15` — the fixture the repository-root walk is
+  pinned against, which is by definition a path and not a constant.
+- `tools_v2/developer-tools/src/enfusion_tooling/cli.rs:69` — the Enfusion pak's own internal
+  `scripts/` prefix, where every vanilla `.c` lives inside the archive. Not a checkout path.
+- `tools_v2/xtask/src/commands/mod_ops/world_boot_verdict.rs:389` — a captured Enfusion server log
+  line; `scripts/game/tbd/…` is the engine's VFS path, and editing it would falsify the fixture.
+
+### Found and fixed
+
+- `tools_v2/xtask/src/commands/mod_ops/compile/execution.rs:189` — the comment named the deleted
+  staging server profile, then narrated a 2026-09-12 addon split and carried a ticket identifier.
+  Rewritten as the invariant it protects: the gate compiles `TBD_Framework` because that is what a
+  dedicated server loads, and tbd-export's road exporter is what could be added.
+- `tools_v2/enfusion_mcp_node_package/package.json` — the package was named `tbd-mod-scripts`,
+  after a directory that no longer exists, and its description named an internal tier number.
+  Renamed to `enfusion-mcp-node-package`, with a description saying what the pin buys. The
+  lockfile's two `name` fields follow, so `npm ci` stays in sync.
+- `tools_v2/xtask/src/commands/deploy/website.rs` — the required-variable error printed a shell
+  script path and line as its prefix. It now names the deploy file and the line to edit.
+  `tools_v2/xtask/src/commands/deploy/staging/config.rs:190` carried the same prefix and is fixed
+  the same way.
+- `tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs:30-38` — the exclusion comments dated
+  an asset relocation and called the old tree "pre-relocation". They now say what each exclusion
+  protects.
+- `tools_v2/xtask/src/commands/deploy/website.rs` was 505 lines after the help text became a
+  function. Split: the `--help` block is now `deploy/website/help_text.rs` (43 lines), leaving
+  `website.rs` at 468.
+- `tools_v2/xtask/src/commands/deploy/website/systemd_unit.rs` rendered the API unit's template
+  regardless of which unit `TBD_WEBSITE_SYSTEMD_UNIT` named. `template_for(unit)` fixes that, and
+  `default_unit_name()` removes the duplicated `tbd-website-api.service` literal.
+- `tools_v2/xtask/src/commands/debug/probes.rs:74,159` — the emitted JSON `"location"` named a
+  deleted shell script. It now names `cargo xtask debug direct-join`, the command that writes the
+  row. `debug/cli.rs:45` and `debug/probes.rs:4` named it too.
+- `tools_v2/xtask/src/verifications/language_bans/tests/python_scripts/tests.rs` — the synthetic
+  offenders were planted under `scripts/` in a throwaway tree, modelling a directory the repository
+  does not have, and one was named after a ticket. They now sit under `tooling/`, and the planted
+  shell file is `planted.sh`.
+- `tools_v2/verification-core/src/verdict.rs:243-253` — the missing-target test used
+  `scripts/gone.sh` as its subject and named a deleted shell helper in its comment. The subject is
+  now `etc/socket.conf` and the test is named for the behaviour it pins.
+- `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs` — `UNKNOWN_HELP` and the doc comment
+  above it (the P3 handoff's two `Found for P8` entries) named three deleted scripts and dated
+  their corrections against a past program. Rewritten as the three decisions the lifecycle rests
+  on, with the command list intact. `COLLIDE`'s doc comment named a deleted Python file.
+- `tools_v2/xtask/src/commands/platform/cli.rs:6,12,18-21` — four clap doc comments, which are
+  operator-facing `--help` text, named deleted scripts.
+- `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs:49` — `SCAN_DIRS` is
+  `[".github"]`. A declared-but-absent root fails closed, so leaving `scripts` there would have
+  turned `cargo xtask verify no-node` red the moment the directory went. The node allowlist is now
+  empty with a comment saying why: the only place that invokes node is the Rust entrypoint
+  resolver, which this gate does not walk.
+- `apps/website/api_v2/src/core/observability/health_probe.rs:71,79` — named a deleted preflight
+  script as a `/healthz` caller. The caller is `cargo xtask platform preflight`.
+- Present-tense rewrites of the module documentation in every xtask module this phase touched:
+  each one opened by naming a shell script it was ported from, and several carried a
+  "preserved oddity" list written against that script rather than against the behaviour. The
+  invariants are kept; the comparisons to a program that no longer exists are gone.
+- The moved deployment files carried their own history: `deploy.env.example` listed a deleted
+  staging script and a ticket identifier, `tbd-website-backup.service` explained its absolute
+  placeholder by narrating what it used to be, and four files named ticket identifiers in their
+  first line. All rewritten to describe what they are.
+
+### Found for P5
+
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:77` — the rendered agent file's header says
+  it is `RENDERED by scripts/mod/deploy-staging.sh` and carries a ticket identifier. The renderer
+  is `cargo xtask deploy staging`. `:94` and `:104` name the same deleted script in the rendered
+  body. The R5a grep does not see these: the lines are inside a raw string and begin with `#`.
+- `tools_v2/xtask/src/commands/deploy/staging.rs:142-144` — `USAGE` is repointed, but the rest of
+  the staging tree still names the deleted driver in comments (`staging/pycompat.rs:6`,
+  `staging/config.rs:185`, `verifications/deployment/staging_compose_paths*`), and
+  `verifications/deployment/staging_compose_paths.rs` still describes itself as gating a shell
+  script that no longer exists. Its subject today is `apps/website/docker-compose.staging.yml`
+  plus the Rust render path.
+
+### Found for P8
+
+- `tools_v2/xtask/src/commands/mod_ops/wave_execution.rs:36-56` — `UNKNOWN_HELP` for the mod wave
+  driver is described as "the historical bash header, retargeted at the lock". It names no deleted
+  script, so it did not block this phase, but the doc comment is history.
+- `tools_v2/xtask/src/commands/deploy/cli.rs:11,14` and `deploy/database_*.rs:1` — six clap and
+  module doc comments still open with "port of scripts/deploy/…". They are comment lines, so the
+  R5a grep excludes them; R3 will not.
+- `tools_v2/xtask/src/commands/setup/{client_addons,mcp_game_root,server_profile,workbench_linux}.rs`
+  — four module doc comments open with "port of scripts/mod/…" and three of them add
+  "Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh)", instructing a reader
+  to preserve a file that is not in the repository.
+
+### Commands that could not run
+
+`cargo xtask deploy website --dry-run` cannot read a real `deploy.env`: the file holds host credentials and exists on no development machine in this repository (the preflight check `test ! -e scripts/deploy/deploy.env` confirmed that before the move). The dry-run was therefore driven through the command's own `DEPLOY_ENV` override against a three-line scratch file in the session scratchpad, which exercises the same code path and the same printed paths. Without it the command exits 1 with `Missing /run/media/system/Disk_2/Projects/TBD-Reforger/tools_v2/xtask/deploy/deploy.env — copy from tools_v2/xtask/deploy/deploy.env.example`, which is itself evidence that the relocated path is the one the command reads.
+
+Every other check of this phase ran unmodified in this environment.

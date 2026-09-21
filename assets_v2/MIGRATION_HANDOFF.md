@@ -63,7 +63,7 @@ The answer turned out to be *both* halves, not either. The API's defaults resolv
 working directory, and neither production runtime satisfies them — the container has no WORKDIR and
 no asset copy, and the host unit runs from `apps/website`, three levels below which is outside the
 repo. `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` are therefore pinned to absolute paths on the unit
-(`scripts/deploy/tbd-website-api.service`, now version-controlled) and on the compose `api` service,
+(`tools_v2/xtask/deploy/systemd/tbd-website-api.service`) and on the compose `api` service,
 which also gains read-only bind mounts because its image ships only the binary.
 
 The terrain tree itself still has to move on the server, once. `cargo xtask deploy website` now

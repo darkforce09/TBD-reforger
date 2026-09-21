@@ -2,7 +2,7 @@
 //!
 //! # The defect
 //!
-//! `scripts/deploy/Caddyfile.website` proxies from loopback, so the `ConnectInfo` peer for every
+//! `tools_v2/xtask/deploy/Caddyfile.website` proxies from loopback, so the `ConnectInfo` peer for
 //! public client is Caddy. Both rate-limit tiers keyed on that peer, so the whole community shared
 //! one `strict|127.0.0.1` bucket at `1/s` burst `10`: the 11th member to open the site inside ten
 //! seconds got a `429` on `/auth/refresh` and rendered logged-out. `Config::trusted_proxies`
@@ -395,11 +395,12 @@ async fn an_unusable_chain_from_a_trusted_proxy_keys_to_the_proxy() {
 /// than discovering from a rate-limit report.
 #[test]
 fn the_deployed_proxy_still_fronts_this_api_from_loopback() {
-    let caddyfile = include_str!("../../../../scripts/deploy/Caddyfile.website");
+    const CADDYFILE_PATH: &str = "tools_v2/xtask/deploy/Caddyfile.website";
+    let caddyfile = include_str!("../../../../tools_v2/xtask/deploy/Caddyfile.website");
     assert!(
         caddyfile.contains("reverse_proxy 127.0.0.1:8080"),
-        "scripts/deploy/Caddyfile.website no longer reverse-proxies to 127.0.0.1:8080 — re-check \
-         what TRUSTED_PROXIES should hold before trusting the old value"
+        "{CADDYFILE_PATH} no longer reverse-proxies to 127.0.0.1:8080 — re-check what \
+         TRUSTED_PROXIES should hold before trusting the old value"
     );
 }
 

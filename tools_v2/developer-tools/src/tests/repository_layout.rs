@@ -26,6 +26,7 @@ fn every_declared_location_exists_in_the_checkout() {
         terrain_assets_dir(&root),
         terrain_dir(&root, "everon"),
         glyph_assets_dir(&root),
+        enfusion_mcp_node_package_dir(&root),
     ] {
         assert!(dir.is_dir(), "not a directory: {}", dir.display());
     }
@@ -60,6 +61,23 @@ fn export_scratch_is_named_for_its_island_and_sits_outside_the_served_tree() {
         "{}",
         scratch.display()
     );
+}
+
+/// The installed server module is absent from a fresh clone, so it is pinned by shape: it lives
+/// inside the package directory whose manifest declares it.
+///
+/// The two constants are separate literals, and a relocation that moved one without the other
+/// would leave `npm ci` installing into one directory while every runner looked in another — a
+/// mismatch that shows up only as a silent fall-through to a network download.
+#[test]
+fn the_enfusion_mcp_entrypoint_sits_inside_its_npm_package_directory() {
+    assert!(
+        ENFUSION_MCP_ENTRYPOINT
+            .starts_with(&format!("{ENFUSION_MCP_NODE_PACKAGE_DIR}/node_modules/")),
+        "{ENFUSION_MCP_ENTRYPOINT} is not installed under {ENFUSION_MCP_NODE_PACKAGE_DIR}"
+    );
+    let root = Path::new("/tmp/checkout");
+    assert!(enfusion_mcp_entrypoint(root).starts_with(enfusion_mcp_node_package_dir(root)));
 }
 
 /// Locations are resolved against the caller's root, never an ambient one.

@@ -1,7 +1,7 @@
-use super::bash_chomp;
+use super::strip_trailing_newlines;
 
 #[test]
-fn bash_chomp_strips_trailing_newlines() {
-    assert_eq!(bash_chomp("a\n\n"), "a");
-    assert_eq!(bash_chomp(""), "");
+fn trailing_newlines_are_stripped_so_a_blank_body_reads_as_empty() {
+    assert_eq!(strip_trailing_newlines("a\n\n"), "a");
+    assert_eq!(strip_trailing_newlines(""), "");
 }

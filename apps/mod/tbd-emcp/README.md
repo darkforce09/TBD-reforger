@@ -9,7 +9,7 @@ Mod GUID: `D4E5F6A7B8C90123` · ID `TBD_EMCP` · Vanilla dependency: `58D0FB3206
 ## What it is
 
 - `Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c` — the 19 handlers shipped in `enfusion-mcp@0.6.1`
-  (`scripts/mod/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP/`, MIT — see `LICENSE`),
+  (`tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP/`, MIT — see `LICENSE`),
   plus one local patch: `EMCP_WB_ScriptEditor.c` adds the `getAllText` action (dumps the whole open
   file). The package copy has no such action.
 - No `Scripts/Game`, no prefabs, no configs. Nothing here ships: `cargo xtask deploy staging` excludes
@@ -36,8 +36,8 @@ Mod GUID: `D4E5F6A7B8C90123` · ID `TBD_EMCP` · Vanilla dependency: `58D0FB3206
 
 ## Upgrading enfusion-mcp
 
-1. Bump `scripts/mod/package.json`, run `npm ci` in `scripts/mod/`.
-2. `diff -r scripts/mod/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP`
+1. Bump `tools_v2/enfusion_mcp_node_package/package.json`, run `npm ci` in that directory.
+2. `diff -r tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/mod/Scripts/WorkbenchGame/EnfusionMCP apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP`
    — expect only the `getAllText` patch.
 3. Copy the new handlers over, re-apply the patch, cold-restart Workbench on tbd-export (the script
    list is built at load), run `cargo xtask mcp smoke`.

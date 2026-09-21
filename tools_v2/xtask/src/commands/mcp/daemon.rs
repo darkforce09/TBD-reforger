@@ -1,17 +1,14 @@
-//! T-888 — port of `scripts/mod/mcp-daemon.sh` → `cargo xtask mcp daemon`.
+//! `cargo xtask mcp daemon` — the broker's lifecycle: start, stop, status, restart, stop-all.
 //!
-//! setsid + AF_UNIX socket lifecycle: start / stop / status / restart / stop-all.
-//! Builds `mcpd` in-process (former `lib/mcpd-bin.sh`) and probes via
-//! [`crate::commands::mcp::json_rpc::cmd_probe_sock`] (former `lib/xtask-run.sh mcp probe-sock`).
-//! Lib scripts themselves stay on disk for T-879 — this module is their last
-//! live caller removal for the daemon path.
+//! Starting builds `mcpd`, hands it the `enfusion-mcp` entry
+//! [`developer_tools::enfusion_tooling::enfusion_mcp_entrypoint`] resolved, and spawns it in its
+//! own session so its argv stays `mcpd --socket` for the process matching that stop-all does.
+//! Liveness is a connect probe through [`crate::commands::mcp::json_rpc::cmd_probe_sock`], not a
+//! file check: a socket file outlives the process that bound it.
 //!
-//! Fail-opens pinned (bash parity):
-//! - `pgrep` / `pkill` / `kill` errors discarded (`2>/dev/null || true`)
-//! - `rm -f` of socket globs ignores missing paths
-//! - `resolve_bin` find under `~/.npm/_npx` swallows walk errors (`2>/dev/null`)
-//!
-//! Usage string keeps the historical script name for byte parity.
+//! Signalling and file removal are best-effort throughout — a `kill` that finds no process, an
+//! already-removed socket and an unreadable npm cache all mean the same thing as success here,
+//! so none of them is raised.
 
 use std::env;
 use std::fs::{self, OpenOptions};
@@ -23,11 +20,12 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::Duration;
 
+use developer_tools::enfusion_tooling::enfusion_mcp_entrypoint;
 use verification_core::proc::Run;
 
 use crate::core::repository_root::find_repo_root;
 
-const USAGE: &str = "usage: mcp-daemon.sh {start|stop|status|restart|stop-all}";
+const USAGE: &str = "usage: cargo xtask mcp daemon {start|stop|status|restart|stop-all}";
 
 /// CLI entry: `cargo xtask mcp daemon [ACTION]` (default `status`).
 pub fn cmd(action: Option<&str>) -> i32 {
@@ -48,7 +46,8 @@ pub fn cmd(action: Option<&str>) -> i32 {
     }
 }
 
-/// Socket path — mirrors bash `MCP_SOCK` / `XDG_RUNTIME_DIR` / AF_UNIX 108-byte cap.
+/// Socket path: `MCP_SOCK`, else one named for the uid under `XDG_RUNTIME_DIR`. Re-seated
+/// under `/tmp` past 100 bytes, because an AF_UNIX path caps at 108 including the terminator.
 pub fn resolve_sock() -> String {
     let uid = unsafe { libc::getuid() };
     let mut sock = env::var("MCP_SOCK").unwrap_or_else(|_| {
@@ -74,7 +73,7 @@ pub fn is_running_at(sock: &str) -> bool {
     crate::commands::mcp::json_rpc::cmd_probe_sock(sock) == 0
 }
 
-/// Start the broker. When `quiet`, suppress messages (bash `>/dev/null 2>&1`).
+/// Start the broker. When `quiet`, print nothing — the call path starts it opportunistically.
 pub fn start_at(sock: &str, quiet: bool) -> i32 {
     if is_running_at(sock) {
         if !quiet {
@@ -86,15 +85,9 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
         let _ = fs::remove_file(sock); // stale socket
     }
 
-    let script_dir = scripts_mod();
-    let root = script_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| find_repo_root().unwrap_or_else(|_| script_dir.clone()));
-
-    let bin = resolve_bin(&script_dir);
-    // Match bash `export` defaults before spawn (child inherits).
+    let root = find_repo_root().unwrap_or_else(|_| PathBuf::from("."));
+    let entry = enfusion_mcp_entrypoint::resolve(&root).entry_path;
+    // The child inherits these; every one has a default so a bare shell can start the daemon.
     let game = env::var("ENFUSION_GAME_PATH").unwrap_or_else(|_| default_game_path());
     let wb = env::var("ENFUSION_WORKBENCH_PATH").unwrap_or_else(|_| default_workbench_path());
     let project = env::var("ENFUSION_PROJECT_PATH").unwrap_or_else(|_| default_project_path());
@@ -102,7 +95,6 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
     let mcpd_target = env::var("MCPD_CARGO_TARGET_DIR")
         .unwrap_or_else(|_| root.join("target-dev-mcpd").display().to_string());
 
-    // Former mcpd-bin.sh: cargo build -q; stdout (path echo) discarded; stderr passes.
     match build_mcpd(&root, &mcpd_target) {
         Ok(()) => {}
         Err(()) => {
@@ -149,10 +141,10 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
         .env("ENFUSION_WORKBENCH_PATH", &wb)
         .env("ENFUSION_PROJECT_PATH", &project)
         .env("MCP_SOCK", sock);
-    if let Some(b) = bin.as_ref() {
-        cmd.env("ENFUSION_MCP_BIN", b);
+    if let Some(entry) = entry.as_ref() {
+        cmd.env("ENFUSION_MCP_BIN", entry);
     }
-    // bash: `setsid "$mcpd_bin" … &` — new session so argv stays `mcpd --socket`.
+    // A new session keeps the child's argv `mcpd --socket`, which is what stop-all matches on.
     unsafe {
         cmd.pre_exec(|| {
             if libc::setsid() == -1 {
@@ -164,8 +156,8 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
     }
     match cmd.spawn() {
         Ok(child) => {
-            // Detach: parent exits after poll; init reaps. Dropping Child would
-            // briefly zombie until xtask exits — forget to match bash `&`.
+            // Detach: this process exits after the readiness poll and init reaps the daemon.
+            // Dropping the handle would leave a zombie until xtask exits.
             std::mem::forget(child);
         }
         Err(e) => {
@@ -197,7 +189,7 @@ pub fn stop_at(sock: &str, quiet: bool) -> i32 {
     if let Ok(pid_s) = fs::read_to_string(&pidfile) {
         let pid_s = pid_s.trim();
         if !pid_s.is_empty() {
-            let _ = Command::new("kill").arg(pid_s).status(); // 2>/dev/null
+            let _ = Command::new("kill").arg(pid_s).status();
         }
     }
     let _ = fs::remove_file(sock);
@@ -229,7 +221,6 @@ pub fn status_at(sock: &str, quiet: bool) -> i32 {
 
 /// Nuke every tbd MCP broker (any socket) + orphaned enfusion-mcp servers.
 pub fn stop_all() -> i32 {
-    // pids="$(pgrep -f 'mcpd --socket' 2>/dev/null || true)"
     let pids = match Command::new("pgrep").args(["-f", "mcpd --socket"]).output() {
         Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).into_owned(),
         _ => String::new(),
@@ -243,9 +234,10 @@ pub fn stop_all() -> i32 {
             let _ = Command::new("kill").args(["-9", pid]).status();
         }
     }
-    // pkill -9 -f 'node_modules/enfusion-mcp/dist/index\.js' 2>/dev/null || true
+    // A broker that died without reaping leaves its server child running; it is matched by the
+    // installed module's path, which is the one thing every tier of the resolution has in common.
     let _ = Command::new("pkill")
-        .args(["-9", "-f", r"node_modules/enfusion-mcp/dist/index\.js"])
+        .args(["-9", "-f", &enfusion_mcp_entrypoint::process_pattern()])
         .status();
 
     let xdg = env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| "/tmp".into());
@@ -270,56 +262,7 @@ fn rm_tbd_mcp_globs(dir: &Path) {
     }
 }
 
-/// 4-tier resolve of the enfusion-mcp entry (mirrors mcp-call / bash resolve_bin).
-fn resolve_bin(script_dir: &Path) -> Option<String> {
-    if let Ok(bin) = env::var("ENFUSION_MCP_BIN") {
-        if Path::new(&bin).is_file() {
-            return Some(bin);
-        }
-    }
-    let pinned = script_dir.join("node_modules/enfusion-mcp/dist/index.js");
-    if pinned.is_file() {
-        return Some(pinned.to_string_lossy().into_owned());
-    }
-    // PINNED fail-open: bash `find … 2>/dev/null | head -1` (readdir order).
-    find_npx_enfusion_first()
-}
-
-fn find_npx_enfusion_first() -> Option<String> {
-    let home = env::var("HOME").ok()?;
-    let root = PathBuf::from(home).join(".npm/_npx");
-    if !root.is_dir() {
-        return None;
-    }
-    let mut hits = Vec::new();
-    let _ = visit_depth(&root, 0, 4, &mut hits);
-    hits.into_iter().next()
-}
-
-fn visit_depth(dir: &Path, depth: u32, max: u32, out: &mut Vec<String>) -> io::Result<()> {
-    if depth > max {
-        return Ok(());
-    }
-    let rd = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return Ok(()),
-    };
-    for e in rd.flatten() {
-        let p = e.path();
-        if p.is_dir() {
-            visit_depth(&p, depth + 1, max, out)?;
-        } else if p.is_file() {
-            let s = p.to_string_lossy();
-            if s.contains("enfusion-mcp/dist/index.js") {
-                out.push(s.into_owned());
-            }
-        }
-    }
-    Ok(())
-}
-
-/// Former `lib/mcpd-bin.sh`: quiet build, honor `CARGO_TARGET_DIR` (= mcpd_target here).
-/// Forwards cargo stderr; discards stdout (path echo).
+/// Build `mcpd` quietly into its own target directory, forwarding cargo's stderr.
 fn build_mcpd(root: &Path, mcpd_target: &str) -> Result<(), ()> {
     let o = match Run::new("cargo")
         .arg("build")
@@ -335,18 +278,11 @@ fn build_mcpd(root: &Path, mcpd_target: &str) -> Result<(), ()> {
         Ok(o) => o,
         Err(_) => return Err(()),
     };
-    // bash: mcpd-bin stdout → /dev/null; stderr inherits.
     let _ = io::stderr().write_all(o.stderr.as_bytes());
     if o.code != 0 {
         return Err(());
     }
     Ok(())
-}
-
-fn scripts_mod() -> PathBuf {
-    find_repo_root()
-        .map(|r| r.join("scripts/mod"))
-        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts/mod"))
 }
 
 fn is_executable(path: &Path) -> bool {

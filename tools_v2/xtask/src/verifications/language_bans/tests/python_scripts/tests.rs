@@ -48,10 +48,10 @@ fn clean_fixture_passes() {
 fn leftover_py_file_fails() {
     let root = throwaway("py");
     write_min_tree(&root);
-    fs::create_dir_all(root.join("scripts")).unwrap();
-    fs::write(root.join("scripts/evil.py"), "print('x')\n").unwrap();
+    fs::create_dir_all(root.join("tooling")).unwrap();
+    fs::write(root.join("tooling/evil.py"), "print('x')\n").unwrap();
     let _ = Command::new("git")
-        .args(["add", "scripts/evil.py"])
+        .args(["add", "tooling/evil.py"])
         .current_dir(&root)
         .status();
     let code = run_with_root(&root).unwrap();
@@ -63,15 +63,15 @@ fn leftover_py_file_fails() {
 fn new_python3_invocation_fails() {
     let root = throwaway("new");
     write_min_tree(&root);
-    fs::create_dir_all(root.join("scripts")).unwrap();
+    fs::create_dir_all(root.join("tooling")).unwrap();
     // Extensionless on purpose: `*.sh` already fails the table; this proves command-position.
     fs::write(
-        root.join("scripts/sneaky"),
+        root.join("tooling/sneaky"),
         "echo start\npython3 -c 'import os'\n",
     )
     .unwrap();
     let _ = Command::new("git")
-        .args(["add", "scripts/sneaky"])
+        .args(["add", "tooling/sneaky"])
         .current_dir(&root)
         .status();
     let code = run_with_root(&root).unwrap();
@@ -83,15 +83,15 @@ fn new_python3_invocation_fails() {
 fn comment_only_python3_is_not_a_hit() {
     let root = throwaway("comment");
     write_min_tree(&root);
-    fs::create_dir_all(root.join("scripts")).unwrap();
+    fs::create_dir_all(root.join("tooling")).unwrap();
     // Not `*.sh` — the combined table bans that extension regardless of python3.
     fs::write(
-        root.join("scripts/note.txt"),
+        root.join("tooling/note.txt"),
         "# deliberately no python3 here\necho ok\n",
     )
     .unwrap();
     let _ = Command::new("git")
-        .args(["add", "scripts/note.txt"])
+        .args(["add", "tooling/note.txt"])
         .current_dir(&root)
         .status();
     let code = run_with_root(&root).unwrap();
@@ -121,14 +121,14 @@ fn rust_comment_python3_is_not_a_hit() {
 fn shebang_python_counts() {
     let root = throwaway("shebang");
     write_min_tree(&root);
-    fs::create_dir_all(root.join("scripts")).unwrap();
+    fs::create_dir_all(root.join("tooling")).unwrap();
     fs::write(
-        root.join("scripts/tool"),
+        root.join("tooling/tool"),
         "#!/usr/bin/env python3\nprint(1)\n",
     )
     .unwrap();
     let _ = Command::new("git")
-        .args(["add", "scripts/tool"])
+        .args(["add", "tooling/tool"])
         .current_dir(&root)
         .status();
     let code = run_with_root(&root).unwrap();
@@ -170,14 +170,14 @@ fn lowercase_makefile_is_banned() {
 fn planted_sh_fails() {
     let root = throwaway("sh");
     write_min_tree(&root);
-    fs::create_dir_all(root.join("scripts")).unwrap();
+    fs::create_dir_all(root.join("tooling")).unwrap();
     fs::write(
-        root.join("scripts/_t904_plant.sh"),
+        root.join("tooling/planted.sh"),
         "#!/usr/bin/env bash\necho x\n",
     )
     .unwrap();
     let _ = Command::new("git")
-        .args(["add", "scripts/_t904_plant.sh"])
+        .args(["add", "tooling/planted.sh"])
         .current_dir(&root)
         .status();
     let code = run_with_root(&root).unwrap();

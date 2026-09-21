@@ -1,17 +1,14 @@
-//! T-855 — port of `scripts/mod/remote-log-grep.sh` → `cargo xtask mod remote-logs`.
+//! `cargo xtask mod remote-logs` — read a staging server's console log and say what happened.
 //!
-//! Four outcomes (preserved exactly): 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
-//! Usage / bad flags go to 3 (not 2) so a mistype cannot read as "booted, nobody joined".
+//! Four outcomes: 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT. A usage error or a bad flag is
+//! ENVIRONMENT, not PARTIAL, so a mistype can never read as "the server booted and nobody joined".
 //!
-//! Fail-opens closed vs bash:
-//! - `grep -c PAT 2>/dev/null || true` on the tagged-line count collapsed a read/pattern
-//!   error into `0` (STALE BUILD). We count after a successful read; an unreadable log is
-//!   ENVIRONMENT (3), same as a missing file.
-//! - Display / error extract used `2>/dev/null`; we print matching lines from the same
-//!   in-memory text used for the verdict (no silent empty extract on a read error).
+//! The log is read once, into memory, and every count and extract comes from that same text. A
+//! log that cannot be read is ENVIRONMENT, the same as a log that is not there — never a zero
+//! count, which would read as the STALE BUILD verdict.
 //!
-//! Preserved oddity: unset `TBD_SSH_HOST` after optional `deploy.env` source exits **1**
-//! (bash `${VAR:?…}`), not ENVIRONMENT 3 — pin that, do not "fix" it to 3.
+//! An unset `TBD_SSH_HOST` exits 1 rather than ENVIRONMENT 3: it is a missing required value, the
+//! same class as the deploy's own required-variable refusal, and it is reported the same way.
 
 use std::fs;
 use std::io::Write;

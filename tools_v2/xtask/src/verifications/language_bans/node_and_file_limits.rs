@@ -15,7 +15,7 @@ const SIZE_3_PRODUCTION_MAX_LINES: usize = 500;
 const SIZE_3_TEST_MAX_LINES: usize = 1000;
 
 /// Directories the SIZE gate must examine. A missing pin is [`NotRun::TargetMissing`], never
-/// an empty pass (T-899). Extra `apps/website/<name>/src` trees are picked up if they exist.
+/// an empty pass. Extra `apps/website/<name>/src` trees are picked up if they exist.
 const FILE_LENGTH_PINS: &[&str] = &[
     "tools_v2/xtask",
     "tools_v2/verification-core",
@@ -33,20 +33,20 @@ struct AllowEntry {
     expires: String,
 }
 
-/* ─────────────────────────── gen font-table (T-152.13) ─────────────────────────── */
+/* ─────────────────────────── gen font-table ─────────────────────────── */
 
-/* ─────────────────────────── verify no-node (T-165.10 hard gate) ─────────────────────────── */
+/* ─────────────────────────── verify no-node ─────────────────────────── */
 
-/// Files this gate declares it scans, over and above the [`SCAN_DIRS`] walk. A declared path that
+/// Individual files this gate scans, over and above the [`SCAN_DIRS`] walk. A declared path that
 /// is MISSING is a FAILURE, never a silent narrowing — see [`verify_no_node()`].
 ///
-/// `Makefile` sat here until T-897 deleted it. It is removed rather than left to fail, and the
-/// fail-closed rule below is the price of that removal: the next deletion cannot quietly shrink
-/// the gate's reach the way this one could have.
+/// Empty today. The fail-closed rule is what keeps it honest: removing a scanned file means
+/// removing its entry here deliberately, rather than letting a deletion quietly shrink the
+/// gate's reach.
 const SCAN_FILES: &[&str] = &[];
 
 /// Directory roots walked for `.sh` / `.yml` / `.yaml`. Same rule: declared-but-absent FAILS.
-const SCAN_DIRS: &[&str] = &["scripts", ".github"];
+const SCAN_DIRS: &[&str] = &[".github"];
 
 #[cfg(test)]
 #[path = "../../tests/node_free_tests.rs"]

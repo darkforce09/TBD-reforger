@@ -52,7 +52,7 @@ That is not waste. It is the only reason the numbers above can be trusted.
 
 1. **Run [`PLAYTEST_RUNBOOK.md`](PLAYTEST_RUNBOOK.md).** Nothing blocks it any more. One session closes
    **T-181.16 and T-068.14** — the last slices of the last two open programs. Start with
-   `scripts/mod/run-playtest-server.sh`. The remaining unknown is the friend's first Direct Join,
+   `cargo xtask mod playtest`. The remaining unknown is the friend's first Direct Join,
    which nobody has ever exercised; §6.2's `#tbd` chat probe tells you in one line which mod the
    client actually loaded.
 2. **Only then consider more waves.** And if you do, read the two entries below first — the tooling
@@ -60,8 +60,8 @@ That is not waste. It is the only reason the numbers above can be trusted.
 
 ### Still open on staging (T-607, no longer playtest-blocking)
 
-`deploy-staging.sh:1153` omits `-addonsDir` in config mode and `:1155` registers no room, so staging
-is still broken both ways. Copy the shape T-604 proved in `scripts/mod/run-playtest-server.sh` —
+`cargo xtask deploy staging` omits `-addonsDir` in config mode and registers no room, so staging
+is still broken both ways. Copy the shape `cargo xtask mod playtest` proved —
 **both flags together**. STAGING-SERVER.md's pass criteria were already corrected by T-606. The old
 1.0.1 pak is kept at `~/.cache/tbd-workshop-1.0.1-backup`; it is the only copy, and the stale-build
 detectors were validated against it, so do not delete it casually.
@@ -309,7 +309,7 @@ record the correction in the ticket and tell the operator plainly.
   error in the other, and a loop that reads exit 2 as "no match" is fail-open — T-586's own prototype
   printed **50 false findings** that way before it was caught. Use `-F` literal for anything
   route-shaped or brace-bearing, and read the exit status (0/1/2/127) rather than collapsing it to a
-  boolean. `scripts/mod/lib/gate-grep.sh` already does this; use it.
+  boolean. `verification_core::gate::{require, ban}` already do this; use them.
 - **`cargo` is not usable in the container**, and neither are rustfmt/xtask. Route them through
   `distrobox-host-exec` like the rest. Only `cargo xtask platform wave` runs directly, never wrapped.
 - **A slice agent running its own server instance needs a PRIVATE `CARGO_TARGET_DIR`.** Measured
@@ -340,8 +340,8 @@ record the correction in the ticket and tell the operator plainly.
   Use `grep -E` (container, host, and every CI runner) and **read the exit status** rather than
   collapsing it to a boolean: 0 match / 1 no-match / 2 file missing / 127 tool absent. Only the last
   two are new information and both must fail closed, naming which happened.
-  The shared helpers are `scripts/mod/lib/gate-grep.sh` (`gate_ban`, `gate_require`, …) — use them
-  rather than hand-rolling, which is how this defect kept being reborn by copy-paste.
+  The shared helpers are `verification_core::gate::{require, ban}` — use them rather than
+  hand-rolling, which is how this defect kept being reborn by copy-paste.
 
 ## The shape
 
@@ -396,12 +396,10 @@ once per wave on merged main.
 still claim (that figure was measured before the Go→Rust and React→Leptos migrations). A gate
 everyone routes around teaches agents that gate failures are noise.
 
-> **T-620 corrected the other half of this paragraph.** It used to add that `verify-no-python.sh`
-> "fails on `scripts/mod/slice-collisions.py` and on inline `python3` in `wave.sh`/`world-boot.sh`",
-> which was true and was the reason nobody minded routing around it. Both `.py` files are now ported
-> to `cargo xtask slice-collisions` and deleted, the inline `python3` debt is frozen in
-> `scripts/python-inventory.txt`, and the gate is GREEN — so it no longer has an excuse to live only
-> in `ci-local`. It is now a step in the **wave gate** and in a dedicated **`language-gates` CI job**,
+> **`cargo xtask verify no-python` is GREEN and has no excuse to live only in `ci-local`.** The
+> collision analyser is `cargo xtask slice-collisions`, and the repository admits no Python at
+> all, so the gate has nothing to route around. It is a step in the **wave gate** and in a
+> dedicated **`language-gates` CI job**,
 > alongside `verify-no-node` and the T-621 shell ratchet. Routing around `ci-local` no longer routes
 > around the language gates.
 
@@ -429,9 +427,9 @@ to the slice's own diff against `main`.
 
 ## Rules
 
-1. **One worktree per ticket.** `bash scripts/mod/slice-worktree.sh new T-190` — that script is
-   program-agnostic, it keys off the branch name only. Sub-slices (`T-190.1`) live in the parent's
-   tree.
+1. **One worktree per ticket.** `cargo xtask platform slice-worktree -- new T-190` — the command
+   is program-agnostic, it keys off the branch name only. Sub-slices (`T-190.1`) live in the
+   parent's tree.
 2. **Concurrency = file-disjointness, computed, never guessed.**
    ```bash
    cargo xtask slice-collisions              # max dispatch set
@@ -533,7 +531,7 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 | Website — server manager | 8 | `apps/website/api_v2/src/` |
 | Arsenal / loadouts | 7 | frontend + `flatten.rs` |
 | Data pipeline | 7 | `contracts_v2/`, `tools/` |
-| End-to-end test lane | 6 | `scripts/mod/`, CI |
+| End-to-end test lane | 6 | `tools_v2/xtask/`, CI |
 | Discord | 6 | `apps/website/api_v2/src/` |
 | Infra / deploy | 6 | root, `docs/` |
 | Registry hygiene | 6 | `tools_v2/xtask/`, `.ai/tickets/` |

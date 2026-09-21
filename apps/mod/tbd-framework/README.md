@@ -130,7 +130,7 @@ Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `
 ### Expected log lines
 
 Verified against a real boot (T-612, 2026-08-01). Everything after each tag/`key=` prefix is
-expected to vary — pin the prefix, never the sentence (`scripts/mod/remote-log-grep.sh:34`):
+expected to vary — pin the prefix, never the sentence (`cargo xtask mod remote-logs` does):
 
 ```
 [TBD][Mission] loaded id=msn_8f3a2c name='Bridgehead at Levie' slots=18 source=backend

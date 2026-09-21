@@ -7,13 +7,12 @@ use std::process::Command;
 
 fn throwaway(tag: &str) -> PathBuf {
     let root = PathBuf::from(format!(
-        "/tmp/t853/w230/t890/ut-{tag}-{}",
+        "/tmp/xtask-mod-wave/ut-{tag}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::create_dir_all(root.join(".ai/artifacts/worktrees")).unwrap();
-    fs::create_dir_all(root.join("scripts/mod")).unwrap();
     root
 }
 

@@ -1,20 +1,13 @@
-//! T-865 — port of `scripts/mod/mcp-call-selftest.sh` → `cargo xtask mcp selftest`.
+//! `cargo xtask mcp selftest` — the whole MCP call path, offline.
 //!
-//! Offline MCP call-path gates (T-090.0 T1–T7; T-162 consumer). Drives `xtask mcp consume`
-//! against recorded fixtures and `xtask mcp call` against the Rust mcpd stub (`MCP_STUB=1`).
+//! Two halves. `cargo xtask mcp consume` is driven against the recorded transcripts in
+//! [`repository_layout::MCP_TRANSCRIPT_FIXTURES_DIR`], one per response shape, to pin the exit
+//! code each shape produces. `cargo xtask mcp call` is then driven against the `mcpd` stub
+//! (`MCP_STUB=1`), one-shot and through the daemon, to pin the same codes end to end — success,
+//! tool error, failed initialize, empty after retries, and timeout.
 //!
-//! Wave 226 option 2: `cargo run -q -p xtask --` replaces former `lib/xtask-run.sh`;
-//! mcpd path is inlined (`cargo build -q -p developer-tools --bin mcpd` + `CARGO_TARGET_DIR`
-//! honor — former `lib/mcpd-bin.sh`). Daemon control is in-process
-//! (`mcp_daemon`, T-888). Warm
-//! `CARGO_TARGET_DIR` keeps stdout reproducible.
-//!
-//! Fail-opens pinned (bash parity):
-//! - `cleanup` / daemon `start` discard stdout+stderr (`>/dev/null 2>&1`).
-//! - One-shot arms discard stderr via `2>/dev/null` (except empty+retry / T7 which keep it).
-//! - Script uses `set -uo pipefail` **without** `-e` — a failed arm increments FAIL and continues.
-//!
-//! Summary label stays `mcp-call-selftest:` (byte parity with the deleted script).
+//! Every arm runs even after one fails, so a run reports the whole call path rather than the
+//! first broken arm. A warm `CARGO_TARGET_DIR` keeps the build step's output off stdout.
 
 use std::fs;
 use std::io::{self, Write};
@@ -23,10 +16,11 @@ use std::path::Path;
 use verification_core::NotRun;
 use verification_core::proc::Run;
 
+use crate::core::repository_layout;
 use crate::core::repository_root::find_repo_root;
 
-/// Shared stderr dump path — same as bash `/tmp/.st_e`.
-const ST_ERR: &str = "/tmp/.st_e";
+/// Where an arm's captured stderr is parked so a failing run can be read after the fact.
+const CAPTURED_STDERR_PATH: &str = "/tmp/xtask-mcp-selftest-stderr";
 
 struct Counters {
     pass: u32,
@@ -53,8 +47,8 @@ impl Counters {
     }
 }
 
-/// Strip trailing newlines the way bash `$(…)` does.
-fn bash_chomp(s: &str) -> String {
+/// Strip every trailing newline, so an otherwise empty body reads as empty.
+fn strip_trailing_newlines(s: &str) -> String {
     let mut t = s.to_string();
     while t.ends_with('\n') {
         t.pop();
@@ -82,31 +76,27 @@ pub fn run() -> i32 {
             return 1;
         }
     };
-    run_at(&root.join("scripts/mod"))
+    run_at(&root)
 }
 
-/// Testable entry: `script_dir` is the former `SCRIPT_DIR` (…/scripts/mod).
-pub fn run_at(script_dir: &Path) -> i32 {
-    let root = script_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| script_dir.to_path_buf());
-    let fix = script_dir.join("fixtures");
+/// Testable entry: `root` is the checkout the transcripts and the commands are read from.
+pub fn run_at(root: &Path) -> i32 {
+    let fix = root.join(repository_layout::MCP_TRANSCRIPT_FIXTURES_DIR);
     let sock = format!("/tmp/tbd-mcp-selftest-{}.sock", uid());
 
-    // bash: `export MCP_STUB=1`
+    // SAFETY: set before any thread is spawned. Every `mcp call` this selftest spawns must reach
+    // the stub rather than a real Workbench.
     unsafe { std::env::set_var("MCP_STUB", "1") };
 
     let mut c = Counters { pass: 0, fail: 0 };
 
-    println!("[T-543] mcpd CARGO_TARGET_DIR honor");
+    println!("[mcpd build] CARGO_TARGET_DIR is honoured");
     let want_stub = format!(
         "{}/debug/mcpd",
         std::env::var("CARGO_TARGET_DIR")
             .unwrap_or_else(|_| root.join("target").display().to_string())
     );
-    let stub = match resolve_mcpd_bin(&root) {
+    let stub = match resolve_mcpd_bin(root) {
         Ok((0, path)) => {
             if path == want_stub {
                 c.ok(&format!("mcpd build+path ({path})"));
@@ -127,82 +117,81 @@ pub fn run_at(script_dir: &Path) -> i32 {
 
     cleanup(&sock);
 
-    println!("[T2-T5] consumer fixtures");
-    match xtask_consume(&root, &fix.join("mcp-wb-state-success.jsonl")) {
+    println!("[transcripts] one recorded response shape per exit code");
+    match xtask_consume(root, &fix.join("mcp-wb-state-success.jsonl")) {
         Ok((rc, out, _)) => {
-            let out = bash_chomp(&out);
+            let out = strip_trailing_newlines(&out);
             if rc == 0 && !out.is_empty() {
-                c.ok("T2 success rc0 non-empty");
+                c.ok("success rc0 non-empty");
             } else {
-                c.no(&format!("T2 success (rc={rc} out=[{out}])"));
+                c.no(&format!("success (rc={rc} out=[{out}])"));
             }
         }
-        Err(n) => c.no(&format!("T2 DidNotRun: {n:?}")),
+        Err(n) => c.no(&format!("success DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&root, &fix.join("mcp-tool-error.jsonl")) {
+    match xtask_consume(root, &fix.join("mcp-tool-error.jsonl")) {
         Ok((rc, _out, err)) => {
-            let _ = fs::write(ST_ERR, &err);
-            c.rc_is("T3 error (rpc)", 3, rc);
+            let _ = fs::write(CAPTURED_STDERR_PATH, &err);
+            c.rc_is("JSON-RPC error", 3, rc);
             if err.contains(r#""code""#) {
-                c.ok("T3 error JSON on stderr");
+                c.ok("error JSON on stderr");
             } else {
-                c.no("T3 error JSON missing");
+                c.no("error JSON missing");
             }
         }
-        Err(n) => c.no(&format!("T3 DidNotRun: {n:?}")),
+        Err(n) => c.no(&format!("JSON-RPC error DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&root, &fix.join("mcp-tool-iserror.jsonl")) {
+    match xtask_consume(root, &fix.join("mcp-tool-iserror.jsonl")) {
         Ok((rc, _out, err)) => {
-            let _ = fs::write(ST_ERR, &err);
-            c.rc_is("T3b error (isError)", 3, rc);
+            let _ = fs::write(CAPTURED_STDERR_PATH, &err);
+            c.rc_is("tool-reported error", 3, rc);
             if err.contains("MCP error") {
-                c.ok("T3b isError text on stderr");
+                c.ok("tool-reported error text on stderr");
             } else {
-                c.no("T3b isError text missing");
+                c.no("tool-reported error text missing");
             }
         }
-        Err(n) => c.no(&format!("T3b DidNotRun: {n:?}")),
+        Err(n) => c.no(&format!("tool-reported error DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&root, &fix.join("mcp-init-fail.jsonl")) {
-        Ok((rc, _, _)) => c.rc_is("T4 init-fail", 2, rc),
-        Err(n) => c.no(&format!("T4 DidNotRun: {n:?}")),
+    match xtask_consume(root, &fix.join("mcp-init-fail.jsonl")) {
+        Ok((rc, _, _)) => c.rc_is("initialize failed", 2, rc),
+        Err(n) => c.no(&format!("initialize failed DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&root, &fix.join("mcp-empty.jsonl")) {
+    match xtask_consume(root, &fix.join("mcp-empty.jsonl")) {
         Ok((rc, out, _)) => {
-            let out = bash_chomp(&out);
+            let out = strip_trailing_newlines(&out);
             if rc == 1 && out.is_empty() {
-                c.ok("T5 empty rc1 empty-out");
+                c.ok("empty response rc1 empty-out");
             } else {
-                c.no(&format!("T5 empty (rc={rc} out=[{out}])"));
+                c.no(&format!("empty response (rc={rc} out=[{out}])"));
             }
         }
-        Err(n) => c.no(&format!("T5 DidNotRun: {n:?}")),
+        Err(n) => c.no(&format!("empty response DidNotRun: {n:?}")),
     }
 
-    println!("[T6] usage error, no spawn");
-    match xtask_call(&root, &[], &[]) {
+    println!("[usage] a missing tool name is refused without spawning a server");
+    match xtask_call(root, &[], &[]) {
         Ok((rc, _out, err)) => {
-            let _ = fs::write(ST_ERR, &err);
-            c.rc_is("T6 usage", 1, rc);
-            // bash: `grep -q usage` (case-sensitive)
+            let _ = fs::write(CAPTURED_STDERR_PATH, &err);
+            c.rc_is("usage", 1, rc);
             if err.contains("usage") {
-                c.ok("T6 usage text on stderr");
+                c.ok("usage text on stderr");
             } else {
-                c.no("T6 usage text missing");
+                c.no("usage text missing");
             }
         }
-        Err(n) => c.no(&format!("T6 DidNotRun: {n:?}")),
+        Err(n) => c.no(&format!("usage DidNotRun: {n:?}")),
     }
 
     println!("[one-shot wrapper via stub] (MCP_NO_DAEMON=1)");
     let call_args = ["wb_state".to_string(), "{}".to_string()];
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -212,7 +201,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         ]),
     ) {
         Ok((rc, out, _err)) => {
-            let out = bash_chomp(&out);
+            let out = strip_trailing_newlines(&out);
             if rc == 0 && out == "STUB-OK wb_state edit 123" {
                 c.ok("one-shot success rc0");
             } else {
@@ -223,7 +212,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -237,7 +226,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -252,7 +241,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -263,19 +252,19 @@ pub fn run_at(script_dir: &Path) -> i32 {
         ]),
     ) {
         Ok((rc, _out, err)) => {
-            let _ = fs::write(ST_ERR, &err);
+            let _ = fs::write(CAPTURED_STDERR_PATH, &err);
             c.rc_is("one-shot empty+retry", 1, rc);
             if err.contains("STUB-STDERR-MARKER") {
-                c.ok("T7 stderr surfaced on failure");
+                c.ok("stderr surfaced on failure");
             } else {
-                c.no("T7 stderr not surfaced");
+                c.no("stderr not surfaced");
             }
         }
         Err(n) => c.no(&format!("one-shot empty DidNotRun: {n:?}")),
     }
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -291,15 +280,15 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     println!("[daemon via stub-daemon] (short socket, offline)");
-    // bash: `export MCP_SOCK=… MCP_DAEMON_IDLE=8 MCP_DAEMON_MAX_LIFE=30`
+    // SAFETY: single-threaded; the daemon and the calls below inherit these.
     unsafe {
         std::env::set_var("MCP_SOCK", &sock);
         std::env::set_var("MCP_DAEMON_IDLE", "8");
         std::env::set_var("MCP_DAEMON_MAX_LIFE", "30");
     }
 
-    // PINNED fail-open: start discards streams (T-888 in-process quiet start)
-    // Env for stub/idle already set above via set_var; also pin ENFUSION_MCP_BIN.
+    // The daemon must resolve the stub rather than a real server, so its entry is pinned here.
+    // SAFETY: single-threaded; the daemon inherits these.
     unsafe {
         std::env::set_var("ENFUSION_MCP_BIN", &stub);
         std::env::set_var("STUB_DAEMON", "1");
@@ -309,7 +298,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     c.rc_is("daemon start+status", 0, code);
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("ENFUSION_MCP_BIN", &stub),
@@ -318,7 +307,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         ]),
     ) {
         Ok((rc, out, _)) => {
-            let out = bash_chomp(&out);
+            let out = strip_trailing_newlines(&out);
             if rc == 0 && out == "STUB-DAEMON-OK wb_state args={}" {
                 c.ok("daemon call rc0");
             } else {
@@ -330,7 +319,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
 
     let args_rt = ["api_search".to_string(), r#"{"query":"Ztest"}"#.to_string()];
     match xtask_call(
-        &root,
+        root,
         &args_rt,
         &env_pairs(&[
             ("ENFUSION_MCP_BIN", &stub),
@@ -339,7 +328,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         ]),
     ) {
         Ok((_rc, out, _)) => {
-            let out = bash_chomp(&out);
+            let out = strip_trailing_newlines(&out);
             if out == r#"STUB-DAEMON-OK api_search args={"query":"Ztest"}"# {
                 c.ok("args round-trip (no brace corruption)");
             } else {
@@ -352,7 +341,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     cleanup(&sock);
 
     match xtask_call(
-        &root,
+        root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -362,7 +351,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         ]),
     ) {
         Ok((rc, out, _)) => {
-            let out = bash_chomp(&out);
+            let out = strip_trailing_newlines(&out);
             if rc == 0 && !out.is_empty() {
                 c.ok("fallback when no daemon");
             } else {
@@ -372,7 +361,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         Err(n) => c.no(&format!("fallback DidNotRun: {n:?}")),
     }
 
-    let _ = fs::remove_file(ST_ERR);
+    let _ = fs::remove_file(CAPTURED_STDERR_PATH);
 
     println!("---");
     if c.fail == 0 {
@@ -389,7 +378,9 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 }
 
-/// PINNED fail-open: bash `cleanup() { … >/dev/null 2>&1; rm -f "$SOCK"*; }`
+/// Stop any daemon on `sock` and remove the socket plus everything it named beside it.
+///
+/// Every step is best-effort: this runs before the first arm, when nothing exists yet.
 fn cleanup(sock: &str) {
     let _ = crate::commands::mcp::daemon::stop_at(sock, true);
     if let Ok(rd) = fs::read_dir("/tmp") {
@@ -408,7 +399,7 @@ fn cleanup(sock: &str) {
     let _ = fs::remove_file(sock);
 }
 
-/// Former `lib/mcpd-bin.sh`: build mcpd quietly, honor `CARGO_TARGET_DIR`, echo path.
+/// Build `mcpd` quietly into `CARGO_TARGET_DIR` and return where the binary landed.
 fn resolve_mcpd_bin(root: &Path) -> Result<(i32, String), NotRun> {
     let target_dir = std::env::var("CARGO_TARGET_DIR")
         .unwrap_or_else(|_| root.join("target").display().to_string());
@@ -427,7 +418,7 @@ fn resolve_mcpd_bin(root: &Path) -> Result<(i32, String), NotRun> {
     Ok((0, format!("{target_dir}/debug/mcpd")))
 }
 
-/// Former `lib/xtask-run.sh` ≡ `cargo run -q -p xtask -- <args>` from monorepo root.
+/// `cargo run -q -p xtask -- <args>` from the checkout root.
 fn cargo_xtask(
     root: &Path,
     args: &[&str],

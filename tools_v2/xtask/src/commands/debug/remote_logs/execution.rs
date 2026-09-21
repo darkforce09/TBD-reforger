@@ -73,9 +73,7 @@ pub(super) fn check_log(log: &Path) -> u8 {
         println!("      Workshop 1.0.1 logs flat '[TBD] …' with no subsystem tag; the current");
         println!("      build tags every line. A '-config'-only server downloads that stale copy");
         println!("      and looks healthy while running months-old script. Boot with -addonsDir,");
-        println!(
-            "      or use scripts/mod/run-playtest-server.sh which asserts the local addon won."
-        );
+        println!("      or use `cargo xtask mod playtest` which asserts the local addon won.");
         fail = true;
     } else if tagged < floor {
         println!("WARN: only {tagged} tagged lines (advisory floor {floor}).");
@@ -295,9 +293,17 @@ pub(super) fn check_log_quiet(log: &Path) -> u8 {
     }
 }
 
+/// What to say when a required value is in neither the environment nor the deploy file.
+fn missing_variable_message(key: &str) -> String {
+    format!(
+        "{key}: set {key} in the environment or in {}",
+        crate::core::repository_layout::DEPLOY_ENV
+    )
+}
+
 pub(super) fn cmd_remote() -> Result<u8> {
     let root = find_repo_root()?;
-    let env_file = root.join("scripts/deploy/deploy.env");
+    let env_file = root.join(crate::core::repository_layout::DEPLOY_ENV);
     let mut host = std::env::var("TBD_SSH_HOST").ok();
     let mut profile = std::env::var("TBD_PROFILE_DIR").ok();
     let mut ssh_pass = std::env::var("TBD_SSH_PASS").ok();
@@ -311,22 +317,18 @@ pub(super) fn cmd_remote() -> Result<u8> {
         ssh_ident = ssh_ident.or_else(|| parsed.get("TBD_SSH_IDENTITY_FILE").cloned());
     }
 
-    // Preserved oddity: bash `: "${TBD_SSH_HOST:?…}"` exits 1, not ENVIRONMENT 3.
+    // A missing required value exits 1, not ENVIRONMENT 3: nothing was probed.
     let host = match host.filter(|s| !s.is_empty()) {
         Some(h) => h,
         None => {
-            eprintln!(
-                "scripts/mod/remote-log-grep.sh: TBD_SSH_HOST: Set TBD_SSH_HOST in scripts/deploy/deploy.env"
-            );
+            eprintln!("{}", missing_variable_message("TBD_SSH_HOST"));
             return Ok(1);
         }
     };
     let profile = match profile.filter(|s| !s.is_empty()) {
         Some(p) => p,
         None => {
-            eprintln!(
-                "scripts/mod/remote-log-grep.sh: TBD_PROFILE_DIR: Set TBD_PROFILE_DIR in scripts/deploy/deploy.env"
-            );
+            eprintln!("{}", missing_variable_message("TBD_PROFILE_DIR"));
             return Ok(1);
         }
     };

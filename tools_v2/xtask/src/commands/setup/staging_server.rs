@@ -1,28 +1,26 @@
-//! T-870 — port of `scripts/mod/bootstrap-staging-server.sh` → `cargo xtask mod bootstrap-staging`.
+//! `cargo xtask mod bootstrap-staging` — one-time discovery of a staging host, and the
+//! directories the deploy expects to find there.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`,
-//! `DEPLOY_ENV=scripts/deploy/deploy.env`.
+//! It installs neither steamcmd nor Arma; `docs/mod/STAGING-SERVER.md` covers those.
 //!
-//! One-time staging-host discovery + mkdir. Does **not** install steamcmd / Arma — see
-//! `docs/mod/STAGING-SERVER.md`.
+//! What it refuses and what it tolerates:
+//! - An absent deploy file is fine: every value it would supply can come from the environment.
+//! - An unreadable deploy file is not: it exits 1 rather than proceeding with an empty overlay.
+//! - An unset `TBD_SSH_HOST` exits 1 — there is no host to discover.
+//! - A `TBD_REMOTE_DIR` containing `prairielearn` exits 1. TBD deploys under `/home/sam/tbd/`
+//!   only, and that substring is the one that marks the neighbouring project's tree.
+//! - An absent `ssh` or `sshpass` exits 127 with an explicit message, never a silent success.
+//!   Transport failures and non-zero remote exits stop the command.
 //!
-//! Fail-opens closed / pinned vs bash:
-//! - Missing `deploy.env` is OK (`[ -f … ] && source`) — pinned soft probe.
-//! - Unset/empty `TBD_SSH_HOST` after optional source exits **1** with the bash
-//!   `${VAR:?…}` shape (historical script path + line 15) — preserved oddity, not "fixed" to 3.
-//! - `TBD_REMOTE_DIR` containing literal `prairielearn` (case-sensitive, bash `== *prairielearn*`)
-//!   refuses with rc=1 — pinned.
-//! - Absent `ssh` / `sshpass`: bash `set -e` would die on command-not-found. **Closed for
-//!   ToolAbsent** via `verification_core::proc::which` → exit 127 with an explicit message (no silent
-//!   success). Transport / remote nonzero still hard-fail like bash `set -e`.
-//!
-//! Test seams (prefer these over PATH stubs — PATH races `gate_crf_leak`'s `/usr/bin/grep`):
-//! - `TBD_BOOTSTRAP_STAGING_SSH` — absolute ssh path (checked before `PATH`). Set-but-missing
+//! Test seams, preferred over PATH stubs because PATH is process-wide and other checks resolve
+//! their own tools through it:
+//! - `TBD_BOOTSTRAP_STAGING_SSH` — absolute ssh path, checked before `PATH`. Set but missing
 //!   forces [`NotRun::ToolAbsent`].
-//! - `TBD_BOOTSTRAP_STAGING_SSHPASS` — same for sshpass.
-//! - Remote discovery soft probes (`ss … 2>/dev/null`, `docker … 2>/dev/null || echo`) stay inside
-//!   the remote heredoc — preserved oddities of the discovery script, not local fail-opens.
+//! - `TBD_BOOTSTRAP_STAGING_SSHPASS` — the same for sshpass.
+//!
+//! The remote discovery heredoc's own probes (`ss … 2>/dev/null`,
+//! `docker … 2>/dev/null || echo`) are soft on purpose: it reports what a host has, and an
+//! absent tool is an answer.
 
 use std::collections::HashMap;
 use std::fs;
@@ -44,7 +42,7 @@ const ENV_SSH: &str = "TBD_BOOTSTRAP_STAGING_SSH";
 /// Optional absolute sshpass path for unit tests (avoids PATH mutation).
 const ENV_SSHPASS: &str = "TBD_BOOTSTRAP_STAGING_SSHPASS";
 
-/// Remote discovery body — byte-stable with the former bash `<<'DISC'` heredoc.
+/// The discovery script run on the remote host: disk, listening ports, container runtime.
 const DISCOVERY_SCRIPT: &str = r#"set -euo pipefail
 echo "--- disk ---"
 df -h ~
@@ -54,7 +52,7 @@ echo "--- docker ---"
 docker compose version 2>/dev/null || docker --version 2>/dev/null || echo "docker not found"
 "#;
 
-/// Paths mirroring `scripts/mod/lib/paths.sh`.
+/// The checkout locations this command reads.
 struct Paths {
     #[allow(dead_code)]
     mono_root: PathBuf,
@@ -74,8 +72,8 @@ impl Paths {
             mod_root: root.join("apps/mod"),
             schema: developer_tools::repository_layout::contracts_dir(root),
             web: root.join("apps/website/api_v2"),
-            // paths.sh pin — not an env override (unlike deploy-website).
-            deploy_env: root.join("scripts/deploy/deploy.env"),
+            // Fixed, unlike `deploy website`, which honours a `DEPLOY_ENV` override.
+            deploy_env: root.join(crate::core::repository_layout::DEPLOY_ENV),
         }
     }
 }
@@ -121,13 +119,13 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     }
 
     println!();
-    println!("Next steps (manual — see docs/STAGING-SERVER.md):");
+    println!("Next steps (manual — see docs/mod/STAGING-SERVER.md):");
     println!("  1. steamcmd +app_update 1890870 on server");
     println!(
         "  2. Create apps/website/api_v2/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)"
     );
     println!("  3. sudo loginctl enable-linger sam");
-    println!("  4. bash scripts/mod/deploy-staging.sh");
+    println!("  4. cargo xtask deploy staging");
 
     Ok(0)
 }
@@ -142,7 +140,7 @@ struct Cfg {
 }
 
 fn load_cfg(deploy_env: &Path) -> Result<Cfg, u8> {
-    // Start from process env, then overlay file keys (bash `source` overwrites, including empty).
+    // Start from the process environment, then let the deploy file's keys win, empty included.
     let mut host = std::env::var("TBD_SSH_HOST").ok();
     let mut remote_dir = std::env::var("TBD_REMOTE_DIR").ok();
     let mut profile_dir = std::env::var("TBD_PROFILE_DIR").ok();
@@ -161,7 +159,7 @@ fn load_cfg(deploy_env: &Path) -> Result<Cfg, u8> {
                 overlay_source(&mut ssh_identity, &map, "TBD_SSH_IDENTITY_FILE");
             }
             Err(e) => {
-                // Closed: unreadable deploy.env is not a silent empty source.
+                // An unreadable deploy file is not an empty one: it stops the command.
                 eprintln!("could not read {}: {e}", deploy_env.display());
                 return Err(1);
             }
@@ -171,15 +169,15 @@ fn load_cfg(deploy_env: &Path) -> Result<Cfg, u8> {
     let host = match host.filter(|s| !s.is_empty()) {
         Some(h) => h,
         None => {
-            // Preserved oddity: bash `: "${TBD_SSH_HOST:?…}"` shape (historical path + line).
             eprintln!(
-                "scripts/mod/bootstrap-staging-server.sh: line 15: TBD_SSH_HOST: Set TBD_SSH_HOST in scripts/deploy/deploy.env"
+                "TBD_SSH_HOST: set TBD_SSH_HOST in the environment or in {}",
+                crate::core::repository_layout::DEPLOY_ENV
             );
             return Err(1);
         }
     };
 
-    // bash `: "${VAR:=default}"` — unset or empty → default.
+    // Unset or empty takes the default.
     Ok(Cfg {
         host,
         remote_dir: nonempty_or(remote_dir, DEFAULT_REMOTE_DIR),
@@ -306,7 +304,7 @@ fn ssh_base(cfg: &Cfg) -> Result<(String, Vec<String>), u8> {
 }
 
 fn not_run_exit(e: &NotRun) -> u8 {
-    // Closed fail-open: bash `set -e` dies on command-not-found; we never fold ToolAbsent into 0.
+    // An absent tool is reported as itself; it never folds into a zero exit code.
     match e {
         NotRun::ToolAbsent(tool) => {
             eprintln!("{tool}: command not found");

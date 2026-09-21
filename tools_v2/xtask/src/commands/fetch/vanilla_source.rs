@@ -1,19 +1,21 @@
-//! T-862 — port of `scripts/mod/fetch-vanilla-source.sh` → `cargo xtask fetch vanilla-source`.
+//! `cargo xtask fetch vanilla-source` — mirror vanilla Enfusion method bodies.
 //!
-//! Mirrors vanilla Enfusion SOURCE (method bodies) from arexplorer.zeroy.com. Default is the
-//! curated T-181 spine; `--all` / `--grep` / explicit names match bash. Pages are cached under
-//! `apps/mod/vanilla_reference/source_html/` and never refetched when non-empty.
+//! Pages come from arexplorer.zeroy.com and are cached under
+//! `apps/mod/vanilla_reference/source_html/`; a cached page that is non-empty is never
+//! refetched. The default set is a curated spine of the classes the framework builds on;
+//! `--all`, `--grep <pattern>` and explicit class names widen it.
 //!
-//! Preserved oddities (byte-for-byte with bash):
-//! - `--help` is a *filename* target (MISS), not usage — clap help is disabled on this subcommand.
-//! - `--grep` with missing or empty pattern prints historical `$0` usage and exits 2.
-//! - Building `map.tsv` from an index with zero href matches exits 1 (grep pipefail), after
-//!   truncating the map file empty.
-//! - HTTP misses count as `miss` and do not change the process exit code (still 0).
+//! Three behaviours worth knowing before reading the code:
+//! - `--help` is treated as a class name, and reports `MISS` like any other unknown name: clap's
+//!   help is disabled on this subcommand so that a class actually called `help` stays fetchable.
+//! - `--grep` with a missing or empty pattern prints the usage line and exits 2.
+//! - An index with no matching links exits 1 after truncating `map.tsv`: an empty map is the
+//!   one state that would make every later lookup silently miss.
+//! - An HTTP miss counts as `miss` and leaves the exit code at 0.
 //!
-//! Curl is invoked via [`verification_core::proc::Run`] (same flags as bash). Offline arms that never
-//! need the network (cache hits, MISS-not-in-index, `--grep` usage, empty-index map build)
-//! are the acceptance surface; live fetch is the same curl recipe when a page is absent.
+//! Curl runs through [`verification_core::proc::Run`]. Cache hits, an unknown name, `--grep`
+//! usage and the empty-index refusal all work offline; a page that is absent is fetched with the
+//! same recipe.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, Write};
@@ -73,7 +75,7 @@ pub fn run(repo_root: &Path, args: &[String]) -> Result<u8> {
     }
 
     let targets = resolve_targets(args, &map_path)?;
-    // Line-flush so `>out 2>&1` interleaves stdout/stderr like bash `echo` (T-853 byte diff).
+    // Line-flushed, so a `>out 2>&1` capture interleaves stdout and stderr in real order.
     out_line(&format!("==> {} source page(s)", targets.len()))?;
 
     let delay = fetch_delay();
@@ -129,7 +131,7 @@ fn err_line(s: &str) -> Result<()> {
     Ok(())
 }
 
-/// `--grep` with missing or empty pattern → usage on stderr, exit 2 (bash `[ -n "${2:-}" ]`).
+/// `--grep` with a missing or empty pattern: usage on stderr, exit 2.
 fn early_usage(args: &[String]) -> Option<u8> {
     if args.first().map(String::as_str) == Some("--grep") {
         let pat = args.get(1).map(String::as_str).unwrap_or("");
@@ -158,7 +160,7 @@ fn ensure_index(index: &Path) -> Result<()> {
         return Ok(());
     }
     out_line("==> file index")?;
-    // bash: `curl -sSL -A UA -o INDEX URL` with set -e (no `|| echo 000`, no http_code).
+    // The index is not optional: a failed fetch stops the command.
     curl_download(&format!("{BASE}/files.html"), index)?;
     let bytes = fs::metadata(index).map(|m| m.len()).unwrap_or(0);
     out_line(&format!("  got files.html ({bytes} bytes)"))?;
@@ -181,9 +183,9 @@ fn ensure_map(index: &Path, map_path: &Path) -> Result<(), u8> {
             (name.to_string(), format!("{stem}_8c_source.html"))
         })
         .collect();
-    // bash: grep exits 1 on no match → pipefail kills the script before `echo mapped`.
+    // An index with no matching links yields no map. Truncate it rather than leaving a stale
+    // one, and refuse: an empty map makes every later lookup miss silently.
     if rows.is_empty() {
-        // `> "$MAP"` truncates even when the pipeline fails.
         let _ = File::create(map_path);
         return Err(1);
     }
@@ -245,7 +247,7 @@ fn lookup_page(map_path: &Path, name: &str) -> Result<Option<String>> {
     Ok(None)
 }
 
-/// Index fetch: `curl -sSL -A UA -o dest url` — curl failure is hard (bash `set -e`).
+/// Fetch one document to `dest`. A curl failure here stops the command.
 fn curl_download(url: &str, dest: &Path) -> Result<()> {
     let curl = proc::which("curl").map_err(|_| anyhow::anyhow!("curl: command not found"))?;
     let out = Run::new(curl)
@@ -296,8 +298,8 @@ fn curl_fetch(url: &str, dest: &Path) -> Result<String> {
                 .merged_output();
             match merged {
                 Ok(out) => {
-                    // Non-zero curl still may print an http_code; bash `|| echo 000` only on
-                    // failure of the curl command itself.
+                    // curl failing as a process is reported as `000`, distinct from any HTTP
+                    // status it would otherwise have printed.
                     if out.code != 0 {
                         let _ = fs::remove_file(dest);
                         return Ok("000".to_string());

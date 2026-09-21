@@ -1,18 +1,14 @@
-//! T-877 — port of `scripts/mod/mcp-smoke.sh` → `cargo xtask mcp smoke`.
+//! `cargo xtask mcp smoke` — one live call per tool against a connected Workbench.
 //!
-//! Live MCP smoke (T-090.0 gate S1): `wb_connect` + `wb_state` must both return
-//! non-empty via in-process `cargo run -q -p xtask -- mcp call` (former
-//! `lib/xtask-run.sh` parity — wave 226 option 2; libs stay on disk for OOS bash).
+//! `wb_connect` and `wb_state` must each return a non-empty body through
+//! `cargo run -q -p xtask -- mcp call`. Every tool is attempted even after one fails, so a run
+//! reports which tools are reachable rather than only the first that is not; the child's stderr
+//! is passed through so the reason is visible beside the verdict.
 //!
-//! Preserved bash shape (`set -uo pipefail`, **no** `-e`):
-//! - a failed / empty tool call does not abort the loop
-//! - command substitution captures **stdout only**; child stderr leaks to our stderr
-//! - `$()` strips all trailing newlines before `[ -n "$out" ]`
-//!
-//! Exit: 0 all tools OK · 1 any tool FAIL.
+//! Exit: 0 every tool OK · 1 any tool FAIL.
 
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use verification_core::NotRun;
 use verification_core::proc::Run;
@@ -30,31 +26,21 @@ pub fn run() -> i32 {
             return 1;
         }
     };
-    run_at(&root.join("scripts/mod"))
+    run_at(&root)
 }
 
-/// Testable entry: `script_dir` is the former `SCRIPT_DIR` (`…/scripts/mod`).
-pub fn run_at(script_dir: &Path) -> i32 {
-    run_writers(script_dir, &mut io::stdout(), &mut io::stderr())
+/// Testable entry: `root` is the checkout the calls are made from.
+pub fn run_at(root: &Path) -> i32 {
+    run_writers(root, &mut io::stdout(), &mut io::stderr())
 }
 
-fn mono_root_from_script_dir(script_dir: &Path) -> PathBuf {
-    // scripts/mod → ../../ = monorepo root (former xtask-run.sh dirname climb).
-    script_dir
-        .parent()
-        .and_then(|p| p.parent())
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| script_dir.to_path_buf())
-}
-
-fn run_writers(script_dir: &Path, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
-    let root = mono_root_from_script_dir(script_dir);
+fn run_writers(root: &Path, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
     let mut fail = 0i32;
 
     for tool in TOOLS {
-        match call_tool(&root, tool) {
+        match call_tool(root, tool) {
             Ok((rc, body, child_err)) => {
-                // Bash `$()` keeps child stderr on the smoke's stderr.
+                // The child's own diagnostics belong beside the verdict they explain.
                 if !child_err.is_empty() {
                     let _ = err.write_all(child_err.as_bytes());
                     let _ = err.flush();
@@ -67,8 +53,8 @@ fn run_writers(script_dir: &Path, out: &mut dyn Write, err: &mut dyn Write) -> i
                 }
             }
             Err(n) => {
-                // No bool fold: DidNotRun must not look like Held. Surface as a tool FAIL
-                // with a non-zero rc so the smoke stays red (bash would also fail the arm).
+                // A command that never ran is not a tool that answered: it surfaces as a FAIL
+                // with the exit code its failure mode implies, never folded into a bare bool.
                 let rc = match &n {
                     NotRun::ToolAbsent(_) => 127,
                     NotRun::Signalled { signal, .. } => 128 + signal,
@@ -92,8 +78,7 @@ fn run_writers(script_dir: &Path, out: &mut dyn Write, err: &mut dyn Write) -> i
     }
 }
 
-/// `(rc, bash-chomped stdout, raw stderr)`.
-/// Former `lib/xtask-run.sh mcp call TOOL '{}'` ≡ `cargo run -q -p xtask -- mcp call …`.
+/// `(exit code, stdout without trailing newlines, raw stderr)`.
 fn call_tool(root: &Path, tool: &str) -> Result<(i32, String, String), NotRun> {
     let o = Run::new("cargo")
         .arg("run")
@@ -107,11 +92,11 @@ fn call_tool(root: &Path, tool: &str) -> Result<(i32, String, String), NotRun> {
         .arg("{}")
         .cwd(root)
         .output()?;
-    Ok((o.code, bash_chomp(&o.stdout), o.stderr))
+    Ok((o.code, strip_trailing_newlines(&o.stdout), o.stderr))
 }
 
-/// Bash command-substitution strips every trailing newline.
-fn bash_chomp(s: &str) -> String {
+/// Strip every trailing newline, so an otherwise empty body reads as empty.
+fn strip_trailing_newlines(s: &str) -> String {
     let mut t = s.to_string();
     while t.ends_with('\n') {
         t.pop();

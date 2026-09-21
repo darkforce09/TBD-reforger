@@ -1,19 +1,18 @@
-//! T-860 — port of `scripts/mod/mcp-call.sh` → `cargo xtask mcp call`.
+//! `cargo xtask mcp call` — one Workbench tool call, through the daemon when it is up.
 //!
-//! Exit codes (locked by mcp-call-selftest): 0 success · 1 usage/empty-after-retries ·
-//! 2 init-failed · 3 JSON-RPC tool error · 4 timeout. Internal 9 = fall back to one-shot.
+//! Exit codes, pinned by `cargo xtask mcp selftest`: 0 success · 1 usage or empty after every
+//! retry · 2 initialize failed · 3 JSON-RPC tool error · 4 timeout. Internal 9 means "the daemon
+//! is unavailable, run the call one-shot".
 //!
-//! Fail-opens pinned (bash parity — changing them is a behaviour change):
-//! - `flock -w 65 … 2>/dev/null || true` — lock failure must not block the call.
-//! - `find ~/.npm/_npx … 2>/dev/null | head -1` — missing npx cache is not fatal.
-//! - daemon `status`/`start` stderr discarded; unavailable daemon → oneshot (rc 9 path).
+//! Three failures deliberately do not stop the call, because none of them says the tool call
+//! cannot succeed:
+//! - a lock that cannot be taken within 65 s — the lock only serialises daemon startup;
+//! - an absent or unreadable npx download cache — the pinned package usually answers first;
+//! - a daemon `status` or `start` that fails — the one-shot path still reaches the server.
 //!
-//! Fail-open closed: bash assumed `timeout(1)` on PATH. If absent we fail the attempt with
-//! rc mapping to empty/fail (1) rather than hanging until MCP_CALL_TIMEOUT wall-clock via a
-//! racy kill thread.
-//!
-//! Preserved oddity: usage text still names `mcp-call.sh` (byte-parity with bash baseline /
-//! T6 selftest `grep -q usage`).
+//! One failure does stop the attempt: a missing `timeout(1)`. The alternative is a call that
+//! hangs for the whole `MCP_CALL_TIMEOUT` wall clock behind a racy kill thread, so the attempt
+//! fails closed instead and maps to the empty-result code.
 
 use std::env;
 use std::fs::{self, File};
@@ -22,11 +21,12 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
+use developer_tools::enfusion_tooling::enfusion_mcp_entrypoint;
 use verification_core::lock::flock_exclusive;
 use verification_core::proc;
 
-/// Byte-identical to bash usage line (T6 + `/tmp/t853/w220/t860/usage`).
-const USAGE: &str = "usage: mcp-call.sh <tool> '<json-args>'";
+/// The usage line `cargo xtask mcp selftest` greps for.
+const USAGE: &str = "usage: cargo xtask mcp call <tool> '<json-args>'";
 
 /// Entry for `xtask mcp call [tool] [args-json]`.
 pub fn run(tool: Option<String>, args_json: Option<String>) -> i32 {
@@ -34,7 +34,7 @@ pub fn run(tool: Option<String>, args_json: Option<String>) -> i32 {
         eprintln!("{USAGE}");
         return 1;
     };
-    // Bash: empty $2 → `{}` (never `${2:-{}}` — that appends a stray `}`).
+    // An absent or empty argument object is the empty JSON object.
     let args = match args_json {
         None => "{}".to_string(),
         Some(s) if s.is_empty() => "{}".to_string(),
@@ -43,7 +43,8 @@ pub fn run(tool: Option<String>, args_json: Option<String>) -> i32 {
 
     export_enfusion_defaults();
     let sock = resolve_sock();
-    // SAFETY: bash exports MCP_SOCK for daemon children / helpers.
+    // SAFETY: set before any thread is spawned. The daemon and the `socket-send` helper read
+    // MCP_SOCK from the environment they inherit.
     unsafe { env::set_var("MCP_SOCK", &sock) };
 
     let mut rc = daemon_try(&tool, &args, &sock);
@@ -85,12 +86,6 @@ fn resolve_sock() -> String {
         sock = format!("/tmp/tbd-mcp-{uid}.sock");
     }
     sock
-}
-
-fn scripts_mod() -> PathBuf {
-    crate::core::repository_root::find_repo_root()
-        .map(|r| r.join("scripts/mod"))
-        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts/mod"))
 }
 
 fn xtask_bin() -> PathBuf {
@@ -143,80 +138,34 @@ fn emit_requests(tool: &str, args: &str) -> String {
     )
 }
 
-/// 4-tier runner resolution (one-shot path). Returns argv (program + args).
-fn resolve_runner(script_dir: &Path) -> Vec<String> {
-    if let Ok(bin) = env::var("ENFUSION_MCP_BIN") {
-        let p = PathBuf::from(&bin);
-        if p.is_file() {
-            let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if name.ends_with(".js") || name.ends_with(".mjs") {
-                dbg("runner=tier1(ENFUSION_MCP_BIN)");
-                return vec!["node".into(), bin];
-            }
-            dbg("runner=tier1(ENFUSION_MCP_BIN)");
-            return vec![bin];
-        }
-    }
-    let pinned = script_dir.join("node_modules/enfusion-mcp/dist/index.js");
-    if pinned.is_file() {
-        dbg("runner=tier2(pinned)");
-        return vec!["node".into(), pinned.to_string_lossy().into_owned()];
-    }
-    // PINNED fail-open: bash `find … 2>/dev/null | head -1`.
-    if let Some(hit) = find_npx_enfusion() {
-        dbg("runner=tier3(npx-cache)");
-        return vec!["node".into(), hit];
-    }
-    dbg("runner=tier4(npx)");
-    vec!["npx".into(), "-y".into(), "enfusion-mcp".into()]
+/// The argv that starts an `enfusion-mcp` server for the one-shot path.
+fn resolve_runner() -> Vec<String> {
+    let command = enfusion_mcp_entrypoint::resolve(&repository_root());
+    dbg(&format!("runner={}", command.source.label()));
+    command.argv()
 }
 
-fn find_npx_enfusion() -> Option<String> {
-    let home = env::var("HOME").ok()?;
-    let root = PathBuf::from(home).join(".npm/_npx");
-    if !root.is_dir() {
-        return None;
-    }
-    let mut hits = Vec::new();
-    let _ = visit_depth(&root, 0, 4, &mut hits);
-    // Sorted for determinism (bash `find|head -1` was readdir-order — pin the swap).
-    hits.sort();
-    hits.into_iter().next()
+/// The checkout to resolve the pinned server package against.
+///
+/// The cwd walk answers for the worktree the call is being made from. When it cannot (the call
+/// was made from outside a checkout), the crate's own manifest directory locates the repository
+/// that built this binary.
+fn repository_root() -> PathBuf {
+    crate::core::repository_root::find_repo_root()
+        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }
 
-fn visit_depth(dir: &Path, depth: u32, max: u32, out: &mut Vec<String>) -> std::io::Result<()> {
-    if depth > max {
-        return Ok(());
-    }
-    let rd = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(_) => return Ok(()), // PINNED fail-open (find 2>/dev/null)
-    };
-    for e in rd.flatten() {
-        let p = e.path();
-        if p.is_dir() {
-            visit_depth(&p, depth + 1, max, out)?;
-        } else if p.is_file() {
-            let s = p.to_string_lossy();
-            if s.contains("enfusion-mcp/dist/index.js") {
-                out.push(s.into_owned());
-            }
-        }
-    }
-    Ok(())
-}
-
-fn ensure_daemon(_script_dir: &Path, sock: &str) -> bool {
+fn ensure_daemon(sock: &str) -> bool {
     if env::var("MCP_NO_DAEMON").ok().as_deref() == Some("1") {
         return false;
     }
-    // T-888: in-process mcp daemon (former mcp-daemon.sh).
     if crate::commands::mcp::daemon::is_running_at(sock) {
         return true;
     }
-    // PINNED fail-open: bash opens SOCK.lock + flock -w 65 || true, then status||start.
+    // One lock file per socket serialises the start, so two concurrent calls do not each spawn a
+    // broker for the same socket.
     let lock_path = format!("{sock}.lock");
-    // PINNED fail-open: ignore flock errors (bash `flock … || true`).
+    // A lock that cannot be taken must not block the call: the daemon may already be starting.
     let _held = flock_exclusive(
         Path::new(&lock_path),
         Duration::from_secs(1),
@@ -225,7 +174,7 @@ fn ensure_daemon(_script_dir: &Path, sock: &str) -> bool {
     )
     .ok();
     if !crate::commands::mcp::daemon::is_running_at(sock) {
-        let _ = crate::commands::mcp::daemon::start_at(sock, true); // bash >/dev/null 2>&1
+        let _ = crate::commands::mcp::daemon::start_at(sock, true);
     }
     drop(_held);
     crate::commands::mcp::daemon::is_running_at(sock)
@@ -233,8 +182,7 @@ fn ensure_daemon(_script_dir: &Path, sock: &str) -> bool {
 
 /// 0 success · 3 tool error · 9 fall-back-to-oneshot
 fn daemon_try(tool: &str, args: &str, sock: &str) -> i32 {
-    let script_dir = scripts_mod();
-    if !ensure_daemon(&script_dir, sock) {
+    if !ensure_daemon(sock) {
         dbg("daemon unavailable");
         return 9;
     }
@@ -306,8 +254,7 @@ fn daemon_try(tool: &str, args: &str, sock: &str) -> i32 {
 }
 
 fn oneshot(tool: &str, args: &str) -> i32 {
-    let script_dir = scripts_mod();
-    let runner = resolve_runner(&script_dir);
+    let runner = resolve_runner();
     let timeout = timeout_secs();
     let max_retries = retries();
     let mut attempt = 0u32;
@@ -345,7 +292,7 @@ fn oneshot(tool: &str, args: &str) -> i32 {
     }
 }
 
-/// `emit | timeout RUNNER 2>errf | xtask mcp consume >outf` — returns (to_rc, consume_rc).
+/// `emit | timeout RUNNER 2>errf | xtask mcp consume >outf` — returns (timeout rc, consume rc).
 fn oneshot_pipe(
     runner: &[String],
     tool: &str,
@@ -354,7 +301,7 @@ fn oneshot_pipe(
     outf: &Path,
     errf: &Path,
 ) -> (i32, i32) {
-    // CLOSED fail-open: without timeout(1) bash could hang the server; refuse the attempt.
+    // Without `timeout(1)` an unresponsive server hangs this attempt for the whole wall clock.
     if proc::which("timeout").is_err() {
         dbg("timeout(1) absent — oneshot attempt fails closed");
         return (1, 1);

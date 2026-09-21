@@ -1,8 +1,0 @@
-{
-  "name": "tbd-mod-scripts",
-  "private": true,
-  "description": "Pinned enfusion-mcp for xtask mcp call runner tier-2 (no npx cold-start)",
-  "dependencies": {
-    "enfusion-mcp": "0.6.1"
-  }
-}

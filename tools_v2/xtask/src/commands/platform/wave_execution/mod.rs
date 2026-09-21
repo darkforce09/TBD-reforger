@@ -81,61 +81,51 @@ pub mod trunk;
 /// T-924 — the gate verdict receipt `land` refuses to merge without.
 pub mod verdict;
 
-/// `sed -n '2,40p' "$0"` — the historical header, printed verbatim on an unknown command.
-///
-/// Embedded rather than read off disk: `wave.sh` is deleted at the end of this port, and a help
-/// text that vanishes with its source is a help text that silently becomes empty.
+/// The help an unknown `platform wave` subcommand prints: what the lifecycle is, the three
+/// decisions that shape it, and every command it accepts.
 pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmatic form of docs/platform/PLATFORM_FACTORY.md.
 #
-# WHY THIS EXISTS SEPARATELY FROM scripts/mod/wave.sh
-# ---------------------------------------------------
-# Same shape, unlike gates. The mod program gates on the Enfusion compiler and a real
-# headless game boot. This program gates on cargo and trunk. Three things had to change, and
-# each is a measured correction to how T-181 ran — not a preference:
+# THREE DECISIONS THIS LIFECYCLE IS BUILT ON
+# ------------------------------------------
+# Slices here are Rust, gated on cargo and trunk. Each decision below is a measured
+# consequence of that, not a preference:
 #
-#   1. SHARED CARGO TARGET DIR.  The mod slices were Enfusion `.c`, so worktrees cost nothing.
-#      These slices are Rust. Without CARGO_TARGET_DIR every worktree starts a COLD build of a
-#      609-crate workspace; the repo's own target/ is 52 GB. Eight cold worktrees is not a slow
-#      wave, it is a dead afternoon. Pointing every tree at one target dir means cargo's lock
-#      serialises builds instead — and a warm `cargo check --workspace` is 6.8 s measured, so
-#      the wait is cheap and the cache is hot for everyone.
+#   1. SHARED CARGO TARGET DIR.  Without CARGO_TARGET_DIR every worktree starts a COLD build of
+#      a 609-crate workspace, and this repository's own target/ is 52 GB. Eight cold worktrees
+#      is a dead afternoon. Pointing every tree at one target dir makes cargo's lock serialise
+#      builds instead — a warm `cargo check --workspace` is 6.8 s measured, so the wait is cheap
+#      and the cache stays hot for every slice.
 #
-#   2. PER-SLICE LANDING, NO WAVE BARRIER.  T-181's rule "merge only when all three complete"
-#      cost 89% of its wall clock: mean 64 minutes between lands, on merges that take zero
-#      seconds. Finished slices sat blocked behind unfinished ones. Here `land` merges ANY slice
-#      that is committed, clean and gate-green, the moment it is ready. `land --wave` keeps the
-#      old barrier behaviour if you ever actually want it.
+#   2. PER-SLICE LANDING, NO WAVE BARRIER.  A barrier that merges only when every slice is done
+#      leaves finished slices blocked behind unfinished ones: measured at 89% of one wave's wall
+#      clock, a mean of 64 minutes between merges that themselves take zero seconds. `land`
+#      merges ANY slice that is committed, clean and gate-green, the moment it is ready.
+#      `land --wave` restores the barrier when a wave genuinely needs one.
 #
-#   3. TIERED GATES.  A slice pays only the cheap gate (~10 s). The expensive suite runs once per
-#      wave on merged main. `cargo xtask ci ci-local` is deliberately NOT used: it is 15-40 minutes, not the
-#      22.7 s the docs still claim. (It was ALSO red for weeks because verify-no-python failed on
-#      scripts/mod/slice-collisions.py; T-620 ported both .py files to xtask and deleted them, so
-#      that half is green now and `verify-no-python` is a wave-gate step in its own right below.)
+#   3. TIERED GATES.  A slice pays only the cheap gate (~10 s). The expensive suite runs once
+#      per wave on merged main. `cargo xtask ci ci-local` is deliberately NOT a wave step: it
+#      takes 15-40 minutes. The language gates it carries are wave steps in their own right
+#      below, where they cost nothing.
 #
 #   cargo xtask platform wave status      # where are we? what is blocking?
 #   cargo xtask platform wave prep        # create worktrees for the next disjoint set
 #   cargo xtask platform wave gate        # full wave gate; base DERIVED from the last
 #                                         # `wave N CLOSED` commit — pass one only to widen,
-#                                         # never to narrow (T-602 refuses a narrowing base)
+#                                         # a narrowing base is refused
 #   cargo xtask platform wave gate --slice T-190   # cheap per-slice gate
 #   cargo xtask platform wave test --slice T-190 -p website-frontend
 #                                         # ad-hoc cargo test into a PER-SLICE private
-#                                         # CARGO_TARGET_DIR (T-742). Never bare cargo test
-#                                         # against the shared cache — that is the
-#                                         # cross-worktree false-binary class.
+#                                         # CARGO_TARGET_DIR. Never bare cargo test against
+#                                         # the shared cache — that is how one worktree runs
+#                                         # another's binary.
 #   cargo xtask platform wave run -p website-api --bin api
 #                                         # build AND LAUNCH into $CARGO_TARGET_DIR/run-main,
-#                                         # stamped `tbd-built-from <sha> <checkout>` (T-300).
+#                                         # stamped `tbd-built-from <sha> <checkout>`.
 #                                         # Refuses from a worktree: run-main is main's.
-#   cargo xtask platform wave land        # merge every ready slice (no barrier)
-#
-#   bash scripts/platform/wave.sh was deleted at T-902."##;
+#   cargo xtask platform wave land        # merge every ready slice (no barrier)"##;
 
-/// `COLLIDE` — the dispatch-set command `status` and `prep` both name.
-///
-/// T-620: was `scripts/platform/slice-collisions.py`. Ported to xtask byte-identically (default,
-/// `--check` and `--repack` all diffed clean against the Python before it was deleted), because
-/// the factory's own tooling was the last thing keeping `cargo xtask verify no-python` red.
+/// The disjoint-set command `status` and `prep` both name in their output, so an operator can
+/// re-run the collision analysis by itself.
 pub const COLLIDE: &str = "cargo run -q -p xtask -- slice-collisions";
 
 // ── THE STEP CAPTURE, AND WHY IT HAS TO EXIST ───────────────────────────────────────────────────

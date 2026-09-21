@@ -7,8 +7,8 @@
 
 apps/mod/crf_framework/
 
-# Staging deploy secrets (copy from scripts/deploy/deploy.env.example)
-scripts/deploy/deploy.env
+# Website and staging deploy secrets (copy from tools_v2/xtask/deploy/deploy.env.example)
+tools_v2/xtask/deploy/deploy.env
 
 # Python bytecode caches
 __pycache__/
@@ -20,9 +20,6 @@ assets_v2/scratch/
 # Satellite/map tile pyramids — local build output (`cargo run -p developer-tools --bin map`).
 # The DEM and the unified .tbd-sat stay in Git LFS; the pyramid is an optional fallback.
 assets_v2/terrains/**/tiles/
-
-# scripts/mod npm deps (enfusion-mcp — install via npm ci in scripts/mod/)
-scripts/mod/node_modules/
 
 # Local enfusion-mcp IDE config (machine paths — see docs/mod/CLAUDE-CODE-START.md)
 .cursor/mcp.json

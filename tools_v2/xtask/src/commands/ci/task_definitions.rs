@@ -272,7 +272,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-no-node",
-        help: "T-165.10 hard gate — zero tracked .mjs/.cjs; node only as the enfusion-mcp floor",
+        help: "zero tracked .mjs/.cjs; no node/npx invocation in a scanned file",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-node", false, verify_no_node)],

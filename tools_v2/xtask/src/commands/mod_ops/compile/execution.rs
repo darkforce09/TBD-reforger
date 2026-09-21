@@ -185,17 +185,13 @@ pub(super) fn compile_inner(
     let link = run_dir.join("addons/tbd-framework");
     let _ = fs::remove_file(&link);
     std::os::unix::fs::symlink(mod_src, &link)?;
-    // ONE ADDON. The gate compiles what ships: the staging server loads only `TBD_Framework`
-    // (`scripts/mod/tbd-staging-server.config.json`). Until 2026-09-12 `apps/mod/tbd-export` was a
-    // file-for-file mirror of this tree and the list read `TBD_Export,TBD_Framework` (T-946.23: the
-    // Enfusion VFS overlays addons by path, last wins, so the order decided which copy compiled and
-    // a lockstep check policed the rest). tbd-export is now a standalone addon that depends only on
-    // vanilla Reforger and on tbd-emcp; both are Workbench tooling the dedicated server never reads
-    // (`Scripts/WorkbenchGame`, see the help text), so they compile inside Workbench.
-    // Operator decision: this gate is framework-only. tbd-export's five
-    // `Scripts/Game/TBD/Export/*.c` (the road exporter) are the one thing it could compile and does
-    // not — to cover them, symlink `apps/mod/tbd-export` beside the framework link above and append
-    // `,TBD_Export` here.
+    // ONE ADDON. The gate compiles what ships: a dedicated server loads only `TBD_Framework`.
+    // `apps/mod/tbd-export` is a standalone addon that depends on vanilla Reforger and on
+    // tbd-emcp; both are Workbench tooling a dedicated server never reads
+    // (`Scripts/WorkbenchGame`, see the help text), so they compile inside Workbench. The one
+    // thing tbd-export holds that this gate could compile is its five
+    // `Scripts/Game/TBD/Export/*.c` road-exporter scripts — to cover them, symlink
+    // `apps/mod/tbd-export` beside the framework link above and append `,TBD_Export` here.
     let mut addons = String::from("TBD_Framework");
 
     if opts.selftest {

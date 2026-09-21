@@ -100,7 +100,7 @@ cargo xtask platform preflight        # 2 warns are normal: CARGO_TARGET_DIR uns
 ```bash
 cargo xtask slice-collisions                            # the open waves: tickets + their owns
                                                         # (plan = .ai/tickets/wave.lock since T-912.2)
-bash scripts/mod/slice-worktree.sh new T-xxx            # one per ticket
+cargo xtask platform slice-worktree -- new T-xxx        # one per ticket
 # ... dispatch 3 slice agents (see §4) ... barrier: ALL report ...
 git merge --no-ff slice/T-xxx -m "T-xxx: <title>"       # each
 BASE=$(git rev-list --extended-regexp --grep='^wave [0-9]+ CLOSED' -1 HEAD)
@@ -118,17 +118,17 @@ refuses an abbreviated or misremembered sha, and has).
 ```bash
 cargo xtask platform wave verified $(git rev-parse HEAD)   # no commit may land after the verifier ran
 # registry: wave tickets -> shipped (with an honest note); verifier findings filed at the next free id
-./scripts/ticket sync
+cargo xtask ticket sync
 # add the ledger row to .ai/artifacts/editor_factory_run.md ; echo L > docs/platform/factory_pack_wave
 git add <EXPLICIT PATHS>    # never `git add <dir>` — mid-write snapshots have been committed twice
 git commit -m "wave M CLOSED — editor wave L: <one-liner>; GATE PASS n/n"
-bash scripts/mod/slice-worktree.sh drop T-xxx                  # each
+cargo xtask platform slice-worktree -- drop T-xxx              # each
 git diff --name-only origin/main..HEAD | grep map-assets       # must be empty
 git -c core.hooksPath=/dev/null push origin main               # plain push dies on the absent-LFS hook
 ```
 
 **Environment note:** this box runs the repo inside a container but `cargo xtask platform wave`, `cargo`, and
-`./scripts/ticket` are **host** binaries. From the container, prefix with
+`cargo xtask ticket` run as **host** binaries. From the container, prefix with
 `distrobox-host-exec sh -c 'cd /run/media/system/Disk_2/Projects/TBD-Reforger && PATH=$HOME/.cargo/bin:$PATH …'`.
 Run natively if your shell is already the host — the wave driver detects and says so.
 

@@ -2,15 +2,20 @@ use super::*;
 
 fn fixture_root(tag: &str) -> PathBuf {
     let root = PathBuf::from(format!(
-        "/tmp/t853/w223/t870/fixture-{tag}-{}",
+        "/tmp/xtask-bootstrap-staging/fixture-{tag}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
-    fs::create_dir_all(root.join("scripts/deploy")).unwrap();
+    fs::create_dir_all(root.join(crate::core::repository_layout::DEPLOY_DIR)).unwrap();
     fs::create_dir_all(root.join("apps/mod")).unwrap();
     root
+}
+
+/// The deploy file inside a fixture tree.
+fn fixture_deploy_env(root: &Path) -> PathBuf {
+    root.join(crate::core::repository_layout::DEPLOY_ENV)
 }
 
 fn clear_ssh_env() {
@@ -34,8 +39,11 @@ struct OverrideGuard {
 impl OverrideGuard {
     fn set_absent(key: &'static str) -> Self {
         let previous = std::env::var_os(key);
-        let absent =
-            std::env::temp_dir().join(format!("t870-absent-{}-{}", key, std::process::id()));
+        let absent = std::env::temp_dir().join(format!(
+            "bootstrap-staging-absent-{}-{}",
+            key,
+            std::process::id()
+        ));
         // SAFETY: caller holds crate::core::test_environment::lock_env; restored on drop.
         unsafe { std::env::set_var(key, &absent) };
         Self { key, previous }
@@ -59,9 +67,9 @@ fn arm_missing_host_exits_1() {
     clear_ssh_env();
     let root = fixture_root("missing-host");
     // empty deploy.env — no TBD_SSH_HOST
-    fs::write(root.join("scripts/deploy/deploy.env"), "").unwrap();
+    fs::write(fixture_deploy_env(&root), "").unwrap();
     let code = run_with_root(&root).unwrap();
-    assert_eq!(code, 1, "bash-red arm: missing TBD_SSH_HOST must exit 1");
+    assert_eq!(code, 1, "missing TBD_SSH_HOST must exit 1");
 }
 
 #[test]
@@ -70,23 +78,23 @@ fn arm_prairielearn_exits_1() {
     clear_ssh_env();
     let root = fixture_root("prairielearn");
     fs::write(
-        root.join("scripts/deploy/deploy.env"),
+        fixture_deploy_env(&root),
         "TBD_SSH_HOST=127.0.0.1\nTBD_REMOTE_DIR=/home/sam/prairielearn/tbd\n",
     )
     .unwrap();
     let code = run_with_root(&root).unwrap();
-    assert_eq!(code, 1, "bash-red arm: prairielearn path must exit 1");
+    assert_eq!(code, 1, "a prairielearn remote path must exit 1");
 }
 
 #[test]
-fn prairielearn_match_is_case_sensitive_like_bash() {
+fn the_prairielearn_refusal_is_case_sensitive() {
     let _g = crate::core::test_environment::lock_env();
     clear_ssh_env();
     let root = fixture_root("PrairieLearn-case");
-    // bash `== *prairielearn*` is case-sensitive — PrairieLearn alone must NOT refuse.
-    // Prove via ToolAbsent ssh (env override seam — never wipe PATH).
+    // The refusal matches the lowercase substring only, so `PrairieLearn` passes it. Proven
+    // through an absent `ssh` (the override seam) rather than by wiping PATH.
     fs::write(
-        root.join("scripts/deploy/deploy.env"),
+        fixture_deploy_env(&root),
         "TBD_SSH_HOST=127.0.0.1\nTBD_REMOTE_DIR=/home/sam/PrairieLearn/tbd\n",
     )
     .unwrap();
@@ -103,23 +111,19 @@ fn defaults_fill_when_unset() {
     let _g = crate::core::test_environment::lock_env();
     clear_ssh_env();
     let root = fixture_root("defaults");
-    fs::write(
-        root.join("scripts/deploy/deploy.env"),
-        "TBD_SSH_HOST=127.0.0.1\n",
-    )
-    .unwrap();
-    let cfg = load_cfg(&root.join("scripts/deploy/deploy.env")).unwrap();
+    fs::write(fixture_deploy_env(&root), "TBD_SSH_HOST=127.0.0.1\n").unwrap();
+    let cfg = load_cfg(&fixture_deploy_env(&root)).unwrap();
     assert_eq!(cfg.remote_dir, DEFAULT_REMOTE_DIR);
     assert_eq!(cfg.profile_dir, DEFAULT_PROFILE_DIR);
     assert_eq!(cfg.addons_staging, DEFAULT_ADDONS_STAGING);
 }
 
 #[test]
-fn deploy_env_path_is_paths_sh_pin() {
+fn the_deploy_file_resolves_against_the_given_root() {
     let root = Path::new("/tmp/fake-mono");
     let p = Paths::from_root(root);
     assert_eq!(
         p.deploy_env,
-        PathBuf::from("/tmp/fake-mono/scripts/deploy/deploy.env")
+        root.join(crate::core::repository_layout::DEPLOY_ENV)
     );
 }

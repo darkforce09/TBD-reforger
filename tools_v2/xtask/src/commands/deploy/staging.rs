@@ -1,101 +1,71 @@
-//! T-853 — port of `scripts/mod/deploy-staging.sh` (1889 lines) → `cargo xtask deploy staging`.
+//! `cargo xtask deploy staging` — put the platform on the staging box and prove it booted.
 //!
-//! Rsync the platform to the staging box, rebuild the API, refresh the Reforger profile,
-//! render + push `server.config.json`, restart the game server, and then **assert the boot**
-//! rather than assume it.
-//!
-//! ── WHY THIS PORT IS THE KEYSTONE ────────────────────────────────────────────────────────────
-//!
-//! `deploy-staging.sh` was the LAST consumer of both `scripts/mod/lib/paths.sh` and
-//! `scripts/mod/lib/gate-grep.sh`. Everything it used from them is inlined here:
-//!
-//! * `paths.sh` gave it `MONO_ROOT` / `SCHEMA` / `DEPLOY_ENV`. Those are now
-//!   [`Paths`] below, derived from [`crate::core::repository_root::find_repo_root`] instead of from
-//!   `$(dirname $0)`. Note the deliberate divergence from `gate_deploy_website.rs`: that port
-//!   honours a `DEPLOY_ENV` env override, and this one does **not**, because `paths.sh`
-//!   *unconditionally overwrote* `DEPLOY_ENV` after sourcing. Honouring an inherited value here
-//!   would be new behaviour wearing a port's clothes.
-//! * `gate-grep.sh` gave it `gate_require` / `gate_ban` inside `validate_agent_files()`. Those
-//!   are now `verification_core::gate::{require, ban}` + `Pattern`, which render byte-for-byte the same
-//!   `FAIL: <msg>` and carry the four-outcome [`verification_core::Verdict`] the bash helper could only
-//!   describe in a comment.
-//!
-//! With this file landed, both libs have zero consumers (T-879 / T-880).
+//! Rsync the monorepo, rebuild the API, refresh the Reforger profile, render and push
+//! `server.config.json`, restart the game server, then read the server's own console log and
+//! assert the boot rather than assume it.
 //!
 //! ── MODULE SPLIT (what each file owns) ───────────────────────────────────────────────────────
 //!
-//! Staging operations are grouped by the artefacts they build: agent, boot verdict, server
-//! config, and remote host. Supporting modules own the shared configuration and rendering logic.
+//! Staging operations are grouped by the artefact they build; supporting modules own the shared
+//! configuration and rendering.
 //!
-//! | file | bash lines | owns |
-//! |------|-----------|------|
-//! | this file | 26–101 | `Paths` (the `paths.sh` inline), CLI parse, mode dispatch |
-//! | [`agent`] | 103–411, 597–679 | T-289 agent: the rendered artefact + its structural gates |
-//! | [`agent_selftest`] | 413–595 | T-289: driving that artefact against a stub systemd |
-//! | [`boot`] | 681–1070 | T-607 boot verdict over a `console.log`, plus its selftest |
-//! | [`config`] | 1072–1250 | `deploy.env`, the `:=` defaults, the mode gate |
-//! | [`render`] | 1252–1522 | T-288 modpack resolution + `server.config.json` render/validate |
-//! | [`pycompat`] | (the 14 `python3` sites) | the python behaviours that were OBSERVABLE in output |
-//! | [`remote`] | 1524–1889 | ssh/rsync/compose transport, the deploy pipeline, the V6 read |
-//! | [`payloads`] | 1591–1849 | the exact text of every remote `bash -s` heredoc |
+//! | file | owns |
+//! |------|------|
+//! | this file | [`Paths`], the CLI parse, and mode dispatch |
+//! | [`agent`] | the host control agent: the rendered artefact and its structural gates |
+//! | [`agent_selftest`] | driving that artefact against a stub systemd |
+//! | [`boot`] | the boot verdict over a `console.log`, plus its selftest |
+//! | [`config`] | the deploy file, the defaults it fills in, and the launch-mode gate |
+//! | [`render`] | modpack resolution and the `server.config.json` render and validate |
+//! | [`pycompat`] | JSON behaviours a `python3` implementation made observable in output |
+//! | [`remote`] | ssh, rsync and compose transport, the deploy pipeline, the console-log read |
+//! | [`payloads`] | the exact text of every remote `bash -s` heredoc |
 //!
 //! ── WHAT IS AND IS NOT VERIFIED ──────────────────────────────────────────────────────────────
 //!
-//! `scripts/deploy/deploy.env` does not exist on a dev machine (it is gitignored *and*
-//! rsync-excluded — see the exclude list in [`remote`]), so every ssh/rsync/compose path in
-//! [`remote`] is **unreachable locally and was never executed by this port's author**. Those
-//! paths are covered by argv-construction unit tests (`remote::tests`) that assert the exact
-//! program + argument vector, in order, that would be spawned. That is structural fidelity, not
-//! live proof, and the tests say so in their names.
+//! [`crate::core::repository_layout::DEPLOY_ENV`] exists on no development machine: it is
+//! gitignored and rsync-excluded (see the exclude list in [`remote`]), so every ssh, rsync and
+//! compose path in [`remote`] is unreachable from a checkout. Those paths are covered by
+//! argv-construction tests that assert the exact program and argument vector, in order, that
+//! would be spawned. That is structural fidelity rather than live proof, and each test says so
+//! in its name.
 //!
 //! Everything reachable offline — `--help`, `--render-only`, `--render-agent`,
 //! `--agent-selftest`, `--verify-boot`, `--verify-boot-selftest`, `--dry-run`, bad-flag and
-//! missing-env handling — was diffed byte-for-byte against the bash before it was deleted.
+//! missing-value handling — is exercised by this crate's tests.
 //!
-//! ── FAIL-OPENS CLOSED (each one named) ───────────────────────────────────────────────────────
+//! ── WHY THREE CHECKS REFUSE RATHER THAN SKIP ─────────────────────────────────────────────────
 //!
-//! The brief allows exactly one class of fix: a path where the script could report having run a
-//! check it did not run. Three were found and closed; they are listed at their sites and
-//! repeated here so a reader does not have to find them:
+//! A deploy that reports having run a check it did not run is worse than one that stops, so
+//! three places refuse instead:
 //!
-//! 1. [`config`] — `deploy.env` was `source`d, i.e. executed as shell. A syntax error in it
-//!    aborted under `set -e`, but a *stray command* in it ran silently with the deploy's
-//!    privileges. Now KEY=VALUE parsed; anything else is inert. (Same call as
-//!    `gate_deploy_website.rs`.)
-//! 2. [`agent`] — `agent_selftest()`'s JSON-contract case ran only `if command -v python3`. On a
-//!    box without python3 the check silently vanished and the selftest still printed
-//!    `AGENT SELFTEST: N passed, 0 failed`. The JSON parse is now `serde_json`, compiled in, so
-//!    the case cannot be skipped. Same for `systemd-analyze verify`, which was also
-//!    `if command -v`-guarded — that one *stays* conditional (see the note there) because it
-//!    tests the host's systemd, not our artefact, but it now says out loud that it was skipped
-//!    instead of silently shrinking the denominator.
-//! 3. [`remote`] — `ssh_cmd "cat '$log/console.log'" > "$_local_log" 2>/dev/null || true`
-//!    swallowed the ssh status entirely; only the follow-up `[ ! -s ]` caught it, so a
-//!    *non-empty but truncated* pull read as a complete log. The status is now checked.
+//! 1. [`config`] parses the deploy file as `KEY=VALUE` and never executes it, so a stray command
+//!    in it is inert rather than run with the deploy's privileges.
+//! 2. [`agent`] parses the agent's JSON contract with `serde_json`, compiled in, so that case
+//!    cannot vanish on a host without a JSON tool and leave the selftest reporting
+//!    `N passed, 0 failed` over a smaller denominator. `systemd-analyze verify` stays
+//!    conditional — it tests the host's systemd, not this artefact — but says out loud that it
+//!    was skipped.
+//! 3. [`remote`] checks the status of the console-log pull. A partial transfer yields a
+//!    non-empty file, so a size check alone would read a truncated log as a complete one.
 //!
-//! ── ODDITIES PRESERVED ON PURPOSE ────────────────────────────────────────────────────────────
+//! ── BEHAVIOURS THAT LOOK LIKE BUGS AND ARE NOT ───────────────────────────────────────────────
 //!
-//! Reproduced, pinned with a test, and documented at their sites:
+//! Each is pinned by a test and documented at its site:
 //!
-//! * `--render-only` is documented in the bash header as "no rsync, no ssh, no deploy" but sits
-//!   *after* the `deploy.env` existence check and the `${VAR:?}` requirements, so it cannot run
-//!   without a filled deploy.env. `--render-agent` / `--agent-selftest` / `--verify-boot*` sit
-//!   *before* it and are genuinely credential-free. Kept: callers depend on the ordering, and
-//!   the render legitimately needs `TBD_PROFILE_DIR` for `TBD_SERVER_CONFIG_REMOTE`.
-//! * `--render-only --dry-run` consumes `--dry-run` as the output path. Bash's `shift`-then-read
-//!   never looked at whether the next word was a flag.
-//! * `deploy.env` values override the process environment, because `source` ran after the
-//!   command line was already in `environ`. So `TBD_A2S_PORT=1 bash deploy-staging.sh` is
-//!   ignored if deploy.env sets it.
-//! * `TBD_SCENARIO` is assigned with an `if [ -z ]` and NOT `: "${VAR:=default}"` — the `}` of
-//!   the ResourceGUID would close the parameter expansion and truncate the default to
-//!   `{69A85365FC09E2CA`. The Rust has no such hazard, but the *validator* that catches the
-//!   truncation is kept, because it is the check that caught it (bash line 1414).
-//! * Usage text still says `deploy-staging.sh`, and the `--verify-boot` hint still shows the
-//!   `bash scripts/mod/deploy-staging.sh …` invocation. Byte-parity with the captured baseline.
-//! * The V1 mission-JSON validate prints its banner and then does nothing under `--dry-run`.
-//! * `TBD_WORKSHOP_MOD_ID` emptiness is checked against the *sourced* value, so exporting an
-//!   empty one on the command line does not trip the config-mode requirement.
+//! * `--render-only` runs after the deploy file's existence check and its required values, so it
+//!   needs a filled deploy file even though it touches no server; the render legitimately reads
+//!   `TBD_PROFILE_DIR` for `TBD_SERVER_CONFIG_REMOTE`. `--render-agent`, `--agent-selftest` and
+//!   `--verify-boot*` run before that point and are genuinely credential-free.
+//! * `--render-only --dry-run` takes `--dry-run` as the output path: a value argument is read as
+//!   a value, with no lookahead for a leading dash, so a file may legitimately be named that.
+//! * Deploy-file values override the process environment, so `TBD_A2S_PORT=1 cargo xtask deploy
+//!   staging` is ignored when the deploy file sets that key.
+//! * `TBD_SCENARIO`'s default carries a `{ResourceGUID}`; the validator that catches a truncated
+//!   GUID is kept, because a truncated default is silent everywhere else.
+//! * The mission-JSON validate prints its banner and then does nothing under `--dry-run`.
+//! * `TBD_WORKSHOP_MOD_ID` emptiness is read from the deploy file's value, so exporting an empty
+//!   one on the command line does not trip the config-mode requirement.
 
 use anyhow::Result;
 use std::path::PathBuf;
@@ -109,20 +79,17 @@ mod pycompat;
 mod remote;
 mod render;
 
-/// `paths.sh`, inlined. This is the whole of what `deploy-staging.sh` used from it.
+/// The three checkout locations this command reads.
 ///
-/// The bash derived these from `$(dirname "$0")`; a cargo subcommand has no `$0` in the repo, so
-/// the root comes from the ticket registry marker like every other xtask module. `SCHEMA`,
-/// `MOD_ROOT` and `WEB` were exported by `paths.sh` for other consumers — only the three fields
-/// below were ever read by this script, and inlining the unused ones would be importing a
-/// dependency, not removing one.
+/// The root comes from the repository marker, like every other xtask module, so the answer is
+/// the worktree the command is run from rather than the one that built the binary.
 #[derive(Debug, Clone)]
 pub struct Paths {
-    /// `MONO_ROOT` — repo root. rsync source, and the base for every other path.
+    /// Repository root: the rsync source, and the base for every other path.
     pub mono_root: PathBuf,
-    /// `SCHEMA` — `contracts_v2`, home of the golden missions the V1 step validates.
+    /// The wire-contract tree, home of the golden missions the mission-JSON step validates.
     pub schema: PathBuf,
-    /// `DEPLOY_ENV` — `scripts/deploy/deploy.env`. Gitignored, rsync-excluded, dev-PC only.
+    /// Host secrets and remote paths. Gitignored, rsync-excluded, development machine only.
     pub deploy_env: PathBuf,
 }
 
@@ -131,17 +98,17 @@ impl Paths {
         let mono_root = crate::core::repository_root::find_repo_root()?;
         Ok(Paths {
             schema: developer_tools::repository_layout::contracts_dir(&mono_root),
-            deploy_env: mono_root.join("scripts/deploy/deploy.env"),
+            deploy_env: mono_root.join(crate::core::repository_layout::DEPLOY_ENV),
             mono_root,
         })
     }
 }
 
-/// Usage block — byte-identical to the bash `-h|--help` arm (three `echo` lines).
+/// The `--help` block.
 const USAGE: &str = "\
-Usage: deploy-staging.sh [--dry-run] [--render-only <path>]
-                         [--render-agent <dir>] [--agent-selftest <dir>]
-                         [--verify-boot <console.log>] [--verify-boot-selftest]";
+Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]
+                                  [--render-agent <dir>] [--agent-selftest <dir>]
+                                  [--verify-boot <console.log>] [--verify-boot-selftest]";
 
 /// Everything the CLI loop can produce. Mirrors the bash's five mode variables plus `DRY_RUN`.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -182,7 +149,7 @@ pub fn parse(args: &[String]) -> Parsed {
     while i < args.len() {
         match args[i].as_str() {
             "--dry-run" => cli.dry_run = true,
-            // T-288: render the server config to a LOCAL path and exit 0 before any rsync/ssh
+            // Render the server config to a LOCAL path and exit 0 before any rsync/ssh
             // runs. This is the only way to exercise the render half without touching a real
             // server, and it is what the perturbation gate drives.
             "--render-only" => {
@@ -195,9 +162,8 @@ pub fn parse(args: &[String]) -> Parsed {
                     }
                 }
             }
-            // T-289: render the host control agent + its systemd units into a LOCAL directory and
-            // exit 0, before any rsync/ssh. Same split T-288 made for the server config: the
-            // artefact is inspectable without deploying it.
+            // Render the host control agent and its systemd units into a LOCAL directory and
+            // exit 0, before any rsync/ssh: the artefact is inspectable without deploying it.
             "--render-agent" => {
                 i += 1;
                 match args.get(i) {
@@ -208,7 +174,7 @@ pub fn parse(args: &[String]) -> Parsed {
                     }
                 }
             }
-            // T-289: render the agent, then RUN it against a stub systemctl whose answers this
+            // Render the agent, then RUN it against a stub systemctl whose answers this
             // program controls, and assert the agent reports the unit's real state. See
             // `agent::selftest` for why that is the whole point.
             "--agent-selftest" => {
@@ -221,7 +187,7 @@ pub fn parse(args: &[String]) -> Parsed {
                     }
                 }
             }
-            // T-607: run the boot verdict over a console.log you already have — no ssh, no
+            // Run the boot verdict over a console.log you already have — no ssh, no
             // deploy.env, no staging host. Same split --render-only made for the server config:
             // a check that only runs mid-deploy is a check nobody runs.
             "--verify-boot" => {
@@ -234,7 +200,7 @@ pub fn parse(args: &[String]) -> Parsed {
                     }
                 }
             }
-            // T-607: prove the boot verdict can FAIL. A gate never observed failing is not a gate.
+            // Prove the boot verdict can FAIL. A gate never observed failing is not a gate.
             "--verify-boot-selftest" => cli.verify_boot_selftest = true,
             "-h" | "--help" => return Parsed::Help,
             other => {

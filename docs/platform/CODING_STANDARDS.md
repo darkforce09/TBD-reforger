@@ -137,7 +137,7 @@ the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` sti
 >
 > Nothing here was ever a violation — **there was no rule**. §10 had 38 entries and not one of them
 > said which language new tooling should be written in, so every slice reached for bash by default.
-> Measured 2026-08-01: **58 tracked `.sh`, 15,618 lines**, of which `scripts/platform/wave.sh` alone
+> Measured 2026-08-01: **58 tracked `.sh`, 15,618 lines**, of which the platform wave driver alone
 > was 3,327. That was far too much to port, and porting it was not what stopped the bleeding — so
 > the ratchet held the line at that day's count instead. **`wave.sh` was deleted at T-902;** T-903
 > deleted `hostrun.sh` (the last tracked `.sh`). **T-904 flipped the ratchet to a hard zero** and

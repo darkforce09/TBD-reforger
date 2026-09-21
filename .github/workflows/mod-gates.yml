@@ -3,7 +3,7 @@ name: mod-gates
 # T-209 — the Enfusion compile gate + the headless world boot, in CI.
 #
 # ── WHY THIS IS A SEPARATE WORKFLOW ON A SELF-HOSTED RUNNER ────────────────────────────────
-# `scripts/mod/compile.sh` and `cargo xtask mod world-boot` are the best regression instruments
+# `cargo xtask mod compile` and `cargo xtask mod world-boot` are the best regression instruments
 # in this repo and neither ran in CI. They cannot run on a GitHub-hosted runner, and not for a
 # reason a clever workflow can engineer around: both drive the real **Arma Reforger dedicated
 # server** binary (`ArmaReforgerServer`) from the Steam depot for appid 1890870. That is a ~10 GB
@@ -47,7 +47,7 @@ name: mod-gates
 #          branches: [main]
 #          paths:
 #            - "apps/mod/**"
-#            - "scripts/mod/**"
+#            - "tools_v2/xtask/**"
 #            - "contracts_v2/fixtures/missions/valid/**"
 #            - ".github/workflows/mod-gates.yml"
 #

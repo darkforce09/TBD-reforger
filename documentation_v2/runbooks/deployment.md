@@ -9,7 +9,7 @@ This runbook defines the architecture and operational procedures for deploying t
 The platform deploys to a dedicated Linux staging server (`dooley` on LAN, e.g. `192.168.0.124` / `192.168.0.140`).
 
 ### Service Architecture & Ports
-- **Reverse Proxy**: Caddy on port `:3080` (`scripts/deploy/Caddyfile.website`).
+- **Reverse Proxy**: Caddy on port `:3080` (`tools_v2/xtask/deploy/Caddyfile.website`).
   - Serves static Leptos frontend assets from `/home/sam/tbd/dist/`.
   - Enforces `Cross-Origin-Opener-Policy: same-origin` (COOP) and `Cross-Origin-Embedder-Policy: credentialless` (COEP) to permit `SharedArrayBuffer` in WebAssembly threads.
   - Reverse-proxies `/api/*`, `/uploads/*`, `/map-assets/*`, and `/healthz` to `:8081`.

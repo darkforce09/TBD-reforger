@@ -168,6 +168,33 @@ impl MapAssetMounts {
     }
 }
 
+/* ─────────────────────────── enfusion-mcp node package ─────────────────────────── */
+
+/// Directory holding the npm manifest, lockfile and node version that pin the `enfusion-mcp`
+/// server this repository runs. It sits outside every crate root so that the installed
+/// dependency tree beside it is never walked by a crate-scoped file scan.
+pub const ENFUSION_MCP_NODE_PACKAGE_DIR: &str = "tools_v2/enfusion_mcp_node_package";
+
+/// The `enfusion-mcp` server module installed by `npm ci` in that package directory. This is the
+/// one spelling of that path in the workspace: `enfusion_tooling::enfusion_mcp_entrypoint`
+/// resolves every caller's runner command from it, and derives from it the process pattern that
+/// identifies a running server.
+pub const ENFUSION_MCP_ENTRYPOINT: &str =
+    "tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js";
+
+/// Absolute path of the pinned `enfusion-mcp` server module inside a checkout.
+pub fn enfusion_mcp_entrypoint(root: &Path) -> PathBuf {
+    root.join(ENFUSION_MCP_ENTRYPOINT)
+}
+
+/// Absolute path of the npm package directory inside a checkout. `cargo xtask mod dev-bootstrap`
+/// runs `npm ci` here.
+pub fn enfusion_mcp_node_package_dir(root: &Path) -> PathBuf {
+    root.join(ENFUSION_MCP_NODE_PACKAGE_DIR)
+}
+
+/* ─────────────────────────────── map assets (scratch) ─────────────────────────────── */
+
 /// Local, uncommitted export scratch for one island: stitched orthophotos, masks, spikes.
 ///
 /// Ignored by git. Pipeline stages write intermediates here; nothing downstream of an export may

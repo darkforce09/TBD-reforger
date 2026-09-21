@@ -1,7 +1,7 @@
 # Spawn / equip determinism program
 
 **Ticket:** T-274 (record / xtask / docs — this hub)  
-**Gate:** `cargo xtask mod spawn-determinism` (T-856; was `scripts/mod/tbd-spawn-determinism.sh`)  
+**Gate:** `cargo xtask mod spawn-determinism`  
 **Verify log (on disk):** [`.ai/artifacts/spawn_determinism_verify_log.md`](../../.ai/artifacts/spawn_determinism_verify_log.md)  
 **Related MCP tooling:** [`MCP_TOOLING.md`](MCP_TOOLING.md)
 

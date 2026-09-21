@@ -107,7 +107,7 @@
 # ── T-609 (2026-07-31): the T-250 unconsumed-key family turned every row below red, silently ───
 # `CheckUnconsumedKeys` (T-250, 30be2f7f4) landed AFTER this file's last reconciliation (T-208,
 # d297f3a39) and warned on bare key PRESENCE — keys every golden deliberately authors. The
-# platform factory's wave gate (scripts/platform/wave.sh cmd_gate) has no world-boot step, so no
+# platform factory's wave gate (`cargo xtask platform wave gate`) has no world-boot step, so no
 # wave ran this ratchet: it has been red on main since T-250 while every wave gate reported green.
 #
 # T-609 made the checks precise instead of widening these budgets. Two families were firing on

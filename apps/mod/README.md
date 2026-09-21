@@ -49,7 +49,7 @@ tags + event keys, never sentences — see `cargo xtask mod remote-logs`.)
 ### Staging server (192.168.0.140)
 
 ```bash
-cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # fill SSH + token
+cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env   # fill SSH + token
 cargo xtask deploy staging
 ```
 
@@ -77,28 +77,28 @@ cargo xtask mod test-phase1-api
 | [`contracts_v2/`](../../contracts_v2/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
 | [`apps/website/`](../website/) | Rust API + Leptos SPA |
 | `Tbd_framework/` | CRF reference only, **gitignored** — do not open in Workbench |
-| [`scripts/mod/`](../../scripts/mod/) | Workbench setup, server profile, dev server, staging deploy, MCP helpers, API tests |
+| [`tools_v2/xtask/`](../../tools_v2/xtask/) | Every `cargo xtask mod` command: Workbench setup, server profile, dev server, staging deploy, MCP bridge, API smokes |
 | [`docs/mod/`](../../docs/mod/) | Ops docs, [`STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md) |
 
 **Handoff docs:** [`CLAUDE-CONTINUATION.md`](../../docs/mod/CLAUDE-CONTINUATION.md) · [`MILESTONES.md`](../../docs/mod/MILESTONES.md) · [`tbd-reforger-platform-build-plan.md`](../../docs/mod/tbd-reforger-platform-build-plan.md)
 
 ---
 
-## Scripts (`scripts/mod/`, run from monorepo root)
+## Commands (run from the monorepo root)
 
-| Script | Purpose |
-|--------|---------|
-| `cargo xtask mcp call` | JSON-RPC to enfusion-mcp from shell |
-| `cargo xtask mcp wb-logs` | Grep latest Proton Workbench `console.log` |
-| `cargo xtask mod spawn-verify` | MCP `wb_play` + log grep for spawn lines (T-873) |
-| `cargo xtask mod dev-bootstrap` | MCP root + `wb_connect` + `mod_validate` |
-| `cargo xtask setup mcp-game-root` | Pak symlink farm for MCP (T-876) |
+| Command | Purpose |
+|---------|---------|
+| `cargo xtask mcp call` | JSON-RPC to enfusion-mcp from a shell |
+| `cargo xtask mcp wb-logs` | Grep the latest Proton Workbench `console.log` |
+| `cargo xtask mod spawn-verify` | `wb_play` plus a log grep for the spawn lines |
+| `cargo xtask mod dev-bootstrap` | MCP root, `wb_connect` and `mod_validate` |
+| `cargo xtask setup mcp-game-root` | Pak symlink farm the MCP reads |
 | `cargo xtask deploy staging` | Rsync → 192.168.0.140, API, game server restart |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
-| `cargo xtask setup client-addons` | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
-| `cargo xtask mod remote-logs` | SSH log verify on staging server |
-| `cargo xtask mod bootstrap-staging` | One-time SSH discovery + mkdir |
-| `cargo xtask setup server-profile` | Dedicated server profile + mission fallback |
+| `cargo xtask setup client-addons` | Local client mod symlink (not Direct-Joinable; the Workshop mod is) |
+| `cargo xtask mod remote-logs` | SSH log verify on the staging server |
+| `cargo xtask mod bootstrap-staging` | One-time SSH discovery and mkdir |
+| `cargo xtask setup server-profile` | Dedicated server profile and mission fallback |
 | `cargo xtask mod dev-server` | Local dedicated server launcher |
 
 ---

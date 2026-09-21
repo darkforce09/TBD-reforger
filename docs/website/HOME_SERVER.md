@@ -95,7 +95,7 @@ flowchart LR
 sshpass -p "$TBD_SSH_PASS" ssh -o StrictHostKeyChecking=no sam@192.168.0.124 'echo ok'
 ```
 
-Prefer lasting setup: install this PC’s SSH public key on the server + `scripts/deploy/deploy.env`.
+Prefer lasting setup: install this PC’s SSH public key on the server + `tools_v2/xtask/deploy/deploy.env`.
 
 ---
 
@@ -123,7 +123,7 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 
 | Gap | Needed for “one command” website host |
 |-----|----------------------------------------|
-| Serve SPA from API **or** Caddy/nginx | `/` → `index.html`, `/api` → Axum (`scripts/deploy/Caddyfile.website` exists; wire still manual) |
+| Serve SPA from API **or** Caddy/nginx | `/` → `index.html`, `/api` → Axum (`tools_v2/xtask/deploy/Caddyfile.website` exists; wire still manual) |
 | COOP/COEP headers on SPA | Same as Trunk (`same-origin` + `credentialless`) — required for map wasm / SAB |
 
 ---
@@ -135,7 +135,7 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 ```bash
 which sshpass rsync ssh curl git cargo docker
 rustc --version  # toolchain pin: root rust-toolchain.toml
-cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env
+cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env
 # Set TBD_SSH_HOST=sam@192.168.0.140 and SSH pass or identity file
 ```
 
@@ -223,7 +223,7 @@ Notes:
 
 - `APP_ENV=production` **disables** `GET /api/v1/auth/dev-login`. Use Discord OAuth for real users.
 - For a first LAN-only smoke you may temporarily use `APP_ENV=development` + `FRONTEND_URL=http://192.168.0.140:3000` — do **not** leave that on a public tunnel.
-- Game token must match `TBD_GAME_SERVER_TOKEN` in `scripts/deploy/deploy.env` when the Reforger server calls the API (see staging doc).
+- Game token must match `TBD_GAME_SERVER_TOKEN` in `tools_v2/xtask/deploy/deploy.env` when the Reforger server calls the API (see staging doc).
 
 Generate secrets:
 
@@ -239,7 +239,7 @@ openssl rand -hex 24   # SERVICE_TOKEN
 From **dev PC** (repo root), first sync (exclude secrets + heavy junk):
 
 ```bash
-source scripts/deploy/deploy.env
+source tools_v2/xtask/deploy/deploy.env
 RSYNC_RSH="ssh -o StrictHostKeyChecking=no"
 # Prefer key auth; sshpass if you still use password like PrairieLearn
 rsync -avz --delete \
@@ -249,7 +249,7 @@ rsync -avz --delete \
   --exclude 'apps/website/frontend/dist' \
   --exclude 'apps/website/api_v2/.env' \
   --exclude 'apps/website/api_v2/.tools/' \
-  --exclude 'scripts/deploy/deploy.env' \
+  --exclude 'tools_v2/xtask/deploy/deploy.env' \
   --exclude 'target' \
   --exclude 'target-gate-*' \
   --exclude 'dist-gate-*' \
@@ -268,7 +268,7 @@ This list mirrors the deploy's own, entry for entry, and exists only for a first
 with `cargo xtask deploy website --dry-run` and prefer that command once the server is reachable.
 Two of these entries are secrets: `apps/website/api_v2/.env` is the server's own configuration
 (rsyncing a dev copy overwrites it, and `--delete` is in this command), and
-`scripts/deploy/deploy.env` holds `TBD_SSH_PASS` and `TBD_GAME_SERVER_TOKEN`.
+`tools_v2/xtask/deploy/deploy.env` holds `TBD_SSH_PASS` and `TBD_GAME_SERVER_TOKEN`.
 
 `assets_v2/scratch` is ~1.5 GB of gitignored local export output; before the asset relocation it
 sat inside the terrain tree and the one exclusion covered both. `packages` no longer exists in the
@@ -313,11 +313,11 @@ curl -sf http://127.0.0.1:8080/healthz
 curl -sf http://127.0.0.1:8080/api/v1/health   # if exposed; else /healthz only
 ```
 
-User systemd unit: [`scripts/deploy/tbd-website-api.service`](../../scripts/deploy/tbd-website-api.service). Substitute `TBD_REPO_DIR_PLACEHOLDER` for your `TBD_REMOTE_DIR` and install it:
+User systemd unit: [`tools_v2/xtask/deploy/systemd/tbd-website-api.service`](../../tools_v2/xtask/deploy/systemd/tbd-website-api.service). Substitute `TBD_REPO_DIR_PLACEHOLDER` for your `TBD_REMOTE_DIR` and install it:
 
 ```bash
 sed "s|TBD_REPO_DIR_PLACEHOLDER|${TBD_REMOTE_DIR#/}|g" \
-  scripts/deploy/tbd-website-api.service \
+  tools_v2/xtask/deploy/systemd/tbd-website-api.service \
   > ~/.config/systemd/user/tbd-website-api.service
 ```
 
@@ -452,14 +452,14 @@ Website one-button path: `cargo xtask deploy website` (compose file exists; see 
 | This file | **Website** on home server + Cloudflare |
 | [`docs/mod/STAGING-SERVER.md`](../mod/STAGING-SERVER.md) | Game server + LAN API smoke |
 | [`docs/website/DEV_RUNBOOK.md`](DEV_RUNBOOK.md) | Local laptop stack (`cargo xtask db up/api/web`) |
-| [`scripts/deploy/deploy.env.example`](../../scripts/deploy/deploy.env.example) | Shared SSH + paths (`TBD_REMOTE_DIR=/home/sam/tbd/repo`) |
+| [`tools_v2/xtask/deploy/deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example) | Shared SSH + paths (`TBD_REMOTE_DIR=/home/sam/tbd/repo`) |
 | PL `PrairieLearn.md` / `HandoverContext.md` | SSH + Cloudflare precedent (do not copy PL ports/paths) |
 
 ---
 
 ## Suggested next code slice (not this doc)
 
-Shipped already: `apps/website/docker-compose.staging.yml` (T-251), `cargo xtask deploy website`, `scripts/deploy/Caddyfile.website`. Remaining:
+Shipped already: `apps/website/docker-compose.staging.yml`, `cargo xtask deploy website`, `tools_v2/xtask/deploy/Caddyfile.website`. Remaining:
 
 1. Wire Caddy/SPA + COOP/COEP as the default one-button host path (or Axum `ServeDir` + SPA fallback).
 2. Optional Dockerfile for release `api` if you prefer container API over host systemd.

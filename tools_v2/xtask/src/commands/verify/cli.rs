@@ -11,7 +11,7 @@ pub(crate) enum VerifyCmd {
     /// T-090.11 shell.
     #[command(name = "blas-manifest")]
     BlasManifest,
-    /// T-165.10 hard gate: zero tracked .mjs/.cjs; no node/npx outside the enfusion-mcp floor
+    /// Zero tracked .mjs/.cjs; no node/npx invocation in a scanned file
     #[command(name = "no-node")]
     NoNode,
     /// T-904 LANG-1: tracked shell/Make hard zero (same TrackedLanguageBan table as no-python)

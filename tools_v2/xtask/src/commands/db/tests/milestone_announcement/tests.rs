@@ -1,14 +1,11 @@
 use super::*;
 
 fn fixture_root(tag: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("t872-seed-{tag}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("seed-announcement-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::create_dir_all(root.join("apps/website/api_v2")).unwrap();
-    fs::create_dir_all(root.join("scripts/mod")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
-    // Script path exists only for error-message pin (port does not execute it).
-    fs::write(root.join(SCRIPT_REL), "# stub\n").unwrap();
     root
 }
 
@@ -126,12 +123,8 @@ fn bad_database_url_forwards_psql_rc() {
 }
 
 #[test]
-fn paths_pin_web_under_apps_website_api() {
+fn the_api_directory_resolves_against_the_given_root() {
     let root = PathBuf::from("/tmp/fake-mono");
     let p = Paths::from_root(&root);
-    assert_eq!(p.web, PathBuf::from("/tmp/fake-mono/apps/website/api_v2"));
-    assert_eq!(
-        p.script,
-        PathBuf::from("/tmp/fake-mono/scripts/mod/seed-milestone-announcement.sh")
-    );
+    assert_eq!(p.web, root.join("apps/website/api_v2"));
 }

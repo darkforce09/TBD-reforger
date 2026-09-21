@@ -259,12 +259,11 @@ legal: everybody falls to round-robin seating, and the lobby picker still works.
 **Why there was no script (the original text, now fixed).** The two that looked like they would
 start a server, did not:
 
-- `scripts/mod/run-dev-server.sh` was **27 lines and never launched anything** — two preflight
-  checks, then it ended. T-871 replaced the later shim with `cargo xtask mod dev-server`
-  (execs `run-playtest-server.sh`, or exits 2 with a pointer / 3 if the launcher is missing).
-- `cargo xtask deploy staging` (formerly `deploy-staging.sh:1153`) builds the `config`-mode
+- `cargo xtask mod dev-server` launches nothing by itself — it hands its arguments to
+  `cargo xtask mod playtest`, and with none it prints its usage and exits 2.
+- `cargo xtask deploy staging` builds the `config`-mode
   ExecStart **without `-addonsDir`**, so the local addon in `game.mods[]` is not what loads — the
-  stale Workshop copy is. Its `addons`-mode branch at `:1155` does pass `-addonsDir`, but with
+  stale Workshop copy is. Its `addons`-mode branch does pass `-addonsDir`, but with
   `-addons`/`-server` instead of `-config`, and that mode registers no backend room: re-measured
   2026-07-31, **zero** `Server registered with address:` lines against a healthy
   `[TBD][Stage] LOADING -> LOBBY` in the same log. Both branches are still wrong; T-604 did not
@@ -317,7 +316,7 @@ ls -l "$HOME/tbd-playtest/addons"
 ```bash
 # 2.4.4 — server config: the committed dev config, made joinable, with the LOCAL addon injected
 LANIP=$(ip route get 1.1.1.1 | awk '{print $7; exit}')
-python3 - scripts/mod/tbd-dev-server.config.json "$HOME/tbd-playtest/server.json" "$LANIP" <<'PY'
+python3 - tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json "$HOME/tbd-playtest/server.json" "$LANIP" <<'PY'
 import json,sys
 src,dst,ip=sys.argv[1:4]
 c=json.load(open(src))
@@ -583,14 +582,14 @@ cargo xtask deploy staging --agent-selftest /tmp/tbd-agent-selftest
 ```
 Expect the rendered agent to be driven against a stub `systemctl` and report the unit's **real**
 state. It must be able to report a *dead* unit as dead even when the verb exited 0 — that is the
-entire reason the agent exists (`cargo xtask deploy staging` (formerly `deploy-staging.sh:139-152`)).
+entire reason the agent exists.
 
 Then install for real. **This runs a full deploy** — rsync, compose rebuild, game-server restart —
-and needs `scripts/deploy/deploy.env`, which **does not exist in this checkout**:
+and needs `tools_v2/xtask/deploy/deploy.env`, which **does not exist in this checkout**:
 
 ```bash
-cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env
-$EDITOR scripts/deploy/deploy.env    # TBD_SSH_HOST, token, paths
+cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env
+$EDITOR tools_v2/xtask/deploy/deploy.env    # TBD_SSH_HOST, token, paths
 TBD_INSTALL_AGENT=1 cargo xtask deploy staging --dry-run   # look first
 TBD_INSTALL_AGENT=1 cargo xtask deploy staging
 ```
@@ -674,7 +673,7 @@ version problem if `ping` works and the A2S port answers.
 
 Find your identityId in the server log — the engine prints it on authentication, and the
 comma-separated list of them is what `game.admins[]` takes
-([`deploy.env.example:56-58`](../../scripts/deploy/deploy.env.example)):
+([`deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example)):
 
 ```bash
 grep -iE 'identityId' "$LOG" | tail -5
@@ -1221,7 +1220,7 @@ T-604 did not touch that file.
 used to rest on was wrong: **`tbd-framework` IS published to the Workshop.** Unlisted, under the
 *same* id as the local gproj GUID `B2C3D4E5F6A78901`, pinned at **version 1.0.1** (2026-06-14).
 `TBD_WORKSHOP_MOD_ID` being commented out at
-[`deploy.env.example:43`](../../scripts/deploy/deploy.env.example) meant only that nobody wrote the
+[`deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example) meant only that nobody wrote the
 id down — not that no publish exists. Measured 2026-07-31 on a clean profile with no `-addonsDir`:
 the engine printed `BACKEND: Addon Download started B2C3D4E5F6A78901 - TBD Framework` /
 `Downloading B2C3D4E5F6A78901 version 1.0.1` and pulled it over the network.

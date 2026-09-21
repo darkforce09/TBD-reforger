@@ -1,7 +1,7 @@
 //! Debug helpers for `cargo xtask debug …` (T-162 / T-868).
 //!
 //! Low-level primitives (`a2s-probe`, `ndjson-append`, `direct-join-log`) kept as subcommands.
-//! The former `scripts/mod/debug-direct-join.sh` orchestrator is `debug direct-join`.
+//! The orchestrator that drives these probes is `cargo xtask debug direct-join`.
 
 use anyhow::{Context, Result};
 use serde_json::{Value, json};
@@ -71,7 +71,7 @@ pub fn cmd_ndjson_append(
     let row = json!({
         "sessionId": "8fc1e0",
         "timestamp": ts,
-        "location": "scripts/debug-direct-join.sh",
+        "location": "cargo xtask debug direct-join",
         "message": message,
         "data": data,
         "hypothesisId": hypothesis_id,
@@ -156,7 +156,7 @@ fn append(log: &Path, run_id: &str, hid: &str, message: &str, data: Value) -> Re
     let row = json!({
         "sessionId": "8fc1e0",
         "timestamp": ts,
-        "location": "scripts/debug-direct-join.sh",
+        "location": "cargo xtask debug direct-join",
         "message": message,
         "data": data,
         "hypothesisId": hid,

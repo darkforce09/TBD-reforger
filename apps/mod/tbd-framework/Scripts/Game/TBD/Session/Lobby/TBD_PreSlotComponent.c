@@ -17,7 +17,7 @@
 //!      runs server-side". What is left of this slice is a CLIENT camera and nothing else. Hanging
 //!      it there would make that header a lie for the next reader — more so now than in T-181.50,
 //!      when at least half of this belonged on the server.
-//!   2. IT IS THE ONLY THING THE ZERO-PLAYER HARNESS CAN PROVE. `scripts/mod/world-boot.sh` boots
+//!   2. IT IS THE ONLY THING THE ZERO-PLAYER HARNESS CAN PROVE. `cargo xtask mod world-boot` boots
 //!      the real scenario with no players, so it cannot exercise a single player-triggered path in
 //!      this slice — but its check 2 (`WORLD (E): Unknown class`) DOES catch a component listed in
 //!      `TBD_GameMode.et` whose class fails to resolve, which is otherwise dropped SILENTLY. Put the
@@ -64,7 +64,7 @@ class TBD_PreSlotComponent : SCR_BaseGameModeComponent
 		}
 
 		// ── THE "AM I A MACHINE WITH A SCREEN" TEST, AND A CORRECTION ──────────────────────────
-		// MEASURED 2026-07-25 against `scripts/mod/world-boot.sh`, which boots the real scenario on
+		// MEASURED 2026-07-25 against `cargo xtask mod world-boot`, which boots the real scenario on
 		// the native Linux dedicated server: `GetGame().GetWorkspace()` is NOT null there. The first
 		// cut of this file used the workspace test alone — the idiom `TBD_SpectatorComponent` uses
 		// and describes as "a dedicated server has no workspace at all (measured — see

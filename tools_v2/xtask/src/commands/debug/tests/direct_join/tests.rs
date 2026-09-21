@@ -1,17 +1,17 @@
 use super::*;
 
 fn fixture_root(tag: &str) -> PathBuf {
-    let root = std::env::temp_dir().join(format!("t868-{tag}-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("direct-join-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     fs::create_dir_all(root.join("apps/mod")).unwrap();
-    fs::create_dir_all(root.join("scripts/deploy")).unwrap();
+    fs::create_dir_all(root.join(crate::core::repository_layout::DEPLOY_DIR)).unwrap();
     root
 }
 
 fn empty_home(tag: &str) -> PathBuf {
-    let home = std::env::temp_dir().join(format!("t868-home-{tag}-{}", std::process::id()));
+    let home = std::env::temp_dir().join(format!("direct-join-home-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&home);
     fs::create_dir_all(home.join(".local/bin")).unwrap();
     home

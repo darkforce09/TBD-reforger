@@ -1,23 +1,18 @@
-//! T-868 — port of `scripts/mod/debug-direct-join.sh` → `cargo xtask debug direct-join`.
+//! `cargo xtask debug direct-join` — one summary of why a client cannot join the staging server.
 //!
-//! Path pins MIRROR the values `scripts/mod/lib/paths.sh` defined; nothing here reads that file.
-//! T-853 deleted `lib/xtask-run.sh` (zero consumers); `lib/paths.sh` survives only until
-//! `deploy-staging.sh`, its last consumer, is ported.
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`,
-//! `DEPLOY_ENV=scripts/deploy/deploy.env`.
+//! An orchestrator: it runs `debug a2s-probe`, `debug direct-join-log` and `debug ndjson-append`
+//! and collects their answers into one line per probe.
 //!
-//! Orchestrator only: keeps `debug a2s-probe` / `debug direct-join-log` / `debug ndjson-append`.
+//! Every local probe is soft, because the summary is worth more complete than strict: a missing
+//! Steam manifest or an unmatched `buildid` reports `unknown`, a `readlink -f` that fails reports
+//! `missing`, and a ping with no `time=` reports `fail`. A `buildid` line with only two fields —
+//! which is what Steam writes — reports empty rather than `unknown`, so an operator can tell
+//! "the file said nothing here" from "there was no file".
 //!
-//! Fail-opens closed / pinned vs bash:
-//! - Steam `buildid`: missing file / no match → `unknown` (pinned soft probe). A hit whose awk
-//!   `$3` is empty (typical two-field Steam `"buildid"\t"N"` lines) stays **empty**, not
-//!   `unknown` — preserved oddity of the bash pipeline.
-//! - Symlink: `readlink -f` fail → `missing` (pinned soft probe).
-//! - Ping: no `time=` match → `fail` (pinned soft probe).
-//! - Remote SSH: bash `2>/dev/null || true` collapsed ToolAbsent and transport errors into empty
-//!   `REMOTE_OUT`. **Closed for ToolAbsent** when `TBD_SSH_HOST` is set (`service=tool_absent`);
-//!   transport / nonzero / stderr-only failures still collapse to empty (pinned preserved oddity —
-//!   the debug helper must not abort the local summary).
+//! The remote probe is the one place that fails loudly: when `TBD_SSH_HOST` is set and `ssh` is
+//! not installed, the summary reports `service=tool_absent` instead of an empty remote section.
+//! Transport failures and non-zero remote exits still collapse to empty — the server being
+//! unreachable is the thing being diagnosed, and it must not abort the local half of the summary.
 
 use std::collections::HashMap;
 use std::fs;
@@ -48,7 +43,7 @@ echo "a2s=$A2S"
 echo "client_lines=$CLIENT"
 "#;
 
-/// Paths mirroring `scripts/mod/lib/paths.sh`.
+/// The checkout locations this command reads.
 struct Paths {
     mono_root: PathBuf,
     #[allow(dead_code)]
@@ -67,7 +62,7 @@ impl Paths {
             mod_root: root.join("apps/mod"),
             schema: developer_tools::repository_layout::contracts_dir(root),
             web: root.join("apps/website/api_v2"),
-            deploy_env: root.join("scripts/deploy/deploy.env"),
+            deploy_env: root.join(crate::core::repository_layout::DEPLOY_ENV),
         }
     }
 

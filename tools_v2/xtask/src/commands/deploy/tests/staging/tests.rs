@@ -5,15 +5,14 @@ fn v(items: &[&str]) -> Vec<String> {
 }
 
 #[test]
-fn usage_matches_the_captured_baseline() {
-    // /tmp/t853/ds--help.old, three lines, rc=0.
+fn usage_names_the_runnable_command_and_every_mode_flag() {
     let lines: Vec<&str> = USAGE.lines().collect();
     assert_eq!(lines.len(), 3);
     assert_eq!(
         lines[0],
-        "Usage: deploy-staging.sh [--dry-run] [--render-only <path>]"
+        "Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]"
     );
-    assert!(lines[1].starts_with("                         [--render-agent <dir>]"));
+    assert!(lines[1].trim_start().starts_with("[--render-agent <dir>]"));
     assert!(lines[2].ends_with("[--verify-boot-selftest]"));
 }
 
@@ -69,12 +68,12 @@ fn flags_accumulate() {
 }
 
 #[test]
-fn paths_inline_the_three_fields_paths_sh_supplied() {
+fn paths_resolve_against_the_running_checkout() {
     let p = Paths::resolve().expect("repo root");
-    assert!(
-        p.mono_root.join(".ai/tickets/ROOT").is_file()
-            || p.mono_root.join(".ai/tickets/registry.json").is_file()
-    );
+    assert!(p.mono_root.join(".ai/tickets/ROOT").is_file());
     assert!(p.schema.ends_with("contracts_v2"));
-    assert!(p.deploy_env.ends_with("scripts/deploy/deploy.env"));
+    assert!(
+        p.deploy_env
+            .ends_with(crate::core::repository_layout::DEPLOY_ENV)
+    );
 }

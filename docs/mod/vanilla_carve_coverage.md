@@ -9,8 +9,8 @@ than every other lane and supersedes the codec problem entirely; cracking the pa
 no longer needed.
 
 ```bash
-bash scripts/mod/fetch-vanilla-source.sh            # curated spine set
-bash scripts/mod/fetch-vanilla-source.sh --grep Respawn
+cargo xtask fetch vanilla-source                          # curated spine set
+cargo xtask fetch vanilla-source --grep Respawn
 cargo run -q -p developer-tools --bin enf -- source       # rebuild .c from cached pages
 cargo run -q -p developer-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
 ```
@@ -138,7 +138,7 @@ The earlier claim that "33.9 MB / 1,859 class declarations" were carveable from 
 conflated two things: a large share of that printable volume is `.et` prefab config, not script.
 
 **Fallbacks for anything listed ABSENT, in order:**
-1. `bash scripts/mod/mcp-call.sh api_search '{"query":"SCR_PossessSpawnData"}'` — signatures only, no bodies.
+1. `cargo xtask mcp call api_search '{"query":"SCR_PossessSpawnData"}'` — signatures only, no bodies.
 2. CRF's own usage as the behavioural oracle — e.g.
    `CRF_SCR_PossessSpawnHandlerComponent.c` is exactly how the possess pipeline was found.
    `cargo run -q -p developer-tools --bin enf -- lookup <symbol>` (CRF lane).

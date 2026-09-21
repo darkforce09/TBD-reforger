@@ -317,7 +317,7 @@ pub fn verify_boot_cli(paths: &Paths, log: &Path) -> u8 {
         );
         eprintln!("so it knows which path counts as 'the checkout we deployed'. Export it, e.g.");
         eprintln!(
-            "  TBD_ADDONS_STAGING=/home/sam/tbd/addons bash scripts/mod/deploy-staging.sh --verify-boot <log>"
+            "  TBD_ADDONS_STAGING=/home/sam/tbd/addons cargo xtask deploy staging --verify-boot <log>"
         );
         return 2;
     }

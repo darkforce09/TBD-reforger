@@ -49,7 +49,7 @@ UI, layers and outliner authoring.
 
 **Will also do the mod half.** An earlier draft of this document said 17 tickets were
 `executor: workbench` and undispatchable. **That was wrong**, and the operator corrected it.
-`scripts/mod/compile.sh` compiles `tbd-framework` against the native Linux dedicated server
+`cargo xtask mod compile` compiles `tbd-framework` against the native Linux dedicated server
 headlessly — verified 2026-08-02: `OK: compiled clean, 5707 files, 11182 classes, 832 ms, no
 Workbench`. Editing a `.c` file is not the same as needing the Workbench GUI. All 16 mod tickets
 are factory work; per the model-routing rule their `.c` portion goes to **Fable 5**.

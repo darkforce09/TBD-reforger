@@ -1,26 +1,24 @@
-//! T-872 — port of `scripts/mod/seed-milestone-announcement.sh`
-//! → `cargo xtask mod seed-announcement`.
+//! `cargo xtask mod seed-announcement` — insert the pinned first-milestone website announcement
+//! when it is not already there.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
-//! `WEB=apps/website/api_v2`. Sources `$WEB/.env` for `DATABASE_URL` (KEY=VALUE parse, not a
-//! full shell `source`).
+//! `DATABASE_URL` comes from the process environment, overlaid by `apps/website/api_v2/.env`,
+//! which is parsed as `KEY=VALUE` and never executed.
 //!
-//! Inserts the pinned Milestone #1 website announcement when absent.
+//! What it refuses and what it tolerates:
+//! - An absent `.env` is reported and the command continues: the value may be in the
+//!   environment already.
+//! - An unreadable `.env` exits 1 rather than proceeding with an empty overlay.
+//! - No `psql` and no running `tbdevent-postgres` container exits 1. A `podman` that is absent,
+//!   fails, or names no matching container reads as "no container" — never as a success when
+//!   `psql` is also missing.
+//! - A `psql` with no `DATABASE_URL` to give it exits 1.
+//! - A non-zero `psql` or `podman exec` forwards its own exit code.
 //!
-//! Fail-opens closed / pinned vs bash:
-//! - Missing `$WEB/.env`: bash `set -a && source && set +a` prints the source error and
-//!   **continues** (`set -e` does not abort mid `&&`-list) — preserved. Absolute path uses
-//!   `$ROOT/scripts/mod/seed-milestone-announcement.sh: line 9: …`.
-//! - No `psql` and no running `tbdevent-postgres` container → stderr message, exit **1**.
-//! - `psql` present but `DATABASE_URL` unbound (`set -u`) → bash line-12 unbound shape, exit **1**.
-//! - `podman` absent / failing / no matching name: treated as "no container" (bash
-//!   `2>/dev/null | grep -qx`), never a silent success when psql is also absent.
-//! - Child `psql` / `podman exec` nonzero: raw exit code forwarded (bash `set -e`).
-//!
-//! Test seams (prefer these over PATH stubs — PATH races `gate_crf_leak`'s `/usr/bin/grep`):
-//! - `TBD_SEED_MILESTONE_PSQL` — absolute path to a psql binary (checked before `PATH`).
-//!   A set-but-missing path forces [`NotRun::ToolAbsent`].
-//! - `TBD_SEED_MILESTONE_PODMAN` — same for podman.
+//! Test seams, preferred over PATH stubs because PATH is process-wide and other checks resolve
+//! their own tools through it:
+//! - `TBD_SEED_MILESTONE_PSQL` — absolute path to a psql binary, checked before `PATH`. A path
+//!   that is set but missing forces [`NotRun::ToolAbsent`].
+//! - `TBD_SEED_MILESTONE_PODMAN` — the same for podman.
 
 use std::collections::HashMap;
 use std::fs;
@@ -33,15 +31,12 @@ use verification_core::verdict::NotRun;
 
 use crate::core::repository_root::find_repo_root;
 
-/// Historical script path (error-message pin + inventory identity).
-const SCRIPT_REL: &str = "scripts/mod/seed-milestone-announcement.sh";
-
 /// Optional absolute psql path for unit tests (avoids PATH mutation).
 const ENV_PSQL: &str = "TBD_SEED_MILESTONE_PSQL";
 /// Optional absolute podman path for unit tests (avoids PATH mutation).
 const ENV_PODMAN: &str = "TBD_SEED_MILESTONE_PODMAN";
 
-/// Exact `<<'SQL'` body from the former bash (trailing newline included).
+/// The statement, written so a second run inserts nothing.
 const SQL: &str = r#"INSERT INTO announcements (title, body, pinned, published, published_at)
 SELECT
   'Milestone #1 — Saturday 22 August 2026',
@@ -61,20 +56,21 @@ WHERE NOT EXISTS (
 const SUCCESS: &str = "Website announcement seeded (if not already present).";
 const NO_PSQL: &str = "No psql and tbdevent-postgres container not running.";
 
-/// Paths mirroring `scripts/mod/lib/paths.sh`.
+/// The checkout location this command reads.
 struct Paths {
     web: PathBuf,
-    script: PathBuf,
 }
 
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
             web: root.join("apps/website/api_v2"),
-            script: root.join(SCRIPT_REL),
         }
     }
 }
+
+/// How this command names itself in its own error messages.
+const COMMAND: &str = "cargo xtask mod seed-announcement";
 
 /// Entry for `xtask mod seed-announcement`.
 pub fn run() -> Result<u8> {
@@ -87,8 +83,7 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     let paths = Paths::from_root(root);
     let env_file = paths.web.join(".env");
 
-    // bash: `set -a && source "$WEB/.env" && set +a`
-    // Process env first; file overlay overwrites (including empty), matching `source`.
+    // The process environment first; the file's keys then win, empty included.
     let mut database_url = std::env::var("DATABASE_URL").ok();
 
     if env_file.is_file() {
@@ -99,30 +94,27 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
                 }
             }
             Err(e) => {
-                // Closed: unreadable .env is not a silent empty source.
+                // An unreadable `.env` is not an empty one: it stops the command.
                 eprintln!("could not read {}: {e}", env_file.display());
                 return Ok(1);
             }
         }
     } else {
-        // Preserved oddity: source error printed, execution continues.
+        // Reported, not fatal: `DATABASE_URL` may already be in the environment.
         eprintln!(
-            "{}: line 9: {}: No such file or directory",
-            paths.script.display(),
+            "{COMMAND}: {}: No such file or directory",
             env_file.display()
         );
     }
 
-    // bash: `if command -v psql >/dev/null 2>&1; then …`
     match resolve_tool(ENV_PSQL, "psql") {
         Ok(psql) => {
             let url = match database_url {
                 Some(u) => u,
                 None => {
-                    // bash `set -u`: `psql "$DATABASE_URL"` → unbound variable
                     eprintln!(
-                        "{}: line 12: DATABASE_URL: unbound variable",
-                        paths.script.display()
+                        "{COMMAND}: DATABASE_URL is set in neither the environment nor {}",
+                        env_file.display()
                     );
                     return Ok(1);
                 }
@@ -188,13 +180,13 @@ fn resolve_tool(env_key: &str, name: &str) -> Result<PathBuf, NotRun> {
 fn run_sql(run: Run) -> Result<u8> {
     match run.merged_output() {
         Ok(out) => {
-            // bash lets psql write stdout/stderr directly; re-emit merged text.
+            // The child's own output is what an operator needs; re-emit it merged.
             let _ = io::stdout().write_all(out.text.as_bytes());
             if out.code == 0 {
                 println!("{SUCCESS}");
                 Ok(0)
             } else {
-                // bash `set -e`: raw psql/podman exit (often 2 for connection errors).
+                // Forward the child's own exit code (often 2 for a connection error).
                 Ok(out.code as u8)
             }
         }
@@ -202,7 +194,7 @@ fn run_sql(run: Run) -> Result<u8> {
     }
 }
 
-/// bash: `podman ps --format '{{.Names}}' 2>/dev/null | grep -qx tbdevent-postgres`
+/// Whether the development database container is running.
 fn tbdevent_postgres_running() -> bool {
     let Ok(podman) = resolve_tool(ENV_PODMAN, "podman") else {
         return false;
@@ -214,7 +206,7 @@ fn tbdevent_postgres_running() -> bool {
         .merged_output()
     {
         Ok(out) if out.code == 0 => out.text.lines().any(|l| l == "tbdevent-postgres"),
-        // ToolAbsent / nonzero / signalled → elif false (bash pipefail+grep miss).
+        // An absent, failing or signalled podman reads as "no container".
         _ => false,
     }
 }

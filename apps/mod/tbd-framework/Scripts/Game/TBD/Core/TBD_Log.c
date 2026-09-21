@@ -104,7 +104,7 @@ class TBD_Log
 	//! the transition line precedes whatever the subsystems say about it. SetStage also keeps the
 	//! legacy `[TBD] Stage → …` Print verbatim (README.md and STAGING-SERVER.md quote it), so both
 	//! formats appear on every transition — detectors should accept either and never depend on the
-	//! non-ASCII arrow (see scripts/mod/remote-log-grep.sh PAT_LOBBY).
+	//! non-ASCII arrow (`cargo xtask mod remote-logs` pins the prefix only).
 	static void Stage(TBD_EGameStage from, TBD_EGameStage to)
 	{
 		Event(CH_STAGE, string.Format("%1 -> %2",

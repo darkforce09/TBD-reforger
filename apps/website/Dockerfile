@@ -9,7 +9,7 @@
 #
 # Runtime listens on 0.0.0.0:$PORT (default 8080). Supply at least DATABASE_URL and
 # JWT_SECRET (see apps/website/api_v2/.env.example). This image does **not** serve the
-# Leptos SPA — use scripts/deploy/Caddyfile.website (COOP/COEP + /api reverse-proxy).
+# Leptos SPA — use tools_v2/xtask/deploy/Caddyfile.website (COOP/COEP + /api reverse-proxy).
 
 # syntax=docker/dockerfile:1
 

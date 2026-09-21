@@ -66,7 +66,7 @@ pub struct Config {
     /// The map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM /
     /// basemap / world chunks). Empty defaults to `../../../assets_v2/terrains` relative to the
     /// CWD, which is correct only when the process runs from `apps/website/api_v2/`. Production
-    /// sets this to an absolute path — see `scripts/deploy/tbd-website-api.service`.
+    /// sets this to an absolute path — see `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
     pub map_assets_dir: String,
     /// The glyph dir served at `/map-assets/glyphs` (the tactical marker atlas, shared by every
     /// terrain). Empty defaults to `../../../assets_v2/glyphs` relative to the CWD.
@@ -78,7 +78,7 @@ pub struct Config {
     /// (the repository's gitignored scratch tree when the process runs from
     /// `apps/website/api_v2/`); outside development it is required and must be absolute, because
     /// the process working directory is a deployment detail and the checkout is what the deploy
-    /// rsyncs with `--delete` — see `scripts/deploy/tbd-website-api.service`.
+    /// rsyncs with `--delete` — see `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
     pub upload_dir: String,
     /// Directory `POST /missions/{id}/inject` stages `mission.json` files into for the game-server
     /// bridge. Same rules as [`Self::upload_dir`]; the development default is

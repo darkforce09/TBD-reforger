@@ -65,7 +65,8 @@ enum Cmd {
     Extract {
         #[arg(long, default_value = "apps/mod/vanilla_reference/Scripts")]
         out: PathBuf,
-        /// Only extract paths starting with this prefix.
+        /// Only extract entries whose path inside the pak starts with this prefix. The default
+        /// is the pak's own script tree, which is where every vanilla `.c` file lives.
         #[arg(long, default_value = "scripts/")]
         prefix: String,
     },

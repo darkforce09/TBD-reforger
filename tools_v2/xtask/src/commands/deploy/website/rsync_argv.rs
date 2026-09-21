@@ -23,20 +23,19 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         "--exclude=apps/website/frontend/dist/".into(),
         "--exclude=apps/website/api_v2/.env".into(),
         "--exclude=apps/website/api_v2/.tools/".into(),
-        "--exclude=scripts/deploy/deploy.env".into(),
+        format!("--exclude={}", crate::core::repository_layout::DEPLOY_ENV),
         // The served terrain tree: ~590 MB of LFS content plus the gitignored tile pyramids
         // nested under it. The server carries its own copy; it is never pushed from a dev PC.
         "--exclude=assets_v2/terrains/".into(),
         // Local export intermediates, 1.5 GB and gitignored (`.gitignore`, `assets_v2/scratch/`).
-        // These used to live *inside* the terrain directory, so one exclusion covered both; the
-        // relocation made them siblings and the terrain exclusion alone no longer reaches them.
+        // They are the terrain tree's sibling, so the terrain exclusion above does not reach them.
         "--exclude=assets_v2/scratch/".into(),
         // `assets_v2/glyphs/` is deliberately NOT excluded. It is 188 KB, it is tracked, and the
         // API serves it at `/map-assets/glyphs`, so the server takes its copy from this rsync.
         //
-        // The pre-relocation asset location. Nothing in the repo writes here any more, so this
-        // exclusion exists purely to keep `--delete` away from a server that still holds its
-        // assets at the old path. Retire it once every host has moved to `assets_v2/terrains`.
+        // Nothing in the repository writes to `packages/`. This exclusion exists purely to keep
+        // `--delete` away from a server that still holds its map assets there; it can go once
+        // every host serves them from `assets_v2/terrains`.
         "--exclude=packages/".into(),
         "--exclude=apps/mod/crf_framework/".into(),
         "--exclude=apps/mod/vanilla_reference/".into(),

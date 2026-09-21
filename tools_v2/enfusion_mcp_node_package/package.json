@@ -1,0 +1,8 @@
+{
+  "name": "enfusion-mcp-node-package",
+  "private": true,
+  "description": "Pins the enfusion-mcp server this repository runs, so every caller starts the same version from disk instead of resolving one over the network",
+  "dependencies": {
+    "enfusion-mcp": "0.6.1"
+  }
+}

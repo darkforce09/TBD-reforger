@@ -11,8 +11,8 @@
 //!
 //! Doxygen wraps each line as `<div class="line" ...>…</div>` with syntax-highlighting spans
 //! and a leading line number. Undoing that is mechanical: drop tags, unescape entities, strip
-//! the line-number prefix. Fetching lives in `scripts/mod/fetch-vanilla-source.sh`; this parses
-//! a local cache so rebuilds are offline and deterministic.
+//! the line-number prefix. Fetching is `cargo xtask fetch vanilla-source`; this parses a local
+//! cache, so rebuilds are offline and deterministic.
 
 use std::fmt::Write as _;
 use std::path::Path;
@@ -109,7 +109,7 @@ fn demangle(page: &str) -> Option<String> {
 pub fn build(src: &Path, out: &Path) -> Result<SourceStats> {
     let rd = std::fs::read_dir(src).with_context(|| {
         format!(
-            "reading {} — run scripts/mod/fetch-vanilla-source.sh first",
+            "reading {} — run `cargo xtask fetch vanilla-source` first",
             src.display()
         )
     })?;

@@ -99,17 +99,13 @@ use host::Host;
 
 /// Printed verbatim by `-h` / `--help`.
 ///
-/// The bash generated this by `sed`-ing its own header between `# Usage:` and the `set -uo
-/// pipefail` line — a neat trick that made the help text and the comment block impossible to drift
-/// apart, and that also made the help text depend on the script still being a file on disk with its
-/// comments intact. A `const` cannot drift from itself, and `help_text_matches_the_options_we_parse`
-/// below pins every listed flag against the parser, which is the property the `sed` was really
-/// buying. Byte-for-byte identical to `/tmp/t853/rps-help.old`.
+/// `help_text_matches_the_options_we_parse` pins every flag listed here against the parser, so
+/// the help cannot advertise an option the command does not accept.
 const HELP: &str = "\
 Usage:
-  bash scripts/mod/run-playtest-server.sh --mission-id=<id> [options]
-  bash scripts/mod/run-playtest-server.sh --mission-id=<id> --admin=<identityId> --dry-run
-  bash scripts/mod/run-playtest-server.sh --selftest
+  cargo xtask mod playtest --mission-id=<id> [options]
+  cargo xtask mod playtest --mission-id=<id> --admin=<identityId> --dry-run
+  cargo xtask mod playtest --selftest
 
 Options:
   --mission-id=<id>     mission the mod loads (TBD_BackendConfig.json missionId)   [required]
@@ -129,14 +125,11 @@ Options:
   --selftest            prove kill_run + the run lock actually work; boots no game server
 ";
 
-/// PRESERVED ODDITY: the usage line still names `bash scripts/mod/run-playtest-server.sh`, not
-/// `cargo xtask mod playtest`. Same call made in `gate_run_dev_server.rs` (T-871) — the baselines
-/// under `/tmp/t853/` are diffed byte-for-byte, and the shim in that module prints the identical
-/// string, so changing one without the other would silently split the two halves of one message.
+/// The one-line refusal printed when a required flag is missing.
 const USAGE_LINE: &str =
-    "Usage: bash scripts/mod/run-playtest-server.sh --mission-id=<id> [--admin=<id>] [--dry-run]";
+    "Usage: cargo xtask mod playtest --mission-id=<id> [--admin=<id>] [--dry-run]";
 
-/// Everything the flag loop can set. Field order mirrors the bash's variable block.
+/// Everything the flag loop can set.
 #[derive(Debug, Clone)]
 pub struct Opts {
     pub mission_id: String,

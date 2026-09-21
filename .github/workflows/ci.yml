@@ -156,8 +156,8 @@ jobs:
 
   # --- schema: the full schema-validate set + citations (T-434) ---
   # Class-R parity: this job MUST match `xtask ci schema-validate` + `xtask ci verify-citations`
-  # (i.e. `xtask ci ci-local-schema`). Sub-gate SET = GATE_SCHEMA_VALIDATE_GATES in
-  # scripts/platform/wave.sh, same order as the task row:
+  # (i.e. `xtask ci ci-local-schema`). Sub-gate SET = the schema-validate step of
+  # `cargo xtask platform wave gate`, same order as the task row:
   #   validate map-object-golden map-glyphs height-labels map-object-enums
   #   type-inventory t090-specs n6 n10  (+ citations)
   # Pre-T-434 hole: only `schema validate` + `citations` — would not have caught T-244
@@ -204,8 +204,8 @@ jobs:
   # THE POINT OF THIS JOB IS THAT IT EXISTS. `verify-no-python` was written in T-162 and wired into
   # exactly two places: one Makefile target and `ci-local`, the local replay nothing runs by
   # default. `grep verify-no-python .github/workflows/*.yml` returned NOTHING for four waves, so a
-  # gate that was RED THE ENTIRE TIME — on scripts/{platform,mod}/slice-collisions.py, the factory's
-  # own tooling — never once blocked a push, and the wave gate reported 28/28 straight over it.
+  # gate that was RED THE ENTIRE TIME — on the factory's own collision analyser — never once
+  # blocked a push, and the wave gate reported 28/28 straight over it.
   #
   # A rule nobody is stopped by is not a rule. All three run here, on every push and PR, unfiltered.
   #
@@ -265,7 +265,7 @@ jobs:
         run: cargo xtask ticket check --strict
 
   # --- mod gates, HOSTED PORTION (T-209) ---
-  # `scripts/mod/compile.sh` and `cargo xtask mod world-boot` are the mod's only regression
+  # `cargo xtask mod compile` and `cargo xtask mod world-boot` are the mod's only regression
   # instruments, and until T-209 neither ran in CI at all — 33k lines of Enfusion with nothing
   # checking them on push. Both need the Arma Reforger DEDICATED SERVER present on the machine,
   # which a GitHub-hosted runner does not have and cannot practicably install (a ~10 GB Steam

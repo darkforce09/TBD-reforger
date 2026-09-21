@@ -1,30 +1,21 @@
-//! T-863 — port of `scripts/mod/tbd-dev-bootstrap.sh` → `cargo xtask mod dev-bootstrap`.
+//! `cargo xtask mod dev-bootstrap` — bring a workstation to the state mod work needs.
 //!
-//! Path pins are inlined as [`Paths`] (former `lib/paths.sh` values; lib stays on disk
-//! for OOS bash — wave 226 option 2 parks T-879/T-880 deletes):
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api_v2`.
+//! It installs the pinned `enfusion-mcp` package, warms the MCP daemon, sets up the MCP game
+//! root, launches Workbench with `-gproj apps/mod/tbd-export/addon.gproj` (which skips the
+//! project picker and loads tbd-framework and tbd-emcp through the dependency), and optionally
+//! starts the API database and the dedicated-server profile.
 //!
-//! Daemon pre-warm is in-process (`mcp_daemon`, T-888). MCP game root is in-process
-//! (`gate_setup_mcp_game_root`, T-876).
-//! `xtask mcp call` uses `cargo run -q -p xtask --` from mono root (former xtask-run).
+//! The enfusion-mcp Workbench handlers are committed in `apps/mod/tbd-emcp`, so nothing is ever
+//! copied into an addon: a second handler set beside tbd-emcp's would shadow it and break the
+//! bridge. A checkout missing those handlers stops the command.
 //!
-//! 2026-09-12: the enfusion-mcp handlers are COMMITTED in `apps/mod/tbd-emcp` (a dependency of
-//! `apps/mod/tbd-export`), so the former `cp -a` of the npx-cache copy into tbd-framework is gone —
-//! it would now plant a second handler set beside tbd-emcp's and kill the bridge. Workbench is
-//! launched with `-gproj apps/mod/tbd-export/addon.gproj` (skips the project picker; loads
-//! tbd-framework + tbd-emcp through the dependency).
+//! Every external step is non-fatal, because this command prepares a machine rather than
+//! verifying one: a failed `npm ci` falls back to whatever npm has already downloaded, and a
+//! Steam launch, a daemon start, a mod validate, a database start and a server-profile setup
+//! each report and continue. The one thing it refuses to do is claim success while Workbench's
+//! Net API is unreachable: that prints what to do by hand and exits 1.
 //!
-//! Fail-opens closed or pinned:
-//! - `steam -applaunch … 2>/dev/null || true` — preserved (launch attempt never fails the gate).
-//! - `npm ci || echo warn` — preserved non-fatal offline path.
-//! - `mcp daemon start || echo warn` — preserved.
-//! - `mod_validate … || true` — preserved (validate soft).
-//! - `podman start … || true` / `setup server-profile … || true` on `--api`/`--server`.
-//!
-//! Preserved oddities:
-//! - ACTION REQUIRED re-run line still names `bash scripts/mod/tbd-dev-bootstrap.sh`
-//!   (historical `$0` parity; docs/callers use `cargo xtask mod dev-bootstrap`).
-//! - `port_open`: `ss` then `netstat` fallback, each with bash's `2>/dev/null` collapse.
+//! `port_open` asks `ss` and falls back to `netstat`; neither being installed reads as closed.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -37,13 +28,13 @@ use verification_core::proc::Run;
 
 use crate::core::repository_root::find_repo_root;
 
-/// Historical bash re-run string (byte parity with former script line 53).
-const RERUN_HISTORICAL: &str = "bash scripts/mod/tbd-dev-bootstrap.sh";
+/// What to run again once the operator has done the manual step this command cannot do.
+const RERUN_COMMAND: &str = "cargo xtask mod dev-bootstrap";
 
 struct Paths {
     mono_root: PathBuf,
     mod_root: PathBuf,
-    mod_scripts: PathBuf,
+    enfusion_mcp_node_package: PathBuf,
     web: PathBuf,
 }
 
@@ -52,7 +43,8 @@ impl Paths {
         Self {
             mono_root: root.to_path_buf(),
             mod_root: root.join("apps/mod"),
-            mod_scripts: root.join("scripts/mod"),
+            enfusion_mcp_node_package:
+                developer_tools::repository_layout::enfusion_mcp_node_package_dir(root),
             web: root.join("apps/website/api_v2"),
         }
     }
@@ -60,7 +52,7 @@ impl Paths {
 
 /// Entry for `xtask mod dev-bootstrap [--api] [--server]`.
 pub fn run(args: &[String]) -> Result<u8> {
-    // TBD_DEV_BOOTSTRAP_ROOT: throwaway fixture roots for T-853 bash-vs-port arms.
+    // TBD_DEV_BOOTSTRAP_ROOT lets a test point this command at a throwaway tree.
     let root = match std::env::var_os("TBD_DEV_BOOTSTRAP_ROOT") {
         Some(p) => PathBuf::from(p),
         None => find_repo_root()?,
@@ -70,9 +62,10 @@ pub fn run(args: &[String]) -> Result<u8> {
 
 /// Testable entry that does not walk for the repo root.
 pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
-    // Bash `cd … && pwd` is logical (-L): on ostree hosts getcwd is `/var/home/…` while
-    // `$PWD` / bash pwd stay `/home/…`. Prefer the `/home` form so gproj paths match bash.
-    let root = bash_logical_path(root);
+    // On an ostree host `getcwd` answers `/var/home/…` while the login shell's own view of the
+    // same directory is `/home/…`. Workbench is handed a `-gproj` path, and the Proton prefix
+    // maps the shell's view, so the `/home` form is the one it can open.
+    let root = symlinked_home_path(root);
     let p = Paths::from_root(&root);
     let mod_dir = p.mod_root.join("tbd-framework");
     let export_dir = p.mod_root.join("tbd-export");
@@ -93,29 +86,29 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
 
     out_line("== TBD dev bootstrap ==")?;
 
-    // Former bash: `bash "$MOD_SCRIPTS/setup-mcp-game-root.sh"` under set -e.
-    // T-876: in-process `cargo xtask setup mcp-game-root` (same defaults).
+    // The same work `cargo xtask setup mcp-game-root` does, with the same defaults.
     match crate::commands::setup::mcp_game_root::run(None, None) {
         Ok(0) => {}
         Ok(code) => return Ok(code),
         Err(e) => return Err(e),
     }
 
-    // Pin enfusion-mcp for the warm MCP daemon (non-fatal offline).
-    let pkg = p.mod_scripts.join("package.json");
-    let nm = p.mod_scripts.join("node_modules/enfusion-mcp");
-    if pkg.is_file() && !nm.is_dir() {
+    // Install the pinned enfusion-mcp package so the daemon starts from disk. Non-fatal: the
+    // entrypoint resolver falls back to npm's download cache and then to a download.
+    let pkg = p.enfusion_mcp_node_package.join("package.json");
+    let installed = developer_tools::repository_layout::enfusion_mcp_entrypoint(&p.mono_root);
+    if pkg.is_file() && !installed.is_file() {
         match Run::new("npm")
             .arg("ci")
             .arg("--silent")
-            .cwd(&p.mod_scripts)
+            .cwd(&p.enfusion_mcp_node_package)
             .merged_output()
         {
             Ok(m) if m.code == 0 => {}
             _ => {
                 out_line(&format!(
-                    "warn: npm ci in {} failed (offline?) — using npx-cache fallback",
-                    p.mod_scripts.display()
+                    "warn: npm ci in {} failed (offline?) — falling back to npm's download cache",
+                    p.enfusion_mcp_node_package.display()
                 ))?;
             }
         }
@@ -123,7 +116,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
 
     if !emcp_ping.is_file() {
         out_line(&format!(
-            "checkout incomplete: {} missing — the enfusion-mcp handlers are committed in apps/mod/tbd-emcp (2026-09-12); nothing is copied into any addon any more",
+            "checkout incomplete: {} missing — the enfusion-mcp handlers live in apps/mod/tbd-emcp and are never copied into another addon",
             emcp_ping.display()
         ))?;
         return Ok(1);
@@ -133,9 +126,9 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         out_line(&format!(
             "Workbench Net API not on :{wb_port} — trying steam -applaunch 1874910 ..."
         ))?;
-        // Preserved fail-open: `steam -applaunch 1874910 2>/dev/null || true`. `-gproj` skips the
-        // project picker (a picker-stuck launch never opens the Net API) and opens tbd-export, which
-        // pulls in tbd-framework + tbd-emcp. Proton maps `/` to `Z:`.
+        // A failed launch is reported by the port poll below, not here. `-gproj` skips the
+        // project picker (a picker-stuck launch never opens the Net API) and opens tbd-export,
+        // which pulls in tbd-framework and tbd-emcp. Proton maps `/` to `Z:`.
         let _ = Run::new("steam")
             .arg("-applaunch")
             .arg("1874910")
@@ -155,15 +148,14 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
             "ACTION REQUIRED: Launch Arma Reforger Tools from Steam, open {}, enable Net API (File > Options > General).",
             gproj.display()
         ))?;
-        out_line(&format!("Then re-run: {RERUN_HISTORICAL}"))?;
+        out_line(&format!("Then re-run: {RERUN_COMMAND}"))?;
         return Ok(1);
     }
 
     out_line(&format!("Port {wb_port} is listening."))?;
 
     out_line("Pre-warming MCP daemon...")?;
-    // T-888: in-process (prints like bash start). Capture via temp? bash printed
-    // start messages on stdout — call non-quiet so messages stream the same way.
+    // Non-quiet, so the daemon's own start messages stream to this command's stdout.
     let code = crate::commands::mcp::daemon::start_at(
         &crate::commands::mcp::daemon::resolve_sock(),
         false,
@@ -232,7 +224,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
                     .arg("start")
                     .arg("tbdevent-postgres")
                     .merged_output();
-                // bash: `(cd "$WEB" && npm run dev) &`
+                // Detached: the dev server runs until the operator stops it.
                 let _ = Command::new("npm")
                     .arg("run")
                     .arg("dev")
@@ -244,7 +236,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
                 out_line("API dev server starting on :8080")?;
             }
             "--server" => {
-                // bash: `(cd "$MONO_ROOT" && cargo run -q -p xtask -- setup server-profile) 2>/dev/null || true`
+                // Optional: a host without a server directory is a valid workstation.
                 let _ = Run::new("cargo")
                     .arg("run")
                     .arg("-q")
@@ -255,8 +247,8 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
                     .arg("server-profile")
                     .cwd(&p.mono_root)
                     .merged_output();
-                // T-871: run-dev-server.sh → `cargo xtask mod dev-server` (still no args —
-                // same as the former bash spawn; the shim exits 2 with usage).
+                // No arguments: `mod dev-server` with none prints its usage and exits 2,
+                // which is the intended outcome of this optional step.
                 let _ = Command::new("cargo")
                     .args(["run", "-q", "-p", "xtask", "--", "mod", "dev-server"])
                     .current_dir(&p.mono_root)
@@ -274,7 +266,8 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
     Ok(0)
 }
 
-fn bash_logical_path(path: &Path) -> PathBuf {
+/// The `/home/…` spelling of a path an ostree host reports as `/var/home/…`.
+fn symlinked_home_path(path: &Path) -> PathBuf {
     let s = path.to_string_lossy();
     if let Some(rest) = s.strip_prefix("/var/home/") {
         let alt = PathBuf::from(format!("/home/{rest}"));
@@ -309,7 +302,8 @@ fn set_default(key: &str, val: &str) {
     }
 }
 
-/// bash: `ss -tln 2>/dev/null | grep -q ":${WB_PORT} " || netstat -tln 2>/dev/null | grep -q …`
+/// Whether anything is listening on `port`: `ss` first, `netstat` as the fallback. Neither
+/// being installed reads as closed, which is the safe answer for a port poll.
 fn port_open(port: &str) -> bool {
     let needle = format!(":{port} ");
     if let Ok(o) = Run::new("ss").arg("-tln").output() {

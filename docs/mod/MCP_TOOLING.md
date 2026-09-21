@@ -1,6 +1,6 @@
 # Workbench MCP shell tooling
 
-**Shipped:** `e7e7232` (2026-06-30) · **Pinned package:** `enfusion-mcp@0.6.1` in `scripts/mod/package.json`  
+**Shipped:** `e7e7232` (2026-06-30) · **Pinned package:** `enfusion-mcp@0.6.1` in `tools_v2/enfusion_mcp_node_package/package.json`  
 **Entry for agents:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap` (launches Workbench on `apps/mod/tbd-export/addon.gproj`; the bridge handlers are committed in [`apps/mod/tbd-emcp/`](../../apps/mod/tbd-emcp/))
 
 Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Replaces the old flaky one-shot `timeout 90 npx …` path that hung to the full timeout or returned empty mid-stream.
@@ -25,7 +25,7 @@ cargo xtask mcp call
 | Offline gates | `cargo xtask mcp selftest` | 19 fixture tests, no Workbench |
 | Live smoke | `cargo xtask mcp smoke` (`cargo xtask mcp smoke`) | `wb_connect` + `wb_state` after bootstrap |
 
-**Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, launches Workbench with `steam -applaunch 1874910 -gproj <repo>/apps/mod/tbd-export/addon.gproj` (skips the project picker), pre-warms the daemon, then `wb_connect` + `mod_validate`. It no longer copies any handlers — they are committed in `apps/mod/tbd-emcp/`.
+**Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `tools_v2/enfusion_mcp_node_package/` when needed, launches Workbench with `steam -applaunch 1874910 -gproj <repo>/apps/mod/tbd-export/addon.gproj` (skips the project picker), pre-warms the daemon, then `wb_connect` + `mod_validate`. It no longer copies any handlers — they are committed in `apps/mod/tbd-emcp/`.
 
 ---
 
@@ -102,11 +102,11 @@ Use **`MCP_DEBUG=1`** to print runner tier + captured stderr on failure.
 ## Binary resolution (4 tiers)
 
 1. `ENFUSION_MCP_BIN` if set and file exists  
-2. `scripts/mod/node_modules/enfusion-mcp/dist/index.js` (after `npm ci`)  
+2. `tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js` (after `npm ci`)  
 3. First hit under `~/.npm/_npx/**/enfusion-mcp/dist/index.js`  
 4. `npx -y enfusion-mcp` (offline/cache-missing fallback)
 
-Install pinned deps: `(cd scripts/mod && npm ci)`.
+Install pinned deps: `(cd tools_v2/enfusion_mcp_node_package && npm ci)`.
 
 ---
 
@@ -145,7 +145,7 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 | One-shot fail-fast | Early consumer exit; timeout is a ceiling, not the common path |
 | `cargo xtask mcp daemon stop-all` | Kills all brokers, reaps orphaned `enfusion-mcp` children, clears sockets |
 | Self-test cleanup | Short idle in tests; verifies zero stray processes after run |
-| `.gitignore` | `scripts/mod/node_modules/` — never commit npm tree |
+| `.gitignore` | `node_modules/` — never commit an npm dependency tree |
 
 **If load spikes:** run `cargo xtask mcp daemon stop-all` and confirm no `enfusion-mcp` / `mcpd` processes remain.
 

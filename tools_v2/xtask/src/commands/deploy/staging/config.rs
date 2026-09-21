@@ -159,17 +159,18 @@ pub(super) fn xargs_like(s: &str) -> String {
 }
 
 impl Env {
-    /// The bash's `source "$ENV_FILE"` + `${VAR:?}` + `${VAR:=default}` block, in order.
+    /// Read the deploy file, require what must be set, and fill in the rest.
     ///
-    /// ODDITY PRESERVED: `deploy.env` values OVERRIDE the process environment, because `source`
-    /// ran after the command line was already in `environ`. So `TBD_A2S_PORT=1 cargo xtask deploy
-    /// staging` is ignored when `deploy.env` sets `TBD_A2S_PORT`. Vars the file does NOT mention
-    /// still come from the environment, which is how `TBD_MODPACK_JSON=… --render-only` works.
+    /// Deploy-file values OVERRIDE the process environment, so `TBD_A2S_PORT=1 cargo xtask deploy
+    /// staging` is ignored when the deploy file sets `TBD_A2S_PORT`. Keys the file does not
+    /// mention still come from the environment, which is how `TBD_MODPACK_JSON=… --render-only`
+    /// works.
     pub fn load(env_file: &Path) -> Result<Env, u8> {
         if !env_file.is_file() {
             eprintln!(
-                "Missing {} — copy from scripts/deploy/deploy.env.example",
-                env_file.display()
+                "Missing {} — copy from {}",
+                env_file.display(),
+                crate::core::repository_layout::DEPLOY_ENV_EXAMPLE
             );
             return Err(1);
         }
@@ -179,15 +180,14 @@ impl Env {
         for (k, v) in pairs {
             map.insert(k, v);
         }
-        // `${VAR:-}` — unset and empty are the same thing to every read below, exactly as `:-`
-        // and `:=` and `:?` all treat them.
+        // Unset and empty are the same thing to every read below.
         let get = |k: &str| -> String { map.get(k).cloned().unwrap_or_default() };
-        // `: "${VAR:?msg}"`. The historical `scripts/mod/deploy-staging.sh: line N:` prefix is
-        // kept because it is what a wave log carries and what an operator greps for.
+        // `line` is the line of the deploy file the value is expected on, so the message points
+        // at the edit to make rather than at the check that refused.
         let req = |k: &str, line: u32, msg: &str| -> Result<String, u8> {
             let v = get(k);
             if v.is_empty() {
-                eprintln!("scripts/mod/deploy-staging.sh: line {line}: {k}: {msg}");
+                eprintln!("deploy.env: line {line}: {k}: {msg}");
                 return Err(1);
             }
             Ok(v)

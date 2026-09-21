@@ -62,13 +62,13 @@ pub(crate) fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMa
 /// # Two payloads, one status (the reason `detailed` exists)
 ///
 /// This route is **unauthenticated and published through Caddy**
-/// (`scripts/deploy/Caddyfile.website:27`). The full report names the exact build, how recently
+/// (`tools_v2/xtask/deploy/Caddyfile.website`). The full report names the exact build, how recently
 /// the process restarted, the connection-pool depth and the migration count — for example
 /// `version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18`. Served to any
 /// caller who finds the URL, that is reconnaissance handed over for free.
 ///
 /// Putting auth in front of the whole route is the wrong fix: `/healthz` is probed **without
-/// credentials** by `scripts/platform/preflight.sh:145`, `scripts/deploy/Caddyfile.website:27`,
+/// credentials** by `cargo xtask platform preflight`, `tools_v2/xtask/deploy/Caddyfile.website`,
 /// `.github/workflows/editor-gates.yml:95` and
 /// `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs:2714`, and it stays open
 /// for exactly that reason while `/metrics` sits behind `X-Service-Token`.
@@ -76,8 +76,8 @@ pub(crate) fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMa
 /// So the split is by **payload**, never by status code:
 ///
 /// * **Public** (`detailed == false`) — `{"status": "ok" | "unavailable"}` and the 200/503 split.
-///   That is everything a prober reads: `curl -fsS` only looks at the code, and `preflight.sh`
-///   compares the code. Nothing about the build, the uptime, the pool or the schema is disclosed.
+///   That is everything a prober reads: `curl -fsS` only looks at the code, and
+///   `cargo xtask platform preflight` compares the code. Nothing about the build, the uptime, the pool or the schema is disclosed.
 /// * **`X-Service-Token`** (`detailed == true`) — the full report: `version`, `uptime_seconds`,
 ///   per-check `status`/`latency_ms`/`error`, the applied/failed migration counts and the pool
 ///   gauges. An operator's tooling sees the same fields, names and values it always did; it just

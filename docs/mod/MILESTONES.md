@@ -31,7 +31,7 @@ from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
       **BLOCKED on T-092** (route + `X-Service-Token` auth do not exist in the current backend)
 - [x] File fallback proven as backup (`$profile:missions/{id}.json`)
 - [x] Per-slot spawn at mission JSON coords (staging dedicated server verified 2026-06-14)
-- [x] Staging server deploy on 192.168.0.140 (`scripts/mod/deploy-staging.sh`) — Workshop mod + `-config`, client Direct-Joined + spawned 2026-06-14
+- [x] Staging server deploy on 192.168.0.140 (`cargo xtask deploy staging`) — Workshop mod + `-config`, client Direct-Joined + spawned 2026-06-14
 - [ ] Slots enforce: roster identity → assigned slot (round-robin only until linking)
 - [ ] A side wins via a real win condition (capture / hold / elimination)
 - [ ] Results POSTed back to the backend and visible on the event page

@@ -511,7 +511,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! safestart) were added to that prefab across three separate slices with nothing anywhere
 	//! proving they instantiate — the compile gate cannot see prefab wiring at all.
 	//!
-	//! `scripts/mod/world-boot.sh` boots the real scenario headlessly and asserts this line, so
+	//! `cargo xtask mod world-boot` boots the real scenario headlessly and asserts this line, so
 	//! a dropped component fails the wave gate instead of surfacing mid-event. The framework
 	//! manager itself is not listed: it is the thing printing, so its presence is self-evident.
 	protected void PrintComponentRollCall()

@@ -1,4 +1,4 @@
-; T-577 — weekly schedule for tbd-website-backup-drill.service (USER timer, not root cron).
+; Weekly schedule for tbd-website-backup-drill.service (USER timer, not root cron).
 
 [Unit]
 Description=TBD website — weekly backup restore drill

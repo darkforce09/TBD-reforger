@@ -239,16 +239,15 @@ mod tests {
     }
 
     #[test]
-    fn renders_missing_target_like_bash() {
-        // gate-grep.sh `_gate_files_present`, byte-for-byte including the six-space indent.
+    fn a_missing_target_names_the_file_and_the_six_space_continuation() {
         let v = Verdict::did_not_run(
             "socket must be 0600",
             Kind::Pin,
-            NotRun::TargetMissing(PathBuf::from("scripts/gone.sh")),
+            NotRun::TargetMissing(PathBuf::from("etc/socket.conf")),
         );
         assert_eq!(
             v.to_string(),
-            "FAIL: socket must be 0600 — target file missing: scripts/gone.sh\n      \
+            "FAIL: socket must be 0600 — target file missing: etc/socket.conf\n      \
              The pin could not run. A moved or deleted file must not read as a clean result."
         );
     }

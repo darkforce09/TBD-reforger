@@ -87,13 +87,14 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
             Some("Install it from Steam (appid 1890870):  steam steam://install/1890870"),
         ));
     }
-    let dev_config = root.join("scripts/mod/tbd-dev-server.config.json");
+    let dev_config = root.join(crate::core::repository_layout::DEV_SERVER_PROFILE);
     if !dev_config.is_file() {
         return Ok(env_fail(
             &format!("dev config not found at {}", dev_config.display()),
-            Some(
-                "The checkout does not look like this repo — verify the working tree before blaming the mod.",
-            ),
+            Some(&format!(
+                "Server profiles live in {} — verify the working tree before blaming the mod.",
+                crate::core::repository_layout::DEDICATED_SERVER_PROFILES_DIR
+            )),
         ));
     }
 

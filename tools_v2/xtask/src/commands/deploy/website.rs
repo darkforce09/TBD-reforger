@@ -1,24 +1,20 @@
-//! T-858 — port of `scripts/deploy/deploy-website.sh` → `cargo xtask deploy website`.
+//! `cargo xtask deploy website` — rsync the monorepo to the server, bring up staging Postgres,
+//! build the release API and the Leptos SPA there, restart the user-systemd unit, print the
+//! Caddy hints.
 //!
-//! Rsync the monorepo to `TBD_REMOTE_DIR`, bring up staging Postgres, build the release
-//! API + Leptos SPA on the server, restart the user-systemd unit, print Caddy hints.
+//! Two refusals shape the command. The host file at
+//! [`repository_layout::DEPLOY_ENV`] is parsed as `KEY=VALUE` and never executed, so a deploy
+//! cannot be turned into arbitrary shell by editing a configuration file; an unreadable or
+//! malformed file exits 1 rather than deploying with defaults. Live `rsync`, `ssh` and `sshpass`
+//! run through `verification_core::proc::Run`, so a missing tool or a killed child is reported as
+//! itself and can never fold into "deploy succeeded".
 //!
-//! Fail-opens closed vs bash:
-//! - `deploy.env` is KEY=VALUE parsed, not `source`d. A read/parse failure is a hard exit 1
-//!   (bash `source` of a missing/unreadable file also fails; we additionally refuse to execute
-//!   arbitrary shell from that file — that was a silent footgun, not a gate verdict).
-//! - Live `rsync` / `ssh` / `sshpass` go through `verification_core::proc::Run`. `ToolAbsent` /
-//!   `Signalled` cannot fold into "deploy succeeded" (bash `set -e` would also stop, but a
-//!   swallowed status could not).
-//!
-//! Preserved oddities:
-//! - Usage text still says `deploy-website.sh` (byte-parity with the former `--help`).
-//! - Required-var errors keep the bash `: ${VAR:?}` shape including the historical
-//!   `scripts/deploy/deploy-website.sh: line N:` prefix.
-//! - Trailing slashes on `TBD_REMOTE_DIR` are stripped only for the prefix check; echoed
-//!   remote paths and `cd '…'` payloads keep the raw value (including `////` joins).
-//! - `systemctl --user restart` soft-fails with WARN (does not abort the deploy).
-//! - Unknown option short-circuits left-to-right before later `--help` (bash `case` loop).
+//! Two behaviours are deliberate and easy to misread as bugs. Trailing slashes on
+//! `TBD_REMOTE_DIR` are stripped only for the `/home/sam/tbd/` prefix check — echoed remote paths
+//! and `cd '…'` payloads keep the operator's raw value, so what is printed is what runs. And a
+//! failed `systemctl --user restart` warns instead of aborting: the code and the database are
+//! already on the server by then, so the deploy is done and the restart is the operator's to
+//! finish.
 
 use std::collections::HashMap;
 use std::fs;
@@ -29,47 +25,17 @@ use anyhow::{Context, Result};
 use verification_core::proc::{self, Run};
 use verification_core::verdict::NotRun;
 
+use crate::core::repository_layout;
 use crate::core::repository_root::find_repo_root;
 
 pub mod asset_preflight;
+pub mod help_text;
 pub mod remote_steps;
 pub mod rsync_argv;
 pub mod systemd_unit;
 
+use help_text::usage;
 use remote_steps::RemoteStep;
-
-/// Historical usage block — kept byte-identical to the bash `usage()` heredoc.
-const USAGE: &str = "\
-Usage: deploy-website.sh [--dry-run] [--help]
-
-  Rsync the monorepo to TBD_REMOTE_DIR, bring up staging Postgres (compose),
-  build the release API binary + Leptos SPA on the server, restart the
-  user-systemd API unit, and print Caddy reload hints.
-
-  --dry-run   Print the plan (rsync/ssh/compose/build/checksum-repair/state-dir/restart)
-              without executing.
-  -h, --help  Show this help.
-
-Environment (scripts/deploy/deploy.env):
-  TBD_SSH_HOST              required (e.g. sam@192.168.0.140)
-  TBD_REMOTE_DIR            required (must be under /home/sam/tbd/ — never prairielearn)
-  TBD_SSH_PASS              optional (sshpass)
-  TBD_SSH_IDENTITY_FILE     optional (ssh -i)
-  TBD_POSTGRES_HOST_PORT    optional (default 5432) — compose host port
-  TBD_WEBSITE_SYSTEMD_UNIT  optional (default tbd-website-api.service)
-  TBD_SKIP_COMPOSE          set to 1 to skip docker compose postgres up
-  TBD_SKIP_SPA_BUILD        set to 1 to skip remote trunk build
-  TBD_SKIP_API_BUILD        set to 1 to skip remote cargo build
-
-Smoke (no SSH):
-  bash scripts/deploy/deploy-website.sh --help
-  bash scripts/deploy/deploy-website.sh --dry-run   # needs a filled deploy.env
-
-Compose validate (local):
-  docker compose -f apps/website/docker-compose.staging.yml config
-  # on hosts with Podman only:
-  podman compose -f apps/website/docker-compose.staging.yml config
-";
 
 /// Entry for `xtask deploy website`.
 pub fn run(args: &[String]) -> Result<u8> {
@@ -78,12 +44,12 @@ pub fn run(args: &[String]) -> Result<u8> {
         match arg.as_str() {
             "--dry-run" => dry_run = true,
             "-h" | "--help" => {
-                print!("{USAGE}");
+                print!("{}", usage());
                 return Ok(0);
             }
             other => {
                 eprintln!("Unknown option: {other}");
-                eprint!("{USAGE}");
+                eprint!("{}", usage());
                 return Ok(2);
             }
         }
@@ -92,13 +58,14 @@ pub fn run(args: &[String]) -> Result<u8> {
     let root = find_repo_root()?;
     let env_file = match std::env::var("DEPLOY_ENV") {
         Ok(p) if !p.is_empty() => PathBuf::from(p),
-        _ => root.join("scripts/deploy/deploy.env"),
+        _ => root.join(repository_layout::DEPLOY_ENV),
     };
 
     if !env_file.is_file() {
         eprintln!(
-            "Missing {} — copy from scripts/deploy/deploy.env.example",
-            env_file.display()
+            "Missing {} — copy from {}",
+            env_file.display(),
+            repository_layout::DEPLOY_ENV_EXAMPLE
         );
         return Ok(1);
     }
@@ -124,11 +91,11 @@ pub fn run(args: &[String]) -> Result<u8> {
         .filter(|s| !s.is_empty())
         .map(|s| s.as_str())
         .unwrap_or("5432");
-    let systemd_unit = map
+    let systemd_unit: String = map
         .get("TBD_WEBSITE_SYSTEMD_UNIT")
         .filter(|s| !s.is_empty())
-        .map(|s| s.as_str())
-        .unwrap_or("tbd-website-api.service");
+        .cloned()
+        .unwrap_or_else(|| systemd_unit::default_unit_name().to_string());
     let skip_compose = map.get("TBD_SKIP_COMPOSE").map(|s| s.as_str()) == Some("1");
     let skip_spa = map.get("TBD_SKIP_SPA_BUILD").map(|s| s.as_str()) == Some("1");
     let skip_api = map.get("TBD_SKIP_API_BUILD").map(|s| s.as_str()) == Some("1");
@@ -162,7 +129,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         host,
         remote_dir,
         postgres_port: postgres_port.to_string(),
-        systemd_unit: systemd_unit.to_string(),
+        systemd_unit,
         skip_compose,
         skip_spa,
         skip_api,
@@ -227,7 +194,8 @@ impl DeployCfg {
         if self.dry_run {
             println!("[dry-run] ssh … {restart}");
         } else {
-            // Preserved soft-fail: bash `ssh_cmd … || { WARN; }` — do not abort.
+            // A failed restart warns and the deploy continues: the code is already on the
+            // server, and aborting here would leave the operator without the hints below.
             match self.ssh_cmd_status(&["bash", "-lc", &restart]) {
                 Ok(0) => {}
                 Ok(_) | Err(_) => {
@@ -237,7 +205,7 @@ impl DeployCfg {
                     );
                     eprintln!(
                         "      The unit ships at {}; install it once on the server:",
-                        systemd_unit::UNIT_TEMPLATE
+                        systemd_unit::template_for(&self.systemd_unit)
                     );
                     eprintln!(
                         "        {}",
@@ -248,15 +216,23 @@ impl DeployCfg {
         }
 
         println!("==> Caddy");
-        println!("    Ensure scripts/deploy/Caddyfile.website is loaded on the server");
+        println!(
+            "    Ensure {} is loaded on the server",
+            repository_layout::CADDYFILE
+        );
         println!("    (root → $TBD_REMOTE_DIR/apps/website/frontend/dist; proxy /api → :8080).");
         println!(
-            "    Example: caddy reload --config '{}/scripts/deploy/Caddyfile.website'",
-            self.remote_dir
+            "    Example: caddy reload --config '{}/{}'",
+            self.remote_dir,
+            repository_layout::CADDYFILE
         );
         println!(
             "==> unit: {} is installed by hand (see docs/website/HOME_SERVER.md Phase D)",
-            systemd_unit::UNIT_TEMPLATE
+            systemd_unit::template_for(&self.systemd_unit)
+        );
+        println!(
+            "    Every deployment template lives in {}",
+            repository_layout::DEPLOY_DIR
         );
         println!("==> smoke hints");
         println!("    curl -sf http://127.0.0.1:8080/healthz");
@@ -385,8 +361,8 @@ impl DeployCfg {
 
     fn rsync_to_remote(&self) -> Result<(), u8> {
         let rsync_e = if let Some(ref pass) = self.ssh_pass {
-            // Preserved oddity: bash expands `$TBD_SSH_PASS` inside the -e string unquoted
-            // relative to shell word-splitting of the remote side of -e.
+            // rsync splits `-e` on whitespace itself, so the password is embedded unquoted.
+            // A password containing whitespace would split into extra argv entries here.
             format!("sshpass -p {pass} ssh -o StrictHostKeyChecking=no")
         } else if let Some(ref id) = self.ssh_identity {
             format!("ssh -i {id} -o StrictHostKeyChecking=no")
@@ -433,10 +409,9 @@ fn require_var(map: &HashMap<String, String>, key: &str, line: u32) -> Result<St
     match map.get(key) {
         Some(v) if !v.is_empty() => Ok(v.clone()),
         _ => {
-            // Preserved bash `: ${VAR:?msg}` shape (historical script path + line).
-            eprintln!(
-                "scripts/deploy/deploy-website.sh: line {line}: {key}: {key} required in deploy.env"
-            );
+            // `line` is the line of the deploy file the value is expected on, so the message
+            // points at the edit to make rather than at the check that refused.
+            eprintln!("deploy.env: line {line}: {key}: {key} required in deploy.env");
             Err(1)
         }
     }

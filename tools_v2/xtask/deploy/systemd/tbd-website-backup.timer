@@ -1,4 +1,4 @@
-; T-577 — nightly schedule for tbd-website-backup.service (USER timer, not root cron).
+; Nightly schedule for tbd-website-backup.service (USER timer, not root cron).
 
 [Unit]
 Description=TBD website — nightly verified PostgreSQL backup

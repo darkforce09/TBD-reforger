@@ -241,7 +241,7 @@ flowchart TB
 which sshpass rsync ssh curl git cargo
 cargo --version
 cargo xtask ci schema-validate
-cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # fill SSH + token + paths
+cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env   # fill SSH + token + paths
 ```
 
 Workbench spawn should already pass (`[TBD] SpawnManager: assigned slot` in the Proton WB log).
@@ -317,7 +317,7 @@ cd /home/sam/tbd/repo/apps/website/api_v2   # after first rsync or clone
 cp .env.example .env
 # Edit:
 #   SESSION_SECRET=<long-random>
-#   GAME_SERVER_TOKENS=<same value as TBD_GAME_SERVER_TOKEN in scripts/deploy/deploy.env>
+#   GAME_SERVER_TOKENS=<same value as TBD_GAME_SERVER_TOKEN in tools_v2/xtask/deploy/deploy.env>
 ```
 
 ### 5. Docker stack
@@ -349,7 +349,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 sudo loginctl enable-linger sam
 ```
 
-`cargo xtask deploy staging` installs `~/.config/systemd/user/tbd-reforger.service` from `scripts/deploy/tbd-reforger.service`.
+`cargo xtask deploy staging` installs `~/.config/systemd/user/tbd-reforger.service` from `tools_v2/xtask/deploy/systemd/tbd-reforger.service`.
 
 ### 8. Firewall (game port)
 
@@ -364,7 +364,7 @@ sudo firewall-cmd --reload
 ## Deploy from dev PC
 
 ```bash
-cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # if not done
+cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env   # if not done
 # Fill TBD_SSH_PASS (or SSH key), TBD_GAME_SERVER_TOKEN, paths
 cargo xtask deploy staging
 cargo xtask deploy staging --dry-run   # preview only
@@ -676,4 +676,4 @@ all fine.
 | `cargo xtask setup server-profile` | Profile + mission fallback |
 | `cargo xtask setup client-addons` | Client mod symlink + Steam launch options |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
-| [`scripts/deploy/tbd-reforger.service`](../../scripts/deploy/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |
+| [`tools_v2/xtask/deploy/systemd/tbd-reforger.service`](../../tools_v2/xtask/deploy/systemd/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |

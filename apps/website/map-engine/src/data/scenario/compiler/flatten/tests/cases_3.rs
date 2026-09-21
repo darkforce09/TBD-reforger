@@ -463,7 +463,7 @@ fn compiler_shaped_golden_is_a_fresh_emitter_output() {
                  stops meaning anything:\n  \
                  let mut s = serde_json::to_string_pretty(&doc).unwrap();\n  \
                  s.push('\\n');\n\n\
-                 Then re-run `scripts/mod/world-boot.sh \
+                 Then re-run `cargo xtask mod world-boot \
                  --mission=compiler-shaped-two-faction`, because a regenerated document is a \
                  new document as far as the mod's parser is concerned."
         );

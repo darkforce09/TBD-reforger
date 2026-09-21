@@ -6,7 +6,7 @@ Conventions: [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md).
 
 ## Start everything
 
-**Toolchain:** Rust stable (API + SPA + tooling). Postgres **18** (`postgres:18-alpine` in `apps/website/api_v2/docker-compose.yml`). Node exists only for `enfusion-mcp` under `scripts/mod` (T-165).
+**Toolchain:** Rust stable (API + SPA + tooling). Postgres **18** (`postgres:18-alpine` in `apps/website/api_v2/docker-compose.yml`). Node exists only for `enfusion-mcp`, pinned in `tools_v2/enfusion_mcp_node_package`.
 
 **CI replay:** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Local mirror:
 

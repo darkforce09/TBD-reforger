@@ -155,18 +155,18 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     let mod_src = root.join("apps/mod/tbd-framework");
     let server_dir = format!("{home}/.local/share/Steam/steamapps/common/Arma Reforger Server");
     let server_bin = PathBuf::from(&server_dir).join("ArmaReforgerServer");
-    let dev_config = root.join("scripts/mod/tbd-dev-server.config.json");
+    let dev_config = root.join(crate::core::repository_layout::DEV_SERVER_PROFILE);
 
-    // ═══ KILL DISCIPLINE, THE LIVENESS PROBE, AND THE RUN LOCK (T-608) ═══════════════════════
-    // Reached this early on purpose, ahead of every other check, for two reasons: `--selftest` has
-    // to be able to get here without a mission id, and `assert_no_live_server` has to run BEFORE
-    // staging rewrites server.json underneath a server that is still running.
+    // ═══ KILL DISCIPLINE, THE LIVENESS PROBE, AND THE RUN LOCK ══════════════════════════════
+    // Reached this early on purpose, ahead of every other check, for two reasons: `--selftest`
+    // has to be able to get here without a mission id, and `assert_no_live_server` has to run
+    // BEFORE staging rewrites server.json underneath a server that is still running.
     let paths = lifecycle::RunPaths::new(&o.run_dir);
 
     // ── --selftest: prove the kill path can FAIL, and cannot lie ─────────────────────────────
-    // Same principle as `world-boot.sh:264` — a gate nobody has watched fail is not a gate. This one
-    // exists because T-608's defect was invisible on every passing run: `kill_run` only lied when the
-    // bridge flaked, which no green boot ever exercises. Boots no game server.
+    // A gate nobody has watched fail is not a gate, and `kill_run` only ever reports a stop it
+    // did not achieve when the bridge flakes — which no green boot exercises. Boots no game
+    // server.
     //
     // ORDERING ODDITY, PRESERVED: this runs before the `--mission-id` check and before port
     // validation, so `--selftest --port=1 --a2s-port=1` still selftests (baseline `f03`).

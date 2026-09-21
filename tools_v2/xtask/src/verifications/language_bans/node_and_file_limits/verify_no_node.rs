@@ -1,17 +1,14 @@
 use super::*;
 
-/// The closure gate: (1) zero tracked `.mjs`/`.cjs` outside `apps/mod`; (2) no `node `/`npx `
-/// invocations under [`SCAN_DIRS`] / [`SCAN_FILES`] outside the enfusion-mcp floor
-/// (`xtask mcp call` `.js` runner tiers in gate_mcp_call.rs); (3) zero `actions/setup-node` in CI.
+/// Three checks: (1) zero tracked `.mjs`/`.cjs` outside `apps/mod`; (2) no `node ` or `npx `
+/// invocation under [`SCAN_DIRS`] / [`SCAN_FILES`]; (3) zero `actions/setup-node` in CI.
 ///
-/// ── T-897: WHY THE DECLARED LIST FAILS CLOSED ────────────────────────────────────────────────
+/// ── WHY THE SUBJECT LIST FAILS CLOSED ────────────────────────────────────────────────────────
 ///
-/// Check (2) used to open its subjects with `let Ok(text) = read_to_string(path) else { return }`
-/// and hardcode `scan(root.join("Makefile"))`. Deleting the Makefile would therefore have REMOVED
-/// one third of the gate's reach while it went on printing `OK (none)` — the defect class T-853
-/// exists to kill: a check whose subject is a file, where deleting the file retires the check
-/// instead of failing it. Subjects are now DECLARED ([`SCAN_FILES`] / [`SCAN_DIRS`]) and a
-/// declared subject that cannot be read is reported as a failure with its cause.
+/// Check (2)'s subjects are DECLARED in [`SCAN_FILES`] and [`SCAN_DIRS`], and a declared subject
+/// that is missing or unreadable is reported as a failure with its cause. The alternative — open
+/// each subject and skip it when the read fails — makes deleting a file retire the check that
+/// covered it, while the gate goes on printing `OK (none)` over a smaller reach.
 pub fn verify_no_node() -> Result<u8> {
     let root = repo_root()?;
     let mut fails = 0u64;
@@ -42,9 +39,10 @@ pub fn verify_no_node() -> Result<u8> {
         .chain(SCAN_DIRS.iter().copied())
         .collect::<Vec<&str>>()
         .join(" + ");
-    println!("==> node/npx invocations in {declared} (allowlist: enfusion-mcp floor)");
-    // Files allowed to invoke node/npx: the enfusion-mcp runner tiers only.
-    // Floor moved to tools_v2/xtask/src/commands/mcp/call.rs (not scanned here — SCAN_DIRS/SCAN_FILES only).
+    println!("==> node/npx invocations in {declared}");
+    // The one place allowed to invoke node is the enfusion-mcp runner, and it is Rust
+    // (`tools_v2/developer-tools/src/enfusion_tooling/enfusion_mcp_entrypoint.rs`), which this
+    // gate does not walk. Nothing under the scanned roots needs an exemption.
     let allow_files: &[&str] = &[];
     let mut offenders: Vec<String> = Vec::new();
     let mut unreadable: Vec<String> = Vec::new();
@@ -148,7 +146,7 @@ pub fn verify_no_node() -> Result<u8> {
     if offenders.is_empty() {
         println!("  OK (none)");
     } else {
-        println!("FAIL: node/npx invocations outside the enfusion-mcp floor:");
+        println!("FAIL: node/npx invocations in a scanned file:");
         for o in &offenders {
             println!("  {o}");
         }

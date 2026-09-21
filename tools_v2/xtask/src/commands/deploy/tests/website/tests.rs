@@ -17,15 +17,17 @@ fn remote_prefix_rejects_escape_and_outside() {
 
 #[test]
 fn usage_mentions_dry_run() {
-    assert!(USAGE.contains("--dry-run"));
-    assert!(USAGE.contains("TBD_REMOTE_DIR"));
+    let usage = usage();
+    assert!(usage.contains("--dry-run"));
+    assert!(usage.contains("TBD_REMOTE_DIR"));
+    assert!(usage.contains(crate::core::repository_layout::DEPLOY_ENV));
 }
 
 /// The exclude list is a delete guard as much as a transfer filter: this is an `--delete` rsync
 /// with no `--delete-excluded`, so anything dropped from here becomes eligible for removal on the
 /// server. Pin the set.
 #[test]
-fn rsync_excludes_the_asset_scratch_and_legacy_trees() {
+fn rsync_excludes_the_secrets_asset_and_scratch_trees() {
     let argv = rsync_argv::rsync_argv("ssh -o StrictHostKeyChecking=no", "/repo/", "h:/remote/");
     let excluded = rsync_argv::exclusions(&argv);
 
@@ -33,9 +35,8 @@ fn rsync_excludes_the_asset_scratch_and_legacy_trees() {
         ".git/",
         "target/",
         "apps/website/api_v2/.env",
-        "scripts/deploy/deploy.env",
-        // The served terrain tree, and the 1.5 GB of gitignored export intermediates that the
-        // pre-relocation `packages/map-assets/` exclusion used to cover by nesting.
+        crate::core::repository_layout::DEPLOY_ENV,
+        // The served terrain tree, and the 1.5 GB of gitignored export intermediates beside it.
         "assets_v2/terrains/",
         "assets_v2/scratch/",
         // Keeps `--delete` off a server still holding its assets at the old path.
@@ -88,14 +89,17 @@ fn asset_probe_checks_the_registry_file_and_the_legacy_directory() {
 
 #[test]
 fn the_unit_install_command_renders_the_shipped_template_for_the_remote_dir() {
-    let cmd = systemd_unit::install_command("/home/sam/tbd/repo", "tbd-website-api.service");
+    let cmd =
+        systemd_unit::install_command("/home/sam/tbd/repo", systemd_unit::default_unit_name());
     // The template spells `/TBD_REPO_DIR_PLACEHOLDER/…`, so the value must not carry a slash.
     assert!(
         cmd.contains("s|TBD_REPO_DIR_PLACEHOLDER|home/sam/tbd/repo|g"),
         "{cmd}"
     );
-    assert!(cmd.contains("scripts/deploy/tbd-website-api.service"));
-    assert!(cmd.contains("~/.config/systemd/user/tbd-website-api.service"));
+    let unit = systemd_unit::default_unit_name();
+    assert!(cmd.contains(&systemd_unit::template_for(unit)));
+    assert!(cmd.contains(&format!("~/.config/systemd/user/{unit}")));
+    assert_eq!(unit, "tbd-website-api.service");
     assert!(cmd.contains("systemctl --user daemon-reload"));
 }
 
@@ -191,7 +195,7 @@ fn the_state_move_targets_the_unit_state_directory_and_is_idempotent() {
 /// `StateDirectory=` name.
 #[test]
 fn the_unit_template_declares_the_state_directory_the_deploy_moves_into() {
-    const UNIT: &str = include_str!("../../../../../../../scripts/deploy/tbd-website-api.service");
+    const UNIT: &str = include_str!("../../../../../deploy/systemd/tbd-website-api.service");
     let state = remote_steps::STATE_DIRECTORY;
     assert!(
         UNIT.contains(&format!("StateDirectory={state}\n")),

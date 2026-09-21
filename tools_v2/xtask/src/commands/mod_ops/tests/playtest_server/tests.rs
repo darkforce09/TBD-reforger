@@ -141,10 +141,8 @@ fn help_text_matches_the_options_we_parse() {
 }
 
 #[test]
-fn help_is_byte_identical_to_the_captured_baseline() {
-    // /tmp/t853/rps-help.old, minus its trailing `rc=0` marker line. Kept as a shape assertion
-    // rather than a file read so the test runs on a machine that never had the bash.
+fn help_opens_with_the_runnable_command_and_lists_every_option() {
     assert_eq!(HELP.lines().count(), 21);
-    assert!(HELP.starts_with("Usage:\n  bash scripts/mod/run-playtest-server.sh"));
+    assert!(HELP.starts_with("Usage:\n  cargo xtask mod playtest"));
     assert!(HELP.ends_with("boots no game server\n"));
 }

@@ -29,12 +29,8 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
    worktree** — `T-181.7.1`, `T-181.7.2` are the same slice's work, not new trees.
 2. **As many concurrent slices as are FILE-DISJOINT — computed, not guessed.**
    ```bash
-   # T-620 deleted scripts/mod/slice-collisions.py with the Python ban; T-912.2 deleted the
-   # per-program plan TSVs and their env override. The xtask port reads the one compiled
-   # .ai/tickets/wave.lock (owns live on the tickets since T-912.1). The mod-only glob +
-   # bare-filename `owns` resolution did NOT come across, so collisions are prefix containment
-   # now — coarser, and it errs toward REPORTING a collision. T-181 is 63/66 shipped and
-   # deferred on a human E2E, so the precise variant was retired with the program it served.
+   # Reads the compiled .ai/tickets/wave.lock, where `owns` lives on each ticket. Collisions
+   # are prefix containment: coarser than a glob match, and it errs toward REPORTING one.
    cargo xtask slice-collisions
    cargo xtask slice-collisions T-181.32 T-181.27
    ```
