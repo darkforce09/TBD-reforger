@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Georeferencing Anchors"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Georeferencing Anchors",
-	description: "Standalone anchors exporter: extracts ground-truth georeferencing anchor oracle to JSON.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Georeferencing Anchors",
+// 	description: "Standalone anchors exporter: extracts ground-truth georeferencing anchor oracle to JSON.",
+// 	category: "TBD"
+// )]
 class TBD_AnchorsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

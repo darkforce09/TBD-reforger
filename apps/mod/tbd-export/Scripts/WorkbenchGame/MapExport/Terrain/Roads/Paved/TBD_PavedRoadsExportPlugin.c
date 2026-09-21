@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Secondary Paved Roads"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Secondary Paved Roads",
-	description: "Standalone paved road exporter: extracts secondary paved asphalt/cobblestone roads and continuous spline geometry to roads_paved.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Secondary Paved Roads",
+// 	description: "Standalone paved road exporter: extracts secondary paved asphalt/cobblestone roads and continuous spline geometry to roads_paved.json.",
+// 	category: "TBD"
+// )]
 class TBD_PavedRoadsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

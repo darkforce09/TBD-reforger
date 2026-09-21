@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Footpaths & Trails"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Footpaths & Trails",
-	description: "Standalone footpath exporter: extracts pedestrian hiking trails and footpaths with continuous spline geometry to paths.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Footpaths & Trails",
+// 	description: "Standalone footpath exporter: extracts pedestrian hiking trails and footpaths with continuous spline geometry to paths.json.",
+// 	category: "TBD"
+// )]
 class TBD_PathsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

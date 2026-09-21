@@ -23,7 +23,7 @@
  * @contract registry-compat.schema.json#/
  */
 
-[WorkbenchPluginAttribute(name: "Export TBD Registry Items", description: "Scan all loaded addons and write registry-items + registry-compat JSON (T-150 universal export).", category: "TBD")]
+// [WorkbenchPluginAttribute(name: "Export TBD Registry Items", description: "Scan all loaded addons and write registry-items + registry-compat JSON (T-150 universal export).", category: "TBD")]
 class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 {
 	protected static const string OUT_ITEMS = "$profile:TBD_RegistryItems.json";

@@ -9,11 +9,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Vegetation (Trees, Rocks, Bushes)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Vegetation (Trees, Rocks, Bushes)",
-	description: "Standalone vegetation exporter: extracts trees, rock formations, bushes, and natural ground clutter.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Vegetation (Trees, Rocks, Bushes)",
+// 	description: "Standalone vegetation exporter: extracts trees, rock formations, bushes, and natural ground clutter.",
+// 	category: "TBD"
+// )]
 class TBD_VegetationExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

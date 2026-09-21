@@ -1,0 +1,12 @@
+SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ ID "2D0FF9E203CA93B6"
+ components {
+  TBD_RoadExportComponent "{B3C4D5E6F7890123}" {
+  }
+  SCR_RespawnSystemComponent "{56B2B4793051E7C9}" {
+   m_sLoadingLayout ""
+  }
+ }
+ m_bAutoPlayerRespawn 0
+ m_bAllowFactionChange 0
+}

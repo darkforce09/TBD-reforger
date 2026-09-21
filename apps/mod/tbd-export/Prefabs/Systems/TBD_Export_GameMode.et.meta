@@ -1,5 +1,5 @@
 MetaFileClass {
- Name "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et"
+ Name "{C3D4E5F6A7B80001}Prefabs/Systems/TBD_Export_GameMode.et"
  Configurations {
   EntityTemplateResourceClass PC {
   }

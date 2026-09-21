@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Satellite Imagery"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Satellite Imagery",
-	description: "Standalone satellite exporter: rasterizes top-down orthographic satellite imagery to TGA.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Satellite Imagery",
+// 	description: "Standalone satellite exporter: rasterizes top-down orthographic satellite imagery to TGA.",
+// 	category: "TBD"
+// )]
 class TBD_SatelliteExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

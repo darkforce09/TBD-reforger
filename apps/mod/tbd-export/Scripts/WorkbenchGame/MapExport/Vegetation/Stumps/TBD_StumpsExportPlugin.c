@@ -9,11 +9,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Stumps (stumps.json)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Stumps (stumps.json)",
-	description: "Standalone stump exporter: extracts tree stumps, cut forestry trunks, and wood logs to stumps.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Stumps (stumps.json)",
+// 	description: "Standalone stump exporter: extracts tree stumps, cut forestry trunks, and wood logs to stumps.json.",
+// 	category: "TBD"
+// )]
 class TBD_StumpsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

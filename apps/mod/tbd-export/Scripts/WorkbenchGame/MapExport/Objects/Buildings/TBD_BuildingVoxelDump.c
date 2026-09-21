@@ -285,11 +285,11 @@ class TBD_BuildingVoxelDump
 	}
 }
 
-[WorkbenchPluginAttribute(
-	name: "Dump Building Voxels",
-	description: "March the full 0.1 m lattice of the first matching building into a raw voxel dump.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Dump Building Voxels",
+// 	description: "March the full 0.1 m lattice of the first matching building into a raw voxel dump.",
+// 	category: "TBD"
+// )]
 class TBD_BuildingVoxelDumpPlugin : WorkbenchPlugin
 {
 	[Attribute("FarmHouse_E_1L01", UIWidgets.EditBox, desc: "Prefab resource substring to match")]

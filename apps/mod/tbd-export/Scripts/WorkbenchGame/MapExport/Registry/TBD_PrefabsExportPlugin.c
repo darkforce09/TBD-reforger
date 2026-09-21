@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Prefab Taxonomy"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Prefab Taxonomy",
-	description: "Standalone prefabs exporter: extracts prefab taxonomy classifications and components to JSON.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Prefab Taxonomy",
+// 	description: "Standalone prefabs exporter: extracts prefab taxonomy classifications and components to JSON.",
+// 	category: "TBD"
+// )]
 class TBD_PrefabsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

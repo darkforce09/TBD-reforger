@@ -13,11 +13,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Roads (All Types)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Roads (All Types)",
-	description: "Standalone road exporter: extracts highways, paved roads, dirt roads, tracks, footpaths, and runways to modular per-type JSON files with continuous spline geometry.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Roads (All Types)",
+// 	description: "Standalone road exporter: extracts highways, paved roads, dirt roads, tracks, footpaths, and runways to modular per-type JSON files with continuous spline geometry.",
+// 	category: "TBD"
+// )]
 class TBD_RoadsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

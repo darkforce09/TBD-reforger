@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Forestry & Agricultural Tracks"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Forestry & Agricultural Tracks",
-	description: "Standalone track exporter: extracts forestry tracks, tractor trails, and rough two-tracks with continuous spline geometry to tracks.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Forestry & Agricultural Tracks",
+// 	description: "Standalone track exporter: extracts forestry tracks, tractor trails, and rough two-tracks with continuous spline geometry to tracks.json.",
+// 	category: "TBD"
+// )]
 class TBD_TracksExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

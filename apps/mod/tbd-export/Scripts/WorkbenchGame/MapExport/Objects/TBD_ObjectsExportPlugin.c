@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export World Objects"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export World Objects",
-	description: "Standalone objects exporter: extracts all placed world entities via spatial chunked AABB queries to JSONL.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export World Objects",
+// 	description: "Standalone objects exporter: extracts all placed world entities via spatial chunked AABB queries to JSONL.",
+// 	category: "TBD"
+// )]
 class TBD_ObjectsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "TEST: Probe Road Network & AIWorld"
  */
 
-[WorkbenchPluginAttribute(
-	name: "TEST: Probe Road Network & AIWorld",
-	description: "Diagnostic probe: Tests ChimeraAIWorld, RoadNetworkManager, and extracts ONE single continuous road curve.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "TEST: Probe Road Network & AIWorld",
+// 	description: "Diagnostic probe: Tests ChimeraAIWorld, RoadNetworkManager, and extracts ONE single continuous road curve.",
+// 	category: "TBD"
+// )]
 class TBD_RoadNetworkProbePlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

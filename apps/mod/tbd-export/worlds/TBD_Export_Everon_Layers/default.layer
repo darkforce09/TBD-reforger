@@ -1,0 +1,6 @@
+SCR_BaseGameMode TBD_Export_GameMode : "{C3D4E5F6A7B80001}Prefabs/Systems/TBD_Export_GameMode.et" {
+ coords 6400 0 6400
+}
+SCR_AIWorld AIWorld : "{70CCCF16487C927F}Prefabs/AI/SCR_AIWorld_Eden.et" {
+ coords 6400 0 6400
+}

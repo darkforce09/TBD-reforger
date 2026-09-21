@@ -290,11 +290,11 @@ class TBD_BlueprintRecon
 	}
 }
 
-[WorkbenchPluginAttribute(
-	name: "Recon Building Children",
-	description: "Dump the real child tree + components of the first building instance matching the prefab filter.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Recon Building Children",
+// 	description: "Dump the real child tree + components of the first building instance matching the prefab filter.",
+// 	category: "TBD"
+// )]
 class TBD_BlueprintReconPlugin : WorkbenchPlugin
 {
 	[Attribute("FarmHouse_E_1L01", UIWidgets.EditBox, desc: "Prefab resource substring to match")]

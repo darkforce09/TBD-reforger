@@ -10,11 +10,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Rocks (rocks.json)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Rocks (rocks.json)",
-	description: "Standalone rock exporter: extracts boulders, cliffs, outcrops, scree, and pebbles with terrain exposure metrics to rocks.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Rocks (rocks.json)",
+// 	description: "Standalone rock exporter: extracts boulders, cliffs, outcrops, scree, and pebbles with terrain exposure metrics to rocks.json.",
+// 	category: "TBD"
+// )]
 class TBD_RocksExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

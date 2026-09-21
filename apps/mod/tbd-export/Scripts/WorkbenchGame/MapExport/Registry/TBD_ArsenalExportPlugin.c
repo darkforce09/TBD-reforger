@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Arsenal Registry"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Arsenal Registry",
-	description: "Standalone arsenal exporter: extracts weapons, equipment, and magazine compatibility registry to JSON.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Arsenal Registry",
+// 	description: "Standalone arsenal exporter: extracts weapons, equipment, and magazine compatibility registry to JSON.",
+// 	category: "TBD"
+// )]
 class TBD_ArsenalExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

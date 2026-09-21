@@ -16,7 +16,7 @@
  * Menu: Workbench > Plugins > TBD > "Export TBD World Objects (full)"
  */
 
-[WorkbenchPluginAttribute(name: "Export TBD World Objects (full)", description: "T-090.3.1 / T-090.12.1: iterate the whole terrain in 512 m cell passes; write raw-entities JSONL (full transform + scale) + completion-sentinel meta to $profile.", category: "TBD")]
+// [WorkbenchPluginAttribute(name: "Export TBD World Objects (full)", description: "T-090.3.1 / T-090.12.1: iterate the whole terrain in 512 m cell passes; write raw-entities JSONL (full transform + scale) + completion-sentinel meta to $profile.", category: "TBD")]
 class TBD_WorldFullExportPlugin : WorkbenchPlugin
 {
 	protected static const float CELL_M = 512.0;

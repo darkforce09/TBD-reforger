@@ -10,11 +10,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Inland Water (Rivers, Lakes & Ponds)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Inland Water (Rivers, Lakes & Ponds)",
-	description: "Fast standalone inland water exporter: extracts rivers, lakes, and ponds.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Inland Water (Rivers, Lakes & Ponds)",
+// 	description: "Fast standalone inland water exporter: extracts rivers, lakes, and ponds.",
+// 	category: "TBD"
+// )]
 class TBD_InlandWaterExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

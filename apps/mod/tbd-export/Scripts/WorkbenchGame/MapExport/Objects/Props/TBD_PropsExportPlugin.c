@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Tactical Props & Clutter"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Tactical Props & Clutter",
-	description: "Standalone props exporter: extracts placed tactical cover, barricades, containers, and clutter.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Tactical Props & Clutter",
+// 	description: "Standalone props exporter: extracts placed tactical cover, barricades, containers, and clutter.",
+// 	category: "TBD"
+// )]
 class TBD_PropsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export DEM Heightmap"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export DEM Heightmap",
-	description: "Standalone DEM exporter: extracts 16-bit terrain heightmap matrix and metadata.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export DEM Heightmap",
+// 	description: "Standalone DEM exporter: extracts 16-bit terrain heightmap matrix and metadata.",
+// 	category: "TBD"
+// )]
 class TBD_DEMExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

@@ -14,11 +14,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Map Data (Full Suite)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Map Data (Full Suite)",
-	description: "Unified map exporter: extracts terrain (DEM, sat, roads, water), vegetation, objects, infrastructure, locations, and registries to a configurable destination directory.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Map Data (Full Suite)",
+// 	description: "Unified map exporter: extracts terrain (DEM, sat, roads, water), vegetation, objects, infrastructure, locations, and registries to a configurable destination directory.",
+// 	category: "TBD"
+// )]
 class TBD_MapExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

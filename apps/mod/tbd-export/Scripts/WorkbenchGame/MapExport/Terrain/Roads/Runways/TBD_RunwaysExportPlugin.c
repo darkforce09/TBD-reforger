@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Airfield Runways & Taxiways"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Airfield Runways & Taxiways",
-	description: "Standalone runway exporter: extracts airfield runways, airstrips, and taxiways with continuous spline geometry to runways.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Airfield Runways & Taxiways",
+// 	description: "Standalone runway exporter: extracts airfield runways, airstrips, and taxiways with continuous spline geometry to runways.json.",
+// 	category: "TBD"
+// )]
 class TBD_RunwaysExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

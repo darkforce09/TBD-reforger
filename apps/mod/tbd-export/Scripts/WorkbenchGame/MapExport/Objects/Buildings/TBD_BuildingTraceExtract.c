@@ -594,11 +594,11 @@ class TBD_BuildingTraceExtract
 	}
 }
 
-[WorkbenchPluginAttribute(
-	name: "Extract Building Blueprint",
-	description: "Trace-scan the first building matching the prefab filter into a blueprint JSON.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Extract Building Blueprint",
+// 	description: "Trace-scan the first building matching the prefab filter into a blueprint JSON.",
+// 	category: "TBD"
+// )]
 class TBD_BuildingTraceExtractPlugin : WorkbenchPlugin
 {
 	[Attribute("FarmHouse_E_1L01", UIWidgets.EditBox, desc: "Prefab resource substring to match")]

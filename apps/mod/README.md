@@ -29,7 +29,7 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 1. Read [`docs/mod/CLAUDE-CODE-START.md`](../../docs/mod/CLAUDE-CODE-START.md)
 2. Run **`cargo xtask mod dev-bootstrap`** (from monorepo root) — launches Workbench on `tbd-export/addon.gproj` (`-gproj`, skips the project picker) and pre-warms the MCP daemon; the `EnfusionMCP` handlers are committed in [`tbd-emcp/`](tbd-emcp/) and nothing is copied any more
 3. Enable **enfusion-mcp** before editing any `.c` file
-4. Open `tbd-export/addon.gproj` in Workbench for the full dev session — it pulls in `tbd-framework` **and** `tbd-emcp` as dependencies, so the MCP bridge is alive. Opening `tbd-framework/addon.gproj` alone works but has **no MCP bridge** unless `TBD_EMCP` is loaded beside it. Never open the gitignored `Tbd_framework/` or `crf_framework/` reference copies
+4. Open `tbd-export/addon.gproj` in Workbench for export tooling sessions (pulls in `tbd-emcp`), or `tbd-framework/addon.gproj` for framework development. Never open the gitignored `Tbd_framework/` or `crf_framework/` reference copies
 
 ### Dedicated server (local POC)
 
@@ -72,7 +72,7 @@ cargo xtask mod test-phase1-api
 | Path | Purpose |
 |---|---|
 | [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) — the shipping addon; carries no `Scripts/WorkbenchGame/` |
-| [`tbd-export/`](tbd-export/) | Thin addon — map-export tooling only (`Scripts/WorkbenchGame/MapExport/**`, registry export plugins, road exporter, `TBD_Export_Everon.conf`). **Depends on** `TBD_Framework` + `TBD_EMCP`; not a mirror |
+| [`tbd-export/`](tbd-export/) | Standalone addon — map-export, equipment and vehicle extraction tooling (`Scripts/WorkbenchGame/**`, road exporter, `TBD_Export_Everon.conf`). **Depends on** vanilla + `TBD_EMCP`; decoupled from framework |
 | [`tbd-emcp/`](tbd-emcp/) | The committed enfusion-mcp Workbench Net API bridge handlers (`Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c`, MIT, from `enfusion-mcp@0.6.1`) |
 | [`contracts_v2/`](../../contracts_v2/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
 | [`apps/website/`](../website/) | Rust API + Leptos SPA |

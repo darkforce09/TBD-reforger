@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Buildings & Structures"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Buildings & Structures",
-	description: "Standalone buildings exporter: extracts all architectural structures partitioned by functional subtype.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Buildings & Structures",
+// 	description: "Standalone buildings exporter: extracts all architectural structures partitioned by functional subtype.",
+// 	category: "TBD"
+// )]
 class TBD_BuildingsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

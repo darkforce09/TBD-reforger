@@ -7,11 +7,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Named Locations"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Named Locations",
-	description: "Standalone locations exporter: extracts named towns, villages, and landmarks to JSON.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Named Locations",
+// 	description: "Standalone locations exporter: extracts named towns, villages, and landmarks to JSON.",
+// 	category: "TBD"
+// )]
 class TBD_LocationsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

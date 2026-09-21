@@ -9,11 +9,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Plants (plants.json)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Plants (plants.json)",
-	description: "Standalone plant exporter: extracts wild plants, marine undergrowth, and curbside weeds to plants.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Plants (plants.json)",
+// 	description: "Standalone plant exporter: extracts wild plants, marine undergrowth, and curbside weeds to plants.json.",
+// 	category: "TBD"
+// )]
 class TBD_PlantsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

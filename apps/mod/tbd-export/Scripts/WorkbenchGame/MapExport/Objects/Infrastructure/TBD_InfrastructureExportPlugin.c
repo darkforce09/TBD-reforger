@@ -10,11 +10,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Infrastructure"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Infrastructure",
-	description: "Standalone infrastructure exporter: extracts fences, bridges, runways, and powerlines.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Infrastructure",
+// 	description: "Standalone infrastructure exporter: extracts fences, bridges, runways, and powerlines.",
+// 	category: "TBD"
+// )]
 class TBD_InfrastructureExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

@@ -9,11 +9,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Trees (trees.json)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Trees (trees.json)",
-	description: "Standalone tree exporter: extracts natural conifer and deciduous trees to trees.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Trees (trees.json)",
+// 	description: "Standalone tree exporter: extracts natural conifer and deciduous trees to trees.json.",
+// 	category: "TBD"
+// )]
 class TBD_TreesExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

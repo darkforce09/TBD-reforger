@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Dirt & Gravel Roads"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Dirt & Gravel Roads",
-	description: "Standalone dirt road exporter: extracts unpaved, gravel, and dirt roads with continuous spline geometry to roads_dirt.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Dirt & Gravel Roads",
+// 	description: "Standalone dirt road exporter: extracts unpaved, gravel, and dirt roads with continuous spline geometry to roads_dirt.json.",
+// 	category: "TBD"
+// )]
 class TBD_DirtRoadsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

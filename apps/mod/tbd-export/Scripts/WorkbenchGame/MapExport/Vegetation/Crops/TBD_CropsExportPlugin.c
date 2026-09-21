@@ -9,11 +9,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Crops (crops.json)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Crops (crops.json)",
-	description: "Standalone crop exporter: extracts agricultural crops and cultivated vegetables to crops.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Crops (crops.json)",
+// 	description: "Standalone crop exporter: extracts agricultural crops and cultivated vegetables to crops.json.",
+// 	category: "TBD"
+// )]
 class TBD_CropsExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

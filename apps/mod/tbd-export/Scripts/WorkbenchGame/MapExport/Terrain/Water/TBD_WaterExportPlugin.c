@@ -10,11 +10,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Water Data"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Water Data",
-	description: "Standalone water exporter: extracts vector lake polygons, river splines, and high-res bathymetry depth matrix.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Water Data",
+// 	description: "Standalone water exporter: extracts vector lake polygons, river splines, and high-res bathymetry depth matrix.",
+// 	category: "TBD"
+// )]
 class TBD_WaterExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

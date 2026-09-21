@@ -6,11 +6,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Highways & Major Arterials"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Highways & Major Arterials",
-	description: "Standalone highway exporter: extracts major arterial highways and continuous spline geometry to highways.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Highways & Major Arterials",
+// 	description: "Standalone highway exporter: extracts major arterial highways and continuous spline geometry to highways.json.",
+// 	category: "TBD"
+// )]
 class TBD_HighwaysExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;

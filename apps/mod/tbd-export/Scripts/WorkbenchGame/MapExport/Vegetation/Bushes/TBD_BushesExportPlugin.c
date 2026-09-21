@@ -9,11 +9,11 @@
  * Menu: Workbench > Plugins > TBD > "Export Bushes (bush.json)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export Bushes (bush.json)",
-	description: "Standalone bush exporter: extracts all authentic natural bushes to bush.json.",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export Bushes (bush.json)",
+// 	description: "Standalone bush exporter: extracts all authentic natural bushes to bush.json.",
+// 	category: "TBD"
+// )]
 class TBD_BushesExportPlugin : WorkbenchPlugin
 {
 	protected ref TBD_MapExportConfig m_Config;
