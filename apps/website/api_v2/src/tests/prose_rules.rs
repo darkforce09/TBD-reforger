@@ -105,8 +105,9 @@ fn rust_files(root: &Path, skip_generated: bool) -> Vec<PathBuf> {
             .unwrap_or(path)
             .display()
             .to_string();
-        !(skip_generated && relative.starts_with(GENERATED_SUBTREE))
-            && !RULE_FILES.contains(&relative.as_str())
+        let generated = skip_generated && relative.starts_with(GENERATED_SUBTREE);
+        let rule_file = RULE_FILES.contains(&relative.as_str());
+        !(generated || rule_file)
     });
     files.sort();
     files

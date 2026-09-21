@@ -345,7 +345,7 @@ instance, is `schema_validators.rs` plus `zone_quantisation.rs` rather than a si
   - `db.rs`: 259 lines of inline tests (prod is 292 lines).
 
 ### Law 8 Violations (Historical Transition Commentary)
-- `Cargo.toml:6`: the crate description named the implementation the code had been ported from and the ticket that did it.
+- `Cargo.toml:6`: the crate description named the implementation the code had been ported from, with a work-item id.
 - `lib.rs:1-6`: the crate header described the port, the plan file it followed, and the package layout it mirrored.
 - `missions.rs` (thirteen sites): comments cited the port and eleven tickets instead of the behaviour.
 - `approvals.rs:1, 263-320`: 58 lines of commentary arguing one ticket's decision.

@@ -32,6 +32,8 @@ Logs under the session scratchpad `phase6/` (`6_1_*` to `6_8_*`).
 
 ## Follow-ups (outside this refactor's scope)
 
+Every item below was closed by Phase 7 — see `PHASE_7_HANDOFF.md`. The list stays as the record of what this phase handed on.
+
 - `apps/website/api_v2/migrations/0021_rate_limit_buckets.sql:7` names the former `t578_ratelimit` suite; migration files are checksummed once applied, so the comment stays until a migration policy allows editing it.
 - The 433 runtime `missions/*.mission.json` drops live inside the crate directory (ignored by git); point `MISSIONS_DIR` outside the tree and remove them.
 - `tests/` fixture literals shaped like `t529-seed-arma-529001` are data, not names; no guard matches them.
