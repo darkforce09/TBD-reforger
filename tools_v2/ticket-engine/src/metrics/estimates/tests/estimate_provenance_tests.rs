@@ -215,7 +215,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
         ("aaaa111122223333", 10),
         ("bbbb111122223333", 20),
         ("cccc111122223333", 12),
-        ("cccc444455556666", 18), // T-003 sums to 30
+        ("cccc444455556666", 18), // the two-commit subject sums to 30
         ("dddd111122223333", 40),
         ("eeee111122223333", 0),
     ]

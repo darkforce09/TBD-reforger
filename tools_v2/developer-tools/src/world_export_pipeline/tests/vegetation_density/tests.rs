@@ -156,7 +156,7 @@ fn encode_decode_round_trip_and_fixture() {
     if fixture.exists() {
         let bytes = std::fs::read(&fixture).unwrap();
         let g = decode_tbdd(&bytes).expect("fixture decode");
-        assert_eq!((g.cols, g.rows), (65, 65)); // T-176 A2 — 8 m grid (65 corners / 512 m chunk)
+        assert_eq!((g.cols, g.rows), (65, 65)); // 8 m grid: 65 corners across a 512 m chunk
     }
 }
 

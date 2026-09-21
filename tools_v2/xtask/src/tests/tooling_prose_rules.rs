@@ -150,10 +150,31 @@ fn is_test_source(path: &str) -> bool {
     path.contains("/tests/") || path.ends_with("_tests.rs") || path.ends_with("/tests.rs")
 }
 
-/// Is this line a comment, by the only rule a text walk can apply: what it starts with?
-fn is_comment_line(line: &str) -> bool {
+/// The prose a line carries: the whole line when it opens a comment, and otherwise everything from
+/// its first `//` outside a string literal to the end of the line. A line that carries no comment
+/// answers with the empty string.
+///
+/// A text walk cannot parse Rust, so this tracks quoting one byte at a time and treats a backslash
+/// inside a string as an escape. That is what separates a comment a reader reads as prose from a
+/// `//` inside a URL or inside the synthetic data a test feeds its subject.
+fn comment_text(line: &str) -> &str {
     let trimmed = line.trim_start();
-    trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*')
+    if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
+        return trimmed;
+    }
+    let bytes = line.as_bytes();
+    let mut inside_string = false;
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'\\' if inside_string => index += 1,
+            b'"' => inside_string = !inside_string,
+            b'/' if !inside_string && bytes.get(index + 1) == Some(&b'/') => return &line[index..],
+            _ => {}
+        }
+        index += 1;
+    }
+    ""
 }
 
 fn in_any(path: &str, prefixes: &[&str]) -> bool {
@@ -219,15 +240,23 @@ fn test_sources_carry_no_ticket_identifiers_in_comments() {
     let root = crate::core::repository_root::test_repo_root();
     let files = tracked_tooling_files(&root);
     let pattern = Regex::new(TICKET_IDENTIFIER).expect("ticket identifier");
-    let select = |path: &str, line: &str| {
-        path.ends_with(".rs")
-            && is_test_source(path)
-            && !in_any(path, &FIXTURE_TREES)
-            && is_comment_line(line)
-    };
+    let mut found = Vec::new();
+    for path in &files {
+        if !path.ends_with(".rs") || !is_test_source(path) || in_any(path, &FIXTURE_TREES) {
+            continue;
+        }
+        let Some(text) = read_text(&root, path) else {
+            continue;
+        };
+        for (number, line) in text.lines().enumerate() {
+            if pattern.is_match(comment_text(line)) {
+                found.push(format!("{path}:{}: {}", number + 1, line.trim()));
+            }
+        }
+    }
     assert_clean(
         "a test comment names a ticket identifier (string literals may carry synthetic ids):",
-        &offences(&root, &files, &pattern, &select),
+        &found,
     );
 }
 
@@ -387,7 +416,14 @@ fn every_rule_fires_on_a_line_that_breaks_it() {
 
     let ticket = Regex::new(TICKET_IDENTIFIER).expect("ticket identifier");
     assert_eq!(lines.iter().filter(|l| ticket.is_match(l)).count(), 1);
-    assert!(is_comment_line(lines[0]));
+    assert!(ticket.is_match(comment_text(lines[0])));
+
+    // A comment reaches the rule wherever it opens, and data on the same line never does.
+    let trailing = format!("    rows.push((sha, 18)); // {}{} sums to 30", "T-", "003");
+    assert!(ticket.is_match(comment_text(&trailing)));
+    let data_only = format!("    corpus.insert(\"{}{}\", row);", "T-", "003");
+    assert!(comment_text(&data_only).is_empty());
+    assert!(comment_text("    let base = \"https://host.invalid/x\";").is_empty());
 
     let dead = dead_name_pattern();
     assert_eq!(lines.iter().filter(|l| dead.is_match(l)).count(), 1);
