@@ -13,7 +13,7 @@
 /// What the server's asset layout is, as judged by the remote probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AssetLayout {
-    /// `assets_v2/terrains` exists. Nothing to do.
+    /// `assets_v2/terrains` is populated (its registry is present). Nothing to do.
     Ready,
     /// The pre-relocation `packages/map-assets` is still the only copy.
     Legacy,
@@ -28,11 +28,17 @@ const LEGACY: i32 = 10;
 /// Exit code the probe uses for "no asset tree at all".
 const ABSENT: i32 = 11;
 
+/// The file whose presence means the terrain tree is populated: the registry every terrain hangs
+/// off. It is never rsynced, so it cannot arrive by accident, and a bare directory cannot stand in
+/// for it — Docker creates a missing bind-mount source as an empty root-owned directory, and a
+/// half-finished `mkdir -p` leaves the same thing.
+pub const TERRAIN_TREE_MARKER: &str = "assets_v2/terrains/terrain-registry.json";
+
 /// The remote shell that answers the question, as an exit code rather than parsed text.
 pub fn probe_script(remote_dir: &str) -> String {
     format!(
         "cd '{remote_dir}' 2>/dev/null || exit 12; \
-         if [ -d assets_v2/terrains ]; then exit 0; fi; \
+         if [ -f {TERRAIN_TREE_MARKER} ]; then exit 0; fi; \
          if [ -d packages/map-assets ]; then exit {LEGACY}; fi; \
          exit {ABSENT}"
     )
@@ -67,7 +73,7 @@ pub fn remediation(remote_dir: &str) -> String {
 pub fn report(layout: AssetLayout, remote_dir: &str) -> Result<(), u8> {
     match layout {
         AssetLayout::Ready => {
-            println!("    {remote_dir}/assets_v2/terrains present");
+            println!("    {remote_dir}/{TERRAIN_TREE_MARKER} present — terrain tree populated");
             Ok(())
         }
         AssetLayout::Absent => {

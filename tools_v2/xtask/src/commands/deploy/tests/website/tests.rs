@@ -75,12 +75,28 @@ fn asset_probe_distinguishes_the_three_layouts() {
     assert_eq!(classify(12), AssetLayout::Indeterminate(12));
 }
 
+/// A populated tree is proven by its registry file, not by a directory existing: Docker creates a
+/// missing bind-mount source as an empty directory, and that must not read as Ready.
 #[test]
-fn asset_probe_checks_both_locations_under_the_remote_dir() {
+fn asset_probe_checks_the_registry_file_and_the_legacy_directory() {
     let script = asset_preflight::probe_script("/home/sam/tbd/repo");
     assert!(script.contains("cd '/home/sam/tbd/repo'"));
-    assert!(script.contains("assets_v2/terrains"));
-    assert!(script.contains("packages/map-assets"));
+    assert!(script.contains("-f assets_v2/terrains/terrain-registry.json"));
+    assert!(!script.contains("-d assets_v2/terrains"));
+    assert!(script.contains("-d packages/map-assets"));
+}
+
+#[test]
+fn the_unit_install_command_renders_the_shipped_template_for_the_remote_dir() {
+    let cmd = systemd_unit::install_command("/home/sam/tbd/repo", "tbd-website-api.service");
+    // The template spells `/TBD_REPO_DIR_PLACEHOLDER/…`, so the value must not carry a slash.
+    assert!(
+        cmd.contains("s|TBD_REPO_DIR_PLACEHOLDER|home/sam/tbd/repo|g"),
+        "{cmd}"
+    );
+    assert!(cmd.contains("scripts/deploy/tbd-website-api.service"));
+    assert!(cmd.contains("~/.config/systemd/user/tbd-website-api.service"));
+    assert!(cmd.contains("systemctl --user daemon-reload"));
 }
 
 /// Only the legacy layout and an unreadable probe stop the deploy. A host with no asset tree at

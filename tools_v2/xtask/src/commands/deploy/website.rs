@@ -33,6 +33,7 @@ use crate::core::repository_root::find_repo_root;
 
 pub mod asset_preflight;
 pub mod rsync_argv;
+pub mod systemd_unit;
 
 /// Historical usage block — kept byte-identical to the bash `usage()` heredoc.
 const USAGE: &str = "\
@@ -266,7 +267,14 @@ impl DeployCfg {
                         "WARN: systemctl restart failed — is {} installed?",
                         self.systemd_unit
                     );
-                    eprintln!("      See docs/website/HOME_SERVER.md Phase D for the unit sketch.");
+                    eprintln!(
+                        "      The unit ships at {}; install it once on the server:",
+                        systemd_unit::UNIT_TEMPLATE
+                    );
+                    eprintln!(
+                        "        {}",
+                        systemd_unit::install_command(&self.remote_dir, &self.systemd_unit)
+                    );
                 }
             }
         }
@@ -277,6 +285,10 @@ impl DeployCfg {
         println!(
             "    Example: caddy reload --config '{}/scripts/deploy/Caddyfile.website'",
             self.remote_dir
+        );
+        println!(
+            "==> unit: {} is installed by hand (see docs/website/HOME_SERVER.md Phase D)",
+            systemd_unit::UNIT_TEMPLATE
         );
         println!("==> smoke hints");
         println!("    curl -sf http://127.0.0.1:8080/healthz");

@@ -286,7 +286,7 @@ cargo xtask mod bootstrap-staging
 ssh sam@192.168.0.140 'df -h ~; ss -tlnp | grep -E "5432|8080|2001" || true; docker compose version'
 ```
 
-If `:5432` is taken, set `TBD_POSTGRES_HOST_PORT=5433` in `deploy.env` and edit `apps/website/docker-compose.yml` to map `127.0.0.1:5433:5432`.
+If `:5432` is taken, set `TBD_POSTGRES_HOST_PORT=5433` in `deploy.env` and edit `apps/website/api_v2/docker-compose.yml` to map `127.0.0.1:5433:5432`.
 
 ### 2. Layout
 
@@ -378,7 +378,7 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 
 | Step | Command | Pass |
 |------|---------|------|
-| V1 Mission JSON | `cargo xtask schema validate-file contracts_v2/fixtures/missions/valid/msn_8f3a2c.json` (from monorepo root) | exit 0 |
+| V1 Mission JSON | `cargo xtask schema validate-file contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json` (from monorepo root) | exit 0 |
 | V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |

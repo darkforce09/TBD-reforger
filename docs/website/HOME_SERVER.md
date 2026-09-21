@@ -119,7 +119,7 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 
 ## Honest gaps (as of 2026-07-27)
 
-`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`cargo xtask deploy staging`) and website deploy (`cargo xtask deploy website`) both compose from that path (T-438). Local laptop compose remains `apps/website/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
+`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`cargo xtask deploy staging`) and website deploy (`cargo xtask deploy website`) both compose from that path (T-438). Local laptop compose remains `apps/website/api_v2/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
 
 | Gap | Needed for “one command” website host |
 |-----|----------------------------------------|
@@ -158,8 +158,8 @@ Dev compose maps host **5434**; on the home server prefer host **5432** (unless 
 **Option A1 — temporary reuse of local compose on server (host port change):**
 
 ```bash
-# On server, inside /home/sam/tbd/repo/apps/website after first sync
-# Edit docker-compose.yml ports to "127.0.0.1:5432:5432" OR use a dedicated staging compose when added
+# On server, inside /home/sam/tbd/repo/apps/website/api_v2 after first sync
+# Edit docker-compose.yml ports to "127.0.0.1:5432:5432" OR use apps/website/docker-compose.staging.yml
 docker compose up -d db
 ```
 
@@ -251,15 +251,21 @@ rsync -avz --delete \
   --exclude 'apps/website/api_v2/.tools/' \
   --exclude 'scripts/deploy/deploy.env' \
   --exclude 'target' \
+  --exclude 'target-gate-*' \
+  --exclude 'dist-gate-*' \
+  --exclude 'apps/mod/crf_framework' \
+  --exclude 'apps/mod/vanilla_reference' \
+  --exclude 'apps/mod/playable_selector' \
+  --exclude 'apps/mod/.local-test-profile' \
   --exclude 'assets_v2/terrains' \
   --exclude 'assets_v2/scratch' \
   --exclude 'packages' \
   ./ "${TBD_SSH_HOST}:${TBD_REMOTE_DIR}/"
 ```
 
-This list is maintained by hand and exists only for a first sync, before `cargo xtask deploy
-website` can run on the box. **The authoritative set is the deploy's own** — print it with
-`cargo xtask deploy website --dry-run` and prefer that command once the server is reachable.
+This list mirrors the deploy's own, entry for entry, and exists only for a first sync before
+`cargo xtask deploy website` can run on the box. **The authoritative set is the deploy's** — print it
+with `cargo xtask deploy website --dry-run` and prefer that command once the server is reachable.
 Two of these entries are secrets: `apps/website/api_v2/.env` is the server's own configuration
 (rsyncing a dev copy overwrites it, and `--delete` is in this command), and
 `scripts/deploy/deploy.env` holds `TBD_SSH_PASS` and `TBD_GAME_SERVER_TOKEN`.
@@ -325,6 +331,25 @@ systemctl --user daemon-reload
 systemctl --user enable --now tbd-website-api.service
 journalctl --user -u tbd-website-api -f
 ```
+
+### If the API refuses to boot after a deploy: `migration N was previously applied but has been modified`
+
+`sqlx` hashes each migration file whole, comments included, and compares it against the hash it
+recorded when the migration ran. An edit to an applied migration's comments therefore stops every
+database that applied it — production included — although the schema is untouched. Do not reset
+the database. On the server:
+
+```bash
+cd /home/sam/tbd/repo
+cargo xtask db repair-migration-checksum --version N --force
+```
+
+`--force` is required on the server: the command proves an edit was comments-only by recovering the
+applied bytes from git history, and the deploy rsync excludes `.git/`. Verify the edit on a dev
+checkout first (`cargo xtask db repair-migration-checksum --version N` there refuses anything but a
+comments-only change) and then repoint the server's row. The container name and credentials come
+from `TBD_DB_CONTAINER`, `TBD_DB_USER`, `TBD_DB_NAME` (defaults `tbd_reforger_db`, `tbd`,
+`tbd_reforger`).
 
 ---
 
@@ -401,7 +426,7 @@ Match `DISCORD_REDIRECT_URL` and `FRONTEND_URL` / `ALLOWED_ORIGINS`.
 # Dev PC: sync (same rsync as Phase C)
 # Server:
 cd /home/sam/tbd/repo && cargo xtask mk leptos-build
-cd /home/sam/tbd/repo/apps/website && cargo build --release --bin api
+cd /home/sam/tbd/repo && cargo build --release -p website-api --bin api
 systemctl --user restart tbd-website-api.service
 # Caddy picks up new dist automatically (static files)
 ```
