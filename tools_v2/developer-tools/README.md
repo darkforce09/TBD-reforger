@@ -29,7 +29,7 @@ cargo run --locked -p developer-tools --bin map -- --help
 - `src/world_export_pipeline/` owns export preparation and validation, object census and classification, chunk partitioning and emission, prefab catalogs, road networks, vegetation density, forest contours and smoothing, texture decoding, and mathematical verification.
 - `src/blueprint/` groups mesh decoding, voxel processing, architectural analysis, BVH construction and batch processing, and archive emission. Ingestion and parity reporting provide the corresponding library entrypoints.
 - `src/map_verification/` implements engine-backed object goldens, label checks, terrain and BLAS manifest checks, and world line-of-sight verification.
-- `src/repository_paths.rs` resolves repository paths; `src/timestamp_formatting.rs` provides shared timestamp formatting.
+- `src/repository_paths.rs` resolves repository paths; `src/repository_layout.rs` names the contract and asset trees; `src/timestamp_formatting.rs` provides shared timestamp formatting; `src/content_digest.rs` hashes file content the way `sqlx` records migrations.
 
 ## Interfaces and fixtures
 

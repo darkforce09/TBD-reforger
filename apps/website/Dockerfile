@@ -16,8 +16,8 @@
 FROM docker.io/library/rust:1.95.0-bookworm AS builder
 WORKDIR /src
 
-# Trimmed workspace: only the crates the `api` binary links. Paths under apps/,
-# and packages/ stay monorepo-shaped so include_str! relatives resolve.
+# Trimmed workspace: only the crates the `api` binary links. Paths under apps/
+# and contracts_v2/ stay monorepo-shaped so include_str! relatives resolve.
 COPY Cargo.lock ./
 RUN printf '%s\n' \
   '[workspace]' \

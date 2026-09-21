@@ -139,10 +139,11 @@ pub struct Task {
     pub steps: &'static [Step],
 }
 
-/// `verify-doc-layout`'s failure text, verbatim from `Makefile:332`. A `const` so the parity test
-/// can pin it against the recipe rather than trusting two hand-copied sentences to agree.
-pub const DOC_LAYOUT_MSG: &str =
-    "FORBIDDEN: markdown under apps/**/docs/ or packages/**/docs/ — use docs/website/ instead";
+/// `verify-doc-layout`'s failure text. Names the trees the walk actually covers (`apps`,
+/// `contracts_v2`, `assets_v2` — see `split_cmd::verify_doc_layout`), so the message and the
+/// behaviour cannot disagree about where a `docs/` subtree is forbidden.
+pub const DOC_LAYOUT_MSG: &str = "FORBIDDEN: markdown under apps/**/docs/, contracts_v2/**/docs/ or \
+                                  assets_v2/**/docs/ — use docs/website/ instead";
 
 // The table lives next door, split at the data/behaviour seam to keep both files inside SIZE-1.
 // It is pure data: `run_task` below is its only interpreter.

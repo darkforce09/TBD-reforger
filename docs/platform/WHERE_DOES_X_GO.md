@@ -15,9 +15,9 @@ The canonical home for each artifact class.
 | Editor/gate smoke | `tools_v2/developer-tools` (`gate` bin) wired through `cargo xtask mk leptos-gates` |
 | Test fixture | crate-local `tests/fixtures/` beside consumer; NEVER `.ai/artifacts/` |
 | Cross-crate contract golden | `contracts_v2/fixtures/{missions,map,registry}/` |
-| Map asset | `assets_v2/terrains/<terrain>/` (LFS: dem png + sat .tbd-sat only; staging/tiles rebuildable local) |
+| Map asset | `assets_v2/terrains/<terrain>/` (LFS: dem png + sat .tbd-sat only; `tiles/` rebuildable local) · export scratch `assets_v2/scratch/<terrain>/` (gitignored, never served) |
 | Ticket | `.ai/tickets/<id>.toml` + `cargo xtask ticket sync` (generated TICKET_*.md never hand-edited) |
-| Spec / doc | `docs/**` only — never `apps/**/docs` or `packages/**/docs` (verify-doc-layout enforces) |
+| Spec / doc | `docs/**` only — never `apps/**/docs`, `contracts_v2/**/docs` or `assets_v2/**/docs` (verify-doc-layout enforces) |
 | Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `apps/mod/`) |
 | Shared engine code | `apps/website/map-engine/` (world, spatial, mission domain) · `apps/website/graphics-engine/` (GPU primitives) |
 | Repo tooling | `xtask` (gates/codegen/ticket lib) · `tools_v2/developer-tools` (gate harness + asset pipelines) |

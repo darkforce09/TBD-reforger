@@ -67,7 +67,7 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 - `docs/specs/**/code.html`, `screen.png` mockups (archive)
 - Generated `docs/TICKET_*.md` (edit registry + sync)
 - Historical T-0xx bullets in CLAUDE (commit archaeology)
-- **Do not create** markdown under `apps/**/docs/` or `packages/**/docs/` — specs live in [`docs/website/frontend/`](frontend/)
+- **Do not create** markdown under `apps/**/docs/`, `contracts_v2/**/docs/` or `assets_v2/**/docs/` — specs live in [`docs/website/frontend/`](frontend/)
 
 Live UI authority: `apps/website/frontend/src/` (Leptos page modules).
 

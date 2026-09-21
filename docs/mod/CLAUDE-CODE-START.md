@@ -10,7 +10,7 @@
 
 **T-121 (deferred):** Arland re-export + optional game-mode fallback — MCP hardening **shipped** @ `e7e7232` — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
 
-**T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
+**T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `cargo run -p developer-tools --bin world -- verify-spike-k1` / `verify-spike-ops-log`.
 
 **Next Claude Code:** **T-090.5.5** only — `treePropLayer.ts` + `world-trees` / `world-props` IconLayer glyphs (501k trees indexed in worker). Single lane. Plan §7 row T-090.5.5 · spec [`t090_5_map_object_render_layer.md`](../specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md).
 

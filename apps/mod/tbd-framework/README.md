@@ -125,7 +125,7 @@ profile/
 `…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/`  
 (paste exact path in verify — differs from dedicated-server `.local-test-profile/`).
 
-Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `apps/website/.env`.
+Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `apps/website/api_v2/.env`.
 
 ### Expected log lines
 

@@ -111,7 +111,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-doc-layout",
-        help: "DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs",
+        help: "DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs, contracts_v2/**/docs or assets_v2/**/docs",
         group: "verify",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -177,8 +177,8 @@ pub static TASKS: &[Task] = &[
         lane: Lane::Ci,
         steps: &[
             // Coreutils `cp`, not `std::fs::copy`: the recipe's observable behaviour on a missing
-            // source is cp's own "cannot stat" diagnostic, and assets_v2/terrains/**/staging is
-            // gitignored scratch, so that miss is the COMMON path here, not the rare one.
+            // source is cp's own "cannot stat" diagnostic, and assets_v2/scratch/ is gitignored,
+            // so that miss is the COMMON path here, not the rare one.
             sh!(
                 "cp assets_v2/scratch/everon/sap/everon-sap-ortho.pre-water.png assets_v2/scratch/everon/sap/everon-sap-ortho.png"
             ),

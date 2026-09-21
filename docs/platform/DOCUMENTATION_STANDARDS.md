@@ -332,14 +332,14 @@ existing Decisions-log pattern (e.g. the UX Decisions log in
 [`docs/`](../../docs/). Exceptions:
 
 - Root [`README.md`](../../README.md) and [`CLAUDE.md`](../../CLAUDE.md) (agent runtime)
-- Per-package **`README.md` only** (one file, no `docs/` subtree) under `apps/*` and `packages/*`
+- Per-package **`README.md` only** (one file, no `docs/` subtree) under `apps/*`, `contracts_v2/*` and `assets_v2/*`
 - Generated pipeline output under [`.ai/artifacts/`](../../.ai/artifacts/) (not hand-authored specs)
 - Archive tiers named in [`docs/website/archive/README.md`](../website/archive/README.md)
 
 **Rule 8.2.2 — FORBIDDEN paths.**
 
 - `apps/**/docs/**` (e.g. `apps/website/frontend/docs/`) — **never create**
-- `packages/**/docs/**` except a single schema README adjacent to JSON (not surface specs)
+- `contracts_v2/**/docs/**` and `assets_v2/**/docs/**` — a README adjacent to the data is the only markdown those trees carry (not surface specs)
 - Duplicate hub trees mirroring `docs/website/` inside application folders
 
 **Rule 8.2.3 — Frontend surface spec contract.** When adding or changing a frontend route
@@ -370,7 +370,8 @@ existing Decisions-log pattern (e.g. the UX Decisions log in
 | Backend API | `docs/website/backend/` |
 | Mission Creator engineering | `docs/specs/Mission_Creator_Architecture/` |
 | Tickets (generated views) | `docs/TICKET_*.md` (`.ai/tickets/*.toml` + `cargo xtask ticket sync`) |
-| Live code | `apps/website/`, `apps/mod/`, `packages/` |
+| Live code | `apps/website/`, `apps/mod/`, `tools_v2/` |
+| Wire contracts and map data | `contracts_v2/`, `assets_v2/` |
 
 **Rule 8.2.6 — Agent routing.** Cursor owns all paths under `docs/`. Claude Code MUST NOT create
 markdown under `apps/` except in-code comments per §1.
@@ -427,7 +428,7 @@ Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../.
 | Gate | Tool | Scope |
 |------|------|-------|
 | Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
-| Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in `.c/.go/.js/.mjs/.rs/.ts/.tsx` under `apps/`, `crates/`, `packages/` — **code only, never `docs/`** |
+| Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in source under `apps/` and `tools_v2/` (the gate's scan roots) — **code only, never `docs/`** |
 | Route tags | `cargo xtask ci verify-coding-standards` (route-tag check) | `@route` against the routes registered in the eight `apps/website/api_v2/src/<domain>/routes.rs` tables |
 | Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
 

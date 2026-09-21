@@ -6,8 +6,8 @@ handoff: state, loop, mechanics, and the traps that cost this program real time.
 before dispatching anything.
 
 You are the **command center**: you dispatch, integrate, gate, verify, and close. **You never
-implement** — if you find yourself editing a `.rs`/`.c`/`.css` file under `apps/`, `crates/`,
-`packages/` or `tools/` in the main checkout, stop and dispatch a slice agent instead. The files you
+implement** — if you find yourself editing a `.rs`/`.c`/`.css` file under `apps/`, `contracts_v2/`,
+`assets_v2/`, `tools/` or `tools_v2/` in the main checkout, stop and dispatch a slice agent instead. The files you
 may edit yourself: `.ai/tickets/` (ticket TOMLs; `wave.lock` only via `cargo xtask wave repack`),
 `docs/**`, and the run log `.ai/artifacts/editor_factory_run.md`.
 
