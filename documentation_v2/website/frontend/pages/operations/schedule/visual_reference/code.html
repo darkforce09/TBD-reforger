@@ -1,0 +1,301 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Upcoming Operations Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Custom scrollbar for tactical feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1120;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e3a5f;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4d8eff;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#001a42",
+                        "on-surface": "#ffffff",
+                        "background": "#10131a",
+                        "on-secondary": "#27313f",
+                        "secondary-container": "#404a59",
+                        "on-secondary-fixed": "#121c2a",
+                        "tertiary": "#ffb786",
+                        "inverse-surface": "#e1e2ec",
+                        "border-subtle": "#1e3a5f",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "surface-container-lowest": "#0b0e15",
+                        "on-error": "#690005",
+                        "surface-container-low": "#191b23",
+                        "on-tertiary-fixed": "#311400",
+                        "on-primary-fixed-variant": "#004395",
+                        "success-muted": "rgba(34, 197, 94, 0.2)",
+                        "surface": "#0b1120",
+                        "outline-variant": "#424754",
+                        "on-tertiary-container": "#461f00",
+                        "surface-container-highest": "#32353c",
+                        "success": "#22c55e",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface-dim": "#10131a",
+                        "on-secondary-container": "#afb9cb",
+                        "inverse-on-surface": "#2e3038",
+                        "on-primary": "#002e6a",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "on-tertiary": "#502400",
+                        "on-surface-variant": "#c2c6d6",
+                        "secondary": "#bdc7d9",
+                        "tertiary-container": "#df7412",
+                        "on-primary-container": "#00285d",
+                        "primary": "#adc6ff",
+                        "surface-variant": "#32353c",
+                        "error-container": "#93000a",
+                        "outline": "#8c909f",
+                        "primary-container": "#4d8eff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "secondary-fixed": "#d9e3f6",
+                        "inverse-primary": "#005ac2",
+                        "surface-container-high": "#272a31",
+                        "surface-bright": "#363941",
+                        "primary-fixed": "#d8e2ff",
+                        "error": "#f87171",
+                        "surface-tint": "#adc6ff",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "on-error-container": "#ffdad6",
+                        "surface-container": "#1d2027",
+                        "on-background": "#e1e2ec"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "pill-padding-y": "0.25rem",
+                        "navbar-height": "64px",
+                        "element-gap": "1rem",
+                        "pill-padding-x": "0.75rem",
+                        "container-padding": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "menu-item": ["Inter"],
+                        "body-md": ["Inter"],
+                        "nav-breadcrumb-current": ["Inter"],
+                        "nav-breadcrumb-parent": ["Inter"],
+                        "mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "menu-item": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "nav-breadcrumb-current": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "nav-breadcrumb-parent": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center p-4 lg:p-8 font-body-md" data-alt="A dark, high-contrast digital topographical map serving as a background. The map features intricate contour lines in deep blue and charcoal hues, illuminated by faint glowing data points and grid overlays, evoking a sophisticated, military-grade command center aesthetic. The lighting is low-key, creating a tactical and immersive environment suitable for an elite event management system." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCyzTaADfmSUOVl4U84d_yiGm-V4DylKvjbrL8xcVUyJLVoV5FAGEOiTlQYdAQdbprEf5N5lVeG_4bSey3QaM44bx5hfLoBbwIYjiT_jWVJ7zhARvks7lJszgTA1s1um2z2GFaS1qkIUEU7HIPBuI17w5XD_1Luw5CGD3waWse1dzV5YhowK6jz1OqrPfBRtQ5ov_NZI-bgOOnyec12enP_4fqMjn4sAYNZyJvfShppayzs_IGwrIU4a9lmQzGqohNhBI4OlZR5vWs'); background-size: cover; background-position: center;">
+<!-- Modal Container -->
+<main class="w-full max-w-7xl h-[870px] bg-surface/70 backdrop-blur-xl border border-border-subtle rounded-xl shadow-2xl flex overflow-hidden">
+<!-- Left Pane: Schedule List (35%) -->
+<section class="w-[35%] flex flex-col border-r border-border-subtle bg-surface-container-lowest/50">
+<!-- Header -->
+<header class="p-6 border-b border-border-subtle shrink-0">
+<h1 class="text-2xl font-bold text-primary tracking-tight">UPCOMING OPS</h1>
+<p class="text-on-surface-variant mt-1 text-sm">Select an operation to view telemetry</p>
+</header>
+<!-- Scrollable List -->
+<div class="flex-1 overflow-y-auto p-4 space-y-3">
+<!-- Active Card -->
+<article class="p-4 rounded-lg bg-surface border border-primary-container/50 shadow-[inset_0_0_15px_rgba(77,142,255,0.15)] cursor-pointer transition-all">
+<div class="flex justify-between items-center mb-3">
+<span class="font-mono text-xs text-primary">2024-11-15 1800Z</span>
+<span class="px-2 py-0.5 rounded-full bg-success-muted text-success text-[10px] font-bold tracking-wider uppercase flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                            Open
+                        </span>
+</div>
+<h2 class="text-lg font-bold text-on-surface mb-4 leading-tight">Operation Enduring Freedom</h2>
+<div class="flex flex-col gap-2">
+<div class="flex items-center text-on-surface-variant text-sm gap-1.5">
+<span class="material-symbols-outlined text-[16px]">map</span>
+<span>Takistan</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary w-[66%]"></div>
+</div>
+<div class="flex justify-between text-xs text-on-surface-variant font-mono mt-0.5">
+<span>REGISTRATION</span>
+<span>40/60</span>
+</div>
+</div>
+</article>
+<!-- Inactive Card 1 -->
+<article class="p-4 rounded-lg bg-surface/50 border border-transparent hover:border-border-subtle hover:bg-surface cursor-pointer transition-all">
+<div class="flex justify-between items-center mb-3">
+<span class="font-mono text-xs text-on-surface-variant">2024-11-22 1930Z</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold tracking-wider uppercase">
+                            Planned
+                        </span>
+</div>
+<h2 class="text-lg font-bold text-on-surface mb-4 leading-tight">Operation Silent Dawn</h2>
+<div class="flex flex-col gap-2">
+<div class="flex items-center text-on-surface-variant text-sm gap-1.5">
+<span class="material-symbols-outlined text-[16px]">map</span>
+<span>Chernarus</span>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-on-surface-variant w-[20%]"></div>
+</div>
+<div class="flex justify-between text-xs text-on-surface-variant font-mono mt-0.5">
+<span>REGISTRATION</span>
+<span>12/60</span>
+</div>
+</div>
+</article>
+<!-- Inactive Card 2 -->
+<article class="p-4 rounded-lg bg-surface/50 border border-transparent hover:border-border-subtle hover:bg-surface cursor-pointer transition-all opacity-70">
+<div class="flex justify-between items-center mb-3">
+<span class="font-mono text-xs text-on-surface-variant">2024-11-01 2000Z</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold tracking-wider uppercase">
+                            Closed
+                        </span>
+</div>
+<h2 class="text-lg font-bold text-on-surface mb-4 leading-tight">Operation Viper Strike</h2>
+<div class="flex flex-col gap-2">
+<div class="flex items-center text-on-surface-variant text-sm gap-1.5">
+<span class="material-symbols-outlined text-[16px]">map</span>
+<span>Altis</span>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-on-surface-variant w-full"></div>
+</div>
+<div class="flex justify-between text-xs text-on-surface-variant font-mono mt-0.5">
+<span>REGISTRATION</span>
+<span>60/60</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Right Pane: Briefing View (65%) -->
+<section class="w-[65%] flex flex-col bg-surface/30 relative">
+<!-- Hero Banner -->
+<div class="h-64 shrink-0 relative m-6 rounded-xl overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A cinematic, wide-angle view of a rugged desert terrain typical of a military simulation environment. The landscape features rolling sand dunes, rocky outcrops, and a vast, hazy sky at sunset. The image is slightly blurred, maintaining a dark, moody atmosphere with high contrast, aligning with the premium, tactical command interface aesthetic. Overlays of faint digital crosshairs enhance the intelligence-briefing feel." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDCJt9xODG1YZcAEHGA80TYGae6UZVANPpaVhDHAw646CtkbdE8FN3UqqrmiOrEWvY5e_gu3ZuDgz8R9ZRQgqE_w_zoYA6n9bDwJ8X8cFEDoV7KWZNPXnxTqz_DrHRQE2TM6Z9iLPkebdBvrOVCld0lLps9R8W8MLR0cDwLehS8D-1kBBRdfZXrKUUQEctdWN9e6pcD5DjDO0LViHU7uPWGYm8lYQwDYj-svV3d4hlVyAnemOa285L9zSwstwV2BYfH8cjPOtskqdI')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface/60 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<div class="flex items-center gap-2 mb-2">
+<span class="px-2 py-1 rounded bg-primary/20 border border-primary/30 text-primary text-xs font-mono font-bold tracking-widest">CLASSIFIED // EYES ONLY</span>
+</div>
+<h2 class="text-4xl font-extrabold text-on-surface tracking-tight uppercase">Operation Enduring Freedom</h2>
+</div>
+</div>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto px-8 pb-8">
+<div class="space-y-8">
+<!-- Intel Column -->
+<div class="space-y-6">
+<section>
+<h3 class="text-sm font-mono text-primary mb-3 flex items-center gap-2 border-b border-white/10 pb-2">
+<span class="material-symbols-outlined text-[18px]">subject</span>
+                                MISSION BRIEFING
+                            </h3>
+<p class="text-on-surface-variant leading-relaxed text-sm">
+                                Intelligence suggests a build-up of hostile forces in the northern sector of Takistan. Our objective is to secure the primary supply route and neutralize any anti-air emplacements in the vicinity of Rasman. Insertion will be via rotary-wing assets at LZ Alpha under the cover of darkness. Expect heavy resistance from mechanized infantry elements.
+                            </p>
+</section>
+<!-- Mission Tabs -->
+<section class="mt-6">
+<div class="flex bg-white/5 p-1 rounded-lg border border-white/10 w-fit">
+<button class="px-4 py-2 rounded-md bg-surface border border-primary/20 shadow-[inset_0_0_10px_rgba(77,142,255,0.1)] text-primary font-mono text-sm">Mission 1: Cold Start</button>
+<button class="px-4 py-2 rounded-md text-on-surface-variant hover:text-on-surface font-mono text-sm transition-colors">Mission 2: Red Dawn</button>
+</div>
+</section>
+<!-- ORBAT Section -->
+<section class="mt-8 border-t border-white/10 pt-6">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-sm font-mono text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">group</span>
+            ORDER OF BATTLE
+        </h3>
+<!-- Faction Toggles -->
+<div class="flex bg-white/5 p-1 rounded-full border border-white/10">
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface text-xs font-bold tracking-wider uppercase shadow-sm">Alliance</button>
+<button class="px-4 py-1.5 rounded-full text-on-surface-variant hover:text-on-surface text-xs font-bold tracking-wider uppercase transition-colors">Empire</button>
+</div>
+</div>
+<!-- 2-Column Roster Layout -->
+<div class="flex gap-6 h-64">
+<!-- Left Column: Squads -->
+<div class="w-[30%] flex flex-col gap-2 border-r border-white/10 pr-6">
+<button class="flex justify-between items-center w-full p-3 rounded bg-primary/10 border border-primary/30 text-left transition-all">
+<span class="text-sm font-bold text-primary">Rogue Squad</span>
+<span class="font-mono text-xs text-primary/70">0/3</span>
+</button>
+<button class="flex justify-between items-center w-full p-3 rounded hover:bg-white/5 border border-transparent hover:border-white/10 text-left transition-all">
+<span class="text-sm font-medium text-on-surface-variant">Phantom Squad</span>
+<span class="font-mono text-xs text-on-surface-variant/70">2/4</span>
+</button>
+<button class="flex justify-between items-center w-full p-3 rounded hover:bg-white/5 border border-transparent hover:border-white/10 text-left transition-all">
+<span class="text-sm font-medium text-on-surface-variant">Viper Squad</span>
+<span class="font-mono text-xs text-on-surface-variant/70">4/4</span>
+</button>
+</div>
+<!-- Right Column: Roles -->
+<div class="w-[70%] flex flex-col gap-3">
+<div class="flex justify-between items-center p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+<span class="font-mono text-sm text-on-surface">1: Pilot Lead</span>
+<button class="px-6 py-1.5 rounded-full bg-primary-container hover:bg-primary-container/80 text-on-primary-container text-xs font-bold tracking-wider uppercase transition-colors">Assign</button>
+</div>
+<div class="flex justify-between items-center p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+<span class="font-mono text-sm text-on-surface">2: Pilot</span>
+<button class="px-6 py-1.5 rounded-full bg-primary-container hover:bg-primary-container/80 text-on-primary-container text-xs font-bold tracking-wider uppercase transition-colors">Assign</button>
+</div>
+<div class="flex justify-between items-center p-3 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors opacity-50">
+<span class="font-mono text-sm text-on-surface-variant">3: Gunner</span>
+<button class="px-6 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold tracking-wider uppercase cursor-not-allowed">Locked</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Command Announcements</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#dde2f7",
+                    "tertiary": "#c3e7ff",
+                    "secondary": "#adc6ff",
+                    "surface-variant": "#2f3445",
+                    "surface-container-highest": "#2f3445",
+                    "secondary-container": "#0566d9",
+                    "on-secondary-fixed-variant": "#004395",
+                    "surface-container-low": "#151b2b",
+                    "error-container": "#93000a",
+                    "surface-glass": "rgba(31, 41, 55, 0.7)",
+                    "on-secondary-fixed": "#001a42",
+                    "error-alert": "#f87171",
+                    "on-error-container": "#ffdad6",
+                    "surface-bright": "#333949",
+                    "on-surface": "#dde2f7",
+                    "inverse-primary": "#455e90",
+                    "on-tertiary-container": "#005979",
+                    "primary-container": "#adc6ff",
+                    "error": "#ffb4ab",
+                    "border-subtle": "#374151",
+                    "tertiary-container": "#7bd0ff",
+                    "outline": "#8e909a",
+                    "surface-dim": "#0d1322",
+                    "on-error": "#690005",
+                    "surface-tint": "#adc6ff",
+                    "inverse-on-surface": "#2a3040",
+                    "surface-container-high": "#242a3a",
+                    "on-tertiary-fixed-variant": "#004c69",
+                    "surface-container-lowest": "#080e1d",
+                    "outline-variant": "#44474f",
+                    "on-primary-fixed-variant": "#2c4677",
+                    "on-primary-container": "#385283",
+                    "on-background": "#dde2f7",
+                    "on-primary": "#122f5f",
+                    "on-surface-variant": "#c4c6d0",
+                    "success-muted": "#064e3b",
+                    "on-tertiary": "#00344a",
+                    "tertiary-fixed-dim": "#7cd0ff",
+                    "on-secondary": "#002e6a",
+                    "surface-container": "#191f2f",
+                    "tertiary-fixed": "#c4e7ff",
+                    "primary": "#d8e2ff",
+                    "on-tertiary-fixed": "#001e2c",
+                    "primary-fixed": "#d8e2ff",
+                    "on-secondary-container": "#e6ecff",
+                    "on-primary-fixed": "#001a42",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "surface": "#0d1322",
+                    "tactical-yellow": "#facc15",
+                    "primary-fixed-dim": "#adc6ff",
+                    "secondary-fixed": "#d8e2ff",
+                    "background": "#0d1322"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-sm": "0.5rem",
+                    "stack-md": "1rem",
+                    "gutter": "1.5rem",
+                    "stack-lg": "2rem",
+                    "margin-mobile": "1rem",
+                    "container-max": "1440px"
+            },
+            "fontFamily": {
+                    "label-md": [
+                            "Inter"
+                    ],
+                    "headline-sm": [
+                            "Inter"
+                    ],
+                    "code-md": [
+                            "JetBrains Mono"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "label-sm": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-sm": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "code-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "30px",
+                            {
+                                    "lineHeight": "38px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Topographical map background pattern */
+        .bg-topo-map {
+            background-color: #0d1322;
+            background-image: radial-gradient(circle at 50% 50%, rgba(47, 52, 69, 0.2) 0%, transparent 60%), linear-gradient(0deg, rgba(13, 19, 34, 0.8) 0%, rgba(13, 19, 34, 0.8) 100%);
+            background-size: 100px 100px, 100% 100%;
+        }
+        
+        /* Tactical grid overlay */
+        .bg-grid-overlay {
+            background-image: 
+                linear-gradient(to right, rgba(142, 144, 154, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(142, 144, 154, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Custom scrollbar for tactical feel */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #44474f;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #adc6ff;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background h-screen w-screen overflow-hidden font-body-md text-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Global Container: Frosted Glass Panel over Topographical Map -->
+<div class="absolute inset-0 bg-topo-map bg-grid-overlay z-0"></div>
+<div class="absolute inset-0 z-10 flex w-full h-full bg-surface-glass backdrop-blur-xl">
+<!-- Left Pane: Master List (30%) -->
+<aside class="w-[30%] min-w-[320px] max-w-[400px] h-full border-r border-outline-variant/30 flex flex-col bg-surface-container-lowest/50">
+<!-- List Header -->
+<div class="p-gutter border-b border-outline-variant/30 flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-wide uppercase">Comms Link</h2>
+<span class="material-symbols-outlined text-outline hover:text-primary transition-colors cursor-pointer" data-icon="filter_list">filter_list</span>
+</div>
+<!-- Scrollable List -->
+<div class="flex-1 overflow-y-auto p-stack-md flex flex-col gap-2">
+<!-- Active Item -->
+<div class="p-4 rounded-lg bg-surface-variant/80 border border-primary/30 shadow-[inset_0_0_15px_rgba(173,198,255,0.1)] cursor-pointer relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex justify-between items-start mb-1">
+<span class="font-code-md text-code-md text-primary opacity-80">[Oct 24]</span>
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(173,198,255,0.6)]"></div>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface font-semibold">Mandatory Core Modpack Sync (v2.1)</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-2 line-clamp-2">All operatives must synchronize local asset caches before deployment to sector 7. Failure to update will result in visual anomalies.</p>
+</div>
+<!-- Inactive Item 1 -->
+<div class="p-4 rounded-lg bg-transparent hover:bg-surface-variant/40 border border-transparent hover:border-outline-variant/30 transition-all duration-200 cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-code-md text-code-md text-outline">[Oct 22]</span>
+<div class="w-2 h-2 rounded-full bg-tactical-yellow opacity-80"></div>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface-variant group-hover:text-on-surface">Server Maintenance Downtime</h3>
+<p class="font-label-sm text-label-sm text-outline mt-2 line-clamp-2">Scheduled localized grid refresh starting 0300 HRS. Expect intermittent telemetry drops.</p>
+</div>
+<!-- Inactive Item 2 -->
+<div class="p-4 rounded-lg bg-transparent hover:bg-surface-variant/40 border border-transparent hover:border-outline-variant/30 transition-all duration-200 cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-code-md text-code-md text-outline">[Oct 18]</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface-variant group-hover:text-on-surface">New Asset Library Integration</h3>
+<p class="font-label-sm text-label-sm text-outline mt-2 line-clamp-2">Phase 3 terrain mapping assets are now available in the central repository. Review documentation prior to use.</p>
+</div>
+<!-- Inactive Item 3 -->
+<div class="p-4 rounded-lg bg-transparent hover:bg-surface-variant/40 border border-transparent hover:border-outline-variant/30 transition-all duration-200 cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="font-code-md text-code-md text-outline">[Oct 15]</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface-variant group-hover:text-on-surface">Security Protocol Alpha-Romeo</h3>
+<p class="font-label-sm text-label-sm text-outline mt-2 line-clamp-2">Routine credential rotation required for all clearance level 4 personnel. Access will be revoked if incomplete.</p>
+</div>
+</div>
+</aside>
+<!-- Right Pane: Detail View (70%) -->
+<main class="flex-1 h-full flex flex-col bg-surface-container-highest/10 overflow-hidden relative">
+<!-- Detail Header Area -->
+<div class="px-12 py-10 flex-shrink-0 z-10 border-b border-outline-variant/20 bg-surface-container-low/40 backdrop-blur-md">
+<!-- Metadata Tags -->
+<div class="flex gap-3 mb-4">
+<span class="font-code-md text-code-md text-tactical-yellow bg-tactical-yellow/10 px-2 py-1 rounded border border-tactical-yellow/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="push_pin">push_pin</span>
+                        [PINNED]
+                    </span>
+<span class="font-code-md text-code-md text-primary bg-primary/10 px-2 py-1 rounded border border-primary/30">
+                        [MODPACK UPDATE]
+                    </span>
+<span class="font-code-md text-code-md text-outline ml-auto">
+                        AUTHORITY: COMMAND // TS: 2024-10-24T08:00:00Z
+                    </span>
+</div>
+<!-- Title -->
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mb-2">Mandatory Core Modpack Sync (v2.1)</h1>
+</div>
+<!-- Detail Scrollable Content -->
+<div class="flex-1 overflow-y-auto px-12 py-8 relative">
+<div class="max-w-4xl mx-auto space-y-8 pb-20">
+<!-- Cinematic Banner Image -->
+<div class="w-full h-80 rounded-xl overflow-hidden border border-outline-variant/30 relative group shadow-2xl">
+<!-- Decorative tactical corners -->
+<div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary z-10 m-2 opacity-50"></div>
+<div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-primary z-10 m-2 opacity-50"></div>
+<div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-primary z-10 m-2 opacity-50"></div>
+<div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary z-10 m-2 opacity-50"></div>
+<div class="bg-cover bg-center w-full h-full mix-blend-luminosity opacity-80 group-hover:opacity-100 group-hover:mix-blend-normal transition-all duration-700" data-alt="A highly detailed cinematic shot of a dark, futuristic military command center interior. Large glowing holographic tactical maps illuminate the room in cool blue and cyan tones. Several sleek, angular workstations with multi-monitor setups display complex data readouts and satellite imagery. The lighting is low-key, dramatic, and moody, emphasizing the high-tech, utilitarian aesthetic of the environment." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCIREppJBP-xnMR7cWdZn7Z38OmtS5kcUggQSg--mUKVWKNKUSmYVfiA2MkvN9IabIYgwtKHPMDkO187ZNpNv721gXQA-kHmNy6fugKsclbnqr9b2x5RRnzoLLE_XWcYACIvN8OpN4Qgs-_92U4DGifavwHgWaWOGUymcs1A7mbQIwsr3S3V5EyE1uYUVHH7z_x-r12er25W4YgkWyMEiQmPk_4ox9IuHdywl44SDe_rPmXiGblyptifjdJ9jpbM1g2JYoIbxChZkQ')"></div>
+<!-- Overlay gradient for text readability if needed -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 via-transparent to-transparent"></div>
+</div>
+<!-- Reading Content -->
+<div class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed space-y-6">
+<p>
+                            Attention all active personnel. A critical synchronization packet (v2.1) has been pushed to the primary distribution node. This update is mandatory for all operatives engaging in the upcoming Operation Black Waves simulation.
+                        </p>
+<p>
+                            The localized asset caches currently utilized by field units contain outdated topographical telemetry and deprecated shader libraries, which will induce severe visual anomalies when rendering Sector 7 environments.
+                        </p>
+<div class="bg-surface-variant/30 border border-outline-variant/30 rounded-lg p-6 my-8 flex gap-4 items-start">
+<span class="material-symbols-outlined text-tactical-yellow mt-1" data-icon="warning">warning</span>
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Failure to Comply</h4>
+<p class="font-body-md text-body-md text-outline">Operatives who fail to synchronize their local repositories prior to 0800 HRS tomorrow will be automatically isolated from the main simulation grid to preserve integrity. Manual override will require clearance level 4 authorization.</p>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-10 mb-4 border-b border-outline-variant/20 pb-2">Changelog Highlights</h3>
+<ul class="space-y-3 list-none pl-0">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] mt-1" data-icon="check_circle">check_circle</span>
+<span>Updated high-resolution displacement maps for Sector 7 coastal regions.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] mt-1" data-icon="check_circle">check_circle</span>
+<span>Integrated new dynamic weather occlusion volumes to fix precipitation clipping issues in underground structures.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] mt-1" data-icon="check_circle">check_circle</span>
+<span>Optimized rendering path for dense foliage assets, reducing GPU overhead by approximately 15%.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] mt-1" data-icon="check_circle">check_circle</span>
+<span>Removed deprecated legacy vehicle models (APC-Mk1, Transport-H) from the active spawn pool.</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Bottom Action Bar (Floating HUD style) -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 bg-surface-container-high/90 backdrop-blur-lg border-t-2 border-tertiary px-6 py-4 rounded-xl shadow-2xl flex items-center gap-6 z-20">
+<div class="flex items-center gap-3 pr-6 border-r border-outline-variant/40">
+<span class="material-symbols-outlined text-tertiary" data-icon="download">download</span>
+<span class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Sync Status: Required</span>
+</div>
+<button class="bg-primary hover:bg-primary-fixed-dim text-on-primary font-label-md text-label-md px-6 py-2 rounded shadow-[0_0_15px_rgba(216,226,255,0.2)] hover:shadow-[0_0_20px_rgba(216,226,255,0.4)] transition-all uppercase tracking-wide">
+                    Initiate Download
+                </button>
+</div>
+</main>
+</div>
+</body></html>

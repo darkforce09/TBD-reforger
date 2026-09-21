@@ -1,0 +1,267 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>TBD Reforger - Comms Broadcaster</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-error": "#690005",
+                "surface-container-lowest": "#080e1d",
+                "on-secondary-container": "#e6ecff",
+                "background": "#0d1322",
+                "surface-tint": "#adc6ff",
+                "primary": "#d8e2ff",
+                "on-primary-container": "#385283",
+                "outline-variant": "#44474f",
+                "on-tertiary-container": "#005979",
+                "error-alert": "#f87171",
+                "border-subtle": "#374151",
+                "on-primary-fixed-variant": "#2c4677",
+                "on-tertiary-fixed-variant": "#004c69",
+                "error": "#ffb4ab",
+                "tactical-yellow": "#facc15",
+                "on-tertiary-fixed": "#001e2c",
+                "on-surface": "#dde2f7",
+                "inverse-surface": "#dde2f7",
+                "success-muted": "#064e3b",
+                "surface-container-highest": "#2f3445",
+                "on-background": "#dde2f7",
+                "secondary": "#adc6ff",
+                "tertiary": "#c3e7ff",
+                "error-container": "#93000a",
+                "on-surface-variant": "#c4c6d0",
+                "on-secondary-fixed": "#001a42",
+                "primary-fixed": "#d8e2ff",
+                "tertiary-fixed-dim": "#7cd0ff",
+                "on-primary-fixed": "#001a42",
+                "on-error-container": "#ffdad6",
+                "inverse-on-surface": "#2a3040",
+                "on-secondary-fixed-variant": "#004395",
+                "primary-container": "#adc6ff",
+                "surface-container-low": "#151b2b",
+                "inverse-primary": "#455e90",
+                "on-primary": "#122f5f",
+                "surface-variant": "#2f3445",
+                "surface-glass": "rgba(31, 41, 55, 0.7)",
+                "surface-dim": "#0d1322",
+                "on-secondary": "#002e6a",
+                "surface-container": "#191f2f",
+                "secondary-fixed": "#d8e2ff",
+                "surface": "#0d1322",
+                "outline": "#8e909a",
+                "secondary-container": "#0566d9",
+                "primary-fixed-dim": "#adc6ff",
+                "surface-bright": "#333949",
+                "secondary-fixed-dim": "#adc6ff",
+                "surface-container-high": "#242a3a",
+                "tertiary-container": "#7bd0ff",
+                "tertiary-fixed": "#c4e7ff",
+                "on-tertiary": "#00344a"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "margin-mobile": "1rem",
+                "stack-md": "1rem",
+                "stack-lg": "2rem",
+                "container-max": "1440px",
+                "gutter": "1.5rem",
+                "stack-sm": "0.5rem"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-sm": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "label-sm": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "30px",
+                        {
+                                "lineHeight": "38px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-sm": [
+                        "20px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "code-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen pt-12 pb-24 relative overflow-y-scroll bg-[url('https://images.unsplash.com/photo-1550537687-c9a0c270b200?q=80&amp;w=2000&amp;auto=format&amp;fit=crop')] bg-cover bg-center bg-fixed bg-no-repeat before:content-[''] before:absolute before:inset-0 before:bg-background/90 before:-z-10">
+<main class="w-full max-w-5xl mx-auto px-4 md:px-gutter">
+<!-- Header -->
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Comms Broadcaster</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-stack-sm">Create and distribute operational updates across the network.</p>
+</div>
+</header>
+<!-- Main Editor Container -->
+<section class="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden relative flex flex-col min-h-[600px]">
+<!-- Top Section: Title & Metadata -->
+<div class="p-8 pb-4 flex flex-col gap-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<input class="w-full bg-transparent border-none text-on-surface text-4xl font-bold placeholder:text-on-surface-variant/50 focus:ring-0 p-0 outline-none transition-all" id="post-title" placeholder="Enter Announcement Title..." type="text">
+<div class="flex items-center gap-3 shrink-0">
+<div class="relative group">
+<select class="appearance-none bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 text-on-surface font-label-md rounded-full px-5 py-2.5 pr-10 focus:ring-2 focus:ring-primary/50 outline-none transition-all cursor-pointer">
+<option value="event">Event</option>
+<option value="modpack">Modpack Update</option>
+<option value="important">Important</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none group-hover:text-on-surface transition-colors">expand_more</span>
+</div>
+<button class="bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 text-on-surface font-label-md rounded-full px-5 py-2.5 flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">add_photo_alternate</span>
+                        Add Hero Image
+                    </button>
+</div>
+</div>
+</div>
+<!-- Writing Canvas -->
+<div class="flex-1 relative p-8 pt-0 flex flex-col">
+<!-- Floating Toolbar -->
+<div class="sticky top-4 z-10 mx-auto w-max mb-6">
+<div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 flex items-center gap-1 shadow-lg">
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Bold">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">format_bold</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Italic">
+<span class="material-symbols-outlined text-[20px]">format_italic</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Underline">
+<span class="material-symbols-outlined text-[20px]">format_underlined</span>
+</button>
+<div class="w-px h-5 bg-white/20 mx-2"></div>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Link">
+<span class="material-symbols-outlined text-[20px]">link</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Image">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</button>
+<div class="w-px h-5 bg-white/20 mx-2"></div>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Bullet List">
+<span class="material-symbols-outlined text-[20px]">format_list_bulleted</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Numbered List">
+<span class="material-symbols-outlined text-[20px]">format_list_numbered</span>
+</button>
+<div class="w-px h-5 bg-white/20 mx-2"></div>
+<button class="p-2 rounded-full hover:bg-white/10 text-on-surface-variant hover:text-white transition-colors" title="Code Block">
+<span class="material-symbols-outlined text-[20px]">code</span>
+</button>
+</div>
+</div>
+<!-- Editor Area -->
+<textarea class="w-full flex-1 min-h-[300px] bg-transparent border-none text-on-surface text-lg leading-relaxed placeholder:text-on-surface-variant/40 resize-none outline-none focus:ring-0 p-0" placeholder="Draft your briefing here..."></textarea>
+</div>
+<!-- Translucent Publishing Footer -->
+<div class="bg-white/5 border-t border-white/10 p-6 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-md">
+<!-- Discord Toggle -->
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="font-label-md text-on-surface mb-0.5">Push to Discord</span>
+<span class="font-body-sm text-sm text-on-surface-variant">Send embed to #announcements</span>
+</div>
+<div class="relative w-14 h-8 bg-surface-container-high rounded-full p-1 cursor-pointer" onclick="this.classList.toggle('bg-primary-container'); this.querySelector('.dot').classList.toggle('translate-x-6'); this.querySelector('.dot').classList.toggle('bg-primary-container'); this.querySelector('.dot').classList.toggle('bg-on-primary-container');">
+<div class="dot w-6 h-6 bg-on-surface-variant rounded-full transition-all duration-300 shadow-sm"></div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-4 w-full md:w-auto">
+<button class="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-on-surface transition-colors font-label-md w-full md:w-auto">
+                        Save Draft
+                    </button>
+<button class="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-all font-label-md flex items-center justify-center gap-2 w-full md:w-auto shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)] font-bold text-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cell_tower</span>
+                        Publish &amp; Broadcast
+                    </button>
+</div>
+</div>
+</section>
+</main>
+</body></html>

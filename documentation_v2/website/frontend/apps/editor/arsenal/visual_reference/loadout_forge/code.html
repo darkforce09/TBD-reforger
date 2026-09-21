@@ -1,0 +1,343 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Loadout Forge - Aegis Tactical</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#0d1322",
+                      "on-primary-fixed-variant": "#2c4677",
+                      "outline-variant": "#44474f",
+                      "on-primary-container": "#385283",
+                      "inverse-on-surface": "#2a3040",
+                      "tactical-yellow": "#facc15",
+                      "secondary": "#adc6ff",
+                      "on-surface-variant": "#c4c6d0",
+                      "on-tertiary-fixed": "#001e2c",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "on-primary-fixed": "#001a42",
+                      "error-alert": "#f87171",
+                      "secondary-fixed": "#d8e2ff",
+                      "error": "#ffb4ab",
+                      "on-primary": "#122f5f",
+                      "inverse-surface": "#dde2f7",
+                      "surface-container-high": "#242a3a",
+                      "primary-fixed": "#d8e2ff",
+                      "primary-container": "#adc6ff",
+                      "surface-variant": "#2f3445",
+                      "surface-container-highest": "#2f3445",
+                      "outline": "#8e909a",
+                      "on-secondary-fixed": "#001a42",
+                      "surface-bright": "#333949",
+                      "on-tertiary-fixed-variant": "#004c69",
+                      "on-error": "#690005",
+                      "tertiary-container": "#7bd0ff",
+                      "surface": "#0d1322",
+                      "success-muted": "#064e3b",
+                      "on-background": "#dde2f7",
+                      "on-error-container": "#ffdad6",
+                      "on-secondary-fixed-variant": "#004395",
+                      "on-tertiary": "#00344a",
+                      "tertiary-fixed-dim": "#7cd0ff",
+                      "on-surface": "#dde2f7",
+                      "primary-fixed-dim": "#adc6ff",
+                      "secondary-container": "#0566d9",
+                      "border-subtle": "#374151",
+                      "surface-glass": "rgba(31, 41, 55, 0.7)",
+                      "surface-container": "#191f2f",
+                      "tertiary": "#c3e7ff",
+                      "on-secondary": "#002e6a",
+                      "tertiary-fixed": "#c4e7ff",
+                      "on-secondary-container": "#e6ecff",
+                      "error-container": "#93000a",
+                      "surface-tint": "#adc6ff",
+                      "primary": "#d8e2ff",
+                      "background": "#0d1322",
+                      "inverse-primary": "#455e90",
+                      "surface-container-lowest": "#080e1d",
+                      "surface-container-low": "#151b2b",
+                      "on-tertiary-container": "#005979"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-md": "1rem",
+                      "gutter": "1.5rem",
+                      "stack-lg": "2rem",
+                      "margin-mobile": "1rem",
+                      "container-max": "1440px",
+                      "stack-sm": "0.5rem"
+              },
+              "fontFamily": {
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "38px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-surface text-on-surface h-screen w-screen overflow-hidden flex items-center justify-center font-body-md text-body-md antialiased selection:bg-primary selection:text-on-primary">
+<!-- Background Map -->
+<div class="absolute inset-0 z-0 bg-cover bg-center opacity-40 blur-sm mix-blend-luminosity" data-alt="A highly detailed, futuristic dark-mode topographical map. The map features contour lines in subtle, glowing cybernetic blue and deep nocturnal navy blues. Tactical overlay elements like grid lines and subtle elevation markers are visible but muted. The overall style is technical minimalism, evoking a high-end military situational awareness display in a low-light operational environment. Deep shadows and high contrast with the subtle neon accents create a utilitarian, precise atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDI1i4eL_iKyx5RyOmN0JAEomRkh3wibaIpQZYagyD36CT-eSUA_YuTGoj9xjCoEsxjgdD0OW7DvDycMPtZ7TuC2D0AWOGcTGhwFLqn1f2gYSQs7e655QX89k4NKnPA7vO6mOho0kul7vRGfhvDY3Tfo4lgsb0XE5lgTPVa6nYVSzs1XOXHUqUyu9Wb5s6YE0MfuSpRXWyvLFKdzVv21oZkrQS21gbAJJPLX9Smm6V8MrajNpNQboUZq5LRqE_nzq7Dw87I9Mf-aSM')"></div>
+<div class="absolute inset-0 z-0 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none"></div>
+<!-- Modal Overlay Container -->
+<div class="relative z-10 w-[1400px] max-w-[95vw] h-[85vh] flex flex-col bg-surface-glass backdrop-blur-2xl rounded-xl border border-white/10 shadow-2xl overflow-hidden ring-1 ring-white/5">
+<!-- Header -->
+<header class="flex items-center justify-between px-gutter py-4 border-b border-white/5 bg-surface-container-lowest/50 shrink-0">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="hover:text-primary cursor-pointer transition-colors">US Army</span>
+<span class="material-symbols-outlined text-[16px] opacity-50">chevron_right</span>
+<span class="hover:text-primary cursor-pointer transition-colors">Alpha Squad</span>
+<span class="material-symbols-outlined text-[16px] opacity-50">chevron_right</span>
+<span class="text-primary font-bold">Rifleman</span>
+</div>
+<div class="flex items-center gap-4">
+<button aria-label="Settings" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/5 text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<button aria-label="Close" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Sidebar: Template Library -->
+<aside class="w-[320px] flex flex-col border-r border-white/5 bg-surface-container/30 shrink-0">
+<div class="p-4 shrink-0">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors text-[20px]">search</span>
+<input class="w-full bg-surface-container border border-white/10 rounded-lg py-2 pl-10 pr-4 text-label-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all" placeholder="Search templates..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-1 px-2 border-b border-white/5 shrink-0 overflow-x-auto hide-scrollbar">
+<button class="px-4 py-2 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface border-b-2 border-transparent hover:border-white/20 transition-all whitespace-nowrap">Factions</button>
+<button class="px-4 py-2 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface border-b-2 border-transparent hover:border-white/20 transition-all whitespace-nowrap">Uniforms</button>
+<button class="px-4 py-2 text-label-sm font-label-sm text-primary border-b-2 border-primary transition-all whitespace-nowrap font-bold">Weapons</button>
+<button class="px-4 py-2 text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface border-b-2 border-transparent hover:border-white/20 transition-all whitespace-nowrap">Medical</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+<div class="group relative flex items-center p-3 rounded-lg border border-white/5 bg-surface-container-high/40 hover:bg-surface-variant/60 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing">
+<div class="w-12 h-12 rounded bg-surface-container border border-white/10 flex items-center justify-center shrink-0 mr-4">
+<span class="material-symbols-outlined text-primary/80">swords</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface truncate">Standard M4A1 Kit</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 truncate">Assault / Mid-Range</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/30 group-hover:text-on-surface-variant transition-colors">drag_indicator</span>
+</div>
+<div class="group relative flex items-center p-3 rounded-lg border border-white/5 bg-surface-container-high/40 hover:bg-surface-variant/60 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing">
+<div class="w-12 h-12 rounded bg-surface-container border border-white/10 flex items-center justify-center shrink-0 mr-4">
+<span class="material-symbols-outlined text-on-surface-variant/80">military_tech</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-label-md text-label-md text-on-surface truncate">Heavy Gunner M249</h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70 truncate">Support / Suppression</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/30 group-hover:text-on-surface-variant transition-colors">drag_indicator</span>
+</div>
+</div>
+</aside>
+<!-- Center Area: Visual Paper Doll -->
+<main class="flex-1 relative flex flex-col items-center justify-center bg-surface-container-lowest/30 p-gutter"><div class="absolute inset-0 pointer-events-none opacity-20" style="background-image: radial-gradient(circle, rgba(173, 198, 255, 0.1) 0%, transparent 70%);"></div><h2 class="absolute top-6 left-6 font-headline-sm text-headline-sm text-on-surface/80 tracking-wide uppercase opacity-70">Alpha 1-1 Rifleman</h2><div class="grid grid-cols-3 gap-8 w-full max-w-5xl z-10 items-center"><div class="flex flex-col gap-6 justify-center"><div class="aspect-square rounded-xl border border-outline-variant bg-surface-container/50 backdrop-blur-md flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-all cursor-pointer group"><span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary">sports_motorsports</span><span class="font-label-sm text-[10px] text-on-surface-variant/70 uppercase tracking-widest">Helmet</span></div><div class="aspect-square rounded-xl border border-outline-variant bg-surface-container/50 backdrop-blur-md flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-all cursor-pointer group"><span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary">shield</span><span class="font-label-sm text-[10px] text-on-surface-variant/70 uppercase tracking-widest">Vest</span></div><div class="aspect-square rounded-xl border border-outline-variant bg-surface-container/50 backdrop-blur-md flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-all cursor-pointer group"><span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary">backpack</span><span class="font-label-sm text-[10px] text-on-surface-variant/70 uppercase tracking-widest">Backpack</span></div></div><div class="h-full flex items-center"><div class="w-full aspect-[3/4] rounded-xl border border-primary/30 bg-primary/5 backdrop-blur-md relative group cursor-pointer overflow-hidden shadow-[0_0_30px_rgba(59,130,246,0.1)] ring-1 ring-primary/20 flex flex-col items-center justify-center p-6"><div class="absolute top-4 left-4 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div><span class="font-label-sm text-[10px] text-primary uppercase tracking-widest font-bold">Primary Weapon</span></div><span class="material-symbols-outlined text-[120px] text-on-surface opacity-90 mb-4">swords</span><span class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">M4A1 Carbine</span></div></div><div class="flex flex-col gap-6 justify-center"><div class="aspect-square rounded-xl border border-outline-variant bg-surface-container/50 backdrop-blur-md flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-all cursor-pointer group"><span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary">apparel</span><span class="font-label-sm text-[10px] text-on-surface-variant/70 uppercase tracking-widest">Uniform</span></div><div class="aspect-square rounded-xl border border-outline-variant bg-surface-container/50 backdrop-blur-md flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-all cursor-pointer group"><span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary">pistol</span><span class="font-label-sm text-[10px] text-on-surface-variant/70 uppercase tracking-widest">Secondary</span></div><div class="aspect-square rounded-xl border border-outline-variant bg-surface-container/50 backdrop-blur-md flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-all cursor-pointer group"><span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary">medical_services</span><span class="font-label-sm text-[10px] text-on-surface-variant/70 uppercase tracking-widest">Medical</span></div></div></div></main>
+<!-- Right Sidebar: Granular Edit & Standardization -->
+<aside class="w-[360px] flex flex-col border-l border-white/5 bg-surface-container/30 shrink-0">
+<!-- Top: Item Details -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+<header class="flex items-center gap-3 pb-4 border-b border-white/10">
+<div class="w-10 h-10 rounded bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">swords</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface leading-tight">M4A1 Configuration</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Primary Assault Rifle</p>
+</div>
+</header>
+<div class="space-y-4">
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant/80 uppercase tracking-wider block">Optic</label>
+<div class="relative">
+<select class="w-full bg-surface-container border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-label-md text-on-surface appearance-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all cursor-pointer">
+<option>ACOG 4x (Standard)</option>
+<option>Holo Sight</option>
+<option>Red Dot</option>
+<option>Iron Sights</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-sm text-label-sm text-on-surface-variant/80 uppercase tracking-wider block">Muzzle</label>
+<div class="relative">
+<select class="w-full bg-surface-container border border-white/10 rounded-lg py-2.5 pl-4 pr-10 text-label-md text-on-surface appearance-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all cursor-pointer">
+<option>Suppressor (Tactical)</option>
+<option>Compensator</option>
+<option>Flash Hider</option>
+<option>Standard Barrel</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="space-y-1.5 pt-2">
+<label class="font-label-sm text-label-sm text-on-surface-variant/80 uppercase tracking-wider block">Ammunition</label>
+<div class="flex items-center gap-2 p-3 rounded-lg bg-surface-container/50 border border-white/5">
+<span class="material-symbols-outlined text-tactical-yellow text-[20px]">bolt</span>
+<span class="font-label-md text-label-md text-on-surface">5.56x45mm NATO</span>
+<span class="ml-auto font-code-md text-code-md text-on-surface-variant/70">x7 Mags</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom: Standardization -->
+<div class="p-6 border-t border-white/10 bg-surface-container-high/20 space-y-4 shrink-0">
+<h4 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+                        Standardization
+                    </h4>
+<button class="w-full flex items-center justify-between p-3 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary transition-all group">
+<span class="font-label-md text-label-md font-medium">Apply Kit to Entire Squad</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<button class="w-full flex items-center justify-between p-3 rounded-lg border border-white/10 bg-surface-container hover:bg-surface-variant hover:border-white/20 text-on-surface transition-all group">
+<span class="font-label-md text-label-md font-medium">Apply Kit to Entire Faction</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform text-on-surface-variant">arrow_forward</span>
+</button>
+</div>
+</aside>
+</div>
+<!-- Footer -->
+<footer class="flex items-center justify-end px-gutter py-4 border-t border-white/5 bg-surface-container-lowest/80 shrink-0">
+<div class="flex gap-3">
+<button class="px-6 py-2 rounded-lg border border-white/10 text-on-surface-variant hover:bg-white/5 hover:text-white transition-colors font-label-md text-label-md">
+                    Cancel
+                </button>
+<button class="px-6 py-2 rounded-lg bg-[#3b82f6] hover:bg-blue-400 text-white font-label-md text-label-md shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+                    Save &amp; Close Forge
+                </button>
+</div>
+</footer>
+</div>
+<style>
+        /* Custom scrollbar for webkit */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+
+</body></html>

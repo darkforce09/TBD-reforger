@@ -1,0 +1,176 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Mortar Calculator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#272a31",
+                        "error-container": "#93000a",
+                        "surface": "#0b1120",
+                        "success": "#22c55e",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "primary-container": "#4d8eff",
+                        "primary-fixed": "#d8e2ff",
+                        "on-surface-variant": "#c2c6d6",
+                        "surface-container-low": "#191b23",
+                        "on-primary-fixed": "#001a42",
+                        "on-tertiary-container": "#461f00",
+                        "tertiary-container": "#df7412",
+                        "on-surface": "#e1e2ec",
+                        "surface-bright": "#363941",
+                        "surface-tint": "#adc6ff",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#adc6ff",
+                        "inverse-primary": "#005ac2",
+                        "outline": "#8c909f",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "on-secondary-fixed": "#121c2a",
+                        "on-primary-container": "#00285d",
+                        "success-muted": "rgba(34, 197, 94, 0.2)",
+                        "surface-variant": "#32353c",
+                        "on-tertiary-fixed": "#311400",
+                        "error": "#f87171",
+                        "on-primary-fixed-variant": "#004395",
+                        "surface-dim": "#10131a",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "on-primary": "#002e6a",
+                        "secondary": "#bdc7d9",
+                        "inverse-surface": "#e1e2ec",
+                        "on-secondary-container": "#afb9cb",
+                        "surface-container-highest": "#32353c",
+                        "tertiary": "#ffb786",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-background": "#e1e2ec",
+                        "tertiary-fixed": "#ffdcc6",
+                        "on-tertiary": "#502400",
+                        "on-secondary": "#27313f",
+                        "inverse-on-surface": "#2e3038",
+                        "surface-container-lowest": "#0b0e15",
+                        "outline-variant": "#424754",
+                        "surface-container": "#1d2027",
+                        "border-subtle": "#1e3a5f",
+                        "on-error": "#690005",
+                        "secondary-fixed": "#d9e3f6",
+                        "background": "#10131a",
+                        "secondary-container": "#404a59",
+                        "tertiary-fixed-dim": "#ffb786"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "6px",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "navbar-height": "64px",
+                        "pill-padding-y": "0.25rem",
+                        "pill-padding-x": "0.75rem",
+                        "element-gap": "1rem",
+                        "container-padding": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "nav-breadcrumb-parent": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "nav-breadcrumb-current": ["Inter"],
+                        "menu-item": ["Inter"],
+                        "body-md": ["Inter"],
+                        "mono": ["Space Mono", "monospace"]
+                    },
+                    "fontSize": {
+                        "nav-breadcrumb-parent": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "nav-breadcrumb-current": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "menu-item": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display": ["48px", {"lineHeight": "1", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .map-bg {
+            background-color: #0b1120;
+            background-image: radial-gradient(circle at center, rgba(30, 58, 95, 0.2) 0%, transparent 70%),
+                              linear-gradient(rgba(30, 58, 95, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(30, 58, 95, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+        
+        /* Simulating topographic lines with SVG background */
+        .topo-layer {
+            position: absolute;
+            inset: 0;
+            opacity: 0.15;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><path d="M 0 100 Q 100 50, 200 150 T 400 100" fill="none" stroke="%23adc6ff" stroke-width="1"/><path d="M 0 150 Q 150 100, 250 200 T 400 150" fill="none" stroke="%23adc6ff" stroke-width="1"/><path d="M 0 200 Q 120 180, 220 280 T 400 200" fill="none" stroke="%23adc6ff" stroke-width="1"/><path d="M 50 0 Q 100 150, 200 200 T 400 300" fill="none" stroke="%23adc6ff" stroke-width="1"/></svg>');
+            background-size: 800px;
+            pointer-events: none;
+        }
+
+        .hud-panel {
+            background: rgba(31, 41, 55, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid #1e3a5f;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .dashed-line {
+            position: absolute;
+            top: 60%;
+            left: 30%;
+            width: 40%;
+            height: 2px;
+            background: transparent;
+            border-top: 2px dashed rgba(225, 226, 236, 0.5);
+            transform: rotate(-15deg);
+            transform-origin: 0 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen w-screen overflow-hidden relative map-bg font-body-md">
+<!-- Topographic Background Layer -->
+<div class="topo-layer"></div>
+<!-- Map Markers -->
+<div class="absolute inset-0 w-full h-full">
+<!-- Dashed Line connecting markers -->
+<div class="dashed-line"></div>
+<!-- Mortar Position Marker -->
+<div class="absolute" style="top: 60%; left: 30%; transform: translate(-50%, -50%); z-index: 20;"><div class="grid grid-cols-2 gap-8 mb-4"><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Distance</span><span class="font-mono text-white text-xl">1,240<span class="text-sm ml-1 opacity-50">m</span></span></div><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Azimuth</span><span class="font-mono text-white text-xl">342.5°<span class="text-xs ml-1 opacity-50 block">(6088m)</span></span></div></div><div class="flex flex-col items-center py-4"><span class="font-label-sm text-white/40 uppercase tracking-widest mb-2">Elevation</span><div class="font-mono text-success text-[64px] leading-none font-bold tracking-tighter drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]">1084</div><span class="font-mono text-success/70 text-sm uppercase tracking-widest mt-1">mils</span></div></div>
+<!-- Target Marker -->
+<div class="p-4 border-t border-white/5 flex items-center justify-center gap-2" style="top: 48%; left: 68%; transform: translate(-50%, -50%); z-index: 20;">
+<div class="relative group cursor-pointer">
+<div class="w-12 h-12 bg-primary/20 backdrop-blur-md rounded-full flex items-center justify-center border border-primary/50 shadow-[0_0_20px_rgba(77,142,255,0.4),inset_0_0_10px_rgba(255,255,255,0.2)] transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-on-error-container">
+                        my_location
+                    </span>
+</div>
+<div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-surface-container-high px-2 py-1 rounded text-label-sm text-error border border-border-subtle whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"><div class="grid grid-cols-2 gap-8 mb-4"><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Distance</span><span class="font-mono text-white text-xl">1,240<span class="text-sm ml-1 opacity-50">m</span></span></div><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Azimuth</span><span class="font-mono text-white text-xl">342.5°<span class="text-xs ml-1 opacity-50 block">(6088m)</span></span></div></div><div class="flex flex-col items-center py-4"><span class="font-label-sm text-white/40 uppercase tracking-widest mb-2">Elevation</span><div class="font-mono text-success text-[64px] leading-none font-bold tracking-tighter drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]">1084</div><span class="font-mono text-success/70 text-sm uppercase tracking-widest mt-1">mils</span></div></div>
+</div>
+</div>
+</div>
+<!-- Floating HUD -->
+<div class="absolute top-6 right-6 w-[340px] bg-slate-900/40 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl flex flex-col z-50 overflow-hidden">
+<!-- Header -->
+<div class="p-6 flex justify-between items-center">
+<h2 class="font-nav-breadcrumb-current text-on-surface uppercase tracking-wider">Firing Solution</h2>
+<div class="flex items-center space-x-1 cursor-pointer bg-surface-container hover:bg-surface-bright px-2 py-1 rounded border border-border-subtle transition-colors"><div class="grid grid-cols-2 gap-8 mb-4"><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Distance</span><span class="font-mono text-white text-xl">1,240<span class="text-sm ml-1 opacity-50">m</span></span></div><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Azimuth</span><span class="font-mono text-white text-xl">342.5°<span class="text-xs ml-1 opacity-50 block">(6088m)</span></span></div></div><div class="flex flex-col items-center py-4"><span class="font-label-sm text-white/40 uppercase tracking-widest mb-2">Elevation</span><div class="font-mono text-success text-[64px] leading-none font-bold tracking-tighter drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]">1084</div><span class="font-mono text-success/70 text-sm uppercase tracking-widest mt-1">mils</span></div></div>
+</div>
+<!-- Body -->
+<div class="p-6 flex flex-col gap-6"><div class="grid grid-cols-2 gap-8 mb-4"><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Distance</span><span class="font-mono text-white text-xl">1,240<span class="text-sm ml-1 opacity-50">m</span></span></div><div class="flex flex-col gap-1"><span class="font-label-sm text-white/40 uppercase tracking-widest">Azimuth</span><span class="font-mono text-white text-xl">342.5°<span class="text-xs ml-1 opacity-50 block">(6088m)</span></span></div></div><div class="flex flex-col items-center py-4"><span class="font-label-sm text-white/40 uppercase tracking-widest mb-2">Elevation</span><div class="font-mono text-success text-[64px] leading-none font-bold tracking-tighter drop-shadow-[0_0_15px_rgba(34,197,94,0.4)]">1084</div><span class="font-mono text-success/70 text-sm uppercase tracking-widest mt-1">mils</span></div></div>
+<!-- Footer -->
+<div class="p-4 border-t border-white/5 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">touch_app</span>
+<span class="font-label-sm text-on-surface-variant">Drag markers on the map to recalculate.</span>
+</div>
+</div>
+</body></html>

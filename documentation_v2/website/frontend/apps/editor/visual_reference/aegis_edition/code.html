@@ -1,0 +1,334 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>AEGIS COMMAND - Mission Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#005979",
+                        "primary": "#d8e2ff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-bright": "#333949",
+                        "error-alert": "#f87171",
+                        "tertiary-fixed-dim": "#7cd0ff",
+                        "surface-container": "#191f2f",
+                        "tactical-yellow": "#facc15",
+                        "background": "#0d1322",
+                        "primary-fixed": "#d8e2ff",
+                        "on-primary-container": "#385283",
+                        "surface-tint": "#adc6ff",
+                        "secondary": "#adc6ff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "outline": "#8e909a",
+                        "tertiary": "#c3e7ff",
+                        "border-subtle": "#374151",
+                        "inverse-on-surface": "#2a3040",
+                        "on-secondary-container": "#e6ecff",
+                        "on-background": "#dde2f7",
+                        "error-container": "#93000a",
+                        "primary-container": "#adc6ff",
+                        "secondary-container": "#0566d9",
+                        "on-primary-fixed": "#001a42",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "on-secondary-fixed": "#001a42",
+                        "surface": "#0d1322",
+                        "tertiary-container": "#7bd0ff",
+                        "on-primary-fixed-variant": "#2c4677",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#c4c6d0",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-tertiary-fixed": "#001e2c",
+                        "surface-container-highest": "#2f3445",
+                        "secondary-fixed": "#d8e2ff",
+                        "success-muted": "#064e3b",
+                        "surface-dim": "#0d1322",
+                        "surface-container-low": "#151b2b",
+                        "inverse-surface": "#dde2f7",
+                        "on-tertiary": "#00344a",
+                        "inverse-primary": "#455e90",
+                        "on-error": "#690005",
+                        "surface-glass": "rgba(31, 41, 55, 0.7)",
+                        "on-secondary": "#002e6a",
+                        "surface-container-high": "#242a3a",
+                        "surface-container-lowest": "#080e1d",
+                        "on-surface": "#dde2f7",
+                        "tertiary-fixed": "#c4e7ff",
+                        "surface-variant": "#2f3445",
+                        "on-primary": "#122f5f",
+                        "outline-variant": "#44474f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem",
+                        "apple": "12px"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "container-max": "1440px",
+                        "stack-md": "1rem",
+                        "stack-lg": "2rem",
+                        "margin-mobile": "1rem",
+                        "gutter": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "code-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>.map-bg {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuBmKLMVZSk_f2WeNayv2OD6ZyrsJyWJD0tgyQahxKDCelUP9SqbXTEY0wRyJLnIP1m4zE9aB-FzxIMD_6EtxpuLyYZIzeqIK2wn6b0aOQl1SjsvsAjPNMZjmxQwC1blk82m1rc-SC2SfBkSv67xFMRYgM_dsGwFduR7IIA67zu4i1vb0OK7XUw5dPIHLk98iOoJDl5e9c2gMHn7SCfLbb19iQKnjPC625YAvLfyuwf56_2GnD3-Xxwd5ZDGYlMIKckOlPJj8ZsWj3Q);
+    background-size: cover;
+    background-position: center
+    }
+/* Custom scrollbar for tactical feel */
+::-webkit-scrollbar {
+    width: 6px
+    }
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1)
+    }
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px
+    }</style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden font-body-md relative">
+<!-- Background Map -->
+<div class="absolute inset-0 map-bg z-0" data-alt="A highly detailed 2D topographical military map viewed from above. The map features contour lines, grid references, and subtle elevation shading in dark nocturnal blues and subdued greens. The lighting is low-contrast and tactical, evoking a high-fidelity situational awareness display on a commander's screen. The aesthetic is clean, precise, and utilitarian, typical of modern military software." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCKhQ51jqOYHPZuHuGuLBiRBv_3tdODlfPgceh5PQgpsjgxNUXT91Ty-TlyCmzTki7q5sCozeBfpxx9HDvpTjxdXCVUXFs1JKSuaJcmE_cFlTDSplnhqJczcCaWgN5gpn57m_4IhGSTgVJ_EDPvm2MUKp75L9F3enLfiKKDISOv5ix8_qQfNZ4dZ-D-YSu8KpMfhG4gTrht-zzEo0VFdU6MrDeJVSM7Z52iYvD7LtOwWVCjyeRvvEWeG8pMG32WU3pfYxgM_ndXRMw')"></div>
+<div class="absolute inset-0 bg-background/40 backdrop-blur-[2px] z-0 pointer-events-none"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full h-12 bg-surface-glass backdrop-blur-xl border-b border-white/10 shadow-xl flex justify-between items-center px-6 z-50">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-bold tracking-tighter text-primary uppercase">AEGIS COMMAND</span>
+<div class="hidden md:flex items-center gap-4 text-label-md font-label-md">
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+                    Time of Day
+                </button>
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">cloud</span>
+                    Weather
+                </button>
+<button class="text-primary border-b-2 border-primary pb-1 px-3 py-1.5 flex items-center gap-2 hover:bg-white/5 transition-colors opacity-80 scale-95">
+<span class="material-symbols-outlined text-[18px]">article</span>
+                    Briefing
+                </button>
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                    Simulation
+                </button>
+<button class="text-on-surface-variant hover:bg-white/5 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+                    Settings
+                </button>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 rounded-full text-error-alert hover:bg-error-alert/10 transition-colors">
+<span class="material-symbols-outlined">power_settings_new</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-12 h-[calc(100vh-48px)] w-64 bg-surface-glass backdrop-blur-2xl border-r border-white/10 shadow-2xl flex flex-col z-40 transition-all duration-200 ease-in-out">
+<div class="p-4 border-b border-white/10">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-border-subtle">
+<img alt="Tactical Officer Profile" class="w-full h-full object-cover" data-alt="A small profile picture avatar of a tactical officer. The portrait is dimly lit with high-contrast cybernetic blue accents on the uniform. The officer wears a headset and looks authoritative. The background is a dark, sleek gradient. The image conveys professionalism and military precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGQQw-OTSPXJHmSPY_CD7Ki3SpOm5Y9CUjKiCIBVuiVzvzTnXTzrsmdUzMp0ZSQIxUqZE6neMf_p4e_CA9iE1fC6U0H4E7583NL9TZLQLEylcPUJnRgNmOFe6OdBitS_sOQi3fc7g8A0Ds8CrVk2bRFx0eman1Fx2W_vNajXcznFFLmsf-zfgJcqSM_Art8N2vITtjmdn-cWvmf3edGhj2lWO7a8plTWOxl0O2WSGfKdWnj9jhJdrR1aRu3-2J_sRI1lACiNXS7q8">
+</div>
+<div>
+<h2 class="font-label-sm text-label-sm uppercase tracking-widest text-tactical-yellow">MISSION EDITOR</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">OP_VANGUARD_01</p>
+</div>
+</div>
+<button class="w-full mt-3 bg-secondary-container hover:bg-secondary-container/80 text-on-secondary-container font-label-md text-label-md py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">rocket_launch</span>
+                LAUNCH SIM
+            </button>
+</div>
+<div class="flex-1 overflow-y-auto py-2">
+<nav class="flex flex-col gap-1 font-body-md text-body-md">
+<a class="bg-secondary-container/30 text-primary border-r-4 border-primary px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+                    Outliner
+                </a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">near_me</span>
+                    Waypoints
+                </a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">polyline</span>
+                    Zones
+                </a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">settings_input_component</span>
+                    Logic
+                </a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">event_note</span>
+                    Events
+                </a>
+</nav>
+<!-- Finder Style Tree View -->
+<div class="px-4 py-4 border-t border-white/5 mt-4">
+<div class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider mb-2">Hierarchy</div>
+<div class="flex flex-col gap-1 font-code-md text-code-md">
+<!-- Tree Item -->
+<div class="flex items-center gap-1 text-on-surface hover:bg-surface-variant/50 p-1 rounded cursor-pointer">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary">folder</span>
+<span>US Army</span>
+</div>
+<!-- Tree Sub Item -->
+<div class="flex items-center gap-1 text-on-surface hover:bg-surface-variant/50 p-1 rounded cursor-pointer pl-4">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">arrow_drop_down</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary">folder_open</span>
+<span>Alpha Squad</span>
+</div>
+<!-- Selected Tree Item -->
+<div class="flex items-center gap-1 text-primary bg-primary/10 p-1 rounded cursor-pointer pl-8 border border-primary/20">
+<span class="material-symbols-outlined text-[16px] opacity-0">arrow_right</span>
+<span class="material-symbols-outlined text-[16px]">person</span>
+<span>Rifleman_01</span>
+</div>
+<!-- Tree Item -->
+<div class="flex items-center gap-1 text-on-surface hover:bg-surface-variant/50 p-1 rounded cursor-pointer pl-8">
+<span class="material-symbols-outlined text-[16px] opacity-0">arrow_right</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">person</span>
+<span class="text-on-surface-variant">Medic_01</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-2 border-t border-white/10 flex flex-col gap-1">
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-2 hover:bg-white/5 flex items-center gap-3 transition-colors rounded-lg font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                Assets
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface px-4 py-2 hover:bg-white/5 flex items-center gap-3 transition-colors rounded-lg font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+                History
+            </a>
+</div>
+</aside>
+<!-- NavigationDrawer (Right Palette) -->
+<aside class="fixed right-4 top-16 h-[calc(100vh-80px)] w-80 bg-surface-glass backdrop-blur-xl border border-white/10 shadow-2xl rounded-apple flex flex-col z-30">
+<div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-apple">
+<div>
+<h2 class="font-label-md text-label-md font-bold text-on-surface uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">category</span>
+                    ASSET PALETTE
+                </h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">V3.4 DATABASE</p>
+</div>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+<!-- Tabs -->
+<div class="flex border-b border-white/10">
+<button class="flex-1 py-3 text-primary border-b-2 border-primary font-label-sm text-label-sm flex items-center justify-center gap-2 hover:bg-white/10 transition-colors scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">flag</span>
+                Factions
+            </button>
+<button class="flex-1 py-3 text-on-surface-variant font-label-sm text-label-sm flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[18px]">military_tech</span>
+                Vehicles
+            </button>
+<button class="flex-1 py-3 text-on-surface-variant font-label-sm text-label-sm flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+                Markers
+            </button>
+</div>
+<div class="flex-1 p-4 overflow-y-auto grid grid-cols-2 gap-3 content-start">
+<!-- Asset Cards -->
+<div class="aspect-square bg-surface-container border border-border-subtle rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary transition-colors">shield</span>
+<span class="font-label-sm text-label-sm text-on-surface text-center px-2">NATO Forces</span>
+</div>
+<div class="aspect-square bg-surface-container border border-border-subtle rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary transition-colors">security</span>
+<span class="font-label-sm text-label-sm text-on-surface text-center px-2">OPFOR</span>
+</div>
+<div class="aspect-square bg-surface-container border border-border-subtle rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary transition-colors">groups</span>
+<span class="font-label-sm text-label-sm text-on-surface text-center px-2">Insurgents</span>
+</div>
+<div class="aspect-square bg-surface-container border border-border-subtle rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary transition-colors">public</span>
+<span class="font-label-sm text-label-sm text-on-surface text-center px-2">Civilians</span>
+</div>
+</div>
+</aside>
+<!-- Inspector Popover (Floating near a selected unit) -->
+<div class="absolute top-[40%] left-[40%] w-64 bg-surface-glass backdrop-blur-xl border border-white/10 shadow-2xl rounded-apple z-20 overflow-hidden" style="transform: translate(-50%, -50%);">
+<!-- Connecting Line / Pointer indicator -->
+<div class="absolute -bottom-2 left-1/2 w-4 h-4 bg-surface-glass border-b border-r border-white/10 rotate-45 transform -translate-x-1/2 shadow-sm pointer-events-none"></div>
+<div class="p-3 border-b border-white/10 bg-white/5 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">person</span>
+<span class="font-label-md text-label-md font-bold uppercase">Rifleman_01</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<div class="p-4 flex flex-col gap-4 font-body-md text-body-md">
+<!-- Property Input -->
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Callsign</label>
+<input class="w-full bg-surface-container border-subtle border rounded px-3 py-1.5 text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-shadow text-sm" type="text" value="Alpha-1-1">
+</div>
+<!-- Property Slider -->
+<div>
+<div class="flex justify-between mb-1">
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Rotation</label>
+<span class="font-code-md text-code-md text-primary">045°</span>
+</div>
+<div class="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden mt-2">
+<div class="h-full bg-primary w-[25%] rounded-full"></div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full mt-2 bg-secondary-container hover:bg-secondary-container/90 text-on-secondary-container font-label-md text-label-md py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg">
+<span class="material-symbols-outlined text-[18px]">build</span>
+                Open Loadout Forge
+            </button>
+</div>
+</div>
+</body></html>
