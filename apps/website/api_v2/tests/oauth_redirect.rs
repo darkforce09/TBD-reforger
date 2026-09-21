@@ -30,7 +30,7 @@ fn location(resp: &Response) -> String {
 
 /// CSRF reject responses must clear `oauth_state` with the exact live helper string
 /// (`OAUTH_STATE_CLEAR`). A soft `contains("Path=/")` would green a divergent `Path=/api`;
-/// Class-R requires byte equality.
+/// The pin requires byte equality.
 fn assert_oauth_state_cleared(resp: &Response) {
     let cookie = resp.headers()[header::SET_COOKIE]
         .to_str()

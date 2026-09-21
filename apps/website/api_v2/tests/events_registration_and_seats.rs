@@ -122,7 +122,7 @@ async fn event_orbat_registration_and_race() {
     .await;
     assert_eq!(st, StatusCode::OK);
 
-    // G7b race-loser: slot1 held by the other user → this claim loses the WHERE → 409.
+    // Race loser: slot1 held by the other user → this claim loses the WHERE → 409.
     sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
         .bind(OTHER)
         .bind(slot1.parse::<uuid::Uuid>().unwrap())
@@ -268,8 +268,13 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         assert_eq!(st, StatusCode::CREATED, "attach: {em}");
         em["id"].as_str().unwrap().to_string()
     };
-    let emid = mk_em("T-318 Op", "Alpha", r#"{"role":"SL"},{"role":"RTO"}"#).await;
-    let other_emid = mk_em("T-318 Op B", "Bravo", r#"{"role":"SL"}"#).await;
+    let emid = mk_em(
+        "Registration Op",
+        "Alpha",
+        r#"{"role":"SL"},{"role":"RTO"}"#,
+    )
+    .await;
+    let other_emid = mk_em("Registration Op B", "Bravo", r#"{"role":"SL"}"#).await;
 
     let slots = async |em: &str| -> Vec<String> {
         let (_, o) = call(
@@ -574,12 +579,12 @@ async fn register_moves_the_caller_s_seat() {
             .collect()
     };
     let emid = mk_em(
-        "T-324 Op",
+        "Seat Op",
         "Alpha",
         r#"{"role":"SL"},{"role":"RTO"},{"role":"AR"}"#,
     )
     .await;
-    let other_emid = mk_em("T-324 Op B", "Bravo", r#"{"role":"SL"}"#).await;
+    let other_emid = mk_em("Seat Op B", "Bravo", r#"{"role":"SL"}"#).await;
     let slots = ids(&emid).await;
     let (slot0, slot1, slot2) = (slots[0].clone(), slots[1].clone(), slots[2].clone());
     let far_slot = ids(&other_emid).await[0].clone();
@@ -692,7 +697,7 @@ async fn register_moves_the_caller_s_seat() {
         register(&emid, &format!(r#"{{"slot_id":"{slot1}"}}"#)).await,
         StatusCode::OK
     );
-    // This is the whole ticket: pre-fix, `held` was 2 here and slot0 still named the caller.
+    // The defect this pins: `held` was 2 here and slot0 still named the caller.
     assert_eq!(held(&emid, DEV_USER).await, 1, "one seat, not two");
     assert_eq!(seat(&slot0).await, None, "the seat moved off must be free");
     assert!(

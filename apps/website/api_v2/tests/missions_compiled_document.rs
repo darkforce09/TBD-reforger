@@ -419,17 +419,17 @@ async fn compiled_refuses_over_capacity_when_registry_phys_is_loaded() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let vest_rn = format!("t549_vest_{stamp}");
-    let mag_rn = format!("t549_mag_{stamp}");
+    let vest_rn = format!("compiled_kit_vest_{stamp}");
+    let mag_rn = format!("compiled_kit_mag_{stamp}");
 
     // A current modpack + phys rows Save/compile both read. Private resource names so parallel
     // suites cannot collide; is_current=true so load_cargo_phys_catalog includes them even if
     // another pack is also current.
     let pack_id: uuid::Uuid = sqlx::query_scalar(
         "INSERT INTO modpacks (name, version, total_size_bytes, workshop_url, is_current, created_at) \
-         VALUES ($1, '0.0.1', 1, 'https://example.invalid/t549', true, now()) RETURNING id",
+         VALUES ($1, '0.0.1', 1, 'https://example.invalid/compiled-kit', true, now()) RETURNING id",
     )
-    .bind(format!("T549 Pack {stamp}"))
+    .bind(format!("Compiled Kit Pack {stamp}"))
     .fetch_one(&pool)
     .await
     .expect("seed modpack");
@@ -437,7 +437,7 @@ async fn compiled_refuses_over_capacity_when_registry_phys_is_loaded() {
         "INSERT INTO registry_items \
          (modpack_id, resource_name, display_name, category, kind, sort_order, \
           weight_kg, volume_cm3, created_at, updated_at) \
-         VALUES ($1, $2, 'Mag', 'T549', 'gear_vest', 0, 0.5, 60.0, now(), now())",
+         VALUES ($1, $2, 'Mag', 'CompiledKit', 'gear_vest', 0, 0.5, 60.0, now(), now())",
     )
     .bind(pack_id)
     .bind(&mag_rn)
@@ -448,7 +448,7 @@ async fn compiled_refuses_over_capacity_when_registry_phys_is_loaded() {
         "INSERT INTO registry_items \
          (modpack_id, resource_name, display_name, category, kind, sort_order, \
           max_weight_kg, max_volume_cm3, created_at, updated_at) \
-         VALUES ($1, $2, 'Plate Carrier', 'T549', 'gear_vest', 1, 5.0, 200.0, now(), now())",
+         VALUES ($1, $2, 'Plate Carrier', 'CompiledKit', 'gear_vest', 1, 5.0, 200.0, now(), now())",
     )
     .bind(pack_id)
     .bind(&vest_rn)
@@ -457,7 +457,7 @@ async fn compiled_refuses_over_capacity_when_registry_phys_is_loaded() {
     .expect("seed vest phys");
 
     let create = format!(
-        r#"{{"title":"T549 Cargo {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        r#"{{"title":"Compiled Kit Cargo {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
     );
     let (st, b) = call(
         &app,

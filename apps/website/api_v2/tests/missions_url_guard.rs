@@ -41,7 +41,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t413-missions-secret"),
+        Config::for_tests(url, "url-guard-missions-secret"),
     ));
     Some((app, pool))
 }
@@ -73,7 +73,7 @@ async fn send(
 }
 
 async fn seed_mission(app: &Router, token: &str) -> String {
-    let title = format!("t413-m-{}", uuid::Uuid::new_v4());
+    let title = format!("url-guard-m-{}", uuid::Uuid::new_v4());
     let (status, body) = send(
         app,
         "POST",

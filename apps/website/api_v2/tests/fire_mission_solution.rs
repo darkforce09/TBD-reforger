@@ -76,7 +76,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t587-secret"),
+        Config::for_tests(url, "fire-mission-secret"),
     ));
     Some((app, pool))
 }
@@ -503,7 +503,7 @@ fn parse_grid_source(src: &str, whose: &str) -> String {
         .join(" ")
 }
 
-/// Class-R: the transcribed `parse_grid` above **is** the shipped one, token for token.
+/// The transcribed `parse_grid` above **is** the shipped one, token for token.
 ///
 /// Not "contains these lines" — that would pass while the copy in this file drifted, which is the
 /// same shape of defect as the comment this suite corrects: a check that agrees with itself.

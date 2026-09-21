@@ -140,13 +140,13 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("registry_items", "cargo_grid_h"),
 ];
 
-/// Instances of this exact defect that are open against **another ticket**, keyed
+/// Instances of this exact defect that are being fixed elsewhere, keyed
 /// `(source file, produced column or `*`, owner)`.
 ///
 /// **Tolerance, not assertion.** An entry suppresses a finding when it matches and is simply
-/// inert when it does not. It deliberately does *not* assert the defect is still present: a slice
-/// worktree branches from an older `main`, so "is this sibling bug fixed yet?" has a different
-/// answer here than on merged `main`, and a presence assertion would turn one of the two trees
+/// inert when it does not. It deliberately does *not* assert the defect is still present: a
+/// worktree branched from an older `main` answers "is this sibling bug fixed yet?" differently
+/// from merged `main`, and a presence assertion would turn one of the two trees
 /// red no matter which way it was written. Instead:
 ///   * anything **not** listed is a hard failure (that is the enumeration doing its job), and
 ///   * [`BASELINE_CAP`] stops the list growing silently, which is the only way a tolerance list
@@ -173,7 +173,7 @@ pub const KNOWN_OPEN: &[(&str, &str, &str)] = &[
 /// notices.
 pub const BASELINE_CAP: usize = 0;
 
-/// Routes that 5xx under the NULL blast because of a defect owned by **another ticket** — the
+/// Routes that 5xx under the NULL blast because of a defect being fixed elsewhere — the
 /// behavioural mirror of [`KNOWN_OPEN`], with the same shrinking-baseline semantics: each entry
 /// must still fail, so a fix elsewhere shows up here as "delete this line" rather than as silent
 /// slack. The precise cause of each is pinned by [`KNOWN_OPEN`]; this list only records that the

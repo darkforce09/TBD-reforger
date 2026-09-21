@@ -23,7 +23,7 @@ mod telemetry_support;
 const PLAYER_DISCORD: &str = "000000000000400003";
 const PLAYER_ARMA: &str = "telemetry-arma-400003";
 
-/// Class-R: the main ingest player must not be content_golden Vance.
+/// The main ingest player must not be content_golden Vance.
 #[test]
 fn ingest_player_is_not_the_content_golden_seed_identity() {
     assert_ne!(
@@ -211,7 +211,7 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
         return;
     };
     let server_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO servers (name, ip, port, is_active) VALUES ('T316 Merge Srv', '127.0.0.1'::inet, 2316, true) RETURNING id",
+        "INSERT INTO servers (name, ip, port, is_active) VALUES ('Status Merge Srv', '127.0.0.1'::inet, 2316, true) RETURNING id",
     )
     .fetch_one(&pool)
     .await

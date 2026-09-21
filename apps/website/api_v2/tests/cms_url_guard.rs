@@ -58,7 +58,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t405-secret"),
+        Config::for_tests(url, "url-guard-secret"),
     ));
     Some((app, pool))
 }
@@ -98,7 +98,7 @@ async fn create_refuses_a_non_http_thumbnail_and_stores_nothing() {
     let token = common::dev_login_token(&app, SUITE, "admin").await;
 
     for bad in REJECTED {
-        let title = format!("t405-create-{bad:?}");
+        let title = format!("url-guard-create-{bad:?}");
         let (status, body) = send(
             &app,
             "POST",
@@ -140,7 +140,7 @@ async fn patch_refuses_a_non_http_thumbnail_and_leaves_the_stored_value_alone() 
     let token = common::dev_login_token(&app, SUITE, "admin").await;
 
     const GOOD: &str = "https://cdn.tbd/thumbs/original.png";
-    let title = format!("t405-patch-{}", uuid::Uuid::new_v4());
+    let title = format!("url-guard-patch-{}", uuid::Uuid::new_v4());
     let (status, created) = send(
         &app,
         "POST",
@@ -207,7 +207,7 @@ async fn patch_rejection_leaves_every_other_field_untouched() {
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
 
-    let title = format!("t405-atomic-{}", uuid::Uuid::new_v4());
+    let title = format!("url-guard-atomic-{}", uuid::Uuid::new_v4());
     let (status, created) = send(
         &app,
         "POST",
@@ -276,7 +276,7 @@ async fn real_thumbnails_and_the_empty_no_thumbnail_shape_still_work() {
         // Absent-or-blank is this column's "no thumbnail" and must keep working untouched.
         "",
     ] {
-        let title = format!("t405-good-{}", uuid::Uuid::new_v4());
+        let title = format!("url-guard-good-{}", uuid::Uuid::new_v4());
         let (status, body) = send(
             &app,
             "POST",

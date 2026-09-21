@@ -23,7 +23,7 @@
 //!   request, which is exactly what a leftmost-hop implementation would reward with a fresh bucket
 //!   each time.
 //!
-//! …and the rest on the thing the ticket actually asks for:
+//! …and the rest on what the setting is for:
 //!
 //! * [`two_clients_behind_the_trusted_proxy_get_separate_buckets`] — two clients through one
 //!   proxy are two buckets, and one tripping does not lock out the other. That is the whole point.
@@ -59,7 +59,7 @@ mod common;
 
 /// A strict-prefix route: rate-limited, and it needs no fixture rows. The handler's own verdict
 /// (400 for a bodyless refresh) is irrelevant — what matters is 429 vs not-429. This is the exact
-/// route the ticket's op-night scenario is about.
+/// route the op-night scenario is about.
 const STRICT_ROUTE: &str = "/api/v1/auth/refresh";
 
 /// The forwarding header, spelled the way a client would send it. `http` has no constant for it —
@@ -75,7 +75,7 @@ async fn boot() -> Option<(PgPool, String)> {
 
 /// A router whose config trusts exactly `trusted` — the one line this ticket makes load-bearing.
 fn router_trusting(pool: PgPool, url: &str, trusted: &[&str]) -> Router {
-    let mut cfg = Config::for_tests(url, "t625-secret");
+    let mut cfg = Config::for_tests(url, "forwarded-secret");
     cfg.trusted_proxies = trusted.iter().map(|s| (*s).to_string()).collect();
     http_router::router(AppState::new(pool, cfg))
 }
@@ -238,7 +238,7 @@ async fn a_forged_header_from_an_untrusted_peer_gets_no_bucket_of_its_own() {
 
 // ───────────────────────── …and it must work when it is configured ─────────────────────────
 
-/// **The ticket.** Two members open the site through the same Caddy. They get **two** buckets, and
+/// **The scenario.** Two members open the site through the same Caddy. They get **two** buckets, and
 /// one exhausting its own does not touch the other.
 ///
 /// Without proxy-aware keying both clients key to `127.0.0.3` — the proxy — so B's first request
@@ -387,7 +387,7 @@ async fn an_unusable_chain_from_a_trusted_proxy_keys_to_the_proxy() {
 
 // ───────────────────────── anti-drift pins ─────────────────────────
 
-/// Class-R: the deployed Caddyfile still proxies from loopback, which is the fact that makes
+/// The deployed Caddyfile still proxies from loopback, which is the fact that makes
 /// `TRUSTED_PROXIES` necessary at all.
 ///
 /// If the deployment ever stops fronting the API this way, the trusted-proxy list becomes a
@@ -403,10 +403,10 @@ fn the_deployed_proxy_still_fronts_this_api_from_loopback() {
     );
 }
 
-/// Class-R: `TRUSTED_PROXIES` is still read by the thing that claims to read it.
+/// `TRUSTED_PROXIES` is still read by the thing that claims to read it.
 ///
-/// The ticket exists because this variable was parsed at boot and consulted by nothing for
-/// several waves, which is invisible from the outside: the API starts, the config looks
+/// A variable that is parsed at boot and consulted by nothing is invisible from the outside:
+/// the API starts, the config looks
 /// configured, and every client still shares one bucket. A grep-shaped test is the cheapest thing
 /// that fails the day the wiring is removed again.
 #[test]
@@ -428,7 +428,7 @@ fn the_rate_limiter_still_reads_the_trusted_proxy_list() {
     );
 }
 
-/// Class-R: an unspecified peer is still nobody, and `Ipv4Addr::UNSPECIFIED` is still the L1
+/// An unspecified peer is still nobody, and `Ipv4Addr::UNSPECIFIED` is still the L1
 /// fallback rather than a durable bucket — the durable limiter's contract, which proxy-aware
 /// keying must not move.
 #[tokio::test]

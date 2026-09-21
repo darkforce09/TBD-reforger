@@ -35,10 +35,11 @@ pub fn database_name_from_url(database_url: &str) -> Option<String> {
 /// Whether `name` is a dedicated integration / gate / probe database — never the live
 /// `tbd_reforger` dev DB.
 ///
-/// Allow-list (Makefile + `scripts/platform/wave.sh` + operator cold DBs):
-/// - `rust_it` — `cargo xtask db test-it` (Makefile DROP/CREATE)
-/// - `tbd_gate*` — wave gate (`tbd_gate_w<N>`, `tbd_gate_it`, `tbd_gate_migrate`, …)
-/// - `*_cold` — operator `TBD_GATE_DB` cold DBs (`tbd_wave6_cold`, …)
+/// Allow-list (the xtask database commands + operator scratch databases):
+/// - `rust_it` — `cargo xtask db test-it` (dropped and recreated per run)
+/// - `tbd_gate*` — `cargo xtask db selftest` and the deploy database drills (`tbd_gate_it`,
+///   `tbd_gate_migrate`, …)
+/// - `*_cold` — operator `TBD_GATE_DB` cold databases (`tbd_operator_cold`, …)
 /// - `*_it` / `*_probe` — agent throwaways that already follow the naming convention
 ///
 /// Anything else (notably `tbd_reforger`) is refused so an exported
@@ -85,7 +86,7 @@ pub fn assert_test_database_url(database_url: &str) {
              The live dev database `tbd_reforger` is never allowed — pointing the\n  \
              integration suite at it would wipe production-like rows.\n  \
              Fix: `cargo xtask db test-it` (creates rust_it), or export a URL whose path\n  \
-             matches the allow-list (wave gate uses tbd_gate_w<N> / *_cold).\n\
+             matches the allow-list (tbd_gate* / *_cold / *_it / *_probe).\n\
              ───────────────────────────────────────────────────────────────────────"
         );
     }
@@ -96,7 +97,7 @@ pub fn assert_test_database_url(database_url: &str) {
 /// The test binary this copy of `common` was compiled into.
 ///
 /// Cargo compiles one crate per top-level `tests/*.rs`, and `CARGO_CRATE_NAME` is set per
-/// compilation unit — so this expands to `admin_field` inside `tests/admin_field.rs`'s
+/// compilation unit — so this expands to `servers_crud` inside `tests/servers_crud.rs`'s
 /// binary and to `dev_login_runtime_identity` inside `tests/dev_login_runtime_identity.rs`'s. It is a
 /// compile-time `env!`, so a Cargo that stopped setting it is a build error here rather
 /// than a silent fallback to one shared name — which is the defect this whole section
@@ -109,11 +110,11 @@ static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
 
 /// Derive this binary's private database name from the operator's base name.
 ///
-/// `("tbd_gate_w60", "admin_field")` → `"tbd_gate_w60_admin_field_it"`.
+/// `("rust_it", "servers_crud")` → `"rust_it_servers_crud_it"`.
 ///
 /// The `_it` suffix is not decoration: it is what keeps every generated name inside the
 /// allow-list ([`is_safe_test_database_name`]) no matter what the base was — `rust_it`,
-/// `tbd_gate_w60` and `tbd_x_cold` all derive to a `*_it` name. The suffix is re-checked at
+/// `tbd_gate_migrate` and `tbd_x_cold` all derive to a `*_it` name. The suffix is re-checked at
 /// runtime in [`resolve_and_provision`]; this function is not trusted to have got it right.
 ///
 /// Postgres truncates identifiers at 63 bytes, and a truncated name is a name two binaries
@@ -178,8 +179,8 @@ pub fn with_database_name(url: &str, database: &str) -> Option<String> {
 ///
 /// Two concurrent `cargo test` invocations against the **same** operator base race on
 /// `<base>_<suite>_it`: both binaries run [`provision`]'s `DROP DATABASE … WITH (FORCE)` /
-/// `CREATE DATABASE` for the same derived name. The wave gate's flock serialises gate runs,
-/// so the gate path is covered; cross-process overlap outside the gate would need
+/// `CREATE DATABASE` for the same derived name. `cargo xtask db test-it` runs the binaries one
+/// after another, so that path is covered; cross-process overlap outside it would need
 /// PID-suffixed names or a cross-process provision lock.
 pub fn require_test_database_url() -> Option<String> {
     PER_BINARY_URL.get_or_init(resolve_and_provision).clone()
@@ -251,8 +252,7 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
     let mut admin = PgConnection::connect(base_url).await.unwrap_or_else(|e| {
         panic!(
             "connect to `{base_url}` to create tests/{SUITE}.rs's database: {e}\n  \
-             The base database must exist — the wave gate's ensure_gate_db creates it, \
-             `cargo xtask db test-it` creates rust_it."
+             The base database must exist — `cargo xtask db test-it` creates rust_it."
         )
     });
     // WITH (FORCE) so a leaked connection from a killed run cannot pin the name. The target

@@ -1,9 +1,8 @@
 //! Whitespace `arma_id` is not linked; leave `reason` rejects blank/whitespace.
 //!
-//! # Owns expansion (called out)
+//! # Scope
 //!
-//! Wave owns list only the three handlers. This IT binary is the Class-R / IT half the
-//! ticket requires: refresh must mint `arma_linked=false` when the row holds
+//! This binary is the HTTP half: refresh must mint `arma_linked=false` when the row holds
 //! whitespace-only `arma_id` (proves session issuance is not `is_some()`-only), and
 //! `POST /me/leave-requests` must 400 on whitespace `reason` (operations/handlers/leave_requests.rs).
 //!
@@ -34,13 +33,13 @@ const ACTOR: &str = "000000000000350001";
 /// Stored whitespace-only `arma_id`. Distinct from empty-string fixtures other suites use.
 const WS_ARMA: &str = "   ";
 /// Unique non-whitespace seed released before we overwrite with WS_ARMA.
-const SEED_ARMA: &str = "t350-seed-arma-350001";
+const SEED_ARMA: &str = "refresh-ws-seed-arma-1";
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let cfg = Config::for_tests(url, "t350-secret");
+    let cfg = Config::for_tests(url, "refresh-ws-secret");
     let state = AppState::new(pool.clone(), cfg);
     Some((http_router::router(state.clone()), state, pool))
 }
@@ -50,23 +49,23 @@ async fn cleanup(pool: &PgPool) {
         .bind(ACTOR)
         .execute(pool)
         .await
-        .expect("t350 cleanup refresh");
+        .expect("refresh-ws cleanup refresh");
     sqlx::query("DELETE FROM leave_requests WHERE discord_id = $1")
         .bind(ACTOR)
         .execute(pool)
         .await
-        .expect("t350 cleanup leave");
+        .expect("refresh-ws cleanup leave");
     // Release UNIQUE arma values before reseed.
     sqlx::query("UPDATE users SET arma_id = NULL WHERE arma_id = ANY($1)")
         .bind(vec![WS_ARMA.to_string(), SEED_ARMA.to_string()])
         .execute(pool)
         .await
-        .expect("t350 release arma");
+        .expect("refresh-ws release arma");
 }
 
 /// Refresh must mint `arma_linked=false` for a legacy whitespace `users.arma_id` row.
 ///
-/// Class-R: if `refresh` still used `user.arma_id.is_some()`, this asserts false.
+/// If `refresh` still used `user.arma_id.is_some()`, this asserts false.
 #[tokio::test]
 async fn refresh_whitespace_arma_id_mints_arma_linked_false() {
     let _guard = DB_LOCK.lock().await;
@@ -75,7 +74,7 @@ async fn refresh_whitespace_arma_id_mints_arma_linked_false() {
         return;
     };
     cleanup(&pool).await;
-    common::seed_user(&pool, ACTOR, "t350-ws", SEED_ARMA, "enlisted").await;
+    common::seed_user(&pool, ACTOR, "refresh-ws-ws", SEED_ARMA, "enlisted").await;
     sqlx::query("UPDATE users SET arma_id = $1, updated_at = now() WHERE discord_id = $2")
         .bind(WS_ARMA)
         .bind(ACTOR)
@@ -130,7 +129,7 @@ async fn refresh_real_arma_id_mints_arma_linked_true() {
         return;
     };
     cleanup(&pool).await;
-    common::seed_user(&pool, ACTOR, "t350-real", SEED_ARMA, "enlisted").await;
+    common::seed_user(&pool, ACTOR, "refresh-ws-real", SEED_ARMA, "enlisted").await;
 
     let refresh = issue_refresh(&pool, ACTOR).await.expect("issue_refresh");
     let body = format!(r#"{{"refresh_token":"{refresh}"}}"#);
@@ -170,7 +169,7 @@ async fn submit_leave_rejects_blank_and_whitespace_reason() {
         return;
     };
     cleanup(&pool).await;
-    common::seed_user(&pool, ACTOR, "t350-leave", SEED_ARMA, "enlisted").await;
+    common::seed_user(&pool, ACTOR, "refresh-ws-leave", SEED_ARMA, "enlisted").await;
     let tok = common::access_token(
         &state,
         "refresh_whitespace_arma_id",

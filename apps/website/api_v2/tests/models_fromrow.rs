@@ -1,4 +1,4 @@
-//! Phase 2 gate — the sqlx `FromRow` decode path is correct for the tricky types:
+//! The sqlx `FromRow` decode path is correct for the tricky types:
 //! Postgres ENUM → Rust enum, `timestamptz` → `DateTime<Utc>`, `bigint` → `i64`,
 //! `numeric` → `f64` (via `::float8` cast), and `jsonb` → RawValue passthrough.
 //!
@@ -8,7 +8,7 @@
 //! NOTE: the app sets `created_at`/`updated_at` explicitly on INSERT (the columns have no DB
 //! default) — the inserts below mirror that.
 //!
-//! Also hosts the sparse-reimport Class-R for
+//! Also hosts the sparse-reimport pin for
 //! `src/missions/services/registry_import.rs`, so that DB consumer goes through the common
 //! guard and the tests-only `src/` scan stays green.
 
@@ -104,7 +104,7 @@ async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
         .await;
 }
 
-/// Class-R: sparse re-import must not NULL populated Option columns.
+/// Sparse re-import must not NULL populated Option columns.
 ///
 /// Lives here rather than beside `src/missions/services/registry_import.rs` so the DB
 /// consumer goes through the common per-binary guard instead of reading `TEST_DATABASE_URL`
@@ -119,7 +119,7 @@ async fn sparse_reimport_preserves_option_columns() {
     database::migrate(&pool).await.expect("migrate");
 
     const MP: &str = "00000000-0000-4000-a000-000000003377";
-    const RN: &str = "{DEADBEEF00003761}Prefabs/Clothing/T376_ClassR_Vest.et";
+    const RN: &str = "{DEADBEEF00003761}Prefabs/Clothing/Reimport_Sparse_Vest.et";
 
     let rich = format!(
         r#"{{
@@ -129,7 +129,7 @@ async fn sparse_reimport_preserves_option_columns() {
   "addons": [{{ "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true }}],
   "items": [{{
     "resource_name": "{RN}",
-    "display_name": "  T376 ClassR Vest  ",
+    "display_name": "  Reimport Sparse Vest  ",
     "category": "  NATO/Vest  ",
     "kind": "gear_vest",
     "abstract": false,
@@ -141,7 +141,7 @@ async fn sparse_reimport_preserves_option_columns() {
     "addon": "ArmaReforger",
     "cargo_grid_w": 4,
     "cargo_grid_h": 6,
-    "icon_url": "items/t376.png"
+    "icon_url": "items/reimport.png"
   }}]
 }}"#
     )
@@ -155,7 +155,7 @@ async fn sparse_reimport_preserves_option_columns() {
   "addons": [{{ "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true }}],
   "items": [{{
     "resource_name": "{RN}",
-    "display_name": "T376 ClassR Vest Renamed",
+    "display_name": "Reimport Sparse Vest Renamed",
     "category": "NATO/Vest",
     "kind": "gear_vest"
   }}]
@@ -204,12 +204,12 @@ async fn sparse_reimport_preserves_option_columns() {
     .await
     .expect("after rich");
     assert_eq!(
-        after_rich.display_name, "T376 ClassR Vest",
+        after_rich.display_name, "Reimport Sparse Vest",
         "trim display_name"
     );
     assert_eq!(after_rich.category, "NATO/Vest", "trim category");
     assert_eq!(after_rich.weight_kg, Some(2.5));
-    assert_eq!(after_rich.icon_url, "items/t376.png");
+    assert_eq!(after_rich.icon_url, "items/reimport.png");
 
     let c2 = import_items(&pool, &sparse, Some(mp), false)
         .await
@@ -230,7 +230,7 @@ async fn sparse_reimport_preserves_option_columns() {
     .await
     .expect("after sparse");
 
-    assert_eq!(after_sparse.display_name, "T376 ClassR Vest Renamed");
+    assert_eq!(after_sparse.display_name, "Reimport Sparse Vest Renamed");
     assert_eq!(after_sparse.weight_kg, Some(2.5), "weight_kg preserved");
     assert_eq!(after_sparse.volume_cm3, Some(400.0), "volume_cm3 preserved");
     assert_eq!(
@@ -249,7 +249,7 @@ async fn sparse_reimport_preserves_option_columns() {
     assert_eq!(after_sparse.cargo_grid_w, Some(4));
     assert_eq!(after_sparse.cargo_grid_h, Some(6));
     assert_eq!(
-        after_sparse.icon_url, "items/t376.png",
+        after_sparse.icon_url, "items/reimport.png",
         "icon_url still never updated"
     );
 }

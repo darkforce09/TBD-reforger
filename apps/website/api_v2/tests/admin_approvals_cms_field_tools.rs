@@ -14,7 +14,7 @@
 //!
 //! # empty-snapshot admin must survive sync
 //!
-//! Class-R unit pins prove `resync_ids_from_snapshot([]) → None`, and an HTTP 200 assertion on
+//! The sibling unit tests prove `resync_ids_from_snapshot([]) → None`, and an HTTP 200 assertion on
 //! roles/sync says nothing past the status line. A cold IT promotes an admin who holds
 //! **zero** `user_discord_roles`, POSTs sync, and asserts the web role stays
 //! `admin` — the lockout path that unit tests alone cannot catch at the
@@ -113,7 +113,7 @@ async fn assert_roles_match_snapshot(pool: &PgPool, snapshot: &[(String, String)
 }
 
 async fn admin_token(app: &Router) -> String {
-    common::dev_login_token(app, "admin_field", "admin").await
+    common::dev_login_token(app, "admin_approvals_cms_field_tools", "admin").await
 }
 
 async fn call(
@@ -258,7 +258,7 @@ async fn ban_reason_survives_a_malformed_reban() {
         sqlx::query(
             "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
              arma_character, role, is_banned, ban_reason, banned_by, banned_at, created_at, updated_at) \
-             VALUES ($1, 'T317 Sentinel', 't317sentinel', '', NULL, '', 'enlisted', true, $2, \
+             VALUES ($1, 'Ban Sentinel', 'bansentinel', '', NULL, '', 'enlisted', true, $2, \
              '000000000000000001', $3::timestamptz, now(), now()) \
              ON CONFLICT (discord_id) DO UPDATE SET is_banned = true, ban_reason = EXCLUDED.ban_reason, \
              banned_by = EXCLUDED.banned_by, banned_at = EXCLUDED.banned_at",
@@ -514,7 +514,7 @@ async fn admin_approvals_cms_field() {
     // request lands at all. A handler that persisted the bare string `issued RCON 'custom'`
     // leaves a trail that cannot tell a shutdown from anything else, and this is the
     // assertion that fails against it.
-    let marker = format!("#tbd-t269-probe-{server_id}");
+    let marker = format!("#tbd-rcon-probe-{server_id}");
     let (st, r) = call(
         &app,
         "POST",
@@ -702,7 +702,7 @@ async fn admin_approvals_cms_field() {
 ///
 /// A `resync_all_roles` that treated an empty stored snowflake list as
 /// `Authoritative([])` → `resolve_role` → enlisted would demote every hand-promoted
-/// or seed admin who never OAuth'd. Unit Class-R pins `resync_ids_from_snapshot`
+/// or seed admin who never OAuth'd. The sibling unit tests pin `resync_ids_from_snapshot`
 /// empty→None; this IT proves the HTTP path leaves the web role alone.
 ///
 /// Isolation: the snapshot → sync → restore wrapper still surrounds the call so users with
@@ -722,7 +722,7 @@ async fn empty_snapshot_admin_survives_roles_sync() {
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
          arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T502 Cold Admin', 't502cold', '', NULL, '', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Sync Cold Admin', 'synccold', '', NULL, '', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET role = 'enlisted', is_banned = false, ban_reason = ''",
     )
     .bind(COLD_ADMIN)
@@ -804,17 +804,20 @@ async fn empty_snapshot_admin_survives_roles_sync() {
         .expect("cleanup cold admin fixture");
 }
 
-/// Class-R: `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
+/// `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
 ///
 /// A bare `POST /admin/roles/sync` on the shared gate DB remaps every user with stored
 /// Discord snowflakes. Removing the restore is a silent cross-suite demotion — this pin
 /// fails the binary if the isolation helpers or call-site restore disappear.
 #[test]
 fn roles_sync_is_suite_scoped_snapshot_restore() {
-    let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
+    let src = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/admin_approvals_cms_field_tools.rs"
+    ));
     assert!(
         src.contains("common::require_test_database_url"),
-        "admin_field boot must call common::require_test_database_url"
+        "admin_approvals_cms_field_tools boot must call common::require_test_database_url"
     );
     assert!(
         src.contains("fn snapshot_user_roles"),
@@ -844,14 +847,17 @@ fn roles_sync_is_suite_scoped_snapshot_restore() {
     );
 }
 
-/// Class-R: the cold empty-snapshot admin IT must remain in this binary.
+/// The cold empty-snapshot admin test must remain in this binary.
 ///
-/// Unit Class-R already pins `resync_ids_from_snapshot([]) → None`. Dropping this
+/// The sibling unit tests already pin `resync_ids_from_snapshot([]) → None`. Dropping this
 /// IT would leave the HTTP path covered only by a 200 assert, and the lockout
 /// regresses silently at the route.
 #[test]
 fn empty_snapshot_admin_survival_it_is_present() {
-    let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
+    let src = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/admin_approvals_cms_field_tools.rs"
+    ));
     assert!(
         src.contains("fn empty_snapshot_admin_survives_roles_sync"),
         "cold IT empty_snapshot_admin_survives_roles_sync missing"

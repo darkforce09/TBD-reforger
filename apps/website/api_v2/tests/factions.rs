@@ -5,7 +5,7 @@
 //!
 //! A `setup` running `DELETE FROM user_factions` with **no WHERE**, then `dev-login` as
 //! `mission_maker` followed by `enlisted`, leaves the shared [`common::DEV_LOGIN_USER`] row on
-//! `enlisted`: it wipes `null_tolerance`'s faction rows and fails `misc_integration`'s
+//! `enlisted`: it wipes `null_tolerance_reads`'s faction rows and fails a sibling binary's
 //! `GET /me` role==admin assert under concurrent `cargo test -p website-api`. Actors and
 //! deletes here are owner-scoped; tokens come from [`common::access_token`] (no shared-row
 //! role rewrite), and [`common::require_test_database_url`] refuses `tbd_reforger` before any
@@ -109,7 +109,7 @@ fn golden_doc() -> Value {
     serde_json::from_slice(&raw).unwrap()
 }
 
-/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped.
+/// The unscoped wipe must not return; deletes stay owner-scoped.
 #[test]
 fn factions_delete_is_owner_scoped() {
     let src = include_str!("factions.rs");

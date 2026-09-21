@@ -1,5 +1,5 @@
-//! Gate G7a — the single-use rotating refresh token invariant. Drives the real router via
-//! `tower::oneshot`.
+//! The single-use rotating refresh token invariant, and the purge of expired tokens. Drives the
+//! real router via `tower::oneshot`.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 
 use axum::Router;
@@ -8,10 +8,12 @@ use axum::http::{Request, StatusCode, header};
 use serde_json::Value;
 use sqlx::PgPool;
 use tower::ServiceExt;
+use uuid::Uuid;
 use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
+use website_api::identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens;
 
 mod common;
 
@@ -142,4 +144,52 @@ async fn refresh_rotation_reuse_revokes_family() {
     let (status, body) = post_refresh(&app, "deadbeef").await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
     assert_eq!(body["error"], "invalid refresh token");
+}
+
+#[tokio::test]
+async fn purge_removes_only_long_expired_tokens() {
+    let Some((_, pool)) = setup().await else {
+        return;
+    };
+
+    let fresh = format!("hash-fresh-{}", Uuid::new_v4());
+    let stale = format!("hash-stale-{}", Uuid::new_v4());
+    // `refresh_tokens.discord_id` REFERENCES `users(discord_id)` ON DELETE CASCADE, so the
+    // owner has to exist before a token can. The id `000000000000000007` is arbitrary to the
+    // purge window this test is actually about, so the fixture makes it a real user rather
+    // than weakening the constraint.
+    sqlx::query(
+        "INSERT INTO users (discord_id, username) VALUES ('000000000000000007', 'purge fixture') \
+         ON CONFLICT (discord_id) DO NOTHING",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    // Fresh (future expiry) + stale (expired > 7 days ago).
+    for (h, days) in [(&fresh, 1i64), (&stale, -8i64)] {
+        sqlx::query(
+            "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) VALUES ('000000000000000007', $1, now() + ($2 || ' days')::interval, now())",
+        )
+        .bind(h)
+        .bind(days.to_string())
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+    let removed = purge_expired_refresh_tokens(&pool).await.unwrap();
+    assert!(removed >= 1, "at least the stale token purged");
+    let fresh_left: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM refresh_tokens WHERE token_hash = $1")
+            .bind(&fresh)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let stale_left: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM refresh_tokens WHERE token_hash = $1")
+            .bind(&stale)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(fresh_left, 1, "fresh token kept");
+    assert_eq!(stale_left, 0, "stale token purged");
 }

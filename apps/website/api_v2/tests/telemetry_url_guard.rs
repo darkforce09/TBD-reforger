@@ -37,9 +37,9 @@ use website_api::core::http_router;
 mod common;
 
 const SVC: &str = "test-service-token";
-const ARMA: &str = "test-arma-t391";
-const SRC: &str = "t391-url-guard";
-const EV: &str = "e-t391";
+const ARMA: &str = "test-arma-url-guard";
+const SRC: &str = "telemetry-url-guard";
+const EV: &str = "e-url-guard";
 
 /// `/api/v1/ingest/` sits behind the **strict** per-IP limiter
 /// (`middleware/ratelimit.rs:21`), whose burst is a good deal smaller than the number of
@@ -65,7 +65,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t391-secret"),
+        Config::for_tests(url, "url-guard-secret"),
     ));
     Some((app, pool))
 }
@@ -262,7 +262,7 @@ async fn rejects_on_the_update_path_without_clobbering_a_good_link() {
     let ns = Ns("update");
     ns.clean(&pool).await;
     let src = ns.src("row");
-    let good = "https://aar.tbd/replays/t391.json?v=2#t=30";
+    let good = "https://aar.tbd/replays/url-guard.json?v=2#t=30";
 
     let (st, r) = post(&app, &ns.body(&src, good)).await;
     assert_eq!(st, StatusCode::OK, "seed create: {r}");

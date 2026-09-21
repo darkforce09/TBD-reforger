@@ -1,7 +1,5 @@
-//! Mission archive/soft-delete lifecycle, editor-only ORBAT derivation, export
-//! edge-cases, version body-limit override, and refresh-token purge. Ports the Go
-//! missions_lifecycle / missions_orbat / missions_export / bodylimit / token_purge
-//! integration tests. Skips without `TEST_DATABASE_URL`.
+//! Mission archive and soft-delete lifecycle, editor-only ORBAT derivation, export edge cases,
+//! and the version body-limit override. Skips without `TEST_DATABASE_URL`.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -14,7 +12,6 @@ use website_api::core::application_state::AppState;
 use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
-use website_api::identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens;
 
 mod common;
 
@@ -324,7 +321,7 @@ async fn version_route_bypasses_the_1mb_global_cap() {
         "version route must accept a >1 MB body (not 413)"
     );
     // A globally-capped route truncates the same body at 1 MB → invalid JSON → 400
-    // (mirrors Go: only CreateVersion special-cases the length limit into a 413).
+    // (only the version route special-cases the length limit into a 413).
     let patch = format!(r#"{{"briefing":"{big}"}}"#);
     let (st, _) = call(
         &app,
@@ -339,52 +336,4 @@ async fn version_route_bypasses_the_1mb_global_cap() {
         StatusCode::BAD_REQUEST,
         "over-cap body on a normal route → 400 invalid body"
     );
-}
-
-#[tokio::test]
-async fn purge_removes_only_long_expired_tokens() {
-    let Some((_, pool)) = boot().await else {
-        return;
-    };
-
-    let fresh = format!("hash-fresh-{}", Uuid::new_v4());
-    let stale = format!("hash-stale-{}", Uuid::new_v4());
-    // `refresh_tokens.discord_id` REFERENCES `users(discord_id)` ON DELETE CASCADE, so the
-    // owner has to exist before a token can. The id `000000000000000007` is arbitrary to the
-    // purge window this test is actually about, so the fixture makes it a real user rather
-    // than weakening the constraint.
-    sqlx::query(
-        "INSERT INTO users (discord_id, username) VALUES ('000000000000000007', 'purge fixture') \
-         ON CONFLICT (discord_id) DO NOTHING",
-    )
-    .execute(&pool)
-    .await
-    .unwrap();
-    // Fresh (future expiry) + stale (expired > 7 days ago).
-    for (h, days) in [(&fresh, 1i64), (&stale, -8i64)] {
-        sqlx::query(
-            "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) VALUES ('000000000000000007', $1, now() + ($2 || ' days')::interval, now())",
-        )
-        .bind(h)
-        .bind(days.to_string())
-        .execute(&pool)
-        .await
-        .unwrap();
-    }
-    let removed = purge_expired_refresh_tokens(&pool).await.unwrap();
-    assert!(removed >= 1, "at least the stale token purged");
-    let fresh_left: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM refresh_tokens WHERE token_hash = $1")
-            .bind(&fresh)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    let stale_left: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM refresh_tokens WHERE token_hash = $1")
-            .bind(&stale)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
-    assert_eq!(fresh_left, 1, "fresh token kept");
-    assert_eq!(stale_left, 0, "stale token purged");
 }

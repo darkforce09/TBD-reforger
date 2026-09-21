@@ -1,9 +1,8 @@
 //! `ingest_event_roster` filters whitespace `arma_id` and emits btrimmed keys.
 //!
-//! # Owns expansion (called out)
+//! # Scope
 //!
-//! Wave owns list is `operations/handlers/roster_ingest.rs` + `apps/website/api/tests/**`.
-//! This IT binary is the Class-R / IT half: plant a whitespace-only `users.arma_id` on an
+//! This binary is the HTTP half: plant a whitespace-only `users.arma_id` on an
 //! assigned seat and assert GET `/ingest/events/:id/roster` does **not** emit it as a seating
 //! key. Also pins that a padded real id emits the trimmed form (agreeing with refresh /
 //! link-confirm / telemetry).
@@ -30,9 +29,9 @@ const ACTOR: &str = "000000000000529001";
 /// Stored whitespace-only `arma_id` (single space — ticket pin).
 const WS_ARMA: &str = " ";
 /// Unique non-whitespace seed released before we overwrite with WS_ARMA / padded.
-const SEED_ARMA: &str = "t529-seed-arma-529001";
+const SEED_ARMA: &str = "roster-ws-seed-arma-1";
 /// Real content id used for the positive + padded-emit cases (trimmed form).
-const REAL_ARMA: &str = "t529-real-arma-529001";
+const REAL_ARMA: &str = "roster-ws-real-arma-1";
 const SVC: &str = "test-service-token";
 
 /// Editor payload: one BLUFOR squad / one SL seat. Attach without explicit `orbat` so
@@ -53,7 +52,7 @@ async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let cfg = Config::for_tests(url, "t529-secret");
+    let cfg = Config::for_tests(url, "roster-ws-secret");
     let state = AppState::new(pool.clone(), cfg);
     Some((http_router::router(state.clone()), state, pool))
 }
@@ -68,17 +67,17 @@ async fn cleanup(pool: &PgPool) {
         ])
         .execute(pool)
         .await
-        .expect("t529 release arma");
+        .expect("roster-ws release arma");
     sqlx::query("DELETE FROM orbat_slots WHERE assigned_to = $1")
         .bind(ACTOR)
         .execute(pool)
         .await
-        .expect("t529 clear seats");
+        .expect("roster-ws clear seats");
     sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
         .bind(ACTOR)
         .execute(pool)
         .await
-        .expect("t529 clear regs");
+        .expect("roster-ws clear regs");
 }
 
 async fn admin_token(app: &Router) -> String {
@@ -124,7 +123,7 @@ async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
         Some(admin),
         None,
         Some(
-            r#"{"title":"T529 Roster","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
+            r#"{"title":"Roster Whitespace","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
         ),
     )
     .await;
@@ -197,7 +196,7 @@ async fn assign_actor(pool: &PgPool, slot_id: &str) {
 }
 
 async fn plant_arma(pool: &PgPool, arma: &str) {
-    common::seed_user(pool, ACTOR, "t529-ws", SEED_ARMA, "enlisted").await;
+    common::seed_user(pool, ACTOR, "roster-ws-ws", SEED_ARMA, "enlisted").await;
     sqlx::query("UPDATE users SET arma_id = $1, updated_at = now() WHERE discord_id = $2")
         .bind(arma)
         .bind(ACTOR)
@@ -227,7 +226,7 @@ async fn roster(app: &Router, event_id: &str) -> Value {
     body
 }
 
-/// Class-R: whitespace-only `arma_id` must not appear in `assignments`.
+/// Whitespace-only `arma_id` must not appear in `assignments`.
 ///
 /// Perturbation: restore `u.arma_id <> ''` + raw SELECT → `" "` is a seating key → fail.
 #[tokio::test]

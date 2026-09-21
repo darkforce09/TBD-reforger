@@ -34,8 +34,8 @@ mod events_support;
 #[tokio::test]
 async fn blank_name_override_does_not_overwrite_a_real_operation_name() {
     let _serial = DB_LOCK.lock().await;
-    const SENTINEL: &str = "SENTINEL Operation Nightfall [T-348]";
-    const FALLBACK: &str = "SENTINEL Mission Title [T-348]";
+    const SENTINEL: &str = "SENTINEL Operation Nightfall [field-contract]";
+    const FALLBACK: &str = "SENTINEL Mission Title [field-contract]";
 
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
@@ -269,8 +269,8 @@ async fn blank_name_override_does_not_overwrite_a_real_operation_name() {
 #[tokio::test]
 async fn blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_silent_draft() {
     let _serial = DB_LOCK.lock().await;
-    const TITLE: &str = "SENTINEL Announcement [T-348]";
-    const BODY: &str = "<p>SENTINEL body [T-348]</p>";
+    const TITLE: &str = "SENTINEL Announcement [field-contract]";
+    const BODY: &str = "<p>SENTINEL body [field-contract]</p>";
 
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
@@ -434,7 +434,7 @@ async fn event_server_and_modpack_binding() {
     // suites cannot collide.
     let modpack_id: uuid::Uuid = sqlx::query_scalar(
         "INSERT INTO modpacks (name, version, total_size_bytes, workshop_url, is_current, created_at) \
-         VALUES ('T260 Pack', '9.9.9', 42, 'https://example.invalid/t260', false, now()) \
+         VALUES ('Binding Pack', '9.9.9', 42, 'https://example.invalid/binding', false, now()) \
          RETURNING id",
     )
     .fetch_one(&pool)
@@ -442,7 +442,7 @@ async fn event_server_and_modpack_binding() {
     .expect("seed modpack");
     let server_id: uuid::Uuid = sqlx::query_scalar(
         "INSERT INTO servers (name, ip, port, required_modpack_id, is_active) \
-         VALUES ('T260 Srv', '127.0.0.1'::inet, 2260, $1, true) RETURNING id",
+         VALUES ('Binding Srv', '127.0.0.1'::inet, 2260, $1, true) RETURNING id",
     )
     .bind(modpack_id)
     .fetch_one(&pool)
@@ -455,7 +455,7 @@ async fn event_server_and_modpack_binding() {
         "POST",
         "/api/v1/events",
         &admin,
-        Some(r#"{"start_time":"2027-06-01T19:00:00Z","name_override":"T260 unbound"}"#),
+        Some(r#"{"start_time":"2027-06-01T19:00:00Z","name_override":"Binding unbound"}"#),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "unbound create: {e}");
@@ -471,7 +471,7 @@ async fn event_server_and_modpack_binding() {
 
     // 2. Create WITH binding — create + hub GET echo both ids.
     let body = format!(
-        r#"{{"start_time":"2027-06-02T19:00:00Z","name_override":"T260 bound","server_id":"{server_id}","modpack_id":"{modpack_id}"}}"#
+        r#"{{"start_time":"2027-06-02T19:00:00Z","name_override":"Binding bound","server_id":"{server_id}","modpack_id":"{modpack_id}"}}"#
     );
     let (st, e) = call(&app, "POST", "/api/v1/events", &admin, Some(&body)).await;
     assert_eq!(st, StatusCode::CREATED, "bound create: {e}");
@@ -586,7 +586,8 @@ async fn event_server_and_modpack_binding() {
 ///
 /// Before: empty-string clear worked by accident (undocumented); duplicate attach of a still-
 /// attached mission 500'd on `idx_event_mission`; after detach there was no FE caller for
-/// `POST /events/:id/missions` (covered by the FE Class-R). This IT pins the BE contracts.
+/// `POST /events/:id/missions` (covered by the frontend's source pins). This suite pins the
+/// backend contracts.
 #[tokio::test]
 async fn patch_clears_briefing_banner_and_mission_reattach_works() {
     let _serial = DB_LOCK.lock().await;
@@ -603,17 +604,17 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
         "/api/v1/events",
         &admin,
         Some(concat!(
-            r#"{"start_time":"2027-11-01T19:00:00Z","name_override":"T332 clear","#,
-            r#""briefing":"ops brief","banner_image_url":"https://example.invalid/t332.png","max_slots":8}"#,
+            r#"{"start_time":"2027-11-01T19:00:00Z","name_override":"Field clear","#,
+            r#""briefing":"ops brief","banner_image_url":"https://example.invalid/field.png","max_slots":8}"#,
         )),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "create: {e}");
     assert_eq!(e["briefing"], "ops brief");
-    assert_eq!(e["banner_image_url"], "https://example.invalid/t332.png");
+    assert_eq!(e["banner_image_url"], "https://example.invalid/field.png");
     let event_id = e["id"].as_str().unwrap().to_string();
 
-    // Omitting the keys must leave them alone (perturbation: treating absent as clear).
+    // Omitting the keys must leave them alone (fails when absent is treated as clear).
     let (st, e) = call(
         &app,
         "PATCH",
@@ -628,7 +629,7 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
         "absent briefing must not clear: {e}"
     );
     assert_eq!(
-        e["banner_image_url"], "https://example.invalid/t332.png",
+        e["banner_image_url"], "https://example.invalid/field.png",
         "absent banner must not clear: {e}"
     );
     assert_eq!(e["max_slots"], 9);
@@ -673,7 +674,7 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
         "/api/v1/missions",
         &admin,
         Some(
-            r#"{"title":"T332 Mission","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
+            r#"{"title":"Field Mission","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
         ),
     )
     .await;
@@ -681,7 +682,7 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
     let mission_id = m["id"].as_str().unwrap().to_string();
 
     let attach_body = format!(
-        r#"{{"mission_id":"{mission_id}","start_time":"2027-11-01T19:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"T332","slots":[{{"role":"SL"}}]}}]}}"#
+        r#"{{"mission_id":"{mission_id}","start_time":"2027-11-01T19:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"Field","slots":[{{"role":"SL"}}]}}]}}"#
     );
     let (st, em) = call(
         &app,
@@ -705,7 +706,7 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
     assert_eq!(
         st,
         StatusCode::CONFLICT,
-        "duplicate attach must 409 (perturbation: drop unique map → 500): {dup}"
+        "duplicate attach must 409 (fails when the unique-violation arm is dropped → 500): {dup}"
     );
     assert!(
         dup["error"]

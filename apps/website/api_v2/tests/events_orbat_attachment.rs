@@ -35,7 +35,7 @@ async fn orbat_groups_by_faction_and_squad() {
         "POST",
         "/api/v1/missions",
         &admin,
-        Some(r#"{"title":"T-324 Factions","terrain":"everon","game_mode":"pve_coop","max_players":16}"#),
+        Some(r#"{"title":"Attachment Factions","terrain":"everon","game_mode":"pve_coop","max_players":16}"#),
     )
     .await;
     let mission_id = m["id"].as_str().unwrap().to_string();
@@ -179,7 +179,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
 
     // ── 1. No published version. The mission is real and the request is well-formed; it is the
     // mission's STATE that cannot answer, so 409 and not 400. ──
-    let m = mission("T227 no version").await;
+    let m = mission("Attach no version").await;
     sqlx::query("UPDATE missions SET current_version_id = NULL WHERE id = $1::uuid")
         .bind(&m)
         .execute(&pool)
@@ -210,7 +210,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
     // is deliberately left in place as defence in depth: it still covers a row that predates
     // this migration on a database restored from an old dump, and constraint 18's backfill
     // NULLs exactly those.
-    let m = mission("T227 dangling").await;
+    let m = mission("Attach dangling").await;
     let err = sqlx::query(
         "UPDATE missions SET current_version_id = gen_random_uuid() WHERE id = $1::uuid",
     )
@@ -227,7 +227,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
     // ── 3. An `orbat` that cannot be read. Pre-fix this did not merely vanish — it fell through
     // to the editor-derived ORBAT, so a DIFFERENT seating plan than the one authored could be
     // materialized under a 201. 400, naming the payload, with serde's message attached. ──
-    let m = mission("T227 unreadable").await;
+    let m = mission("Attach unreadable").await;
     publish(
         &m,
         r#"{"orbat":[{"squad":"Alpha","slots":"not-an-array"}]}"#,
@@ -247,7 +247,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
     // ── 4. A perfectly VALID payload that seats nobody — the shape that needs no mistake at
     // all. `input.orbat.is_empty()` cannot see it, because the squad list is not empty; only
     // the slot count is. ──
-    let m = mission("T227 valid but empty").await;
+    let m = mission("Attach valid but empty").await;
     publish(
         &m,
         r#"{"orbat":[{"faction":"USA","squad":"Alpha","slots":[]}]}"#,
@@ -262,7 +262,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
 
     // ── 5. The other door: an `orbat` on the REQUEST with no slots. Same catastrophe, and this
     // one is the caller's payload, so 400. ──
-    let m = mission("T227 request empty").await;
+    let m = mission("Attach request empty").await;
     let (st, b) = attach(
         &m,
         r#","orbat":[{"faction":"USA","squad":"Alpha","slots":[]}]"#,
@@ -272,10 +272,10 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
 
     // ── 6. Control — one real slot still attaches, and materializes exactly one row. Without
     // this the whole test would pass by refusing everything. ──
-    let m = mission("T227 control").await;
+    let m = mission("Attach control").await;
     let (st, b) = attach(
         &m,
-        r#","orbat":[{"faction":"USA","callsign":"A","squad":"T227 Alpha","slots":[{"role":"SL"}]}]"#,
+        r#","orbat":[{"faction":"USA","callsign":"A","squad":"Attach Alpha","slots":[{"role":"SL"}]}]"#,
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "control must still attach: {b}");
@@ -336,7 +336,7 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
 
     // ══ 1. ZERO CAPACITY REFUSES, RATHER THAN REGISTERING FOREVER ═════════════════════════
     // Seeded past the attach guard, exactly as a row written before this fix would be.
-    let mission_id = mission("T227 seatless").await;
+    let mission_id = mission("Attach seatless").await;
     let ev = event(0).await;
     let seatless: uuid::Uuid = sqlx::query_scalar(
         "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
@@ -372,7 +372,7 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
     // ══ 2. `max_slots` BOUNDS THE WHOLE OPERATION ═════════════════════════════════════════
     // 4 seats in the ORBAT but a cap of 2. Pre-fix `max_slots` was validated on create,
     // editable via PATCH, rendered by the SPA as "{n} slot cap" — and read by nothing.
-    let mission_id = mission("T227 capped").await;
+    let mission_id = mission("Attach capped").await;
     let ev = event(2).await;
     let (st, em) = call(
         &app,
@@ -380,7 +380,7 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
         &format!("/api/v1/events/{ev}/missions"),
         &admin,
         Some(&format!(
-            r#"{{"mission_id":"{mission_id}","start_time":"2027-09-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"T227 Capped","slots":[{{"role":"R0"}},{{"role":"R1"}},{{"role":"R2"}},{{"role":"R3"}}]}}]}}"#
+            r#"{{"mission_id":"{mission_id}","start_time":"2027-09-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"Attach Capped","slots":[{{"role":"R0"}},{{"role":"R1"}},{{"role":"R2"}},{{"role":"R3"}}]}}]}}"#
         )),
     )
     .await;
@@ -389,7 +389,7 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
 
     // Two seeded strangers fill the cap. dev-login is one fixed identity, so the other
     // occupants are seeded and only the caller under test goes through the handler — the same
-    // idiom the G7b race tests use. `arma_id` has its own unique index.
+    // idiom the seat-race tests use. `arma_id` has its own unique index.
     for id in [OTHER, THIRD] {
         common::seed_user(&pool, id, "Seeded", &arma(id), "enlisted").await;
         sqlx::query(
@@ -470,14 +470,14 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
     // Already inside the operation, so a second mission of the SAME event must not consume a
     // second unit of an attendance cap that is now exactly full. A distinct mission, because
     // `idx_event_mission` is unique on `(event_id, mission_id)`.
-    let mission_2 = mission("T227 capped second").await;
+    let mission_2 = mission("Attach capped second").await;
     let (st, em2) = call(
         &app,
         "POST",
         &format!("/api/v1/events/{ev}/missions"),
         &admin,
         Some(&format!(
-            r#"{{"mission_id":"{mission_2}","start_time":"2027-09-02T00:00:00Z","orbat":[{{"faction":"USA","callsign":"B","squad":"T227 Second","slots":[{{"role":"R0"}}]}}]}}"#
+            r#"{{"mission_id":"{mission_2}","start_time":"2027-09-02T00:00:00Z","orbat":[{{"faction":"USA","callsign":"B","squad":"Attach Second","slots":[{{"role":"R0"}}]}}]}}"#
         )),
     )
     .await;
@@ -532,7 +532,7 @@ async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
         "/api/v1/missions",
         &admin,
         Some(
-            r#"{"title":"T284 Clear","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
+            r#"{"title":"Override Clear","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
         ),
     )
     .await;
@@ -544,7 +544,7 @@ async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
         "POST",
         "/api/v1/events",
         &admin,
-        Some(r#"{"start_time":"2027-07-01T00:00:00Z","name_override":"T284 Op"}"#),
+        Some(r#"{"start_time":"2027-07-01T00:00:00Z","name_override":"Override Op"}"#),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "event: {e}");

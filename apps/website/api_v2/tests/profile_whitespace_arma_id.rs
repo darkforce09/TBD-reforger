@@ -1,9 +1,8 @@
 //! GET /me and /me/link/status treat whitespace `arma_id` as unlinked.
 //!
-//! # Owns expansion (called out)
+//! # Scope
 //!
-//! Wave owns list is only `handlers/me.rs`. This IT binary is the Class-R / IT half
-//! the ticket requires: plant a whitespace-only `users.arma_id` and assert both
+//! This binary is the HTTP half: plant a whitespace-only `users.arma_id` and assert both
 //! endpoints report unlinked. Proves the `/me` handlers are not `is_some()`-only.
 //!
 //! Helper:
@@ -32,13 +31,13 @@ const ACTOR: &str = "000000000000528001";
 /// Stored whitespace-only `arma_id` (single space — ticket pin).
 const WS_ARMA: &str = " ";
 /// Unique non-whitespace seed released before we overwrite with WS_ARMA.
-const SEED_ARMA: &str = "t528-seed-arma-528001";
+const SEED_ARMA: &str = "profile-ws-seed-arma-1";
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let cfg = Config::for_tests(url, "t528-secret");
+    let cfg = Config::for_tests(url, "profile-ws-secret");
     let state = AppState::new(pool.clone(), cfg);
     Some((http_router::router(state.clone()), state, pool))
 }
@@ -48,21 +47,21 @@ async fn cleanup(pool: &PgPool) {
         .bind(ACTOR)
         .execute(pool)
         .await
-        .expect("t528 cleanup link codes");
+        .expect("profile-ws cleanup link codes");
     sqlx::query("DELETE FROM refresh_tokens WHERE discord_id = $1")
         .bind(ACTOR)
         .execute(pool)
         .await
-        .expect("t528 cleanup refresh");
+        .expect("profile-ws cleanup refresh");
     sqlx::query("UPDATE users SET arma_id = NULL WHERE arma_id = ANY($1)")
         .bind(vec![WS_ARMA.to_string(), SEED_ARMA.to_string()])
         .execute(pool)
         .await
-        .expect("t528 release arma");
+        .expect("profile-ws release arma");
 }
 
 async fn plant_whitespace(pool: &PgPool) {
-    common::seed_user(pool, ACTOR, "t528-ws", SEED_ARMA, "enlisted").await;
+    common::seed_user(pool, ACTOR, "profile-ws-ws", SEED_ARMA, "enlisted").await;
     sqlx::query("UPDATE users SET arma_id = $1, updated_at = now() WHERE discord_id = $2")
         .bind(WS_ARMA)
         .bind(ACTOR)
@@ -81,7 +80,7 @@ async fn plant_whitespace(pool: &PgPool) {
     assert!(stored.as_deref().unwrap().trim().is_empty());
 }
 
-/// Class-R: GET /me must report `arma_linked: false` for whitespace-only arma_id.
+/// GET /me must report `arma_linked: false` for whitespace-only arma_id.
 ///
 /// Perturbation: revert `get_me` to `u.arma_id.is_some()` → this asserts false.
 #[tokio::test]
@@ -125,7 +124,7 @@ async fn get_me_whitespace_arma_id_reports_arma_linked_false() {
     cleanup(&pool).await;
 }
 
-/// Class-R: GET /me/link/status must report `linked: false` for whitespace-only arma_id.
+/// GET /me/link/status must report `linked: false` for whitespace-only arma_id.
 ///
 /// Perturbation: revert `link_status` to `u.arma_id.is_some()` → this asserts false.
 #[tokio::test]
@@ -181,7 +180,7 @@ async fn get_me_and_link_status_real_arma_id_reports_linked_true() {
         return;
     };
     cleanup(&pool).await;
-    common::seed_user(&pool, ACTOR, "t528-real", SEED_ARMA, "enlisted").await;
+    common::seed_user(&pool, ACTOR, "profile-ws-real", SEED_ARMA, "enlisted").await;
 
     let tok = common::access_token(
         &state,

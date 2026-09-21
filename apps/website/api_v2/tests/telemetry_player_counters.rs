@@ -50,8 +50,8 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     // Both arma_ids stay unlinked on purpose: `TBD_ResultsReporter.c:23-35` says no player
     // carries an `arma_id` in production until the link flow ships, so this is the real
     // population, and the unlinked-reporting path is the same code path as a linked report.
-    const A1: &str = "t393-arma-mod-a";
-    const A2: &str = "t393-arma-mod-b";
+    const A1: &str = "counters-arma-mod-a";
+    const A2: &str = "counters-arma-mod-b";
     const EV: &str = "9f0f4c6e-1d3a-4e2b-8c77-2a5b6d4e9011";
     const MISSION: &str = "3c1d5b7a-8e42-4f19-9a6d-71b0c2e8f455";
     const SRC: &str = "3c1d5b7a-8e42-4f19-9a6d-71b0c2e8f455@2026-07-26T20:03:11Z#183472";
@@ -97,7 +97,7 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     // ever lands, this is one of the call sites that needs a real user.
     sqlx::query(
         "INSERT INTO missions (id, title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
-         VALUES ($1, 'T393 Shipping Mod Mission', $2, 'everon', 'pve_coop', 32, 'live', now(), now()) \
+         VALUES ($1, 'Counters Shipping Mod Mission', $2, 'everon', 'pve_coop', 32, 'live', now(), now()) \
          ON CONFLICT (id) DO NOTHING",
     )
     .bind(Uuid::parse_str(MISSION).expect("MISSION is a uuid literal"))
@@ -107,7 +107,7 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     .expect("seed the mission the shipping payload names");
     sqlx::query(
         "INSERT INTO events (id, name_override, start_time, status, created_by, created_at, updated_at) \
-         VALUES ($1, 'T393 Shipping Mod Event', now() - interval '2 hours', 'open', $2, now(), now()) \
+         VALUES ($1, 'Counters Shipping Mod Event', now() - interval '2 hours', 'open', $2, now(), now()) \
          ON CONFLICT (id) DO NOTHING",
     )
     .bind(Uuid::parse_str(EV).expect("EV is a uuid literal"))
@@ -243,9 +243,9 @@ async fn a_partial_counters_object_is_still_a_400() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t393-arma-partial";
-    const SRC: &str = "m-t393-partial";
-    const EV: &str = "e-t393-partial";
+    const ARMA: &str = "counters-arma-partial";
+    const SRC: &str = "m-counters-partial";
+    const EV: &str = "e-counters-partial";
 
     let clean = |pool: PgPool| async move {
         sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
@@ -370,17 +370,17 @@ async fn absent_counters_are_not_a_write_on_reingest() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t393-arma-noclaim";
+    const ARMA: &str = "counters-arma-noclaim";
     const DISCORD: &str = "000000000000393001";
-    const SRC: &str = "m-t393-noclaim";
-    const EV: &str = "e-t393-noclaim";
+    const SRC: &str = "m-counters-noclaim";
+    const EV: &str = "e-counters-noclaim";
 
     // Link the player so the leaderboard half of the property is observable too — an unowned
     // row never reaches `leaderboard_totals`, so an unlinked player could not show that
     // a zeroing would have propagated.
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T393', 't393', '', $2, '[TBD] T393', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Counters', 'counters', '', $2, '[TBD] Counters', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -487,10 +487,10 @@ async fn insert_without_counters_stores_null_not_zero() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t397-arma-null-insert";
+    const ARMA: &str = "absent-arma-null-insert";
     const DISCORD: &str = "000000000000397101";
-    const SRC: &str = "m-t397-null-insert";
-    const EV: &str = "e-t397-null-insert";
+    const SRC: &str = "m-absent-null-insert";
+    const EV: &str = "e-absent-null-insert";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \

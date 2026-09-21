@@ -7,7 +7,7 @@
 //! the `lt.discord_id ASC` tie-breaker; nothing off-list reaches ORDER BY) is pinned by the pure
 //! unit tests that stay next to the handler in `src/command_center/handlers/leaderboards.rs`.
 //!
-//! Why it lives in `tests/` and not in that file: the Class-R pin
+//! Why it lives in `tests/` and not in that file: the source pin
 //! (`common::assert_no_raw_test_database_url_reads_outside_common`) forbids a raw
 //! `TEST_DATABASE_URL` read anywhere under `src/**` — only [`common::require_test_database_url`]
 //! may read it, and `tests/common` is not reachable from a lib test. So this binary gets the
@@ -16,7 +16,7 @@
 //! operator's name and the derived one. The content golden is applied on top here.
 //!
 //! Never a `skip:` — a missing `TEST_DATABASE_URL` is a FAIL. The whole point of this test is
-//! the database; the wave gate and `cargo xtask db test-it` always export it.
+//! the database; `cargo xtask db test-it` always exports it.
 
 mod common;
 
@@ -74,7 +74,7 @@ async fn provision_golden_database() -> (String, PgPool) {
     let url = common::require_test_database_url().unwrap_or_else(|| {
         panic!(
             "TEST_DATABASE_URL required — a missing DB URL is a FAIL, not a skip. \
-             The wave gate exports it from ensure_gate_db; `cargo xtask db test-it` sets it \
+             `cargo xtask db test-it` sets it \
              to rust_it; by hand: postgres://tbd:tbd@localhost:5434/<name>_it?sslmode=disable"
         )
     });
@@ -172,7 +172,7 @@ fn largest_tie(category: &str, rows: &[Value]) -> usize {
 #[tokio::test]
 async fn paging_the_golden_ties_yields_every_row_exactly_once() {
     let (url, pool) = provision_golden_database().await;
-    let state = AppState::new(pool, Config::for_tests(url, "t311-test-secret"));
+    let state = AppState::new(pool, Config::for_tests(url, "paging-test-secret"));
 
     // Acceptance 2: the whitelist is still the only source of ORDER BY text.
     let rejected = get_leaderboards(State(state.clone()), bearer(), query("bogus", PAGE, 0))

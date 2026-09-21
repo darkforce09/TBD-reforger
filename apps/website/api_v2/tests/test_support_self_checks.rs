@@ -29,16 +29,16 @@ use common::source_text::{
 fn per_binary_database_name_is_derived_from_the_binary() {
     // Distinct binaries never derive the same database.
     assert_eq!(
-        per_binary_database_name("tbd_gate_w60", "admin_field"),
-        "tbd_gate_w60_admin_field_it"
+        per_binary_database_name("rust_it", "servers_crud"),
+        "rust_it_servers_crud_it"
     );
     assert_eq!(
-        per_binary_database_name("tbd_gate_w60", "misc_integration"),
-        "tbd_gate_w60_misc_integration_it"
+        per_binary_database_name("rust_it", "factions"),
+        "rust_it_factions_it"
     );
     assert_ne!(
-        per_binary_database_name("tbd_gate_w60", "admin_field"),
-        per_binary_database_name("tbd_gate_w60", "misc_integration")
+        per_binary_database_name("rust_it", "servers_crud"),
+        per_binary_database_name("rust_it", "factions")
     );
     // Stable across calls — a name that changed per call would leak a database per run.
     assert_eq!(
@@ -49,11 +49,11 @@ fn per_binary_database_name_is_derived_from_the_binary() {
     for base in [
         "rust_it",
         "tbd_gate_it",
-        "tbd_gate_w60",
-        "tbd_wave6_cold",
+        "tbd_gate_migrate",
+        "tbd_operator_cold",
         "tbd_scratch_probe",
     ] {
-        let derived = per_binary_database_name(base, "admin_field");
+        let derived = per_binary_database_name(base, "servers_crud");
         assert!(
             is_safe_test_database_name(&derived),
             "derived `{derived}` must stay inside the allow-list"
@@ -77,11 +77,11 @@ fn per_binary_database_name_is_derived_from_the_binary() {
     // URL rewrite keeps credentials, host, port and query.
     assert_eq!(
         with_database_name(
-            "postgres://tbd:tbd@localhost:5434/tbd_gate_w60?sslmode=disable",
-            "tbd_gate_w60_admin_field_it"
+            "postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable",
+            "rust_it_servers_crud_it"
         )
         .as_deref(),
-        Some("postgres://tbd:tbd@localhost:5434/tbd_gate_w60_admin_field_it?sslmode=disable")
+        Some("postgres://tbd:tbd@localhost:5434/rust_it_servers_crud_it?sslmode=disable")
     );
 }
 
@@ -487,12 +487,12 @@ fn dev_login_prime_literals_still_match_handler() {
 /// The allow/deny table for the test-database target guard.
 #[test]
 fn test_database_name_guard_refuses_unsafe_names() {
-    // Makefile + wave gate + operator cold.
+    // The xtask database commands and operator scratch databases.
     assert!(is_safe_test_database_name("rust_it"));
     assert!(is_safe_test_database_name("tbd_gate_it"));
-    assert!(is_safe_test_database_name("tbd_gate_w54"));
+    assert!(is_safe_test_database_name("tbd_gate_probe"));
     assert!(is_safe_test_database_name("tbd_gate_migrate"));
-    assert!(is_safe_test_database_name("tbd_wave6_cold"));
+    assert!(is_safe_test_database_name("tbd_operator_cold"));
     assert!(is_safe_test_database_name("tbd_scratch_cold"));
     assert!(is_safe_test_database_name("tbd_scratch_probe"));
     assert!(is_safe_test_database_name("tbd_scratch_it"));

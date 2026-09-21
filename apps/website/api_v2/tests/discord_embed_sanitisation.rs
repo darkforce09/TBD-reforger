@@ -3,11 +3,11 @@
 //! # Why this file exists
 //!
 //! `community_content/services/discord_webhook.rs` owns the sanitiser (`sanitize_discord_embed_field`: strip ASCII
-//! controls, then prefix a leading `=` / `+` / `-` / `@` with U+200B) and three Class-R pins. Two
+//! controls, then prefix a leading `=` / `+` / `-` / `@` with U+200B) and three unit tests. Two
 //! of the three test the helper in isolation; the third is an `include_str!` window pin that
 //! greps `push_announcement` for the call. None of them asserts what the **webhook actually
 //! posts**, so on their own the contract would rest on a substring appearing near the word
-//! `title:` in a source file — the shape of pin a W67 edit walks around.
+//! `title:` in a source file — the shape of pin a careless edit walks around.
 //!
 //! A sink test does not need that argument. The sanitiser's entire job is to change bytes on
 //! their way out of the process, so the honest instrument is to catch the bytes: a local axum
@@ -68,7 +68,7 @@ async fn spawn_discord() -> (String, Captured) {
             .await
             .expect("read webhook body");
         seen.lock().expect("captures").push((uri, body.to_vec()));
-        Json(json!({ "id": "msg-t546" }))
+        Json(json!({ "id": "msg-embed" }))
     }
 
     let router = Router::new()
@@ -126,7 +126,7 @@ fn announcement(title: &str, body: &str, snippet: &str) -> Announcement {
         snippet: snippet.into(),
         tag: AnnouncementTag::Update,
         thumbnail_url: String::new(),
-        author_id: "t546".into(),
+        author_id: "embed".into(),
         status: AnnouncementStatus::Published,
         is_pinned: false,
         pushed_to_discord: false,
@@ -145,13 +145,13 @@ async fn push_and_capture(title: &str, body: &str, snippet: &str) -> (String, Ve
         .push_announcement(&announcement(title, body, snippet))
         .await
         .unwrap_or_else(|e| panic!("push_announcement({title:?}): {e}"));
-    assert_eq!(id, "msg-t546", "the created message id must round-trip");
+    assert_eq!(id, "msg-embed", "the created message id must round-trip");
     only_capture(&seen)
 }
 
 /// **The hostile-title set, asserted on what actually goes out.**
 ///
-/// RED perturbations (measured):
+/// Fails when (measured):
 /// - `title: cap_runes(&a.title, 256)` in `push_announcement` (drop the sanitise call) → the
 ///   formula cases fail: the outbound title still begins with `=` / `+` / `-` / `@`.
 /// - drop the `is_ascii_control` filter in `sanitize_discord_embed_field` → the control cases
@@ -254,7 +254,7 @@ async fn hostile_titles_are_neutralised_on_the_wire() {
 /// that sanitises at persist instead would make this fail on the row assertion, which is the
 /// point — that would silently rewrite content on a surface that never had the problem.
 ///
-/// RED perturbation (measured): drop the sanitise call from `push_announcement`'s title arm →
+/// Fails (measured) when the sanitise call is dropped from `push_announcement`'s title arm →
 /// the outbound embed title is the raw `=…` and this fails while the 201 still says pushed.
 #[tokio::test]
 async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
@@ -276,12 +276,12 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
     common::seed_user(
         &pool,
         ACTOR,
-        "T546 Content Admin",
-        &common::unique_arma("t546"),
+        "Embed Content Admin",
+        &common::unique_arma("embed"),
         "admin",
     )
     .await;
-    let admin = common::access_token(&state, "webhook_it", ACTOR, "admin", true);
+    let admin = common::access_token(&state, "discord_embed_sanitisation", ACTOR, "admin", true);
 
     // Leading `=`, an embedded tab, and a CR — the full hostile set in one authored title.
     const HOSTILE: &str = "=HYPERLINK(\"http://evil.example\",\"payroll\")\tQ4\rOps";
@@ -322,7 +322,7 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
         "the announcement must have been pushed: {created}"
     );
     assert_eq!(
-        created["discord_message_id"], "msg-t546",
+        created["discord_message_id"], "msg-embed",
         "the created message id must be stored: {created}"
     );
 
@@ -359,5 +359,5 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
         .bind(ACTOR)
         .execute(&pool)
         .await
-        .expect("clean t546 announcements");
+        .expect("clean embed announcements");
 }

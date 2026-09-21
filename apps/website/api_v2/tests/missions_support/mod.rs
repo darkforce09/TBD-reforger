@@ -97,7 +97,7 @@ pub fn json(bytes: &[u8]) -> Value {
 /// clean gate DB. Page-1 `.any(id)` therefore stays green without shared-DB residue and
 /// does not pin the helper. The overflow suite plants >20 newer-`updated_at` fillers so
 /// default page 1 misses while this walk still finds.
-/// Same shape as the approvals ratchet (`admin_field::find_in_approvals`).
+/// Same shape as the approvals ratchet (`admin_approvals_cms_field_tools::find_in_approvals`).
 pub async fn find_id_in_missions_list(
     app: &Router,
     bearer: &str,
@@ -136,7 +136,8 @@ pub async fn find_id_in_missions_list(
 }
 
 /// Walk `GET /approvals` pages until `mission_id` appears. Twin of
-/// `admin_field::find_in_approvals`. A page-1-only lookup reds a shared gate DB the moment
+/// `admin_approvals_cms_field_tools::find_in_approvals`. A page-1-only lookup fails on a shared
+/// database the moment
 /// queue residue passes 20 rows.
 pub async fn find_in_approvals(app: &Router, admin: &str, mission_id: &str) -> Option<Value> {
     const PAGE: usize = 100;
@@ -385,7 +386,7 @@ pub async fn seed_zone_rules_mission(pool: &sqlx::PgPool, rules_json: &str) -> S
          VALUES ($1, $2, '000000000000000001', 'everon', 'pve_coop', 'clear', '14:00:00'::time, 16, 'draft', now(), now())",
     )
     .bind(id)
-    .bind(format!("T683 Zone {stamp}"))
+    .bind(format!("Support Zone {stamp}"))
     .execute(pool)
     .await
     .expect("seed mission row");

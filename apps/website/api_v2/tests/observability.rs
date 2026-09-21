@@ -1,4 +1,4 @@
-//! The database-backed half of the observability / durable-rate-limiting slice.
+//! The database-backed half of observability and durable rate limiting.
 //!
 //! # Why this file exists rather than `#[cfg(test)]` in `src/core/http_router.rs`
 //!
@@ -56,7 +56,7 @@ async fn pool_for(url: &str) -> PgPool {
 fn app_with(pool: PgPool) -> Router {
     http_router::router(AppState::new(
         pool,
-        Config::for_tests("postgres://unused", "t280-observability"),
+        Config::for_tests("postgres://unused", "observability-secret"),
     ))
 }
 
@@ -97,9 +97,9 @@ fn value(body: &str, prefix: &str) -> Option<f64> {
 static BUCKET_TABLE: tokio::sync::OnceCell<()> = tokio::sync::OnceCell::const_new();
 
 /// Ensure the table [`PgRateLimiter`] needs. **This DDL is the deliverable for the
-/// migration owner** — `RATE_LIMIT_BUCKETS_DDL` is a `const` in `src/core/http_router.rs` precisely so
-/// the bytes proven here and the bytes that eventually land in
-/// `apps/website/api/migrations/` cannot drift.
+/// migration owner** — `RATE_LIMIT_BUCKETS_DDL` is a `const` in
+/// `src/core/middleware/durable_ratelimit.rs` precisely so the bytes proven here and the bytes in
+/// `migrations/0021_rate_limit_buckets.sql` cannot drift.
 async fn ensure_bucket_table(pool: &PgPool) {
     BUCKET_TABLE
         .get_or_init(|| async {
@@ -197,8 +197,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
 /// The dead-pool half lives in `src/core/http_router.rs`. Both are needed: a `/healthz` that reveals nothing
 /// because it is 503-ing on every check has not been fixed, it has been broken, and this is the
 /// case where there is real detail to leak (a real version, a real uptime, real pool gauges and a
-/// real migration count — the four fields wave 69's verifier actually measured off the public
-/// route).
+/// real migration count — the four fields measured off the public route).
 #[tokio::test]
 async fn healthz_public_shape_is_status_only_against_a_live_database() {
     let Some(url) = common::require_test_database_url() else {
@@ -283,11 +282,7 @@ async fn pg_limiter_refuses_at_the_limit_and_after_a_restart() {
     );
 
     // ── the fix: same shape, state in Postgres.
-    let key = format!(
-        "{}-{}",
-        bucket_key("t280-restart", ip),
-        uuid::Uuid::new_v4()
-    );
+    let key = format!("{}-{}", bucket_key("restart", ip), uuid::Uuid::new_v4());
     let pool_a = pool_for(&url).await;
     ensure_bucket_table(&pool_a).await;
     let a = PgRateLimiter::new(pool_a.clone(), 0, 3); // refill 0: only spending matters
@@ -325,14 +320,14 @@ async fn pg_limiter_refuses_at_the_limit_and_after_a_restart() {
 }
 
 /// Cross-process: two limiters on independent pools spend **one** budget. This is the
-/// second half of the ticket's "cannot scale past one process".
+/// second half of "cannot scale past one process".
 #[tokio::test]
 async fn pg_limiter_is_shared_across_processes() {
     let Some(url) = common::require_test_database_url() else {
         eprintln!("skip: TEST_DATABASE_URL unset — pg_limiter_is_shared_across_processes");
         return;
     };
-    let key = format!("t280-shared|{}", uuid::Uuid::new_v4());
+    let key = format!("shared|{}", uuid::Uuid::new_v4());
     let p1 = pool_for(&url).await;
     let p2 = pool_for(&url).await;
     ensure_bucket_table(&p1).await;
@@ -371,7 +366,7 @@ async fn pg_limiter_refills_over_time_and_prunes() {
         eprintln!("skip: TEST_DATABASE_URL unset — pg_limiter_refills_over_time_and_prunes");
         return;
     };
-    let key = format!("t280-refill|{}", uuid::Uuid::new_v4());
+    let key = format!("refill|{}", uuid::Uuid::new_v4());
     let pool = pool_for(&url).await;
     ensure_bucket_table(&pool).await;
     // 5 tokens/s, burst 1 — one token per 200 ms.

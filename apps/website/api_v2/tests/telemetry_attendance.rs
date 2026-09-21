@@ -30,15 +30,15 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t369-arma-correct";
+    const ARMA: &str = "attend-arma-correct";
     const DISCORD: &str = "000000000000369001";
-    const SRC: &str = "m-t369-correct";
-    const EV: &str = "e-t369";
+    const SRC: &str = "m-attend-correct";
+    const EV: &str = "e-attend";
     const STARTED: &str = "2026-07-26T18:00:00Z";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T369', 't369', '', $2, '[TBD] T369', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Attend', 'attend', '', $2, '[TBD] Attend', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -73,7 +73,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     // is actually measurable rather than the 0.0 fallback.
     let mission_id: Uuid = sqlx::query_scalar(
         "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
-         VALUES ('T369 Op', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+         VALUES ('Attend Op', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -81,7 +81,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     .unwrap();
     let event_id: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
-         VALUES ('T369 Event', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
+         VALUES ('Attend Event', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -244,14 +244,14 @@ async fn attendance_marks_only_the_played_event_mission() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t230-arma-scope";
+    const ARMA: &str = "scope-arma-scope";
     const DISCORD: &str = "000000000000230001";
-    const SRC: &str = "m-t230-scope";
-    const EV: &str = "e-t230";
+    const SRC: &str = "m-scope-scope";
+    const EV: &str = "e-scope";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T230', 't230', '', $2, '[TBD] T230', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Scope', 'scope', '', $2, '[TBD] Scope', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -281,7 +281,7 @@ async fn attendance_marks_only_the_played_event_mission() {
 
     let mission_played: Uuid = sqlx::query_scalar(
         "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
-         VALUES ('T230 Played', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+         VALUES ('Scope Played', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -289,7 +289,7 @@ async fn attendance_marks_only_the_played_event_mission() {
     .unwrap();
     let mission_other: Uuid = sqlx::query_scalar(
         "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
-         VALUES ('T230 Other', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+         VALUES ('Scope Other', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -297,7 +297,7 @@ async fn attendance_marks_only_the_played_event_mission() {
     .unwrap();
     let event_id: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
-         VALUES ('T230 Multi-mission', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
+         VALUES ('Scope Multi-mission', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -389,7 +389,7 @@ async fn attendance_marks_only_the_played_event_mission() {
     );
 
     // Event-only ingest (no mission_id) must not invent "mark every mission" either.
-    const SRC2: &str = "m-t230-event-only";
+    const SRC2: &str = "m-scope-event-only";
     sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
         .bind(SRC2)
         .execute(&pool)
@@ -470,15 +470,15 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t540-arma-repoint";
+    const ARMA: &str = "repoint-arma-repoint";
     const DISCORD: &str = "000000000000540001";
-    const SRC1: &str = "m-t540-one";
-    const SRC2: &str = "m-t540-two";
-    const EV: &str = "e-t540";
+    const SRC1: &str = "m-repoint-one";
+    const SRC2: &str = "m-repoint-two";
+    const EV: &str = "e-repoint";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T540', 't540', '', $2, '[TBD] T540', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Repoint', 'repoint', '', $2, '[TBD] Repoint', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -510,7 +510,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
     // the retract key off, so moving only `event_id` is the minimal real move.
     let mission_id: Uuid = sqlx::query_scalar(
         "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
-         VALUES ('T540 Played', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+         VALUES ('Repoint Played', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -518,7 +518,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
     .unwrap();
     let event_1: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
-         VALUES ('T540 First Op', now() - interval '3 hours', 'open', $1, now(), now()) RETURNING id",
+         VALUES ('Repoint First Op', now() - interval '3 hours', 'open', $1, now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)
@@ -526,7 +526,7 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
     .unwrap();
     let event_2: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
-         VALUES ('T540 Second Op', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
+         VALUES ('Repoint Second Op', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
     )
     .bind(DISCORD)
     .fetch_one(&pool)

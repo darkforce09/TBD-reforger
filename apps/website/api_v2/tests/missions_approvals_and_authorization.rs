@@ -59,7 +59,7 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let title = format!("T234-Submit-Path-{stamp}");
+    let title = format!("Approval-Submit-Path-{stamp}");
     let (st, b) = call(
         &app,
         "POST",
@@ -208,7 +208,7 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_character, role, \
          is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T234 Other Author', 't234other', '', '', 'mission_maker', false, '', now(), now()) \
+         VALUES ($1, 'Approval Other Author', 'approvalother', '', '', 'mission_maker', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO NOTHING",
     )
     .bind(other)
@@ -225,7 +225,7 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
                  VALUES ($1, $2, 'everon', '', 'pve_coop', 'clear', '14:00'::time, 10, \
                  $3::mission_status, '', '', '', now(), now()) RETURNING id",
             )
-            .bind(format!("T234 {status} by {author}"))
+            .bind(format!("Approval {status} by {author}"))
             .bind(author)
             .bind(status)
             .fetch_one(&pool)

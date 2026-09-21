@@ -165,7 +165,7 @@ impl DevLoginFailure<'_> {
 ///
 /// Prefer this whenever the suite needs a specific `discord_id` (private actor) or must not
 /// leave `users.role` on `DEV_LOGIN_USER` as `enlisted` for a sibling binary that reads the
-/// DB (`misc_integration.rs` asserts `role == admin` via `GET /me`). JWT role gates
+/// DB (a sibling binary asserts `role == admin` via `GET /me`). JWT role gates
 /// (`MissionMakerUser`, `AdminUser`, …) read the claim, not the row — so this loses no
 /// coverage versus [`dev_login_token`] for authz paths.
 ///

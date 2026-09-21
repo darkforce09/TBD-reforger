@@ -23,7 +23,7 @@ mod common;
 const DEV_ID: &str = "000000000000000001";
 /// All seeded rows carry this `source_event_id` so cleanup can be exact and can never reach a row
 /// another test owns.
-const EV: &str = "e-t233-combat";
+const EV: &str = "e-combat-combat";
 
 async fn setup() -> Option<(Router, String, PgPool)> {
     let url = common::require_test_database_url()?;
@@ -31,7 +31,7 @@ async fn setup() -> Option<(Router, String, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t233-secret"),
+        Config::for_tests(url, "combat-secret"),
     ));
     let resp = app
         .clone()
@@ -81,7 +81,7 @@ async fn reset(pool: &PgPool) {
         .execute(pool)
         .await
         .expect("clean stats");
-    sqlx::query("DELETE FROM matches WHERE source_match_id LIKE 'm-t233-%'")
+    sqlx::query("DELETE FROM matches WHERE source_match_id LIKE 'm-combat-%'")
         .execute(pool)
         .await
         .expect("clean matches");
@@ -108,7 +108,7 @@ async fn seed_match(
         "INSERT INTO matches (source_match_id, started_at, outcome, created_at) \
          VALUES ($1, now(), 'success', now()) RETURNING id",
     )
-    .bind(format!("m-t233-{tag}"))
+    .bind(format!("m-combat-{tag}"))
     .fetch_one(pool)
     .await
     .expect("seed match");
@@ -120,7 +120,7 @@ async fn seed_match(
     )
     .bind(match_id)
     .bind(DEV_ID)
-    .bind(format!("arma-t233-{tag}"))
+    .bind(format!("arma-combat-{tag}"))
     .bind(kills)
     .bind(deaths)
     .bind(is_command)
@@ -266,7 +266,7 @@ async fn derived_combat_figures_match_hand_computation() {
     // `command_win_rate` flattens "never commanded" to `0`, indistinguishable from "commanded
     // twice and lost both". `command_games` is `NULLIF(count(…), 0)`, so the handler keys the null
     // off that column instead. A rendered "Win Rate 0%" for a rifleman who was never eligible is
-    // exactly the fabrication this ticket removed, inverted.
+    // exactly the fabrication this suite guards against, inverted.
     reset(&pool).await;
     seed_match(&pool, "grunt", 3, 3, false, None).await;
     leaderboard_view::refresh_leaderboard(&pool)

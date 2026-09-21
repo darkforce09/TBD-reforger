@@ -1,4 +1,4 @@
-//! Content-read slice — list envelopes, tier enforcement, wiki upsert round-trip.
+//! Community-content reads — list envelopes, tier enforcement, wiki upsert round-trip.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 
 use axum::Router;
@@ -132,8 +132,8 @@ async fn content_reads_and_wiki_upsert() {
     assert_eq!(st, StatusCode::UNAUTHORIZED);
 }
 
-/// The cold gate must exercise the write path (`POST /vehicle-database`): GET-only coverage
-/// lets the gate pass with `create_vehicle` unregistered.
+/// This suite must exercise the write path (`POST /vehicle-database`): GET-only coverage
+/// would pass with `create_vehicle` unregistered.
 #[tokio::test]
 async fn vehicle_database_create_round_trip() {
     let Some((app, tok)) = setup().await else {

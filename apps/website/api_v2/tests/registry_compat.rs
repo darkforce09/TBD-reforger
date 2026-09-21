@@ -1,10 +1,9 @@
-//! Registry ingest + compat API slice — proof-ledger gates G1–G5, G9, G10
-//! (see `.ai/artifacts/t068_9_verify_log.md`): ingest bijection, idempotency,
-//! API fidelity, `edge_type` filter, DB referential integrity, any-mod synthetic
-//! round-trip + modpack isolation + prune, histograms.
+//! Registry ingest and the compat API: ingest bijection, idempotency, API fidelity, the
+//! `edge_type` filter, DB referential integrity, any-mod synthetic round-trip with modpack
+//! isolation and prune, and histograms.
 //!
 //! Uses the committed vanilla envelopes as ground truth, imported under a fixed
-//! test-scoped modpack (never `is_current` — `content_read.rs` asserts the
+//! test-scoped modpack (never `is_current` — `community_content_reads.rs` asserts the
 //! no-current-modpack 404 on this shared DB). Skips unless `TEST_DATABASE_URL`
 //! points at a migrated DB.
 
@@ -180,7 +179,7 @@ async fn db_items(pool: &PgPool, mp: Uuid) -> BTreeSet<(String, String, String, 
     rows.into_iter().collect()
 }
 
-/// Full-row snapshot (ids + timestamps) — byte-level idempotency evidence (G2).
+/// Full-row snapshot (ids + timestamps) — byte-level idempotency evidence.
 /// evidence joins the ORDER BY (and qty the row) because the edge key is wide:
 /// several rows can share (from, to, type).
 #[allow(clippy::type_complexity)]
@@ -244,13 +243,13 @@ async fn registry_compat_ingest_api_worker_gates() {
     let cc = import_compat(&pool, &compat_raw, Some(mp), false)
         .await
         .expect("compat");
-    // The census-gated envelope (see .ai/artifacts/t068_10_2_census.md):
-    // 1,857 items (23 predicted drops from the 1,880-item scan) / 20,908 raw
-    // edges = the untouched 4,685 legacy set + 16,223
+    // The committed envelope's census:
+    // 1,857 items (23 drops from the 1,880-item scan) / 20,908 raw
+    // edges = the 4,685 non-cargo edges + 16,223
     // character_default_cargo emissions (one per InitialInventoryItems
     // PrefabsToSpawn entry — duplicates are the qty signal). The importer
     // aggregates duplicates per (from, to, type, evidence): 10,604 unique rows
-    // (4,685 legacy + 5,919 cargo).
+    // (4,685 non-cargo + 5,919 cargo).
     assert_eq!(
         (ci.total, ci.unique, ci.inserted, ci.updated),
         (1857, 1857, 1857, 0)
@@ -260,7 +259,7 @@ async fn registry_compat_ingest_api_worker_gates() {
         (20908, 10604, 10604, 0)
     );
 
-    // G10 — importer histograms equal envelope histograms (raw counts, pre-aggregation).
+    // Histograms — importer histograms equal envelope histograms (raw counts, pre-aggregation).
     assert_eq!(ci.histogram, histogram(&items_env, "items", "kind"));
     assert_eq!(cc.histogram, histogram(&compat_env, "edges", "edge_type"));
     assert_eq!(cc.histogram["mag_in_weapon"], 529);
@@ -289,11 +288,11 @@ async fn registry_compat_ingest_api_worker_gates() {
     .unwrap();
     assert_eq!(grids, 1257, "cargo_grid coverage");
 
-    // G1 — ingest bijection: DB row-set ≡ envelope set (items + edges).
+    // Ingest bijection: DB row-set ≡ envelope set (items + edges).
     assert_eq!(db_items(&pool, mp).await, envelope_items(&items_env));
     assert_eq!(db_edges(&pool, mp).await, envelope_edges(&compat_env));
 
-    // G5 — DB referential integrity: every edge endpoint is a catalog item.
+    // Referential integrity: every edge endpoint is a catalog item.
     let dangling: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM registry_compat c WHERE c.modpack_id = $1 AND ( \
            NOT EXISTS (SELECT 1 FROM registry_items i \
@@ -305,9 +304,9 @@ async fn registry_compat_ingest_api_worker_gates() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(dangling, 0, "G5: dangling edge endpoints");
+    assert_eq!(dangling, 0, "dangling edge endpoints");
 
-    // ── API (G3): full graph, named edges, ETag machinery ────────────────────
+    // ── API fidelity: full graph, named edges, ETag machinery ────────────────
     let compat_uri = format!("/api/v1/registry/compat?modpack={TEST_MP}");
     let (st, body) = get(&app, &compat_uri, &maker, None).await;
     assert_eq!(st, StatusCode::OK);
@@ -316,7 +315,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     assert_eq!(
         api_edge_set(&body),
         envelope_edges(&compat_env),
-        "G3: API ≡ envelope"
+        "API ≡ envelope"
     );
     let etag = body["etag"].as_str().unwrap().to_string();
 
@@ -349,7 +348,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     let (st, _) = get(&app, &compat_uri, &maker, Some(&etag)).await;
     assert_eq!(st, StatusCode::NOT_MODIFIED);
 
-    // G4 — edge_type filter: set-equal to the oracle filter; distinct ETag.
+    // edge_type filter: set-equal to the oracle filter; distinct ETag.
     let filt_uri = format!("{compat_uri}&edge_type=mag_in_weapon");
     let (st, filt) = get(&app, &filt_uri, &maker, None).await;
     assert_eq!(st, StatusCode::OK);
@@ -358,12 +357,8 @@ async fn registry_compat_ingest_api_worker_gates() {
         .into_iter()
         .filter(|(_, _, ty, _)| ty == "mag_in_weapon")
         .collect();
-    assert_eq!(
-        api_edge_set(&filt),
-        oracle,
-        "G4: filtered API ≡ oracle filter"
-    );
-    assert_ne!(filt["etag"], etag, "G4: filter-discriminated ETag");
+    assert_eq!(api_edge_set(&filt), oracle, "filtered API ≡ oracle filter");
+    assert_ne!(filt["etag"], etag, "filter-discriminated ETag");
     // Filtered ETag must not satisfy the unfiltered resource.
     let (st, _) = get(
         &app,
@@ -385,7 +380,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     assert_eq!(st, StatusCode::OK);
     assert_eq!(items_body["data"].as_array().unwrap().len(), 1857);
 
-    // ── G2 — idempotency: re-run touches nothing ─────────────────────────────
+    // ── Idempotency: re-run touches nothing ──────────────────────────────────
     let snap = db_edge_snapshot(&pool, mp).await;
     let ci2 = import_items(&pool, &items_raw, Some(mp), false)
         .await
@@ -396,20 +391,20 @@ async fn registry_compat_ingest_api_worker_gates() {
     assert_eq!(
         (ci2.inserted, ci2.updated, ci2.pruned),
         (0, 0, 0),
-        "G2 items"
+        "idempotent items"
     );
     assert_eq!(
         (cc2.inserted, cc2.updated, cc2.pruned),
         (0, 0, 0),
-        "G2 compat"
+        "idempotent compat"
     );
     assert_eq!(
         db_edge_snapshot(&pool, mp).await,
         snap,
-        "G2: row snapshot identical"
+        "row snapshot identical"
     );
     let (_, body2) = get(&app, &compat_uri, &maker, None).await;
-    assert_eq!(body2["etag"].as_str().unwrap(), etag, "G2: ETag identical");
+    assert_eq!(body2["etag"].as_str().unwrap(), etag, "ETag identical");
 
     // ── Tier + resolution failures ────────────────────────────────────────────
     let (st, _) = get(&app, &compat_uri, &enlisted, None).await;
@@ -431,7 +426,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     .await;
     assert_eq!(st, StatusCode::NOT_FOUND);
 
-    // ── G9 — any-mod synthetic round-trip (all 16 kinds, all 7 edge types, ────
+    // ── Any-mod synthetic round-trip (all 16 kinds, all 7 edge types, ─────────
     // regex-edge-case names, one evidence-less edge), isolated second modpack.
     let kinds = [
         "character",
@@ -530,12 +525,12 @@ async fn registry_compat_ingest_api_worker_gates() {
     assert_eq!(
         db_items(&pool, mp2).await,
         envelope_items(&syn_items_env),
-        "G9: items bijection"
+        "synthetic items bijection"
     );
     assert_eq!(
         db_edges(&pool, mp2).await,
         envelope_edges(&syn_compat_env),
-        "G9: edges bijection"
+        "synthetic edges bijection"
     );
 
     // All 7 edge families present via API for the synthetic modpack.
@@ -553,7 +548,7 @@ async fn registry_compat_ingest_api_worker_gates() {
         .iter()
         .map(|e| e["edge_type"].as_str().unwrap().to_string())
         .collect();
-    assert_eq!(types.len(), 7, "G9: all 7 edge families round-trip");
+    assert_eq!(types.len(), 7, "all 7 edge families round-trip");
 
     // Prune: subset envelope with prune=true ⇒ DB set-equals subset exactly.
     let subset_env = json!({
@@ -568,21 +563,17 @@ async fn registry_compat_ingest_api_worker_gates() {
     assert_eq!(
         (sp.inserted, sp.updated, sp.pruned),
         (0, 1, 5),
-        "G9 prune counts"
+        "prune counts"
     );
     assert_eq!(
         db_edges(&pool, mp2).await,
         envelope_edges(&subset_env),
-        "G9: pruned ≡ subset"
+        "pruned ≡ subset"
     );
 
     // Isolation: the vanilla test modpack is untouched by all MP2 traffic.
     let (_, body3) = get(&app, &compat_uri, &maker, None).await;
-    assert_eq!(
-        body3["etag"].as_str().unwrap(),
-        etag,
-        "G9: MP1 ETag unchanged"
-    );
+    assert_eq!(body3["etag"].as_str().unwrap(), etag, "MP1 ETag unchanged");
     assert_eq!(body3["data"].as_array().unwrap().len(), 10604);
 
     // Invalid envelope is rejected before SQL (schema gate).

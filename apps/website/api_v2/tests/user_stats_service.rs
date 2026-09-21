@@ -48,8 +48,8 @@ impl Fixture {
         common::seed_user(
             &pool,
             player,
-            "T336 Fixture",
-            &format!("t336-arma-{tag}"),
+            "Stats Fixture",
+            &format!("stats-arma-{tag}"),
             "enlisted",
         )
         .await;
@@ -124,7 +124,7 @@ impl Fixture {
         )
         .bind(match_id)
         .bind(self.player)
-        .bind(format!("t336-arma-{}-{arma_suffix}", self.tag))
+        .bind(format!("stats-arma-{}-{arma_suffix}", self.tag))
         .bind(self.tag)
         .execute(pool)
         .await
@@ -139,7 +139,7 @@ impl Fixture {
              created_at, updated_at) \
              VALUES ($1, $2, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
         )
-        .bind(format!("T336 {name}"))
+        .bind(format!("Stats {name}"))
         .bind(self.tag)
         .fetch_one(pool)
         .await
@@ -199,8 +199,8 @@ impl Fixture {
 ///
 /// # The asymmetry this deliberately pins rather than fixes
 ///
-/// The numerator (`state = 'attended'`) is **not** time-filtered while the denominator is. Phase 2
-/// below marks a *future* op attended and requires the rate to move to 100 — which is what the
+/// The numerator (`state = 'attended'`) is **not** time-filtered while the denominator is. The
+/// second step below marks a *future* op attended and requires the rate to move to 100 — which is what the
 /// shipped SQL does, and which means `attendance_rate` can in principle exceed 100.
 ///
 /// That is a real latent defect, pinned here rather than fixed: quietly correcting the SQL
@@ -209,7 +209,7 @@ impl Fixture {
 /// silent difference nobody notices.
 #[tokio::test]
 async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
-    let Some((pool, f)) = Fixture::boot("000000000000336001", "t336-correct").await else {
+    let Some((pool, f)) = Fixture::boot("000000000000336001", "stats-correct").await else {
         eprintln!("skip: TEST_DATABASE_URL unset — recompute_user_stats_is_reachable…");
         return;
     };
@@ -275,7 +275,7 @@ async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
 /// can silently drop.
 #[tokio::test]
 async fn a_player_with_no_history_reads_zero_rather_than_dividing_by_zero() {
-    let Some((pool, f)) = Fixture::boot("000000000000336002", "t336-empty").await else {
+    let Some((pool, f)) = Fixture::boot("000000000000336002", "stats-empty").await else {
         eprintln!("skip: TEST_DATABASE_URL unset — a_player_with_no_history…");
         return;
     };
@@ -304,7 +304,7 @@ async fn a_player_with_no_history_reads_zero_rather_than_dividing_by_zero() {
 /// It is infallible by design — the point is that it does not swallow the *work*, only the error.
 #[tokio::test]
 async fn the_best_effort_wrapper_still_writes_the_numbers() {
-    let Some((pool, f)) = Fixture::boot("000000000000336003", "t336-wrapper").await else {
+    let Some((pool, f)) = Fixture::boot("000000000000336003", "stats-wrapper").await else {
         eprintln!("skip: TEST_DATABASE_URL unset — the_best_effort_wrapper…");
         return;
     };
@@ -318,10 +318,10 @@ async fn the_best_effort_wrapper_still_writes_the_numbers() {
     f.reset(&pool).await;
 }
 
-/// Class-R: the function has exactly one definition, and it is not in `handlers/`.
+/// The function has exactly one definition, and it is not in a handler.
 ///
 /// Two definitions of "a deployment" drifting apart is the same silent-wrong-number bug the
-/// backfill exists to prevent. A relocation that left a copy behind — or a later slice that
+/// backfill exists to prevent. A relocation that left a copy behind — or a later change that
 /// re-derived the SQL in a handler — would satisfy every test above.
 #[test]
 fn the_sql_lives_only_in_the_service() {

@@ -5,7 +5,7 @@
 //! are a first failure, not the contract — `tests/dev_login_runtime_identity.rs` reads the
 //! identities back over HTTP, which is the only view that can see whether the arms compile.
 
-/// Strip `//` and `/* */` outside string/char/raw-string literals so Class-R cannot stay green
+/// Strip `//` and `/* */` outside string/char/raw-string literals so a source pin cannot stay green
 /// when live match arms are moved into comments.
 ///
 /// Local copy — `common::strip_rust_comments_outside_literals` is private to that module; do
@@ -145,7 +145,7 @@ fn string_literal_span(bytes: &[u8], i: usize) -> Option<(usize, usize, usize)> 
 /// Blank the interiors of string / raw-string literals **except** when the literal is a
 /// match-arm pattern (followed by `=>`).
 ///
-/// Comment strip alone keeps Class-R green when live arms collapse to `_` and the
+/// Comment strip alone keeps a source pin green when live arms collapse to `_` and the
 /// old arms live only inside `r#" "enlisted" => … "#` decoys (string contents survive
 /// comment strip). Blanking non-pattern string interiors removes that hollow while
 /// keeping real `"enlisted" => DEV_…` arms searchable.
@@ -205,7 +205,7 @@ fn blank_string_contents_except_match_patterns(src: &str) -> String {
     out
 }
 
-/// Fn-body view for match-arm Class-R: comment-stripped, then non-pattern string
+/// Fn-body view for the match-arm source pins: comment-stripped, then non-pattern string
 /// interiors blanked, so a raw-string decoy cannot green.
 fn live_match_view(fn_body: &str) -> String {
     blank_string_contents_except_match_patterns(fn_body)
@@ -280,12 +280,12 @@ fn fn_body<'a>(code: &'a str, name: &str) -> &'a str {
     let start = match starts.as_slice() {
         [only] => *only,
         [] => panic!(
-            "Class-R: no FILE-SCOPE `{marker}` in comment-stripped \
+            "source pin: no FILE-SCOPE `{marker}` in comment-stripped \
              src/identity_and_access/handlers/developer_login.rs — a definition nested in a `mod`/`impl`/block is not \
              the item the crate calls, and this pin binds the top-level one on purpose."
         ),
         many => panic!(
-            "Class-R: {} file-scope `{marker}` definitions (offsets {many:?}) — a Rust \
+            "source pin: {} file-scope `{marker}` definitions (offsets {many:?}) — a Rust \
              file cannot have two, so this source is not what the crate compiles.",
             many.len()
         ),
@@ -293,7 +293,7 @@ fn fn_body<'a>(code: &'a str, name: &str) -> &'a str {
     let after = &code[start..];
     let open = after
         .find('{')
-        .unwrap_or_else(|| panic!("Class-R: `{marker}` has no opening brace"));
+        .unwrap_or_else(|| panic!("source pin: `{marker}` has no opening brace"));
     let bytes = after.as_bytes();
     let mut depth = 0i32;
     let mut i = open;
@@ -334,10 +334,10 @@ fn fn_body<'a>(code: &'a str, name: &str) -> &'a str {
         }
         i += 1;
     }
-    panic!("Class-R: `{marker}` body not closed");
+    panic!("source pin: `{marker}` body not closed");
 }
 
-/// Class-R: each role must map to a distinct discord_id (and arma_id) in the dev-login handler.
+/// Each role must map to a distinct discord_id (and arma_id) in the dev-login handler.
 ///
 /// Perturbation RED:
 /// - delete a role-specific literal, OR
@@ -382,7 +382,7 @@ fn dev_login_roles_use_distinct_discord_ids() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src/identity_and_access/handlers/developer_login.rs");
     let src = std::fs::read_to_string(&handler)
-        .unwrap_or_else(|e| panic!("Class-R: read {}: {e}", handler.display()));
+        .unwrap_or_else(|e| panic!("source pin: read {}: {e}", handler.display()));
     // The pins below run on comment-stripped code so `// "enlisted" => …` cannot green.
     let code = strip_rust_comments_outside_literals(&src);
 

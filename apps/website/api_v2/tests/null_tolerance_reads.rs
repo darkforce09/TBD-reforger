@@ -69,8 +69,8 @@ async fn every_nullable_column_null_and_every_get_route_still_serves() {
         .collect();
     if !healed.is_empty() {
         eprintln!(
-            "note: KNOWN_OPEN_ROUTES entries now survive the NULL blast — the owning ticket \
-             landed, so prune them from tests/null_tolerance_support/mod.rs: {healed:?}"
+            "note: KNOWN_OPEN_ROUTES entries now survive the NULL blast — the defect is \
+             fixed, so prune them from tests/null_tolerance_support/mod.rs: {healed:?}"
         );
     }
 
@@ -99,7 +99,7 @@ async fn every_nullable_column_null_and_every_get_route_still_serves() {
 /// unreachable through the API at all.
 ///
 /// Two halves, both load-bearing:
-///   1. **Class-R structural pin** — planting NULL into either timestamp column must fail
+///   1. **Structural pin** — planting NULL into either timestamp column must fail
 ///      23502. Reverting 0015's NOT NULL fails here loudly.
 ///   2. **Minimal behavioural assert** — with both timestamps set, `GET /approvals` must
 ///      report `updated_at` as `submitted_at` (the first COALESCE arm). The remaining arms are
@@ -190,7 +190,7 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
 /// silently escape this file. No database needed.
 #[test]
 fn every_get_route_is_swept_or_skipped_with_a_reason() {
-    // Class-R pins: no instance of this defect is open, so both the tolerance list and its
+    // Source pins: no instance of this defect is open, so both the tolerance list and its
     // ceiling stay at zero. Re-adding an entry *or* bumping the cap must RED. With BASELINE_CAP
     // pinned at 0, `baseline <= BASELINE_CAP` is identical to `baseline == 0` (and
     // clippy::absurd_extreme_comparisons denies the `<=` form).

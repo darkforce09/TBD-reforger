@@ -156,7 +156,7 @@ async fn arma_id_of(pool: &PgPool, discord_id: &str) -> Option<String> {
 
 /// **The COALESCE first-create contract, observed on the row.**
 ///
-/// `common/mod.rs`'s Class-R greps `dev_login` for
+/// The source pin under `common/` greps `dev_login` for
 /// `UPDATE users SET arma_id = COALESCE(arma_id, $2)`. A nested `fn dev_login` decoy and a
 /// `$decoy$…$decoy$` payload both got that green; both are guarded there, and both guards are
 /// lexical, so the next walk-around only has to reach for a `cfg` or an `if false`.
@@ -207,7 +207,7 @@ async fn dev_login_first_create_coalesces_arma_id() {
 
     // (B) An already-linked arma id must survive. This is what COALESCE buys and what
     //     `SET arma_id = $2` destroys.
-    let linked = common::unique_arma("t571-linked");
+    let linked = common::unique_arma("runtime-linked");
     sqlx::query("UPDATE users SET arma_id = $2 WHERE discord_id = $1")
         .bind(ID)
         .bind(&linked)

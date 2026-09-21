@@ -64,7 +64,10 @@ async fn boot() -> Option<(PgPool, String)> {
 }
 
 fn router_for(pool: PgPool, url: &str) -> Router {
-    http_router::router(AppState::new(pool, Config::for_tests(url, "t578-secret")))
+    http_router::router(AppState::new(
+        pool,
+        Config::for_tests(url, "durable-secret"),
+    ))
 }
 
 /// One request from `ip`, with the `ConnectInfo` production always installs.
@@ -157,7 +160,7 @@ async fn strict_route_trips_with_429_retry_after_and_a_spent_bucket() {
 /// router whose in-memory limiter has never seen this client.
 ///
 /// A fresh `IpLimiter` (burst 10) cannot refuse a first request, so a 429 here can only have come
-/// from Postgres. This is the perturbation that separates "the durable limiter exists" from "the
+/// from Postgres. This is what separates "the durable limiter exists" from "the
 /// durable limiter is consulted" — unwired, it is a 400 from the refresh handler.
 #[tokio::test]
 async fn refusal_survives_a_restart() {
@@ -322,7 +325,7 @@ async fn an_unreachable_store_refuses_rather_than_opening_up() {
     let dead = PgPoolOptions::new()
         .max_connections(1)
         .acquire_timeout(Duration::from_millis(250))
-        .connect_lazy("postgres://t578:t578@127.0.0.1:1/t578_no_such_db")
+        .connect_lazy("postgres://unreachable:unreachable@127.0.0.1:1/no_such_db")
         .expect("lazy pool");
     let app = router_for(dead, "postgres://unused");
     let (st, retry, body) = call_from(&app, Ipv4Addr::new(10, 78, 4, 4), STRICT_ROUTE).await;
@@ -368,7 +371,7 @@ async fn pruning_at_the_production_ttl_does_not_release_a_spent_bucket() {
     assert_eq!(st, StatusCode::TOO_MANY_REQUESTS, "body: {body}");
 }
 
-/// Class-R: the TTL is long enough that a swept bucket had already refilled to capacity, which is
+/// The TTL is long enough that a swept bucket had already refilled to capacity, which is
 /// what makes [`start_rate_limit_prune`] reclamation rather than a grant of quota.
 #[test]
 fn prune_ttl_is_longer_than_a_full_refill() {
@@ -399,7 +402,7 @@ fn migration_0021_is_the_ddl_constant_verbatim() {
     );
 }
 
-/// Class-R: the served binary still installs `ConnectInfo`.
+/// The served binary still installs `ConnectInfo`.
 ///
 /// `client_ip` reports "no client" when the extension is absent, and a request with no client is
 /// not attributed to a durable bucket. That is correct for an in-process caller and catastrophic
@@ -424,7 +427,7 @@ fn api_binary_still_installs_connect_info() {
     );
 }
 
-/// Class-R: the durable tier's surface is the strict tier's, stated once.
+/// The durable tier's surface is the strict tier's, stated once.
 #[test]
 fn durable_surface_is_the_strict_prefixes() {
     assert_eq!(STRICT_PREFIXES, ["/api/v1/auth/", "/api/v1/ingest/"]);

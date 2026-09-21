@@ -47,7 +47,7 @@ use website_api::core::http_router;
 use crate::common;
 
 /// Serialise the DB-touching tests of one binary — they share [`OTHER`] / [`THIRD`] and the
-/// event rows hung off them. Same pattern as `identity_link.rs` / `null_tolerance.rs`.
+/// event rows hung off them. Same pattern as `identity_link.rs` / `null_tolerance_reads.rs`.
 pub static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 

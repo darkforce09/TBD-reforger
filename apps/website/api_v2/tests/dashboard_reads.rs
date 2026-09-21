@@ -26,8 +26,8 @@ mod common;
 const DASH_UID: &str = "000000000000000341";
 
 /// Tag prefix for events this suite inserts. Soft-delete is scoped to this prefix only —
-/// never a blanket `DELETE FROM events` (the misc_integration `boot_servers` pattern).
-const EVENT_TAG: &str = "T341-Dash-";
+/// never a blanket `DELETE FROM events`, which would destroy sibling suites' rows.
+const EVENT_TAG: &str = "Dashboard-Reads-";
 
 /// Boot the router and mint a real admin session for [`DASH_UID`].
 ///
@@ -42,7 +42,7 @@ async fn setup() -> Option<(Router, String, PgPool)> {
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, role, is_banned, created_at, updated_at) \
-         VALUES ($1, 'T341 Dashboard', 'admin', false, now(), now()) \
+         VALUES ($1, 'Dashboard Reads', 'admin', false, now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET role = 'admin', is_banned = false",
     )
     .bind(DASH_UID)
@@ -75,7 +75,7 @@ async fn setup() -> Option<(Router, String, PgPool)> {
             .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
     }
 
-    let raw = format!("t341-dash-{}", Uuid::new_v4());
+    let raw = format!("dashboard-reads-{}", Uuid::new_v4());
     sqlx::query(
         "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) \
          VALUES ($1, $2, now() + interval '1 hour', now())",
@@ -173,7 +173,7 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
          VALUES ($1, $2, 'everon', 'pve_coop', 'clear', '14:00', 16, 'live', now(), now()) \
          RETURNING id",
     )
-    .bind(format!("T341 mission {stamp}"))
+    .bind(format!("Dashboard mission {stamp}"))
     .bind(DASH_UID)
     .fetch_one(pool)
     .await
@@ -229,7 +229,7 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
     (event_id.to_string(), name, em_id)
 }
 
-/// Class-R static pins: reinstating a bare star on event_registrations or `.ok().flatten()` on
+/// Source pins: reinstating a bare star on event_registrations or `.ok().flatten()` on
 /// `mission_title_terrain` must turn this red without needing a schema change.
 #[test]
 fn deployments_reads_avoid_bare_star_and_swallowed_errors() {
@@ -347,7 +347,7 @@ async fn dashboard_leaderboards_deployments_loa_audit() {
     assert_eq!(st, StatusCode::CREATED, "loa: {body}");
     let loa_id = body["id"].as_str().unwrap().to_string();
     assert_eq!(body["status"], "pending");
-    // Dates serialize as midnight-UTC timestamps (Go time.Time on a date column).
+    // Dates serialize as midnight-UTC timestamps (the wire spelling for a `date` column).
     assert_eq!(body["starts_on"], "2026-08-01T00:00:00Z");
 
     let (_, body) = call(&app, "GET", "/api/v1/me/leave-requests", &tok, None).await;

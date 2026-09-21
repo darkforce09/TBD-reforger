@@ -175,8 +175,8 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
     );
 
     // ── 3. The backfill moves the rows it should and leaves the rest alone ───────────────────
-    let tag = format!("t405-{}", Uuid::new_v4());
-    sqlx::query("DELETE FROM matches WHERE source_match_id LIKE 't405-%'")
+    let tag = format!("backfill-{}", Uuid::new_v4());
+    sqlx::query("DELETE FROM matches WHERE source_match_id LIKE 'backfill-%'")
         .execute(&pool)
         .await
         .expect("clear prior run");

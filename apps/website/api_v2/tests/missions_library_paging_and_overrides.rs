@@ -81,7 +81,7 @@ async fn library_bookmark_lookup_survives_page1_overflow() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let title = format!("T496-Subject-{stamp}");
+    let title = format!("Library-Subject-{stamp}");
     let (st, b) = call(
         &app,
         "POST",
@@ -108,7 +108,7 @@ async fn library_bookmark_lookup_survives_page1_overflow() {
              INSERT INTO missions (title, author_id, terrain, custom_terrain_name, game_mode, \
                  weather, time_of_day, max_players, status, thumbnail_url, briefing, \
                  rejection_reason, created_at, updated_at) \
-             SELECT 'T496-Filler-' || g::text || '-' || $2::text, $1, 'everon', '', 'pve_coop', \
+             SELECT 'Library-Filler-' || g::text || '-' || $2::text, $1, 'everon', '', 'pve_coop', \
                  'clear', '14:00'::time, 10, 'draft'::mission_status, '', '', '', \
                  now(), now() \
              FROM generate_series(1, $3) AS g \

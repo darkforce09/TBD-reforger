@@ -6,7 +6,7 @@
 //! all registrations are removed. This cannot be undone." `delete_event` runs
 //! `UPDATE events SET deleted_at = now() WHERE id = $1` and nothing else. Nothing cascades. A
 //! confirm dialog reporting a destruction that never happened is this program's signature defect
-//! aimed at the person clicking the button, and it survived four waves because the claim lived in a
+//! aimed at the person clicking the button, and it survived because the claim lived in a
 //! `&'static str` in one crate and the behaviour lived in one SQL statement in another, with
 //! nothing joining them.
 //!
@@ -66,7 +66,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t579-secret"),
+        Config::for_tests(url, "soft-delete-secret"),
     ));
     Some((app, pool))
 }
@@ -130,7 +130,7 @@ async fn seed_operation(app: &Router, admin: &str) -> (String, String, String) {
         "POST",
         "/api/v1/missions",
         admin,
-        Some(r#"{"title":"T-579 Op","terrain":"everon","game_mode":"pve_coop","max_players":16}"#),
+        Some(r#"{"title":"Soft Delete Op","terrain":"everon","game_mode":"pve_coop","max_players":16}"#),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "mission: {m}");

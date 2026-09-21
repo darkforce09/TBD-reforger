@@ -52,12 +52,12 @@ mod common;
 
 // ───────────────────────────── the agent, rendered once ─────────────────────────────
 
-/// Repo root, derived from this crate's manifest dir (`<root>/apps/website/api`).
+/// Repo root, derived from this crate's manifest dir (`<root>/apps/website/api_v2`).
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
         .nth(3)
-        .expect("<root>/apps/website/api has three ancestors")
+        .expect("<root>/apps/website/api_v2 has three ancestors")
         .to_path_buf()
 }
 
@@ -72,7 +72,7 @@ fn agent_dir() -> &'static Path {
     static DIR: OnceLock<PathBuf> = OnceLock::new();
     DIR.get_or_init(|| {
         let root = repo_root();
-        let out = std::env::temp_dir().join(format!("t595-agent-{}", std::process::id()));
+        let out = std::env::temp_dir().join(format!("rcon-agent-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&out);
 
         // The renderer is `cargo xtask deploy staging -- --render-agent <out>`. This test renders
@@ -169,7 +169,7 @@ impl AgentHarness {
     async fn start(name: &str, stub: Stub) -> Self {
         let dir = agent_dir();
         // sun_path is ~108 bytes — keep this short and out of the (deep) worktree path.
-        let socket = std::env::temp_dir().join(format!("t595-{name}-{}.sock", std::process::id()));
+        let socket = std::env::temp_dir().join(format!("rcon-{name}-{}.sock", std::process::id()));
         let _ = std::fs::remove_file(&socket);
 
         let listener = tokio::net::UnixListener::bind(&socket)
@@ -235,7 +235,7 @@ async fn boot(socket: &str) -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let mut cfg = Config::for_tests(url, "t595-secret");
+    let mut cfg = Config::for_tests(url, "rcon-secret");
     cfg.game_agent_socket = socket.to_string();
     let app = http_router::router(AppState::new(pool.clone(), cfg));
     Some((app, pool))
@@ -429,7 +429,7 @@ async fn agent_reporting_an_uninstalled_unit_is_503() {
 /// agent, or `TBD_INSTALL_AGENT=1` never run. `connect(2)` fails and the API says so.
 #[tokio::test]
 async fn a_socket_with_no_listener_is_503_not_a_success() {
-    let dead = std::env::temp_dir().join(format!("t595-dead-{}.sock", std::process::id()));
+    let dead = std::env::temp_dir().join(format!("rcon-dead-{}.sock", std::process::id()));
     let _ = std::fs::remove_file(&dead);
     let Some((app, pool)) = boot(&dead.to_string_lossy()).await else {
         panic!("TEST_DATABASE_URL required — a skip here is a failure to have tested");

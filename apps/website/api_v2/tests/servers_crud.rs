@@ -35,7 +35,7 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let like = format!("T235 {tag}%");
+    let like = format!("Servers {tag}%");
     sqlx::query(
         "DELETE FROM server_statuses WHERE server_id IN (SELECT id FROM servers WHERE name LIKE $1)",
     )
@@ -124,12 +124,12 @@ async fn servers_crud_full_lifecycle() {
         Method::POST,
         "/api/v1/servers",
         Some(&admin),
-        Some(json!({ "name": "T235 Life Alpha", "ip": "10.20.30.40", "port": 2001 })),
+        Some(json!({ "name": "Servers Life Alpha", "ip": "10.20.30.40", "port": 2001 })),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "POST /servers: {created}");
     let id = created["id"].as_str().expect("created id").to_string();
-    assert_eq!(created["name"], "T235 Life Alpha");
+    assert_eq!(created["name"], "Servers Life Alpha");
     assert_eq!(created["ip"], "10.20.30.40");
     assert_eq!(created["port"], 2001);
     assert_eq!(created["is_active"], true, "is_active defaults true");
@@ -160,11 +160,11 @@ async fn servers_crud_full_lifecycle() {
         Method::PATCH,
         &format!("/api/v1/servers/{id}"),
         Some(&admin),
-        Some(json!({ "name": "T235 Life Bravo", "ip": "0:0:0:0:0:0:0:1", "port": 2302 })),
+        Some(json!({ "name": "Servers Life Bravo", "ip": "0:0:0:0:0:0:0:1", "port": 2302 })),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "PATCH: {patched}");
-    assert_eq!(patched["name"], "T235 Life Bravo");
+    assert_eq!(patched["name"], "Servers Life Bravo");
     assert_eq!(
         patched["ip"], "::1",
         "the address is canonicalised on write, so the stored value and the echo agree"
@@ -187,13 +187,13 @@ async fn servers_crud_full_lifecycle() {
     .await;
     assert_eq!(st, StatusCode::OK, "{only_port}");
     assert_eq!(only_port["port"], 2303);
-    assert_eq!(only_port["name"], "T235 Life Bravo", "name untouched");
+    assert_eq!(only_port["name"], "Servers Life Bravo", "name untouched");
     assert_eq!(only_port["ip"], "::1", "ip untouched");
 
     // ── UPDATE — attach then clear the required modpack ───────────────────────────
     let modpack: Uuid = sqlx::query_scalar(
         "INSERT INTO modpacks (name, version, total_size_bytes, is_current, created_at) \
-         VALUES ('T235 Life Pack', '1.0.0', 1024, false, now()) RETURNING id",
+         VALUES ('Servers Life Pack', '1.0.0', 1024, false, now()) RETURNING id",
     )
     .fetch_one(&pool)
     .await
@@ -210,7 +210,7 @@ async fn servers_crud_full_lifecycle() {
     assert_eq!(st, StatusCode::OK, "{attached}");
     assert_eq!(attached["required_modpack_id"], modpack.to_string());
     assert_eq!(
-        attached["required_modpack"]["name"], "T235 Life Pack",
+        attached["required_modpack"]["name"], "Servers Life Pack",
         "the modpack panel is composed into the row"
     );
 
@@ -326,7 +326,7 @@ async fn servers_crud_full_lifecycle() {
 
 /// **Positive** live assertion: `GET /servers.terrain` comes from the match JOIN.
 ///
-/// Class-R — what absence makes this RED:
+/// What makes this fail:
 /// - Removing `LEFT JOIN matches m ON m.id = ss.current_match_id` (or `m.terrain AS terrain`)
 ///   from `SERVER_STATUS_SELECT_*` while hard-coding `terrain: None` / `NULL AS terrain`
 ///   → row still lists, but `terrain` stays JSON `null` despite a live `current_match_id`.
@@ -341,10 +341,10 @@ async fn servers_list_terrain_from_current_match_join() {
         return;
     };
     let admin = token(&state, "admin");
-    const SRC: &str = "t535-terrain-join";
+    const SRC: &str = "servers-terrain-join";
 
     // Parallel-safe: wipe any leftover match from a prior crash (matches has no cascade from
-    // servers, and boot_servers only cleans statuses/servers by T235 name prefix).
+    // servers, and boot_servers only cleans statuses/servers by Servers name prefix).
     sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
         .bind(SRC)
         .execute(&pool)
@@ -357,7 +357,7 @@ async fn servers_list_terrain_from_current_match_join() {
         "/api/v1/servers",
         Some(&admin),
         Some(json!({
-            "name": "T235 TerrainJoin Alpha",
+            "name": "Servers TerrainJoin Alpha",
             "ip": "10.53.5.1",
             "port": 5351
         })),
@@ -427,7 +427,7 @@ async fn servers_writes_are_admin_only() {
         Method::POST,
         "/api/v1/servers",
         Some(&admin),
-        Some(json!({ "name": "T235 Tier Alpha", "ip": "127.0.0.1", "port": 2101 })),
+        Some(json!({ "name": "Servers Tier Alpha", "ip": "127.0.0.1", "port": 2101 })),
     )
     .await;
     let id = created["id"].as_str().expect("created id").to_string();
@@ -446,12 +446,12 @@ async fn servers_writes_are_admin_only() {
         (
             Method::POST,
             "/api/v1/servers".to_string(),
-            Some(json!({ "name": "T235 Tier Nope", "ip": "127.0.0.1", "port": 2102 })),
+            Some(json!({ "name": "Servers Tier Nope", "ip": "127.0.0.1", "port": 2102 })),
         ),
         (
             Method::PATCH,
             format!("/api/v1/servers/{id}"),
-            Some(json!({ "name": "T235 Tier Nope" })),
+            Some(json!({ "name": "Servers Tier Nope" })),
         ),
         (Method::DELETE, format!("/api/v1/servers/{id}"), None),
     ] {
@@ -474,7 +474,7 @@ async fn servers_writes_are_admin_only() {
 
     // The refusals were refusals, not silent no-ops.
     let row = list_row(&app, &admin, &id).await.expect("row survives");
-    assert_eq!(row["name"], "T235 Tier Alpha");
+    assert_eq!(row["name"], "Servers Tier Alpha");
     assert_eq!(row["is_active"], true);
 }
 
@@ -509,24 +509,24 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     // `ip` is Postgres `inet`. A hostname raises SQLSTATE 22P02, which `From<sqlx::Error>` turns
     // into a logged 500 — verified against the live DB.
     reject(
-        json!({ "name": "T235 Valid A", "ip": "tbd.example.com", "port": 2201 }),
+        json!({ "name": "Servers Valid A", "ip": "tbd.example.com", "port": 2201 }),
         "hostname",
     )
     .await;
     // `host('10.0.0.5/24'::inet)` = `10.0.0.5` (measured), so a mask would be accepted and then
     // silently altered — the stored address would differ from the one sent.
     reject(
-        json!({ "name": "T235 Valid A", "ip": "10.0.0.5/24", "port": 2201 }),
+        json!({ "name": "Servers Valid A", "ip": "10.0.0.5/24", "port": 2201 }),
         "cidr mask",
     )
     .await;
     reject(
-        json!({ "name": "T235 Valid A", "ip": "", "port": 2201 }),
+        json!({ "name": "Servers Valid A", "ip": "", "port": 2201 }),
         "empty ip",
     )
     .await;
     reject(
-        json!({ "name": "T235 Valid A", "ip": "999.1.1.1", "port": 2201 }),
+        json!({ "name": "Servers Valid A", "ip": "999.1.1.1", "port": 2201 }),
         "not an address",
     )
     .await;
@@ -535,7 +535,7 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     // address nothing can connect to.
     for bad in [0, -1, 65536, 999_999_999_i64] {
         reject(
-            json!({ "name": "T235 Valid A", "ip": "127.0.0.1", "port": bad }),
+            json!({ "name": "Servers Valid A", "ip": "127.0.0.1", "port": bad }),
             "port out of range",
         )
         .await;
@@ -555,9 +555,9 @@ async fn servers_write_validation_rejects_at_the_boundary() {
 
     // Required on create, and the message names the field rather than falling through to axum's.
     reject(json!({ "ip": "127.0.0.1", "port": 2201 }), "no name").await;
-    reject(json!({ "name": "T235 Valid A", "port": 2201 }), "no ip").await;
+    reject(json!({ "name": "Servers Valid A", "port": 2201 }), "no ip").await;
     reject(
-        json!({ "name": "T235 Valid A", "ip": "127.0.0.1" }),
+        json!({ "name": "Servers Valid A", "ip": "127.0.0.1" }),
         "no port",
     )
     .await;
@@ -566,7 +566,7 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     // card just lost its modpack panel with nothing complaining anywhere.
     reject(
         json!({
-            "name": "T235 Valid A", "ip": "127.0.0.1", "port": 2201,
+            "name": "Servers Valid A", "ip": "127.0.0.1", "port": 2201,
             "required_modpack_id": Uuid::new_v4()
         }),
         "unknown modpack",
@@ -582,7 +582,7 @@ async fn servers_write_validation_rejects_at_the_boundary() {
         "/api/v1/servers",
         Some(&admin),
         Some(
-            json!({ "name": "T235 Valid A", "ip": "127.0.0.1", "port": 2201,
+            json!({ "name": "Servers Valid A", "ip": "127.0.0.1", "port": 2201,
                      "required_modpack_id": "not-a-uuid" }),
         ),
     )
@@ -598,10 +598,12 @@ async fn servers_write_validation_rejects_at_the_boundary() {
 
     // Nothing above was stored.
     assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM servers WHERE name LIKE 'T235 Valid%'")
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM servers WHERE name LIKE 'Servers Valid%'"
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
         0,
         "a rejected create must not have written a row"
     );
@@ -613,11 +615,13 @@ async fn servers_write_validation_rejects_at_the_boundary() {
         Method::POST,
         "/api/v1/servers",
         Some(&admin),
-        Some(json!({ "name": "  T235 Valid Trimmed  ", "ip": " ::ffff:1.2.3.4 ", "port": 65535 })),
+        Some(
+            json!({ "name": "  Servers Valid Trimmed  ", "ip": " ::ffff:1.2.3.4 ", "port": 65535 }),
+        ),
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "{ok}");
-    assert_eq!(ok["name"], "T235 Valid Trimmed");
+    assert_eq!(ok["name"], "Servers Valid Trimmed");
     assert_eq!(ok["port"], 65535);
     let id = ok["id"].as_str().unwrap().to_string();
     assert_eq!(
@@ -644,6 +648,6 @@ async fn servers_write_validation_rejects_at_the_boundary() {
         assert_eq!(st, StatusCode::BAD_REQUEST, "PATCH {bad}: {b}");
     }
     let after = list_row(&app, &admin, &id).await.unwrap();
-    assert_eq!(after["name"], "T235 Valid Trimmed", "unchanged: {after}");
+    assert_eq!(after["name"], "Servers Valid Trimmed", "unchanged: {after}");
     assert_eq!(after["port"], 65535, "unchanged: {after}");
 }

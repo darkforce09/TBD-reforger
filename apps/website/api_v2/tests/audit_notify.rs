@@ -1,13 +1,12 @@
 //! The 0025 audit triggers and the LISTEN/NOTIFY admin stream.
 //!
-//! Anchor 2026-09-04: `handlers/admin/audit.rs:161` re-SELECTed `audit_logs` every 2 s per
-//! connected admin, and three actions wrote no audit row at all — event create, mission
-//! soft-delete and slot kick. The rows now come from row triggers in `0025_audit_notify.sql`
-//! (the handler files belong to other slices this wave), and every `audit_logs` insert raises
-//! `pg_notify('audit_log', id)` so `administration::services::audit_notifier` can push instead of poll.
+//! Event create, mission soft-delete and slot kick write their audit rows through the row
+//! triggers in `0025_audit_notify.sql` rather than through the handlers, and every `audit_logs`
+//! insert raises `pg_notify('audit_log', id)` so `administration::services::audit_notifier`
+//! pushes to the admin stream instead of polling the table.
 //!
-//! Skips (`skip:` line) unless `TEST_DATABASE_URL` is set; the wave gate and `cargo xtask db
-//! test-it` always set it, so a printed skip is a red there. Each fixture gets fresh ids, so the
+//! Skips (`skip:` line) unless `TEST_DATABASE_URL` is set; `cargo xtask db test-it` always sets
+//! it, so a printed skip is a red there. Each fixture gets fresh ids, so the
 //! assertions are scoped to the rows this test planted and survive a shared, dirty database —
 //! and the streams skip rows that parallel tests in this binary announce on the same channel.
 
@@ -201,7 +200,7 @@ async fn event_insert_writes_an_event_create_audit_row() {
         return;
     };
     let creator = seed_user(&pool, "t9406-creator").await;
-    let event = seed_event(&pool, &creator, "T-940.6 Operation Lantern").await;
+    let event = seed_event(&pool, &creator, "Audit Notify Operation Lantern").await;
 
     let rows = audit_rows(&pool, "event.create", &event.to_string()).await;
     assert_eq!(
@@ -216,7 +215,7 @@ async fn event_insert_writes_an_event_create_audit_row() {
     assert_eq!(r.target_type.as_deref(), Some("event"));
     assert_eq!(r.target_id.as_deref(), Some(event.to_string().as_str()));
     assert!(
-        r.message.contains("T-940.6 Operation Lantern"),
+        r.message.contains("Audit Notify Operation Lantern"),
         "message names the event: {:?}",
         r.message
     );
@@ -235,10 +234,10 @@ async fn mission_soft_delete_writes_one_mission_delete_audit_row() {
         return;
     };
     let author = seed_user(&pool, "t9406-author").await;
-    let mission = seed_mission(&pool, &author, "T-940.6 Night Ferry").await;
+    let mission = seed_mission(&pool, &author, "Audit Notify Night Ferry").await;
     let target = mission.to_string();
 
-    sqlx::query("UPDATE missions SET title = 'T-940.6 Night Ferry (renamed)' WHERE id = $1")
+    sqlx::query("UPDATE missions SET title = 'Audit Notify Night Ferry (renamed)' WHERE id = $1")
         .bind(mission)
         .execute(&pool)
         .await
@@ -308,8 +307,8 @@ async fn clearing_a_slot_writes_an_event_slot_kick_audit_row() {
     };
     let creator = seed_user(&pool, "t9406-leader").await;
     let player = seed_user(&pool, "t9406-kicked-player").await;
-    let event = seed_event(&pool, &creator, "T-940.6 Slot Kick").await;
-    let mission = seed_mission(&pool, &creator, "T-940.6 Slot Kick mission").await;
+    let event = seed_event(&pool, &creator, "Audit Notify Slot Kick").await;
+    let mission = seed_mission(&pool, &creator, "Audit Notify Slot Kick mission").await;
     let em = seed_event_mission(&pool, event, mission).await;
     let slot = seed_slot(&pool, em, "A1").await;
     let target = em.to_string();
@@ -412,7 +411,7 @@ async fn every_audit_insert_is_announced_within_a_second() {
         None,
         "",
         "t9406.probe",
-        "T-940.6 notify probe",
+        "Audit Notify notify probe",
         "probe",
         &probe,
     )
@@ -453,7 +452,7 @@ async fn stream_pushes_a_trigger_row_within_a_second_without_polling() {
         Box::pin(audit_row_stream(pool.clone(), notify.clone(), Duration::from_secs(3600)).await);
 
     let creator = seed_user(&pool, "t9406-pusher").await;
-    let event = seed_event(&pool, &creator, "T-940.6 pushed event").await;
+    let event = seed_event(&pool, &creator, "Audit Notify pushed event").await;
     let latency = expect_row(
         &mut stream,
         "event.create",
@@ -524,7 +523,7 @@ async fn listener_down_falls_back_to_polling_and_recovers() {
 
     // 3. The outage row reaches the stream by the 250 ms poll.
     let creator = seed_user(&pool, "t9406-outage").await;
-    let during = seed_event(&pool, &creator, "T-940.6 during outage").await;
+    let during = seed_event(&pool, &creator, "Audit Notify during outage").await;
     expect_row(
         &mut stream,
         "event.create",
@@ -557,7 +556,7 @@ async fn listener_down_falls_back_to_polling_and_recovers() {
     // 5. Pushed again: a stream whose ticker cannot fire gets the next row within a second.
     let mut pushed =
         Box::pin(audit_row_stream(pool.clone(), notify.clone(), Duration::from_secs(3600)).await);
-    let after = seed_event(&pool, &creator, "T-940.6 after recovery").await;
+    let after = seed_event(&pool, &creator, "Audit Notify after recovery").await;
     let latency = expect_row(
         &mut pushed,
         "event.create",

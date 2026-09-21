@@ -7,15 +7,16 @@
 //! These tests pin the HTTP round-trip: create and body-only PATCH store authored text
 //! **byte-identical**, and a body-only PATCH recomputes `snippet` (capped) from the new body.
 //!
-//! RED perturbation: introduce `sanitize_html(&input.body)` in `handlers/cms.rs` —
-//! the `assert_eq!(body, AUTHOR)` arms fail because the row contains `&lt;` / `&amp;`.
+//! Fails when `sanitize_html(&input.body)` is introduced in
+//! `community_content/handlers/announcements_admin.rs`: the `assert_eq!(body, AUTHOR)` arms fail
+//! because the row contains `&lt;` / `&amp;`.
 //!
 //! **`POST …/push-discord` refuses non-published.** Create/PATCH gate Discord push on
 //! `status == published`, and so does the dedicated route. Tests below prove draft → 400
 //! and published → 200 against a local mock webhook.
 //!
-//! RED perturbation: drop the `status != Published` guard in `push_announcement_discord`
-//! — `push_discord_refuses_draft` fails (draft reaches the webhook / returns 200).
+//! Fails when the `status != Published` guard is dropped from `push_announcement_discord`:
+//! `push_discord_refuses_draft` fails (draft reaches the webhook / returns 200).
 //!
 //! Skips without `TEST_DATABASE_URL` — a skip is a failure to have tested, not a pass.
 
@@ -45,19 +46,19 @@ async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let mut cfg = Config::for_tests(url, "t239-secret");
+    let mut cfg = Config::for_tests(url, "body-secret");
     cfg.discord_webhook_url = webhook_url;
     let app = http_router::router(AppState::new(pool.clone(), cfg));
     Some((app, pool))
 }
 
-/// Local Discord-webhook stand-in (same pattern as `services_http.rs`).
+/// Local Discord-webhook stand-in (same pattern as `discord_http_clients.rs`).
 async fn spawn_mock_webhook() -> String {
     let l = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = l.local_addr().unwrap();
     let router = Router::new().route(
         "/wh",
-        post(|| async { AxumJson(json!({ "id": "t246-msg" })) }),
+        post(|| async { AxumJson(json!({ "id": "push-msg" })) }),
     );
     tokio::spawn(async move { axum::serve(l, router).await.unwrap() });
     format!("http://{addr}/wh")
@@ -137,7 +138,7 @@ async fn create_stores_bare_angle_brackets_without_html_entities() {
         return;
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t239-create-{}", uuid::Uuid::new_v4());
+    let title = format!("body-create-{}", uuid::Uuid::new_v4());
 
     let (status, resp) = send(
         &app,
@@ -175,7 +176,7 @@ async fn body_only_patch_stores_identity_and_refreshes_snippet() {
         return;
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t239-patch-{}", uuid::Uuid::new_v4());
+    let title = format!("body-patch-{}", uuid::Uuid::new_v4());
 
     let (status, resp) = send(
         &app,
@@ -226,7 +227,7 @@ async fn explicit_snippet_is_hard_capped_at_200_runes() {
         return;
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t239-snip-{}", uuid::Uuid::new_v4());
+    let title = format!("body-snip-{}", uuid::Uuid::new_v4());
     let long = "字".repeat(250);
 
     let (status, resp) = send(
@@ -260,7 +261,7 @@ async fn push_discord_refuses_draft() {
         return;
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t246-draft-{}", uuid::Uuid::new_v4());
+    let title = format!("push-draft-{}", uuid::Uuid::new_v4());
 
     let (status, resp) = send(
         &app,
@@ -302,7 +303,7 @@ async fn push_discord_refuses_archived() {
         return;
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t246-arch-{}", uuid::Uuid::new_v4());
+    let title = format!("push-arch-{}", uuid::Uuid::new_v4());
 
     let (status, resp) = send(
         &app,
@@ -357,7 +358,7 @@ async fn push_discord_allows_published() {
         return;
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t246-pub-{}", uuid::Uuid::new_v4());
+    let title = format!("push-pub-{}", uuid::Uuid::new_v4());
 
     let (status, resp) = send(
         &app,
@@ -396,7 +397,7 @@ async fn push_discord_allows_published() {
     .await
     .unwrap();
     assert!(pushed, "row must record webhook success");
-    assert_eq!(msg_id, "t246-msg");
+    assert_eq!(msg_id, "push-msg");
 }
 
 /// CMS master list returns drafts; public feed does not; non-admin is refused.
@@ -410,7 +411,7 @@ async fn cms_list_includes_draft_public_feed_excludes_non_admin_forbidden() {
         return;
     };
     let admin = common::dev_login_token(&app, SUITE, "admin").await;
-    let title = format!("t465-draft-{}", uuid::Uuid::new_v4());
+    let title = format!("refuse-draft-{}", uuid::Uuid::new_v4());
 
     let (status, resp) = send(
         &app,
@@ -419,7 +420,7 @@ async fn cms_list_includes_draft_public_feed_excludes_non_admin_forbidden() {
         &admin,
         json!({
             "title": title,
-            "body": "t465 draft body — must appear on CMS list only",
+            "body": "refuse draft body — must appear on CMS list only",
             "tag": "update",
             "status": "draft",
         }),

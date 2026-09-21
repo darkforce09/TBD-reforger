@@ -30,7 +30,7 @@ async fn create_version_bumps_updated_at_and_writes_audit() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let title = format!("T258-Version-Save-{stamp}");
+    let title = format!("Version-Version-Save-{stamp}");
     let (st, b) = call(
         &app,
         "POST",
@@ -68,7 +68,7 @@ async fn create_version_bumps_updated_at_and_writes_audit() {
         "pin must land strictly before the create-time stamp: pinned={pinned} before={before}"
     );
 
-    let notes = format!("t258 editor notes {stamp}");
+    let notes = format!("version editor notes {stamp}");
     let ver = format!(
         r#"{{"semver":"0.2.0","editor_notes":"{notes}","payload":{{"editor":{{"slots":[]}}}}}}"#
     );
@@ -142,11 +142,11 @@ async fn create_version_bumps_updated_at_and_writes_audit() {
 
 /// CREATE contract: omitted or `""` weather → 201 + `clear`.
 ///
-/// Class-R in `handlers/missions.rs` pins the handler source; this is the live HTTP layer
-/// `admin_field` already exercises incidentally (POST without weather). Explicit pin so a
-/// regression that 400s omitted weather cannot hide behind Class-R alone.
+/// The sibling unit tests pin the handler source; this is the live HTTP layer
+/// `admin_approvals_cms_field_tools` already exercises incidentally (POST without weather).
+/// Explicit pin so a regression that 400s omitted weather cannot hide behind the source pins alone.
 ///
-/// RED (assert-flip): expect `weather == "dense_fog"` on the omit path — fails while production
+/// Assert-flip check: expect `weather == "dense_fog"` on the omit path — fails while production
 /// still defaults to Clear.
 #[tokio::test]
 async fn create_mission_omitted_or_blank_weather_defaults_to_clear() {
@@ -161,7 +161,7 @@ async fn create_mission_omitted_or_blank_weather_defaults_to_clear() {
         .as_nanos();
 
     // Omit weather entirely (`#[serde(default)]` → `""` → Clear).
-    let title_omit = format!("T512-Create-Omit-{stamp}");
+    let title_omit = format!("Weather-Create-Omit-{stamp}");
     let (st, b) = call(
         &app,
         "POST",
@@ -186,7 +186,7 @@ async fn create_mission_omitted_or_blank_weather_defaults_to_clear() {
     );
 
     // Explicit empty string is the same serde/default path and must also land Clear.
-    let title_blank = format!("T512-Create-Blank-{stamp}");
+    let title_blank = format!("Weather-Create-Blank-{stamp}");
     let (st, b) = call(
         &app,
         "POST",
@@ -214,9 +214,9 @@ async fn create_mission_omitted_or_blank_weather_defaults_to_clear() {
 /// PATCH contract: after `dense_fog`, `{"weather":""}` → 400 and the row stays.
 ///
 /// A `valid_weather` that maps `""` → Clear makes this PATCH answer 200 and rewrite the row.
-/// Class-R covers the helper; this covers the wire + persistence.
+/// The unit tests cover the helper; this covers the wire + persistence.
 ///
-/// RED (assert-flip): expect `StatusCode::OK` on the blank PATCH — fails while production 400s.
+/// Assert-flip check: expect `StatusCode::OK` on the blank PATCH — fails while production 400s.
 #[tokio::test]
 async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
     let Some((app, pool, maker, _)) = app_pool_and_tokens().await else {
@@ -227,7 +227,7 @@ async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let title = format!("T512-Patch-Blank-{stamp}");
+    let title = format!("Weather-Patch-Blank-{stamp}");
 
     let (st, b) = call(
         &app,
@@ -317,9 +317,9 @@ async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
 /// then GET the mission row and assert the title moved. Whitespace-only payload title must NOT
 /// clobber the row.
 ///
-/// Perturbation RED: drop the `title = $3` arm in `create_version` → first assert fails.
+/// Fails when the `title = $3` arm is dropped from `create_version`: the first assert fails.
 ///
-/// This has to be an integration test: Class-R pins on the handler source alone cannot prove
+/// This has to be an integration test: source pins on the handler alone cannot prove
 /// the SQL UPDATE actually lands on the row.
 #[tokio::test]
 async fn create_version_mirrors_authored_payload_title_onto_mission_row() {
@@ -332,8 +332,8 @@ async fn create_version_mirrors_authored_payload_title_onto_mission_row() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let stale = format!("T505-Stale-{stamp}");
-    let authored = format!("T505-Authored-{stamp}");
+    let stale = format!("Title-Stale-{stamp}");
+    let authored = format!("Title-Authored-{stamp}");
     let (st, b) = call(
         &app,
         "POST",
@@ -421,7 +421,7 @@ async fn create_version_mirrors_authored_payload_title_onto_mission_row() {
 
 /// `POST /missions/:id/versions/:vid/set-current` re-points the tip.
 ///
-/// The handler carries its own Class-R; this is the live HTTP layer. Create two
+/// The handler carries its own unit tests; this is the live HTTP layer. Create two
 /// non-vacuous versions (0.1.0 is the seed), leave the tip on the newer, then set-current to the
 /// older and assert `current_version_id` + `/compiled` serve the older payload.
 ///
@@ -438,7 +438,7 @@ async fn set_current_version_repaints_tip_over_http() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let title = format!("T544-SetCurrent-{stamp}");
+    let title = format!("Tip-SetCurrent-{stamp}");
     let (st, b) = call(
         &app,
         "POST",

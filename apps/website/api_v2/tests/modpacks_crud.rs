@@ -2,7 +2,7 @@
 //!
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 //!
-//! ## RED perturbation (non-vacuity)
+//! ## What makes this fail (non-vacuity)
 //! Drop the `workshop_id` bind from `replace_mods`' INSERT (or omit the column from
 //! migration 0012) and re-run `modpack_crud_round_trip` — the assert
 //! `mods[0].workshop_id == "AABBCCDDEEFF0011"` goes red. Restored + `touch` → green.
@@ -25,7 +25,7 @@ async fn boot(tag: &str) -> Option<(Router, PgPool, String, String)> {
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
 
-    let like = format!("T271 {tag}%");
+    let like = format!("Modpack {tag}%");
     // Nested mods first — no FK, but keep the table tidy across parallel IT binaries.
     sqlx::query(
         "DELETE FROM modpack_mods WHERE modpack_id IN \
@@ -100,7 +100,7 @@ async fn modpack_crud_round_trip() {
         "/api/v1/modpacks",
         Some(&enlisted),
         Some(json!({
-            "name": "T271 crud pack",
+            "name": "Modpack crud pack",
             "version": "1.0.0",
             "total_size_bytes": 100,
             "mods": []
@@ -116,7 +116,7 @@ async fn modpack_crud_round_trip() {
         "/api/v1/modpacks",
         Some(&admin),
         Some(json!({
-            "name": "T271 crud pack",
+            "name": "Modpack crud pack",
             "version": "1.0.0",
             "total_size_bytes": 1_048_576,
             "workshop_url": "https://reforger.armaplatform.com/workshop",
@@ -134,7 +134,7 @@ async fn modpack_crud_round_trip() {
     .await;
     assert_eq!(st, StatusCode::CREATED, "create: {created}");
     let id = created["id"].as_str().expect("id");
-    assert_eq!(created["name"], "T271 crud pack");
+    assert_eq!(created["name"], "Modpack crud pack");
     assert_eq!(created["mods"][0]["workshop_id"], "AABBCCDDEEFF0011");
     assert_eq!(created["mods"][0]["mod_guid"], "1122334455667788");
     assert_eq!(created["mods"][0]["version"], "0.9.1");
@@ -159,7 +159,7 @@ async fn modpack_crud_round_trip() {
         &format!("/api/v1/modpacks/{id}"),
         Some(&admin),
         Some(json!({
-            "name": "T271 crud pack",
+            "name": "Modpack crud pack",
             "version": "1.1.0",
             "total_size_bytes": 2_097_152,
             "workshop_url": "",
@@ -254,7 +254,7 @@ async fn modpack_delete_conflict_when_referenced() {
         "/api/v1/modpacks",
         Some(&admin),
         Some(json!({
-            "name": "T271 conflict pack",
+            "name": "Modpack conflict pack",
             "version": "0.0.1",
             "total_size_bytes": 0,
             "mods": []
@@ -267,7 +267,7 @@ async fn modpack_delete_conflict_when_referenced() {
     // Point a server at it (no FK — just a uuid column).
     sqlx::query(
         "INSERT INTO servers (name, ip, port, required_modpack_id, is_active) \
-         VALUES ('T271 conflict server', '127.0.0.1'::inet, 2001, $1::uuid, true)",
+         VALUES ('Modpack conflict server', '127.0.0.1'::inet, 2001, $1::uuid, true)",
     )
     .bind(&id)
     .execute(&pool)
@@ -292,7 +292,7 @@ async fn modpack_delete_conflict_when_referenced() {
     );
 
     // Cleanup so the next run and sibling IT binaries stay clean.
-    sqlx::query("DELETE FROM servers WHERE name = 'T271 conflict server'")
+    sqlx::query("DELETE FROM servers WHERE name = 'Modpack conflict server'")
         .execute(&pool)
         .await
         .ok();

@@ -25,13 +25,13 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t316-arma-revert";
+    const ARMA: &str = "revert-arma-revert";
     const DISCORD: &str = "000000000000316001";
-    const SRC: &str = "m-t316-revert";
+    const SRC: &str = "m-revert-revert";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T316', 't316', '', $2, '[TBD] T316', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Revert', 'revert', '', $2, '[TBD] Revert', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -59,7 +59,7 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
 
     // The honest ingest: a completed, won match with a real scoreline and an AAR link.
     let full = format!(
-        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","aar_replay_url":"https://aar.tbd/{SRC}.json","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"e-t316","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","aar_replay_url":"https://aar.tbd/{SRC}.json","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"e-revert","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
     );
     let (st, r) = call(
         &app,
@@ -139,7 +139,7 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
         None,
         Some(SVC),
         Some(&format!(
-            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","source_event_id":"e-t316"}}]}}"#
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","source_event_id":"e-revert"}}]}}"#
         )),
     )
     .await;
@@ -226,14 +226,14 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t347-arma-blank";
+    const ARMA: &str = "blank-arma-blank";
     const DISCORD: &str = "000000000000347001";
-    const SRC: &str = "m-t347-blank";
-    const EV: &str = "e-t347";
+    const SRC: &str = "m-blank-blank";
+    const EV: &str = "e-blank";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T347', 't347', '', $2, '[TBD] T347', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Blank', 'blank', '', $2, '[TBD] Blank', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -389,15 +389,15 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t501-arma-terrain";
+    const ARMA: &str = "terrain-arma-terrain";
     const DISCORD: &str = "000000000000501001";
-    const SRC_A: &str = "m-t501-kolguyev";
-    const SRC_B: &str = "m-t501-anizay";
-    const EV: &str = "e-t501";
+    const SRC_A: &str = "m-terrain-kolguyev";
+    const SRC_B: &str = "m-terrain-anizay";
+    const EV: &str = "e-terrain";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T501', 't501', '', $2, '[TBD] T501', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Terrain', 'terrain', '', $2, '[TBD] Terrain', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)
@@ -528,7 +528,7 @@ async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
 /// `upsert_match` parses with `parse_uuid_opt_strict`: through the soft parser junk becomes
 /// `None`, the match stores with no event or mission, the attendance UPDATE matches nothing,
 /// and the game server gets a **200** for a report that has silently lost its attribution. The helper's unit
-/// tests and the Class-R source pin both hold, but neither can answer the only question a game
+/// tests and the source pin both hold, but neither can answer the only question a game
 /// server actually asks — what does the endpoint do. This POSTs the junk.
 ///
 /// The status code is the smaller half. The larger half is that the transaction did not
@@ -544,14 +544,14 @@ async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t533-arma-junk-ids";
+    const ARMA: &str = "junk-arma-junk-ids";
     const DISCORD: &str = "000000000000533001";
-    const SRC: &str = "m-t533-junk";
-    const EV: &str = "e-t533";
+    const SRC: &str = "m-junk-junk";
+    const EV: &str = "e-junk";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T533', 't533', '', $2, '[TBD] T533', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Junk', 'junk', '', $2, '[TBD] Junk', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(DISCORD)

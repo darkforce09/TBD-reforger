@@ -50,14 +50,14 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    // Three identities: one linked account, one account that has not linked yet (the ticket's
+    // Three identities: one linked account, one account that has not linked yet (the unlinked
     // player), and an `arma_id` with no account behind it at all.
-    const LINKED_ARMA: &str = "t229-arma-linked";
+    const LINKED_ARMA: &str = "totals-arma-linked";
     const LINKED_DISCORD: &str = "000000000000229001";
-    const UNLINKED_ARMA: &str = "t229-arma-unlinked";
+    const UNLINKED_ARMA: &str = "totals-arma-unlinked";
     const UNLINKED_DISCORD: &str = "000000000000229002";
-    const ORPHAN_ARMA: &str = "t229-arma-no-account";
-    const SRC: &str = "m-t229-unlinked";
+    const ORPHAN_ARMA: &str = "totals-arma-no-account";
+    const SRC: &str = "m-totals-unlinked";
     const CODE: &str = "922900";
 
     // Same reasoning as the sibling envelope tests: `matches` does not cascade to
@@ -68,7 +68,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     // (`idx_users_arma_id`), so if any *other* account is holding one of these three ids the
     // fixture insert dies on `23505` and the link-confirm leg would 409 on `ingest_link_confirm`'s
     // clash guard. Hit for real while writing this: a manual probe on the same database had
-    // parked `t229-arma-linked` on a third account. Releasing first makes the test own its ids
+    // parked `totals-arma-linked` on a third account. Releasing first makes the test own its ids
     // outright instead of hoping they are free.
     let clean = |pool: PgPool| async move {
         sqlx::query("UPDATE users SET arma_id = NULL WHERE arma_id = ANY($1)")
@@ -104,7 +104,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T229 Linked', 't229linked', '', $2, '[TBD] Linked', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Totals Linked', 't229linked', '', $2, '[TBD] Linked', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
     )
     .bind(LINKED_DISCORD)
@@ -112,11 +112,11 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     .execute(&pool)
     .await
     .unwrap();
-    // The ticket's player: a real account with no `arma_id` yet. `arma_id = NULL` is the whole
+    // The unlinked player: a real account with no `arma_id` yet. `arma_id = NULL` is the whole
     // premise, so it is reset on conflict rather than left at whatever a previous run linked.
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'T229 Unlinked', 't229unlinked', '', NULL, '', 'enlisted', false, '', now(), now()) \
+         VALUES ($1, 'Totals Unlinked', 't229unlinked', '', NULL, '', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET arma_id = NULL, total_deployments = 0",
     )
     .bind(UNLINKED_DISCORD)
@@ -177,10 +177,10 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
         "/api/v1/ingest/match-results",
         format!(
             r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{},{},{},{}]}}"#,
-            line(LINKED_ARMA, "e-t229-a", 9, 1, 300, 0),
-            line(UNLINKED_ARMA, "e-t229-a", 17, 3, 842, 4),
-            line(UNLINKED_ARMA, "e-t229-b", 5, 1, 300, 1),
-            line(ORPHAN_ARMA, "e-t229-a", 4, 2, 120, 0),
+            line(LINKED_ARMA, "e-totals-a", 9, 1, 300, 0),
+            line(UNLINKED_ARMA, "e-totals-a", 17, 3, 842, 4),
+            line(UNLINKED_ARMA, "e-totals-b", 5, 1, 300, 1),
+            line(ORPHAN_ARMA, "e-totals-a", 4, 2, 120, 0),
         ),
     )
     .await;
@@ -224,7 +224,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
         "every line stored; the unresolved ones kept, with a NULL owner"
     );
 
-    // (3) The invisibility itself, which is what the ticket is about: those rows reach no
+    // (3) The invisibility itself, which is the point: those rows reach no
     // aggregate. Not a bug in the aggregates — a leaderboard ranks accounts, and an unowned row
     // has no account — but it is why a 200 that says nothing is a silent loss.
     assert_eq!(
@@ -318,12 +318,12 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ARMA: &str = "t397-arma-mv-null";
+    const ARMA: &str = "nullcounters-arma-mv-null";
     const DISCORD: &str = "000000000000397102";
-    const SRC_A: &str = "m-t397-mv-a";
-    const SRC_B: &str = "m-t397-mv-b";
-    const EV_A: &str = "e-t397-mv-a";
-    const EV_B: &str = "e-t397-mv-b";
+    const SRC_A: &str = "m-nullcounters-mv-a";
+    const SRC_B: &str = "m-nullcounters-mv-b";
+    const EV_A: &str = "e-nullcounters-mv-a";
+    const EV_B: &str = "e-nullcounters-mv-b";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
@@ -439,7 +439,7 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
 /// what makes "`COALESCE` moved inside the aggregate" a failing test instead of a code review.
 ///
 /// RED — **verified**: rewrite every `deaths` reference in `0014`'s aggregate as
-/// `COALESCE(deaths, 0)` (the poisoning the ticket names). The guard then reads
+/// `COALESCE(deaths, 0)` (the poisoning this guards against). The guard then reads
 /// `count(COALESCE(deaths, 0)) FILTER (WHERE COALESCE(deaths, 0) IS NOT NULL)`, which is 2 for
 /// player A rather than 0, so it stops firing and `kd_ratio` falls through to
 /// `COALESCE(sum(kills), 0)` = `Some(0.0)`. This test fails; the sibling
@@ -458,14 +458,14 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
         return;
     };
     // Player A — every row unmeasured. Player B — one row that really did measure zero deaths.
-    const ARMA_A: &str = "t493-arma-never-measured";
+    const ARMA_A: &str = "zeroes-arma-never-measured";
     const DISCORD_A: &str = "000000000000493101";
-    const ARMA_B: &str = "t493-arma-measured-zero";
+    const ARMA_B: &str = "zeroes-arma-measured-zero";
     const DISCORD_B: &str = "000000000000493102";
-    const SRC_A1: &str = "m-t493-never-1";
-    const SRC_A2: &str = "m-t493-never-2";
-    const SRC_B: &str = "m-t493-zero";
-    const EV: &str = "e-t493";
+    const SRC_A1: &str = "m-zeroes-never-1";
+    const SRC_A2: &str = "m-zeroes-never-2";
+    const SRC_B: &str = "m-zeroes-zero";
+    const EV: &str = "e-zeroes";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
@@ -610,7 +610,7 @@ async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    // A ratchet that silently matched nothing would be the exact defect this slice exists to
+    // A ratchet that silently matched nothing would be the exact defect this suite exists to
     // remove, so prove the definition was read before asserting anything about it.
     assert!(
         viewdef.len() > 200 && viewdef.contains("kd_ratio"),

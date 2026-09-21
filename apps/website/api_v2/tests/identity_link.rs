@@ -38,8 +38,8 @@ use website_api::core::http_router;
 mod common;
 
 /// Serialise DB-touching tests in this binary — both async tests share ACTOR /
-/// seed placeholders on one gate DB (see the seed race in the module docs). Pattern:
-/// `null_tolerance.rs`.
+/// seed placeholders on one database (see the seed race in the module docs). Pattern:
+/// `null_tolerance_reads.rs`.
 static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
@@ -104,8 +104,8 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
         .unwrap_or_else(|e| panic!("identity_link release pad stats: {e}"));
     sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
         .bind(vec![
-            "m-t351-pad-trim".to_string(),
-            "m-t351-pad-trim-2".to_string(),
+            "m-link-pad-trim".to_string(),
+            "m-link-pad-trim-2".to_string(),
         ])
         .execute(&pool)
         .await
@@ -158,7 +158,7 @@ async fn call(
     )
 }
 
-/// Class-R: this suite must never authenticate as / mutate the shared dev-login snowflake,
+/// This suite must never authenticate as / mutate the shared dev-login snowflake,
 /// and PAD_ACTOR must not collide with telemetry's PLAYER_DISCORD.
 #[test]
 fn actor_is_not_the_shared_dev_login_user() {
@@ -412,7 +412,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     };
 
     const CODE: &str = "400351";
-    const SRC: &str = "m-t351-pad-trim";
+    const SRC: &str = "m-link-pad-trim";
 
     common::seed_user(
         &pool,
@@ -450,7 +450,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     // Pre-link orphan scoreline under the *trimmed* id (what ingest stores). Without the
     // confirm trim, the claim join would miss these rows forever.
     let pre_ingest = format!(
-        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PAD_ARMA}","role_played":"SL","source_event_id":"e-t351","counters":{{"kills":7,"deaths":2,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":1,"is_command":false}}}}]}}"#
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PAD_ARMA}","role_played":"SL","source_event_id":"e-link","counters":{{"kills":7,"deaths":2,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":1,"is_command":false}}}}]}}"#
     );
     let (st, body) = call(
         &app,
@@ -463,7 +463,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     assert_eq!(st, StatusCode::OK, "pre-link ingest: {body}");
     assert_eq!(body["unlinked"], 1, "orphan until link: {body}");
     let owned_before: Option<String> = sqlx::query_scalar(
-        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-t351'",
+        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-link'",
     )
     .bind(PAD_ARMA)
     .fetch_one(&pool)
@@ -513,7 +513,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
 
     // Backfill claim: orphan rows for the trimmed id now belong to PAD_ACTOR.
     let owned_after: Option<String> = sqlx::query_scalar(
-        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-t351'",
+        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-link'",
     )
     .bind(PAD_ARMA)
     .fetch_one(&pool)
@@ -537,7 +537,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
 
     // Ingest resolver: a later match with the clean id finds the account.
     let post_ingest = format!(
-        r#"{{"match":{{"source_match_id":"{SRC}-2","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PAD_ARMA}","role_played":"SL","source_event_id":"e-t351-b","counters":{{"kills":3,"deaths":0,"team_kills":0,"longest_kill_m":50,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
+        r#"{{"match":{{"source_match_id":"{SRC}-2","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PAD_ARMA}","role_played":"SL","source_event_id":"e-link-b","counters":{{"kills":3,"deaths":0,"team_kills":0,"longest_kill_m":50,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
     let (st, body) = call(
         &app,
@@ -554,7 +554,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
     );
     assert_eq!(body["unlinked"], 0, "no orphan after trim-store: {body}");
     let post_owner: Option<String> = sqlx::query_scalar(
-        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-t351-b'",
+        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND source_event_id = 'e-link-b'",
     )
     .bind(PAD_ARMA)
     .fetch_one(&pool)

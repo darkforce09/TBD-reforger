@@ -42,7 +42,7 @@ async fn boot() -> Option<(Router, PgPool)> {
     database::migrate(&pool).await.expect("migrate");
     let app = http_router::router(AppState::new(
         pool.clone(),
-        Config::for_tests(url, "t413-events-secret"),
+        Config::for_tests(url, "url-guard-events-secret"),
     ));
     Some((app, pool))
 }
@@ -87,7 +87,7 @@ async fn create_refuses_a_non_http_banner_and_stores_nothing() {
     let start = future_start();
 
     for bad in REJECTED {
-        let name = format!("t413-create-{bad:?}");
+        let name = format!("url-guard-create-{bad:?}");
         let (status, body) = send(
             &app,
             "POST",
@@ -131,7 +131,7 @@ async fn patch_refuses_a_non_http_banner_and_leaves_the_stored_value_alone() {
     let token = common::dev_login_token(&app, SUITE, "admin").await;
 
     const GOOD: &str = "https://cdn.tbd/banners/original.png";
-    let name = format!("t413-patch-{}", uuid::Uuid::new_v4());
+    let name = format!("url-guard-patch-{}", uuid::Uuid::new_v4());
     let (status, created) = send(
         &app,
         "POST",
@@ -199,7 +199,7 @@ async fn patch_rejection_leaves_every_other_field_untouched() {
     };
     let token = common::dev_login_token(&app, SUITE, "admin").await;
 
-    let name = format!("t413-atomic-{}", uuid::Uuid::new_v4());
+    let name = format!("url-guard-atomic-{}", uuid::Uuid::new_v4());
     let (status, created) = send(
         &app,
         "POST",
@@ -268,7 +268,7 @@ async fn real_banners_and_the_empty_no_banner_shape_still_work() {
         "https://cdn.tbd/banners/Operation%20Red%20Dawn.png",
         "",
     ] {
-        let name = format!("t413-good-{}", uuid::Uuid::new_v4());
+        let name = format!("url-guard-good-{}", uuid::Uuid::new_v4());
         let (status, body) = send(
             &app,
             "POST",

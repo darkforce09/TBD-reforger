@@ -1,10 +1,9 @@
-//! Phase 1 gate — the sqlx migration runner reproduces the full schema.
+//! The sqlx migration runner reproduces the full schema.
 //!
 //! Skips unless `TEST_DATABASE_URL` is set. This binary goes through
 //! [`common::require_test_database_url`], so it owns its own `<base>_db_migrate_it`
 //! database. Provision already migrates from empty; the assertions below pin object counts,
-//! and the second `migrate` call pins idempotency. Byte-level schema parity is proven
-//! separately by the G2 `pg_dump` diff.
+//! and the second `migrate` call pins idempotency.
 
 mod common;
 

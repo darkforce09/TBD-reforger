@@ -70,7 +70,7 @@ const GLOBAL_ROUTE: &str = "/api/v1/announcements";
 /// The *other* `ServeDir` in the router. The directory need not exist: a `429` short-circuits
 /// before `ServeDir` is ever reached, so the interesting statuses here are 404 (allowed through)
 /// and 429 (refused).
-const LIMITED_STATIC: &str = "/uploads/t630-no-such-file.png";
+const LIMITED_STATIC: &str = "/uploads/exempt-no-such-file.png";
 
 /// Requests fired in each burst. 200 is 5× the global burst of 40, so a `/map-assets` burst that
 /// survives it cannot be surviving on a bucket that merely happens to be deep.
@@ -91,7 +91,7 @@ const GLYPH_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../../as
 const EXEMPT_GLYPH: &str = "/map-assets/glyphs/manifest.json";
 
 fn config_for(url: &str) -> Config {
-    let mut cfg = Config::for_tests(url, "t630-secret");
+    let mut cfg = Config::for_tests(url, "exempt-secret");
     cfg.map_assets_dir = MAP_ASSETS_DIR.to_string();
     cfg.glyph_assets_dir = GLYPH_ASSETS_DIR.to_string();
     cfg
@@ -111,7 +111,7 @@ fn dead_pool() -> PgPool {
     PgPoolOptions::new()
         .max_connections(1)
         .acquire_timeout(Duration::from_millis(250))
-        .connect_lazy("postgres://t630:t630@127.0.0.1:1/t630_no_such_db")
+        .connect_lazy("postgres://unreachable:unreachable@127.0.0.1:1/no_such_db")
         .expect("lazy pool")
 }
 
@@ -346,12 +346,12 @@ async fn the_other_static_mount_is_still_limited() {
 #[tokio::test]
 async fn the_spa_deployment_keeps_its_fallback_limited_and_its_isolation_headers() {
     let mut cfg = config_for("postgres://unused");
-    cfg.spa_dist_dir = "/nonexistent-t630-dist".to_string();
+    cfg.spa_dist_dir = "/nonexistent-exempt-dist".to_string();
     let app = http_router::router(AppState::new(dead_pool(), cfg));
     let ip = Ipv4Addr::new(10, 63, 6, 6);
 
     // 1. the SPA fallback is a limited route.
-    let hist = burst(&app, ip, "GET", "/t630-spa-route").await;
+    let hist = burst(&app, ip, "GET", "/exempt-spa-route").await;
     assert!(
         count(&hist, StatusCode::TOO_MANY_REQUESTS) > 0,
         "the SPA fallback was never refused in {BURST} requests — the fallback has followed the \
@@ -423,7 +423,7 @@ async fn a_refusal_still_looks_exactly_as_it_did() {
 
 // ───────────────────────── anti-drift pins ─────────────────────────
 
-/// Class-R: the exemption governs **which routes** the limiter sees and nothing about the strict
+/// The exemption governs **which routes** the limiter sees and nothing about the strict
 /// tier's surface. If this ever needs updating, `/auth/` or `/ingest/` protection is being edited,
 /// which is a separate change.
 #[test]
@@ -439,7 +439,7 @@ fn the_strict_surface_is_untouched() {
     );
 }
 
-/// Class-R: this suite asserts against the mount the router actually registers.
+/// This suite asserts against the mount the router actually registers.
 #[test]
 fn the_asset_under_test_is_under_the_exempt_mount() {
     assert_eq!(RATE_LIMIT_EXEMPT_MOUNT, "/map-assets");

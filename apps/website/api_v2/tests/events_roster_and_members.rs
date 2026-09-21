@@ -14,7 +14,7 @@ use tower::ServiceExt;
 mod common;
 mod events_support;
 
-/// Class-R: two seeds must not share a fixed `arma_id` string (the cold-gate flake).
+/// Two seeds must not share a fixed `arma_id` string (a flake on a shared database).
 ///
 /// Perturbation: change [`arma`] back to `format!("events-arma-{discord_id}")` → both
 /// equal the literal below → assert fails.
@@ -35,7 +35,7 @@ fn arma_mint_never_collides_on_a_fixed_string() {
     );
 }
 
-/// Class-R: suite snowflakes must stay off telemetry / identity / dev-login ranges.
+/// Suite snowflakes must stay off telemetry / identity / dev-login ranges.
 ///
 /// Perturbation: set OTHER/THIRD equal to a known foreign actor → assert fails.
 #[test]
@@ -65,7 +65,7 @@ fn actor_snowflakes_are_suite_private() {
 /// member index 20 plus the envelope fields.
 ///
 /// Perturbation: drop `OFFSET` / hard-code `LIMIT 20` with no bind → page still length 20 but
-/// first username is `t495_user_00` (or total/offset mismatch) → assert fails.
+/// first username is `roster_page_user_00` (or total/offset mismatch) → assert fails.
 #[tokio::test]
 async fn members_list_honours_offset_pagination() {
     let _serial = DB_LOCK.lock().await;
@@ -75,7 +75,7 @@ async fn members_list_honours_offset_pagination() {
     };
 
     const N: usize = 25;
-    const PREFIX: &str = "t495_user_";
+    const PREFIX: &str = "roster_page_user_";
     // Suite-private discord ids — must not collide with OTHER/THIRD / other suites.
     for i in 0..N {
         let discord_id = format!("000000000000495{i:03}");
@@ -116,9 +116,9 @@ async fn members_list_honours_offset_pagination() {
         .iter()
         .map(|m| m["username"].as_str().unwrap_or(""))
         .collect();
-    assert_eq!(names0.first().copied(), Some("t495_user_00"));
+    assert_eq!(names0.first().copied(), Some("roster_page_user_00"));
     assert!(
-        !names0.contains(&"t495_user_20"),
+        !names0.contains(&"roster_page_user_20"),
         "offset=0 must not include member index 20: {names0:?}"
     );
 
@@ -148,12 +148,12 @@ async fn members_list_honours_offset_pagination() {
     assert_eq!(page_off["offset"], 20, "envelope offset: {page_off}");
     assert_eq!(
         data_off[0]["username"].as_str(),
-        Some("t495_user_20"),
+        Some("roster_page_user_20"),
         "offset=20 must surface member at index 20 first: {page_off}"
     );
     assert_eq!(
         data_off[4]["username"].as_str(),
-        Some("t495_user_24"),
+        Some("roster_page_user_24"),
         "last row of the window: {page_off}"
     );
 }
@@ -218,16 +218,16 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let vest_rn = format!("t551_vest_{stamp}");
-    let mag_rn = format!("t551_mag_{stamp}");
+    let vest_rn = format!("roster_kit_vest_{stamp}");
+    let mag_rn = format!("roster_kit_mag_{stamp}");
     let actor_arma = arma(OTHER);
 
     // Current modpack + private phys rows — load_cargo_phys_catalog includes all is_current.
     let pack_id: uuid::Uuid = sqlx::query_scalar(
         "INSERT INTO modpacks (name, version, total_size_bytes, workshop_url, is_current, created_at) \
-         VALUES ($1, '0.0.1', 1, 'https://example.invalid/t551', true, now()) RETURNING id",
+         VALUES ($1, '0.0.1', 1, 'https://example.invalid/roster-kit', true, now()) RETURNING id",
     )
-    .bind(format!("T551 Pack {stamp}"))
+    .bind(format!("Roster Kit Pack {stamp}"))
     .fetch_one(&pool)
     .await
     .expect("seed modpack");
@@ -235,7 +235,7 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
         "INSERT INTO registry_items \
          (modpack_id, resource_name, display_name, category, kind, sort_order, \
           weight_kg, volume_cm3, created_at, updated_at) \
-         VALUES ($1, $2, 'Mag', 'T551', 'gear_vest', 0, 0.5, 60.0, now(), now())",
+         VALUES ($1, $2, 'Mag', 'RosterKit', 'gear_vest', 0, 0.5, 60.0, now(), now())",
     )
     .bind(pack_id)
     .bind(&mag_rn)
@@ -246,7 +246,7 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
         "INSERT INTO registry_items \
          (modpack_id, resource_name, display_name, category, kind, sort_order, \
           max_weight_kg, max_volume_cm3, created_at, updated_at) \
-         VALUES ($1, $2, 'Plate Carrier', 'T551', 'gear_vest', 1, 5.0, 200.0, now(), now())",
+         VALUES ($1, $2, 'Plate Carrier', 'RosterKit', 'gear_vest', 1, 5.0, 200.0, now(), now())",
     )
     .bind(pack_id)
     .bind(&vest_rn)
@@ -255,10 +255,10 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
     .expect("seed vest phys");
 
     let admin = token(&app, "admin").await;
-    common::seed_user(&pool, OTHER, "t551-other", &actor_arma, "enlisted").await;
+    common::seed_user(&pool, OTHER, "roster-kit-other", &actor_arma, "enlisted").await;
 
     let create = format!(
-        r#"{{"title":"T551 Cargo {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        r#"{{"title":"Roster Kit Cargo {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
     );
     let (st, m) = call(&app, "POST", "/api/v1/missions", &admin, Some(&create)).await;
     assert_eq!(st, StatusCode::CREATED, "mission: {m}");
