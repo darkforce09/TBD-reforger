@@ -1,6 +1,8 @@
 # TBD Reforger Platform Documentation Master Hub
 
-Welcome to the canonical documentation architecture for the TBD Reforger Platform monorepo. This documentation hierarchy mirrors the codebase directly, providing an unambiguous 1:1 mapping between production code and architectural specifications.
+The canonical documentation architecture for the TBD Reforger Platform monorepo. This hierarchy mirrors the codebase directly, providing an unambiguous 1:1 mapping between production code and architectural specifications.
+
+> **Status:** a blueprint. `docs/` is still the authoritative tree, and every code pin and ticket citation points there, until [`ARCHITECTURE_PLAN.md`](ARCHITECTURE_PLAN.md) Phase 3 executes. The hub documents here were derived from `docs/` on 2026-09-16; [`ANALYSIS_AND_INVENTORY.md`](ANALYSIS_AND_INVENTORY.md) §6 lists what changed underneath them since.
 
 ## 1. Monorepo Architectural Atlas
 
@@ -21,12 +23,14 @@ documentation_v2/
 │   ├── tbd_export/                           <-- Workbench export plugins (terrain DEM, roads, objects, registry)
 │   └── tbd_emcp/                             <-- Enfusion MCP automation bridge (19 NetAPI handlers)
 │
-├── tools/                                    <-- Mirrors tools/ & crates/ (Platform tooling suite)
+├── tools/                                    <-- Mirrors tools_v2/ (Platform tooling suite)
 │   ├── xtask/                                <-- Central workspace task runner (`cargo xtask`) & verifications
-│   ├── developer_tools/                      <-- Heavy async CLI suite (`tbd-tools`: gate, enf, mcpd, world, map)
-│   ├── ticket_engine/                        <-- Ticket domain database & TOML serialization (`tbd-tickets`)
-│   ├── verification_core/                    <-- Fail-closed static verification library (`tbd-gate`)
+│   ├── developer_tools/                      <-- Heavy async CLI suite (`developer-tools`: gate, enf, mcpd, world, map, capture)
+│   ├── ticket_engine/                        <-- Ticket domain database & TOML serialization (`ticket-engine`)
+│   ├── verification_core/                    <-- Fail-closed static verification library (`verification-core`)
 │   └── ticketboard/                          <-- Native egui/eframe desktop ticket viewer (`apps/ticketboard/`)
+│
+├── platform/                                 <-- Mirrors docs/platform/ minus its ticket specs: standards, factory briefs, runbooks, audits, known-bugs
 │
 ├── runbooks/                                 <-- Standard operational runbooks
 │   ├── local_development.md                  <-- Host vs container execution, dev-login, cargo wrappers

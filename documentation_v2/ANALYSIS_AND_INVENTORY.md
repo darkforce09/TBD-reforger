@@ -4,14 +4,17 @@ This document provides an exhaustive, forensic census of all 821 files in `docs/
 
 ## 1. Executive Census Summary
 
-- **Total Files Audited**: **821 files**
-- **File Formats**: 649 Markdown (`.md`), 102 PNG Images (`.png`), 64 HTML Prototypes (`.html`), 2 YAML (`.yaml`), 1 TSV (`capability_verdicts.tsv`), 3 Raw data/shell files (`factory_pack_wave`, `before`, `after`).
-- **Distribution Across Monorepo Domains**:
+> Census taken 2026-09-16; re-measured 2026-09-21. The relocation catalog in §5 is the 2026-09-16 set; §6 lists what changed under it since.
+
+- **Total Files Audited**: **821 files** on 2026-09-16 — **824 on 2026-09-21** (see §6)
+- **File Formats** (2026-09-21): 652 Markdown (`.md`), 102 PNG Images (`.png`), 64 HTML Prototypes (`.html`), 2 YAML (`.yaml`), 1 TSV (`capability_verdicts.tsv`), 3 Raw data/shell files (`factory_pack_wave`, `.doc-manifest.before`, `.doc-manifest.after`).
+- **Distribution Across Monorepo Domains** (2026-09-21):
   - `docs/plans/`: **207 files** (1 `TEMPLATE.md` + 206 `t-*_plan.md` files; 100% actively referenced by tickets)
-  - `docs/specs/`: **328 files** (185 MCA, 44 existing, 30 ideas, 10 audit, 2 factory, 2 website_reorg, 53 mockups, 2 root)
+  - `docs/specs/`: **329 files** (185 MCA, 44 existing, 30 ideas, 10 audit, 2 factory, 3 website_reorg, 53 mockups, 2 root)
   - `docs/mod/`: **153 files** (15 root architecture & triage, 14 UI specs, 35 screenshots, 88 Stitch mockups)
-  - `docs/platform/`: **71 files** (42 ticket specifications, standards, runbooks, defect specs)
+  - `docs/platform/`: **72 files** (42 ticket specifications, standards, runbooks, defect specs, the engine-split program)
   - `docs/website/`: **56 files** (backend, frontend shell, 28 surface specs, platform design, archive)
+  - `docs/tools/`: **1 file** (`editor_capture.md`, added after the census)
   - Root `docs/`: **6 files** (machine-generated markdown queues; retired in favor of native `apps/ticketboard`)
 
 ## 2. Flat Ticket Specifications Architecture (`tickets/specs/`)
@@ -894,3 +897,37 @@ The forensic audit identified multiple layers of obsolete technology residue tha
 | 820 | `docs/website/platform/context_handoff.md` | `documentation_v2/website/platform/context_handoff.md` | Website architecture documentation (platform/context_handoff.md). |
 | 821 | `docs/website/platform/macos_ux_architecture.md` | `documentation_v2/website/platform/macos_ux_architecture.md` | Website architecture documentation (platform/macos_ux_architecture.md). |
 | 822 | `docs/website/platform/registration_flow.md` | `documentation_v2/website/platform/registration_flow.md` | Website architecture documentation (platform/registration_flow.md). |
+
+## 6. Drift Since the Census (2026-09-16 → 2026-09-21)
+
+Everything below happened under this inventory after it was taken. `ARCHITECTURE_PLAN.md` Phase 2b refreshes the affected hub documents from these sources before Phase 3 moves them.
+
+### 6.1 Files added to `docs/` (need a §5 row and a hub)
+
+| Legacy path | Target | Note |
+|:---|:---|:---|
+| `docs/platform/ENGINE_SPLIT_PROGRAM.md` | `documentation_v2/platform/ENGINE_SPLIT_PROGRAM.md` | Program document, not a ticket spec. |
+| `docs/platform/engine_split_phase3_baseline.md` | `documentation_v2/platform/engine_split_phase3_baseline.md` | Archival baseline; keeps its old-path spellings by the `contracts_v2/MIGRATION_HANDOFF.md` §5 convention. |
+| `docs/specs/website_reorg/graphics_engine_and_mission_core_blueprint.md` | `documentation_v2/tickets/specs/graphics_engine_and_mission_core_blueprint.md` | Flattens with the rest of `specs/`. Written against a `crates/` layout that no longer exists; a plan, left as written. |
+| `docs/specs/website_reorg/website_architecture_audit.md` | `documentation_v2/tickets/specs/website_architecture_audit.md` | Flattens. |
+| `docs/tools/editor_capture.md` | `documentation_v2/tools/developer_tools/editor_capture.md` | New `docs/tools/` directory; the atlas has no `tools/` legacy row — this is its only file. |
+
+### 6.2 Repository changes that every derived hub document is behind
+
+- **Contracts and assets relocation (2026-09-18/19)**: `packages/tbd-schema` → `contracts_v2/{definitions,rules,catalogs,fixtures}`, `packages/map-assets` → `assets_v2/{terrains,glyphs,scratch}`. Every live document under `docs/` was rewritten; hub documents copied before that still say `packages/` (three were corrected on 2026-09-21: `website/frontend/apps/editor/arsenal/README.md`, `runbooks/deployment.md`, `runbooks/database_operations.md`).
+- **Deploy and database tooling (2026-09-21)**: `cargo xtask deploy website` gained an asset preflight and a widened rsync exclude set; `cargo xtask db repair-migration-checksum` and `tests/migrations_are_immutable.rs` exist; the API's asset directories are pinned on `scripts/deploy/tbd-website-api.service`. Sources: `docs/website/HOME_SERVER.md`, `docs/website/DEV_RUNBOOK.md`, `docs/mod/STAGING-SERVER.md`, root `CLAUDE.md`.
+- **Tooling paths (2026-09-18)**: `tools/tbd-tools` → `tools_v2/developer-tools`; `crates/tbd-tickets` → `tools_v2/ticket-engine`; `crates/tbd-gate` → `tools_v2/verification-core`; `xtask/src/*` → `tools_v2/xtask/src/commands/**` and `verifications/**`. `ARCHITECTURE_PLAN.md` §4 carries the live pin list.
+
+### 6.3 Files modified under `docs/` since the census (60)
+
+`docs/mod/`: `CLAUDE-CODE-START.md`, `MCP_TOOLING.md`, `MILESTONES.md`, `SLICE_WORKFLOW.md`, `STAGING-SERVER.md`, `t181_event_mod_program.md`, `TBD_MOD_DESIGN.md`, `ui/ui_referances/play_area_warning_spec.md`, `ui/ui_referances/spectator_ui_spec.md`, `ui/ui_stitch_mockup/stitch_tbd_reforger_ui_mod_postgame/reforger_dark_tactical/DESIGN.md`, `vanilla_carve_coverage.md`, `VERIFY_AGENT_PROMPT.md`.
+
+`docs/plans/`: `t-135_plan.md`, `t-295_plan.md`, `t-311_plan.md`, `t-934_plan.md`, `t-935_3_plan.md`, `t-935_plan.md`, `t-940_plan.md`.
+
+`docs/platform/`: `CODING_STANDARDS.md`, `DOCUMENTATION_STANDARDS.md`, `EDITOR_FACTORY_FOR_CURSOR.md`, `EDITOR_FACTORY_START.md`, `EDITOR_UI_HANDOFF.md`, `ENGINE_SPLIT_PROGRAM.md`, `EYE_PASS_2026-09.md`, `FACTORY_FOR_CURSOR.md`, `FACTORY_RUN_2026-09.md`, `known-bugs/KB-002-editor-gate-boot-wedge.md`, `PLATFORM_FACTORY.md`, `PLAYTEST_RUNBOOK.md`, `t123_documentation_standards_rollout.md`, `t165_node_eradication.md`, `t171_monorepo_hygiene_program.md`, `t172_leptos_bug_bash.md`, `t176_forest_place_ghost_zoompan.md`, `t179_forest_canopy_fix.md`, `WHERE_DOES_X_GO.md`.
+
+`docs/specs/`: `audit_2026_09/false_claims.md`, `audit_2026_09/README.md`, `audit_2026_09/t940_website_platform.md`, `ideas/t242_t216_deltas.md`, `ideas/t295_realtime_collab.md`, `ideas/t311_leaderboard_tiebreak.md`, `Mission_Creator_Architecture/agent_execution.md`, `engineering_plan.md`, `t068_11_compiler_loadout_export.md`, `t090_091_map_terrain_program.md`, `t090_10_map_engine_v2.md`, `t090_2_map_object_taxonomy.md`, `t090_3_map_asset_export.md`, `t090_5_map_object_render_layer.md`, `t090_phased_object_import.md`, `t090_terrain_export_pipeline.md`, `t090_world_object_glyphs.md`, `t090_world_object_type_inventory.md`, `t152_10_e2e_cartographic_gate.md`, `t152_2_reforger_icon_art.md`.
+
+`docs/website/`: `AGENT_COMMIT_CHECKLIST.md`, `DEV_RUNBOOK.md`, `HOME_SERVER.md` (plus the platform and mod runbooks above that the `runbooks/` hub draws on).
+
+To regenerate this list: `git log --since=2026-09-16 --name-status --format= -- docs/ | sort -u`.

@@ -28,8 +28,8 @@ documentation_v2/tickets/
 
 | Artifact Type | Storage Directory | Ticket TOML Citation Pattern |
 |---|---|---|
-| **Technical Specifications** | `tickets/specs/` | `spec = "documentation/tickets/specs/<name>.md"` |
-| **Implementation Plans** | `tickets/plans/` | `plan = "documentation/tickets/plans/t-<id>_plan.md"` |
+| **Technical Specifications** | `tickets/specs/` | `spec = "documentation_v2/tickets/specs/<name>.md"` |
+| **Implementation Plans** | `tickets/plans/` | `plan = "documentation_v2/tickets/plans/t-<id>_plan.md"` |
 
 This flat symmetry eliminates arbitrary subfolders (`existing/`, `ideas/`, `factory/`, `Mission_Creator_Architecture/`), ensuring that neither developers nor automated tooling need to navigate fragmented folder trees.
 
