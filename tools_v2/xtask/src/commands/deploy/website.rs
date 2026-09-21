@@ -31,6 +31,8 @@ use verification_core::verdict::NotRun;
 
 use crate::core::repository_root::find_repo_root;
 
+pub mod rsync_argv;
+
 /// Historical usage block — kept byte-identical to the bash `usage()` heredoc.
 const USAGE: &str = "\
 Usage: deploy-website.sh [--dry-run] [--help]
@@ -183,12 +185,22 @@ impl DeployCfg {
     fn execute(&self) -> Result<u8> {
         println!("==> deploy-website → {}:{}", self.host, self.remote_dir);
 
-        println!("==> rsync (excludes secrets, build artifacts, LFS map-assets, oracle lanes)");
+        println!(
+            "==> rsync (excludes secrets, build artifacts, the terrain + scratch asset trees, \
+             the legacy packages/ tree, oracle lanes)"
+        );
         if self.dry_run {
             println!(
                 "[dry-run] rsync -avz --delete … {}:{}/",
                 self.host, self.remote_dir
             );
+            // The exclude list is the whole point of a dry run: with `--delete` and no
+            // `--delete-excluded`, every entry is also what keeps rsync from removing that path
+            // on the server. Print it rather than eliding it behind the ellipsis.
+            let argv = rsync_argv::rsync_argv("", "", "");
+            for excluded in rsync_argv::exclusions(&argv) {
+                println!("[dry-run]   --exclude={excluded}");
+            }
         } else if let Err(code) = self.rsync_to_remote() {
             return Ok(code);
         }
@@ -342,27 +354,7 @@ impl DeployCfg {
 
         let dest = format!("{}:{}/", self.host, self.remote_dir);
         let mono = format!("{}/", self.root.display());
-        let run = Run::new("rsync")
-            .arg("-e")
-            .arg(&rsync_e)
-            .arg("-avz")
-            .arg("--delete")
-            .arg("--exclude=.git/")
-            .arg("--exclude=target/")
-            .arg("--exclude=target-gate-*/")
-            .arg("--exclude=dist-gate-*/")
-            .arg("--exclude=**/node_modules/")
-            .arg("--exclude=apps/website/frontend/dist/")
-            .arg("--exclude=apps/website/api_v2/.env")
-            .arg("--exclude=apps/website/api_v2/.tools/")
-            .arg("--exclude=scripts/deploy/deploy.env")
-            .arg("--exclude=assets_v2/terrains/")
-            .arg("--exclude=apps/mod/crf_framework/")
-            .arg("--exclude=apps/mod/vanilla_reference/")
-            .arg("--exclude=apps/mod/playable_selector/")
-            .arg("--exclude=apps/mod/.local-test-profile/")
-            .arg(&mono)
-            .arg(&dest);
+        let run = Run::new("rsync").args(rsync_argv::rsync_argv(&rsync_e, &mono, &dest));
 
         match run.merged_output() {
             Ok(out) => {

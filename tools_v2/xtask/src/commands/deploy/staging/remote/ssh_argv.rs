@@ -31,6 +31,13 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "--exclude=apps/mod/tbd-export/".into(),
         "--exclude=apps/mod/tbd-emcp/".into(),
         "--exclude=scripts/deploy/deploy.env".into(),
+        // Build output and the map asset trees. These were never in the bash this lane was ported
+        // from, so the staging rsync has been sending the whole `target/` directory and, since the
+        // asset relocation, 1.5 GB of gitignored export intermediates. A game-server host needs
+        // none of it. Excluded paths are also protected from `--delete` (no `--delete-excluded`).
+        "--exclude=target/".into(),
+        "--exclude=assets_v2/terrains/".into(),
+        "--exclude=assets_v2/scratch/".into(),
         format!("{}/", mono_root.display()),
         format!("{host}:{remote_dir}/"),
     ]

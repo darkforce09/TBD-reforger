@@ -81,6 +81,11 @@ fn rsync_argv_keeps_every_exclude_in_order() {
         "--exclude=apps/website/api_v2/.env",
         "--exclude=apps/mod/tbd-export/",
         "--exclude=apps/mod/tbd-emcp/",
+        // Build output and map assets: a game-server host needs neither, and `--delete` would
+        // otherwise reach them on the server.
+        "--exclude=target/",
+        "--exclude=assets_v2/terrains/",
+        "--exclude=assets_v2/scratch/",
     ] {
         assert!(argv.iter().any(|a| a == needed), "missing {needed}");
     }
