@@ -131,20 +131,20 @@ fn resolve_profile(arg: Option<&Path>, mod_root: &Path) -> PathBuf {
     if let Some(p) = arg {
         return p.to_path_buf();
     }
-    if let Ok(p) = std::env::var("TBD_PROFILE") {
-        if !p.is_empty() {
-            return PathBuf::from(p);
-        }
+    if let Ok(p) = std::env::var("TBD_PROFILE")
+        && !p.is_empty()
+    {
+        return PathBuf::from(p);
     }
     mod_root.join(".local-test-profile")
 }
 
 /// `SERVICE_TOKEN` env wins; else first `SERVICE_TOKEN=` line in `apps/website/api_v2/.env`.
 fn resolve_service_token(web: &Path) -> Option<String> {
-    if let Ok(t) = std::env::var("SERVICE_TOKEN") {
-        if !t.is_empty() {
-            return Some(t);
-        }
+    if let Ok(t) = std::env::var("SERVICE_TOKEN")
+        && !t.is_empty()
+    {
+        return Some(t);
     }
     let env_file = web.join(".env");
     if env_file.is_file() {

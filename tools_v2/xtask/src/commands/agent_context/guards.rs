@@ -226,21 +226,21 @@ fn guard_read(session: &str, input: &Value) -> Option<String> {
         ));
     }
 
-    if let Some(n) = line_count(Path::new(path)) {
-        if n > BIG_FILE_LINES {
-            let shown = if n == usize::MAX {
-                ">4MB".into()
-            } else {
-                n.to_string()
-            };
-            return Some(format!(
-                "Whole-file read of a large file: {path} ({shown} lines).\n\
+    if let Some(n) = line_count(Path::new(path))
+        && n > BIG_FILE_LINES
+    {
+        let shown = if n == usize::MAX {
+            ">4MB".into()
+        } else {
+            n.to_string()
+        };
+        return Some(format!(
+            "Whole-file read of a large file: {path} ({shown} lines).\n\
                  Locate first, then read the span: use the Grep tool for the symbol, then Read \
                  with `offset`/`limit`. Pass either one and this call is allowed.\n\
                  (Measured: 131 reads over 4k tokens accounted for 37% of all tool-result \
                  residency; the worst single call cost 4.77M token-turns.)"
-            ));
-        }
+        ));
     }
 
     record_read(session, path);

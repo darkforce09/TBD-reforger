@@ -152,14 +152,14 @@ pub fn include_inputs_under(dirs: &[String]) -> Vec<PathBuf> {
             // flattened text then carries runs of spaces the substring form cannot absorb. A file
             // whose every anchored pin is wrapped would drop out of the frontend's input set
             // entirely, which reads as "frontend untouched" and silently skips the suite.
-            if re_manifest.is_match(&flat) {
-                if let Some(md) = owning_package_dir(&consumer.display().to_string()) {
-                    let manifest_dir = realpath_m(Path::new(&md));
-                    for c in re_manifest.captures_iter(&flat) {
-                        let cand = realpath_m(&manifest_dir.join(c[1].trim_start_matches('/')));
-                        if cand.is_file() {
-                            out.push(cand);
-                        }
+            if re_manifest.is_match(&flat)
+                && let Some(md) = owning_package_dir(&consumer.display().to_string())
+            {
+                let manifest_dir = realpath_m(Path::new(&md));
+                for c in re_manifest.captures_iter(&flat) {
+                    let cand = realpath_m(&manifest_dir.join(c[1].trim_start_matches('/')));
+                    if cand.is_file() {
+                        out.push(cand);
                     }
                 }
             }

@@ -36,49 +36,49 @@ pub fn cmd_consume() -> i32 {
                 return 3;
             }
             let result = map.get("result").cloned().unwrap_or(json!({}));
-            if let Some(obj) = result.as_object() {
-                if obj.get("isError") == Some(&Value::Bool(true)) {
-                    let texts: Vec<String> = obj
-                        .get("content")
-                        .and_then(|c| c.as_array())
-                        .map(|arr| {
-                            arr.iter()
-                                .filter_map(|c| {
-                                    let o = c.as_object()?;
-                                    if o.get("type").and_then(|t| t.as_str()) == Some("text") {
-                                        Some(
-                                            o.get("text")
-                                                .and_then(|t| t.as_str())
-                                                .unwrap_or("")
-                                                .to_string(),
-                                        )
-                                    } else {
-                                        None
-                                    }
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_default();
-                    let msg = if texts.is_empty() {
-                        compact_json(&result)
-                    } else {
-                        texts.join("\n")
-                    };
-                    let _ = writeln!(io::stderr(), "{msg}");
-                    return 3;
-                }
+            if let Some(obj) = result.as_object()
+                && obj.get("isError") == Some(&Value::Bool(true))
+            {
+                let texts: Vec<String> = obj
+                    .get("content")
+                    .and_then(|c| c.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|c| {
+                                let o = c.as_object()?;
+                                if o.get("type").and_then(|t| t.as_str()) == Some("text") {
+                                    Some(
+                                        o.get("text")
+                                            .and_then(|t| t.as_str())
+                                            .unwrap_or("")
+                                            .to_string(),
+                                    )
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                let msg = if texts.is_empty() {
+                    compact_json(&result)
+                } else {
+                    texts.join("\n")
+                };
+                let _ = writeln!(io::stderr(), "{msg}");
+                return 3;
             }
             let mut printed = false;
             if let Some(arr) = result.get("content").and_then(|c| c.as_array()) {
                 for chunk in arr {
-                    if let Some(o) = chunk.as_object() {
-                        if o.get("type").and_then(|t| t.as_str()) == Some("text") {
-                            let text = o.get("text").and_then(|t| t.as_str()).unwrap_or("");
-                            if write_stdout_line(text) != 0 {
-                                return 0; // BrokenPipe → 0 (Python)
-                            }
-                            printed = true;
+                    if let Some(o) = chunk.as_object()
+                        && o.get("type").and_then(|t| t.as_str()) == Some("text")
+                    {
+                        let text = o.get("text").and_then(|t| t.as_str()).unwrap_or("");
+                        if write_stdout_line(text) != 0 {
+                            return 0; // BrokenPipe → 0 (Python)
                         }
+                        printed = true;
                     }
                 }
             }

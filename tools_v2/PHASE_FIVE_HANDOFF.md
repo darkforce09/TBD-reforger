@@ -738,14 +738,14 @@ verification_core | lock::tests::acquires_when_free
 verification_core | lock::tests::dropping_releases_for_the_next_holder
 verification_core | lock::tests::exhaustion_is_did_not_run_never_a_pass
 verification_core | lock::tests::heartbeat_fires_while_blocked
-verification_core | lock::tests::interops_with_the_flock_command_used_by_wave_sh
-verification_core | pattern::tests::caret_is_a_line_anchor_like_grep
+verification_core | lock::tests::interops_with_the_flock_command
+verification_core | pattern::tests::caret_is_a_line_anchor
 verification_core | pattern::tests::case_insensitive_folds
-verification_core | pattern::tests::dollar_is_a_line_anchor_like_grep
+verification_core | pattern::tests::dollar_is_a_line_anchor
 verification_core | pattern::tests::dot_does_not_cross_a_newline
 verification_core | pattern::tests::invalid_regex_is_an_error_not_a_panic
 verification_core | pattern::tests::literal_escapes_metacharacters
-verification_core | pattern::tests::posix_classes_work_as_in_ere
+verification_core | pattern::tests::posix_classes_work_as_in_an_extended_regex
 verification_core | pattern::tests::source_survives_escaping_for_diagnostics
 verification_core | proc::tests::absent_tool_is_tool_absent_not_a_failure
 verification_core | proc::tests::captures_stderr_separately
@@ -785,9 +785,9 @@ verification_core | scan::tests::walks_recursively_and_deterministically
 verification_core | verdict::tests::ban_and_pin_differ_only_in_the_noun
 verification_core | verdict::tests::exit_codes_separate_did_not_run_from_failed
 verification_core | verdict::tests::held_renders_nothing
-verification_core | verdict::tests::legacy_binary_exit_matches_gate_grep
-verification_core | verdict::tests::renders_bare_failure_like_bash
-verification_core | verdict::tests::renders_missing_target_like_bash
+verification_core | verdict::tests::the_binary_exit_code_collapses_both_failure_kinds_to_one
+verification_core | verdict::tests::renders_a_bare_failure_as_one_headline
+verification_core | verdict::tests::a_missing_target_names_the_file_and_the_six_space_continuation
 verification_core | verdict::tests::signal_death_is_did_not_run_never_failed
 xtask | commands::agent_context::guards::tests::bare_file_read_is_denied
 xtask | commands::agent_context::guards::tests::capped_search_is_allowed
@@ -1205,7 +1205,7 @@ xtask | core::repository_root::tests::nested_tooling_directories_resolve_reposit
 xtask | core::test_environment::tests::prepend_dir_keeps_usr_bin
 xtask | commands::mcp::workbench_logs::file_cli_tests::file_equals_empty_parses_via_clap
 xtask | tooling_dependency_boundaries::foundational_engines_have_no_workspace_dependencies
-xtask | tooling_dependency_boundaries::heavy_package_has_one_owner_and_preserves_executable_names
+xtask | tooling_dependency_boundaries::the_tooling_tree_holds_its_executables_manifests_and_layout_modules
 xtask | tooling_dependency_boundaries::inline_module_detection_handles_nested_syntax_without_matching_source_strings
 xtask | tooling_dependency_boundaries::structural_limits_distinguish_scenarios_and_separate_tests
 xtask | tooling_dependency_boundaries::ticket_implementations_have_one_owner
@@ -2506,6 +2506,178 @@ Two filters do not reach zero, and each names something this phase must not rewr
 - `tools_v2/ANALYSIS_AND_INVENTORY.md`, `ARCHITECTURE_PLAN.md`, `PHASE_ONE_HANDOFF.md` and
   `PHASE_THREE_HANDOFF.md` still name deleted gate files, the deleted tools tree, and three
   decomposed modules. Every one of those documents is on P8's rewrite list.
+
+### Commands that could not run
+
+None. Every command of this phase ran unmodified in this environment.
+
+## P6 — verification-core and structural rules
+
+This phase brings `verification-core` under the same structural rules as the rest of the tooling
+and widens the rules themselves to every crate under `tools_v2`. The file-length gate refuses an
+allowlist row whose file is not scanned, so splitting the oversized module and removing its
+exemption are one commit or neither.
+
+### What changed
+
+`tools_v2/verification-core/src/proc.rs` (786 lines) becomes a module directory:
+
+- `src/proc/mod.rs` — the vocabulary: `Run` and its builder, `Output`, `Merged`, and the
+  re-exports of `which`, `retry` and `wait_for`. The public API is unchanged: callers still write
+  `verification_core::proc::{Run, Output, Merged, which, retry, wait_for}`.
+- `src/proc/runner.rs` — `output`, `merged_output`, `status`, `expect_ok`, `expect_code`, the
+  process-group isolation (`setsid`, with `setpgid` as the fallback), the deadline loop and the
+  `killpg` that ends a whole tree.
+- `src/proc/stream.rs` — the pipe drains: two threads for separated streams, one for the shared
+  pipe, each reading to EOF for the child's whole life so a full buffer cannot deadlock it.
+- `src/proc/lookup.rs` — `which`, `retry` and `wait_for`.
+- `src/proc/README.md` — described `../proc.rs`, a file that no longer existed; it now describes
+  the four modules of the directory it sits in.
+
+Two duplications the split removed rather than copied: both capture paths now build their
+`Command` through one `Run::command`, and both reap through one `wait_within`. The behaviour is
+unchanged on every path, the joins on the timeout path included.
+
+The seven inline test modules move to `src/tests/{gate,lock,pattern,proc,report,scan,verdict}_tests.rs`,
+each declared from its production file with `#[cfg(test)] #[path = "tests/<name>_tests.rs"] mod tests;`
+(`proc` declares `../tests/proc_tests.rs` from `proc/mod.rs`). Test bodies and assertions are
+unchanged; the eight renamed functions are listed below and their lines in the baseline inventory
+above now name them.
+
+`.coding-standards-allowlist.yaml` loses its last `tools_v2/` row (the SIZE-3 exemption for
+`proc.rs`). Every file in the crate is now inside the ordinary limits.
+
+`tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`:
+
+- `TOOLING_CRATES` lists all four crates, so the line limits, the no-inline-tests rule and the
+  no-size-exemptions rule scan `verification-core` and `ticket-engine` as well.
+- The executable test asserts what the tree holds instead of what it does not: the six
+  executables, the four crate manifests, the two repository-layout modules and the node package
+  manifest. It is named for what it checks.
+
+`tools_v2/xtask/src/main.rs` loses its three crate-wide `#![allow(clippy::…)]`. Clippy then
+reported 52 `collapsible_if` sites in 34 files, every one a nested `if` that becomes a let chain;
+all are collapsed and no `#[allow]` was added anywhere. `unnecessary_sort_by` and
+`unnecessary_unwrap` had no remaining sites.
+
+Manifests: `verification-core/Cargo.toml` gains `description`, `rust-version = "1.95"` and
+`license = "UNLICENSED"`, and its header comment now states the dependency policy without naming
+a crate and a script that do not exist; `developer-tools/Cargo.toml` gains `rust-version` and
+`license`; `xtask/Cargo.toml` describes what the binary is.
+
+Prose across the crate now describes the code as it stands. The module documents of `lib.rs`,
+`gate.rs`, `pattern.rs`, `proc/mod.rs`, `report.rs`, `scan.rs` and `verdict.rs` kept every
+invariant they carried — the four outcomes, the line-anchor semantics, the fail-closed walk, the
+raw exit code, the process group, the pipe drains — and lost the attributions to deleted shell
+drivers, the ticket identifiers and the broken rustdoc link to a file outside the workspace.
+`README.md` lists the module tree as it now is and documents the lock path and its overrides.
+
+### The renamed tests
+
+| Before | After | Why |
+|---|---|---|
+| `lock::tests::interops_with_the_flock_command_used_by_wave_sh` | `interops_with_the_flock_command` | The name pointed at a deleted driver; the function was renamed in the previous phase and only its inventory line was outstanding. |
+| `verdict::tests::legacy_binary_exit_matches_gate_grep` | `the_binary_exit_code_collapses_both_failure_kinds_to_one` | Named a deleted library and used a word the prose rules ban; the new name states the contract. |
+| `verdict::tests::renders_bare_failure_like_bash` | `renders_a_bare_failure_as_one_headline` | Described the rendering by comparison to something not in the repository. |
+| `verdict::tests::renders_missing_target_like_bash` | `a_missing_target_names_the_file_and_the_six_space_continuation` | The function carried this name already; the inventory line was stale. |
+| `pattern::tests::caret_is_a_line_anchor_like_grep` | `caret_is_a_line_anchor` | Same comparison-to-an-absent-thing shape. |
+| `pattern::tests::dollar_is_a_line_anchor_like_grep` | `dollar_is_a_line_anchor` | As above. |
+| `pattern::tests::posix_classes_work_as_in_ere` | `posix_classes_work_as_in_an_extended_regex` | An abbreviation that needs outside context. |
+| `tooling_dependency_boundaries::heavy_package_has_one_owner_and_preserves_executable_names` | `the_tooling_tree_holds_its_executables_manifests_and_layout_modules` | The old name described the negative asserts this phase replaced. |
+
+The crate runs 68 test functions, the same 68 as the baseline, plus the crate-level documentation
+example the inventory does not list.
+
+### Acceptance
+
+| Command | Expected | Actual |
+|---|---|---|
+| `find tools_v2/verification-core/src -name '*.rs' -exec wc -l {} + \| awk '$1 >= 500 && $2 !~ /tests/'` | empty | one line, ` 2282 total` — `wc` prints an aggregate row for a multi-file argument list and 2282 passes both conditions. No file row is printed; adding `&& $2 != "total"` yields empty. The largest production file is `proc/runner.rs` at 283 lines. |
+| `git grep -c 'mod tests {' tools_v2/verification-core/src` | 0 | no output, exit 1 (no file matches) |
+| `grep -c 'tools_v2/' .coding-standards-allowlist.yaml` | 0 | 0 |
+| `grep -c '#!\[allow' tools_v2/xtask/src/main.rs` | 0 | 0 |
+| `git grep -n 'TOOLING_CRATES' tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs` | four entries | `:134` declares `[&str; 4]` with `xtask`, `developer-tools`, `verification-core`, `ticket-engine`; `:143` and `:324` iterate it |
+| `grep -c -E '^(description\|rust-version\|license)' <the four manifests>` | 3 each | verification-core 3, developer-tools 3, xtask 3, ticket-engine 3 |
+| `cargo test -p verification-core` | count = P0 | ok — 68 passed, 0 failed, plus 1 documentation test |
+| `cargo test -p xtask tooling_` | green, 4 crates | ok — 12 passed, 0 failed |
+| `cargo xtask verify file-length` | OK, no orphan row | exit 0 — scanned 2523 `.rs` files, 0 violations (2513 after the previous phase, plus the ten files this split adds) |
+| `cargo clippy -p xtask -p verification-core --all-targets -- -D warnings` | clean | exit 0, no diagnostics |
+| `cargo check --workspace --locked` | clean | exit 0 |
+| `cargo fmt --check` | clean | exit 0 |
+| `cargo doc -p verification-core --no-deps` | links valid | exit 0, zero warnings |
+| `cargo xtask verify ci-schema-parity` | PASS | `ci-schema-parity: PASS`, exit 0 |
+| `cargo test -p xtask -p verification-core -p ticket-engine -p developer-tools` | green | exit 0 — 652, 68, 259 and 200 passed, 0 failed, 4 ignored |
+
+### Found and fixed
+
+- `tools_v2/verification-core/src/lib.rs:3-63` — the crate document quoted a deleted shell
+  library's header, carried three ticket identifiers, and ended in a rustdoc link to a path
+  outside the workspace. The facts it carried are kept: one implementation of the four outcomes
+  shared by every gate, the matcher compiled in, and `?` propagating "did not run" out of a
+  compound condition.
+- `tools_v2/verification-core/src/proc/mod.rs:25,29`, `runner.rs` (`expect_code`) and
+  `tests/proc_tests.rs` — the raw-exit-code rule named two deleted scripts. The live commands with
+  that contract are `cargo xtask mod compile --selftest`, which passes only on exactly 1
+  (`tools_v2/xtask/src/commands/mod_ops/compile.rs:2`), and `cargo xtask map export-terrain`,
+  which exits 2 when the staged export is missing
+  (`tools_v2/xtask/src/commands/map/terrain_export.rs:4,7`).
+- `tools_v2/verification-core/src/gate.rs:1-34`, `scan.rs:1-26`, `verdict.rs:1-146`,
+  `pattern.rs:1-31`, `report.rs:1-11,83` — deleted script names, a bash-idiom narrative and the
+  word the history rules ban. Each invariant stays and now stands on its own: a compound condition
+  must not short-circuit clean, a silenced search error must not read as zero violations, a
+  boolean cannot carry four outcomes, `^` and `$` are line anchors, and the two failure kinds are
+  counted separately.
+- `tools_v2/verification-core/src/tests/lock_tests.rs` — the interop assertion said Rust had
+  failed to contend with bash's lock; it names `flock(1)`, which is what the test actually starts.
+- `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/repository_access.rs:47` —
+  the vacuous-pass refusal printed a ticket identifier to the operator. The sibling gate in
+  `verify_engine_layers.rs:318` prints the same sentence without one; they now match.
+- Six directories under `tools_v2` held nothing but a signpost `README.md` pointing at an
+  implementation that lives elsewhere: `ticket-engine/src/{core,store,operations}`,
+  `developer-tools/src/map_raster_pipeline/satellite_container`,
+  `developer-tools/src/browser_testing/server` and
+  `developer-tools/src/world_export_pipeline/mathematical_gates`. Coverage check before deleting:
+  each directory contained exactly one tracked file, that file was its own `README.md`, none of
+  the six holds a `.rs` file, so no `mod` or `#[path]` declaration can resolve into one; and each
+  target the README named still exists (`ticket-engine/src/model/`, `src/store.rs`, `src/ops/`,
+  `map_raster_pipeline/satellite_archive_container.rs`, `browser_testing/server.rs`,
+  `world_export_pipeline/mathematical_verification.rs`). All six are deleted;
+  `find tools_v2 -type d -empty` outside the node package is empty afterwards.
+- The baseline inventory lines for the eight renamed tests, one of which
+  (`verdict::tests::renders_missing_target_like_bash`) had been stale since the phase that moved
+  the deployment files.
+
+### Found for P7
+
+- `tools_v2/xtask/src/verifications/schemas/checks/specification_consistency.rs:326` reads the
+  registry through `ticket_engine::registry::load_registry` and falls back to a hardcoded slice
+  identifier when that read fails. The fallback is a literal ticket identifier in production code,
+  so it cannot survive P8's rule; the path it stands in is the one P7 reworks when the registry
+  loader loses its JSON branch. Decide there whether an unreadable registry should refuse the gate
+  (a `DidNotRun`) rather than silently compare the hub header against a frozen identifier.
+
+### Found for P8
+
+- `tools_v2/verification-core/src/scan.rs:95` exports `grep_lines`, whose name borrows an external
+  tool for a function that runs no process. It is public API used across `xtask` and
+  `developer-tools`; renaming it is a public-surface change, which belongs with the other renames
+  rather than inside a prose pass — recorded so the decision is taken deliberately.
+- `tools_v2/xtask/src/commands/platform/wave_execution/changed/changed_rs.rs:57-59` explains the
+  edition walk by quoting a shell pipeline. The invariant to keep is that the FIRST line starting
+  with `edition` is read, reduced to its digits, so `edition.workspace = true` yields an empty
+  string and the walk continues upward.
+- `tools_v2/xtask/src/commands/mcp/json_rpc.rs:80` ends a return arm with the comment
+  `// BrokenPipe → 0 (Python)`, naming a language this repository bans from its tooling.
+
+### Found for P10
+
+- This document is itself inside the R2, R3 and R7 scopes (they read `tools_v2` and
+  `tools_v2/*.md`). Measured on this commit: R2 matches 15 lines, R3 10 lines, R7 3 lines, all of
+  them in sections written by earlier phases — twelve are baseline-inventory lines naming the two
+  ticket-engine modules P7 renames, and the rest are prose that names a deleted driver while
+  explaining why something was removed. The final matrix will report them unless the phase that
+  rewrites this document's earlier sections states the same facts without the names, so run the
+  three rows with and without `':!tools_v2/PHASE_FIVE_HANDOFF.md'` and record both numbers.
 
 ### Commands that could not run
 

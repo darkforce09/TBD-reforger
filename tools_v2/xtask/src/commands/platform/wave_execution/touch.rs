@@ -224,10 +224,10 @@ fn package_name(dir: &str) -> Option<String> {
             let rest = rest.trim_start();
             if let Some(rest) = rest.strip_prefix('=') {
                 let rest = rest.trim_start();
-                if let Some(rest) = rest.strip_prefix('"') {
-                    if let Some(end) = rest.find('"') {
-                        return Some(rest[..end].to_string());
-                    }
+                if let Some(rest) = rest.strip_prefix('"')
+                    && let Some(end) = rest.find('"')
+                {
+                    return Some(rest[..end].to_string());
                 }
             }
         }

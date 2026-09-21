@@ -125,15 +125,15 @@ pub fn run_with(root: &Path, home: &Path, run_id: &str) -> Result<u8> {
 fn load_ssh_vars(deploy_env: &Path) -> (Option<String>, Option<String>) {
     let mut host = std::env::var("TBD_SSH_HOST").ok().filter(|s| !s.is_empty());
     let mut pass = std::env::var("TBD_SSH_PASS").ok().filter(|s| !s.is_empty());
-    if deploy_env.is_file() {
-        if let Ok(map) = parse_deploy_env(deploy_env) {
-            // bash `source` overlays file onto the shell.
-            if let Some(v) = map.get("TBD_SSH_HOST").filter(|s| !s.is_empty()) {
-                host = Some(v.clone());
-            }
-            if let Some(v) = map.get("TBD_SSH_PASS").filter(|s| !s.is_empty()) {
-                pass = Some(v.clone());
-            }
+    if deploy_env.is_file()
+        && let Ok(map) = parse_deploy_env(deploy_env)
+    {
+        // bash `source` overlays file onto the shell.
+        if let Some(v) = map.get("TBD_SSH_HOST").filter(|s| !s.is_empty()) {
+            host = Some(v.clone());
+        }
+        if let Some(v) = map.get("TBD_SSH_PASS").filter(|s| !s.is_empty()) {
+            pass = Some(v.clone());
         }
     }
     (host, pass)

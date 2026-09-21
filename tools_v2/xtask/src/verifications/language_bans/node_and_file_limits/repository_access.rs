@@ -44,7 +44,7 @@ pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, N
 
     let files = walk_rust_sources(root)?;
     if files.is_empty() {
-        println!("FAIL: file-length walked 0 .rs files — refusing a vacuous pass (T-899)");
+        println!("FAIL: file-length walked 0 .rs files — refusing a vacuous pass.");
         return Ok(1);
     }
 
@@ -86,11 +86,9 @@ pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, N
         } else {
             SIZE_3_PRODUCTION_MAX_LINES
         };
-        if n > max_lines {
-            if !is_size3_exempt(&rel, &entries, &today) {
-                eprintln!("SIZE-3: {rel} is {n} lines (>{max_lines}, not allowlisted)");
-                fails += 1;
-            }
+        if n > max_lines && !is_size3_exempt(&rel, &entries, &today) {
+            eprintln!("SIZE-3: {rel} is {n} lines (>{max_lines}, not allowlisted)");
+            fails += 1;
         }
     }
     println!(
@@ -170,10 +168,10 @@ pub(super) fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
             continue;
         }
         if let Some(r) = t.strip_prefix("- rule:") {
-            if let Some(e) = cur.take() {
-                if !e.path.is_empty() {
-                    out.push(e);
-                }
+            if let Some(e) = cur.take()
+                && !e.path.is_empty()
+            {
+                out.push(e);
             }
             cur = Some(AllowEntry {
                 rule: yaml_scalar(r),
@@ -194,10 +192,10 @@ pub(super) fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
             e.expires = yaml_scalar(v);
         }
     }
-    if let Some(e) = cur.take() {
-        if !e.path.is_empty() {
-            out.push(e);
-        }
+    if let Some(e) = cur.take()
+        && !e.path.is_empty()
+    {
+        out.push(e);
     }
     out
 }

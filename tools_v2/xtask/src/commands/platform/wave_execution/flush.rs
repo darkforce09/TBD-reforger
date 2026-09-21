@@ -327,18 +327,18 @@ pub(super) fn spawn_cargo(ctx: &Ctx, verb: &str, cargo_args: &[String], run_args
 /// that this driver should honour. Announced, never silent — a tool that quietly edits its own
 /// environment is the thing that makes the next failure unexplainable.
 pub(super) fn disown_ambient_target_dir() {
-    if let Ok(v) = std::env::var("CARGO_TARGET_DIR") {
-        if !v.is_empty() {
-            eprintln!("wave: ignoring inherited CARGO_TARGET_DIR={v}");
-            eprintln!(
-                "      This driver picks its own (gate-check, per-slice private, shared warm cache)."
-            );
-            eprintln!(
-                "      An inherited one crosses the container/host bridge and poisons the cache it names."
-            );
-            // SAFETY: single-threaded entry, before any child is spawned or thread started.
-            unsafe { std::env::remove_var("CARGO_TARGET_DIR") };
-        }
+    if let Ok(v) = std::env::var("CARGO_TARGET_DIR")
+        && !v.is_empty()
+    {
+        eprintln!("wave: ignoring inherited CARGO_TARGET_DIR={v}");
+        eprintln!(
+            "      This driver picks its own (gate-check, per-slice private, shared warm cache)."
+        );
+        eprintln!(
+            "      An inherited one crosses the container/host bridge and poisons the cache it names."
+        );
+        // SAFETY: single-threaded entry, before any child is spawned or thread started.
+        unsafe { std::env::remove_var("CARGO_TARGET_DIR") };
     }
 }
 

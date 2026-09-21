@@ -153,22 +153,23 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default();
     let token = adhoc_token(&base);
-    if !adhoc_env.is_empty() && priv_r != default_r {
-        if let Some(tok) = &token {
-            wprintln!(
-                "test: REFUSING — TBD_ADHOC_TARGET_DIR is not the default per-slice path ({priv_r})."
-            );
-            if *tok != tid {
-                wprintln!("        Foreign-slice token '{tok}' != --slice '{tid}'.");
-            }
-            wprintln!(
-                "        Allowed overrides: $HOME/.cache/tbd-target-{tid}, or a non-T-* verifier"
-            );
-            wprintln!("        path (e.g. $HOME/.cache/tbd-target-wave138-verify).");
-            return 2;
+    if !adhoc_env.is_empty()
+        && priv_r != default_r
+        && let Some(tok) = &token
+    {
+        wprintln!(
+            "test: REFUSING — TBD_ADHOC_TARGET_DIR is not the default per-slice path ({priv_r})."
+        );
+        if *tok != tid {
+            wprintln!("        Foreign-slice token '{tok}' != --slice '{tid}'.");
         }
-        // token empty → non-T-* verifier path — allowed (documented above).
+        wprintln!(
+            "        Allowed overrides: $HOME/.cache/tbd-target-{tid}, or a non-T-* verifier"
+        );
+        wprintln!("        path (e.g. $HOME/.cache/tbd-target-wave138-verify).");
+        return 2;
     }
+    // token empty → non-T-* verifier path — allowed (documented above).
 
     // Never advertise rm -rf for a path whose ticket token differs from --slice or is a live
     // worktree's foreign cache. Default per-slice for THIS tid + non-T-* verifier OK.

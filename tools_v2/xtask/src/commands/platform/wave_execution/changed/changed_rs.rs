@@ -54,16 +54,16 @@ pub fn file_edition(f: &str) -> String {
             break;
         }
         let manifest = d.join("Cargo.toml");
-        if manifest.is_file() {
-            if let Ok(body) = std::fs::read_to_string(&manifest) {
-                // `grep -m1 '^edition' | tr -dc '0-9'` — the FIRST line starting with `edition`,
-                // reduced to its digits. `edition.workspace = true` therefore yields the empty
-                // string and the walk continues upward, which is the behaviour that matters.
-                if let Some(line) = body.lines().find(|l| l.starts_with("edition")) {
-                    let e: String = line.chars().filter(char::is_ascii_digit).collect();
-                    if !e.is_empty() {
-                        return e;
-                    }
+        if manifest.is_file()
+            && let Ok(body) = std::fs::read_to_string(&manifest)
+        {
+            // `grep -m1 '^edition' | tr -dc '0-9'` — the FIRST line starting with `edition`,
+            // reduced to its digits. `edition.workspace = true` therefore yields the empty
+            // string and the walk continues upward, which is the behaviour that matters.
+            if let Some(line) = body.lines().find(|l| l.starts_with("edition")) {
+                let e: String = line.chars().filter(char::is_ascii_digit).collect();
+                if !e.is_empty() {
+                    return e;
                 }
             }
         }
@@ -387,12 +387,11 @@ pub fn owning_package_dir(f: &str) -> Option<String> {
             return None;
         }
         let manifest = d.join("Cargo.toml");
-        if manifest.is_file() {
-            if let Ok(body) = std::fs::read_to_string(&manifest) {
-                if body.lines().any(|l| l.starts_with("[package]")) {
-                    return Some(ds);
-                }
-            }
+        if manifest.is_file()
+            && let Ok(body) = std::fs::read_to_string(&manifest)
+            && body.lines().any(|l| l.starts_with("[package]"))
+        {
+            return Some(ds);
         }
         d = d.parent()?.to_path_buf();
     }

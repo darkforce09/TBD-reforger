@@ -123,10 +123,10 @@ pub(super) fn orphan_cache_mb() -> u64 {
     };
     let mut sum: u64 = 0;
     for line in String::from_utf8_lossy(&out.stdout).lines() {
-        if let Some(first) = line.split_whitespace().next() {
-            if let Ok(n) = first.parse::<u64>() {
-                sum += n;
-            }
+        if let Some(first) = line.split_whitespace().next()
+            && let Ok(n) = first.parse::<u64>()
+        {
+            sum += n;
         }
     }
     sum

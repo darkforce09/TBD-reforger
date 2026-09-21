@@ -1,15 +1,15 @@
-# verification-core — the four-outcome static-check library (T-853; Rust port of
-# scripts/mod/lib/gate-grep.sh).
-#
-# Dependency-light ON PURPOSE. This crate is linked by every gate in `xtask`/`xtools` and by the
-# heavy async tooling in `tools_v2/developer-tools`, so anything added here is paid for by both. `regex`
-# replaces the `grep` subprocess (retiring the exit-127 class outright) and `libc` is needed for
-# two things bash gets wrong and this crate must not: killing a timed-out process GROUP rather
-# than just the child, and `flock` on the shared gate lock.
+# Dependency-light ON PURPOSE. Every gate in `xtask` and the heavy tooling in `developer-tools`
+# link this crate, so anything added here is paid for by both. `regex` puts the matcher inside the
+# gate binary, which retires the absent-search-tool class outright, and `libc` carries the two
+# primitives the crate cannot do without: killing a timed-out process GROUP rather than only its
+# leader, and `flock` on the shared verification lock.
 [package]
 name = "verification-core"
+description = "Fail-closed verdicts, pattern scans, process isolation and the repository verification lock"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
 publish = false
 
 [dependencies]

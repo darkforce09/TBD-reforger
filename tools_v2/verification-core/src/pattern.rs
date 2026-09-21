@@ -1,47 +1,42 @@
-//! Patterns — the typed form of `grep`'s `-E` / `-F` / `-i` triple.
+//! Patterns — the typed form of an extended regex, a literal needle and a case fold.
 //!
-//! ── WHY `regex` AND NOT A `grep` SUBPROCESS ──────────────────────────────────────────────────
+//! ── WHY THE MATCHER IS COMPILED IN ───────────────────────────────────────────────────────────
 //!
-//! `gate-grep.sh` had already removed one external search tool. Its header records the finding:
-//! `ripgrep` is installed **nowhere** on this machine, and `command -v rg` succeeds in an agent
-//! shell only because the harness injects a shell *function* named `rg`. So an `rg`-based gate
-//! returned a different verdict depending on who invoked it, and the fix was to fall back to
-//! `grep`, which is present in the container, on the host and on every CI runner.
+//! A gate that shells out to a search binary answers differently depending on who invokes it:
+//! `ripgrep` is installed on no machine this repository runs on, and `command -v rg` still
+//! succeeds in an agent shell because the harness injects a shell *function* of that name. With
+//! the `regex` crate the search engine is inside the gate binary, so there is no `PATH`, no shell
+//! function, no version skew, and **exit 127 is not a reachable state for the matcher at all**.
+//! The dependency is removed rather than asserted.
 //!
-//! Using the `regex` crate finishes that job: the search engine is now compiled into the gate
-//! binary, so there is no `PATH`, no shell function, no version skew, and **exit 127 stops being
-//! a reachable state for the matcher at all**. That is a dependency removed, not asserted.
+//! ── LINE SEMANTICS: `^` AND `$` ──────────────────────────────────────────────────────────────
 //!
-//! ── THE COMPATIBILITY TRAP: `^` AND `$` ──────────────────────────────────────────────────────
+//! Gate patterns are written the way an operator writes them for a line-oriented search: `^foo`
+//! means "some line begins with foo". The `regex` crate defaults to matching the whole text,
+//! where `^` means "the input begins with foo" — so the same pattern would quietly match only the
+//! first line, and a ban built on `^\s*unsafe` would report OK over a file full of violations.
 //!
-//! `grep` is a LINE matcher. `^foo` means "some line begins with foo". The `regex` crate defaults
-//! to matching against the whole text, where `^` means "the input begins with foo" — so a pattern
-//! ported verbatim would quietly stop matching on every line but the first, and a ban built on
-//! `^\s*unsafe` would report OK over a file full of violations.
+//! That is the defect this crate exists to prevent, arriving through the back door of a syntax
+//! difference, so `multi_line(true)` is set unconditionally and is not configurable. With it,
+//! `^`/`$` are line anchors and `.` still does not cross a newline.
 //!
-//! That is the same class of defect this crate exists to prevent, arriving through the back door
-//! of a syntax difference, so `multi_line(true)` is set unconditionally and is not configurable.
-//! With it, `^`/`$` are line anchors and `.` still does not cross a newline — which together are
-//! exactly `grep`'s semantics.
-//!
-//! The remaining ERE surface is compatible for everything the ported gates use: `\(`, `\[`, `|`
-//! and the POSIX classes such as `[[:space:]]` mean the same thing in both engines. `-F` becomes
-//! [`Pattern::literal`], which escapes the needle rather than trusting the caller to have escaped
-//! it — the honest version of `grep -F`.
+//! The rest of the extended-regex surface the gates use — `\(`, `\[`, `|` and POSIX classes such
+//! as `[[:space:]]` — needs no translation. A fixed needle is [`Pattern::literal`], which escapes
+//! it rather than trusting the caller to have escaped it.
 
 use regex::{Regex, RegexBuilder};
 
-/// A compiled search pattern with `grep`-compatible semantics.
+/// A compiled search pattern with line-oriented semantics.
 #[derive(Debug, Clone)]
 pub struct Pattern {
     re: Regex,
     /// The pattern exactly as the caller wrote it, for failure messages. The compiled form is
-    /// unhelpful in a log when the source was `-F` and got escaped.
+    /// unhelpful in a log when the source was a literal needle and got escaped.
     source: String,
 }
 
 impl Pattern {
-    /// An extended-regex pattern — the default engine, equivalent to `grep -E`.
+    /// An extended-regex pattern — the default engine.
     pub fn regex(pat: &str) -> Result<Pattern, regex::Error> {
         Ok(Pattern {
             re: build(pat, false)?,
@@ -49,8 +44,8 @@ impl Pattern {
         })
     }
 
-    /// A literal pattern — equivalent to `grep -F`. The needle is escaped, so regex metacharacters
-    /// in it are matched as themselves.
+    /// A literal pattern. The needle is escaped, so regex metacharacters in it are matched as
+    /// themselves.
     pub fn literal(pat: &str) -> Pattern {
         // `regex::escape` output is always a valid pattern, so this cannot fail.
         let re = build(&regex::escape(pat), false).expect("escaped literal is always valid");
@@ -60,7 +55,7 @@ impl Pattern {
         }
     }
 
-    /// Case-fold this pattern — equivalent to adding `grep -i`.
+    /// Case-fold this pattern.
     pub fn case_insensitive(self) -> Result<Pattern, regex::Error> {
         Ok(Pattern {
             re: build(self.re.as_str(), true)?,
@@ -88,63 +83,5 @@ fn build(pat: &str, case_insensitive: bool) -> Result<Regex, regex::Error> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn caret_is_a_line_anchor_like_grep() {
-        // THE TRAP. Default regex-crate semantics would fail this, and every ported `^`-anchored
-        // ban would go quietly green over a file full of violations.
-        let p = Pattern::regex("^forbidden").unwrap();
-        assert!(p.is_match("ok line\nforbidden line\n"));
-    }
-
-    #[test]
-    fn dollar_is_a_line_anchor_like_grep() {
-        let p = Pattern::regex("trailing$").unwrap();
-        assert!(p.is_match("has trailing\nmore\n"));
-    }
-
-    #[test]
-    fn dot_does_not_cross_a_newline() {
-        // grep is per-line, so a `.` run can never span lines. Same here.
-        let p = Pattern::regex("a.*b").unwrap();
-        assert!(!p.is_match("a\nb"));
-        assert!(p.is_match("a x b"));
-    }
-
-    #[test]
-    fn literal_escapes_metacharacters() {
-        let p = Pattern::literal("foo(bar)");
-        assert!(p.is_match("call foo(bar) here"));
-        assert!(!p.is_match("call fooXbar here"));
-    }
-
-    #[test]
-    fn case_insensitive_folds() {
-        let p = Pattern::regex("unsafe")
-            .unwrap()
-            .case_insensitive()
-            .unwrap();
-        assert!(p.is_match("UNSAFE block"));
-        let sensitive = Pattern::regex("unsafe").unwrap();
-        assert!(!sensitive.is_match("UNSAFE block"));
-    }
-
-    #[test]
-    fn posix_classes_work_as_in_ere() {
-        // gate-grep.sh's header pins `[[:space:]]` as identical across engines.
-        let p = Pattern::regex("foo[[:space:]]+bar").unwrap();
-        assert!(p.is_match("foo   bar"));
-    }
-
-    #[test]
-    fn source_survives_escaping_for_diagnostics() {
-        assert_eq!(Pattern::literal("a.b").source(), "a.b");
-    }
-
-    #[test]
-    fn invalid_regex_is_an_error_not_a_panic() {
-        assert!(Pattern::regex("a(").is_err());
-    }
-}
+#[path = "tests/pattern_tests.rs"]
+mod tests;

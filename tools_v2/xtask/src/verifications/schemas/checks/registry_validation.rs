@@ -130,10 +130,10 @@ pub(super) fn validate(
         for e in compat["edges"].as_array().into_iter().flatten() {
             let et = e["edge_type"].as_str().unwrap_or("?");
             for endpoint in ["from_node", "to_node"] {
-                if let Some(n) = e[endpoint].as_str() {
-                    if !known.contains(n) {
-                        bad.push(format!("dangling {et} {endpoint} {n}"));
-                    }
+                if let Some(n) = e[endpoint].as_str()
+                    && !known.contains(n)
+                {
+                    bad.push(format!("dangling {et} {endpoint} {n}"));
                 }
             }
         }

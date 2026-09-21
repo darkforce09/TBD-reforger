@@ -44,7 +44,7 @@ fn tooling_dependency_direction_is_enforced() {
 }
 
 #[test]
-fn heavy_package_has_one_owner_and_preserves_executable_names() {
+fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
     let root = crate::core::repository_root::test_repo_root();
     let manifest: Value = toml::from_str(
         &fs::read_to_string(root.join("tools_v2/developer-tools/Cargo.toml")).unwrap(),
@@ -58,18 +58,19 @@ fn heavy_package_has_one_owner_and_preserves_executable_names() {
         .collect();
     names.sort();
     assert_eq!(names, ["capture", "enf", "gate", "map", "mcpd", "world"]);
-    assert!(!root.join("tools/tbd-tools/Cargo.toml").exists());
-    assert!(!root.join("tools_v2/xtask/src/map_blueprint").exists());
-    assert!(
-        !root
-            .join("tools_v2/developer-tools/src/blueprint/pak.rs")
-            .exists()
-    );
-    assert!(
-        !root
-            .join("tools_v2/developer-tools/src/world_export_pipeline/pak.rs")
-            .exists()
-    );
+    for relative in [
+        "tools_v2/xtask/Cargo.toml",
+        "tools_v2/developer-tools/Cargo.toml",
+        "tools_v2/verification-core/Cargo.toml",
+        "tools_v2/ticket-engine/Cargo.toml",
+        // The two modules that own every repository path a crate spells, and the node package
+        // that sits outside all four crate roots so no crate walk treats it as source.
+        "tools_v2/xtask/src/core/repository_layout.rs",
+        "tools_v2/developer-tools/src/repository_layout.rs",
+        "tools_v2/enfusion_mcp_node_package/package.json",
+    ] {
+        assert!(root.join(relative).is_file(), "missing: {relative}");
+    }
 }
 
 #[test]
@@ -128,7 +129,14 @@ fn ticket_implementations_have_one_owner() {
     }
 }
 
-const TOOLING_CRATES: [&str; 2] = ["xtask", "developer-tools"];
+/// Every crate under `tools_v2`. The structural rules below — line limits, no inline test
+/// modules, no file-size exemptions — hold for all four, with no crate exempt from any of them.
+const TOOLING_CRATES: [&str; 4] = [
+    "xtask",
+    "developer-tools",
+    "verification-core",
+    "ticket-engine",
+];
 
 fn rust_sources(root: &Path) -> Vec<PathBuf> {
     let mut paths = Vec::new();
@@ -241,15 +249,14 @@ fn attribute_enables_tests(meta: &syn::Meta) -> bool {
 fn inline_test_modules(input: ParseStream<'_>) -> syn::Result<Vec<String>> {
     let mut found = Vec::new();
     while !input.is_empty() {
-        if let Ok(module) = input.fork().parse::<syn::ItemMod>() {
-            if module.content.is_some()
-                && module
-                    .attrs
-                    .iter()
-                    .any(|attribute| attribute_enables_tests(&attribute.meta))
-            {
-                found.push(module.ident.to_string());
-            }
+        if let Ok(module) = input.fork().parse::<syn::ItemMod>()
+            && module.content.is_some()
+            && module
+                .attrs
+                .iter()
+                .any(|attribute| attribute_enables_tests(&attribute.meta))
+        {
+            found.push(module.ident.to_string());
         }
         if input.peek(syn::token::Brace) {
             let inner;

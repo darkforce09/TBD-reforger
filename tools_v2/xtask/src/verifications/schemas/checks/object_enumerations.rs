@@ -60,12 +60,12 @@ pub fn map_object_enums() -> Result<u8> {
             ));
             return;
         };
-        if let Some(klass) = class {
-            if !sets[enum_name].contains(klass) {
-                errors.push(format!(
-                    "{src}: class '{klass}' not in {enum_name} (kind={kind})"
-                ));
-            }
+        if let Some(klass) = class
+            && !sets[enum_name].contains(klass)
+        {
+            errors.push(format!(
+                "{src}: class '{klass}' not in {enum_name} (kind={kind})"
+            ));
         }
     };
 
@@ -103,17 +103,17 @@ pub fn map_object_enums() -> Result<u8> {
     let regions = read_json(&sroot.join("fixtures/map/map-object-regions-everon-sample.json"))?;
     for reg in regions.as_array().into_iter().flatten() {
         let id = &reg["id"];
-        if let Some(kind) = reg["kind"].as_str() {
-            if !sets["kind"].contains(kind) {
-                errors.push(format!("region {id}: kind '{kind}' not in kind enum"));
-            }
+        if let Some(kind) = reg["kind"].as_str()
+            && !sets["kind"].contains(kind)
+        {
+            errors.push(format!("region {id}: kind '{kind}' not in kind enum"));
         }
-        if let Some(d) = reg["dominantSpeciesClass"].as_str() {
-            if !sets["forestClass"].contains(d) {
-                errors.push(format!(
-                    "region {id}: dominantSpeciesClass '{d}' not in forestClass"
-                ));
-            }
+        if let Some(d) = reg["dominantSpeciesClass"].as_str()
+            && !sets["forestClass"].contains(d)
+        {
+            errors.push(format!(
+                "region {id}: dominantSpeciesClass '{d}' not in forestClass"
+            ));
         }
     }
 

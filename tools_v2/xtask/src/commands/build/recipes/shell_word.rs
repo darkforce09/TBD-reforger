@@ -37,11 +37,11 @@ pub(super) fn run_steps(steps: &[Step]) -> Result<u8> {
             .find(|(k, _)| k == "CARGO_TARGET_DIR")
             .map(|(_, v)| v.clone())
             .unwrap_or_else(|| pin.clone());
-        if is_rust_build_tool(&step.argv[0]) {
-            if let Err(msg) = abi_guard(Path::new(&effective)) {
-                eprintln!("{msg}");
-                return Ok(1);
-            }
+        if is_rust_build_tool(&step.argv[0])
+            && let Err(msg) = abi_guard(Path::new(&effective))
+        {
+            eprintln!("{msg}");
+            return Ok(1);
         }
 
         println!("{}", step.echo());

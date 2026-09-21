@@ -17,13 +17,13 @@ pub fn map_glyphs() -> Result<u8> {
 
     // 1. Golden coverage.
     for p in prefabs.as_array().into_iter().flatten() {
-        if let Some(key) = p["render"]["iconKey"].as_str() {
-            if !glyphs.contains_key(key) {
-                errors.push(format!(
-                    "prefab {}: render.iconKey '{key}' missing from glyph manifest",
-                    p["prefabId"]
-                ));
-            }
+        if let Some(key) = p["render"]["iconKey"].as_str()
+            && !glyphs.contains_key(key)
+        {
+            errors.push(format!(
+                "prefab {}: render.iconKey '{key}' missing from glyph manifest",
+                p["prefabId"]
+            ));
         }
     }
 
@@ -40,10 +40,10 @@ pub fn map_glyphs() -> Result<u8> {
             Ok(doc) => {
                 let mut missing: BTreeMap<String, usize> = BTreeMap::new();
                 for p in doc["prefabs"].as_array().into_iter().flatten() {
-                    if let Some(key) = p["render"]["iconKey"].as_str() {
-                        if !glyphs.contains_key(key) {
-                            *missing.entry(key.to_string()).or_insert(0) += 1;
-                        }
+                    if let Some(key) = p["render"]["iconKey"].as_str()
+                        && !glyphs.contains_key(key)
+                    {
+                        *missing.entry(key.to_string()).or_insert(0) += 1;
                     }
                 }
                 for (key, n) in missing {

@@ -324,15 +324,13 @@ pub fn specification_consistency() -> Result<u8> {
 
     // Gate 10 — hub header names the registry active slice.
     let mut active_slice = "T-090.1.2.5".to_string();
-    if let Ok(reg) = ticket_engine::registry::load_registry(&root) {
-        if let Some(t090) = reg["tickets"]
+    if let Ok(reg) = ticket_engine::registry::load_registry(&root)
+        && let Some(t090) = reg["tickets"]
             .as_array()
             .and_then(|a| a.iter().find(|t| t["id"] == "T-090"))
-        {
-            if let Some(s) = t090["active_slice"].as_str() {
-                active_slice = s.to_string();
-            }
-        }
+        && let Some(s) = t090["active_slice"].as_str()
+    {
+        active_slice = s.to_string();
     }
     let header: String = hub.chars().take(800).collect();
     if !header.contains(&active_slice) {

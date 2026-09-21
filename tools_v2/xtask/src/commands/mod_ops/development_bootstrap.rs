@@ -306,15 +306,17 @@ fn set_default(key: &str, val: &str) {
 /// being installed reads as closed, which is the safe answer for a port poll.
 fn port_open(port: &str) -> bool {
     let needle = format!(":{port} ");
-    if let Ok(o) = Run::new("ss").arg("-tln").output() {
-        if o.code == 0 && o.stdout.lines().any(|l| l.contains(&needle)) {
-            return true;
-        }
+    if let Ok(o) = Run::new("ss").arg("-tln").output()
+        && o.code == 0
+        && o.stdout.lines().any(|l| l.contains(&needle))
+    {
+        return true;
     }
-    if let Ok(o) = Run::new("netstat").arg("-tln").output() {
-        if o.code == 0 && o.stdout.lines().any(|l| l.contains(&needle)) {
-            return true;
-        }
+    if let Ok(o) = Run::new("netstat").arg("-tln").output()
+        && o.code == 0
+        && o.stdout.lines().any(|l| l.contains(&needle))
+    {
+        return true;
     }
     false
 }

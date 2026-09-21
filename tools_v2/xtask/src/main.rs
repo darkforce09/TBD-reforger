@@ -1,7 +1,3 @@
-#![allow(clippy::collapsible_if)]
-#![allow(clippy::unnecessary_sort_by)]
-#![allow(clippy::unnecessary_unwrap)]
-
 mod commands;
 mod verifications;
 

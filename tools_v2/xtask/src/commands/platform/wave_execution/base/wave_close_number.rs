@@ -101,31 +101,31 @@ pub fn prev_wave_close() -> Option<String> {
 /// caller escalates. Fail-closed.
 pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
     let blob = git_stdout(&["show", &format!("{rev}:{}", ctx.plan)]).unwrap_or_default();
-    if !blob.is_empty() {
-        if let Ok(lock) = ticket_engine::wave_lock::parse(&blob) {
-            if let Ok(w) = u32::try_from(n) {
-                let open = lock.tickets_in_wave(w);
-                if !open.is_empty() {
-                    return open;
-                }
-                // T-946 — A CLOSED WAVE LIVES IN `[[emptied]]`, AND THAT IS STILL THE PLAN
-                // SPEAKING. The open-wave list is the only place this used to look, so a wave
-                // that emptied correctly — every ticket shipped, the repack freezing its set as a
-                // pending entry — had NO rows here and oracle 2 reported silence. Every gate then
-                // demanded `TBD_GATE_BASE_CONFIRM`, which is exactly the "give the ledger
-                // something to say" the refusal asks for, refused about a ledger that WAS saying
-                // it. Reading the pending entry can only ever strengthen the check: silence
-                // becomes a real ticket list, which the completion test below then contradicts or
-                // corroborates.
-                return lock
-                    .emptied
-                    .iter()
-                    .find(|e| e.n == w)
-                    .map(|e| e.tickets.clone())
-                    .unwrap_or_default();
+    if !blob.is_empty()
+        && let Ok(lock) = ticket_engine::wave_lock::parse(&blob)
+    {
+        if let Ok(w) = u32::try_from(n) {
+            let open = lock.tickets_in_wave(w);
+            if !open.is_empty() {
+                return open;
             }
-            return Vec::new();
+            // T-946 — A CLOSED WAVE LIVES IN `[[emptied]]`, AND THAT IS STILL THE PLAN
+            // SPEAKING. The open-wave list is the only place this used to look, so a wave
+            // that emptied correctly — every ticket shipped, the repack freezing its set as a
+            // pending entry — had NO rows here and oracle 2 reported silence. Every gate then
+            // demanded `TBD_GATE_BASE_CONFIRM`, which is exactly the "give the ledger
+            // something to say" the refusal asks for, refused about a ledger that WAS saying
+            // it. Reading the pending entry can only ever strengthen the check: silence
+            // becomes a real ticket list, which the completion test below then contradicts or
+            // corroborates.
+            return lock
+                .emptied
+                .iter()
+                .find(|e| e.n == w)
+                .map(|e| e.tickets.clone())
+                .unwrap_or_default();
         }
+        return Vec::new();
     }
     super::super::legacy_plan::tickets_at(rev, n)
 }
@@ -231,33 +231,31 @@ pub fn wave_close_is_newest_wave(sha: &str) -> u8 {
     //
     // Skipped when there is no other marker at all — the first wave ever closed has nothing to be
     // one more than, and inventing a ceiling for it would refuse a legitimate tree.
-    if let Some(high) = high {
-        if n > high + 1 {
-            wprintln!(
-                "gate: the derived wave base claims a wave that never opened — refusing to run."
-            );
-            wprintln!("        derived {} claims wave {n}", short(sha));
-            wprintln!("          {}", subject(sha));
-            wprintln!(
-                "        but the highest wave any other marker reachable from HEAD claims is {high}, so the"
-            );
-            wprintln!(
-                "        next wave to close can only be {}. Wave numbers advance by exactly one:",
-                high + 1
-            );
-            wprintln!(
-                "        measured over all 34 markers, 78 down to 45, 33 steps of 1, no gaps and no repeats."
-            );
-            wprintln!(
-                "        A marker {} waves ahead of the ledger is not a boundary this history",
-                n - high
-            );
-            wprintln!(
-                "        ever reached — and gating from it would put every wave in between outside the"
-            );
-            wprintln!("        range, unread, while the verdict claimed to describe them.");
-            return 2;
-        }
+    if let Some(high) = high
+        && n > high + 1
+    {
+        wprintln!("gate: the derived wave base claims a wave that never opened — refusing to run.");
+        wprintln!("        derived {} claims wave {n}", short(sha));
+        wprintln!("          {}", subject(sha));
+        wprintln!(
+            "        but the highest wave any other marker reachable from HEAD claims is {high}, so the"
+        );
+        wprintln!(
+            "        next wave to close can only be {}. Wave numbers advance by exactly one:",
+            high + 1
+        );
+        wprintln!(
+            "        measured over all 34 markers, 78 down to 45, 33 steps of 1, no gaps and no repeats."
+        );
+        wprintln!(
+            "        A marker {} waves ahead of the ledger is not a boundary this history",
+            n - high
+        );
+        wprintln!(
+            "        ever reached — and gating from it would put every wave in between outside the"
+        );
+        wprintln!("        range, unread, while the verdict claimed to describe them.");
+        return 2;
     }
     0
 }

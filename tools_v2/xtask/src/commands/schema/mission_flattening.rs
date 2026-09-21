@@ -50,14 +50,14 @@ pub(super) fn apply_flatten_orbat_slots(mission: &mut Value, context: &str) -> R
 
     let mut anchors: BTreeMap<String, (f64, f64)> = BTreeMap::new();
     for zone in mission["zones"].as_array().into_iter().flatten() {
-        if zone["type"] == "spawn" {
-            if let (Some(faction), Some(x), Some(z)) = (
+        if zone["type"] == "spawn"
+            && let (Some(faction), Some(x), Some(z)) = (
                 zone["faction"].as_str(),
                 zone["shape"]["circle"]["x"].as_f64(),
                 zone["shape"]["circle"]["z"].as_f64(),
-            ) {
-                anchors.insert(faction.to_string(), (x, z));
-            }
+            )
+        {
+            anchors.insert(faction.to_string(), (x, z));
         }
     }
     anchors.entry("blufor".into()).or_insert((4831.2, 6620.8));

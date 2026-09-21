@@ -387,10 +387,10 @@ impl Drop for HolderNote {
     /// would be told "unknown".
     fn drop(&mut self) {
         let needle = format!("pid {} ", self.pid);
-        if let Ok(body) = std::fs::read_to_string(&self.path) {
-            if body.contains(&needle) {
-                let _ = std::fs::remove_file(&self.path);
-            }
+        if let Ok(body) = std::fs::read_to_string(&self.path)
+            && body.contains(&needle)
+        {
+            let _ = std::fs::remove_file(&self.path);
         }
     }
 }

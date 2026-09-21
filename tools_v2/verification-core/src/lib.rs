@@ -1,41 +1,34 @@
 //! `verification-core` — the four-outcome static-check library.
 //!
-//! T-853. The Rust port of [`scripts/mod/lib/gate-grep.sh`], built FIRST in the shell→`xtask`
-//! migration and for the same reason that file was extracted from its callers in T-556.
+//! Every quality gate in the repository is written against this crate: one implementation of what
+//! a check can conclude, shared by all of them, so the next gate cannot be born with the hole
+//! that a search which never ran reads as a pass.
 //!
-//! ── WHY THIS IS THE FIRST THING PORTED ───────────────────────────────────────────────────────
-//!
-//! `gate-grep.sh` states its own purpose:
-//!
-//! > T-216 fixed exactly this defect in `scripts/verify-t180-coherency.sh` in wave 5, inline. The
-//! > fix did not propagate: every `scripts/mod/verify-t*.sh` written afterwards was born with the
-//! > same two holes. This file is the propagation mechanism — one implementation, sourced by
-//! > every mod gate, so the next gate cannot be born broken by copy-paste.
-//!
-//! Porting the gates one at a time without this library landing first would have each of ~20
-//! ports invent its own verdict shape — destroying the propagation mechanism in the very act of
-//! modernising it. So the library goes first, and every ported gate is written against it.
-//!
-//! ── WHAT THE TYPE SYSTEM BUYS OVER THE BASH ──────────────────────────────────────────────────
-//!
-//! Three defect classes that bash could only ask callers to remember stop being representable:
+//! ── THE THREE DEFECT CLASSES IT MAKES UNREPRESENTABLE ────────────────────────────────────────
 //!
 //! 1. **"The check did not run" folded into "the check passed."** [`Verdict`] has no `bool`
 //!    conversion of any kind, so the four outcomes cannot collapse into two by accident. Adding a
-//!    `NotRun` variant later breaks every incomplete `match` in the workspace — propagation the
-//!    bash library wanted and could not enforce.
-//! 2. **The search tool going absent.** The matcher is the `regex` crate, compiled in. Exit 127 —
-//!    the T-620 defect that kept `verify-no-python` green for four waves — is no longer reachable
-//!    for pattern matching at all.
+//!    `NotRun` variant breaks every incomplete `match` in the workspace, which is what makes the
+//!    rule reach gates nobody has written yet.
+//! 2. **The search tool going absent.** The matcher is the `regex` crate, compiled in. Exit 127
+//!    is not a reachable state for pattern matching at all, so a gate cannot report clean because
+//!    its search binary was missing.
 //! 3. **Compound conditions short-circuiting clean.** [`gate::probe_files`] returns
 //!    `Result<bool, NotRun>`, so `?` propagates "did not run" instead of leaving it to a caller
-//!    who must remember that a status above 1 is not a `false`.
+//!    who must remember that an unreadable input is not a `false`.
+//!
+//! ── THE MODULES ──────────────────────────────────────────────────────────────────────────────
+//!
+//! [`verdict`] holds the outcome type and its rendering; [`gate`] the six assertions written
+//! against it; [`pattern`] the compiled search patterns; [`scan`] the fail-closed tree walk that
+//! reports offending lines; [`report`] the accumulation and the process exit contract; [`lock`]
+//! the `flock`-based serialisation of expensive steps; [`proc`] child processes that never lose
+//! the reason they stopped.
 //!
 //! ── OUTPUT IS A CONTRACT ─────────────────────────────────────────────────────────────────────
 //!
-//! Failures render byte-for-byte as the bash helpers did, six-space continuation indent and em
-//! dash included. Ports are accepted by diffing old and new stdout on both a clean tree and a
-//! deliberately broken one, and `wave.sh` scrapes these logs.
+//! Failures render as one headline plus six-space continuation lines, and `cargo xtask platform
+//! wave` scrapes gate logs to build its step table. The text is part of the interface.
 //!
 //! ── USAGE ────────────────────────────────────────────────────────────────────────────────────
 //!
@@ -59,8 +52,6 @@
 //!
 //! std::process::exit(report.finish());
 //! ```
-//!
-//! [`scripts/mod/lib/gate-grep.sh`]: ../../../scripts/mod/lib/gate-grep.sh
 
 pub mod gate;
 pub mod lock;

@@ -278,20 +278,17 @@ impl Env {
         // T-607: the GUID is the join between the deployed checkout and game.mods[], and if
         // deploy.env drifts from the gproj the addon assertion starts checking the wrong id — it
         // would then pass only when the mod did NOT load. Cross-check rather than trust.
-        if let Some(g) = super::boot::read_addon_guid(mono_root) {
-            if !g.is_empty() && g != self.addon_guid {
-                eprintln!(
-                    "TBD_ADDON_GUID='{}' does not match apps/mod/tbd-framework/addon.gproj",
-                    self.addon_guid
-                );
-                eprintln!(
-                    "  ('{g}'). The gproj is the source of truth — fix deploy.env, or the boot"
-                );
-                eprintln!(
-                    "  assertion will be checking an addon id this checkout does not publish."
-                );
-                return Err(1);
-            }
+        if let Some(g) = super::boot::read_addon_guid(mono_root)
+            && !g.is_empty()
+            && g != self.addon_guid
+        {
+            eprintln!(
+                "TBD_ADDON_GUID='{}' does not match apps/mod/tbd-framework/addon.gproj",
+                self.addon_guid
+            );
+            eprintln!("  ('{g}'). The gproj is the source of truth — fix deploy.env, or the boot");
+            eprintln!("  assertion will be checking an addon id this checkout does not publish.");
+            return Err(1);
         }
         if self.remote_dir.contains("prairielearn") {
             eprintln!("Refusing to deploy: TBD_REMOTE_DIR must not be under prairielearn/");

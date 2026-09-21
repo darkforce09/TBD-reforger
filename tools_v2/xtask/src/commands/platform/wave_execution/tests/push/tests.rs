@@ -62,10 +62,10 @@ fn rustc() -> PathBuf {
         return PathBuf::from(p);
     }
     // Cargo bakes its own path in at compile time; under rustup rustc is its sibling.
-    if let Some(sib) = Path::new(env!("CARGO")).parent().map(|d| d.join("rustc")) {
-        if sib.is_file() {
-            return sib;
-        }
+    if let Some(sib) = Path::new(env!("CARGO")).parent().map(|d| d.join("rustc"))
+        && sib.is_file()
+    {
+        return sib;
     }
     PathBuf::from("rustc")
 }

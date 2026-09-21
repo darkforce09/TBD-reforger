@@ -1,10 +1,10 @@
 use super::*;
 
 pub(super) fn resolve_service_token(root: &Path) -> Option<String> {
-    if let Ok(t) = std::env::var("TBD_SERVICE_TOKEN") {
-        if !t.is_empty() {
-            return Some(t);
-        }
+    if let Ok(t) = std::env::var("TBD_SERVICE_TOKEN")
+        && !t.is_empty()
+    {
+        return Some(t);
     }
     let main_root = git_main_root(root).unwrap_or_else(|| root.to_path_buf());
     for f in [
@@ -140,12 +140,12 @@ pub(super) fn require_host() -> bool {
 }
 
 pub(super) fn host_command(program: &str) -> Command {
-    if in_container() {
-        if let Some(b) = host_bridge() {
-            let mut c = Command::new(b);
-            c.arg(program);
-            return c;
-        }
+    if in_container()
+        && let Some(b) = host_bridge()
+    {
+        let mut c = Command::new(b);
+        c.arg(program);
+        return c;
     }
     Command::new(program)
 }

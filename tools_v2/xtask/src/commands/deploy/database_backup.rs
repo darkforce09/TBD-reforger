@@ -221,11 +221,12 @@ fn run_backup(db: &str, out: &str, keep: u64, min_rows: u64) -> Result<u8> {
     match count_db_rows(db) {
         Ok(raw) => {
             let trimmed: String = raw.chars().filter(|c| !c.is_whitespace()).collect();
-            if !trimmed.is_empty() && trimmed.bytes().all(|b| b.is_ascii_digit()) {
-                if let Ok(n) = trimmed.parse::<u64>() {
-                    src_rows = Some(n);
-                    info(&format!("source     {n} live row(s) across user tables"));
-                }
+            if !trimmed.is_empty()
+                && trimmed.bytes().all(|b| b.is_ascii_digit())
+                && let Ok(n) = trimmed.parse::<u64>()
+            {
+                src_rows = Some(n);
+                info(&format!("source     {n} live row(s) across user tables"));
             }
         }
         Err(_) => {

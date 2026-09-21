@@ -285,10 +285,10 @@ fn banned_by_table(rel: &str) -> Option<String> {
     for ban in TRACKED_LANGUAGE_BANS {
         match *ban {
             TrackedLanguageBan::Extension(ext) => {
-                if let Some((_, e)) = name.rsplit_once('.') {
-                    if e == ext {
-                        return Some(format!("*.{ext}"));
-                    }
+                if let Some((_, e)) = name.rsplit_once('.')
+                    && e == ext
+                {
+                    return Some(format!("*.{ext}"));
                 }
             }
             TrackedLanguageBan::Basename(b) => {

@@ -233,13 +233,13 @@ pub fn run(args: RestoreArgs) -> Result<u8> {
     info(&format!(
         "restored   '{db}' now reports {got} live row(s) (archive held {rows})"
     ));
-    if !got.is_empty() {
-        if let Ok(got_n) = got.parse::<u64>() {
-            if got_n == 0 && rows > 0 {
-                eprintln!("FAIL: archive held {rows} rows but '{db}' reports 0 after restore.");
-                return Ok(1);
-            }
-        }
+    if !got.is_empty()
+        && let Ok(got_n) = got.parse::<u64>()
+        && got_n == 0
+        && rows > 0
+    {
+        eprintln!("FAIL: archive held {rows} rows but '{db}' reports 0 after restore.");
+        return Ok(1);
     }
     info("done");
     Ok(0)

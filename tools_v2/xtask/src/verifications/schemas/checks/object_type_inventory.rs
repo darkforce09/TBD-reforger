@@ -146,35 +146,35 @@ pub fn type_inventory() -> Result<u8> {
         }
 
         // I2 — building class sum when populated.
-        if let Some(by_building) = inv["byBuildingClass"].as_object() {
-            if !by_building.is_empty() {
-                let class_sum: i64 = by_building
-                    .values()
-                    .filter_map(|row| row["instances"].as_i64())
-                    .sum();
-                let b = inv["byKind"]["building"]["instances"]
-                    .as_i64()
-                    .unwrap_or(-1);
-                if class_sum != b {
-                    failures.push(format!(
-                        "{label}: I2 byBuildingClass sum {class_sum} !== byKind.building.instances {b}"
-                    ));
-                }
+        if let Some(by_building) = inv["byBuildingClass"].as_object()
+            && !by_building.is_empty()
+        {
+            let class_sum: i64 = by_building
+                .values()
+                .filter_map(|row| row["instances"].as_i64())
+                .sum();
+            let b = inv["byKind"]["building"]["instances"]
+                .as_i64()
+                .unwrap_or(-1);
+            if class_sum != b {
+                failures.push(format!(
+                    "{label}: I2 byBuildingClass sum {class_sum} !== byKind.building.instances {b}"
+                ));
             }
         }
 
         // Forest region tree assignment — exact.
-        if inv["byRegionKind"]["forest"].is_object() {
-            if let Some(tree_total) = inv["byKind"]["tree"]["instances"].as_i64() {
-                let region_trees = inv["byRegionKind"]["forest"]["treeCount"]
-                    .as_i64()
-                    .unwrap_or(0);
-                let unassigned = inv["unassignedTrees"].as_i64().unwrap_or(0);
-                if region_trees + unassigned != tree_total {
-                    failures.push(format!(
+        if inv["byRegionKind"]["forest"].is_object()
+            && let Some(tree_total) = inv["byKind"]["tree"]["instances"].as_i64()
+        {
+            let region_trees = inv["byRegionKind"]["forest"]["treeCount"]
+                .as_i64()
+                .unwrap_or(0);
+            let unassigned = inv["unassignedTrees"].as_i64().unwrap_or(0);
+            if region_trees + unassigned != tree_total {
+                failures.push(format!(
                         "{label}: F-count forest.treeCount ({region_trees}) + unassignedTrees ({unassigned}) !== byKind.tree.instances ({tree_total})"
                     ));
-                }
             }
         }
 
@@ -211,20 +211,20 @@ pub fn type_inventory() -> Result<u8> {
         }
 
         // I5 / I7 — manifest.objects cross-check.
-        if let Some(m) = manifest {
-            if let Some(prefab_count) = m["objects"]["prefabCount"].as_i64() {
-                let unique = inv["levels"]["uniquePrefabs"].as_i64().unwrap_or(-1);
-                if prefab_count != unique {
-                    failures.push(format!(
+        if let Some(m) = manifest
+            && let Some(prefab_count) = m["objects"]["prefabCount"].as_i64()
+        {
+            let unique = inv["levels"]["uniquePrefabs"].as_i64().unwrap_or(-1);
+            if prefab_count != unique {
+                failures.push(format!(
                         "{label}: I5 manifest.objects.prefabCount {prefab_count} !== levels.uniquePrefabs {unique}"
                     ));
-                }
-                let mi = m["objects"]["instanceCount"].as_i64().unwrap_or(-1);
-                if mi != total {
-                    failures.push(format!(
+            }
+            let mi = m["objects"]["instanceCount"].as_i64().unwrap_or(-1);
+            if mi != total {
+                failures.push(format!(
                         "{label}: I7 manifest.objects.instanceCount {mi} !== levels.totalInstances {total}"
                     ));
-                }
             }
         }
     };

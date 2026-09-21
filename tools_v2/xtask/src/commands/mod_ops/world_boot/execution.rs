@@ -51,21 +51,21 @@ pub(super) fn parse_args(args: &[String]) -> std::result::Result<Opts, u8> {
 
 pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
     let goldens = developer_tools::repository_layout::mission_fixtures_valid_dir(root);
-    if let Some(ref m) = opts.mission.clone() {
-        if !Path::new(&m).is_file() {
-            let as_json = goldens.join(format!("{m}.json"));
-            let as_raw = goldens.join(m);
-            if as_json.is_file() {
-                opts.mission = Some(as_json.to_string_lossy().into_owned());
-            } else if as_raw.is_file() {
-                opts.mission = Some(as_raw.to_string_lossy().into_owned());
-            } else {
-                eprintln!(
-                    "ERROR: no such mission '{m}' (looked in {})",
-                    goldens.display()
-                );
-                return Ok(2);
-            }
+    if let Some(ref m) = opts.mission.clone()
+        && !Path::new(&m).is_file()
+    {
+        let as_json = goldens.join(format!("{m}.json"));
+        let as_raw = goldens.join(m);
+        if as_json.is_file() {
+            opts.mission = Some(as_json.to_string_lossy().into_owned());
+        } else if as_raw.is_file() {
+            opts.mission = Some(as_raw.to_string_lossy().into_owned());
+        } else {
+            eprintln!(
+                "ERROR: no such mission '{m}' (looked in {})",
+                goldens.display()
+            );
+            return Ok(2);
         }
     }
 

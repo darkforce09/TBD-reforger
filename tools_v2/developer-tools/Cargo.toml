@@ -3,6 +3,8 @@ name = "developer-tools"
 description = "Browser automation, Enfusion assets, blueprint compilation, and map verification"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
 publish = false
 
 [dependencies]

@@ -371,13 +371,13 @@ pub fn validate_server_config(path: &Path) -> Result<(), u8> {
         }
     }
     let a2s = top.get("a2s").and_then(|a| a.as_object()).unwrap_or(&empty);
-    if let Some(port) = a2s.get("port").filter(|p| !p.is_null()) {
-        if Some(port) == top.get("bindPort") {
-            errs.push(format!(
-                "a2s.port == bindPort ({}) — replication cannot start",
-                json_repr(top.get("bindPort"))
-            ));
-        }
+    if let Some(port) = a2s.get("port").filter(|p| !p.is_null())
+        && Some(port) == top.get("bindPort")
+    {
+        errs.push(format!(
+            "a2s.port == bindPort ({}) — replication cannot start",
+            json_repr(top.get("bindPort"))
+        ));
     }
     // T-607: scenarioId against the ENGINE's OWN schema, copied verbatim out of its rejection
     // (1.7.0.54):
@@ -388,15 +388,15 @@ pub fn validate_server_config(path: &Path) -> Result<(), u8> {
     // validator printed "config VALID" over exactly that config — a tool reporting success over an
     // input it never really examined. The engine finds it ~90 s into a boot, after the rsync and a
     // full script compile; this finds it on the dev machine before anything is pushed.
-    if let Some(Value::String(scenario)) = game.get("scenarioId") {
-        if !scenario.is_empty() {
-            let re = Regex::new(r"^\{[0-9A-F]{16}\}[a-zA-Z0-9_./ -]+$").expect("static");
-            if !re.is_match(scenario) {
-                errs.push(format!(
+    if let Some(Value::String(scenario)) = game.get("scenarioId")
+        && !scenario.is_empty()
+    {
+        let re = Regex::new(r"^\{[0-9A-F]{16}\}[a-zA-Z0-9_./ -]+$").expect("static");
+        if !re.is_match(scenario) {
+            errs.push(format!(
                     "game.scenarioId {} is rejected by the engine's schema (^\\{{[0-9A-F]{{16}}\\}}[a-zA-Z0-9_./ -]+$). A value that stops right after the GUID means TBD_SCENARIO was truncated by brace parsing in the shell.",
                     py_repr(scenario)
                 ));
-            }
         }
     }
     let mods = match game.get("mods") {

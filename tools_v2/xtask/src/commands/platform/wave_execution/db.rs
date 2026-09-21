@@ -42,10 +42,10 @@ fn psql_argv(ctx: &Ctx, db: &str, flags: &[&str], sql: &str) -> Vec<String> {
 /// integer, bumped on promote) so residue isolation tracks packing progress.
 pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
     let mut w: Option<String> = None;
-    if let Ok(v) = std::env::var("TBD_GATE_WAVE") {
-        if !v.is_empty() {
-            w = Some(v);
-        }
+    if let Ok(v) = std::env::var("TBD_GATE_WAVE")
+        && !v.is_empty()
+    {
+        w = Some(v);
     }
     if w.is_none() {
         let pack_file = ctx.root.join("docs/platform/factory_pack_wave");
@@ -262,10 +262,10 @@ pub fn ensure_gate_db(ctx: &Ctx, state: &GateState) -> i32 {
         wprintln!("        A concurrent gate may be connected to one; WITH (FORCE) would kill it.");
     }
     // Prune only on the default per-wave path — never when the operator pinned TBD_GATE_DB.
-    if pinned.is_empty() {
-        if let Some(w) = wave {
-            prune_old_gate_wave_dbs(ctx, w.parse().unwrap_or(0));
-        }
+    if pinned.is_empty()
+        && let Some(w) = wave
+    {
+        prune_old_gate_wave_dbs(ctx, w.parse().unwrap_or(0));
     }
     0
 }

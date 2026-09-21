@@ -234,10 +234,10 @@ impl Host {
     /// on the metal is still not used there.
     fn argv(&self, cmd: &[&str]) -> Vec<String> {
         let mut v: Vec<String> = Vec::with_capacity(cmd.len() + 1);
-        if self.in_container {
-            if let Some(b) = &self.bridge {
-                v.push(b.clone());
-            }
+        if self.in_container
+            && let Some(b) = &self.bridge
+        {
+            v.push(b.clone());
         }
         v.extend(cmd.iter().map(|s| s.to_string()));
         v

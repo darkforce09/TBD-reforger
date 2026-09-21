@@ -33,12 +33,12 @@ impl Runner {
             wprintln!("PASS");
             return;
         }
-        if let Some(secs) = self.timeout_arm {
-            if rc == 124 {
-                wprintln!("FAIL (TIMEOUT after {secs}s)");
-                self.fail = true;
-                return;
-            }
+        if let Some(secs) = self.timeout_arm
+            && rc == 124
+        {
+            wprintln!("FAIL (TIMEOUT after {secs}s)");
+            self.fail = true;
+            return;
         }
         wprintln!("FAIL");
         // The last 15 captured lines, indented six spaces.

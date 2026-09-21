@@ -103,10 +103,10 @@ fn parse_cli_stdout(stdout: &str) -> Result<Value> {
     }
     for line in trimmed.lines().rev() {
         let line = line.trim();
-        if line.starts_with('{') {
-            if let Ok(v) = serde_json::from_str::<Value>(line) {
-                return Ok(v);
-            }
+        if line.starts_with('{')
+            && let Ok(v) = serde_json::from_str::<Value>(line)
+        {
+            return Ok(v);
         }
     }
     bail!("agent CLI stdout is not JSON — cannot extract usage, run FAILED");
