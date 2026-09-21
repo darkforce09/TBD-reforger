@@ -20,7 +20,7 @@ shaped it.
 
 ## 1. Context & Architectural Goals
 
-The legacy backend (`apps/website/api`) accumulated severe structural issues:
+The pre-refactor layout of this crate had accumulated severe structural issues:
 1. **Meaningless Root Grab-Bags**: Root files (`app.rs` 1,641 LOC, `config.rs` 995 LOC, `db.rs` 551 LOC, `realtime.rs` 369 LOC) conflated unrelated concerns into single monoliths.
 2. **Domain Disjointedness**:
    - `FireMission` was orphaned in `models/admin.rs` beside disciplinary warnings and audit logs.
@@ -31,7 +31,7 @@ The legacy backend (`apps/website/api`) accumulated severe structural issues:
 3. **Law 7 & Law 8 Violations**:
    - 17 files exceeded the hard 500 LOC ceiling (two reaching ~3,000 LOC).
    - Inlined unit test modules (`mod tests`) bloated production files.
-   - Comments frequently referenced historical transitions and ticket tickets (*"Rust port of Go"*, *"T-343 sweep"*).
+   - Comments frequently narrated historical transitions and named tickets instead of describing the code.
 
 This blueprint establishes a clean, domain-driven structure under `apps/website/api_v2/`.
 
@@ -56,7 +56,7 @@ graph TD
     BodyLim -.->|SEAM: Rate-Limit Exempt| MapAssets["Exempt Mount: /map-assets/*"]
 ```
 
-### Critical Invariant: The T-630 Rate-Limit Seam
+### Critical Invariant: The Rate-Limit Seam
 `/map-assets` provides DEM elevation terrain, satellite tiles, and 3D world geometry to the Mission Editor and Planner. A single cold editor load requests up to 951 binary chunks. Mounting this below `rate_limit` would cause cascading HTTP 429 throttles. Therefore, `/map-assets` is mounted strictly **outside and below** the rate limit layer, while all other endpoints remain strictly throttled.
 
 ---
@@ -207,7 +207,7 @@ pub fn router(state: AppState) -> Router {
 
 ## 5. Migration Roadmap
 
-The migration from `apps/website/api` to `apps/website/api_v2` is planned in 4 safe stages:
+The migration from the pre-refactor layout to `apps/website/api_v2` is planned in 4 safe stages:
 1. **Stage 1 (Scaffolding & Blueprints — CURRENT)**: Complete `api_v2/` directory topology, domain READMEs, and forensic mapping.
 2. **Stage 2 (Foundations Migration)**: Migrate `core/`, `identity_and_access/`, and `background_workers/`.
 3. **Stage 3 (Domain Handlers Migration)**: Migrate `operations/`, `missions/`, `server_infrastructure/`, `administration/`, `match_telemetry/`, `command_center/`, and `community_content/`.

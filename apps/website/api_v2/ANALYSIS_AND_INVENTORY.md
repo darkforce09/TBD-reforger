@@ -5,13 +5,13 @@
 > the file names, route table and boundaries that exist today, read [`README.md`](./README.md) and
 > the module `README.md` files under `src/`.
 
-Exhaustive forensic analysis of the legacy backend (`apps/website/api`), capturing exact line counts, functional responsibilities, architectural violations, and target refactoring destinations under `apps/website/api_v2/`.
+Exhaustive forensic analysis of the pre-refactor backend layout, capturing exact line counts, functional responsibilities, architectural violations, and target refactoring destinations under `apps/website/api_v2/`.
 
 ---
 
 ## 1. Complete File Census & Line Count Audit
 
-Full inventory of all 78 Rust files in `apps/website/api/src/`, totaling **30,812 lines of code**:
+Full inventory of all 78 Rust files in the pre-refactor `src/`, totaling **30,812 lines of code**:
 
 | File Path | Total LOC | Prod LOC | Test LOC | Target `api_v2/` Subsystem |
 |:---|:---:|:---:|:---:|:---|
@@ -345,9 +345,9 @@ instance, is `schema_validators.rs` plus `zone_quantisation.rs` rather than a si
   - `db.rs`: 259 lines of inline tests (prod is 292 lines).
 
 ### Law 8 Violations (Historical Transition Commentary)
-- `Cargo.toml:6`: *"description = 'TBD Reforger platform backend — Rust port of the Go API (T-145).'"*
-- `lib.rs:1-6`: *"Rust port of the Go API (T-145)... approved plan (~/.claude/plans/...)... mirrors the corresponding Go package under internal/"*
-- `missions.rs:1-3, 39, 55, 80, 249, 272, 665, 811, 847, 1209, 1338, 1591, 1788`: Cites Go rewrite and tickets T-363, T-382, T-377, T-367, T-408, T-497, T-315, T-346, T-683, T-549, T-690.
-- `approvals.rs:1, 263-320`: 58 lines of historical commentary arguing ticket T-283.
-- `mortar.rs:1, 20-33, 68-91`: Discussion of pre-T-349 bugs and Go porting details.
-- `game_agent.rs:1-27`: Transition narrative across tickets T-289, T-269, T-853, T-595.
+- `Cargo.toml:6`: the crate description named the implementation the code had been ported from and the ticket that did it.
+- `lib.rs:1-6`: the crate header described the port, the plan file it followed, and the package layout it mirrored.
+- `missions.rs` (thirteen sites): comments cited the port and eleven tickets instead of the behaviour.
+- `approvals.rs:1, 263-320`: 58 lines of commentary arguing one ticket's decision.
+- `mortar.rs:1, 20-33, 68-91`: discussion of earlier bugs and porting details.
+- `game_agent.rs:1-27`: a transition narrative across four tickets.

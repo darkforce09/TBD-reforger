@@ -1,10 +1,6 @@
 # Env
 .env
 
-# Runtime storage (local-disk relative to the api/ working directory; S3/MinIO in production)
-uploads/
-/missions/
-
 # Editor
 .vscode/
 .idea/
