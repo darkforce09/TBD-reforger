@@ -73,7 +73,7 @@ This phase measures and edits no code, so it fixes nothing. Everything it found 
 
 ## Test inventory
 
-The 1361 test functions the five tooling crates run, one per line as `target | test path`. A phase that renames, adds or deletes a test updates this list, so it keeps naming the tests that exist.
+The 1373 test entries the five tooling crates run, one per line as `target | test path`. A phase that renames, adds or deletes a test updates this list, so it keeps naming the tests that exist.
 
 ```text
 developer_tools | blueprint::archive_emit::tests::archive_boot_splits_the_whole_corpus_and_never_censuses_a_blocking_prefab
@@ -362,6 +362,10 @@ ticket_engine | cli::tests::execution_boundaries_tests::cleanup_resolution_prese
 ticket_engine | cli::tests::execution_boundaries_tests::cleanup_resolution_preserves_defaults_and_performs_no_deletion
 ticket_engine | cli::tests::execution_boundaries_tests::dry_run_does_not_call_executor
 ticket_engine | cli::tests::execution_boundaries_tests::executor_failure_stops_the_batch
+ticket_engine | corpus_pins::tests::a_missing_file_is_an_error_naming_the_path
+ticket_engine | corpus_pins::tests::an_unknown_key_is_an_error
+ticket_engine | corpus_pins::tests::committed_pins_load_with_both_tables_populated
+ticket_engine | corpus_pins::tests::lookups_answer_by_exact_id
 ticket_engine | encoding::tests::encoding_roundtrip_tests::class_and_estimated_values_are_validated
 ticket_engine | encoding::tests::encoding_roundtrip_tests::flat_scope_full_depth_roundtrip
 ticket_engine | encoding::tests::encoding_roundtrip_tests::idea_rejects_order
@@ -398,7 +402,6 @@ ticket_engine | metrics::tests::receipt_validation_tests::total_sum_invariant_is
 ticket_engine | metrics::tests::receipt_validation_tests::two_runs_in_one_second_yield_two_files
 ticket_engine | model::tests::model_contract_tests::classify_work_is_token_boundary_and_ordered
 ticket_engine | model::tests::model_contract_tests::domain_as_str_is_snake_case
-ticket_engine | model::tests::model_contract_tests::frozen_unmappable_is_49
 ticket_engine | model::tests::model_contract_tests::ready_constructor_rejects_empty_goal
 ticket_engine | model::tests::model_contract_tests::status_name_roundtrip
 ticket_engine | model::tests::model_contract_tests::title_debt_instrument
@@ -441,7 +444,7 @@ ticket_engine | ops::tests::status_and_shipping_tests::ship_preserves_shipped_at
 ticket_engine | ops::tests::status_and_shipping_tests::ship_refuses_created_at_less_pre_write
 ticket_engine | ops::tests::status_and_shipping_tests::ship_refuses_empty_ready_tier_fields
 ticket_engine | ops::tests::status_and_shipping_tests::stamp_sha_writes_noops_and_refuses
-ticket_engine | proptest_roundtrip::parse_render_work_queued_roundtrip
+ticket_engine | proptest_roundtrip_tests::parse_render_work_queued_roundtrip
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::cancelled_counts_as_shipped
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::registry_poisons_on_a_ticket_without_an_id
 ticket_engine | registry::shipping_status::tests::registry_poisons_on_a_ticket_without_an_id_tests::registry_unreadable_is_not_shipped
@@ -773,9 +776,9 @@ verification_core | report::tests::violations_exit_one
 verification_core | scan::tests::a_file_root_is_accepted_directly
 verification_core | scan::tests::a_missing_root_is_did_not_run_not_zero_hits
 verification_core | scan::tests::extension_filter_applies
-verification_core | scan::tests::grep_lines_finds_every_occurrence
-verification_core | scan::tests::grep_lines_on_a_missing_file_is_did_not_run
-verification_core | scan::tests::grep_lines_reports_one_based_line_numbers
+verification_core | scan::tests::matching_lines_finds_every_occurrence
+verification_core | scan::tests::matching_lines_on_a_missing_file_is_did_not_run
+verification_core | scan::tests::matching_lines_reports_one_based_line_numbers
 verification_core | scan::tests::non_utf8_bytes_do_not_abort_the_scan
 verification_core | scan::tests::walks_recursively_and_deterministically
 verification_core | verdict::tests::a_missing_target_names_the_file_and_the_six_space_continuation
@@ -1211,6 +1214,15 @@ xtask | tooling_dependency_boundaries::tooling_crates_have_no_file_size_exemptio
 xtask | tooling_dependency_boundaries::tooling_dependency_direction_is_enforced
 xtask | tooling_dependency_boundaries::tooling_source_files_stay_below_their_structural_limits
 xtask | tooling_dependency_boundaries::tooling_test_modules_live_in_separate_files
+xtask | tooling_prose_rules::documents_carry_no_ticket_identifiers
+xtask | tooling_prose_rules::every_rule_fires_on_a_line_that_breaks_it
+xtask | tooling_prose_rules::every_rust_file_named_in_prose_exists
+xtask | tooling_prose_rules::nothing_names_a_retired_spelling
+xtask | tooling_prose_rules::nothing_names_a_script_file_the_tooling_does_not_ship
+xtask | tooling_prose_rules::nothing_narrates_its_own_history
+xtask | tooling_prose_rules::only_a_layout_module_spells_a_repository_path
+xtask | tooling_prose_rules::production_sources_carry_no_ticket_identifiers
+xtask | tooling_prose_rules::test_sources_carry_no_ticket_identifiers_in_comments
 xtask | verifications::architecture::editor_orbat_coherency::tests::a_missing_target_never_reads_as_a_pass
 xtask | verifications::architecture::editor_orbat_coherency::tests::every_cargo_pin_arm_can_go_red
 xtask | verifications::architecture::editor_orbat_coherency::tests::every_static_arm_can_go_red
@@ -3234,3 +3246,162 @@ this document carries.
 ### Commands that could not run
 
 None. Every check of this phase ran in this environment.
+
+---
+
+## P10 — Final verification
+
+Every row of the verification matrix runs against the committed tree, together with each build,
+test and gate lane the closure plan names. This section records what each returned, the four
+results that are a shape rather than a literal zero, the three defects the run found and fixed, and
+the one step that belongs to the operator.
+
+Row identifiers are the closure plan's, which holds the command texts. This document records
+identifiers and results only: the matrix searches this file too, and its command texts contain the
+very tokens the matrix drives to zero.
+
+### The matrix
+
+| Row | What it counts | Baseline | Now |
+|---|---|---|---|
+| R1 | Ticket identifiers in `tools_v2` sources, manifests, documents and data, fixture trees excluded | 2959 lines | 594 lines, every one inside a string literal of a test file. **0** in production sources, **0** in documents and manifests, **0** in comments |
+| R1b | Ticket identifiers and node script names in the browser-oracle freeze manifest | 4 | 0 |
+| R2 | Dead names anywhere under `tools_v2` | 201 | 0 |
+| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 597 | 9, every one the host control agent the staging deploy renders onto the game host |
+| R4 | Empty directories under `tools_v2` | 138 | 0 |
+| R5 | Root script tree tracked; repository-wide references to it | 17 tracked files; 355 reference lines | 0 tracked files; 0 reference lines. The directory survives on disk holding one untracked, gitignored dependency tree — the operator step below |
+| R5a | R5's references minus `tools_v2` documents and minus comment lines | 160 | 0 |
+| R6 | The structural rules over the tooling crates | 2 crates scanned | 21 tests pass; the crate list holds 4 entries; `.coding-standards-allowlist.yaml` carries no tooling row |
+| R7 | Words that narrate a change rather than the present state | 112 | 0 |
+| R8 | Repository path literals outside the crate layout modules | part one 159 production lines; part two 0 with the destinations not yet existing | part one **0**; part two 3, all test pins |
+| R9 | Agent instructions and hub documents naming commands, files and crates that do not exist; tracked root ghost files | 56 lines; 3 tracked paths | 0 lines; 0 tracked paths |
+| R10 | Root agent document and its mirror | identical; the mirror untracked | identical; the mirror untracked |
+| R11 | Workspace check, tooling clippy, formatting | — | check exit 0 (244 warnings, every one from `website-frontend`); clippy exit 0 with no output; formatting exit 0 |
+| R12 | The five tooling suites | 1357 passed, 7 ignored | exit 0; 1366 passed, 0 failed, 7 ignored |
+| R13 | The four gate lanes | — | see the lane table below |
+| R14 | Ticket registry health | — | strict check OK; the generator run twice leaves the working tree clean; the wave lock reads OK |
+| R15 | The release, tooling and mod commands | — | see the command table below |
+| R16 | Ticket-shaped and dead spellings in every help surface | non-empty | 0 matches over eight help outputs |
+| R17 | Verification functions named after a ticket; asset-layout uses in the deployment preflight | 14 functions; 8 lines over 4 variants | 0 functions; 8 lines over the same 4 variants, the remote probe intact |
+| R18 | Distinct `.rs` basenames named in `tools_v2` production prose that exist nowhere in the workspace | 161 | 0 |
+
+Every row holds. Fifteen finish at the literal value the plan's column names; four finish at a
+shape, and each of those is recorded below with the measurement that shows the shape is the
+property the row exists to hold rather than a shortfall.
+
+This document sits inside the scopes of R1, R2, R3, R7 and R18, so each of those rows was run both
+over the whole tooling tree and with this file excluded. The two readings agree: the file carries
+no ticket identifier, no dead name, no script file name, no narrative word and no name of a Rust
+file that is not in the workspace, so excluding it changes nothing.
+
+### R13 — the gate lanes
+
+| Lane | Result |
+|---|---|
+| `cargo xtask ci ci-local` | exit 0. Twenty steps, every one green: the editorconfig check, the four language bans, the engine-layer check, formatting, clippy, the workspace build, the wasm build, the backend integration suite against the running database, the coding-standards and document-layout checks, the frontend lane, and the schema lane through contract validation, citations, the staging compose-path check, the mission upload size-gate check and the schema-parity check. The size-gate check prints its own refusal proofs, which are part of its PASS |
+| `cargo xtask mk ci-local-leptos` | exit 0 |
+| `cargo xtask ci editor-api-boot` then `cargo xtask mk leptos-gates` | both exit 0. The boot check brings the API up on its port and answers its health probe; the gate lane runs its preflight, which reports OK with 0 warnings, then 22 headless editor gates, every one green |
+| `cargo xtask db test-it` | exit 0; 512 passed, 0 failed, 1 ignored |
+
+### R15 — the release, tooling and mod commands
+
+| Command | Result |
+|---|---|
+| `cargo xtask deploy website --dry-run` | exit 0 with the environment file pointed at a scratch copy of the committed template; prints `==> unit: tools_v2/xtask/deploy/systemd/tbd-website-api.service is installed by hand`, the rsync exclusion for the runtime environment file, and the reload against `tools_v2/xtask/deploy/Caddyfile.website`. Run with no environment file at all it refuses and names the template to copy, which is this machine's state and the command's intended behaviour |
+| `cargo xtask mcp selftest` | `mcp-call-selftest: ALL PASS (20)`, exit 0 |
+| the entrypoint the machine-local MCP configuration names | present on disk under `tools_v2/enfusion_mcp_node_package/node_modules/` |
+| `cargo xtask mod world-boot --selftest` | exit 0; every negative fixture rejected |
+| `cargo xtask mod compile` | exit 0; 5804 files, 11643 classes, 0 warnings in the mod sources |
+| `cargo xtask verify no-node` | exit 0; `OK (none)` for each check, the walked root being the workflow directory |
+| `cargo xtask verify file-length` | exit 0; scanned 2546 `.rs` files, 0 violations |
+| `cargo xtask verify ci-schema-parity` | `ci-schema-parity: PASS`, exit 0 |
+| the ignore rule over the runtime deployment environment file | `.gitignore:11` names it |
+
+### Where a result is a shape rather than a zero
+
+Four rows finish at a number the plan's column does not spell literally. Each is the property the
+row exists to hold, measured.
+
+1. **R1 finishes at 594 lines.** Every one is test data: the ticket domain's own corpora, receipts
+   and refusal fixtures, written as string literals inside test sources. A lexical pass over those
+   files — one that tracks raw strings, escapes and multi-line literals rather than reading a line
+   at a time — classifies all 708 identifier occurrences those lines carry: 708 inside a string
+   literal, 0 inside a comment, 0 in code. Production sources, documents and manifests carry none.
+2. **R3 finishes at 9 lines.** All nine name one file: the control agent that
+   `cargo xtask deploy staging` renders onto the game host, where systemd socket-activates it and
+   `apps/website/api_v2/tests/game_agent_rcon.rs` asserts its name. It is a live remote artifact
+   rather than a deleted script, and `tools_v2/xtask/src/tests/tooling_prose_rules.rs` carves it out
+   by name — the single exception in the rule.
+3. **R8 part two finishes at 3 lines, not the 2 the plan anticipated.** All three sit in test
+   sources: the contract path the forwarded-header test reads, and two repository-root probes that
+   pin the node package manifest. The row's subject is production sources, which report 0.
+4. **`verify file-length` scans 2546 `.rs` files against the baseline's 2529.** The walk roots are
+   unchanged: the pinned directory list is byte-identical to the baseline's, and the dynamic half —
+   every `src` and `tests` directory directly under the website tree — resolves to the same set,
+   because no crate joined or left that tree. Counting tracked `.rs` files under exactly those
+   roots gives 2529 at the baseline and 2546 now, so the rise of 17 is entirely files that exist:
+   ten in `verification-core` from splitting its process module and lifting its inline tests into
+   siblings, eighteen in `ticketboard` from the same lifting, two in `developer-tools`, less twelve
+   in `ticket-engine` and one in `xtask` that went with deleted code.
+
+### Test inventory — every baseline name accounted for
+
+The live set of 1373 test entries is compared against the inventory at the end of this document.
+Six names in the inventory do not run, and every one is accounted for:
+
+| Inventory name | Where it went |
+|---|---|
+| `model::tests::model_contract_tests::frozen_unmappable_is_49` | deleted with the constant it measured, which had no reader in the workspace; the prose phase records the deletion under its own `Found and fixed` |
+| `proptest_roundtrip::parse_render_work_queued_roundtrip` | the same test, now declared from a sibling file as `proptest_roundtrip_tests::parse_render_work_queued_roundtrip` |
+| `scan::tests::grep_lines_finds_every_occurrence` | `scan::tests::matching_lines_finds_every_occurrence` |
+| `scan::tests::grep_lines_on_a_missing_file_is_did_not_run` | `scan::tests::matching_lines_on_a_missing_file_is_did_not_run` |
+| `scan::tests::grep_lines_reports_one_based_line_numbers` | `scan::tests::matching_lines_reports_one_based_line_numbers` |
+| the `verification-core` documentation test | runs; it is one entry whose target label this comparison spells differently |
+
+Seventeen entries run that the inventory did not name: four corpus-pin tests and one module path in
+`ticket-engine`, the three scan tests under their live names, and the nine prose rules. The
+inventory below is regenerated from the live set, so it names the tests that exist.
+
+### Found and fixed
+
+- `tools_v2/xtask/src/verifications/schemas/checks/content_budgets.rs:11` — the building-geometry
+  gate held a sixth copy of the sentence it certifies, and that copy had drifted from the five
+  documents it is compared against, so `cargo xtask ci ci-local` stopped there and the schema lane's
+  remaining steps never ran. The gate now reads the sentence from
+  `contracts_v2/definitions/map-object-prefab.schema.json`, which defines it, and asserts the four
+  specification documents repeat it verbatim. There is one text between the five places instead of
+  six, and the gate refuses rather than certifying a fragment when the definition does not state
+  the sentence or states one shorter than the floor the module pins.
+- `tools_v2/developer-tools/src/world_export_pipeline/tests/vegetation_density/tests.rs:159` and
+  `tools_v2/ticket-engine/src/metrics/estimates/tests/estimate_provenance_tests.rs:218` — two
+  trailing comments cited a ticket identifier. Each now states the fact it was cited for: the grid
+  the assertion pins, and the subject whose two commits the row sums.
+- `tools_v2/xtask/src/tests/tooling_prose_rules.rs:153` — the rule that forbids a ticket identifier
+  in a test comment recognised a comment only by what a line starts with, so a comment after code
+  on the same line reached no rule. It now takes the comment a line carries — everything from the
+  first `//` outside a string literal — and matches there, which is why the two comments above are
+  findable. Its self-test proves the extension on a trailing comment, on data that merely looks
+  like one, and on a `//` inside a string.
+
+### Found for the operator
+
+- The root script directory is still on disk, holding one untracked, gitignored dependency tree.
+  The three machine-local MCP configurations already name the module installed under
+  `tools_v2/enfusion_mcp_node_package/node_modules/`, and that file is present, so the move is
+  complete on disk; what remains is that running agent sessions hold the old path open. Restart
+  Claude Code and Cursor, then remove the directory. Nothing in the index points at it: a
+  tracked-file listing under it returns nothing, and no source, document or configuration in the
+  repository names it.
+- Four decision records under `.ai/artifacts/` keep ticket-shaped file names. Nothing executable
+  reads them — a search over the tooling, the applications and the contract tree finds no reader —
+  and each sits beside handoff and verification documents of the same name, which the closure plan
+  holds as historical records. The five records the map lane actually reads carry domain names and
+  resolve through `tools_v2/developer-tools/src/repository_layout.rs`.
+
+### Commands that could not run
+
+None. Every command of the matrix ran unmodified in this environment, the headless editor gates
+included: the preflight finds the pinned browser, the toolchain and the free memory it needs, and
+reports no warning. The one command that answers differently here is the website deploy rehearsal,
+which needs a runtime environment file this machine does not keep; run against a copy of the
+committed template it exits 0 and prints the paths above.
