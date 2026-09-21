@@ -382,3 +382,81 @@ fn a_well_formed_list_parses_and_validates() {
     assert!(nets[2].contains(ip("::1")));
     assert!(!nets.iter().any(|n| n.contains(ip("203.0.113.1"))));
 }
+
+#[test]
+fn production_rejects_a_missing_upload_dir() {
+    let mut cfg = production_base();
+    cfg.upload_dir.clear();
+    match cfg.validate() {
+        Err(ConfigError::Missing("UPLOAD_DIR")) => {}
+        other => panic!("expected Missing(UPLOAD_DIR), got {other:?}"),
+    }
+}
+
+#[test]
+fn production_rejects_a_relative_mission_stage_dir() {
+    let mut cfg = production_base();
+    cfg.mission_stage_dir = "missions".into();
+    match cfg.validate() {
+        Err(ConfigError::Malformed("MISSION_STAGE_DIR", why)) => {
+            assert!(why.contains("absolute"), "{why}");
+        }
+        other => panic!("expected Malformed(MISSION_STAGE_DIR), got {other:?}"),
+    }
+}
+
+/// A trailing newline from a secrets manager would create a directory named with it, and every
+/// upload would land somewhere the unit never points `/uploads` at.
+#[test]
+fn runtime_dirs_with_surrounding_whitespace_are_rejected_in_every_env() {
+    let mut cfg = Config::for_tests("postgres://x/x", "jwt-secret");
+    cfg.upload_dir = format!("{}\n", cfg.upload_dir);
+    match cfg.validate() {
+        Err(ConfigError::Malformed("UPLOAD_DIR", _)) => {}
+        other => panic!("expected Malformed(UPLOAD_DIR), got {other:?}"),
+    }
+}
+
+/// Development keeps the checkout-relative default; production gets nothing filled in, so the
+/// operator's omission is reported as such instead of silently becoming a path inside the tree.
+#[test]
+fn the_development_default_never_applies_outside_development() {
+    let default = "../../../assets_v2/scratch/website-api/uploads";
+    assert_eq!(runtime_storage_dir("", default, "development"), default);
+    assert_eq!(runtime_storage_dir("", default, "production"), "");
+    assert_eq!(
+        runtime_storage_dir("/var/lib/uploads", default, "development"),
+        "/var/lib/uploads"
+    );
+}
+
+#[test]
+fn development_accepts_a_relative_runtime_dir_and_production_an_absolute_one() {
+    let mut dev = Config::for_tests("postgres://x/x", "jwt-secret");
+    dev.upload_dir = "../../../assets_v2/scratch/website-api/uploads".into();
+    assert!(dev.validate().is_ok());
+
+    let mut prod = production_base();
+    prod.upload_dir = "/var/lib/tbd-website-api/uploads".into();
+    prod.mission_stage_dir = "/var/lib/tbd-website-api/missions".into();
+    assert!(prod.validate().is_ok());
+}
+
+/// Every harness that builds a router through `for_tests` writes into a temporary directory,
+/// never into the crate directory the tests run from.
+#[test]
+fn test_configs_keep_runtime_storage_out_of_the_checkout() {
+    let cfg = Config::for_tests("postgres://x/x", "jwt-secret");
+    let temp = std::env::temp_dir();
+    assert!(
+        Path::new(&cfg.upload_dir).starts_with(&temp),
+        "{}",
+        cfg.upload_dir
+    );
+    assert!(
+        Path::new(&cfg.mission_stage_dir).starts_with(&temp),
+        "{}",
+        cfg.mission_stage_dir
+    );
+    assert_ne!(cfg.upload_dir, cfg.mission_stage_dir);
+}

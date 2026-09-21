@@ -46,6 +46,11 @@ RUN apt-get update \
 
 COPY --from=builder /src/target/release/api /usr/local/bin/api
 
+# The runtime storage root the compose file mounts a named volume on (UPLOAD_DIR and
+# MISSION_STAGE_DIR point under it). Created here, owned by the API's uid, so the volume inherits
+# a writable tree on first use instead of a root-owned mount point the process cannot write to.
+RUN mkdir -p /srv/state/uploads /srv/state/missions && chown -R 65534:65534 /srv/state
+
 # nobody (65534) — no shell, no home; secrets come from env / compose.
 USER 65534:65534
 ENV PORT=8080

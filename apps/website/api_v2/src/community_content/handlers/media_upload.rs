@@ -1,17 +1,15 @@
-//! CMS media uploads: the multipart thumbnail endpoint and the local storage directory it
-//! writes into (also served back at `/uploads`).
+//! CMS media uploads: the multipart thumbnail endpoint, writing into the configured upload
+//! directory (`Config::upload_dir`, served back at `/uploads`).
 
-use axum::extract::Multipart;
+use axum::extract::{Multipart, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
+use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AdminUser;
-
-/// Local upload storage dir (also served at `/uploads`).
-pub(crate) const UPLOAD_DIR: &str = "uploads";
 
 const MAX_UPLOAD_BYTES: usize = 5 << 20;
 
@@ -19,9 +17,11 @@ const MAX_UPLOAD_BYTES: usize = 5 << 20;
 ///
 /// @route POST /api/v1/cms/uploads
 pub async fn upload_image(
+    State(state): State<AppState>,
     _a: AdminUser,
     mut mp: Multipart,
 ) -> Result<(StatusCode, Json<Value>), ApiError> {
+    let upload_dir = state.cfg.upload_dir.as_str();
     while let Some(field) = mp
         .next_field()
         .await
@@ -48,10 +48,10 @@ pub async fn upload_image(
                 "only JPG, PNG, WEBP allowed",
             ));
         }
-        std::fs::create_dir_all(UPLOAD_DIR)
+        std::fs::create_dir_all(upload_dir)
             .map_err(|_| ApiError::internal("storage unavailable"))?;
         let name = format!("{}{ext}", Uuid::new_v4());
-        std::fs::write(format!("{UPLOAD_DIR}/{name}"), &data)
+        std::fs::write(format!("{upload_dir}/{name}"), &data)
             .map_err(|_| ApiError::internal("could not save file"))?;
         return Ok((
             StatusCode::CREATED,

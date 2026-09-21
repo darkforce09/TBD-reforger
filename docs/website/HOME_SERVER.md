@@ -326,6 +326,14 @@ to absolute paths. Both matter: the API resolves its asset defaults against the 
 and `ServeDir` never checks that the root exists, so a wrong CWD serves 404 for every map asset
 without logging anything.
 
+It also declares `StateDirectory=tbd-website-api` and points `UPLOAD_DIR` / `MISSION_STAGE_DIR` at
+`~/.local/state/tbd-website-api/{uploads,missions}`: everything the API writes lives there, never in
+the checkout the deploy rsyncs with `--delete`. Outside development the API refuses to boot unless
+both are set to absolute paths. `cargo xtask deploy website` creates the directory and moves any
+files an older layout left under `apps/website/api_v2/{uploads,missions}` into it before restarting
+the unit; Caddy's `/uploads/*` proxy is unchanged because the API serves that path from wherever
+`UPLOAD_DIR` points.
+
 ```bash
 systemctl --user daemon-reload
 systemctl --user enable --now tbd-website-api.service

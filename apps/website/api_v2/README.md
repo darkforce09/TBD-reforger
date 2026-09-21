@@ -137,6 +137,13 @@ fragment for API testing.
 `SKIP_MIGRATE=1` keeps the binary from running migrations, for a harness that owns the schema of a
 shared database itself.
 
+What the API writes — CMS uploads (served back at `/uploads`) and the `mission.json` files an admin
+injects for the game server — goes to `UPLOAD_DIR` and `MISSION_STAGE_DIR`. Development defaults
+both to `../../../assets_v2/scratch/website-api/{uploads,missions}` (the repository's gitignored
+scratch tree, outside this crate); outside development both are required and must be absolute, and
+the production unit points them at its systemd state directory. Test configurations use a temporary
+directory, so no suite writes into the checkout.
+
 Applied migrations are immutable: `sqlx` compares each file's SHA-384 against the hash it recorded
 when the migration ran, comments included, and `tests/migrations_are_immutable.rs` pins every file so
 an edit fails CI before it stops a database. A comments-only edit to an applied file is repointed with
@@ -148,6 +155,6 @@ an edit fails CI before it stops a database. A comments-only edit to an applied 
   middleware hierarchy, and the rate-limit seam.
 - [`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md) — the pre-refactor inventory, kept for
   reference.
-- `PHASE_1_HANDOFF.md` … `PHASE_5_HANDOFF.md` — the record of how the layout was reached and why
-  each piece sits where it does.
+- `PHASE_1_HANDOFF.md` … `PHASE_7_HANDOFF.md` — the record of how the layout was reached, why
+  each piece sits where it does, and the completion audit that closed the last leftovers.
 - The ten module `README.md` files under `src/`.

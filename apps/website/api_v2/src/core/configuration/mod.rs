@@ -31,6 +31,11 @@ use proxy_network::parse_trusted_proxies;
 /// Default body cap for `POST /missions/:id/versions` (256 MB).
 const DEFAULT_MISSION_VERSION_MAX_BODY_BYTES: i64 = 256 << 20;
 
+/// Development default for `UPLOAD_DIR`, relative to the crate directory the developer runs from.
+const DEVELOPMENT_UPLOAD_DIR: &str = "../../../assets_v2/scratch/website-api/uploads";
+/// Development default for `MISSION_STAGE_DIR`, beside [`DEVELOPMENT_UPLOAD_DIR`].
+const DEVELOPMENT_MISSION_STAGE_DIR: &str = "../../../assets_v2/scratch/website-api/missions";
+
 /// All runtime settings for the API.
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -66,6 +71,19 @@ pub struct Config {
     /// The glyph dir served at `/map-assets/glyphs` (the tactical marker atlas, shared by every
     /// terrain). Empty defaults to `../../../assets_v2/glyphs` relative to the CWD.
     pub glyph_assets_dir: String,
+
+    // Runtime storage — what the API writes. Never inside the source tree in production.
+    /// Directory the CMS thumbnail upload writes into and `/uploads` serves from. In development
+    /// an empty value means `../../../assets_v2/scratch/website-api/uploads` relative to the CWD
+    /// (the repository's gitignored scratch tree when the process runs from
+    /// `apps/website/api_v2/`); outside development it is required and must be absolute, because
+    /// the process working directory is a deployment detail and the checkout is what the deploy
+    /// rsyncs with `--delete` — see `scripts/deploy/tbd-website-api.service`.
+    pub upload_dir: String,
+    /// Directory `POST /missions/{id}/inject` stages `mission.json` files into for the game-server
+    /// bridge. Same rules as [`Self::upload_dir`]; the development default is
+    /// `../../../assets_v2/scratch/website-api/missions`.
+    pub mission_stage_dir: String,
 
     // Database
     pub database_url: String,
@@ -124,15 +142,26 @@ impl Config {
         let _ = dotenvy::dotenv();
 
         let frontend_url = get_env("FRONTEND_URL", "http://localhost:5173");
+        let app_env = get_env("APP_ENV", "production");
         let cfg = Config {
             port: get_env("PORT", "8080"),
-            env: get_env("APP_ENV", "production"),
             trusted_proxies: split_csv(&env::var("TRUSTED_PROXIES").unwrap_or_default()),
             allowed_origins: split_csv(&get_env("ALLOWED_ORIGINS", &frontend_url)),
             frontend_url,
             spa_dist_dir: env::var("SPA_DIST_DIR").unwrap_or_default(),
             map_assets_dir: env::var("MAP_ASSETS_DIR").unwrap_or_default(),
             glyph_assets_dir: env::var("GLYPH_ASSETS_DIR").unwrap_or_default(),
+            upload_dir: runtime_storage_dir(
+                &env::var("UPLOAD_DIR").unwrap_or_default(),
+                DEVELOPMENT_UPLOAD_DIR,
+                &app_env,
+            ),
+            mission_stage_dir: runtime_storage_dir(
+                &env::var("MISSION_STAGE_DIR").unwrap_or_default(),
+                DEVELOPMENT_MISSION_STAGE_DIR,
+                &app_env,
+            ),
+            env: app_env,
             database_url: env::var("DATABASE_URL").unwrap_or_default(),
             mission_version_max_body_bytes: get_env_int(
                 "MISSION_VERSION_MAX_BODY_BYTES",
@@ -219,6 +248,29 @@ impl Config {
                 ));
             }
         }
+        // What the API writes must land where the operator said, never in a directory that
+        // happens to be the process's CWD. Empty can only survive `load` outside development (the
+        // development default fills it), and there it is a missing setting, not a default.
+        for (name, value) in [
+            ("UPLOAD_DIR", &self.upload_dir),
+            ("MISSION_STAGE_DIR", &self.mission_stage_dir),
+        ] {
+            if value.is_empty() {
+                return Err(ConfigError::Missing(name));
+            }
+            if value != value.trim() {
+                return Err(ConfigError::Malformed(
+                    name,
+                    "has leading or trailing whitespace",
+                ));
+            }
+            if !self.is_development() && !Path::new(value).is_absolute() {
+                return Err(ConfigError::Malformed(
+                    name,
+                    "must be an absolute path outside development",
+                ));
+            }
+        }
         // `TRUSTED_PROXIES` decides whether a client-supplied header is believed, so a typo in it
         // must not be survivable. Unset stays legal and means "trust none"; a *set* entry that
         // does not parse dies here rather than being skipped at request time, where the operator
@@ -293,8 +345,11 @@ impl Config {
     }
 
     /// Minimal config for tests + harnesses: development env, dev CORS origin, the
-    /// given DB URL + JWT secret, a non-empty service token, blank Discord creds.
+    /// given DB URL + JWT secret, a non-empty service token, blank Discord creds, and runtime
+    /// storage under a per-process temporary directory so no suite writes into the checkout.
     pub fn for_tests(database_url: impl Into<String>, jwt_secret: impl Into<String>) -> Self {
+        let scratch =
+            std::env::temp_dir().join(format!("website-api-tests-{}", std::process::id()));
         Self {
             port: "0".into(),
             env: "development".into(),
@@ -304,6 +359,8 @@ impl Config {
             spa_dist_dir: String::new(),
             map_assets_dir: String::new(),
             glyph_assets_dir: String::new(),
+            upload_dir: scratch.join("uploads").display().to_string(),
+            mission_stage_dir: scratch.join("missions").display().to_string(),
             database_url: database_url.into(),
             mission_version_max_body_bytes: DEFAULT_MISSION_VERSION_MAX_BODY_BYTES,
             jwt_secret: jwt_secret.into(),
@@ -319,6 +376,17 @@ impl Config {
             // own socket and sets this, so no suite can accidentally reach a real agent.
             game_agent_socket: String::new(),
         }
+    }
+}
+
+/// A runtime storage directory as configured, with the development default applied when the
+/// variable is unset. Outside development an unset variable stays empty, so [`Config::validate`]
+/// reports it as missing rather than pointing a deployment at a checkout-relative path.
+fn runtime_storage_dir(configured: &str, development_default: &str, app_env: &str) -> String {
+    if configured.is_empty() && app_env == "development" {
+        development_default.to_string()
+    } else {
+        configured.to_string()
     }
 }
 

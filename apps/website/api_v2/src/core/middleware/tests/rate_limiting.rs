@@ -173,7 +173,7 @@ fn the_exemption_does_not_cover_the_other_static_mount() {
     assert_ne!(RATE_LIMIT_EXEMPT_MOUNT, "/uploads");
     let src = include_str!("../../http_router.rs");
     assert!(
-        src.contains(r#"nest_service("/uploads", ServeDir::new("uploads"))"#),
+        src.contains(r#"nest_service("/uploads", ServeDir::new(uploads_dir))"#),
         "src/core/http_router.rs no longer mounts /uploads the way this test assumes — re-check that it is \
          still registered ABOVE the rate-limit layer"
     );

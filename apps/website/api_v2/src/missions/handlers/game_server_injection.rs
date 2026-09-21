@@ -100,10 +100,8 @@ pub async fn ingest_list_missions(
     Ok(Json(json!({ "missions": missions, "count": count })))
 }
 
-/// Staging dir for injected mission.json files (game-server bridge pickup).
-const MISSION_STAGE_DIR: &str = "missions";
-
-/// `POST /api/v1/missions/:id/inject` — stage mission.json for the server bridge (admin).
+/// `POST /api/v1/missions/:id/inject` — stage mission.json for the server bridge (admin), into
+/// the configured `Config::mission_stage_dir`.
 ///
 /// @route POST /api/v1/missions/:id/inject
 pub async fn inject_mission(
@@ -123,8 +121,9 @@ pub async fn inject_mission(
     let doc = build_mission_doc(&state.pool, &m).await?;
     let data = serde_json::to_vec_pretty(&doc)
         .map_err(|_| ApiError::internal("could not build mission.json"))?;
-    fs::create_dir_all(MISSION_STAGE_DIR).map_err(|_| ApiError::internal("staging unavailable"))?;
-    let path = format!("{MISSION_STAGE_DIR}/{}.mission.json", m.id);
+    let stage_dir = state.cfg.mission_stage_dir.as_str();
+    fs::create_dir_all(stage_dir).map_err(|_| ApiError::internal("staging unavailable"))?;
+    let path = format!("{stage_dir}/{}.mission.json", m.id);
     fs::write(&path, data).map_err(|_| ApiError::internal("could not stage mission"))?;
 
     let actor = &admin.0.discord_id;

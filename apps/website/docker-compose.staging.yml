@@ -72,11 +72,19 @@ services:
       # container. Both directories are therefore bind-mounted below and named absolutely here.
       MAP_ASSETS_DIR: /srv/assets/terrains
       GLYPH_ASSETS_DIR: /srv/assets/glyphs
+      # What the API writes (CMS uploads served at /uploads, staged mission.json files) goes to a
+      # named volume; outside development the API refuses to boot unless both are absolute. The
+      # image creates /srv/state owned by the API's uid, and the volume takes that ownership on
+      # first use.
+      UPLOAD_DIR: /srv/state/uploads
+      MISSION_STAGE_DIR: /srv/state/missions
     volumes:
       # Read-only: the API serves these, it never writes them. The terrain tree is the server's own
       # copy (the deploy rsync excludes it); the glyph atlas arrives with the rsync.
       - ../../assets_v2/terrains:/srv/assets/terrains:ro
       - ../../assets_v2/glyphs:/srv/assets/glyphs:ro
+      - tbd_staging_api_state:/srv/state
 
 volumes:
   tbd_staging_pgdata:
+  tbd_staging_api_state:

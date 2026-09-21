@@ -32,8 +32,11 @@ use verification_core::verdict::NotRun;
 use crate::core::repository_root::find_repo_root;
 
 pub mod asset_preflight;
+pub mod remote_steps;
 pub mod rsync_argv;
 pub mod systemd_unit;
+
+use remote_steps::RemoteStep;
 
 /// Historical usage block — kept byte-identical to the bash `usage()` heredoc.
 const USAGE: &str = "\
@@ -43,7 +46,8 @@ Usage: deploy-website.sh [--dry-run] [--help]
   build the release API binary + Leptos SPA on the server, restart the
   user-systemd API unit, and print Caddy reload hints.
 
-  --dry-run   Print the plan (rsync/ssh/compose/build/restart) without executing.
+  --dry-run   Print the plan (rsync/ssh/compose/build/checksum-repair/state-dir/restart)
+              without executing.
   -h, --help  Show this help.
 
 Environment (scripts/deploy/deploy.env):
@@ -212,50 +216,14 @@ impl DeployCfg {
             return Ok(code);
         }
 
-        if !self.skip_compose {
-            println!("==> remote: staging Postgres (docker compose)");
-            let compose_remote = format!(
-                "cd '{}' &&     export TBD_POSTGRES_HOST_PORT='{}' &&     if command -v docker >/dev/null 2>&1; then       docker compose -f apps/website/docker-compose.staging.yml up -d postgres;     else       podman compose -f apps/website/docker-compose.staging.yml up -d postgres;     fi",
-                self.remote_dir, self.postgres_port
-            );
-            if self.dry_run {
-                println!("[dry-run] ssh … {compose_remote}");
-            } else if let Err(code) = self.ssh_cmd(&["bash", "-lc", &compose_remote]) {
-                return Ok(code);
-            }
-        }
-
-        if !self.skip_api {
-            println!("==> remote: cargo build --release -p website-api --bin api");
-            let api_build = format!(
-                "cd '{}' &&     export PATH=\"$HOME/.cargo/bin:$PATH\" &&     cargo build --release -p website-api --bin api &&     test -x target/release/api",
-                self.remote_dir
-            );
-            if self.dry_run {
-                println!("[dry-run] ssh … {api_build}");
-            } else if let Err(code) = self.ssh_cmd(&["bash", "-lc", &api_build]) {
-                return Ok(code);
-            }
-        }
-
-        if !self.skip_spa {
-            println!("==> remote: trunk build --release (Leptos SPA → frontend/dist)");
-            let spa_build = format!(
-                "cd '{}/apps/website/frontend' &&     export PATH=\"$HOME/.cargo/bin:$PATH\" &&     trunk build --release",
-                self.remote_dir
-            );
-            if self.dry_run {
-                println!("[dry-run] ssh … {spa_build}");
-            } else if let Err(code) = self.ssh_cmd(&["bash", "-lc", &spa_build]) {
+        for step in self.remote_plan() {
+            if let Err(code) = self.remote_step(&step) {
                 return Ok(code);
             }
         }
 
         println!("==> remote: restart {}", self.systemd_unit);
-        let restart = format!(
-            "systemctl --user restart '{}' &&   systemctl --user is-active '{}'",
-            self.systemd_unit, self.systemd_unit
-        );
+        let restart = remote_steps::restart(&self.systemd_unit);
         if self.dry_run {
             println!("[dry-run] ssh … {restart}");
         } else {
@@ -295,6 +263,52 @@ impl DeployCfg {
         println!("    curl -sfI http://127.0.0.1:3080/");
         println!("==> done");
         Ok(0)
+    }
+
+    /// The ordered remote steps between the rsync and the restart. The checksum repair and the
+    /// state-directory move come last, once the new tree is on the server and before the unit picks
+    /// it up: a comments-only migration edit must be repointed before the new binary boots, or the
+    /// boot refuses it, and the runtime files must already be where the unit's environment points.
+    fn remote_plan(&self) -> Vec<RemoteStep> {
+        let mut plan = Vec::new();
+        if !self.skip_compose {
+            plan.push(RemoteStep::new(
+                "staging Postgres (docker compose)",
+                remote_steps::compose_up(&self.remote_dir, &self.postgres_port),
+            ));
+        }
+        if !self.skip_api {
+            plan.push(RemoteStep::new(
+                "cargo build --release -p website-api --bin api",
+                remote_steps::api_build(&self.remote_dir),
+            ));
+        }
+        if !self.skip_spa {
+            plan.push(RemoteStep::new(
+                "trunk build --release (Leptos SPA → frontend/dist)",
+                remote_steps::spa_build(&self.remote_dir),
+            ));
+        }
+        plan.push(RemoteStep::new(
+            "repoint the checksums of comments-only migration edits",
+            remote_steps::migration_checksum_repair(&self.remote_dir),
+        ));
+        plan.push(RemoteStep::new(
+            "move runtime files into the unit's state directory",
+            remote_steps::runtime_state_move(&self.remote_dir),
+        ));
+        plan
+    }
+
+    /// Run one step over ssh, or print it under `--dry-run`. A non-zero exit aborts the deploy
+    /// before the restart, so the running unit keeps serving the previous tree.
+    fn remote_step(&self, step: &RemoteStep) -> Result<(), u8> {
+        println!("==> remote: {}", step.title);
+        if self.dry_run {
+            println!("[dry-run] ssh … {}", step.command);
+            return Ok(());
+        }
+        self.ssh_cmd(&["bash", "-lc", &step.command])
     }
 
     fn ssh_base_program_args(&self) -> (String, Vec<String>) {

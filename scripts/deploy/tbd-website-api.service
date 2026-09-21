@@ -21,6 +21,15 @@
 ; The terrain tree is NOT rsynced by the deploy (it is ~590 MB of LFS content); the server keeps
 ; its own copy and `cargo xtask deploy website` refuses to run if it is missing. The glyph atlas
 ; IS rsynced — it is 188 KB and tracked.
+;
+; ── WHY THE RUNTIME DIRECTORIES ARE SET EXPLICITLY ──────────────────────────────────────────
+;
+; The API writes two things: CMS uploads (served back at /uploads) and the mission.json files an
+; admin stages for the game server. Outside development it refuses to boot unless both
+; directories are named absolutely, so that what it writes never lands inside the checkout the
+; deploy rsyncs with --delete. systemd creates %S/tbd-website-api (StateDirectory=), and
+; `cargo xtask deploy website` moves anything an older layout left under
+; apps/website/api_v2/{uploads,missions} into it before restarting this unit.
 
 [Unit]
 Description=TBD Reforger website API
@@ -38,6 +47,12 @@ EnvironmentFile=/TBD_REPO_DIR_PLACEHOLDER/apps/website/api_v2/.env
 ; Served at /map-assets and /map-assets/glyphs. See the note above before changing either.
 Environment=MAP_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets_v2/terrains
 Environment=GLYPH_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets_v2/glyphs
+
+; What the API writes lives under the unit's state directory, never in the checkout. See the
+; note above; `%S` is $XDG_STATE_HOME (~/.local/state) for a user unit.
+StateDirectory=tbd-website-api
+Environment=UPLOAD_DIR=%S/tbd-website-api/uploads
+Environment=MISSION_STAGE_DIR=%S/tbd-website-api/missions
 
 ExecStart=/TBD_REPO_DIR_PLACEHOLDER/target/release/api
 

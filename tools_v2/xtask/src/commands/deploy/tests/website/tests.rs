@@ -119,3 +119,86 @@ fn the_remediation_names_every_directory_that_must_move() {
         assert!(fix.contains(moved), "remediation omits {moved}");
     }
 }
+
+fn plan_for(skip_compose: bool, skip_api: bool, skip_spa: bool) -> Vec<String> {
+    let cfg = DeployCfg {
+        root: PathBuf::from("/tmp/repo"),
+        host: "sam@192.168.0.140".into(),
+        remote_dir: "/home/sam/tbd/repo".into(),
+        postgres_port: "5432".into(),
+        systemd_unit: "tbd-website-api.service".into(),
+        skip_compose,
+        skip_spa,
+        skip_api,
+        ssh_pass: None,
+        ssh_identity: None,
+        dry_run: true,
+    };
+    cfg.remote_plan().into_iter().map(|s| s.title).collect()
+}
+
+/// The checksum repair and the state move follow every build and precede the restart, which
+/// `execute` issues only after the plan drains. With every build skipped they are the whole plan.
+#[test]
+fn the_remote_plan_ends_with_the_checksum_repair_and_the_state_move() {
+    let full = plan_for(false, false, false);
+    assert_eq!(full.len(), 5, "{full:?}");
+    assert!(full[0].contains("Postgres"));
+    assert!(full[1].contains("cargo build"));
+    assert!(full[2].contains("trunk build"));
+    assert!(full[3].contains("checksums"));
+    assert!(full[4].contains("state directory"));
+
+    let builds_skipped = plan_for(true, true, true);
+    assert_eq!(builds_skipped.len(), 2, "{builds_skipped:?}");
+    assert!(builds_skipped[0].contains("checksums"));
+    assert!(builds_skipped[1].contains("state directory"));
+}
+
+#[test]
+fn the_checksum_repair_runs_in_the_remote_checkout_against_the_staging_container() {
+    let cmd = remote_steps::migration_checksum_repair("/home/sam/tbd/repo");
+    assert!(cmd.starts_with("cd '/home/sam/tbd/repo' &&"), "{cmd}");
+    assert!(
+        cmd.contains(
+            "TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force"
+        ),
+        "{cmd}"
+    );
+}
+
+#[test]
+fn the_state_move_targets_the_unit_state_directory_and_is_idempotent() {
+    let cmd = remote_steps::runtime_state_move("/home/sam/tbd/repo");
+    assert!(
+        cmd.contains("${XDG_STATE_HOME:-$HOME/.local/state}/tbd-website-api"),
+        "{cmd}"
+    );
+    assert!(cmd.contains("for legacy in uploads missions"), "{cmd}");
+    assert!(
+        cmd.contains("'/home/sam/tbd/repo/apps/website/api_v2/'"),
+        "{cmd}"
+    );
+    assert!(
+        cmd.contains("if [ -d \"$src\" ]"),
+        "the move must be conditional: {cmd}"
+    );
+    assert!(cmd.contains("--remove-source-files"), "{cmd}");
+}
+
+/// The unit template and the deploy agree on where the runtime files live: the unit points the
+/// API there through its environment, the deploy moves the files there, and both spell the same
+/// `StateDirectory=` name.
+#[test]
+fn the_unit_template_declares_the_state_directory_the_deploy_moves_into() {
+    const UNIT: &str = include_str!("../../../../../../../scripts/deploy/tbd-website-api.service");
+    let state = remote_steps::STATE_DIRECTORY;
+    assert!(
+        UNIT.contains(&format!("StateDirectory={state}\n")),
+        "{UNIT}"
+    );
+    assert!(UNIT.contains(&format!("Environment=UPLOAD_DIR=%S/{state}/uploads\n")));
+    assert!(UNIT.contains(&format!(
+        "Environment=MISSION_STAGE_DIR=%S/{state}/missions\n"
+    )));
+}

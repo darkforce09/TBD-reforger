@@ -34,6 +34,13 @@ cargo xtask mk leptos
 
 Config: `apps/website/api_v2/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
 
+Runtime storage: what the API writes — CMS uploads (served back at `/uploads`) and the
+`mission.json` files an admin injects for the game server — goes to `UPLOAD_DIR` and
+`MISSION_STAGE_DIR`. In development both default to `assets_v2/scratch/website-api/{uploads,missions}`
+(gitignored, outside the crate); outside development both are required and must be absolute, and the
+production unit points them at its systemd state directory. Nothing the API writes lands in
+`apps/website/api_v2/`.
+
 ## Confirm it's up
 
 ```bash

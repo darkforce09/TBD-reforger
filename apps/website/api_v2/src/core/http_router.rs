@@ -63,6 +63,11 @@ pub fn router(state: AppState) -> Router {
     // closures over the `Arc`.
     let reg_metrics = registry.clone();
     let reg_health = registry.clone();
+    // Uploads are served from the directory the upload handler writes into; the API owns it, so
+    // it is created here rather than reported missing like the read-only asset roots below.
+    let uploads_dir = state.cfg.upload_dir.clone();
+    ensure_runtime_dir("UPLOAD_DIR", &uploads_dir);
+    ensure_runtime_dir("MISSION_STAGE_DIR", &state.cfg.mission_stage_dir);
     let mut r = Router::new()
         // Public callers get `{"status": …}` and the 200/503 split, nothing else. The detail is
         // behind the same `X-Service-Token` that gates `/metrics`. See [`healthz`].
@@ -93,7 +98,7 @@ pub fn router(state: AppState) -> Router {
             ),
         )
         .nest("/api/v1", api_v1_routes(dev, version_limit))
-        .nest_service("/uploads", ServeDir::new("uploads"));
+        .nest_service("/uploads", ServeDir::new(uploads_dir));
 
     // Always serve `/map-assets` (Trunk proxies here in dev; production SPA cutover uses the same
     // path). Gating this behind SPA_DIST_DIR left the editor with 404s for DEM/sat/world under
@@ -203,6 +208,16 @@ pub fn router(state: AppState) -> Router {
 #[cfg(test)]
 #[path = "tests/http_router.rs"]
 mod tests;
+
+/// Creates a directory the API writes into, at router build, so the first upload or injection
+/// does not depend on a deployment having prepared it. A failure is logged with the variable
+/// that names the directory and left to surface as a 500 on the write, where the handler already
+/// reports it.
+fn ensure_runtime_dir(env_var: &str, dir: &str) {
+    if let Err(error) = std::fs::create_dir_all(dir) {
+        tracing::error!(env_var, configured = dir, %error, "cannot create the runtime directory");
+    }
+}
 
 /// Warns at router build when an asset root does not exist.
 ///
