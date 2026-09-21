@@ -1,4 +1,4 @@
-//! MCP JSON-RPC helpers (T-162) — formerly scripts/mod/lib/mcp-*.py
+//! MCP JSON-RPC helpers for `cargo xtask mcp`.
 
 use serde_json::{Value, json};
 use std::io::{self, BufRead, Read, Write};
@@ -6,7 +6,7 @@ use std::os::unix::net::UnixStream;
 use std::path::Path;
 use std::time::Duration;
 
-/// Exit codes match mcp-consume.py (locked by mcp-call-selftest).
+/// Exit codes are locked by `mcp call-selftest`.
 pub fn cmd_consume() -> i32 {
     let stdin = io::stdin();
     let mut saw_init = false;
@@ -76,7 +76,7 @@ pub fn cmd_consume() -> i32 {
                     {
                         let text = o.get("text").and_then(|t| t.as_str()).unwrap_or("");
                         if write_stdout_line(text) != 0 {
-                            return 0; // BrokenPipe → 0 (Python)
+                            return 0; // BrokenPipe → 0
                         }
                         printed = true;
                     }

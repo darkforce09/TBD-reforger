@@ -1,4 +1,4 @@
-//! `cargo xtask verify blas-manifest` — T-090.12.2: the prefab BLAS library under
+//! `cargo xtask verify blas-manifest` — the prefab BLAS library under
 //! `assets_v2/terrains/everon/prefabs/` is complete and self-consistent.
 //!
 //! - `blas-manifest.json` validates against `blas-manifest.schema.json` and parses as
@@ -9,7 +9,7 @@
 //! - every BLAS entry's file exists with exactly the manifest's byte size and parses as a v2
 //!   sidecar with the manifest's triangle and kind counts;
 //! - the hot set lists blocking pids only, most-placed first;
-//! - the farmhouse descriptor's root BLAS is byte-identical to the T-090.11 shell sidecar.
+//! - the farmhouse descriptor's root BLAS is byte-identical to the shell sidecar.
 //!
 //! Exit 0 = every check passed; 1 = any failure (each printed). No pak access, no Workbench.
 
@@ -210,7 +210,7 @@ pub fn verify_blas_manifest(root: &Path) -> Result<u8> {
         }
     }
 
-    // The T-090.11 pin: the farmhouse root BLAS is the shell sidecar, byte for byte.
+    // The pin: the farmhouse root BLAS is the shell sidecar, byte for byte.
     match descriptors.values().find(|d| d.slug == FARMHOUSE_SLUG) {
         Some(d) => {
             let shell = prefabs.join(&d.shell_bvh);

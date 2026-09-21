@@ -4,7 +4,7 @@ use super::*;
 
 // ── `ticket check` validation ──────────────────────────────────────────────────────────
 /// Validate the estimates tree + its ticket coherence. Every error names its file
-/// or ticket. Rules (spec §estimates-outside-metrics + T-917.5 acceptance):
+/// or ticket. Rules (spec §estimates-outside-metrics):
 ///
 /// - every file under `estimates/` satisfies `estimates.schema.json` (a missing
 ///   schema while estimates exist is itself red) plus [`validate_estimate`];
@@ -17,7 +17,7 @@ use super::*;
 ///   file for the same id is red naming BOTH paths;
 /// - `"tokens" ∈ estimated[]` ⇔ the estimate file exists — both directions red.
 ///
-/// Fail-closed on an unloadable corpus, like every corpus rule in `check.rs`.
+/// Fail-closed on an unloadable corpus, like every corpus rule in [`crate::validation`].
 pub fn check_as_errors(root: &Path) -> Vec<String> {
     let corpus = match Corpus::load(root) {
         Ok(c) => c,

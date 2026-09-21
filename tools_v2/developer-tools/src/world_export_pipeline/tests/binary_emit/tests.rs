@@ -24,7 +24,7 @@ fn objects_dir() -> PathBuf {
 /// A copy of `bytes` whose first byte sits on a 4-byte boundary, so the zero-copy
 /// `cast_slice` path is exercised **deterministically** rather than whenever the allocator
 /// happens to oblige. `fs::read` hands back a `Vec<u8>`, which is only 1-aligned by contract;
-/// the loader (T-935.3) faces the same problem on `fetch_bytes` and answers it the same way.
+/// the loader faces the same problem on `fetch_bytes` and answers it the same way.
 fn aligned4(bytes: &[u8]) -> (Vec<u8>, usize) {
     let mut buf: Vec<u8> = Vec::with_capacity(bytes.len() + 4);
     let pad = buf.as_ptr().align_offset(4);

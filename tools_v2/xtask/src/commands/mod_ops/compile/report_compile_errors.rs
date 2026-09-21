@@ -63,7 +63,7 @@ pub(super) fn report_compile_errors(
 /// The Game module's file count is the vanilla baseline plus every `.c` under
 /// `tbd-framework/Scripts/Game` — one addon, one term (since 2026-09-12; before that the count was
 /// the union of the two mirror trees, which could not tell "framework lost a file" from "fine",
-/// T-946.24). The check is `loaded >= vanilla + ours`, not `==`: the baseline is calibrated once
+/// The check is `loaded >= vanilla + ours`, not `==`: the baseline is calibrated once
 /// per machine and only ever goes stale LOW as the vanilla game grows (this box: 5633 calibrated
 /// 2026-07; green runs already reported 5761), and `--probe` adds files of its own. Anything below
 /// the sum means the engine skipped part or all of the addon — the stale-rdb failure this guard

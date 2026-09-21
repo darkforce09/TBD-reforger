@@ -1,4 +1,4 @@
-//! T-165.5 — static SPA server (port of `driver/serve.mjs`).
+//! Static SPA server for the headless gates.
 //!
 //! Serves a built SPA with the SAME cross-origin-isolation headers the app expects
 //! (`crossOriginIsolated === true` for the wasm/SAB path). Any path without a file extension
@@ -38,7 +38,7 @@ fn mime_for(ext: &str) -> Option<&'static str> {
     })
 }
 
-/// Strip leading `..` components (the serve.mjs traversal guard).
+/// Strip leading `..` components: the path-traversal guard.
 fn sanitize_rel(p: &str) -> PathBuf {
     PathBuf::from(p)
         .components()
@@ -76,7 +76,7 @@ const SHUTDOWN_GRACE: std::time::Duration = std::time::Duration::from_secs(3);
 impl RunningServer {
     /// Signal shutdown and wait — but only for `SHUTDOWN_GRACE`, then abort.
     ///
-    /// T-361: `axum::serve(..).with_graceful_shutdown(..)` resolves only once every in-flight
+    /// `axum::serve(..).with_graceful_shutdown(..)` resolves only once every in-flight
     /// connection has drained. Before this ticket that was safe, because the `/api` proxy
     /// buffered with `bytes().await` and so could not produce an unbounded response. Now that it
     /// streams, a still-open SSE subscription is a connection that **never** drains, and a plain
@@ -111,7 +111,7 @@ fn base_headers(res: &mut Response) {
     h.insert(header::CACHE_CONTROL, "no-store".parse().unwrap());
 }
 
-/// T-361 — upstream response headers that must NOT be copied onto a *streamed* proxy response.
+/// Upstream response headers that must NOT be copied onto a *streamed* proxy response.
 ///
 /// Two distinct reasons, both fatal if ignored:
 ///  - **Framing** (`content-length`, `transfer-encoding`): we re-frame the body ourselves. hyper
@@ -188,7 +188,7 @@ fn parse_bytes_range(h: &HeaderMap, file_len: u64) -> Option<(u64, u64)> {
     Some((start, end))
 }
 
-/// Serve one map-asset file with optional HTTP Range (T-166). Full GET still reads the file;
+/// Serve one map-asset file with optional HTTP Range. Full GET still reads the file;
 /// Range uses seek + exact-length read so a 152_713_114 B sat bundle is never fully buffered.
 async fn serve_map_asset(file: &Path, headers: &HeaderMap) -> Response {
     let meta = match tokio::fs::metadata(file).await {
@@ -257,7 +257,7 @@ async fn handler(
 ) -> Response {
     let path = uri.path().to_string();
 
-    // /map-assets/ passthrough (T-159.28). T-166: honor Range with seek+partial read → 206
+    // /map-assets/ passthrough: honor Range with seek+partial read → 206
     // so CI sat preview never loads the full 152_713_114 B `.tbd-sat` into RAM.
     // Glyphs first: it is the more specific prefix, and the terrain branch below would otherwise
     // claim it and look for a `glyphs/` directory inside the terrain tree.
@@ -274,7 +274,7 @@ async fn handler(
         }
     }
 
-    // Same-origin API proxy (T-159.25 equivalent).
+    // Same-origin API proxy.
     if let Some(proxy) = &state.cfg.api_proxy
         && path.starts_with("/api/")
     {
@@ -303,7 +303,7 @@ async fn handler(
                             h.append(k, v.clone());
                         }
                     }
-                    // Preserve the pre-T-361 default for an upstream that sends no content-type.
+                    // The default for an upstream that sends no content-type.
                     if !h.contains_key(header::CONTENT_TYPE) {
                         h.insert(
                             header::CONTENT_TYPE,
@@ -311,12 +311,12 @@ async fn handler(
                         );
                     }
                 }
-                // T-361 — STREAM the body; do not `upstream.bytes().await`.
+                // STREAM the body; do not `upstream.bytes().await`.
                 //
                 // `bytes()` resolves only at end-of-body, so an endless response (Server-Sent
                 // Events, long-poll) parked this handler forever and the downstream request
                 // never completed: the gate could not browser-test any SSE-driven page, and
-                // T-306 had to hand-roll a shim that replayed captured frames plus a close.
+                // A hand-rolled shim replaying captured frames plus a close is what this replaces.
                 // Yielding each chunk as it lands makes arrival incremental — the first frame
                 // reaches the client while the upstream stream is still open — which is the
                 // whole point; a finite body still arrives in full, just without the
@@ -378,7 +378,7 @@ async fn handler(
 }
 
 fn percent_decode(s: &str) -> String {
-    // Minimal %XX decoder (serve.mjs uses decodeURIComponent; asset paths here are ASCII).
+    // Minimal %XX decoder; asset paths here are ASCII.
     let bytes = s.as_bytes();
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
@@ -439,7 +439,7 @@ pub fn repo_root() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("."))
 }
 
-/// T-361 — the `/api` proxy must **stream**, not buffer.
+/// The `/api` proxy must **stream**, not buffer.
 ///
 /// These tests exist because the gate could not see something. `gate serve` used to do
 /// `upstream.bytes().await`, which resolves only at end-of-body, so an endless response (SSE,

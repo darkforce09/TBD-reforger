@@ -168,11 +168,11 @@ surface = ["map_canvas"]
     );
 }
 
-/// T-917.2: every new key lands in its canonical slot — class after summary, plan
+/// Every new key lands in its canonical slot — class after summary, plan
 /// after spec, the body lists between main_goal and acceptance (in order),
 /// citations after acceptance, estimated/estimate_note after completed_at,
 /// migration_legacy immediately before owns, [scope] trailing. Extends the
-/// T-913.1 `timestamps_roundtrip_in_canonical_slot` pattern.
+/// `timestamps_roundtrip_in_canonical_slot` pattern.
 #[test]
 fn v2_keys_land_in_canonical_slots() {
     let t = Ticket::Work(WorkTicket {
@@ -255,7 +255,7 @@ fn v2_keys_land_in_canonical_slots() {
     assert_eq!(t, parse_ticket_toml(&s).unwrap());
 }
 
-/// T-913.1: stamps round-trip and land in the canonical slot — after `shipped_at`
+/// Stamps round-trip and land in the canonical slot — after `shipped_at`
 /// (still a bare SHA), before `owns`.
 #[test]
 fn timestamps_roundtrip_in_canonical_slot() {
@@ -313,7 +313,7 @@ fn timestamps_roundtrip_in_canonical_slot() {
     assert_eq!(t, parse_ticket_toml(&s).unwrap());
 }
 
-/// T-913.1: program arm carries the stamps too — and (T-917.2) the class/body keys
+/// Program arm carries the stamps too — and the class/body keys
 /// are LEGAL on programs while scope stays forbidden.
 #[test]
 fn program_timestamps_and_v2_fields_roundtrip() {
@@ -352,7 +352,7 @@ completed_at = "2026-08-14T12:00:00Z"
     assert!(err.contains("program forbids [scope]"), "{err}");
 }
 
-/// T-913.1: malformed stamps are load errors that NAME the ticket — never now.
+/// Malformed stamps are load errors that NAME the ticket — never now.
 #[test]
 fn malformed_timestamp_is_parse_error_naming_ticket() {
     for bad in [
@@ -382,13 +382,13 @@ layer = "docs"
     }
 }
 
-/// T-920.1 — the rename roundtrip: a pre-rename blob carrying `user_story`
+/// The rename roundtrip: a pre-rename blob carrying `user_story`
 /// parses via the serde alias into `main_goal`, and the render emits ONLY
 /// `main_goal`, in the same canonical slot (after `active`-tier keys, before
 /// `context`). A load + write_back of a carrier IS the migration.
 #[test]
 fn user_story_alias_parses_and_emits_main_goal() {
-    let legacy = r#"
+    let aliased = r#"
 id = "T-919"
 kind = "work"
 title = "Wall triage drain"
@@ -405,7 +405,7 @@ acceptance = ["gate"]
 domain = "repo"
 layer = "docs"
 "#;
-    let t = parse_ticket_toml(legacy).expect("user_story alias parses");
+    let t = parse_ticket_toml(aliased).expect("user_story alias parses");
     match &t {
         Ticket::Work(w) => assert_eq!(
             w.main_goal.as_deref(),
@@ -439,7 +439,7 @@ layer = "docs"
     assert_eq!(t, parse_ticket_toml(&rendered).unwrap());
     // Carrying BOTH spellings is a serde duplicate-field refusal, not a silent
     // pick — the alias-class discipline the 4a2f3426 pin established.
-    let both = legacy.replace(
+    let both = aliased.replace(
         "user_story = \"the goal, pre-rename spelling\"",
         "user_story = \"old\"\nmain_goal = \"new\"",
     );

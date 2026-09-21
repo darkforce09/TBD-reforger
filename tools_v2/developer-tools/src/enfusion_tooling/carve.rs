@@ -1,4 +1,4 @@
-//! T-181.3 — carve vanilla Enfusion script out of the shipped `.pak` archives.
+//! Carve vanilla Enfusion script out of the shipped `.pak` archives.
 //!
 //! WHY THIS EXISTS
 //! ---------------
@@ -205,7 +205,7 @@ pub fn carve(game_root: &Path, out_dir: &Path) -> Result<CarveStats> {
         }
     }
 
-    // T-537: refuse writing an empty carve manifest over a previous successful carve.
+    // Refuse writing an empty carve manifest over a previous successful carve.
     super::refuse_empty_write(
         "enf carve manifest",
         st.blobs_kept == 0,
@@ -274,7 +274,7 @@ const REFERENCE_ONLY_MD: &str = r#"# Reference only — carved vanilla Enfusion 
 **GENERATED. GITIGNORED. NEVER COMMIT.**
 
 This tree is Arma Reforger's own script source, carved out of the shipped `.pak` archives by
-`enf carve` (T-181.3). It is **Bohemia Interactive's copyrighted game content** — it exists
+`enf carve`. It is **Bohemia Interactive's copyrighted game content** — it exists
 purely so a developer or agent can `rg` the vanilla implementation instead of guessing at APIs
 that `api_search` only exposes as signatures.
 

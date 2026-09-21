@@ -1,6 +1,6 @@
 use super::*;
 
-/// smoke_marquee_drag_editor.mjs — T-159.19: marquee select + drag-move (?force=webgl).
+/// Marquee select + drag-move (?force=webgl).
 pub async fn smoke_marquee_drag(dist: &str, raw_path: &str) -> Result<u8> {
     let path = force_webgl(raw_path);
     let h = Harness::new(dist, 5305, 9365, None, None, &[]).await?;
@@ -128,7 +128,7 @@ pub async fn smoke_marquee_drag(dist: &str, raw_path: &str) -> Result<u8> {
     code
 }
 
-/// smoke_undo_editor.mjs — T-159.21/.22.1: two drags, undo boundary, redo button, A7 keydown guard.
+/// Two drags, undo boundary, redo button, A7 keydown guard.
 pub async fn smoke_undo(dist: &str, raw_path: &str) -> Result<u8> {
     let path = force_webgl(raw_path);
     let h = Harness::new(dist, 5308, 9368, None, None, &[]).await?;
@@ -182,9 +182,9 @@ pub async fn smoke_undo(dist: &str, raw_path: &str) -> Result<u8> {
                 "a6_chromeMounted".into(),
                 json!(eval_bool(&h.page, "!!document.querySelector('[aria-label=\"Undo\"]') &&\n        !!document.querySelector('[aria-label=\"Redo\"]')").await?),
             );
-            // T-177 B1 / T-178 A2 — left dock is Editor Layers only (no Outliner label, no ORBAT);
+            // Left dock is Editor Layers only (no Outliner label, no ORBAT);
             // palette has Factions; ORBAT Manager on the strip.
-            // T-843 / T-637 / T-696 — left dock header is "Layers"+"Locations" (not "Editor Layers");
+            // Left dock header is "Layers"+"Locations" (not "Editor Layers");
             // right dock Factions tab is icon-only (name lives on aria-label/title, not textContent).
             checks.insert(
                 "a6_docksMounted".into(),

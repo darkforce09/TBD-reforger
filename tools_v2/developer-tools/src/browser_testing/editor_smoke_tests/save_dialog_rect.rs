@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-789 (wave-203 MAJOR) — the Save Version dialog's Version input must render FULLY IN-VIEWPORT.
+/// The Save Version dialog's Version input must render FULLY IN-VIEWPORT.
 ///
 /// This is the authoritative guard the source class-pin (`is_clamped_on_screen_by_construction`,
 /// renamed `dialog_carries_the_centering_classes_rect_is_smoke_proven`) could not be: the wave-203
@@ -11,7 +11,7 @@ use super::*;
 /// The fix portals the dialog to `document.body`. This smoke opens the real dialog in real Chrome at
 /// BOTH shipping viewports and asserts the input's live `getBoundingClientRect` is on-screen
 /// (`top>=0 && bottom<=innerHeight`), the "Version" label is visible, `activeElement` is the input
-/// (T-789 focus-first), and 8 Tabs stay inside the dialog (T-789 Tab trap). Reintroducing the
+/// (focus-first), and 8 Tabs stay inside the dialog (Tab trap). Reintroducing the
 /// containing block (re-nest under the glass, or add a `transform`/`filter` to an ancestor) drives
 /// `v1920_inViewport` / `v1366_inViewport` false — the perturbation the class pin let through.
 pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
@@ -76,7 +76,7 @@ pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
                 .await?;
                 checks.insert(format!("{tag}_labelVisible"), json!(label_visible));
 
-                // T-789 focus-first: activeElement IS the Version input on open.
+                // Focus-first: activeElement IS the Version input on open.
                 let focused = eval_bool(
                     &h.page,
                     "document.activeElement === document.querySelector('input[aria-label=\"Version\"]')",
@@ -84,7 +84,7 @@ pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
                 .await?;
                 checks.insert(format!("{tag}_focusOnVersion"), json!(focused));
 
-                // T-789 Tab trap: 8 Tabs keep focus inside the dialog subtree (its container is the
+                // Tab trap: 8 Tabs keep focus inside the dialog subtree (its container is the
                 // nearest ancestor DIV of the Version input carrying the centering classes).
                 for _ in 0..8 {
                     key_chord(&h.page, "Tab", "Tab", 0, 9).await?;
@@ -129,10 +129,10 @@ pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
-/// T-794 (wave-207) — **an entrance animation must not move the surface.** This is the guard the
+/// **An entrance animation must not move the surface.** This is the guard the
 /// fix itself could not have: the defect lived in `aegis.css`, and CSS has no Rust test home.
 ///
-/// What T-794 fixed: `dialog-in` carried `from { transform: translate(-50%, calc(-50% + 8px))
+/// The defect it pins: `dialog-in` carrying `from { transform: translate(-50%, calc(-50% + 8px))
 /// scale(0.96) }` to re-state a centered dialog's own centering translate. True under Tailwind v3,
 /// where `-translate-x-1/2` compiled INTO `transform` and the animation replaced it; Tailwind v4
 /// (pinned 4.3.2) emits the independent `translate:` property, which COMPOSES with `transform`
@@ -148,7 +148,7 @@ pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
 /// 700 ms (well past the 120 ms entrance). `max(|dx|, |dy|) < 8` px is the review's own ceiling and
 /// `animation-duration <= 0.15 s` its snappiness bar.
 ///
-/// PERTURBATION-PROVEN against a scratch copy of the dist carrying the EXACT pre-T-794 sheet
+/// PERTURBATION-PROVEN against a scratch copy of the dist carrying that EXACT sheet
 /// (`26d488d5^`: the `transform: translate(-50%, calc(-50% + 8px)) scale(0.96)` keyframe, the
 /// `scale(0.95)` menu one, 200 ms / 150 ms). Every surface went red and reproduced the ticket's own
 /// measurement to the pixel — `ctxmenu dx=115.2 dy=99.5` (the ticket's "115 px off its own click
@@ -167,7 +167,7 @@ pub async fn smoke_entrance_motion_rect(dist: &str, path: &str) -> Result<u8> {
             .wait_for("!!document.querySelector('canvas')", 80, 250)
             .await?;
         let ready = h.page.wait_for(ATTR_READY, 120, 250).await?;
-        // The viewport T-794 measured at. A `fixed` surface's travel is viewport-relative, so the
+        // The viewport the travel bound is measured at. A `fixed` surface's travel is viewport-relative, so the
         // number in the ticket is only reproducible at the ticket's own metrics.
         h.page
             .send(

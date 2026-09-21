@@ -366,7 +366,7 @@ fn red1_strip_cap_call(src: &str) -> std::result::Result<String, String> {
 
 fn red2_relocate_after_parse(src: &str) -> std::result::Result<String, String> {
     let block_re = Regex::new(
-        r"(?s)\n\t\t// T-456 — REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load\..*?\n\t\t\}\n",
+        r"(?s)\n\t\t// REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load\..*?\n\t\t\}\n",
     )
     .expect("red2 block");
     let Some(m) = block_re.find(src) else {

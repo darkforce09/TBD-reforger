@@ -25,7 +25,7 @@ pub fn add(
 }
 
 /// The one shape both minters (`add`, `add_child`) produce — `cmd_add`'s row, typed.
-/// T-917.2: mints v2 — flat scope `repo`/`docs` (the vocab-legal mint default,
+/// Mints v2 — flat scope `repo`/`docs` (the vocab-legal mint default,
 /// component-free so the surface rule leaves ideas mintable), and a `class` from the
 /// conservative-deterministic [`crate::classify_work`] triage so the check-level
 /// class-required-on-work rule holds from birth (idea status is otherwise exempt from

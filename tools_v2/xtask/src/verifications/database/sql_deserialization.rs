@@ -1,6 +1,6 @@
-//! SQL-shape gates for the Axum API (T-853 port of `scripts/website/verify-no-select-star.sh`).
+//! SQL-shape gates for the Axum API.
 //!
-//! ── WHAT THE GATE IS FOR (T-145) ─────────────────────────────────────────────────────────────
+//! ── WHAT THE GATE IS FOR ─────────────────────────────────────────────────────────────
 //!
 //! A bare `SELECT *` / `RETURNING *` against a table with nullable columns re-introduces the
 //! Go→Rust null-tolerance 500 hazard: Go/GORM read NULL as the zero value, sqlx rejects it. Model

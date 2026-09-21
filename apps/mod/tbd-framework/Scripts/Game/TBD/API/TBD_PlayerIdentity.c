@@ -1,4 +1,4 @@
-//! T-181.13.1 — THE single accessor for the `arma_id` this mod puts on the wire.
+//! THE single accessor for the `arma_id` this mod puts on the wire.
 //!
 //! ══ WHY THIS IS ITS OWN FILE ═══════════════════════════════════════════════════════════════
 //! Two halves of one contract have to agree on a string, byte for byte, or the whole identity
@@ -8,7 +8,7 @@
 //!     GAME SERVER confirming a player's link code. It is the ONLY thing besides the dev seed that
 //!     ever writes `users.arma_id`. The mod **does** implement that path: `TBD_IdentityLink`
 //!     exposes `#tbd link <code>` (also `#tbd link status`), and `TBD_MissionLoader.ParseMissionJson`
-//!     calls `TBD_IdentityLink.Arm()` (T-181.35 shipped).
+//!     calls `TBD_IdentityLink.Arm()`; link-confirm SHIPS.
 //!   * `POST /api/v1/ingest/match-results` (`apps/website/api_v2/src/handlers/telemetry.rs:215`)
 //!     resolves each player with `SELECT discord_id FROM users WHERE arma_id = $1`
 //!     (telemetry.rs:238). That is `TBD_ResultsReporter`.
@@ -63,7 +63,7 @@ class TBD_PlayerIdentity
 	//!   3. NO identity — misconfigured dedicated server, or a player mid-teardown. Returns EMPTY.
 	//!      Callers MUST drop the player rather than substitute anything.
 	//!
-	//! Proven, not assumed (T-181.13.1 compile probe; negative control
+	//! Proven, not assumed (compile probe; negative control
 	//! `SCR_PlayerIdentityUtils.GetPlayerIdentityIdZZ` -> `Undefined function`):
 	//! `GetPlayerIdentityId(int)` returns a `UUID`, `UUID.IsNull()` exists, and
 	//! `string.Format("%1", uuid)` compiles. `IsNull()` is the correct emptiness test and

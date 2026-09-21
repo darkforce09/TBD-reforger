@@ -18,7 +18,7 @@ pub(super) async fn run_modes(
                     std::fs::copy(&gold_file, &react_ref)?;
                 }
                 let cap = capture_route(browser, &args.leptos_dir, 5197, route).await?;
-                // T-378: verify parses; accept used to write blindly — refuse `"null"` /
+                // Verify parses before accept writes — refuse `"null"` /
                 // undersized DOM before overwriting a committed golden.
                 validate_accept_dom(&cap.dom)?;
                 std::fs::write(&gold_file, &cap.dom)?;

@@ -19,7 +19,7 @@ fn a_clean_source_holds() {
 
 #[test]
 fn every_ban_is_discriminating() {
-    // The T-556/T-620 defect in test form: a ban that compares nothing reports clean. Each
+    // The defect in test form: a ban that compares nothing reports clean. Each
     // lie must break the contract, or the ban guarding it is decoration.
     for lie in LIES {
         let src = format!("{}//! {lie}\n", clean_source());

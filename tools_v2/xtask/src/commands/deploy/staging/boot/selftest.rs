@@ -121,7 +121,7 @@ pub fn selftest(_paths: &Paths) -> u8 {
         fail += 1;
     }
 
-    // The format check that USED to be sufficient is not, and this proves it on the spot: the
+    // A format check alone is not sufficient, and this proves it on the spot: the
     // -config-only log is the stale SOURCE, yet a current-format Workshop build makes it
     // indistinguishable by line count. Kept as an executable statement so nobody re-derives the
     // format check as a substitute for the path check.

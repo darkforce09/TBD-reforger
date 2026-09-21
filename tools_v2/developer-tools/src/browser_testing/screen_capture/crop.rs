@@ -1,6 +1,6 @@
 use super::*;
 
-/// `crop.sh` — crop a rectangle out of a screenshot (and optionally nearest-neighbour upscale it) so
+/// Crop a rectangle out of a screenshot (and optionally nearest-neighbour upscale it) so
 /// it can be Read at full detail. Ported to the `image` crate (already a dependency); no ffmpeg and
 /// no python.
 ///

@@ -190,7 +190,7 @@ fn matches_through_the_building_yaw_and_skips_furniture_descendants() {
     assert!(!r.ok());
 }
 
-/// The T-090.11.3 socket pin: the committed farmhouse instances against the committed
+/// The socket pin: the committed farmhouse instances against the committed
 /// Workbench recon dump (88 architectural children, 2026-09-03).
 #[test]
 fn farmhouse_sockets_match_the_workbench_recon() {

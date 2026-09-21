@@ -1,5 +1,5 @@
-//! T-165.8 — catalog-v1 world-object build + roads (ports of `build-world-objects.mjs` and
-//! `build-roads-from-topo.mjs`). Content-identical to the Node pipeline: identical JSON bytes
+//! Catalog-v1 world-object build + roads. Content-identical to the documented artifact
+//! contract: identical JSON bytes
 //! before compression (js_num integral-number semantics, identical key order via preserve_order,
 //! identical sorts), gzip level 9 (flate2 — the N5 one-time re-encode swaps the committed gz
 //! container bytes; decompressed content is the proven-equal contract).
@@ -38,7 +38,7 @@ pub const PHASE_ORDER: [&str; 5] = [
     "P5_props",
 ];
 
-/// One partitioned chunk row (T-090.12.1: full transform; trivial trailers are written 5-wide).
+/// One partitioned chunk row (full transform; trivial trailers are written 5-wide).
 struct ChunkRow {
     id: usize,
     x: f64,
@@ -57,7 +57,7 @@ struct KeptRow {
     y: f64,
     z: f64,
     rot: f64,
-    /// T-090.12.1 — `pitchDeg` / `rollDeg` (round2; the export has carried them since T-090.3)
+    /// `pitchDeg` / `rollDeg` (round2; every export carries them)
     /// and `scale` (round3; written by the v2 exporter only, else `1.0`).
     pitch: f64,
     roll: f64,

@@ -1,29 +1,29 @@
-//! T-288 — deploy.env, modpack resolution and the `server.config.json` render half
+//! Deploy.env, modpack resolution and the `server.config.json` render half
 //! (bash lines 1072–1522).
 //!
 //! ── THE RENDER IS A PURE FUNCTION THAT WRITES A FILE ─────────────────────────────────────────
 //!
-//! The push is a separate step that copies that file. Before T-288 the two were fused into one
+//! The push is a separate step that copies that file. Fusing the two into one
 //! `ssh_cmd "cat > remote" <<EOF` heredoc, which meant the only way to see what this script
 //! produces was to deploy it to a live server — so nothing ever checked it.
 //!
 //! ── WHERE `game.mods[]` COMES FROM ───────────────────────────────────────────────────────────
 //!
-//! Before T-288 this script hardcoded ONE mod — `{"modId": "$TBD_WORKSHOP_MOD_ID", "name":
+//! Hardcoding ONE mod — `{"modId": "$TBD_WORKSHOP_MOD_ID", "name":
 //! "TBD_Framework"}` — and never read the `modpacks` / `modpack_mods` tables. A modpack authored
 //! on the website therefore had no path to a running server.
 //!
 //! THE SOURCE IS THE API, and specifically the bytes of `GET /api/v1/modpacks/current`
 //! (`apps/website/api_v2/src/core/http_router.rs` → `handlers/modpacks.rs::get_current_modpack`) whose `mods[]`
 //! rows carry exactly the fields a Reforger `game.mods[]` entry needs — `workshop_id`, `mod_guid`,
-//! `version` — added by T-271 in `migrations/0012_modpack_mods_workshop.sql`, whose header says
-//! verbatim: "keep both so a future renderer (T-288) can choose".
+//! `version` — added in `migrations/0012_modpack_mods_workshop.sql`, whose header says
+//! verbatim: "keep both so a future renderer can choose".
 //!
 //! REJECTED — reading Postgres directly: this is not a DB client (no `DATABASE_URL` in
 //! `deploy.env.example`), the database lives inside docker compose on the remote host, and
 //! hand-rolling the projection would duplicate the null-tolerant COALESCE read in
 //! `handlers/modpacks.rs mod_cols!()`. The next migration would break the renderer silently.
-//! REJECTED — inventing a modpack file format of our own: that IS the defect T-288 removed.
+//! REJECTED — inventing a modpack file format of our own: that IS the defect this render avoids.
 //!
 //! ⚠ THE CREDENTIAL DOES NOT EXIST YET. `/modpacks/current` is gated by `AuthUser`, a **Bearer
 //! JWT** minted from a Discord login (`middleware/auth.rs`). This program's only secret is
@@ -100,7 +100,7 @@ pub struct Env {
 /// FAIL-OPEN CLOSED (1 of 3). The bash `source`d this file, i.e. EXECUTED it. A syntax error
 /// aborted under `set -e`, but a stray command in it ran silently with the deploy's privileges and
 /// its network reach. Nothing about the deploy needs shell in a config file. Same call as
-/// `gate_deploy_website.rs` made for `deploy-website.sh`.
+/// the website deploy makes for its own remote steps.
 ///
 /// The consequence to keep in mind: `export FOO=$(hostname)` used to work and now yields the
 /// literal text. No committed `deploy.env.example` line uses substitution, and a value that is
@@ -218,7 +218,7 @@ impl Env {
             event_id: def("TBD_EVENT_ID", "b0000000-0000-4000-8000-000000000001"),
             backend_url: def("TBD_BACKEND_URL", "http://127.0.0.1:8080"),
             addon_guid: def("TBD_ADDON_GUID", "B2C3D4E5F6A78901"),
-            // T-607: NOT `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"`. That idiom — which
+            // NOT `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"`. That idiom — which
             // is what this line was — is silently truncated by bash: the `}` of the ResourceGUID
             // closes the parameter expansion, so the default became `{69A85365FC09E2CA` and the
             // rest of the line was parsed as literal text and discarded. Measured:
@@ -234,7 +234,7 @@ impl Env {
             ),
             server_dir: def("TBD_SERVER_DIR", "/home/sam/steam/arma-reforger-server"),
             // Server launch mode. `config` is THE DEFAULT and the only mode that is both correct
-            // and joinable; see `boot.rs` for why the default used to be `addons` and why that was
+            // and joinable; see `boot.rs` for why the default is not `addons` and why that is
             // the wrong half to default to.
             server_mode: def("TBD_SERVER_MODE", "config"),
             workshop_mod_id: get("TBD_WORKSHOP_MOD_ID"),
@@ -251,7 +251,7 @@ impl Env {
                 "TBD_SERVER_CONFIG_REMOTE",
                 &format!("{}/server.config.json", dirname(&profile_dir)),
             ),
-            // T-607: how long to wait for the engine to reach a verdict before failing the deploy.
+            // How long to wait for the engine to reach a verdict before failing the deploy.
             // Room registration landed 14 s after start on a measured 2026-08-01 boot, but that
             // number is not reliable — the playtest runner records the same binary and config
             // registering in 13 s on one boot and never across 300 s on another. This is a bound
@@ -275,7 +275,7 @@ impl Env {
     /// bash's order (guid at 1143, prairielearn at 1197, mode at 1202). The order is observable:
     /// a deploy.env with both a stale guid and a prairielearn path reports the guid.
     pub fn validate(&self, mono_root: &Path) -> Result<(), u8> {
-        // T-607: the GUID is the join between the deployed checkout and game.mods[], and if
+        // The GUID is the join between the deployed checkout and game.mods[], and if
         // deploy.env drifts from the gproj the addon assertion starts checking the wrong id — it
         // would then pass only when the mod did NOT load. Cross-check rather than trust.
         if let Some(g) = super::boot::read_addon_guid(mono_root)
@@ -309,7 +309,7 @@ impl Env {
                     eprintln!(
                         "to the Workshop first, then set its modId in deploy.env), or a modpack"
                     );
-                    eprintln!("source: TBD_MODPACK_JSON=<file> / TBD_MODPACK_URL=<url> (T-288).");
+                    eprintln!("source: TBD_MODPACK_JSON=<file> / TBD_MODPACK_URL=<url>.");
                     return Err(1);
                 }
                 if self.a2s_port == self.game_port {
@@ -318,7 +318,7 @@ impl Env {
                     );
                     return Err(1);
                 }
-                // T-607: validate admin ids against the ENGINE's own schema, here, before anything
+                // Validate admin ids against the ENGINE's own schema, here, before anything
                 // is rsynced. Both patterns copied verbatim out of the engine's rejection of a bad
                 // value (1.7.0.54):
                 //   BACKEND (E): RegEx Pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

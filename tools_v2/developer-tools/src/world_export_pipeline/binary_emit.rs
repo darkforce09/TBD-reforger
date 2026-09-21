@@ -1,8 +1,9 @@
-//! T-935.2 — the binary twin of every `objects/chunks/{cx}_{cy}.json.gz`.
+//! The binary twin of every `objects/chunks/{cx}_{cy}.json.gz`.
 //!
 //! `build-objects` writes each chunk twice: the gzip-9 JSON the shipped loader still reads, and a
 //! `TBDC`-framed `{cx}_{cy}.bin` of raw `ObjectInstancePod` rows. Dual emission is deliberate and
-//! stays until T-935.13 flips the manifest — deleting either write before then blinds one reader.
+//! stays until the terrain manifest names only the binary path — deleting either write before
+//! then blinds one reader.
 //!
 //! # Why the emitter narrows the JSON rows instead of the builder's own `f64`s
 //!

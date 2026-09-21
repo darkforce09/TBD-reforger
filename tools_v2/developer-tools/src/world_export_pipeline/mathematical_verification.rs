@@ -1,4 +1,4 @@
-//! T-165.8 — the mathematical phase gate (port of `scripts/map-assets/verify-phase.mjs`):
+//! The mathematical phase gate:
 //! G1-G12 global invariants + P1-*/PH-P2-* phase gates + D/F density-forest gates + E6/G4/I6
 //! determinism on the STAGED raw export and the COMMITTED objects/ artifacts. Phases are
 //! CUMULATIVE — phase-scoped gates filter committed rows to the requested phase's kinds while

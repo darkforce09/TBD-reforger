@@ -3,9 +3,9 @@ use developer_tools::repository_layout::{
     terrain_dir, terrain_manifest_path, terrain_registry_path,
 };
 
-/// The full contract-validation suite (port of `contracts_v2/scripts/validate.mjs`):
+/// The full contract-validation suite:
 /// golden missions + registries + compat FK walkers + addon/variant provenance + bridge samples +
-/// terrain manifests/anchors + ENF-4 Enfusion DTO fixtures + the T-090.2 map-object goldens.
+/// terrain manifests/anchors + ENF-4 Enfusion DTO fixtures + the map-object goldens.
 /// Cross-file `$ref`s resolve through a `referencing::Registry` keyed by each schema's `$id`
 /// (the ajv `addSchema` equivalent); ENF-4 pointer validators are built as `{"$ref": "<id>#/$defs/<n>"}`.
 pub fn validate_all() -> Result<u8> {
@@ -175,7 +175,7 @@ pub fn validate_all() -> Result<u8> {
         &read_json(&terrain_manifest_path(&root, "everon"))?,
     );
 
-    println!("Locations (T-152.6):");
+    println!("Locations:");
     check(
         "locations-everon-sample.json",
         &v_locations,
@@ -190,7 +190,7 @@ pub fn validate_all() -> Result<u8> {
         );
     }
 
-    println!("Height labels (T-152.16):");
+    println!("Height labels:");
     let hl = terrain_dir(&root, "everon").join("height-labels.json");
     if hl.exists() {
         check(
@@ -267,7 +267,7 @@ pub fn validate_all() -> Result<u8> {
         check(&format!("instance[{i}]"), &v_mo_instance, row);
     }
 
-    println!("Map object chunk sample (T-090.3.1 / T-090.12.1 — all-number 5- or 8-tuples):");
+    println!("Map object chunk sample (all-number 5- or 8-tuples):");
     let chunk = read_json(&mo.join("map-object-chunk-sample.json"))?;
     for (i, row) in chunk["chunk"]["instances"]
         .as_array()
@@ -311,7 +311,7 @@ pub fn validate_all() -> Result<u8> {
         &read_json(&mo.join("phased/P1-buildings.json"))?,
     );
 
-    println!("ResolvedWorldObject (Eden AI + T-090.7):");
+    println!("ResolvedWorldObject (Eden AI):");
     for (i, row) in read_json(&mo.join("map-object-resolved-sample.json"))?
         .as_array()
         .into_iter()
@@ -337,16 +337,16 @@ pub fn validate_all() -> Result<u8> {
         &read_json(&terrain_registry_path(&root))?,
     );
 
-    println!("Dual + legacy terrain manifests (T-090.1/.1.1):");
+    println!("Dual + tile-only terrain manifests:");
     check(
         "everon-dual-tiles",
         &v_tmanifest,
         &read_json(&mo.join("terrain-manifest-everon-dual-tiles.json"))?,
     );
     check(
-        "everon-legacy-tiles",
+        "everon-tile-only-satellite",
         &v_tmanifest,
-        &read_json(&mo.join("terrain-manifest-everon-legacy-tiles.json"))?,
+        &read_json(&mo.join("terrain-manifest-everon-tile-only-satellite.json"))?,
     );
     check(
         "everon-unified-satellite",
@@ -366,7 +366,7 @@ pub fn validate_all() -> Result<u8> {
         &read_json(&terrain_dir(&root, "everon").join("objects/type-inventory.json"))?,
     );
 
-    println!("TBD_MissionValidator unconsumed-key warnings (T-250):");
+    println!("TBD_MissionValidator unconsumed-key warnings:");
     {
         let validator_c =
             root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c");
@@ -379,9 +379,9 @@ pub fn validate_all() -> Result<u8> {
                     .to_string(),
             );
         }
-        // T-437 / T-254: `entities` is modeled + spawned — no longer an unconsumed-key warn.
+        // `entities` is modeled + spawned — no longer an unconsumed-key warn.
         for key in ["environment", "settings", "layers", "tickets", "radio"] {
-            let marker = format!("T-250-UNCONSUMED-WARN: {key}");
+            let marker = format!("UNCONSUMED-WARN: {key}");
             if !src.contains(&marker) {
                 bad.push(format!("missing marker comment `{marker}`"));
             }
@@ -402,8 +402,7 @@ pub fn validate_all() -> Result<u8> {
         // Regression: the retired entities unconsumed lie must not return.
         if src.contains("AddWarning(\"entities\",") {
             bad.push(
-                "entities AddWarning must stay retired (T-254 spawns entities[]; T-437)"
-                    .to_string(),
+                "entities AddWarning must stay retired (the mod spawns entities[])".to_string(),
             );
         }
         if src.contains("does not spawn mission entities")
@@ -449,7 +448,7 @@ pub fn validate_all() -> Result<u8> {
         }
         if bad.is_empty() {
             println!(
-                "  PASS  TBD_MissionValidator.c (5 unconsumed-key warnings wired; entities retired T-254/T-437)"
+                "  PASS  TBD_MissionValidator.c (5 unconsumed-key warnings wired; entities retired)"
             );
         } else {
             failures.set(failures.get() + 1);

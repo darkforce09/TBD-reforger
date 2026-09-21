@@ -1,6 +1,6 @@
 //! Enfusion `.et` prefab text — a tolerant parser for the entity-template grammar plus the
 //! inheritance resolver that turns a prefab path into the facts the BLAS/instance pipeline
-//! needs (T-090.11.2): the mesh (`MeshObject.Object`), door parameters, the attach socket
+//! needs: the mesh (`MeshObject.Object`), door parameters, the attach socket
 //! (`Hierarchy.PivotID`), slot-bone mappings and the child entity list with their local
 //! transforms.
 //!

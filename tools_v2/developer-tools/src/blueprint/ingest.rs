@@ -2,12 +2,12 @@
 //!
 //! Copies Workbench-exported building blueprints from the profile export dir into
 //! `assets_v2/terrains/everon/prefabs/buildings/`, validating each file by a serde round-trip
-//! through `map_engine_core::building_blueprint::BuildingBlueprint` (the exact contract the
+//! through `website_map_engine::building_blueprint::BuildingBlueprint` (the exact contract the
 //! `/debug/building-viewer` bench and the LOS raycaster consume — a file that ingests is a file
 //! the viewer can render).
 //!
 //! Source resolution: `--src <dir>` override, else the first existing of the known profile
-//! locations (the same candidates `apps/mod/tbd-export/tools/export-roads-to-png.mjs` probes), searched two levels
+//! locations, searched two levels
 //! deep for `prefabs/buildings/*.json` (the map segment is derived Workbench-side and has taken
 //! the shapes `everon/` and `$tbd_export:worlds/` in real runs).
 //!

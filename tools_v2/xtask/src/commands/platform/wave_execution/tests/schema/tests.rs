@@ -26,10 +26,10 @@ fn empty_input_matches_too() {
     assert_eq!(cksum(b""), format!("{}{}", 4294967295u32, 0));
 }
 
-/// T-420's awk read 3 of 9 and the one-way subset check stayed green over the hole, so the
+/// An awk that reads 3 of 9 leaves the one-way subset check green over the hole, so the
 /// set must match EXACTLY — an empty or partial read is a hard fail in `gate_schema`.
 ///
-/// T-897 rebased this off the Makefile recipe onto the task table. Note there is no
+/// Rebased this off the Makefile recipe onto the task table. Note there is no
 /// `if …exists()` guard any more: the old one made the test vacuous the moment the file it
 /// named went away, which is the same defect in miniature that this ticket exists to fix.
 #[test]

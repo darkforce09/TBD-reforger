@@ -97,7 +97,7 @@ fn rsync_argv_keeps_every_exclude_in_order() {
 
 #[test]
 fn exec_start_config_mode_carries_both_flags() {
-    // The whole of T-604/T-607: without -addonsDir the engine loads the Workshop copy.
+    // The whole point: without -addonsDir the engine loads the Workshop copy.
     let s = exec_start(&base());
     assert!(s.contains(" -addonsDir /home/sam/tbd/addons "), "{s}");
     assert!(

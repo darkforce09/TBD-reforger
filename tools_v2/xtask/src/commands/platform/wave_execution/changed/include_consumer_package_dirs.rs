@@ -44,7 +44,7 @@ pub fn include_consumer_package_dirs(orphan: &str) -> Vec<String> {
 
 /// The `[workspace] members = [...]` list, parsed from the manifest rather than hardcoded.
 ///
-/// A list here rots exactly the way T-422 records `gate_schema`'s rotting, and the rot is silent —
+/// A hand-written list here rots the way a hand-written gate list rots, and the rot is silent —
 /// a member dropped from this list is a crate that goes back to being judged on someone else's
 /// artifacts.
 pub fn workspace_members() -> Vec<String> {
@@ -95,16 +95,16 @@ pub fn workspace_members() -> Vec<String> {
     out
 }
 
-/// Non-`.rs` files rustc embeds via `include_str!`/`include_bytes!` (T-426).
+/// Non-`.rs` files rustc embeds via `include_str!`/`include_bytes!`.
 ///
-/// T-421's [`super::super::touch::touch_workspace`] invalidated every workspace `.rs` mtime but not the
+/// [`super::super::touch::touch_workspace`] invalidates every workspace `.rs` mtime but not the
 /// JSON/WGSL/SQL paths those macros pull in — same mtime-freshness hole, narrower blast radius.
 /// MEASURED 2026-07-27: repro on `contracts_v2/definitions/mission.schema.json` with `touch -r`
-/// back to original mtime after a byte change: `cargo check -p map-engine-core --features
+/// back to original mtime after a byte change: `cargo check -p website-map-engine --features
 /// doc,mission,world` in `target-gate-check` stayed rc 0 until the schema file itself was touched.
 ///
 /// Static paths are resolved from the including `.rs` file; `concat!(env!("CARGO_MANIFEST_DIR"),
-/// "…")` is resolved from the owning package dir. Macro-expanded fixture trees (dto.rs golden
+/// "…")` is resolved from the owning package dir. Macro-expanded fixture trees (the DTO golden
 /// tests) are touched wholesale because their per-file paths are not statically enumerable.
 pub fn compiled_include_input_paths() -> Vec<PathBuf> {
     include_inputs_under(&workspace_members())
@@ -112,7 +112,7 @@ pub fn compiled_include_input_paths() -> Vec<PathBuf> {
 
 /// [`compiled_include_input_paths`] restricted to the given package dirs.
 ///
-/// T-946.64 follow-up (wave-255 verify). Split out so the slice gate's frontend test step can ask
+/// Follow-up (wave-255 verify). Split out so the slice gate's frontend test step can ask
 /// the same question about the WASM-SCOPE crates ONLY. Taking the whole-workspace answer would put
 /// `apps/website/api_v2/**`'s include inputs into the frontend's scope, which
 /// `the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not` deliberately forbids.

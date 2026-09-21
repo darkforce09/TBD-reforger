@@ -15,7 +15,7 @@
 //!
 //! `--git-common-dir` is the **primary** checkout's `.git`, shared by every linked worktree. So a
 //! run from `.ai/artifacts/worktrees/T-XXX` still points at the primary repo's warm 52 GB
-//! `target/`. That is T-253/T-322, and it is why eight parallel slice agents do not each
+//! `target/`, which is why eight parallel slice agents do not each
 //! cold-build a 609-crate workspace.
 //!
 //! **This is why the pin is computed in Rust and NOT moved into `.cargo/config.toml`.** A `[env]`
@@ -33,7 +33,7 @@
 //!
 //! * the shared warm cache is `primary_root/target` — deliberately cross-worktree;
 //! * `rust-api`'s private dir is `cwd_root/target-dev-api` — deliberately per-worktree, because it
-//!   starts a long-lived server that must not sit in the shared build-lock queue (T-322).
+//!   starts a long-lived server that must not sit in the shared build-lock queue.
 //!
 //! Collapsing them either way is a silent regression, so they are two functions with two names.
 
@@ -67,7 +67,7 @@ pub(crate) const PIN_SOURCE_MARKER: &str = "primary_root().join(\"target\")";
 /// This module's own path, repo-relative — the file [`PIN_SOURCE_MARKER`] must appear in.
 pub(crate) const PIN_SOURCE_REL: &str = "tools_v2/xtask/src/core/cargo_target_directory.rs";
 
-/// The private target dir `api` / `rust-api` keep (T-322), relative to [`cwd_root`].
+/// The private target dir `api` / `rust-api` keep, relative to [`cwd_root`].
 pub(crate) const DEV_API_TARGET: &str = "target-dev-api";
 
 /// `$(CURDIR)` — the checkout `make` would have been invoked from. **Inside a worktree this IS the
@@ -110,7 +110,7 @@ pub(crate) fn primary_root() -> PathBuf {
 /// that ships.
 pub(crate) fn resolve_target_dir(env: Option<&str>) -> String {
     match env {
-        // `?=` — an operator/wave.sh export wins, as it must: `wave.sh` hands its gate steps a
+        // `?=` — an operator or driver export wins, as it must: the wave driver hands its gate steps a
         // private dir, and a pin that overrode that would put every gate back in the shared cache.
         Some(v) if !v.is_empty() => v.to_string(),
         _ => primary_root().join("target").display().to_string(),
@@ -141,7 +141,7 @@ pub(crate) fn abi_guard(dir: &Path) -> std::result::Result<(), String> {
             return Err(format!(
                 "REFUSING: {} was built by '{found}', this is '{want}'.\n      \
                  Two glibcs sharing one CARGO_TARGET_DIR produce `GLIBC_2.xx not found` at run \
-                 time, which reads like a broken checkout (measured 2026-08-12, T-853).\n      \
+                 time, which reads like a broken checkout (measured 2026-08-12).\n      \
                  Set CARGO_TARGET_DIR to a directory of your own, or delete {}.",
                 dir.display(),
                 stamp.display()
@@ -156,7 +156,7 @@ pub(crate) fn abi_guard(dir: &Path) -> std::result::Result<(), String> {
 }
 
 /// `glibc<version>-<container|host>`. The container test is distrobox's own (`/run/.containerenv`
-/// or `/.dockerenv`) — the same one `hostrun.rs` uses, and NOT `command -v distrobox-host-exec`,
+/// or `/.dockerenv`) — the same one the host bridge uses, and NOT `command -v distrobox-host-exec`,
 /// which is true on both sides of the bridge (the 126 trap).
 pub(crate) fn abi_id() -> String {
     // SAFETY: `gnu_get_libc_version` returns a pointer to a static NUL-terminated string in libc;
@@ -179,7 +179,7 @@ pub(crate) fn abi_id() -> String {
 
 // ── verify-cargo-target ──────────────────────────────────────────────────────────────────────
 
-/// T-253: assert the shared `CARGO_TARGET_DIR` pin is intact. Port of `Makefile:27-48`.
+/// Assert the shared `CARGO_TARGET_DIR` pin is intact. Port of `Makefile:27-48`.
 ///
 /// Five checks; the first three are the Makefile's, §4 is new, §5 is the Makefile's `make -n
 /// rust-build` grep expressed against the data instead of against dry-run text.
@@ -190,7 +190,7 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
     match pin_marker_verdict(root) {
         Verdict::Held => {}
         _ => {
-            println!("FAIL: {PIN_SOURCE_REL} missing `{PIN_SOURCE_MARKER}` (T-253 shared pin)");
+            println!("FAIL: {PIN_SOURCE_REL} missing `{PIN_SOURCE_MARKER}` (the shared pin)");
             return Ok(1);
         }
     }
@@ -214,7 +214,7 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
     if pin_is_worktree_local(&got, &cwd_root(), &primary_root()) {
         println!(
             "FAIL: in a linked worktree the pin resolved to '{got}' — that is this worktree's \
-             own target/, not the primary repo's shared one (T-253/T-322)"
+             own target/, not the primary repo's shared one"
         );
         return Ok(1);
     }
@@ -233,7 +233,7 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
         .iter()
         .any(|s| s.recipe_env("CARGO_TARGET_DIR").is_some())
     {
-        println!("FAIL: rust-api lost its private target-dev-api dir (T-322)");
+        println!("FAIL: rust-api lost its private target-dev-api dir");
         return Ok(1);
     }
 
@@ -267,7 +267,7 @@ pub(crate) fn private_target_dir_violation(steps: &[Step]) -> Option<String> {
 
 /// §1 as a [`Verdict`] — `Held`, `Failed`, or `DidNotRun` when the source file cannot be read.
 ///
-/// A deleted or unreadable `mk_build.rs` must never read as "the pin is fine"; that is the
+/// A deleted or unreadable recipe module must never read as "the pin is fine"; that is the
 /// fail-open `verify-no-python` sat on for four waves.
 pub(crate) fn pin_marker_verdict(root: &Path) -> Verdict {
     let path = root.join(PIN_SOURCE_REL);
@@ -275,7 +275,7 @@ pub(crate) fn pin_marker_verdict(root: &Path) -> Verdict {
         Ok(t) => t,
         Err(source) => {
             return Verdict::did_not_run(
-                "T-253 pin source",
+                "shared target-dir pin source",
                 Kind::Pin,
                 NotRun::Unreadable { path, source },
             );
@@ -299,9 +299,9 @@ pub(crate) fn pin_marker_verdict(root: &Path) -> Verdict {
 
 // ── reclaim-target-ci ────────────────────────────────────────────────────────────────────────
 
-/// T-253: delete the obsolete primary-repo `target-ci/` (~13G). Port of `Makefile:50-67`.
+/// Delete the obsolete primary-repo `target-ci/` (~13G). Port of `Makefile:50-67`.
 ///
-/// `root` is a parameter so the destructive path is testable against a scratch tree — the T-853
+/// `root` is a parameter so the destructive path is testable against a scratch tree — the
 /// rule is "never perturb the real tree", and a function that can only read the real repo cannot
 /// be proved to leave a live slice's dir alone.
 ///
@@ -319,7 +319,7 @@ pub(crate) fn pin_marker_verdict(root: &Path) -> Verdict {
 ///   `X`, and an EMPTY `$(TBD_REPO_ROOT)` yields the absolute `/target-ci`, which also passes.
 ///
 /// So neither `REFUSING:` line was reachable from `make`, and the RED arm that went looking for
-/// them aborted itself rather than pretend (T-556). They are reproduced here verbatim anyway,
+/// them aborted itself rather than pretend. They are reproduced here verbatim anyway,
 /// because deleting a guard is a behaviour change and this is a port — but one of them DOES become
 /// reachable in Rust: `Path::new("").join("target-ci")` is the *relative* `target-ci`, which fails
 /// the shape test. `tests::reclaim_refusals_are_preserved` pins that, so the text is not merely

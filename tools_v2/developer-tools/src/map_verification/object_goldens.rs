@@ -1,6 +1,6 @@
 //! The semantic golden gate S2–S9 + S11–S15, run as `cargo xtask schema map-object-golden`
 //! over `contracts_v2/fixtures/map/`. Shape validation (S1) lives in
-//! `schema validate`; enum drift (S10) in `schema map-object-enums`. Uses the shared tbd-tools
+//! `schema validate`; enum drift (S10) in `schema map-object-enums`. Uses the shared
 //! compute libs (geometry/density/forest) — the same code the world builder + phase gates run.
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
@@ -30,7 +30,7 @@ struct Gate {
     errs: Vec<String>,
 }
 
-/* ───────── S15 — the TBDC binary twin of the chunk golden (T-935.12, spec §2 / §3.1) ───────── */
+/* ───────── S15 — the TBDC binary twin of the chunk golden (spec §2 / §3.1) ───────── */
 
 #[path = "object_goldens/read_json.rs"]
 mod read_json;

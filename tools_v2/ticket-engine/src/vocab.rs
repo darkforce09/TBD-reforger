@@ -1,7 +1,7 @@
-//! T-917.2 — the Scope v2 vocabulary tree, resolved at [`crate::Corpus::load`].
+//! The Scope v2 vocabulary tree, resolved at [`crate::Corpus::load`].
 //!
 //! `.ai/tickets/scope-vocab.toml` is the 4-level domain → layer → component → surface
-//! word list (T-917.1). This module reads it LENIENTLY — tables of tables of string
+//! word list. This module reads it LENIENTLY — tables of tables of string
 //! arrays — because the file's own shape gate (sortedness, closed domain set, no
 //! duplicates) lives in `crate::validation::vocabulary` and runs in `ticket check`; here the
 //! tree only has to answer legality questions: is this ticket's
@@ -29,13 +29,13 @@ pub struct ScopeVocab {
 
 impl ScopeVocab {
     /// Read `.ai/tickets/scope-vocab.toml` under `root`. Missing file is an error
-    /// naming the path (fail-closed — the T-917.2 cutover made scope legality
+    /// naming the path (fail-closed — the cutover made scope legality
     /// load-bearing for every corpus load).
     pub fn load(root: &Path) -> Result<Self, String> {
         let path = root.join(SCOPE_VOCAB);
         if !path.is_file() {
             return Err(format!(
-                "missing scope vocabulary (required for every corpus load since T-917.2): {}",
+                "missing scope vocabulary (required for every corpus load): {}",
                 path.display()
             ));
         }

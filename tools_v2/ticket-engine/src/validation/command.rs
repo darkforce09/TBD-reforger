@@ -2,7 +2,7 @@
 
 use super::*;
 
-/// T-917.6 — the strict honesty counters (spec §The gate: "drift is visible, never
+/// The strict honesty counters (spec §The gate: "drift is visible, never
 /// silent"). Pure visibility, never a rule: printed under `--strict` only, derived
 /// at run time from receipts, estimate files and `estimated[]` markers over the
 /// SHIPPED set. Instruments, named:
@@ -13,7 +13,7 @@ use super::*;
 ///   E — the mutual-exclusion rule reds it, the counter does not hide it);
 /// - stamps `M/E2` = shipped tickets whose `estimated[]` lists NONE of the three
 ///   stamp fields vs at least one; the `git_subject`/`id_interpolation` split
-///   classifies each E2 ticket by its `estimate_note` — the T-917.4 miner always
+///   classifies each E2 ticket by its `estimate_note` — the miner always
 ///   writes "git_subject-mined" into notes on method-1 tickets, so a note without
 ///   that token is method 2 (interpolated dates and/or a no-subject absent SHA).
 ///
@@ -66,14 +66,14 @@ pub(super) fn strict_honesty_counters(root: &Path) -> Option<Vec<String>> {
 
 pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Result<()> {
     let errors = check(root, registry, strict);
-    // T-917.6 honesty counters: strict-only visibility, printed red or green (a red
+    // Honesty counters: strict-only visibility, printed red or green (a red
     // tree's drift matters MORE) — but only when the trees they read actually load.
     if strict && let Some(lines) = strict_honesty_counters(root) {
         for line in lines {
             println!("{line}");
         }
     }
-    // T-920.1 debt counters: every run, red or green — the acceptance-named
+    // Debt counters: every run, red or green — the acceptance-named
     // check-side counter with the instrument in the line.
     if let Some(lines) = debt_counter_lines(root) {
         for line in lines {
@@ -91,8 +91,7 @@ pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Res
 }
 
 /// Schema + structural preflight shared by registry mutators
-/// (`ship`/`done` — T-237; `set-status`/`mark-ready`/`reorder` — T-451;
-/// `add`/`remove` — T-455).
+/// (`ship`/`done`, `set-status`/`mark-ready`/`reorder`, `add`/`remove`).
 ///
 /// Returns `Ok(())` when `check` is green; `Err` with a refuse message when red.
 /// Callers must not mutate the registry on `Err`. Prefer this over `process::exit`
@@ -106,16 +105,16 @@ pub(super) const REPACK_FIXES_IT: &str = "run `cargo xtask wave repack`";
 
 /// `require_check_ok` for the BATCH-SHIP window, where the lock is stale ON PURPOSE.
 ///
-/// T-946 shipped `ticket ship --no-repack` so a wave's ids can ship together and ONE repack at the
+/// `ticket ship --no-repack` lets a wave's ids ship together, with ONE repack at the
 /// end sees the whole set landed (a per-id repack re-packs the wave smaller between ships, so it
 /// never empties and `wave --close` has nothing to close). Measured 2026-09-06, the first
 /// production run of that path: the second ship refused, because ship's own preflight is this
 /// function and the lock was stale — exactly as `--no-repack` had just left it.
 ///
 /// ```text
-/// ERROR: wave.lock wave 0 is stale — missing ["T-305"], extra []: run `cargo xtask wave repack`
-/// ERROR: wave.lock wave 236 lists T-305 (shipped, executor claude-code) — not dispatchable; …
-/// xtask: refusing ship T-298: ticket check failed (2 error(s))
+/// ERROR: wave.lock wave 0 is stale — missing ["<id>"], extra []: run `cargo xtask wave repack`
+/// ERROR: wave.lock wave 236 lists <id> (shipped, executor claude-code) — not dispatchable; …
+/// xtask: refusing ship <id>: ticket check failed (2 error(s))
 /// ```
 ///
 /// So the batch waives EXACTLY the errors whose own text names a repack as the fix, and nothing

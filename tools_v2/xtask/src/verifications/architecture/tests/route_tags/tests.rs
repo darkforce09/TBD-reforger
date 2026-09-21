@@ -159,7 +159,7 @@ fn clean_tree_passes_and_counts_exactly() {
     );
 }
 
-/// DIRECTION A — a tag naming a route that is not registered (the T-586 servers triple).
+/// DIRECTION A — a tag naming a route that is not registered (the servers triple).
 #[test]
 fn a_tag_pointing_at_no_route_fails() {
     let r = Repo::new("dir-a");
@@ -173,7 +173,7 @@ fn a_tag_pointing_at_no_route_fails() {
         ]);
 }
 
-/// DIRECTION B — a registered route whose handler carries no tag (the T-586 `submit_mission`).
+/// DIRECTION B — a registered route whose handler carries no tag (the `submit_mission`).
 ///
 /// `set_status` is the target because the sentinels cannot be: untag one of those and the sentinel
 /// guard fires first, so the cross-check is never reached. That is the guard working, but it makes

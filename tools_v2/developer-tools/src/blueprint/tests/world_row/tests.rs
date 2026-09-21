@@ -28,8 +28,8 @@ fn chunk_id_is_the_floor_partition() {
     assert_eq!(chunk_id_of(0.0, 0.0), "0_0");
 }
 
-/// The T-090.12.1 transform pin: the farmhouse's committed chunk row (18_0), composed with
-/// the 88 socket instances of the T-090.11 pipeline, lands every child on the Workbench
+/// The transform pin: the farmhouse's committed chunk row (18_0), composed with
+/// the 88 socket instances of the pipeline, lands every child on the Workbench
 /// recon's absolute `worldPos` within 2 cm. Its pitch and roll are 0, so the row must have
 /// stayed 5-wide (trivial trailers are never padded).
 #[test]
@@ -65,11 +65,11 @@ fn farmhouse_chunk_row_places_every_socket_child_within_2cm() {
     assert!(r.ok());
 }
 
-/// The tilted-prop pin: the GarbageContainer_01 the T-090.11.3 rotation fixture recorded at
+/// The tilted-prop pin: the GarbageContainer_01 the rotation fixture recorded at
 /// world (9878.51, 6.753, 236.2) with angles (−3.044, −104.126, −4.754) is an 8-wide row in
 /// chunk 19_0 carrying pitch −3.04 / roll −4.75 (round2) and heading 255.87
 /// (`norm_heading(−104.126)`). Scale is 1.0 while the catalogue is built from the July 2026
-/// export (no `scale` field) — re-blessed when the v2 export lands (T-090.12.1b).
+/// export (no `scale` field) — re-blessed when the v2 export lands.
 #[test]
 fn garbage_container_row_carries_pitch_and_roll() {
     let fx: Value = serde_json::from_str(

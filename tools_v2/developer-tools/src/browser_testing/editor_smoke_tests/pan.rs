@@ -1,6 +1,6 @@
 use super::*;
 
-/// smoke_pan_editor.mjs — T-159.15.2: RMB pan + mid-pan wheel rebase via __editorCam.
+/// RMB pan + mid-pan wheel rebase via __editorCam.
 pub async fn smoke_pan(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5301, 9361, None, None, &[]).await?;
     let run = async {
@@ -17,7 +17,7 @@ pub async fn smoke_pan(dist: &str, path: &str) -> Result<u8> {
             let raw = eval_str(&h.page, "window.__editorCam()").await?;
             Ok::<Value, anyhow::Error>(serde_json::from_str(&raw).unwrap_or(json!({})))
         };
-        // T-843 — map pan is MMB (button 1); RMB opens the context menu (mission_editor host).
+        // Map pan is MMB (button 1); RMB opens the context menu (mission_editor host).
         let mmb = json!({ "button": "middle", "buttons": 4, "clickCount": 1 });
         let held = json!({ "button": "none", "buttons": 4 });
 
@@ -72,7 +72,7 @@ pub async fn smoke_pan(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
-/// smoke_persist_editor.mjs — T-159.17: IDB persist across reload (COLD seed → WARM restore).
+/// IDB persist across reload (COLD seed → WARM restore).
 pub async fn smoke_persist(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5303, 9363, None, None, &[]).await?;
     let run = async {
@@ -152,7 +152,7 @@ pub async fn smoke_persist(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
-/// smoke_select_editor.mjs — T-159.18: LMB pick foundation (selfcheck + click/toggle battery).
+/// LMB pick foundation (selfcheck + click/toggle battery).
 pub async fn smoke_select(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5304, 9364, None, None, &[]).await?;
     let run = async {
@@ -231,7 +231,7 @@ pub async fn smoke_select(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
-/// smoke_save_export_editor.mjs — T-159.20: Rust compile bridges produce the schema payloads.
+/// Rust compile bridges produce the schema payloads.
 pub async fn smoke_save_export(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5307, 9367, None, None, &[]).await?;
     let run = async {
@@ -258,7 +258,7 @@ pub async fn smoke_save_export(dist: &str, path: &str) -> Result<u8> {
             export_len = e1.len();
             slot_count = eval_i64(&h.page, "window.__missionDoc.slot_count()").await?;
 
-            // T-843 — editor slot maps iterate in hash order; sort slots by id before compare so
+            // Editor slot maps iterate in hash order; sort slots by id before compare so
             // consecutive compiles are judged for content stability, not Map walk order.
             let canon = |raw: &str| -> Value {
                 let mut v: Value = serde_json::from_str(raw).unwrap_or(Value::Null);

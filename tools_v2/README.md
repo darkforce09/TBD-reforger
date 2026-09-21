@@ -10,4 +10,9 @@ All four crates are live. xtask separates command domains, shared core helpers, 
 
 Ticketboard consumes ticket-engine’s existing public model and operation interfaces. Agent invocation, worktree cleanup, and platform-wave orchestration remain in xtask.
 
-See [the architecture plan](ARCHITECTURE_PLAN.md), [phase-two evidence](PHASE_TWO_HANDOFF.md), [phase-three evidence](PHASE_THREE_HANDOFF.md), and [phase-four status and evidence](PHASE_FOUR_HANDOFF.md).
+[ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md) states the invariants and the dependency direction;
+[ANALYSIS_AND_INVENTORY.md](ANALYSIS_AND_INVENTORY.md) maps every module to what it is responsible
+for. The five landing records carry the measurements taken as this tree was built:
+[the relocation](PHASE_ONE_HANDOFF.md), [the heavy services](PHASE_TWO_HANDOFF.md),
+[the ticket subsystem](PHASE_THREE_HANDOFF.md), [the decomposition](PHASE_FOUR_HANDOFF.md) and
+[the closure](PHASE_FIVE_HANDOFF.md).

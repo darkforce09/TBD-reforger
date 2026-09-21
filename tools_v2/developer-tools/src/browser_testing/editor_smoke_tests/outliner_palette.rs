@@ -1,6 +1,6 @@
 use super::*;
 
-/// smoke_outliner_palette_editor.mjs — T-159.22 dock gate (P1/O1/O2/D1/D2/D3/W1).
+/// Dock gate (P1/O1/O2/D1/D2/D3/W1).
 /// MUST NOT call probe() before the D2 read (it would re-centre the camera).
 pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
     const RIFLEMAN_LABEL: &str = "[aria-label=\"US Rifleman\"]";
@@ -49,7 +49,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
             .evaluate("window.__missionPersist.clear()", true)
             .await?;
         let ready = boot_to(format!("{SEL_READY} && {PERSIST_READY} && {DOC_READY}")).await?;
-        // T-172 B6 — palette folders below depth 0 boot collapsed (`default_expanded` rule 3:
+        // Palette folders below depth 0 boot collapsed (`default_expanded` rule 3:
         // only faction roots open). Expand US_Army before waiting on its leaves.
         let us_army = h
             .page
@@ -90,7 +90,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
             let docks0 = dock_text().await?;
             checks.insert(
                 "p1_paletteTree".into(),
-                // T-843 — Factions tab is icon-only (`aria-label`); tree text still has NATO/US_Army.
+                // Factions tab is icon-only (`aria-label`); tree text still has NATO/US_Army.
                 json!(
                     eval_bool(
                         &h.page,
@@ -124,7 +124,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                 json!(docks0.contains("Unfiled (10)") && count0 == 8),
             );
 
-            // T-178 A4 — guide click toggles expand/collapse. Slot rows carry
+            // Guide click toggles expand/collapse. Slot rows carry
             // `data-guide-toggle` for Unfiled; after collapse Unfiled is depth-0 (no guide), so
             // re-expand via the chevron (`aria-expanded=false`) before later o2 row-select.
             let guide_ok = eval_bool(
@@ -240,7 +240,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                     json!(docks1.contains("Layer 1") && docks1.contains("Unfiled (10)")),
                 );
 
-                // O3/O4/O5 (T-177 B1 / T-071.0) — the place minted a default squad. The ORBAT tree
+                // O3/O4/O5 — the place minted a default squad. The ORBAT tree
                 // moved from the left dock into the top-strip ORBAT Manager modal, so open it, then
                 // assert the squad shows, its slot leaf selects, and dbl-click opens Attributes
                 // (SEL-ORBAT-DBL-001). Keep the modal open through o5.
@@ -261,7 +261,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                 checks.insert(
                     "o3_orbatSquadMinted".into(),
                     json!(
-                        // T-180.1 place mints faction-BLUFOR / "Squad N"; T-180.7 side tabs show BLUFOR.
+                        // Place mints faction-BLUFOR / "Squad N"; side tabs show BLUFOR.
                         orbat_popup_text.contains("Squad 1") && orbat_popup_text.contains("BLUFOR")
                     ),
                 );
@@ -321,7 +321,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
             )
             .await?;
             cam_dock = cam().await?;
-            // T-843 — CDP mouseWheel at fixed 700,500 often misses the canvas after modal
+            // CDP mouseWheel at fixed 700,500 often misses the canvas after modal
             // teardown; dispatch a WheelEvent on the canvas centre (same as smoke_editor / cur).
             eval(
                 &h.page,

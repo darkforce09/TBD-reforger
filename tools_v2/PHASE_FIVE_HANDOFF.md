@@ -1534,9 +1534,9 @@ and the count is restated here as evidence rather than as a durable property of 
 | External tool logs deleted | `enfusion_unpacker.log`, `scripts/mod/enfusion_unpacker.log` — output of an unpacker that runs outside this repository; `git grep enfusion_unpacker tools_v2` returns nothing. Their two lines in the local `.git/info/exclude` are gone with them |
 | README-only directories removed from the index and disk | `tools_v2/developer-tools/tests/`, `tools_v2/developer-tools/test_fixtures/mcp/`, `tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge/`, `tools_v2/verification-core/tests/` — `git ls-files` showed exactly one `README.md` in each before removal |
 | Crate constant deleted | `tools_v2/developer-tools/src/lib.rs` — the `PROGRAM` constant carried a ticket identifier as its value and had no reader; the module list is one alphabetical block under a crate doc comment naming the six binaries it serves |
-| Test file moved and renamed | `tools_v2/xtask/src/tests/main/t857_wb_logs_file_cli.rs` → `tools_v2/xtask/src/commands/mcp/tests/workbench_logs/file_cli_tests.rs`, declared from `commands/mcp/workbench_logs.rs` beside that module's other test file; `tools_v2/xtask/src/tests/main/` is gone and `main.rs` no longer declares it |
-| Test files renamed | `verifications/schemas/tests/checks/{objective_spine,side_fallback,staged_golden}_tests.rs`, declared from `verifications/schemas/checks.rs` |
-| Test file moved and renamed | `developer-tools/src/map_raster_pipeline/tests/map_labels/map_labels_tests.rs`; `.../tests/satellite_archive_container/container_tests.rs`, with the emptied `tests/tbds_v2/` gone |
+| Test file moved and renamed | one ticket-numbered file under `tools_v2/xtask/src/tests/main/` becomes `tools_v2/xtask/src/commands/mcp/tests/workbench_logs/file_cli_tests.rs`, declared from `commands/mcp/workbench_logs.rs` beside that module's other test file; `tools_v2/xtask/src/tests/main/` is gone and `main.rs` no longer declares it |
+| Test files renamed | three ticket-numbered files become `verifications/schemas/tests/checks/objective_spine_tests.rs`, `side_fallback_tests.rs` and `staged_golden_tests.rs`, declared from `verifications/schemas/checks.rs` |
+| Test file moved and renamed | `developer-tools/src/map_raster_pipeline/tests/map_labels/map_labels_tests.rs`; `.../tests/satellite_archive_container/container_tests.rs`, with the emptied directory it left behind gone |
 | Test directories renamed | `world_export_pipeline/tests/enfusion_texture_decoder/`, `world_export_pipeline/tests/json_number_formatting/`, each named for the module that declares it |
 | Documents corrected | `tools_v2/verification-core/README.md` described a `tests/` directory holding a file that never existed; it now describes the layout that exists. The `Test inventory` in this document carries the eleven renamed test paths |
 
@@ -1550,7 +1550,7 @@ destination cells in `tools_v2/ANALYSIS_AND_INVENTORY.md`, recorded below.
 |---|---|---|
 | `find tools_v2 -type d -empty \| wc -l` | 0 | 0 |
 | `git ls-files tools_v2 \| grep -E '/[^/]*t[0-9]{3}' \| grep -v 'fixtures/'` | empty | empty, exit 1 |
-| `git grep -n -E '#\[path = "[^"]*(t[0-9]{3}\|tbds_v2\|tests/edds\|tests/jsval)[^"]*"\]' -- tools_v2` | empty | empty, exit 1 |
+| A `#[path]` grep for the four retired test-directory spellings over `tools_v2` | empty | empty, exit 1 |
 | `test ! -e tools_v2/developer-tools/tests && test ! -e tools_v2/verification-core/tests && test ! -e tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge && test ! -e tools_v2/developer-tools/test_fixtures/mcp` | exit 0 | exit 0 |
 | `grep -c PROGRAM tools_v2/developer-tools/src/lib.rs` | 0 | 0 |
 | `cargo test -p xtask -p developer-tools` | green, no live test lost | exit 0; developer-tools 254 passed, 0 failed, 4 ignored; xtask 650 passed, 0 failed — both equal to the baseline |
@@ -1570,7 +1570,7 @@ warnings`.
 - `tools_v2/xtask/src/commands/mcp/workbench_logs.rs:1-16,28,37-46,48-55,92,124,179,211,216,237,323,391` — the module doc, the printed usage banner and eight inline comments named a deleted shell script and narrated that script's behaviour. The banner is the command's own `--help` text, so it told every reader to run a file that does not exist; it now spells `cargo xtask mcp wb-logs`. No test pins that text. Two printed failure lines claimed `grep` exited with a status although the command runs no `grep` process; they now say the probe errored. One user-visible line dated a stale build by calendar month and now names what the data shows: flat tags without subsystem tags.
 - `tools_v2/xtask/src/commands/mcp/cli.rs:19,26,30,33,43,49,66` — seven `--help` strings, six carrying a ticket identifier and five naming a deleted shell script as the thing the subcommand is a port of. They are the text `cargo xtask mcp --help` prints.
 - `tools_v2/xtask/src/verifications/schemas/checks.rs` — the module doc named eight deleted Node scripts; twenty-three comment lines carried ticket identifiers; one doc comment named the crate by a spelling that no longer exists and claimed neither the wave gate nor CI runs its tests, which is no longer true; another named the module path `tools_v2/developer-tools/src/world/INSTANCE_KINDS`, which is nowhere in the workspace — the twin is `developer_tools::world_export_pipeline::INSTANCE_KINDS`; one named a deleted shell script as the discipline it follows. Every invariant, measurement and refusal reason is kept; only the narrative around them is gone.
-- `tools_v2/developer-tools/src/map_raster_pipeline/map_labels.rs:1-5` — the header named three deleted Node exporters and resolved elevation through `map_engine_core`, a crate spelling that does not exist; the live path is `website_map_engine::world::environment::locations::peaks`.
+- `tools_v2/developer-tools/src/map_raster_pipeline/map_labels.rs:1-5` — the header named three deleted Node exporters and resolved elevation through a crate spelling that does not exist; the live path is `website_map_engine::world::environment::locations::peaks`.
 - `tools_v2/developer-tools/src/map_raster_pipeline/satellite_archive_container.rs:1,148`, `world_export_pipeline/enfusion_texture_decoder.rs:1-6,74,149`, `world_export_pipeline/json_number_formatting.rs:1-3,60,65` — ticket identifiers and references to deleted Node sources, including a header that told the reader to consult one of them for the container format. The format is now described where the decoder is.
 - `tools_v2/xtask/src/verifications/schemas/tests/checks/objective_spine_tests.rs:47` — a ticket identifier inside an assertion message. `side_fallback_tests.rs:140` — a ticket identifier inside the printed banner of the simulated program the test compiles and runs.
 - Every moved test file gained a module doc comment saying what it proves, since its file name no longer carries that meaning implicitly.
@@ -1579,14 +1579,14 @@ warnings`.
 
 ### Found for P6
 
-- `tools_v2/verification-core/README.md` §1 — the layout block lists `src/proc.rs` as the single process module because that is what exists. When `proc.rs` splits into `proc/{mod,runner,stream,lookup}.rs` and the seven inline test modules move to `src/tests/`, extend that block with those files; the rest of the document needs no change.
+- `tools_v2/verification-core/README.md` §1 — the layout block lists one process module because that is what exists. When it splits into a `proc/` directory of four modules and the seven inline test modules move to `src/tests/`, extend that block with those files; the rest of the document needs no change.
 
 ### Found for P8
 
 - `tools_v2/xtask/src/commands/debug/remote_logs/execution.rs:104-105,143` — the hand-synced twin of the workbench-log vocabulary still carries the comment `probe_str is infallible today; keep the bash "did not execute" arm` and prints `grep exited ?` on a path that runs no `grep` process. Replace both with the wording now at `tools_v2/xtask/src/commands/mcp/workbench_logs.rs:178-179,211`, so the two stay hand-synced.
 - `tools_v2/xtask/src/commands/mcp/call.rs:29` and `tools_v2/xtask/src/commands/mcp/daemon.rs:30` — each `USAGE` constant tells the user to run a deleted shell script. Replace with `usage: cargo xtask mcp call <tool> '<json-args>'` and `usage: cargo xtask mcp daemon {start|stop|status|restart|stop-all}`; no test pins either string.
 - `tools_v2/ANALYSIS_AND_INVENTORY.md:182,184` — the two destination cells name `tools_v2/developer-tools/test_fixtures/mcp/` and `tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge/package.json`, both removed in this phase; the settled destinations are `tools_v2/xtask/fixtures/mcp/` and `tools_v2/enfusion_mcp_node_package/`. `:189` repeats the first of the two. `:191` states the repository root retains `tools/` and `packages/`; neither directory exists. These four lines are inside the document this phase rewrites wholesale, and the rewrite has to state the destinations that the move actually used, so they are listed rather than patched ahead of it.
-- `tools_v2/developer-tools/src/world_export_pipeline/mod.rs:26-35` — the doc comment for `INSTANCE_KINDS` carries two ticket identifiers, narrates a three-copy history, and names `build.rs` and `aux.rs`; `aux.rs` exists nowhere in the workspace and no `build.rs` sits in this crate. The live invariant to keep is that one const holds the census bucket order and that a classified prefab with no bucket is a hard failure rather than a missing row.
+- `tools_v2/developer-tools/src/world_export_pipeline/mod.rs:26-35` — the doc comment for `INSTANCE_KINDS` carries two ticket identifiers, narrates a three-copy history, and names two Rust files that exist nowhere in this crate. The live invariant to keep is that one const holds the census bucket order and that a classified prefab with no bucket is a hard failure rather than a missing row.
 
 ### Commands that could not run
 
@@ -1600,26 +1600,23 @@ checkout, and every capability that had a live caller was relocated before its n
 
 ### The verdict-diff harness
 
-`cargo xtask platform wave diff` compared this driver's stdout, stderr and exit code against
-`scripts/platform/wave.sh`. That script is absent from the checkout (`git ls-files scripts` lists
-eight deployment files, five MCP transcripts, two node manifests and two server profiles — no
-`.sh` anywhere), so every comparison arm refused before comparing. The two internal probes it
+`cargo xtask platform wave diff` compared this driver's stdout, stderr and exit code against a
+shell implementation. No shell file is in the checkout (`git ls-files scripts` listed eight
+deployment files, five MCP transcripts, two node manifests and two server profiles, and nothing
+executable), so every comparison arm refused before comparing. The two internal probes it
 carried, `base-probe` and `hold-lock`, were read by the harness's own noise-floor arm and by
-nothing else (`git grep -n 'hold-lock\|base-probe' tools_v2` named only `diff.rs`,
-`diff_arms/arm_noise_floor.rs:142,358` and the pre-`Ctx::enter` special case in `flush.rs`).
+nothing else: a grep for the two probe names over `tools_v2` named only the comparison
+dispatcher, its noise-floor arm at lines 142 and 358, and the pre-`Ctx::enter` special case in
+`flush.rs`.
 
 Deleted, with the line count each carried:
 
-| File | Lines |
-|---|---|
-| `tools_v2/xtask/src/commands/platform/wave_execution/diff.rs` | 288 |
-| `tools_v2/xtask/src/commands/platform/wave_execution/diff_arms.rs` | 27 |
-| `tools_v2/xtask/src/commands/platform/wave_execution/diff_arms/arm_noise_floor.rs` | 450 |
-| `tools_v2/xtask/src/commands/platform/wave_execution/diff_arms/arm_refusals.rs` | 351 |
-| `tools_v2/xtask/src/commands/platform/wave_execution/diff_reclaim.rs` | 238 |
+Five files under `tools_v2/xtask/src/commands/platform/wave_execution/` carried it: the dispatcher
+(288 lines), the arm module (27), the two arms (450 and 351) and the reclaim comparison (238) —
+1,354 lines in total.
 
-No test file declared any of them (`git grep -n '#\[path = "tests/' wave_execution` lists fourteen
-declarations, none naming a diff module), so no test disappeared with them. The three `pub mod`
+No test file declared any of them (the `#[path = "tests/` declarations under `wave_execution` number
+fourteen, and none named a comparison module), so no test disappeared with them. The three `pub mod`
 lines at `wave_execution/mod.rs`, the `"diff"` dispatch arm and the pre-`Ctx::enter` `base-probe`
 special case in `flush.rs`, and the `diff <arm>` spelling in the `platform/cli.rs` argument
 documentation went in the same commit. `reclaim` stays: `reclaim::cmd_reclaim` is dispatched from
@@ -1709,26 +1706,13 @@ Relocated before the delete, because each has a live caller:
 
 Deleted, with the line count each carried:
 
-| File | Lines |
-|---|---|
-| `tools_v2/ticket-engine/src/maintenance/mod.rs` | 5 |
-| `tools_v2/ticket-engine/src/maintenance/main_goal_migration.rs` | 260 |
-| `tools_v2/ticket-engine/src/maintenance/body_quarantine.rs` | 181 |
-| `tools_v2/ticket-engine/src/maintenance/tests/body_quarantine/mod.rs` | 62 |
-| `tools_v2/ticket-engine/src/maintenance/tests/body_quarantine/body_quarantine_tests.rs` | 125 |
-| `tools_v2/ticket-engine/src/maintenance/scope_migration/mod.rs` | 27 |
-| `tools_v2/ticket-engine/src/maintenance/scope_migration/classification.rs` | 158 |
-| `tools_v2/ticket-engine/src/maintenance/scope_migration/mapping.rs` | 236 |
-| `tools_v2/ticket-engine/src/maintenance/scope_migration/migration.rs` | 276 |
-| `tools_v2/ticket-engine/src/maintenance/scope_migration/tests/mod.rs` | 7 |
-| `tools_v2/ticket-engine/src/maintenance/scope_migration/tests/scope_mapping_tests.rs` | 140 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/mod.rs` | 53 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/application.rs` | 175 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/history.rs` | 159 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/interpolation.rs` | 128 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/planning.rs` | 250 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/tests/mod.rs` | 80 |
-| `tools_v2/ticket-engine/src/maintenance/timestamp_backfill/tests/timestamp_provenance_tests.rs` | 429 |
+| Subtree of `tools_v2/ticket-engine/src/maintenance/` | Files | Lines |
+|---|---:|---:|
+| the module root | 1 | 5 |
+| the main-goal migration | 1 | 260 |
+| the body quarantine, with its tests | 3 | 368 |
+| the scope migration, with its tests | 5 | 644 |
+| the timestamp backfill, with its tests | 8 | 1,274 |
 
 With the tree gone, `pub mod maintenance;` leaves `ticket-engine/src/lib.rs`, the five clap variants
 leave `xtask/src/commands/ticket/cli.rs`, the five dispatch arms leave
@@ -1838,7 +1822,7 @@ nothing further to write.
   in code form while asserting that no test uses one, which made a mechanical search for such guards
   report the sentence that forbids them. Same statement, prose form.
 - `docs/platform/token_estimate_factor.md:4,11` — the document pointed at
-  `cargo xtask ticket estimate-tokens` and at `xtask/src/estimate_tokens.rs`. The first is deleted
+  `cargo xtask ticket estimate-tokens` and at a deleted xtask module. The first is deleted
   here and the second has not existed since the engine split; both now name the live generator
   (`ticket stamp-sha`) and the live constant
   (`tools_v2/ticket-engine/src/metrics/estimates/model.rs::TOKENS_PER_LOC`). The test that pins the
@@ -1878,12 +1862,12 @@ nothing further to write.
   `UNKNOWN_HELP` describes the constant as a `sed` range over a script "deleted at the end of this
   port". Replace with what it is: the help text an unknown wave subcommand prints.
 - `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs:88-135` — `UNKNOWN_HELP` itself is
-  operator-facing text that still names `scripts/mod/wave.sh`, `scripts/mod/slice-collisions.py` and
-  `bash scripts/platform/wave.sh`, and dates its three corrections against a past program. The
-  command list in its tail is accurate and must survive the rewrite.
+  operator-facing text that still names three deleted shell and Python drivers, and dates its three
+  corrections against a past program. The command list in its tail is accurate and must survive the
+  rewrite.
 - `tools_v2/xtask/src/commands/platform/slice_worktree.rs:44-51` — the `PROG` doc comment explains
-  the constant by narrating the script that used to be named there. The invariant to keep is that
-  usage and every guard refusal name one command, through this constant.
+  the constant by narrating a deleted script. The invariant to keep is that usage and every guard
+  refusal name one command, through this constant.
 
 ### Commands that could not run
 
@@ -2060,14 +2044,13 @@ The four lines the layout-literal grep still reports are not repository-path dup
   deleted shell script. It now names `cargo xtask debug direct-join`, the command that writes the
   row. `debug/cli.rs:45` and `debug/probes.rs:4` named it too.
 - `tools_v2/xtask/src/verifications/language_bans/tests/python_scripts/tests.rs` — the synthetic
-  offenders were planted under `scripts/` in a throwaway tree, modelling a directory the repository
-  does not have, and one was named after a ticket. They now sit under `tooling/`, and the planted
-  shell file is `planted.sh`.
-- `tools_v2/verification-core/src/verdict.rs:243-253` — the missing-target test used
-  `scripts/gone.sh` as its subject and named a deleted shell helper in its comment. The subject is
-  now `etc/socket.conf` and the test is named for the behaviour it pins.
+  offenders were planted under a directory the repository does not have, and one was named after a
+  ticket. They now sit under `tooling/`, and the planted shell file carries a neutral name.
+- `tools_v2/verification-core/src/verdict.rs:243-253` — the missing-target test used a deleted
+  shell helper as its subject and named another in its comment. The subject is now
+  `etc/socket.conf` and the test is named for the behaviour it pins.
 - `tools_v2/xtask/src/commands/platform/wave_execution/mod.rs` — `UNKNOWN_HELP` and the doc comment
-  above it (the P3 handoff's two `Found for P8` entries) named three deleted scripts and dated
+  above it (the P3 handoff's two `Found for P8` entries) named three deleted drivers and dated
   their corrections against a past program. Rewritten as the three decisions the lifecycle rests
   on, with the command list intact. `COLLIDE`'s doc comment named a deleted Python file.
 - `tools_v2/xtask/src/commands/platform/cli.rs:6,12,18-21` — four clap doc comments, which are
@@ -2080,19 +2063,19 @@ The four lines the layout-literal grep still reports are not repository-path dup
 - `apps/website/api_v2/src/core/observability/health_probe.rs:71,79` — named a deleted preflight
   script as a `/healthz` caller. The caller is `cargo xtask platform preflight`.
 - Present-tense rewrites of the module documentation in every xtask module this phase touched:
-  each one opened by naming a shell script it was ported from, and several carried a
+  each one opened by naming a deleted shell script as its origin, and several carried a
   "preserved oddity" list written against that script rather than against the behaviour. The
   invariants are kept; the comparisons to a program that no longer exists are gone.
 - The moved deployment files carried their own history: `deploy.env.example` listed a deleted
   staging script and a ticket identifier, `tbd-website-backup.service` explained its absolute
-  placeholder by narrating what it used to be, and four files named ticket identifiers in their
-  first line. All rewritten to describe what they are.
+  placeholder by narrating an earlier shape, and four files named ticket identifiers in their first
+  line. All rewritten to describe what they are.
 
 ### Found for P5
 
-- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:77` — the rendered agent file's header says
-  it is `RENDERED by scripts/mod/deploy-staging.sh` and carries a ticket identifier. The renderer
-  is `cargo xtask deploy staging`. `:94` and `:104` name the same deleted script in the rendered
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:77` — the rendered agent file's header names
+  a deleted staging script as its renderer and carries a ticket identifier. The renderer is
+  `cargo xtask deploy staging`. `:94` and `:104` name the same deleted script in the rendered
   body. The R5a grep does not see these: the lines are inside a raw string and begin with `#`.
 - `tools_v2/xtask/src/commands/deploy/staging.rs:142-144` — `USAGE` is repointed, but the rest of
   the staging tree still names the deleted driver in comments (`staging/pycompat.rs:6`,
@@ -2110,9 +2093,8 @@ The four lines the layout-literal grep still reports are not repository-path dup
   module doc comments still open with "port of scripts/deploy/…". They are comment lines, so the
   R5a grep excludes them; R3 will not.
 - `tools_v2/xtask/src/commands/setup/{client_addons,mcp_game_root,server_profile,workbench_linux}.rs`
-  — four module doc comments open with "port of scripts/mod/…" and three of them add
-  "Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh)", instructing a reader
-  to preserve a file that is not in the repository.
+  — four module doc comments open by naming a deleted setup script, and three of them instruct the
+  reader to preserve a path-pin shell file that is not in the repository.
 
 ### Commands that could not run
 
@@ -2328,7 +2310,7 @@ inventory lines. Test totals are unchanged: 259 + 200 + 1 + 68 + 652 + 1 = 1181 
 
 Two filters do not reach zero, and each names something this phase must not rewrite:
 
-- The deleted-script filter matches `tbd-reforger-agent.sh` at
+- The deleted-script filter matches the host control agent's file name at
   `commands/deploy/staging/agent.rs:307`, `staging/agent/render_agent_files.rs:10,58`,
   `staging/agent_selftest.rs:122` and `staging/remote/ssh_argv.rs:421`. That name is not a deleted
   script: `render_agent_files.rs` WRITES that file on every staging deploy, systemd socket-activates
@@ -2450,7 +2432,7 @@ Two filters do not reach zero, and each names something this phase must not rewr
   implementation of the four-outcome verdict, shared by every gate, so the next gate cannot be born
   with the "a search that did not run reads as a pass" hole. P6 already rewrites `lib.rs:3,28,63`;
   this is the same block.
-- `tools_v2/verification-core/src/proc.rs:25,29,425,685`, `src/gate.rs:1`, `src/scan.rs:6,17` and
+- `tools_v2/verification-core`'s process module at four lines, `src/gate.rs:1`, `src/scan.rs:6,17` and
   `src/verdict.rs:5,20,28,34,41,64,145` name deleted shell scripts. The invariants to keep: a
   merged-output drain must never collapse an exit code, because a self-test that passes only on
   exit 1 is meaningless otherwise; and the four-outcome verdict exists because a boolean cannot
@@ -2483,8 +2465,8 @@ Two filters do not reach zero, and each names something this phase must not rewr
   `cartographic_rendering/build_tile_pyramid.rs:5`, `inland_water.rs:3,21` and
   `inland_water_archive.rs:10` describe each stage as a port of a deleted Node or shell script.
   The live fact under each is what the stage does; the file names go.
-- The plan's R3 row targets zero `.sh/.py/.mjs/.cjs` spellings in `tools_v2`. Five of them name
-  `tbd-reforger-agent.sh`, the file `commands/deploy/staging/agent/render_agent_files.rs` writes
+- The plan's R3 row targets zero shell, Python and Node file spellings in `tools_v2`. Five of them
+  name the host control agent the file `commands/deploy/staging/agent/render_agent_files.rs` writes
   onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name. It is a
   live remote artifact, not a deleted script, so R3 needs the same explicit retained-name carve-out
   the plan's decision 8 gives the deployment preflight's `packages/map-assets` probe — not a
@@ -2517,7 +2499,7 @@ exemption are one commit or neither.
 
 ### What changed
 
-`tools_v2/verification-core/src/proc.rs` (786 lines) becomes a module directory:
+The crate's single process module (786 lines) becomes a module directory:
 
 - `src/proc/mod.rs` — the vocabulary: `Run` and its builder, `Output`, `Merged`, and the
   re-exports of `which`, `retry` and `wait_for`. The public API is unchanged: callers still write
@@ -2528,21 +2510,21 @@ exemption are one commit or neither.
 - `src/proc/stream.rs` — the pipe drains: two threads for separated streams, one for the shared
   pipe, each reading to EOF for the child's whole life so a full buffer cannot deadlock it.
 - `src/proc/lookup.rs` — `which`, `retry` and `wait_for`.
-- `src/proc/README.md` — described `../proc.rs`, a file that no longer existed; it now describes
-  the four modules of the directory it sits in.
+- `src/proc/README.md` — described a file that no longer existed; it now describes the four
+  modules of the directory it sits in.
 
 Two duplications the split removed rather than copied: both capture paths now build their
 `Command` through one `Run::command`, and both reap through one `wait_within`. The behaviour is
 unchanged on every path, the joins on the timeout path included.
 
-The seven inline test modules move to `src/tests/{gate,lock,pattern,proc,report,scan,verdict}_tests.rs`,
-each declared from its production file with `#[cfg(test)] #[path = "tests/<name>_tests.rs"] mod tests;`
-(`proc` declares `../tests/proc_tests.rs` from `proc/mod.rs`). Test bodies and assertions are
+The seven inline test modules move to one file each under `src/tests/`, named for the production
+module they test, each declared from that module with a `#[cfg(test)]` `#[path]` declaration
+(`proc` declares its own from `proc/mod.rs`, one directory up). Test bodies and assertions are
 unchanged; the eight renamed functions are listed below and their lines in the baseline inventory
 above now name them.
 
-`.coding-standards-allowlist.yaml` loses its last `tools_v2/` row (the SIZE-3 exemption for
-`proc.rs`). Every file in the crate is now inside the ordinary limits.
+`.coding-standards-allowlist.yaml` loses its last `tools_v2/` row, the SIZE-3 exemption that
+process module held. Every file in the crate is now inside the ordinary limits.
 
 `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`:
 
@@ -2761,7 +2743,7 @@ declaring their own. No production file in `tools_v2/` or `apps/ticketboard/` sp
   reads `ticket_engine::repository`. The two
   empty-state strings that named a directory became functions that name it from the constant.
 - The eighteen inline `#[cfg(test)] mod tests { … }` blocks are extracted to
-  `apps/ticketboard/src/tests/<module>_tests.rs`, declared with `#[path]`, as Law 7 requires. Test
+  one file per module under `apps/ticketboard/src/tests/`, declared with `#[path]`, as Law 7 requires. Test
   module paths are unchanged, so every test keeps its name: 173 before, 173 after.
 - `detail.rs`, `verbs.rs` and `viewer.rs` fall under 500 lines once their tests move out, so their
   three SIZE-3 rows leave `.coding-standards-allowlist.yaml`. `app.rs`, `board.rs`, `estimates.rs`,
@@ -2856,3 +2838,163 @@ retire-or-move list, and states that Phase 1 of that blueprint is three module e
 - `cargo xtask verify file-length` now scans 2543 `.rs` files against the 2529 recorded at the
   baseline. The rise is the test files the last two phases extracted from inline modules, not a
   widened walk: the pinned directories are unchanged.
+
+---
+
+## P8 — Present-tense prose
+
+Every comment, doc comment, help string, README and landing record under `tools_v2` now states
+what the code does now and why. A structural test keeps it that way.
+
+### What changed
+
+**The sources.** 1,489 lines across 349 files carried a ticket identifier: 1,307 comment lines,
+165 production lines that were not comments, and 17 lines of documents and manifests. Each was
+rewritten to carry the fact the identifier was cited for — the measured number, the rule, the
+refusal reason — or deleted where the identifier was the whole content. The heaviest files were
+the wave-execution lifecycle (`touch`, `db`, `lock`, `migrate`, `push`, `schema`, `base`,
+`ledger`, `flush`, `land` and `reclaim`), `slice_worktree`, `schemas/checks/wire_field_readers.rs`,
+`ci/task_definitions.rs` and `task_runner.rs`, every `commands/*/cli.rs`, `verifications/mod_scripts`,
+`verifications/language_bans`, `commands/deploy`, `commands/mcp`, `commands/mod_ops`,
+`commands/setup`, `commands/db`, the browser-testing diagnostics and capture lanes, the world
+export and map raster pipelines, the blueprint lane, and the ticket engine's validation, cli,
+wave-lock and registry modules.
+
+**Corpus data left the source.** Three ticket-identifier tables were data about this repository's
+ticket corpus rather than code, and they now live beside the corpus they describe, in
+`.ai/tickets/corpus-pins.toml`, read fail-closed by `ticket_engine::corpus_pins`:
+
+| Pin | Read by |
+|---|---|
+| `game_mod_programme_ticket` | `cargo xtask mod wave`, which filters the shared lock to that programme's dotted children. A missing or malformed pin file is a refusal, because an empty programme id would claim every other programme's rows. |
+| `map_terrain_programme_ticket` | `cargo xtask schema specification-consistency`, for the specification file prefix, the first-slice claim and the hub header's active slice. |
+| `never_minted` | `cargo xtask ticket check`, which reds on a ticket row carrying one of those ids. |
+| `gap_implementations` | `cargo xtask ticket sync`, for the gap rows no ticket claims through its own `implements` list. |
+
+`FROZEN_UNMAPPABLE` went with them, deleted rather than moved: it had no reader in the workspace
+beyond a test asserting its own length.
+
+**Names that were ticket-shaped became names.** The ten in-process CI adapters are `run_<check>`
+rather than `x_<check>`. The `UnreadField` rows lost their `ticket` field; the message now names
+the baseline's reason, which is the actionable half. The satellite export's `slice` stamp carries
+the stage that produced it (`spike-subregion-export`, `world-object-build`, `density-grid-build`,
+`density-redensify`, `aerial-cell-catalog`) in the writers, in the validator and in the committed
+`map_export_everon.json`. A contract fixture is `terrain-manifest-everon-tile-only-satellite.json`,
+after what it holds.
+
+**Three mod comment contracts moved with their sources.** `TBD_PlayerIdentity.c`,
+`TBD_ResultsReporter.c` and `TBD_MissionLoader.c` carried ticket identifiers in the exact comment
+text three verifications pin. Source and pin were rewritten in one commit: the bans now name the
+retired phrasing rather than a ticket, the truth pins name the shipped behaviour, and
+`cargo xtask mod compile` is clean.
+
+**The documents.** `ANALYSIS_AND_INVENTORY.md` is an inventory of what exists — crate, module,
+responsibility — instead of a migration mapping. `ARCHITECTURE_PLAN.md` is the architecture: the
+four crates and the node package, the dependency direction with the rule that asserts each edge,
+the invariants, the layout modules and the verification surface. The four landing records keep
+their measurements and lose the phase narrative, the ticket identifiers and the dead names. This
+document was rewritten under the same rules: where an earlier section quoted a retired spelling to
+show what changed, it now states the live name and the count of retired spellings.
+
+**The test.** `tools_v2/xtask/src/tests/tooling_prose_rules.rs`, declared from `main.rs` (28
+lines), walks `git ls-files tools_v2` and asserts eight rules, printing every offending
+`path:line` on failure:
+
+| Rule | Subject |
+|---|---|
+| Production `.rs` files carry no ticket identifier | anywhere in the file |
+| Test `.rs` files carry none on comment lines | string literals may carry synthetic ids — that is the ticket domain's own test data |
+| `.md`, `.toml` and `.json` carry none | outside the four fixture trees |
+| No file names a retired spelling | the whole tracked tree |
+| No file names a shell, Python or Node source | outside the language-ban tests, which synthesise the offenders their gates catch, and outside the host control agent's own file name |
+| Only a layout module spells a repository path | production `.rs` only; a `.pak` archive's internal script tree and an Enfusion diagnostic are named as what they are, not repository paths |
+| Nothing narrates its own history | the whole tracked tree |
+| Every `.rs` file named in prose exists | production `.rs` and `.md` |
+
+The retired spellings and the history words are held in halves and joined at runtime, so the rules
+file does not match its own needles — the discipline `ticket_engine::validation::references`
+already uses for its fossil-path guard. `every_rule_fires_on_a_line_that_breaks_it` assembles a
+fixture the same way and asserts each pattern matches exactly the line that breaks it, so a green
+suite means the rules looked.
+
+### Acceptance
+
+| Row | What it counts | Before | After |
+|---|---|---|---|
+| R1 | Ticket identifiers in `tools_v2` sources, manifests and documents, fixture trees excluded | 2,087 lines: 1,307 comment lines, 165 production non-comment lines, 17 in documents and manifests, 598 test-file string literals | 596 lines, every one a string literal in a test file: **0** comment lines, **0** production lines, **0** in documents and manifests |
+| R1b | Ticket identifiers and node script names in the browser-oracle freeze manifest | 0 | 0 |
+| R2 | Dead names anywhere under `tools_v2` | 84 | 0 |
+| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 257 | 9, every one the host control agent the staging deploy renders onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name; **0** otherwise |
+| R7 | Words that narrate a change rather than the present state | 83 | 0 |
+| R18 | Distinct `.rs` basenames named in production prose that exist nowhere in the workspace | 171 | 0 |
+
+| Command | Expected | Actual |
+|---|---|---|
+| `cargo test -p xtask tooling_prose_rules` | green | exit 0; 9 passed |
+| `cargo test -p xtask -p developer-tools -p verification-core -p ticket-engine -p ticketboard` | green | exit 0; xtask 661, developer-tools 259 and 4 ignored, verification-core 68, ticket-engine 206 plus 1 compile-failure test, ticketboard 170 and 3 ignored |
+| `cargo clippy -p xtask -p developer-tools -p verification-core -p ticket-engine -p ticketboard --all-targets -- -D warnings` | clean | exit 0 |
+| `cargo fmt --all --check` | clean | exit 0 |
+| `cargo doc -p verification-core -p developer-tools --no-deps` | builds without warnings | exit 0; zero warnings after one unclosed-HTML-tag doc comment was fenced |
+| `cargo check --workspace --locked` | passes | exit 0 |
+| `cargo xtask verify ci-schema-parity` | PASS | `ci-schema-parity: PASS` |
+| `cargo xtask verify file-length` | OK | `scanned 2546 .rs file(s), 0 violation(s)` |
+| `cargo xtask verify no-shell` / `verify no-node` | OK | hard zero over 12,868 tracked paths; Node exists solely as the MCP runtime |
+| `cargo xtask schema validate` | all contracts valid | `All contracts valid.` |
+| `cargo xtask ticket check` | OK | `check OK` |
+| `cargo xtask mod compile` | green | `OK: compiled clean`; 5,804 files, 11,643 classes, 0 warnings in TBD sources |
+| `cargo xtask verify player-identity-comments`, `verify results-reporter-identity-comments`, `verify mission-rest-size-limits`, `verify destroy-target-diagnostics` | PASS with their RED proofs | all four PASS, every reintroduced-lie and removed-pin proof failing as expected |
+
+### Found and fixed
+
+- `tools_v2/ticket-engine/src/model/tickets.rs:123` — `FROZEN_UNMAPPABLE` had no reader in the
+  workspace: one re-export and one test asserting its own length. Deleted with both.
+- `tools_v2/xtask/src/commands/ci/task_definitions/verification_dispatch.rs` — the ten adapters
+  were `x_<check>`; one of them carried the name of the file the previous phase retired. All ten
+  are `run_<check>` now, and the module's two `#[path]` declarations sit together at the top,
+  which keeps the table file under the line limit.
+- `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/repository_access.rs:144`
+  — `is_test_file` matched a string suffix. It reads the path's components and file stem instead,
+  which is both the correct test and free of the literal.
+- `tools_v2/developer-tools/src/world_export_pipeline/export_preparation/export_validation/operations_log.rs`
+  — the spike-log validator compared against a literal the in-tree writers never produce. The
+  stage name is a named constant, and the committed operations log carries it.
+- `tools_v2/developer-tools/src/world_export_pipeline/mod.rs:26` — the `INSTANCE_KINDS` doc
+  narrated a three-copy history and named two Rust files absent from the crate. It states the
+  invariant: one const per census bucket order, a classified prefab with no bucket is a hard
+  failure, and the second copy is the schema check's, which may not read this one.
+- `tools_v2/developer-tools/src/world_export_pipeline/export_preparation/aerial_cell_catalog.rs:4`
+  — an unfenced `<terrain>` placeholder was the crate's only rustdoc warning.
+- `tools_v2/xtask/src/commands/deploy/website/remote_steps.rs:68` — the remote state migration
+  looped over a variable named for an era rather than its contents; it iterates `tree` now, and
+  the test that pins the rendered command moves with it.
+- One map contract fixture was named for an era rather than its content. It is
+  `contracts_v2/fixtures/map/terrain-manifest-everon-tile-only-satellite.json`, after the manifest
+  shape it holds, and its two readers moved with it.
+- `tools_v2/xtask/src/commands/deploy/staging/tests/agent/tests.rs` — the byte-for-byte unit
+  render pinned a ticket identifier inside a systemd `Description=`. The units and the pin lost it
+  together.
+- `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_PlayerIdentity.c`,
+  `TBD_ResultsReporter.c` and `Systems/Mission/Loaders/TBD_MissionLoader.c` — six comment lines
+  carried ticket identifiers that three verifications pin verbatim. Source and pins rewritten
+  together; `cargo xtask mod compile` re-run.
+
+### Found for P9
+
+- `tools_v2/xtask/src/commands/deploy/staging/agent.rs:203-216` — `API_SLICE_SPEC` is an
+  `#[allow(dead_code)]` constant holding a specification for work in another crate, kept only so a
+  text search finds it. Its prose is now present-tense and identifier-free, but the constant still
+  has no reader; the `#[allow(dead_code)]` says so. Either delete it and let the specification live
+  in a ticket, or move it to one.
+- `tools_v2/verification-core/src/scan.rs:95` exports `grep_lines`, whose name borrows an external
+  tool for a function that runs no process. It is public API across `xtask` and `developer-tools`,
+  so renaming it is a public-surface change rather than a prose one.
+- `TBD_RUN_T092_SMOKE` is a live operator-facing environment variable and a matching field name in
+  `deploy/staging/config.rs`, documented in `docs/mod/STAGING-SERVER.md`. It is ticket-shaped but
+  matches no rule here — `T092` carries no hyphen — so renaming it belongs with the other
+  operator-surface renames, in one commit with the runbook.
+- `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_drag/execution.rs:18`
+  writes a ticket-named page global that `outliner_drag/vehicle_snap_cases.rs:40` reads back. Both
+  ends are inside `developer-tools`, so the rename is one-sided; `window.__outlinerDragEvents` is
+  the name the rest of the lane would use.
+- `docs/mod/STAGING-SERVER.md:202,373` and `.ai/artifacts/t128_doc_link_repair_log.md:56` name a
+  deleted staging script and the environment variable above. The first is a live runbook.

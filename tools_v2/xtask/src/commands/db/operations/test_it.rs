@@ -1,4 +1,4 @@
-//! T-894 — `make rust-test-it` as `cargo xtask db test-it` (Makefile:201-212).
+//! `cargo xtask db test-it`: the integration-test lane.
 //!
 //! Split into its own file because this is the one genuinely non-trivial recipe left in the
 //! Makefile: four command lines, two of which carry make prefixes that change their semantics
@@ -21,7 +21,7 @@
 //!    first line's status and honours the second's.
 //! 2. `ESCAPE '\'` makes the underscores in `rust_it\_%\_it` LITERAL. Without it, `_` is SQL's
 //!    single-character wildcard and the pattern would match names nobody meant to drop. This is
-//!    the T-534 per-binary naming (`<base>_<suite>_it`, `apps/website/api_v2/tests/common/mod.rs`)
+//!    the per-binary naming (`<base>_<suite>_it`, `apps/website/api_v2/tests/common/mod.rs`)
 //!    read back out.
 //! 3. `[ -n "$db" ] || continue` guards the empty line `read` yields on a blank result set.
 //! 4. `>/dev/null` is on the DROP's stdout only — psql's stderr stays on the terminal.
@@ -32,13 +32,13 @@
 //!   `psql` dying (container down, wrong name, bad credentials) produced a GREEN target that
 //!   reaped nothing. `selftest`'s arm 5 runs the Makefile's own pipeline against a dead container
 //!   and asserts it still exits 0 — that is the fail-open, measured, not asserted from reading.
-//! - **Every name is re-checked against the T-381 allow-list before its DROP.** The Makefile is
+//! - **Every name is re-checked against the allow-list before its DROP.** The recipe is
 //!   safe by construction (its base is the literal `rust_it`); this port accepts `TBD_IT_BASE_DB`
 //!   so the selftest can use a scratch base that does not race sibling slices, and that knob is
-//!   exactly the "stray env var" T-381 exists to stop. Guarded twice: once on the base, once per
+//!   exactly the "stray env var" the allow-list exists to stop. Guarded twice: once on the base, once per
 //!   returned name.
 //! - **The reap runs even when the suite fails.** make aborts the recipe on a red `cargo test`,
-//!   skipping the T-558 prune on precisely the runs that leave leftovers. Output is unchanged
+//!   skipping the prune on precisely the runs that leave leftovers. Output is unchanged
 //!   (the reap is silent), so this costs nothing in parity — see [`join_rc`].
 
 use std::process::{Command, Stdio};
@@ -51,7 +51,7 @@ use crate::commands::deploy::database_operations as dbc;
 /// The reap SELECT, byte-identical to Makefile:210 once `{base}` is substituted.
 ///
 /// `LIKE 'rust_it\_%\_it' ESCAPE '\'` — the backslashes make the underscores LITERAL, so this is
-/// "the base, an underscore, anything, then `_it`" (T-534's per-binary databases) and not the
+/// "the base, an underscore, anything, then `_it`" (the per-binary databases) and not the
 /// single-character wildcard `_` would otherwise be.
 pub(crate) fn reap_select(base: &str) -> String {
     format!(
@@ -167,11 +167,11 @@ pub(crate) fn join_rc(test_rc: u8, reap_rc: u8) -> u8 {
     if test_rc != 0 { test_rc } else { reap_rc }
 }
 
-/// T-558's prune: drop the base database and every `<base>_<suite>_it` sibling.
+/// The prune: drop the base database and every `<base>_<suite>_it` sibling.
 ///
 /// The bash was `psql -Atc … | while read -r db; do [ -n "$db" ] || continue; psql -qc "DROP …"
 /// >/dev/null; done`. Two things change: the query's rc is checked (the pipeline's was invisible —
-/// see the module header), and each name is re-checked against the T-381 allow-list before its
+/// see the module header), and each name is re-checked against the allow-list before its
 /// DROP. `read -r` strips leading/trailing IFS whitespace, which is what the `.trim()` matches.
 pub(crate) fn reap(base: &str) -> Result<u8> {
     let (rc, stdout, stderr) = dbc::ct_capture(

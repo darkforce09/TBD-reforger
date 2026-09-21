@@ -1,4 +1,4 @@
-/// An echoed recipe line. The map lane stays a subprocess on purpose: `map` is a `tbd-tools`
+/// An echoed recipe line. The map lane stays a subprocess on purpose: `map` is a `developer-tools`
 /// binary, and reaching into another crate's clap wiring to save a fork would be drift.
 macro_rules! sh {
     ($line:expr) => {

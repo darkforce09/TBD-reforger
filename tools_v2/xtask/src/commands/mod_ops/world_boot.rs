@@ -1,4 +1,4 @@
-//! T-892 — port of `scripts/mod/world-boot.sh` → `cargo xtask mod world-boot`.
+//! `cargo xtask mod world-boot`: boot the dedicated server headless and read its verdict.
 //!
 //! Exit: **0** PASS · **1** CODE · **2** usage · **3** ENVIRONMENT.
 //! Verdict / `--selftest` → [`crate::commands::mod_ops::world_boot_verdict`] (SIZE split).

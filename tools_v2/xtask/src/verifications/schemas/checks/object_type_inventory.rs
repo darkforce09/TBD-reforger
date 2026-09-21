@@ -12,8 +12,8 @@ use developer_tools::repository_layout::{
 ///   1. against `$defs.kind` minus `$defs.regionKind` — the single source of truth. This is what
 ///      catches the NEXT kind addition on the day it lands.
 ///   2. against `developer_tools::world_export_pipeline::INSTANCE_KINDS`, order included — the two copies exist because
-///      `xtask` stays dependency-light and `tbd-tools` owns the export pipeline, and a divergence
-///      between them is precisely the T-244 defect. Order matters: it is the emitted `byKind` key
+///      `xtask` stays dependency-light and `developer-tools` owns the export pipeline, and a divergence
+///      between them is precisely the defect. Order matters: it is the emitted `byKind` key
 ///      order, so a reordering here would silently change the artifact on the next rebuild.
 ///
 /// Missing enum `$defs` are a FAILURE, not a skip: a schema that could not be read must not let
@@ -47,7 +47,7 @@ pub(super) fn instance_kinds_lockstep_failures(enums: &Value) -> Vec<String> {
                      map-object-enums.schema.json $defs.kind minus $defs.regionKind — \
                      missing {missing:?}, spurious {spurious:?}. I1 sums only the kinds named \
                      there, so a missing bucket makes the sum come up short by that bucket's \
-                     instances and reads as a bad artifact instead of a stale gate (T-244/T-594)"
+                     instances and reads as a bad artifact instead of a stale gate"
                 ));
             }
         }
@@ -85,7 +85,7 @@ pub fn type_inventory() -> Result<u8> {
 
     let mut failures: Vec<String> = Vec::new();
 
-    // T-594. The lockstep pin for INSTANCE_KINDS, RUN rather than merely written down. It is here
+    // The lockstep pin for INSTANCE_KINDS, RUN rather than merely written down. It is here
     // and not only in a #[test] because nothing runs xtask's tests: the wave gate tests
     // website-api / map-engine-* / website-frontend, and CI mirrors that. `xtask schema
     // type-inventory` is in GATE_SCHEMA_VALIDATE_GATES, so this executes in both gate halves.

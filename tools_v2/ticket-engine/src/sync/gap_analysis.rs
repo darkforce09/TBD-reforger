@@ -5,6 +5,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::LazyLock;
 
+use crate::corpus_pins::{self, CorpusPins};
 use crate::registry::{str_field, tickets};
 use crate::repository::documentation::GAP_ANALYSIS;
 
@@ -137,7 +138,13 @@ pub fn test_gap_analysis_round_trip(root: &Path) -> Result<()> {
     Ok(())
 }
 
-fn lookup_ticket_for_gap(registry: &Value, eden_id: &str, tbd_id: &str, gap_notes: &str) -> String {
+fn lookup_ticket_for_gap(
+    pins: &CorpusPins,
+    registry: &Value,
+    eden_id: &str,
+    tbd_id: &str,
+    gap_notes: &str,
+) -> String {
     if let Some(c) = CHECKMARK_TICKET.captures(gap_notes) {
         return c[1].to_string();
     }
@@ -152,43 +159,11 @@ fn lookup_ticket_for_gap(registry: &Value, eden_id: &str, tbd_id: &str, gap_note
             }
         }
     }
-    let mapping: &[(&str, &str)] = &[
-        ("PLACE-004", "T-072"),
-        ("XFORM-SHIFT-001", "T-073"),
-        ("XFORM-ROT-001", "T-073"),
-        ("RIGHT-SUBMODE-001", "T-074"),
-        ("WIDGET-CYCLE-001", "T-075"),
-        ("CREW-PANEL-001", "T-076"),
-        ("CREW-BOARD-001", "T-076"),
-        ("PLACE-CREW-001", "T-077"),
-        ("COMP-SAVE-001", "T-078"),
-        ("COMP-PLACE-001", "T-078"),
-        ("RIGHT-MODE-001", "T-068"),
-        ("RIGHT-CAT-001", "T-068"),
-        ("RIGHT-MODE-006", "T-069"),
-        ("RIGHT-STUB-002", "T-069"),
-        ("CONN-GROUP-001", "T-071"),
-        ("LEFT-ORBAT-001", "T-071"),
-        ("RIGHT-SEARCH-001", "T-055"),
-        ("SEL-MOD-001", "T-053"),
-        ("SEL-ORBAT-DBL-001", "T-054"),
-        ("ATTR-FIELD-OBJ-POSITION", "T-049"),
-        ("ATTR-TAB-001", "T-049"),
-        ("MAP-TERRAIN-001", "T-049"),
-        ("DATA-HYD-TITLE-001", "T-049"),
-        ("TOP-TITLE-001", "T-049"),
-        ("TOP-UNDO-001", "T-052"),
-        ("TOOLBAR-UNDO-001", "T-052"),
-    ];
-    for (k, v) in mapping {
-        if *k == eden_id {
-            return (*v).to_string();
-        }
+    if let Some(ticket) = pins.gap_implementation(eden_id) {
+        return ticket.to_string();
     }
-    for (k, v) in mapping {
-        if *k == tbd_id {
-            return (*v).to_string();
-        }
+    if let Some(ticket) = pins.gap_implementation(tbd_id) {
+        return ticket.to_string();
     }
     "—".to_string()
 }
@@ -199,12 +174,13 @@ pub fn sync_gap_analysis_ticket_column(root: &Path, registry: &Value) -> Result<
     if !path.is_file() {
         return Ok(());
     }
+    let pins = corpus_pins::load(root)?;
     let original = fs::read_to_string(&path)?;
     let mut doc = parse_gap_analysis(&original);
     for table in &mut doc.tables {
         for row in &mut table.rows {
             if row.len() >= 5 {
-                row[3] = lookup_ticket_for_gap(registry, &row[0], &row[1], &row[4]);
+                row[3] = lookup_ticket_for_gap(&pins, registry, &row[0], &row[1], &row[4]);
             }
         }
     }

@@ -47,7 +47,7 @@ pub(super) fn run(lanes: &Lanes, log: &mut Log) -> u8 {
 }
 
 /// Exit **2**, not the script's 1: "the tree is dirty" and "I never read the tree" are different
-/// operator actions. `wave.sh` tests `rc -eq 0`, so any nonzero is still FAIL there.
+/// operator actions. The wave driver tests `rc -eq 0`, so any nonzero is still FAIL there.
 pub(super) fn refuse(log: &mut Log, cause: NotRun) -> u8 {
     let msg = "no-oracle-leak could not examine the trees it was pointed at";
     log.say(Verdict::did_not_run(msg, Kind::Ban, cause).to_string());

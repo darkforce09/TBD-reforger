@@ -1,7 +1,7 @@
-//! T-289 — the host control agent (bash lines 103–679).
+//! The host control agent.
 //!
 //! WHAT THIS IS. `POST /api/v1/admin/servers/:id/rcon` answers 503 `RCON_NO_TRANSPORT`
-//! (`handlers/admin.rs:551`) because the API has no channel to the game host. This module renders
+//! (the RCON console handler) because the API has no channel to the game host. This module renders
 //! the host half of that channel. The API half is a separate slice — the bash carried a full
 //! specification for it in a 70-line comment block; it is kept verbatim in
 //! [`API_SLICE_SPEC`] rather than summarised away, because it is the only written record of a
@@ -10,7 +10,7 @@
 //!
 //! ── THE FACT THAT DECIDES THE DESIGN ─────────────────────────────────────────────────────────
 //!
-//! T-269 recorded "The game server is a **separate host**" (`admin.rs:517`). That is true of the
+//! The game server is a **separate host**. That is true of the
 //! DEVELOPER'S PC and false of the API. Re-measured on main 2026-07-31: `docs/mod/
 //! STAGING-SERVER.md:3` puts "API + Postgres and Arma Reforger dedicated server" on
 //! `sam@192.168.0.140`; `scripts/deploy/deploy.env.example:17` gives ONE ssh host for BOTH deploy
@@ -29,7 +29,7 @@
 //! ── WHAT WAS REJECTED ────────────────────────────────────────────────────────────────────────
 //!
 //! * SSH from an axum handler. `send_rcon` is gated by `AdminUser` and `RconCommand::Custom`
-//!   (`admin.rs:493-510`) carries operator-supplied free text — that is remote code execution
+//!   (the RCON console handler) carries operator-supplied free text — that is remote code execution
 //!   with an admin checkbox in front of it. It is also not possible on the box: `deploy.env` is
 //!   gitignored AND rsync-excluded, so the credential exists only on a developer's PC.
 //! * BattlEye / Reforger RCON over UDP. Re-measured: `ss -lntu` binds only :8080 / :3000 / :5434
@@ -229,10 +229,10 @@ proven; the API half is mechanical from here.
    answering start/restart, on purpose. Use 20s. A timeout shorter than the dwell would
    turn every honest slow answer into a false \"unreachable\".
 
-3. HANDLER — apps/website/api_v2/src/handlers/admin/admin.rs `send_rcon` (currently ends in the
+3. HANDLER — the API's `send_rcon` (currently ends in the
    unconditional Err(SERVICE_UNAVAILABLE, RCON_NO_TRANSPORT) at :628). Map the validated
    RconCommand, then map the reply — the mapping is three-way, because that is the delivery
-   result T-269 asked for:
+   result the operator asked for:
       RconCommand::Restart                   -> AgentAction::Restart
       RconCommand::Kick / ChangeMap / Custom -> STILL 503, unchanged (see SCOPE GAP)
       AgentResult::Accepted    -> 202 {\"accepted\":true,\"delivered\":true,\"state\":<state>}
@@ -240,7 +240,7 @@ proven; the API half is mechanical from here.
       AgentResult::Unreachable -> 503 RCON_NO_TRANSPORT
       transport error/timeout  -> 503, same shape
    THE AUDIT ROW MUST RECORD THE OUTCOME, NOT THE ATTEMPT — that is the specific defect
-   T-269 called out. Write it AFTER the agent answers, Info on Accepted and Warn otherwise,
+   the audit calls out. Write it AFTER the agent answers, Info on Accepted and Warn otherwise,
    with the observed `state` in the detail.
 
 4. ADDRESSING — for THIS deployment nothing is needed in the `servers` table: one host, one
@@ -258,7 +258,7 @@ proven; the API half is mechanical from here.
 * change_map and custom need a live admin channel INTO a running server. Nothing in this repo
   has one. Either is strictly larger than this ticket and must not be smuggled into the agent
   — the agent's safety argument rests entirely on it accepting no free text.
-* kick CANNOT BE BUILT AT ALL YET: `RconInput` has no player field (admin.rs:422-428), so
+* kick CANNOT BE BUILT AT ALL YET: `RconInput` has no player field, so
   apps/website/frontend/src/server_control.rs:44 posts a bare {\"action\":\"kick\"} that names
   nobody. That is a UI + model gap, upstream of any transport question.
 ";
@@ -278,7 +278,7 @@ pub struct AgentEnv {
     /// path.
     pub remote_path: String,
     /// Install the agent as part of a real deploy. DEFAULT OFF, deliberately: the install step
-    /// mutates a live host and T-289 could not exercise it. The RENDER is proven by
+    /// mutates a live host no test may touch. The RENDER is proven by
     /// `--agent-selftest`; the INSTALL is not, so it must be opted into by someone watching it.
     pub install: bool,
 }
@@ -350,7 +350,7 @@ impl AgentEnv {
     pub fn socket_unit(&self) -> String {
         format!(
             "[Unit]\n\
-             Description=TBD Reforger host control agent socket (T-289)\n\
+             Description=TBD Reforger host control agent socket\n\
              Documentation=man:systemd.socket(5)\n\
              \n\
              [Socket]\n\
@@ -367,7 +367,7 @@ impl AgentEnv {
     pub fn service_unit(&self) -> String {
         format!(
             "[Unit]\n\
-             Description=TBD Reforger host control agent connection (T-289)\n\
+             Description=TBD Reforger host control agent connection\n\
              Documentation=man:systemd.socket(5)\n\
              \n\
              [Service]\n\

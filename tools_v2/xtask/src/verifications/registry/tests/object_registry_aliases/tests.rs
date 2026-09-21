@@ -69,7 +69,7 @@ fn the_real_registry_holds() {
     assert_eq!(verify_object_registry_aliases(&repo()).unwrap(), 0);
 }
 
-/// T-556 anti-vacuity: a gate that cannot fail is indistinguishable from one that checks
+/// Anti-vacuity: a gate that cannot fail is indistinguishable from one that checks
 /// nothing, and this one prints a single PASS line on a clean tree. Each case aims at a
 /// different one of the script's ordered checks and must turn that PASS into a 1.
 #[test]

@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::map_scratch_dir;
 
-/// Enumerate Everon SAP supertexture cells → assets_v2/scratch/<terrain>/sap/cell-catalog.json
+/// Enumerate Everon SAP supertexture cells → `assets_v2/scratch/<terrain>/sap/cell-catalog.json`
 /// (fast index; the
 /// full decode + fail-fast lives in the stitch step).
 pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
@@ -49,7 +49,7 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
     };
     let catalog = json!({
         "terrain": terrain,
-        "slice": "T-090.1.2",
+        "slice": "aerial-cell-catalog",
         "generatedAt": generated_at,
         "grid": GRID,
         "cellCount": entries.len(),
@@ -62,7 +62,7 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
         "source": "sap-supertexture-stitch",
         "cells": entries,
     });
-    // T-537: refuse an empty cell catalog overwrite.
+    // Refuse an empty cell catalog overwrite.
     super::super::refuse_empty_write(
         "catalog-sap-cells",
         catalog["cellCount"].as_u64() != Some(u64::from(CELL_COUNT))

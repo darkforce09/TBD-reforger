@@ -7,7 +7,7 @@
 //! through `BuildingBlueprint::evaluate_los` — the BVH raycast over the sidecar decides
 //! clear/blocked, the blueprint names the hit — and prints where the model and the engine
 //! disagree. Report-only: the number is the instrument, not a gate (the CI pin lives in
-//! `map_blueprint::tests::farmhouse_golden_parity_is_pinned`).
+//! `blueprint::tests::farmhouse_golden_parity_is_pinned`).
 //!
 //! Usage: `cargo xtask map parity-report --pairs <parity.json> --blueprint <blueprint.json>
 //!         --sidecar <file.bvh>`

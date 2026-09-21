@@ -1,4 +1,4 @@
-//! T-913.1 — RFC 3339 UTC lifecycle stamps (`created_at` / `completed_at`).
+//! RFC 3339 UTC lifecycle stamps (`created_at` / `completed_at`).
 //!
 //! THE RULE (UTC-only, canonical): a value is legal iff it parses under the RFC 3339
 //! well-known format, its offset is zero, the offset is WRITTEN `Z` or `+00:00`, and the
@@ -35,7 +35,7 @@ pub fn validate_rfc3339_utc(field: &str, value: &str) -> Result<(), String> {
 }
 
 /// Now, UTC, whole seconds, rendered `2026-08-14T12:34:56Z` — always passes
-/// [`crate::validate_rfc3339_utc`]. The one string the T-913.1 writers stamp.
+/// [`crate::validate_rfc3339_utc`]. The one string the writers stamp.
 pub fn now_utc_rfc3339() -> String {
     let now = OffsetDateTime::now_utc()
         .replace_nanosecond(0)

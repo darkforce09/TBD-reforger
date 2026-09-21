@@ -24,7 +24,7 @@ struct TerrainContract {
     max_m: f64,
 }
 
-/* ───────────────── T-935.12 — the manifest's binary blocks (spec §5) ───────────────── */
+/* ───────────────── The manifest's binary blocks (spec §5) ───────────────── */
 
 /// `map-object-instance.schema.json` `$defs/objectInstancePodRow` against the Rust POD.
 ///
@@ -124,7 +124,7 @@ fn pod_row_doc_failures(instance_schema: &Value) -> Vec<String> {
 /// Existence only, never content: in a slice worktree these files are git-LFS pointers.
 /// Is `kind` (e.g. `objects.binary.prefabs`) actually PRESENT in the manifest, as opposed to absent?
 ///
-/// T-946.24 — the difference between "not claimed" and "claimed as nothing".
+/// The difference between "not claimed" and "claimed as nothing".
 fn manifest_names_key(manifest: &Value, kind: &str) -> bool {
     let mut cur = manifest;
     for seg in kind.split('.') {
@@ -141,7 +141,7 @@ fn manifest_binary_failures(manifest: &Value, asset_dir: &Path) -> (usize, Vec<S
     let mut errs = Vec::new();
     let mut declared = 0_usize;
     let want = |kind: &str, rel: &str, dir: bool, errs: &mut Vec<String>| {
-        // T-946.24 — an ABSENT key and a key set to "" are different statements. Absent means the
+        // An ABSENT key and a key set to "" are different statements. Absent means the
         // manifest does not claim this artefact exists; empty means it claims one and names
         // nothing, which resolves to the asset directory itself and used to pass both this gate and
         // the schema. Found by the wave-242 verifier.
@@ -316,7 +316,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
     let wpx = manifest["dem"]["widthPx"].as_f64().unwrap_or(0.0);
     let hpx = manifest["dem"]["heightPx"].as_f64().unwrap_or(0.0);
     if wpx == 0.0 || hpx == 0.0 {
-        println!("WARN  Stub manifest (widthPx/heightPx=0) — OK for T-090.0");
+        println!("WARN  Stub manifest (widthPx/heightPx=0) — no raster declared");
     } else if manifest["dem"]["exportedAt"]
         .as_str()
         .unwrap_or("")
@@ -338,7 +338,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
     }
     println!("PASS  Manifest matches terrains.ts for {terrain}");
 
-    // T-935.12. Runs on every manifest, with or without binary blocks — a manifest that declares
+    // Runs on every manifest, with or without binary blocks — a manifest that declares
     // none is the shipped state and says so out loud, because "PASS" over zero examined blocks is
     // this program's signature defect. The POD row doc is checked unconditionally: it describes the
     // format whether or not this terrain has migrated yet.
@@ -347,7 +347,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
     let (declared, path_errors) = manifest_binary_failures(&manifest, &terrain_dir(root, terrain));
     bin_errors.extend(path_errors);
     if !bin_errors.is_empty() {
-        eprintln!("FAIL  T-935 binary blocks (spec §5):");
+        eprintln!("FAIL  binary blocks (spec §5):");
         for e in &bin_errors {
             eprintln!("      {e}");
         }
@@ -355,11 +355,11 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
     }
     if declared == 0 {
         println!(
-            "PASS  ObjectInstancePod row doc; {terrain} declares no T-935 binary block (JSON paths)"
+            "PASS  ObjectInstancePod row doc; {terrain} declares no binary block (JSON paths)"
         );
     } else {
         println!(
-            "PASS  ObjectInstancePod row doc + {declared} T-935 binary block(s), every path resolved"
+            "PASS  ObjectInstancePod row doc + {declared} binary block(s), every path resolved"
         );
     }
 

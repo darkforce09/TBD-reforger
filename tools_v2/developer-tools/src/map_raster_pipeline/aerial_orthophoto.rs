@@ -1,7 +1,7 @@
-//! T-165.9 — the SAP ortho lane: seam metrics (port of `lib/sap-seam-metrics.mjs`),
+//! The SAP ortho lane: seam metrics,
 //! `verify-sap-seams` / `analyze-sap-seams` / `verify-sap-ortho`, the stitcher
-//! (`stitch-sap-ortho.mjs` — 2500-cell EDDS decode → north-up canvas), and the seam bridge
-//! (`blend-sap-seams.mjs`, both the in-canvas op and the CLI fallback).
+//! the stitch (2500-cell EDDS decode → north-up canvas), and the seam bridge
+//! (both the in-canvas op and the CLI fallback).
 //!
 //! The magick shell-outs are native ops here (decode/encode via image/png, stddev/HSL/
 //! threshold/resize in `img`). Numeric gate thresholds are unchanged; the two derived

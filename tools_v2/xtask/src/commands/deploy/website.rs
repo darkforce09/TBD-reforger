@@ -165,7 +165,7 @@ impl DeployCfg {
 
         println!(
             "==> rsync (excludes secrets, build artifacts, the terrain + scratch asset trees, \
-             the legacy packages/ tree, oracle lanes)"
+             the packages/ tree, oracle lanes)"
         );
         if self.dry_run {
             println!(

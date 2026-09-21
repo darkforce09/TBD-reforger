@@ -7,7 +7,7 @@
 
 /// `uses:` values that may appear on a step. Anything else is a composite-action bypass.
 ///
-/// `actions/setup-go@v6` is deliberately absent: T-901 ports the editorconfig job to
+/// `actions/setup-go@v6` is deliberately absent: the editorconfig job runs as
 /// `cargo xtask ci verify-editorconfig`, so Go-on-the-runner is no longer a CI dependency.
 pub const ALLOWED_USES: &[&str] = &[
     "actions/checkout@v7",
@@ -62,7 +62,7 @@ pub fn uses_reason(uses: &str) -> Option<String> {
     if ALLOWED_USES.contains(&t) {
         None
     } else {
-        Some(format!("uses: `{t}` is not on the T-901 pin list"))
+        Some(format!("uses: `{t}` is not on the pin list"))
     }
 }
 

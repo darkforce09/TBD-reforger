@@ -81,7 +81,7 @@ pub fn run(args: &[String]) -> Result<u8> {
                 .display()
                 .to_string(),
             Err(_) => {
-                // bash expanded $TBD_MONO_ROOT (set by deleted db-common.sh). Fail closed.
+                // $TBD_MONO_ROOT is the operator's override for the monorepo root. Fail closed.
                 die(
                     "TBD_GATE_MIGRATION_DIR unset and repo root not found — cannot locate migrations.",
                 );
@@ -89,7 +89,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         }
     });
 
-    // Same T-381 guard as manual restore — drill must never aim at live.
+    // Same allow-list guard as manual restore — drill must never aim at live.
     refuse_unsafe_restore_target(&scratch, None)?;
 
     if which("sha384sum").is_none() {
@@ -176,7 +176,7 @@ pub fn run(args: &[String]) -> Result<u8> {
     let _ = drop_scratch_db(&scratch);
 
     info(&format!("restoring into scratch database '{scratch}'"));
-    // --expect-db is the SOURCE database, not scratch (T-588).
+    // --expect-db is the SOURCE database, not scratch.
     let restore_rc = crate::commands::deploy::database_restore::run(RestoreArgs {
         db: Some(scratch.clone()),
         url: None,

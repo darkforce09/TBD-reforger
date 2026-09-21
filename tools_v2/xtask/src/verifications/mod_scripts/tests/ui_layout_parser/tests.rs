@@ -38,7 +38,7 @@ fn guid_desync_would_hide_a_c6() {
     assert_eq!(strip_quoted(line).matches('}').count(), 0);
 
     // And end-to-end: a container child whose slot has no HorizontalAlign must be caught. With
-    // a desynced counter `owner_line[depth]` misses and C6 never fires — the T-181.51 defect.
+    // a desynced counter `owner_line[depth]` misses and C6 never fires — the defect.
     let body = "\
 OverlayWidgetClass \"{7BD1A70000000750}\" {
  Name \"Root\"

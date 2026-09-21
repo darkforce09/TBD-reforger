@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-912.1: the hardcoded dependency/run-last tables must not come back — the packer reads
+/// The hardcoded dependency/run-last tables must not come back — the packer reads
 /// ticket `depends_on` / `pack_last` / `owns`. The needle is assembled at runtime so this
 /// test's own source cannot satisfy the scan it performs.
 #[test]

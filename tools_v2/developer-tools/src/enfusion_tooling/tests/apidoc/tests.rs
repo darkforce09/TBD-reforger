@@ -19,7 +19,7 @@ fn strips_entities() {
 
 #[test]
 fn build_refuses_header_only_classes_tsv() {
-    // T-537 Class-R: empty annotated.html must not overwrite committed vanilla_api_*.tsv.
+    // Class-R: empty annotated.html must not overwrite committed vanilla_api_*.tsv.
     let dir = std::env::temp_dir().join(format!("t537-apidoc-empty-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let src = dir.join("src");

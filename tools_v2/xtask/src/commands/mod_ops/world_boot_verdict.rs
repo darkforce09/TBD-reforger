@@ -1,4 +1,4 @@
-//! Verdict + `--selftest` half of the T-892 port of `scripts/mod/world-boot.sh`.
+//! Verdict + `--selftest` half of `cargo xtask mod world-boot`.
 //!
 //! Split like `gate_ui_layouts` / `gate_ui_layouts_awk`: this module is the pure log triage
 //! (`assess_log`) plus the offline fixture harness. It knows nothing about Steam, the API, or

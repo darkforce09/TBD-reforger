@@ -8,7 +8,7 @@ fn scratch(tag: &str, files: &[(&str, &str)]) -> PathBuf {
     let tickets = dir.join(crate::repository::TICKETS_DIR);
     fs::create_dir_all(&tickets).unwrap();
     fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
-    // T-917.2: `Corpus::load` resolves scope legality fail-closed — every scratch
+    // `Corpus::load` resolves scope legality fail-closed — every scratch
     // tree carries the minimal vocabulary its fixtures use.
     fs::write(tickets.join("scope-vocab.toml"), "[repo.xtask]\n").unwrap();
     for (name, body) in files {
@@ -33,7 +33,7 @@ fn work(id: &str, order: i64, owns: &[&str], deps: &[&str], status: &str) -> Str
     )
 }
 
-// ── T-914: the close-marker ledger base ─────────────────────────────────────────────────
+// ── The close-marker ledger base ────────────────────────────────────────────────────────
 /// Run git in `dir` with a pinned identity — the metrics.rs scratch-repo pattern. Never a
 /// `Date`-dependent assertion downstream: subjects are the only degree of freedom.
 fn git_in_dir(dir: &Path, args: &[&str]) {
@@ -73,7 +73,7 @@ fn scratch_git(tag: &str, files: &[(&str, &str)], subjects: &[&str]) -> PathBuf 
     dir
 }
 
-// ── T-925: the [[emptied]] section — pending close targets ──────────────────────────────
+// ── The [[emptied]] section — pending close targets ─────────────────────────────────────
 /// The lock text from `[[emptied]]` to the section after it — the proof-block slice.
 fn emptied_slice(text: &str) -> &str {
     let start = text.find("[[emptied]]").expect("emptied section present");
@@ -84,7 +84,7 @@ fn emptied_slice(text: &str) -> &str {
     &text[start..end]
 }
 
-// ── T-946.12: the reservation, for a wave that dissolved id by id ───────────────────────
+// ── The reservation, for a wave that dissolved id by id ─────────────────────────────────
 /// Build the exact wave-240 shape: a wave whose set ships ONE ID AT A TIME, so no repack
 /// ever sees the whole set under its own label and the freed label is reissued.
 fn dissolved_by_id(name: &str) -> std::path::PathBuf {

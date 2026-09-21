@@ -103,7 +103,7 @@ fn the_unit_install_command_renders_the_shipped_template_for_the_remote_dir() {
     assert!(cmd.contains("systemctl --user daemon-reload"));
 }
 
-/// Only the legacy layout and an unreadable probe stop the deploy. A host with no asset tree at
+/// Only the old packages tree and an unreadable probe stop the deploy. A host with no asset tree at
 /// all is a library-only site, which HOME_SERVER documents as a supported cutover.
 #[test]
 fn only_a_legacy_or_unreadable_layout_refuses_the_deploy() {
@@ -178,7 +178,7 @@ fn the_state_move_targets_the_unit_state_directory_and_is_idempotent() {
         cmd.contains("${XDG_STATE_HOME:-$HOME/.local/state}/tbd-website-api"),
         "{cmd}"
     );
-    assert!(cmd.contains("for legacy in uploads missions"), "{cmd}");
+    assert!(cmd.contains("for tree in uploads missions"), "{cmd}");
     assert!(
         cmd.contains("'/home/sam/tbd/repo/apps/website/api_v2/'"),
         "{cmd}"

@@ -133,7 +133,7 @@ pub fn census_spike(terrain: &str) -> Result<u8> {
         );
     }
     let total_instances = entries.len();
-    // T-537: refuse writing an empty spike inventory over a prior census artifact.
+    // Refuse writing an empty spike inventory over a prior census artifact.
     super::super::refuse_empty_write(
         "census-spike type-inventory",
         total_instances == 0,
@@ -203,8 +203,8 @@ pub fn census_spike(terrain: &str) -> Result<u8> {
 }
 
 pub(super) fn spawn_type_inventory_gate() -> Result<bool> {
-    // The I-gates live in `xtask schema type-inventory` (T-165.1) — the Rust replacement for
-    // the spawned verify-type-inventory.mjs.
+    // The I-gates live in `xtask schema type-inventory` — the Rust home for
+    // `cargo xtask schema type-inventory`.
     let status = std::process::Command::new("cargo")
         .args(["run", "-q", "-p", "xtask", "--", "schema", "type-inventory"])
         .current_dir(repo_root())
@@ -228,13 +228,13 @@ pub fn census_types(terrain: &str) -> Result<u8> {
     if inv["censusStatus"] == "pending_export" {
         if full.exists() {
             eprintln!(
-                "map-census: full-map export exists but censusStatus is still pending_export — run full classify + census implementation (T-090.2/.3)"
+                "map-census: full-map export exists but censusStatus is still pending_export — run full classify + census implementation"
             );
             return Ok(1);
         }
         if spike.exists() {
             println!(
-                "map-census: {terrain} censusStatus=pending_export — T-090.3.0 spike subregion export present (assets_v2/scratch/{terrain}/spike); full-map census still pending (expected)"
+                "map-census: {terrain} censusStatus=pending_export — spike subregion export present (assets_v2/scratch/{terrain}/spike); full-map census still pending (expected)"
             );
             return Ok(0);
         }
@@ -244,7 +244,7 @@ pub fn census_types(terrain: &str) -> Result<u8> {
         return Ok(0);
     }
     println!(
-        "map-census: {terrain} censusStatus={} — validation only (compute path T-090.2/.3)",
+        "map-census: {terrain} censusStatus={} — validation only (no compute path)",
         inv["censusStatus"].as_str().unwrap_or("")
     );
     std::fs::write(

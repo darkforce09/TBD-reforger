@@ -4,9 +4,9 @@ use super::*;
 pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     // ARGUMENTS ARE AN ALLOWLIST, and unknown ones are REFUSED.
     //
-    // This used to be `[ "${1:-}" = "--wave" ] && barrier=1` and nothing else, so any other
-    // argument was silently discarded: `land T-204` was byte-for-byte `land`, and landed every
-    // committed slice in the wave. OBSERVED 2026-07-26 — it merged T-389 and T-229 whose agents had
+    // A bare `[ "${1:-}" = "--wave" ] && barrier=1` test admits any other
+    // A discarded argument makes `land <id>` byte-for-byte `land`, landing every
+    // committed slice in the wave. OBSERVED 2026-07-26 — it merged two slices whose agents had
     // not yet REPORTED, defeating rule 11 from inside the tool that rule depends on, and dropped
     // their worktrees out from under two live agents. Nothing was lost only because the gate
     // happened to pass.
@@ -21,7 +21,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         if a == "--wave" {
             barrier = true;
         } else if a == "--bookkeeping" {
-            // T-913.2 escape hatch: a command-center/manual bookkeeping land may proceed
+            // Escape hatch: a command-center/manual bookkeeping land may proceed
             // without slice-run receipts. It stamps only receipts that already exist and
             // NEVER fabricates a run file or token counts. Default is strict.
             bookkeeping = true;
@@ -100,11 +100,11 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             blocked.join(" ")
         );
         wprintln!(
-            "(this is the T-181 barrier that cost 89% of wall clock — omit --wave to land now)"
+            "(this is the wave barrier that cost 89% of wall clock — omit --wave to land now)"
         );
         return 0;
     }
-    // T-913.2: a factory land is STRICT about run receipts — every landing ticket must
+    // A factory land is STRICT about run receipts — every landing ticket must
     // have a slice-run file under .ai/tickets/metrics/<id>/ or the land refuses before
     // touching main. `--bookkeeping` waives the requirement for manual/command-center
     // lands; land still never invents a receipt it does not have.
@@ -124,7 +124,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // T-924 — NOTHING MECHANICAL USED TO STOP AN UNGATED SLICE LANDING.
+    // NOTHING MECHANICAL USED TO STOP AN UNGATED SLICE LANDING.
     //
     // `land` ran the WAVE gate after merging (below) and never asked whether a SLICE gate had run
     // before. On 2026-08-14 one had not: it refused from the wrong cwd, the exit was masked by a
@@ -136,7 +136,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     // whoever reads the scrollback. The sha compared is the tip of `slice/<id>` — the commit the
     // merge below will bring in — against the sha the gate stamped from inside that worktree.
     //
-    // NO `--bookkeeping` WAIVER, deliberately. That flag waives T-913.2 TOKEN receipts for manual
+    // NO `--bookkeeping` WAIVER, deliberately. That flag waives TOKEN receipts for manual
     // lands; a bookkeeping land still merges real code to main, so waiving the gate receipt would
     // reopen this exact hole behind a flag. Re-gating a finished slice is seconds.
     let mut ungated: Vec<String> = Vec::new();
@@ -163,17 +163,17 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
 
     // The last known-GREEN main. THE REVERT TARGET ONLY — not the gate's diff anchor.
     //
-    // T-946.14: it used to be both, and as the gate's anchor it was wrong the moment main moved
+    // It is not the gate's anchor: that would be wrong the moment main moves
     // after the wave's close marker, which it always does (the command centre commits briefs, a
     // ledger row and its own fixes between the close and the first land). Measured 2026-09-06
-    // landing T-675.1 into wave 241:
+    // landing one slice into wave 241:
     //
     //   gate: base edb4e4e4d starts AFTER this wave opened — refusing to run.
     //           this wave opened at 52a038a77
     //           7 commit(s) of this wave sit OUTSIDE edb4e4e4d..HEAD. touch_changed, wasm32,
     //           fmt and the trunk build would each report PASS/SKIP without reading one of them
     //
-    // That refusal is T-602 working exactly as designed — a gate anchored at pre-merge HEAD reads
+    // That refusal is the base derivation working exactly as designed — a gate anchored at pre-merge HEAD reads
     // only the merge and calls the whole wave green — so the anchor is what has to change, not the
     // check. The gate derives its own base from the close-marker ledger when given none, which is
     // the same base the end-of-wave gate and the close ceremony use. The revert target stays
@@ -199,7 +199,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             .map(|s| s.success())
             .unwrap_or(false);
         if ok {
-            // T-913.2: the merge succeeded — stamp the harness receipt NOW (outcome +
+            // The merge succeeded — stamp the harness receipt NOW (outcome +
             // land sha + finished), before repack_after_land. Land never invents token
             // counts: a bookkeeping ticket without a receipt is skipped, and a receipt
             // that exists but cannot be stamped is a hard stop, not a silent shrug.
@@ -242,7 +242,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     if gate::cmd_gate(ctx, "") != 0 {
         // DO NOT DROP. `slice-worktree drop` is `worktree remove --force` + `branch -D`, so
         // dropping here would destroy the tree and branch of every slice in the wave BEFORE anyone
-        // can see which one broke it — the exact failure the T-181 reap incident (643c5233) was
+        // can see which one broke it — the exact failure the reap incident (643c5233) was
         // fixed to prevent, and which this script originally reproduced by dropping inside the
         // merge loop.
         wprintln!(
@@ -270,7 +270,7 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // T-912.2 lifecycle (a): `wave repack` is land's final mutation, BEFORE the push, so a lock
+    // Lifecycle (a): `wave repack` is land's final mutation, BEFORE the push, so a lock
     // refresh rides the land rather than sitting dirty behind it. Usually a no-op byte-wise —
     // slice branches do not edit ticket files, and every status writer already runs the same
     // writer — but a merged slice that DID move a ticket must not leave `wave check` red on the
@@ -328,7 +328,7 @@ pub(super) fn repack_after_land(ctx: &Ctx) -> u8 {
     0
 }
 
-/// T-913.2: commit the land-stamped run receipts so they ride the land — one commit,
+/// Commit the land-stamped run receipts so they ride the land — one commit,
 /// EXPLICIT paths only (never `-A`), placed before the gate so a later `wave revert` of
 /// the merges rolls the stamps back with them.
 ///

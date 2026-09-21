@@ -21,7 +21,7 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
     };
 
     // Asked and answered once, so the advertised list and the dispatch below cannot disagree —
-    // and so `handles`, the T-894/T-896 chaining seam, is the same predicate callers get.
+    // and so `handles`, the chaining seam, is the same predicate callers get.
     if !handles(&target) {
         return unknown_target(&target);
     }

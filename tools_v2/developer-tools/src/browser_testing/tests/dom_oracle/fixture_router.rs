@@ -93,7 +93,7 @@ fn a_json_fixture_is_served_minified() {
     assert!(!bytes.contains(&b'\n'), "the served body must be one line");
 }
 
-/// The hole this closes: an API call with no fixture used to be answered `{}` + 200, so the page
+/// The hole this closes: answering an API call with no fixture as `{}` + 200 lets the page
 /// rendered a stable error state that the settle loop accepted as a baseline.
 #[test]
 fn an_unanswered_api_call_is_reported_rather_than_filled_in() {

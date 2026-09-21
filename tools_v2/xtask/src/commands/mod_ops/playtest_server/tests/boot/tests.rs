@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn the_launcher_argv_is_the_one_the_engine_needs() {
     // NEVER EXECUTED BY A TEST MACHINE WITHOUT THE ENGINE, so the argv itself is the contract.
-    // Flag ORDER matches `deploy-staging.sh:1659` deliberately.
+    // Flag ORDER matches the staging deploy's deliberately.
     let s = launcher_script("");
     assert!(s.contains("echo $$ > \"$1/server.pid\""));
     assert!(
@@ -14,7 +14,7 @@ fn the_launcher_argv_is_the_one_the_engine_needs() {
     assert!(s.contains("-config \"$1/server.json\""));
     assert!(s.contains("-profile \"$1/profile\""));
     assert!(s.contains("-maxFPS 60 -logStats 30000 -nothrow"));
-    // BOTH flags together. That combination is the entire finding of T-604: `-addonsDir` alone
+    // BOTH flags together. That combination is the entire finding: `-addonsDir` alone
     // registers no room, `-config` alone silently runs the stale Workshop pak.
     assert!(s.contains("-addonsDir") && s.contains("-config"));
 }

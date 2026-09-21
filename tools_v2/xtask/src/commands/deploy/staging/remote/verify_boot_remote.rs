@@ -1,8 +1,8 @@
 use super::*;
 
-/// T-607: assert the boot, do not assume it.
+/// Assert the boot, do not assume it.
 ///
-/// `systemctl restart` exits 0 over a unit that is already dead — the same defect T-289's agent
+/// `systemctl restart` exits 0 over a unit that is already dead — the same defect the agent
 /// selftest exists for. And even a genuinely-running server proves nothing about WHICH mod it
 /// loaded. Until this block existed the deploy's last word was `sleep 8`, after which it printed a
 /// success banner regardless of what the engine did.

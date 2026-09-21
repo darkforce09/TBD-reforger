@@ -2,7 +2,7 @@ use super::*;
 
 use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
 
-/// build-tile-pyramid.sh port: XYZ WebP levels from a full-extent ortho (+full.webp).
+/// XYZ WebP levels from a full-extent ortho (+full.webp).
 #[allow(clippy::too_many_arguments)]
 pub fn build_tile_pyramid(
     input: &Path,

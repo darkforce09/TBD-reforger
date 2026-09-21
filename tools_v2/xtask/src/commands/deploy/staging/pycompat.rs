@@ -1,9 +1,9 @@
-//! python-compatibility helpers for the T-288 render half — split out of [`super::config`] for
+//! python-compatibility helpers for the render half — split out of [`super::config`] for
 //! SIZE-3.
 //!
 //! ── WHY A PORT CARRIES A PYTHON EMULATOR AT ALL ──────────────────────────────────────────────
 //!
-//! `deploy-staging.sh` did its JSON work in `python3` (14 call sites) because "`jq` is NOT
+//! The staging deploy renders JSON here rather than shelling out, because "`jq` is NOT
 //! installed here (measured) and hand-rolled JSON in bash silently emits invalid documents". Those
 //! call sites are gone — `serde_json` is compiled in. But four python behaviours were OBSERVABLE
 //! in the script's output, and a wave log greps that output:

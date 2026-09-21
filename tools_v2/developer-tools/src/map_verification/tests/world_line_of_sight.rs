@@ -1,4 +1,4 @@
-//! Tests for [`super`] — the committed-catalogue pins (T-090.12.3 / .4).
+//! Tests for [`super`] — the committed-catalogue pins.
 
 use std::fs;
 use std::sync::Arc;
@@ -22,11 +22,11 @@ fn assets() -> PathBuf {
     terrain_dir(&crate::repository_paths::test_repo_root(), "everon")
 }
 
-/// The T-090.11.4 door-parity oracle replayed through the WORLD occluder: the committed farmhouse
+/// The door-parity oracle replayed through the WORLD occluder: the committed farmhouse
 /// descriptor (root shell + every architectural instance, furniture dropped as in the compound
 /// pin, doors closed) placed by a synthetic chunk row at a yaw, every local oracle pair mapped
 /// through that row's transform. The chunk-row transform + TLAS + trace pipeline must reproduce
-/// the compound's (4000, 3998, 0, 2) exactly — T-090.12.4 re-blessed from (4000, 3983, 0, 17):
+/// the compound's (4000, 3998, 0, 2) exactly, re-blessed from (4000, 3983, 0, 17):
 /// the projectile layer policy drops the shell's `Building` physics mesh, and 15 of the 17
 /// door-inclusive misses were that mesh disagreeing with the `FireView` fire geometry.
 #[test]
@@ -38,7 +38,7 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     assert_eq!(d.slug, "FarmHouse_E_1L01_Wood");
     let mut d = d;
     d.instances.retain(|i| i.kind != InstanceKind::Furniture);
-    // T-090.12.4 — 133 → 121: the twelve `LightSwitch_02` records sit on the `Prop` preset
+    // 133 → 121: the twelve `LightSwitch_02` records sit on the `Prop` preset
     // (no fire geometry) and left the descriptor with the projectile layer policy.
     assert_eq!(
         d.instances.len(),
@@ -133,7 +133,7 @@ fn cell_18_0_loads_with_no_proxy_rows_and_names_the_farmhouse() {
     assert!(r.blocker.as_ref().is_some_and(|b| b.pid == 132), "{r:?}");
 }
 
-/// The world-parity pins (T-090.12.4): both Workbench oracle cells (4000 seeded pairs each,
+/// The world-parity pins: both Workbench oracle cells (4000 seeded pairs each,
 /// `EPhysicsLayerPresets.Projectile`, `ENTS` column) replayed through `blocked` under the vision
 /// policy on the committed chunks + library, pinned at the measured numbers. Bar: ≥ 98 %.
 /// Measured 2026-09-04 (scale re-export + projectile layer policy): village 18_0 3971/4000

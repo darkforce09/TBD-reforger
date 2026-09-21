@@ -29,7 +29,7 @@ fn an_empty_pgid_is_unknown_never_dead() {
 
 #[test]
 fn a_broken_bridge_probes_unknown_not_dead() {
-    // THE T-608 REGRESSION, at the unit level. `hostrun kill -0 … || return 0` produced `dead`
+    // THE REGRESSION, at the unit level. `hostrun kill -0 … || return 0` produces `dead`
     // here, and that single misreading manufactured both halves of the orphan.
     assert_eq!(probe_group(&unreachable(), "424242"), Probe::Unknown);
 }

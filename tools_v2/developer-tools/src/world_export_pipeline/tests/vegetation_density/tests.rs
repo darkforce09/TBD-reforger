@@ -5,7 +5,7 @@ use website_map_engine::io::density::tbdd::encode_tbdd;
 
 /// The 625 committed everon density tiles (`objects/density/*.bin`), sorted.
 ///
-/// A missing or short corpus is a FAILURE, never a skip: the T-935.5 acceptance is *all 625*
+/// A missing or short corpus is a FAILURE, never a skip: the acceptance is *all 625*
 /// tiles, and "the directory was not there" is the shape of a green run that examined nothing.
 fn everon_density_tiles() -> Vec<std::path::PathBuf> {
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -27,7 +27,7 @@ fn everon_density_tiles() -> Vec<std::path::PathBuf> {
     files
 }
 
-/// T-935.5 main goal — **the 625 committed tiles stay valid byte for byte**.
+/// Main goal — **the 625 committed tiles stay valid byte for byte**.
 ///
 /// Decode each tile with the new `cast_slice` decoder and re-emit it through the *unchanged*
 /// `encode_tbdd`; the result must be the file, byte for byte. This is the independent half of
@@ -86,7 +86,7 @@ fn committed_everon_tiles_survive_decode_then_re_emit_byte_for_byte() {
     );
 }
 
-/// T-935.5 — a synthetic tile emitted through this module's own pipeline (accumulate → blur →
+/// A synthetic tile emitted through this module's own pipeline (accumulate → blur →
 /// slice → `encode_tbdd`) decodes back to exactly the corner values that were sliced, and the
 /// bytes match a header/payload string spelled out independently of `encode_tbdd`.
 #[test]
@@ -170,19 +170,17 @@ fn corner_partition_identity() {
     let (grid, _) = accumulate_corners(pts.iter().copied(), world);
     let sum: u64 = grid.iter().copied().map(u64::from).sum();
     assert_eq!(sum, 1000);
-    // T-597: was `401`. The partition identity above (sum == count) is cell-size agnostic and
-    // was always correct; only this literal was stale. T-176 A2 (`a5940fad9`) took
-    // DENSITY_CELL_M from 32 m to 8 m, so corner_grid_size(12800) went 12800/32 + 1 = 401 to
-    // 12800/8 + 1 = 1601, and this assertion has been RED on every run since.
+    // The partition identity above (sum == count) holds at any cell size; the literal below
+    // is the 8 m one: `corner_grid_size(12800)` is `12800 / 8 + 1 = 1601`.
     //
     // Deliberately an INDEPENDENT literal and not `12800 / DENSITY_CELL_M as usize + 1`:
     // spelling the formula here would just restate `corner_grid_size`'s body, so it would
     // agree with any cell size including a wrong one — an assertion that cannot fail. A flat
-    // 1601 is the thing a reader can check against the T-178 Class-R pin of the same number.
+    // 1601 is the thing a reader can check against the Class-R pin of the same number.
     assert_eq!(corner_grid_size(world), 1601);
 }
 
-/// T-149 — `sample_corners` reads the corner `corner_of` assigns, at the half-open window
+/// `sample_corners` reads the corner `corner_of` assigns, at the half-open window
 /// boundary and outside the world, and never panics on a short grid.
 ///
 /// The oracle is deliberately NOT `grid[corner_of(y)*n + corner_of(x)]` for every case —
@@ -296,7 +294,7 @@ impl Rng {
 fn seeded_random_corner_partition_identity() {
     // The world exporter's chunk side (module doc: corner (i,j) of chunk (cx,cy) sits at
     // `cx*512 + i*DENSITY_CELL_M`). A chunk's corner window has to span exactly one chunk —
-    // that is the relation T-176 A2 moved (32 m → 8 m, so 17 → 65 corners) and that nothing
+    // that is the relation the 8 m cell size sets (32 m → 8 m, so 17 → 65 corners) and that nothing
     // was checking. A flat 512 for the same reason the 1601 above is flat.
     const CHUNK_M: usize = 512;
     let cols = DENSITY_COLS as usize;

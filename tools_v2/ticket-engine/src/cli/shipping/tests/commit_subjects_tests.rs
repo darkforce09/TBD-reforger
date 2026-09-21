@@ -2,7 +2,8 @@ use super::*;
 
 use std::path::PathBuf;
 
-/// The boundary pins: T-90 vs T-902 vs T-90.1 vs T-90.10, dot-segment included, plus the leading
+/// The boundary pins: a two-digit id against a three-digit one and against its own dotted
+/// children, dot-segment included, plus the leading
 /// guard and per-subject dedupe. A loose rule would hand one ticket another ticket's commits.
 #[test]
 fn subject_id_boundary_pins() {
@@ -58,7 +59,7 @@ fn shape_predicates() {
     assert!(!crate::is_sha_shaped("abc123")); // 6 hex — too short
 }
 
-/// Live-repo smoke: the miner reads real history — T-917.1 has subject commits, their dates come
+/// Live-repo smoke: the miner reads real history — a shipped id has subject commits, their dates come
 /// back `Z`-canonical, and the list is oldest-first.
 #[test]
 fn mine_subjects_live_repo_smoke() {

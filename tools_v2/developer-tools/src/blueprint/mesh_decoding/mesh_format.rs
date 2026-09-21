@@ -4,7 +4,7 @@
 //!
 //! Format knowledge: the community-reverse-engineered XOB9 layout as implemented by
 //! Cyrex0/Enfusion-Unpacker (`src/formats/xob_parser.cpp`, itself following
-//! `xob_to_obj.py` from enfusion_toolkit). This is an independent Rust implementation of
+//! the enfusion_toolkit converter). This is an independent Rust implementation of
 //! the documented byte layout; no code was copied.
 //!
 //! Layout (IFF/FORM container, chunk sizes big-endian):
@@ -45,7 +45,7 @@ pub struct XobMesh {
     pub records: Vec<CollRecord>,
 }
 
-/// One COLL collider record's header facts (T-090.11.2). `layer_idx` names the layer
+/// One COLL collider record's header facts. `layer_idx` names the layer
 /// preset (`Building`, `FireView`, `Glass`, `Foliage`, …) and `mesh_idx` the collider mesh
 /// (`UTM_BD_*`), both in the HEAD name space.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -87,14 +87,14 @@ struct Submesh {
  *
  * COLL payload = sequence of collider records, each:
  *   u8 shape_type · u8 0xFF · u16 layer_idx (layer-preset NAME in the HEAD name space:
- *   `Building`, `FireView`, `Glass`, `Foliage`, … — T-090.11.2) ·
+ *   `Building`, `FireView`, `Glass`, `Foliage`, …) ·
  *   rotation 3×3 f32 (row-major) · center 3×f32 · f32 0 · u16 pair (mesh name idx,
  *   first material idx) · u32 0 ·
  *   shape payload:
  *     type 3 (box):     half-extents 3×f32
  *     type 4 (convex):  u16 nverts · u16 nfaces · u16 nedges · u16 nidx · verts nverts×3×f32
  *                       · face/edge tables of 2·nidx·2 + 4·nedges + 4·nfaces bytes (undecoded;
- *                       the hull is rebuilt from the vertices, see `hull.rs`) — a conifer's
+ *                       the hull is rebuilt from the vertices, see the convex-hull module) — a conifer's
  *                       `UCX_C` trunk (10 verts, 208 table bytes) and `UCX_Fol` canopy
  *                       (19 verts, 748 bytes) pin the stride
  *     type 5 (trimesh): u16 nverts · u16 ntris · verts nverts×3×f32 · indices ntris×3×u16
@@ -104,7 +104,7 @@ struct Submesh {
  *                       · verts nverts×3×f32 · indices ntris×3×u16
  * The subrange table is the per-triangle game material: each entry names a
  * `Common/Materials/Game/<stem>.gamemat` (same name space as the node records, see
- * `xob_nodes.rs`) for the run of triangles ending at `last_tri` (inclusive; runs are back
+ * [`super::node_records`]) for the run of triangles ending at `last_tri` (inclusive; runs are back
  * to back from triangle 0) — the farmhouse's record 0 carries nine (tiles_ceramic … brick)
  * ending at 8, 18, 78, …, 1128 for its 1129 triangles. `VOLM` stays unparsed: the layer
  * preset lives in the record header.

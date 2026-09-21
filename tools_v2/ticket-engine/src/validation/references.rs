@@ -6,19 +6,19 @@ use crate::repository::documentation::{
     ARCHIVED_WAVE_PLAN_READERS, SCAN_EXEMPT_PREFIXES, STALE_TICKET_ID_SCAN_ROOTS,
 };
 
-/// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
+/// Parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
 /// the pair:
 ///
 /// - every `children[]` entry must have an on-disk `T-<child>.toml` — with `save_tree`'s
-///   delete pass gone (T-916.2 demoted it to migration/test duty) a mangled `children[]` can
-///   no longer mass-delete files, but a listing without a file was previously INVISIBLE:
+///   delete pass demoted to test duty, a mangled `children[]` can
+///   no longer mass-delete files, and a listing without a file would otherwise be INVISIBLE:
 ///   nothing checked parent↔child at all;
 /// - every child file's `parent` must exist on disk — a removed parent would otherwise strand
 ///   its children as permanently unreachable rows.
 ///
 /// Measured against the live tree 2026-08-14: ZERO violations, so no allowlist. The one
-/// pre-known oddity — T-111 (frozen-unmappable parking) cross-listing T-067.1 — satisfies both
+/// pre-known oddity — a parked program cross-listing another program's child — satisfies both
 /// rules because the file and its parent both exist; only a dotted-extension SHAPE rule would
 /// red it, and that rule deliberately lives in the ops post-image gate (changed programs only),
 /// not here, exactly so frozen history stays green.
@@ -56,12 +56,12 @@ pub(super) fn check_children_integrity(root: &Path) -> Vec<String> {
     errors
 }
 
-/// T-912.2 fossil-path guard: the wave-plan TSVs and their env knobs are dead, and any LIVE
+/// Fossil-path guard: the wave-plan TSVs and their env knobs are dead, and any LIVE
 /// mention of them is a regression vector — a reader quietly retargeted at a file that no longer
 /// exists is exactly the false-green class this program killed. Greps the tracked tree (working
 /// contents, so an uncommitted plant is caught) minus a tight historical allowlist.
 ///
-/// Needles are assembled at runtime, same trick as the T-912.1 `const DEPS` tripwire, so this
+/// Needles are assembled at runtime, like the `const DEPS` tripwire, so this
 /// file's own source cannot satisfy the scan it performs.
 pub(super) fn fossil_needles() -> [String; 3] {
     [

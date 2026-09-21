@@ -8,7 +8,7 @@
 //! applied migration is indistinguishable at boot from rewriting its DDL:
 //!
 //! ```text
-//! Error: migration 21 was previously applied but has been modified
+//! Error: sqlx refuses to boot with a VersionMismatch over an applied, modified migration
 //! ```
 //!
 //! Every database that applied the old bytes refuses to start, including production, and the

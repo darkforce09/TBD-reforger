@@ -121,7 +121,7 @@ pub fn height_labels(root: &Path, terrain: &str) -> Result<u8> {
         println!("  SKIP  G3 named merge — no locations.json");
     }
 
-    // ── Native branch (RESTORED at T-165.4 — was wasm-pkg-gated): declutter + ASL oracle. ──
+    // ── Native branch: declutter + ASL oracle. ──
     let manifest_path = base.join("manifest.json");
     let dem_rel = read_json(&manifest_path)
         .ok()
@@ -276,9 +276,7 @@ pub fn height_labels(root: &Path, terrain: &str) -> Result<u8> {
                     }
                 }
             }
-            println!(
-                "  NOTE  contour index labels: T-152.16 FRESH operator waiver (see .ai/artifacts/t152_16_verify_log.md)"
-            );
+            println!("  NOTE  contour index labels: operator waiver on record");
         }
         _ => println!("  SKIP  ASL oracle — DEM absent (run git lfs pull)"),
     }

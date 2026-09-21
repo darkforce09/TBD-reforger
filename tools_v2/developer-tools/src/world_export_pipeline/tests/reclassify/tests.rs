@@ -64,7 +64,7 @@ fn no_drift_when_rules_match_the_catalogue() {
     assert!(rep.new_kinds.is_empty());
 }
 
-/// RED: this is T-244's exact shape — append a rule, and the committed artifact is stale.
+/// RED: append a rule, and the committed artifact is stale.
 #[test]
 fn appending_a_rule_reports_drift_and_a_new_census_bucket() {
     let (rows, rep) = reclassify_rows(&rules(vec![wreck_rule()]), &committed()).expect("ok");

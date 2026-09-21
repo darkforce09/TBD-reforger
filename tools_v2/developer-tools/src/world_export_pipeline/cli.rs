@@ -1,5 +1,5 @@
-//! `world` — the T-165.8 world-export pipeline CLI (ports of the scripts/map-assets export
-//! lane). Subcommands land through the slice; exit codes mirror the Node scripts.
+//! `world` — the world-export pipeline CLI: every stage that turns a Workbench export into the
+//! committed terrain artifacts, and every gate that verifies one.
 
 use std::process::ExitCode;
 
@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// decode-topo.mjs CLI: section/record stats + per-type histogram
+    /// Report the topo file's sections and records, with a per-type histogram
     TopoStats {
         #[arg(long, default_value = "everon")]
         terrain: String,
@@ -35,29 +35,29 @@ enum Cmd {
         #[arg(long)]
         phase: String,
     },
-    /// validate-export-artifacts.mjs port (cargo run -q -p developer-tools --bin world -- validate-exports)
+    /// Validate the committed export artifacts against their declared shapes
     ValidateExports,
-    /// census-types.mjs port (cargo run -q -p developer-tools --bin world -- census)
+    /// Census the exported world-object types and their classification status
     Census {
         #[arg(long)]
         terrain: String,
     },
-    /// verify-spike-k1.mjs port
+    /// Verify the subregion spike's K1 gate
     SpikeK1 {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// census-spike.mjs port
+    /// Census the subregion spike export
     SpikeCensus {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// verify-spike-ops-log.mjs port
+    /// Verify the subregion spike's operations log
     SpikeOpsLog {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// copy-world-export-profile.mjs port
+    /// Copy a Workbench export profile into the scratch staging tree
     CopyExportProfile {
         #[arg(long, default_value = "everon")]
         terrain: String,
@@ -70,12 +70,12 @@ enum Cmd {
         #[arg(long)]
         meta: Option<String>,
     },
-    /// catalog-sap-cells.mjs port (T-090.1.2 SAP cell index)
+    /// Build the SAP aerial cell index
     SapCatalog {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// raw-u16-to-dem-png.mjs port (T-091.0)
+    /// Repack a raw u16 heightfield into the DEM PNG
     RawU16DemPng {
         #[arg(long)]
         raster: std::path::PathBuf,
@@ -84,7 +84,7 @@ enum Cmd {
         #[arg(long)]
         out: std::path::PathBuf,
     },
-    /// build-world-objects.mjs port
+    /// Partition the staged export into the committed chunk rows, catalogue and density grids
     BuildObjects {
         #[arg(long)]
         terrain: String,
@@ -97,16 +97,16 @@ enum Cmd {
         #[arg(long)]
         ops_log: bool,
     },
-    /// T-176 A2 — re-derive density grids from committed objects (no staging/Workbench). Overwrites
+    /// Re-derive density grids from committed objects (no staging/Workbench). Overwrites
     /// objects/density/*.bin at the current DENSITY_CELL_M with a canopy-blurred tree channel.
     Redensify {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
-    /// T-176 A2 — regenerate the golden S13 density fixture (bin + expectedCorners) at the current
+    /// Regenerate the golden S13 density fixture (bin + expectedCorners) at the current
     /// DENSITY_CELL_M. Run after a cell-size change so `cargo xtask ci schema-validate` (S13) stays green.
     GenDensityFixture,
-    /// T-278 — rebuild the catalogue's classification lane from COMMITTED artifacts + the current
+    /// Rebuild the catalogue's classification lane from COMMITTED artifacts + the current
     /// prefab-classify.json. No Workbench, no staging, no game install. Default is a read-only
     /// drift check that exits 1 when a rule edit has gone latent; `--write` applies it.
     Reclassify {
@@ -119,14 +119,14 @@ enum Cmd {
         #[arg(long)]
         out: Option<PathBuf>,
     },
-    /// verify-phase.mjs port: G1-G12 + P-gates + D/F + E6 determinism
+    /// Run the mathematical phase gate: G1-G12 + P-gates + D/F + E6 determinism
     VerifyPhase {
         #[arg(long)]
         terrain: String,
         #[arg(long)]
         phase: String,
     },
-    /// build-roads-from-topo.mjs port. Dual emission (T-935.6): writes
+    /// Build the road network from the topo file. Dual emission: writes
     /// `objects/roads.json.gz` and `roads/road_network.rkyv`.
     BuildRoads {
         #[arg(long)]
@@ -136,7 +136,7 @@ enum Cmd {
         #[arg(long)]
         ops_log: bool,
     },
-    /// T-935.6 — re-emit `roads/road_network.rkyv` from the committed `objects/roads.json.gz`.
+    /// Re-emit `roads/road_network.rkyv` from the committed `objects/roads.json.gz`.
     ///
     /// The archive half of `build-roads`, without the `.pak` VFS the topo decode needs — so the
     /// binary lane is reproducible from the repo alone rather than only on an export box.
@@ -230,7 +230,7 @@ fn run() -> anyhow::Result<ExitCode> {
             ops_log,
         } => {
             chunk_partitioner::build_roads_from_topo(&terrain, out.as_deref(), ops_log)?;
-            // T-935.6 dual emission. It runs AFTER the JSON write and reads the file that write
+            // Dual emission. It runs AFTER the JSON write and reads the file that write
             // just produced, so the archive is the JSON's centrelined twin by construction — see
             // `roads_emit`'s module docs. Both paths are printed because an operator who only
             // sees one of them cannot tell which lane a stale asset came from.

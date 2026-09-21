@@ -4,13 +4,13 @@ use super::*;
 ///
 /// Union of COMMITTED and WORKING-TREE changes. Diffing the base alone means an agent running the
 /// slice gate before committing gets "no Rust files changed" and a vacuous PASS — observed on both
-/// T-182 and T-185, where the same gate went red the moment the work was committed. A gate that
+/// And the converse, where the same gate goes red the moment the work is committed. A gate that
 /// only works if you already did the right thing is not a gate.
 ///
 /// THE DISTINCTION: a path being LISTED here does not mean it EXISTS. Deletions and renames appear
 /// in both `git diff --name-only` and `git status --porcelain`, and the file they name is gone.
 ///
-/// Callers handle absence differently (T-409 corrected T-406's over-refuse):
+/// Callers handle absence differently:
 ///   * [`fmt_changed`] — deletion-only is a named SKIP (nothing left to format).
 ///   * [`super::super::touch::touch_changed`] — touches the owning crate's Cargo.toml (or `include!`
 ///     consumers) so cargo fingerprints still invalidate; refuses only when nothing at all can be
@@ -57,9 +57,9 @@ pub fn file_edition(f: &str) -> String {
         if manifest.is_file()
             && let Ok(body) = std::fs::read_to_string(&manifest)
         {
-            // `grep -m1 '^edition' | tr -dc '0-9'` — the FIRST line starting with `edition`,
-            // reduced to its digits. `edition.workspace = true` therefore yields the empty
-            // string and the walk continues upward, which is the behaviour that matters.
+            // The FIRST line starting with `edition`, reduced to its digits.
+            // `edition.workspace = true` therefore yields the empty string and the walk
+            // continues upward, which is the behaviour that matters.
             if let Some(line) = body.lines().find(|l| l.starts_with("edition")) {
                 let e: String = line.chars().filter(char::is_ascii_digit).collect();
                 if !e.is_empty() {
@@ -78,7 +78,7 @@ pub fn file_edition(f: &str) -> String {
 /// Format-check ONLY the files this slice changed against main.
 ///
 /// Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`cargo xtask mk rust-fmt` /
-/// `.github/workflows/ci.yml` website-api; T-297 cleaned the tree, T-453 aligned CI). The wave gate
+/// `.github/workflows/ci.yml` website-api). The wave gate
 /// stays diff-scoped so a slice only fails on files it touched — not a substitute for CI `--all`.
 ///
 /// The base defaults to `main...HEAD`, which is correct inside a WORKTREE (the slice gate) and
@@ -86,7 +86,7 @@ pub fn file_edition(f: &str) -> String {
 /// exactly where it mattered most. It hid a real rustfmt violation in `mission_compile.rs` through
 /// five consecutive green wave gates.
 pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
-    // T-492: empty→SKIP must not mask a failed changed_rs (e.g. git_porcelain_paths rc≠0).
+    // empty→SKIP must not mask a failed changed_rs (e.g. git_porcelain_paths rc≠0).
     // wasm_changed / refuse_empty_range already check porcelain rc; these two helpers did not.
     let files = match changed_rs(base) {
         Ok(v) => v,
@@ -119,7 +119,7 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
         }
     }
     // Deletion/rename-only is a legitimate SKIP for rustfmt: there is no source left to format.
-    // T-406 keyed checked==0 as vacuous and refused; T-409 corrected it — the same shape already
+    // Keying checked==0 as vacuous and refusing is wrong — the same shape already
     // stayed green in clippy_changed (crate still resolves and is linted). Silence stays banned:
     // we always name the skip. The vacuous refuse that must NOT return green is elsewhere —
     // clippy with zero resolved crates, touch that invalidated no fingerprint.
@@ -135,11 +135,11 @@ pub fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 
 /// Native `cargo check --workspace` does NOT compile the frontend: `apps/website/frontend/src` is
 /// `#![cfg(target_arch = "wasm32")]`, so a native check walks straight past it and reports PASS on
-/// a file it never looked at. T-188 hit exactly this. Any slice touching the frontend must be
+/// a file it never looked at. Any slice touching the frontend must be
 /// checked for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
 /// The frontend crate directory, and every WORKSPACE crate it depends on, transitively.
 ///
-/// T-946 — THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
+/// THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
 /// both asked "did anything under `apps/website/frontend/` change", but the SPA compiles half the
 /// engine into its own wasm binary. Wave 237 changed `apps/website/map-engine` — a rewritten
 /// `geometry/tbdd.rs` and a dependency that stopped being optional — touched no frontend path, and
@@ -214,7 +214,7 @@ pub fn wasm_scope_touched<'a>(root: &Path, paths: impl Iterator<Item = &'a str>)
 
 pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
     let base = if base.is_empty() { DEFAULT_BASE } else { base };
-    // Same union as fmt_changed, for the same reason. LFS-safe porcelain (T-401).
+    // Same union as fmt_changed, for the same reason. LFS-safe porcelain.
     let wt = match ledger::git_porcelain_paths() {
         Ok(v) => v,
         Err(rc) => return rc,
@@ -228,7 +228,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
         );
         return 0;
     }
-    // checkrun, not hostrun: this IS a cargo check, so it carries the T-421 exposure verbatim. The
+    // checkrun, not hostrun: this IS a cargo check, so it carries the exposure verbatim. The
     // ticket's fix direction names `cargo check --workspace` and the three clippy steps; this line
     // is neither, and leaving it would have left a check step on the shared dir in the one file
     // whose subject is check steps on the shared dir. Same dir as the rest — cargo namespaces by
@@ -250,7 +250,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
     rc
 }
 
-/// T-946.64 — THE SLICE GATE HAD NO TEST STEP AT ALL, AND WAVE 253 PAID FOR IT TWICE.
+/// THE SLICE GATE HAD NO TEST STEP AT ALL, AND WAVE 253 PAID FOR IT TWICE.
 ///
 /// [`super::super::gate::gate_slice`] ran `cargo check`, wasm32, fmt, clippy, schema, the catalogue-drift
 /// probe, two `db_migrate` steps and the `VERIFY_STEPS` loop — every one of which asks "does this
@@ -259,17 +259,17 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// shipped deterministically-failing frontend tests that only the wave-level gate caught, after
 /// the merge:
 ///
-///   * T-937.4's own Class-R probe was DEAD — a test-only helper sat above the production items it
+///   * A Class-R probe can be DEAD — a test-only helper sitting above the production items it
 ///     searched for, so the scrubbed haystack was 46 lines and the assertion could only fail.
-///   * T-938.4 narrowed a value to `f32`, widened five of its OWN goldens `1e-9` → `1e-5`, and left
+///   * A narrowing to `f32` widened five of its OWN goldens `1e-9` → `1e-5`, and left
 ///     the identical assertions in `building_viewer.rs` — a file outside its `owns` — to break.
 ///
 /// Both were deterministic in isolation. Neither slice gate could have seen them, and the fix for
 /// "the gate does not run the tests" is not a longer brief.
 ///
 /// **Scope is [`wasm_scope_touched`] PLUS the SPA's `include_str!`/`include_bytes!` inputs.**
-/// `wasm_scope_touched` walks the SPA's `Cargo.toml` path dependencies, so `map-engine-core` is
-/// inside it — which is precisely how T-938.4's core-crate edit reached a frontend test, and why a
+/// `wasm_scope_touched` walks the SPA's `Cargo.toml` path dependencies, so `website-map-engine` is
+/// inside it — which is precisely how a core-crate edit reaches a frontend test, and why a
 /// literal `apps/website/frontend/` prefix would have missed the very case this step exists for.
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
@@ -294,7 +294,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// first cut and the wave-255 verify caught it. `gate_check_target` is `main_root/target-gate-check`,
 /// and `main_root` is the primary checkout SHARED BY EVERY WORKTREE — so five concurrent slice gates
 /// all build `website-frontend` into one directory. That is the exact condition
-/// [`super::super::gate::cmd_gate`] refuses in so many words: T-193 and T-195 independently measured
+/// [`super::super::gate::cmd_gate`] refuses in so many words: two runs independently measured
 /// `cargo test -p website-frontend` running a stale `website_frontend-<hash>` binary built from
 /// ANOTHER worktree (same package name + version across worktrees = same artifact hash =
 /// clobbering), and the wave gate gives its own frontend step `target-gate-frontend` for it. A
@@ -303,7 +303,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
     let base = if base.is_empty() { DEFAULT_BASE } else { base };
     // Same committed-plus-working-tree union as fmt_changed and wasm_changed, for the same reason:
-    // a slice gate run before committing must not report a vacuous PASS. LFS-safe porcelain (T-401).
+    // a slice gate run before committing must not report a vacuous PASS. LFS-safe porcelain.
     let wt = match ledger::git_porcelain_paths() {
         Ok(v) => v,
         Err(rc) => return rc,
@@ -422,7 +422,7 @@ pub fn realpath_m(p: &Path) -> PathBuf {
 /// Every `.rs` file under the four source roots, for the `grep -rl` sweeps.
 ///
 /// `grep`, not `rg` — rg is container-only (PLATFORM_FACTORY.md Known traps), and the whole point
-/// of T-620 is that a search tool going absent must not read as a clean result. Here the walk is
+/// of the language bans is that a search tool going absent must not read as a clean result. Here the walk is
 /// compiled in, so the tool cannot be absent at all.
 pub(super) fn rs_files_under(roots: &[&str]) -> Vec<PathBuf> {
     let mut v = Vec::new();

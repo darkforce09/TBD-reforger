@@ -1,23 +1,22 @@
 //! `cargo xtask mk <target>` — the Makefile's **build/test lane**, in Rust.
 //!
-//! T-853 Phase 3, slice T-895. Sixteen `make` targets move here byte-for-byte:
+//! Sixteen build targets, byte-for-byte:
 //! `rust-api rust-build rust-test rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
 //! leptos leptos-debug leptos-build leptos-gates ci-local-leptos verify-cargo-target
-//! print-cargo-target-dir reclaim-target-ci`. The Makefile itself is deleted by T-897; this slice
+//! print-cargo-target-dir reclaim-target-ci`. There is no Makefile; this module
 //! only has to make the equivalents exist and be provably identical.
 //!
 //! ── WHERE THE TARGET-DIR PIN LIVES ───────────────────────────────────────────────────────────
 //!
 //! In [`crate::core::cargo_target_directory`], with the two `make` targets that police it. That module is the one
 //! to read before changing anything here: `CARGO_TARGET_DIR` is derived from `git rev-parse
-//! --git-common-dir` so that every linked worktree shares the PRIMARY repo's warm `target/`
-//! (T-253/T-322), and a `.cargo/config.toml` `[env]` with `relative = true` would silently reverse
-//! that.
+//! --git-common-dir` so that every linked worktree shares the PRIMARY repo's warm `target/`, and
+//! a `.cargo/config.toml` `[env]` with `relative = true` would silently reverse that.
 //!
 //! Because the pin is a *value we compute*, it must be **injected into every child cargo**
 //! ([`run_steps`]) rather than left to inheritance: `make` `export`ed it, so its children saw it,
 //! and an `xtask` invoked without it in the environment must reproduce that. The one recipe-level
-//! override is `rust-api`'s private `$(CURDIR)/target-dev-api` (T-322) — the *other* root, and the
+//! override is `rust-api`'s private `$(CURDIR)/target-dev-api` — the *other* root, and the
 //! reason `mk_target_dir` has two.
 //!
 //! ── OUTPUT IS A CONTRACT ─────────────────────────────────────────────────────────────────────
@@ -31,7 +30,7 @@
 //!
 //! 1. `make` collapses every failure to **rc 2** and prints `make: *** [Makefile:N: t] Error C` on
 //!    stderr. Here the child's **raw** exit code is propagated and nothing extra is printed. That
-//!    is [`verification_core::proc`]'s rule (`compile.sh --selftest` passes only on exactly 1), and a
+//!    is [`verification_core::proc`]'s rule (`mod compile --selftest` passes only on exactly 1), and a
 //!    Makefile line number is not something a Makefile-less tree can honestly print.
 //! 2. Composites (`rust-ci`, `leptos-gates`) call Rust functions instead of `$(MAKE) sub-target`,
 //!    so make's `make[1]: Entering/Leaving directory` scaffolding and its `make <target>` echo are

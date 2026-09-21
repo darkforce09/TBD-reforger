@@ -1,7 +1,7 @@
-//! T-889 — port of `scripts/platform/preflight.sh` → `cargo xtask platform preflight`.
+//! `cargo xtask platform preflight`: is this machine set up to run the factory?
 //!
 //! Unattended factory assertions; ANSI ✓ / ✗ BLOCK / ! WARN  + summary match bash.
-//! Disk/memory lines are wall-clock noisy (T-853 §Non-reproducible). `hostrun cargo` is
+//! Disk/memory lines are wall-clock noisy and not reproducible. `hostrun cargo` is
 //! obsolete (build-essential in-container); cargo/ticket/slice-collisions run direct. Host
 //! bridge + API `ss`/`stat`/`date` still use distrobox-host-exec when containerised.
 //! Fixture override: `TBD_PREFLIGHT_ROOT`.
@@ -23,14 +23,14 @@ struct Counters {
     warn: u32,
 }
 
-// ── T-300: THE RUN TARGET'S PROVENANCE ───────────────────────────────────────────────────────
+// ── THE RUN TARGET'S PROVENANCE ──────────────────────────────────────────────────────────────
 //
 // `stray_worktree_targets` above answers "did a worktree build into its own `target/`?" — a disk
 // question. This answers the one that cost wave 1 a day: "is the binary a run lane is about to
 // launch the code that is actually on main?" Cargo cannot answer it. Its `-C metadata` hash does
 // not include the manifest path, so two checkouts of one package write the same artifact and the
 // same uplifted `<profile>/<bin>`, and freshness is mtime-keyed, so the second build is satisfied
-// by the first and prints `Finished` with no `Compiling` line. MEASURED 2026-09-06 (T-300):
+// by the first and prints `Finished` with no `Compiling` line. MEASURED 2026-09-06:
 // a worktree built `UNMERGED-SLICE-CODE`, the main checkout's `cargo run` then printed it.
 //
 // So `cargo xtask platform wave run` writes `tbd-built-from` (`<sha> <checkout>`) beside the

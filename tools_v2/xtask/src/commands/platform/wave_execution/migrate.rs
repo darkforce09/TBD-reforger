@@ -1,4 +1,4 @@
-//! The migration gates: the Class-R pin on 0016's claim body, and T-555's populated-database step.
+//! The migration gates: the Class-R pin on 0016's claim body, and the populated-database step.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -7,7 +7,7 @@ use std::process::{Command, Stdio};
 use super::{Ctx, host, lock::GateState};
 use crate::wprintln;
 
-// T-555 — THE POPULATED-DATABASE MIGRATION STEP. Read this header before changing anything below.
+// THE POPULATED-DATABASE MIGRATION STEP. Read this header before changing anything below.
 //
 // ── WHAT WAS WRONG, AND WHY NO GATE COULD SEE IT ────────────────────────────────────────────────
 //
@@ -17,16 +17,16 @@ use crate::wprintln;
 //
 //   1. EDITING AN ALREADY-APPLIED MIGRATION. sqlx checksums the WHOLE FILE (sha384) and stores it in
 //      `_sqlx_migrations`. Change so much as one comment character and every database that already
-//      ran that file refuses to boot: `migration N was previously applied but has been modified`.
+//      ran that file refuses to boot with a sqlx VersionMismatch over the modified migration.
 //      From empty there is nothing to compare against, so the checksum matches BY CONSTRUCTION.
 //   2. DDL THAT CANNOT SURVIVE REAL ROWS. `CREATE UNIQUE INDEX` on a column pair that already has a
 //      duplicate; `SET NOT NULL` on a column that already has a NULL. From empty there are no rows,
 //      so the DDL applies BY CONSTRUCTION.
 //
-// Both landed. a843905f (T-331) retouched an applied 0009 — comment-only, SQL byte-identical — and
-// killed every existing database. 0017 (T-511) created a unique index over a duplicate seat the
-// pre-T-331 seed had already inserted, and its own header asserted the row had been cleared; T-331
-// had fixed the SEED FILE, which does nothing to data already seeded. EVERY WAVE GATE SINCE T-331
+// Both landed. a843905f retouched an applied 0009 — comment-only, SQL byte-identical — and
+// killed every existing database. 0017 created a unique index over a duplicate seat the
+// seed had already inserted, and its own header asserted the row had been cleared; fixing the
+// SEED FILE does nothing to data already seeded. EVERY WAVE GATE AFTER SUCH A FIX
 // WAS GREEN OVER BOTH — including, on deploy, staging and production. Not a test that examined
 // nothing: a whole category, backward compatibility, that the gate architecture excluded by design.
 //
@@ -82,7 +82,7 @@ use crate::wprintln;
 // The checksum half is absolute: from the second run onward, ANY edit to an applied migration is
 // caught, whatever the data. The DDL half is only ever as good as the rows this database happens to
 // carry, and a VIRGIN persist DB carries only what today's seed inserts. Measured 2026-07-27:
-// bootstrap a fresh persist DB with the current (T-331-fixed) content_golden and the PRE-T-555
+// bootstrap a fresh persist DB with the current content_golden and the older
 // 0017, and it passes — because the fixed seed no longer produces the duplicate seat that 0017 died
 // on. The defect only reproduces on a database that ran the OLD seed, which is what every real
 // database did.

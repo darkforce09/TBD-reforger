@@ -19,7 +19,7 @@ pub(crate) fn write_estimate_file(root: &Path, rec: &EstimateRecord) -> Result<P
 /// Load every existing `estimates/*.json` keyed by filename stem (the placement
 /// identity — check enforces stem == id). Fail-loud: a broken existing file
 /// refuses the run instead of being silently re-planned over. `pub(crate)` since
-/// T-917.6: `stamp-sha` and the strict honesty counters read the same tree.
+/// `stamp-sha` and the strict honesty counters read the same tree.
 pub(crate) fn load_existing(root: &Path) -> Result<BTreeMap<String, EstimateRecord>> {
     let dir = estimates_root(root);
     let mut out = BTreeMap::new();

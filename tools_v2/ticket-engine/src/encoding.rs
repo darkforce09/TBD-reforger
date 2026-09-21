@@ -1,14 +1,14 @@
 //! Encoding C: flat `status = "queued"` plus sibling `order`, custom mapping onto [`Status`].
 //!
-//! T-917.2 (schema v2): `[scope]` is a FLAT table (`domain`/`layer`/`component`/`surface`
-//! — the nested `[scope.website.editor]` tree and its `ScopeFile` plumbing died at the
-//! cutover), and the ticket body decomposed into typed fields. Canonical top-level key
+//! Schema v2: `[scope]` is a FLAT table (`domain`/`layer`/`component`/`surface`; there is no
+//! nested `[scope.website.editor]` tree and no `ScopeFile` plumbing), and the ticket body is
+//! decomposed into typed fields. Canonical top-level key
 //! slots, in emit order (pinned by `v2_keys_land_in_canonical_slots`):
 //!
 //! - `class` after `summary`;
 //! - `plan` after `spec`;
 //! - `context`, `requirement`, `current_state`, `approach`, `verify` after
-//!   `main_goal` (the T-920.1 rename of `user_story` — same slot), before
+//!   `main_goal` (the rename of `user_story` — same slot), before
 //!   `acceptance`;
 //! - `citations` after `acceptance`;
 //! - `estimated` + `estimate_note` after `completed_at`;
@@ -57,7 +57,7 @@ pub struct TicketFile {
         alias = "active_slice"
     )]
     pub active: Option<String>,
-    /// T-920.1 rename (t920 spec Decisions log #1): the on-disk key is `main_goal`;
+    /// Rename (t920 spec Decisions log #1): the on-disk key is `main_goal`;
     /// `user_story` is a parse-time serde alias so every pre-rename git revision
     /// stays readable — render always emits `main_goal`, in the SAME canonical slot
     /// the old key held. `user_story` itself stays listed in the frozen
@@ -81,7 +81,7 @@ pub struct TicketFile {
     pub citations: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shipped_at: Option<String>,
-    /// T-913.1 lifecycle stamps, canonical slot: after `shipped_at` (still a bare commit
+    /// Lifecycle stamps, canonical slot: after `shipped_at` (still a bare commit
     /// SHA — untouched semantics), before the provenance keys. RFC 3339 UTC only;
     /// validated in [`TicketFile::into_ticket`], so a malformed value refuses the tree
     /// instead of being coerced to now.
@@ -135,7 +135,7 @@ fn status_from_file(f: &TicketFile) -> Result<Status, String> {
     }
 }
 
-/// T-913.1: malformed lifecycle stamps are parse errors that NAME the ticket — the load
+/// Malformed lifecycle stamps are parse errors that NAME the ticket — the load
 /// refuses; nothing ever substitutes now.
 fn validate_timestamps(f: &TicketFile) -> Result<(), String> {
     for (field, value) in [
@@ -150,7 +150,7 @@ fn validate_timestamps(f: &TicketFile) -> Result<(), String> {
     Ok(())
 }
 
-/// T-917.2 value validation for the new keys. Safe to parse-enforce (unlike the body
+/// Value validation for the new keys. Safe to parse-enforce (unlike the body
 /// caps): the keys did not exist before v2, so no historical revision can carry them.
 fn validate_v2_fields(f: &TicketFile) -> Result<(), String> {
     if let Some(class) = &f.class
@@ -357,7 +357,7 @@ impl TicketFile {
     }
 }
 
-/// Parse one ticket TOML. **Documented weakening (T-917.2, spec §Scope v2):** a bare
+/// Parse one ticket TOML. **Documented weakening (spec §Scope v2):** a bare
 /// parse is SHAPE-STRICT ONLY — it validates structure (kinds, status data, timestamp
 /// format, class/estimated value sets, surface-requires-component) but NOT scope
 /// legality against `.ai/tickets/scope-vocab.toml`, because a lone parse cannot know

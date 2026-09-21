@@ -1,10 +1,10 @@
-//! T-876 — port of `scripts/mod/setup-mcp-game-root.sh` → `cargo xtask setup mcp-game-root`.
+//! `cargo xtask setup mcp-game-root`: point the MCP bridge at the installed game.
 //!
 //! Builds a flattened pak symlink farm so enfusion-mcp's VFS (which only scans
 //! `<gamePath>/addons/*.pak` directly) can see nested `addons/data/` + `addons/core/` paks.
 //!
 //! Acceptance is bash/port stdout+stderr+rc (+ symlink names/targets) on a clean throwaway
-//! tree and ≥2 broken arms — not a green run alone (T-556 / T-853).
+//! tree and ≥2 broken arms — not a green run alone.
 //!
 //! Preserved oddities:
 //! - Flatten naming is bash `${rel//\//_}` (every `/` → `_`), including preserving `.PAK` case
@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-/// Hardcoded default from former `setup-mcp-game-root.sh` line 11.
+/// The default game root when the operator names none.
 const DEFAULT_GAME: &str = "/home/Samuel/.local/share/Steam/steamapps/common/Arma Reforger";
 
 /// Entry for `xtask setup mcp-game-root [GAME] [FAKE]`.

@@ -1,7 +1,7 @@
 use super::{assert_js_ok, to_code};
 use serde_json::json;
 
-/// T-386 Class-R: `{pass:false}` must fail assert_ok and map to nonzero exit.
+/// Class-R: `{pass:false}` must fail assert_ok and map to nonzero exit.
 #[test]
 fn pass_false_object_fails() {
     let v = json!({"pass": false, "failed": ["W1_reached_editor", "THROWN"]});
@@ -12,7 +12,7 @@ fn pass_false_object_fails() {
     assert_eq!(to_code(assert_js_ok(&v)), 1);
 }
 
-/// T-386 Class-R: `{pass:true}` is the authoritative object pass.
+/// Class-R: `{pass:true}` is the authoritative object pass.
 #[test]
 fn pass_true_object_ok() {
     let v = json!({"pass": true, "checks": {"a": true}});
@@ -20,7 +20,7 @@ fn pass_true_object_ok() {
     assert_eq!(to_code(assert_js_ok(&v)), 0);
 }
 
-/// T-386 Class-R: bare diagnostic object (no `pass`) must FAIL, not pass.
+/// Class-R: bare diagnostic object (no `pass`) must FAIL, not pass.
 #[test]
 fn bare_diagnostic_object_fails() {
     let v = json!({"reached": true, "username": "cpl-authed", "failed": []});

@@ -1,8 +1,8 @@
-//! T-887 — port of `scripts/deploy/backup-drill.sh` → `cargo xtask deploy db drill`.
+//! `cargo xtask deploy db drill`: restore the newest dump into a scratch database and verify it.
 //!
 //! Restore-into-scratch recoverability proof. CREATE/DROP only allow-listed scratch DBs
 //! (`tbd_drill_probe`, etc.). Live `tbd_reforger` is dump SOURCE only — never a restore target
-//! (T-381 via [`crate::commands::deploy::database_operations::refuse_unsafe_restore_target`]).
+//! (via [`crate::commands::deploy::database_operations::refuse_unsafe_restore_target`]).
 //!
 //! Calls `deploy_db_backup` / `deploy_db_restore` in-process.
 

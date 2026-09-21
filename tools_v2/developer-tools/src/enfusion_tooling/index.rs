@@ -1,4 +1,4 @@
-//! T-181.2 — walk a source tree, emit the committed TSV index.
+//! Walk a source tree, emit the committed TSV index.
 //!
 //! Output is TSV on purpose: `rg '^CRF_EGamemodeState\t' crf_symbols.tsv` is instant and
 //! needs no parser, and the files diff cleanly in review.
@@ -136,7 +136,7 @@ pub fn build(root: &Path, out_dir: &Path, prefix: &str) -> Result<Stats> {
         st.rpl_props += scan.rpl_props.len();
     }
 
-    // T-537: same class as apidoc — never stamp header-only TSVs over a committed index.
+    // Same class as apidoc — never stamp header-only TSVs over a committed index.
     super::refuse_empty_write(
         &format!("enf index {prefix}_symbols.tsv"),
         st.symbols == 0,

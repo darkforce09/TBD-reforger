@@ -2,7 +2,7 @@
 
 use super::*;
 
-/// T-383 — shared refuse-empty-write guard (lives under owns so cmds/schema_gates can call it).
+/// Shared refuse-empty-write guard: every generated-document writer goes through it.
 /// A success path must not overwrite committed content with structurally empty / vacuous output.
 pub fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()> {
     if empty {

@@ -1,4 +1,4 @@
-//! Tests for [`crate::commands::platform::slice_worktree`] — T-853.
+//! Tests for [`crate::commands::platform::slice_worktree`].
 //!
 //! Split out of `slice_worktree.rs` purely for size: that file reached 1010 lines, one over
 //! SIZE-3's hard fail, and the seam between a 700-line implementation and 300 lines of tests is
@@ -70,9 +70,9 @@ fn lane_ok(root: &Path, slice: &str, lane: &str) -> bool {
     lane_is_linked(&dst, &root.join("apps/mod").join(lane))
 }
 
-/// T-946 — record a PASS gate verdict for `slice`'s current tip, the way the slice gate would.
+/// Record a PASS gate verdict for `slice`'s current tip, the way the slice gate would.
 ///
-/// `cmd_merge` refuses an ungated branch since T-946 closed the second of the three merge-to-main
+/// `cmd_merge` refuses an ungated branch: it closes the second of the three merge-to-main
 /// paths, so a fixture that merges has to be gated first. That is the guard working: before this,
 /// these fixtures were merging code no gate had examined, which is exactly what they now cannot.
 fn gated(root: &Path, slice: &str) {
@@ -99,7 +99,7 @@ fn pins_the_sed_regex_oddities() {
     assert_eq!(parent_slice("T-181.7.1"), "T-181.7");
     assert_eq!(parent_slice("T-181.7"), "T-181.7");
     // Flat factory ids have no dot and must survive untouched — every live worktree in the real
-    // repo (T-212, T-654, T-673…) is this shape.
+    // repo is this shape.
     assert_eq!(parent_slice("T-181"), "T-181");
     assert_eq!(parent_slice("T-181.7junk"), "T-181.7"); // greedy `.*` tail
     assert_eq!(parent_slice("xT-181.7.1"), "xT-181.7.1"); // `^`-anchored
@@ -205,7 +205,7 @@ fn new_refuses_when_a_required_oracle_is_missing() {
 
 #[test]
 fn merge_refuses_a_slice_no_gate_has_examined() {
-    // T-946 — `platform wave land` was one of THREE doors to main; this is the second, and
+    // `platform wave land` was one of THREE doors to main; this is the second, and
     // `mod wave land` calls it, which makes it the chokepoint both share. Before the guard moved
     // here, a slice could merge with no gate having run on it at all.
     let root = scratch("merge-ungated");
@@ -247,7 +247,7 @@ fn sub_slice_shares_the_parent_tree() {
     // sub-slice id and having the PARENT's tree be what moves.
     commit(&tree(&root, "T-181.7"), "s.txt", "w");
     // The receipt is keyed to the PARENT id, because that is the branch `merge` rewrites to and
-    // therefore the one the gate would have examined (T-946).
+    // therefore the one the gate would have examined.
     gated(&root, "T-181.7");
     let rc = cmd_merge(&root, "T-181.7.1").unwrap();
     assert_eq!(rc, 0, "merge did not rewrite the sub-slice to its parent");
@@ -293,7 +293,7 @@ fn drop_refuses_unmerged_commits_and_force_overrides() {
 
 #[test]
 fn drop_refuses_a_dirty_tree_even_when_nothing_is_unmerged() {
-    // THE T-352 SHAPE EXACTLY: the work all landed (`main..branch` == 0) so Guard A abstains,
+    // THE SHAPE EXACTLY: the work all landed (`main..branch` == 0) so Guard A abstains,
     // and an agent is still writing. Guard A alone was measured SILENT here.
     let root = scratch("dropdirty");
     landed(&root, "T-905");

@@ -1,4 +1,4 @@
-//! T-090.12.1 — `instances-verify --world-row --chunk <cx_cy.json.gz> --prefabs <prefabs.json.gz>`:
+//! `instances-verify --world-row --chunk <cx_cy.json.gz> --prefabs <prefabs.json.gz>`:
 //! the committed chunk row that places the recon's building, composed with every socket
 //! instance, must land each matched child on the recon's absolute `worldPos` within
 //! [`POS_TOL_M`]. That pins the chunk wire v2 transform end to end on the world data itself —

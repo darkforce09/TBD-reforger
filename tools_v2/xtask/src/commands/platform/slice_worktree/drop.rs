@@ -14,7 +14,7 @@ pub(super) fn cmd_drop(root: &Path, slice_arg: &str, third: &str) -> Result<u8> 
     // ── GUARD A: unmerged commits ────────────────────────────────────────────────────────────
     // `git branch -D` below is a FORCE delete, so dropping an unmerged branch leaves its commits as
     // unreferenced objects — recoverable only by someone who thinks to look, which nobody does.
-    // OBSERVED 2026-07-26: the command center landed T-352's first two commits and dropped the
+    // OBSERVED 2026-07-26: the command center landed a slice's first two commits and dropped the
     // worktree, then RESUMED the agent. It found its own worktree and branch gone mid-session, its
     // commits surviving only as loose objects, and had to recreate the branch and restore the tree
     // before it could finish. It reported that rather than losing the work, which is the only
@@ -34,14 +34,14 @@ pub(super) fn cmd_drop(root: &Path, slice_arg: &str, third: &str) -> Result<u8> 
 
     // ── GUARD B: dirty tree. THE ONE THAT ACTUALLY COVERS THE CITED INCIDENT. ─────────────────
     // The bash's own heading: "I PORTED THE WRONG GUARD." Guard A alone would have been SILENT on
-    // T-352 — measured, `main..branch` was 0 at drop time because the work had all landed. What
+    // Measured, `main..branch` was 0 at drop time because the work had all landed. What
     // mattered was never "unmerged commits" but "an agent is still writing here", i.e. a DIRTY TREE.
     // `reap` had that guard all along; the port took one of its three and not the one that applies.
     // Measured live at 1128c1e3 with only Guard A in place:
-    //   T-365  ahead=0  dirty=3  -> would DESTROY 3 UNSTAGED files (not in the object DB)
-    //   T-369  ahead=0  dirty=2  -> would DESTROY 2 staged files
-    // And `wave.sh land` calls this in a loop AUTOMATICALLY, minutes after selecting the slice, with
-    // a merge and a wave gate in between — a resumed agent writing then is the T-352 sequence.
+    //   ahead=0  dirty=3  -> would DESTROY 3 UNSTAGED files (not in the object DB)
+    //   ahead=0  dirty=2  -> would DESTROY 2 staged files
+    // And `platform wave land` calls this in a loop AUTOMATICALLY, minutes after selecting the slice, with
+    // a merge and a wave gate in between — a resumed agent writing then is the sequence.
     if !forced && abs_dir.is_dir() {
         let st = status_of(&abs_dir)?;
         // ── FAIL-OPEN CLOSED (3 of 3) ────────────────────────────────────────────────────────
@@ -145,7 +145,8 @@ pub(super) fn cmd_reap(root: &Path) -> Result<u8> {
         let range = format!("main..{b}");
         let commits = count(&gp(root, &["rev-list", "--count", &range])?);
         // `--grep="slice/$s\$"` — a git BRE with an end anchor. The `.` in a sub-slice id is an
-        // any-char wildcard there (`slice/T-181.7$` also matches `slice/T-181x7`); passed through
+        // any-char wildcard there (a dotted branch pattern also matches one with any character
+        // in the dot's place); passed through
         // unchanged so git applies exactly the semantics the bash got.
         let grep = format!("--grep=slice/{s}$");
         let log = gp(root, &["log", "main", "--merges", "--oneline", &grep])?;

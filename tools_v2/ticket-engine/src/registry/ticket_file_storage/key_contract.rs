@@ -33,7 +33,7 @@ pub const FROZEN_27: &[&str] = &[
     "acceptance",
 ];
 
-/// T-911.2 mapped encoding-C key set — every top-level key `TicketFile` carried at the
+/// Mapped encoding-C key set — every top-level key `TicketFile` carried at the
 /// typed cutover, in canonical spelling (`slices` / `active_slice` are parse-time serde
 /// aliases and never appear on disk). FROZEN: a new ticket key goes in [`ALLOWED_NEW`],
 /// never here.
@@ -63,17 +63,17 @@ pub const ENCODING_C_KEYS: &[&str] = &[
     "scope",
 ];
 
-/// T-913.1 deliberate widen: the ONLY keys legal on disk beyond [`ENCODING_C_KEYS`].
+/// Deliberate widen: the ONLY keys legal on disk beyond [`ENCODING_C_KEYS`].
 /// Inventing a ticket key means adding it here AND to `TicketFile` AND to
 /// `.ai/tickets/schema.json` in one commit that says so —
 /// `on_disk_keys_are_mapped_or_allowed_new` stays red until you do.
 ///
-/// T-917.2 widen (schema v2, one governance commit with `TicketFile` + schema.json):
+/// Widen (schema v2, one governance commit with `TicketFile` + schema.json):
 /// `class`, `plan`, the five body lists, `citations`, the provenance pair
 /// `estimated`/`estimate_note`, and the wall-quarantine target `migration_legacy`.
 /// The flat `[scope]` shape rides the frozen `scope` key.
 ///
-/// T-920.1 widen: `main_goal` — the rename of `user_story` (t920 spec Decisions log
+/// Widen: `main_goal` — the rename of `user_story` (t920 spec Decisions log
 /// #1). `user_story` STAYS in the frozen [`ENCODING_C_KEYS`] as history: on-disk
 /// keys must be a SUBSET of the union, and a vanished key is legal — the 50-carrier
 /// migration emptied the spelling from the live tree, while old git revisions still

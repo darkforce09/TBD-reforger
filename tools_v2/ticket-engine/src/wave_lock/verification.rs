@@ -21,7 +21,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
         ));
     }
 
-    // T-914: the recorded ledger base must match a fresh derivation from git history. A close
+    // The recorded ledger base must match a fresh derivation from git history. A close
     // marker landing (or the newest one being disavowed) without a repack leaves every open
     // wave labeled off the old base — this error is what drives the close → check-red → repack
     // loop. Deliberately NOT a contiguity rule: beyond the strictly-increasing check below,
@@ -44,7 +44,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     };
 
     // Wave numbering: strictly increasing, wave 0 first when present, no duplicate n —
-    // across the UNION of open-wave labels and pending emptied labels (T-925). Emptied
+    // across the UNION of open-wave labels and pending emptied labels. Emptied
     // labels are RESERVED numbers sitting between wave_base and the open waves (the packer
     // numbers open waves past them), so the one legal ascending order is wave 0, then every
     // pending emptied label, then every open wave; a collision or inversion anywhere in
@@ -180,7 +180,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
         }
     }
 
-    // ── T-925: the pending [[emptied]] section — repack-recorded close targets ──────────────
+    // ── The pending [[emptied]] section — repack-recorded close targets ─────────────────────
     // Like the wave-0 baseline, entries CARRY from the previous lock at repack time (the
     // frozen {label, ticket set} of an open wave whose every ticket had shipped) and CANNOT be
     // recomputed from scratch here — at check time there is no previous lock to read, only the
@@ -225,7 +225,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
         }
     }
     if let Some(want_base) = derived_base {
-        // T-946: recompute with the SAME floor the packer used, or `check` reds on a lock that
+        // Recompute with the SAME floor the packer used, or `check` reds on a lock that
         // is correct — the carry rule now seats pending labels on the marker ledger.
         let want_floor = ledger_floor(root, want_base).unwrap_or(want_base);
         let want = carry_emptied(Some(&lock), &views, want_base, want_floor);

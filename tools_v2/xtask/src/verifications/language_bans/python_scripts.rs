@@ -1,11 +1,11 @@
-//! T-904 — LANG-2 is the same `TrackedLanguageBan` table as LANG-1.
+//! LANG-2 is the same `TrackedLanguageBan` table as LANG-1.
 //!
 //! `cargo xtask verify no-python` stays as a CI alias so job names in `ci.yml` / `mk_ci_tasks`
 //! / the wave gate do not break. It does **not** keep a second ratchet that can disagree with
 //! `verify no-shell`. Inventories are gone.
 //!
-//! Historical: T-882 ported `scripts/verify-no-python.sh`; T-620 made that script fail-closed
-//! after four waves of `rg || true`. T-904 folds the `.py` / `python3` command-position ban into
+//! The ban is fail-closed: a search tool that cannot run is a FAIL, never a clean tree. It folds
+//! the `.py` and `python3` command-position ban into
 //! `tools_v2/xtask/src/verifications/language_bans/shell_scripts.rs`.
 
 use anyhow::Result;

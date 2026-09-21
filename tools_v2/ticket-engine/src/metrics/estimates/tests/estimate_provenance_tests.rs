@@ -238,7 +238,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
         t1,
         "{\n  \"derived_from_shas\": [\n    \"aaaa111122223333\"\n  ],\n  \"factor\": 150,\n  \"generated_at\": \"2026-08-15T00:00:00Z\",\n  \"id\": \"T-001\",\n  \"loc_changed\": 10,\n  \"source\": \"diff_loc\",\n  \"tokens_estimated\": 1500\n}\n"
     );
-    // T-004: L0 cohort (chore, repo, docs) has exactly the 3 members
+    // The L0 cohort (chore, repo, docs) has exactly the 3 members
     // 1500/3000/4500 → median 3000, full key recorded.
     let t4: EstimateRecord = serde_json::from_str(
         &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-004.json"))).unwrap(),
@@ -254,7 +254,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
             layer: Some("docs".into()),
         })
     );
-    // T-006: (feature, website, backend) empty → (feature, website) 1 →
+    // The widening cohort: (feature, website, backend) empty → (feature, website) 1 →
     // (feature) 1 → all 4 members {1500,3000,4500,6000} → 3750, key {}.
     let t6: EstimateRecord = serde_json::from_str(
         &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-006.json"))).unwrap(),
@@ -271,14 +271,14 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
         }),
         "the WIDENED key actually used is the all-key"
     );
-    // T-007 fell through: cohort_median in its (chore, repo, docs) cohort.
+    // The fall-through ticket: cohort_median in its (chore, repo, docs) cohort.
     let t7: EstimateRecord = serde_json::from_str(
         &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-007.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(t7.source, "cohort_median");
     assert_eq!(t7.tokens_estimated, 3000);
-    // T-008 (class-less program): straight to the all-key.
+    // The class-less program: straight to the all-key.
     let t8: EstimateRecord = serde_json::from_str(
         &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-008.json"))).unwrap(),
     )
@@ -291,14 +291,14 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
             layer: None
         })
     );
-    // T-008.1 (zero-subject child WITH class+scope): its own L0 cohort.
+    // The zero-subject child WITH class+scope: its own L0 cohort.
     let t81: EstimateRecord = serde_json::from_str(
         &fs::read_to_string(root.join(format!("{ESTIMATES_DIR}/T-008.1.json"))).unwrap(),
     )
     .unwrap();
     assert_eq!(t81.tokens_estimated, 3000);
     assert_eq!(t81.cohort_size, Some(3));
-    // T-009 (receipt): NO estimate file, NO marker.
+    // The ticket with a receipt: NO estimate file, NO marker.
     assert!(!root.join(format!("{ESTIMATES_DIR}/T-009.json")).exists());
 
     let reread = Corpus::load(&root).expect("reload");
@@ -494,7 +494,7 @@ fn business_rules_red() {
         errs.iter().any(|e| e.contains("RFC 3339")),
         "semantic timestamp rule must fire past the pattern floor: {errs:?}"
     );
-    // Stem mismatch (file T-002.json carrying id T-001).
+    // Stem mismatch (a file whose name is not the id inside it).
     fs::remove_file(dir.join("T-001.json")).unwrap();
     fs::write(dir.join("T-002.json"), diff_json("T-001", 150, 1500, NOW)).unwrap();
     let errs = check_as_errors(&root);
@@ -572,7 +572,7 @@ fn summarize_by_agent_on_mixed_tree_equals_receipts_only() {
         "2026-08-14T01:20:00Z",
         "2026-08-14T01:20:30Z",
     );
-    // T-003 has NO receipt → a huge cohortless diff_loc estimate instead.
+    // The receiptless ticket → a huge cohortless diff_loc estimate instead.
     let mut subjects: BTreeMap<String, Vec<SubjectCommit>> = BTreeMap::new();
     subjects.insert("T-003".into(), vec![sc("aaaa111122223333")]);
     let sha_loc: BTreeMap<String, u64> = [("aaaa111122223333".to_string(), 6667)]
@@ -607,7 +607,7 @@ fn summarize_by_agent_on_mixed_tree_equals_receipts_only() {
 }
 
 /// Live-repo smoke: the batched numstat pass reads real history, and the
-/// exclusion rule holds against a known commit — T-917.1's oldest subject
+/// exclusion rule holds against a known commit — the oldest subject
 /// commit (64c054a6…) touched `.ai/tickets/scope-vocab.toml` (excluded) AND
 /// xtask sources (included), so its included LOC is strictly positive.
 #[test]

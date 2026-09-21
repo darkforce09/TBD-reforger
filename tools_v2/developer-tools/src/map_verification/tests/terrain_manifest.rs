@@ -153,7 +153,7 @@ fn a_row_shape_this_build_cannot_read_is_refused() {
     assert!(errs.iter().any(|e| e.contains("{cx}")), "{errs:?}");
 }
 
-/// ACCEPTANCE: T-935.13 cutover — everon declares objects + labels + buildings (not dem.raw,
+/// ACCEPTANCE: everon declares objects + labels + buildings (not dem.raw,
 /// not water: those emitters did not run). Every named path must resolve.
 #[test]
 fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {

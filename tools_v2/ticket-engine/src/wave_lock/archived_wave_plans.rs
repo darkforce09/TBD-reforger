@@ -1,12 +1,12 @@
-//! T-912.2 — the ONE file allowed to name the dead wave-plan TSVs.
+//! The ONE file allowed to name the dead wave-plan TSVs.
 //!
 //! `.ai/tickets/wave.lock` replaced both hand-kept TSVs, and `ticket check` carries a
 //! fossil-path guard that reds ANY live mention of them outside a tight historical allowlist.
 //! This module is on that allowlist, for two jobs that are genuinely about the past:
 //!
 //!   1. HISTORY READS. The wave-gate's ticket-ledger oracle corroborates a derived wave-close
-//!      boundary by reading the plan AT THAT BOUNDARY'S PARENT via `git show` (T-618: the
-//!      checkout is not evidence). Every boundary before the T-912.2 cutover has a TSV there
+//!      boundary by reading the plan AT THAT BOUNDARY'S PARENT via `git show` (the
+//!      checkout is not evidence). Every boundary before the cutover has a TSV there
 //!      and no lock; refusing to read it would demote every historical close from
 //!      "corroborated" to "demand operator confirmation" — a regression in the exact machinery
 //!      this program must keep working. History is immutable and TSV-shaped; a reader of
@@ -77,10 +77,10 @@ fn parse_rows(text: &str) -> Vec<(String, String)> {
 /// Tickets a HISTORICAL plan blob assigns to wave `n` at revision `rev`, accepting both label
 /// spellings (`77` and `w77`).
 ///
-/// The `w`-prefix strip is NOT style tolerance (T-616 note carried over from the deleted
-/// working-tree reader): T-616 normalised the WORKING TREE, and this reads history exclusively —
+/// The `w`-prefix strip is NOT style tolerance: a normalisation of the WORKING TREE leaves the
+/// committed revisions alone, and this reads history exclusively —
 /// every revision at or before wave 79's close still spells those rows `w76`…`w79`, because
-/// that is what was committed. Delete the strip and every pre-T-616 wave close becomes
+/// that is what was committed. Delete the strip and every `w`-prefixed wave close becomes
 /// unverifiable in one commit.
 pub fn tickets_at(root: &Path, rev: &str, n: i64) -> Vec<String> {
     let want = n.to_string();

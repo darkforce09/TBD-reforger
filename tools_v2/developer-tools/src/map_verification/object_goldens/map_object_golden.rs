@@ -32,7 +32,7 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
         ("prop", "propClass"),
         ("utility", "utilityClass"),
         ("water", "waterClass"),
-        // T-244. Arms S3 (≥1 golden example for the kind) and, via the entry below, S9 (one
+        // Arms S3 (≥1 golden example for the kind) and, via the entry below, S9 (one
         // golden example per vehicleClass). Both are backed by real Everon wreck prefabs.
         ("vehicle", "vehicleClass"),
     ]);
@@ -421,8 +421,8 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
         &mut gates,
     )?;
 
-    // S15 — T-935.12. Read as BYTES, and a missing or unreadable golden is a FAIL rather than a
-    // silently skipped sub-gate: T-975 is exactly that bug on the density fixture next door.
+    // S15. Read as BYTES, and a missing or unreadable golden is a FAIL rather than a
+    // silently skipped sub-gate: a skip on a missing fixture hides the defect entirely.
     {
         let p = mo(&["map-object-chunk-sample.bin"]);
         let errs = match fs::read(&p) {

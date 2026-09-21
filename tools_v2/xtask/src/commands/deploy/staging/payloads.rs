@@ -53,7 +53,7 @@ pub fn profile_payload(env: &Env) -> String {
 /// These hit the game-server REST routes (`/api/missions/:id/compiled`,
 /// `/api/game/.../roster`). Those existed only in the Phase-0 REST spike backend, since removed —
 /// the current backend serves `/api/v1` only, so these curls 404 and would abort the deploy.
-/// BLOCKED on T-092. Skipped by default; `TBD_RUN_T092_SMOKE=1` forces the gate.
+/// Skipped by default; `TBD_RUN_T092_SMOKE=1` forces it anyway.
 pub fn smoke_payload(env: &Env) -> String {
     format!(
         "set -euo pipefail\n\

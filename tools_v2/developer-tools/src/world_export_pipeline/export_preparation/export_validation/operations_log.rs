@@ -1,6 +1,10 @@
 use super::*;
 use crate::repository_layout::{export_operations_log, map_scratch_dir};
 
+/// The export stage this gate accepts an operations log from: the subregion spike, whose log
+/// carries the K-gate verdicts and the sampled rows the checks below read.
+const SPIKE_SLICE: &str = "spike-subregion-export";
+
 pub fn verify_spike_ops_log(terrain: &str) -> Result<u8> {
     let root = repo_root();
     let ops_path = export_operations_log(&root, terrain);
@@ -71,8 +75,8 @@ pub fn verify_spike_ops_log(terrain: &str) -> Result<u8> {
     if ops.get("terrainId").is_some() && ops["terrainId"] != terrain {
         fail.push(format!("terrainId {} !== {terrain}", ops["terrainId"]));
     }
-    if ops.get("slice").is_some() && ops["slice"] != "T-090.3.0" {
-        fail.push(format!("slice {} !== T-090.3.0", ops["slice"]));
+    if ops.get("slice").is_some() && ops["slice"] != SPIKE_SLICE {
+        fail.push(format!("slice {} !== {SPIKE_SLICE}", ops["slice"]));
     }
     if ops.get("subregionBBoxM").is_some()
         && !(ops["subregionBBoxM"]

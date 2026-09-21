@@ -1,6 +1,6 @@
-//! T-894 acceptance harness — `cargo xtask db selftest`.
+//! Acceptance harness — `cargo xtask db selftest`.
 //!
-//! T-556 (anti-vacuity): **a passing run is not evidence.** Every arm below either compares the
+//! Anti-vacuity: **a passing run is not evidence.** Every arm below either compares the
 //! port against the thing it replaces on a tree where BOTH can run, or proves that the bash side
 //! goes red (or, worse, wrongly green) on a deliberately broken one. An arm that cannot reach its
 //! subject reports [`Verdict::DidNotRun`], which [`Report::finish`] ranks ABOVE a violation — a
@@ -12,7 +12,7 @@
 //! |---|---|---|
 //! | 1 frozen baseline | the port's rendered recipes vs text captured from `make -n` on 2026-08-12 | the baseline is a separate literal; drift in either direction fails |
 //! | 2 Makefile pin | the LIVE `Makefile` recipe bodies vs the same renderers | any edit to the recipes fails the arm until the port follows |
-//! | 3 T-381 refusal | `TBD_IT_BASE_DB=tbd_reforger cargo xtask db test-it` | asserts rc≠0 AND that `tbd_reforger` still exists afterwards |
+//! | 3 allow-list refusal | `TBD_IT_BASE_DB=tbd_reforger cargo xtask db test-it` | asserts rc≠0 AND that `tbd_reforger` still exists afterwards |
 //! | 4 reap | two `<base>_<suite>_it` databases really disappear | asserts they EXISTED first, and that an unrelated database survives |
 //! | 5 reap fail-open | the Makefile's own pipeline against a dead container | asserts **bash exits 0** there (reaping nothing) while the port fails |
 //! | 6 compose parity | `make db-up` vs `cargo xtask db up`, byte-for-byte | plus a missing-compose-file arm that must fail IDENTICALLY on both sides |
@@ -53,7 +53,7 @@ use crate::commands::deploy::database_operations as dbc;
 use crate::core::repository_root::find_repo_root;
 
 /// Captured from `make -n` at the repo root on 2026-08-12, before a single line of the port
-/// existed. This is the baseline the whole slice is measured against; it stays here after T-897
+/// existed. This is the baseline the whole lane is measured against; it stays here with no Makefile
 /// deletes the Makefile, which is the point — arm 2 dies with the file, arm 1 does not.
 const BASELINE: &[(&str, &[&str])] = &[
     (
@@ -107,7 +107,7 @@ const ARM4_BASE: &str = "tbd_gate_selftest_arm4";
 
 pub fn run() -> Result<u8> {
     let root = find_repo_root()?;
-    let mut report = Report::new("T-894 db lane");
+    let mut report = Report::new("db lane");
     report.check(arm_frozen_baseline());
     report.check(arm_makefile_pin(&root));
     report.check(arm_live_database_refusal());
@@ -358,7 +358,7 @@ fn arm_reap_fail_open() -> Verdict {
 
 fn arm_compose_parity(root: &Path) -> Verdict {
     if !root.join("Makefile").is_file() {
-        println!("arm 6 SKIPPED — no Makefile (T-897 deleted it); nothing left to diff against");
+        println!("arm 6 SKIPPED — no Makefile in the tree; nothing left to diff against");
         return Verdict::Held;
     }
     let scratch = root.join("target-mk-db-selftest");

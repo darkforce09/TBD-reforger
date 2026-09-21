@@ -1,6 +1,6 @@
 use super::*;
 
-/// smoke_arsenal_editor.mjs — T-159.27 Arsenal loadout tab (R1–R5, registry golden intercepted).
+/// Arsenal loadout tab (R1–R5, registry golden intercepted).
 pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
     const M16A2: &str = "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et";
     let h = Harness::new(dist, 5314, 9374, None, None, &[]).await?;
@@ -31,7 +31,7 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
             );
             eval(&h.page, "[...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Arsenal').click()").await?;
 
-            // R2 (T-172 B10) — registry resolved → the Forge layout: 14-region rail + the item
+            // R2 — registry resolved → the Forge layout: 14-region rail + the item
             // list for the default-active Primary region.
             checks.insert(
                 "r2_registryFetched".into(),
@@ -110,7 +110,7 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
                 json!(h.page.wait_for("!JSON.parse(window.__editorCommands.compile_save_json()).editor.slots.some(s => s.loadout)", 20, 250).await?),
             );
 
-            // R6 (T-167 compat / T-172 Forge) — R5's undo bumped `doc_tick`, which re-creates the
+            // R6 (compat optic in the Forge layout) — R5's undo bumped `doc_tick`, which re-creates the
             // modal body and resets the tab to Identity; re-open the Arsenal tab, re-pick primary
             // from the item list, then the compat PANEL lists the edge's ACOG under OPTIC; click
             // it → saved weapons[0] carries `optic`.
@@ -167,10 +167,10 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
                 json!(h.page.wait_for("(() => { const s=(JSON.parse(window.__editorCommands.compile_save_json()).editor?.slots||[]).find(s=>s.loadout); return !!(s && s.loadout.weapons && s.loadout.weapons[0] && s.loadout.weapons[0].optic) })()", 40, 250).await?),
             );
 
-            // R7 (T-172 B10 — 3D doll) — the DollEngine canvas mounts (long wait: SwiftShader
+            // R7 (3D doll) — the DollEngine canvas mounts (long wait: SwiftShader
             // create is slow headless); its window hooks report a live backend, the active-region
             // anchor projects, and a CPU pick at that anchor resolves a region. If create failed
-            // (no GL at all), the SVG paper-doll fallback must be up instead — the T-154 contract.
+            // (no GL at all), the SVG paper-doll fallback must be up instead — the fallback contract.
             let doll_3d = h
                 .page
                 .wait_for(

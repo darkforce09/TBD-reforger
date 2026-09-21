@@ -1,10 +1,10 @@
-//! T-859 — port of `scripts/mod/manual-test.sh` → `cargo xtask mod manual-test`.
+//! `cargo xtask mod manual-test`: the operator-driven mod arms.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
+//! Path pins:
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`.
 //!
 //! PASS/FAIL/SKIP accounting and `== section ==` banners match bash byte-for-byte.
-//! On the live tree this gate ships **red** (legacy Go restspike + npm schema + missing
+//! On the live tree this gate ships **red** (an upstream Go restspike + npm schema + missing
 //! missions / mcp.json / GAME_SERVER_TOKENS) — acceptance is the bash/port diff, not green.
 //!
 //! Fail-opens closed vs bash:
@@ -44,7 +44,7 @@ pub(crate) struct Paths {
 }
 
 impl Paths {
-    /// Reproduce `scripts/mod/lib/paths.sh` against an already-resolved monorepo root.
+    /// Resolve the path pins against an already-resolved monorepo root.
     fn from_root(root: &Path) -> Self {
         Self {
             mono_root: root.to_path_buf(),

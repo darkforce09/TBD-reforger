@@ -3,7 +3,7 @@ use crate::commands::deploy::staging::config::tests::base;
 
 #[test]
 fn legacy_mods_render_matches_the_captured_bytes() {
-    // Diffed against /tmp/t853/ro-legacy.json.old: python json.dumps(indent=2) then every
+    // Diffed against a captured render: two-space JSON indent then every
     // line after the first gets four extra spaces, so `[` sits flush after `"mods": `.
     let e = base();
     let mut mod0 = Map::new();
@@ -59,7 +59,7 @@ fn every_fail_closed_branch_fires() {
 
 #[test]
 fn validator_catches_the_truncated_scenario_and_the_port_clash() {
-    // The two cases the bash validator was BLIND to before T-607 and T-288 respectively.
+    // The two cases a format-only validator is BLIND to.
     let d = std::env::temp_dir().join(format!("tbd-t853-cfg-{}", std::process::id()));
     let _ = fs::create_dir_all(&d);
 
@@ -136,7 +136,7 @@ fn curl_argv_is_stable() {
 
 #[test]
 fn modpack_url_without_a_token_fails_before_any_network_call() {
-    // The credential tier T-288 documented: TBD_GAME_SERVER_TOKEN is a SERVICE_TOKEN and does
+    // The credential tier: TBD_GAME_SERVER_TOKEN is a SERVICE_TOKEN and does
     // not authenticate an AuthUser route, so an empty TBD_MODPACK_TOKEN must fail closed here
     // rather than produce a 401 nobody reads.
     let mut e = base();

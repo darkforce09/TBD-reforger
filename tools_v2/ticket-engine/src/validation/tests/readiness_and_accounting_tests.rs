@@ -1,7 +1,7 @@
 use super::*;
 
-/// T-920.1 / T-922 — the ready-tier body rule: live tree green (ready-class plus
-/// shipped after the T-922 drain); a planted ready or shipped work ticket with
+/// The ready-tier body rule: live tree green (ready-class plus
+/// shipped after the drain); a planted ready or shipped work ticket with
 /// the six fields empty reds NAMING EACH missing field; the quarantine exemption
 /// and the queued tier stay green.
 #[test]
@@ -74,7 +74,7 @@ fn ready_tier_body_red_green_and_quarantine_exempt() {
         check_ready_tier_body(&tmp).is_empty(),
         "queued is exempt from the ready tier"
     );
-    // T-922 zeroing: shipped joins this rule. Empty-bodied shipped reds;
+    // Zeroing: shipped joins this rule. Empty-bodied shipped reds;
     // quarantine exemption still holds; filled shipped is green.
     let shipped = |extra: &str| {
         format!(
@@ -114,7 +114,7 @@ fn ready_tier_body_red_green_and_quarantine_exempt() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-920.1 — the pin growth verdict: equality is silent; growth blames the
+/// The pin growth verdict: equality is silent; growth blames the
 /// offender (never the pin); below-pin stays green HERE because check runs on
 /// arbitrary roots (a 4-ticket scratch measures 0 against the live pin) — the
 /// shrink direction is the store ratchet tests' exact-equality red, on the live
@@ -137,7 +137,7 @@ fn debt_pin_growth_verdict() {
     );
 }
 
-/// T-917.6 — the strict honesty counters over a scratch fixture whose numbers are
+/// The strict honesty counters over a scratch fixture whose numbers are
 /// hand-computable: 4 shipped — one receipted+measured, one diff_loc-estimated
 /// (git_subject stamps), one cohort_median-estimated (id_interpolation stamps),
 /// one measured-stamps with a receipt missing tokens accounting entirely (the
@@ -150,12 +150,12 @@ fn honesty_counters_fixture_math() {
             "id = \"{id}\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"shipped\"\norder = 10\nshipped_at = \"abcdef12\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n{extra}\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
         )
     };
-    // T-001: receipt, measured stamps.
+    // The first fixture ticket: receipt, measured stamps.
     fs::write(dir.join("T-001.toml"), shipped("T-001", "")).unwrap();
     let rdir = tmp.join(crate::repository::METRICS_DIR).join("T-001");
     fs::create_dir_all(&rdir).unwrap();
     fs::write(rdir.join("r.json"), "{}").unwrap();
-    // T-002: diff_loc estimate, git_subject-mined stamps.
+    // The second: diff_loc estimate, git_subject-mined stamps.
     fs::write(
             dir.join("T-002.toml"),
             shipped(
@@ -164,7 +164,7 @@ fn honesty_counters_fixture_math() {
             ),
         )
         .unwrap();
-    // T-003: cohort_median estimate, interpolated stamps (no git_subject token).
+    // The third: cohort_median estimate, interpolated stamps (no git_subject token).
     fs::write(
             dir.join("T-003.toml"),
             shipped(
@@ -173,7 +173,7 @@ fn honesty_counters_fixture_math() {
             ),
         )
         .unwrap();
-    // T-004: measured stamps, NO accounting (counted 0/0 — the gate rule reds it).
+    // The fourth: measured stamps, NO accounting (counted 0/0 — the gate rule reds it).
     fs::write(dir.join("T-004.toml"), shipped("T-004", "")).unwrap();
     // A queued ticket must not count anywhere.
     fs::write(
@@ -207,8 +207,8 @@ fn honesty_counters_fixture_math() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-916.2: the referential-integrity rule. The live tree must be green (measured: zero
-/// violations, T-111→T-067.1 included — file and parent both exist); a children[] entry
+/// The referential-integrity rule. The live tree must be green (measured: zero
+/// violations, the cross-listed child included — file and parent both exist); a children[] entry
 /// without a file and a child whose parent file is missing must each go red naming BOTH
 /// ids; restoring the files restores green.
 #[test]
@@ -239,7 +239,7 @@ children = [
     };
     fs::write(dir.join("T-009.toml"), program).unwrap();
     fs::write(dir.join("T-009.1.toml"), child("T-009.1", "T-009")).unwrap();
-    // T-009.2 listed but missing on disk → red naming lister and child.
+    // A child listed but missing on disk → red naming lister and child.
     let errs = check_children_integrity(&tmp);
     assert_eq!(
         errs,
@@ -274,7 +274,7 @@ children = [
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-913.1: a malformed lifecycle stamp is a parse error that names the ticket — the
+/// A malformed lifecycle stamp is a parse error that names the ticket — the
 /// every-file walk (`check_open_work_owns` reuses `parse_ticket_toml`) goes red, and
 /// nothing coerces the value to now. Valid stamps restore green.
 #[test]

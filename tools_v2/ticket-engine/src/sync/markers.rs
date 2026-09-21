@@ -8,7 +8,7 @@ pub(super) fn inject_marker_block(path: &Path, start: &str, end: &str, inner: &s
         bail!("Missing markers in {}: {} / {}", path.display(), start, end);
     }
     let inner_r = inner.trim_end();
-    // T-383: never collapse a marker to whitespace / bare heading with no body lines.
+    // Never collapse a marker to whitespace / bare heading with no body lines.
     refuse_empty_write(
         &format!("marker {}", path.display()),
         marker_inner_is_vacuous(inner_r),
@@ -51,7 +51,7 @@ pub(super) fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
         })
         .collect();
     open_t.sort_by_key(|t| (order_or(t, 9999), str_field(t, "id")));
-    // T-383: bare "### Recommended next work" with zero bullets is a vacuous overwrite.
+    // Bare "### Recommended next work" with zero bullets is a vacuous overwrite.
     refuse_empty_write(
         "ROADMAP next block",
         open_t.is_empty(),

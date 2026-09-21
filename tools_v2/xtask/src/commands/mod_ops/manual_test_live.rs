@@ -1,4 +1,4 @@
-//! Live REST + full-server arms for T-859 `mod manual-test` (SIZE-1 split).
+//! Live REST + full-server arms for `mod manual-test` (SIZE-1 split).
 
 use std::fs;
 use std::net::TcpStream;

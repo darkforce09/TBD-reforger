@@ -138,7 +138,7 @@ pub fn gate_trunk_build(ctx: &Ctx) -> i32 {
     // the gate would keep printing PASS right up until the day it raced again. So prove it every
     // run: both private paths must have taken a write from THIS build.
     //
-    // NO SLACK on t0, and the 5 s that used to be here is REMOVED rather than reduced. `date +%s`
+    // NO SLACK on t0: there is no grace window here at all, not even a reduced one. `date +%s`
     // truncates downward, so t0 <= the real start instant T0; the build takes minutes, so every file
     // it writes has mtime T_w > T0 >= t0; and `-newermt` is STRICTLY greater (verified 2026-07-26: a
     // file whose mtime equals the argument does not match). So T_w > t0 holds with certainty and the

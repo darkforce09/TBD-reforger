@@ -33,14 +33,14 @@ fn units_render_byte_for_byte() {
     let e = env();
     assert_eq!(
         e.socket_unit(),
-        "[Unit]\nDescription=TBD Reforger host control agent socket (T-289)\n\
+        "[Unit]\nDescription=TBD Reforger host control agent socket\n\
          Documentation=man:systemd.socket(5)\n\n[Socket]\n\
          ListenStream=%t/tbd-reforger-agent.sock\nSocketMode=0600\nAccept=yes\n\n\
          [Install]\nWantedBy=sockets.target\n"
     );
     assert_eq!(
         e.service_unit(),
-        "[Unit]\nDescription=TBD Reforger host control agent connection (T-289)\n\
+        "[Unit]\nDescription=TBD Reforger host control agent connection\n\
          Documentation=man:systemd.socket(5)\n\n[Service]\nType=oneshot\n\
          ExecStart=/home/sam/tbd/tbd-reforger-agent.sh\n\
          Environment=TBD_AGENT_UNIT=tbd-reforger.service\n\
@@ -86,7 +86,7 @@ fn validate_rejects_a_tampered_agent() {
     fs::write(&sh, &body).unwrap();
     assert!(validate_agent_files(&e, &d).is_err(), "ban must fire");
 
-    // A DELETED artefact must not read as clean — the gate-grep.sh hole this port inherits
+    // A DELETED artefact must not read as clean — the hole a search-only probe leaves
     // the fix for. `Verdict::DidNotRun` is a distinct variant, so it cannot fold into Held.
     fs::remove_file(&sh).unwrap();
     assert!(

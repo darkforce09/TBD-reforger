@@ -52,7 +52,7 @@ pub(super) fn gn(dir: &Path, args: &[&str]) -> Result<Output> {
 /// stdout-then-stderr INVERTED those lines against the bash, which the harness caught. One shared
 /// pipe is what a shell's `2>&1` does, so the order is the child's own. KNOWN DEVIATION, the only
 /// one in the output contract: git progress lines bash left on stderr arrive on stdout. Combined
-/// output — how `wave.sh`/`mod_wave.rs` capture this, and how the acceptance diff is taken — is
+/// output — how the two wave drivers capture this, and how the acceptance diff is taken — is
 /// byte-identical, and no caller reads the streams apart.
 pub(super) fn passthru(run: Run) -> Result<i32> {
     let m = run.merged_output().map_err(|e| anyhow::anyhow!("{e:?}"))?;
@@ -68,7 +68,7 @@ pub(super) fn pt(dir: &Path, args: &[&str]) -> Result<i32> {
 /// Forward **stdout only**, swallowing stderr — the bash's `git … 2>/dev/null || true`.
 ///
 /// Used for the two `git branch` deletions. Their stdout is load-bearing — `Deleted branch
-/// slice/T-900 (was f7b03ad).` is the operator's only receipt that the branch went, and the harness
+/// slice/<id> (was f7b03ad).` is the operator's only receipt that the branch went, and the harness
 /// caught its absence when this discarded both streams. Their stderr is the "branch not found"
 /// noise the bash hides, because deleting a branch that never existed is not an error.
 pub(super) fn pt_stdout(dir: &Path, args: &[&str]) -> Result<()> {
@@ -94,13 +94,15 @@ pub(super) fn count(out: &Output) -> u64 {
     }
 }
 
-/// A sub-slice belongs to its parent's tree: `T-181.7.1` → `T-181.7`; `T-181.7` stays put.
+/// A sub-slice belongs to its parent's tree: a two-dot id resolves to its one-dot parent, and a
+/// one-dot id stays put.
 ///
 /// The bash is `sed -E 's/^(T-[0-9]+\.[0-9]+).*/\1/'`, whose oddities are the contract, not
 /// accidents to be tidied (`pins_the_sed_regex_oddities` covers each): `^`-anchored with a greedy
-/// `.*` tail and not global, so `T-181.7junk` → `T-181.7` while `xT-181.7.1` is UNCHANGED; a bare id
-/// with no dot (`T-181`) does not match and is returned unchanged, which is how the factory's flat
-/// ids survive (every live worktree in the real repo is that shape); and `T-181.` needs a digit
+/// `.*` tail and not global, so a trailing suffix is trimmed while a LEADING one leaves the id
+/// UNCHANGED; a bare id
+/// with no dot does not match and is returned unchanged, which is how the factory's flat
+/// ids survive (every live worktree in the real repo is that shape); and a trailing dot needs a digit
 /// after the dot, so it too is unchanged.
 pub(super) fn parent_slice(s: &str) -> String {
     // Per call: runs at most once per process on a ~10-byte string, so a `OnceLock` buys nothing.
@@ -111,7 +113,7 @@ pub(super) fn parent_slice(s: &str) -> String {
     }
 }
 
-/// Repo root. `TBD_SLICE_WORKTREE_ROOT` overrides it, mirroring `TBD_PREFLIGHT_ROOT` in the T-889
+/// Repo root. `TBD_SLICE_WORKTREE_ROOT` overrides it, mirroring `TBD_PREFLIGHT_ROOT` in the
 /// port, so the tests and the acceptance harness drive throwaway repos under `/tmp` rather than the
 /// real `.ai/artifacts/worktrees/`, which holds live slices. The bash has no equivalent — it derives
 /// `$ROOT` from `dirname $0/../..`.
@@ -128,7 +130,7 @@ pub fn run(args: &[String]) -> Result<u8> {
 
 /// Same dispatch, against an EXPLICIT root.
 ///
-/// T-853: `crate::commands::mod_ops::wave_execution`'s `prep` and `land` used to `bash scripts/mod/slice-worktree.sh`. They
+/// `crate::commands::mod_ops::wave_execution`'s `prep` and `land` call these in-process. They
 /// call this instead — in-process, so there is no second cargo resolution and no chance of the
 /// child picking a different `CARGO_TARGET_DIR` than the process that launched it. They already
 /// hold the root they mean, so they pass it rather than re-deriving it through
@@ -219,7 +221,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     //                      understand how a lobby/slot-picker is SHAPED, then write our own.
     // `xtask verify no-crf-leak` enforces that (CRF_ and PS_ identifier + asset-GUID gates).
     //
-    // REQUIRED vs OPTIONAL (T-181.52): the refuse-on-missing rule exists for ONE failure mode — an
+    // REQUIRED vs OPTIONAL: the refuse-on-missing rule exists for ONE failure mode — an
     // agent with no way to CHECK an Enfusion API fact will invent one. crf_framework and
     // vanilla_reference answer that, live in the repo, and are provisioned by repo tooling, so their
     // absence means a broken local setup: REFUSE. playable_selector is a DESIGN mirror proving no
@@ -276,7 +278,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
             );
             return Ok(1);
         }
-        // Verify rather than trust. This whole block used to be unreachable and nothing noticed,
+        // Verify rather than trust. An unreachable block here goes unnoticed,
         // because nobody checked the result — the agents just quietly lost their proof lanes.
         if lane_is_linked(&dst, Path::new(src)) {
             println!("  oracle ok: apps/mod/{name} -> {src}");
@@ -299,7 +301,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     // `cargo xtask ci schema-validate` die in a worktree at `schema height-labels` ("PNG decode: Invalid PNG
     // signature") while passing on main — two agents burned real effort on that. Symlinking the real
     // assets DOES fix the target, and was tried and REVERTED: git then reports all 983 tracked files
-    // there as DELETED, leaving every worktree permanently dirty so `wave.sh land` refuses it.
+    // there as DELETED, leaving every worktree permanently dirty so `wave land` refuses it.
     // Hiding that with `--skip-worktree` would make working-tree changes INVISIBLE, which in a
     // program merging unattended agent work silently loses a slice.
     println!(
@@ -363,8 +365,8 @@ pub(super) fn cmd_merge(root: &Path, slice_arg: &str) -> Result<u8> {
         eprintln!("usage: {PROG} merge <slice>");
         return Ok(2);
     }
-    // ODDITY: unlike `new`, the sub-slice rewrite here is SILENT — `merge T-181.7.1` merges
-    // `slice/T-181.7` and never says so. Preserved; `sub_slice_shares_the_parent_tree` pins it.
+    // ODDITY: unlike `new`, the sub-slice rewrite here is SILENT — merging a two-dot id merges
+    // its one-dot parent branch and never says so. `sub_slice_shares_the_parent_tree` pins it.
     let slice = parent_slice(slice_arg);
     let branch = format!("slice/{slice}");
     let dir = format!("{WORKTREES_DIR}/{slice}");
@@ -397,9 +399,9 @@ pub(super) fn cmd_merge(root: &Path, slice_arg: &str) -> Result<u8> {
         return Ok(1);
     }
 
-    // T-946 — THE GATE-VERDICT RECEIPT GUARDS THIS PATH TOO.
+    // THE GATE-VERDICT RECEIPT GUARDS THIS PATH TOO.
     //
-    // T-924 put the receipt check in `platform wave land`, and the wave 237 verifier found that
+    // Put the receipt check in `platform wave land`, and the wave 237 verifier found that
     // `land` is one of THREE ways a slice branch reaches main: this command is the second, and
     // `mod wave land` is the third — which calls this one. A guard that covers a third of the
     // doors is a guard nobody can rely on, and its main goal is literally "nothing mechanical lets

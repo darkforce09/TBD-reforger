@@ -8,7 +8,7 @@ pub fn town_labels(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
     let loc_path = terrain_dir(root, terrain).join("locations.json");
     if !loc_path.exists() {
         eprintln!(
-            "verify-town-labels: missing {} (run T-152.6)",
+            "verify-town-labels: missing {} (run `map build-map-labels`)",
             loc_path.display()
         );
         return Ok(1);

@@ -45,7 +45,7 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
 /// `ExecStart` per mode.
 ///
 /// `-config` is mutually exclusive with **`-addons`** — NOT with `-addonsDir`. Those are two
-/// different flags and the distinction is the whole of T-604. `-addons <GUID>` asks the engine to
+/// different flags and the distinction is the whole point. `-addons <GUID>` asks the engine to
 /// activate a mod id and is refused alongside `-config` ("-config cannot be used together with
 /// addons!"); `-addonsDir <dir>` only tells it where to LOOK, and combines with `-config` fine.
 ///
@@ -92,7 +92,7 @@ pub(super) fn not_run_exit(e: &NotRun) -> u8 {
     }
 }
 
-/// T-607: READ THE EXIT CODE of `mod remote-logs`, do not just inherit it.
+/// READ THE EXIT CODE of `mod remote-logs`, do not just inherit it.
 ///
 /// `remote-log-grep` is a FOUR-outcome check and this script is the consumer that pinned `2`:
 ///
@@ -100,16 +100,16 @@ pub(super) fn not_run_exit(e: &NotRun) -> u8 {
 /// 0 HEALTHY  ·  1 FAIL  ·  2 PARTIAL (booted, nobody joined yet)  ·  3 ENVIRONMENT
 /// ```
 ///
-/// This used to be the last statement in the file, so under `set -e` the deploy simply exited with
+/// Were this the last statement in the file, under `set -e` the deploy would simply exit with
 /// whatever it returned. `2` is the NORMAL state immediately after a deploy — nobody has had time
 /// to join — so every healthy deploy reported failure to any caller reading `!= 0`, and the fix
 /// people reach for when a green run keeps "failing" is to stop believing the gate. `3` is the
 /// opposite hazard and must never be soft: it means no log was examined at all, so it says nothing
 /// about the mod and cannot be allowed to read as success.
 ///
-/// The same contract applies to `cargo xtask mcp wb-logs` (T-857) and `cargo xtask mod spawn-verify`
-/// (T-873) — both were inverted and passed ONLY on the stale June build. Do not build a staging
-/// check on a `!= 0` reading of any of the three.
+/// The same contract applies to `cargo xtask mcp wb-logs` and `cargo xtask mod spawn-verify`: an
+/// inverted reading of either passes only on a stale build. Do not build a staging check on a
+/// `!= 0` reading of any of the three.
 pub fn v6_verdict(code: i32) -> u8 {
     match code {
         0 => {
@@ -244,7 +244,7 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     }
 
     // ── docker compose ──────────────────────────────────────────────────────────────────────
-    // T-438: the compose file lives at apps/website/docker-compose.staging.yml (T-251), not under
+    // The compose file lives at apps/website/docker-compose.staging.yml, not under
     // apps/website/api_v2/. Match `cargo xtask deploy website`.
     println!("==> docker compose (API + Postgres)");
     if cli.dry_run {
@@ -266,9 +266,7 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     // ── V2–V4 API smoke ─────────────────────────────────────────────────────────────────────
     println!("==> API smoke (V2–V4)");
     if !env.run_t092_smoke {
-        println!(
-            "[SKIP] V2–V4 API smoke — routes BLOCKED on T-092 (not in current backend; would 404)."
-        );
+        println!("[SKIP] V2–V4 API smoke — routes not in the current backend; would 404.");
         println!(
             "       Set TBD_RUN_T092_SMOKE=1 to force once those routes ship. See {}.",
             crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
@@ -304,7 +302,7 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         println!("[dry-run] install tbd-reforger.service and restart");
     } else {
         // In config mode, render the server config JSON LOCALLY, validate it, and only then push
-        // it. T-288 split render from push: an invalid or empty mod list now fails here, on the dev
+        // it. Render is split from push: an invalid or empty mod list fails here, on the dev
         // machine, instead of landing on the server and failing at boot.
         if env.server_mode == "config" {
             let local =
@@ -337,10 +335,10 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         }
     }
 
-    // ── T-289: install the host control agent ───────────────────────────────────────────────
+    // ── Install the host control agent ──────────────────────────────────────────────────────
     //
     // OFF BY DEFAULT. The render above is proven by --agent-selftest; THIS step is not, because
-    // exercising it means mutating the live staging host, which T-289 was not permitted to touch.
+    // exercising it means mutating the live staging host, which no test may touch.
     // It also buys nothing until the API side lands — nothing would connect to the socket.
     //
     // The agent is enabled via its SOCKET, never its service: socket activation means the agent
@@ -407,7 +405,7 @@ pub(super) fn install_agent(
     host: &str,
     agent_env: &AgentEnv,
 ) -> Result<Option<u8>> {
-    // Render LOCALLY and validate BEFORE anything is pushed — the T-288 posture: a broken artefact
+    // Render LOCALLY and validate BEFORE anything is pushed — the posture: a broken artefact
     // fails here, on the dev machine, not after it has landed on the server.
     let local = std::env::temp_dir().join(format!("tbd-agent.{}", std::process::id()));
     let _ = fs::remove_dir_all(&local);

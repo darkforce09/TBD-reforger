@@ -26,7 +26,7 @@ pub fn map_object_enums() -> Result<u8> {
         ("propClass", set("propClass")),
         ("utilityClass", set("utilityClass")),
         ("waterClass", set("waterClass")),
-        // T-244 vehicle lane. This entry is NOT optional bookkeeping: the last check in check_row
+        // Vehicle lane. This entry is NOT optional bookkeeping: the last check in check_row
         // is `sets[enum_name]`, and BTreeMap's Index impl PANICS on a missing key. Adding a kind to
         // class_enum_for_kind below WITHOUT adding its enum here turns a clean FAIL into a crash.
         ("vehicleClass", set("vehicleClass")),

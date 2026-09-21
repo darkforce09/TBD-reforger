@@ -1,4 +1,4 @@
-//! T-149 — Chaikin smoothing for the Path B forest rings.
+//! Chaikin smoothing for the Path B forest rings.
 //!
 //! `forest::trace_rings` walks cell boundaries on the 32 m region lattice, so **every** emitted
 //! ring segment is axis-aligned and every turn is exactly ±90°: measured on the committed everon
@@ -91,7 +91,7 @@ pub const PIN_SOLID_MASS: f64 = 3.0 * CANOPY_MASS_ISO;
 /// a real clearing. Zero: a notch with *any* canopy in it is a 32 m threshold artefact and rounds.
 pub const PIN_CLEAR_MASS: f64 = 0.0;
 
-/// Acceptance bound (`T-149.toml`): area drift per region, as a fraction.
+/// Acceptance bound: area drift per region, as a fraction.
 pub const MAX_AREA_DRIFT: f64 = 0.03;
 
 const DENSITY_CELL_M_F: f64 = density::DENSITY_CELL_M as f64;

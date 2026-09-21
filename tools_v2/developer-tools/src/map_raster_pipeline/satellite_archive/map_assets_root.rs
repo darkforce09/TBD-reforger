@@ -133,7 +133,7 @@ pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {
     Ok(0)
 }
 
-/// The v1 (hand-packed JSON table) bundle checks, unchanged from T-165.9. `None` = fatal.
+/// The v1 (hand-packed JSON table) bundle checks. `None` = fatal.
 pub(super) fn verify_bundle_v1(
     buf: &[u8],
     terrain: &str,

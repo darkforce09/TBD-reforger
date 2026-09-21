@@ -133,7 +133,7 @@ pub fn verify_no_node() -> Result<u8> {
         println!(
             "      Restore the path, or delete it from SCAN_FILES/SCAN_DIRS in tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs"
         );
-        println!("      in the SAME commit that deletes the file. (T-897)");
+        println!("      in the SAME commit that deletes the file.");
         fails += 1;
     }
     if !unreadable.is_empty() {

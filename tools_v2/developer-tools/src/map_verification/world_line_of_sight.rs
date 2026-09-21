@@ -1,11 +1,11 @@
-//! `cargo xtask map world-los` — T-090.12.3: the world occluder on the committed catalogue,
+//! `cargo xtask map world-los` — the world occluder on the committed catalogue,
 //! engine-free. Loads `objects/prefabs.json.gz`, a cell and its 8 neighbours from
 //! `objects/chunks/`, and every descriptor + BLAS the rows need from `prefabs/`, then:
 //!
 //! - `--census`            per-chunk kinds, proxy rows, pending BLAS, memory
 //! - `--probe ax,ay,az bx,by,bz`   one segment (ENGINE frame `[x, y_up, z_north]`): events + verdict
 //! - `--bench N`           N random eye-height segments in the cell: µs / segment
-//! - `--pairs <json>`      replay a `world-parity` oracle (T-090.12.4): agree / phantom / missed
+//! - `--pairs <json>`      replay a `world-parity` oracle: agree / phantom / missed
 //!   per policy, bucketed by the engine's hit prefab kind; `--min-agree F` exits 1 below it
 //! - `--dem`               also replay the `clearWorld` column: objects ∧ the 2 m DEM (terrain
 //!   sampled every metre along the pair through the editor's `DemManifest` sampler)

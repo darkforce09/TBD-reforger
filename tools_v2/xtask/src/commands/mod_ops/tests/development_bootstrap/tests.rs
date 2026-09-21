@@ -1,6 +1,6 @@
 use super::*;
 
-// T-876: setup-mcp-game-root is in-process (no shell script to stub). Failure arms for
+// Setup-mcp-game-root is in-process (no shell script to stub). Failure arms for
 // the port live in `gate_setup_mcp_game_root` tests. Bootstrap still covers port_open.
 
 #[test]

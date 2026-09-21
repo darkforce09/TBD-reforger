@@ -1,8 +1,9 @@
-//! T-935.6 — the rkyv twin of `objects/roads.json.gz`.
+//! The rkyv twin of `objects/roads.json.gz`.
 //!
 //! `build-roads` writes the road network twice: the gzip-9 JSON the shipped loader still fetches,
 //! and a `roads/road_network.rkyv` `RoadNetworkArchive`. Dual emission is deliberate and stays
-//! until T-935.11/.13 flip the URL — deleting either write before then blinds one reader.
+//! until the terrain manifest names only the binary path — deleting either write before then
+//! blinds one reader.
 //!
 //! # Why the emitter centrelines instead of copying the export's quad soup
 //!
@@ -25,7 +26,7 @@
 //!
 //! `road_class` is a byte on the wire. The table is
 //! `road_class_code` /
-//! `road_class_name` in `map-engine-core` — *one*
+//! `road_class_name` in `website-map-engine` — *one*
 //! table, linked by both the writer here and the reader in `world::roads`, so they cannot drift
 //! into disagreeing about what a byte means. A class the table cannot code is a hard error here
 //! and a hard error there; neither side invents a fallback.
@@ -51,7 +52,7 @@ use crate::repository_layout::terrain_dir;
 pub const ROADS_GZ: &str = "objects/roads.json.gz";
 
 /// The rkyv road network, relative to a terrain directory. Matches the manifest's
-/// `objects.binary.roads` path (`map_engine_core::world::ObjectsBinaryBlock`), which T-935.11
+/// `objects.binary.roads` path (`website_map_engine::world::ObjectsBinaryBlock`), which the manifest
 /// will point the SPA at.
 pub const ROAD_NETWORK_RKYV: &str = "roads/road_network.rkyv";
 
@@ -117,7 +118,7 @@ pub fn write_road_network_rkyv(path: &Path, archive: &RoadNetworkArchive) -> Res
 ///
 /// # Errors
 /// When the JSON is missing or undecodable, or when it centrelines to nothing — an empty network
-/// is refused rather than written, the same guard `build-roads` puts on the JSON itself (T-537).
+/// is refused rather than written, the same guard `build-roads` puts on the JSON itself.
 pub fn build_road_network_archive(terrain_dir: &Path) -> Result<RoadNetworkArchive> {
     let src = terrain_dir.join(ROADS_GZ);
     let raw = std::fs::read(&src).with_context(|| format!("read {}", src.display()))?;

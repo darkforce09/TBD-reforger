@@ -60,7 +60,7 @@ pub(super) fn append_spatial_gates(
         let mut prev: Option<Vec<f64>> = None;
         let mut wide = 0usize;
         for (i, row) in rows.iter().enumerate() {
-            // T-090.12.1 (objects schemaVersion 1.1.0): rows are exactly 5 or 8 numbers; an 8-wide row
+            // Objects schemaVersion 1.1.0: rows are exactly 5 or 8 numbers; an 8-wide row
             // must carry a non-trivial pitch / roll / scale (the converter writes trivial trailers
             // as a 5-wide row, so a padded row would be a canonicality bug in the emitter).
             let nums: Option<Vec<f64>> = row
@@ -111,7 +111,7 @@ pub(super) fn append_spatial_gates(
         }
         if wide == 0 {
             errs.push(
-                "chunk-sample: no 8-wide row (T-090.12.1 full-transform branch needs golden coverage)"
+                "chunk-sample: no 8-wide row (the full-transform branch needs golden coverage)"
                     .into(),
             );
         }
@@ -119,7 +119,7 @@ pub(super) fn append_spatial_gates(
             .iter()
             .any(|p| p["render"]["importanceZoom"].is_number())
         {
-            errs.push("prefabs-sample: no prefab carries render.importanceZoom (T-090.3.1 bump needs golden coverage)".into());
+            errs.push("prefabs-sample: no prefab carries render.importanceZoom (the zoom bump needs golden coverage)".into());
         }
         gates.push(Gate {
             id: "S11",

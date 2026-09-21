@@ -2,7 +2,7 @@
 
 use super::*;
 
-/// Scope v2 domain — the ONE level that stays a closed Rust enum (T-917 spec §Scope v2:
+/// Scope v2 domain — the ONE level that stays a closed Rust enum (spec §Scope v2:
 /// "changes ~never"). Everything below it (`layer`/`component`/`surface`) is validated
 /// data from `.ai/tickets/scope-vocab.toml`, resolved at [`crate::Corpus::load`] and in
 /// `ticket check` — never compiled (compiled-enum friction is what produced the
@@ -30,7 +30,7 @@ impl Domain {
     }
 }
 
-/// Scope v2 (T-917.2): the flat 4-level breadcrumb — exactly one `domain`/`layer`,
+/// Scope v2: the flat 4-level breadcrumb — exactly one `domain`/`layer`,
 /// optional `component` (component-free layers exist per the vocabulary), and a
 /// `surface` array (a coherent slice may touch several surfaces; a ticket spanning
 /// components is mis-sliced). Serialized as the flat `[scope]` table:
@@ -58,11 +58,11 @@ pub struct ScopeV2 {
     pub surface: Vec<String>,
 }
 
-/// The closed `class` value set (T-917 Decisions log #4) — required on work tickets
+/// The closed `class` value set (spec Decisions log #4) — required on work tickets
 /// (check-enforced; value-validated at parse when present).
 pub const CLASS_VALUES: &[&str] = &["bug", "feature", "chore", "audit", "docs"];
 
-/// Legal `estimated[]` entries — the provenance machinery's field list (T-917 spec
+/// Legal `estimated[]` entries — the provenance machinery's field list (spec
 /// §Provenance; `scope` is the non-numeric reuse recorded by the v2 migrator).
 pub const ESTIMATED_VALUES: &[&str] = &[
     "created_at",
@@ -73,7 +73,7 @@ pub const ESTIMATED_VALUES: &[&str] = &[
 ];
 
 /// 7–40 lowercase hex — the repo's `shipped_at` / estimate SHA shape. THE single
-/// authority (T-917.6): the T-917.4 miner, the T-917.5 estimates check, the S.6 ship
+/// authority: the subject miner, the estimates check, the S.6 ship
 /// gate and [`crate::ops::stamp_sha`] all judge SHA-shapedness through this one predicate
 /// (xtask re-exports it), so the shape rule cannot fork.
 pub fn is_sha_shaped(v: &str) -> bool {
@@ -82,7 +82,7 @@ pub fn is_sha_shaped(v: &str) -> bool {
             .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))
 }
 
-/// T-917.3 word caps (spec §Body, Decisions log #6) — CHECK-enforced (`ticket check`)
+/// Word caps (spec §Body, Decisions log #6) — CHECK-enforced (`ticket check`)
 /// plus an `ops::validate_post_image` refusal on tickets an op rewrites; NEVER
 /// parse-enforced, so old git revisions stay readable. The counting instrument is
 /// `split_whitespace().count()` over the TOML-PARSED string everywhere (quarantine
@@ -104,10 +104,10 @@ pub const BODY_LINE_WORD_CAP: usize = 30;
 /// Per-entry cap on `citations[]` (reference-only strings).
 pub const CITATION_WORD_CAP: usize = 8;
 
-/// T-920.1 title gate (t920 spec Decisions log #4): a REAL title is nonempty, is not
+/// Title gate (t920 spec Decisions log #4): a REAL title is nonempty, is not
 /// the ticket id, and stays within this many words. Enforced on CHANGED tickets by the
 /// ops post-image gate; history debt is metered by [`TITLE_DEBT_PIN`] and drained by
-/// the T-919/T-921 streams — never check-redded wholesale.
+/// the debt-drain batches — never check-redded wholesale.
 pub const TITLE_WORD_CAP: usize = 10;
 
 /// The one title-debt instrument (t920 spec §Schema changes): `title == id` OR the
@@ -119,22 +119,22 @@ pub fn title_is_debt(id: &str, title: &str) -> bool {
     title == id || title.split_whitespace().count() > TITLE_WORD_CAP
 }
 
-/// T-920.1 shrink-only debt pin: work+program tickets where [`title_is_debt`]
+/// Shrink-only debt pin: work+program tickets where [`title_is_debt`]
 /// (measured on the live tree at land time — 99 id-as-title + 341 over-cap, zero
 /// overlap possible: an id is one token). Drift is red BOTH ways in `ticket check`
 /// and in the store ratchet test: growth means a title gate bypass (ops refuse debt
 /// titles on changed tickets), shrinkage means a repair landed and the pin must
-/// shrink in the same commit (the T-919/T-921 batch contract).
+/// shrink in the same commit (the batch contract).
 pub const TITLE_DEBT_PIN: usize = 0;
 
-/// T-920.1 shrink-only debt pin: queued/ready/running/review WORK tickets with empty
+/// Shrink-only debt pin: queued/ready/running/review WORK tickets with empty
 /// `main_goal` (instrument: [`main_goal_is_debt`]) — measured on the live tree at
 /// land time. The queued-tier main_goal obligation (t920 spec Decisions log #1) binds
 /// as this metered ratchet instead of an instant corpus-wide red because the debt is
 /// history-wide; NEW offenders are impossible: the ops post-image gate refuses a
 /// changed non-quarantined queued+ work ticket without main_goal. Quarantined
 /// carriers (nonempty `migration_legacy`) ARE counted — the wall holds the content
-/// unprocessed, and the T-919 drain fills main_goal when it decomposes the wall,
+/// unprocessed, and the drain fills main_goal when it decomposes the wall,
 /// shrinking this pin in the same commit.
 pub const MAIN_GOAL_DEBT_PIN: usize = 0;
 
@@ -145,7 +145,7 @@ pub fn main_goal_is_debt(w: &WorkTicket) -> bool {
     w.status.name().is_live() && w.main_goal.as_deref().unwrap_or("").trim().is_empty()
 }
 
-/// T-920.1 ready-tier body obligation (t920 spec Decisions log #2): the six fields a
+/// Ready-tier body obligation (t920 spec Decisions log #2): the six fields a
 /// ready/running/review/shipped WORK ticket must carry nonempty, in the
 /// spec table's order. Returns the empty ones by name — `ops::mark_ready` and
 /// `ops::ship` refuse naming each, and the corpus-wide check rule reds the same list.
@@ -156,7 +156,7 @@ pub fn main_goal_is_debt(w: &WorkTicket) -> bool {
 /// queued is the reachable case; on ready-class tickets the entry is belt-and-braces
 /// that cannot fire (an empty-acceptance ready ticket refuses the corpus load).
 /// Callers apply the quarantine exemption (nonempty `migration_legacy`) themselves —
-/// content exists, unprocessed (the T-919 drain fills the fields with the wall).
+/// content exists, unprocessed (the drain fills the fields from the wall).
 pub fn empty_ready_tier_fields(w: &WorkTicket) -> Vec<&'static str> {
     let mut missing = Vec::new();
     for (name, lines) in [
@@ -175,7 +175,7 @@ pub fn empty_ready_tier_fields(w: &WorkTicket) -> Vec<&'static str> {
 }
 
 /// Conservative-deterministic class triage from title/summary prose (same input →
-/// same class; metadata triage, not provenance — T-917.2 migrator header documents
+/// same class; metadata triage, not provenance — the migrator header documents
 /// why this carries no `estimated[]` marker). Token-boundary matching on purpose:
 /// substring matching would classify "prefix"/"fixture" as bugs. Precedence:
 /// bug > audit > docs > chore > feature.

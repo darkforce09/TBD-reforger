@@ -49,7 +49,7 @@ pub fn repack_quiet(root: &Path) -> Result<WaveLock> {
         return migrate_from_tsv(root);
     }
     // The previous committed lock is BOTH carries: its wave 0 is the parked baseline, and its
-    // open waves + pending entries feed the emptied carry (T-925, `carry_emptied`).
+    // open waves + pending entries feed the emptied carry (`carry_emptied`).
     let prev = load(root).ok(); // first-ever compile on a lockless tree carries nothing
     let baseline: BTreeSet<String> = prev
         .as_ref()
@@ -105,7 +105,7 @@ pub(super) fn migrate_from_tsv(root: &Path) -> Result<WaveLock> {
         .map(|l| groups[l].iter().map(|s| s.to_string()).collect())
         .collect();
 
-    // T-914: the migration arm numbers from the ledger too. The T-912.2 cutover relabeled the
+    // The migration arm numbers from the ledger too. The cutover relabeled the
     // TSV groups 1..N, but that lock has already landed in real history — this arm is only
     // reachable on a hypothetical TSV-bearing tree, and numbering it off the ledger keeps the
     // base check green there instead of red-on-arrival. No emptied carry: the TSV era
@@ -140,7 +140,7 @@ pub(super) fn summary(lock: &WaveLock) -> String {
         .map(|w| w.tickets.len())
         .unwrap_or(0);
     let base = format!("{open} open ticket(s) in {n_open} wave(s), {parked} parked at wave 0");
-    // T-925: a pending emptied wave is the thing `wave --close` acts on — say so whenever one
+    // A pending emptied wave is the thing `wave --close` acts on — say so whenever one
     // exists; byte-identical summary when none does.
     match lock.emptied.len() {
         0 => base,
@@ -156,7 +156,7 @@ pub fn cmd_repack(root: &Path, reserve: &[String]) -> Result<u8> {
         repack_reserving(root, reserve)?
     };
     if migrated {
-        println!("wave.lock: migrated from the committed wave-plan TSVs (both deleted)");
+        println!("wave.lock: numbered from the committed wave-plan history");
     }
     if let Some(e) = lock.emptied.last().filter(|_| !reserve.is_empty()) {
         println!(

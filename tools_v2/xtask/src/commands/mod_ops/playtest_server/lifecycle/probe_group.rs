@@ -70,7 +70,7 @@ pub fn read_pgid(pidfile: &str) -> String {
 /// Deliberately NOT a name match: a broad `pkill -f ArmaReforgerServer` would also kill the
 /// operator's own dev server, and (measured) the bridge's own `sh -c` command line contains that
 /// string, so it kills the caller too. The recorded pid is a PROCESS GROUP LEADER — the launcher runs
-/// under `setsid` — and we signal the whole group, same discipline as `world-boot.sh:423`.
+/// under `setsid` — and we signal the whole group, the same discipline the world-boot gate uses.
 pub fn kill_run(paths: &RunPaths, host: &Host) -> Result<(), String> {
     kill_run_inner(paths, host, Volume::Loud)
 }

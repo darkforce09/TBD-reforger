@@ -29,7 +29,7 @@ pub(super) fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Stat
         StatusName::Idea => {
             if let Some(n) = cur.order() {
                 return Err(format!(
-                    "refusing set-status {id}: idea must not carry order and the ticket has order {n} — the legacy CLI wedges mid-save here; clear the order deliberately first"
+                    "refusing set-status {id}: idea must not carry order and the ticket has order {n} — a mid-save wedge is the alternative; clear the order deliberately first"
                 ));
             }
             Ok(Status::Idea)
@@ -37,7 +37,7 @@ pub(super) fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Stat
         StatusName::Queued => {
             let order = cur.order().ok_or_else(|| {
                 format!(
-                    "refusing set-status {id}: queued requires order and the ticket has none — `ticket reorder {id} <anchor>` mints one (the legacy CLI wedges mid-save here)"
+                    "refusing set-status {id}: queued requires order and the ticket has none — `ticket reorder {id} <anchor>` mints one (a mid-save wedge is the alternative)"
                 )
             })?;
             Ok(Status::Queued { order })
@@ -58,7 +58,7 @@ pub(super) fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Stat
             }
             if !missing.is_empty() {
                 return Err(format!(
-                    "refusing set-status {id}: status {} needs order/spec/main_goal/acceptance and the ticket lacks {} — the legacy CLI wedges mid-save on this; set the fields (or use mark-ready) first",
+                    "refusing set-status {id}: status {} needs order/spec/main_goal/acceptance and the ticket lacks {} — a mid-save wedge is the alternative; set the fields (or use mark-ready) first",
                     name.as_str(),
                     missing.join(", ")
                 ));
@@ -83,7 +83,7 @@ pub(super) fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Stat
 
 /// `cmd_set_status` semantics: trim, refuse empty, refuse a non-enum value, write the
 /// status; `cancelled` stamps `completed_at` (the ONLY set-status target that stamps —
-/// `ship`/`done` own the shipped stamp, `cmds.rs` comment T-913.1). Deliberately does
+/// `ship`/`done` own the shipped stamp). Deliberately does
 /// NOT clear `active` (that is `ship`'s job) and does NOT touch order fields beyond
 /// what the target status can carry.
 pub fn set_status(
@@ -125,11 +125,11 @@ pub fn set_status(
 /// `cmd_ship` semantics: status→shipped preserving the existing `shipped_at` value and
 /// order (ship never invents the SHA — that stays hand-edited), stamp `completed_at`,
 /// clear the ticket's own `active`. NOW resolves child ids (the full-corpus map is the
-/// fix for the "`ticket ship T-912.2` → Unknown ticket" hole), and — new invariant —
+/// a dotted child id resolves here), and — the invariant —
 /// clears any program whose `active` still names the shipped ticket; that parent
 /// counts as changed.
 ///
-/// **T-917.6 — the ship-gate lifecycle** (spec §The gate, §stamp-sha closes the loop).
+/// **The ship-gate lifecycle** (spec §The gate, §stamp-sha closes the loop).
 /// A shipped ticket must end with `created_at` + `completed_at` + a SHA-shaped
 /// `shipped_at` + token accounting, but those arrive at DIFFERENT moments:
 ///
@@ -157,14 +157,14 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
              ticket needs a deliberate hand-stamp: its file's first-commit author date in UTC"
         ));
     }
-    // T-920.1 (t920 spec Decisions log #2, shipped row): a FUTURE ship carries the
+    // (t920 spec Decisions log #2, shipped row): a FUTURE ship carries the
     // full ready-tier body — main_goal plus the six fields — refused pre-write
     // naming each empty one. Work-only (the tier table is work-shaped; a program
     // aggregates its children's bodies) and quarantine-exempt like every body-tier
     // rule. `main_goal` is checked HERE and not in `empty_ready_tier_fields` because
     // ship can jump from queued/idea, where the ready-class parse guarantee does not
     // exist yet. Shipped HISTORY stays untouched: check never reds old ships until
-    // the T-921 drain finishes — this arm binds only the ship verb from now on.
+    // the debt drain finishes — this arm binds only the ship verb.
     if let Ticket::Work(w) = t
         && w.migration_legacy.is_empty()
     {
@@ -212,7 +212,7 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
     commit(c, post, changed, BTreeSet::new(), BTreeSet::new())
 }
 
-/// T-917.6 — `ticket stamp-sha` step 3 of the ship lifecycle (see [`ship`]): write the
+/// `ticket stamp-sha` step 3 of the ship lifecycle (see [`ship`]): write the
 /// landing commit SHA onto a SHIPPED ticket, canonically, through both storage arms
 /// (work tickets carry the `shipped_at` field mirrored into [`Status::Shipped`];
 /// programs carry it inside the status only — the `current_shipped_at` asymmetry).
@@ -226,7 +226,7 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
 ///
 /// Idempotent-ish: re-stamping the SAME sha is a no-op — `Ok` with an empty
 /// `changed` set, so the caller can still (re)generate the token estimate for a
-/// ticket whose stamp landed but whose accounting did not (the T-917.5→T-917.6
+/// ticket whose stamp landed but whose accounting did not (the
 /// window). A successful write also REMOVES a stale `"shipped_at"` entry from
 /// `estimated[]`: the operator-supplied landing SHA is measured provenance, not an
 /// estimate (the marker + gap-note state was the miner's honest absence, now closed).

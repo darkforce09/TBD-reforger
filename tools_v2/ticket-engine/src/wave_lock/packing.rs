@@ -2,13 +2,13 @@
 
 use super::*;
 
-/// T-946.12 — RESERVE A LABEL FOR A WAVE THE DERIVED CARRY CANNOT SEE.
+/// RESERVE A LABEL FOR A WAVE THE DERIVED CARRY CANNOT SEE.
 ///
 /// `carry_emptied` freezes a pending entry only when ONE repack sees a previous open wave whose
 /// whole ticket set is landed. `ticket ship` repacks after every id, so a wave shipped one ticket
 /// at a time never presents that picture: after the first ship the repack re-packs the open waves
 /// and hands the wave's own label to the NEXT batch, so when the last id ships the label no longer
-/// names the set that emptied. Measured 2026-09-06 on wave 240 (T-935.6 / T-935.9 / T-674.1): the
+/// names the set that emptied. Measured 2026-09-06 on wave 240: the
 /// batch broke mid-way on a missing `created_at`, the per-id path finished it, and the lock ended
 /// with no pending entry and label 240 reissued to three unstarted tickets.
 ///
@@ -71,7 +71,7 @@ pub(super) fn reserved_entry(
 ///
 /// Returns the packed waves (1..N by position). Dependency edges whose target cannot ever pack
 /// (not dispatchable, not shipped/cancelled) are collected into `warnings` and do not gate —
-/// see the module header for the T-212 → T-257 case that forces this.
+/// see the module header for the reservation case that forces this.
 pub(super) fn greedy_waves(
     views: &[TicketView],
     cap: usize,

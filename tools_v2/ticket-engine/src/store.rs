@@ -1,4 +1,4 @@
-//! T-916.1 — typed corpus store: every `.ai/tickets/T-*.toml`, parents AND children,
+//! Typed corpus store: every `.ai/tickets/T-*.toml`, parents AND children,
 //! in one typed map, plus surgical per-file writes.
 //!
 //! Design authority: `docs/platform/t915_ticketboard_design.md` §Write path. This module
@@ -20,7 +20,7 @@
 //!   ([`Corpus::delete_files`]), so no mutation can mass-delete children again.
 //! - **Children are first-class.** The map holds dotted-id files too, which is what
 //!   makes `ops::ship` of a child id resolve at all — the Value path's parents-only
-//!   view was the "`ticket ship T-912.2` → Unknown ticket" hole.
+//!   view answered "Unknown ticket" for every dotted child id.
 
 use crate::{Ticket, parse_ticket_toml, render_ticket_toml};
 use std::collections::BTreeMap;
@@ -36,7 +36,7 @@ pub fn is_parent_id(id: &str) -> bool {
     }
 }
 
-/// Numeric part of a parent id (`T-916` → `916`); `None` for children and non-ids.
+/// Numeric part of a parent id (`<prefix>-916` → `916`); `None` for children and non-ids.
 pub fn parent_numeric_id(id: &str) -> Option<u64> {
     if !is_parent_id(id) {
         return None;
@@ -86,7 +86,7 @@ impl Corpus {
     /// whose inner id differs from its stem would either mask or duplicate another
     /// ticket in the map, and both are corruption, not data.
     ///
-    /// T-917.2: the load ALSO resolves scope legality against
+    /// The load ALSO resolves scope legality against
     /// `.ai/tickets/scope-vocab.toml` (spec §Scope v2 — "legality is resolved at
     /// `Corpus::load` and in `check`"): a missing vocabulary refuses the load naming
     /// the path, and a work ticket whose domain/layer/component/surface is not in the
@@ -137,8 +137,8 @@ impl Corpus {
     }
 
     /// Next parent id numeral: max parent numeric + 1. Children NEVER affect it — the
-    /// exact `tickets_store::derive_next_id` semantics (`T-090.6` does not make the next
-    /// id 91), preserved so `ops::add` mints the same id the legacy `ticket add` would.
+    /// exact `derive_next_id` semantics (a dotted child id does not make the next
+    /// id 91), so `ops::add` mints from the parents alone.
     pub fn derive_next_parent_id(&self) -> u64 {
         self.tickets
             .keys()
@@ -152,7 +152,7 @@ impl Corpus {
     /// extension + 1, else `.1`. "Existing" is conservative — the scan covers both
     /// corpus keys and the parent's `children[]` entries, so a listed-but-fileless child
     /// or a stray file both block their numeral. Only single-segment all-digit suffixes
-    /// count (`T-916.1` extends `T-916`; `T-916.1.1` does not), mirroring how
+    /// count (one dot extends its parent; two do not), mirroring how
     /// `derive_next_parent_id` is max+1 over its own tier: freed numerals in the middle
     /// are never re-minted.
     pub fn next_child_id(&self, parent_id: &str) -> String {

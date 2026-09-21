@@ -32,7 +32,7 @@ fn all_1_3_fields_are_unread_on_the_live_tree() {
 /// check that never notices anything at all.
 ///
 /// It used to plant one `framing` identifier in a scratch tree and watch a CLEAN 0 baseline
-/// trip. T-212 landed that reader and retired the row, and no clean-0 row is left to stand in
+/// trip. That reader landed and the row retired, and no clean-0 row is left to stand in
 /// for it — so the proof is rebuilt on `objectives`, and in BOTH directions, which is strictly
 /// stronger than the version it replaces:
 ///
@@ -40,7 +40,7 @@ fn all_1_3_fields_are_unread_on_the_live_tree() {
 ///     not simply always-red, which a one-directional test cannot rule out);
 ///   * one more identifier — the shape a new reader has, since `JsonLoadContext` binds by
 ///     member name and no reader can exist without spelling the key — trips it, by name and
-///     with its ticket.
+///     with the reason its baseline is nonzero.
 #[test]
 fn unread_gate_fires_when_a_reader_appears() {
     let pinned = UNREAD_WIRE_FIELDS
@@ -85,8 +85,8 @@ fn unread_gate_fires_when_a_reader_appears() {
     let f = unread_wire_field_failures(&dir).expect("scan scratch");
     assert!(
         f.iter()
-            .any(|m| m.contains("'objectives'") && m.contains("T-212")),
-        "the gate must fail and name objectives + its ticket once a reader appears; got {f:#?}"
+            .any(|m| m.contains("'objectives'") && m.contains(pinned.why)),
+        "the gate must fail and name objectives + its baseline reason once a reader appears; got {f:#?}"
     );
     let _ = fs::remove_dir_all(&dir);
 }

@@ -1,14 +1,12 @@
-//! T-165.9 — unified satellite bundle (tbd-sat): the verifier (port of
-//! `verify-unified-satellite.mjs`, dep-free byte parse) and the builder (port of
-//! `build-unified-satellite.mjs` — Lanczos cascade mips, tile crop, VP8L via image-webp).
-//! Plus the tile-pyramid verifier (port of `verify-tile-pyramid.mjs`).
+//! Unified satellite bundle (tbd-sat): the verifier (a dep-free byte parse), the builder
+//! (Lanczos cascade mips, tile crop, VP8L via image-webp) and the tile-pyramid verifier.
 //!
-//! T-935.10 — the container gained a **version 2** (`satellite_archive_container`): a 32-byte `TbdsHeader`
+//! The container gained a **version 2** (`satellite_archive_container`): a 32-byte `TbdsHeader`
 //! plus an rkyv `TbdSatIndexV2` instead of v1's hand-packed JSON table. Both writers consume the
 //! same encoded block vector, so a v1 and a v2 bundle built from one source have **byte-identical
 //! payloads** and differ only in their index — which makes "renders identically at every mip" a
 //! property of the code rather than a hope. v1 is retained behind `--container-version 1`:
-//! `everon-sat.tbd-sat` is committed in that shape until T-935.13 regenerates it.
+//! `everon-sat.tbd-sat` is committed in that shape until a Workbench export regenerates it.
 
 use std::path::{Path, PathBuf};
 

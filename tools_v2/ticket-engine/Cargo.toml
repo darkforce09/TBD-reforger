@@ -14,7 +14,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 walkdir = "2"
 jsonschema = { version = "0.46.10", default-features = false }
 serde = { version = "1", features = ["derive"] }
-# T-913.1 timestamp parse/format: `time` is already in the workspace lockfile as a
+# Timestamp parse/format: `time` is already in the workspace lockfile as a
 # transitive dependency (0.3.53), so this adds zero new supply chain; its well-known
 # Rfc3339 parser is strict and exposes the offset for the UTC-only rule.
 time = { version = "0.3", features = ["parsing", "formatting"] }

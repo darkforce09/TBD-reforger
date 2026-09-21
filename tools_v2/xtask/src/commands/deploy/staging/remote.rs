@@ -21,7 +21,7 @@
 //!
 //! ── THE EXCLUDE LIST IS A LICENCE BOUNDARY, NOT AN OPTIMISATION ──────────────────────────────
 //!
-//! T-181.52: EXCLUDE EVERY ORACLE LANE, not just CRF. These are read-only reference trees; the
+//! EXCLUDE EVERY ORACLE LANE, not just CRF. These are read-only reference trees; the
 //! server only ever runs `apps/mod/tbd-framework` (see the addon symlink), so shipping them is
 //! pure licence exposure for zero benefit. `crf_framework` was already excluded, but
 //! `vanilla_reference` and `playable_selector` were NOT — and in the MAIN checkout (which is what

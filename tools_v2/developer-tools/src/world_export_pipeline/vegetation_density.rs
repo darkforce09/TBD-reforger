@@ -1,5 +1,5 @@
-//! T-165.4 — TBDD corner-density grid (port of `scripts/map-assets/lib/density-grid.mjs`).
-//! Pure + deterministic; the byte codec itself lives in `map_engine_core::geometry::tbdd`
+//! TBDD corner-density grid.
+//! Pure + deterministic; the byte codec itself lives in `website_map_engine::geometry::tbdd`
 //! (`encode_tbdd`/`decode_tbdd`) — this module carries the density-grid constants + the global
 //! corner accumulation/slicing used by the world builder + gates.
 //!
@@ -7,18 +7,18 @@
 //! (cx*512 + i*`DENSITY_CELL_M`, cy*512 + j*`DENSITY_CELL_M`); its count = instances whose
 //! rounded-2dp (x,y) falls in [X-cell/2, X+cell/2) × [Y-cell/2, Y+cell/2).
 //!
-//! T-176 A2 — the tree channel written to disk is the raw corner counts **box-blurred** into a
+//! The tree channel written to disk is the raw corner counts **box-blurred** into a
 //! canopy field (`box_blur_corners` at `CANOPY_KERNEL_RADIUS_CELLS`); the rock channel stays raw.
 
-// T-176 A2 — finer forest fidelity: 8 m cells (was 32 m; operator "32 m too big"). A 512 m chunk /
+// Forest fidelity: 8 m cells. A 512 m chunk /
 // 8 m = 64 cells → 65 shared-border corners. `TBDD_FILE_BYTES` + `corner_grid_size` cascade.
 pub const DENSITY_CELL_M: u16 = 8;
 pub const DENSITY_COLS: u16 = 65;
 pub const DENSITY_ROWS: u16 = 65;
-/// T-176 A2 — canopy box-blur radius in cells applied to the tree channel at bake time (global,
+/// Canopy box-blur radius in cells applied to the tree channel at bake time (global,
 /// pre-slice → seamless per-chunk marching). At 8 m cells r=1 = a 3×3 (~24 m) window: bridges the
 /// normal tree spacing (~11 m on Everon) into solid canopy while leaving clearings ≥ ~24 m as holes.
-/// Tune together with `map_engine_core::geometry::forest_mass::CANOPY_MASS_ISO`.
+/// Tune together with `website_map_engine::geometry::forest_mass::CANOPY_MASS_ISO`.
 pub const CANOPY_KERNEL_RADIUS_CELLS: usize = 1;
 pub const DENSITY_CHANNELS: [&str; 2] = ["tree", "rock"];
 pub const TBDD_VERSION: u16 = 1;
@@ -28,9 +28,8 @@ pub const TBDD_FILE_BYTES: usize =
 
 /// Global corner-grid side length for a square world (**1601** for Everon 12800).
 ///
-/// T-597: this doc said `401` — the pre-T-176 value, from when `DENSITY_CELL_M` was 32 m.
-/// The 8 m migration (T-176 A2, `a5940fad9`) moved it to `12800/8 + 1 = 1601` and updated
-/// neither this line nor `corner_partition_identity` below.
+/// At the 8 m cell size the grid is `12800 / 8 + 1 = 1601` corners per axis; the number is
+/// pinned independently by `corner_partition_identity` below.
 #[must_use]
 pub fn corner_grid_size(world_size_m: f64) -> usize {
     (world_size_m / f64::from(DENSITY_CELL_M)).floor() as usize + 1
@@ -39,7 +38,7 @@ pub fn corner_grid_size(world_size_m: f64) -> usize {
 /// Global corner index of a coordinate on a grid of `n` corners per side (half-open window
 /// [corner-cell/2, corner+cell/2); a coordinate outside the world clamps into the edge corner).
 ///
-/// T-149 split this out of `corner_of` so `sample_corners` can index a grid it was **handed**
+/// Separate from `corner_of` so `sample_corners` can index a grid it was **handed**
 /// rather than one it re-derives from a world size: the two could disagree, and a sampler that
 /// silently reads the wrong corner is the signature defect in miniature.
 fn corner_index(coord: f64, n: usize) -> usize {
@@ -53,7 +52,7 @@ pub fn corner_of(coord: f64, world_size_m: f64) -> usize {
     corner_index(coord, corner_grid_size(world_size_m))
 }
 
-/// T-149 — read the 8 m corner grid at a world position: the value of the corner
+/// Read the 8 m corner grid at a world position: the value of the corner
 /// [`corner_of`] would assign `(x, y)` to, on a `size`×`size` grid produced by
 /// [`accumulate_corners`] (optionally through [`box_blur_corners`], which preserves the shape).
 ///
@@ -90,7 +89,7 @@ pub fn accumulate_corners(
     (grid, n)
 }
 
-/// T-176 A2 — separable box-SUM blur of a global corner grid (radius `r` cells, clamped edges).
+/// Separable box-SUM blur of a global corner grid (radius `r` cells, clamped edges).
 /// Output corner = Σ raw counts in the (2r+1)² window ≈ "trees within ~(2r+1)·cell m". Turns the
 /// sparse fine tree-count grid into a smooth canopy-density field so `forest_mass_from_corners` at
 /// `CANOPY_MASS_ISO` hugs real clusters (holes at clearings) instead of speckling. Applied to the

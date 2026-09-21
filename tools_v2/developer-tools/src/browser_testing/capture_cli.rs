@@ -19,7 +19,7 @@ use crate::browser_testing::screen_capture::{self as capture, ShotOptions, Step}
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "capture", about = "T-661 editor-capture harness (Rust)")]
+#[command(name = "capture", about = "Editor-capture harness")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -27,9 +27,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// cdp2.mjs port: navigate the steps, poll the boot overlay out, capture chrome (+ map).
+    /// Navigate the steps, poll the boot overlay out, capture chrome (+ map).
     ///
-    /// ARGS are the cdp2.mjs positional pairs: `<out.png> <url> <waitMs> [url waitMs ...]`.
+    /// ARGS are positional pairs: `<out.png> <url> <waitMs> [url waitMs ...]`.
     Shot {
         /// `<out.png> <url> <waitMs> [url waitMs ...]` — first is the output PNG, then url/waitMs pairs.
         #[arg(required = true, num_args = 1..)]
@@ -41,7 +41,7 @@ enum Cmd {
         #[arg(long = "hide-overlay")]
         hide_overlay: bool,
     },
-    /// zoomsweep.mjs port: boot the editor, then per zoom set the camera and read the canvas.
+    /// Boot the editor, then per zoom set the camera and read the canvas.
     Zoomsweep {
         /// Output filename prefix (`<prefix>_z<z>.png` per zoom).
         out_prefix: String,
@@ -50,7 +50,7 @@ enum Cmd {
         /// Comma-separated zoom levels, e.g. `-2,-1,0,1`.
         zooms: String,
     },
-    /// crop.sh port: crop (and optionally nearest-neighbour upscale) a region of a screenshot.
+    /// Crop (and optionally nearest-neighbour upscale) a region of a screenshot.
     Crop {
         /// Source image.
         img: PathBuf,
@@ -75,7 +75,7 @@ pub fn run() -> ExitCode {
             canvas,
             hide_overlay,
         } => {
-            // cdp2.mjs: `out = a.shift(); for (i=0; i<a.length; i+=2) steps.push([a[i], Number(a[i+1]||3000)])`.
+            // `out` is the first positional; the rest are `<url> <waitMs>` pairs.
             let mut it = args.into_iter();
             let out = PathBuf::from(it.next().expect("clap required=true guarantees >=1 arg"));
             let rest: Vec<String> = it.collect();
@@ -83,7 +83,7 @@ pub fn run() -> ExitCode {
             let mut i = 0;
             while i < rest.len() {
                 let url = rest[i].clone();
-                // Default wait 3000ms when the pair is missing its second element (cdp2.mjs `|| 3000`).
+                // Default wait 3000ms when the pair is missing its second element.
                 let wait_ms = rest
                     .get(i + 1)
                     .and_then(|s| s.parse::<u64>().ok())

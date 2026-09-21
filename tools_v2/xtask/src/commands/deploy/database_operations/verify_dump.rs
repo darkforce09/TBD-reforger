@@ -74,7 +74,7 @@ pub(crate) fn verify_dump(
         return Err(VerifyFail);
     }
 
-    // 4. IDENTITY (T-588)
+    // 4. IDENTITY
     if let Some(expect) = expect_db {
         let dbname = toc
             .lines()

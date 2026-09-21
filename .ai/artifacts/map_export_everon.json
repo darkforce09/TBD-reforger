@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "terrainId": "everon",
-  "slice": "T-090.3.0",
+  "slice": "spike-subregion-export",
   "generatedAt": "2026-06-30T16:20:00Z",
   "status": "COMPLETE — enumeration proven on real Everon (TBD_Dev_POC.ent + Eden). K1/K1b/K2/K5/K6/K7 PASS; K3/K4 honest RED (tile production = T-090.1/.1.1, out of spike scope).",
   "subregionBBoxM": [

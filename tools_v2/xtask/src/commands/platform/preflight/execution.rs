@@ -23,7 +23,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
         ok("host bridge", "not containerised");
     }
 
-    // 2. cargo (direct — T-889)
+    // 2. cargo (direct)
     {
         let mut cmd = Command::new("cargo");
         cmd.arg("--version");
@@ -80,7 +80,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
             &format!("{stray} worktree(s) built into their own target — will exhaust disk"),
         );
     }
-    // T-300. The shared cache is fine for check/test/clippy and fatal for a launched binary; this
+    // The shared cache is fine for check/test/clippy and fatal for a launched binary; this
     // is the check that says which one the run target currently holds.
     {
         let run_dir =
@@ -201,7 +201,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
         }
     }
 
-    // 9. Wave lock (T-912.2 — this check pointed at the TSV until the lock replaced it).
+    // 9. Wave lock.
     // `wave check` recomputes from the tickets and structurally compares; a missing lock is a
     // DidNotRun refusal inside it, so an absent plan can never read as green here.
     {
@@ -278,14 +278,14 @@ pub fn run(warn_only: bool) -> Result<u8> {
         );
     }
 
-    // 11b. trunk serve (informational since T-396)
+    // 11b. trunk serve (informational)
     let ts = count_pgrep("trunk serve");
     if ts == 0 {
         ok("trunk serve", "not running");
     } else {
         ok(
             "trunk serve",
-            &format!("{ts} running — fine since T-396; the gate builds into private dist + target"),
+            &format!("{ts} running — fine; the gate builds into private dist + target"),
         );
     }
 

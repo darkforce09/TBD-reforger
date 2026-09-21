@@ -1,4 +1,4 @@
-//! T-894 — the A/B plumbing: how each side of a comparison is run, and what may be normalised.
+//! The A/B plumbing: how each side of a comparison is run, and what may be normalised.
 //!
 //! Kept apart from `selftest`'s arms on purpose. The arms decide WHAT is compared; this file
 //! decides what counts as "the same output", and that is where a parity harness quietly dies —
@@ -183,7 +183,7 @@ pub(crate) fn write_scratch_compose(dir: &Path) -> Result<()> {
     fs::create_dir_all(dir)?;
     fs::write(
         dir.join("docker-compose.yml"),
-        "# T-894 selftest scratch project — created by `cargo xtask db selftest`, safe to delete.\n\
+        "# Selftest scratch project — created by `cargo xtask db selftest`, safe to delete.\n\
          services:\n  \
            db:\n    \
              image: docker.io/library/postgres:18-alpine\n    \

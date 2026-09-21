@@ -15,19 +15,19 @@ pub fn run(args: &[String]) -> Result<u8> {
     }
 }
 
-/// Entry for `xtask mod compile-selftest` — T-897's port of the Makefile's `mod-compile-selftest`.
+/// Entry for `xtask mod compile-selftest`.
 ///
 /// THE INSTRUMENT BEFORE THE VERDICT. This check's entire job is to prove the absence of false
 /// greens, so it must not be one. Only exit **1** — a real Enfusion rejection of the deliberately
 /// broken `--selftest` addon — counts as a pass, per the contract at the top of this file:
 /// 0 compiled clean · 1 real compile failure · 2 no verdict reached · 3 environment failure.
 ///
-/// Until T-312 the check was `if compile --selftest; then FAIL else OK fi`, which read ANY
+/// A check shaped `if compile --selftest; then FAIL else OK fi` reads ANY
 /// non-zero as "the gate correctly rejected broken source". On a machine with no dedicated server
 /// and no host bridge the gate exits 3 without compiling a line, and that printed SELFTEST OK —
 /// while `mod wave gate` called it and reported PASS for a check that never happened.
 ///
-/// The classification lived in the Makefile recipe until T-897 (`Makefile:290-298`), where it had
+/// The classification lives here rather than in a recipe, where it would have
 /// to be a shell `case` **because GNU make flattens every failed recipe to its own status 2**,
 /// destroying the 1-vs-3 distinction the whole check turns on. In-process there is no flattening:
 /// `rc` below is this gate's own. Each branch still NAMES its failure mode, because a caller
@@ -75,7 +75,7 @@ pub fn run_selftest() -> Result<u8> {
     })
 }
 
-/// T-901: the mod-gates.yml preflight, in Rust. Missing server or empty rdb is a hard fail
+/// The mod-gates.yml preflight, in Rust. Missing server or empty rdb is a hard fail
 /// (exit 1). A check that did not find the depot must not print SELFTEST OK — that is
 /// `run_selftest`'s job, and it already refuses exit 0 / 3 as a pass.
 pub fn run_preflight() -> Result<u8> {

@@ -96,7 +96,7 @@ pub(super) fn to_code(pass: bool) -> u8 {
 }
 
 pub(super) fn force_webgl(path: &str) -> String {
-    // Idempotent — EDIT_PATH already pins `force=webgl` (T-166), so callers that wrap it must not
+    // Idempotent — EDIT_PATH already pins `force=webgl`, so callers that wrap it must not
     // double-append.
     if path.contains("force=webgl") {
         return path.to_string();

@@ -16,7 +16,7 @@ pub use status::{Status, StatusName};
 
 mod tickets;
 
-pub use tickets::{FROZEN_UNMAPPABLE, ProgramTicket, Ticket, WorkTicket};
+pub use tickets::{ProgramTicket, Ticket, WorkTicket};
 
 #[cfg(test)]
 #[path = "tests/mod.rs"]

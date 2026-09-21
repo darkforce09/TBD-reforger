@@ -1,11 +1,11 @@
-//! T-878 — port of `scripts/mod/setup-client-addons.sh` → `cargo xtask setup client-addons`.
+//! `cargo xtask setup client-addons`: symlink the framework into the client addon tree.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
+//! Path pins:
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`. Staging lives at `$HOME/.local/share/tbd-server-addons`.
 //!
 //! Symlinks `$MOD_ROOT/tbd-framework` into the client addon staging dir and prints Steam launch
-//! options. Acceptance is bash/port stdout+stderr+rc on a clean tree and ≥2 broken arms
-//! (T-556 / T-853). Throwaway `$HOME` only — never clobber the operator's real addon staging.
+//! options. Acceptance is stdout, stderr and exit code on a clean tree plus at least two broken
+//! arms, against a throwaway `$HOME` only — never the operator's real addon staging.
 //!
 //! Preserved oddities:
 //! - `ln -sfn` succeeds even when `$MOD_ROOT/tbd-framework` is missing (dangling symlink) —
@@ -23,7 +23,7 @@ use anyhow::{Context, Result};
 
 use crate::core::repository_root::find_repo_root;
 
-/// Paths mirroring `scripts/mod/lib/paths.sh` for an already-resolved monorepo root.
+/// The path pins, for an already-resolved monorepo root.
 struct Paths {
     mod_root: PathBuf,
 }
@@ -46,7 +46,7 @@ pub fn run() -> Result<u8> {
 ///
 /// Split out so the `$HOME` test does not have to `set_current_dir` into a throwaway root to make
 /// `find_repo_root` land there. That chdir is process-wide: every other test thread walking from
-/// the cwd at that instant (`map_blueprint::tests::fixture`, `map_world_los` pins) resolved the
+/// the cwd at that instant (the blueprint fixture and `map_world_los` pins) resolved the
 /// throwaway root — which carries a `.ai/tickets/ROOT` marker — and failed with NotFound. Measured
 /// 2026-09-05, wave 248 full gate, `test xtask+developer-tools`: reproducible 2/2 in the gate's cold
 /// target dir, never in isolation.

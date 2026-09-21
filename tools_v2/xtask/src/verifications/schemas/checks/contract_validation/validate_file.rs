@@ -1,6 +1,6 @@
 use super::*;
 
-/// Validate one mission JSON file (or stdin with `-`) — port of `validate-file.mjs`
+/// Validate one mission JSON file (or stdin with `-`).
 /// (schema + the 1.1 ORBAT-count/slot-id checks; the deploy-staging V1 gate).
 pub fn validate_file(target: &str) -> Result<u8> {
     let raw = if target == "-" {
@@ -18,7 +18,7 @@ pub fn validate_file(target: &str) -> Result<u8> {
 
     let root = repo_root()?;
     let schema = read_json(&definition_path(&root, "mission.schema.json"))?;
-    // T-450 — whole-document byte ceiling (mirrors TBD_MissionLoader.MISSION_FILE_MAX_BYTES).
+    // Whole-document byte ceiling (mirrors TBD_MissionLoader.MISSION_FILE_MAX_BYTES).
     // Prefer the schema keyword so a drifted constant here fails closed rather than silently
     // accepting an oversized file that the mod would refuse.
     let max_bytes = schema["x-tbd-missionFileMaxBytes"]

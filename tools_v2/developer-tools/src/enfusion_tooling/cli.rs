@@ -1,7 +1,7 @@
-//! `enf` — T-181 Enfusion oracle CLI.
+//! `enf` — the Enfusion oracle CLI.
 //!
 //! Builds and queries the mechanical indexes that let a session answer "how does CRF do X"
-//! (and, from T-181.3, "what does vanilla actually do") in seconds, with a real `file:line`
+//! (and "what does vanilla actually do") in seconds, with a real `file:line`
 //! instead of a plausible-sounding invention.
 //!
 //!   enf index crf --root apps/mod/crf_framework --out .ai/artifacts/enf-index
@@ -18,7 +18,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser)]
 #[command(
     name = "enf",
-    about = "T-181 Enfusion oracle: index + query CRF and vanilla scripts"
+    about = "Enfusion oracle: index + query CRF and vanilla scripts"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -70,7 +70,7 @@ enum Cmd {
         #[arg(long, default_value = "scripts/")]
         prefix: String,
     },
-    /// Dump one pak entry's RAW compressed bytes — codec identification (T-181.3.3).
+    /// Dump one pak entry's RAW compressed bytes — codec identification.
     DumpEntry {
         path: String,
         #[arg(long, default_value = "/tmp/entry.bin")]

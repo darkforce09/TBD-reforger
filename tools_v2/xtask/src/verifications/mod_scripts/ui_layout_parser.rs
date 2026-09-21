@@ -1,4 +1,4 @@
-//! The `awk` half of the T-853 port of `scripts/mod/verify-ui-layouts.sh`.
+//! The layout-file parser half of the UI-layout gate.
 //!
 //! ── WHY THIS IS ITS OWN FILE ─────────────────────────────────────────────────────────────────
 //!
@@ -20,7 +20,7 @@
 //!
 //! ── THE BUG THAT MADE THE FIRST CUT OF THIS GATE VACUOUS ─────────────────────────────────────
 //!
-//! Per the T-181.51 registry note the FIRST version of the script **passed the known-broken
+//! Per the registry note the FIRST version of the script **passed the known-broken
 //! files**. Every Workbench GUID is written as a quoted `"{7BD1A70000000750}"`, so counting `{`
 //! and `}` over the raw line desyncs the depth counter; `owner[depth]` then points at the wrong
 //! widget, the C4/C6 bookkeeping never matches, and the gate reports clean over a layout it was
@@ -50,7 +50,7 @@
 //! The deviation is kept, for the reason `verification_core::scan::walk_files` already sorts: *"a gate's
 //! output must not depend on readdir ordering, or two runs over the same tree disagree and the
 //! diff-based port acceptance becomes meaningless."* The same argument applies to a hash order
-//! that varies by awk implementation. Nothing consumes the order: `scripts/mod/wave.sh:141` runs
+//! that varies by implementation. Nothing consumes the order: the mod wave driver runs
 //! this gate through a `run()` helper that branches on the exit status alone and, on failure,
 //! prints `tail -12` of the merged output for a human. The finding SET, the finding TEXT and the
 //! EXIT CODE are unchanged. `tests::multiple_c6_findings_come_out_in_ascending_line_order` pins
@@ -76,7 +76,7 @@ const OK_SLOT: &[&str] = &[
 /// awk's `container[]`: widgets that size children by layout rules, not by anchors.
 ///
 /// A child of one of these MUST declare a slot, or it silently falls back to its desired size —
-/// which for a `FrameWidgetClass` is ZERO. That is the T-181.47 defect exactly.
+/// which for a `FrameWidgetClass` is ZERO. That is the defect exactly.
 const CONTAINER: &[&str] = &[
     "OverlayWidgetClass",
     "SizeLayoutWidgetClass",
@@ -130,7 +130,7 @@ const GEOM_KEYS: &[&str] = &[
 /// 3. **LATENT BUG, PRESERVED:** [`Analyzer::flush_frame`] early-returns when `have_frame` is
 ///    false, so awk's `delete seen; delete val` never runs on that path. Geometry keys written
 ///    inside a NON-frame slot — an `OffsetLeft` on a `ButtonWidgetSlot`, which is precisely the
-///    T-181.47 mistake — survive into the next `FrameWidgetSlot` and can raise a C3 against values
+///    Mistake — survive into the next `FrameWidgetSlot` and can raise a C3 against values
 ///    belonging to a different widget. This is a real defect in the script, found while porting;
 ///    it is reported rather than patched because fixing it changes what the gate prints on a
 ///    broken tree, and a port is not the place to argue a behaviour change.

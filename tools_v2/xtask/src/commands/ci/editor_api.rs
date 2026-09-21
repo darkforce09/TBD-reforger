@@ -1,4 +1,4 @@
-//! T-901 — boot website-api for editor-gates.yml and wait on `/healthz`.
+//! Boot website-api for editor-gates.yml and wait on `/healthz`.
 //!
 //! The workflow used to background `cargo run` with `|| true`, then `seq`/`curl` in a loop.
 //! `|| true` is the forbidden shape: a spawn failure would read as "API is starting". This

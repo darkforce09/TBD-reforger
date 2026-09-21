@@ -9,8 +9,8 @@ use super::*;
 /// Scoping decisions, each measured against the live tree on 2026-08-14:
 ///
 /// - **Live-order collisions: refuse only NEW colliding pairs.** The live tree already
-///   carries parent↔child live-order collisions (order 900 across the T-090 family,
-///   4310 on T-674.1/.2, 4320 on T-675.1/.2) that `validate_registry` never reds —
+///   carries parent↔child live-order collisions (order 900 across one program family,
+///   one order shared by a parent and its children) that `validate_registry` never reds —
 ///   its walk is parents-only — so a literal corpus-wide refusal would wedge every op
 ///   on a tree the check calls green. Refusing collisions the op *introduces* kills
 ///   exactly the `cmd_reorder` red-write wedge the design names, and never
@@ -18,7 +18,7 @@ use super::*;
 /// - **Empty `owns` on live work: only ids this op made live.** Same
 ///   don't-retro-police carve-out, stated verbatim in the design.
 /// - **Child-id shape (`{parent}.{suffix}`): changed programs only.** Measured
-///   preexisting violation: T-111 (frozen-unmappable parking) lists T-067.1. A
+///   preexisting violation: a parked program cross-lists another program's child. A
 ///   corpus-wide rule would refuse every op on the live tree; scoping to programs the
 ///   op touched still guarantees ops never *produce* a non-dotted child.
 /// - **Duplicate `children[]` entries and dangling `children[]` references:
@@ -60,16 +60,16 @@ pub(super) fn validate_post_image(
             let words = w.summary.split_whitespace().count();
             if words > crate::SUMMARY_WORD_CAP {
                 return Err(format!(
-                    "post-image {id}: summary is {words} words (cap {}) — write the ten typed body fields instead of a wall (caps: T-917 spec §Body)",
+                    "post-image {id}: summary is {words} words (cap {}) — write the ten typed body fields instead of a wall (caps: spec §Body)",
                     crate::SUMMARY_WORD_CAP
                 ));
             }
         }
     }
-    // T-920.1 title gate (t920 spec Decisions log #4): no op may write a ticket —
+    // Title gate (t920 spec Decisions log #4): no op may write a ticket —
     // either kind — whose title is empty, its own id, or over TITLE_WORD_CAP words.
     // Scoped to `changed`, the same don't-retro-police carve-out: the 440 history
-    // titles are metered debt (TITLE_DEBT_PIN) drained by the T-919/T-921 streams;
+    // titles are metered debt (TITLE_DEBT_PIN) drained batch by batch;
     // an op that rewrites a debt ticket must repair the title in the same breath.
     // The two nonempty arms are exactly [`crate::title_is_debt`] — one instrument.
     for id in changed {
@@ -82,7 +82,7 @@ pub(super) fn validate_post_image(
             }
             if title == id {
                 return Err(format!(
-                    "post-image {id}: title equals the ticket id — write a real title; id-as-title is the measured debt class the T-919/T-921 streams drain, and ops never add to it (t920 spec Decisions log #4)"
+                    "post-image {id}: title equals the ticket id — write a real title; id-as-title is the measured debt class the drain batches shrink, and ops never add to it (t920 spec Decisions log #4)"
                 ));
             }
             let words = title.split_whitespace().count();
@@ -94,9 +94,9 @@ pub(super) fn validate_post_image(
             }
         }
     }
-    // T-920.1 queued-tier main_goal (t920 spec Decisions log #1): a changed LIVE
+    // Queued-tier main_goal (t920 spec Decisions log #1): a changed LIVE
     // (queued/ready/running/review) work ticket must carry main_goal. Quarantine-
-    // exempt (nonempty migration_legacy — content exists, unprocessed; the T-919
+    // exempt (nonempty migration_legacy — content exists, unprocessed; the
     // drain fills main_goal when it decomposes the wall). Scoped to `changed`: the
     // history debt is metered by MAIN_GOAL_DEBT_PIN, never retro-policed — this arm
     // is what makes NEW offenders impossible while the pin drains.
@@ -156,7 +156,7 @@ pub(super) fn validate_post_image(
         if !all_preexisting {
             let list: Vec<&str> = ids.iter().map(String::as_str).collect();
             return Err(format!(
-                "duplicate live order {order} on {} — refusing to write a red corpus (the legacy cmd_reorder wedge class); pick a different anchor",
+                "duplicate live order {order} on {} — refusing to write a red corpus; pick a different anchor",
                 list.join(" and ")
             ));
         }
@@ -170,7 +170,7 @@ pub(super) fn validate_post_image(
                     w.status.name().as_str()
                 ));
             }
-            // T-917.2 surface rule (spec Decisions log #3: surface REQUIRED on
+            // Surface rule (spec Decisions log #3: surface REQUIRED on
             // live/new work), same made-live-only scoping as owns. Binds only when
             // the scope names a component: component-free vocabulary positions
             // (repo/docs, engine layers, …) carry no surfaces to require, and

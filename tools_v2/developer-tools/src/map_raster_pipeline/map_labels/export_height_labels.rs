@@ -105,7 +105,7 @@ pub fn export_height_labels(terrain: &str) -> Result<u8> {
         }
         Value::Object(o)
     };
-    // T-537: refuse writing [] over committed height-map_labels.json.
+    // Refuse writing [] over committed height-map_labels.json.
     super::super::refuse_empty_write(
         "export-height-labels",
         out.is_empty(),
@@ -134,7 +134,7 @@ pub fn export_height_labels(terrain: &str) -> Result<u8> {
     if !named_dropped.is_empty() {
         named_dropped.sort_by_key(|(_, v)| *v);
         eprintln!(
-            "export-height-labels: dropped {} named row(s) < {floor_m} m floor (coastal mis-tags; kind fixes T-152.17/.19): {}",
+            "export-height-labels: dropped {} named row(s) < {floor_m} m floor (coastal mis-tags): {}",
             named_dropped.len(),
             named_dropped
                 .iter()

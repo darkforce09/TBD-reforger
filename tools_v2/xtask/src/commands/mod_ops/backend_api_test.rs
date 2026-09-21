@@ -1,9 +1,9 @@
-//! T-874 — port of `scripts/mod/test-phase1-api.sh`
+//! `cargo xtask mod test-phase1-api`: the Phase-1 backend REST arms.
 //! → `cargo xtask mod test-phase1-api`.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
+//! Path pins:
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`.
-//! Bash sources paths.sh then `WEB="$WEB"` (no-op); `$WEB` is unused by the smoke itself.
+//! `$WEB` is resolved but unused by the smoke itself.
 //!
 //! Smoke: curl Phase-1 game-server routes (link / roster / compiled mission) with
 //! `API_BASE` (default `http://127.0.0.1:8080`), `GAME_SERVER_TOKEN`, `EVENT_ID`.
@@ -30,7 +30,7 @@ use verification_core::verdict::NotRun;
 /// Entry for `xtask mod test-phase1-api`.
 pub fn run(repo_root: &Path) -> Result<u8> {
     let _paths = Paths::from_root(repo_root);
-    // Mirror bash `source …/paths.sh` + `WEB="$WEB"` — WEB unused by the curls.
+    // WEB is resolved for symmetry with the other lanes; the curls do not use it.
     let _ = &_paths.web;
 
     let api = env::var("API_BASE").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string());
@@ -111,7 +111,7 @@ struct Paths {
 }
 
 impl Paths {
-    /// Reproduce `scripts/mod/lib/paths.sh` against an already-resolved monorepo root.
+    /// Resolve the path pins against an already-resolved monorepo root.
     fn from_root(root: &Path) -> Self {
         Self {
             mono_root: root.to_path_buf(),

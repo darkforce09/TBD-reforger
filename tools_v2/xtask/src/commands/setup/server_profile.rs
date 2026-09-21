@@ -1,16 +1,16 @@
-//! T-861 — port of `scripts/mod/setup-server-profile.sh` → `cargo xtask setup server-profile`.
+//! `cargo xtask setup server-profile`: write the dedicated-server profile this checkout boots with.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
+//! Path pins:
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`.
 //!
 //! Builds a dedicated-server profile tree (`profile/TBD_BackendConfig.json`, mission fallback,
 //! optional registry). Acceptance is bash/port stdout+stderr+rc (+ tree modes/bytes) on a clean
-//! tree and ≥2 broken arms — not a green run alone (T-556 / T-853).
+//! tree and ≥2 broken arms — not a green run alone.
 //!
 //! Fail-opens closed vs bash:
 //! - Missing `backend.example.json` / golden still hard-fail (bash `set -e` on `cp`, explicit
 //!   golden check). Registry copy keeps bash's `cp … 2>/dev/null || true`.
-//! - `.env` SERVICE_TOKEN parse matches `world-boot.sh` / former script (strip CR, one quote layer,
+//! - `.env` SERVICE_TOKEN parse matches the world-boot gate's (strip CR, one quote layer,
 //!   `sed -n 's/^SERVICE_TOKEN=//p' | head -1`); absent line leaves the placeholder.
 //!
 //! Preserved oddities:
@@ -36,7 +36,7 @@ const GOLDEN_MISSION_FILE: &str = "bridgehead-at-levie.json";
 const BACKEND_EXAMPLE_REL: &str = "apps/mod/tbd-framework/Data/backend.example.json";
 const REGISTRY_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 
-/// Paths mirroring `scripts/mod/lib/paths.sh` for an already-resolved monorepo root.
+/// The path pins, for an already-resolved monorepo root.
 struct Paths {
     mod_root: PathBuf,
     web: PathBuf,
@@ -154,7 +154,7 @@ fn resolve_service_token(web: &Path) -> Option<String> {
     }
 }
 
-/// Character-for-character the reader in world-boot.sh / former setup-server-profile.sh.
+/// Character-for-character the reader the world-boot gate uses.
 fn token_from_env_file(path: &Path) -> Option<String> {
     let text = fs::read_to_string(path).ok()?;
     for line in text.lines() {

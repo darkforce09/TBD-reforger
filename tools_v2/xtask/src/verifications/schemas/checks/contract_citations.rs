@@ -28,7 +28,7 @@ pub(super) fn pointer_resolves(doc: &Value, pointer: &str) -> bool {
 }
 
 /// The gate's own scope, rendered from the constants above so the printed claim cannot drift
-/// from what the walker actually reads (T-611: the old summary was a hardcoded sentence that
+/// from what the walker actually reads (a hardcoded summary sentence
 /// outlived its configuration by two full-codebase rewrites).
 pub(super) fn citation_scope() -> String {
     let exts: Vec<String> = CODE_EXTS.iter().map(|e| format!(".{e}")).collect();
@@ -38,7 +38,7 @@ pub(super) fn citation_scope() -> String {
 
 /// Walk `root`'s [`SCAN_ROOTS`] for `@contract` tags and resolve each against `schema_dir`.
 ///
-/// Split out of [`citations`] at T-611 so the scope contract — which extensions, which roots,
+/// Split out of [`citations`] so the scope contract — which extensions, which roots,
 /// and what counts as "no verdict" — is testable against a fixture tree rather than only
 /// against the live repo. `rs` and `crates/` sat unscanned through two full-codebase rewrites
 /// while the gate reported green; the tests below exist so that cannot recur silently.
@@ -56,7 +56,7 @@ pub(super) fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationS
     for scan in SCAN_ROOTS {
         let base = root.join(scan);
         if !base.exists() {
-            // T-611: this used to `continue` in silence, so renaming a scan root would have
+            // This used to `continue` in silence, so renaming a scan root would have
             // produced "Checked 0 @contract citation(s) … All resolve" and exit 0 — a pass
             // over a tree the gate never opened. That is the defect this gate exists to catch.
             scope_errors.push(format!(
@@ -118,9 +118,9 @@ pub(super) fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationS
     }
 
     // A scan that read nothing is not a pass. This guard exists because the failure mode the
-    // gate is meant to prevent is a green over an unexamined input (cf. T-606, T-607): if the
+    // gate is meant to prevent is a green over an unexamined input: if the
     // matcher, the extension list or the roots ever break, the count silently goes to 0 and
-    // every citation "resolves". T-611.
+    // every citation "resolves".
     if citations == 0 && scope_errors.is_empty() {
         scope_errors.push(format!(
             "0 @contract citation(s) found across {files_read} file(s) — the matcher, the \
@@ -149,7 +149,7 @@ pub fn citations() -> Result<u8> {
         scope_errors,
     } = scan_citations(&root, &schema_dir)?;
 
-    // T-611 — the summary states its own scope. The old two lines ("Checked N …" +
+    // The summary states its own scope. The old two lines ("Checked N …" +
     // "All @contract citations resolve.") were a broad claim over a narrow scan: true count,
     // false confidence. Every clause below is generated from CODE_EXTS / SCAN_ROOTS.
     let breakdown = per_ext
@@ -183,11 +183,9 @@ pub fn citations() -> Result<u8> {
         }
     }
     println!(
-        "TS-6 retired: the React contract layer was deleted at T-159.29.3 (Leptos dto.rs is R-api-golden gated)."
+        "TS-6 retired: there is no React contract layer (the Leptos DTOs are R-api-golden gated)."
     );
-    println!(
-        "GO-7 retired: Go handlers removed at the T-145 Rust cutover (axum routes are compile-checked)."
-    );
+    println!("GO-7 retired: there are no Go handlers (axum routes are compile-checked).");
     Ok(if problems.is_empty() && scope_errors.is_empty() {
         0
     } else {

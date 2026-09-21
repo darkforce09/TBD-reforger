@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-916.1 acceptance 2 — add-child onto a work parent refuses without `promote`;
+/// Acceptance 2 — add-child onto a work parent refuses without `promote`;
 /// with `promote` the parent atomically becomes a program (scope dropped, every
 /// other field preserved) carrying the freshly minted first child.
 #[test]
@@ -86,7 +86,7 @@ fn add_child_onto_program_appends_next_free_id() {
     }
 }
 
-/// T-916.1 acceptance 2 — duplicate `children[]` entries refuse at the post-image
+/// Acceptance 2 — duplicate `children[]` entries refuse at the post-image
 /// gate (corpus-wide; the 4a2f3426 class), whatever op tries to write.
 #[test]
 fn duplicate_child_refuses_any_op() {
@@ -103,7 +103,7 @@ fn duplicate_child_refuses_any_op() {
     assert_eq!(before, c);
 }
 
-/// T-916.1 acceptance 2/3 — remove of a program refuses without `force`; with
+/// Acceptance 2/3 — remove of a program refuses without `force`; with
 /// `force` it cascade-deletes the full descendant closure (children[] edges AND
 /// work parent back-edges, nested programs included).
 #[test]
@@ -133,7 +133,7 @@ fn remove_program_refuses_then_force_cascades() {
     assert!(c.tickets.is_empty(), "closure removes every descendant");
 }
 
-/// T-916.1 acceptance 2 — removing the last child of a program refuses, naming the
+/// Acceptance 2 — removing the last child of a program refuses, naming the
 /// fix (programs require children).
 #[test]
 fn remove_last_child_of_program_refuses() {
@@ -167,7 +167,7 @@ fn remove_work_scrubs_parent_children() {
     assert!(c.get("T-1.1").is_none());
 }
 
-/// A work ticket double-listed by a second program (the live T-067.1 shape) cannot
+/// A work ticket double-listed by a second program (a shape the live tree carries) cannot
 /// be removed while that listing dangles — the corpus-wide referential check
 /// refuses, naming the listing program.
 #[test]
@@ -184,7 +184,7 @@ fn remove_double_listed_child_refuses() {
     assert_eq!(before, c);
 }
 
-/// T-916.1 acceptance 2 — a reorder that would land on an occupied live order
+/// Acceptance 2 — a reorder that would land on an occupied live order
 /// refuses instead of writing red state (the sanctioned wedge fix).
 #[test]
 fn reorder_collision_refuses() {
@@ -230,7 +230,7 @@ fn reorder_flips_idea_and_requires_owns() {
 
 /// Don't retro-police: the live tree already carries parent↔child live-order
 /// collisions the parents-only `validate_registry` never reds (order 900 across
-/// the T-090 family, measured 2026-08-14). Ops that do not introduce a NEW
+/// the family, measured 2026-08-14). Ops that do not introduce a NEW
 /// collision must keep working on such a corpus.
 #[test]
 fn preexisting_collision_is_not_retro_policed() {
@@ -253,7 +253,7 @@ fn preexisting_collision_is_not_retro_policed() {
     assert!(err.contains("duplicate live order 900"), "{err}");
 }
 
-/// Both anchor failure modes print the exact legacy string (cmd_reorder prints
+/// Both anchor failure modes print the exact refusal string (cmd_reorder prints
 /// "Unknown anchor ticket" for missing AND for order-less anchors).
 #[test]
 fn reorder_unknown_anchor_message() {
@@ -269,7 +269,7 @@ fn reorder_unknown_anchor_message() {
 
 /// cmd_advance_slice walk over typed children: first child when no active, next
 /// after the current one, refuse past the end, refuse active-not-in-children —
-/// legacy refusal strings verbatim.
+/// those refusal strings verbatim.
 #[test]
 fn advance_slice_walks_and_refuses() {
     let mut c = corpus(vec![
@@ -299,17 +299,17 @@ fn advance_slice_walks_and_refuses() {
     assert_eq!(err, "active_slice T-9.9 not in slices[]");
 }
 
-/// T-916.1 acceptance 3 — the 4a2f3426 alias-class regression pin. The bug: the
+/// Acceptance 3 — the alias-class regression pin, measured at commit 4a2f3426: the
 /// Value path mirrored `children`→`slices` and `active`→`active_slice`, and a
 /// value carrying BOTH spellings blew up serde's alias handling ("duplicate field
 /// `children`"), breaking every mutator. Through the typed path the mirrored-keys
-/// condition is unrepresentable: legacy spellings on disk still PARSE (serde
+/// condition is unrepresentable: aliased spellings on disk still PARSE (serde
 /// aliases), but no rendered output of any op ever contains a `slices =` or
 /// `active_slice =` line — there is nothing to clash.
 #[test]
 fn mirrored_keys_unrepresentable_4a2f3426_pin() {
-    // Legacy spellings parse via alias into the canonical typed fields…
-    let legacy = r#"
+    // Aliased spellings parse into the canonical typed fields…
+    let aliased = r#"
 id = "T-1"
 kind = "program"
 title = "t"
@@ -318,7 +318,7 @@ status = "idea"
 slices = ["T-1.1", "T-1.2"]
 active_slice = "T-1.1"
 "#;
-    let t = parse_ticket_toml(legacy).expect("aliases parse");
+    let t = parse_ticket_toml(aliased).expect("aliases parse");
     let rendered = render_ticket_toml(&t).expect("render");
     assert!(rendered.contains("children = ["), "{rendered}");
     assert!(rendered.contains("active = \"T-1.1\""), "{rendered}");
@@ -335,7 +335,7 @@ active_slice = "T-1.1"
         for line in out.lines() {
             assert!(
                 !line.starts_with("slices = ") && !line.starts_with("active_slice = "),
-                "{id} rendered a mirrored legacy key:\n{out}"
+                "{id} rendered a mirrored alias key:\n{out}"
             );
         }
     }
@@ -357,7 +357,7 @@ fn injected_clock_determinism() {
         add_child(c, "T-2", "Slice one", "", true, CLOCK).expect("promote");
         reorder(c, "T-003", "T-1", CLOCK).expect_err("minted idea has empty owns");
         set_status(c, "T-1", "cancelled", CLOCK).expect("cancel");
-        // T-920.1: a minted child ships only with its body filled (the ship
+        // A minted child ships only with its body filled (the ship
         // ready-tier gate) — fill it deterministically, then ship.
         if let Some(Ticket::Work(w)) = c.tickets.get_mut("T-2.1") {
             w.main_goal = Some("slice goal".into());
@@ -413,7 +413,7 @@ fn remove_cascade_end_to_end_on_disk() {
     );
 }
 
-/// T-917.3: an op may not mint a NEW summary wall — `add` with a >40-word summary
+/// An op may not mint a NEW summary wall — `add` with a >40-word summary
 /// refuses pre-write (corpus byte-untouched, the ops refusal-test pattern), naming
 /// the count and the cap.
 #[test]
@@ -429,7 +429,7 @@ fn add_refuses_wall_summary_pre_write() {
     assert_eq!(c, before, "refused op must leave the corpus untouched");
 }
 
-/// T-917.3: nonempty `migration_legacy` exempts exactly the summary cap — an op
+/// Nonempty `migration_legacy` exempts exactly the summary cap — an op
 /// touching a quarantined ticket (summary := title, possibly >40 words) commits.
 #[test]
 fn quarantined_ticket_is_exempt_from_summary_cap() {

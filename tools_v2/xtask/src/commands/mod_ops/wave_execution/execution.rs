@@ -26,16 +26,30 @@ pub fn run_with_root(root: &Path, args: &[String]) -> u8 {
     }
 }
 
-/// Is this id one of the mod program's? The driver is the T-181 driver — it says so on the tin —
-/// and `shipped_slices` reads the T-181 slice plan exclusively, so any other id in the shared
-/// lock is another program's row.
-pub(super) fn mod_slice_id(id: &str) -> bool {
-    id.starts_with("T-181.")
+/// The programme whose dotted children this driver owns, from the corpus pins. A missing or
+/// malformed pin file is a refusal: filtering the shared lock against an empty programme id
+/// would silently claim every other programme's rows.
+pub(super) fn mod_programme(root: &Path) -> Option<String> {
+    match ticket_engine::corpus_pins::load(root) {
+        Ok(pins) => Some(pins.game_mod_programme_ticket),
+        Err(error) => {
+            eprintln!("mod wave: {error:#}");
+            None
+        }
+    }
 }
 
-/// The lock's `(wave, slice)` pairs for this program. A missing/unreadable lock is `None` —
-/// callers refuse loudly instead of shrugging into "ALL PLANNED WAVES SHIPPED".
+/// Is this id one of the mod programme's? Its dotted children are its slices, and
+/// `shipped_slices` reads that programme's slice plan exclusively, so any other id in the
+/// shared lock is another programme's row.
+pub(super) fn mod_slice_id(programme: &str, id: &str) -> bool {
+    id.starts_with(&format!("{programme}."))
+}
+
+/// The lock's `(wave, slice)` pairs for this programme. A missing/unreadable lock or pin file
+/// is `None` — callers refuse loudly instead of shrugging into "ALL PLANNED WAVES SHIPPED".
 pub(super) fn lock_mod_rows(root: &Path) -> Option<Vec<(u32, String)>> {
+    let programme = mod_programme(root)?;
     let lock = match ticket_engine::wave_lock::load(root) {
         Ok(l) => l,
         Err(e) => {
@@ -49,7 +63,7 @@ pub(super) fn lock_mod_rows(root: &Path) -> Option<Vec<(u32, String)>> {
             .flat_map(|w| {
                 w.tickets
                     .iter()
-                    .filter(|t| mod_slice_id(t))
+                    .filter(|t| mod_slice_id(&programme, t))
                     .map(move |t| (w.n, t.clone()))
             })
             .collect(),
@@ -88,8 +102,8 @@ pub(super) fn unique_sorted_waves(root: &Path) -> Vec<String> {
     waves.into_iter().map(|n| n.to_string()).collect()
 }
 
-/// Shipped slice ids for T-181 (python3 one-liner → serde). On any error → empty (2>/dev/null).
-pub(super) fn shipped_slices(root: &Path) -> Vec<String> {
+/// Shipped slice ids for the mod programme. On any error → empty.
+pub(super) fn shipped_slices(root: &Path, programme: &str) -> Vec<String> {
     let v: Value = match ticket_engine::registry::load_registry(root) {
         Ok(v) => v,
         Err(_) => return Vec::new(),
@@ -100,7 +114,7 @@ pub(super) fn shipped_slices(root: &Path) -> Vec<String> {
     };
     let t181 = match tickets
         .iter()
-        .find(|t| t.get("id").and_then(|i| i.as_str()) == Some("T-181"))
+        .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(programme))
     {
         Some(t) => t,
         None => return Vec::new(),
@@ -119,7 +133,7 @@ pub(super) fn shipped_slices(root: &Path) -> Vec<String> {
 /// missing or unreadable (already reported by [`lock_mod_rows`]) — a refusal, not "done".
 pub(super) fn current_wave(root: &Path) -> Option<String> {
     lock_mod_rows(root)?;
-    let shipped = shipped_slices(root);
+    let shipped = shipped_slices(root, &mod_programme(root)?);
     for w in unique_sorted_waves(root) {
         let mut done_all = true;
         for s in wave_slices(root, &w) {
@@ -238,7 +252,7 @@ pub(super) fn cmd_prep(root: &Path, wave_arg: &str) -> u8 {
         println!("nothing to prep");
         return 0;
     }
-    // T-853: was `bash scripts/mod/slice-worktree.sh new <slice>`. Called IN-PROCESS now rather
+    // The slice-worktree `new` verb, called IN-PROCESS rather
     // than re-spawning cargo — the script is gone, and a nested `cargo run` here would pay a second
     // resolution and could pick a different target dir than the one this process was launched with.
     for s in wave_slices(root, &w) {
@@ -285,7 +299,7 @@ pub(super) fn cmd_gate(root: &Path) -> u8 {
         "cargo",
         &["run", "-q", "-p", "xtask", "--", "mod", "compile"],
     );
-    // T-897: was `distrobox-host-exec cargo xtask mod compile-selftest`. That Makefile recipe carried the
+    // Was `distrobox-host-exec cargo xtask mod compile-selftest`. That Makefile recipe carried the
     // rc classification (only exit 1 — a real rejection of broken source — is a pass); it now
     // lives in `crate::commands::mod_ops::compile::run_selftest`. The host bridge is dropped for the same reason
     // the `compile` arm above does not need it: the gate crosses it itself.

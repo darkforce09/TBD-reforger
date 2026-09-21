@@ -4,9 +4,10 @@
 //! Subcommands: `status` | `gate` | `land` | `prep [N]` | `push`; an unknown one prints the
 //! header on stdout and exits 2.
 //!
-//! The driver reads the shared wave lock, filtered to its own programme's ids: the driver
-//! introduces itself as "T-181 wave status" and `shipped_slices` reads that programme's slice
-//! plan exclusively, so a lock wave holding none of its ids is another programme's business. A
+//! The driver reads the shared wave lock, filtered to its own programme's ids — the programme
+//! ticket is `game_mod_programme_ticket` in the corpus pins — and `shipped_slices` reads that
+//! programme's slice plan exclusively, so a lock wave holding none of its ids is another
+//! programme's business. A
 //! MISSING lock is a refusal (rc 2), never `ALL PLANNED WAVES SHIPPED` — a driver that shrugs at
 //! a missing plan reports green for work it never looked at.
 //!

@@ -50,7 +50,7 @@ fn dependent_packs_strictly_after_unshipped_dependency() {
 
 #[test]
 fn candidates_sort_by_order_then_id_never_glob_order() {
-    // File names sort T-10 < T-9 lexically; order says T-9 first.
+    // File names sort "-10" before "-9" lexically; order says the single digit first.
     let dir = scratch(
         "order",
         &[
@@ -60,8 +60,8 @@ fn candidates_sort_by_order_then_id_never_glob_order() {
         ],
     );
     let lock = compile(&dir, &BTreeSet::new(), None).unwrap();
-    // One wave (disjoint, under cap) — candidate order is (order, id): T-9, T-10, T-8→ tie
-    // on 20 broken by id: "T-10" < "T-8" lexicographically.
+    // One wave (disjoint, under cap) — candidates sort by (order, id), so the tie
+    // on order 20 breaks lexicographically on the id.
     assert_eq!(
         lock.tickets_in_wave(1),
         vec!["T-9".to_string(), "T-10".to_string(), "T-8".to_string()]
@@ -108,7 +108,7 @@ fn wave_zero_is_baseline_union_parked_minus_reopened() {
         .into_iter()
         .collect();
     let views = load_views(&dir).unwrap();
-    // T-1 reopened → leaves wave 0; T-777 has no file → ledger keeps it; T-2 parked.
+    // The reopened id leaves wave 0; the id with no file is kept by the ledger; one stays parked.
     assert_eq!(
         wave_zero(&views, &baseline),
         vec!["T-2".to_string(), "T-777".to_string()]
@@ -230,7 +230,7 @@ fn reorder_changes_open_waves_only_never_wave_zero() {
     let _ = fs::remove_dir_all(&dir);
 }
 
-/// T-946 — a wave repacked once its whole set has landed freezes that whole set; a wave
+/// A wave repacked once its whole set has landed freezes that whole set; a wave
 /// repacked after EVERY id freezes at most a remnant.
 ///
 /// This is why wave 248 could not be closed on 2026-09-05. `wave --close` closes a pending
@@ -297,10 +297,10 @@ fn a_wave_freezes_its_whole_set_only_when_repacked_after_the_last_ship() {
     let _ = fs::remove_dir_all(&dir2);
 }
 
-/// T-946 follow-up — an incidental repack keeps the plan's own width.
+/// An incidental repack keeps the plan's own width.
 ///
 /// `ticket ship`'s lifecycle hook repacks with no environment, and `max_concurrent()` defaults
-/// to 8. Measured 2026-09-06: wave 236 was packed 3 wide, `ticket ship T-298`'s hook re-packed
+/// to 8. Measured 2026-09-06: wave 236 was packed 3 wide, a ship hook re-packed
 /// it at 8, and the wave that had just been gated no longer existed in the plan — `wave
 /// --close` had nothing to close. An explicit `TBD_MAX_CONCURRENT` still wins.
 #[test]
@@ -362,12 +362,12 @@ fn an_incidental_repack_keeps_the_locks_own_width() {
     let _ = fs::remove_dir_all(&dir);
 }
 
-/// T-946 — the lock numbers from the HIGHEST CLAIM, not merely the newest marker, and a
+/// The lock numbers from the HIGHEST CLAIM, not merely the newest marker, and a
 /// prefixed subject is not a marker at all.
 ///
 /// This is the measured shape of the real ledger on 2026-09-05: a newer marker claiming a
-/// LOWER wave than an older one (the T-853 programme closed alongside the editor programme),
-/// plus prefixed `T-853 wave N CLOSED` subjects that the anchored authority rejects. Before
+/// LOWER wave than an older one (two programmes closed alongside each other),
+/// plus prefixed `<id> wave N CLOSED` subjects that the anchored authority rejects. Before
 /// the fix the lock numbered from `newest_close_base` alone while the close ceremony's oracle
 /// would accept only `highest claim + 1`, so the two drifted and NO close could be written.
 #[test]

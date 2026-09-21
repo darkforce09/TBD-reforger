@@ -22,8 +22,8 @@ pub struct LockWave {
 pub struct WaveLock {
     pub version: u32,
     pub max_concurrent: usize,
-    /// T-914 — the close-marker ledger base open waves continue from (module header
-    /// §NUMBERING). Serde-defaulted so pre-T-914 lock blobs read at historical revisions and
+    /// The close-marker ledger base open waves continue from (module header
+    /// §NUMBERING). Serde-defaulted so lock blobs without it read at historical revisions and
     /// the raw-TOML stubs in `mod_wave_tests` keep parsing; ALWAYS emitted (even 0) by the
     /// deterministic render. Declared between `max_concurrent` and `pack_last` because struct
     /// order IS emit order, and root-level values must precede the `[[waves]]` tables.
@@ -31,13 +31,13 @@ pub struct WaveLock {
     pub wave_base: u32,
     pub pack_last: Vec<String>,
     pub waves: Vec<LockWave>,
-    /// T-925 — pending EMPTIED waves (module header §EMPTIED WAVES): open waves of the
+    /// Pending EMPTIED waves (module header §EMPTIED WAVES): open waves of the
     /// previous lock whose every ticket has shipped, frozen as {label, exact ticket set} by
     /// the repack that dissolved them, held until `wave --close` lands each label's marker.
-    /// `carry_emptied` is the only producer. Serde-defaulted so pre-T-925 lock blobs (and
+    /// `carry_emptied` is the only producer. Serde-defaulted so lock blobs without it (and
     /// the raw-TOML stubs) keep parsing; SKIPPED from the render when empty — an
     /// `emptied = []` root value after the `[[waves]]` tables would not even be valid TOML,
-    /// and the empty case must render byte-identically to the pre-T-925 shape. Nonempty it
+    /// and the empty case must render byte-identically to a lock without it. Nonempty it
     /// renders as `[[emptied]]` tables between `[[waves]]` and `[owns]`, labels ascending.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub emptied: Vec<LockWave>,
@@ -64,7 +64,7 @@ impl WaveLock {
 }
 
 /// The per-ticket facts the compiler needs, from EVERY `.ai/tickets/T-*.toml` — children
-/// included. NOT the parents-only registry loader; a child id like T-090.4 must be a candidate.
+/// included. NOT the parents-only registry loader; a dotted child id must be a candidate.
 #[derive(Debug, Clone)]
 pub struct TicketView {
     pub id: String,

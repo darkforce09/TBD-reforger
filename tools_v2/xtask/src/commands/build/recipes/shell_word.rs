@@ -111,7 +111,7 @@ pub(super) fn is_rust_build_tool(prog: &str) -> bool {
 
 pub(crate) fn rust_api() -> Vec<Step> {
     // `$(CURDIR)/target-dev-api`, NOT the shared cache: this starts the same long-lived server as
-    // `make api`, so it needs the same isolation (T-322). Build targets below exit, so they do not.
+    // `make api`, so it needs the same isolation. Build targets below exit, so they do not.
     let private = cwd_root().join(DEV_API_TARGET).display().to_string();
     vec![
         Step::new(&["cargo", "run", "--bin", "api"])
@@ -131,7 +131,7 @@ pub(crate) fn rust_test() -> Vec<Step> {
 pub(crate) fn rust_fmt() -> Vec<Step> {
     vec![
         Step::new(&["cargo", "fmt", "--check"]).cd(WEB),
-        // `--all` covers tools_v2/xtask/tbd-tools, which the api-crate run does not (T-297).
+        // `--all` covers the tooling crates, which the api-crate run does not.
         Step::new(&["cargo", "fmt", "--all", "--check"]),
     ]
 }
@@ -234,7 +234,7 @@ pub(crate) fn gate_doctor() -> Vec<Step> {
 }
 
 pub(crate) fn leptos_gates() -> Vec<Step> {
-    // T-843 option (b): this is the **required editor-factory pre-close** path. It runs
+    // The **required editor-factory pre-close** path. It runs
     // `gate editor-suite` (incl. save-dialog-rect / entrance-motion-rect). Chromium stays OUT of
     // `cargo xtask platform wave gate` — see docs/platform/EDITOR_FACTORY_FOR_CURSOR.md §5.
     // `leptos-gates: leptos-build gate-doctor` and `gate-doctor: leptos-build`. make builds a
@@ -284,12 +284,11 @@ pub(crate) fn ci_local_leptos() -> Vec<Step> {
     ]
 }
 
-/// `rust-test-it` — **T-894 owns the public target**; this is `rust-ci`'s fifth step.
+/// `rust-test-it` — `cargo xtask db test-it` owns the public target; this is `rust-ci`'s fifth step.
 ///
 /// It is duplicated here on purpose and the duplication is the smaller error. `rust-ci` is
-/// `fmt + clippy + build + wasm-ci + test-it`; a composite that silently drops a step is the T-489
-/// hollow-composite defect, and this slice may not edit T-894's files (they land in parallel).
-/// **At merge: delete this and call T-894's `db test-it`** — the recipes must not diverge.
+/// `fmt + clippy + build + wasm-ci + test-it`; a composite that silently drops a step reports
+/// success over work it never did, which is the defect this arm exists to make impossible.
 pub(crate) fn rust_test_it() -> Vec<Step> {
     let psql = |flag: &str, sql: &str| {
         Step::new(&[
@@ -316,7 +315,7 @@ pub(crate) fn rust_test_it() -> Vec<Step> {
     ]
 }
 
-/// T-558's reaper: drop `rust_it` and every per-binary `rust_it_<suite>_it` T-534 provisioned.
+/// The reaper: drop `rust_it` and every per-binary `rust_it_<suite>_it` database.
 ///
 /// `@`-prefixed in the Makefile, so it is NOT echoed — and its `while read -r db` loop over psql
 /// output was the one piece of genuinely non-trivial shell in the file. Here it is a captured
@@ -372,7 +371,7 @@ pub(super) fn rust_ci() -> Result<u8> {
     Ok(rc)
 }
 
-/// Does this module own `target`? The seam for T-894/T-896, which add their own lanes: chain them
+/// Does this module own `target`? The seam the database and CI lanes chain onto: chain them
 /// as `if crate::commands::build::recipes::handles(t) { crate::commands::build::recipes::run(a) } else { crate::commands::db::operations::run(a) }` rather than merging
 /// three dispatch tables into one file.
 pub(crate) fn handles(target: &str) -> bool {

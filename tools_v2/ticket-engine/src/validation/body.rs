@@ -11,7 +11,7 @@ use super::*;
 /// bare date by the prefix rule.
 pub(super) const QUARANTINE_CUTOVER: &str = "2026-08-15";
 
-/// T-917.3 — body word caps, anti-blend rules and the quarantine-mint tripwire
+/// Body word caps, anti-blend rules and the quarantine-mint tripwire
 /// (spec §Body + §Wall quarantine; Decisions log #6: CHECK-enforced, never
 /// parse-enforced — old git revisions must stay readable). Warnings (the
 /// command-shaped-acceptance rule) are eprinted, never errors. Fail-closed on an

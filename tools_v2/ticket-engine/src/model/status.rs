@@ -115,7 +115,7 @@ impl Status {
     }
 
     /// Ready/running/review require spec + main_goal + nonempty acceptance.
-    /// (T-920.1: `main_goal` is the renamed `user_story` — same slot, same rule.)
+    /// (`main_goal` occupies the slot `user_story` names in older blobs — same rule.)
     pub fn live_ready(
         name: StatusName,
         order: i64,

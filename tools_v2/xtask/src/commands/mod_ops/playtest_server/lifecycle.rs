@@ -1,4 +1,4 @@
-//! ═══ KILL DISCIPLINE, THE LIVENESS PROBE, AND THE RUN LOCK (T-608) ═══════════════════════════
+//! ═══ KILL DISCIPLINE, THE LIVENESS PROBE, AND THE RUN LOCK ═══════════════════════════
 //!
 //! Reached before every other check on purpose, for two reasons: `--selftest` has to be able to get
 //! here without a mission id, and [`assert_no_live_server`] has to run BEFORE staging rewrites
@@ -34,7 +34,7 @@ impl RunPaths {
 
 /// What the probe found. **Four states, and `Unknown` is NOT `Dead`.**
 ///
-/// A three-valued answer would have been enough to make the T-608 bug unrepresentable, but `Zombie`
+/// A three-valued answer is enough to make the bug unrepresentable, and `Zombie`
 /// has to be separate too — see [`probe_group()`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Probe {
@@ -92,7 +92,7 @@ pub enum Volume {
     Quiet,
 }
 
-// ── the run lock (T-608 / F5) ────────────────────────────────────────────────────────────────
+// ── the run lock (F5) ────────────────────────────────────────────────────────────────────────
 // There was no lock and the run dir is fixed, so running the S3 "restart with --admin" command
 // before Ctrl-C'ing the first server orphaned the running group: the second invocation's
 // `rm -f "$PIDFILE"` destroyed the only handle, the first instance's `kill_run` then read no pidfile

@@ -4,9 +4,9 @@ use super::INSTANCE_KINDS;
 use crate::browser_testing::server::repo_root;
 use crate::repository_layout::definition_path;
 
-/// T-278 — the guard that would have caught T-244 the day it landed.
+/// The guard that catches a kind added to the schema and not to this constant.
 ///
-/// T-244 added `vehicle` to the enums schema and to the classify rules, and every census
+/// Adding `vehicle` to the enums schema and to the classify rules leaves every census
 /// kind list stayed at eight. Nothing compared them, so the only signal would have been a
 /// panic during an export nobody could run. This compares them.
 #[test]

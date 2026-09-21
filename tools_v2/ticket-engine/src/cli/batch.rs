@@ -221,7 +221,7 @@ pub(super) fn run_one(
     if dry_run {
         return Ok(());
     }
-    // T-913.2: `ticket run` DELEGATES to the slice-run producer — same configured agent
+    // `ticket run` DELEGATES to the slice-run producer — same configured agent
     // CLI, same fail-closed usage rule, same run receipt under .ai/tickets/metrics/<id>/.
     // The pre-913 scaffolding printed an instruction and invoked nothing, which meant
     // zero receipts and zero token accounting.

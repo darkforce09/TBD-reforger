@@ -1,10 +1,10 @@
 //! The plan / registry / worktree readers everything else keys off.
 //!
-//! These are `wave.sh`'s smallest functions and its most load-bearing ones: `land` decides what to
+//! These are the driver's smallest functions and its most load-bearing ones: `land` decides what to
 //! merge from [`tree_state`] and [`has_work`], and `status`, `wave`, `wave --close` and `land` all
 //! key off [`current_wave`].
 //!
-//! T-912.2: the plan is `.ai/tickets/wave.lock`, compiled from the tickets by `cargo xtask wave
+//! The plan is `.ai/tickets/wave.lock`, compiled from the tickets by `cargo xtask wave
 //! repack`. The TSV readers died with the TSVs, and so did their signature false-green: the old
 //! `plan_rows` swallowed a missing plan into an empty set (`unwrap_or_default`), which is how
 //! `status` once said `ALL WAVES COMPLETE` about a directory that is not the repo. A missing
@@ -71,7 +71,7 @@ pub fn wave_tickets(ctx: &Ctx, w: &str) -> Result<Vec<String>> {
 
 /// The first lock wave n>0 holding at least one unshipped ticket — `"done"` when none does.
 ///
-/// This is the whole successor to the T-616 dual-spelling saga and the generation-floor env it
+/// This is the whole successor to the dual-spelling saga and the generation-floor env it
 /// forced: the lock's wave 0 is where every landed generation lives, waves 1+ are open work
 /// only, and lock wave numbers are typed integers already in ascending order. There is nothing
 /// left to sort, prefix-strip, or floor. `wave`, `wave --close` and `land` all key off this.
@@ -101,7 +101,7 @@ pub fn tree_state(ctx: &Ctx, id: &str) -> &'static str {
     // git-lfs is installed neither in the container nor on the host, and `status` runs the clean
     // filter to re-hash modified files. In a worktree that has touched anything LFS-adjacent this
     // aborts with `git-lfs filter-process: not found` / `fatal: the remote end hung up
-    // unexpectedly` and exit 128 — OBSERVED on slice/T-192 mid-run. Neutralise the filters for this
+    // unexpectedly` and exit 128 — OBSERVED on a slice branch mid-run. Neutralise the filters for this
     // read-only check.
     let out = std::process::Command::new("git")
         .args(["-C", &d])
@@ -135,7 +135,7 @@ pub const LFS_NEUTRAL: [&str; 8] = [
 
 /// Working-tree porcelain paths with LFS filters neutralised — same flags as [`tree_state`].
 ///
-/// T-401: `changed_rs` / `wasm_changed` / `refuse_empty_range` used `git status --porcelain
+/// `changed_rs` / `wasm_changed` / `refuse_empty_range` used `git status --porcelain
 /// 2>/dev/null` and treated empty stdout as "no changes". When the LFS clean filter aborts (exit
 /// 128, empty stdout) that silently half-killed every change-scoped gate: committed diffs still
 /// showed, but uncommitted working-tree Rust/frontend edits vanished. Capture rc, never swallow a

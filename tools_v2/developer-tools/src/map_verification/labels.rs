@@ -1,7 +1,7 @@
-//! T-165.4 — label gates (height/town/road/locations), ported from `scripts/map-assets/`.
+//! Label gates: height, town, road and location names.
 //! The height-labels port RESTORES the wasm-era branch natively (declutter G5/G6 + the ASL
 //! oracle + G3 completeness) — those gates had retired-skipped when the React wasm pkg died;
-//! `map-engine-core::dem` is the same math the wasm wrapped, so the Rust gate runs it directly.
+//! `website_map_engine::dem` is the same math the wasm wrapped, so the Rust gate runs it directly.
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -21,7 +21,7 @@ use website_map_engine::world::terrain::dem::sampling::sample_elevation_from_met
 
 const PEAK_LABEL_MAX: usize = 48;
 
-/* ─────────────────────────── locations (T-152.6 G2–G7) ─────────────────────────── */
+/* ─────────────────────────── locations (G2–G7) ─────────────────────────── */
 
 pub const REQUIRED_EVERON_TOWNS: [&str; 7] = [
     "Morton",
@@ -42,11 +42,11 @@ pub const MAJOR_EVERON_ROADS: [&str; 6] = [
 ];
 const N_MIN: usize = 10;
 
-/* ─────────── town labels (T-152.8/.17 — native rebuild on core importance_declutter) ─────────── */
+/* ─────────── town labels (native rebuild on core importance_declutter) ─────────── */
 
-/* ─────────── road names (T-152.9 — native rebuild on core road_labels) ─────────── */
+/* ─────────── road names (native rebuild on core road_labels) ─────────── */
 
-/* ─────────── terrain alignment (T-091.0 — DEM vs GetSurfaceY anchors) ─────────── */
+/* ─────────── terrain alignment (DEM vs GetSurfaceY anchors) ─────────── */
 
 #[path = "labels/read_json.rs"]
 mod read_json;

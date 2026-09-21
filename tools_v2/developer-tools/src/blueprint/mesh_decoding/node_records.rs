@@ -1,4 +1,4 @@
-//! XOB HEAD node table — the scene hierarchy of a Reforger `.xob` (T-090.11.2): the
+//! XOB HEAD node table — the scene hierarchy of a Reforger `.xob`: the
 //! `Scene_Root`, every `socket_*` empty a child prefab attaches to, and the string table
 //! the COLL chunk's material subranges index. Reverse-engineered in this repo (2026-09-03)
 //! from `FarmHouse_E_1L01.xob`; no public parser existed.
@@ -15,7 +15,7 @@
 //!   (`0xFFFF` = none). Positions and rotations are parent-relative; sockets sit directly
 //!   under the root in every file seen so far, and the walk below composes the chain anyway.
 //!
-//! The COLL chunk (see `xob.rs`) refers to the same index space: each collider record's
+//! The COLL chunk (see [`super::mesh_format`]) refers to the same index space: each collider record's
 //! leading `u16` is its layer-preset name (`Building`, `FireView`, `Glass`, `Foliage`, …) and
 //! each trimesh subrange's `u16` is the `.gamemat` for that run of triangles.
 
@@ -73,7 +73,7 @@ fn f32le(p: &[u8]) -> f32 {
     f32::from_le_bytes([p[0], p[1], p[2], p[3]])
 }
 
-/// Byte-scan for an IFF chunk id from offset 12 (mirrors `xob.rs::find_chunk`, returning
+/// Byte-scan for an IFF chunk id from offset 12 (mirrors [`super::mesh_format`]'s chunk finder, returning
 /// the payload's FILE offset as well so record offsets can be reported absolutely).
 fn find_chunk_at(data: &[u8], id: &[u8; 4]) -> Option<(usize, usize)> {
     let mut pos = 12usize;

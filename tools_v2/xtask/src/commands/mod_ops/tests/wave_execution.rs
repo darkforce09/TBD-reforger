@@ -13,6 +13,12 @@ fn throwaway(tag: &str) -> PathBuf {
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::create_dir_all(root.join(".ai/artifacts/worktrees")).unwrap();
+    // The real corpus pins: the driver reads its programme id from them and refuses without.
+    fs::copy(
+        crate::core::repository_root::test_repo_root().join(ticket_engine::repository::CORPUS_PINS),
+        root.join(ticket_engine::repository::CORPUS_PINS),
+    )
+    .unwrap();
     root
 }
 
@@ -26,7 +32,7 @@ fn write_registry(root: &Path, slice_plan: &str) {
     ticket_engine::registry::ticket_file_storage::save_toml_tree(root, &v).unwrap();
 }
 
-/// A stub `.ai/tickets/wave.lock` — the T-912.2 successor to the stub TSVs these tests wrote.
+/// A stub `.ai/tickets/wave.lock` — the successor to the stub TSVs these tests wrote.
 fn write_lock(root: &Path, waves: &[(u32, &[&str])]) {
     let mut text = String::from("version = 1\nmax_concurrent = 8\npack_last = []\n");
     if waves.is_empty() {
@@ -121,7 +127,7 @@ fn prep_done_prints_nothing() {
 
 #[test]
 fn missing_lock_is_a_refusal_not_all_shipped() {
-    // The TSV-era shrug: missing plan → "ALL PLANNED WAVES SHIPPED", rc 0. Killed by T-912.2.
+    // The shrug this refuses: missing plan → "ALL PLANNED WAVES SHIPPED", rc 0.
     let root = throwaway("missing-lock");
     write_registry(&root, "");
     assert_eq!(current_wave(&root), None);

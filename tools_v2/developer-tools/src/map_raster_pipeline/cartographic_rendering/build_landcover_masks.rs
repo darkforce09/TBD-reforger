@@ -111,7 +111,7 @@ pub fn build_landcover_cli(terrain: &str) -> Result<u8> {
     Ok(0)
 }
 
-/// despike (see build-map-cartographic.mjs): duplicate-drop, return-spike drop, width-stub
+/// despike: duplicate-drop, return-spike drop, width-stub
 /// perpendicular-excursion drop.
 pub(super) fn despike(verts: &[f32]) -> Vec<(f64, f64)> {
     let mut pts: Vec<(f64, f64)> = Vec::with_capacity(verts.len() / 2);

@@ -181,7 +181,7 @@ fn unknown_class_is_refused_at_write_time() {
     assert!(msg.contains("cannot code"), "{msg}");
 }
 
-/// An empty road set is refused rather than written over a committed archive (T-537's rule,
+/// An empty road set is refused rather than written over a committed archive (the refuse-empty rule,
 /// applied to the binary lane).
 #[test]
 fn empty_road_json_is_refused() {

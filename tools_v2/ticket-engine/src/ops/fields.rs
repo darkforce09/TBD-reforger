@@ -28,7 +28,7 @@ pub(super) fn validate_clock(now_utc: &str) -> Result<(), String> {
     crate::validate_rfc3339_utc("now_utc", now_utc)
 }
 
-/// Exact legacy refusal string (`cmds.rs::unknown_ticket`) so T-916.2 can pass op
+/// The exact refusal string so the command layer can pass op
 /// errors through verbatim.
 pub(super) fn unknown(id: &str) -> String {
     format!("Unknown ticket: {id}")

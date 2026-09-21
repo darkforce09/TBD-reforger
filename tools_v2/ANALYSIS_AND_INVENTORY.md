@@ -1,191 +1,142 @@
-# Legacy Tooling Analysis & Inventory Catalog
+# Tooling inventory
 
-Exhaustive forensic analysis of the existing tooling layout (`xtask/`, `tools/`, and `crates/`), capturing exact line counts, functional responsibilities, architectural violations, and target refactoring destinations.
-
----
-
-## 1. Legacy Crate Overview
-
-| Legacy Location | Target Location | Crate Name | Files | Total LOC | Purpose & Key Primitives |
-|---|---|---|---|---|---|
-| `crates/tbd-gate` | `tools_v2/verification-core` | `verification-core` | 8 | 2,260 | Fail-closed static assertion library (`Verdict`, `GateLock`, `Report`, `proc::Run`). |
-| `crates/tbd-tickets` | `tools_v2/ticket-engine` | `ticket-engine` | 7 | 5,078 | Ticket schema, canonical TOML serialization, transactional mutation engine. |
-| `xtask/` | `tools_v2/xtask` | `xtask` | 175 | ~75,000+ | Workspace task runner, ticket validation, markdown syncing, wave lockfile, 3D mesh CAD compiler. |
-| `tools/tbd-tools` | `tools_v2/developer-tools` | `developer-tools` | 52 | ~24,000+ | Heavy async CLI suite: CDP browser harness, Enfusion oracle, map imagery pipeline, world export. |
-| `tools/pbo` | *(Deleted)* | — | 1 | — | Orphaned Python bytecode cache (`derap.cpython-311.pyc`). |
-| `tools/editor-capture` | *(Deleted)* | — | 1 | — | Obsolete Markdown README; capture logic already ported to Rust. |
+What lives under `tools_v2/`, module by module, and what each part is responsible for. The
+architecture, its invariants and the dependency direction are in
+[ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md); this document is the map.
 
 ---
 
-## 2. Forensic Analysis of `gate_*.rs` and `gate_t*.rs` (xtask)
+## 1. The four crates
 
-### 2.1 Ticket-Named Gates (`gate_t*.rs`)
-Historical ticket numbers violate **Law 4 (Zero Context Needed)** and **Law 8 (Present-Tense Documentation)**. Below is the mapping of every `gate_t*.rs` to its live present-tense invariant:
+| Crate | Rust files | Lines | Responsibility |
+|---|---:|---:|---|
+| `verification-core` | 18 | 2,282 | Fail-closed assertion primitives: `Verdict`, `Report`, `Pattern`, the repository lock, the file walk, and child-process isolation. |
+| `ticket-engine` | 127 | 18,779 | The ticket domain: typed storage, canonical TOML, validated operations, generated views, wave scheduling and accounting. |
+| `developer-tools` | 242 | 48,663 | The heavy services: headless browser harness, Enfusion oracle and archives, map raster pipeline, world export, blueprint compilation, map verification. |
+| `xtask` | 374 | 65,160 | The command router: every `cargo xtask ...` verb, and every repository verification. |
 
-| Current File | LOC | Ticket | Present-Tense Invariant Enforced | New Self-Describing Location |
-|---|---|---|---|---|
-| `gate_t180.rs` | 425 | T-180 | Proves ORBAT and entity mutations route strictly through the CRDT store; bans direct mutation calls in frontend/map-engine. | `tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs` |
-| `gate_t296.rs` | 230 | T-296 | Enforces the `#tbd link` comment contract on `TBD_ResultsReporter.c` with perturbation proofs. | `tools_v2/xtask/src/verifications/mod_scripts/results_reporter_comments.rs` |
-| `gate_t437.rs` | 338 | T-437 | Proves destroy-objective entity diagnostics handle missing target entities cleanly in `TBD_ObjectiveRegistry.c`. | `tools_v2/xtask/src/verifications/mod_scripts/destroy_target_diagnostics.rs` |
-| `gate_t438.rs` | 195 | T-438 | Pin ensuring staging deploy commands target `docker-compose.staging.yml`. | `tools_v2/xtask/src/verifications/deployment/staging_compose_path.rs` |
-| `gate_t439.rs` | 385 | T-439 | Audits parity between editor object palette aliases and Enfusion spawn registry entries. | `tools_v2/xtask/src/verifications/registry/object_alias_spawn_census.rs` |
-| `gate_t440.rs` | 275 | T-440 | Verifies the US Army 1980s faction library SQL seed applies cleanly. | `tools_v2/xtask/src/verifications/database/faction_library_seed.rs` |
-| `gate_t444.rs` | 240 | T-444 | Verifies tactical field manual wiki page SQL seeds apply cleanly. | `tools_v2/xtask/src/verifications/database/wiki_page_seed.rs` |
-| `gate_t456.rs` | 210 | T-456 | Enforces HTTP body size limits on the game mission REST loader before JSON parsing. | `tools_v2/xtask/src/verifications/mod_scripts/mission_loader_rest_size.rs` |
-| `gate_t468.rs` | 315 | T-468 | Pin ensuring all schema verification gates remain wired into CI tasks. | `tools_v2/xtask/src/verifications/ci/ci_schema_parity.rs` |
-
-### 2.2 Operational Commands Misnamed as Gates
-During the T-853 bash migration, operational CLI commands were prefixed with `gate_`. They belong in `commands/`:
-
-| Current Misnamed File | LOC | Actual CLI Command | Target Domain Path |
-|---|---|---|---|
-| `gate_bootstrap_staging_server.rs` | 380 | `cargo xtask mod bootstrap-staging` | `tools_v2/xtask/src/commands/mod_ops/bootstrap_staging.rs` |
-| `gate_debug_direct_join.rs` | 320 | `cargo xtask debug direct-join` | `tools_v2/xtask/src/commands/debug/direct_join.rs` |
-| `gate_deploy_website.rs` | 420 | `cargo xtask deploy website` | `tools_v2/xtask/src/commands/deploy/website.rs` |
-| `gate_export_terrain.rs` | 240 | `cargo xtask map export-terrain` | `tools_v2/xtask/src/commands/map/export_terrain.rs` |
-| `gate_fetch_vanilla_api.rs` | 350 | `cargo xtask fetch vanilla-api` | `tools_v2/xtask/src/commands/fetch/vanilla_api.rs` |
-| `gate_fetch_vanilla_source.rs`| 350 | `cargo xtask fetch vanilla-source` | `tools_v2/xtask/src/commands/fetch/vanilla_source.rs` |
-| `gate_mcp_call.rs` | 330 | `cargo xtask mcp call` | `tools_v2/xtask/src/commands/mcp/call.rs` |
-| `gate_mcp_smoke.rs` | 220 | `cargo xtask mcp smoke` | `tools_v2/xtask/src/commands/mcp/smoke.rs` |
-| `gate_mcp_wb_logs.rs` | 460 | `cargo xtask mcp wb-logs` | `tools_v2/xtask/src/commands/mcp/wb_logs.rs` |
-| `gate_mission_version_upload_repro.rs` | 160 | `cargo xtask repro mission-upload` | `tools_v2/xtask/src/commands/repro/mission_upload.rs` |
-| `gate_mod_compile.rs` | 740 | `cargo xtask mod compile` | `tools_v2/xtask/src/commands/mod_ops/compile.rs` |
-| `gate_remote_log_grep.rs` | 480 | `cargo xtask mod remote-logs` | `tools_v2/xtask/src/commands/mod_ops/remote_logs.rs` |
-| `gate_run_dev_server.rs` | 130 | `cargo xtask mod dev-server` | `tools_v2/xtask/src/commands/mod_ops/dev_server.rs` |
-| `gate_seed_milestone_announcement.rs` | 210 | `cargo xtask mod seed-announcement` | `tools_v2/xtask/src/commands/mod_ops/seed_announcement.rs` |
-| `gate_setup_client_addons.rs` | 270 | `cargo xtask setup client-addons` | `tools_v2/xtask/src/commands/setup/client_addons.rs` |
-| `gate_setup_mcp_game_root.rs` | 180 | `cargo xtask setup mcp-game-root` | `tools_v2/xtask/src/commands/setup/mcp_game_root.rs` |
-| `gate_setup_server_profile.rs`| 290 | `cargo xtask setup server-profile` | `tools_v2/xtask/src/commands/setup/server_profile.rs` |
-| `gate_setup_workbench_linux.rs`| 290 | `cargo xtask setup workbench-linux` | `tools_v2/xtask/src/commands/setup/workbench_linux.rs` |
-| `gate_tbd_dev_bootstrap.rs` | 480 | `cargo xtask mod dev-bootstrap` | `tools_v2/xtask/src/commands/mod_ops/dev_bootstrap.rs` |
-| `gate_test_mission.rs` | 260 | `cargo xtask mod test-mission` | `tools_v2/xtask/src/commands/mod_ops/test_mission.rs` |
-| `gate_test_phase1_api.rs` | 250 | `cargo xtask mod test-phase1-api` | `tools_v2/xtask/src/commands/mod_ops/test_phase1_api.rs` |
-
-### 2.3 Genuine Invariant Verifications (xtask)
-These true verification checks belong in `tools_v2/xtask/src/verifications/`:
-
-| File | LOC | Domain | Invariant Checked | Target Path |
-|---|---|---|---|---|
-| `gate_engine_layers.rs` | 580 | Architecture | Guarantees `graphics-engine` never imports `map-engine` and has zero map concepts (Law 6). | `verifications/architecture/engine_layer_boundaries.rs` |
-| `gate_route_tags.rs` | 966 | API | Validates bidirectional parity between Axum handlers and `@route` doc tags. | `verifications/architecture/route_tags.rs` |
-| `gate_crf_leak.rs` | 830 | Licensing | Guarantees zero Coalition Reforger Framework (CRF) symbols or GUIDs leak into `tbd-framework`. | `verifications/licensing/no_crf_oracle_leak.rs` |
-| `shell_free.rs` | 460 | Language Bans | LANG-1: Hard-zero shell scripts in repository. | `verifications/language_bans/no_shell_scripts.rs` |
-| `gate_no_python.rs` | 180 | Language Bans | LANG-2: Hard-zero Python in repository. | `verifications/language_bans/no_python_scripts.rs` |
-| `node_free.rs` | 680 | Language Bans | LANG-3: Hard-zero Node/npm scripts; enforces file length pins. | `verifications/language_bans/no_node_scripts.rs` |
-| `sql_gates.rs` | 165 | Database | Bans `SELECT *` on tables with nullable columns. | `verifications/database/no_select_star.rs` |
-| `mod_comment_gates.rs` | 222 | Mod Scripts | Verifies `TBD_PlayerIdentity.c` comment contracts. | `verifications/mod_scripts/player_identity_comments.rs` |
-| `gate_ui_layouts.rs` | 480 | Enfusion UI | Validates `.layout` syntax, slot types, and widget contracts. | `verifications/mod_scripts/enfusion_ui_layouts.rs` |
-| `gate_tbd_spawn_determinism.rs` | 380 | Mod Scripts | Seeded entity spawn placement determinism. | `verifications/mod_scripts/spawn_determinism.rs` |
-| `golden_gate.rs` | 990 | Map Assets | Map object semantics golden gates S2-S15. | `verifications/map_assets/map_object_golden.rs` |
-| `label_gates.rs` | 975 | Map Assets | Height/town label declutter and DEM elevation validation. | `verifications/map_assets/terrain_labels.rs` |
-| `verify_blas_manifest.rs` | 247 | Map Assets | Building BLAS BVH library manifest validation. | `verifications/map_assets/blas_manifest.rs` |
-| `verify_ci_shell.rs` | 420 | CI | Bans inline bash logic in `.github/workflows/`. | `verifications/ci/ci_workflow_shell.rs` |
+A fifth directory, `enfusion_mcp_node_package/`, is not a crate: it holds the npm manifest,
+lockfile and node version that pin the `enfusion-mcp` server, and it sits outside every crate root
+so the dependency tree `npm ci` installs beside it is never walked by a crate-scoped file scan.
 
 ---
 
-## 3. Analysis of Massive Files (>500 LOC)
+## 2. `verification-core`
 
-### 3.1 `schema_gates.rs` (4,764 LOC, 203 KB)
-A monolithic port of `contracts_v2/scripts/*.mjs`.
+The foundation every check is built on. It depends on no workspace crate.
 
-**Decomposition Plan (<500 LOC per module under `tools_v2/xtask/src/verifications/schemas/`):**
-1. `contract_citations.rs` (~390 LOC): RFC-6901 JSON pointer validation.
-2. `sentence_and_tile_budgets.rs` (~110 LOC): N6 sentence rules and N10 tile budget checks.
-3. `map_object_enums.rs` (~150 LOC): Enum catalog schema validation.
-4. `type_inventory.rs` (~390 LOC): Type inventory checks I1–I7.
-5. `terrain_manifest.rs` (~280 LOC): Binary manifest chunk headers and boundaries.
-6. `terrain_binary_blocks.rs` (~280 LOC): POD format validation & elevation block limits.
-7. `spec_consistency.rs` (~410 LOC): 12 spec-to-model consistency gates.
-8. `kit_alias_spawn_registry.rs` (~105 LOC): Kit alias ↔ spawn registry cross-referencing.
-9. `schema_version_wire_fields.rs` (~480 LOC): Schema version wire fields tripwire.
-10. `validator/compiler.rs` (~450 LOC) & `validator/rules.rs` (~450 LOC): JSON Schema validator.
-11. `map_glyphs/manifest.rs` (~400 LOC) & `map_glyphs/rules.rs` (~380 LOC): NATO glyph catalog validation.
-
-### 3.2 `check.rs` (2,330 LOC, 99 KB)
-Enforces ticket database integrity. **1,066 lines of inline tests (`check.rs:1264–2330`)!**
-- Relocated to `tools_v2/ticket-engine/src/validation/`.
-- Tests extracted to `tools_v2/ticket-engine/tests/ticket_check_tests.rs`.
-- Production logic split into: `schema.rs`, `scope.rs`, `body_rules.rs`, `gates.rs`, `debt.rs`, `hierarchy.rs`.
-
-### 3.3 `cmds.rs` (2,214 LOC, 91 KB)
-Ticket CLI commands. **871 lines of inline tests (`cmds.rs:1343–2214`)!**
-- Relocated to `tools_v2/ticket-engine/src/cli/`.
-- Tests extracted to `tools_v2/ticket-engine/tests/ticket_cmds_tests.rs`.
-- Production logic split into: `query.rs`, `mutation.rs`, `shipping.rs`, `batch_run.rs`.
-
-### 3.4 `wave_lock.rs` (2,170 LOC, 93 KB)
-The wave lockfile compiler and repack/check tool. **1,027 lines of inline tests (`wave_lock.rs:1143–2170`)!**
-- Relocated to `tools_v2/ticket-engine/src/wave_lock/`.
-- Tests extracted to `tools_v2/ticket-engine/tests/wave_lock_tests.rs`.
-- Production logic split into: `model.rs`, `packer.rs`, `verifier.rs`.
-
-### 3.5 `smokes.rs` (4,071 LOC, 186 KB)
-The headless Chrome DevTools Protocol editor smoke test suite.
-- Relocated to `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`.
-- Split into: `harness.rs`, `runner.rs`, `core_tests.rs`, `canvas_tests.rs`, `dock_widget_tests.rs`, `mutation_tests.rs`.
-
-### 3.6 `aux.rs` (1,644 LOC, 66 KB)
-Catch-all junk drawer in `tools-tools`.
-- Relocated to `tools_v2/developer-tools/src/world_export_pipeline/`.
-- Split into 5 focused modules: `dem_elevation_import.rs`, `export_validation.rs`, `object_census.rs`, `export_profile_staging.rs`, `export_spike_verification.rs`.
+| Module | Responsibility |
+|---|---|
+| `verdict` | The outcomes a check can reach — pass, fail, did-not-run — and their exit codes. A check that cannot run never reports clean. |
+| `report` | Accumulated findings and the operator-facing rendering of a run. |
+| `pattern` | Compiled literal and regular-expression matchers, so a missing external search tool cannot read as a clean result. |
+| `scan` | The fail-closed file walk: a declared-but-absent root is an error, and an empty input is never a green. |
+| `lock` | The repository verification lock, shared across worktrees so two gates cannot run unserialised against one build cache. |
+| `proc` | Child processes: `runner` spawns into its own process group and enforces a deadline, `stream` drains the pipes on dedicated threads, `lookup` resolves programs on `PATH` and waits on a condition. |
 
 ---
 
-## 4. Analysis of `xtask/src/map_blueprint/` (13,409 LOC, 32 Files)
+## 3. `ticket-engine`
 
-| File | LOC | Purpose | Target Path in `developer-tools` |
-|---|---|---|---|
-| `xob.rs` | 705 | Binary reader for Enfusion `.xob` 3D models | `src/blueprint/mesh_reader.rs` |
-| `xob_nodes.rs` | 541 | Scene node hierarchy table parser | `src/blueprint/mesh_nodes.rs` |
-| `mesh.rs` | 904 | Mesh-based voxel extractor (raymarching) | `src/blueprint/voxel_raymarcher.rs` |
-| `walls.rs` | 990 | Architectural wall segment extraction | `src/blueprint/architectural_analysis/walls.rs` |
-| `batch.rs` | 943 | BLAS acceleration structure batch walker | `src/blueprint/bvh/batch.rs` |
-| `prefab.rs` | 822 | Parser for Enfusion entity templates (`.et`) | `src/blueprint/prefab_parser.rs` |
-| `verify.rs` | 765 | Instance reconstruction verifier | `src/blueprint/verify.rs` |
-| `pak.rs` | 679 | FORM/PAC1 Enfusion `.pak` archive reader | Unified into `src/enfusion_pak/` |
-| `archive_emit.rs`| 651 | Binary `building_blueprints.rkyv` archiver | `src/blueprint/archive_compiler.rs` |
-| `library.rs` | 617 | Prefab BLAS catalog generator | `src/blueprint/library.rs` |
-| `bvh.rs` | 566 | 3D BVH collision sidecar writer (`.bvh`) | `src/blueprint/bvh/builder.rs` |
-| `mod.rs` | 500 | Module declarations & CLI router | `src/blueprint/mod.rs` |
-| `rotation_pin.rs`| 408 | Euler angle composition order pin | `src/blueprint/rotation_pin.rs` |
-| `world_row.rs` | 399 | Terrain world entity row verifier | `src/blueprint/world_row.rs` |
-| `rings.rs` | 376 | Rectilinear 2D boundary tracing | `src/blueprint/architectural_analysis/rings.rs` |
-| `emit.rs` | 344 | Assembles `BuildingBlueprint` JSON schema | `src/blueprint/emit.rs` |
-| `inspect.rs` | 312 | Low-level CLI inspector for `.xob` chunks | `src/blueprint/inspect.rs` |
-| `hull.rs` | 267 | 3D convex hull triangulation | `src/blueprint/hull.rs` |
-| `roof.rs` | 246 | Top surface voxel roof heightfield downsampler | `src/blueprint/architectural_analysis/roofs.rs` |
-| `params.rs` | 223 | Tunable heuristic parameters | `src/blueprint/params.rs` |
-| `parse.rs` | 216 | NDJSON voxel dump reader | `src/blueprint/parse.rs` |
-| `library_cli.rs` | 211 | CLI harness for `bvh-batch` | `src/blueprint/library_cli.rs` |
-| `surface_kind.rs`| 208 | Maps collision materials to surface kinds | `src/blueprint/surface_kind.rs` |
-| `slabs.rs` | 186 | Vertical voxel column slab analyzer | `src/blueprint/architectural_analysis/slabs.rs` |
-| `types.rs` | 167 | In-memory voxel and blueprint models | `src/blueprint/types.rs` |
-| `march.rs` | 136 | Raymarching skeleton for voxel clouds | `src/blueprint/march.rs` |
-| `pair.rs` | 122 | Face pairing for collision geometry | `src/blueprint/pair.rs` |
-| `plate.rs` | 60 | Floor plate detector | `src/blueprint/architectural_analysis/plates.rs` |
-| *(Test Files)* | 1,738 | Unit tests for mesh, library, synth, and batch | `src/blueprint/tests/` |
+The ticket corpus and everything that reads or writes it. It depends on no workspace crate.
 
-**Conclusion**: Removing `map_blueprint/` from `xtask` strips 13.4k LOC of heavy 3D math and allows `xtask` to compile rapidly without linking `website-map-engine` 3D features.
+| Module | Responsibility |
+|---|---|
+| `model` | The typed tickets: program and work shapes, scope, status, class. |
+| `encoding` | Canonical TOML: one rendering per ticket, byte-stable, with serde aliases for the spellings older blobs carry. |
+| `store` | Fail-closed corpus loading over every `.ai/tickets/T-*.toml`, parents and children alike. |
+| `ops` | Validated mutations: each produces a post-image the validation rules accept, or refuses before any write. |
+| `registry` | The ticket files on disk, the read-only value projection the Markdown views read, and the ticket statuses at a past revision. |
+| `validation` | Schema, vocabulary, ownership, body caps, readiness tiers, the ship gate, hierarchy, accounting, debt and repository references. |
+| `cli` | Briefs, queries, mutations, shipping, batch selection and configuration, as command services the host calls. |
+| `sync` | The generated Markdown views, the dispatch queue JSON, roadmap markers and the gap-analysis ticket column. |
+| `wave_lock` | Dependency packing, file-disjoint collision selection, the deterministic lock file, drift checks, reservations, and the archived wave plans at the revisions that still carry them. |
+| `metrics` | Measured run receipts, elapsed time, token accounting and the derived estimates. |
+| `vocab` | The four-level scope vocabulary, resolved at every corpus load. |
+| `corpus_pins` | The corpus facts no ticket file states: the programme tickets, the ids that must never be minted, and the editor gap rows no ticket claims. |
+| `repository` | Every repository path the crate reads or writes, spelled once, with a `documentation` submodule for the ones under the documentation tree, plus checkout-root discovery. |
+| `timestamp` | RFC 3339 UTC lifecycle stamps and their strict parse. |
 
 ---
 
-## 5. Forensic Analysis of Root `scripts/` Directory
+## 4. `developer-tools`
 
-### 5.1 Reality: Zero Scripts in `scripts/`
-Following the T-853 / T-620 shell script eradication programs, all bash and python scripts were completely ported to Rust and removed from git. However, the `scripts/` directory was left sitting at the repository root as an obsolete container holding configuration files, systemd templates, test fixtures, and orphaned bytecode:
+The heavy services, behind six executables: `enf`, `gate`, `mcpd`, `world`, `map`, `capture`.
 
-| Path in `scripts/` | Git Status | What It Actually Is | Why It Violates Core Laws | Target Clean Destination |
-|---|---|---|---|---|
-| `scripts/deploy/deploy.env.example` | Tracked | Staging server environment variable template (TBD_SSH_HOST, etc.) | Configuration template, not a script. Violates Law 4. | `tools_v2/xtask/deploy/deploy.env.example` (or `packages/deployment/`) |
-| `scripts/deploy/Caddyfile.website` | Tracked | Production & staging Caddy reverse proxy configuration | Server web configuration, not a script. Violates Law 4. | `tools_v2/xtask/deploy/Caddyfile.website` |
-| `scripts/deploy/*.service`, `*.timer` | Tracked (5 files) | Linux systemd service and timer unit definitions for backups and website runner | Systemd unit configuration files. Violates Law 4. | `tools_v2/xtask/deploy/systemd/` |
-| `scripts/mod/fixtures/mcp-*.jsonl` | Tracked (5 files) | Test data fixtures for MCP JSON-RPC daemon testing | JSONL test fixtures sitting in a "scripts" folder. Violates Law 4 & 5. | `tools_v2/developer-tools/test_fixtures/mcp/` |
-| `scripts/mod/tbd-*-server.config.json`| Tracked (2 files) | Dedicated server JSON profile configurations (dev & staging) | Game server configuration files. Violates Law 4. | `apps/mod/Configs/Server/` (or `tools_v2/xtask/src/commands/mod_ops/configs/`) |
-| `scripts/mod/package.json` | Tracked | Pinned npm package for `enfusion-mcp: 0.6.1` | Node dependency manifest for tier-2 MCP calls. | `tools_v2/developer-tools/src/enfusion_tooling/mcp_node_bridge/package.json` |
-| `scripts/mod/node_modules/` | Untracked | Local node dependencies for `enfusion-mcp` | Untracked dependency debris. | Deleted / gitignored under tools. |
-| `scripts/platform/__pycache__/` | Untracked | Python bytecode from pre-Rust era (`slice-collisions.cpython-311.pyc`) | Orphaned dead-weight Python bytecode. Violates Law 3. | Deleted entirely. |
+| Module | Responsibility |
+|---|---|
+| `browser_testing` | The headless Chrome harness: the CDP client, the static SPA server and `/api` proxy, the DOM oracle, the editor smoke scenarios, the fontconfig and liveness diagnostics, and screen capture. |
+| `enfusion_tooling` | The Enfusion oracle: the symbol index, the Script API parse, vanilla source carve, citations, the capability matrix, and the MCP broker. |
+| `enfusion_pak` | The `.pak` archive reader shared by the oracle and the blueprint lane. |
+| `map_raster_pipeline` | Map imagery: the SAP aerial ortho, the cartographic render and tile pyramid, the glyph atlas, the inland-water lane, the satellite container and the label archives. |
+| `world_export_pipeline` | The world export: topo decode, texture decode, prefab classification, chunk partitioning, density grids, forest contours, roads, the DEM, the binary twins and the mathematical phase gate. |
+| `blueprint` | Building blueprints from voxel dumps: mesh decode, architectural analysis, BVH construction, the prefab archive and the parity report. |
+| `map_verification` | Engine-backed checks over the committed map assets: labels, object goldens, the terrain manifest, the BLAS manifest and world line-of-sight. |
+| `repository_layout` | Every repository path this crate reads or writes, spelled once. |
+| `repository_paths` | Checkout-root discovery, independent of `ticket-engine` so neither foundational crate depends on the other. |
 
-### 5.2 Resolution: Complete Elimination of Root `scripts/`
-Once the deployment configurations and systemd units are moved to `tools_v2/xtask/deploy/`, the MCP fixtures are moved to `tools_v2/developer-tools/test_fixtures/mcp/`, and the server profiles are moved to their respective configs, the root `scripts/` directory is **completely deleted**.
+---
 
-This achieves the core architectural mandate: **the repository root retains strictly `apps/`, `tools/`, `packages/`, and `docs/`**.
+## 5. `xtask`
+
+`cargo xtask <domain> <verb>` is the one entry point to repository operations.
+
+### 5.1 Commands
+
+| Domain | What it drives |
+|---|---|
+| `agent_context` | The context budget an agent session is handed. |
+| `build` | The build recipes: the workspace, the SPA, the engines, the API. |
+| `ci` | The task index every CI job runs, and the composite local replay. |
+| `db` | The development Postgres lifecycle and the integration-test database lane. |
+| `debug` | Operator probes: direct join, remote logs. |
+| `deploy` | The website and staging deployments, the host control agent, and the guarded database backup, restore and drill. |
+| `fetch` | Vanilla Enfusion API and source retrieval. |
+| `generate` | Generated source: the bitmap font table. |
+| `map` | The map lane, delegated to `developer-tools`. |
+| `mcp` | The Enfusion MCP bridge: calls, the daemon, the smoke and the selftest. |
+| `mod_ops` | The game mod: compile, playtest, world boot, mission and API tests, and its own wave driver. |
+| `platform` | The platform wave lifecycle, slice worktrees, preflight and receipts. |
+| `reproduction` | Reproductions of reported defects, end to end. |
+| `schema` | Contract validation, object enums, type inventory, specification consistency and the glyph manifest. |
+| `setup` | Machine setup: client addons, the MCP game root, the server profile, the Workbench. |
+| `ticket` and `wave` | Adapters that delegate to `ticket-engine`. |
+| `verify` | Every repository verification, by name. |
+
+### 5.2 Verifications
+
+| Group | What it holds |
+|---|---|
+| `architecture` | Editor and ORBAT coherency, route tags, engine layer boundaries. |
+| `ci` | The parity between the verification surface and the CI task index, and the workflow shell rules. |
+| `database` | SQL shape rules and the seed checks. |
+| `deployment` | The staging compose path pin. |
+| `language_bans` | Zero tracked shell, Python or Node sources, and the file-length limits. |
+| `licensing` | No upstream reference source reaches the shipping mod. |
+| `map_assets` | Label, manifest and alignment checks, delegated to `developer-tools`. |
+| `mod_scripts` | Comment contracts, spawn determinism, UI layouts and the mission REST limits over the EnfScript sources. |
+| `registry` | Object alias against spawn registry parity. |
+| `schemas` | Contract citations, content budgets, object enums, type inventory, specification consistency, kit references, wire-field readers, glyphs and mission validation. |
+
+### 5.3 Shared
+
+| Module | Responsibility |
+|---|---|
+| `cli` | The top-level parser, argument preprocessing and routing. |
+| `core` | Checkout-root discovery, the container-to-host bridge, Cargo target-directory handling, and `repository_layout`, which spells every repository path this crate reads. |
+| `tests` | The structural rules: dependency direction, file limits, test placement, path ownership and prose rules. |
+
+---
+
+## 6. Data beside the crates
+
+| Directory | Read by |
+|---|---|
+| `xtask/deploy/` | `cargo xtask deploy website` and `deploy staging`: the environment example, the Caddy site file and the systemd units. |
+| `xtask/dedicated_server_profiles/` | `cargo xtask mod playtest` and `mod world-boot`. |
+| `xtask/fixtures/mcp/` | `cargo xtask mcp selftest`. |
+| `developer-tools/fixtures/dom_oracle/` | The DOM oracle's frozen route captures. |
+| `developer-tools/test_fixtures/` | The blueprint and contract fixtures the unit tests read. |
+| `developer-tools/gate-env.json` | `gate doctor`: the pinned chromium, toolchain and resource limits. |
+| `ticket-engine/tests/fixtures/` | The receipt, estimate and corpus fixtures, shared with `xtask`. |
+| `enfusion_mcp_node_package/` | Every agent session and every `cargo xtask mcp` verb. |

@@ -11,7 +11,7 @@ fn positive_identification_spares_everything_it_cannot_parse() {
     // A GATE dir that CONTAINS a ticket id — anchoring at the first component is what makes
     // this unparseable even without the explicit target-gate-* exclusion.
     assert_eq!(slice_token("target-gate-schema-T422"), None);
-    // `target-T-068.13-api` is not `(-.*)?$` after the digits.
+    // A dotted id with an `-api` suffix is not `(-.*)?$` after the digits.
     assert_eq!(slice_token("target-T-068.13-api"), None);
 }
 

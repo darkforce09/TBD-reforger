@@ -1,7 +1,7 @@
 //! `cargo xtask platform slice-worktree` — one git worktree per SLICE, under the worktree base,
 //! on branch `slice/<slice>`.
 //!
-//! Sub-slices (`T-181.7.1`) live in their parent's tree (`T-181.7`) because they are the same
+//! A sub-slice lives in its parent's tree because they are the same
 //! slice's work. Subcommands: `new` `list` `merge` `drop` `reap`.
 //!
 //! ── THIS FILE DESTROYS WORK IF IT IS WRONG ───────────────────────────────────────────────────
@@ -45,14 +45,14 @@ fn usage() -> String {
 /// The subcommands, spelled the way the operator must retype them.
 const USAGE_BODY: &str = "\
 #
-# One worktree per SLICE. Sub-slices (T-181.7.1) live in their parent's worktree (T-181.7),
+# One worktree per SLICE. A sub-slice lives in its parent's worktree,
 # because they are the same slice's work. Three worktrees at a time; merge when all three are
 # complete; DELETE immediately after merging — leftover trees fill the disk.
 #
-#   cargo xtask platform slice-worktree -- new   T-181.7
+#   cargo xtask platform slice-worktree -- new   <slice id>
 #   cargo xtask platform slice-worktree -- list
-#   cargo xtask platform slice-worktree -- merge T-181.7
-#   cargo xtask platform slice-worktree -- drop  T-181.7
+#   cargo xtask platform slice-worktree -- merge <slice id>
+#   cargo xtask platform slice-worktree -- drop  <slice id>
 #   cargo xtask platform slice-worktree -- reap
 ";
 

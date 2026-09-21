@@ -1,7 +1,7 @@
-//! T-165.8 — the export-lane auxiliaries: `validate-export-artifacts.mjs` (map-export-validate),
-//! `census-types.mjs` (map-census), the T-090.3.0 spike gates (`verify-spike-k1`,
-//! `census-spike`, `verify-spike-ops-log`), `copy-world-export-profile.mjs`, and
-//! `raw-u16-to-dem-png.mjs` (T-091.0 DEM repack). Ports preserve stdout shapes + exit codes.
+//! The export-lane auxiliaries: artifact validation (map-export-validate),
+//! the type census (map-census), the spike gates (`verify-spike-k1`,
+//! `census-spike`, `verify-spike-ops-log`), the export-profile copy, and
+//! the DEM repack. Every stage keeps its stdout shape and exit codes.
 
 use std::collections::{HashMap, HashSet};
 use std::io::BufRead as _;
@@ -24,7 +24,7 @@ use crate::world_export_pipeline::vegetation_density as density;
 
 /* ─────────────────────────── census-spike ─────────────────────────── */
 
-/// T-278 — was a local 8-kind array missing T-244's `vehicle`; `census_spike` does
+/// A local kind array that misses `vehicle` strands rows; `census_spike` does
 /// `by_kind.get_mut(kind).unwrap_or_else(|| panic!("kind {kind}"))`, so one wreck prefab inside
 /// the spike region panicked the census. Single source now.
 const ALL_KINDS: [&str; 9] = super::INSTANCE_KINDS;
@@ -37,7 +37,7 @@ const ALL_KINDS: [&str; 9] = super::INSTANCE_KINDS;
 
 /* ─────────────────────────── copy-world-export-profile ─────────────────────────── */
 
-/* ─────────────────────────── raw-u16-to-dem-png (T-091.0) ─────────────────────────── */
+/* ─────────────────────────── DEM repack ─────────────────────────── */
 
 /// The plugin's fixed V4 encoding range (`TBD_MapExportDEM.c` `DEFAULT_HMIN`/`DEFAULT_HMAX`), used
 /// when a meta file predates the `heightRange*` keys. Everon's shipped manifest carries exactly
@@ -47,7 +47,7 @@ const DEM_DEFAULT_MAX_M: f64 = 375.53;
 
 /* ─────────────────────────── export-terrain phase gate ─────────────────────────── */
 
-/* ─────────────────────────── catalog-sap-cells (T-090.1.2) ─────────────────────────── */
+/* ─────────────────────────── SAP aerial cell index ─────────────────────────── */
 
 #[cfg(test)]
 #[path = "tests/export_preparation/elevation_dem_tests.rs"]

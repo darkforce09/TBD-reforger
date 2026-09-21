@@ -47,7 +47,7 @@ pub fn capture_step<R>(f: impl FnOnce() -> R) -> (String, R) {
 ///
 /// One helper rather than a `Command` at every site: the bash reached for git roughly ninety
 /// times and swallowed stderr at nearly all of them, and the places where it did NOT swallow are
-/// the interesting ones ([`ledger::git_porcelain_paths`], T-401).
+/// the interesting ones ([`ledger::git_porcelain_paths`]).
 pub fn git_stdout(args: &[&str]) -> Option<String> {
     let out = std::process::Command::new("git").args(args).output().ok()?;
     if !out.status.success() {
@@ -161,7 +161,7 @@ pub fn cmd_run(ctx: &Ctx, args: &[String]) -> u8 {
         return 1;
     }
     // The two-glibc guard, reused rather than re-derived: a container-built run-main read back by
-    // host cargo is `GLIBC_2.xx not found`, which reads as a broken checkout (T-853).
+    // host cargo is `GLIBC_2.xx not found`, which reads as a broken checkout.
     if let Err(msg) = crate::core::cargo_target_directory::abi_guard(Path::new(&ctx.run_target_dir))
     {
         werr!("run: {msg}");
@@ -240,7 +240,7 @@ pub(super) fn run_lane_refusal(
         return Some(vec![
             format!("run: REFUSING — `{bad}` overrides the run target this lane exists to pin."),
             "     Drop it, or use `cargo xtask platform wave test --slice <T-xxx>` for a".into(),
-            "     private per-slice dir (T-742).".into(),
+            "     private per-slice dir.".into(),
         ]);
     }
     // R3 — THE MAIN GOAL, at the only place it can be enforced. `run-main` is MAIN's; a
@@ -253,7 +253,7 @@ pub(super) fn run_lane_refusal(
             format!("     worktree      = {}", root.display()),
             format!("     main checkout = {}", main_root.display()),
             format!("     run target    = {run_target_dir}"),
-            "     A worktree build here would be executed by main's next run lane (T-300).".into(),
+            "     A worktree build here would be executed by main's next run lane.".into(),
             "     Use CARGO_TARGET_DIR=<main_root>/target-<slice> for a private server dir.".into(),
         ]);
     }
@@ -311,7 +311,7 @@ pub(super) fn spawn_cargo(ctx: &Ctx, verb: &str, cargo_args: &[String], run_args
 /// This driver CHOOSES target dirs; it does not take one. It has three, each for a measured
 /// reason: `GATE_CHECK_TARGET` so the gate's artifacts are written by the gate alone (that is what
 /// makes one fingerprint invalidation hold for every step under it), a per-slice private dir for
-/// ad-hoc `cargo test` (T-742, so a slice cannot read a sibling's binary), and the shared warm
+/// ad-hoc `cargo test` (so a slice cannot read a sibling's binary), and the shared warm
 /// cache derived from `git rev-parse --git-common-dir` so every linked worktree points at the
 /// PRIMARY repo's `target/` instead of cold-building a 609-crate workspace eight times.
 ///
@@ -320,7 +320,7 @@ pub(super) fn spawn_cargo(ctx: &Ctx, verb: &str, cargo_args: &[String], run_args
 /// exported. Steps that cross the bridge run cargo ON THE HOST, so host cargo (glibc 2.43) wrote
 /// host binaries into the container's target dir, and the next in-container `cargo run` died with
 /// `GLIBC_2.39 not found` — a link error that reads exactly like a broken checkout and is not one.
-/// That is the same two-glibc trap `scripts/lib/hostrun.sh` was written for, arriving through an
+/// That is the same two-glibc trap the host bridge exists for, arriving through an
 /// environment variable instead of a compiler.
 ///
 /// Removing it is right rather than merely convenient: there is no value a caller could supply
@@ -352,7 +352,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         "status" => status::cmd_status(&ctx),
         "prep" => status::cmd_prep(&ctx),
         "test" => test_cmd::cmd_test(&ctx, &rest),
-        // T-300. Sibling of `test`, and for the same reason one layer over: `test` keeps a slice's
+        // Sibling of `test`, and for the same reason one layer over: `test` keeps a slice's
         // cargo test off the shared cache, `run` keeps a launched binary off it.
         "run" => cmd_run(&ctx, &rest),
         "gate" => match rest.first().map(String::as_str) {
@@ -362,7 +362,7 @@ pub fn run(args: &[String]) -> Result<u8> {
             // `advance` writes the shared persist DB, so it takes the same lock the wave gate
             // holds when it calls this. GATE_LOCK_HELD is deliberately not settable from the
             // environment (it is reset at load), so there is no way to skip this by exporting a
-            // variable — here, a `GateLock` has no public constructor at all (T-406).
+            // variable — here, a `GateLock` has no public constructor at all.
             Some("--migrate-persist") => {
                 let mode = rest.get(1).map(String::as_str).unwrap_or("audit");
                 let mut state = lock::GateState::new();
@@ -378,7 +378,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         },
         "wave" => {
             if rest.first().map(String::as_str) == Some("--close") {
-                // T-923: everything after `--close` belongs to the close ceremony
+                // Everything after `--close` belongs to the close ceremony
                 // (`--summary <text>`, `--dry-run`) and is allowlist-parsed there.
                 land::cmd_wave_close(&ctx, &rest[1..])
             } else {

@@ -1,6 +1,6 @@
 use super::*;
 
-/// smoke_editor.mjs — T-159.15: canvas mounts + engine renders + wheel-zoom changes the view.
+/// Canvas mounts + engine renders + wheel-zoom changes the view.
 pub async fn smoke_editor(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5299, 9359, None, None, &[]).await?;
     let run = async {
@@ -8,7 +8,7 @@ pub async fn smoke_editor(dist: &str, path: &str) -> Result<u8> {
         h.page
             .wait_for("!!document.querySelector('canvas')", 80, 250)
             .await?;
-        // Wait for engine + `__editorCam` (T-166 host bootstrap can outlast a fixed 1.2s sleep).
+        // Wait for engine + `__editorCam` (host bootstrap can outlast a fixed 1.2s sleep).
         h.page
             .wait_for("typeof window.__editorCam==='function'", 80, 250)
             .await?;
@@ -47,7 +47,7 @@ pub async fn smoke_editor(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
-/// selfcheck_editor.mjs — T-159.15.1: byte-exact GPU readback self-checks (?force=webgl).
+/// Byte-exact GPU readback self-checks (?force=webgl).
 pub async fn smoke_selfcheck(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5300, 9360, None, None, &[]).await?;
     let run = async {

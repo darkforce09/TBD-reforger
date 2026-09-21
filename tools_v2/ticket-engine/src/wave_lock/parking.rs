@@ -51,7 +51,7 @@ pub(super) fn wave_zero(views: &[TicketView], baseline: &BTreeSet<String>) -> Ve
     set.into_iter().collect()
 }
 
-/// T-925 — the `[[emptied]]` carry: which pending close targets does the new lock hold?
+/// The `[[emptied]]` carry: which pending close targets does the new lock hold?
 ///
 /// Same previous-lock carry class as the wave-0 baseline ([`repack_quiet`] feeds the committed
 /// lock in; a lockless tree carries nothing):
@@ -102,7 +102,7 @@ pub(super) fn carry_emptied(
         }
     }
     out.sort_by_key(|e| e.n);
-    // T-946 — RELABEL FROM THE LEDGER, KEEP THE SET FROZEN. The frozen ticket set is still never
+    // RELABEL FROM THE LEDGER, KEEP THE SET FROZEN. The frozen ticket set is still never
     // recomputed; only the LABEL is, because the label is the half that drifted. A pending entry
     // is a promise that a `wave N CLOSED` marker will be written for this set, and the ceremony's
     // oracle accepts exactly `ledger_floor + 1` — so a label above that is a promise the ceremony

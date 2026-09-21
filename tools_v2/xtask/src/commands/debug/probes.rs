@@ -1,4 +1,4 @@
-//! Debug helpers for `cargo xtask debug …` (T-162 / T-868).
+//! Debug helpers for `cargo xtask debug …`.
 //!
 //! Low-level primitives (`a2s-probe`, `ndjson-append`, `direct-join-log`) kept as subcommands.
 //! The orchestrator that drives these probes is `cargo xtask debug direct-join`.

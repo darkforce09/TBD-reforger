@@ -1,4 +1,4 @@
-//! T-165.5 — S-routes gate (port of `manifests/extract-leptos-routes.mjs`).
+//! S-routes gate: the Leptos router's routes against the committed manifest.
 //!
 //! Extracts the route table from `apps/website/frontend/src/router.rs` and diffs it against the
 //! frozen React oracle manifest `manifests/routes.csv`. Robust to rustfmt line-wrapping: splits

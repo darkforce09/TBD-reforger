@@ -1,5 +1,5 @@
-//! T-165.4 — Path B derived-hull forest regions (1:1 port of
-//! `scripts/map-assets/lib/forest-regions.mjs`; t090_8_forest_vegetation_regions.md §Export).
+//! Path B derived-hull forest regions (1:1 port of
+//! the forest-regions spec §Export).
 //! Pure + deterministic (F6: same instances → same rings). Ship identity (F2, by construction):
 //! `Σ regions.treeCount + unassignedTrees == trees.len()`.
 

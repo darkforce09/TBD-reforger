@@ -5,7 +5,7 @@ use crate::browser_testing::server::repo_root;
 use crate::repository_layout::terrain_dir;
 
 /// The committed everon export: 1623 prefabs, 36 land-cover regions, 1,216,066 instances.
-/// (`map-engine-core`'s `store.rs` census pin says the same three numbers.) Re-pin
+/// (`website-map-engine`'s census pin says the same three numbers.) Re-pin
 /// deliberately if the export changes — a silently shrinking corpus is how a parity test
 /// stops proving anything.
 const EVERON_PREFABS: usize = 1623;
@@ -69,7 +69,7 @@ fn everon_catalog_archives_emit_and_read_back_as_their_json() {
     // The order half is not decoration. `by_id` below is a hash map, so it is blind to a
     // reordered catalogue — measured: a `rows_from_archive` that rotates the row vector by one
     // leaves every assertion on `by_id` passing. The reader side of that is pinned in
-    // `map-engine-core`'s `everon_catalogue_archive_equals_the_json_rows`; what is pinned HERE
+    // `website-map-engine`'s `everon_catalogue_archive_equals_the_json_rows`; what is pinned HERE
     // is the writer side, JSON order → archive order → file bytes.
     let json_rows = narrow_prefab_rows(&read_doc(&dir, PREFABS_GZ).expect("prefabs json"));
     assert_eq!(json_rows.len(), EVERON_PREFABS);
@@ -153,7 +153,7 @@ fn standalone_census_matches_the_catalogue() {
         EVERON_INSTANCES,
         "the per-kind census must add up to the declared total"
     );
-    // T-946.19 — the ORDER, on the emitter side too. A sum is permutation-blind, and
+    // The ORDER, on the emitter side too. A sum is permutation-blind, and
     // `by_kind` is an order contract (`INSTANCE_KINDS`, `road` last): the wave-241 verifier
     // showed `by_kind[1..8]` could be shuffled with every test in both crates still green.
     assert_eq!(
@@ -168,7 +168,7 @@ fn standalone_census_matches_the_catalogue() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// An empty catalogue is refused rather than written over a committed archive (T-537's rule,
+/// An empty catalogue is refused rather than written over a committed archive (the refuse-empty rule,
 /// applied to the binary lane) — and nothing is written when it is refused.
 #[test]
 fn an_empty_catalogue_is_refused() {
@@ -238,9 +238,9 @@ fn a_census_from_another_export_is_refused() {
 /// binary lane is switched off".
 ///
 /// This is also the only place both halves are visible: the emitter constants live in
-/// `tbd-tools`, the manifest parser in `map-engine-core`.
+/// this crate, the manifest parser in `website-map-engine`.
 ///
-/// The second half is T-935.13: the committed everon manifest names the same paths this
+/// The second half: the committed everon manifest names the same paths this
 /// emitter writes. If they drift, this fails here rather than by the editor fetching the
 /// wrong files.
 #[test]

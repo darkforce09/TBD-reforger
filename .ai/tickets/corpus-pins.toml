@@ -1,0 +1,53 @@
+# Facts about this repository's ticket corpus that no ticket file states.
+#
+# `cargo xtask ticket check` and `cargo xtask ticket sync` both read this file and refuse when
+# it is missing or malformed, so a lost pin reds the gate instead of silently relaxing a rule.
+
+# The programme ticket whose children are the game-mod slices. `cargo xtask mod wave` filters the
+# shared wave lock to this id's dotted children, so a lock wave holding none of them belongs to
+# another programme.
+game_mod_programme_ticket = "T-181"
+
+# The programme ticket that owns the map-and-terrain specification set. Its lowercase,
+# hyphen-free spelling prefixes those specification file names, and `cargo xtask schema
+# specification-consistency` compares the hub header against this programme's active slice.
+map_terrain_programme_ticket = "T-090"
+
+# Ids no ticket may carry: documents written before the registry existed cite these numbers as
+# something other than a ticket, so a ticket row claiming one is a collision, not a ticket.
+never_minted = [
+  "T-007", "T-014", "T-015", "T-016", "T-017", "T-026",
+  "T-027", "T-028", "T-041", "T-042", "T-044", "T-051",
+]
+
+# Which ticket implements an editor gap row, for the rows of
+# `docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md` that no ticket claims through its
+# own `implements` list and whose notes carry no checkmark citation. `ticket sync` writes the
+# document's ticket column from a ticket's own claim first and from this table only as a fallback.
+[gap_implementations]
+"PLACE-004"               = "T-072"
+"XFORM-SHIFT-001"         = "T-073"
+"XFORM-ROT-001"           = "T-073"
+"RIGHT-SUBMODE-001"       = "T-074"
+"WIDGET-CYCLE-001"        = "T-075"
+"CREW-PANEL-001"          = "T-076"
+"CREW-BOARD-001"          = "T-076"
+"PLACE-CREW-001"          = "T-077"
+"COMP-SAVE-001"           = "T-078"
+"COMP-PLACE-001"          = "T-078"
+"RIGHT-MODE-001"          = "T-068"
+"RIGHT-CAT-001"           = "T-068"
+"RIGHT-MODE-006"          = "T-069"
+"RIGHT-STUB-002"          = "T-069"
+"CONN-GROUP-001"          = "T-071"
+"LEFT-ORBAT-001"          = "T-071"
+"RIGHT-SEARCH-001"        = "T-055"
+"SEL-MOD-001"             = "T-053"
+"SEL-ORBAT-DBL-001"       = "T-054"
+"ATTR-FIELD-OBJ-POSITION" = "T-049"
+"ATTR-TAB-001"            = "T-049"
+"MAP-TERRAIN-001"         = "T-049"
+"DATA-HYD-TITLE-001"      = "T-049"
+"TOP-TITLE-001"           = "T-049"
+"TOP-UNDO-001"            = "T-052"
+"TOOLBAR-UNDO-001"        = "T-052"

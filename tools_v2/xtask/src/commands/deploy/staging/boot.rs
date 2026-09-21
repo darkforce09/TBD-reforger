@@ -1,4 +1,4 @@
-//! T-607 — THE BOOT VERDICT (bash lines 681–1070).
+//! THE BOOT VERDICT.
 //!
 //! ── WHAT WAS BROKEN ──────────────────────────────────────────────────────────────────────────
 //!
@@ -17,7 +17,7 @@
 //! at it. Every "staging is green" verdict since the June publish was a true statement about the
 //! WRONG code.
 //!
-//! THE FIX is T-604's: `-addonsDir <dir>` **plus** `-config <json>` does both at once. The
+//! THE FIX: `-addonsDir <dir>` **plus** `-config <json>` does both at once. The
 //! 2026-06-14 "mutually exclusive" finding was measured on `-addons`, which really is fatal with
 //! `-config`; `-addonsDir` is a different flag and combines with it fine.
 //!

@@ -1,7 +1,7 @@
 use super::*;
 use developer_tools::repository_layout::{glyph_assets_dir, terrain_dir};
 
-/// Glyph coverage gate (port of `verify-map-glyphs-manifest.mjs`) — golden + committed-catalog
+/// Glyph coverage gate — golden + committed-catalog
 /// iconKey coverage, SVG existence/viewBox, sane render fields, and the built-atlas rect/RIFF
 /// checks when present.
 pub fn map_glyphs() -> Result<u8> {
@@ -55,7 +55,7 @@ pub fn map_glyphs() -> Result<u8> {
             Err(e) => errors.push(format!("catalog {}: unreadable ({e})", catalog.display())),
         }
     } else {
-        // T-935.13 — do not skip glyph coverage when runtime gz-JSON leaves. We still ship the
+        // Do not skip glyph coverage when runtime gz-JSON leaves. We still ship the
         // gz as an emitter input; if it is absent the gate must fail, not go silently vacuous.
         errors.push(format!(
             "catalog {}: missing (glyph coverage would otherwise be skipped)",

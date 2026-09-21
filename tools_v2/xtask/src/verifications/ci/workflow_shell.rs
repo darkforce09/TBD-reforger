@@ -1,9 +1,9 @@
-//! T-901 — `cargo xtask verify ci-shell`.
+//! `cargo xtask verify ci-shell`.
 //!
 //! ── WHY THIS GATE EXISTS ─────────────────────────────────────────────────────────────────────
 //!
 //! The ban is not on bash the language. It is on **logic that no type checker and no local
-//! replay can see**. After T-897 deleted the Makefile, the remaining hiding place for that
+//! replay can see**. With no Makefile in the tree, the remaining hiding place for that
 //! logic is `run:` blocks in `.github/workflows/`. A step that `if`/`|| true`/`set -euo pipefail`s
 //! its way to a green check is the same defect class as `verify-no-python` grepping with an
 //! absent `rg` and reporting OK — except this time the script is not even a file `git grep` can

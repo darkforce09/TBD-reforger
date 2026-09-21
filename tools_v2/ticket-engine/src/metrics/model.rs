@@ -59,8 +59,8 @@ pub struct RunRecord {
     pub tokens_consumed: TokensConsumed,
 }
 
-/// RFC 3339 UTC parse with the SAME acceptance rule as the ticket lifecycle stamps
-/// (T-913.1): reuse `tbd_tickets` validation, then reparse for the arithmetic.
+/// RFC 3339 UTC parse with the SAME acceptance rule as the ticket lifecycle stamps: reuse the
+/// stamp validation, then reparse for the arithmetic.
 pub(super) fn parse_utc(field: &str, value: &str) -> Result<OffsetDateTime> {
     crate::validate_rfc3339_utc(field, value).map_err(|e| anyhow::anyhow!("{e}"))?;
     OffsetDateTime::parse(value, &Rfc3339)

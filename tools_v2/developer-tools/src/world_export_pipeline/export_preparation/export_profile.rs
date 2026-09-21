@@ -60,7 +60,7 @@ pub fn copy_world_export_profile(
         );
         return Ok(1);
     }
-    // T-537: count source FIRST — never overwrite a staged export with an empty jsonl.
+    // Count source FIRST — never overwrite a staged export with an empty jsonl.
     let mut line_count = 0u64;
     {
         let f = std::fs::File::open(&src_jsonl)?;
@@ -90,7 +90,7 @@ pub fn copy_world_export_profile(
             return Ok(1);
         }
         std::fs::copy(&src_meta, &dest_meta)?;
-        // T-090.12.1b — provenance: when the plugin wrote no `workbenchVersion`, stamp the Steam
+        // Provenance: when the plugin wrote no `workbenchVersion`, stamp the Steam
         // build id of the Workbench that produced the export (`appmanifest_1874910.acf` above the
         // profile's `steamapps/` — Arma Reforger Tools). `build-objects --patch-manifest` copies
         // it into `objects.workbenchVersion`; a Workbench outside Steam leaves the key absent.
@@ -120,7 +120,7 @@ pub fn copy_world_export_profile(
             dest_meta.display()
         );
     } else if dest_meta.exists() {
-        // T-537: refuse lossy synth overwrite of an existing real/prior meta.
+        // Refuse lossy synth overwrite of an existing real/prior meta.
         eprintln!(
             "copy-world-export-profile: refusing lossy write — source meta missing and dest meta already exists at {}; left jsonl updated, meta untouched",
             dest_meta.display()

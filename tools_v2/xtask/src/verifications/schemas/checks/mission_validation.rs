@@ -15,11 +15,11 @@ pub(super) fn validate(
         check(&f, v_mission, &read_json(&missions_dir.join(&f))?);
     }
 
-    // ── T-706 — schemaVersion 1.3 wire fields must stay UNREAD until their reader lands ───────
+    // ── schemaVersion 1.3 wire fields must stay UNREAD until their reader lands ─────────────
     // The ticket's own acceptance: every field the 1.3 pass added is on the wire and read by
     // NOTHING mod-side; when a reader lands under its owning ticket, this trips and forces the
     // "no reader on any shipped build" wording to come out. See UNREAD_WIRE_FIELDS.
-    println!("T-706 unread 1.3 wire fields (each must stay reader-free until its ticket lands):");
+    println!("Unread 1.3 wire fields (each must stay reader-free until its reader lands):");
     {
         let mod_root = root.join("apps/mod/tbd-framework");
         let bad = unread_wire_field_failures(&mod_root)?;
@@ -37,11 +37,11 @@ pub(super) fn validate(
         }
     }
 
-    // ── T-450 — MISSION_FILE_MAX_BYTES pin (schema keyword ↔ mod constant ↔ goldens) ─────────
+    // ── MISSION_FILE_MAX_BYTES pin (schema keyword ↔ mod constant ↔ goldens) ────────────────
     // JSON Schema cannot express whole-document byte size. The ceiling lives on the schema as
     // `x-tbd-missionFileMaxBytes` and must stay equal to `TBD_MissionLoader.MISSION_FILE_MAX_BYTES`
     // (`8 * 1024 * 1024`). Without this gate a description-only comment would rot silently.
-    println!("Mission file byte ceiling (T-450):");
+    println!("Mission file byte ceiling:");
     {
         let mut bad: Vec<String> = Vec::new();
         let mission_schema = schema("mission.schema.json")?;
@@ -78,7 +78,7 @@ pub(super) fn validate(
         if !loader_src.contains("x-tbd-missionFileMaxBytes") {
             bad.push(
                 "TBD_MissionLoader.c comment no longer cites schema \
-                 `x-tbd-missionFileMaxBytes` (T-450 cross-pin)"
+                 `x-tbd-missionFileMaxBytes` (the cross-pin)"
                     .to_string(),
             );
         }
@@ -94,7 +94,7 @@ pub(super) fn validate(
         }
         // Synthetic: a schema-VALID document padded past the ceiling must exceed the pin.
         // meta.author has no maxLength, so schema alone would accept it — that is exactly
-        // the pre-T-450 defect this gate exists to keep closed.
+        // the defect this gate exists to keep closed.
         if pinned != 0 {
             let mut doc = read_json(&missions_dir.join("last-stand-at-montfort.json"))?;
             doc["meta"]["author"] = Value::String("x".repeat(pinned));
@@ -129,10 +129,10 @@ pub(super) fn validate(
         }
     }
 
-    // ── T-181.36 — kit alias ↔ spawn registry cross-reference ────────────────────────────────
+    // ── kit alias ↔ spawn registry cross-reference ──────────────────────────────────────────
     // The check mission.schema.json structurally cannot do; see the KNOWN_UNRESOLVABLE_KITS
     // header for why a closed enum would be the wrong answer.
-    println!("Kit alias registry cross-reference (T-181.36):");
+    println!("Kit alias registry cross-reference:");
     let (reg_path, reg_aliases) = spawn_registry_aliases(root)?;
     println!(
         "  note  {} alias(es) from {}",
@@ -187,11 +187,11 @@ pub(super) fn validate(
         }
     }
 
-    // ── T-249 — slot-y golden pins schema 1.2 optional y + Y_ABSENT / HasJsonY path ───────────
+    // ── slot-y golden pins schema 1.2 optional y + Y_ABSENT / HasJsonY path ─────────────────
     // No other committed golden authors slots[].y, so deleting this file would leave the entire
     // spawn-height branch (TBD_MissionSlotStruct.Y_ABSENT, HasJsonY(), TBD_SpawnManager spawn Y
-    // policy) unexercised in CI despite T-092.1 shipping it.
-    println!("slot-y golden (T-249):");
+    // policy) unexercised in CI despite the mod shipping it.
+    println!("slot-y golden:");
     const SLOT_Y_GOLDEN: &str = "slot-y-absent-and-present.json";
     {
         let path = missions_dir.join(SLOT_Y_GOLDEN);
@@ -239,13 +239,13 @@ pub(super) fn validate(
         }
     }
 
-    // ── T-181.36 — kit-aliases.json must mirror the registry it claims to be generated from ──
+    // ── kit-aliases.json must mirror the registry it claims to be generated from ────────────
     // `contracts_v2/rules/kit-aliases.json` is the INVERSE table (ResourceName -> alias)
     // that the mission-compile flatten uses, and its own header says it is generated from the mod
     // registry. Nothing enforced that. A kit added to one and not the other does not error: the
     // flatten silently falls back to the faction default kit, so an authored medic compiles into a
     // rifleman. Two definitions and no enforcement is exactly how they drift.
-    println!("kit-aliases.json <-> spawn registry mirror (T-181.36):");
+    println!("kit-aliases.json <-> spawn registry mirror:");
     {
         let ka_path = sroot.join("rules/kit-aliases.json");
         let ka = read_json(&ka_path)?;
@@ -318,11 +318,11 @@ pub(super) fn validate(
         }
     }
 
-    // ── T-181.34 — negative goldens: fixtures the gate is REQUIRED to reject ─────────────────
+    // ── negative goldens: fixtures the gate is REQUIRED to reject ───────────────────────────
     // A vocabulary nobody tests is not enforced. Delete the `container` enum from
     // mission.schema.json and every positive golden still passes; these are what notice.
     // Each fixture is a wrapper, not a mission — see golden-missions-invalid/README.md.
-    println!("Negative goldens (must FAIL — T-181.34):");
+    println!("Negative goldens (must FAIL):");
     let neg_dir = sroot.join("fixtures/missions/invalid");
     for f in sorted_json_files(&neg_dir)? {
         let w = read_json(&neg_dir.join(&f))?;

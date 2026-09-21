@@ -21,4 +21,8 @@ fn main() -> ExitCode {
 #[path = "tests/tooling_dependency_boundaries.rs"]
 mod tooling_dependency_boundaries;
 
+#[cfg(test)]
+#[path = "tests/tooling_prose_rules.rs"]
+mod tooling_prose_rules;
+
 pub(crate) mod core;

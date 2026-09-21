@@ -12,7 +12,7 @@ fn frozen_27_matches_live_corpus() {
     assert_eq!(got, expect, "corpus keys drifted from FROZEN_27");
 }
 
-/// T-913.1 key governance — this is the gate `frozen_27_matches_live_corpus` cannot be
+/// Key governance — this is the gate `frozen_27_matches_live_corpus` cannot be
 /// on a phase-2 tree (it early-returns above). Globs EVERY on-disk `.ai/tickets/T-*.toml`
 /// — children included, no registry loader in the way — and demands each top-level key
 /// be a mapped encoding-C key or a deliberate [`ALLOWED_NEW`] entry. The NEXT key someone
@@ -74,7 +74,7 @@ fn on_disk_keys_are_mapped_or_allowed_new() {
 /// is silently dropped on parse (no `deny_unknown_fields` — the save path
 /// tolerates `slice_plan`), so it would vanish from the output set and fail here.
 ///
-/// T-920.1: `user_story` is the first FROZEN key that is also a serde ALIAS of a
+/// `user_story` is the first FROZEN key that is also a serde ALIAS of a
 /// live key (`main_goal`) — the two cannot co-occur in one doc (serde refuses the
 /// duplicate), and no output ever contains the dead spelling, so the maximal doc
 /// carries `main_goal` and the expected set subtracts `user_story`. The alias
@@ -142,14 +142,14 @@ layer = "docs"
     );
 }
 
-/// T-920.1 governance companion: the frozen `user_story` spelling still PARSES
+/// Governance companion: the frozen `user_story` spelling still PARSES
 /// (serde alias) and lands in `main_goal`; serialization never emits it. This is
 /// what keeps every pre-rename git revision readable while the on-disk subset
 /// rule reports the key as legally vanished.
 #[test]
 fn user_story_alias_maps_to_main_goal() {
-    let legacy = "id = \"T-001\"\nkind = \"work\"\ntitle = \"t\"\nsummary = \"s\"\nstatus = \"idea\"\nuser_story = \"old spelling\"\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n";
-    let file: crate::TicketFile = toml::from_str(legacy).expect("user_story alias parses");
+    let aliased = "id = \"T-001\"\nkind = \"work\"\ntitle = \"t\"\nsummary = \"s\"\nstatus = \"idea\"\nuser_story = \"old spelling\"\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n";
+    let file: crate::TicketFile = toml::from_str(aliased).expect("user_story alias parses");
     assert_eq!(file.main_goal.as_deref(), Some("old spelling"));
     let out = serde_json::to_value(&file).expect("serialize");
     let obj = out.as_object().unwrap();

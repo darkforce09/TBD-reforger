@@ -168,7 +168,7 @@ fn archive_carries_every_committed_blueprint_level() {
     }
 }
 
-/// T-935.8 — the split the occluder host boots from, over the WHOLE committed corpus.
+/// The split the occluder host boots from, over the WHOLE committed corpus.
 ///
 /// Two things are pinned here, and both are load-bearing for line of sight:
 ///

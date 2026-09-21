@@ -10,7 +10,7 @@ pub(super) fn usage_fail(msg: &str) -> u8 {
 /// bash `env_fail` — rc **3**.
 ///
 /// ENVIRONMENT, not code — the world was never booted, so a 3 says NOTHING about the mod. Same
-/// split `world-boot.sh:355` established; keep the two readable side by side.
+/// split the world-boot gate uses; keep the two readable side by side.
 pub(super) fn env_fail(msg: &str, hint: &str) -> u8 {
     eprintln!();
     eprintln!("ENVIRONMENT: {msg}");
@@ -224,7 +224,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         );
     }
 
-    // GUID read out of addon.gproj, never hardcoded — `world-boot.sh:376` does the same, for the same
+    // GUID read out of addon.gproj, never hardcoded — the world-boot gate does the same, for the same
     // reason: a literal here would drift from the gproj silently and the mod would stop resolving.
     let gproj = mod_src.join("addon.gproj");
     let addon_guid = read_addon_guid(&std::fs::read_to_string(&gproj).unwrap_or_default());
@@ -293,7 +293,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     }
 
     // ── profile ──────────────────────────────────────────────────────────────────────────────
-    // `$profile:` resolves to <-profile-arg>/profile/, NOT <-profile-arg>/ (`world-boot.sh:383`).
+    // `$profile:` resolves to <-profile-arg>/profile/, NOT <-profile-arg>/.
     // `cargo xtask setup server-profile` already knows that; do not seed one level up.
     if let Err(code) = render::setup_server_profile(root, &o.run_dir) {
         return code;
@@ -340,7 +340,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     }
 
     // ── addon staging dir ────────────────────────────────────────────────────────────────────
-    // A symlink to the live checkout, exactly like `deploy-staging.sh:1100`. This is the copy that
+    // A symlink to the live checkout, exactly like the staging deploy's. This is the copy that
     // must win at load time; `assert_local_addon_won` below proves it did.
     let link = format!("{}/addons/tbd-framework", o.run_dir);
     // bash `ln -sfn`: replace the LINK, never follow it into the target directory.
@@ -389,9 +389,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         println!(
             "        from game.admins[]. With none, every '#tbd' command answers 'TBD: admin only.'"
         );
-        println!(
-            "        and T-181.16's admin-respawn item cannot be reached. The 'passwordAdmin' field"
-        );
+        println!("        and the admin-respawn item cannot be reached. The 'passwordAdmin' field");
         println!("        is a DIFFERENT mechanism and does not feed that list.");
         println!();
     }

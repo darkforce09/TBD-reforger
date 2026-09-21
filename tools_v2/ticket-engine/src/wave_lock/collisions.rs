@@ -1,12 +1,11 @@
-//! T-620 — the maximum FILE-DISJOINT set of platform tickets that can run concurrently.
+//! The maximum FILE-DISJOINT set of platform tickets that can run concurrently.
 //!
-//! Originally a byte-for-byte port of `scripts/platform/slice-collisions.py` over the wave-plan
-//! TSV; since T-912.2 the plan is the compiled `.ai/tickets/wave.lock` and the packing facts —
-//! `owns`, `depends_on`, `pack_last` (T-912.1) — live on the tickets, so this command reads the
-//! lock plus the ticket files and nothing else. The TSV, its plan-path env override, and the
-//! label-format checks that guarded a hand-kept column (T-616/T-623 F5) died with it: lock wave
-//! numbers are typed integers written by one writer, and a missing lock is a DidNotRun refusal
-//! from [`crate::wave_lock::load`], never an empty dispatch set.
+//! A file-disjointness solver over the wave plan. The plan is the compiled
+//! `.ai/tickets/wave.lock`, and the packing facts — `owns`, `depends_on`, `pack_last` — live on
+//! the tickets, so this command reads the lock plus the ticket files and nothing else. There is
+//! no hand-kept plan file, no plan-path env override and no label-format check: lock wave numbers
+//! are typed integers written by one writer, and a missing lock is a DidNotRun refusal from
+//! [`crate::wave_lock::load`], never an empty dispatch set.
 //!
 //! The parallelism limit on this program is not disk and not CPU — it is merge conflicts.
 //! Worktrees make concurrent edits *safe* (no clobbering) but do nothing to prevent two agents
@@ -14,9 +13,9 @@
 //! `owns` field, so it is computed here rather than eyeballed.
 //!
 //!   cargo xtask slice-collisions                 # max concurrent set from the open waves
-//!   cargo xtask slice-collisions T-190 T-191     # what may JOIN those already in flight
+//!   cargo xtask slice-collisions <id> <id>       # what may JOIN those already in flight
 //!   cargo xtask slice-collisions --repack        # alias for `cargo xtask wave repack`
-//!   cargo xtask slice-collisions --check T-190   # is T-190 safe against everything running?
+//!   cargo xtask slice-collisions --check <id>    # is that id safe against everything running?
 //!
 //! `--repack` is an ALIAS, not a second writer: the lock has exactly one compiler
 //! ([`crate::wave_lock::cmd_repack`]), and this spelling survives only because a generation of
@@ -33,7 +32,7 @@ use anyhow::{Result, bail};
 use crate::wave_lock;
 
 /// Integration attention, not disk, is the real ceiling: every agent returns a dense report the
-/// command center must actually read. Measured on T-181: three was far too low, twenty is too many
+/// command center must actually read. Measured: three is far too low, twenty is too many
 /// to integrate in one sitting. Eight is the working compromise — raise it if you are keeping up.
 fn max_concurrent() -> usize {
     wave_lock::max_concurrent()
@@ -42,13 +41,13 @@ fn max_concurrent() -> usize {
 /// Per-ticket packing facts — `owns`, `depends_on`, `pack_last` — read from EVERY
 /// `.ai/tickets/T-*.toml`, children included.
 ///
-/// Until T-912.1 the ordering constraints that file-disjointness cannot express (two tickets touch
+/// The ordering constraints that file-disjointness cannot express (two tickets touch
 /// DIFFERENT files but one must land first) were a hardcoded 11-row dependency table plus a
 /// run-last list in this file, and `owns` lived only in the wave-plan TSV column. All three are
-/// ticket fields now, and T-912.2 compiled the wave labels into the lock.
+/// ticket fields, and the wave labels are compiled into the lock.
 ///
 /// NOT the parents-only registry loader: `load_phase2_tree` walks PARENT files only, so child ids
-/// like T-181.23 or T-090.4 would be absent from its map. Glob the directory directly.
+/// A child id would be absent from a parents-only map. Glob the directory directly.
 struct TicketFacts {
     owns: HashMap<String, Vec<String>>,
     depends_on: HashMap<String, Vec<String>>,
@@ -62,7 +61,7 @@ impl TicketFacts {
 }
 
 fn ticket_facts(root: &Path) -> Result<TicketFacts> {
-    // T-916.2: read through the shared typed corpus (`crate::store::Corpus`) — this was
+    // Read through the shared typed corpus (`crate::store::Corpus`) — this was
     // one of the three near-duplicate directory walks the store now replaces. Same fail-closed
     // contract: one unparseable ticket file refuses the load, naming it.
     let corpus = crate::Corpus::load(root).map_err(|e| anyhow::anyhow!(e))?;
@@ -119,7 +118,7 @@ fn lock_rows(
 }
 
 /// Two tickets collide if any owned path overlaps — including prefix containment, so
-/// `apps/website/api_v2/src/` collides with `apps/website/api_v2/src/handlers/admin.rs`.
+/// `apps/website/api_v2/src/` collides with any file under it.
 fn collides(a: &[String], b: &[String]) -> bool {
     wave_lock::collides(a, b)
 }

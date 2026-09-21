@@ -270,7 +270,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
         }
     }
 
-    // Inventory gates (I1-I7 subset) — delegate to the Rust xtask gate (was verify-type-inventory.mjs).
+    // Inventory gates (I1-I7 subset) — delegate to `cargo xtask schema type-inventory`.
     // Output captured (the Node script spawned with stdio:pipe) — surfaced only on failure.
     let inv_gate = std::process::Command::new("cargo")
         .args(["run", "-q", "-p", "xtask", "--", "schema", "type-inventory"])
@@ -303,7 +303,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
     match other {
         Some(t) => {
             let tid = t["terrainId"].as_str().unwrap_or("");
-            // T-869: export-terrain.sh → `cargo run -q -p xtask -- map export-terrain …`
+            // The export stage runs as `cargo run -q -p xtask -- map export-terrain …`
             // (inherits CARGO_TARGET_DIR when set — same pin as Makefile / checkrun gates).
             let status = std::process::Command::new("cargo")
                 .args([
@@ -339,8 +339,8 @@ pub fn validate_export_artifacts() -> Result<u8> {
 
     {
         // E2c: terrain ids must flow from argv/registry — no literal id in the pipeline sources.
-        // T-165.8 / T-869: the pipeline is Rust; scanned set is the Rust modules + the xtask
-        // orchestrator (topo.rs is excluded like decode-topo.mjs was — its per-terrain CONFIG
+        // The pipeline is Rust; scanned set is the Rust modules + the xtask
+        // orchestrator (topo.rs is excluded — its per-terrain CONFIG
         // TABLE is the sanctioned place for ids).
         let sources = [
             "tools_v2/developer-tools/src/world_export_pipeline/chunk_partitioner.rs",

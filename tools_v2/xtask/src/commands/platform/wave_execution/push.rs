@@ -1,11 +1,11 @@
-//! ── T-599 — THE PUSH GUARD ASKS GIT WHICH FILES ARE LFS. IT DOES NOT MATCH THE PATH. ────────
+//! ── THE PUSH GUARD ASKS GIT WHICH FILES ARE LFS. IT DOES NOT MATCH THE PATH. ───────────────
 //!
 //! git-lfs is not installed in this container (any checkout needing it dies with
 //! `git-lfs filter-process: 1: git-lfs: not found`), so `--no-verify` is how work leaves this
 //! machine at all. The guard is real: pushing `--no-verify` over genuine LFS content publishes
 //! commits whose LFS objects were never uploaded, and every later clone breaks on them.
 //!
-//! WHAT THIS USED TO BE, AND WHY IT WAS WRONG:
+//! WHAT A PATH-MATCHING GUARD GETS WRONG:
 //!
 //! ```text
 //! if git diff --name-only origin/main..HEAD | grep -q '^assets_v2/terrains/'; then refuse
@@ -20,7 +20,7 @@
 //!
 //! Everything else beneath that tree is ordinary bytes. MEASURED 2026-07-31 while closing wave 74:
 //! a legitimate 19-commit push was refused, and all 30 files in the range resolved to
-//! `filter: unspecified` — including T-594's regenerated `everon/objects/prefabs.json.gz` and
+//! `filter: unspecified` — including a regenerated `everon/objects/prefabs.json.gz` and
 //! `everon/objects/type-inventory.json`, which are real content, not pointers. ZERO files in that
 //! range were LFS. The operator overrode the guard by hand, correctly.
 //!
@@ -38,9 +38,9 @@
 //! answer "go ahead" — that is the one direction where being wrong cannot be undone, because the
 //! remote is shared. This is deliberately NOT symmetric with the false-positive fix above.
 //!
-//! ── T-600 — EVERY COMMIT IN THE RANGE, AND EACH COMMIT'S OWN `.gitattributes`. ───────────────
+//! ── EVERY COMMIT IN THE RANGE, AND EACH COMMIT'S OWN `.gitattributes`. ──────────────────────
 //!
-//! T-599 fixed WHICH question this asks (check-attr, not path matching). It kept the wrong INPUT:
+//! Fixed WHICH question this asks (check-attr, not path matching). It kept the wrong INPUT:
 //! `git diff --name-only origin/main..HEAD` is the ENDPOINT diff, so a file living only in an
 //! INTERMEDIATE commit — added, then deleted or renamed before HEAD — was never examined at all.
 //! MEASURED in a scratch repo with this function sourced verbatim: a `.tbd-sat` added in commit 2
@@ -67,17 +67,17 @@
 //! It cuts both ways, and that is intended. A file committed as ordinary bytes BEFORE some later
 //! commit in the range adds an lfs rule is NOT refused: its blob is real content, nothing was ever
 //! cleaned, nothing needs uploading. Refusing it would be a fresh false positive of exactly the
-//! kind T-599 removed — and the false-positive fix is the reason the guard is believed at all.
+//! kind the path match produced — and the false-positive fix is the reason the guard is believed at all.
 //!
 //! Git is 2.39 here, so `check-attr --source=<tree-ish>` (2.40+) does not exist. `--cached` does,
 //! and reads attributes from the index ONLY — so a throwaway `GIT_INDEX_FILE` filled by
 //! `read-tree <c>` is that answer. MEASURED: HEAD says `unspecified` for the Case-7 path, the temp
 //! index says `lfs`.
 //!
-//! ── T-943 — THE GUARD DEADLOCKED ON ITS OWN QUESTION, AND ANSWERED IT WHERE NOBODY ASKED. ────
+//! ── THE GUARD MUST NOT DEADLOCK ON ITS OWN QUESTION, OR ANSWER IT WHERE NOBODY ASKED. ──────
 //!
 //! Two defects, both measured 2026-09-04 while closing wave 248 on `origin/main..HEAD` (28 commits,
-//! one of them T-090.12.2's 1,691 `assets_v2/terrains/everon/prefabs/blas/*.bvh`).
+//! one of them 1,691 `assets_v2/terrains/everon/prefabs/blas/*.bvh`).
 //!
 //! FIRST: THE PIPE. This function used to hand `check-attr` the whole path list —
 //! `child.stdin.take()?.write_all(&list.stdout)` — and only afterwards call `wait_with_output` to
@@ -99,7 +99,7 @@
 //! SECOND: THE GUARD RAN ON A HOST THAT HAS GIT-LFS. Everything above exists because git-lfs is
 //! missing from the CONTAINER, where `--no-verify` is the only way out. On the operator's host
 //! git-lfs 3.7.1 is installed, the pre-push hook uploads the objects, and the guard's refusal is a
-//! false positive of exactly the kind T-599 was written to remove — the operator overrode it by
+//! false positive of exactly the kind the git query removes — the operator overrode it by
 //! hand with `git push origin main`, and was right. `git lfs version` is the question that decides
 //! it, and its answer picks BOTH the mode line and the argv (see `push_plan`): present → plain
 //! `git push origin main` WITH hooks and no guard at all; absent → the guard, then `--no-verify`.
@@ -119,7 +119,7 @@ use crate::wprintln;
 /// Run `cmd`, feeding `input` to its stdin from a scoped writer thread while THIS thread drains
 /// its stdout to EOF.
 ///
-/// The whole point is that the two happen AT THE SAME TIME. See the T-943 note in the module
+/// The whole point is that the two happen AT THE SAME TIME. See the note in the module
 /// header for the ten-minute hang this replaced: filling one 64 KB pipe from the same thread that
 /// must empty the other is a deadlock the moment either list outgrows the buffer, and no amount of
 /// ordering fixes it.
@@ -250,7 +250,7 @@ pub fn lfs_paths_in_range(range: &str) -> Result<Vec<String>, ()> {
                 return Err(());
             }
 
-            // T-943: `feed_and_capture`, never an inline `write_all` — this is the list that hit
+            // `feed_and_capture`, never an inline `write_all` — this is the list that hit
             // 1,691 paths and wedged both processes for ten minutes.
             let mut check_attr = Command::new("git");
             check_attr
@@ -285,7 +285,7 @@ pub fn lfs_paths_in_range(range: &str) -> Result<Vec<String>, ()> {
 
 pub fn cmd_push(_ctx: &Ctx) -> u8 {
     let range = "origin/main..HEAD";
-    // T-943. One question, asked once, and printed. Everything below it — whether the guard runs
+    // One question, asked once, and printed. Everything below it — whether the guard runs
     // at all, and whether the push carries --no-verify — is this answer.
     let git_lfs = git_lfs_present();
     let (mode, argv) = push_plan(git_lfs);

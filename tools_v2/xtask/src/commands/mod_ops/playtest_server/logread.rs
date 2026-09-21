@@ -43,7 +43,7 @@ pub(super) fn has_re(text: &str, ere: &str) -> bool {
 /// The furthest milestone the log shows, newest first.
 ///
 /// The TBD markers are matched as ESCAPED EREs (`\[TBD\]\[Stage\].*LOBBY`), not as `grep -F` on a
-/// whole sentence (T-606). `-F` was originally chosen because `[` is a character class to both ugrep
+/// whole sentence. `-F` was originally chosen because `[` is a character class to both ugrep
 /// and GNU grep — a real hazard, but the fix for it is to escape the brackets, not to pin the entire
 /// English line. `-F '[TBD][Stage] LOADING -> LOBBY'` breaks if anyone changes the arrow, renames a
 /// stage enum, or appends a clause; measured, changing `->` to `=>` alone drops this from 1 match to

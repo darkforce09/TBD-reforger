@@ -2,7 +2,7 @@ use super::*;
 use clap::CommandFactory;
 
 /// [`LANE_COMMANDS`] is a second copy of the clap enum's names, and it exists only because
-/// `schema_gates`' gate 7 needs the NAMES without a parse. Diff the two so the copy cannot
+/// The schema gate needs the NAMES without a parse. Diff the two so the copy cannot
 /// rot — a new `DbCmd` variant that never reaches the list would make a correct spec citation
 /// read as a typo.
 #[test]

@@ -174,7 +174,7 @@ type BanRow = (&'static str, &'static str, bool, &'static [&'static str], &'stat
 
 #[rustfmt::skip]
 const BANS: &[BanRow] = &[
-    ("ensure_default_squad still present in editor_ops.rs",
+    ("ensure_default_squad still present on the place path",
      "ensure_default_squad", false,
      EDITOR_OPS_SPLIT,
      "no ensure_default_squad on place path"),
@@ -186,7 +186,7 @@ const BANS: &[BanRow] = &[
      "no Standardization UI strings"),
 ];
 
-/// The three side-tint pins, all in `slots_gpu.rs`, all sharing one `ok` line. The RGBA triples
+/// The three side-tint pins, all in [`SLOTS_GPU`], all sharing one `ok` line. The RGBA triples
 /// are the Class-R lock — BLUFOR/OPFOR/INDFOR must stay three visually distinct colours — and the
 /// literal spacing is part of the pin, so reformatting the array is a change the gate should see.
 #[rustfmt::skip]

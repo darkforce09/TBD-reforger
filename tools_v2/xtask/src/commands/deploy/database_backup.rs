@@ -1,4 +1,4 @@
-//! T-885 — port of `scripts/deploy/backup-db.sh` → `cargo xtask deploy db backup`.
+//! `cargo xtask deploy db backup`: a verified PostgreSQL dump, then a prune.
 //!
 //! Verified `pg_dump -Fc` + count-based retention + `--verify-only`. Calls
 //! [`crate::commands::deploy::database_operations`] helpers directly.

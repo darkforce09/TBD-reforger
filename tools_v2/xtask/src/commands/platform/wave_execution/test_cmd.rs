@@ -1,8 +1,8 @@
-//! T-742 — ad-hoc `cargo test` into a PER-SLICE private `CARGO_TARGET_DIR`.
+//! Ad-hoc `cargo test` into a PER-SLICE private `CARGO_TARGET_DIR`.
 //!
 //! DEFECT: concurrent slice worktrees export the same shared cache
 //! (`CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` / `$MAIN_ROOT/target`). `cargo test` BUILDS
-//! AND THEN RUNS a binary, so one worktree can execute another's `website_frontend-<hash>` (T-649
+//! AND THEN RUNS a binary, so one worktree can execute another's `website_frontend-<hash>` (one run
 //! live: arsenal.rs:4733 failure that did not exist in that tree; line tracked a sibling). The
 //! per-slice gate and the wave-gate `test frontend` step already use private dirs; ad-hoc agent
 //! invocations did not, and the brief only ADVISED a private dir — nothing enforced it.
@@ -61,9 +61,9 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
     }
     if tid.is_empty() {
         wprintln!("test: REFUSING — --slice T-nnn is required.");
-        wprintln!("        Bare `cargo test` against the shared CARGO_TARGET_DIR is the T-742");
+        wprintln!("        Bare `cargo test` against the shared CARGO_TARGET_DIR is the");
         wprintln!("        cross-worktree false-binary class. Sanctioned path:");
-        wprintln!("          cargo xtask platform wave test --slice T-742 -p website-frontend");
+        wprintln!("          cargo xtask platform wave test --slice <id> -p website-frontend");
         return 2;
     }
     // `case "$tid" in [Tt]-[0-9]*)`
@@ -77,7 +77,7 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
         werr!("test: REFUSING — slice id '{tid}' (expected T-nnn)");
         return 2;
     }
-    // Normalise t-742 → T-742 without touching digits. `${tid#*[Tt]-}` strips through the FIRST
+    // Uppercase the id prefix without touching digits. `${tid#*[Tt]-}` strips through the FIRST
     // `T-`/`t-`.
     let tid = format!("T-{}", strip_through_first_t_dash(&tid));
 
@@ -139,7 +139,7 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
             "test: REFUSING — private dir collapsed onto the shared CARGO_TARGET_DIR ({priv_r})."
         );
         wprintln!(
-            "        That is exactly the T-742 defect. Unset TBD_ADHOC_TARGET_DIR or point it at"
+            "        That is exactly the cross-worktree defect. Unset TBD_ADHOC_TARGET_DIR or point it at"
         );
         wprintln!("        a per-slice path under $HOME/.cache/tbd-target-{tid}.");
         return 2;
@@ -147,7 +147,7 @@ pub fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
 
     // F2: TBD_ADHOC_TARGET_DIR must resolve to this slice's default OR a non-`T-*` verifier path
     // (basename lacks `tbd-target-T-<digits>` — e.g. `tbd-target-wave138-verify`). A foreign-slice
-    // `tbd-target-T-739` under `--slice T-999` is REFUSED — never print rm -rf for it.
+    // A dir named for ANOTHER slice is REFUSED — never print rm -rf for it.
     let base = Path::new(&priv_r)
         .file_name()
         .map(|s| s.to_string_lossy().into_owned())

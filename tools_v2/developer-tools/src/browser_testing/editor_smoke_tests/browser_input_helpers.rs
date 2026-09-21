@@ -64,7 +64,7 @@ pub(super) async fn click_at(page: &Page, x: f64, y: f64, ctrl: bool) -> Result<
     Ok(())
 }
 
-/// One trusted key chord: rawKeyDown + keyUp ONLY (T-159.22.1 — keyDown would double-fire).
+/// One trusted key chord: rawKeyDown + keyUp ONLY — keyDown would double-fire.
 pub(super) async fn key_chord(
     page: &Page,
     key: &str,

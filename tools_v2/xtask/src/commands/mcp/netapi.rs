@@ -1,6 +1,6 @@
 //! `cargo xtask mcp wbcall <APIFunc> ['<json>']` — a raw Workbench NET API call
-//! (T-090.11.3). The enfusion-mcp server exposes typed tools but no generic NetApiHandler
-//! bridge, and the Node `wbcall.mjs` of the T-090.6 sessions was eradicated with T-165; this
+//! The enfusion-mcp server exposes typed tools but no generic NetApiHandler
+//! bridge, and there is no Node bridge beside it; this
 //! is its Rust port so the blueprint pipeline (`EMCP_WB_TbdBlueprint`: `recon`, `parity`,
 //! `extract`, `probe`, `dump`) can be driven from xtask.
 //!

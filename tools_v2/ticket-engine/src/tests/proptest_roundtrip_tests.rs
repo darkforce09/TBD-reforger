@@ -3,7 +3,7 @@
 use crate::{Domain, ScopeV2, Status, Ticket, WorkTicket, parse_ticket_toml, render_ticket_toml};
 use proptest::prelude::*;
 
-/// Valid RFC 3339 UTC stamps under the T-913.1 rule (`Z` or `+00:00`, uppercase `T`).
+/// Valid RFC 3339 UTC stamps under the rule (`Z` or `+00:00`, uppercase `T`).
 /// Day capped at 28 so every generated date exists.
 fn rfc3339_utc() -> impl Strategy<Value = String> {
     (

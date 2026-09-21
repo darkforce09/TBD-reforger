@@ -2,7 +2,7 @@
 
 use super::*;
 
-/// T-917.4 — estimated[]-vs-field coherence (the S.6 gate builds on this rule). An
+/// Estimated[]-vs-field coherence (the S.6 gate builds on this rule). An
 /// `estimated[]` stamp entry must correspond to a PRESENT field — a marked estimate
 /// with no value is a hole wearing a provenance badge — with exactly one legal
 /// asymmetry: `shipped_at` may be absent+marked WHEN `estimate_note` names the gap
@@ -71,7 +71,7 @@ pub(super) fn check_estimated_stamp_coherence(root: &Path) -> Vec<String> {
     errors
 }
 
-/// T-917.6 — THE hard ship gate (spec §The gate; Decisions log #1: "hard requirement…
+/// THE hard ship gate (spec §The gate; Decisions log #1: "hard requirement…
 /// use maths", operator-overruled soft states). For every SHIPPED ticket — work AND
 /// program (program `shipped_at` lives inside `Status::Shipped`; work carries the
 /// field — the `ops::current_shipped_at` asymmetry, read through both arms here):
@@ -89,12 +89,12 @@ pub(super) fn check_estimated_stamp_coherence(root: &Path) -> Vec<String> {
 /// Composes onto the earlier rules WITHOUT double-reporting (each absent-field state
 /// is red under exactly one rule):
 ///
-/// - absent-but-MARKED `created_at`/`completed_at` is the T-917.4 coherence rule's
+/// - absent-but-MARKED `created_at`/`completed_at` is the coherence rule's
 ///   red ("a marked estimate with no value is a hole wearing a provenance badge") —
 ///   this gate reds the absent-UNMARKED case;
 /// - absent+marked `shipped_at` with an empty note is coherence's red — this gate
 ///   reds absent-unmarked and present-but-not-SHA-shaped (naming the value);
-/// - receipt AND estimate together is the T-917.5 mutual-exclusion red — this gate's
+/// - receipt AND estimate together is the mutual-exclusion red — this gate's
 ///   arm covers only the NEITHER case.
 ///
 /// Lifecycle note (`ops::ship` doc has the full contract): the working tree is
@@ -155,7 +155,7 @@ pub(super) fn check_ship_gate(root: &Path) -> Vec<String> {
             )),
             None if marked("shipped_at") => {
                 // Rule split: with a nonempty estimate_note this is the legal
-                // absent-marked asymmetry; with an empty note the T-917.4 coherence
+                // absent-marked asymmetry; with an empty note the coherence
                 // rule already reds it. Either way, not this gate's finding.
             }
             None => errors.push(format!(
@@ -173,7 +173,7 @@ pub(super) fn check_ship_gate(root: &Path) -> Vec<String> {
             errors.push(format!(
                 "{id}: shipped with no token accounting — needs a run receipt under \
                  {}/{id}/ or an estimate at {}/{id}.json (`ticket stamp-sha {id} <sha>` \
-                 generates one; both at once is the T-917.5 mutual-exclusion red)",
+                 generates one; both at once is the mutual-exclusion red)",
                 crate::repository::METRICS_DIR,
                 crate::repository::ESTIMATES_DIR
             ));

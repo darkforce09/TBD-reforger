@@ -6,7 +6,7 @@ pub async fn sleep_ms(ms: u64) {
 
 /// `CHROME_HEADLESS_SHELL` env → `~/.cache/ms-playwright` scan.
 ///
-/// T-177 — prefer the **full `chrome` build over `chrome-headless-shell`**. The minimal headless
+/// Prefer the **full `chrome` build over `chrome-headless-shell`**. The minimal headless
 /// shell ships a stubbed `SkFontMgr_FontConfigInterface` whose `onMatchFamilyStyleCharacter`
 /// (per-character font fallback) is a `FATAL: … "Not implemented"` (`SkFontMgr_FontConfigInterface.cpp:163`):
 /// the moment a page needs a fallback glyph — which the editor chrome does, env-dependently — the
@@ -60,7 +60,7 @@ pub(super) fn dirs_home() -> Option<PathBuf> {
     std::env::var_os("HOME").map(PathBuf::from)
 }
 
-/// Poll a URL until it answers (ok or 404 = server up). 60 tries × 250 ms, as in cdp.mjs.
+/// Poll a URL until it answers (ok or 404 = server up). 60 tries × 250 ms.
 pub async fn wait_http(client: &reqwest::Client, url: &str, tries: u32) -> bool {
     for _ in 0..tries {
         if let Ok(res) = client.get(url).send().await
@@ -75,7 +75,7 @@ pub async fn wait_http(client: &reqwest::Client, url: &str, tries: u32) -> bool 
 
 /// Consume one of chrome's output pipes until EOF, keeping the last `LOG_TAIL_LINES` lines.
 ///
-/// # Why this exists (T-354 — the undrained-pipe deadlock)
+/// # Why this exists: the undrained-pipe deadlock
 ///
 /// [`launch`] hands chrome piped stdout+stderr. A pipe holds **64 KiB**; once it fills and nobody
 /// reads, the next `write(2)` **blocks the thread that issued it** — indefinitely, because a pipe
@@ -94,10 +94,10 @@ pub async fn wait_http(client: &reqwest::Client, url: &str, tries: u32) -> bool 
 ///
 /// Two things make it expensive. It is **intermittent** — thread-scheduling roulette, so it passes
 /// often enough to look like flake. And it is **self-disguising**: the harness sees exactly the
-/// T-320 font-abort signature (`cdp: ws call timed out (Runtime.evaluate)`, which `gate doctor`
+/// Font-abort signature (`cdp: ws call timed out (Runtime.evaluate)`, which `gate doctor`
 /// then reports as "the headless browser process DIED"), so the diagnosis points at Skia while the
-/// browser sits alive and blocked in `write`. T-232 lost its second hand-rolled harness to this;
-/// T-320 lost five sessions to the same signature from a genuinely different cause. Draining
+/// browser sits alive and blocked in `write`. A hand-rolled harness was lost to this twice;
+/// Lost five sessions to the same signature from a genuinely different cause. Draining
 /// removes the failure mode rather than detecting it: chrome cannot block on a pipe someone is
 /// always reading.
 ///
@@ -154,10 +154,10 @@ pub async fn launch_with_gpu(
     let chromium = find_chromium().ok_or_else(|| {
         anyhow!("cdp: no chromium (set CHROME_HEADLESS_SHELL or install playwright)")
     })?;
-    // T-339 — every CDP caller (smokes Harness, vsuite, doctor liveness) gets the gate-owned
-    // fontconfig cache. Pin `XDG_CACHE_HOME` on the *child* Command (T-362) rather than relying
+    // Every CDP caller (smokes Harness, vsuite, doctor liveness) gets the gate-owned
+    // fontconfig cache. Pin `XDG_CACHE_HOME` on the *child* Command rather than relying
     // on process-wide `set_var` after tokio is running: that closes vsuite's separate-chromium
-    // gap and avoids relocating an `unsafe` env write into a multi-threaded window (T-354).
+    // gap and avoids relocating an `unsafe` env write into a multi-threaded window.
     let font_cache = crate::browser_testing::diagnostics::gate_font_cache_dir();
     std::fs::create_dir_all(font_cache)
         .with_context(|| format!("create gate font cache {}", font_cache.display()))?;
@@ -167,7 +167,7 @@ pub async fn launch_with_gpu(
         std::env::temp_dir().join(format!("tbd-cdp-{}-{debug_port}", std::process::id()));
     let _ = std::fs::remove_dir_all(&user_data_dir);
     let mut args: Vec<String> = Vec::new();
-    // T-177 — the full `chrome` build must be told to run headless (the shell is always headless and
+    // The full `chrome` build must be told to run headless (the shell is always headless and
     // ignores this). Without it the full binary tries to open a window and aborts. See `find_chromium`.
     if !is_headless_shell(&chromium) {
         args.push("--headless=new".into());
@@ -187,16 +187,16 @@ pub async fn launch_with_gpu(
         .args(&args)
         .env("XDG_CACHE_HOME", font_cache)
         // Own process group (leader pid == child pid) so shutdown can signal the whole chrome
-        // tree — renderer/gpu children included — without touching the harness (T-166).
+        // tree — renderer/gpu children included — without touching the harness.
         .process_group(0)
         .stdin(std::process::Stdio::null())
         // Both pipes are DRAINED below — piping either one without reading it deadlocks chrome at
-        // 64 KiB. See [`drain_pipe`] (T-354).
+        // 64 KiB. See [`drain_pipe`].
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
         .with_context(|| format!("spawn {}", chromium.display()))?;
-    // T-354 — start draining BEFORE the first `/json/version` poll below. Chrome writes past the
+    // Start draining BEFORE the first `/json/version` poll below. Chrome writes past the
     // 64 KiB buffer inside its first second, so a drain started any later races the very deadlock
     // it exists to prevent. Both fds: stdout is "usually empty", and that assumption is exactly the
     // kind that turns into an intermittent hang.

@@ -1,9 +1,9 @@
-//! T-288 — modpack resolution and the `server.config.json` render (bash lines 1252–1522), split
+//! Modpack resolution and the `server.config.json` render, split
 //! out of [`super::config`] for SIZE-3.
 //!
 //! [`super::config`] owns the INPUTS (`deploy.env`, the `:=` defaults, the mode gate). This module
 //! owns the ARTEFACT they produce. The split is the bash's own: `render_server_config()` is a pure
-//! function of an already-validated environment, and T-288 exists precisely because the render was
+//! function of an already-validated environment, and this split exists precisely because a render
 //! once fused to the push and therefore unobservable.
 //!
 //! The render is reached by two callers and must be identical for both: `--render-only <path>`
@@ -26,7 +26,7 @@ use super::pycompat::{
 /// `resolve_modpack_doc` — the modpack document (`GET /modpacks/current` shape) as text.
 ///
 /// Returns `(document, src_label)`. The label is what error text names, so a reader can tell a bad
-/// file from a bad API response from the synthesized legacy document.
+/// file from a bad API response from the synthesized single-mod document.
 pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
     if !env.modpack_json.is_empty() {
         let p = PathBuf::from(&env.modpack_json);
@@ -56,7 +56,7 @@ pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
             eprintln!(
                 "      SERVICE_TOKEN checked on the X-Service-Token header by ServiceAuth and"
             );
-            eprintln!("      will NOT authenticate this route. See T-288.");
+            eprintln!("      will NOT authenticate this route.");
             return Err(1);
         }
         fetch_modpack_url(env)
@@ -119,7 +119,7 @@ fn fetch_modpack_url(env: &Env) -> Result<(String, String), u8> {
             "FAIL: {} returned HTTP {code} (expected 200).",
             env.modpack_url
         );
-        eprintln!("      401/403 means the credential tier is wrong — see T-288.");
+        eprintln!("      401/403 means the credential tier is wrong.");
         return Err(1);
     }
     let text = fs::read_to_string(&out).unwrap_or_default();
@@ -379,7 +379,7 @@ pub fn validate_server_config(path: &Path) -> Result<(), u8> {
             json_repr(top.get("bindPort"))
         ));
     }
-    // T-607: scenarioId against the ENGINE's OWN schema, copied verbatim out of its rejection
+    // scenarioId against the ENGINE's OWN schema, copied verbatim out of its rejection
     // (1.7.0.54):
     //   BACKEND (E): RegEx Pattern: "^\{[0-9A-F]{16}\}[a-zA-Z0-9_./ -]+$"
     //   BACKEND (E): Pattern Description: "Param must start with ResourceGUID enclosed in brackets."

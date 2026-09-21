@@ -169,7 +169,7 @@ pub fn build_library(
         walker.instances.clear();
         walker.notes.clear();
         // Walked exactly as `bvh-batch` walks a building (the root as the shell), so the child
-        // ids and parents are the T-090.11 instances file's; the root record is synthesised.
+        // ids and parents are the instances file's; the root record is synthesised.
         let walked = walker.walk(
             &path,
             &slug,
@@ -340,7 +340,7 @@ pub fn build_library(
         opts.hot,
         canopy_hull,
     )?;
-    // T-090.12.4 — the layer-policy census: per preset, triangles kept / dropped and the meshes
+    // The layer-policy census: per preset, triangles kept / dropped and the meshes
     // the policy emptied (their prefabs carry `blocks: false`, reason `no-fire-geo`).
     {
         let mut by_preset: BTreeMap<String, (usize, usize, usize)> = BTreeMap::new();

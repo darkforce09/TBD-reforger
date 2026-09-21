@@ -4,14 +4,14 @@
 //! every gate in every worktree writes to the same shared paths.
 //!
 //!   ARTIFACT CLOBBERING. The per-step private target dirs (target-gate-api, -frontend,
-//!   -mapengine, -trunk, -schema, and T-421's -check) are private per STEP but SHARED ACROSS
-//!   WORKTREES — same package + same version = same artifact hash = clobbering. T-334's agent
+//!   -mapengine, -trunk, -schema, -check) are private per STEP but SHARED ACROSS
+//!   WORKTREES — same package + same version = same artifact hash = clobbering. One agent
 //!   watched `target-gate-api/debug/deps/events-*` be overwritten mid-session by a sibling
 //!   worktree's build and found main's literals inside a binary its own gate had just produced,
 //!   with `ps` confirming a concurrent `gate_test_api` from another tree. So "N passed" was not its
 //!   own code.
 //!
-//!   THAT RESIDUE IS WHY T-421 DID NOT STOP AT A PRIVATE DIR. Because these dirs are shared across
+//!   THAT RESIDUE IS WHY A PRIVATE DIR IS NOT ENOUGH. Because these dirs are shared across
 //!   worktrees, a private dir narrows WHO writes an artifact (to serialised gates) but never makes
 //!   the artifact this tree's — gate-to-gate clobbering survives it, and MEASURED 2026-07-26 the
 //!   mtime repro still returned rc 0 inside a private dir. The analysis steps therefore pair
@@ -19,8 +19,8 @@
 //!   lock bounds the writers, the touch makes every workspace unit recompile from THIS tree, and
 //!   neither is sufficient alone. The test steps still carry the residue; that is not this ticket.
 //!
-//!   SHARED GATE DATABASE. Pre-T-411, `ensure_gate_db` handed every slice the same `tbd_gate_it`;
-//!   T-411 narrowed that to per-wave `tbd_gate_w<N>` (last two kept). Concurrent writers inside one
+//!   SHARED GATE DATABASE. A single `tbd_gate_it` handed to every slice collides;
+//!   Narrowed that to per-wave `tbd_gate_w<N>` (last two kept). Concurrent writers inside one
 //!   wave remain: `tests/registry_compat.rs:38-60` DELETEs and re-imports two FIXED modpack UUIDs.
 //!   Re-measured 2026-07-26, two copies of one binary against `tbd_gate_it`: one panicked at
 //!   registry_compat.rs:511 with left (0, 5) / right (16, 7) while the other passed. Run alone it
@@ -74,16 +74,16 @@
 //! hold it".
 //!
 //! The correction is recorded rather than the claim quietly narrowed, because getting a
-//! justification wrong in this file is the same class of error as the bug — that is `wave.sh`'s own
+//! justification wrong in this file is the same class of error as the bug — that is the driver's own
 //! standard, stated in `checkrun`'s `CARGO_INCREMENTAL` note and applied here to this port.
 //! Operationally it does not matter: the gate is single-threaded and spawns its steps in sequence,
 //! so there is no second thread to fork inside our window. It matters for anything that later runs
 //! gate steps concurrently.
 //!
-//! ── THE T-406 DEFECT THE TYPE PREVENTS ──────────────────────────────────────────────────────
+//! ── THE DEFECT THE TYPE PREVENTS ────────────────────────────────────────────────────────────
 //!
 //! The bash tracked success in `GATE_LOCK_HELD=0`, set to 1 by `take_gate_lock` — a success flag
-//! set by the function that is supposed to succeed. Before T-406 it returned 0 after FAILING to
+//! set by the function that is supposed to succeed. Returning 0 after FAILING to
 //! lock, so on a full disk (252 MB free, recorded in `cmd_reclaim`'s header) the destructive
 //! `DROP DATABASE … WITH (FORCE)` ran unserialised. [`verification_core::GateLock`] has a private field and
 //! no public constructor, so the only way to hold one is to have acquired it. [`GateState`] carries
@@ -236,7 +236,7 @@ impl GateState {
     ///     actually happening at 252 MB free mid-wave. A disk that full is exactly when steps start
     ///     failing with "No space left on device" that reads like a build error, i.e. the worst
     ///     possible moment to also hand out a verdict nobody can trust.
-    ///   * What the lock buys is not a nicety. T-334 watched `target-gate-api/debug/deps/events-*`
+    ///   * What the lock buys is not a nicety. A run watched `target-gate-api/debug/deps/events-*`
     ///     be overwritten mid-session by a sibling worktree and found MAIN's literals inside a
     ///     binary its own gate had just produced. Unserialised, "N passed" is not a claim about this
     ///     slice.
@@ -258,7 +258,7 @@ impl GateState {
         // Escape hatch, for a machine where locking genuinely is not available. It does NOT restore
         // the old behaviour: it proceeds with the verdict itself relabelled, so nothing downstream
         // and nobody reading a log can mistake the result for a clean pass. GATE_UNSERIALISED=1 is
-        // what lets ensure_gate_db still prepare its databases under this hatch (T-409); the lock
+        // what lets ensure_gate_db still prepare its databases under this hatch; the lock
         // stays None — we do not pretend the flock is held.
         if std::env::var("TBD_GATE_ALLOW_UNSERIALISED").as_deref() == Ok("1") {
             self.unserialised = true;

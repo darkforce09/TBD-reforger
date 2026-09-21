@@ -23,7 +23,7 @@ fn boot_phase_reports_the_furthest_milestone_not_the_first() {
 
 #[test]
 fn the_lobby_marker_survives_a_reworded_arrow() {
-    // T-606: `grep -F '[TBD][Stage] LOADING -> LOBBY'` dropped to ZERO matches when the arrow
+    // A fixed-string search for `[TBD][Stage] LOADING -> LOBBY` drops to ZERO matches when the arrow
     // changed, i.e. a server that WAS in LOBBY was reported as never having got there.
     let p = with_log("arrow", "[TBD][Stage] LOADING => LOBBY\n");
     assert!(boot_phase(&p).starts_with("WORLD UP, mission already in LOBBY"));
@@ -99,7 +99,7 @@ fn the_hard_gate_holds_on_a_real_engine_boot() {
     //     `grep -A6`'s window, but only just, and it is preceded by two vanilla addons that
     //     `tail -1` must not select.
     //
-    // This is the T-604 finding in evidence: `-addonsDir` + `-config` together, and the LOCAL
+    // This is the finding in evidence: `-addonsDir` + `-config` together, and the LOCAL
     // checkout wins over the unlisted Workshop 1.0.1 published under the same GUID.
     let real = "\
 ENGINE       : GameProject load

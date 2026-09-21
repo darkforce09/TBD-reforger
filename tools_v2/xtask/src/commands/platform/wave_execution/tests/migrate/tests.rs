@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn comment_stripping_survives_multiline_blocks_and_line_comments() {
-    // Comment-only bait must not false-green the claim-body pin (T-523 / verifier MAJOR).
+    // Comment-only bait must not false-green the claim-body pin.
     let src = "UPDATE public.match_player_stats AS s\n/* SET discord_id = u.discord_id\n   still commented */\n-- AND s.discord_id IS NULL\nSELECT 1;\n";
     let out = strip_sql_comments(src);
     assert!(out.contains("UPDATE public.match_player_stats AS s"));

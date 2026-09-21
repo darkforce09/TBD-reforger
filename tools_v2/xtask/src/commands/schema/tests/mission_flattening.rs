@@ -113,9 +113,9 @@ fn flatten_in_place_refuses_empty_slots_overwrite() {
     assert_eq!(before, fs::read_to_string(&path).unwrap());
 }
 
-// ─── T-538 / T-539: stdout path shares preserve/refuse (not a silent lossy preview) ───
+// ─── stdout path shares preserve/refuse (not a silent lossy preview) ───
 //
-// T-539 MAJOR: preserve Class-R must pin `flatten_orbat_slots(..., false)` (stdout
+// MAJOR: preserve Class-R must pin `flatten_orbat_slots(..., false)` (stdout
 // entrypoint), NOT `apply_flatten_orbat_slots` alone. A post-apply stdout-only
 // `mission["schemaVersion"] = "1.1"` stamp must RED these pins.
 
@@ -152,7 +152,7 @@ fn flatten_stdout_preserves_schema_version_1_0() {
     assert!(!after["slots"].as_array().unwrap().is_empty());
 }
 
-/// Defense-in-depth: apply-level still covered, but must not be the only stdout pin (T-539).
+/// Defense-in-depth: apply-level still covered, but must not be the only stdout pin.
 #[test]
 fn flatten_apply_preserves_schema_version_1_0_defense() {
     let mut m = mission_with_prior_loadout_uid();
@@ -163,7 +163,7 @@ fn flatten_apply_preserves_schema_version_1_0_defense() {
 }
 
 /// Source ratchet: `flatten_orbat_slots` / mission body must not reassign schemaVersion
-/// after `apply_flatten_orbat_slots` (exact pre-T-538 bug shape on the stdout branch).
+/// after `apply_flatten_orbat_slots` (the exact bug shape on the stdout branch).
 #[test]
 fn flatten_orbat_slots_no_post_apply_schema_reassign_source_ratchet() {
     let src_path =

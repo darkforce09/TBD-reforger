@@ -27,15 +27,15 @@ fn set_status_refuses_empty_and_invalid() {
     assert_eq!(before, c, "refused ops must leave the corpus untouched");
 }
 
-/// T-916.1 acceptance 2 — →ready on a ticket without order (an idea) refuses up
-/// front, naming the missing data, instead of the legacy mid-save wedge.
+/// Acceptance 2 — →ready on a ticket without order (an idea) refuses up
+/// front, naming the missing data, instead of wedging mid-save.
 #[test]
 fn set_status_ready_without_order_refuses() {
     let mut c = corpus(vec![Ticket::Work(work("T-1", Status::Idea))]);
     let before = c.clone();
     let err = set_status(&mut c, "T-1", "ready", CLOCK).expect_err("must refuse");
     assert!(err.contains("order"), "must name the missing order: {err}");
-    assert!(err.contains("wedges mid-save"), "{err}");
+    assert!(err.contains("mid-save wedge is the alternative"), "{err}");
     assert_eq!(before, c);
 }
 
@@ -54,7 +54,7 @@ fn set_status_cancelled_stamps_completed_at() {
 }
 
 /// Preserved asymmetry: `set-status shipped` neither stamps `completed_at` nor
-/// clears `active` — `ship` owns both (cmds.rs T-913.1 comment).
+/// clears `active` — `ship` owns both.
 #[test]
 fn set_status_shipped_keeps_active_and_does_not_stamp() {
     let mut c = corpus(vec![
@@ -94,8 +94,8 @@ fn set_status_idea_with_order_refuses() {
     assert!(err.contains("idea must not carry order"), "{err}");
 }
 
-/// T-916.1 acceptance 4 — ship of a dotted child id succeeds at the op layer (the
-/// legacy "Unknown ticket" hole), and the new invariant: a parent whose `active`
+/// Acceptance 4 — ship of a dotted child id succeeds at the op layer (the
+/// the "Unknown ticket" hole), and the invariant: a parent whose `active`
 /// names the shipped child is cleared and counted as changed.
 #[test]
 fn ship_dotted_child_clears_matching_parent_active() {
@@ -160,7 +160,7 @@ fn ship_preserves_shipped_at_and_order() {
     }
 }
 
-/// T-917.6 — ship REFUSES a created_at-less ticket pre-write (the birth stamp can
+/// Ship REFUSES a created_at-less ticket pre-write (the birth stamp can
 /// never arrive later honestly), naming the field and the fix; the corpus is
 /// byte-untouched. Both kinds refuse.
 #[test]
@@ -188,7 +188,7 @@ fn ship_refuses_created_at_less_pre_write() {
     assert_eq!(before, c, "refused ship must leave the corpus untouched");
 }
 
-/// T-917.6 — stamp_sha writes the landing SHA through both arms, is a no-op on
+/// stamp_sha writes the landing SHA through both arms, is a no-op on
 /// the same sha, refuses a different sha / a non-shipped ticket / a garbage sha,
 /// and drops a stale "shipped_at" estimated[] marker when it closes the field.
 #[test]
@@ -299,11 +299,11 @@ fn ship_leaves_unrelated_parent_active() {
 
 /// `mark_ready`: spec argument lands, deps gate fires exactly like cmd_mark_ready
 /// ("Blocked by …"), story backfills summary→title→id, acceptance backfills
-/// `["See spec."]`, and (T-917.6) the `plan` field lands on the default path. A
+/// `["See spec."]`, and the `plan` field lands on the default path. A
 /// queued ticket with empty owns stays legal — queued was already live, so this
 /// op did not MAKE it live (no retro-policing).
 ///
-/// T-920.1: the story/acceptance backfills only fire on QUARANTINED tickets now —
+/// The story/acceptance backfills only fire on QUARANTINED tickets now —
 /// a non-quarantined ticket with empty body fields refuses at the ready-tier gate
 /// (`mark_ready_refuses_empty_ready_tier_fields`) — so T-1 here carries the
 /// nonempty `migration_legacy` that exempts it.
@@ -365,7 +365,7 @@ fn mark_ready_backfills_and_gates() {
     mark_ready(&mut c, "T-2", None, None, CLOCK).expect("deps satisfied; T-404 absent is skipped");
 }
 
-/// T-920.1 acceptance — the mark-ready ready-tier refusal: promotion of a
+/// Acceptance — the mark-ready ready-tier refusal: promotion of a
 /// non-quarantined work ticket refuses pre-write NAMING EACH empty ready-tier
 /// field; the corpus is untouched; filling the fields (or quarantining) restores
 /// the promotion.
@@ -415,10 +415,10 @@ fn mark_ready_refuses_empty_ready_tier_fields() {
         .expect("filled tier fields promote");
 }
 
-/// T-920.1 acceptance — the ship ready-tier refusal (future ships): a ship from
+/// Acceptance — the ship ready-tier refusal (future ships): a ship from
 /// queued with empty body fields refuses pre-write naming each — main_goal
 /// included (the queued→shipped jump never passes the ready-class parse) — and
-/// the quarantine exemption lets a wall-carrying ticket ship (T-919 fills its
+/// the quarantine exemption lets a wall-carrying ticket ship (the drain fills its
 /// fields when the drain reaches it).
 #[test]
 fn ship_refuses_empty_ready_tier_fields() {
@@ -458,7 +458,7 @@ fn ship_refuses_empty_ready_tier_fields() {
     ship(&mut c, "T-3", CLOCK).expect("filled body ships");
 }
 
-/// T-920.1 acceptance — the post-image title gate: an op that would write a
+/// Acceptance — the post-image title gate: an op that would write a
 /// changed ticket whose title is empty, equals its id, or exceeds 10 words
 /// refuses pre-write (corpus untouched); both kinds. An 11-word title names the
 /// count; exactly 10 words passes; UNCHANGED debt-titled tickets never
@@ -518,7 +518,7 @@ fn post_image_title_gate_refuses_changed_debt_titles() {
         .expect("unchanged debt title must not block other ops");
 }
 
-/// T-920.1 acceptance — the post-image queued-tier main_goal gate: an op leaving
+/// Acceptance — the post-image queued-tier main_goal gate: an op leaving
 /// a changed non-quarantined work ticket live without main_goal refuses; the
 /// quarantine exemption passes; leaving the live set with main_goal empty is
 /// legal (the rule binds on the POST status).
@@ -550,7 +550,7 @@ fn post_image_main_goal_gate_on_changed_live_work() {
     set_status(&mut c, "T-4", "deferred", CLOCK).expect("leaving live needs no main_goal");
 }
 
-/// T-917.6 plan ready-gate: mark-ready without the plan file refuses naming the
+/// Plan ready-gate: mark-ready without the plan file refuses naming the
 /// path (corpus untouched); an explicit PLAN argument overrides the default and
 /// must exist too; an existing `plan` field is honored over the default.
 #[test]
@@ -672,7 +672,7 @@ fn add_mints_next_parent_id_and_stamps() {
     }
 }
 
-/// T-917.2 — the surface rule mirrors the owns rule: an op that makes a
+/// The surface rule mirrors the owns rule: an op that makes a
 /// component-bearing, surface-less work ticket live refuses naming the fix;
 /// a surface or the migrator's `"scope"` estimated-marker passes; component-free
 /// scope is exempt (no vocabulary surfaces exist to require).

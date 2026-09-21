@@ -142,7 +142,12 @@ pub(super) fn rel_posix(root: &Path, file: &Path) -> String {
 }
 
 pub(super) fn is_test_file(rel: &str) -> bool {
-    rel.split('/').any(|component| component == "tests") || rel.ends_with("_tests.rs")
+    let path = Path::new(rel);
+    path.components().any(|part| part.as_os_str() == "tests")
+        || (path.extension().is_some_and(|extension| extension == "rs")
+            && path
+                .file_stem()
+                .is_some_and(|stem| stem.to_string_lossy().ends_with("_tests")))
 }
 
 pub(super) fn allowlist_path_is_scanned(

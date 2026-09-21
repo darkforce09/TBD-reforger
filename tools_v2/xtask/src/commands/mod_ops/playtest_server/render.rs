@@ -1,6 +1,6 @@
 //! Config rendering — **all three former `python3` heredocs**, plus the profile seed step.
 //!
-//! `scripts/python-inventory.txt` listed `run-playtest-server.sh` for "backend cfg + admin list
+//! The playtest server needs "backend cfg + admin list
 //! JSON". The three sites were:
 //!
 //! | bash line | what it did | here |
@@ -266,7 +266,7 @@ fn setdefault_object<'m>(
 /// The `ValueError:` line and the `ERROR:` line are reproduced exactly, and rc stays 1. The two
 /// framing lines are the ONLY thing dropped, deliberately: `File "<stdin>", line 5` points into a
 /// heredoc that no longer exists, so carrying it over would be fabricating a citation to deleted
-/// code — the same class of stale pointer T-606 spent a wave removing from this file's comments.
+/// code — the same class of stale pointer a wave of comment repair removed from this file.
 /// Pinned by `int_like_reproduces_the_python_valueerror_text`.
 fn int_like(s: &str) -> Result<Value, String> {
     s.trim()

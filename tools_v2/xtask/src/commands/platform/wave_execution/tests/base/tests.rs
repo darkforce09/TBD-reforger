@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-946 — a wave that emptied correctly still has rows for oracle 2 to read.
+/// A wave that emptied correctly still has rows for oracle 2 to read.
 ///
 /// Before this, `wave_plan_tickets_at` looked only at `[[waves]]`, so a wave whose every
 /// ticket had shipped — the repack having frozen its set as a pending `[[emptied]]` entry —
@@ -52,7 +52,7 @@ fn the_plan_speaks_for_a_wave_that_has_already_emptied() {
 
 #[test]
 fn the_four_accepted_suffixes_and_nothing_else() {
-    // T-613. Every widening admits a class of English continuation, and each of those is a
+    // Every widening admits a class of English continuation, and each of those is a
     // plausible thing a hurried operator writes about a wave that DID NOT close.
     assert!(wave_close_subject_ok("wave 76 CLOSED"));
     assert!(wave_close_subject_ok("wave 76 CLOSED: five slices"));
@@ -77,7 +77,7 @@ fn the_four_accepted_suffixes_and_nothing_else() {
 #[test]
 fn the_prefilter_and_the_authority_agree_on_the_delimiters() {
     // The ERE is handed to git, but it must not be able to select a subject the authority
-    // rejects for a delimiter reason — that is the T-613 hole in reverse.
+    // rejects for a delimiter reason — that is the hole in reverse.
     let re = regex::Regex::new(WAVE_CLOSE_MARKER_RE).unwrap();
     for s in [
         "wave 76 CLOSED",

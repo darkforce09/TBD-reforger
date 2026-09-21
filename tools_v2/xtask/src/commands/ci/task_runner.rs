@@ -1,6 +1,6 @@
-//! `mk_ci` — the Makefile's CI / composite / map lane, as first-class xtask tasks (T-896).
+//! `mk_ci` — the Makefile's CI / composite / map lane, as first-class xtask tasks.
 //!
-//! T-853 Phase 3. The root `Makefile` is being absorbed into `xtask`; T-897 deletes it. This
+//! The task index. There is no root `Makefile`; this
 //! module owns the CI lane: `ci-local`, `ci-local-schema`, `schema-validate`, `schema-codegen`,
 //! `verify-citations`, `verify-coding-standards`, `verify-doc-layout`, `verify-editorconfig`, the
 //! three `map-*` composites, `lfs-dem`, `lfs-sat`, `help`, `test`, `build`.
@@ -9,7 +9,7 @@
 //!
 //! `ci-local`, `ci-local-schema` and `rust-ci` are *sequences of other targets*. Written as
 //! sixteen independent functions, a composite would have to re-list what its parts do, and the
-//! copy rots — that is exactly T-489's defect, where a make target reported success while its
+//! copy rots — a target that reports success while its
 //! recipe had been hollowed to `@true`. Here [`Step::Task`] names another row of [`TASKS`] and
 //! the runner recurses into **the same** `run_task` the standalone command calls. A composite
 //! therefore cannot drift from its parts or be hollowed independently of them: there is one
@@ -17,27 +17,27 @@
 //! and `cargo xtask ci ci-local` reach it through the identical call.
 //!
 //! The same table is the source for [`help`] (so a task cannot exist and be undiscoverable) and
-//! for [`schema_list_gates`] (so `wave.sh`'s drift tripwire keeps an input after the Makefile
+//! for [`schema_list_gates`] (so the wave driver's drift tripwire keeps an input with no Makefile
 //! dies — see §4).
 //!
 //! ── 2. WHY SOME ROWS BELONG TO OTHER SLICES ─────────────────────────────────────────────────
 //!
 //! `ci-local` runs `rust-ci` and `ci-local-leptos`; `test` runs `rust-test`; `build` runs
-//! `leptos-build`. Those targets are **T-895's** lane and `rust-test-it` is **T-894's**, and all
+//! `leptos-build`. Those targets are the build lane's and `rust-test-it` is the database lane's, and all
 //! three slices are in flight on the same commit. Two options existed:
 //!
 //!   * stub them, and have `ci-local` report a green it did not earn — the defect this program
 //!     exists to kill; or
 //!   * carry the recipe here, marked [`Lane::Borrowed`], so the composite genuinely runs.
 //!
-//! The second, with a guard: `mk_ci_tests.rs` parses the Makefile and asserts every row's steps
+//! The second, with a guard: the task tests parse the recipe text and assert every row's steps
 //! reproduce that target's recipe **verbatim**, borrowed rows included. While the Makefile lives
-//! they cannot drift; when it dies they are already proven equal, so the merge with T-894/T-895
+//! they cannot drift; the lanes are proven equal, so composing them
 //! is a deletion of duplicates, not a reconciliation of two guesses.
 //!
 //! [`Lane::Alias`] rows are different: `verify-no-python` and friends were *already* one-line
 //! aliases for an existing `cargo xtask verify …`, so nothing is borrowed — the row just records
-//! that the make name maps onto a command that has existed since T-165.
+//! that the task name maps onto a command that exists.
 //!
 //! ── 3. MAKEFILE ODDITIES PRESERVED ON PURPOSE ───────────────────────────────────────────────
 //!
@@ -45,9 +45,9 @@
 //!   lives in `~/go/bin`, which is on no default PATH. `apply_env` reproduces the prepend for
 //!   every child. Dropping it would turn `verify-editorconfig` into "command not found" on a
 //!   correct machine.
-//! * **`CARGO_TARGET_DIR ?=`** (`Makefile:16`, T-253) points every linked worktree at the primary
+//! * **`CARGO_TARGET_DIR ?=`** points every linked worktree at the primary
 //!   checkout's warm `target/`, and `?=` lets an operator/wave export win. Not reproducing it
-//!   would silently split the 52 GB cache per worktree. T-895 owns the *assertion* half
+//!   would silently split the 52 GB cache per worktree. The build lane owns the *assertion* half
 //!   (`verify-cargo-target`); this is the derivation half, and the two should become one helper
 //!   when the lanes merge.
 //! * **`-podman …`** in `rust-test-it` (`Makefile:205`) ignores failure; [`Step::Shell`] keeps the
@@ -70,7 +70,7 @@
 //!
 //! ── 4. `xtask schema list-gates` ────────────────────────────────────────────────────────────
 //!
-//! `scripts/platform/wave.sh:1598` and its port `tools_v2/xtask/src/commands/platform/wave_execution/schema.rs` **parse the Makefile's
+//! `tools_v2/xtask/src/commands/platform/wave_execution/schema.rs` **parses the recipe's
 //! `schema-validate` recipe** to cross-check `GATE_SCHEMA_VALIDATE_GATES`; that tripwire refuses
 //! to report PASS when the parse comes back empty. Deleting the Makefile removes its input, so
 //! the tripwire would go permanently red — or, worse, be quietly loosened. [`schema_list_gates`]
@@ -177,7 +177,7 @@ pub use tasks::TASKS;
 /// (its own probed paths) and an `LD_LIBRARY_PATH` pointing into `target/debug`, and those are in
 /// the build-script fingerprints of exactly that crate set.
 ///
-/// This is the T-253/T-322 hazard in a new coat — a shared 52 GB target dir where two invocations
+/// The same hazard in a new coat — a shared 52 GB target dir where two invocations
 /// disagree — and it arrives with the Makefile's replacement, so it is closed here rather than
 /// left to be rediscovered as "xtask is slow". The `CARGO_PKG_*` block is stripped for the same
 /// reason plus an obvious one: `CARGO_PKG_NAME=xtask` is a lie to the child.

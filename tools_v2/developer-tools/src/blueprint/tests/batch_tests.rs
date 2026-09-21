@@ -4,7 +4,7 @@
 use super::*;
 use crate::blueprint::tests::fixture;
 
-/// The real farmhouse closure out of the operator's paks — the T-090.11.2 acceptance pin
+/// The real farmhouse closure out of the operator's paks — the acceptance pin
 /// on the live install: 181 collision-bearing instances, 90 of them on decoded sockets, the
 /// shell all-Opaque, every glass pane Glass. Needs `~/.cache/enfusion-mcp-root/addons`.
 #[test]
@@ -389,7 +389,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
-/// T-090.12.4 — the layer policy: a `Tree` physics box beside a `FireGeo` trunk box — the
+/// The layer policy: a `Tree` physics box beside a `FireGeo` trunk box — the
 /// projectile policy emits the fire record only, the census says which was dropped, and a mesh
 /// with nothing but physics shells has no sidecar at all (`no-fire-geo`); `All` keeps both.
 #[test]

@@ -68,7 +68,7 @@ fn perturbed_schema_rejects_tip_registry() {
     );
 }
 
-/// T-912.1: the owns rule sees CHILD ticket files. The live tree must be green, and an
+/// The owns rule sees CHILD ticket files. The live tree must be green, and an
 /// owns-empty queued work ticket dropped into a synthetic tickets dir must go red — including
 /// a dotted child id the parents-only registry view never loads.
 #[test]
@@ -111,7 +111,7 @@ layer = "docs"
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.2: class is required on every work ticket — the live tree is green (the
+/// Class is required on every work ticket — the live tree is green (the
 /// migrator triaged all of history), and a planted class-less work ticket reds
 /// naming ticket + the legal set; restoring class restores green.
 #[test]
@@ -154,7 +154,7 @@ layer = "docs"
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.2: live work with a component but no surface is red unless the migrator's
+/// Live work with a component but no surface is red unless the migrator's
 /// `"scope" ∈ estimated[]` escape is recorded; component-free scope is exempt.
 #[test]
 fn live_work_component_without_surface_is_red() {
@@ -231,7 +231,7 @@ component = "mission_creator"
         "component-free scope is exempt"
     );
     // …and a component whose vocabulary surface list is EMPTY (mod.scripts.backend
-    // — the live T-674.2/T-675.2 shape) are all green: the rule cannot require a
+    // a shape the live tree carries) are all green: the rule cannot require a
     // surface the vocabulary does not offer.
     fs::write(
             dir.join("T-001.toml"),
@@ -248,7 +248,7 @@ component = "mission_creator"
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.3: the body cap rules. The live tree is green (post-quarantine); a
+/// The body cap rules. The live tree is green (post-quarantine); a
 /// planted 41-word summary reds naming ticket, field, count and cap; a 31-word
 /// context line, a 9-word citation and an owns-duplicating citation each red; a
 /// command-shaped acceptance line WARNS (never errors); nonempty
@@ -358,7 +358,7 @@ fn body_caps_red_green_and_warning_channel() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.3: the quarantine is one-shot history migration — a work ticket carrying
+/// The quarantine is one-shot history migration — a work ticket carrying
 /// migration_legacy with created_at past the 2026-08-15 cutover is red (new
 /// tickets never quarantine); a pre-cutover stamp (or no stamp) stays green.
 #[test]
@@ -394,7 +394,7 @@ fn quarantine_mint_past_cutover_is_red() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.4: the estimated[]-vs-field coherence rule. Live tree green; a ticket
+/// The estimated[]-vs-field coherence rule. Live tree green; a ticket
 /// listing created_at/completed_at in estimated[] with the field ABSENT is red
 /// naming ticket + field; shipped_at absent+marked is legal ONLY with an
 /// estimate_note naming the gap; present fields restore green.
@@ -472,12 +472,12 @@ fn estimated_marker_without_field_is_red() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.6 — THE ship gate, arm by arm. Live tree green (the S.2–S.5 passes plus
+/// THE ship gate, arm by arm. Live tree green (the S.2–S.5 passes plus
 /// this slice's data fixes made it satisfiable); each planted violation reds
 /// naming ticket + field (and the offending value for the SHA-shape arm); the
 /// absent-marked-with-note asymmetry and receipt-or-estimate accounting are green.
 /// Deliberately calls the gate fn directly — the double-report splits against the
-/// T-917.4/5 rules are documented on the fn and exercised by the full-check test
+/// The coherence and mutual-exclusion rules are documented on the fn and exercised by the full-check test
 /// on the live tree.
 #[test]
 fn ship_gate_red_green_per_arm() {
@@ -590,7 +590,7 @@ fn ship_gate_red_green_per_arm() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-917.6 — the plan ready-gate: a ready/running/review WORK ticket without a
+/// The plan ready-gate: a ready/running/review WORK ticket without a
 /// plan key reds naming the fix; a plan key whose file is missing reds naming the
 /// path; plan + file is green; programs and non-ready work are exempt.
 #[test]
@@ -649,7 +649,7 @@ fn plan_ready_gate_red_green() {
     fs::remove_dir_all(&tmp).unwrap();
 }
 
-/// T-920.1 — the idea-tier title rule: live tree green (measured zero empty
+/// The idea-tier title rule: live tree green (measured zero empty
 /// titles); a planted empty-title work ticket reds naming it; a real title
 /// restores green. Programs are not this rule's business (work-shaped tier
 /// table), and title != id / word-cap arms deliberately do NOT red here — they

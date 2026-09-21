@@ -1,6 +1,6 @@
-/// T-946/T-960 — the road census comes from the committed roads.json.gz, and it is 887.
+/// The road census comes from the committed roads.json.gz, and it is 887.
 ///
-/// Both slots used to be hardcoded (`segments` 0, `byRoadClass` {}) because roads export as
+/// Neither slot is hardcoded (`segments` 0, `byRoadClass` {}), though roads export as
 /// prefab-less `RoadEntity` rows that classification never sees, so no rule edit could ever
 /// make them non-zero. Five places in the repo also claimed 888; the file ships 887.
 #[test]
@@ -27,9 +27,9 @@ fn the_road_census_reads_the_committed_roads_file() {
     assert_eq!(by_class.len(), 5, "five road classes: {by_class:?}");
 }
 
-/// T-090.12.1 — the P5 filter admits T-244's `vehicle` kind: without it a rebuild from the
+/// The P5 filter admits the `vehicle` kind: without it a rebuild from the
 /// staged export silently dropped the 13 wreck prefabs (176 instances) the committed
-/// catalogue carries since T-594, and E6 could never have matched the committed artifacts.
+/// catalogue carries, and E6 could never match the committed artifacts.
 #[test]
 fn p5_admits_the_vehicle_lane() {
     let p5 = super::phase_kinds("P5_props").unwrap();
@@ -91,7 +91,7 @@ fn clear_density_wipes_when_rebuilding() {
 
 #[test]
 fn refuse_empty_catalog_write_contract() {
-    // T-537 Class-R: empty kept/prefab set must refuse before objects/ wipe.
+    // Class-R: empty kept/prefab set must refuse before objects/ wipe.
     let err = super::super::refuse_empty_write(
         "build-world-objects catalog",
         true,

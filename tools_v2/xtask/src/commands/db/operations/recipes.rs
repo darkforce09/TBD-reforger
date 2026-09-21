@@ -1,8 +1,8 @@
-//! T-894 — the Makefile recipes this lane reproduces, as text.
+//! The Makefile recipes this lane reproduces, as text.
 //!
-//! Split out of `mk_db.rs` for one reason: this is the half of the port that must OUTLIVE the
+//! Split out of [`super`] for one reason: this is the half that must OUTLIVE the
 //! Makefile. `selftest`'s arm 2 diffs these renderings against the live `Makefile` today; when
-//! T-897 deletes that file, arm 1 keeps diffing them against a frozen copy of what `make -n`
+//! Deletes that file, arm 1 keeps diffing them against a frozen copy of what `make -n`
 //! printed on 2026-08-12, and this module is the thing on the other side of that comparison.
 //!
 //! Everything here is derived from the same consts the runners use ([`super::WEB`],

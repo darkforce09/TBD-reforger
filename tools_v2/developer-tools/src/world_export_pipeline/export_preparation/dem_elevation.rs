@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-935.4 — write `dem/elevation.dem`: a `TBDE` header (spec §3.2) then `width * height` `u16`
+/// Write `dem/elevation.dem`: a `TBDE` header (spec §3.2) then `width * height` `u16`
 /// samples little-endian, row-major, row 0 = north edge.
 ///
 /// The samples are written **verbatim** — the same quantised values the 16-bit PNG carries — so the
@@ -121,8 +121,8 @@ pub fn raw_u16_to_dem_png(raster_path: &Path, meta_path: &Path, out_path: &Path)
     }
     println!("OK  IHDR bitDepth=16 colorType=0 dims match; round-trip pixels OK");
 
-    // T-935.4 dual emission (spec §7 wave 2): the same `raster` also goes out as
-    // `dem/elevation.dem` beside the PNG. Both are written every run until T-935.13 flips the
+    // Dual emission (spec §7 wave 2): the same `raster` also goes out as
+    // `dem/elevation.dem` beside the PNG. Both are written every run until the manifest names the
     // manifest — the loader picks by `manifest.dem.raw`, so deleting either write before then
     // blinds one reader. Nothing above this line changed.
     let dem_path = out_path.with_file_name("elevation.dem");

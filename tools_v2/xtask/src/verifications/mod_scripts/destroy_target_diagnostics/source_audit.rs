@@ -51,7 +51,7 @@ pub fn verify_destroy_target_diagnostics(repo_root: &Path) -> Result<u8> {
     );
 
     // Display path for RED FAIL lines — bash used `mktemp` (`/tmp/tmp.XXXXXXXXXX`). A stable
-    // alphanumeric suffix keeps the T-853 path-normaliser (`/tmp/tmp.[A-Za-z0-9]+`) happy.
+    // alphanumeric suffix keeps the path-normaliser (`/tmp/tmp.[A-Za-z0-9]+`) happy.
     let tmp_display = PathBuf::from(format!("/tmp/tmp.t437{}", std::process::id()));
 
     // ── RED 1: paraphrased lie ───────────────────────────────────────────────────────────────

@@ -1,19 +1,19 @@
-//! T-884 — port of `scripts/deploy/lib/db-common.sh` → `cargo xtask deploy db …`.
+//! Shared plumbing for `cargo xtask deploy db …`.
 //!
-//! Shared plumbing for backup-db / restore-db / backup-drill (siblings T-885…T-887). Ported
+//! Shared plumbing for backup-db / restore-db / backup-drill. Ported
 //! FIRST so three callers cannot invent three dump-verifiers. Same propagation argument as
-//! `gate-grep.sh` / `tools_v2/verification-core` (T-853 / T-556).
+//! `tools_v2/verification-core`.
 //!
 //! ── Closed fail-opens (measured in the bash header, preserved here) ─────────────────────────
 //!
 //! - `pg_restore --list` alone is NOT verification — TOC lives at the head; truncated /
 //!   mid-file-corrupt dumps still pass `--list`. Check 5 runs `--data-only` and counts COPY rows.
-//! - Identity (T-588): `dbname:` header + `_sqlx_migrations` TOC entry before the body read.
+//! - Identity: `dbname:` header + `_sqlx_migrations` TOC entry before the body read.
 //! - The scratch allow-list refuses `tbd_reforger` unless `--confirm` spells the name twice.
 //!
 //! `_sqlx_migrations` probes use `verification_core::gate::probe_str`.
 //!
-//! T-885…T-887 call this module from Rust directly; there is no shell bridge.
+//! The three verbs call this module from Rust directly; there is no shell bridge.
 
 use std::env;
 use std::fs;
@@ -71,7 +71,7 @@ pub enum DeployDbCmd {
         file: PathBuf,
         #[arg(long = "min-rows", default_value_t = 1)]
         min_rows: u64,
-        /// Empty string skips the T-588 identity check (and says so on stderr).
+        /// Empty string skips the identity check (and says so on stderr).
         #[arg(long = "expect-db", default_value = "")]
         expect_db: String,
     },

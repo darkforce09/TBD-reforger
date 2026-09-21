@@ -1,4 +1,4 @@
-//! T-864 — port of `scripts/mod/test-mission.sh` → `cargo xtask mod test-mission`.
+//! `cargo xtask mod test-mission`: the mission-document arms.
 //!
 //! Switch the mission the Workbench client loads via profile
 //! `$HOME/.../ArmaReforgerWorkbench/profile/TBD_BackendConfig.json` (+ optional golden stage).

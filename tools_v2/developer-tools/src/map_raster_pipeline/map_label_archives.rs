@@ -1,9 +1,9 @@
-//! T-935.7 — `locations/map_labels.rkyv`: the binary twin of the three cartographic label files.
+//! `locations/map_labels.rkyv`: the binary twin of the three cartographic label files.
 //!
 //! `map labels-rkyv` reads `locations.json`, `height-labels.json` and `road-names.json` and writes
 //! one `MapLabelsArchive`. Dual emission, per spec §7 wave 2: the JSON files stay the source of
 //! truth and stay on disk, the archive is derived from them, and the SPA only reads it once
-//! T-935.13 puts a `labels` block in the manifest.
+//! The terrain manifest carries a `labels` block naming it.
 //!
 //! # Why the road lane needs a fourth file
 //!
@@ -21,7 +21,7 @@
 //!   `road_names_to_archive`.
 //! * `road-names.json` present without `objects/roads.json.gz`: the alternative is an archive with
 //!   a silently empty road lane that a loader would trust.
-//! * An archive with nothing in any lane (`refuse_empty_write`, T-537/T-383).
+//! * An archive with nothing in any lane (`refuse_empty_write`).
 
 use std::path::{Path, PathBuf};
 

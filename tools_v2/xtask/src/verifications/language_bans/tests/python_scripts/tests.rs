@@ -152,7 +152,7 @@ fn makefile_is_banned() {
 
 #[test]
 fn lowercase_makefile_is_banned() {
-    // GNU make searches GNUmakefile, then makefile, then Makefile. T-904 originally
+    // GNU make searches GNUmakefile, then makefile, then Makefile. The ban originally
     // banned only the camel/GNU names; lowercase `makefile` was a Make-return path.
     let root = throwaway("lcmake");
     write_min_tree(&root);

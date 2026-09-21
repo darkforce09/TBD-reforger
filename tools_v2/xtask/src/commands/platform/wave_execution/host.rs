@@ -1,4 +1,4 @@
-//! `hostrun` / `checkrun` — the container→host bridge, exactly as `wave.sh` defines it.
+//! `hostrun` / `checkrun` — the container→host bridge, as the wave driver defines it.
 //!
 //! ── WHAT IS SHARED WITH `crate::core::host_execution`, AND WHAT IS NOT ───────────────────────────────────
 //!
@@ -6,20 +6,20 @@
 //! than a third copy of distrobox's `distrobox-host-exec:130`. That module's own note asks for
 //! exactly this, and flags the one difference:
 //!
-//! > NOTE for the `wave.sh` port: `scripts/platform/wave.sh:168` carries a THIRD clause,
-//! > `|| [ -n "${container:-}" ]`, which `scripts/lib/hostrun.sh` did not. The two-clause form
+//! > NOTE for this driver: it carries a THIRD clause,
+//! > `|| [ -n "${container:-}" ]`, which the shared bridge does not. The two-clause form
 //! > here is the one both existing Rust callers were built and measured against, so the lift keeps
 //! > it exactly. Widening it is a behaviour change and belongs in its own ticket.
 //!
-//! So [`in_container`] below is `crate::core::host_execution::in_container()` OR `$container`, which is `wave.sh`'s
+//! So [`in_container`] below is `crate::core::host_execution::in_container()` OR `$container`, which is this driver's
 //! three-clause test to the letter, built on the shared two. Narrowing it to the shared form would
 //! change which side of the bridge this file believes it is on — a behaviour change in the
 //! highest-risk file in the program, introduced by a refactor.
 //!
-//! Three more things stay here because they are `wave.sh` semantics, not bridge semantics:
+//! Three more things stay here because they are wave-driver semantics, not bridge semantics:
 //!
 //!   * BRIDGE SET. `crate::core::host_execution::Host::detect` accepts `distrobox-host-exec` **or** `host-spawn`.
-//!     `wave.sh` knows only `distrobox-host-exec`. On a machine carrying `host-spawn` alone the
+//!     This driver knows only `distrobox-host-exec`. On a machine carrying `host-spawn` alone the
 //!     shared detector would bridge where the bash ran natively.
 //!   * ENV FORWARDING. `hostrun` bakes in `env CARGO_TARGET_DIR=… TEST_DATABASE_URL=…`, read at
 //!     CALL time. The shared bridge forwards nothing.
@@ -53,10 +53,10 @@
 //! the step printed PASS. Measured 2026-07-26: `TEST_DATABASE_URL=x distrobox-host-exec sh -c
 //! 'echo [$TEST_DATABASE_URL]'` -> `[]`, and the suite finishing in 0.00s for a DB-backed crate is
 //! the tell. Consequence, which is why this is a BLOCKER and not a nit: EVERY regression test this
-//! program added — T-343, T-346, T-347, T-348, T-349, T-366 all live in
+//! program added — six of them live in
 //! `tests/{missions,events,telemetry}.rs` — was invisible to the gate that cleared their slices.
 //!
-//! T-575: `MIGRATE_TEST_DATABASE_URL` was forwarded here too and is gone with its consumer — see
+//! `MIGRATE_TEST_DATABASE_URL` was forwarded here too and is gone with its consumer — see
 //! [`super::db::ensure_gate_db`]. Forwarding an unset variable is harmless; forwarding one that
 //! looks live is how a dead path survives four waves of readers.
 
@@ -71,7 +71,7 @@ pub struct Host {
     pub timeout_secs: u64,
 }
 
-/// `wave.sh:169` — the shared two-clause test, plus the `$container` clause only `wave.sh` has.
+/// The shared two-clause test, plus the `$container` clause only this driver has.
 ///
 /// ```text
 /// in_container() { [ -f /run/.containerenv ] || [ -f /.dockerenv ] || [ -n "${container:-}" ]; }
@@ -144,7 +144,7 @@ impl Host {
     ///
     /// `TEST_DATABASE_URL` is read HERE, at call time, not at detect time: [`super::db::ensure_gate_db`]
     /// exports it partway through the wave gate and every test step after that depends on seeing
-    /// the new value. Baking it in at startup is the whole T-575-adjacent hazard.
+    /// the new value. Baking it in at startup is the whole hazard.
     pub fn hostrun_argv(&self, cmd: &[String]) -> Vec<String> {
         let mut v: Vec<String> = Vec::new();
         if self.bridge {
@@ -179,7 +179,7 @@ impl Host {
     /// comment justified it as "another mtime-keyed cache layered on top of the one that lied".
     /// That was wrong, and getting a justification wrong in this file is the same class of error as
     /// the bug — so it is corrected here rather than quietly dropped. Incremental state is
-    /// CONTENT-keyed, not mtime-keyed, so it is emphatically not the mechanism T-421 is about:
+    /// CONTENT-keyed, not mtime-keyed, so it is emphatically not the mtime mechanism:
     /// MEASURED 2026-07-26, repro A goes red with incremental left ON exactly as it does with it
     /// off. It is disabled because it is one more cache standing between this tree's bytes and the
     /// verdict, and the whole subject here is a verdict that came from a cache instead of from the

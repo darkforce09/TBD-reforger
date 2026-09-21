@@ -1,6 +1,6 @@
-//! T-181.2 — Enfusion `.c` symbol scanner.
+//! Enfusion `.c` symbol scanner.
 //!
-//! Produces provable `symbol -> file:line` rows for the CRF oracle and (T-181.3) the carved
+//! Produces provable `symbol -> file:line` rows for the CRF oracle and the carved
 //! vanilla tree. Both lanes share this one scanner so there is a single correctness bar.
 //!
 //! WHY THIS IS MECHANICAL AND NOT AN LLM SUMMARY
@@ -255,7 +255,7 @@ pub fn scan_str(text: &str, rel: &str) -> FileScan {
             match c {
                 '{' => depth += 1,
                 '}' => {
-                    // Clamp at 0. Carved vanilla blobs (T-181.3) start mid-file, so their
+                    // Clamp at 0. Carved vanilla blobs start mid-file, so their
                     // first braces are unbalanced; without this, depth goes negative and
                     // every subsequent top-level declaration is missed.
                     depth = (depth - 1).max(0);

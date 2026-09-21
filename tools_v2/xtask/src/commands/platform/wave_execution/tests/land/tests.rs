@@ -5,7 +5,7 @@ use crate::commands::platform::wave_execution::{capture_step, testcwd};
 
 #[test]
 fn the_allowlist_refuses_anything_that_is_not_wave_or_a_ticket() {
-    // `land T-204` was byte-for-byte `land` before this allowlist existed.
+    // Without this allowlist, `land <id>` is byte-for-byte `land`.
     assert!(is_ticket_glob("T-204"));
     assert!(is_ticket_glob("T-204.3"));
     assert!(!is_ticket_glob("t-204"), "the glob is case-sensitive");
@@ -14,11 +14,11 @@ fn the_allowlist_refuses_anything_that_is_not_wave_or_a_ticket() {
     assert!(!is_ticket_glob("T-"));
 }
 
-// ── T-923: the close ceremony ───────────────────────────────────────────────────────────
+// ── the close ceremony ──────────────────────────────────────────────────────────────────
 
 #[test]
 fn the_close_argument_parser_is_an_allowlist() {
-    // T-946 added the third element: the operator-vouched `--tickets` set, `None` by default.
+    // Added the third element: the operator-vouched `--tickets` set, `None` by default.
     assert_eq!(parse_close_args(&[]).unwrap(), (None, false, None));
     assert_eq!(
         parse_close_args(&["--dry-run".into()]).unwrap(),
@@ -317,12 +317,12 @@ fn dry_run_prints_the_subject_and_writes_nothing() {
     let _ = std::fs::remove_dir_all(&dir); // never chdir'd into — safe to reclaim now
 }
 
-// ── T-925: close targets the oldest pending emptied label ───────────────────────────────
+// ── close targets the oldest pending emptied label ──────────────────────────────────────
 
 /// A fabricated PENDING-EMPTIED close state: `n` colliding tickets packed into singleton
 /// waves 42..41+n over a `wave 41 CLOSED` ledger, lock committed, then the first `ship`
 /// tickets shipped one at a time — each ship followed by the ship-hook repack, each pair
-/// committed together (the T-917 lifecycle shape) — so the committed lock holds `ship`
+/// committed together (the lifecycle shape) — so the committed lock holds `ship`
 /// pending `[[emptied]]` entries with frozen singleton sets, ascending, over a clean
 /// tree. Same no-delete rule as [`close_scratch`]: cwd-guarded tests never reclaim their
 /// dir; each rerun reclaims its own.
@@ -365,7 +365,7 @@ fn emptied_scratch(tag: &str, n: usize, ship: usize) -> PathBuf {
     dir
 }
 
-/// T-946 — the close-time registry view must see CHILD ids.
+/// The close-time registry view must see CHILD ids.
 ///
 /// RED before the fix: `is_shipped("T-1.1")` was false for a ticket file that reads
 /// `status = "shipped"`, because the view loaded parents only, and `wave --close` printed
@@ -378,7 +378,7 @@ fn registry_view_reports_a_shipped_child_ticket_as_shipped() {
     std::fs::create_dir_all(&tickets).unwrap();
     std::fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
     std::fs::write(tickets.join("scope-vocab.toml"), "[repo.xtask]\n").unwrap();
-    // `queued`, not `ready`: the T-917 schema gate requires a spec on a ready ticket, and
+    // `queued`, not `ready`: the schema gate requires a spec on a ready ticket, and
     // the typed corpus this view now loads through enforces it.
     std::fs::write(
         tickets.join("T-1.toml"),
@@ -420,7 +420,7 @@ fn registry_view_reports_a_shipped_child_ticket_as_shipped() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// T-946 — `--tickets` closes an operator-vouched set, and still validates every id.
+/// `--tickets` closes an operator-vouched set, and still validates every id.
 #[test]
 fn close_tickets_flag_parses_and_still_refuses_an_unshipped_id() {
     let parsed = parse_close_args(&[
@@ -465,7 +465,7 @@ fn close_tickets_flag_parses_and_still_refuses_an_unshipped_id() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
-/// T-946 — `--tickets` must refuse a label the lock still calls OPEN.
+/// `--tickets` must refuse a label the lock still calls OPEN.
 ///
 /// This is the guard for the marker that had to be disavowed on 2026-09-06: wave 236 shipped
 /// per id, no pending entry formed, the repack gave label 236 to the next batch, and the close

@@ -1,11 +1,11 @@
-//! T-181.3.3 — reconstruct vanilla `.c` source from Doxygen `*_source.html` pages.
+//! Reconstruct vanilla `.c` source from Doxygen `*_source.html` pages.
 //!
 //! The AR Explorer (arexplorer.zeroy.com) is a Doxygen build of Arma Reforger 1.7.0.54 with
 //! SOURCE_BROWSER enabled — 6,495 source pages, exactly matching the script count in the pak
 //! file table, each carrying the **complete file including method bodies**.
 //!
 //! That is strictly better than every other lane we have:
-//!   * the pak's compressed entries are an unidentified codec (T-181.3.3 negative results),
+//!   * the pak's compressed entries are an unidentified codec (measured negative results),
 //!   * BI's official API docs give signatures but no bodies,
 //!   * byte-carving only reaches the uncompressed minority.
 //!
@@ -150,7 +150,7 @@ pub fn build(src: &Path, out: &Path) -> Result<SourceStats> {
         st.lines += lines.len();
     }
 
-    // T-537: refuse a header-only `_SOURCE_MANIFEST.tsv` overwrite when nothing demangled.
+    // Refuse a header-only `_SOURCE_MANIFEST.tsv` overwrite when nothing demangled.
     super::refuse_empty_write(
         "enf source manifest",
         st.files == 0,

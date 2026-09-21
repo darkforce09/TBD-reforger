@@ -168,10 +168,10 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
 /// its raster and re-reads it, asserting all 40,960,000 samples are identical and metres agree
 /// to within the `f32` rounding of the header's scale/offset.
 ///
-/// NOT `#[ignore]`, as of T-946. It was, because `assets_v2/terrains/**/*.png` is git-LFS and
+/// NOT `#[ignore]`: `assets_v2/terrains/**/*.png` is git-LFS and
 /// in a slice worktree the file is a 133-byte pointer — but a blanket ignore also hid it from
 /// the WAVE gate, which runs on main where the payload is real. The wave 238 verifier found
-/// that `test xtask+tbd-tools PASS` had covered the emitter's unit tests and not the one test
+/// that `test xtask+developer-tools PASS` covers the emitter's unit tests and not the one test
 /// that compares the emitted `.dem` against the shipped DEM. It costs 3.5 s there.
 ///
 /// So the skip is now conditional on the evidence rather than declared: a pointer file is a

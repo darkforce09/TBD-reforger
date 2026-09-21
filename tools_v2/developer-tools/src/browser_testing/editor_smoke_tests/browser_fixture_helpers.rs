@@ -1,7 +1,7 @@
 use super::*;
 
-/// T-843 / T-805 — editor route requires `mission_maker`. Pre-T-805 the suite ran logged out;
-/// after T-805 a guest is bounced to `?role_notice=mission_maker` before `__editorCam` appears.
+/// Editor route requires `mission_maker`: a guest is bounced to
+/// `?role_notice=mission_maker` before `__editorCam` appears.
 /// Seed the v-suite admin fixture into `tbd-auth` on every new document so the suite (and
 /// doctor liveness) can enter `/missions/smoke/edit`. Prefer **no** live `/api` proxy for the
 /// pure UI smokes: a dead refresh against :8080 clears the seeded session (measured).
@@ -9,7 +9,7 @@ pub(super) fn editor_auth_seed() -> Result<String> {
     crate::browser_testing::dom_oracle::seed_script()
 }
 
-/// The gate_r_auth.mjs interception pattern used by the arsenal + outliner smokes: /registry →
+/// The auth-interception pattern used by the arsenal + outliner smokes: /registry →
 /// the committed golden; other /api/v1/ → 401 {}; everything else continues. Returns a counter.
 pub(super) async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
     let golden = std::fs::read_to_string(
@@ -96,7 +96,7 @@ pub(super) async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMut
     Ok(hits)
 }
 
-/// T-167 Smart-Arsenal tap: the committed registry golden **augmented** with a compat optic +
+/// Smart-Arsenal tap: the committed registry golden **augmented** with a compat optic +
 /// magazine (kind + weight), plus `/registry/compat` edges linking the golden's M16A2 to them and
 /// `/factions` from its golden. Inline JSON so the r_api-pinned `GET__registry.json` stays byte-exact.
 /// `(registry_hits, compat_hits, faction_post_hits)`.
@@ -123,7 +123,7 @@ pub(super) async fn serve_arsenal_golden(
         arr.push(mk(OPTIC, "ACOG", "gear_optic", 0.6));
         arr.push(mk(MAG, "STANAG 30rd", "gear_magazine", 0.45));
         let n = arr.len() as u64;
-        // T-427 paginated cold path reads `total`.
+        // Paginated cold path reads `total`.
         registry["total"] = json!(n);
         registry["limit"] = json!(500);
         registry["offset"] = json!(0);
@@ -167,7 +167,7 @@ pub(super) async fn serve_arsenal_golden(
             let method = p["request"]["method"].as_str().unwrap_or("GET");
             let res = if u.contains("/api/v1/registry/compat") && u.contains("view=cargo_defaults")
             {
-                // T-843 / T-427 — cold path also GETs cargo_defaults; returning the edge list here
+                // Cold path also GETs cargo_defaults; returning the edge list here
                 // makes fetch_compat_cold fail deserialize → CompatStatus::Unavailable → no optics.
                 rp.fulfill_json(
                     request_id,
@@ -189,7 +189,7 @@ pub(super) async fn serve_arsenal_golden(
                 *rh.lock().unwrap() += 1;
                 rp.fulfill_json(request_id, 200, &registry).await
             } else if u.contains("/api/v1/auth/refresh") {
-                // T-843 — keep the seeded editor session alive under Fetch (rt-seed is not a real token).
+                // Keep the seeded editor session alive under Fetch (rt-seed is not a real token).
                 rp.fulfill_json(
                     request_id,
                     200,

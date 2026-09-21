@@ -1,5 +1,5 @@
 //! `cargo xtask map instances-verify --instances <slug>.instances.json --recon
-//! <slug>_children.json` — the T-090.11.3 socket-transform check: every architectural instance
+//! <slug>_children.json` — the socket-transform check: every architectural instance
 //! the offline pipeline placed from an XOB socket (`source: xobSocket`) is matched to the
 //! Workbench recon dump of the live entity hierarchy and must agree within [`POS_TOL_M`] /
 //! [`YAW_TOL_DEG`].
@@ -16,7 +16,7 @@
 //!
 //! Frames: the building's `rootAngles` turn `relPos` / world yaw into the local frame the
 //! instances use. The rotation handedness is not assumed: both yaw signs are tried and the one
-//! with the smaller total position error is reported (the T-090.11.3 handedness pin).
+//! with the smaller total position error is reported (the handedness pin).
 
 use std::collections::HashMap;
 use std::fs;
@@ -41,7 +41,7 @@ const MATCH_CAP_M: f64 = 1.5;
 pub struct ReconFile {
     pub slug: String,
     pub root_angles: [f64; 3],
-    /// T-090.12.1 — the building's absolute origin (the world-row pin locates its chunk row).
+    /// The building's absolute origin (the world-row pin locates its chunk row).
     #[serde(default)]
     pub root_world_pos: Option<[f64; 3]>,
     pub children: Vec<ReconChild>,
@@ -62,7 +62,7 @@ pub struct ReconChild {
     pub size: [f64; 3],
     #[serde(default)]
     pub components: Vec<String>,
-    // ── T-090.11.3 enrichment (present once the recon plugin is compiled with ExtrasJson) ──
+    // ── Socket enrichment (present once the recon plugin is compiled with ExtrasJson) ──
     /// The `Hierarchy` component's `PivotID` — the socket the child hangs on.
     #[serde(default)]
     pub pivot_id: String,
@@ -72,7 +72,7 @@ pub struct ReconChild {
     /// World `[pitch, yaw, roll]`.
     #[serde(default)]
     pub angles_deg: Option<[f64; 3]>,
-    /// Absolute world origin of the child (T-090.12.1 world-row pin).
+    /// Absolute world origin of the child (the world-row pin).
     #[serde(default)]
     pub world_pos: Option<[f64; 3]>,
     /// `DoorComponent` params on a leaf.

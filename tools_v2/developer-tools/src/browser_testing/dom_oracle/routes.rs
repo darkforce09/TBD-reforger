@@ -52,7 +52,7 @@ pub fn js_len(s: &str) -> usize {
     s.chars().map(char::len_utf16).sum()
 }
 
-/// Validate a captured DOM string before `accept` may overwrite a committed golden (T-378).
+/// Validate a captured DOM string before `accept` may overwrite a committed golden.
 /// Mirrors verify-mode's `serde_json::from_str` parse, then refuses JSON `null` and
 /// undersized captures that would destroy the baseline.
 pub fn validate_accept_dom(dom: &str) -> Result<()> {
@@ -110,7 +110,7 @@ pub(super) fn gold_dir() -> PathBuf {
 
 /// The localStorage auth seed — the stored VALUE is built with the same key order as the
 /// Node harness's object literal (serde_json preserve_order), so the app boots identically.
-/// pub(crate): render-check's `--seed-auth` (T-172 behavioral probes) injects the same seed.
+/// pub(crate): render-check's `--seed-auth` (behavioral probes) injects the same seed.
 pub(crate) fn seed_script() -> Result<String> {
     let me: Value = serde_json::from_str(
         &std::fs::read_to_string(fixtures_dir().join("GET__me.json")).context("GET__me.json")?,
@@ -236,7 +236,7 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
         let mut prev: Option<String> = None;
         for i in 0..60 {
             page.evaluate(SETTLE, true).await?;
-            // Scope = the app root's first child (see gate_v_suite.mjs for the toaster note).
+            // Scope = the app root's first child, so a toaster mounted at the body is excluded.
             let v = page
                 .evaluate("__domOracleSerialize('#root>:first-child', null)", false)
                 .await?;
@@ -357,8 +357,8 @@ pub fn diff_node(o: &Value, l: &Value, path: &str, out: &mut Vec<Value>, cap: us
 pub async fn run(args: &VSuiteArgs) -> Result<u8> {
     if args.mode == "freeze" {
         eprintln!(
-            "v-suite freeze retired (T-171): the React oracle under {} is non-regenerable — \
-             the source dist was deleted at T-159.29.3, and a capture from the live Leptos dist \
+            "v-suite freeze retired: the React oracle under {} is non-regenerable — \
+             its source dist is deleted, and a capture from the live Leptos dist \
              would overwrite it. Use `verify` (regression) or `accept --only <slug> --note` \
              (intentional single-route divergence).",
             gold_dir().display()
@@ -383,8 +383,8 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
         all.iter().filter(|r| r.slug == args.only).collect()
     };
 
-    // T-339 — fonts: `cdp::launch` pins gate-owned `XDG_CACHE_HOME` on the chromium child
-    // (T-362 `.env`); `gate` main also calls `ensure_gate_font_cache` before tokio (T-354).
+    // Fonts: `cdp::launch` pins gate-owned `XDG_CACHE_HOME` on the chromium child
+    // child (`.env`); `gate` main also calls `ensure_gate_font_cache` before tokio.
     let mut browser = cdp::launch(9341, &[]).await?;
     let result = run_modes(&browser, &gold, args, &selected).await;
     browser.kill();

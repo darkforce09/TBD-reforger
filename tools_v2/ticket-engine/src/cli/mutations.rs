@@ -11,16 +11,16 @@ pub fn cmd_add(
     impact: &str,
     summary: &str,
 ) -> Result<()> {
-    // T-455: refuse insert when the registry fails ticket check (same bar as
-    // set-status/mark-ready/reorder/ship — T-451 / T-237). Check runs first so a
+    // Refuse insert when the registry fails ticket check (same bar as
+    // set-status/mark-ready/reorder/ship). Check runs first so a
     // red registry never gets a row write + sync.
     require_check_ok(root, registry, "add")?;
 
     let mut corpus = load_corpus(root)?;
     let _ = (program, surfaces, impact);
-    // Typed op (T-916.1): mints max PARENT numeric + 1 (children never affect it —
+    // Typed op: mints max PARENT numeric + 1 (children never affect it —
     // `derive_next_id` semantics preserved), kind work, status idea, repo/docs scope.
-    // T-913.1: every minted ticket gets its birth stamp (RFC 3339 UTC). Existing tickets
+    // Every minted ticket gets its birth stamp (RFC 3339 UTC). Existing tickets
     // get NO backfill — only the minting verbs write created_at.
     let (tid, outcome) = ops::add(&mut corpus, title, summary, &crate::now_utc_rfc3339())
         .map_err(anyhow::Error::msg)?;
@@ -34,14 +34,14 @@ pub fn cmd_add(
     Ok(())
 }
 
-/// T-916.2 new verb: `ticket add-child <PARENT> <TITLE> [--summary S] [--promote]`.
+/// New verb: `ticket add-child <PARENT> <TITLE> [--summary S] [--promote]`.
 /// Appends a freshly minted child (next free dotted extension, status idea, created_at
 /// stamped) under an existing program. A `kind = "work"` parent refuses unless `--promote`
 /// performs the atomic work→program rewrite plus first child in one op (design Decisions #4;
 /// the refusal text comes from the op). Syncs like `add`; no repack — a minted idea child is
 /// in wave limbo, and a `--promote` of a LIVE work parent is reconciled by the next
 /// `cargo xtask wave repack` exactly like a `remove` of a live ticket (neither verb repacked
-/// before T-916 either).
+/// before the typed ops either).
 pub fn cmd_add_child(
     root: &Path,
     registry: &mut Value,
@@ -85,12 +85,12 @@ pub fn cmd_remove(root: &Path, registry: &mut Value, id: &str, force: bool) -> R
     if corpus.get(id).is_none() {
         unknown_ticket(id);
     }
-    // T-455: refuse delete when the registry fails ticket check (same bar as
-    // add / set-status — T-451). Check runs first so a red registry never loses
+    // Refuse delete when the registry fails ticket check (same bar as
+    // add / set-status). Check runs first so a red registry never loses
     // a row on disk.
     require_check_ok(root, registry, &format!("remove {id}"))?;
 
-    // Typed op (T-916.1): a work ticket deletes surgically and scrubs its parent's
+    // Typed op: a work ticket deletes surgically and scrubs its parent's
     // children[]; a program REFUSES unless --force cascade-deletes the descendant closure
     // deliberately (design Decisions #3 — the documented divergence from the old save path,
     // whose stale-file pass cascade-deleted silently).
@@ -114,11 +114,11 @@ pub fn cmd_reorder(root: &Path, registry: &mut Value, id: &str, after: &str) -> 
     if corpus.get(id).is_none() {
         unknown_ticket(id);
     }
-    // T-451: reorder may flip idea→queued; refuse when check is red.
+    // Reorder may flip idea→queued; refuse when check is red.
     require_check_ok(root, registry, &format!("reorder {id}"))?;
 
-    // Typed op (T-916.1): order = anchor + 1, idea flips to queued, every other status keeps
-    // its variant. "Unknown anchor ticket: {after}" comes back verbatim on the legacy exit
+    // Typed op: order = anchor + 1, idea flips to queued, every other status keeps
+    // its variant. "Unknown anchor ticket: {after}" comes back verbatim on the exit
     // path; the op's OTHER refusal — duplicate live order — is the sanctioned divergence
     // where the old CLI wrote red state on disk (the cmd_reorder wedge).
     let outcome = match ops::reorder(&mut corpus, id, after, &crate::now_utc_rfc3339()) {
@@ -140,8 +140,8 @@ pub fn cmd_reorder(root: &Path, registry: &mut Value, id: &str, after: &str) -> 
 }
 
 pub fn cmd_advance_slice(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
-    // T-459: refuse advance when the registry fails ticket check (same bar as
-    // add/remove/set-status/mark-ready/reorder/ship — T-455 / T-451 / T-237).
+    // Refuse advance when the registry fails ticket check (same bar as
+    // add/remove/set-status/mark-ready/reorder/ship).
     // Check runs first so a red registry never gets an active write + sync.
     require_check_ok(root, registry, &format!("advance-slice {id}"))?;
 
@@ -149,10 +149,10 @@ pub fn cmd_advance_slice(root: &Path, registry: &mut Value, id: &str) -> Result<
     if corpus.get(id).is_none() {
         unknown_ticket(id);
     }
-    // Typed op (T-916.1): walks `ProgramTicket::children` (the Value path read the mirrored
-    // `slices` key) — no active → first child, else the next one; the legacy refusals
+    // Typed op: walks `ProgramTicket::children` (the Value path read the mirrored
+    // `slices` key) — no active → first child, else the next one; the refusals
     // ("{id} has no slices[]", "active_slice {a} not in slices[]", "{id}: no slice after {a}")
-    // come back verbatim on the legacy exit path.
+    // come back verbatim on the exit path.
     let outcome = match ops::advance_slice(&mut corpus, id, &crate::now_utc_rfc3339()) {
         Ok(o) => o,
         Err(msg) => refuse_verbatim(&msg),

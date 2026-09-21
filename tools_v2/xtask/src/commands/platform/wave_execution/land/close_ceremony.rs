@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-923 — the marker commit, the repack and the lock-refresh commit, as ONE motion.
+/// The marker commit, the repack and the lock-refresh commit, as ONE motion.
 ///
 /// TESTABILITY CUT, stated plainly: `cmd_wave_close`'s validations (all-shipped, verifier
 /// recorded AND at HEAD, the full wave gate) need a live registry, a verifier marker file and a
@@ -50,8 +50,8 @@ pub(super) fn close_ceremony(
 
     // DIRTY TREE = REFUSAL, before anything is created. The ceremony commits twice; starting it
     // on top of unrelated changes either sweeps them into the lock commit or strands them behind
-    // a marker. Same LFS-neutral, fail-closed porcelain read as tree_state/git_porcelain_paths
-    // (T-401): a status that CANNOT run is never an empty status.
+    // a marker. Same LFS-neutral, fail-closed porcelain read as tree_state/git_porcelain_paths:
+    // a status that CANNOT run is never an empty status.
     let mut porcelain: Vec<&str> = ledger::LFS_NEUTRAL.to_vec();
     porcelain.extend_from_slice(&["status", "--porcelain"]);
     let dirty = match git_at(root, &porcelain) {
@@ -147,7 +147,7 @@ pub(super) fn close_ceremony(
     }
     wprintln!("marker committed: {} {subject}", short(&cand));
 
-    // REPACK — T-914's include-HEAD derivation exists exactly for this moment: the fresh marker
+    // REPACK — the include-HEAD derivation exists exactly for this moment: the fresh marker
     // sits AT HEAD, so the recompiled base becomes {n} and open waves renumber {n}+1 onward.
     if let Err(e) = ticket_engine::wave_lock::repack_quiet(root) {
         wprintln!("wave repack FAILED after the close marker: {e:#}");

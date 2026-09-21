@@ -2,11 +2,13 @@
 #![deny(clippy::wildcard_enum_match_arm)]
 
 pub mod cli;
+pub mod corpus_pins;
 mod encoding;
 pub mod metrics;
 pub mod ops;
 #[cfg(test)]
-mod proptest_roundtrip;
+#[path = "tests/proptest_roundtrip_tests.rs"]
+mod proptest_roundtrip_tests;
 pub mod registry;
 pub mod repository;
 pub mod store;

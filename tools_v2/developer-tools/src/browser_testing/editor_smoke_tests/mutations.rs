@@ -2,7 +2,7 @@ use super::*;
 use crate::repository_layout::MapAssetMounts;
 use std::path::Path;
 
-/// smoke_mutations.mjs — T-159.25 live suite-mutation gate (TOKEN/REFRESH envs, backend on :8080).
+/// Live suite-mutation gate (TOKEN/REFRESH envs, backend on :8080).
 pub async fn smoke_mutations(dist: &str) -> Result<u8> {
     let Ok(_token) = std::env::var("TOKEN") else {
         eprintln!("smoke_mutations: set TOKEN + REFRESH (dev-login tokens)");
@@ -79,7 +79,7 @@ pub async fn smoke_mutations(dist: &str) -> Result<u8> {
     code
 }
 
-/// gate_r_auth.mjs — the R-auth single-flight refresh gate (no backend; Fetch-mocked).
+/// The R-auth single-flight refresh gate (no backend; Fetch-mocked).
 /// Exit map: 0 pass · 1 fail · 2 no dist · 3 driver error (mapped by the bin).
 pub async fn r_auth(dist_override: Option<String>) -> Result<u8> {
     let dist = dist_override
@@ -207,7 +207,7 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
     if let Some(s) = extra.as_deref() {
         injects.push(s);
     }
-    // T-339 — thread a real proxy (CLI `--api-proxy`, else the standard :8080 backend).
+    // Thread a real proxy (CLI `--api-proxy`, else the standard :8080 backend).
     let api_proxy = a.api_proxy.clone().or_else(|| Some(BACKEND.to_string()));
     let h = Harness::new(
         &a.dir,
@@ -233,9 +233,9 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
         let text = eval_str(&h.page, "document.body.innerText").await?;
         let html = eval_str(&h.page, "document.body.innerHTML").await?;
         // awaitPromise so async-IIFE probes can settle reactive updates between steps
-        // (T-172 behavioral probes); plain values pass through unchanged. The raw value is
+        // (behavioral probes); plain values pass through unchanged. The raw value is
         // echoed in the verdict so a diagnostic probe can return a JSON string — but a string
-        // (or any object without a boolean `pass`) is NOT a pass (T-386).
+        // (or any object without a boolean `pass`) is NOT a pass.
         let assert_value = match &a.assert_js {
             Some(js) => Some(h.page.evaluate(js, true).await?),
             None => None,
@@ -269,7 +269,7 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
     code
 }
 
-/// T-173 perf smoke — boots the editor on the full map-assets set, runs `PERF_PROBE` +
+/// Perf smoke — boots the editor on the full map-assets set, runs `PERF_PROBE` +
 /// `PERF_PROBE_NOBLUR_PAN`, prints every metric. `strict` turns the deterministic rows into
 /// gates (Phase-3 targets): duplicate/idle chunk fetches must be 0 and a steady pan must not
 /// move upload/recompose counters. FPS rows stay report-only (SwiftShader variance) except the
@@ -366,13 +366,13 @@ pub async fn smoke_perf(dist: &str, strict: bool) -> Result<u8> {
     code
 }
 
-/// T-386 — explicit `--assert-js` verdict. No truthiness.
+/// Explicit `--assert-js` verdict. No truthiness.
 ///
 /// Recognised **pass**: literal boolean `true`, or a JSON object whose `"pass"` field is
 /// boolean `true`. Recognised **fail**: literal `false` / `null` / `0` / `""`, an object with
 /// `"pass": false`, an object/string/array/number with no recognised verdict — including a
-/// diagnostic string echoed in `assertValue`. Pre-T-386 treated every non-null object as pass,
-/// so probes returning `{"pass":false,...}` exited 0.
+/// diagnostic string echoed in `assertValue`. Truthiness is never a verdict: a probe
+/// returning `{"pass":false,...}` must exit nonzero.
 pub(crate) fn assert_js_ok(v: &Value) -> bool {
     if let Some(b) = v.as_bool() {
         return b;

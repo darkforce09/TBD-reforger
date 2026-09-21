@@ -38,7 +38,7 @@ pub fn tree_is_phase2(root: &Path) -> bool {
     false
 }
 
-/// Legacy `targets` synthesis from the v2 scope — the queue.json / slice_plan
+/// `targets` synthesis from the v2 scope — the queue.json / slice_plan
 /// consumers still speak the 4-value target set. Same outputs as the v1 mapping:
 /// website→website, mod→mod, schema→shared, engine/repo→root.
 fn targets_from_scope(scope: &ScopeV2) -> Vec<String> {
@@ -123,23 +123,23 @@ pub fn ticket_to_value(t: &Ticket) -> Value {
     v
 }
 
-/// MIGRATION/TEST-ONLY since T-916.2 (the file-top `allow(dead_code)` pattern): the registry
+/// TEST-ONLY (the file-top `allow(dead_code)` pattern): the registry
 /// mutators write through `crate::ops` + `Corpus::write_back` now, so no mutator path
 /// reaches this Value→typed conversion anymore — `save_registry` refuses phase-2 trees, and
 /// `mutators_never_reach_the_value_writer_pin` keeps both facts pinned. It stays compiled
-/// because the T-912.2 alias-clash regression pin below still exercises it against the whole
+/// because the alias-clash regression pin below exercises it against the whole
 /// loaded registry: the mirrored-keys condition must STAY representable-and-handled on the
 /// read path even though no writer consumes the result.
 pub fn value_to_ticket(v: &Value) -> Result<Ticket> {
-    // T-912.2 fix for a T-911.2 round-trip regression that broke EVERY registry mutator:
+    // The round-trip rule that keeps every registry mutator whole:
     // `ticket_to_value` mirrors `children` → `slices` and `active` → `active_slice` for the
-    // legacy readers (`ticket advance-slice` reads `slices`, `ticket brief` reads
-    // `active_slice`), and `TicketFile` declares those legacy names as serde ALIASES — so a
+    // Value readers (`ticket advance-slice` reads `slices`, `ticket brief` reads
+    // `active_slice`), and `TicketFile` declares those names as serde ALIASES — so a
     // value carrying both spellings deserialized as `duplicate field \`children\`` and
     // `ticket ship`/`set-status`/`mark-ready`/`reorder` all refused to save (measured at the
-    // T-912.1 tip: `ticket ship T-905` → `save T-067: ticket value → file: duplicate field
+    // The symptom: `save <id>: ticket value → file: duplicate field
     // \`children\``). Strip the mirror when the canonical key is present; a value carrying
-    // ONLY the legacy spelling still lands through the alias.
+    // ONLY the aliased spelling lands.
     let mut v = v.clone();
     if let Some(obj) = v.as_object_mut() {
         if obj.contains_key("children") {
@@ -192,7 +192,7 @@ pub fn load_phase2_tree(root: &Path) -> Result<Value> {
     }))
 }
 
-/// MIGRATION/TEST-ONLY since T-916.2 — the retired Value write path. Live mutations go through
+/// TEST-ONLY — the Value write path. Live mutations go through
 /// `crate::ops` + `Corpus::write_back` (surgical per-file temp+rename writes); nothing
 /// live calls this, and `registry::save_registry` refuses phase-2 trees so it cannot be
 /// reached by accident. Note what retiring it kills: the final stale-file pass below deletes

@@ -1,14 +1,13 @@
-//! T-853 — port of `scripts/mod/run-playtest-server.sh` → `cargo xtask mod playtest`.
+//! `cargo xtask mod playtest`: the local dedicated-server lane.
 //!
 //! Start a JOINABLE, mod-loaded, admin-capable dedicated server. The bash header's institutional
 //! record is carried over below, because every paragraph of it is a measured fact that cost a wave
 //! to learn, and a port that summarises them away throws that away.
 //!
-//! ── WHY THIS EXISTS (T-604) ──────────────────────────────────────────────────────────────────
+//! ── WHY THIS EXISTS ──────────────────────────────────────────────────────────────────
 //!
 //! Nothing in this repo started a server two people could join with the LOCAL mod loaded.
-//! `run-dev-server.sh` was 27 lines that ran two preflight checks and ended — it never launched
-//! anything. `deploy-staging.sh` builds two ExecStarts and each one breaks a different half:
+//! The staging deploy builds two ExecStarts and each one breaks a different half:
 //!
 //! ```text
 //!   :1155  -addonsDir + -addons + -server   loads the local mod, registers NO backend room
@@ -44,9 +43,9 @@
 //! `boot::assert_local_addon_won` is a HARD GATE, not a warning: if the packed profile copy wins,
 //! this program kills the server and exits non-zero.
 //!
-//! COUNT THE FORMAT, NOT THE LINES (T-606). The bash comment once asserted **109** tagged lines and
+//! COUNT THE FORMAT, NOT THE LINES. The bash comment once asserted **109** tagged lines and
 //! `docs/mod/STAGING-SERVER.md` asserted **108** for the same claim. Neither was a typo. Measured
-//! on this checkout 2026-07-31 with `world-boot.sh --keep-logs`: slot-loadout-coverage (7 slots)
+//! on this checkout 2026-07-31 with `mod world-boot --keep-logs`: slot-loadout-coverage (7 slots)
 //! -> 147 `[TBD][` lines, bridgehead-at-levie (18 slots) -> 155. The number rots even with the
 //! mission held fixed, and is not monotonic in slot count either. The stable discriminator is the
 //! discontinuity at ZERO: stale 1.0.1 emits zero `[TBD][` lines, any current build emits many.

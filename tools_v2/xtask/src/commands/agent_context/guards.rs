@@ -11,7 +11,7 @@
 //!   Bash tool results resident     409,407,866   17.4% of P
 //!     grep/rg                                     8.96% of P
 //!     head/sed/cat/tail extraction                6.25% of P
-//!     cargo/make/trunk/wave.sh gate               1.95% of P
+//!     cargo / trunk / wave gate                  1.95% of P
 //!
 //! Prompt instructions do not hold here: an agent that is stuck re-reads the file anyway. These
 //! guards are PreToolUse hooks, so the harness refuses the call regardless of intent.

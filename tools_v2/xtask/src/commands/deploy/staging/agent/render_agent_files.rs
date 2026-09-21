@@ -37,7 +37,7 @@ pub(crate) fn write_or_die(path: &Path, body: &str) -> Result<(), u8> {
 /// Print a `Verdict` exactly as `gate_require`/`gate_ban` did (`FAIL: <msg>` on stdout, six-space
 /// continuations) and fold it into the running fail flag.
 ///
-/// This is the whole of the `gate-grep.sh` dependency, inlined. `Verdict` has no bool conversion,
+/// The whole search dependency, inlined. `Verdict` has no bool conversion,
 /// so `DidNotRun` cannot silently read as held — which is the upgrade over the bash, where a
 /// missing target file printed two lines and returned the same `1` as a real violation.
 pub(super) fn note(fail: &mut bool, v: Verdict) {

@@ -7,7 +7,7 @@ pub fn wave_close_number(rev: &str) -> Option<i64> {
 
 /// Has this wave-close been DISAVOWED by a later revert? Returns the reverting commit.
 ///
-/// T-613 (verifier F6). A reverted close still derived as the base, so a wave the operator had
+/// Verifier F6. A reverted close deriving as the base means a wave the operator had
 /// explicitly taken back was never re-gated — narrow and silent, the same shape as everything else
 /// on this page. Derivation now SKIPS a disavowed marker and falls through to the one before it,
 /// which re-gates the disavowed wave's whole span. That is the over-broad direction, which this
@@ -32,10 +32,10 @@ pub fn wave_close_disavowed(rev: &str) -> Option<String> {
 /// HEAD IS EXCLUDED DELIBERATELY. `wave --close` gates BEFORE writing its own marker, so the newest
 /// reachable marker is always the previous wave's.
 ///
-/// WHAT THAT NO LONGER MEANS, corrected T-618 because the sentence that used to end this paragraph
+/// WHAT THAT DOES NOT MEAN: the tempting sentence to end this paragraph with
 /// promised behaviour the code now refuses. It said re-gating an already-closed tree "picks the
 /// previous close again and re-gates that whole wave, rather than gating nothing". The picking
-/// still happens — but T-613's ORACLE 1 then refuses the result, because the close sitting AT HEAD
+/// still happens — but ORACLE 1 then refuses the result, because the close sitting AT HEAD
 /// is reachable and claims a HIGHER wave than the base just derived, which is exactly the
 /// contradiction that oracle exists to report. Measured at b2afc99a (wave 78's own close, checked
 /// out): derives 2b144b5d, then refuses with "CONTRADICTED by the marker ledger", rc 2. That is
@@ -57,15 +57,15 @@ pub fn prev_wave_close() -> Option<String> {
         // git's --grep matches the WHOLE message, so a body line quoting the marker would
         // false-match; `wave --close` writes it as the SUBJECT, so confirm it there. A bash glob
         // rather than grep on purpose: `rg` does not exist under `bash -c` and the two greps on
-        // this machine (ugrep interactively, GNU under `bash script.sh`) disagree on ERE details.
-        // A `case` glob is the same program under both. T-613 keeps that reasoning and moves the
+        // this machine (ugrep interactively, GNU under a shell) disagree on ERE details.
+        // A `case` glob is the same program under both. The oracles keep that reasoning and move the
         // glob into wave_close_subject_ok so derivation and verification share ONE definition of
         // the format — they must not be able to disagree about what a marker is.
         let subj = subject(sha);
         if !wave_close_subject_ok(&subj) {
             continue;
         }
-        // T-613 / F6: a close the operator reverted is not a boundary. Skipping it lands on the
+        // F6: a close the operator reverted is not a boundary. Skipping it lands on the
         // PREVIOUS close, which puts the disavowed wave back inside the gate range.
         if let Some(rev) = wave_close_disavowed(sha) {
             werr!(
@@ -86,14 +86,14 @@ pub fn prev_wave_close() -> Option<String> {
 
 /// Tickets the plan assigns to a wave AS OF A REVISION.
 ///
-/// T-912.2: the plan at a revision is `.ai/tickets/wave.lock` — read as a blob and parsed as
+/// The plan at a revision is `.ai/tickets/wave.lock` — read as a blob and parsed as
 /// TOML. Every boundary BEFORE the cutover has no lock blob there, and refusing to read those
 /// revisions would demote every historical wave close from "corroborated" to "demand operator
 /// confirmation" — so an absent or unparseable lock blob falls back to the historical TSV
 /// readers in [`super::super::archived_wave_plans`], the one module allowed to name the dead files. History is
 /// immutable and TSV-shaped; a reader of history may name that shape.
 ///
-/// T-618: takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2
+/// Takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2
 /// — and that caller must not be able to read a plan row the commit it is grading just wrote, so
 /// there is deliberately NO checkout-reading variant of this function to reach for by mistake.
 ///
@@ -109,7 +109,7 @@ pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
             if !open.is_empty() {
                 return open;
             }
-            // T-946 — A CLOSED WAVE LIVES IN `[[emptied]]`, AND THAT IS STILL THE PLAN
+            // A CLOSED WAVE LIVES IN `[[emptied]]`, AND THAT IS STILL THE PLAN
             // SPEAKING. The open-wave list is the only place this used to look, so a wave
             // that emptied correctly — every ticket shipped, the repack freezing its set as a
             // pending entry — had NO rows here and oracle 2 reported silence. Every gate then
@@ -223,7 +223,7 @@ pub fn wave_close_is_newest_wave(sha: &str) -> u8 {
         return 2;
     }
 
-    // T-618, THE OTHER DIRECTION. "Strictly higher" alone never refuses a number that is higher by
+    // THE OTHER DIRECTION. "Strictly higher" alone never refuses a number that is higher by
     // a MILE, so `wave 99 CLOSED` outranked all 34 real markers and sailed through. Wave numbers do
     // not merely increase, they increase by ONE: measured 2026-08-01 across every marker reachable
     // from HEAD, 78 down to 45, 33 steps, every one of them exactly 1. So the exact bound is
@@ -263,7 +263,7 @@ pub fn wave_close_is_newest_wave(sha: &str) -> u8 {
 /// ORACLE 2. `0` = ledger corroborates; `1` = ledger cannot speak; `2` = ledger contradicts.
 /// Prints its own verdict either way — a check nobody sees the result of is not a check.
 ///
-/// T-618. Read the block above for what changed and why. In one line: MEMBERSHIP comes from the
+/// Read the block above for why. In one line: MEMBERSHIP comes from the
 /// boundary's PARENT, COMPLETION from the boundary, and only the former can corroborate.
 pub fn wave_close_ledger_says(ctx: &Ctx, sha: &str) -> u8 {
     let Some(n) = wave_close_number(sha) else {
@@ -289,7 +289,7 @@ pub fn wave_close_ledger_says(ctx: &Ctx, sha: &str) -> u8 {
     let known = tickets.len();
 
     if known == 0 {
-        // THE T-618 CASE, and it deserves its own message rather than a generic silence: the plan
+        // THE MEMBERSHIP CASE, and it deserves its own message rather than a generic silence: the plan
         // has rows for wave $n at the boundary but NOT at its parent, which means this very commit
         // filed them. That is self-corroboration, and it is what the forged wave-78 marker did.
         if !wave_plan_tickets_at(ctx, sha, n).is_empty() {

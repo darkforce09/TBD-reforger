@@ -1,4 +1,4 @@
-//! Live Workbench path for T-856 spawn-determinism (split from gate_tbd_spawn_determinism for SIZE-1).
+//! Live Workbench path for spawn-determinism, split from [`super::spawn_determinism`] for SIZE-1.
 //! Only reached after preflight succeeds.
 
 use std::fs;
@@ -15,7 +15,7 @@ use super::{
 };
 
 fn mcp(repo_root: &Path, tool: &str, args_json: &str) -> proc::Merged {
-    // T-860: former scripts/mod/mcp-call.sh → cargo xtask mcp call.
+    // `cargo xtask mcp call`.
     // Callers inspect `.code` / `.text` (bash redirected most calls).
     match proc::Run::new("cargo")
         .args([

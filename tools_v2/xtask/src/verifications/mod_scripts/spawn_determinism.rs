@@ -1,11 +1,11 @@
-//! T-856 — spawn/equip determinism gate
+//! spawn/equip determinism gate
 //!
-//! Live Workbench path lives in [`live`] (SIZE-1 split; soft cap 600). (T-853 port of `scripts/mod/tbd-spawn-determinism.sh`).
+//! Live Workbench path lives in [`live`] (SIZE-1 split; soft cap 600).
 //!
 //! CLI: `cargo xtask mod spawn-determinism` with bash-compatible modes `--preflight`,
 //! `--selftest`, and `[N-runs] [world]`.
 //!
-//! `gate_probe_file` semantics come from [`verification_core::gate::probe_files`] (T-556 four-outcome).
+//! `gate_probe_file` semantics come from [`verification_core::gate::probe_files`] (four outcomes).
 //! Fail-opens closed or pinned inline where noted.
 
 use std::collections::BTreeMap;

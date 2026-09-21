@@ -2,8 +2,8 @@ use super::*;
 
 /// `--selftest` — prove the kill path can FAIL, and cannot lie.
 ///
-/// Same principle as `world-boot.sh:264` — a gate nobody has watched fail is not a gate. This one
-/// exists because T-608's defect was invisible on every passing run: `kill_run` only lied when the
+/// A gate nobody has watched fail is not a gate. This one
+/// exists because the defect is invisible on every passing run: `kill_run` only lies when the
 /// bridge flaked, which no green boot ever exercises. So the lie is reproduced here on purpose.
 /// Boots no game server; spawns disposable `sleep` groups on the host and kills them.
 pub fn selftest(host: &Host) -> u8 {
@@ -51,7 +51,7 @@ pub fn selftest(host: &Host) -> u8 {
         t.check(
             rc != 0,
             &format!("S1 kill_run refused to claim success ({st_out})"),
-            "S1 kill_run returned SUCCESS with the group alive — this is the T-608 defect",
+            "S1 kill_run returned SUCCESS with the group alive",
         );
         t.check(
             stray == pg,

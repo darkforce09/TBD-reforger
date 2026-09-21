@@ -1,16 +1,16 @@
-//! T-873 — port of `scripts/mod/tbd-spawn-verify.sh` → `cargo xtask mod spawn-verify`.
+//! `cargo xtask mod spawn-verify`: spawn the mission in the Workbench and read the result.
 //!
-//! Thin wrapper around `mcp wb-logs` (T-857) + MCP play/stop:
+//! Thin wrapper around `mcp wb-logs` + MCP play/stop:
 //! - `--selftest` → `exec cargo run -q -p xtask -- mcp wb-logs --selftest` (no Workbench)
 //! - else → `mcp call wb_play` / sleep 25 / `mcp call wb_stop` / `mcp wb-logs PATTERN`
 //!
 //! Fail-opens pinned (bash parity — do not "fix"):
-//! - `xtask-run.sh mcp call wb_play '{}' || true`
-//! - `xtask-run.sh mcp call wb_stop '{}' || true`
+//! - `mcp call wb_play '{}'`, failures ignored
+//! - `mcp call wb_stop '{}'`, failures ignored
 //!
 //! Play/stop MCP failures must not abort the verify; the log grep verdict is what matters.
 //!
-//! Default display filter (T-612) pins tags + event keys, never deleted prose. Verdict logic
+//! Default display filter pins tags + event keys, never deleted prose. Verdict logic
 //! lives in `mcp wb-logs` — one definition, shared.
 //!
 //! §Non-reproducible: the live (non-`--selftest`) arm sleeps 25s wall-clock between play and
@@ -27,7 +27,7 @@ use anyhow::Result;
 
 use crate::core::repository_root::find_repo_root;
 
-/// Bash `${1:-…}` after quote processing in `tbd-spawn-verify.sh`.
+/// The default world when the operator names none.
 const DEFAULT_PATTERN: &str =
     r"\[TBD\]\[Slots\]|\[TBD\]\[Loadout\]|\[TBD\]\[Spawn\]|assigned slot|bound player";
 
@@ -59,13 +59,13 @@ pub(crate) fn run_with_root(root: &Path, selftest: bool, pattern: Option<String>
 
     let pattern = pattern.unwrap_or_else(|| DEFAULT_PATTERN.to_string());
 
-    // bash: `"$MOD_SCRIPTS/lib/xtask-run.sh" mcp call wb_play '{}' || true`
+    // `mcp call wb_play '{}'`, failures ignored.
     // FAIL-OPEN PIN: play MCP failure must not abort (preserved).
     let _ = cargo_xtask(root, &["mcp", "call", "wb_play", "{}"]);
 
     thread::sleep(Duration::from_secs(25));
 
-    // bash: `"$MOD_SCRIPTS/lib/xtask-run.sh" mcp call wb_stop '{}' || true`
+    // `mcp call wb_stop '{}'`, failures ignored.
     // FAIL-OPEN PIN: stop MCP failure must not abort (preserved).
     let _ = cargo_xtask(root, &["mcp", "call", "wb_stop", "{}"]);
 
@@ -76,7 +76,7 @@ pub(crate) fn run_with_root(root: &Path, selftest: bool, pattern: Option<String>
     }
 }
 
-/// `cargo run -q -p xtask -- <args>` from monorepo root (xtask-run.sh / bare cargo parity).
+/// `cargo run -q -p xtask -- <args>` from the monorepo root.
 fn cargo_xtask(root: &Path, args: &[&str]) -> std::io::Result<u8> {
     let mut cmd = Command::new("cargo");
     cmd.args(["run", "-q", "-p", "xtask", "--"])

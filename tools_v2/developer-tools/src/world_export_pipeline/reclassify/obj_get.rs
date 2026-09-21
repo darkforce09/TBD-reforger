@@ -6,7 +6,7 @@ pub(super) fn obj_get<'a>(v: &'a Value, k: &str) -> Option<&'a Value> {
 }
 
 /// The rule that produced a committed row, identified by its `kind`+`class` pair — the same
-/// lookup `build.rs` uses to recover `render.importanceZoom` for a census bucket. `None` when
+/// lookup the world-object build uses to recover `render.importanceZoom` for a census bucket. `None` when
 /// the pair is the fallback's (or no rule claims it), which is itself the answer: the fallback.
 pub(crate) fn rule_for_kind_class<'a>(rules: &'a Rules, kind: &str, class: &str) -> &'a Value {
     if let Some(arr) = rules.doc["rules"].as_array()
@@ -21,7 +21,7 @@ pub(crate) fn rule_for_kind_class<'a>(rules: &'a Rules, kind: &str, class: &str)
 
 /// Keep a measured OBB, re-template a fallback one.
 ///
-/// `build.rs` writes `spatial` from per-axis medians of sampled engine halfExtents when it has
+/// The world-object build writes `spatial` from per-axis medians of sampled engine halfExtents when it has
 /// samples, and copies the matched rule's `spatial` template when it does not. Only the second
 /// case is reproducible here, and it is detectable: a committed `spatial` byte-equal to its
 /// producing rule's template was a template. Anything else is a measurement that exists nowhere
@@ -39,7 +39,7 @@ pub(super) fn respatialize(committed: &Value, old_rule: &Value, new_rule: &Value
 }
 
 /// Rebuild one prefab row from the rules, preserving identity (`prefabId`, `resourceName`,
-/// `label`) and measured geometry. Key order matches `build.rs`'s emitted row exactly —
+/// `label`) and measured geometry. Key order matches the build's emitted row exactly —
 /// serde_json is built with `preserve_order`, so this is a byte-level contract, not cosmetics.
 pub(super) fn rebuild_row(
     rules: &Rules,
@@ -139,7 +139,7 @@ pub fn reclassify_rows(rules: &Rules, committed: &[Value]) -> Result<(Vec<Value>
         out.push(new_row);
     }
 
-    // T-537/T-383 non-vacuity guard, and the one that catches a gutted rules file: a rules doc
+    // Non-vacuity guard, and the one that catches a gutted rules file: a rules doc
     // that classifies nothing would silently re-stamp every row as the fallback `prop/unknown`
     // and report a large, confident, wrong drift. Refuse instead.
     super::super::refuse_empty_write(
@@ -171,7 +171,7 @@ pub fn reclassify_rows(rules: &Rules, committed: &[Value]) -> Result<(Vec<Value>
 }
 
 /// Instance count per `prefabId` from the committed chunk files — the census input that
-/// `build.rs` gets from the raw stream and that we get from the artifact it wrote.
+/// the world-object build gets from the raw stream and that we get from the artifact it wrote.
 pub(super) fn instances_by_prefab(chunks_dir: &Path, n_prefabs: usize) -> Result<Vec<u64>> {
     let mut counts = vec![0u64; n_prefabs];
     let mut chunk_files = 0u64;
@@ -205,12 +205,12 @@ pub(super) fn instances_by_prefab(chunks_dir: &Path, n_prefabs: usize) -> Result
 }
 
 /// Recompute the count lanes of `type-inventory.json` from the rebuilt rows, preserving every
-/// other key and its order. Mirrors `build.rs`'s census block.
-/// Re-derive `needsReview` from the live rules — T-946, and the number it corrects is the one
+/// other key and its order. Mirrors the build's census block.
+/// Re-derive `needsReview` from the live rules; the number it corrects is the one
 /// the ticket that touched it was named after.
 ///
 /// The entries are staging-derived (`instanceCount` and `reason` come from a Workbench export
-/// this repo cannot reproduce), which is why they used to be carried through untouched. But
+/// this repo cannot reproduce), which is why a blind carry-through is tempting. But
 /// membership is NOT staging-derived: a prefab needs review exactly when the rules still fail to
 /// classify it, and that is decidable here. Preserving the list wholesale meant a rule edit that
 /// classified 420 of the 443 left the artifact still publishing `needsReview.prefabTypes = 443` —
@@ -250,7 +250,7 @@ pub(super) fn rebuild_inventory(
             if *k == "road" {
                 // Roads come from `.topo`, not the prefab lane — but the census is derivable from
                 // the COMMITTED roads.json.gz, so recompute it rather than carrying a value that
-                // was hardcoded to 0 (T-946/T-960, `chunk_partitioner::road_census`). Falls back to the
+                // is not hardcoded to 0 (`chunk_partitioner::road_census`). It falls back to the
                 // committed number when the file cannot be read.
                 m.insert(
                     "segments".into(),
@@ -430,7 +430,7 @@ pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) ->
         );
     }
     println!("reclassify: WROTE {}", out_objects.display());
-    // T-935.13 — the rkyv twins must not go stale when classification is rewritten. The emitter
+    // The rkyv twins must not go stale when classification is rewritten. The emitter
     // re-reads the JSON just written (same contract as build-world-objects).
     let terrain_for_rkyv = out_objects.parent().unwrap_or(out_objects.as_path());
     for (path, bytes) in catalog_emit::emit_catalog_archives(terrain_for_rkyv)? {

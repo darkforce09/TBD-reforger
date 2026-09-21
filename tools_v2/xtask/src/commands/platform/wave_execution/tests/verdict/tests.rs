@@ -17,9 +17,9 @@ fn scratch(tag: &str) -> PathBuf {
     tmp
 }
 
-/// T-946 — a non-canonical slice id must not be told to do the impossible.
+/// A non-canonical slice id must not be told to do the impossible.
 ///
-/// `slice/T-247-hotfix` is a branch shape this repo really creates. `path_for` refuses it, so
+/// A hotfix-suffixed slice branch is a shape this repo really creates. `path_for` refuses it, so
 /// `read` errors — and the old message said "re-gate", which cannot help: `record_slice_gate`
 /// refuses the same shape in the same place. The refusal now says so and names the two things
 /// that DO work.
@@ -121,7 +121,7 @@ fn land_accepts_a_green_receipt_at_the_landing_sha() {
 
 #[test]
 fn land_refuses_when_no_gate_has_run() {
-    // The pre-T-924 behaviour of `land` in one assertion: with NO receipt on disk it used to
+    // The behaviour `land` must not have, in one assertion: with NO receipt on disk it would
     // merge anyway. This is the arm that closes the 2026-08-14 incident.
     let root = scratch("missing");
     let r = land_refusal(&root, "T-924", SHA).expect("must refuse");
@@ -248,7 +248,7 @@ fn the_newest_gate_wins() {
 //
 // The behavioural tests above prove the ORACLE is right. They cannot prove it is WIRED — a
 // correct refusal that nothing invokes is this program's most expensive recurring defect
-// (T-462, T-463, T-556: verify scripts that existed, were correct, and were called by nothing).
+// (a verification that exists, is correct, and is called by nothing).
 // These read the production source of the two call sites. The haystack is a single function
 // BODY extracted by brace matching, so this test module can never satisfy its own pin.
 

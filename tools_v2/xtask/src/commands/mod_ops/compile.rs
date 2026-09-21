@@ -1,4 +1,4 @@
-//! T-891 — `scripts/mod/compile.sh` → `cargo xtask mod compile`.
+//! `cargo xtask mod compile`: the headless Enfusion compile gate.
 //! Exit: **0** clean · **1** CODE · **2** no verdict · **3** ENV. `--selftest` must exit **1**.
 
 use std::fs::{self, OpenOptions};

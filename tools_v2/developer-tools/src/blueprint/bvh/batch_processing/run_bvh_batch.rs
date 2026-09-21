@@ -4,7 +4,7 @@ use crate::repository_layout::{definition_path, terrain_dir};
 /// `map bvh-batch --prefab <Prefabs/…/X.et> [--slug <s>] [--out <dir>] [--paks <dir>]
 /// [--extract <dir>] [--scene <spec.json>] [--kind <record>=<kind>]… [--dry-run]`
 pub fn run_bvh_batch(root: &std::path::Path, args: &[String]) -> Result<u8> {
-    // T-090.12.2 — the whole-catalogue lane lives in `library.rs`.
+    // The whole-catalogue lane lives in `library.rs`.
     if args.iter().any(|a| a == "--all-prefabs") {
         return super::super::library_cli::run(root, args);
     }

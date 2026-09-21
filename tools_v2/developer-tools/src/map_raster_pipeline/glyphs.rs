@@ -1,4 +1,4 @@
-//! T-165.9 — world-glyph atlas builder (port of `build-glyph-atlas.mjs`): SVG sources →
+//! World-glyph atlas builder: SVG sources →
 //! one lossless-WebP atlas + Deck-ready JSON mapping. Rasterization is resvg (replaces the
 //! magick RSVG delegate); layout contract unchanged (sorted keys, 128 px cells, row-major
 //! grid on a power-of-two canvas, GL-G4 4096² cap).
@@ -116,7 +116,7 @@ pub fn build_glyph_atlas() -> Result<u8> {
         h: height as usize,
         data: canvas,
     })?;
-    // T-537: validate BEFORE write — used to write then fail, leaving a corrupt atlas.
+    // Validate BEFORE write — used to write then fail, leaving a corrupt atlas.
     if webp.len() < 12 || &webp[0..4] != b"RIFF" || &webp[8..12] != b"WEBP" {
         return Ok(fail("emitted atlas is not a RIFF/WEBP file"));
     }

@@ -119,7 +119,7 @@ pub(super) fn collapse_diagnose_returns(src: &str) -> Option<String> {
     let out = pat.replace(src, |caps: &regex::Captures| {
         count += 1;
         format!(
-            "{}\n\t\t//! Distinguishes missing/skipped spawn vs out-of-zone placement (comment only — T-474 RED).\n\t\treturn \"destroy targets empty — no matches in zone\";\n\t{}",
+            "{}\n\t\t//! Distinguishes missing/skipped spawn vs out-of-zone placement (comment only).\n\t\treturn \"destroy targets empty — no matches in zone\";\n\t{}",
             caps.get(1).map(|m| m.as_str()).unwrap_or(""),
             caps.get(2).map(|m| m.as_str()).unwrap_or(""),
         )
@@ -134,7 +134,7 @@ pub(super) fn collapse_diagnose_returns(src: &str) -> Option<String> {
 pub(super) fn rename_diagnose_fn(src: &str) -> Option<String> {
     let mut src2 = src.replacen(
         DIAG_SIG,
-        "\t//! DiagnoseEmptyDestroyTargets — renamed; name kept in comment only (T-474 RED).\n\
+        "\t//! DiagnoseEmptyDestroyTargets — renamed; name kept in comment only.\n\
          \tprotected static string DiagnoseEmptyTargets(notnull TBD_Objective objective)",
         1,
     );
@@ -154,7 +154,7 @@ pub(super) fn comment_only_registry_pin(src: &str) -> Option<String> {
     if !src.contains(REG_FORMAT_OLD) {
         return None;
     }
-    let new = "\t\t\t//! was: not in the registry, so there is no prefab to look for (T-474 RED comment-only)\n\
+    let new = "\t\t\t//! not in the registry, so there is no prefab to look for (comment only)\n\
                \t\t\tobjective.m_sInertReason = DiagnoseEmptyDestroyTargets(objective);";
     Some(src.replacen(REG_FORMAT_OLD, new, 1))
 }

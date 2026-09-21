@@ -1,6 +1,6 @@
-//! T-165.9 — the water lane: `analyze-water-sources.mjs` (the T-090.1.2.5.2 inland-water
+//! The water lane: the source analysis (the inland-water
 //! classifier — grey/wet pixel classes on the road-subtracted field, component acceptance,
-//! mask + preview + spike JSON) and `composite-water-ortho.mjs` (ocean ramp + inland tint
+//! mask + preview + spike JSON) and the composite (ocean ramp + inland tint
 //! over the SAP ortho, inward feather, in-place with backup + meta block).
 
 mod source_components;

@@ -99,7 +99,7 @@ pub(super) fn prepare_world_objects(
     let mut no_prefab_classes: Vec<(String, u64)> = Vec::new();
     let mut no_prefab_idx: HashMap<String, usize> = HashMap::new();
     let mut out_of_bounds = 0u64;
-    // T-090.12.1 — how many raw rows carried a `scale` key (0 for a pre-v2 export).
+    // How many raw rows carried a `scale` key (0 for a pre-v2 export).
     let mut rows_with_scale = 0u64;
     let mut kept: Vec<KeptRow> = Vec::new();
     let density_phase = phase_kind_set.contains("tree");
@@ -174,7 +174,7 @@ pub(super) fn prepare_world_objects(
             out_of_bounds += 1;
             return;
         }
-        // T-090.12.1 — the full transform. `-0` rounds to +0 so a flat entity stays 5-wide.
+        // The full transform. `-0` rounds to +0 so a flat entity stays 5-wide.
         let pitch = round2(row["pitchDeg"].as_f64().unwrap_or(0.0));
         let roll = round2(row["rollDeg"].as_f64().unwrap_or(0.0));
         let scale = match row["scale"].as_f64() {
@@ -252,7 +252,7 @@ pub(super) fn prepare_world_objects(
     for (i, rn) in phase_prefab_names.iter().enumerate() {
         let cls = classify.classify(rn);
         let rule = rules.rule(cls.rule_idx).clone();
-        // Measured spatial (T-090.3.3): per-axis median of sampled engine halfExtents,
+        // Measured spatial: per-axis median of sampled engine halfExtents,
         // remapped to map axes; degenerate medians fall back to the rule template.
         let spatial = match he_samples.get(rn) {
             Some(samples) if !samples.is_empty() => {
@@ -343,7 +343,7 @@ pub(super) fn prepare_world_objects(
                 .then(a.id.cmp(&b.id))
         });
     }
-    // T-090.12.1 — the row-width census (reported, and the manifest's `transforms` word).
+    // The row-width census (reported, and the manifest's `transforms` word).
     let mut rows_wide = 0u64;
     let mut rows_wide_by_kind: BTreeMap<String, u64> = BTreeMap::new();
     for k in &kept {
@@ -359,7 +359,7 @@ pub(super) fn prepare_world_objects(
     });
 
     // ---- write artifacts ----
-    // T-537: refuse wiping objects/ with an empty catalog (would overwrite committed prefabs/chunks).
+    // Refuse wiping objects/ with an empty catalog (would overwrite committed prefabs/chunks).
     crate::world_export_pipeline::refuse_empty_write(
         "build-world-objects catalog",
         kept.is_empty() || phase_prefab_names.is_empty(),
@@ -377,7 +377,7 @@ pub(super) fn prepare_world_objects(
         gz9(compact(&prefabs_doc).as_bytes())?,
     )?;
 
-    // T-935.2 — the class byte the chunk JSON does not carry, from the catalogue just written.
+    // The class byte the chunk JSON does not carry, from the catalogue just written.
     let class_by_pid = binary_emit::class_code_table(&prefabs_doc);
     let mut cells: Vec<Value> = Vec::new();
     for key in &sorted_chunk_keys {
@@ -397,7 +397,7 @@ pub(super) fn prepare_world_objects(
                 ))
             })
             .collect();
-        // T-935.2 — narrowed from the SAME rows the gz write below serialises (see binary_emit).
+        // Narrowed from the SAME rows the gz write below serialises (see binary_emit).
         let pods = binary_emit::pods_from_rows(&rows, &class_by_pid);
         let doc = json!({ "instances": rows });
         std::fs::write(
@@ -406,8 +406,8 @@ pub(super) fn prepare_world_objects(
         )?;
         let mut it = key.split('_').map(|v| v.parse::<i64>().unwrap_or(0));
         let (cx, cy) = (it.next().unwrap_or(0), it.next().unwrap_or(0));
-        // T-935.2 — dual emission: the binary twin beside the gz-JSON, which stays authoritative
-        // until T-935.13 flips the manifest.
+        // Dual emission: the binary twin beside the gz-JSON, which stays authoritative
+        // until the terrain manifest names only the binary path.
         binary_emit::write_chunk_bin(&chunks_dir.join(format!("{key}.bin")), cx, cy, &pods)?;
         cells.push(json!({
             "cx": cx, "cy": cy, "path": format!("objects/chunks/{key}.json.gz"),

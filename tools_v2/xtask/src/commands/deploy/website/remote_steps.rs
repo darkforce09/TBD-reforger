@@ -65,7 +65,7 @@ pub fn migration_checksum_repair(remote_dir: &str) -> String {
 /// move it only ensures the directories exist.
 pub fn runtime_state_move(remote_dir: &str) -> String {
     format!(
-        "state=\"${{XDG_STATE_HOME:-$HOME/.local/state}}/{STATE_DIRECTORY}\" &&     mkdir -p \"$state/uploads\" \"$state/missions\" &&     for legacy in uploads missions; do       src='{remote_dir}/apps/website/api_v2/'\"$legacy\";       if [ -d \"$src\" ]; then         rsync -a --remove-source-files \"$src/\" \"$state/$legacy/\" &&         find \"$src\" -depth -type d -empty -delete;       fi;     done"
+        "state=\"${{XDG_STATE_HOME:-$HOME/.local/state}}/{STATE_DIRECTORY}\" &&     mkdir -p \"$state/uploads\" \"$state/missions\" &&     for tree in uploads missions; do       src='{remote_dir}/apps/website/api_v2/'\"$tree\";       if [ -d \"$src\" ]; then         rsync -a --remove-source-files \"$src/\" \"$state/$tree/\" &&         find \"$src\" -depth -type d -empty -delete;       fi;     done"
     )
 }
 

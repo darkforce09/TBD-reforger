@@ -8,7 +8,7 @@ pub fn n6_sentence() -> Result<u8> {
     };
     let core = norm(
         "oriented bounding rectangle from spatial.halfExtentsM + rotationDeg. Real footprint polygon rings \
-         are populated only when T-090.3.0 proves Enfusion footprint export; when present, polygons \
+         are populated only when the Enfusion footprint export is proven; when present, polygons \
          supersede OBB rectangles for render.",
     );
     let spec = spec_dir(&root);

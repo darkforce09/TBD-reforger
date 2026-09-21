@@ -41,7 +41,7 @@ pub(super) fn mission(duplicate: bool, large: bool) -> Value {
         ID
     };
     json!({
-        "id":id,"title":"T-946.86 regression","terrain":"everon","game_mode":"pve_coop",
+        "id":id,"title":"outliner drag regression","terrain":"everon","game_mode":"pve_coop",
         "weather":"clear","time_of_day":"12:00","max_players":32,"status":"draft",
         "author_id":"00000000000000001","author_name":"Dev","author_avatar":"", "bookmarked":false,
         "armory":[],"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z",

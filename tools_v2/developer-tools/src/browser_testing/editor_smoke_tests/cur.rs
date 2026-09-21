@@ -1,6 +1,6 @@
 use super::*;
 
-/// smoke_cur_editor.mjs — T-159.22: CUR toolbelt read-out (C0 camera + C1/C2 math + C3 em dash).
+/// CUR toolbelt read-out (C0 camera + C1/C2 math + C3 em dash).
 /// MUST NOT call probe() (it re-centres the camera and would invalidate the arithmetic).
 pub async fn smoke_cur(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5310, 9370, None, None, &[]).await?;
@@ -61,7 +61,7 @@ pub async fn smoke_cur(dist: &str, path: &str) -> Result<u8> {
             // C1 — the container centre is the camera target.
             mv(720.0, 450.0).await?;
             centre = read().await?;
-            // T-843 / T-793 — CUR readout carries Eden's presentation-only ` m` suffix
+            // CUR readout carries Eden's presentation-only ` m` suffix
             // (`fmt_coord_eden`); values stay metre-exact, the unit is what the smoke must pin.
             checks.insert(
                 "c1_centreIsTarget".into(),
@@ -103,7 +103,7 @@ pub(super) async fn probe_hit(page: &Page) -> Result<(f64, f64)> {
     ))
 }
 
-/// smoke_attributes_editor.mjs — T-159.26 Attributes modal (A1/A2t/A2i/U/A1c).
+/// Attributes modal (A1/A2t/A2i/U/A1c).
 pub async fn smoke_attributes(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5311, 9371, None, None, &[]).await?;
     let run = async {
@@ -177,7 +177,7 @@ pub async fn smoke_attributes(dist: &str, path: &str) -> Result<u8> {
                 ),
             );
 
-            // A2i — Identity tab → Role commit via input + blur (T-785: text_field commits on
+            // A2i — Identity tab → Role commit via input + blur (text_field commits on
             // blur/Enter, not per keystroke — a bare `input` only writes the draft).
             eval(&h.page, "[...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Identity').click()").await?;
             checks.insert(
@@ -244,7 +244,7 @@ pub async fn smoke_attributes(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
-/// smoke_keyboard_settings_editor.mjs — T-159.26: Delete/undo, copy/paste, Mission Settings.
+/// Delete/undo, copy/paste, Mission Settings.
 pub async fn smoke_keyboard_settings(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5316, 9376, None, None, &[]).await?;
     let run = async {

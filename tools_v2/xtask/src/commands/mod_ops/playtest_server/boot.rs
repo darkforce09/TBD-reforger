@@ -24,7 +24,7 @@
 //!
 //! ── LIVENESS IS CHECKED ON THE PROCESS GROUP, NOT ON THE LAUNCHER ────────────────────────────
 //!
-//! Under the host bridge the local launcher returns almost immediately (`world-boot.sh:809` records
+//! Under the host bridge the local launcher returns almost immediately (the world-boot gate records
 //! the same trap), so `kill -0 $LAUNCHER` reports "died" while the engine is still compiling
 //! scripts — measured here as a FAILED verdict 9 KB into a boot that was going fine. And it is
 //! checked every 10 s rather than every tick because each probe spawns a bridge process.

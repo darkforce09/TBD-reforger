@@ -1,5 +1,5 @@
-//! `cargo xtask map bvh-batch` — the offline BLAS / instance pipeline (T-090.11.2); its
-//! inspection twin `map xob-inspect` lives in `inspect.rs`.
+//! `cargo xtask map bvh-batch` — the offline BLAS / instance pipeline; its
+//! inspection twin `map xob-inspect` lives in [`super::super::mesh_decoding::archive_inspection`].
 //!
 //! `bvh-batch --prefab <Prefabs/…/X.et>` walks the prefab closure straight out of the game
 //! paks: the building's own collision mesh becomes the shell sidecar
@@ -68,10 +68,10 @@ pub struct Asset {
     pub node_count: usize,
 }
 
-/// Which COLL records a BLAS is built from (T-090.12.4).
+/// Which COLL records a BLAS is built from.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum LayerPolicy {
-    /// Every record — the physics shells included (the T-090.11 emit).
+    /// Every record, the physics shells included.
     All,
     /// Only records whose layer preset stops a projectile
     /// ([`preset_stops_projectile`]): what the engine's `Projectile` trace sees.

@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn set_status_refuses_empty_without_write() {
-    // T-383 Class-R: empty status must not overwrite a live registry field.
+    // Class-R: empty status must not overwrite a live registry field.
     let root = worktree_root();
     let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
@@ -32,7 +32,7 @@ fn set_status_refuses_empty_without_write() {
 
 #[test]
 fn set_status_refuses_invalid_enum_without_write() {
-    // T-383 Class-R: invalid enum must not overwrite a live registry field.
+    // Class-R: invalid enum must not overwrite a live registry field.
     let root = worktree_root();
     let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
     let before = fs::read_to_string(&registry_path).expect("read registry before");
@@ -61,7 +61,7 @@ fn set_status_refuses_invalid_registry_without_write() {
     let mut registry = red_registry(&root);
 
     // Preflight must fail before any mutator body runs — if this Err is missing,
-    // cmd_set_status would write the live tip (see T-451 perturbation).
+    // cmd_set_status would write the live tip (see the perturbation below).
     let preflight = require_check_ok(&root, &registry, "set-status T-001");
     assert!(
         preflight.is_err(),
@@ -187,7 +187,7 @@ fn remove_refuses_invalid_registry_without_write() {
 
 #[test]
 fn advance_slice_refuses_invalid_registry_without_write() {
-    // T-459: advance-slice must share the add/remove preflight — red registry
+    // Advance-slice must share the add/remove preflight — red registry
     // never mutates active_slice in-memory or on disk.
     let root = worktree_root();
     let registry_path = root.join(crate::repository::TICKETS_DIR).join("T-001.toml");
@@ -226,7 +226,7 @@ fn advance_slice_refuses_invalid_registry_without_write() {
 #[test]
 fn require_check_ok_err_matches_set_status_gate() {
     // Same gate surface ship/set-status/mark-ready/add/remove/advance-slice share
-    // (T-237 / T-451 / T-455 / T-459).
+
     let root = worktree_root();
     let registry = red_registry(&root);
     let err = require_check_ok(&root, &registry, "set-status T-001")
@@ -234,11 +234,11 @@ fn require_check_ok_err_matches_set_status_gate() {
     assert!(format!("{err:#}").contains("refusing set-status T-001"));
 }
 
-/// T-916.2 — the reload-before-sync invariant, pinned (t915 design §Write path,
+/// The reload-before-sync invariant, pinned (t915 design §Write path,
 /// "Rewiring sequence invariant"). The typed op writes files FIRST; if cmd_ship then fed
 /// the pre-mutation Value to cmd_sync, queue.json and the generated docs would still call
-/// T-002 ready. The regenerated outputs must reflect the POST-state.
-/// T-946 — `--no-repack` leaves the committed lock untouched, and the later repack picks the
+/// The regenerated outputs must reflect the POST-state.
+/// `--no-repack` leaves the committed lock untouched, and the later repack picks the
 /// change up.
 ///
 /// Shipping repacked after EVERY id, which is why a wave could never empty:
@@ -248,13 +248,13 @@ fn require_check_ok_err_matches_set_status_gate() {
 /// in `wave_lock`). The command center now ships the wave's ids — each still followed by its
 /// own `stamp-sha`, the lifecycle is unchanged —
 /// and repacks ONCE at the end, where the whole set is visible at the same instant.
-/// T-946 follow-up — the stale lock `--no-repack` leaves must not refuse the NEXT ship, and
+/// The stale lock `--no-repack` leaves must not refuse the NEXT ship, and
 /// nothing else may be waived with it.
 ///
 /// The first production run of the batch path failed exactly here: ship's preflight is
 /// `require_check_ok`, so the second ship refused over the lock staleness that `--no-repack`
 /// had just deliberately created —
-/// `ERROR: wave.lock wave 0 is stale — missing ["T-305"] … refusing ship T-298`. The waiver
+/// `ERROR: wave.lock wave 0 is stale — missing [<id>] … refusing ship <id>`. The waiver
 /// drops only errors whose own text names a repack as the fix.
 #[test]
 fn the_stale_lock_left_by_no_repack_is_waived_for_the_next_ship_and_nothing_else_is() {
@@ -314,7 +314,7 @@ fn the_stale_lock_left_by_no_repack_is_waived_for_the_next_ship_and_nothing_else
     let _ = fs::remove_dir_all(&root);
 }
 
-/// T-946 follow-up — the batch waiver must NOT swallow the missing-lock refusal.
+/// The batch waiver must NOT swallow the missing-lock refusal.
 ///
 /// `wave_lock::missing_lock_error` carries the same ``run `cargo xtask wave repack` `` phrase
 /// the waiver keys on, and `check_as_errors` returns it ALONE — every other lock check is
@@ -414,22 +414,22 @@ fn ship_regenerates_docs_from_post_state_reload_pin() {
             .any(|l| l.starts_with("| T-002 |") && l.contains("| shipped |")),
         "generated docs must show the post-state row:\n{reg_md}"
     );
-    // The ship hook repacked: T-002 is parked at wave 0, out of the open waves.
+    // The ship hook repacked: the shipped parent is parked at wave 0, out of the open waves.
     let lock = crate::wave_lock::load(&root).expect("lock");
     assert!(lock.tickets_in_wave(0).contains(&"T-002".to_string()));
     assert!(!lock.open_ids().contains(&"T-002".to_string()));
     let _ = fs::remove_dir_all(&root);
 }
 
-/// T-916.2 acceptance 3 — dotted child ship end-to-end through the rewired verb. The
-/// pre-T-916 binary refused this exact invocation with "Unknown ticket: T-001.1"
+/// Acceptance 3 — dotted child ship end-to-end through the typed verb. The
+/// A parents-only view refuses this exact invocation with "Unknown ticket" for the child id
 /// (`require_ticket` walked the parents-only Value; children were shipped by hand TOML
 /// edit + repack — the documented hole this program closes).
 #[test]
 fn child_ship_end_to_end_typed_path() {
     let root = scratch_registry("child-ship");
     let mut registry = load_registry(&root).expect("scratch registry loads");
-    // Pre-state: T-001's queue row carries the ACTIVE CHILD's spec via slice_plan.
+    // Pre-state: the program's queue row carries the ACTIVE CHILD's spec via slice_plan.
     assert!(
         queue_rows(&root)
             .iter()
@@ -463,7 +463,7 @@ fn child_ship_end_to_end_typed_path() {
     assert!(lock.tickets_in_wave(0).contains(&"T-001.1".to_string()));
     assert!(!lock.open_ids().contains(&"T-001.1".to_string()));
     // queue.json regenerated post-state THROUGH the reload: with the active slice gone,
-    // T-001's row falls back to the parent's own spec. A stale pre-mutation Value would
+    // The program's row falls back to its own spec. A stale pre-mutation Value would
     // still print docs/child-spec.md here.
     assert!(
         queue_rows(&root)
@@ -473,7 +473,7 @@ fn child_ship_end_to_end_typed_path() {
         queue_rows(&root)
     );
 
-    // T-917.6 lifecycle: between ship and stamp-sha the tree is transiently
+    // Lifecycle: between ship and stamp-sha the tree is transiently
     // gate-red (shipped_at + tokens missing), so the NEXT check-gated verb must
     // be preceded by the stamp — exactly the documented flow. Injected inputs:
     // no subject commits, the landing sha carries 12 included LOC.
@@ -513,7 +513,7 @@ fn child_ship_end_to_end_typed_path() {
     let _ = fs::remove_dir_all(&root);
 }
 
-/// T-917.6 acceptance — the scratch end-to-end ship cycle: `ship` (stamps
+/// Acceptance — the scratch end-to-end ship cycle: `ship` (stamps
 /// completed_at; tree transiently gate-red) → "commit" (a fake landing sha) →
 /// `stamp-sha` → ship gate GREEN with the auto-estimate written and its factor
 /// matching the documented constant. Then the idempotence contract: re-stamp of
@@ -582,7 +582,7 @@ fn stamp_sha_end_to_end_scratch_cycle() {
         est.tokens_estimated,
         20 * crate::metrics::estimates::TOKENS_PER_LOC
     );
-    // Gate green: the full check has no T-002 finding left (the fixture itself
+    // Gate green: the full check has no finding left on the shipped parent (the fixture itself
     // stays green on every other rule).
     let errs = crate::validation::check(&root, &registry, false);
     assert!(

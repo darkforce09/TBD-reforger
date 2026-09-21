@@ -39,17 +39,17 @@ const BANS: &[Ban] = &[
         true,
         "PlayerIdentity still claims the mod does not implement link-confirm",
     ),
-    // The em dash and [[:space:]] class mean the same thing to the regex crate as they did in
-    // A regex: the alternation is what makes both phrasings of the retired claim one ban.
+    // The [[:space:]] class means the same thing to the regex crate as it did to the shell
+    // matcher: the alternation is what makes both phrasings of the retired claim one ban.
     (
-        r"does not implement it yet[[:space:]]*—[[:space:]]*that is T-181\.35|that is T-181\.35",
+        r"link-confirm[[:space:]]+is[[:space:]]+(future|planned|unimplemented)|is[[:space:]]+still[[:space:]]+future[[:space:]]+work",
         false,
-        "PlayerIdentity still frames link-confirm as future T-181.35 work",
+        "PlayerIdentity still frames link-confirm as future work",
     ),
     (
-        r"T-181\.35 must not resolve",
+        r"link-confirm[[:space:]]+must[[:space:]]+not[[:space:]]+resolve",
         false,
-        "PlayerIdentity still speaks of T-181.35 in the future tense for GetArmaId",
+        "PlayerIdentity still speaks of link-confirm in the future tense for GetArmaId",
     ),
 ];
 
@@ -57,7 +57,7 @@ const BANS: &[Ban] = &[
 const PINS: &[&str] = &[
     "TBD_IdentityLink",
     "#tbd link <code>",
-    "T-181.35 shipped",
+    "link-confirm SHIPS",
     "ENGINE-resolved identity is still not a LINKED one",
 ];
 
@@ -67,8 +67,8 @@ const PINS: &[&str] = &[
 /// prefix, so the perturbation has to be a sentence a human might actually write.
 const LIES: &[&str] = &[
     "The mod does not implement it yet",
-    "link-confirm — that is T-181.35",
-    "T-181.35 must not resolve GetArmaId",
+    "link-confirm is planned",
+    "link-confirm must not resolve GetArmaId",
 ];
 
 const TARGET: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_PlayerIdentity.c";

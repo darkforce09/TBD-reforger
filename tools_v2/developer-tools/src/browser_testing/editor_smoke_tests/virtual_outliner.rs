@@ -1,13 +1,13 @@
 use super::*;
 
-/// T-169 — the VirtualOutliner gate. Seeds a mission past `VIRTUAL_SLOT_THRESHOLD` (via the
+/// The VirtualOutliner gate. Seeds a mission past `VIRTUAL_SLOT_THRESHOLD` (via the
 /// `__missionDoc.seed_slots` hook) and asserts the dock trees WINDOW: `window.__outlinerStats`
 /// reports `rendered < total` above the threshold (and `rendered === total` below it), for both
-/// the Editor Layers and ORBAT trees, while a windowed slot row still selects. T-769: v3 pins the
+/// the Editor Layers and ORBAT trees, while a windowed slot row still selects. v3 pins the
 /// rendered count from the measured scroller height (and that the scroller fills its flex parent),
 /// not a fixed `<= 60` cap that breaks as soon as the tree is `h-full`.
 pub async fn smoke_virtual_outliner(dist: &str, raw_path: &str) -> Result<u8> {
-    // T-843 / T-829 — pin WebGL2 even when a verifier passes a bare path (config-sensitive red).
+    // Pin WebGL2 even when a verifier passes a bare path (config-sensitive red).
     let path = force_webgl(raw_path);
     let h = Harness::new(dist, 5320, 9380, None, None, &[]).await?;
     let run = async {
@@ -43,7 +43,7 @@ pub async fn smoke_virtual_outliner(dist: &str, raw_path: &str) -> Result<u8> {
                 json!(e_total0 > 0 && e_total0 <= 50 && e_rend0 == e_total0),
             );
 
-            // T-843 / T-829 — open ORBAT Manager BEFORE bulk seed so the modal mounts on a quiet
+            // Open ORBAT Manager BEFORE bulk seed so the modal mounts on a quiet
             // doc (wave204 MINOR: do not discard the modal-open wait). Dispatch click (same path as
             // outliner-palette); require the h2. Then seed_slots(80) while open so orbat stats cross
             // the windowing threshold without a first-paint race on 80 squads.
@@ -78,8 +78,8 @@ pub async fn smoke_virtual_outliner(dist: &str, raw_path: &str) -> Result<u8> {
                 "v2_editorLayersWindowed".into(),
                 json!(h.page.wait_for(&windowed, 40, 250).await?),
             );
-            // T-769 — pin windowing from the MEASURED scroller height, not a viewport-sized magic
-            // cap. The old `e_rend1 <= 60` predates h-full (T-339) and goes red the moment the
+            // Pin windowing from the MEASURED scroller height, not a viewport-sized magic
+            // cap. A fixed `e_rend1 <= 60` bound goes red the moment the
             // scroller fills the flex-1 region (61 at the gate's 1440×900). Formula at scrollTop=0:
             // rendered = min(total, ceil(H/ROW_H) + 2*OVERSCAN); also require the scroller taller
             // than the historical 420 px budget and filling its flex parent (the void absorb).
@@ -125,7 +125,7 @@ pub async fn smoke_virtual_outliner(dist: &str, raw_path: &str) -> Result<u8> {
                 ),
             );
         }
-        // T-843 / T-829 — 7 checks (v1–v4, v5a modal open, v5 windowed, v6).
+        // 7 checks (v1–v4, v5a modal open, v5 windowed, v6).
         // Seed(80) schedules yrs IndexedDB work; under suite load those flush after the
         // windowing asserts and trip no_panics. Wait for persist quiet, then drop the known
         // yrs store unwrap / wasm unreachable noise from that flush before judging.
@@ -151,7 +151,7 @@ pub async fn smoke_virtual_outliner(dist: &str, raw_path: &str) -> Result<u8> {
     code
 }
 
-/// smoke_hydrate_editor.mjs — T-159.26 server-hydrate data-safety gate (LIVE backend on :8080).
+/// Server-hydrate data-safety gate (LIVE backend on :8080).
 pub async fn smoke_hydrate(dist: &str) -> Result<u8> {
     const SAVED_SLOTS: i64 = 3; // must differ from SEED_N (8)
     let http = reqwest::Client::builder()
@@ -271,7 +271,7 @@ pub async fn smoke_hydrate(dist: &str) -> Result<u8> {
             )
             .await?;
 
-        // T-172 B4 follow-up: pin force=webgl like every other editor smoke — with the slot
+        // Follow-up: pin force=webgl like every other editor smoke — with the slot
         // atlas live, the first hydrated slots_bind_soa allocates a GPU instance buffer, and
         // headless Chromium's software WebGPU device rejects any createBuffer (the known
         // wedge the suite avoids via WebGL2/SwiftShader).

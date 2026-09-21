@@ -38,7 +38,7 @@ pub(super) fn verify(g: &mut Gates, data: ArtifactData<'_>, validators: Artifact
                 if !v_instance.is_valid(row) {
                     errs.push(format!("chunk {key}[{i}]: {}", first_err(v_instance, row)));
                 } else {
-                    // T-090.12.1 — rows are exactly 5 or 8 numbers; an 8-wide row must carry a
+                    // Rows are exactly 5 or 8 numbers; an 8-wide row must carry a
                     // non-trivial pitch / roll / scale (trivial trailers are written 5-wide).
                     let n = row.as_array().map_or(0, Vec::len);
                     let num = |k: usize| row[k].as_f64();

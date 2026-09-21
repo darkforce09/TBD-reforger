@@ -218,7 +218,7 @@ pub(super) fn apply_env(c: &mut Command, root: &Path) {
 }
 
 /// `$(TBD_REPO_ROOT)/target` — the PRIMARY checkout's target, shared by every linked worktree
-/// (T-253). `git rev-parse --git-common-dir` is what makes a worktree resolve to its primary.
+/// `git rev-parse --git-common-dir` is what makes a worktree resolve to its primary.
 pub(super) fn shared_target_dir(root: &Path) -> PathBuf {
     let out = Command::new("git")
         .args(["rev-parse", "--path-format=absolute", "--git-common-dir"])
@@ -277,7 +277,7 @@ pub(super) fn verify_doc_layout() -> i32 {
         Err(nr) => {
             eprintln!("verify-doc-layout: DID NOT RUN — {nr:?}");
             eprintln!("  A tree that could not be read is not a clean tree. (`2>/dev/null` in the");
-            eprintln!("  Makefile recipe hid exactly this; T-896 closed it.)");
+            eprintln!("  A recipe that swallows this hides a red run.)");
             2
         }
     }
@@ -290,8 +290,8 @@ pub(super) fn verify_doc_layout() -> i32 {
 /// where a target happened to sit in the file. Rendered from [`TASKS`], so a task cannot be added
 /// without appearing here.
 ///
-/// T-897: this is now the ONLY task index — the Makefile it mirrored is gone. It cannot render
-/// the other two lanes' rows (T-894's `db` is a clap enum, T-895's `mk` a `&[&str]`, neither
+/// This is the ONLY task index — there is no Makefile beside it. It cannot render
+/// the other two lanes' rows (`db` is a clap enum, `mk` a `&[&str]`, neither
 /// carrying help text), so it POINTS at them rather than transcribing a third copy that would
 /// rot. `cargo xtask mk` and `cargo xtask db --help` each list their own.
 pub fn help() -> i32 {
@@ -329,10 +329,10 @@ pub fn help() -> i32 {
     0
 }
 
-/// `cargo xtask schema list-gates` — the input `wave.sh`'s drift tripwire loses with the Makefile.
+/// `cargo xtask schema list-gates` — the input the wave driver's drift tripwire reads.
 ///
-/// `scripts/platform/wave.sh:1598` awks the `schema-validate` recipe and refuses to report PASS
-/// when the parse comes back empty (T-420/T-422). This prints the same set, derived from the
+/// The wave driver reads the `schema-validate` recipe and refuses to report PASS
+/// when the parse comes back empty. This prints the same set, derived from the
 /// `schema-validate` row of [`TASKS`] — the code that runs the gates — so the replacement input
 /// is the executable list itself and not a third transcription of it.
 pub fn schema_list_gates() -> i32 {

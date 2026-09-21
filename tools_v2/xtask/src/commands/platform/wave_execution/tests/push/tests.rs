@@ -4,7 +4,7 @@ use std::sync::mpsc;
 use std::time::Duration;
 
 /// A stand-in for `git check-attr --cached -z --stdin filter`, in the ONE shape that decides
-/// whether T-943 reproduces: it answers INCREMENTALLY. It reads a chunk of stdin, emits
+/// whether the deadlock reproduces: it answers INCREMENTALLY. It reads a chunk of stdin, emits
 /// `<path>\0filter\0unspecified\0` for every complete path in it, and loops — so its stdout
 /// fills while its stdin is still being written, which is what real check-attr does and what
 /// makes a single-threaded fill-then-drain caller deadlock.
@@ -123,7 +123,7 @@ fn deadlock_threshold(per_in: usize) -> usize {
     PIPE_CAPACITY + (PIPE_CAPACITY / (per_in + ANSWER_OVERHEAD)) * per_in
 }
 
-/// THE T-943 REGRESSION PIN.
+/// THE DEADLOCK REGRESSION PIN.
 ///
 /// The assertion is a receive timeout because that is the only honest red for a deadlock: the
 /// unfixed code does not fail, it never returns. MEASURED with the inline `write_all` restored:

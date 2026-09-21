@@ -10,7 +10,7 @@ fn live_vocab_file_is_green() {
     );
 }
 
-/// T-917.1 acceptance: counted shape READ FROM THE FILE at run time. D is pinned to 5
+/// Acceptance: counted shape READ FROM THE FILE at run time. D is pinned to 5
 /// (domains are a closed set); L/C/F are asserted populated and printed, never hardcoded.
 #[test]
 fn counted_shape_from_live_file() {

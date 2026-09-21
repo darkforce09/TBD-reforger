@@ -1,7 +1,7 @@
 use super::*;
 
 /// Print the derived base loudly, then demand the operator name it. Used when NOTHING could
-/// corroborate. Loud-and-blocked, not quiet-and-passed: the whole point of T-613.
+/// corroborate. Loud-and-blocked, not quiet-and-passed: the whole point of the oracles.
 pub fn demand_base_confirmation(ctx: &Ctx, bsha: &str, why: &str) -> u8 {
     let confirm = std::env::var("TBD_GATE_BASE_CONFIRM").unwrap_or_default();
     if confirm == bsha || confirm == short(bsha) {
@@ -39,9 +39,7 @@ pub fn demand_base_confirmation(ctx: &Ctx, bsha: &str, why: &str) -> u8 {
     wprintln!(
         "        2a8b41e2 filed wave 77's. Rows appended by the closing commit itself corroborate"
     );
-    wprintln!(
-        "        nothing (T-618): oracle 2 reads the plan at the boundary's PARENT precisely so a"
-    );
+    wprintln!("        nothing: oracle 2 reads the plan at the boundary's PARENT precisely so a");
     wprintln!(
         "        commit cannot vouch for itself, so rows that arrive with the marker are not there."
     );
@@ -56,14 +54,14 @@ pub fn demand_base_confirmation(ctx: &Ctx, bsha: &str, why: &str) -> u8 {
 /// is, every time.
 ///
 /// NOT "every slice MERGE is inside base..HEAD", which is how the ticket phrased it. Measured: wave
-/// 76 landed T-608 as a plain commit with no merge at all, and wave 74 landed three that way
+/// 76 landed one ticket as a plain commit with no merge at all, and wave 74 landed three that way
 /// (`c7a3ff78`, `bed4f269`, `0a1a53ac`). Enumerating merges would have called such a wave covered
 /// while its non-merge landings sat outside the range — the same lie in a new place. The ancestor
 /// test is landing-shape-independent. ([`slice_span_check`] enumerates merges for a DIFFERENT
 /// question — whether the range bisects one — where the shape is exactly what is being asked
 /// about.)
 ///
-/// T-613 — THE ANCESTOR TEST BELOW IS STILL ASKED OF [`prev_wave_close`], THE FUNCTION THAT
+/// THE ANCESTOR TEST BELOW IS STILL ASKED OF [`prev_wave_close`], THE FUNCTION THAT
 /// PRODUCED THE ANSWER, and that cannot be fixed by moving the call: there is no second record of
 /// the boundary to ask instead. What changed is that the derived boundary must now survive three
 /// cross-checks that do NOT come from it, and that a boundary nothing can corroborate is refused
@@ -146,9 +144,7 @@ pub fn gate_base_covers_wave(ctx: &Ctx, base: &str) -> u8 {
     wprintln!(
         "        fmt and the trunk build would each report PASS/SKIP without reading one of them,"
     );
-    wprintln!(
-        "        and the verdict would describe a fraction of the wave. That is T-602 verbatim."
-    );
+    wprintln!("        and the verdict would describe a fraction of the wave.");
     wprintln!(
         "        Fix: run 'cargo xtask platform wave gate' with NO base (it derives {}),",
         short(&psha)
@@ -163,7 +159,7 @@ pub fn gate_base_covers_wave(ctx: &Ctx, base: &str) -> u8 {
 /// Found by wave 1's adversarial verifier, which got `GATE: PASS` out of both surviving holes:
 ///   `gate HEAD`          -> `HEAD^{commit}` resolves, `HEAD..HEAD` is empty, every change-scoped
 ///                           step PASSes without invoking hostrun even once.
-///   `gate --slice T-393` -> gate_slice never passed a base at all, so the helpers defaulted to
+///   `gate --slice <id>` -> gate_slice never passed a base at all, so the helpers defaulted to
 ///                           `main...HEAD` — correct inside a worktree, EMPTY when run on main,
 ///                           and the ticket id argument is decorative so it cannot self-correct.
 /// Both printed PASS having compiled nothing. Same signature defect, two more doorways.
@@ -174,8 +170,8 @@ pub fn gate_base_covers_wave(ctx: &Ctx, base: &str) -> u8 {
 pub fn refuse_empty_range(range: &str, what: &str) -> u8 {
     // Same committed ∪ working-tree union as changed_rs. Diffing the range alone refused
     // `gate --slice` when a slice had working-tree changes but no commits yet — contradicting
-    // changed_rs's stated purpose (T-409 NIT; pre-existing, not T-406).
-    // Porcelain via git_porcelain_paths (T-401) — never treat LFS filter exit 128 as empty.
+    // changed_rs's stated purpose.
+    // Porcelain via git_porcelain_paths — never treat LFS filter exit 128 as empty.
     let wt = match ledger::git_porcelain_paths() {
         Ok(v) => v,
         Err(rc) => return rc as u8,

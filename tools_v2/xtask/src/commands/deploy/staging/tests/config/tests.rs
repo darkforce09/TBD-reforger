@@ -86,7 +86,7 @@ fn mode_gate_matches_the_bash_case() {
     // config mode with no mod source at all.
     e.server_mode = "config".into();
     assert!(e.validate(Path::new("/nonexistent")).is_err());
-    // …satisfied by a modpack file instead of the legacy id.
+    // …satisfied by a modpack file instead of the single-mod id.
     e.modpack_json = "/tmp/pack.json".into();
     e.a2s_port = "17777".into();
     assert!(e.validate(Path::new("/nonexistent")).is_ok());
@@ -135,7 +135,7 @@ fn deploy_env_file_beats_the_process_environment() {
     assert_eq!(e.game_port, "2001");
     // dirname of TBD_PROFILE_DIR.
     assert_eq!(e.server_config_remote, "/p/server.config.json");
-    // The scenario default is NOT truncated — the bash-brace defect T-607 measured.
+    // The scenario default is NOT truncated — the measured brace-expansion defect.
     assert_eq!(e.scenario, "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf");
     // A missing file is the documented rc-1 message, not a panic.
     assert!(Env::load(&d.join("absent.env")).is_err());

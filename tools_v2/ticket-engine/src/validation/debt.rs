@@ -2,7 +2,7 @@
 
 use super::*;
 
-/// The two T-920.1 debt counts over a loaded corpus, by THE shared instruments
+/// The two debt counts over a loaded corpus, by THE shared instruments
 /// (`crate::title_is_debt` / `main_goal_is_debt`) — split pure so the
 /// fixture tests and the counter printer consume the same arithmetic.
 pub(super) fn debt_counts(corpus: &crate::Corpus) -> (usize, usize) {
@@ -53,10 +53,10 @@ pub(super) fn pin_growth_finding(
     }
 }
 
-/// T-920.1 — the queued-tier main_goal rule (b) and the title-debt meter (t920 spec
+/// The queued-tier main_goal rule (b) and the title-debt meter (t920 spec
 /// §Schema changes): both bind as measured, shrink-only pins instead of instant
 /// corpus-wide reds — the debt is history-wide (440 titles, 53 main_goals at land),
-/// and the T-919/T-921 streams drain it batch by batch, shrinking the pins in the
+/// and the drain batches shrink it, and the pins with it, in the
 /// same commits. Growth reds every check run (so a slipped offender wedges the next
 /// verb immediately); the pin==measured equality is pinned by the store ratchet
 /// tests — see [`pin_growth_finding`] for why the split. Fail-closed on an

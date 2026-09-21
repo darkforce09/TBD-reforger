@@ -5,7 +5,7 @@
 use super::*;
 
 /// One COLL box record with an explicit layer-preset name index and first-material
-/// index in the header (the T-090.11.2 fields); no subrange table (boxes have none), so
+/// index in the header; no subrange table (boxes have none), so
 /// the layer preset is the only kind opinion.
 pub(crate) fn coll_box_record_with_material(
     center: [f32; 3],

@@ -370,7 +370,7 @@ pub(crate) fn refuse_unsafe_restore_target(name: &str, confirm: Option<&str>) ->
     eprint!(
         "\
 ───────────────────────────────────────────────────────────────────────
-REFUSING to restore into database `{name}` (T-381 allow-list).
+REFUSING to restore into database `{name}` (outside the restore allow-list).
 
   Allowed without confirmation: rust_it, tbd_gate*, *_cold, *_it, *_probe
 

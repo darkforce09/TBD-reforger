@@ -1,10 +1,10 @@
-//! T-181.47 UI-layout gate — the T-853 port of `scripts/mod/verify-ui-layouts.sh`.
+//! UI-layout gate: every `.layout` the mod ships parses and resolves.
 //!
 //! ── WHY THIS EXISTS (carried over from the script) ───────────────────────────────────────────
 //!
-//! A `.layout` only loads when a menu opens, which needs a connected client. `compile.sh` never
-//! reads it and `world-boot.sh` boots with zero players, so a broken layout ships silently and the
-//! first symptom is a human staring at an unreadable screen. That is exactly how T-181.47
+//! A `.layout` only loads when a menu opens, which needs a connected client. `mod compile` never
+//! reads it and `mod world-boot` boots with zero players, so a broken layout ships silently and the
+//! first symptom is a human staring at an unreadable screen. That is exactly how a layout defect
 //! happened: the list rendered as a ~10px column of clipped text for a whole session.
 //!
 //! This gate cannot prove a layout *looks* right — only a client can. It proves the things that
@@ -62,7 +62,7 @@
 //! 2. `names=$(... | grep -vx 'FocusAnchor' || true)` — `|| true` swallows grep's exit 2 as well as
 //!    its exit 1, and an empty `names` then prints
 //!    `OK  widget-name contract (0 names bound by script, all declared)`: a gate reporting OK over
-//!    zero inputs, the T-556 signature defect. No subprocess can fail here, and [`C5_FLOOR`] pins
+//!    zero inputs, the signature defect. No subprocess can fail here, and [`C5_FLOOR`] pins
 //!    that the bound set never shrinks below the seeds.
 //! 3. `grep -rhoE ... "$SCRIPT_DIR"` under `set -euo pipefail` **abandons the run with no verdict**
 //!    if that directory is gone: grep exits 2, pipefail propagates it out of the command

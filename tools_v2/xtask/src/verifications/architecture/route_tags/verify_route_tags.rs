@@ -21,7 +21,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     // Probe the matcher over a subject whose answer is known, BEFORE it decides anything. bash:
     // `gate_probe_str -F "tbd" "tbd-reforger"` with `case` arms for 127 (tool absent) and 2
     // (pattern error) — neither reachable now, which is what compiling the engine in buys and what
-    // T-620 shows it is worth (`verify-no-python` stayed green over `rg: command not found` for
+    // Shows it is worth (`verify-no-python` stayed green over `rg: command not found` for
     // four waves). The probe stays because "the matcher works" is still a claim, and `probe_str`
     // returning `Result` forces the dead arm to be written rather than assumed.
     match gate::probe_str(&Pattern::literal("tbd"), "tbd-reforger") {

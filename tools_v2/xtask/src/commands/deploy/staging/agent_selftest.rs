@@ -1,4 +1,4 @@
-//! T-289 — the agent selftest (bash lines 413–595), split out of [`super::agent`] for SIZE-3.
+//! The agent selftest, split out of [`super::agent`] for SIZE-3.
 //!
 //! [`super::agent`] owns the ARTEFACT — what gets rendered and what invariants it must satisfy.
 //! This module owns the EVIDENCE — running that artefact against a controllable systemd and

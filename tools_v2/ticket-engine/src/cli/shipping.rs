@@ -10,36 +10,36 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     cmd_ship_opt(root, registry, id, true)
 }
 
-/// `ship` with the wave.lock refresh made optional — T-946's BATCH SHIP.
+/// `ship` with the wave.lock refresh made optional — the BATCH SHIP.
 ///
 /// WHY A WAVE COULD NOT EMPTY. `wave --close` can only close a pending `[[emptied]]` entry, and
 /// `wave_lock::carry_emptied` freezes one only when a repack sees a wave whose EVERY ticket has
 /// landed. But this verb repacks after each id, and the repack re-packs from scratch: the id just
 /// shipped moves to wave 0 and the wave it came from is a different, smaller wave by the time the
 /// next ship runs. A wave shipped one ticket at a time therefore dissolves an id at a time and no
-/// repack ever sees the whole set landed — measured 2026-09-05 on wave 248 (T-940.5, T-940.6,
-/// T-311): three ships, three repacks, zero pending entries, and the wave became unclosable.
+/// repack ever sees the whole set landed — measured 2026-09-05 on wave 248:
+/// three ships, three repacks, zero pending entries, and the wave was unclosable.
 ///
 /// So the command center ships the wave's ids with `--no-repack` and repacks ONCE at the end:
 /// that repack sees all of them shipped together and freezes the full set. The lock is still
-/// refreshed before anything is committed (the T-912.2 lifecycle invariant) — only the point at
+/// refreshed before anything is committed (the lifecycle invariant) — only the point at
 /// which it happens moves, from per-id to per-wave.
 ///
 /// `refresh: true` is the unchanged single-ship path.
 pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) -> Result<()> {
-    // Membership first (the pre-T-916 `require_ticket`-before-check order), but against the
-    // full typed corpus so dotted child ids resolve (T-916.2).
+    // Membership first (`require_ticket` before check), but against the
+    // full typed corpus so dotted child ids resolve.
     let mut corpus = load_corpus(root)?;
     if corpus.get(id).is_none() {
         unknown_ticket(id);
     }
-    // T-237: refuse to mark shipped when the registry fails ticket check
+    // Refuse to mark shipped when the registry fails ticket check
     // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
     // red registry never gets a status write + sync.
     if refresh {
         require_check_ok(root, registry, &format!("ship {id}"))?;
     } else {
-        // T-946: the batch window leaves the lock stale on purpose; waive only the errors whose
+        // The batch window leaves the lock stale on purpose; waive only the errors whose
         // own text names a repack as the fix (see `require_check_ok_deferring_repack`).
         crate::validation::require_check_ok_deferring_repack(
             root,
@@ -48,8 +48,8 @@ pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) 
         )?;
     }
 
-    // Typed op (T-916.1): status→shipped preserving shipped_at + order (the SHA stays
-    // hand-edited — T-913.1: completed_at rides the same mutation, `shipped_at` stays a bare
+    // Typed op: status→shipped preserving shipped_at + order (the SHA stays
+    // hand-edited: completed_at rides the same mutation, `shipped_at` stays a bare
     // SHA), clear `active` on the ticket AND on any program whose `active` names it. The op's
     // post-image validation is a second net behind the preflight above, not a replacement.
     let outcome =
@@ -70,7 +70,7 @@ pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) 
     Ok(())
 }
 
-/// T-917.6 — `ticket stamp-sha <id> <sha>`: step 3 of the ship lifecycle (see
+/// `ticket stamp-sha <id> <sha>`: step 3 of the ship lifecycle (see
 /// `ops::ship`). Writes `shipped_at` through the typed op, then closes the token
 /// accounting: when the ticket has neither a run receipt under `metrics/<id>/` nor
 /// an `estimates/<id>.json`, the `diff_loc` estimate is generated on the spot from

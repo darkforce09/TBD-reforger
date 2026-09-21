@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::MapAssetMounts;
 
-/// T-166 — full W1–W5 host wiring Class-R matrix (`?force=webgl&sat=preview`).
+/// Full W1–W5 host wiring Class-R matrix (`?force=webgl&sat=preview`).
 pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
     let path = "/missions/smoke/edit?force=webgl&sat=preview";
     let h = Harness::new(
@@ -74,7 +74,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             )
             .await?;
             let a_roads = eval_bool(&h.page, "window.__mapAssets.road_segments === 887").await?;
-            // T-177 — landcover lane is empty on Everon since **T-176 A2** dropped `forest`-kind
+            // Landcover lane is empty on Everon: the density bake drops `forest`-kind
             // regions (the 32 m wash) and Everon has no `field`/`waterBody` regions, so the composed
             // mesh is 0 polygons (`world_host::push_landcover`). Was `=== 36`; that stale assertion
             // went unnoticed because the chrome-headless-shell font crash killed the suite at
@@ -88,7 +88,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 "window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0",
             )
             .await?;
-            // T-179 — density canopy: Class-R equality pins (soft >0 banned for bins/dims).
+            // Density canopy: Class-R equality pins (soft >0 banned for bins/dims).
             let a_density_dims = eval_bool(
                 &h.page,
                 "window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601",
@@ -122,7 +122,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             checks.insert("A_atlas".into(), json!(a_atlas));
             checks.insert("A_trees_off".into(), json!(a_trees_off));
 
-            // T-179 — real MS outline hairlines armed at z=-1 (not fake segments===1).
+            // Real MS outline hairlines armed at z=-1 (not fake segments===1).
             let outline_set = eval_bool(
                 &h.page,
                 "typeof window.__editorCamSet === 'function' && (window.__editorCamSet(6400, 6400, -1.0), true)",
@@ -142,7 +142,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 eval_i64(&h.page, "window.__mapAssets.forest_outline_segments || 0")
                     .await
                     .unwrap_or(0);
-            // T-179 floor from this checkout fullmap: 99374 segments @ z=-1 (MS hairlines).
+            // Floor from this checkout fullmap: 99374 segments @ z=-1 (MS hairlines).
             // Soft `> 0` alone can false-green a stub flag; require a real polyline count.
             const OUTLINE_SEGS_FLOOR: i64 = 50_000;
             let a_outline_probe = a_outline_probe && outline_segs_at_probe >= OUTLINE_SEGS_FLOOR;
@@ -224,7 +224,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
     code
 }
 
-/// smoke_hillshade_editor.mjs — T-159.28: DEM fetched + Rust-decoded + hillshade uploaded.
+/// DEM fetched + Rust-decoded + hillshade uploaded.
 pub async fn smoke_hillshade(dist: &str, map_assets: &str) -> Result<u8> {
     let path = "/missions/smoke/edit?force=webgl&sat=preview";
     let h = Harness::new(
@@ -281,7 +281,7 @@ pub async fn smoke_hillshade(dist: &str, map_assets: &str) -> Result<u8> {
     code
 }
 
-/// smoke_doc_editor.mjs — T-159.16: hosted MissionDocCore live + seeded + round-trips.
+/// Hosted MissionDocCore live + seeded + round-trips.
 pub async fn smoke_doc(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5302, 9362, None, None, &[]).await?;
     let run = async {
@@ -304,8 +304,8 @@ pub async fn smoke_doc(dist: &str, path: &str) -> Result<u8> {
         } else {
             eprintln!("smoke_doc_editor: window.__missionDoc never appeared");
         }
-        // T-172 B4 — the slot glyph lane must be live: atlas uploaded at mount and the seeded
-        // SoA bound (the pre-T-172 editor never called ensure_slot_atlas → invisible slots).
+        // The slot glyph lane must be live: atlas uploaded at mount and the seeded
+        // SoA bound (an editor that never calls ensure_slot_atlas renders invisible slots).
         let slot_stats: Value = {
             let engine_up = h
                 .page

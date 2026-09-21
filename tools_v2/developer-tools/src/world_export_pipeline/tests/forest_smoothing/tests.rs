@@ -502,7 +502,7 @@ fn everon_canopy() -> (Vec<u32>, usize) {
     (grid, size)
 }
 
-/// T-149 ACCEPTANCE, on the whole committed everon catalogue rather than a sample.
+/// ACCEPTANCE, on the whole committed everon catalogue rather than a sample.
 ///
 /// Three claims, all measured against the shipped rings:
 ///   1. every region's area drift is under 3%;

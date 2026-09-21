@@ -15,16 +15,16 @@ use crate::{werr, wprintln};
 /// `(summary, dry_run, operator-vouched ticket set)` — the parsed shape of `wave --close`.
 type CloseArgs = (Option<String>, bool, Option<Vec<String>>);
 
-// ── T-923: THE CLOSE CEREMONY ───────────────────────────────────────────────────────────────────
+// ── THE CLOSE CEREMONY ──────────────────────────────────────────────────────────────────────────
 //
 // `wave --close` used to end at a PRINT, and a human typed the marker commit. The ledger records
 // what that produced: every hand-typed marker since wave 132 was malformed — waves 231–235 carry
-// prefixed subjects the anchored authority (T-613) rejects as non-markers, and 218/233 needed
+// prefixed subjects the anchored authority rejects as non-markers, and 218/233 needed
 // disavow reverts. So the print is replaced by the ceremony itself: the ONLY writer of marker
 // commits is now the code that defines what a marker is.
 //
 // THE SELF-CHECK RUNS THE REAL AUTHORITY ON THE REAL OBJECT. A string-level re-implementation of
-// the oracle would drift from it — T-613's lesson in miniature — so the candidate marker is
+// the oracle would drift from it — the oracles' lesson in miniature — so the candidate marker is
 // created first as an UNREACHABLE commit object (`git commit-tree`: object store only, no ref
 // moves, `git log` unchanged), [`super::base::wave_close_number`] and
 // [`super::base::wave_close_is_newest_wave`] are run against that object, and only an accepted

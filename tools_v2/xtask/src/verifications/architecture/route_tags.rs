@@ -1,5 +1,5 @@
 //! GO-7 — every `@route` tag resolves to a registered Axum route, and every route back to a tag
-//! (T-853 port of `scripts/verify-route-tags.sh`, the check restored at T-586/T-590).
+//! `cargo xtask verify route-tags`.
 //!
 //! ── WHY A SCRIPT HAD TO EXIST AT ALL ─────────────────────────────────────────────────────────
 //!
@@ -7,13 +7,13 @@
 //! the tag MUST match the wired route in `handlers.go` `Register()` (method + path)."* §2 of that
 //! document classes GO-7 **CI-SCRIPT** rather than lint-enforced, and that is the whole reason:
 //! clippy does not read doc comments and `cargo fmt` only reflows them, so nothing in the compiler
-//! can see a comment claiming a route. The Go gate was `verify-contract-citations.mjs` — presence
-//! AND route-match across all 82 Go handlers. T-145's Go→Rust rewrite deleted `Register()` and
+//! can see a comment claiming a route. The Go gate checked citation presence — presence
+//! AND route-match across all 82 Go handlers. The Rust rewrite deleted `Register()` and
 //! every Go handler, GO-7 died with them, and nothing replaced it: `Makefile:304` still claimed the
 //! GO-2..9 analogs were "enforced by clippy + the centralized ApiError type + `cargo fmt`", none of
 //! which can see a doc comment.
 //!
-//! MEASURED CONSEQUENCE (T-586, found by T-576): `handlers/servers.rs` carried `@route` tags on
+//! MEASURED CONSEQUENCE: `handlers/servers.rs` carried `@route` tags on
 //! THREE handlers — `create_server` (POST), `update_server` (PATCH), `deactivate_server` (DELETE) —
 //! that no route table registered. The whole admin server-CRUD triple was documented, tested and
 //! unreachable, and nothing went red. In the other direction `submit_mission` was a live registered
@@ -22,7 +22,7 @@
 //! ── THE TWO DIRECTIONS, BOTH HARD FAILURES ───────────────────────────────────────────────────
 //!
 //!   A. TAG → ROUTER  every `@route METHOD PATH` must be registered, on that method, for that
-//!      handler — the T-586 triple: a claim to a door that is not in the wall.
+//!      handler — the triple: a claim to a door that is not in the wall.
 //!   B. ROUTER → TAG  every registered route must carry a matching `@route` on the handler it
 //!      names. GO-7's "presence" half, and not optional: DOCUMENTATION_STANDARDS.md §3.1 makes
 //!      `@route` REQUIRED on the serving handler, one leg of the three-way triangulation a mod
@@ -38,9 +38,9 @@
 //! [`MERGE_FN`] merges all of them under [`API_PREFIX`]. So the router side of this check is the
 //! UNION of every discovered table, and `http_router.rs` is read only for its shape.
 //!
-//! ── VACUITY GUARDS (T-556: a gate reporting nothing == a gate checking nothing) ───────────────
+//! ── VACUITY GUARDS (a gate reporting nothing == a gate checking nothing) ────────────────────
 //!
-//! A verifier that passes because it parsed zero inputs is the T-586 defect in a new hat, so the
+//! A verifier that passes because it parsed zero inputs is the defect in a new hat, so the
 //! parse is checked against itself before any verdict is issued: every raw `@route` line must
 //! become exactly one parsed tuple; every `.route(` line must yield at least one registration;
 //! every discovered route table must be merged and every merged table must exist on disk;
@@ -56,9 +56,9 @@
 //!
 //! 1. **Exit 127 is unreachable for the matcher.** The script's header warns at length about search
 //!    tools that answer differently depending on WHO invoked them: `rg` is installed nowhere here
-//!    and exists in an agent shell only as an injected function (T-556), and one layer down `grep`
-//!    is *ugrep 7.5.0* as an agent-shell function but GNU grep 3.8 under `bash script.sh` (measured
-//!    2026-07-31, T-586). ugrep rejects an unescaped `{` in an ERE ("invalid repeat", exit 2) where
+//!    and exists in an agent shell only as an injected function, and one layer down `grep`
+//!    is *ugrep 7.5.0* as an agent-shell function but GNU grep 3.8 under a shell (measured
+//!    2026-07-31). ugrep rejects an unescaped `{` in an ERE ("invalid repeat", exit 2) where
 //!    GNU grep takes it literally — and **every route path here contains `{id}`**. bash survived by
 //!    routing every route-shaped comparison through `-F`. Here the engine is the `regex` crate
 //!    compiled in: no `PATH`, no shell function, no skew. [`Pattern::literal`] is kept wherever
@@ -69,7 +69,7 @@
 //!    tree"*, which sends the reader to the wrong file. [`scan::walk_files`] makes it a `NotRun`.
 //! 3. **Deterministic ordering.** MEASURED 2026-08-12: the script's `sort`s run under the ambient
 //!    locale and no caller pins one (nothing matches `LC_ALL|LC_COLLATE` in `Makefile`,
-//!    `scripts/platform/wave.sh` or `.github/workflows/`). Under `LANG=en_AU.UTF-8` glibc ignores
+//!    a gate step or `.github/workflows/`). Under `LANG=en_AU.UTF-8` glibc ignores
 //!    punctuation at the primary level, so `DELETE …/{id}/bookmark` lists BEFORE `DELETE …/{id}`;
 //!    under `LANG=C` it lists after — so the report order depended on the operator's environment,
 //!    rule 1 of `.cursor/rules/acceptance-gates-reproducible.mdc`, in the one script whose header is
@@ -134,7 +134,7 @@ const SENTINELS: &[&str] = &[
 ];
 
 // Fixed output blocks, as consts because rustfmt cannot break a string literal — and every byte
-// here is contract: `wave.sh` scrapes these logs and T-853 accepts ports by diffing stdout.
+// here is contract: the wave driver scrapes these logs and a port is accepted by diffing stdout.
 const SHAPE_FAIL: &str = "ROUTE-TAG CHECK: FAIL (router shape changed — the extractor was not run)";
 const PARSE_FAIL: &str =
     "ROUTE-TAG CHECK: FAIL (the parse could not be trusted — no tag/route verdict was issued)";

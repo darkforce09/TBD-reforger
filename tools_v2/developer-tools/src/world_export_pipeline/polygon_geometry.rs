@@ -1,9 +1,9 @@
-//! T-165.4 — shared map-pipeline geometry (port of `scripts/map-assets/lib/anchor-check.mjs`).
+//! Shared map-pipeline geometry: the anchor checks.
 //! The remap + partition formulas are intentionally re-implemented here — they must AGREE with
 //! the world builder without importing from it (non-circularity: a chunking bug in the builder
 //! cannot self-certify).
 //!
-//! Conventions (T-090.3.1 plan decisions 2 + 4):
+//! Conventions:
 //!   raw (engine): x = east, y = altitude, z = north, headingDeg = `GetAngles()[1]`
 //!   map:          x = engine.x, y = engine.z, z = engine.y, rotationDeg = headingDeg
 //!   partition:    cell = clamp(floor(coord / chunk_size), 0, cells-1)
@@ -54,7 +54,7 @@ fn row_y(row: &Value) -> f64 {
     }
 }
 
-/// P1-4 anchor check (see anchor-check.mjs header). `get_chunk(cx, cy)` returns the chunk doc
+/// P1-4 anchor check (see the module header). `get_chunk(cx, cy)` returns the chunk doc
 /// (`{ "instances": [...] }`) or None. Returns errors (empty = PASS).
 pub fn check_anchors(
     anchors: &[Value],

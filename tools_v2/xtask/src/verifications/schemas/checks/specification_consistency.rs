@@ -2,9 +2,9 @@ use super::*;
 
 /// Every task name reachable as `cargo xtask ci|mk|db <name>`, from the LIVE dispatch tables.
 ///
-/// Three tables because the three T-853 Phase 3 lanes landed in parallel worktrees and each picked
-/// its own clap shape (`mk_build.rs` docs, T-895). Reading all three is what lets gate 7 resolve a
-/// spec's `cargo xtask …` citation instead of merely eyeballing it.
+/// Three tables because the `ci`, `mk` and `db` lanes each carry their own clap shape. Reading
+/// all three is what lets gate 7 resolve a spec's `cargo xtask …` citation instead of merely
+/// eyeballing it.
 pub(super) fn live_xtask_task_names() -> HashSet<String> {
     let mut out: HashSet<String> = crate::commands::ci::task_runner::TASKS
         .iter()
@@ -23,12 +23,17 @@ pub(super) fn live_xtask_task_names() -> HashSet<String> {
     out
 }
 
-/// The program whose specification set these gates read, and whose active slice gate 10
-/// compares the hub header against.
-const MAP_TERRAIN_PROGRAM: &str = "T-090";
+/// The programme whose specification set these gates read, and whose active slice gate 10
+/// compares the hub header against, from the corpus pins. Its lowercase, hyphen-free spelling is
+/// the prefix of that programme's specification file names.
+fn map_terrain_programme(root: &std::path::Path) -> Result<String> {
+    Ok(ticket_engine::corpus_pins::load(root)?.map_terrain_programme_ticket)
+}
 
 pub fn specification_consistency() -> Result<u8> {
     let root = repo_root()?;
+    let programme = map_terrain_programme(&root)?;
+    let specification_prefix = programme.to_lowercase().replace('-', "");
     let spec = spec_dir(&root);
     let read = |p: PathBuf| -> Result<String> {
         fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))
@@ -37,7 +42,7 @@ pub fn specification_consistency() -> Result<u8> {
     let mut specification_files: Vec<String> = fs::read_dir(&spec)?
         .filter_map(|e| e.ok())
         .map(|e| e.file_name().to_string_lossy().to_string())
-        .filter(|n| n.starts_with("t090") && n.ends_with(".md"))
+        .filter(|n| n.starts_with(&specification_prefix) && n.ends_with(".md"))
         .collect();
     specification_files.sort();
     let corpus: Vec<(String, String)> = specification_files
@@ -178,7 +183,7 @@ pub fn specification_consistency() -> Result<u8> {
 
     // Gate 7 — every referenced task exists.
     //
-    // T-897 REPOINT. This read the root `Makefile` with `?`, so it was fail-CLOSED and would have
+    // REPOINT. This read the root `Makefile` with `?`, so it was fail-CLOSED and would have
     // gone red the moment the file died — but red for the wrong reason, and the obvious repair
     // ("drop the make half") would have retired the check instead of moving it. Both halves moved:
     //
@@ -189,13 +194,13 @@ pub fn specification_consistency() -> Result<u8> {
     //     Makefile, so every other `make …` in the corpus is an instruction that cannot be run.
     //
     // The net effect is that the gate bites HARDER after the deletion than before it, which is the
-    // bar T-853 sets for a check whose subject is removed.
+    // bar a check whose subject is removed has to meet.
     let make_targets: HashSet<String> = ARCHIVAL_MAKE_TARGETS
         .iter()
         .map(|t| (*t).to_string())
         .collect();
     let xtask_tasks: HashSet<String> = live_xtask_task_names();
-    // T-165.9: the tbd-schema npm package is deleted (the Node eradication endpoint) — any
+    // The tbd-schema npm package is deleted (the Node eradication endpoint) — any
     // npm-script citation in the spec corpus is archival by definition, so the live-scripts
     // set is empty and the allowlist below carries every historically-cited name.
     let pkg_path = schema_root(&root).join("package.json");
@@ -218,7 +223,7 @@ pub fn specification_consistency() -> Result<u8> {
     ] {
         npm_scripts.insert(s.to_string());
     }
-    // Gate scripts retired to `cargo xtask schema …` at T-165.1/.2 — historical specs may still
+    // Gate scripts retired to `cargo xtask schema …` — historical specs may still
     // quote the npm form (archival, not executable).
     for s in [
         "validate",
@@ -231,7 +236,7 @@ pub fn specification_consistency() -> Result<u8> {
         "verify-n6",
         "verify-n10",
         "verify-terrain-manifest",
-        // retired with the T-165.4/.9 terrain + image lanes (package deleted at .9)
+        // retired with the terrain + image lanes (their package is deleted)
         "verify-terrain-alignment",
         "verify-terrain",
     ] {
@@ -246,7 +251,7 @@ pub fn specification_consistency() -> Result<u8> {
                 fail(
                     "7",
                     format!(
-                        "{name}: referenced `make {}` — the root Makefile was deleted at T-897; \
+                        "{name}: referenced `make {}` — there is no root Makefile; \
                          cite the `cargo xtask …` spelling instead",
                         &c[1]
                     ),
@@ -270,7 +275,7 @@ pub fn specification_consistency() -> Result<u8> {
                 fail(
                     "7",
                     format!(
-                        "{name}: referenced `npm run {}` not in the historically-cited npm-script allowlist (Node was eradicated at T-165)",
+                        "{name}: referenced `npm run {}` not in the historically-cited npm-script allowlist (the tooling carries no Node scripts)",
                         &c[1]
                     ),
                 );
@@ -278,7 +283,7 @@ pub fn specification_consistency() -> Result<u8> {
         }
     }
 
-    // Gate 8 — no doc claims T-090.1 active.
+    // Gate 8 — no doc claims the first basemap slice active.
     let authority = [
         root.join("CLAUDE.md"),
         spec.join("ROADMAP.md"),
@@ -295,16 +300,20 @@ pub fn specification_consistency() -> Result<u8> {
         let text = if p.exists() { read(p)? } else { String::new() };
         gate8.push((name, text));
     }
-    let t0901 = regex::Regex::new(r"T-090\.1([^\d.]|\.\D|$)")?;
+    let first_slice =
+        regex::Regex::new(&format!(r"{}\.1([^\d.]|\.\D|$)", regex::escape(&programme)))?;
     let active = regex::RegexBuilder::new(r"\bactive\b")
         .case_insensitive(true)
         .build()?;
-    let ok_ctx = regex::RegexBuilder::new(r"T-090\.3\.0|\bqueued\b|active\s+basemap")
-        .case_insensitive(true)
-        .build()?;
+    let ok_ctx = regex::RegexBuilder::new(&format!(
+        r"{}\.3\.0|\bqueued\b|active\s+basemap",
+        regex::escape(&programme)
+    ))
+    .case_insensitive(true)
+    .build()?;
     for (name, text) in &gate8 {
         for line in text.lines() {
-            if !t0901.is_match(line) || !active.is_match(line) {
+            if !first_slice.is_match(line) || !active.is_match(line) {
                 continue;
             }
             if ok_ctx.is_match(line) {
@@ -313,7 +322,7 @@ pub fn specification_consistency() -> Result<u8> {
             let trimmed: String = line.trim().chars().take(90).collect();
             fail(
                 "8",
-                format!("{name}: claims T-090.1 active — \"{trimmed}\""),
+                format!("{name}: claims {programme}.1 active — \"{trimmed}\""),
             );
         }
     }
@@ -334,7 +343,7 @@ pub fn specification_consistency() -> Result<u8> {
         .context("specification-consistency gate 10 reads the active slice from the registry")?;
     let active_slice = registry["tickets"]
         .as_array()
-        .and_then(|a| a.iter().find(|t| t["id"] == MAP_TERRAIN_PROGRAM))
+        .and_then(|a| a.iter().find(|t| t["id"] == programme.as_str()))
         .and_then(|t| t["active_slice"].as_str());
     match active_slice {
         Some(slice) => {

@@ -1,4 +1,4 @@
-//! T-181.2.1 — the capability matrix, and the UNTRIAGED gate behind it.
+//! The capability matrix, and the UNTRIAGED gate behind it.
 //!
 //! THE PROBLEM THIS SOLVES
 //! -----------------------
@@ -12,7 +12,7 @@
 //! reported `UNTRIAGED` and the check FAILS. A forgotten capability becomes a build error.
 //!
 //! The verdict table (`docs/mod/capability_verdicts.tsv`) is hand-authored and reviewed —
-//! it is product judgement. The aggregation is mechanical. Same split as the rest of T-181:
+//! it is product judgement. The aggregation is mechanical. Same split as the rest of the oracle:
 //! humans decide, the tool measures.
 
 use std::collections::BTreeMap;

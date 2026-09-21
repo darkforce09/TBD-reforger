@@ -78,9 +78,9 @@ const BANS: &[Ban] = &[
     // both. The pattern is byte-identical to the one ripgrep was originally handed — across all
     // three engines only the thing evaluating it has changed.
     (
-        r"ATTENDANCE IS INERT UNTIL T-181\.35|until T-181\.35 (lands|ships)",
+        r"ATTENDANCE IS INERT UNTIL|until[[:space:]]+link-confirm[[:space:]]+(lands|ships)",
         false,
-        "ResultsReporter still frames attendance as inert until T-181.35",
+        "ResultsReporter still frames attendance as inert until link-confirm lands",
     ),
 ];
 
@@ -91,7 +91,7 @@ const BANS: &[Ban] = &[
 const PINS: &[&str] = &[
     "TBD_IdentityLink",
     "#tbd link <code>",
-    "IDENTITY LINKING (T-181.35 SHIPPED)",
+    "IDENTITY LINKING SHIPS",
 ];
 
 /// The exact lie text reintroduced for each RED proof, in ban order.
@@ -103,7 +103,7 @@ const PINS: &[&str] = &[
 const LIES: &[&str] = &[
     "There is no `#tbd link` command",
     "this mod does not implement link-confirm",
-    "ATTENDANCE IS INERT UNTIL T-181.35",
+    "ATTENDANCE IS INERT UNTIL link-confirm lands",
 ];
 
 const TARGET: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c";

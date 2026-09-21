@@ -1,4 +1,4 @@
-//! T-181.4/.52 oracle-leak guard — the T-853 port of `scripts/mod/verify-no-crf-leak.sh`.
+//! The oracle-leak guard: no upstream reference source may reach the shipping mod.
 //!
 //! ── THIS GATE SHIPS **RED**, AND THAT IS THE CORRECT STATE ───────────────────────────────────
 //!
@@ -32,7 +32,7 @@
 //! design-mirror and cite, we do not vendor. `playable_selector` has **NO LICENCE AT ALL**, which
 //! is strictly *worse* than APL: with no grant, default copyright applies and there is no
 //! permission to copy, adapt or redistribute any of it. The command keeps the too-narrow name
-//! `no-crf-leak` because `wave.sh`, the `Makefile`, `SLICE_WORKFLOW.md` and
+//! `no-crf-leak` because the gate steps, `SLICE_WORKFLOW.md` and
 //! `t181_event_mod_program.md` invoke it by that name; renaming drops it out of the wave runner.
 //!
 //! ── BASH ODDITIES PRESERVED ON PURPOSE ───────────────────────────────────────────────────────
@@ -73,7 +73,7 @@
 //! Runtime is ~7m25s, almost all vanilla probe: a GUID that is a genuine miss reads all ~20 GB of
 //! `data0*.pak`. No timeout — bash had none, and a deadline would turn a cold page cache into a
 //! leak report. (`grep` is `/usr/bin/grep` 3.8; this shell's `ugrep` shim is a shell *function*,
-//! so neither a `bash` script nor [`Run`] ever sees it — gate-grep.sh's `rg` finding again.)
+//! so neither a shell nor [`Run`] ever sees it.)
 
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
@@ -161,7 +161,7 @@ impl Lanes {
 
 /// Every line the gate prints, streamed *and* retained.
 ///
-/// The script's stdout is a contract — `wave.sh` scrapes it and T-853 accepts ports by diffing it
+/// This stdout is a contract — the wave driver scrapes it, and a port is accepted by diffing it
 /// — so the tests assert exact text rather than a boolean. Retaining is what makes that possible;
 /// streaming is what stops a 7-minute run looking hung.
 struct Log {

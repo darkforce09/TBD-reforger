@@ -1,6 +1,6 @@
 //! `cargo xtask map bvh-parity` + `map bvh-emit` — CLI for the 3D-occlusion lane.
 //!
-//! The BVH raycaster and the `.bvh` sidecar codec live in `map_engine_core::bvh`
+//! The BVH raycaster and the `.bvh` sidecar codec live in `website_map_engine::bvh`
 //! (step 2 moved them there; this file kept only the xtask plumbing). `bvh-parity`
 //! replays the Workbench parity oracle over either the COLL trimesh of a `.xob`
 //! (`--mesh`) or an emitted sidecar (`--sidecar`) — the two lanes must print identical
@@ -10,7 +10,7 @@
 //! Usage: `map bvh-parity (--mesh <file.xob> | --sidecar <file.bvh>) --pairs <parity.json>
 //!         [--record <i>] [--t-eps <meters>] [--dump-misses <path.jsonl>]
 //!         [--instances <slug>.instances.json [--exclude-kinds a,b] [--doors closed|open]]`
-//! (`--instances` = the T-090.11.4 compound lane: shell + every BLAS the instances file
+//! (`--instances` = the compound lane: shell + every BLAS the instances file
 //! references, replayed through `CompoundBuilding::blocked_range` — glass and foliage never
 //! block, doors in the requested state; `--exclude-kinds furniture` drops what the Workbench
 //! oracle's world does not nest under the building.)
@@ -195,7 +195,7 @@ pub fn run_bvh_parity(_root: &std::path::Path, args: &[String]) -> Result<u8> {
     )
     .context("parse parity JSON")?;
 
-    // T-090.11.4: the compound lane — the shell (the geometry loaded above) plus every
+    // The compound lane — the shell (the geometry loaded above) plus every
     // instance the file references, in the requested door state.
     let compound: Option<CompoundBuilding> = match &instances_path {
         Some(path) => {
@@ -409,7 +409,7 @@ pub fn run_bvh_emit(root: &std::path::Path, args: &[String]) -> Result<u8> {
 
     let bytes = fs::read(&mesh_path).with_context(|| mesh_path.display().to_string())?;
     let parsed = xob::parse_coll(&bytes)?;
-    // Determinism authority (see map_engine_core::bvh): quantize to the stored f32s FIRST
+    // Determinism authority (see website_map_engine::bvh): quantize to the stored f32s FIRST
     // and build over their lifted values, so loader-side raycasts are bit-identical.
     let verts_f32 = quantize_verts(&parsed.verts);
     if verts_f32.iter().flatten().any(|c| !c.is_finite()) {
@@ -417,7 +417,7 @@ pub fn run_bvh_emit(root: &std::path::Path, args: &[String]) -> Result<u8> {
     }
     let lifted = lift_verts(&verts_f32);
     let bvh = Bvh::build(&lifted, &parsed.tris);
-    // Every COLL triangle is Opaque on this lane (the shell); T-090.11.2's batch emitter is
+    // Every COLL triangle is Opaque on this lane (the shell); the batch emitter is
     // the one that reads game materials and tags glass / foliage.
     let kinds = vec![SurfaceKind::Opaque; parsed.tris.len()];
     let out_bytes = emit_bytes(&verts_f32, &parsed.tris, &kinds, &bvh);

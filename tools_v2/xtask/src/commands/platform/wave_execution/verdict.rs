@@ -1,4 +1,4 @@
-//! T-924 — the gate verdict receipt: the artifact `land` reads to know a gate actually ran.
+//! The gate verdict receipt: the artifact `land` reads to know a gate actually ran.
 //!
 //! THE INCIDENT THIS FILE EXISTS FOR. 2026-08-14: a slice gate silently REFUSED — it was invoked
 //! from the wrong cwd, so `super::base::refuse_empty_range` returned 2 before a single step ran —
@@ -86,8 +86,8 @@ pub fn verdicts_dir(main_root: &Path) -> PathBuf {
 ///
 /// The id reaches this code from `gate --slice <arg>` — an argv string. `<slice>.json` interpolated
 /// into a path is a traversal if the id contains a separator, so the shape is checked rather than
-/// trusted: `T-` followed by digits, then optional `.`-separated numeric slice parts (`T-924`,
-/// `T-159.29.3`). Anything else is refused, never sanitised into something adjacent.
+/// trusted: `T-` followed by digits, then optional `.`-separated numeric slice parts. Anything
+/// else is refused, never sanitised into something adjacent.
 pub fn path_for(main_root: &Path, slice: &str) -> Result<PathBuf> {
     if !is_ticket_id(slice) {
         bail!(
@@ -97,7 +97,7 @@ pub fn path_for(main_root: &Path, slice: &str) -> Result<PathBuf> {
     Ok(verdicts_dir(main_root).join(format!("{slice}.json")))
 }
 
-/// `T-924`, `T-159.29.3` — and nothing that could leave the receipts directory.
+/// a bare id or a dotted child id — and nothing that could leave the receipts directory.
 fn is_ticket_id(s: &str) -> bool {
     let Some(rest) = s.strip_prefix("T-") else {
         return false;
@@ -262,10 +262,10 @@ pub fn land_refusal(main_root: &Path, slice: &str, landing_sha: &str) -> Option<
             ));
         }
         Err(e) if !is_ticket_id(slice) => {
-            // T-946 — SAY THE RIGHT THING OR THE OPERATOR CANNOT ACT. An id this module refuses to
+            // SAY THE RIGHT THING OR THE OPERATOR CANNOT ACT. An id this module refuses to
             // build a path for cannot be re-gated either: `record_slice_gate` bails in exactly the
             // same place, so "re-gate" describes a loop with no exit. Branches of this shape do
-            // exist here — `git branch --list 'slice/*'` carries `slice/T-247-hotfix`.
+            // exist here — `git branch --list 'slice/*'` carries hotfix-suffixed branches.
             return Some(format!(
                 "land: {slice} is not a ticket id (expected T-nnn[.n…]), so no gate verdict can \
                  exist for it: {e:#}\n      \

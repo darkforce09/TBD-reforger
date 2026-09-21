@@ -34,6 +34,11 @@ pub const SCHEMA: &str = ".ai/tickets/schema.json";
 /// resolved against at every corpus load.
 pub const SCOPE_VOCAB: &str = ".ai/tickets/scope-vocab.toml";
 
+/// The corpus facts no ticket file states: the ids that must never be minted, and which ticket
+/// implements an editor gap row the ticket itself does not claim. Read by
+/// [`crate::corpus_pins::load`].
+pub const CORPUS_PINS: &str = ".ai/tickets/corpus-pins.toml";
+
 /// The wave plan, compiled from the ticket files by `cargo xtask wave repack` — the ONE writer.
 pub const WAVE_LOCK: &str = ".ai/tickets/wave.lock";
 

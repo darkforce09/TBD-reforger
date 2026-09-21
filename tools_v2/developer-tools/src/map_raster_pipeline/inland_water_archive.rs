@@ -1,4 +1,4 @@
-//! T-935.9 — `map water`: the two water binaries, from the Workbench staging export.
+//! `map water`: the two water binaries, from the Workbench staging export.
 //!
 //! * `water/water_vectors.rkyv` — a `WaterVectorsArchive` built from the export scratch's
 //!   `water/TBD_InlandWaterExport_vectors.json` (lake rings, river centrelines, pond

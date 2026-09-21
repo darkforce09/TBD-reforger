@@ -1,4 +1,4 @@
-//! T-181.3.1 — parse Bohemia's official Script API (Doxygen HTML) into the oracle index.
+//! Parse Bohemia's official Script API (Doxygen HTML) into the oracle index.
 //!
 //! Closes the gap `enf carve` cannot: the compressed-only classes (SCR_BaseGameMode,
 //! SCR_PossessSpawnData, SCR_PossessSpawnRequestComponent, SCR_RespawnSystemComponent,
@@ -161,7 +161,7 @@ pub fn build(src: &Path, out: &Path) -> Result<ApiStats> {
             };
             // interfaceSCR__BaseGameMode.html -> SCR_BaseGameMode
             //
-            // T-603: a `.replace('_', "_")` used to sit between the two lines below. Clippy's
+            // No `.replace('_', "_")` sits between the two lines below: clippy's
             // `no_effect_replace` is right that it is a no-op — `str::replace` returns a new
             // String with each match swapped, and swapping "_" for "_" swaps nothing. It read as
             // "and leave single underscores alone", which the sentinel already guarantees:
@@ -182,7 +182,7 @@ pub fn build(src: &Path, out: &Path) -> Result<ApiStats> {
         }
     }
 
-    // T-537: refuse header-only TSV overwrite of the committed enf-index (T-383 residual).
+    // Refuse header-only TSV overwrite of the committed enf-index.
     // The bin used to write first and only then exit 1 on classes==0 — damage already done.
     super::refuse_empty_write(
         "enf apidoc classes TSV",

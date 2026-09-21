@@ -375,7 +375,7 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
         }
         g.gate(
             "P5-1",
-            "fence prefabs > 0 and fence instances > 0 (T-152.4 G1/G2)",
+            "fence prefabs > 0 and fence instances > 0 (G1/G2)",
             errs,
         );
     }

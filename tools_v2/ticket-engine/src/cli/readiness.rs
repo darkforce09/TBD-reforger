@@ -13,13 +13,13 @@ pub fn cmd_mark_ready(
     if corpus.get(id).is_none() {
         unknown_ticket(id);
     }
-    // T-451: refuse ready promotion when the registry fails ticket check.
+    // Refuse ready promotion when the registry fails ticket check.
     require_check_ok(root, registry, &format!("mark-ready {id}"))?;
 
-    // Typed op (T-916.1): spec-arg set, spec-on-disk + deps gates, ready promotion with the
+    // Typed op: spec-arg set, spec-on-disk + deps gates, ready promotion with the
     // exact main_goal (summary→title→id) and acceptance (["See spec."]) backfills. The
-    // legacy refusals — "Ticket {id} needs a spec path", "Spec file not found: …",
-    // "Blocked by …" — come back verbatim and exit exactly as before. T-917.6 adds the
+    // The refusals — "Ticket {id} needs a spec path", "Spec file not found: …",
+    // "Blocked by …" — come back verbatim, with the same exit code. The plan gate adds the
     // plan ready-gate: PLAN defaults to docs/plans/<id-lowercased-dots-to-underscores>_plan.md
     // and must exist on disk ("Plan file not found: …").
     let outcome = match ops::mark_ready(

@@ -32,11 +32,11 @@ fn psql_argv(ctx: &Ctx, db: &str, flags: &[&str], sql: &str) -> Vec<String> {
 /// Its own DB, not the Makefile's `rust_it`: slice agents run `cargo xtask db test-it` concurrently, and that
 /// target DROPs and recreates `rust_it`, so sharing it would make the gate race them.
 ///
-/// T-411 / T-490: the IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older
+/// The IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older
 /// than the last two waves dropped under the gate lock. NOT a per-run name (that leaks a DB every
 /// kill) and NOT a timed wipe (that turns a permanent ratchet into an intermittent flake).
 ///
-/// T-490: do NOT derive N from `current_wave` when a packing counter exists. `current_wave` is the
+/// Do NOT derive N from `current_wave` when a packing counter exists. `current_wave` is the
 /// lowest plan wave with any deferred/open ticket — a Wave-3 deferral pins `tbd_gate_w3` forever
 /// while the factory is packing Wave 35. Prefer the packing marker (positive integer, bumped
 /// on promote) so residue isolation tracks packing progress.
@@ -67,7 +67,7 @@ pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
             }
         }
         if w.is_none() {
-            // T-912.2: a missing/unreadable lock is a refusal here too — fall through to the
+            // A missing/unreadable lock is a refusal here too — fall through to the
             // "cannot derive numeric wave" error below rather than inventing a DB name.
             let cw = match ledger::current_wave(ctx) {
                 Ok(cw) => cw,
@@ -114,7 +114,7 @@ pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
 /// Drop `tbd_gate_w*` databases older than the last two waves (keep N and N-1). Only names matching
 /// `^tbd_gate_w[0-9]+$` — never `tbd_gate_it`, `tbd_gate_migrate`, or operator `TBD_GATE_DB` names.
 ///
-/// T-534: the wave DB is no longer the only thing to reap. `cargo test -p website-api` now gives
+/// The wave DB is no longer the only thing to reap. `cargo test -p website-api` now gives
 /// each test BINARY its own database, derived as `<base>_<suite>_it` by
 /// `apps/website/api_v2/tests/common/mod.rs` (`per_binary_database_name`) — so one gate run against
 /// `tbd_gate_w60` also leaves `tbd_gate_w60_admin_field_it`, `…_events_it`, … 25 of them, measured.
@@ -162,12 +162,12 @@ pub fn prune_old_gate_wave_dbs(ctx: &Ctx, wave: i64) {
 
 /// Prepare the gate database, and REFUSE the destructive prune without the lock.
 ///
-/// T-575 — THE SECOND VARIABLE AND ITS DATABASE ARE GONE. This used to force-drop and recreate
+/// THE SECOND VARIABLE AND ITS DATABASE ARE GONE. This used to force-drop and recreate
 /// `tbd_gate_migrate` and export `MIGRATE_TEST_DATABASE_URL` at it, because `tests/db_migrate.rs`
 /// exercises the migration chain from empty and could not share a DB the other suites had already
-/// migrated. T-558 moved `db_migrate.rs` AND `models_fromrow.rs` onto
+/// migrated. Both `db_migrate.rs` and `models_fromrow.rs` sit on
 /// `common::require_test_database_url`, so each gets its own `<base>_<suite>_it` off
-/// `TEST_DATABASE_URL` (the T-534 shape) and NEITHER reads the variable any more.
+/// `TEST_DATABASE_URL`, and NEITHER reads the variable any more.
 ///
 /// Verified repo-wide before deleting, not assumed: the only surviving mentions of
 /// `MIGRATE_TEST_DATABASE_URL` are the two `//!` doc comments in those same two test files
@@ -185,13 +185,13 @@ pub fn prune_old_gate_wave_dbs(ctx: &Ctx, wave: i64) {
 /// against.
 ///
 /// It is closed by the flock, not by anything here — which means it was only ever as good as the
-/// lock ACTUALLY being held, and before T-406 it was not: `take_gate_lock` returned 0 after failing
+/// lock ACTUALLY being held: a `take_gate_lock` that returns 0 after failing
 /// to lock, so on a full disk (252 MB free, recorded in `cmd_reclaim`'s header) this ran
 /// unserialised. Assert the invariant rather than assume it.
 ///
 /// `GATE_UNSERIALISED=1` is the deliberate escape hatch (`TBD_GATE_ALLOW_UNSERIALISED=1`): the
 /// operator accepted a degraded verdict, and the full gate must still be able to prepare its
-/// databases. T-409: the hatch used to return 0 from `take_gate_lock` without setting
+/// databases. The hatch must never return 0 from `take_gate_lock` without setting
 /// `GATE_LOCK_HELD`, so this refused and every full-gate run under the hatch printed
 /// `GATE: FAIL — UNSERIALISED` regardless of the code.
 pub fn ensure_gate_db(ctx: &Ctx, state: &GateState) -> i32 {
@@ -277,17 +277,17 @@ pub fn ensure_gate_db(ctx: &Ctx, state: &GateState) -> i32 {
 ///
 /// `cargo test` BUILDS AND THEN RUNS a binary. With the shared dir, the binary this step runs can be
 /// one ANOTHER WORKTREE built: same package name and version across worktrees means the same
-/// artifact hash, so they clobber. T-235 measured it three ways — its test binary ran another
+/// artifact hash, so they clobber. It was measured three ways — one test binary ran another
 /// worktree's 4-test build TWICE under a stable hash with changing contents, `target/debug/api`
 /// changed size with its own source unchanged, and a compile failed against a stale rlib then
 /// succeeded on retry with no edit.
 ///
-/// Consequence, which is why this is a BLOCKER: THE GATE CAN PASS ON CODE IT NEVER COMPILED. T-233
+/// Consequence, which is why this is a BLOCKER: THE GATE CAN PASS ON CODE IT NEVER COMPILED. One run
 /// reported 126 passed / 0 failed and its test fails on a clean database — a stale or foreign binary
 /// that never contained the test produces exactly that, and it was reverted.
 ///
 /// THIS PARAGRAPH USED TO END: "and `cargo check`/`clippy` do not need one because they emit no
-/// binary to run." THAT WAS WRONG, it was the whole of T-421, and it is corrected here rather than
+/// binary to run." THAT IS WRONG, and it is corrected here rather than
 /// deleted because it is a reasonable-sounding inference that someone will otherwise make again.
 /// The exposure is not about RUNNING anything. Cargo decides freshness by MTIME, so a check step
 /// returns a verdict about a file it never opened whenever the file's mtime does not exceed the

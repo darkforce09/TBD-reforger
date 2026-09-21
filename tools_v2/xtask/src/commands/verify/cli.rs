@@ -11,7 +11,7 @@ pub(crate) enum VerifyCmd {
     /// the shell the catalogue records.
     #[command(name = "blas-manifest")]
     BlasManifest,
-    /// Zero tracked .mjs/.cjs; no node/npx invocation in a scanned file
+    /// Zero tracked Node sources; no node/npx invocation in a scanned file
     #[command(name = "no-node")]
     NoNode,
     /// LANG-1: tracked shell/Make hard zero (same TrackedLanguageBan table as no-python)

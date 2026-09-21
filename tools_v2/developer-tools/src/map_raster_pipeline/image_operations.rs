@@ -1,5 +1,5 @@
-//! T-165.9 — shared image primitives: PNG I/O, WebP header parse (the hand-rolled reader
-//! from verify-tile-pyramid.mjs/verify-unified-satellite.mjs), WebP encode (lossless via
+//! Shared image primitives: PNG I/O, WebP header parse (the hand-rolled reader
+//! used by the pyramid and satellite verifiers), WebP encode (lossless via
 //! image-webp, lossy via the vendored-libwebp `webp` crate — N3), Lanczos resize, stddev,
 //! box blur, HSL — the ops the Node lane ran through ImageMagick.
 

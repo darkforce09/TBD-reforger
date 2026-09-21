@@ -9,7 +9,7 @@ fn worktree_root() -> PathBuf {
 }
 
 /// Scratch tickets dir carrying the minimal vocabulary the fail-closed corpus load
-/// requires since T-917.2 (Corpus::load resolves scope legality on every load).
+/// requires (Corpus::load resolves scope legality on every load).
 fn scratch_tickets_dir(tag: &str) -> (PathBuf, PathBuf) {
     let tmp = std::env::temp_dir().join(format!("{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);

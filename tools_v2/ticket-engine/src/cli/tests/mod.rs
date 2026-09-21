@@ -51,11 +51,11 @@ fn git_in_dir(dir: &Path, args: &[&str]) {
     );
 }
 
-/// T-916.2 scratch registry — a real git repo carrying the REAL `.ai/tickets/schema.json`
-/// plus a minimal 4-ticket tree (program T-001 with a ready active child and an idea
-/// child; ready parent T-002), wave.lock freshly repacked and everything committed.
+/// Scratch registry — a real git repo carrying the REAL `.ai/tickets/schema.json`
+/// plus a minimal 4-ticket tree (one program with a ready active child and an idea
+/// child; one ready parent), wave.lock freshly repacked and everything committed.
 /// Mutator tests run HERE only: the live registry gets zero writes from the suite.
-/// T-917.2: the tree carries the minimal scope vocabulary (Corpus::load resolves
+/// The tree carries the minimal scope vocabulary (Corpus::load resolves
 /// legality fail-closed) and every work ticket a class (check requires it).
 fn scratch_registry(tag: &str) -> PathBuf {
     use crate::{Domain, ProgramTicket, ScopeV2, Status, Ticket, WorkTicket};
@@ -76,7 +76,14 @@ fn scratch_registry(tag: &str) -> PathBuf {
     )
     .unwrap();
     fs::write(dir.join(crate::repository::SCOPE_VOCAB), "[repo.docs]\n").unwrap();
-    // T-917.5/.6: the estimates schema rides along so a stamp-sha-generated
+    // The real corpus pins: `check` refuses without them, and a stub would retire the
+    // never-minted rule inside the scratch.
+    fs::copy(
+        worktree_root().join(crate::repository::CORPUS_PINS),
+        dir.join(crate::repository::CORPUS_PINS),
+    )
+    .unwrap();
+    // The estimates schema rides along so a stamp-sha-generated
     // estimate validates under the REAL contract inside the scratch too.
     fs::copy(
         worktree_root().join(crate::repository::ESTIMATES_SCHEMA),
@@ -85,7 +92,7 @@ fn scratch_registry(tag: &str) -> PathBuf {
     .unwrap();
     fs::write(dir.join("docs/spec.md"), "# spec\n").unwrap();
     fs::write(dir.join("docs/child-spec.md"), "# child spec\n").unwrap();
-    // T-917.6 plan ready-gate: every ready-class WORK ticket carries a plan that
+    // Plan ready-gate: every ready-class WORK ticket carries a plan that
     // exists on disk (the live-tree contract this fixture must now mirror).
     fs::create_dir_all(dir.join(crate::repository::documentation::PLANS_DIR)).unwrap();
     for plan in ["t-001_1_plan.md", "t-002_plan.md"] {
@@ -127,7 +134,7 @@ fn scratch_registry(tag: &str) -> PathBuf {
                     surface: vec![],
                 },
                 main_goal: ready_class.then(|| "story".to_string()),
-                // T-920.1 ready-tier rule: ready-class work carries the six
+                // Ready-tier rule: ready-class work carries the six
                 // body fields nonempty (check_ready_tier_body) — the fixture
                 // mirrors the live-tree contract like it does for plans.
                 context: if ready_class {
@@ -163,7 +170,7 @@ fn scratch_registry(tag: &str) -> PathBuf {
                 citations: vec![],
                 shipped_at: None,
                 priority: None,
-                // T-917.6: birth stamps present, or ops::ship refuses the flip.
+                // Birth stamps present, or ops::ship refuses the flip.
                 created_at: Some("2026-08-01T09:00:00Z".into()),
                 completed_at: None,
                 estimated: vec![],

@@ -1,5 +1,5 @@
-//! Game material → [`SurfaceKind`] (T-090.11.2). The COLL chunk's subrange table names a
-//! `Common/Materials/Game/*.gamemat` per triangle run (see `xob.rs`); the stem of that path
+//! Game material → [`SurfaceKind`]. The COLL chunk's subrange table names a
+//! `Common/Materials/Game/*.gamemat` per triangle run (see [`super::super::mesh_decoding`]); the stem of that path
 //! decides the class. Never derived from visual `.emat` names — the visual LODs and the
 //! collision mesh are different triangle sets.
 
@@ -64,7 +64,7 @@ pub fn kind_for_layer(layer: &str) -> Option<SurfaceKind> {
 /// layers, `Debris`, …) are the character / vehicle physics shells bullets pass through — the
 /// coarse trunk box beside a tree's fire trunk, the 6 m box around a pole fence. `Foliage` /
 /// `Bush` (soft, concealment) and `Glass*` (a pane) keep their soft kinds. `None` = an unknown
-/// name, kept (no opinion). Pinned by the T-090.12.4 oracle: dropping the static shells took
+/// name, kept (no opinion). Pinned by the oracle: dropping the static shells took
 /// the village cell from 97.9 % to the measured number in that commit.
 #[must_use]
 pub fn preset_stops_projectile(layer: &str) -> Option<bool> {

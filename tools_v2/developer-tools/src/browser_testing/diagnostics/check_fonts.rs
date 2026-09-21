@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::MapAssetMounts;
 
-/// **T-320 — can chromium resolve a font at all?**
+/// **Can chromium resolve a font at all?**
 ///
 /// Launch chromium on `about:blank`, watch its own log for [`NO_FONT_MARKER`], kill it. That one line
 /// is the difference between "the editor gate works" and "the browser process SIGABRTs the first time
@@ -20,7 +20,7 @@ use crate::repository_layout::MapAssetMounts;
 /// Timing measured here: chromium emits the font errors ~250–400 ms after launch, before the page
 /// exists at all, so [`FONT_PROBE_WINDOW_MS`] of silence is a sound "fonts are fine".
 ///
-/// T-362 — this probe deliberately **inherits** `XDG_CACHE_HOME` instead of passing its own via
+/// This probe deliberately **inherits** `XDG_CACHE_HOME` instead of passing its own via
 /// `Command::env`. It has to measure what every other browser launch in the run will get, not what
 /// [`ensure_gate_font_cache`] intended; a probe that forces its own cache would pass while the
 /// smokes inherited a poisoned one, which is the exact failure this check exists to catch.
@@ -86,11 +86,11 @@ pub(super) async fn check_fonts() -> FontProbe {
     let _ = std::fs::remove_dir_all(&profile);
     let _ = std::fs::remove_file(&log_path);
     if broken {
-        // T-362 — name the cache on the FAILURE path too. Which directory chromium was reading is
+        // Name the cache on the FAILURE path too. Which directory chromium was reading is
         // the first thing anyone needs and the one thing the old message omitted.
         println!(
             "  ✗ fonts       chromium resolves NO font ('{NO_FONT_MARKER}') — the editor page will \
-             SIGABRT the browser on its first fallback glyph (T-320)"
+             SIGABRT the browser on its first fallback glyph"
         );
         println!("                cache: {}", font_cache_report());
         return FontProbe::NoFonts;
@@ -112,7 +112,7 @@ pub(super) async fn check_fonts() -> FontProbe {
 
 /// The dist has to exist. A missing `--dist` used to serve 500s to every request and then fail on
 /// **liveness**, which reads as "the editor page wedged" — the wrong diagnosis for a wrong path
-/// (T-320: this is what a `gate doctor` run inside a worktree with no build looks like).
+/// (this is what a `gate doctor` run inside a worktree with no build looks like).
 pub(super) fn check_dist(dist: &str) -> u32 {
     let index = PathBuf::from(dist).join("index.html");
     if index.exists() {
@@ -151,7 +151,7 @@ pub(super) fn count_chrome_processes() -> u32 {
 /// (via [`cdp::Page::evaluate_with_timeout`]) instead of the suite's 130 s hang. The whole probe is
 /// wrapped in an overall timeout so it can never inherit the wedge it exists to catch.
 ///
-/// T-320: whatever the outcome, before reporting we ask the browser's own `/json/version` whether it
+/// Whatever the outcome, before reporting we ask the browser's own `/json/version` whether it
 /// is still alive. A dead endpoint turns "timed out" into "crashed", which is the difference between
 /// hunting the app and hunting the environment.
 pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Liveness> {
@@ -159,7 +159,7 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
     let budget = env
         .and_then(|e| e["limits"]["liveness_timeout_secs"].as_u64())
         .unwrap_or(15);
-    // T-843 / T-805 — liveness must enter the editor. Seed the same admin `tbd-auth` blob the
+    // Liveness must enter the editor. Seed the same admin `tbd-auth` blob the
     // smokes use, and do NOT proxy `/api` to :8080 here: a failed refresh against a live API
     // clears the seeded session and the probe never sees `__editorCam` (measured).
     let srv = start_server(
@@ -209,7 +209,7 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
         Ok(inner) => inner,
         Err(_) => Ok(false),
     };
-    // T-320 — ask the browser itself. `Runtime.evaluate` "timing out" is what a SIGABRT'd browser
+    // Ask the browser itself. `Runtime.evaluate` "timing out" is what a SIGABRT'd browser
     // looks like from the client: the ws reader sees a close, the pending call is never answered.
     let alive = browser
         .http
@@ -235,10 +235,10 @@ pub(super) async fn liveness_probe(dist: &str, env: Option<&Value>) -> Result<Li
     }
 }
 
-/// The T-320 remedy, printed when `check_fonts` says chromium has no fonts.
+/// The font remedy, printed when `check_fonts` says chromium has no fonts.
 pub(super) fn print_font_wedge_hint() {
     println!(
-        "  ─ chromium could not resolve a single font. That is the T-320 wedge: the editor page's"
+        "  ─ chromium could not resolve a single font. That is the font wedge: the editor page's"
     );
     println!(
         "    first per-character fallback hits SkFontMgr_FontConfigInterface.cpp:163 SK_ABORT and"
@@ -254,9 +254,7 @@ pub(super) fn print_font_wedge_hint() {
     println!(
         "    • the gate sidesteps that by OWNING its cache — `ensure_gate_font_cache` always points"
     );
-    println!(
-        "      chromium at $TMPDIR/tbd-gate-cache-<distro>, whatever XDG_CACHE_HOME says (T-362:"
-    );
+    println!("      chromium at $TMPDIR/tbd-gate-cache-<distro>, whatever XDG_CACHE_HOME says (");
     println!(
         "      it used to stand down when XDG_CACHE_HOME was set, which this container exports as"
     );
@@ -275,7 +273,7 @@ pub(super) fn print_font_wedge_hint() {
         "    • verify the machine really has fonts:  fc-list | wc -l   (0 = none installed). Note a"
     );
     println!(
-        "      healthy fc-list proves nothing about chromium — T-320 had fc-list at 783 and chromium"
+        "      healthy fc-list proves nothing about chromium — one wedge had fc-list at 783 and chromium"
     );
     println!("      at zero, because they were reading different caches.");
 }

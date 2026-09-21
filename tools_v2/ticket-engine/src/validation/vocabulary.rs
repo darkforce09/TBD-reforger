@@ -1,14 +1,14 @@
-//! T-917.1 — shape gate for the Scope v2 vocabulary file (`.ai/tickets/scope-vocab.toml`).
+//! Shape gate for the Scope v2 vocabulary file (`.ai/tickets/scope-vocab.toml`).
 //!
 //! The vocabulary is the 4-level domain/layer/component/surface word list ticket `[scope]`
 //! blocks will be validated against from the S.2 cutover on (spec:
 //! `docs/platform/t917_ticket_schema_v2.md` §Scope v2). This slice is ADDITIVE: nothing
-//! here parses tickets or resolves vocab-vs-ticket legality (that rides T-917.2) — the
+//! here parses tickets or resolves vocab-vs-ticket legality (the corpus load does) — the
 //! rule validates ONLY the vocabulary file's own shape:
 //!
 //! * the file exists (missing = one error naming the path — required from this slice on;
-//!   BASE tier since the T-917.2 cutover made scope legality ride every corpus load,
-//!   see the wire-in note in [`crate::validation::check`] — T-917.1 had parked existence at
+//!   BASE tier since the cutover made scope legality ride every corpus load,
+//!   see the wire-in note in [`crate::validation::check`] — existence was parked at
 //!   `--strict` while pre-v2 scratch registries still lacked the file);
 //! * it parses as TOML — duplicate layer/component keys are refused by the parser itself
 //!   (TOML forbids redefining a key), so "no duplicate component names within a layer"
@@ -52,7 +52,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     let path = vocab_path(root);
     if !path.is_file() {
         return vec![format!(
-            "missing scope vocabulary (required for ticket check since T-917.1): {SCOPE_VOCAB}"
+            "missing scope vocabulary (required for ticket check): {SCOPE_VOCAB}"
         )];
     }
     let text = match fs::read_to_string(&path) {

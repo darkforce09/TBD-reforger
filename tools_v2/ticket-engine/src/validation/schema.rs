@@ -105,11 +105,6 @@ pub(super) fn validate_row(row: &serde_json::Value) -> Vec<String> {
             errors.push(format!("{tid}: ready-class requires acceptance"));
         }
     }
-    if let Some(id) = opt_str(row, "id")
-        && FORBIDDEN_PHANTOM_IDS.contains(&id)
-    {
-        errors.push(format!("Forbidden phantom id {id}"));
-    }
     errors
 }
 

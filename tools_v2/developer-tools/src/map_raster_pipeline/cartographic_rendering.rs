@@ -1,7 +1,7 @@
-//! T-165.9 — the cartographic lane: `build-landcover-mask.mjs` (SAP-appearance forest/bright
-//! masks), `build-map-cartographic.mjs` (TGA base → landcover tints → Lanczos upscale →
+//! The cartographic lane: the landcover masks (SAP-appearance forest/bright
+//! masks), the cartographic render (TGA base → landcover tints → Lanczos upscale →
 //! inland-water tint → .topo road strokes via resvg — replaces the magick MVG draw pass),
-//! and the tile-pyramid builder (`build-tile-pyramid.sh` — XYZ WebP levels; lossless via
+//! and the tile-pyramid builder (XYZ WebP levels; lossless via
 //! image-webp, the lossy leg via the vendored-libwebp `webp` crate per N3).
 
 use std::path::{Path, PathBuf};

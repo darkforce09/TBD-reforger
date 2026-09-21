@@ -1,7 +1,7 @@
 //! The container↔host bridge — **moved**. This is a re-export, not an implementation.
 //!
-//! T-853 lifted the bridge to [`crate::core::host_execution`] so the playtest server and the `wave.sh` port share
-//! ONE implementation instead of two copies of the old bash `hostrun.sh`. Everything that used to
+//! The bridge lives in [`crate::core::host_execution`] so the playtest server and the wave driver share
+//! ONE implementation instead of a copy per caller. Everything that used to
 //! live here — `Host::detect`, `capture`, `capture_trimmed`, `signal_quietly`, `spawn_background`,
 //! `require_host`, `instruction_name`, `broken` — is unchanged and lives there now, along with the
 //! tests that pinned it and the full record of WHY the bridge still exists (short version: the C

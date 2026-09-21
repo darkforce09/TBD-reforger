@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-916.1 acceptance 1 — the whole live tree round-trips byte-identically:
+/// Acceptance 1 — the whole live tree round-trips byte-identically:
 /// load every on-disk `T-*.toml` (parents AND children), render each typed ticket,
 /// and the bytes must equal the file exactly — modulo the two pinned hand-edit
 /// exceptions above, which must still be value-equal. N is measured on disk at run
@@ -84,8 +84,8 @@ fn corpus_roundtrip_real_tree_byte_identical() {
     }
 }
 
-// after T-919 batch 28
-/// T-917.3 permanent reversibility + ratchet proof over the live tree. The verb's
+// after the latest drain batch
+/// Permanent reversibility + ratchet proof over the live tree. The verb's
 /// own in-run assertion proved join("\n") == the pre-move summary bytes while it
 /// still held the original in memory; what stays provable forever is: (a) the
 /// carrier count equals the pin exactly, (b) every carrier is a WORK ticket (only
@@ -99,7 +99,7 @@ fn migration_legacy_ratchet_pin() {
     let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
     let mut carriers = 0usize;
     for (id, t) in &corpus.tickets {
-        let legacy = match t {
+        let wall_lines = match t {
             Ticket::Program(p) => {
                 assert!(
                     p.migration_legacy.is_empty(),
@@ -109,11 +109,11 @@ fn migration_legacy_ratchet_pin() {
             }
             Ticket::Work(w) => &w.migration_legacy,
         };
-        if legacy.is_empty() {
+        if wall_lines.is_empty() {
             continue;
         }
         carriers += 1;
-        let wall = legacy.join("\n");
+        let wall = wall_lines.join("\n");
         assert!(
             wall.split_whitespace().count() > crate::SUMMARY_WORD_CAP,
             "{id}: parked migration_legacy joins to {} words — not a wall; the quarantine only moves >{} word summaries",
@@ -140,7 +140,7 @@ fn migration_legacy_ratchet_pin() {
     );
 }
 
-/// T-920.1 third shrink-only ratchet (the [`migration_legacy_ratchet_pin`]
+/// Third shrink-only ratchet (the [`migration_legacy_ratchet_pin`]
 /// pattern, red BOTH ways): work+program tickets whose title is debt by THE
 /// instrument ([`crate::title_is_debt`] — `title == id` OR TOML-parsed title
 /// `split_whitespace().count() > 10`) must equal [`crate::TITLE_DEBT_PIN`]
@@ -149,8 +149,8 @@ fn migration_legacy_ratchet_pin() {
 /// - **Growth is impossible by rule**: the ops post-image gate refuses writing a
 ///   debt title on any CHANGED ticket, so a count above the pin means a hand-edit
 ///   minted one — fix the title, never the pin.
-/// - **Every T-919/T-921 batch that repairs titles SHRINKS the pin in the same
-///   commit** by the measured batch amount (t920 spec §T-921).
+/// - **Every drain batch that repairs titles SHRINKS the pin in the same
+///   commit** by the measured batch amount (t920 spec §the drain).
 #[test]
 fn title_debt_ratchet_pin() {
     let root = repo_root();
@@ -174,10 +174,10 @@ fn title_debt_ratchet_pin() {
     );
 }
 
-/// T-920.1 fourth shrink-only ratchet, same pattern: queued/ready/running/review
+/// Fourth shrink-only ratchet, same pattern: queued/ready/running/review
 /// WORK tickets with empty `main_goal` ([`crate::main_goal_is_debt`]) must equal
 /// [`crate::MAIN_GOAL_DEBT_PIN`] exactly. Quarantined carriers COUNT (the wall
-/// holds the content unprocessed; the T-919 drain fills main_goal and shrinks
+/// holds the content unprocessed; the drain fills main_goal and shrinks
 /// this pin in the same commit); new offenders are impossible — the ops
 /// post-image gate refuses a changed non-quarantined live work ticket without
 /// main_goal, and a quarantine mint past the cutover is red in check.
@@ -234,7 +234,7 @@ fn next_child_id_direct_extensions_only() {
         .insert("T-916.1".into(), work("T-916.1", Status::Idea));
     c.tickets
         .insert("T-916.2".into(), work("T-916.2", Status::Idea));
-    // Grandchild — a deeper extension must not bump T-916's own tier.
+    // Grandchild — a deeper extension must not bump the parent's own tier.
     c.tickets
         .insert("T-916.2.9".into(), work("T-916.2.9", Status::Idea));
     assert_eq!(c.next_child_id("T-916"), "T-916.3");
@@ -275,7 +275,7 @@ fn load_refuses_id_filename_mismatch() {
     assert!(err.contains("T-777") && err.contains("T-001"), "{err}");
 }
 
-/// T-917.2 — legality resolves at load: a work ticket whose scope pair is not in
+/// Legality resolves at load: a work ticket whose scope pair is not in
 /// the vocabulary refuses naming ticket + pair; a MISSING vocabulary refuses
 /// naming the path (fail-closed — never a silent legality skip).
 #[test]

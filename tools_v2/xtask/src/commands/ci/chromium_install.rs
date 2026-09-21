@@ -1,4 +1,4 @@
-//! T-901 — install the pinned Chrome-for-Testing build used by editor-gates.yml.
+//! Install the pinned Chrome-for-Testing build used by editor-gates.yml.
 //!
 //! The workflow used to `set -euo pipefail`, `apt-get`, `curl | unzip`, and append `GITHUB_ENV`
 //! in a multi-line `run:` block. That is exactly the logic this ticket pulls out of YAML: no

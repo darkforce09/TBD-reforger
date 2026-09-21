@@ -1,4 +1,4 @@
-//! T-090.11.3 rotation-order pin — which Euler composition does Enfusion use for `angles`
+//! Rotation-order pin — which Euler composition does Enfusion use for `angles`
 //! (pitch about X, yaw about Y, roll about Z)?
 //!
 //! The Workbench recon of a *tilted parent with a rotated child* is an exact, compile-free

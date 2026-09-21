@@ -1,6 +1,6 @@
-//! `cargo xtask map bvh-batch --all-prefabs` — T-090.12.2: the prefab BLAS library.
+//! `cargo xtask map bvh-batch --all-prefabs` — the prefab BLAS library.
 //!
-//! Walks EVERY prefab of `objects/prefabs.json.gz` through the T-090.11.2 [`Walker`] straight out
+//! Walks EVERY prefab of `objects/prefabs.json.gz` through the [`Walker`] straight out
 //! of the game paks and emits, under `assets_v2/terrains/<terrain>/prefabs/`:
 //!
 //! - `blas/<stem>.bvh` — one sidecar per distinct XOB (dedup by stem via the walker's asset
@@ -14,7 +14,7 @@
 //!
 //! Trees: the trunk and the foliage colliders come from the COLL records exactly as `bvh-batch`
 //! reads them (`kind_for_gamemat` / `kind_for_layer`). A tree whose COLL carries no Foliage
-//! triangle gets a canopy from the convex hull of its visual LOD0 (`hull_triangles`, the T-090.11
+//! triangle gets a canopy from the convex hull of its visual LOD0 (`hull_triangles`, the
 //! `TreeCanopy` fallback) as an all-Foliage sidecar `blas/<stem>_canopy.bvh`; the census says how
 //! many needed it.
 //!

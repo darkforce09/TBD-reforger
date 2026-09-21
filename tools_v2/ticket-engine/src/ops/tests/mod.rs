@@ -17,8 +17,8 @@ fn scratch_root(name: &str) -> PathBuf {
 
 /// Scratch work ticket. `owns` defaults NONEMPTY so status flips into the live set
 /// do not trip the owns gate unless a test empties it on purpose, and `created_at`
-/// defaults PRESENT so ships do not trip the T-917.6 birth-stamp refusal unless a
-/// test removes it on purpose. T-920.1 extends the same convention to the body
+/// defaults PRESENT so ships do not trip the birth-stamp refusal unless a
+/// test removes it on purpose. The same convention extends to the body
 /// tiers: `main_goal` and the six ready-tier fields default NONEMPTY so live
 /// flips and ships pass the tier gates unless a test empties them on purpose.
 fn work(id: &str, status: Status) -> WorkTicket {

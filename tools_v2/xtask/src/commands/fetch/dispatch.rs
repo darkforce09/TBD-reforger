@@ -6,7 +6,7 @@ use std::path::PathBuf;
 pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
     match cmd {
         FetchCmd::VanillaSource { args } => {
-            // TBD_FETCH_ROOT: throwaway fixture roots for T-853 bash-vs-port arms.
+            // TBD_FETCH_ROOT: throwaway fixture roots for the comparison arms.
             // Production callers leave it unset → find_repo_root().
             let root = match std::env::var_os("TBD_FETCH_ROOT") {
                 Some(p) => PathBuf::from(p),

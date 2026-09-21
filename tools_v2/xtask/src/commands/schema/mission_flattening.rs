@@ -20,7 +20,7 @@ thread_local! {
         const { std::cell::RefCell::new(None) };
 }
 
-/// Shared flatten transform + T-383/T-538 preserve/refuse rules.
+/// Shared flatten transform plus the preserve/refuse rules.
 ///
 /// Used by both `--in-place` and stdout paths so neither silently drops loadout/uid
 /// or force-stamps `schemaVersion` over a deliberate prior value.
@@ -98,7 +98,7 @@ pub(super) fn apply_flatten_orbat_slots(mission: &mut Value, context: &str) -> R
                         "z": (z * 10.0).round() / 10.0,
                         "headingDeg": heading.round(),
                     });
-                    // T-383: preserve optional schema keys from prior slots / role (loadout, uid).
+                    // Preserve optional schema keys from prior slots / role (loadout, uid).
                     // Prefer role-authored values; fall back to matching prior slot by id.
                     let prior = prior_by_id.get(slot["id"].as_str().unwrap_or(""));
                     if let Some(uid) = role.get("uid").filter(|v| !v.is_null()) {
@@ -125,8 +125,8 @@ pub(super) fn apply_flatten_orbat_slots(mission: &mut Value, context: &str) -> R
     let new_loadout_n = slots.iter().filter(|s| s.get("loadout").is_some()).count();
     let new_uid_n = slots.iter().filter(|s| s.get("uid").is_some()).count();
 
-    // T-383 / T-538: refuse empty / lossy transform — same rules for --in-place AND stdout.
-    // Stdout must not silently emit a lossy preview (pre-T-538 force-stamped 1.1 and dropped
+    // Refuse empty / lossy transform — same rules for --in-place AND stdout.
+    // Stdout must not silently emit a lossy preview (force-stamping 1.1 drops
     // unmatched loadout/uid without error).
     refuse_empty_write(
         context,
@@ -153,7 +153,7 @@ pub(super) fn apply_flatten_orbat_slots(mission: &mut Value, context: &str) -> R
 /// CLI body shared by `--in-place` and stdout: read → apply → return mission.
 ///
 /// No post-apply `schemaVersion` mutation lives here or in [`flatten_orbat_slots`] —
-/// preserve/default stamping is solely inside [`apply_flatten_orbat_slots`] (T-538/T-539).
+/// preserve/default stamping is solely inside [`apply_flatten_orbat_slots`].
 pub(super) fn flatten_orbat_slots_mission(
     path: &str,
     in_place: bool,
@@ -176,7 +176,7 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
         fs::write(&file, out)?;
         println!("Wrote {n} slots to {}", file.display());
     } else {
-        // T-539: tests may capture this exact stdout emission (not apply_* alone).
+        // Tests may capture this exact stdout emission (not apply_* alone).
         #[cfg(test)]
         {
             let captured = flatten_stdout_capture_buf(|buf| {

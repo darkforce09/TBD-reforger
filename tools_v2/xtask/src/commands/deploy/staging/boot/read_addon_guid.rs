@@ -116,7 +116,7 @@ pub fn assert_local_addon_won(out: &mut Out, log: &Path, guid: &str, addons_dir:
     out.e("");
     out.e("  Cause is almost always a missing -addonsDir on the ExecStart. Check the unit:");
     out.e("      systemctl --user cat tbd-reforger.service | grep ExecStart");
-    out.e("  It must carry BOTH -addonsDir and -config (T-604).");
+    out.e("  It must carry BOTH -addonsDir and -config.");
     1
 }
 
@@ -143,7 +143,7 @@ pub fn assert_room_registered(out: &mut Out, log: &Path) -> i32 {
             "      A healthy log is not a joinable server: -addonsDir + -addons + -server reaches",
         );
         out.e("      LOBBY with the mod loaded and never registers a room. Direct Join answers");
-        out.e("      'No server found'. Joinable needs -config, alongside -addonsDir (T-604).");
+        out.e("      'No server found'. Joinable needs -config, alongside -addonsDir.");
         return 1;
     };
     // `sed 's/.*Server registered/Server registered/'` — drop the engine's timestamp prefix.

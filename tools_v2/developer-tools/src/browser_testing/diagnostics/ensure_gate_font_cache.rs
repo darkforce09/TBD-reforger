@@ -2,7 +2,7 @@ use super::*;
 
 /// Point chromium at a **gate-owned** fontconfig cache, unconditionally.
 ///
-/// # Why this exists (T-320 — the editor-gate wedge)
+/// # Why this exists: the editor-gate wedge
 ///
 /// `~/.cache` is shared by every distro that shares the home directory (a distrobox/toolbox
 /// container and the host both write `~/.cache/fontconfig`). Fontconfig keys each cache file by a
@@ -20,16 +20,16 @@ use super::*;
 /// and every other SPA route render inside the fonts they already matched and survive, which is
 /// exactly why the failure looked editor-specific and unfixable from the app side.
 ///
-/// This is the same class of defect T-177 was created to kill: the gate depending on **unpinned
+/// This is the same class of defect the pinned Chrome build kills: the gate depending on **unpinned
 /// external state**. A gate-owned cache dir makes the font set a function of the machine's
 /// installed fonts only. The first run pays one fontconfig scan (~1 s); after that it is cached.
 ///
-/// # Why it is now unconditional (T-362)
+/// # Why it is now unconditional
 ///
 /// It used to return early whenever `XDG_CACHE_HOME` was set, on the reasoning that an operator who
 /// sets it means it. The reasoning does not survive contact with this machine: the Debian container
 /// **exports `XDG_CACHE_HOME=~/.cache`**, which is precisely the shared host/container path whose
-/// poisoned cache caused T-320. So the fix documented itself as unconditional and was, in the one
+/// poisoned cache wedges the gate. So the fix is unconditional and is, in the one
 /// environment it was written for, disabled.
 ///
 /// MEASURED 2026-07-26, end to end, with a cache warmed by a container-side chromium at a scratch
@@ -39,7 +39,7 @@ use super::*;
 ///     `ERROR:ui/gfx/platform_font_skia.cc:258] Could not find any font: , sans`;
 ///   * `gate doctor` pointed at it reported `✗ fonts` and then `✗ liveness … the headless browser
 ///     process DIED`, whose underlying error was `cdp: ws call timed out (Runtime.evaluate)` — the
-///     T-320 signature that cost five sessions.
+///     the signature that cost five sessions.
 ///
 /// Controls (the gate's own cache, a virgin directory, and the operator's real `~/.cache`) all
 /// resolved fonts, so the variable is isolated: a cache written from the *other* distro at a shared
@@ -56,7 +56,7 @@ use super::*;
 ///     it.
 ///   * **Falling back late would be unsafe.** Switching caches *after* discovering a bad one means a
 ///     second `set_var` once the browser is already up — i.e. inside the multi-threaded window
-///     T-354 warned about, after `start_server` spawned tokio tasks and `reqwest::Client::new()`
+///     the multi-threaded window, after `start_server` spawned tokio tasks and `reqwest::Client::new()`
 ///     started reading proxy env vars. The only sound place to decide is before any of that.
 ///
 /// A deliberate setting is still honoured — through `FONT_CACHE_ENV`, which is *about the gate*.
@@ -68,7 +68,7 @@ use super::*;
 ///
 /// Still **not** safe to call from a multi-threaded process: `std::env::set_var` races every
 /// concurrent `getenv` in the process, including ones inside libc and reqwest, and no restructuring
-/// here changes that. What T-362 does change is that the *decision* no longer depends on the
+/// here changes that. The *decision* does not depend on the
 /// ambient environment, so moving the call is now behaviour-preserving — see
 /// [`gate_font_cache_dir`] for the hand-off that lets the `unsafe` disappear entirely.
 pub fn ensure_gate_font_cache() {
@@ -98,7 +98,7 @@ pub(super) fn font_cache_install() -> &'static Result<(), String> {
 /// `XDG_CACHE_HOME` on the `Command` itself (`.env("XDG_CACHE_HOME", gate_font_cache_dir())`)
 /// rather than inheriting it from the process, [`ensure_gate_font_cache`]'s `unsafe set_var` — and
 /// with it every question about when it is safe to call — can be deleted outright. That is the
-/// version of the T-354 hand-off that needs no single-threaded window at all.
+/// version of the hand-off that needs no single-threaded window at all.
 pub fn gate_font_cache_dir() -> &'static Path {
     &resolved_font_cache().0
 }
@@ -125,7 +125,7 @@ pub(super) fn resolved_font_cache() -> &'static (PathBuf, CacheOrigin) {
 pub(super) fn default_font_cache_dir() -> PathBuf {
     let name = match distro_slug() {
         Some(slug) => format!("tbd-gate-cache-{slug}"),
-        // Unreadable `/etc/os-release` → the pre-T-362 name. Losing the discriminator is worse than
+        // Unreadable `/etc/os-release` → the undiscriminated name. Losing the discriminator is worse than
         // the old behaviour in no way, and inventing an unstable one (pid, time) would defeat the
         // caching this directory exists for.
         None => "tbd-gate-cache".to_string(),
@@ -218,9 +218,9 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
     }
     warnings += check_dist(dist.as_deref().unwrap_or(DEFAULT_DIST));
 
-    // T-362 — a zero-font chromium is a HARD fail, and it short-circuits the liveness probe.
+    // A zero-font chromium is a HARD fail, and it short-circuits the liveness probe.
     //
-    // Two changes from the T-320 shape, both measured against the poisoned-cache repro. It used to
+    // Two departures from the plain probe, both measured against the poisoned-cache repro. It used to
     // count as one *warning*, so a fonts failure that the liveness probe happened to survive exited
     // **0** and handed the wedge to the suite — the gate reporting OK on an environment it had just
     // proved was fatal. And running liveness anyway costs ~15 s to produce `the headless browser
@@ -230,7 +230,7 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
         print_font_wedge_hint();
         println!(
             "== gate doctor: FAIL — chromium cannot resolve a single font; every editor smoke would \
-             SIGABRT the browser (T-320)"
+             SIGABRT the browser"
         );
         return Ok(1);
     }

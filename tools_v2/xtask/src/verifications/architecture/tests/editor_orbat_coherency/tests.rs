@@ -62,7 +62,7 @@ fn the_real_tree_holds() {
     assert_eq!(static_checks(&repo()), Ok(()));
 }
 
-/// T-556 anti-vacuity: a gate that cannot fail checks nothing. One case per static arm,
+/// Anti-vacuity: a gate that cannot fail checks nothing. One case per static arm,
 /// asserted against the tables so the right row is pinned as having fired; the exact bash
 /// wording — which is the diff contract — is asserted below.
 #[test]
@@ -107,11 +107,11 @@ fn a_missing_target_never_reads_as_a_pass() {
     assert_eq!(red_gone("gone-pin", SLOTS_GPU), want);
 }
 
-/// The three `cargo_test_pin` arms, including T-424's — cargo exits 0 and nothing ran — plus
+/// The three `cargo_test_pin` arms, including the one where cargo exits 0 and nothing ran — plus
 /// the two shapes that must still HOLD, so the classifier is not merely red on everything.
 #[test]
 fn every_cargo_pin_arm_can_go_red() {
-    let label = "-p map-engine-core --lib zzz -- --quiet";
+    let label = "-p website-map-engine --lib zzz -- --quiet";
     let red = |status, out: &str| classify(label, status, out).unwrap_err();
     let empty = "\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; \
                  0 measured; 277 filtered out; finished in 0.00s\n\n";
@@ -158,12 +158,12 @@ fn the_argv_rendering_and_the_pin_table_match_the_script() {
     assert_eq!(shown(&args), want);
     assert_eq!(CARGO_PINS.len(), 25);
     assert_eq!(CARGO_PINS.iter().filter(|p| p.4.is_some()).count(), 5);
-    // T-482: the vehicle-floor pin must keep `store`, or it matches zero tests.
+    // The vehicle-floor pin must keep `store`, or it matches zero tests.
     let veh = CARGO_PINS
         .iter()
         .find(|p| p.3 == "the_vehicle_row_still_has_the_shape_this_module_reads");
     assert_eq!(veh.expect("the vehicle-floor pin is still listed").1, MSN);
-    // T-216 §2: no pin may ask for `store` without `scenario`.
+    // No pin may ask for `store` without `scenario`.
     assert!(!CARGO_PINS.iter().any(|p| p.1 == Some("store")));
     // T-0xx Phase 2A: the crate default is `scenario` alone now. A map-engine graphics row
     // left on `NOF` would compile none of its modules and report "0 tests" as a pass.
@@ -184,7 +184,7 @@ fn the_argv_rendering_and_the_pin_table_match_the_script() {
 fn merged_capture_keeps_order_and_never_invents_an_exit_code() {
     let tmp = Path::new("/tmp");
     let path = std::env::var("PATH").unwrap_or_default();
-    // T-853: the local `merged()` this used to exercise now lives in the library as
+    // The local `merged()` this used to exercise now lives in the library as
     // `Run::merged_output`, so a second cargo-running port inherits it instead of re-deriving
     // it. The assertions stay here because THIS gate is the one whose 803-line diff depends
     // on them.

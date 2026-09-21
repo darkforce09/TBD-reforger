@@ -1,6 +1,6 @@
-//! T-886 — guarded PostgreSQL restore (`scripts/deploy/restore-db.sh` → `cargo xtask deploy db restore`).
+//! Guarded PostgreSQL restore: `cargo xtask deploy db restore`.
 //!
-//! Load-bearing: T-381 allow-list (`refuse_unsafe_restore_target`) and verify-before-write
+//! Load-bearing: the restore allow-list (`refuse_unsafe_restore_target`) and verify-before-write
 //! (`verify_dump`). Do not reimplement those — call `deploy_db_common`.
 
 use std::env;
@@ -43,7 +43,7 @@ pub struct RestoreArgs {
     #[arg(long = "expect-db")]
     pub(crate) expect_db: Option<String>,
 
-    /// Required to target a database outside the T-381 allow-list; must equal `--db`.
+    /// Required to target a database outside the restore allow-list; must equal `--db`.
     #[arg(long = "i-understand-this-destroys")]
     pub(crate) confirm: Option<String>,
 

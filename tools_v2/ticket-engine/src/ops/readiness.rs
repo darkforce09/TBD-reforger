@@ -14,13 +14,13 @@ pub fn default_plan_path(id: &str) -> String {
 /// then status→ready with the exact backfills: empty `main_goal` becomes
 /// summary→title→id, all-empty `acceptance` becomes `["See spec."]`.
 ///
-/// **T-920.1 ready-tier gate** (t920 spec Decisions log #2): a WORK ticket whose
+/// **Ready-tier gate** (t920 spec Decisions log #2): a WORK ticket whose
 /// `migration_legacy` is empty refuses promotion while any of the six ready-tier
 /// body fields ([`crate::empty_ready_tier_fields`]) is empty — naming each. The
 /// backfills therefore only ever fire on quarantined tickets (and on `main_goal`,
 /// which the queued tier owns and the backfill fills summary→title→id as before).
 ///
-/// **T-917.6 plan ready-gate** (spec §Plan documents, Decisions log #9): nothing goes
+/// **Plan ready-gate** (spec §Plan documents, Decisions log #9): nothing goes
 /// ready without its own plan document. `plan_arg` (nonempty) sets the `plan` field;
 /// otherwise an already-set `plan` stands; otherwise the field defaults to
 /// [`default_plan_path`]. Whatever path results must EXIST on disk under the corpus
@@ -97,14 +97,14 @@ pub fn mark_ready(
     let was_live = snapshot.status().name().is_live();
     let order = snapshot.status().order().ok_or_else(|| {
         format!(
-            "refusing mark-ready {id}: ready requires order and the ticket has none — the legacy CLI wedges mid-save here; reorder it into the queue first"
+            "refusing mark-ready {id}: ready requires order and the ticket has none — a mid-save wedge is the alternative; reorder it into the queue first"
         )
     })?;
-    // T-920.1 ready-tier gate (t920 spec Decisions log #2): promotion refuses with
+    // Ready-tier gate (t920 spec Decisions log #2): promotion refuses with
     // any of the six body fields empty, naming each — pre-write, corpus untouched
-    // (the T-916.1 refusal pattern). Work-only, quarantine-exempt: a nonempty
-    // migration_legacy means the content exists unprocessed (the T-919 drain fills
-    // the fields when it decomposes the wall) — the legacy story/acceptance
+    // (the shared refusal pattern). Work-only, quarantine-exempt: a nonempty
+    // migration_legacy means the content exists unprocessed (the drain fills
+    // the fields when it decomposes the wall) — the story/acceptance
     // backfills below still serve exactly that path.
     if let Ticket::Work(w) = &snapshot
         && w.migration_legacy.is_empty()

@@ -1038,7 +1038,7 @@ class TBD_MissionLoader
 			return;
 		}
 
-		// T-456 — REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load.
+		// REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load.
 		// A compromised/stale API could otherwise hand the mod an oversized body that skips the
 		// profile FileHandle.GetLength() gate and still reaches ParseMissionJson.
 		if (!IsMissionBodyWithinCap(data))

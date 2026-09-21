@@ -347,7 +347,7 @@ impl Broker {
 async fn run_broker(sock: PathBuf, pidfile: PathBuf) -> ExitCode {
     let idle_ms = env_secs("MCP_DAEMON_IDLE", 1800) * 1000;
     // Hard backstop: self-terminate after this even if "busy", so the daemon can never
-    // linger/leak indefinitely. The next mcp-call.sh transparently restarts it. 0 = disabled.
+    // linger/leak indefinitely. The next `mcp call` transparently restarts it. 0 = disabled.
     let max_life_ms = env_secs("MCP_DAEMON_MAX_LIFE", 14400) * 1000;
     let call_ms = env_secs("MCP_CALL_TIMEOUT", 180) * 1000;
 

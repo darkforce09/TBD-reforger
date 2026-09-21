@@ -2,9 +2,9 @@
 
 use super::*;
 
-/// T-914 — the ledger base the lock records: derived from `root`'s git history at pack time,
+/// The ledger base the lock records: derived from `root`'s git history at pack time,
 /// never from a constant. 0 when no marker is reachable (scratch dirs, stub roots, unit tests,
-/// a tree before its first close), which keeps open waves at the pre-T-914 1..N. The u32
+/// a tree before its first close), which keeps open waves at 1..N. The u32
 /// conversion is total in practice — the subject authority admits digits only, and no ledger
 /// approaches the boundary; a number that somehow overflows is treated as no marker.
 pub(super) fn ledger_base(root: &Path) -> Result<u32> {
@@ -18,7 +18,7 @@ pub(super) fn ledger_base(root: &Path) -> Result<u32> {
 /// The number below which no label may be issued: the highest wave any reachable close marker
 /// CLAIMS, never lower than the base.
 ///
-/// T-946. `wave_base` answers "which commit is the wave boundary" and is derived newest-first;
+/// `wave_base` answers "which commit is the wave boundary" and is derived newest-first;
 /// this answers "which numbers are already spent by a close that still stands", and the oracle
 /// (the platform wave-number check) will accept exactly `floor + 1`. Numbering
 /// the lock from anything else is how the two drifted 13 labels apart — see
@@ -53,7 +53,7 @@ pub(super) fn assemble(
         });
     }
     // Open waves continue the close-marker ledger (module header §NUMBERING), numbering past
-    // every PENDING emptied label too (T-925): those labels are reserved for their close
+    // every PENDING emptied label too: those labels are reserved for their close
     // markers, so the first open wave is max(wave_base, highest pending) + 1 and a relabel
     // can never collide with a wave that is waiting to close. Wave 0 is a LEDGER, not a
     // schedule — its label never moves off 0.
@@ -128,11 +128,11 @@ pub(super) fn compile_inner(
 ) -> Result<WaveLock> {
     let views = load_views(root)?;
     let mut warnings = Vec::new();
-    // T-946 follow-up — A REPACK MUST NOT RESHAPE A PLAN NOBODY ASKED IT TO RESHAPE.
+    // A REPACK MUST NOT RESHAPE A PLAN NOBODY ASKED IT TO RESHAPE.
     //
     // `max_concurrent()` reads `TBD_MAX_CONCURRENT` and defaults to 8, and `ticket ship`'s
     // lifecycle hook repacks with no environment at all. Measured 2026-09-06: wave 236 was packed
-    // at the run's 3-wide cap, then `ticket ship T-298`'s hook re-packed the whole lock at 8 and
+    // at the run's 3-wide cap, then a later ship hook re-packed the whole lock at 8 and
     // wave 236 came back holding eight different tickets — the wave that had just been gated no
     // longer existed in the plan, and `wave --close` had nothing to close. The lock RECORDS its
     // own `max_concurrent`; an incidental repack must honour it. An explicit

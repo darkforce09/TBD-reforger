@@ -1,7 +1,7 @@
 use super::*;
 
 /// `location.href`, `document.readyState`, etc. — `Runtime.evaluate` returning the value, with the
-/// same "never throw, fold the error into the string" contract as `cdp2.mjs`'s `evalJs`.
+/// a "never throw, fold the error into the string" contract.
 pub(super) async fn eval_js(page: &Page, expr: &str) -> String {
     match page.evaluate(expr, false).await {
         Ok(Value::String(s)) => s,
@@ -11,7 +11,7 @@ pub(super) async fn eval_js(page: &Page, expr: &str) -> String {
     }
 }
 
-/// Attach the console/log/exception taps that `cdp2.mjs` installs on the raw WS, using the CDP
+/// Attach the console/log/exception taps on the raw WS, using the CDP
 /// plumbing's persistent-event streams. Mirrors that script's arg-joining
 /// (`a.value ?? a.description ?? a.type`).
 pub(super) async fn attach_console_capture(page: &Arc<Page>) -> ConsoleLog {
@@ -75,7 +75,7 @@ pub(super) async fn attach_console_capture(page: &Arc<Page>) -> ConsoleLog {
     lines
 }
 
-/// JS `String(value)` for the scalar arg values CDP returns by value (`cdp2.mjs` joined these raw).
+/// JS `String(value)` for the scalar arg values CDP returns by value.
 pub(super) fn json_scalar(v: &Value) -> String {
     match v {
         Value::String(s) => s.clone(),
@@ -84,11 +84,11 @@ pub(super) fn json_scalar(v: &Value) -> String {
     }
 }
 
-/// Poll the boot overlay out, then dump the same page diagnostics `cdp2.mjs` logs. Returns nothing;
+/// Poll the boot overlay out, then dump the page diagnostics. Returns nothing;
 /// everything goes to stderr, exactly as the Node driver did (stdout stays clean for the caller).
 pub(super) async fn poll_overlay_and_diagnostics(page: &Page, console: &ConsoleLog) {
     // The editor boots behind a full-bleed loading overlay. Poll it out rather than guessing a
-    // fixed wait (cdp2.mjs: 25 one-second iterations).
+    // fixed wait (25 one-second iterations).
     for i in 0..25u32 {
         let state = eval_js(
             page,
@@ -186,7 +186,7 @@ pub(super) async fn capture_canvas(page: &Page, out: &Path) -> Result<()> {
     Ok(())
 }
 
-/// `<out>.png` → `<out>_canvas.png` (`cdp2.mjs`'s `out.replace(/\.png$/, '_canvas.png')`).
+/// `<out>.png` → `<out>_canvas.png`.
 pub(super) fn canvas_path(out: &Path) -> PathBuf {
     let s = out.to_string_lossy();
     let stem = s.strip_suffix(".png").unwrap_or(&s);
@@ -194,7 +194,7 @@ pub(super) fn canvas_path(out: &Path) -> PathBuf {
 }
 
 /// `Page.captureScreenshot` with the given params, writing `out` on success. Returns whether it
-/// wrote (the `cdp2.mjs` `shoot` helper — used to build the fallback chain).
+/// wrote — used to build the fallback chain.
 pub(super) async fn shoot(page: &Page, out: &Path, params: Value, label: &str) -> bool {
     match page.send("Page.captureScreenshot", params).await {
         Ok(r) => {
@@ -223,11 +223,11 @@ pub(super) async fn shoot(page: &Page, out: &Path, params: Value, label: &str) -
     }
 }
 
-/// `cdp2.mjs` — navigate through the steps, poll the boot overlay out, dump diagnostics, then
+/// Navigate through the steps, poll the boot overlay out, dump diagnostics, then
 /// capture the chrome (and, with `canvas_capture`, the map).
 ///
 /// Launches chromium itself (ANGLE/Vulkan on the real device) and tears it down — absorbing what
-/// `run_shot_gpu.sh` did around the driver. Returns the process exit code (0 on success).
+/// the GPU launch does around the driver. Returns the process exit code (0 on success).
 pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
     if steps.is_empty() {
         eprintln!("capture shot: need at least one <url> <waitMs> step");
@@ -236,7 +236,7 @@ pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
 
     // ANGLE/Vulkan on the real device — the only backend the live wgpu engine boots on (README §2).
     // launch_with_gpu pins XDG_CACHE_HOME on the chromium child, carrying the KB-002 fontconfig
-    // workaround (README §1) that run_shot_gpu.sh did with `export XDG_CACHE_HOME=…`.
+    // workaround (README §1), by pinning `XDG_CACHE_HOME` on the chromium child.
     let browser = cdp::launch_with_gpu(CAPTURE_DEBUG_PORT, GpuBackend::Vulkan, &[]).await?;
     // Open a page with no initial navigation; enable Log so `Log.entryAdded` reaches the tap.
     let page = Arc::new(cdp::new_page(&browser, None, &[]).await?);
@@ -249,7 +249,7 @@ pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
     for step in steps {
         eprintln!("→ {} (wait {}ms)", step.url, step.wait_ms);
         // Navigate WITHOUT waiting on Page.loadEventFired: the editor's SPA boot keeps loading long
-        // past the load event, so cdp2.mjs relied on the fixed per-step sleep, not the load event.
+        // past the load event, so the driver relies on the fixed per-step sleep, not the load event.
         page.send("Page.navigate", json!({ "url": step.url }))
             .await?;
         sleep_ms(step.wait_ms).await;
@@ -305,7 +305,7 @@ pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
     Ok(u8::from(!wrote))
 }
 
-/// `zoomsweep.mjs` — boot the editor, then for each zoom set the camera and read the wgpu canvas.
+/// Boot the editor, then for each zoom set the camera and read the wgpu canvas.
 ///
 /// Boots via the hardcoded two-step dev-login → edit navigation (6 s + 15 s settle), waits the boot
 /// overlay out (60 s cap), then for each zoom calls `__editorCamSet(tx, ty, z)`, settles 3.5 s, and
@@ -313,7 +313,7 @@ pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
 ///
 /// ── KNOWN CAPTURE-HARNESS ARTIFACT (do NOT file/fix) ─────────────────────────────────────────
 /// Under headless ANGLE/Vulkan, `window.__editorCamSet(...)` **panics the render engine**
-/// (`wgpu-29.0.4/src/backend/webgpu.rs`), which poisons the `RefCell` in `mission_editor.rs`'s
+/// (the wgpu crate's WebGPU backend), which poisons the `RefCell` in the editor's
 /// `cam_set`; every subsequent `__editorCam()` returns `undefined` and every canvas read returns a
 /// ~44 KB **black rectangle** instead of the ~3.7 MB map. Reproduced across multiple runs and zooms,
 /// inside and outside the height-label band — it is NOT a zoom-range guard. It is confirmed **fine
@@ -322,7 +322,7 @@ pub async fn shot(out: &Path, steps: &[Step], opts: ShotOptions) -> Result<u8> {
 /// a comment; it does not work around the panic (headless zoom would need `mouseWheel` events
 /// instead), and no ticket is filed against the engine from here.
 pub async fn zoomsweep(out_prefix: &str, mission_id: &str, zooms: &[f64]) -> Result<u8> {
-    // Everon centre-ish; the peaks worth reading sit inland (zoomsweep.mjs `[TX, TY] = [6400, 6400]`).
+    // Everon centre-ish; the peaks worth reading sit inland (`[TX, TY] = [6400, 6400]`).
     const TX: i64 = 6400;
     const TY: i64 = 6400;
 
@@ -331,7 +331,7 @@ pub async fn zoomsweep(out_prefix: &str, mission_id: &str, zooms: &[f64]) -> Res
     page.set_viewport(CAPTURE_VIEWPORT.0, CAPTURE_VIEWPORT.1)
         .await?;
 
-    // dev-login (admin), then the mission edit route — the two fixed navigations from zoomsweep.mjs.
+    // dev-login (admin), then the mission edit route — the two fixed navigations.
     page.send(
         "Page.navigate",
         json!({ "url": "http://localhost:8080/api/v1/auth/dev-login?role=admin" }),
@@ -376,7 +376,7 @@ pub async fn zoomsweep(out_prefix: &str, mission_id: &str, zooms: &[f64]) -> Res
     let mut wrote_any = false;
     for &z in zooms {
         // NOTE: this call is the one documented to panic the engine headless (see the artifact note
-        // on this fn). It is issued verbatim as zoomsweep.mjs did; a black canvas below is that
+        // on this fn). It is issued verbatim; a black canvas below is that
         // artifact, not a driver bug.
         let _ = eval_js(&page, &format!("window.__editorCamSet({TX}, {TY}, {z})")).await;
         sleep_ms(3500).await;

@@ -2,7 +2,7 @@ use super::{python3_in_command_position, shebang_names_python, shebang_names_she
 
 #[test]
 fn counts_real_shell_shebangs() {
-    // `scripts/ticket`, the extensionless tool T-623 found missing from the inventory.
+    // An extensionless tool an inventory would have missed.
     assert!(shebang_names_shell("#!/usr/bin/env bash"));
     assert!(shebang_names_shell("#!/bin/sh"));
     assert!(shebang_names_shell("#!/bin/bash -e"));

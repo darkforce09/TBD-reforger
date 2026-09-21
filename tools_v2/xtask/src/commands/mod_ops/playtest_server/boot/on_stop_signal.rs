@@ -46,7 +46,7 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
     // The pidfile is NOT deleted here. `assert_no_live_server` above already removed it, and only
     // after confirming the group it named was dead; if it could not confirm that, this line was never
     // reached. An unconditional `rm -f "$PIDFILE"` is what let a second invocation orphan the first
-    // one's server (T-608 / F5) — it threw away the only handle on a live process group.
+    // one's server (F5) — throwing away the only handle on a live process group.
     let logroot = format!("{}/profile/logs", o.run_dir);
     let _ = std::fs::remove_dir_all(&logroot);
 

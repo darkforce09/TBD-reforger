@@ -1,12 +1,12 @@
-//! The container↔host bridge. This module IS the bridge — `scripts/lib/hostrun.sh` is gone (T-903).
+//! The container↔host bridge. This module IS the bridge; there is no shell shim beside it.
 //!
-//! T-853 lifted this out of `playtest_server/host.rs` so the playtest server and the `wave.sh` port
+//! It sits here, not in `playtest_server/host.rs`, so the playtest server and the wave driver
 //! depend on ONE implementation. Before the lift there were two, and the second was about to be
 //! written from the same bash a third time.
 //!
 //! ── WHY A BRIDGE IS STILL NEEDED — AND WHICH HALF OF THE SHIM IS OBSOLETE ────────────────────────
 //!
-//! READ THIS BEFORE CONCLUDING THE SHIM IS DEAD. `hostrun.sh` was written for T-181.0 and gave two
+//! READ THIS BEFORE CONCLUDING THE SHIM IS DEAD. The host bridge gives two
 //! reasons. Exactly one of them has expired, and deleting the module on the strength of the expired
 //! one would take the live half with it.
 //!
@@ -40,7 +40,7 @@
 //!
 //! `distrobox-host-exec` is installed on BOTH sides of the bridge: `/usr/bin/distrobox-host-exec`
 //! exists in the container AND on the host. On the host it refuses. MEASURED 2026-07-26 on the host,
-//! recorded at `scripts/platform/wave.sh:149-155`:
+//! the wave driver records:
 //!
 //! ```text
 //! $ distrobox-host-exec echo hi
@@ -60,7 +60,7 @@
 //!
 //! ── THE `| head` GOTCHA, AND WHY THE PORT CANNOT HIT IT ──────────────────────────────────────────
 //!
-//! `hostrun.sh`'s header records, verbatim:
+//! The bridge's own contract, verbatim:
 //!
 //! > GOTCHA (measured): under `set -euo pipefail`, `hostrun CMD | head -N` aborts the calling
 //! > script. `head` closes the pipe after N lines, the bridge takes SIGPIPE and reports 127, and
@@ -85,9 +85,9 @@
 //! over the session bus). Reimplementing that is a large, fragile job with no upside; the shim's own
 //! job was only ever "pick the right one and exec it", which is four lines. So this module spawns it.
 //!
-//! T-903 deleted `scripts/lib/hostrun.sh`. This module is the only remaining bridge: callers go
-//! through [`Host`], not a sourced bash shim. `scripts/platform/wave.sh` sourced the `.sh` until
-//! T-902 deleted the bash driver.
+//! This module is the only bridge: callers go
+//! through [`Host`], not a sourced shell shim. The wave driver used one until
+//! Deleted the bash driver.
 //!
 //! cwd is preserved by `distrobox-host-exec`, so relative paths behave the same either way.
 
@@ -116,8 +116,8 @@ const BRIDGES: &[&str] = &["distrobox-host-exec", "host-spawn"];
 /// This is distrobox's own test (`distrobox-host-exec:130`), copied rather than reinvented so the
 /// two can never disagree about what "in a container" means.
 ///
-/// NOTE for the `wave.sh` port: `scripts/platform/wave.sh:168` carries a THIRD clause,
-/// `|| [ -n "${container:-}" ]`, which `scripts/lib/hostrun.sh` did not. The two-clause form here
+/// NOTE for the wave driver: it carries a THIRD clause,
+/// `|| [ -n "${container:-}" ]`, which the bridge does not. The two-clause form here
 /// is the one both existing Rust callers were built and measured against, so the lift keeps it
 /// exactly. Widening it is a behaviour change and belongs in its own ticket with its own measurement.
 pub fn in_container() -> bool {
@@ -135,7 +135,7 @@ pub struct Host {
     in_container: bool,
     /// SELFTEST ONLY — models bash's `hostrun() { return 127; }` subshell override.
     ///
-    /// S1 of `--selftest` exists because T-608's defect was invisible on every passing run: the
+    /// S1 of `--selftest` exists because the defect is invisible on every passing run: the
     /// liveness probe only lied when the bridge flaked. There is no way to make a real bridge flake
     /// on demand, so the bash overrode the function; this flag is the same trick with a type.
     broken: bool,
@@ -157,7 +157,7 @@ impl Host {
     /// Build a `Host` describing a specific situation, for tests and for callers that already know
     /// which side they are on. Everything else should use [`Host::detect`].
     // DEAD UNTIL THE SECOND CALLER LANDS. This item and the eight below it are the surface the
-    // `wave.sh` port consumes; T-853 lifted the module first so that port has one implementation to
+    // the wave driver consumes; the module sits here so the driver has one implementation to
     // call instead of a third copy of the bash. The playtest server does not need them, so the bin
     // target sees them as unused until `wave` lands — at which point every one of these
     // `allow(dead_code)`s should be deleted rather than kept "just in case".
@@ -247,7 +247,7 @@ impl Host {
     ///
     /// Returns `None` when the bridge is unusable — the honest form of hostrun's `return 127`. bash
     /// also printed a heredoc diagnostic on that path, and it is deliberately NOT reproduced HERE:
-    /// every `hostrun` call site in `run-playtest-server.sh` redirects stderr to `/dev/null`
+    /// every `hostrun` call site in the playtest lane redirects stderr to `/dev/null`
     /// (`2>/dev/null` or `>/dev/null 2>&1`), so that text never reached a terminal and emitting it
     /// here would add output no baseline has. The rc and the empty capture are what those callers
     /// actually read.
@@ -266,7 +266,7 @@ impl Host {
         match Run::new(prog).args(args).merged_output() {
             Ok(m) => Some(m.text),
             // A bridge that could not be spawned, was signalled, or timed out is NOT an answer.
-            // `None` propagates as "unknown" at the probe, which is the whole point of T-608.
+            // `None` propagates as "unknown" at the probe, which is the whole point.
             Err(_) => None,
         }
     }
@@ -274,7 +274,7 @@ impl Host {
     /// bash `hostrun "$@"` in its LOUD form: run direct on the metal, via the bridge in a container,
     /// and when containerised with NO bridge print the real diagnosis and return 127.
     ///
-    /// This is the entry point for callers that show the operator stderr — the `wave.sh` port among
+    /// This is the entry point for callers that show the operator stderr — the wave driver among
     /// them. The point of the refusal text is that the alternative is a linker or `GLIBC_2.39` error
     /// that LOOKS like a broken repo; see the module docs for what that cost the last time.
     ///
@@ -385,7 +385,7 @@ const REQUIRE_HOST_REFUSAL: &str = "require_host: no host bridge (distrobox-host
 /// ```
 ///
 /// ONE DELIBERATE DEVIATION, and it is the only edit to this text. The bash said "and no C
-/// toolchain". That clause was measured true in T-181.0 and is measured FALSE today —
+/// toolchain". That clause is measured FALSE today —
 /// `build-essential` is installed in the agent container and `cargo build` works natively there.
 /// Printing it now would tell the reader the exact thing this module exists to stop them believing,
 /// in the one message they see at the moment they are most likely to act on it. So the clause is

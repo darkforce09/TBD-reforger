@@ -174,7 +174,7 @@ pub fn build_unified_satellite(
 
 /// The v1 container bytes: `"TBDS"`, formatVersion 1, jsonLength, the hand-packed JSON table, then
 /// the payload. Retained verbatim behind `--container-version 1` because `everon-sat.tbd-sat` is
-/// committed in this shape and stays that way until T-935.13 regenerates it.
+/// committed in this shape and stays that way until a Workbench export regenerates it.
 pub(crate) fn build_tbds_v1_bytes(
     blocks: &[TileBuf],
     level_meta: &[(usize, usize)],

@@ -9,15 +9,15 @@
 //! Skips any dir belonging to a slice whose worktree still exists, so a live agent's cache
 //! survives.
 //!
-//! T-426: gate-private dirs (`target-gate-*`, `dist-gate-*`) live at MAIN_ROOT, not `/var/tmp` —
-//! ~15 GB class, expensive to rebuild, warm is valuable (T-421 measured cold 23.4 s vs warm 9.3 s
+//! Gate-private dirs (`target-gate-*`, `dist-gate-*`) live at MAIN_ROOT, not `/var/tmp` —
+//! ~15 GB class, expensive to rebuild, warm is valuable (measured cold 23.4 s vs warm 9.3 s
 //! slice gate). Default reclaim does NOT touch them; opt in with `--gate-dirs`. Optional
 //! `--gate-dirs-older-than-days N` only removes gate dirs whose directory mtime is older than N
 //! days (age-based sweep without nuking a cache that was used today).
 //!
-//! T-589: PER-SLICE private dirs (`target-<SLICE>`, `target-<SLICE>-api`) ALSO live at MAIN_ROOT,
-//! and until T-589 nothing reaped them at all. See the block inside for why they are swept BY
-//! DEFAULT while T-426's gate set stayed opt-in — the two look alike and are opposites.
+//! PER-SLICE private dirs (`target-<SLICE>`, `target-<SLICE>-api`) ALSO live at MAIN_ROOT,
+//! and nothing else reaps them. See the block inside for why they are swept BY
+//! DEFAULT while the gate set stays opt-in — the two look alike and are opposites.
 
 use std::path::{Path, PathBuf};
 

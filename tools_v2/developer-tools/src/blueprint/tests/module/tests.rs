@@ -121,7 +121,7 @@ fn farmhouse_dump_matches_golden_blueprint() {
 
 /// The acceptance instrument, pinned: replay the committed 400-pair engine oracle through
 /// the golden blueprint + the golden `.bvh` sidecar. **400/400** since `evaluate_los` moved
-/// onto the BVH raycaster (T-090.6 step 3, 2026-09-01). 2.5D history: 260/400 pre-roof
+/// onto the BVH raycaster (step 3, measured 2026-09-01). 2.5D: 260/400 pre-roof
 /// (every miss the unmodeled roof) → 384 roof heightfield → 387 attic band + above-roof
 /// wall cap, where the 13 misses were all model-clear/engine-blocked roof-margin leans.
 /// Same instrument as `bvh::tests::farmhouse_bvh_sidecar_parity_is_pinned` by construction

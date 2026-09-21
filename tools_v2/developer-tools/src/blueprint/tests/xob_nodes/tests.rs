@@ -94,7 +94,7 @@ fn node_table_decodes_sockets_and_the_name_space_starts_at_the_first_material() 
     assert!((grp.t[1] - 2.0).abs() < 1e-6 && (grp.t[2] - 3.0).abs() < 1e-6);
 }
 
-/// The T-090.11.2 acceptance on the real farmhouse: 26 records (root + 25 sockets), COLL
+/// The acceptance on the real farmhouse: 26 records (root + 25 sockets), COLL
 /// record 0's nine subranges resolve to the nine game materials in file order and cover
 /// all 1129 triangles, record 1 (`FireView`) resolves too. Needs the operator's extract.
 #[test]

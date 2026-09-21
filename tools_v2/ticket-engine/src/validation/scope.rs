@@ -2,12 +2,12 @@
 
 use super::*;
 
-/// T-912.1: every open work ticket must own its collision surface — the wave packer reads ticket
+/// Every open work ticket must own its collision surface — the wave packer reads ticket
 /// `owns` now, and an owns-empty ticket is invisible to every dispatch set it computes.
 ///
-/// Reads EVERY `.ai/tickets/T-*.toml` through the shared typed corpus (T-916.2 — the store
+/// Reads EVERY `.ai/tickets/T-*.toml` through the shared typed corpus (the store
 /// replaced this fn's own glob). `tickets(registry)` walks the parents-only phase-2 view,
-/// which would silently exempt children (T-181.16, T-912.2, …) from the rule. Fail-closed on
+/// which would silently exempt children (…) from the rule. Fail-closed on
 /// an unloadable corpus: the load error (naming the first offending file) is the finding — a
 /// guard that cannot scan must not report clean.
 pub(super) fn check_open_work_owns(root: &Path) -> Vec<String> {
@@ -27,7 +27,7 @@ pub(super) fn check_open_work_owns(root: &Path) -> Vec<String> {
     errors
 }
 
-/// T-917.2 — class is REQUIRED on work tickets (spec Decisions log #4; the value set is
+/// Class is REQUIRED on work tickets (spec Decisions log #4; the value set is
 /// parse-validated in tbd-tickets, so only ABSENCE can red here). Corpus-wide: the v2
 /// migrator triaged every historical work ticket and the minters classify at birth, so
 /// no status tier is exempt. Fail-closed on an unloadable corpus, same as the owns rule.
@@ -51,7 +51,7 @@ pub(super) fn check_work_class(root: &Path) -> Vec<String> {
     errors
 }
 
-/// T-917.2 — surface is REQUIRED on live work (spec Decisions log #3), the corpus-wide
+/// Surface is REQUIRED on live work (spec Decisions log #3), the corpus-wide
 /// mirror of the ops made-live gate. Binds exactly where a surface is *possible*: the
 /// scope must name a component AND the vocabulary must OFFER surfaces for it — a rule
 /// cannot require what `.ai/tickets/scope-vocab.toml` does not contain (component-free

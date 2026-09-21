@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-515 — Class-R: SQL-only claim migration 0016 must keep its claim UPDATE body.
+/// Class-R: SQL-only claim migration 0016 must keep its claim UPDATE body.
 ///
 /// `tests/db_migrate.rs` only asserts schema/object counts after sqlx migrate. A hollow 0016 that
 /// drops the claim UPDATE (`UPDATE match_player_stats … SET discord_id`) but keeps
@@ -27,16 +27,14 @@ pub fn gate_db_migrate_claim_body(ctx: &Ctx) -> i32 {
         });
     if !Path::new(&f).is_file() {
         wprintln!("db_migrate claim body: missing migration file: {f}");
-        wprintln!(
-            "        T-335 0016 is the one-shot claim for pre-T-326 linked accounts; without it"
-        );
+        wprintln!("        0016 is the one-shot claim for already-linked accounts; without it");
         wprintln!("        this Class-R cannot pin the UPDATE body. Restore the file or unset");
         wprintln!("        TBD_GATE_MIGRATION_0016.");
         return 1;
     }
     let src = std::fs::read_to_string(&f).unwrap_or_default();
     // Strip /*…*/ block comments (incl. multiline) then -- line comments before needle search so
-    // comment-only bait cannot false-green (T-523 / verifier MAJOR).
+    // comment-only bait cannot false-green.
     let body = strip_sql_comments(&src);
     let needles = [
         "UPDATE public.match_player_stats AS s",
@@ -56,7 +54,7 @@ pub fn gate_db_migrate_claim_body(ctx: &Ctx) -> i32 {
         wprintln!(
             "        Hollow 0016 (REFRESH kept, claim UPDATE dropped) still passes schema counts."
         );
-        wprintln!("        Restore the T-335 claim UPDATE body (do not weaken this assert).");
+        wprintln!("        Restore the claim UPDATE body (do not weaken this assert).");
         return 1;
     }
     wprintln!("db_migrate claim body: OK — 0016 retains claim UPDATE needles ({f})");
@@ -286,9 +284,7 @@ pub fn gate_db_migrate_persist(ctx: &Ctx, state: &GateState, mode: &str) -> u8 {
         wprintln!(
             "        Every existing database — dev, staging, production — will refuse to boot with"
         );
-        wprintln!(
-            "        `migration N was previously applied but has been modified` (sqlx VersionMismatch)."
-        );
+        wprintln!("        a sqlx VersionMismatch over the modified migration.");
         for (ver, f, applied_sum, sum) in &drift {
             wprintln!("        - migration {ver}  {f}");
             wprintln!("            applied: {applied_sum}");
@@ -347,7 +343,7 @@ pub fn gate_db_migrate_persist(ctx: &Ctx, state: &GateState, mode: &str) -> u8 {
                 "        Neutralise the offending rows FIRST, in the same migration, then constrain —"
             );
             wprintln!(
-                "        see 0010_backfill_aar_replay_url_scheme.sql (T-405) for the established shape."
+                "        see 0010_backfill_aar_replay_url_scheme.sql for the established shape."
             );
             return 1;
         }

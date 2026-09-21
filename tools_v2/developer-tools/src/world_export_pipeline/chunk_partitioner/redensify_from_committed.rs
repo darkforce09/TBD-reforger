@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::{density_fixtures_dir, terrain_dir};
 
-/// T-176 A2 — re-derive the TBDD density grids from the **committed** objects (no staging /
+/// Re-derive the TBDD density grids from the **committed** objects (no staging /
 /// Workbench). Reads `objects/prefabs.json.gz` (prefabId→kind) + every `objects/chunks/*.json.gz`
 /// (`instances:[[prefabId,x,y,z,yaw],…]`), accumulates a global corner grid at `DENSITY_CELL_M`,
 /// box-blurs the tree channel into a smooth canopy field (bridges tree gaps, leaves clearings as
@@ -73,7 +73,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
 
     let (tree_grid, tree_size) = density::accumulate_corners(trees.iter().copied(), world_size_m);
     let (rock_grid, rock_size) = density::accumulate_corners(rocks.iter().copied(), world_size_m);
-    // T-537: refuse redensifying committed density bins from an empty tree+rock set.
+    // Refuse redensifying committed density bins from an empty tree+rock set.
     super::super::refuse_empty_write(
         "redensify density bins",
         trees.is_empty() && rocks.is_empty(),
@@ -115,7 +115,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
     Ok(())
 }
 
-/// T-176 A2 — regenerate the golden S13 density fixture (`density-fixture.bin` + `expectedCorners` +
+/// Regenerate the golden S13 density fixture (`density-fixture.bin` + `expectedCorners` +
 /// `expectedFileBytes` in `density-fixture.json`) from its own `treePositions`/`rockPositions` at the
 /// current `DENSITY_CELL_M`. The S13 gate encodes the same slice and checks every corner, so after a
 /// cell-size change the committed fixture must be regenerated. No canopy blur — this validates the
@@ -139,7 +139,7 @@ pub fn gen_density_fixture() -> Result<()> {
     };
     let trees = pos("treePositions");
     let rocks = pos("rockPositions");
-    // T-537: refuse regenerating the golden density fixture from an empty position set.
+    // Refuse regenerating the golden density fixture from an empty position set.
     super::super::refuse_empty_write(
         "gen-density-fixture positions",
         trees.is_empty() && rocks.is_empty(),
@@ -192,9 +192,9 @@ pub fn gen_density_fixture() -> Result<()> {
     Ok(())
 }
 
-/// build-roads-from-topo.mjs port. Determinism: records sorted by (type, first x, first y,
+/// Build the road network from the topo file. Determinism: records sorted by (type, first x, first y,
 /// vertexCount); ids assigned after the sort; points rounded to 2 dp; gzip level 9.
-/// The road census, read from the COMMITTED `roads.json.gz` — T-946/T-960.
+/// The road census, read from the COMMITTED `roads.json.gz`.
 ///
 /// Roads never pass through prefab classification: they export as prefab-less `RoadEntity` rows
 /// (`resourceName` empty), so `classify.rs` — a pure function of the resource name — never sees
@@ -298,7 +298,7 @@ pub fn build_roads_from_topo_opt(
         })
         .collect();
     let doc = json!({ "schemaVersion": "1.0.0", "terrainId": terrain, "roadSegments": segments });
-    // T-537: refuse writing empty roads.json.gz over the committed 887-segment catalog.
+    // Refuse writing empty roads.json.gz over the committed 887-segment catalog.
     super::super::refuse_empty_write(
         "build-roads-from-topo",
         segments.is_empty(),
@@ -321,7 +321,7 @@ pub fn build_roads_from_topo_opt(
         by_class.insert(c.to_string(), json!(n + 1));
     }
     let summary = json!({
-        "slice": "T-090.3.3",
+        "slice": "density-redensify",
         "source": "decode-topo section 1",
         "classMappingProvisional": false,
         "classByTopoType": { "0": "runway", "1": "highway_paved", "2": "road_paved", "3": "road_dirt", "5": "track" },

@@ -7,7 +7,7 @@ fn repo_root() -> PathBuf {
     crate::repository::find_repo_root().expect("repository root")
 }
 
-/// Minimal vocabulary every scratch TREE carries (T-917.2: `Corpus::load` is
+/// Minimal vocabulary every scratch TREE carries (`Corpus::load` is
 /// fail-closed on the vocab file). Memory-only corpora (`Corpus::new`) never read it.
 const MINI_VOCAB: &str = "[repo.docs]\n";
 
@@ -64,12 +64,12 @@ fn work(id: &str, status: Status) -> Ticket {
 /// `render_ticket_toml` form — both hand-edited outside any writer, both
 /// VALUE-equal after re-parse (measured 2026-08-14 over 1182 files):
 ///
-/// EMPTY since the T-916.1 land commit canonicalized the last two hand-edit
-/// deviations (`T-911.1` shipped_at slot, `T-916.2` inline layers array) as
+/// EMPTY: the corpus carries no hand-edit
+/// deviations (a shipped_at slot, an inline layers array) as
 /// operator bookkeeping riding the same commit. The pin stays SELF-TIGHTENING
 /// both ways: a deviation outside the list fails the test, and a listed file
 /// that has become canonical ALSO fails until the entry is removed in the same
-/// commit — the `frozen_unmappable_is_49` exact-accounting pattern. The list
+/// commit — the exact-accounting pattern. The list
 /// may only ever shrink.
 const HAND_EDITED_NOT_CANONICAL: &[&str] = &[];
 

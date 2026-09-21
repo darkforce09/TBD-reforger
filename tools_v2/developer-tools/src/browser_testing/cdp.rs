@@ -1,4 +1,4 @@
-//! T-165.5 — Chrome DevTools Protocol client (port of `driver/cdp.mjs`).
+//! Chrome DevTools Protocol client.
 //!
 //! Same wire behavior as the Node harness: raw CDP over one WebSocket per page, chromium
 //! resolved from `CHROME_HEADLESS_SHELL` or the playwright cache, SwiftShader WebGL2 +
@@ -25,15 +25,15 @@ pub struct Browser {
     child: Child,
     pub debug_port: u16,
     pub http: reqwest::Client,
-    /// Per-launch chromium profile dir (T-166 hygiene). Every smoke gets its OWN profile so OPFS
+    /// Per-launch chromium profile dir. Every smoke gets its OWN profile so OPFS
     /// + IndexedDB (large persisted world/mission state) never bleed across smokes in a suite run.
     user_data_dir: PathBuf,
-    /// Chrome's own recent stdout+stderr, filled by the [`drain_pipe`] tasks (T-354).
+    /// Chrome's own recent stdout+stderr, filled by the [`drain_pipe`] tasks.
     log_tail: Arc<StdMutex<VecDeque<String>>>,
 }
 
 impl Browser {
-    /// Chrome's own last `LOG_TAIL_LINES` output lines, oldest first (T-354).
+    /// Chrome's own last `LOG_TAIL_LINES` output lines, oldest first.
     ///
     /// This is the browser's account of its own death — what runbook P2 goes hunting for by
     /// re-launching chromium by hand. Worth printing on any wedge/timeout path: a `FATAL` /
@@ -46,7 +46,7 @@ impl Browser {
             .unwrap_or_default()
     }
 
-    /// SIGTERM the whole chrome PROCESS GROUP (T-166). Chrome forks renderer/gpu/zygote children;
+    /// SIGTERM the whole chrome PROCESS GROUP. Chrome forks renderer/gpu/zygote children;
     /// signalling only the parent pid (the old behavior) orphaned those children, which kept
     /// pegging every core under SwiftShader software GL → the *next* smoke's page starved of CPU
     /// and its `Runtime.evaluate` wedged (the suite "hang"). `launch` puts chrome in its own group
@@ -92,7 +92,7 @@ impl Drop for Browser {
 const LOG_TAIL_LINES: usize = 200;
 
 /// The GPU backend chromium is launched with — the one knob that separates the gate harness from
-/// the editor-capture harness (T-165.5 vs T-661 capture port).
+/// the editor-capture harness.
 ///
 /// # Why this is a choice and not a constant
 ///
@@ -113,7 +113,7 @@ pub enum GpuBackend {
     /// ANGLE SwiftShader — software WebGL2, no GPU required. The gate harness default.
     Swiftshader,
     /// ANGLE/Vulkan on the real device — required to boot the live WebGPU map engine. The
-    /// editor-capture harness default. The flag set mirrors `run_shot_gpu.sh` GPU_MODE=vulkan
+    /// editor-capture harness default. The flag set is ANGLE over Vulkan
     /// (`--use-angle=vulkan --enable-features=Vulkan --use-vulkan --ignore-gpu-blocklist`).
     Vulkan,
 }
@@ -122,9 +122,9 @@ impl GpuBackend {
     /// The chromium GPU flags for this backend, appended after the shared base flags in [`launch`].
     fn flags(self) -> &'static [&'static str] {
         match self {
-            // T-165.5 baseline: ANGLE software GL for CI determinism.
+            // Baseline: ANGLE software GL for CI determinism.
             GpuBackend::Swiftshader => &["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-            // run_shot_gpu.sh vulkan branch, verbatim — the only mode the live wgpu engine boots on.
+            // The vulkan branch — the only mode the live wgpu engine boots on.
             GpuBackend::Vulkan => &[
                 "--use-angle=vulkan",
                 "--enable-features=Vulkan",
@@ -163,10 +163,10 @@ impl Page {
             .await
     }
 
-    /// A CDP call with an explicit per-call WS timeout (T-177). The suite default (130 s) sits just
+    /// A CDP call with an explicit per-call WS timeout. The suite default (130 s) sits just
     /// past the 120 s server-side `Runtime.evaluate` timeout so a real slow eval still completes but
     /// a wedged page main thread fails the smoke loudly instead of hanging `wait_for` — and the whole
-    /// suite — forever (T-166 safety net). The fail-fast `gate doctor` liveness probe passes a SHORT
+    /// suite — forever, as a safety net. The fail-fast `gate doctor` liveness probe passes a SHORT
     /// timeout (via [`Self::evaluate_with_timeout`]) so a wedge surfaces in seconds with a diagnosis.
     pub async fn send_with_timeout(
         &self,
@@ -265,7 +265,7 @@ impl Page {
             .await
     }
 
-    /// `evaluate` with an explicit WS timeout (T-177). The server-side `Runtime.evaluate` `timeout`
+    /// `evaluate` with an explicit WS timeout. The server-side `Runtime.evaluate` `timeout`
     /// is set to match (clamped to `1000..=120000` ms) so the browser gives up in lockstep with the
     /// client — used by the fail-fast `gate doctor` liveness probe (short timeout → a wedge surfaces
     /// in seconds, not 130 s).

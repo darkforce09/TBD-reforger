@@ -30,7 +30,7 @@ static ID_TOKEN: LazyLock<Regex> =
 /// Extract boundary-matched ticket ids from one commit subject, deduped, in order.
 /// Maximal munch supplies the trailing boundary (the id is followed by a non-id
 /// character or end); the leading guard refuses an ASCII-alphanumeric predecessor,
-/// so `XT-90` is not a claim on `T-90`.
+/// so a subject prefixed with another letter is not a claim on a ticket id.
 pub fn subject_ids(subject: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for m in ID_TOKEN.find_iter(subject) {

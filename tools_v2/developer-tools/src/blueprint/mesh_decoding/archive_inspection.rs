@@ -1,4 +1,4 @@
-//! `cargo xtask map xob-inspect` — what the XOB decoder sees (T-090.11.2): chunk ids, the
+//! `cargo xtask map xob-inspect` — what the XOB decoder sees: chunk ids, the
 //! string table, node records + sockets, COLL records with their layer preset and
 //! per-material triangle runs, the resulting kinds histogram. The reverse-engineering
 //! instrument and the acceptance check for the node / material decode; `--find <substr>`

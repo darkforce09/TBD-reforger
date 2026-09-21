@@ -154,7 +154,7 @@ pub fn verify(file: &InstancesFile, recon: &ReconFile) -> Report {
     best
 }
 
-/// The T-090.11.3 enrichment, when the dump carries it: a leaf's hinge params must equal the
+/// The enrichment, when the dump carries it: a leaf's hinge params must equal the
 /// instance's `DoorRecord`, the child's `pivotId` must be the instance id's last segment, and
 /// its parent-frame origin must match the instance placed under its parent (2 cm).
 pub(super) fn enrichment_checks(file: &InstancesFile, recon: &ReconFile, report: &mut Report) {
@@ -225,7 +225,7 @@ pub fn load(instances: &PathBuf, recon: &PathBuf) -> Result<(InstancesFile, Reco
 pub fn run_instances_verify(_root: &std::path::Path, args: &[String]) -> Result<u8> {
     let mut instances: Option<PathBuf> = None;
     let mut recon: Option<PathBuf> = None;
-    // T-090.12.1 — `--world-row --chunk <cx_cy.json.gz> --prefabs <prefabs.json.gz>`.
+    // `--world-row --chunk <cx_cy.json.gz> --prefabs <prefabs.json.gz>`.
     let mut world_row = false;
     let mut chunk: Option<PathBuf> = None;
     let mut prefabs: Option<PathBuf> = None;
@@ -335,7 +335,7 @@ pub fn run_instances_verify(_root: &std::path::Path, args: &[String]) -> Result<
             c.depth, c.size, c.rel_pos, c.angles_deg
         );
     }
-    // T-090.12.1 — the committed chunk row must place every matched child on its recon worldPos.
+    // The committed chunk row must place every matched child on its recon worldPos.
     let mut world_ok = true;
     if world_row {
         let chunk = chunk.context("--world-row needs --chunk <cx_cy.json.gz>")?;

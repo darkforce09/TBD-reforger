@@ -1,7 +1,7 @@
-//! T-894 — the Makefile's **database lane** as `cargo xtask db …`.
+//! The **database lane**: `cargo xtask db …`.
 //!
-//! T-853 Phase 3 replaces `make` with `cargo xtask`. This module is the first of the three build
-//! slices (T-894 db / T-895 build / T-896 ci); T-897 deletes the Makefile afterwards. **This slice
+//! `cargo xtask` is the whole build interface. This module is the first of the three build
+//! lanes (db / build / ci); there is no Makefile beside them. **This module
 //! does not touch the Makefile** — the three build slices stay file-disjoint on purpose, so the
 //! only thing that lands here is the successor plus the evidence that it matches.
 //!
@@ -47,7 +47,7 @@
 //!
 //! 1. **The four `deploy db` wrappers echo nothing.** `db-backup`/`db-restore`/`db-backup-drill`/
 //!    `db-backup-verify` are one-line recipes that shell out to `cargo run -q -p xtask -- deploy
-//!    db …` (T-884…T-887 already ported that lane). This module calls those Rust functions
+//!    db …`. This module calls those Rust functions
 //!    **in-process**, so echoing `cargo run -q -p xtask -- …` would be a fabricated trace of a
 //!    command that never ran. The make side prints exactly one extra line — its own transport —
 //!    and the argv mapping (including make's `$(if $(DB),--db $(DB),)` conditionals, which expand
@@ -71,8 +71,8 @@
 //! - The leading `-` on the first `DROP DATABASE` (make ignores that line's status) and the `@` on
 //!   the reap block (silent) are both preserved.
 //! - `make db-restore` with no `DUMP=`/`DB=` printed a usage line naming *make* and exited 2. The
-//!   port kept that byte-for-byte through T-894/T-896 because rc AND text parity was the
-//!   acceptance criterion. **T-897 reworded it** — as that note said it would — now that there is
+//!   wording is kept byte-for-byte wherever rc AND text parity is the
+//!   acceptance criterion. **It is reworded here** now that there is
 //!   no `make db-restore` for an operator to run. The rc is unchanged.
 //!
 //! ── FAIL-OPENS CLOSED, AND ONE LATENT BUG FIXED ──────────────────────────────────────────────
@@ -85,12 +85,12 @@
 //! - **A stray base name could reach `DROP DATABASE`.** The Makefile has no knob, so its literal
 //!   `rust_it` is safe by construction; the port adds `TBD_IT_BASE_DB` (the selftest needs a
 //!   scratch base to avoid racing sibling slices), which would be a loaded gun without a guard. It
-//!   goes through the SAME T-381 allow-list the integration harness carries
+//!   goes through the SAME drop allow-list the integration harness carries
 //!   (`apps/website/api_v2/tests/common/mod.rs:87` ⇄ [`crate::commands::deploy::database_operations::
 //!   is_safe_scratch_database_name`]), and every individual name is re-checked immediately before
 //!   its `DROP`. `tbd_reforger` is refused twice over.
 //! - **The reap was skipped on exactly the runs that leak.** `cargo test` failing aborts the make
-//!   recipe before the T-558 prune, so a red suite leaves its `rust_it_<suite>_it` databases
+//!   recipe before the prune, so a red suite leaves its `rust_it_<suite>_it` databases
 //!   behind — the case the prune exists for. The port always reaps and then returns the test rc.
 //!   Output is unchanged (the reap is silent by design), so this costs no parity.
 //! - No container runtime at all is a `FATAL:` refusal from `resolve_runtime()` rather than a
@@ -115,7 +115,7 @@ pub mod test_it;
 // ── THE RECIPES, FROZEN ──────────────────────────────────────────────────────────────────────
 // These consts are the port's single source of truth AND the baseline captured from the Makefile
 // on 2026-08-12. `selftest`'s recipe arm re-derives them from the live Makefile while it exists;
-// after T-897 deletes it, the consts are what survives — which is why the pin lives here and not
+// with no Makefile beside them, the consts are what survives — which is why the pin lives here and not
 // only in a test that reads a file that is going away.
 
 /// `WEB := apps/website/api_v2` (Makefile:3).
@@ -157,7 +157,7 @@ pub(crate) const IT_BASE_DB: &str = "rust_it";
 /// The maintenance database `psql` connects to in order to drop/create the scratch one — the LIVE
 /// dev database, as the Makefile recipe had it. Preserved; nothing is written to it.
 pub(crate) const IT_MAINT_DB: &str = "tbd_reforger";
-/// `db restore` / `db backup-verify` usage lines. Frozen text (Makefile:99-100, 107 pre-T-897).
+/// `db restore` / `db backup-verify` usage lines. Frozen text.
 const USAGE_RESTORE: &str =
     "usage: cargo xtask db restore --dump <file.dump> --db <target> [--create]";
 const USAGE_VERIFY: &str = "usage: cargo xtask db backup-verify --dump <file.dump>";
@@ -173,7 +173,7 @@ pub enum DbCmd {
     Logs,
     /// `make seed` — apply the five data seeds to the running DB.
     Seed,
-    /// `make db-backup` — verified dump + prune (T-885 lane).
+    /// Verified dump + prune.
     Backup {
         #[arg(long)]
         db: Option<String>,
@@ -182,7 +182,7 @@ pub enum DbCmd {
         #[arg(long)]
         keep: Option<String>,
     },
-    /// `make db-restore DUMP=… DB=…` — verify a dump then `pg_restore --clean` (T-381 allow-list).
+    /// Verify a dump then `pg_restore --clean`, inside the drop allow-list.
     Restore {
         #[arg(long)]
         dump: Option<String>,
@@ -207,13 +207,13 @@ pub enum DbCmd {
         #[arg(long)]
         dump: Option<String>,
     },
-    /// `make registry-import` — ingest the committed T-150 registry envelopes into the dev DB.
+    /// Ingest the committed registry envelopes into the dev DB.
     #[command(name = "registry-import")]
     RegistryImport,
     /// `make rust-test-it` — fresh `rust_it` DB, run the suite, reap the per-binary leftovers.
     #[command(name = "test-it")]
     TestIt,
-    /// T-556 acceptance harness: bash-vs-port arms, each with its own RED proof.
+    /// Acceptance harness: every arm carries its own RED proof.
     Selftest,
     /// Repoint a recorded migration checksum after a comments-only edit to an applied migration.
     #[command(name = "repair-migration-checksum")]

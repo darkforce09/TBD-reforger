@@ -1,6 +1,6 @@
 use super::*;
 
-/// T-946 — the wasm scope reaches the engine crates the SPA compiles, not just its own path.
+/// The wasm scope reaches the engine crates the SPA compiles, not just its own path.
 ///
 /// Wave 237 changed `apps/website/map-engine` only, and the gate printed
 /// `wasm32 (frontend) PASS` next to `trunk build SKIP (frontend untouched this wave)` — a
@@ -27,7 +27,7 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
             &root,
             ["apps/website/map-engine/src/io/density/tbdd.rs"].into_iter()
         ),
-        "a map-engine-core source change must put the SPA in scope"
+        "a website-map-engine source change must put the SPA in scope"
     );
     assert!(
         wasm_scope_touched(&root, ["apps/website/map-engine/Cargo.toml"].into_iter()),
@@ -43,7 +43,7 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
     );
 }
 
-/// T-946.64 follow-up, filed by the wave-255 verify: **the dependency graph is not the frontend
+/// Follow-up, filed by the wave-255 verify: **the dependency graph is not the frontend
 /// suite's whole input set.**
 ///
 /// `frontend_tests_changed` originally scoped itself on `wasm_scope_touched` alone. But the
@@ -153,7 +153,7 @@ fn workspace_members_parse_is_not_empty_on_the_real_manifest() {
     // `cargo test` sets the CWD to the PACKAGE root (`tools_v2/xtask/`), not the workspace root, so a
     // bare `Cargo.toml` here is xtask's own manifest and has no `[workspace]` at all. Walk up
     // for the real one; at runtime the driver has already `cd`-ed to the repo root.
-    // T-923: the cwd is shared test state — resolve the root AND chdir under the one
+    // The cwd is shared test state — resolve the root AND chdir under the one
     // process-wide lock in [`crate::commands::platform::wave_execution::testcwd`], or a concurrent scratch-repo test
     // (whose tree carries `.ai/tickets/ROOT`) becomes the "repo root" this test reads.
     let Some(cwd) =

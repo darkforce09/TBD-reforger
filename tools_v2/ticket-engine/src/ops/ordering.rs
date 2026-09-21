@@ -11,8 +11,8 @@ use super::*;
 /// documented divergence from the old save path, which silently cascade-deleted via
 /// the `save_tree` stale-file pass (design Decisions log #3).
 ///
-/// Any OTHER program still listing a removed id (double listings exist: T-067 and
-/// T-111 both list T-067.1) makes the post-image referential check refuse the whole
+/// Any OTHER program still listing a removed id (double listings exist: two programs
+/// listing one child) makes the post-image referential check refuse the whole
 /// op — fail-closed, naming the listing program — rather than strand a dangling
 /// `children[]` entry.
 pub fn remove(c: &mut Corpus, id: &str, force: bool, now_utc: &str) -> Result<OpOutcome, String> {
@@ -76,7 +76,7 @@ pub fn remove(c: &mut Corpus, id: &str, force: bool, now_utc: &str) -> Result<Op
 }
 
 /// `cmd_reorder` semantics: the anchor must exist AND carry an order (both failure
-/// modes print the same legacy string), new order = anchor + 1, and an `idea` ticket
+/// modes print the same string), new order = anchor + 1, and an `idea` ticket
 /// flips to `queued` — every other status keeps its variant and only moves its order.
 /// The one sanctioned divergence: a resulting duplicate LIVE order refuses at the
 /// post-image gate instead of landing red state on disk (the wedge that motivated
@@ -152,7 +152,7 @@ pub fn reorder(c: &mut Corpus, id: &str, after: &str, now_utc: &str) -> Result<O
 /// `cmd_advance_slice` semantics over the typed [`ProgramTicket::children`] (the Value
 /// path read the mirrored `slices` key): no active → first child; else the next child
 /// after the current one; refuse past the end and refuse an active that is not in the
-/// list. Refusal strings are the legacy ones verbatim so T-916.2 can pass them
+/// list. Refusal strings come back verbatim so the command layer can pass them
 /// through.
 pub fn advance_slice(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String> {
     validate_clock(now_utc)?;

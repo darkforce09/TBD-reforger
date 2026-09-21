@@ -164,7 +164,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         out_line("warn: daemon pre-warm failed — xtask mcp call will use one-shot fallback")?;
     }
 
-    // Former lib/xtask-run.sh → cargo run -q -p xtask -- (mono root).
+    // `cargo run -q -p xtask --` from the monorepo root.
     match Run::new("cargo")
         .arg("run")
         .arg("-q")

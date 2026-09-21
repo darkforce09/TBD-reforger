@@ -5,13 +5,13 @@ use super::*;
 /// landing. That third condition is the one that was being skipped, so it is checked here rather
 /// than trusted.
 ///
-/// T-923: after the validations pass, this no longer PRINTS a marker for a human to type — it
+/// After the validations pass, this no longer PRINTS a marker for a human to type — it
 /// runs [`close_ceremony()`], which writes the marker commit itself, repacks the lock and commits
 /// the refresh. `--summary <text>` feeds the subject; `--dry-run` prints the exact would-be
 /// subject and writes nothing. There is no mode that prints without committing except
 /// `--dry-run`.
 ///
-/// T-925: the TARGET is the oldest pending `[[emptied]]` entry of the lock ([`close_target`]),
+/// The TARGET is the oldest pending `[[emptied]]` entry of the lock ([`close_target`]),
 /// not `current_wave` — which names the first wave still holding UNSHIPPED work and therefore
 /// could never name a closable one. Every validation below runs against the entry's FROZEN
 /// ticket set; the ceremony itself is unchanged.
@@ -28,12 +28,12 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     };
 
     let lock = lock_or_refuse!(ledger::load_lock(ctx));
-    // T-946 — `--tickets`: close a set the LOCK cannot name.
+    // `--tickets`: close a set the LOCK cannot name.
     //
     // A pending `[[emptied]]` entry only forms when one repack sees a whole wave landed, and
     // `ticket ship` repacks after every id. So a wave shipped one ticket at a time dissolves into
     // wave 0 an id at a time and the entry never forms (or forms holding the last id alone) —
-    // measured 2026-09-05 on wave 248's T-940.5 / T-940.6 / T-311, which left no entry at all
+    // measured 2026-09-05 on wave 248's three ids, which left no entry at all
     // while a one-ticket remnant from an earlier wave sat pending. The gate, meanwhile, gates the
     // whole span since the previous marker, so the wave IS verified; only the lock's bookkeeping
     // lost the membership. `--tickets` lets the command center name that verified span, and every
@@ -68,14 +68,12 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
                 wprintln!(
                     "         Closing that label would write a marker whose own plan calls it open,"
                 );
-                wprintln!(
-                    "         and oracle 2 refuses every later gate over it (T-618). Ship the wave"
-                );
+                wprintln!("         and oracle 2 refuses every later gate over it. Ship the wave");
                 wprintln!(
                     "         through `ticket ship --no-repack` + one repack so it freezes a"
                 );
                 wprintln!("         pending entry with its own reserved label, then close that.");
-                // T-946.19 — the line above is the PREVENTION, and it is useless to the operator
+                // The line above is the PREVENTION, and it is useless to the operator
                 // standing in front of a wave that already dissolved: by then no amount of
                 // re-shipping will make the carry see a set whose label was reissued three ships
                 // ago. The wave-241 verifier hit exactly that and had to be told the repair by
@@ -170,7 +168,7 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
     // failure documented at the top of fmt_changed — "EMPTY on merged main, so without an explicit
     // base this checked nothing exactly where it mattered most".
     //
-    // T-602 — THE SAME BUG LIVED HERE, LATENT. This used to pass `HEAD~${WAVE_GATE_DEPTH:-40}`,
+    // THE SAME BUG LIVED HERE, LATENT. This used to pass `HEAD~${WAVE_GATE_DEPTH:-40}`,
     // falling back to the root commit when HEAD had fewer than 40 ancestors. A COUNT is not a wave
     // boundary: any wave longer than 40 commits silently gated only its last 40 and every
     // change-scoped step went narrow exactly as wave 75's did. Wave 75 was 10 commits and wave 76
@@ -187,7 +185,7 @@ pub fn cmd_wave_close(ctx: &Ctx, args: &[String]) -> u8 {
         return 1;
     }
 
-    // T-923: every validation above passed — the ceremony replaces the print. The old behaviour
+    // Every validation above passed — the ceremony replaces the print. The old behaviour
     // ended here with `WAVE {w} CLOSED` on stdout and a human typing the marker; the ledger
     // shows what that produced (231–235 prefixed non-markers, 218/233 disavowed).
     close_ceremony(&ctx.root, &w, &wave_ids, summary.as_deref(), dry_run)
@@ -204,7 +202,7 @@ pub(super) fn parse_close_args(args: &[String]) -> Result<CloseArgs, String> {
                 Some(v) => summary = Some(v.clone()),
                 None => return Err("wave --close: --summary needs a value".into()),
             },
-            // T-946 — the operator-vouched set. See `cmd_wave_close`.
+            // The operator-vouched set. See `cmd_wave_close`.
             "--tickets" => match it.next() {
                 Some(v) => {
                     let ids: Vec<String> = v
@@ -238,12 +236,12 @@ pub(super) fn parse_close_args(args: &[String]) -> Result<CloseArgs, String> {
     Ok((summary, dry_run, tickets))
 }
 
-/// T-925 — the close TARGET: the oldest pending `[[emptied]]` entry of the committed lock,
+/// The close TARGET: the oldest pending `[[emptied]]` entry of the committed lock,
 /// as `(label, frozen ticket set)`.
 ///
 /// `current_wave` (the dispatch pointer, untouched) names the first open wave holding
 /// UNSHIPPED work — a wave that by definition can never pass the all-shipped validation, which
-/// is why close refused on every tree since the T-912.2 cutover: the moment a wave's last
+/// is why close refused on every tree since the cutover: the moment a wave's last
 /// ticket shipped, the ship-hook repack dissolved its label into wave 0 and the pointer moved
 /// on. The repack now freezes that dissolving wave as a pending `[[emptied]]` entry (operator
 /// decision 2026-08-16), and close targets the OLDEST one: the marker-ledger oracle accepts

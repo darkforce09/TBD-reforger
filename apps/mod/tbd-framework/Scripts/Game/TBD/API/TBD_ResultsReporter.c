@@ -1,4 +1,4 @@
-//! T-181.13.1 — the THIN end-of-round results POST.
+//! The THIN end-of-round results POST.
 //!
 //! ══ WHAT "THIN" MEANS HERE ═════════════════════════════════════════════════════════════════
 //! It is an operator instruction, not laziness. `TBD_MOD_DESIGN.md` §6 defers full AAR /
@@ -21,7 +21,7 @@
 //! because ingest treats a present `counters` object as the full scoreline. `aar_replay_url` stays
 //! omitted from the match object: that is a different field, not a player counter.
 //!
-//! ══ IDENTITY LINKING (T-181.35 SHIPPED) ════════════════════════════════════════════════════
+//! ══ IDENTITY LINKING SHIPS ═════════════════════════════════════════════════════════════════
 //! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard — all three
 //! hang off `SELECT discord_id FROM users WHERE arma_id = $1`
 //! (`apps/website/api_v2/src/handlers/telemetry.rs:238`). `users.arma_id` is written by the dev seed
@@ -622,7 +622,7 @@ class TBD_ResultsReporter
 	//! RFC 3339 UTC, which is what the backend's `DateTime<Utc>` (serde/chrono) parses:
 	//! `2026-07-25T16:31:28Z`.
 	//!
-	//! Proven, not assumed (T-181.13.1 compile probe; negative control
+	//! Proven, not assumed (compile probe; negative control
 	//! `System.GetYearMonthDayUTCZZ` -> `Undefined function`): `System.GetYearMonthDayUTC` and
 	//! `System.GetHourMinuteSecondUTC` both resolve against the real dedicated-server script API.
 	//! `Arm()` prints the resulting value on every boot so the FORMAT is proved by a run, not by a

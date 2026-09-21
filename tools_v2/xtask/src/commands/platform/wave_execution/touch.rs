@@ -3,7 +3,7 @@
 //! Force cargo to actually recompile what this slice changed.
 //!
 //! The shared `CARGO_TARGET_DIR` is necessary (a per-worktree target is ~44 GB) but it lets cargo
-//! hand one worktree an artifact built from ANOTHER worktree's source. OBSERVED by T-193: `cargo
+//! hand one worktree an artifact built from ANOTHER worktree's source. OBSERVED: `cargo
 //! test` reported 113 passing from a binary that did not contain its new tests, and `--list` showed
 //! main's 15 eden_chrome tests rather than its own 18. Touching the source forced a real rebuild
 //! and the true numbers appeared.
@@ -42,8 +42,8 @@ fn touch_paths(paths: &[PathBuf]) -> usize {
 
 /// Bump mtime on everything this slice changed, so cargo cannot reuse a foreign artifact.
 pub fn touch_changed(base: &str) -> i32 {
-    // T-536: empty→listed=0→return 0 must not mask a failed changed_rs (e.g. git_porcelain_paths
-    // rc≠0). Same class as T-492 for fmt_changed/clippy_changed — `for f in $(changed_rs …)`
+    // empty→listed=0→return 0 must not mask a failed changed_rs (e.g. git_porcelain_paths
+    // rc≠0). Same class as fmt_changed/clippy_changed — `for f in $(changed_rs …)`
     // discarded the rc and treated porcelain failure as an empty change list.
     let files = match changed_rs(base) {
         Ok(v) => v,
@@ -59,7 +59,7 @@ pub fn touch_changed(base: &str) -> i32 {
         }
         // Deleted/renamed-away: the file cannot be touched, but its crate (or include! consumers)
         // still needs a fingerprint bump — otherwise cargo is free to reuse a stale artifact that
-        // still contains the deleted code. T-409: deletion-only used to hard-fail here while
+        // still contains the deleted code. Deletion-only must not hard-fail here while
         // clippy_changed correctly stayed green.
         if let Some(d) = owning_package_dir(f) {
             let manifest = Path::new(&d).join("Cargo.toml");
@@ -95,7 +95,7 @@ pub fn touch_changed(base: &str) -> i32 {
     0
 }
 
-/// T-421. The other half of the cure, and the half that actually makes the two repros red.
+/// The other half of the cure, and the half that actually makes the two repros red.
 ///
 /// WHAT WAS WRONG WITH THE OLD REASONING. The comment on `gate_test_api` used to say `cargo
 /// check`/`clippy` need no private dir "because they emit no binary to run". The exposure was never
@@ -104,13 +104,13 @@ pub fn touch_changed(base: &str) -> i32 {
 /// never opened, and both of the ticket's repros are that one sentence:
 ///
 ///   A. MEASURED 2026-07-26. Append `THIS IS NOT RUST AND CANNOT COMPILE ###` to
-///      `crates/map-engine-core/src/slot_line.rs`, then `touch -r` it back to its ORIGINAL mtime.
+///      a `website-map-engine` source file, then `touch -r` it back to its ORIGINAL mtime.
 ///      `cargo check --workspace --quiet` -> rc 0. `touch` it (identical bytes) -> rc 101,
 ///      "reserved multi-hash token is forbidden". The gate's own clippy line: same, 0 then 101.
 ///   B. MEASURED 2026-07-26. A sibling worktree added a const and built into the shared dir. From a
-///      tree that does not contain that symbol, `cargo check -p map-engine-core --features
+///      tree that does not contain that symbol, `cargo check -p website-map-engine --features
 ///      doc,mission,world` reported `Finished in 0.06s`, and `--message-format=json` named
-///      `libmap_engine_core-<hash>.rmeta` as its own artifact — an rmeta that greps 1 for the
+///      `libwebsite_map_engine-<hash>.rmeta` as its own artifact — an rmeta that greps 1 for the
 ///      foreign symbol while the tree greps 0. The check stood on another tree's work and said
 ///      PASS.
 ///
@@ -125,7 +125,7 @@ pub fn touch_changed(base: &str) -> i32 {
 /// WHY THE WHOLE WORKSPACE AND NOT JUST THE DIFF. [`touch_changed`] already covers `$base..HEAD`
 /// union `git status --porcelain`, and that defence is real — keep it. What it cannot cover is a
 /// crate this slice did not touch but some OTHER tree did: wave 5's own 12/12 run touched only
-/// map-engine-core, website-frontend and xtask, so website-api and every other member's verdict
+/// website-map-engine, website-frontend and xtask, so website-api and every other member's verdict
 /// rested on artifacts of unidentified provenance. Provenance is not a property of the diff, so the
 /// invalidation cannot be scoped to the diff.
 ///
@@ -240,21 +240,21 @@ fn package_name(dir: &str) -> Option<String> {
 /// WHY THIS EXISTS: the slice gate ran check + wasm32 + fmt and no clippy at all, so a lint in a
 /// slice's own code could not surface until the wave gate ran `clippy --all-targets` on merged main
 /// — where it reads as somebody else's problem and blocks every other slice in the group. Hit for
-/// real on T-329, which added a large test file: `doc_list_item_without_indentation` and an
+/// real on a slice that added a large test file: `doc_list_item_without_indentation` and an
 /// unnecessary `to_string`, both in code it wrote, neither visible to the gate it was told to pass.
 ///
 /// `--all-targets` is the load-bearing flag: the wave gate uses it, so tests and benches are gated
 /// there. Without it here, a test-only lint is invisible to the agent and certain to land red. That
-/// is exactly the T-329 case.
+/// is exactly the case.
 ///
 /// Scoped to changed crates rather than the workspace because `clippy --workspace -D warnings` is
-/// red on clean main — a gate nothing can pass teaches agents that gate failures are noise. T-603
+/// red on clean main — a gate nothing can pass teaches agents that gate failures are noise. A re-measure
 /// re-measured 2026-07-31: 60 errors, ALL of them website-frontend linted natively, none in
 /// tools_v2/developer-tools or xtask (this note used to blame those two; they are clean and the wave gate
 /// now lints them by name). Frontend goes through wasm32 with NO `-D`, matching ci.yml:113;
 /// everything else takes `-D warnings`, matching the wave gate.
 pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
-    // T-492: propagate changed_rs failure — empty stdout + rc≠0 must not become SKIP.
+    // Propagate changed_rs failure — empty stdout + rc≠0 must not become SKIP.
     let files = match changed_rs(base) {
         Ok(v) => v,
         Err(rc) => return rc,
@@ -265,8 +265,8 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
     }
     // Map each file to its owning crate by walking up to the nearest Cargo.toml with a [package]
     // name. Orphan fragments (apps/website/shared/*.rs) have no package ancestor — the walk stops
-    // at '.' — but they are include!'d into real crates (T-405 is_http_url_cases.rs → website-api +
-    // website-frontend). T-406's empty-crates refuse false-red'd that shape; resolve via include!
+    // at '.' — but they are include!'d into real crates (`is_http_url_cases.rs` reaches website-api
+    // and website-frontend). An empty-crates refusal false-reds that shape; resolve via include!
     // consumers before refusing.
     let mut crates: Vec<String> = Vec::new();
     let push_unique = |crates: &mut Vec<String>, c: String| {
@@ -310,8 +310,8 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
     }
     for c in &crates {
         let argv: Vec<String> = match c.as_str() {
-            // T-742: --all-targets is load-bearing (see function header) — without it, #[cfg(test)]
-            // lints are invisible here and certain to land red once T-752 teaches CI/Makefile the
+            // --all-targets is load-bearing (see function header) — without it, #[cfg(test)]
+            // lints are invisible here and certain to land red once CI learns the
             // same flag. NO -D warnings: ci.yml website-frontend clippy is advisory (no -D),
             // matching the wave-gate `clippy frontend` step. Align -D with CI intent, not with the
             // other crates.
@@ -325,20 +325,18 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
                 "--all-targets",
                 "--quiet",
             ]),
-            // T-614 — tbd-tools AND xtask USED TO BE SKIPPED HERE, reason "red on main, ungated by
-            // CI". The first half was FALSE and contradicted by the header of this same function:
-            // T-603's re-measure found the 60 workspace errors are ALL website-frontend and called
-            // these two clean, and the wave gate has linted them by name since then. Re-verified
-            // 2026-08-01 through this very function, both directions: with the arm removed, a
-            // `format!("{}", "verify")` injected into tools_v2/developer-tools/src/enfusion_tooling/apidoc.rs and into
-            // tools_v2/xtask/src/sync.rs made clippy_changed return 1 naming each file and line in turn, and
-            // with the injections removed it returned 0 having actually compiled both crates. The
-            // old arm returned 0 with BOTH injections in place, printing `(skipped tbd-tools: …)
-            // (skipped xtask: …)` and compiling nothing. The second half is still true — the
-            // ci.yml change was comment-only — which is exactly why the skip had to go: nothing
-            // else lints them before merged main, so a slice editing ONLY these crates had its own
-            // gate examine none of its code and landed its lint at the wave gate, where it reads as
-            // somebody else's problem and blocks the whole group. They now fall through to the
+            // THE TOOLING CRATES ARE NOT SKIPPED HERE. A skip reading "red on main, ungated by
+            // CI" is false on both halves. Measured: the 60 workspace errors are ALL
+            // website-frontend, and the wave gate lints the tooling crates by name. Re-verified
+            // 2026-08-01 through this very function, both directions: with a skip arm in place, a
+            // `format!("{}", "verify")` injected into
+            // tools_v2/developer-tools/src/enfusion_tooling/apidoc.rs and into an xtask module
+            // leaves it returning 0, printing `(skipped: …)` and compiling nothing; without the
+            // arm, `clippy_changed` returns 1 naming each file and line in turn, and returns 0
+            // having actually compiled both crates once the injections are removed. Nothing else
+            // lints them before merged main, so a slice editing ONLY these crates would have its
+            // own gate examine none of its code and land its lint at the wave gate, where it reads
+            // as somebody else's problem and blocks the whole group. They fall through to the
             // default arm below, like every other crate.
             //
             // --all-features is REQUIRED (same floor as the gate test step). lib.rs gates every

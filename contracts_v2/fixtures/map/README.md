@@ -21,7 +21,7 @@ Twenty fixtures covering the object pipeline: chunks, catalogs, regions, roads, 
 | `terrain-registry.sample.json` | Registry shape sample |
 | `terrain-manifest-everon-unified-satellite.json` | Manifest with a unified satellite bundle |
 | `terrain-manifest-everon-dual-tiles.json` | Manifest with both tile pyramids |
-| `terrain-manifest-everon-legacy-tiles.json` | Manifest with the older tile-only satellite |
+| `terrain-manifest-everon-tile-only-satellite.json` | Manifest whose satellite is tiles only |
 | `phased/P1-buildings.json`, `phased/P2-trees.json`, `phased/P1-anchor-fixture.json` | Per-phase import fixtures |
 | `locations-everon-sample.json` | Settlements, hills, and landmarks |
 

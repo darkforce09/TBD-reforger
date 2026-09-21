@@ -48,7 +48,7 @@ fn bridge_is_never_used_on_the_metal() {
 #[test]
 fn a_containerised_host_with_no_bridge_is_rc_127_and_silent() {
     // hostrun's `return 127` path. The capture must be None — NOT an empty success, which is
-    // what let a bridge failure read as "the process is dead" (T-608).
+    // what let a bridge failure read as "the process is dead".
     let h = Host::new(None, true);
     assert!(h.capture(&["echo", "hi"]).is_none());
     assert_eq!(h.capture_trimmed(&["echo", "hi"]), "");
@@ -97,7 +97,7 @@ fn the_refusal_is_the_bash_heredoc() {
 #[test]
 fn a_broken_bridge_answers_nothing_even_when_one_exists() {
     // S1's mechanism: the bridge is present and would work, and we still get no answer. This is
-    // the ONLY way to reproduce T-608's trigger, because a real bridge cannot be made to flake.
+    // the ONLY way to reproduce the trigger, because a real bridge cannot be made to flake.
     let metal = on_metal().broken();
     assert!(metal.capture(&["echo", "hi"]).is_none());
     // `require_host` short-circuits on the metal before any bridge question is asked — bash's

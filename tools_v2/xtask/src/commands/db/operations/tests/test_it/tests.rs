@@ -1,6 +1,6 @@
 use super::*;
 
-/// The exact SQL from Makefile:210. If this string moves, T-534's per-binary databases stop
+/// The exact SQL the prune runs. If this string moves, the per-binary databases stop
 /// being reaped and nobody notices until postgres runs out of them.
 #[test]
 fn reap_select_is_the_makefile_pattern() {

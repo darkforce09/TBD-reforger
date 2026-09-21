@@ -1,8 +1,8 @@
-//! T-935.11 — the rkyv twins of `objects/prefabs.json.gz`, `objects/type-inventory.json` and
+//! The rkyv twins of `objects/prefabs.json.gz`, `objects/type-inventory.json` and
 //! `objects/forest-regions.json.gz`.
 //!
 //! `build-world-objects` writes each of these catalogues twice: the JSON the shipped loader still
-//! fetches, and a Tier-2 archive beside it. Dual emission is deliberate and stays until T-935.13
+//! fetches, and a Tier-2 archive beside it. Dual emission is deliberate and stays until the
 //! flips the manifest — deleting either write before then blinds one reader.
 //!
 //! # Why it re-reads the JSON it just wrote instead of narrowing the builder's own model
@@ -15,7 +15,7 @@
 //! JSON decode **by construction** rather than by coincidence — including the drops: a row the
 //! loader rejects is absent from both.
 //!
-//! # Why the row encoding lives in `map-engine-core`, not here
+//! # Why the row encoding lives in `website-map-engine`, not here
 //!
 //! `row_to_archive` and `region_to_archive` are in `world/prefab.rs` and `world/regions.rs`,
 //! next to the readers that invert them. The wire rows have no `Option`s while the parser rows
@@ -26,7 +26,7 @@
 //! # Three files, two of them versioned
 //!
 //! `prefabs.rkyv` and `forest-regions.rkyv` carry `schema_version`. `type-inventory.rkyv` does
-//! not — `TypeInventory` has no such field (`binary/archives.rs`), so the standalone census is
+//! not — `TypeInventory` has no such field (`website-map-engine`'s `io::archives`), so the standalone census is
 //! the *convenience* copy and the one inside `PrefabCatalogArchive` is the checked one. Both are
 //! written from a single value here, and `standalone_census_matches_the_catalogue` pins that.
 
@@ -58,7 +58,7 @@ pub const TYPE_INVENTORY_JSON: &str = "objects/type-inventory.json";
 pub const FOREST_REGIONS_GZ: &str = "objects/forest-regions.json.gz";
 
 /// The rkyv catalogue. Matches the manifest's `objects.binary.prefabs`
-/// (`map_engine_core::world::ObjectsBinaryBlock`), which T-935.13 points the SPA at.
+/// (`website_map_engine::world::ObjectsBinaryBlock`), which the terrain manifest points the SPA at.
 pub const PREFAB_CATALOG_RKYV: &str = "objects/prefabs.rkyv";
 /// The rkyv census — manifest `objects.binary.typeInventory`.
 pub const TYPE_INVENTORY_RKYV: &str = "objects/type-inventory.rkyv";
@@ -78,7 +78,7 @@ fn read_doc(terrain_dir: &Path, rel: &str) -> Result<serde_json::Value> {
 /// file, so an archive that cannot survive it is a broken file whether or not `to_bytes` returned
 /// `Ok`, and the emitter is the last place that can say so cheaply. (Three concrete functions
 /// rather than one generic: naming the serializer/validator bounds would put `rkyv` in
-/// `tbd-tools`' dependency list for no gain, and `map-engine-core` deliberately owns that.)
+/// this crate's dependency list for no gain, and `website-map-engine` deliberately owns that.)
 macro_rules! write_archive {
     ($fn_name:ident, $ty:ty, $what:literal) => {
         /// Serialise `archive`, validate the bytes with `access_checked`, then write them.
@@ -118,8 +118,8 @@ write_archive!(
 /// `prefabs.json.gz` + `type-inventory.json` → `PrefabCatalogArchive`.
 ///
 /// # Errors
-/// When either source is missing or undecodable, when the catalogue narrows to nothing (T-537:
-/// an empty catalogue is refused rather than written over a committed one), when the two
+/// When either source is missing or undecodable, when the catalogue narrows to nothing
+/// (an empty catalogue is refused rather than written over a committed one), when the two
 /// documents disagree about which terrain they describe, or when a row cannot be encoded without
 /// changing its meaning (see `row_to_archive`).
 pub fn build_prefab_catalog_archive(terrain_dir: &Path) -> Result<PrefabCatalogArchive> {
@@ -199,7 +199,7 @@ pub fn build_forest_regions_archive(terrain_dir: &Path) -> Result<ForestRegionsA
 /// here instead of on a user's machine.
 ///
 /// Returns `(path, bytes)` per file written, in emit order. `forest-regions.rkyv` is written only
-/// when its JSON exists (a non-density `--phase` does not produce one, and T-378 forbids touching
+/// when its JSON exists (a non-density `--phase` does not produce one, and may not touch
 /// the committed density tree in that case); the skip is reported to the caller as an absent row,
 /// never as a silent success.
 ///

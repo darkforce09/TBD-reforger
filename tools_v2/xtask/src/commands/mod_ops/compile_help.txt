@@ -1,4 +1,4 @@
-# T-181.1 — headless Enfusion compile gate. The "HEMTT for Reforger".
+# Headless Enfusion compile gate. The "HEMTT for Reforger".
 #
 # Compiles the Game scripts of tbd-framework using the NATIVE Linux dedicated server
 # (ArmaReforgerServer) — no Workbench, no Proton, no GPU, no Steam client, no clicking.
@@ -14,19 +14,19 @@
 #   cargo run -q -p xtask -- mod compile --probe=/tmp/p  # ALSO compile a throwaway addon of .c files —
 #                                                         # the API-existence oracle, kept OUT of the mod tree
 #
-# ── EXIT CODES (identical contract to world-boot.sh — the two gates run back to back) ────
+# ── EXIT CODES (identical contract to `mod world-boot` — the two gates run back to back) ────
 #   0  compiled clean
 #   1  CODE: Enfusion compile errors, printed as file:line. The mod is broken. Fix the mod.
 #   2  the harness could not reach a verdict at all (bad argument, or a timeout with no marker).
 #      Neither proven-broken code nor a diagnosed environment fault.
 #   3  ENVIRONMENT: this machine is not set up to run the gate. Nothing was compiled, so a 3
 #      says NOTHING about tbd-framework. Do not read it as a code failure and do not open a mod
-#      ticket for it. (T-209: the stale-rdb load-count guard below used to exit 1 — a fix agent
+#      ticket for it. (The stale-rdb load-count guard below must never exit 1 — a fix agent
 #      handed that verdict spends its budget auditing sources that compile perfectly.)
 #
 # `cargo xtask mod compile-selftest` runs `--selftest` in-process and passes ONLY on exit 1 (a real
 # Enfusion rejection): 0 (gate is blind), 2 (no verdict) and 3 (environment) print SELFTEST FAIL
-# and exit 1. `.github/workflows/mod-gates.yml` calls that target directly (T-897 / T-901).
+# and exit 1. `.github/workflows/mod-gates.yml` calls that target directly.
 #
 # ── MEASURED FACTS THIS DEPENDS ON (probed 2026-07-25, do not re-derive) ─────────────────
 #   * Diagnostics land in  <profile>/logs/logs_<ts>/error.log  as:

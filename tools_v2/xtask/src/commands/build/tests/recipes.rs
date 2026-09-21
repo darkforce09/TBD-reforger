@@ -222,7 +222,7 @@ fn abi_guard_refuses_a_foreign_stamp() {
 }
 
 /// `handles` and the dispatch table agree — an entry that dispatches nowhere would make the
-/// T-894/T-896 chaining seam silently swallow a target.
+/// The chaining seam must not silently swallow a target.
 #[test]
 fn every_advertised_target_dispatches() {
     for t in TARGETS {

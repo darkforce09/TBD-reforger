@@ -7,7 +7,7 @@
 //! −X-facing surface (the face a +X ray enters). Triangles are classified by their
 //! GEOMETRIC normal, oriented to agree with the mesh's packed vertex normals (robust to
 //! index-winding conventions); a one-sided sheet therefore appears in exactly one march
-//! direction and pair.rs absorbs it as a sliver, same as engine one-sided collision.
+//! direction and the pairing pass absorbs it as a sliver, same as engine one-sided collision.
 //! Deviations from the sensor, both parser-legal: no 48-hit cap (no trace budget here),
 //! and hits closer than the engine's 0.02 m re-cast step are merged instead of re-traced.
 

@@ -5,7 +5,7 @@
 //!
 //! Two gate slots are retired and print that they are, so the missing surface stays visible
 //! rather than looking like a silent pass:
-//! - TS-6 front-end export tags — the front end's contract layer is Rust (`dto.rs`) gated by
+//! - TS-6 front-end export tags — the front end's contract layer is Rust (its DTO modules) gated by
 //!   R-api golden tests, so there is no separate export-tag surface to match.
 //! - GO-7 @route match — axum wires routes through typed functions, so a route rename is a
 //!   compile error rather than documentation rot.

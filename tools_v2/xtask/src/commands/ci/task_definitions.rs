@@ -1,6 +1,8 @@
 #[macro_use]
 #[path = "task_definitions/recipe_macros.rs"]
 mod recipe_macros;
+#[path = "task_definitions/verification_dispatch.rs"]
+mod verification_dispatch;
 
 use super::{Lane, Step, Task, verify_doc_layout};
 use crate::commands::generate::schema_types::codegen;
@@ -15,6 +17,11 @@ use crate::verifications::map_assets::map_object_golden;
 use crate::verifications::schemas::checks::{
     citations, map_glyphs, map_object_enums, n6_sentence, n10_tile_budget,
     specification_consistency, type_inventory, validate_all,
+};
+use verification_dispatch::{
+    run_ci_schema_parity, run_engine_layers, run_height_labels, run_mission_rest_size_limits,
+    run_no_select_star, run_route_tags, run_staging_compose_paths, run_terrain_alignment,
+    run_terrain_alignment_strict, run_terrain_manifest,
 };
 
 pub static TASKS: &[Task] = &[
@@ -47,7 +54,7 @@ pub static TASKS: &[Task] = &[
             xt!(
                 "cargo xtask verify ci-schema-parity",
                 true,
-                x_ci_schema_parity
+                run_ci_schema_parity
             ),
         ],
     },
@@ -74,7 +81,7 @@ pub static TASKS: &[Task] = &[
                 map_object_golden
             ),
             xt!("cargo xtask schema map-glyphs", false, map_glyphs),
-            xt!("cargo xtask schema height-labels", false, x_height_labels),
+            xt!("cargo xtask schema height-labels", false, run_height_labels),
             xt!(
                 "cargo xtask schema map-object-enums",
                 false,
@@ -112,8 +119,12 @@ pub static TASKS: &[Task] = &[
         steps: &[
             Step::Task("verify-doc-layout"),
             xt!("cargo xtask verify file-length", true, verify_file_length),
-            xt!("cargo xtask verify no-select-star", true, x_no_select_star),
-            xt!("cargo xtask verify route-tags", true, x_route_tags),
+            xt!(
+                "cargo xtask verify no-select-star",
+                true,
+                run_no_select_star
+            ),
+            xt!("cargo xtask verify route-tags", true, run_route_tags),
         ],
     },
     Task {
@@ -292,7 +303,7 @@ pub static TASKS: &[Task] = &[
         steps: &[xt!(
             "cargo xtask verify engine-layers",
             false,
-            x_engine_layers
+            run_engine_layers
         )],
     },
     Task {
@@ -317,7 +328,7 @@ pub static TASKS: &[Task] = &[
         steps: &[xt!(
             "cargo xtask verify staging-compose-paths",
             true,
-            x_staging_compose_paths
+            run_staging_compose_paths
         )],
     },
     Task {
@@ -328,7 +339,7 @@ pub static TASKS: &[Task] = &[
         steps: &[xt!(
             "cargo xtask verify mission-rest-size-limits",
             true,
-            x_mission_rest_size_limits
+            run_mission_rest_size_limits
         )],
     },
     Task {
@@ -340,12 +351,12 @@ pub static TASKS: &[Task] = &[
             xt!(
                 "cargo xtask schema terrain-manifest --terrain everon",
                 false,
-                x_terrain_manifest
+                run_terrain_manifest
             ),
             xt!(
                 "cargo xtask schema terrain-alignment --terrain everon",
                 false,
-                x_terrain_alignment
+                run_terrain_alignment
             ),
         ],
     },
@@ -358,12 +369,12 @@ pub static TASKS: &[Task] = &[
             xt!(
                 "cargo xtask schema terrain-manifest --terrain everon",
                 false,
-                x_terrain_manifest
+                run_terrain_manifest
             ),
             xt!(
                 "cargo xtask schema terrain-alignment --terrain everon --strict",
                 false,
-                x_terrain_alignment_strict
+                run_terrain_alignment_strict
             ),
         ],
     },
@@ -486,14 +497,3 @@ pub static TASKS: &[Task] = &[
         ],
     },
 ];
-
-// In-process leaf adapters. `fn` pointers cannot capture, and these leaves take an argument, so
-// the table stays a `static` and `help` needs no allocation.
-
-#[path = "task_definitions/verification_dispatch.rs"]
-mod verification_dispatch;
-use verification_dispatch::{
-    x_ci_schema_parity, x_engine_layers, x_height_labels, x_mission_rest_size_limits,
-    x_no_select_star, x_route_tags, x_staging_compose_paths, x_terrain_alignment,
-    x_terrain_alignment_strict, x_terrain_manifest,
-};

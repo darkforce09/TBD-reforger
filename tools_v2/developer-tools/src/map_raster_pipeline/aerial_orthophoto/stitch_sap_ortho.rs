@@ -1,6 +1,6 @@
 use super::*;
 
-/// stitch-sap-ortho.mjs port: decode all 2500 cells, assemble north-up, bridge seams, write
+/// Decode all 2500 cells, assemble north-up, bridge seams, write
 /// PNG + TBD_SatExport_meta.json.
 pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
     if terrain != "everon" {
@@ -58,7 +58,7 @@ pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
     let seams = bridge_seams(&mut canvas, ortho_px, 4)?;
     eprintln!("  seam repair: bridged {seams} interior seams/axis (apron feather HW=4)");
 
-    // T-537: refuse writing meta/PNG claiming success with an incomplete or empty stitch.
+    // Refuse writing meta/PNG claiming success with an incomplete or empty stitch.
     super::super::refuse_empty_write(
         "stitch-sap-ortho cells",
         decoded == 0 || decoded != enfusion_texture_decoder::CELL_COUNT,

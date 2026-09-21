@@ -4,7 +4,7 @@ use super::*;
 use anyhow::Context;
 
 /// Cohort material from the on-disk diff_loc estimates (shared by the batch planner
-/// and the T-917.6 single-ticket planner, so both interpolate against the same
+/// and the single-ticket planner, so both interpolate against the same
 /// population).
 pub(super) fn members_from_existing(
     corpus: &Corpus,
@@ -39,7 +39,7 @@ pub(super) fn loc_of(sha_loc: &BTreeMap<String, u64>, sha: &str) -> u64 {
     }
 }
 
-/// The `stamp-sha` derivation set (T-917.6): the ticket's subject-commit SHAs plus
+/// The `stamp-sha` derivation set: the ticket's subject-commit SHAs plus
 /// the landing sha the operator just passed — prefix-deduped, because the landing
 /// commit is usually the newest subject commit already and its short form must not
 /// double-count that commit's LOC.
@@ -54,7 +54,7 @@ pub fn derivation_shas(subject_shas: &[String], landing: &str) -> Vec<String> {
     out
 }
 
-/// T-917.6 `stamp-sha` reuse: plan ONE ticket's token estimate from an explicit
+/// `stamp-sha` reuse: plan ONE ticket's token estimate from an explicit
 /// derivation-SHA set (see [`derivation_shas`] — subject commits INCLUDING the
 /// just-passed landing sha). `diff_loc` when the included LOC over those commits is
 /// positive; `cohort_median` otherwise (zero LOC is bookkeeping evidence, zero

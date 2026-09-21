@@ -21,7 +21,7 @@ macro_rules! lock_or_refuse {
 }
 pub(crate) use lock_or_refuse;
 
-/// `wave.sh status` — where are we, and what is blocking?
+/// `wave status` — where are we, and what is blocking?
 pub fn cmd_status(ctx: &Ctx) -> u8 {
     let w = lock_or_refuse!(ledger::current_wave(ctx));
     wprintln!("═══ platform program ═══");
@@ -100,7 +100,7 @@ pub fn cmd_status(ctx: &Ctx) -> u8 {
     0
 }
 
-/// `wave.sh prep` — print the next disjoint dispatch set.
+/// `wave prep` — print the next disjoint dispatch set.
 ///
 /// cargo is a HOST binary inside the dev container, so this goes through the bridge — unlike the
 /// `python3` it replaced, which was present on both sides. `hostrun` degrades to a plain exec on
@@ -125,7 +125,7 @@ pub fn cmd_prep(ctx: &Ctx) -> u8 {
 /// the adversarial verifier (rule 4), so dissolving waves silently deleted the verifier and 27
 /// tickets landed unreviewed. The operator noticed; the tooling did not.
 ///
-/// Note this does NOT reintroduce the T-181 land barrier that cost 89% of that program's wall
+/// Note this does NOT reintroduce the land barrier that cost 89% of that program's wall
 /// clock. Slices still land the moment they are green (note 2). What a wave gates is DISPATCH: you
 /// may not open wave N+1 until wave N is shipped, gated and VERIFIED. Landing stays eager; starting
 /// is paced.

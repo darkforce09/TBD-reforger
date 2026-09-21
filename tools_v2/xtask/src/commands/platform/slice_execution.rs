@@ -1,4 +1,4 @@
-//! T-913.2 — `cargo xtask platform slice-run <id>`: the run-receipt PRODUCER.
+//! `cargo xtask platform slice-run <id>`: the run-receipt PRODUCER.
 //!
 //! Launches the configured agent CLI for one ticket slice, captures its final JSON,
 //! extracts `tokens_consumed` and writes ONE run file under

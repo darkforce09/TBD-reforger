@@ -1,8 +1,8 @@
-//! Repro helpers for `cargo xtask repro mission-upload` (T-162 / T-867).
+//! Repro helpers for `cargo xtask repro mission-upload`.
 //!
 //! `mission-id` and `mission-version-body` remain standalone subcommands (shell and
-//! the T-867 orchestrator both use them). The upload orchestrator lives in
-//! `gate_mission_version_upload_repro.rs`.
+//! the orchestrator both use them). The upload orchestrator lives in
+//! [`super::mission_version_upload`].
 
 use anyhow::{Context, Result, bail};
 use serde_json::Value;

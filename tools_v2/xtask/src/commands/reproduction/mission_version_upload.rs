@@ -1,4 +1,4 @@
-//! T-867 — port of `scripts/website/mission-version-upload-repro.sh`
+//! Reproduce a mission-version upload end to end.
 //! → `cargo xtask repro mission-upload`.
 //!
 //! Orchestrates curl + the existing `repro mission-id` / `repro mission-version-body`

@@ -65,7 +65,7 @@ pub fn build_world_objects_opt(
         }
         let _ = clear_density_dir_if_rebuilding(&density_dir, true)?;
         std::fs::create_dir_all(&density_dir)?;
-        // T-176 A2 — the tree channel written to disk is the canopy-blurred grid (density.rs
+        // The tree channel written to disk is the canopy-blurred grid (density.rs
         // `box_blur_corners`); the raw `tree_grid` above stays only for the PH-P2 sum identity.
         // Blur the GLOBAL grid before slicing so adjacent chunks share identical border corners
         // (no seams). Rocks stay raw counts.
@@ -99,7 +99,7 @@ pub fn build_world_objects_opt(
             })
             .collect();
         let mut derived = derive_forest_regions(&trees, world_size_m, terrain);
-        // T-149 — the rings out of `trace_rings` are raw marching-squares output on the 32 m
+        // The rings out of `trace_rings` are raw marching-squares output on the 32 m
         // region lattice: 100% of their segments are axis-aligned. Round them against the 8 m
         // canopy field (the same `tree_canopy` grid the TBDD tiles above were sliced from) before
         // they are written. `smooth_regions` reports per-region vertex counts and area drift.
@@ -134,7 +134,7 @@ pub fn build_world_objects_opt(
         }));
         regions_result = Some(derived);
     } else {
-        // T-378: a non-density `--phase` must NOT wipe committed density bins.
+        // A non-density `--phase` must NOT wipe committed density bins.
         let cleared = clear_density_dir_if_rebuilding(&density_dir, false)?;
         debug_assert!(!cleared);
         if density_dir.exists() {
@@ -153,7 +153,7 @@ pub fn build_world_objects_opt(
             inst_by_prefab[row.id] += 1;
         }
     }
-    // T-278: this was a local 8-kind array missing T-244's `vehicle`, so the
+    // A local kind array that misses `vehicle` strands rows, so the
     // `expect("kind bucket")` below panicked on the first wreck prefab — the reason re-running
     // the export could not have activated the vehicle lane. Single source now.
     let kind_order = super::super::INSTANCE_KINDS;
@@ -288,10 +288,10 @@ pub fn build_world_objects_opt(
         pretty_nl(&Value::Object(inventory)),
     )?;
 
-    // T-935.11 — dual emission: the rkyv twins of the three catalogue JSONs, built by re-reading
+    // Dual emission: the rkyv twins of the three catalogue JSONs, built by re-reading
     // the files just written (so they equal the loader's decode by construction) and read back
     // through the SPA's own entry points before this returns. The JSON stays authoritative until
-    // T-935.13 flips the manifest.
+    // The terrain manifest names them.
     for (path, bytes) in catalog_emit::emit_catalog_archives(&out_base)? {
         if !quiet {
             println!(
@@ -311,7 +311,7 @@ pub fn build_world_objects_opt(
         let set = |obj: &mut Map<String, Value>, k: &str, v: Value| {
             obj.insert(k.to_string(), v);
         };
-        // T-090.12.1 — objects schemaVersion 1.1.0: chunk rows carry [.., pitch, roll, scale] when
+        // Objects schemaVersion 1.1.0: chunk rows carry [.., pitch, roll, scale] when
         // non-trivial. `transforms` names what every row can carry, `scaleSource` whether the
         // export provided a scale at all (a pre-v2 export is unit scale everywhere), and
         // `workbenchVersion` is copied from the export meta when the plugin wrote one.
@@ -384,7 +384,7 @@ pub fn build_world_objects_opt(
         std::fs::write(&manifest_path, pretty_nl(&manifest))?;
     }
 
-    // T-090.12.1 — the row-width census: rows carrying a non-trivial transform trailer.
+    // The row-width census: rows carrying a non-trivial transform trailer.
     if !quiet {
         println!(
             "build-world-objects: transforms — {rows_wide} of {} rows 8-wide (by kind {:?}) · {rows_with_scale} raw rows carried scale",
@@ -396,7 +396,7 @@ pub fn build_world_objects_opt(
     let mut top_classes = no_prefab_classes.clone();
     top_classes.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
     let summary = json!({
-        "slice": if density_phase { "T-090.3.2" } else { "T-090.3.1" },
+        "slice": if density_phase { "density-grid-build" } else { "world-object-build" },
         "phase": phase,
         "stagedAt": staged_at,
         "rawLineCount": line_count,
@@ -433,7 +433,7 @@ pub fn build_world_objects_opt(
                 ops["fullExport"]["phases"] = json!({});
             }
             ops["fullExport"]["phases"][phase] = json!({
-                "slice": "T-090.3.2",
+                "slice": "density-grid-build",
                 "stagedAt": staged_at,
                 "density": ds,
                 "forestRegions": {

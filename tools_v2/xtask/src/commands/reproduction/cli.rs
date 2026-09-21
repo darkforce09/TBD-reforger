@@ -17,7 +17,7 @@ pub(crate) enum ReproCmd {
         #[arg(long)]
         semver: String,
     },
-    /// Orchestrate mission-version upload repro (ex mission-version-upload-repro.sh)
+    /// Orchestrate the mission-version upload reproduction
     #[command(name = "mission-upload")]
     MissionUpload,
 }

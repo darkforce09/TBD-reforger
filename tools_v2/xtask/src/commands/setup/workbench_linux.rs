@@ -1,4 +1,4 @@
-//! T-875 — port of `scripts/mod/setup-workbench-linux.sh` → `cargo xtask setup workbench`.
+//! `cargo xtask setup workbench`: install the Enfusion Workbench prerequisites on Linux.
 //!
 //! Symlinks the Steam Arma Reforger `addons/data` tree to `$HOME/ArmaReforger-Base/data` so
 //! Proton Workbench can browse a simple home path when "Locate base game" appears.
@@ -7,7 +7,7 @@
 //! - `HOME` — required (bash `set -u`); link root is `$HOME/ArmaReforger-Base`
 //! - `STEAM_BASE` — optional override of the Steam common install dir (default under `$HOME`)
 //!
-//! Acceptance is bash/port stdout+stderr+rc on a clean tree and ≥2 broken arms (T-556 / T-853).
+//! Acceptance is bash/port stdout+stderr+rc on a clean tree and ≥2 broken arms.
 //! Throwaway `$HOME` / `STEAM_BASE` only — never clobber the operator's real Steam tree.
 //!
 //! Preserved oddities:

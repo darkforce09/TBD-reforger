@@ -31,7 +31,7 @@ pub(super) fn cmd_land(root: &Path) -> u8 {
     for s in wave_slices(root, &w) {
         if has_work(root, &s) {
             println!("── merging {s}");
-            // T-853: was `bash scripts/mod/slice-worktree.sh merge <slice>`, in-process now.
+            // The slice-worktree `merge` verb, in-process.
             // The port CLOSED a fail-open here that this caller depended on: bash's dirty check
             // used plain git, and a `git status` exiting 128 produced an empty substitution that
             // `[ -n … ]` read as CLEAN — so a dirty worktree merged and the work was destroyed.
@@ -65,7 +65,7 @@ pub(super) fn cmd_land(root: &Path) -> u8 {
 
     // 4. Reap.
     println!();
-    // T-853: was `bash scripts/mod/slice-worktree.sh reap`, in-process now. `reap` is the
+    // The slice-worktree `reap` verb, in-process. `reap` is the
     // DESTRUCTIVE one, and the port left every guard intact: uncommitted work, "unstarted is not
     // merged" (the five-worktree incident), and git's own `worktree lock` refusal.
     let _ = crate::commands::platform::slice_worktree::run_at(root, &["reap".to_string()]);

@@ -3,7 +3,7 @@
 use super::*;
 
 pub fn load_views(root: &Path) -> Result<Vec<TicketView>> {
-    // T-916.2: the shared typed corpus (`crate::store::Corpus`) replaced this module's
+    // The shared typed corpus (`crate::store::Corpus`) replaced this module's
     // own directory walk — three near-duplicate walks existed (here, `check_open_work_owns`,
     // `slice_collisions::ticket_facts`) and the store is now the one substrate. Same
     // fail-closed contract (one unparseable file refuses the load, naming it), plus the

@@ -34,18 +34,18 @@ pub(super) fn key_of(name: &str) -> String {
 /// A first cut sorted the expansion with `Vec::<PathBuf>::sort()`, i.e. bytewise, and produced
 ///
 /// ```text
-///   target-T-888  target-T-999  target-T-999-api  target-ci  target-dev-api
+///   target-T-88888  target-T-99999  target-T-99999-api  target-ci  target-dev-api
 /// ```
 ///
 /// where the bash produced
 ///
 /// ```text
-///   target-ci  target-dev-api  target-T-888  target-T-999  target-T-999-api
+///   target-ci  target-dev-api  target-T-88888  target-T-99999  target-T-99999-api
 /// ```
 ///
 /// Bash sorts pathname expansions with `strcoll()` under the active locale, and glibc's
 /// `en_US.UTF-8` gives punctuation and case NO primary weight — so `target-ci` sorts before
-/// `target-T-888` because `ci` < `t888` once the hyphens and the case are ignored. Bytewise, `T`
+/// a slice dir because `ci` sorts low once the hyphens and the case are ignored. Bytewise, `T`
 /// (0x54) sorts before `c` (0x63) and the order inverts.
 ///
 /// This changes only the ORDER OF THE REPORT, never which directory is removed — the decisions are
@@ -200,24 +200,24 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // T-589 — PER-SLICE PRIVATE TARGET DIRS AT MAIN_ROOT. Swept by DEFAULT. Here is why, since the
+    // PER-SLICE PRIVATE TARGET DIRS AT MAIN_ROOT. Swept by DEFAULT. Here is why, since the
     // sibling set two blocks down is deliberately opt-in and the two are easy to confuse.
     //
-    // T-426 made target-gate-* opt-in for one reason: it is a WARM SHARED cache. Every future slice
-    // gate hits target-gate-api (24 GB today), and T-421 measured cold 23.4 s vs warm 9.3 s — so
+    // Made target-gate-* opt-in for one reason: it is a WARM SHARED cache. Every future slice
+    // gate hits target-gate-api (24 GB today), and a cold build measures 23.4 s vs 9.3 s warm — so
     // deleting it bills work that has not happened yet, to everyone, invisibly. That argument does
     // not survive translation to a target-<SLICE> dir, which is the opposite on every axis: exactly
     // one slice ever hits it, that slice is gone, and nothing will ever hit it again. Its entire
-    // remaining function is to occupy disk. `target-T-454` did that for weeks at 2.7 GB while this
+    // remaining function is to occupy disk. One such dir did that for weeks at 2.7 GB while this
     // very command printed "reclaimed 0 MB" standing next to it (measured 2026-07-31), and the
     // volume runs at 87%. Opt-in housekeeping that nobody opts into is not housekeeping.
     // `--no-slice-dirs` turns it off for the one operator who wants a look before a sweep.
     //
     // The leak is also SELF-INFLICTED and structural, which is what makes "just tell agents to
     // clean up" insufficient: PLATFORM_FACTORY's Known traps and the brief template now INSTRUCT
-    // every slice agent to build its own runnable binary into target-<slice>-api (T-581/T-582 were
+    // every slice agent to build its own runnable binary into target-<slice>-api (two slices were
     // served each other's binaries out of the shared target/). Agents are told to delete it and
-    // mostly do — T-585 reclaimed 8.0 GB itself — but "mostly" is the wrong verb for a slice that
+    // mostly do — one slice reclaimed 8.0 GB itself — but "mostly" is the wrong verb for a slice that
     // gets parked, rate-limited or killed mid-run, and those are the ones that leave a dir behind.
     //
     // SELECTION IS POSITIVE IDENTIFICATION, NOT A BLOCKLIST. A dir is removed only when its own
@@ -227,12 +227,12 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
     // dirs that a looser rule would have eaten:
     //     target/                  67 GB  the shared CARGO_TARGET_DIR for every worktree
     //     target-dev-api          3.6 GB  the operator's live `cargo xtask mk rust-api` cache — no ticket in name
-    //     target-gate-schema-T422 1.7 GB  a GATE dir that CONTAINS a ticket id
+    //     target-gate-schema-t422 1.7 GB  a GATE dir that CONTAINS a ticket id
     // The last one is why the ticket must be the first component after `target-`: anchoring there
     // means no target-gate-* name can be read as a slice dir even if the explicit exclusion below
-    // were deleted. A name the pattern cannot parse (target-ci, target-T-068.13-api) is SPARED, not
+    // were deleted. A name the pattern cannot parse (target-ci, or an id with a suffix after it) is SPARED, not
     // guessed at — and printed with its size, because a silent skip is the same defect as the
-    // "0 MB" report that produced this ticket, just wearing a quieter hat.
+    // "0 MB" report that hid the leak, just wearing a quieter hat.
     let main_root = ctx.main_root.display().to_string();
     if !slice_dirs {
         wprintln!("slice dirs at {main_root}: not swept (--no-slice-dirs)");
@@ -313,7 +313,7 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // T-742 — orphan ad-hoc private dirs under `$HOME/.cache/tbd-target-T-*`. Swept by default with
+    // Orphan ad-hoc private dirs under `$HOME/.cache/tbd-target-T-*`. Swept by default with
     // the same live-slice spare set as MAIN_ROOT/target-T-*. The shared cache
     // (`$HOME/.cache/tbd-target` with no ticket suffix) is NEVER touched. Agents must still delete
     // their own dir before reporting; this is the parked/killed-agent half.
@@ -363,7 +363,7 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // ── the T-426 gate set, opt-in ─────────────────────────────────────────────────────────────
+    // ── the gate set, opt-in ─────────────────────────────────────────────────────────────
     let gate_glob = |root: &str| -> Vec<PathBuf> {
         let mut v = glob_dir(root, |n| n.starts_with("target-gate-"));
         v.extend(glob_dir(root, |n| n.starts_with("dist-gate-")));
@@ -432,7 +432,7 @@ pub(super) fn slice_token(base: &str) -> Option<String> {
         return None;
     }
     let tok_end = idx + digits.len();
-    // `(-.*)?$` — the remainder must be empty or start with `-`. `target-T-068.13-api` therefore
+    // `(-.*)?$` — the remainder must be empty or start with `-`. A dotted id with an `-api` suffix therefore
     // does NOT parse, and is SPARED rather than guessed at.
     let tail = &rest[tok_end..];
     if !tail.is_empty() && !tail.starts_with('-') {

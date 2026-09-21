@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::terrain_registry_path;
 
-/// T-378: only an intentional density rebuild may wipe `objects/density/`.
+/// Only an intentional density rebuild may wipe `objects/density/`.
 /// Non-density phases must leave the 625 committed bins alone.
 pub fn may_clear_density_dir(density_phase: bool) -> bool {
     density_phase
@@ -71,7 +71,7 @@ pub(super) fn pretty_nl(v: &Value) -> String {
     serde_json::to_string_pretty(v).expect("json") + "\n"
 }
 
-/// The full build-world-objects.mjs port. `out_base = None` → the real terrain dir.
+/// The full world-object build. `out_base = None` → the real terrain dir.
 pub fn build_world_objects(
     terrain: &str,
     phase: &str,

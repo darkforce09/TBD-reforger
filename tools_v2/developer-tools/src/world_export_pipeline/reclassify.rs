@@ -1,4 +1,4 @@
-//! T-278 — regenerate the prefab catalogue's **classification lane** from committed artifacts
+//! Regenerate the prefab catalogue's **classification lane** from committed artifacts
 //! alone: no Enfusion Workbench run, no hand-copied staging, no game install.
 //!
 //! THE PROBLEM THIS EXISTS FOR
@@ -10,7 +10,7 @@
 //! and absent from every clone. So a rule edit is unverifiable and unshippable by anyone who is
 //! not sitting in front of Workbench, and `cargo xtask map export-terrain` exits 2 for everybody else.
 //!
-//! T-244 is the measured consequence: it added a `vehicle` kind plus wreck rules, the gates went
+//! The measured consequence of a rule change: adding a `vehicle` kind plus wreck rules sent the gates
 //! green against the *rules*, and the shipped `prefabs.json.gz` never changed. Its own agent
 //! disclosed the change was latent. It stayed latent.
 //!
@@ -32,7 +32,7 @@
 //! preserved and reported as staging-derived rather than silently rewritten to a subset.
 //!
 //! Default mode is CHECK: read-only, exit 1 on drift. That is the gate this repo did not have —
-//! run on the day T-244 landed it would have gone red with the 16 rows it was about to strand.
+//! run on the day such a change lands goes red with the rows it is about to strand.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

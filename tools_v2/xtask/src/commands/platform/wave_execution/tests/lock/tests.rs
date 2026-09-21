@@ -9,7 +9,7 @@ fn a_fresh_state_is_neither_held_nor_degraded() {
 
 /// INTEROP, BOTH DIRECTIONS — the requirement that makes a half-ported factory safe.
 ///
-/// During the overlap a machine WILL run `scripts/platform/wave.sh gate` and
+/// During the overlap a machine WILL run `wave gate` and
 /// `cargo xtask platform wave gate` at the same time, and they must contend. `flock(1)` and
 /// `flock(2)` are the same primitive on the same inode, so this is a property of naming the
 /// same path — and the only way to know it holds is to make the two fight over one file.
@@ -86,7 +86,7 @@ fn bash_flock_and_this_port_contend_on_one_file() {
 
 #[test]
 fn unserialised_verdict_cannot_look_like_a_clean_pass() {
-    // The whole point of T-409's relabelling: a log scraper reading the last line must see it.
+    // The whole point of the relabelling: a log scraper reading the last line must see it.
     let mut s = GateState::new();
     s.unserialised = true;
     s.why = "flock is not on PATH".into();

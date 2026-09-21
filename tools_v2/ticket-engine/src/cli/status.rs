@@ -54,7 +54,7 @@ pub fn cmd_ready_ids(
 }
 
 pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str) -> Result<()> {
-    // T-383: reject empty / invalid status before any write — never stamp `""` over registry.
+    // Reject empty / invalid status before any write — never stamp `""` over registry.
     let status = status.trim();
     refuse_empty_write(
         &format!("set-status {id}"),
@@ -73,16 +73,16 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
     if corpus.get(id).is_none() {
         unknown_ticket(id);
     }
-    // T-451: refuse status writes when the registry fails ticket check
-    // (same bar as ship/done — T-237). No silent escape hatch; a red registry
+    // Refuse status writes when the registry fails ticket check
+    // (same bar as ship/done). No silent escape hatch; a red registry
     // must be fixed before any status mutator may write.
     require_check_ok(root, registry, &format!("set-status {id}"))?;
 
-    // Typed op (T-916.1): the enum gate again (second net); T-913.1: a cancel is a
+    // Typed op: the enum gate again (second net); a cancel is a
     // completion — the op stamps completed_at in the same mutation, before the wave-lock
     // refresh below; other set-status targets do not stamp (`ticket ship` / `ticket done`
     // own the shipped stamp) and `active` is untouched (also ship's job). Transitions the
-    // ticket lacks data for refuse UP FRONT instead of the legacy mid-save wedge.
+    // ticket lacks data for refuse UP FRONT instead of wedging mid-save.
     let outcome = ops::set_status(&mut corpus, id, status, &crate::now_utc_rfc3339())
         .map_err(anyhow::Error::msg)?;
     corpus
@@ -96,7 +96,7 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
     reload_registry(root, registry)?;
     let queue = generate_queue_json(registry);
     write_json_ascii(&root.join(crate::repository::QUEUE_JSON), &queue)?;
-    // T-912.2: `set-status cancelled` (and `shipped`) must repack or `wave check` goes red on a
+    // `set-status cancelled` (and `shipped`) must repack or `wave check` goes red on a
     // correct registry. Run for EVERY status — a demotion out of the dispatchable set (queued →
     // idea/deferred) strands the id in the lock's open waves just as surely as a cancel, and a
     // dispatchability-neutral write recompiles to the identical bytes.

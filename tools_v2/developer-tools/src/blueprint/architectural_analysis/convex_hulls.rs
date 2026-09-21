@@ -1,4 +1,4 @@
-//! Convex-hull triangulation of a small point cloud (T-090.11.2) — the COLL chunk's
+//! Convex-hull triangulation of a small point cloud — the COLL chunk's
 //! `UCX_*` convex colliders (shape type 4) store their vertices plus face/edge tables whose
 //! exact layout is not decoded; the hull of the vertex set IS the collider, so its faces are
 //! rebuilt here. Sizes are tiny (a trunk hull has 10 vertices, a conifer canopy 19), so a

@@ -1,10 +1,10 @@
-//! T-935.8 — `cargo xtask map blueprint-from-voxels archive [--terrain everon]`: the whole prefab
+//! `cargo xtask map blueprint-from-voxels archive [--terrain everon]`: the whole prefab
 //! occluder library as ONE `prefabs/building_blueprints.rkyv`.
 //!
 //! Reads what `bvh-batch --all-prefabs` already wrote — `prefabs/blas-manifest.json`,
 //! `prefabs/descriptors/<pid>.json` (1623 files, 19 MB) — plus the extracted blueprints under
-//! `prefabs/buildings/`, and folds them into the T-935.1
-//! [`BuildingBlueprintArchive`](map_engine_core::world::binary::archives::BuildingBlueprintArchive):
+//! `prefabs/buildings/`, and folds them into the
+//! [`BuildingBlueprintArchive`](website_map_engine::world::binary::archives::BuildingBlueprintArchive):
 //! the descriptor census, the shared BLAS index the descriptors point into, and the tactical
 //! blueprint levels. The loader side is `world::occluder::descriptor` (`BuildingArchiveBytes`,
 //! `PrefabDescriptor::from_archived`) and `building_blueprint::BuildingBlueprint::from_archived`.

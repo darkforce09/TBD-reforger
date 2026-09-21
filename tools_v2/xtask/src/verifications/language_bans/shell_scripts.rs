@@ -1,12 +1,10 @@
-//! T-904 — tracked-language HARD ZERO (was the T-621 / T-620 ratchet).
+//! Tracked-language HARD ZERO (was the ratchet).
 //!
 //! ── WHY THIS WAS A RATCHET, AND WHY IT IS A BAN NOW ──────────────────────────────────────────
 //!
 //! There was never a rule about shell in this repository. Measured 2026-08-01: 58 tracked `.sh`
-//! files, 15,618 lines. T-621 froze that count in `scripts/shell-inventory.txt` so the list could
-//! only shrink. T-620 did the same for `python3` in `scripts/python-inventory.txt` (12 files).
-//! T-853 drained both lists to empty (T-902 deleted `wave.sh`, T-903 deleted `hostrun.sh`).
-//! **T-904 deletes the inventories and flips the gate to a hard zero:** any tracked match is FAIL.
+//! files, 15,618 lines. A frozen inventory let that list only shrink; both lists are drained to
+//! empty, there is no inventory file, and **the gate is a hard zero:** any tracked match is FAIL.
 //! There is no allowlist and no "may only shrink".
 //!
 //! ── ONE TABLE ────────────────────────────────────────────────────────────────────────────────
@@ -20,14 +18,14 @@
 //!
 //! `apps/mod/**` Enfusion source is `.c` (and layouts, configs). `.c` is not in this table, so
 //! those files are not banned. This gate does **not** skip `apps/mod/**` as a prefix — a planted
-//! `apps/mod/foo.sh` is still `.sh` and still FAIL. Widening that skip is how a shell script
+//! a tracked shell file under `apps/mod/` is still FAIL. Widening that skip is how a shell script
 //! would re-enter under the Enfusion tree.
 //!
 //! ── FAIL-CLOSED ──────────────────────────────────────────────────────────────────────────────
 //!
 //! An empty tree of banned files is OK only because the walk **ran**. `git ls-files` failing, or
 //! succeeding with zero tracked paths, is FAIL (anti-vacuity: reporting OK over an input that was
-//! never examined is the T-620 `rg || true` defect). A tracked path that cannot be read is FAIL,
+//! never examined is the `rg || true` defect). A tracked path that cannot be read is FAIL,
 //! not a skip — classification requires opening the file.
 //!
 //! A file is banned if it matches the table **or** its first line is a parsed shebang naming a
@@ -42,7 +40,7 @@ use anyhow::{Context, Result};
 
 /// Interpreters whose shebang makes a tracked file a shell script.
 ///
-/// Includes `dash` (historical T-623 set) plus `ksh` / `fish` so dropping the extension off a
+/// Includes `dash` plus `ksh` / `fish` so dropping the extension off a
 /// banned-extension script does not dodge the table.
 const SHELLS: &[&str] = &["sh", "bash", "dash", "zsh", "ksh", "fish"];
 
@@ -125,7 +123,7 @@ fn repo_root() -> Result<PathBuf> {
 }
 
 fn run_at(root: &Path, label: Label) -> Result<u8> {
-    println!("==> tracked language ban (T-904 hard zero; no inventory)");
+    println!("==> tracked language ban (hard zero; no inventory)");
     let Walk {
         examined,
         hits,
@@ -141,9 +139,7 @@ fn run_at(root: &Path, label: Label) -> Result<u8> {
     }
     if examined == 0 {
         println!("FAIL: git ls-files -z returned 0 tracked paths — the walk examined nothing.");
-        println!(
-            "      An empty input must never read as a clean tree (T-556 / T-620 anti-vacuity)."
-        );
+        println!("      An empty input must never read as a clean tree (anti-vacuity).");
         fail_footer(label, 1);
         return Ok(1);
     }
@@ -345,7 +341,7 @@ fn shebang_interpreter(first_line: &str) -> Option<&str> {
 
 /// Does this FIRST LINE name a shell interpreter?
 ///
-/// T-623 F3. Not `line.contains("bash")`, and not `line.starts_with("#!")` either — MEASURED
+/// F3. Not `line.contains("bash")`, and not `line.starts_with("#!")` either — MEASURED
 /// 2026-08-01, `tools_v2/xtask/src/main.rs` opens with
 ///
 ///     #![allow(clippy::collapsible_if)]
