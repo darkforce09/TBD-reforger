@@ -28,11 +28,12 @@ The deployment command synchronizes the repository to the target server, compile
 cargo xtask deploy website
 ```
 
-### Execution Pipeline (`tools_v2/xtask/src/gate_deploy_website.rs`):
-1. **Target Validation**: Asserts `TBD_REMOTE_DIR` is set to `/home/sam/tbd/` and SSH connectivity succeeds.
-2. **Workspace Synchronization**: Uses `rsync` with exclude patterns (`target/`, `.git/`, `node_modules/`) to push code to the remote server.
-3. **Container Healthcheck**: Asserts staging Postgres container on port `:5433` is running and healthy.
-4. **Remote Compilation**:
+### Execution Pipeline (`tools_v2/xtask/src/commands/deploy/website.rs`):
+1. **Target Validation**: Asserts `TBD_REMOTE_DIR` is under `/home/sam/tbd/` and never a PrairieLearn path.
+2. **Asset Preflight**: Probes the server for `assets_v2/terrains/terrain-registry.json`; refuses to continue while the host still keeps its assets at the pre-relocation `packages/map-assets`, printing the `mv` to run.
+3. **Workspace Synchronization**: `rsync --delete` with the exclude set in `deploy/website/rsync_argv.rs` — secrets, build output, the terrain and scratch asset trees, the legacy `packages/`, the oracle lanes. Every entry is also what protects that path from `--delete` on the server; `cargo xtask deploy website --dry-run` prints the list.
+4. **Container Healthcheck**: Asserts staging Postgres container on port `:5433` is running and healthy.
+5. **Remote Compilation**:
    - Compiles Axum API: `cargo build --release -p website-api`
    - Compiles Leptos SPA: `trunk build --release` inside `apps/website/frontend/`
 5. **Atomic Service Restart**:

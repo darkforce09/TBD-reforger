@@ -4,7 +4,7 @@ The Arsenal workspace provides complete gear, weapon, and uniform loadout author
 
 ## Features
 - Interactive 2D equipment slot grid (headgear, vest, uniform, backpack, primary weapon, secondary weapon).
-- JSON loadout contract compliance (`packages/tbd-schema/schema/loadout.schema.json`).
+- JSON loadout contract compliance (`contracts_v2/definitions/loadout-export.schema.json`).
 - Visual inventory mass-template application across squads.
 - Colocated visual design blueprints in `visual_reference/`.
 

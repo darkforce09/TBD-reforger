@@ -1,7 +1,7 @@
 # Engine Split Program — graphics-engine / map-engine / editor app
 
 **Status:** proposed, not yet ticketed.
-**Scope:** `apps/website/` only. No mod (`apps/mod/`), no schema (`packages/tbd-schema/`), no API contract change.
+**Scope:** `apps/website/` only. No mod (`apps/mod/`), no schema (`contracts_v2/`), no API contract change.
 **Shape:** three phases. Phase 1 is the expensive one; phases 2 and 3 are mostly mechanical.
 
 ---
@@ -579,7 +579,7 @@ per frame for data that never changed, this phase is a speed-up.
 
 ### 2D — separate static world from authored entities
 
-`world/` is immutable, streamed from `packages/map-assets`, cacheable, never persisted.
+`world/` is immutable, streamed from `assets_v2/terrains`, cacheable, never persisted.
 `data/` is mutable, undoable, CRDT-synced, persisted. They share the spatial index and nothing else.
 Do not let a `world/` type gain a `dirty` flag or a `data/` type gain a chunk id.
 
@@ -884,8 +884,8 @@ Rule 5 is the one that stops `editing/` drifting back into the browser. Wire
 Not part of this program, do not touch:
 
 - `apps/mod/**` — all three Enfusion addons.
-- `packages/tbd-schema/**` and generated `apps/website/api_v2/src/contract/generated/**`.
+- `contracts_v2/**` and generated `apps/website/api_v2/src/contract/generated/**`.
 - The API JSON contract — routes, field names, `{data,total,limit,offset}` envelope, auth tiers.
-- `packages/map-assets/**` and the `/map-assets` route.
+- `assets_v2/terrains/**` and the `/map-assets` route.
 - Any behavior change. This program moves code and builds one new interface (`frame/`). If a phase
   produces a visible behavior difference, that is a bug in the phase.
