@@ -255,9 +255,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "SCOPE (React-era, shipped; app retired at T-159.29.3): tactical-map/dem/* + DemController wiring"
             );
-            println!(
-                "REFERENCE (port, do not re-run): contracts_v2/scripts/lib/dem-sample.mjs"
-            );
+            println!("REFERENCE (port, do not re-run): contracts_v2/scripts/lib/dem-sample.mjs");
             println!(
                 "PREFLIGHT: cargo xtask ci lfs-dem && cargo run -q -p xtask -- ticket brief T-091"
             );
