@@ -3405,3 +3405,21 @@ included: the preflight finds the pinned browser, the toolchain and the free mem
 reports no warning. The one command that answers differently here is the website deploy rehearsal,
 which needs a runtime environment file this machine does not keep; run against a copy of the
 committed template it exits 0 and prints the paths above.
+
+### Orchestrator re-verification
+
+The full local CI suite ran once more against the committed tree after the sentence gate was
+repointed at the contract, from outside the phase that wrote the fix: `cargo xtask ci ci-local`
+exits 0, ending on the schema-parity and mission-size checks it could not reach before. The matrix
+rows re-measured independently agree with the table above: ticket identifiers 594, every one a
+string literal in a test file and none in a production file, a comment or a document; dead names 0;
+history words 0; path literals outside the three layout modules 0; empty directories 0; tracked
+files under the root script directory 0; dangling module mentions 0; help output carries no ticket
+spelling, no retired crate name and no shell file name.
+
+One comment escaped every earlier pass because it sits in a compile-fail fixture, a tree the
+ticket-identifier scan excludes as test data: `tools_v2/ticket-engine/tests/fail/mod_frontend.rs`
+cited a ticket as the provenance of its own pin and named the construct it replaced. It now states
+what it pins and why the refusal is the pin. The fixture's expected-output file addresses the
+offending expression by line, so the comment keeps its four lines; `cargo test -p ticket-engine
+--test trybuild` passes.
