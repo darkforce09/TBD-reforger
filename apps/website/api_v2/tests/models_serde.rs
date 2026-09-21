@@ -1,12 +1,11 @@
-//! Phase 2 gate — the encoder contract holds on the wire (serialization parity).
-//!
-//! These lock the Go `encoding/json` semantics the differential G5 later re-checks
-//! against the live Go service: enum snake_case, `omitempty` = absent (not null),
-//! non-omitempty `null`, Go RFC3339Nano timestamps, midnight-UTC dates.
+//! The JSON wire contract, pinned at the encoder: enum values are snake_case, optional fields
+//! are absent (not `null`) when empty, nullable non-optional fields serialize as `null`,
+//! timestamps are RFC 3339 UTC with trailing fractional zeros trimmed, and dates are midnight
+//! UTC. The SPA's DTO golden tests and the Enfusion mod parse exactly these spellings.
 
 use chrono::{TimeZone, Utc};
 use serde_json::json;
-use website_api::core::wire_format::go_time;
+use website_api::core::wire_format::rfc3339_utc;
 use website_api::identity_and_access::models::user_account::{User, UserRole};
 use website_api::missions::models::mission::{GameMode, MissionStatus, WeatherType};
 use website_api::operations::models::event::RegistrationState;
@@ -40,21 +39,24 @@ fn enum_values_are_snake_case() {
 }
 
 #[test]
-fn go_time_trims_trailing_zeros_like_go() {
+fn timestamps_trim_trailing_fractional_zeros() {
     let whole = Utc.with_ymd_and_hms(2026, 7, 6, 12, 0, 0).unwrap();
-    assert_eq!(go_time::format(&whole), "2026-07-06T12:00:00Z");
+    assert_eq!(rfc3339_utc::format(&whole), "2026-07-06T12:00:00Z");
 
-    // 500 ms → ".5" (Go trims trailing zeros), not ".500".
+    // 500 ms → ".5" (trailing zeros trimmed), not ".500".
     let half = whole + chrono::Duration::milliseconds(500);
-    assert_eq!(go_time::format(&half), "2026-07-06T12:00:00.5Z");
+    assert_eq!(rfc3339_utc::format(&half), "2026-07-06T12:00:00.5Z");
 
     // Full nanosecond precision, no padding artifacts.
     let nanos = whole + chrono::Duration::nanoseconds(123_456_789);
-    assert_eq!(go_time::format(&nanos), "2026-07-06T12:00:00.123456789Z");
+    assert_eq!(
+        rfc3339_utc::format(&nanos),
+        "2026-07-06T12:00:00.123456789Z"
+    );
 }
 
 #[test]
-fn user_omitempty_and_null_match_go() {
+fn user_optional_fields_are_absent_and_nullable_fields_are_null() {
     let dt = Utc.with_ymd_and_hms(2026, 7, 6, 12, 0, 0).unwrap();
     let u = User {
         discord_id: "1".into(),
@@ -77,7 +79,7 @@ fn user_omitempty_and_null_match_go() {
     let v = serde_json::to_value(&u).unwrap();
     let obj = v.as_object().unwrap();
 
-    // arma_id has NO omitempty in Go → present as null.
+    // arma_id is nullable, not optional → present as null.
     assert_eq!(obj.get("arma_id"), Some(&serde_json::Value::Null));
     // Non-omitempty empty strings still serialize.
     assert!(obj.contains_key("discord_handle"));
@@ -89,7 +91,7 @@ fn user_omitempty_and_null_match_go() {
             "{absent} must be omitted when empty"
         );
     }
-    // enum snake_case + Go timestamp + numeric.
+    // enum snake_case + timestamp + numeric.
     assert_eq!(obj["role"], json!("admin"));
     assert_eq!(obj["created_at"], json!("2026-07-06T12:00:00Z"));
     assert_eq!(obj["total_deployments"], json!(42));

@@ -25,7 +25,9 @@ pub async fn get_me(
     Ok(Json(json!({ "user": u, "arma_linked": arma_linked })))
 }
 
-/// `PATCH /api/v1/me` — placeholder echo (profile fields come from Discord/link flow).
+/// `PATCH /api/v1/me` — answers with the caller's stored user object, unchanged: every profile
+/// field is owned by the Discord sign-in or the Arma link flow, so there is nothing a client may
+/// set here.
 ///
 /// @route PATCH /api/v1/me
 pub async fn update_me(

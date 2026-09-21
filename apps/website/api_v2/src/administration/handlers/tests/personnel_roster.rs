@@ -1,4 +1,4 @@
-/// Class-R — `list_users` must SELECT the live `users.total_deployments` column. A literal
+/// `list_users` must SELECT the live `users.total_deployments` column. A literal
 /// `0::bigint AS total_deployments` alias would false-green the SPA bind while never reading the
 /// denormalized counter.
 #[test]

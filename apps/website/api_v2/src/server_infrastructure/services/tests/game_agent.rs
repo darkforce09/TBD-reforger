@@ -25,7 +25,7 @@ fn verbs_are_the_agents_four_literals() {
     );
 }
 
-/// Class-R — **the timeout must exceed the dwell.**
+/// **The timeout must exceed the dwell.**
 ///
 /// Read the dwell out of the agent template rather than hardcoding 8 here, because the failure
 /// this guards against is somebody *raising the dwell* and leaving this client timing out under

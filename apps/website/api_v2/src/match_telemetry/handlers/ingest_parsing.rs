@@ -88,7 +88,7 @@ pub(super) fn valid_terrain(s: &str) -> Option<TerrainType> {
 /// so community missions legitimately carry names outside `everon|arland|custom`. Rejecting
 /// the whole match-results POST for that is the "production ingest 400s" failure mode for
 /// those senders. Soft-fails like [`parse_uuid_opt`] (heartbeat three-state), **not** like
-/// [`parse_uuid_opt_strict`] (match event/mission ids). Known pins still map; Class-R tests lock
+/// [`parse_uuid_opt_strict`] (match event/mission ids). The sibling tests lock
 /// both halves.
 pub(super) fn parse_terrain_opt(s: &Option<String>) -> Option<TerrainType> {
     s.as_deref()

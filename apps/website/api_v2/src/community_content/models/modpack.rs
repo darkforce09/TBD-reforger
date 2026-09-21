@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// Downloadable dependency set.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -16,7 +16,7 @@ pub struct Modpack {
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub workshop_url: String,
     pub is_current: bool,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }
 

@@ -57,7 +57,7 @@ fn version_payload_vacuous_rejects_empty_keeps_editor_skeleton() {
     assert!(!version_payload_is_vacuous("not-json"));
 }
 
-/// The helper surfaces a 400 with the refuse message (perturbation target).
+/// The helper surfaces a 400 with the refuse message .
 #[test]
 fn reject_vacuous_version_payload_is_bad_request() {
     let err = reject_vacuous_version_payload("{}").expect_err("empty must 400");

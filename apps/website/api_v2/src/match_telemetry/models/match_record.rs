@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::{go_time, go_time_opt};
+use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 use crate::missions::models::mission::TerrainType;
 
 /// Mission outcomes (Postgres ENUM `mission_outcome`).
@@ -65,16 +65,20 @@ pub struct Match {
     pub mission_id: Option<Uuid>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub terrain: Option<TerrainType>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub started_at: DateTime<Utc>,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub ended_at: Option<DateTime<Utc>>,
     pub outcome: MissionOutcome,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub winning_faction: String,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub aar_replay_url: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }
 
@@ -112,6 +116,6 @@ pub struct MatchPlayerStat {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub command_win: Option<bool>,
     pub source_event_id: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }

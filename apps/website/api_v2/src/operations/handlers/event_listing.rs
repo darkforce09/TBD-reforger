@@ -19,7 +19,7 @@ use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::AuthUser;
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 use crate::missions::models::mission::MissionArmory;
 use crate::operations::models::{Event, EventMission, OrbatSlot, RegistrationState};
 use crate::operations::services::event_lookup::load_event;
@@ -198,7 +198,7 @@ struct EventMissionDossier {
     briefing: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     thumbnail_url: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     start_time: DateTime<Utc>,
     factions: Vec<String>,
     armory_by_faction: Vec<ArmoryFactionDto>,

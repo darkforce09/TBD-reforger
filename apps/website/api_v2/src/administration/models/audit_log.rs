@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::core::wire_format::RawJson;
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// Audit severities (Postgres ENUM `audit_severity`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -45,6 +45,6 @@ pub struct AuditLog {
     /// `jsonb` (nullable) — passthrough (hazard #8).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub metadata: Option<RawJson>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }

@@ -51,7 +51,7 @@ pub fn routes(version_limit: usize) -> Router<AppState> {
         .route(
             "/missions/{id}/versions",
             // The version POST carries the compiled editor payload (hundreds of MB) —
-            // override the global 1 MB body cap for this route only (Go: per-route BodyLimit).
+            // override the global 1 MB body cap for this route only.
             post(handlers::mission_versions::create_version)
                 .layer(DefaultBodyLimit::max(version_limit)),
         )

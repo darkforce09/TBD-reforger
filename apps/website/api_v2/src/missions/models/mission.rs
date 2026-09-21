@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::core::wire_format::RawJson;
-use crate::core::wire_format::{go_time, go_time_opt};
+use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 
 /// Mission lifecycle states (Postgres ENUM `mission_status`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -110,11 +110,15 @@ pub struct Mission {
     pub rejection_reason: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub reviewed_by: Option<String>,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub reviewed_at: Option<DateTime<Utc>>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -130,7 +134,7 @@ pub struct MissionVersion {
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub editor_notes: String,
     pub created_by: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }
 
@@ -200,6 +204,6 @@ pub struct MissionDefaultValueBucket {
 pub struct MissionBookmark {
     pub discord_id: String,
     pub mission_id: Uuid,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }

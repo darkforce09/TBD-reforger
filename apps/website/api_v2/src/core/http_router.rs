@@ -1,5 +1,5 @@
 //! HTTP application assembly — the router + global middleware chain. Shared by the
-//! `api` binary and the test/differential harnesses so they exercise one router.
+//! `api` binary and the integration suites so they exercise one router.
 //!
 //! [`router`] owns the layer order, which is load-bearing: the metrics middleware sits outside
 //! the panic-catcher and the rate limiter so a 500-from-panic and a 429-from-throttle are both

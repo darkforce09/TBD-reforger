@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::{go_time, go_time_opt};
+use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 
 /// Announcement statuses (Postgres ENUM `announcement_status`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -56,10 +56,14 @@ pub struct Announcement {
     pub pushed_to_discord: bool,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub discord_message_id: String,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub published_at: Option<DateTime<Utc>>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }

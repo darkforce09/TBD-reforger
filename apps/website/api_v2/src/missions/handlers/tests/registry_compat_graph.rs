@@ -56,7 +56,7 @@ fn cargo_aggregate_sums_qty_and_maps_containers() {
 
 #[test]
 fn cargo_aggregate_is_strictly_smaller_than_raw_edge_walk_input() {
-    // Class-R shape pin: N raw cargo edges → fewer aggregated rows (duplicates collapse).
+    // Shape pin: N raw cargo edges → fewer aggregated rows (duplicates collapse).
     // Proves the slim view cannot re-expand to the full dump.
     let mut edges = Vec::new();
     for i in 0..100 {

@@ -37,7 +37,7 @@ pub(crate) struct MissionJson {
     briefing: String,
     armory: Vec<ArmoryExport>,
     payload: Box<RawValue>,
-    #[serde(with = "crate::core::wire_format::go_time")]
+    #[serde(with = "crate::core::wire_format::rfc3339_utc")]
     exported_at: chrono::DateTime<Utc>,
 }
 

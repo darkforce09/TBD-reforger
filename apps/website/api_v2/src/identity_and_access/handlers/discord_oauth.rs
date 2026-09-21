@@ -359,7 +359,7 @@ fn classify_discord_failure(e: &anyhow::Error) -> (&'static str, &'static str) {
             "Discord answered and REJECTED the call — the status and its body are in `error`. \
              401 invalid_client = wrong DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET; 400 \
              invalid_grant = wrong DISCORD_REDIRECT_URL, or a code already used or expired. \
-             Pre-flight the credential pair with the curl in apps/website/api/.env.example.",
+             Pre-flight the credential pair with the curl in apps/website/api_v2/.env.example.",
         ),
     }
 }

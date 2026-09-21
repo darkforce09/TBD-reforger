@@ -1,14 +1,14 @@
-//! Go-style RFC3339 timestamp serialization: the three `#[serde(with = …)]` modules the models
-//! apply field by field so the JSON this API emits is byte-identical to the format its clients
-//! parse.
+//! The timestamp and date spellings of the JSON wire contract: three `#[serde(with = …)]`
+//! modules the models apply field by field, so every instant this API emits is byte-identical to
+//! the string the SPA's DTO golden tests and the Enfusion mod parse.
 
-/// A `timestamptz` rendered as Go's `RFC3339Nano`: trailing-zero-trimmed fractional seconds
-/// (`.5`, not `.500`), `Z` for UTC.
-pub mod go_time {
+/// A `timestamptz` as RFC 3339 in UTC: `Z` suffix, fractional seconds only when non-zero and
+/// with trailing zeros trimmed (`.5`, not `.500`; `.123456789` at full precision).
+pub mod rfc3339_utc {
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Deserializer, Serializer};
 
-    /// Format a UTC instant the way Go's `time.Time.MarshalJSON` does.
+    /// Format a UTC instant in the wire spelling described on the module.
     pub fn format(dt: &DateTime<Utc>) -> String {
         let nanos = dt.timestamp_subsec_nanos();
         let base = dt.format("%Y-%m-%dT%H:%M:%S");
@@ -35,15 +35,15 @@ pub mod go_time {
     }
 }
 
-/// An optional timestamp — same wire format as [`go_time`], with `None` handled by the caller's
-/// `skip_serializing_if` so an absent value is an absent key.
-pub mod go_time_opt {
+/// An optional timestamp — same wire format as [`rfc3339_utc`], with `None` handled by the
+/// caller's `skip_serializing_if` so an absent value is an absent key.
+pub mod rfc3339_utc_opt {
     use chrono::{DateTime, Utc};
     use serde::{Deserialize, Deserializer, Serializer};
 
     pub fn serialize<S: Serializer>(opt: &Option<DateTime<Utc>>, s: S) -> Result<S::Ok, S::Error> {
         match opt {
-            Some(dt) => s.serialize_str(&super::go_time::format(dt)),
+            Some(dt) => s.serialize_str(&super::rfc3339_utc::format(dt)),
             None => s.serialize_none(),
         }
     }
@@ -58,9 +58,9 @@ pub mod go_time_opt {
     }
 }
 
-/// A Postgres `date` rendered as an instant at midnight UTC — a full RFC3339 timestamp
-/// (`2026-07-06T00:00:00Z`), NOT a bare `2026-07-06`.
-pub mod go_date {
+/// A Postgres `date` rendered as an instant at midnight UTC — a full RFC 3339 timestamp
+/// (`2026-07-06T00:00:00Z`), NOT a bare `2026-07-06`. Reading accepts both spellings.
+pub mod rfc3339_utc_date {
     use chrono::{DateTime, NaiveDate};
     use serde::{Deserialize, Deserializer, Serializer};
 

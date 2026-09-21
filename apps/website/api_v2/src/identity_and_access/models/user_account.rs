@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::{go_time, go_time_opt};
+use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 
 /// Web permission level, synced from Discord roles. Backed by the Postgres ENUM
 /// `user_role`. Ordering (low→high): enlisted < leader < mission_maker < admin.
@@ -51,16 +51,24 @@ pub struct User {
     pub ban_reason: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub banned_by: Option<String>,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub banned_at: Option<DateTime<Utc>>,
     pub total_deployments: i64,
     /// `numeric(5,2)` — queries must `CAST(attendance_rate AS double precision)`.
     pub attendance_rate: f64,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub last_login_at: Option<DateTime<Utc>>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -79,7 +87,7 @@ pub struct DiscordRole {
 pub struct UserDiscordRole {
     pub discord_id: String,
     pub discord_role_id: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub synced_at: DateTime<Utc>,
 }
 
@@ -90,11 +98,15 @@ pub struct IdentityLinkCode {
     pub discord_id: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub arma_id: Option<String>,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub consumed_at: Option<DateTime<Utc>>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub expires_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }
 
@@ -105,10 +117,14 @@ pub struct RefreshToken {
     pub discord_id: String,
     #[serde(skip)]
     pub token_hash: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub expires_at: DateTime<Utc>,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub revoked_at: Option<DateTime<Utc>>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }

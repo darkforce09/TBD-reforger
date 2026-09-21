@@ -56,7 +56,7 @@ fn publish_interval_rejects_zero_negative_garbage() {
 /// Perturbation RED: when publish is a no-op, a subscriber receives nothing. Dropping this
 /// assertion (or restoring a publish) is what makes the GREEN test below load-bearing.
 #[tokio::test]
-async fn perturbation_no_publish_delivers_zero_frames() {
+async fn a_publisher_that_skips_publish_delivers_zero_frames() {
     let hub = Arc::new(Hub::new());
     let id = Uuid::parse_str("00000000-0000-4000-d000-000000000099").unwrap();
     let topic = format!("server:{id}");
@@ -74,7 +74,7 @@ async fn perturbation_no_publish_delivers_zero_frames() {
     tokio::time::sleep(Duration::from_millis(120)).await;
     assert!(
         rx.try_recv().is_err(),
-        "perturbation: stub that skips publish must deliver zero frames"
+        "a stub that skips publish must deliver zero frames"
     );
 
     handle.abort();

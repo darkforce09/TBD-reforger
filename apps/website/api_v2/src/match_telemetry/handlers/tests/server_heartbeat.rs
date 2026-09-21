@@ -6,7 +6,7 @@ use crate::match_telemetry::handlers::ingest_parsing::tests::{
 
 const HEARTBEAT_SRC: &str = include_str!("../server_heartbeat.rs");
 
-/// Class-R: the heartbeat's `server_statuses` write must route its error through
+/// the heartbeat's `server_statuses` write must route its error through
 /// `foreign_key_error`, and the fallthrough must still be `e.into()`.
 ///
 /// The helper being correct proves nothing if the call site never calls it — that is the
@@ -36,7 +36,7 @@ fn heartbeat_status_write_maps_foreign_key_violations() {
     assert!(
         collapsed.contains("foreign_key_error(&e)"),
         "the server_statuses write must route its error through foreign_key_error \
-         (perturbation: bare `.await?` → 500 on an unregistered server_id)"
+         (fails with: bare `.await?` → 500 on an unregistered server_id)"
     );
     assert!(
         collapsed.contains("e.into()"),

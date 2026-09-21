@@ -1,6 +1,6 @@
 use super::*;
 
-/// Class-R: formula-leading cells must be prefixed so Excel/Sheets do not execute them.
+/// formula-leading cells must be prefixed so Excel/Sheets do not execute them.
 ///
 /// RED: delete the `Some(b'=' | …)` arm (or make the helper return `Cow::Borrowed` always) —
 /// `assert!(escaped.starts_with('\''))` fails and raw `=cmd` survives.
@@ -27,7 +27,7 @@ fn escape_csv_formula_prefixes_equals_plus_minus_at() {
     assert_eq!(escape_csv_formula("9=ok"), "9=ok");
 }
 
-/// Class-R: the export writer path (same `csv::Writer` + `escape_csv_formula` as
+/// the export writer path (same `csv::Writer` + `escape_csv_formula` as
 /// [`export_audit_logs_csv`]) must not emit a record whose decoded field still starts with a
 /// formula character. A helper-only green with a raw write path is a false green.
 ///

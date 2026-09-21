@@ -30,15 +30,15 @@ fn results_handler() -> String {
     collapse_ws(&strip_rust_comments(&after[..end]))
 }
 
-/// Class-R: both `ingest_match_results` sites must invoke `require_role_played`.
+/// both `ingest_match_results` sites must invoke `require_role_played`.
 ///
 /// Helper-only tests (`blank_role_played_is_rejected` / `non_blank_role_played_ok`) stay green
 /// if the call sites are deleted — this pin fails that deletion. Comments are stripped before
-/// counting so a bait comment cannot false-green a deleted live call.
+/// counting so a comment naming the call cannot stand in for a deleted live call.
 #[test]
 fn ingest_match_results_invokes_require_role_played_at_both_sites() {
     let collapsed = results_handler();
-    // Assembled so a free-floating bait comment / this test's source cannot false-green
+    // Assembled so a comment naming the call, or this test's own source, cannot satisfy it
     // with a bare `contains("require_role_played")` on the helper-only suite.
     let call = format!("{}{}", "require_role_played(", "&p.role_played)");
     assert_eq!(
@@ -53,7 +53,7 @@ fn ingest_match_results_invokes_require_role_played_at_both_sites() {
     );
 }
 
-/// Class-R: a re-point must retract prior event_mission attendance before the SET.
+/// a re-point must retract prior event_mission attendance before the SET.
 ///
 /// A SET-only path false-greens every "marks EV2" assert while leaving EV1 attended. The full
 /// integration coverage lives in `tests/telemetry_attendance.rs`; this pin fails if the retract

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::core::wire_format::RawJson;
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// One reusable faction. `doc` is the full faction-library document (validated against
 /// the generated contract on every write); `side`/`name` are projections of the same
@@ -20,8 +20,8 @@ pub struct UserFaction {
     pub side: String,
     pub name: String,
     pub doc: RawJson,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }

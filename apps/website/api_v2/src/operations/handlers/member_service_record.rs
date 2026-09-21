@@ -41,7 +41,7 @@ use uuid::Uuid;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 use crate::identity_and_access::services::user_lookup::load_user;
 use crate::match_telemetry::models::match_record::{Match, MatchPlayerStat};
 use crate::missions::services::mission_lookup::mission_title_terrain;
@@ -53,7 +53,7 @@ struct DeploymentUpcoming {
     event_mission_id: String,
     name: String,
     terrain: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     start_time: DateTime<Utc>,
     state: String,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -66,7 +66,7 @@ struct DeploymentUpcoming {
 
 #[derive(Debug, Serialize)]
 struct ServiceRecord {
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     date: DateTime<Utc>,
     operation: String,
     role: String,
@@ -274,7 +274,7 @@ async fn load_event(pool: &sqlx::PgPool, id: Uuid) -> sqlx::Result<Option<Event>
         .await
 }
 
-/// The wire-format zero timestamp `0001-01-01T00:00:00Z` that `core::wire_format::go_time`
+/// The wire-format zero timestamp `0001-01-01T00:00:00Z` that `core::wire_format::rfc3339_utc`
 /// renders — used only for the unreachable orphan-match path (a `MatchPlayerStat` always
 /// references a real match).
 fn go_zero() -> DateTime<Utc> {

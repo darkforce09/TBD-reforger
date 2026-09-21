@@ -13,7 +13,7 @@ use crate::missions::contract::schema_validators::{
     validate_mission_document, validate_mission_editor_payload_with_catalog,
 };
 
-/// The same phys table + over-capacity numbers Save's cargo Class-R uses
+/// The same phys table + over-capacity numbers Save's cargo unit tests use
 /// (`missions::handlers::mission_versions` /
 /// `missions::contract::schema_validators`), so the two boundaries are compared on one fixture.
 fn cargo_phys_catalog_fixture() -> CargoPhysCatalog {
@@ -110,7 +110,7 @@ fn compile_with_catalog_refuses_over_capacity_like_save() {
         .expect("empty catalog must not invent a limit (matches Save silence)");
 }
 
-/// Class-R — the no-arg compile entry always routes through the catalogued gate (empty catalog
+/// The no-arg compile entry always routes through the catalogued gate (empty catalog
 /// today). RED: `flatten_to_mod_document` bypasses `with_catalog` again.
 #[test]
 fn flatten_routes_through_catalogued_compile_gate() {
@@ -141,7 +141,7 @@ fn flatten_routes_through_catalogued_compile_gate() {
     );
 }
 
-/// Class-R — compile-as-trust-saved for the empty-catalog default: Save and live `/compiled` own
+/// Compile-as-trust-saved for the empty-catalog default: Save and live `/compiled` own
 /// the refuse via `load_cargo_phys_catalog`. RED: Save drops the catalog load, or this adapter
 /// stops documenting that dependency.
 #[test]

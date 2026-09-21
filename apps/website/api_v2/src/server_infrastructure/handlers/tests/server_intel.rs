@@ -1,7 +1,7 @@
 //! Source pins over the read path: the list endpoint must prefetch in a constant number of
 //! round-trips, and the status join that supplies `terrain` must stay in the query.
 
-/// Class-R: `list_servers` must prefetch via `servers_intel_batch` / `ANY($1)`, never compose
+/// `list_servers` must prefetch via `servers_intel_batch` / `ANY($1)`, never compose
 /// one card per row (an N+1 over the whole fleet).
 #[test]
 fn list_servers_does_not_compose_one_card_per_row() {
@@ -61,7 +61,7 @@ fn servers_intel_batch_uses_any_prefetch() {
     );
 }
 
-/// Class-R: production source must join `matches.terrain` — removing the join is a ship fail.
+/// production source must join `matches.terrain` — removing the join is a ship fail.
 #[test]
 fn server_intel_joins_matches_terrain() {
     const SRC: &str = include_str!("../server_intel.rs");

@@ -145,7 +145,7 @@ fn flatten_matches_locked_contract() {
         )
     );
 
-    // Gate G6: the compiled document (incl. the loadout block and the weapon slots) validates
+    // Schema conformance: the compiled document (incl. the loadout block and the weapon slots) validates
     // against mission.schema.json. This is the assertion that stands between a widened compiler
     // and a 500 on GET /missions/:id/compiled — `gear` is `additionalProperties: false`, so
     // emitting launcher/handgun/throwable without the matching schema keys would fail here, and in

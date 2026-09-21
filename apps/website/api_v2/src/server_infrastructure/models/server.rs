@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// Registered Arma Reforger server instance. `ip` is Postgres `inet` bound as text
 /// (queries must `SELECT ip::text`).
@@ -36,7 +36,7 @@ pub struct ServerStatus {
     pub ingame_time: String,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub ingame_weather: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -48,6 +48,6 @@ pub struct ServerStatusHistory {
     pub player_count: i64,
     /// `numeric(5,1)` — queries must `CAST(server_fps AS double precision)`.
     pub server_fps: f64,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub recorded_at: DateTime<Utc>,
 }

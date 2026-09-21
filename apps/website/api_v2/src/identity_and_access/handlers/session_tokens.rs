@@ -17,7 +17,7 @@ use serde_json::{Value, json};
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
 use crate::core::error_handling::api_error::ApiError;
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 use crate::identity_and_access::models::user_account::RefreshToken;
 use crate::identity_and_access::services::session_issuance::{
     arma_id_is_linked, issue_refresh, revoke_token_family,
@@ -97,7 +97,7 @@ pub async fn refresh(
 
     Ok(Json(json!({
         "access_token": access,
-        "expires_at": go_time::format(&exp),
+        "expires_at": rfc3339_utc::format(&exp),
         "refresh_token": new_refresh,
         "token_type": "Bearer",
     })))

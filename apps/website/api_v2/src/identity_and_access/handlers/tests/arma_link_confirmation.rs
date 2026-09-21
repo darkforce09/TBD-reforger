@@ -13,7 +13,7 @@ use super::*;
 /// equalities; no comment-only pins; no event-wide IN/ANY/UNION bypass.
 #[test]
 fn backfill_attendance_joins_event_id_and_mission_id() {
-    // Assembled so a bait comment / this test's source cannot false-green the const.
+    // Assembled so a comment naming the value, or this test's own source, cannot satisfy it.
     let join_pin_ab = format!(
         "{}{}",
         "m.event_id = em.event_id AND ", "m.mission_id = em.mission_id"

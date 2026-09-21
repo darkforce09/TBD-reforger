@@ -61,7 +61,7 @@ pub(crate) fn collapse_ws(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Class-R: known terrains still map (do not break everon/arland/custom).
+/// known terrains still map (do not break everon/arland/custom).
 #[test]
 fn terrain_known_pins() {
     assert_eq!(
@@ -78,7 +78,7 @@ fn terrain_known_pins() {
     );
 }
 
-/// Class-R: community / unknown terrain soft-fails to None — does not 400.
+/// community / unknown terrain soft-fails to None — does not 400.
 #[test]
 fn terrain_community_degrades_to_none() {
     assert_eq!(parse_terrain_opt(&Some("kolguyev".into())), None);
@@ -87,7 +87,7 @@ fn terrain_community_degrades_to_none() {
     assert_eq!(parse_terrain_opt(&None), None);
 }
 
-/// Class-R: present-and-blank `role_played` is a 400 — mirrors `source_match_key` / outcome
+/// present-and-blank `role_played` is a 400 — mirrors `source_match_key` / outcome
 /// blank rejects. `''` and whitespace both reject.
 #[test]
 fn blank_role_played_is_rejected() {
@@ -102,7 +102,7 @@ fn blank_role_played_is_rejected() {
     }
 }
 
-/// Class-R: non-blank role is accepted; trimmed form is what binds.
+/// non-blank role is accepted; trimmed form is what binds.
 #[test]
 fn non_blank_role_played_ok() {
     assert_eq!(require_role_played("SL").unwrap(), "SL");
@@ -113,7 +113,7 @@ fn non_blank_role_played_ok() {
     assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
 }
 
-/// Class-R: malformed non-empty event_id / mission_id → 400 (not silent None).
+/// malformed non-empty event_id / mission_id → 400 (not silent None).
 #[test]
 fn malformed_event_or_mission_id_is_bad_request() {
     for field in ["event_id", "mission_id"] {
@@ -130,7 +130,7 @@ fn malformed_event_or_mission_id_is_bad_request() {
     }
 }
 
-/// Class-R: absent / blank / valid still Ok — blank keeps (not three-state clear).
+/// absent / blank / valid still Ok — blank keeps (not three-state clear).
 #[test]
 fn event_mission_id_absent_blank_valid_ok() {
     let id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
@@ -161,7 +161,7 @@ fn event_mission_id_absent_blank_valid_ok() {
     );
 }
 
-/// Class-R: `current_match_id` keeps soft three-state via `parse_uuid_opt`.
+/// `current_match_id` keeps soft three-state via `parse_uuid_opt`.
 /// Absent → None (caller treats as keep); "" / whitespace → None (clear); uuid → Some;
 /// unparseable present → None (clear, **not** 400 — do not tighten this helper globally).
 #[test]
@@ -183,7 +183,7 @@ fn current_match_id_three_state_soft_parse() {
     assert_eq!(parse_uuid_opt(&Some("123".into())), None);
 }
 
-/// Class-R: COALESCE keep/clear is two-state. Whitespace must clear as `""`, never bind as a
+/// COALESCE keep/clear is two-state. Whitespace must clear as `""`, never bind as a
 /// third non-NULL value. `None` stays keep — do not collapse blank to `None` (that would break
 /// the deliberate `""` clear).
 #[test]
@@ -203,7 +203,7 @@ fn coalesce_str_two_state_no_whitespace_third() {
     assert_ne!(coalesce_str(&Some("   ".into())), None);
 }
 
-/// Class-R: call sites must use `coalesce_str`, not raw `as_deref()` — otherwise helper-only
+/// call sites must use `coalesce_str`, not raw `as_deref()` — otherwise helper-only
 /// tests stay green while COALESCE still admits `Some("   ")`.
 #[test]
 fn coalesce_str_bound_at_heartbeat_and_match_writes() {
@@ -221,11 +221,11 @@ fn coalesce_str_bound_at_heartbeat_and_match_writes() {
     let hb_collapsed = collapse_ws(&hb);
     assert!(
         hb_collapsed.contains("coalesce_str(&input.ingame_time)"),
-        "heartbeat must bind coalesce_str(&input.ingame_time) (perturbation: as_deref)"
+        "heartbeat must bind coalesce_str(&input.ingame_time) (fails with: as_deref)"
     );
     assert!(
         hb_collapsed.contains("coalesce_str(&input.ingame_weather)"),
-        "heartbeat must bind coalesce_str(&input.ingame_weather) (perturbation: as_deref)"
+        "heartbeat must bind coalesce_str(&input.ingame_weather) (fails with: as_deref)"
     );
     assert!(
         !hb_collapsed.contains("input.ingame_time.as_deref()"),
@@ -261,7 +261,7 @@ fn coalesce_str_bound_at_heartbeat_and_match_writes() {
     );
 }
 
-/// Class-R: the FK constraint names this module branches on must follow `0018`'s
+/// the FK constraint names this module branches on must follow `0018`'s
 /// `<table>_<column>_fkey` convention.
 ///
 /// Three of the four are for constraints that do not exist yet, so nothing at runtime can
@@ -286,7 +286,7 @@ fn fk_constant_names_follow_migration_convention() {
     }
 }
 
-/// Class-R: the mapping must **discriminate**, not blanket-4xx the database.
+/// the mapping must **discriminate**, not blanket-4xx the database.
 ///
 /// `foreign_key_error` is the only thing standing between "a foreign key was violated" and
 /// "every `sqlx::Error` is the caller's fault". Asserted here on the source rather than only

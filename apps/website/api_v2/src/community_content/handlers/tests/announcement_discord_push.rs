@@ -1,7 +1,7 @@
-/// Class-R: the CMS Discord push must route through `webhook.push_announcement` (the sanitised
+/// the CMS Discord push must route through `webhook.push_announcement` (the sanitised
 /// sink) and the failure-audit title must use `sanitize_discord_embed_field`.
 ///
-/// RED perturbations:
+/// Fails when:
 /// - call a raw HTTP client with `a.title` instead of `state.webhook.push_announcement` → FAIL
 /// - restore bare `a.title` in the audit format string → FAIL
 #[test]
@@ -31,7 +31,7 @@ fn push_to_discord_uses_sanitised_webhook_sink() {
     let sanitize = format!("{}{}", "sanitize_discord_", "embed_field");
     assert!(
         fn_body.contains(&sanitize),
-        "failure-audit title must call `{sanitize}` (perturbation: raw a.title in format!)"
+        "failure-audit title must call `{sanitize}` (fails with: raw a.title in format!)"
     );
     // Window pin: sanitize call must sit near the audit action, not a distant import bait.
     let audit_arm = fn_body

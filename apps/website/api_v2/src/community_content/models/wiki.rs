@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// SOP / manual document (markdown body).
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -19,7 +19,7 @@ pub struct WikiPage {
     pub nav_order: i64,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub updated_by: Option<String>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 

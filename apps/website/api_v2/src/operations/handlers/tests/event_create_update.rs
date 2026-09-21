@@ -68,13 +68,13 @@ fn patch_empty_string_clear_writers_and_attach_maps_unique() {
         patch_code.contains("briefing: Option<String>")
             && patch_code.contains("banner_image_url: Option<String>"),
         "PatchEventInput briefing/banner must be Option<String> so \"\" clears \
-         (perturbation: present_option / Option<Option<_>> / drop fields)"
+         (fails with: present_option / Option<Option<_>> / drop fields)"
     );
     assert!(
         !patch_code.contains("briefing: Option<Option")
             && !patch_code.contains("banner_image_url: Option<Option"),
         "briefing/banner must not use present_option Option<Option<_>> \
-         (perturbation: treat null as clear like server_id)"
+         (fails with: treat null as clear like server_id)"
     );
 
     // Live UPDATE writers — empty Some(\"\") must still push the column.
@@ -82,24 +82,24 @@ fn patch_empty_string_clear_writers_and_attach_maps_unique() {
         code.contains("if let Some(b) = &input.briefing")
             && code.contains("qb.push(\", briefing = \").push_bind(b.clone())"),
         "update_event must WRITE briefing when the key is present (incl. \"\") \
-         (perturbation: drop the briefing qb.push arm)"
+         (fails with: drop the briefing qb.push arm)"
     );
     assert!(
         code.contains("qb.push(\", banner_image_url = \").push_bind(u.clone())"),
         "update_event must WRITE banner_image_url when the key is present (incl. \"\") \
-         (perturbation: drop the banner qb.push arm)"
+         (fails with: drop the banner qb.push arm)"
     );
     // Banner clear path goes through the validator — empty must be Ok, not 400.
     assert!(
         code.contains("fn validated_banner_image_url")
             && code.contains("trimmed.is_empty() || is_http_url(trimmed)"),
         "validated_banner_image_url must accept empty (clear) or http(s) \
-         (perturbation: refuse empty → \"\" clear 400s)"
+         (fails with: refuse empty → \"\" clear 400s)"
     );
     assert!(
         code.contains(".map(validated_banner_image_url)"),
         "PATCH must route banner_image_url through validated_banner_image_url \
-         (perturbation: write raw / skip validator)"
+         (fails with: write raw / skip validator)"
     );
 
     let add = production_half(ATTACHMENT)
@@ -114,6 +114,6 @@ fn patch_empty_string_clear_writers_and_attach_maps_unique() {
         add_code.contains("is_unique_violation")
             && add_code.contains("already attached to this event"),
         "add_event_mission must map idx_event_mission unique violations to a 409 \
-         (perturbation: drop is_unique_violation arm → 500 on duplicate attach)"
+         (fails with: drop is_unique_violation arm → 500 on duplicate attach)"
     );
 }

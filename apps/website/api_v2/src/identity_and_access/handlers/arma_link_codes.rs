@@ -57,7 +57,7 @@ pub async fn create_link_code(
                     StatusCode::CREATED,
                     Json(json!({
                         "code": code,
-                        "expires_at": crate::core::wire_format::go_time::format(&expires),
+                        "expires_at": crate::core::wire_format::rfc3339_utc::format(&expires),
                     })),
                 ));
             }

@@ -12,7 +12,7 @@ fn production_half() -> &'static str {
         .expect("mission_export.rs must declare a sibling test module")
 }
 
-/// Class-R: live `/compiled` must load the Save phys catalog and compile through the catalogued
+/// live `/compiled` must load the Save phys catalog and compile through the catalogued
 /// gate — the empty-catalog `flatten_to_mod_document` would let an over-capacity version ship.
 /// RED: swap back to the no-arg flatten, or drop the catalog load.
 #[test]
@@ -43,7 +43,7 @@ fn compiled_route_loads_cargo_phys_catalog() {
     );
 }
 
-/// Class-R: `/compiled` must SURFACE the compile's structured findings, not drop them.
+/// `/compiled` must SURFACE the compile's structured findings, not drop them.
 ///
 /// This is the one boundary where a dropped finding is invisible: everything the compile learned
 /// would be thrown away or flattened into a pass/fail, and the caller is a game server that reads
@@ -113,7 +113,7 @@ fn compiled_route_surfaces_the_structured_diagnostics() {
     );
 }
 
-/// Class-R: a clean compile's *response* carries `x-compile-diagnostics-count: 0`.
+/// a clean compile's *response* carries `x-compile-diagnostics-count: 0`.
 ///
 /// The source pin above covers the route's shape (lift-before-serialize, both header constants,
 /// warn!, no refusal). That is necessary but not sufficient: a source scan cannot prove the

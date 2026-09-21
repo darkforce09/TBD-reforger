@@ -1,6 +1,6 @@
 use super::*;
 
-/// Class-R: formula-leading embed text must not leave Discord with a live first char.
+/// formula-leading embed text must not leave Discord with a live first char.
 ///
 /// RED: delete the `Some(b'=' | …)` arm (or always return `Cow::Borrowed`) — first char
 /// stays `=`/`+`/`-`/`@` and `assert!(!…)` fails.
@@ -32,7 +32,7 @@ fn sanitize_discord_embed_field_neutralises_formula_prefixes() {
     assert!(!sanitize_discord_embed_field("=x").starts_with('\''));
 }
 
-/// Class-R: ASCII control characters must be stripped from embed fields.
+/// ASCII control characters must be stripped from embed fields.
 ///
 /// RED: drop the `is_ascii_control` filter — NUL/tab/CR survive and these asserts fire.
 #[test]
@@ -46,7 +46,7 @@ fn sanitize_discord_embed_field_strips_ascii_controls() {
     assert_eq!(out.as_ref(), "helloworldlinebreak");
 }
 
-/// Class-R: the live sink (`push_announcement` title + description arms) must call
+/// the live sink (`push_announcement` title + description arms) must call
 /// `sanitize_discord_embed_field` — a helper-only green with raw `cap_runes(&a.title)` is a
 /// false green.
 ///
@@ -70,11 +70,11 @@ fn push_announcement_sanitises_title_and_description_at_sink() {
         .unwrap_or(after.len());
     let fn_body = &after[..end];
 
-    // Assembled so a bait comment cannot satisfy — call site must sit next to title bind.
+    // Assembled so a comment naming the call cannot satisfy — call site must sit next to title bind.
     let sanitize = format!("{}{}", "sanitize_discord_", "embed_field");
     assert!(
         fn_body.contains(&sanitize),
-        "push_announcement must call `{sanitize}` (perturbation: raw title into embed)"
+        "push_announcement must call `{sanitize}` (fails with: raw title into embed)"
     );
 
     let title_arm = fn_body.find("title:").expect("embed title: arm must exist");

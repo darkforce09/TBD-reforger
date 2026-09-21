@@ -11,7 +11,7 @@ use crate::community_content::services::modpack_lookup::load_current_modpack;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AuthUser;
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 use crate::missions::services::mission_lookup::mission_title_terrain;
 use crate::operations::models::{Event, EventMission, OrbatSlot};
 use crate::server_infrastructure::models::server::ServerStatus;
@@ -21,7 +21,7 @@ struct EventSummary {
     event_id: String,
     name: String,
     terrain: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     start_time: DateTime<Utc>,
     registered: i64,
     max_slots: i64,

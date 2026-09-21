@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::{go_time, go_time_opt};
+use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 
 /// Event lifecycle states (Postgres ENUM `event_status`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -65,7 +65,7 @@ pub struct Event {
     pub id: Uuid,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub name_override: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub start_time: DateTime<Utc>,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub briefing: String,
@@ -82,9 +82,9 @@ pub struct Event {
     /// Modpack this operation requires. Per-event, not the global `/modpacks/current`.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub modpack_id: Option<Uuid>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -95,11 +95,11 @@ pub struct EventMission {
     pub id: Uuid,
     pub event_id: Uuid,
     pub mission_id: Uuid,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub start_time: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -120,7 +120,11 @@ pub struct OrbatSlot {
     pub slot_index: i64,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub assigned_to: Option<String>,
-    #[serde(with = "go_time_opt", skip_serializing_if = "Option::is_none", default)]
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
     pub assigned_at: Option<DateTime<Utc>>,
 }
 
@@ -131,7 +135,7 @@ pub struct OrbatReservation {
     pub event_mission_id: Uuid,
     pub squad: String,
     pub reserved_by: String,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub reserved_at: DateTime<Utc>,
 }
 
@@ -144,6 +148,6 @@ pub struct EventRegistration {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub slot_id: Option<Uuid>,
     pub state: RegistrationState,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub registered_at: DateTime<Utc>,
 }

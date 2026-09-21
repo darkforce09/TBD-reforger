@@ -189,7 +189,7 @@ pub async fn ingest_server_status(
         // landing between the two statements. That is a race in the platform's own state, not a
         // bad body: answering 400 "unknown server_id" would tell the bridge to stop sending a
         // payload that was correct when it was sent. A 500 for a genuine race is the honest
-        // answer, and an arm no test can reach is an arm no perturbation can prove.
+        // answer, and an arm no test can reach is an arm no test can prove.
         .execute(&state.pool)
         .await?;
     }

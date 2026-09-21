@@ -22,7 +22,7 @@ fn core_player(extra: serde_json::Value) -> PlayerStatInput {
     serde_json::from_value(v).expect("PlayerStatInput decodes")
 }
 
-/// Class-R: a lone top-level `deaths` folds into a complete scoreline.
+/// a lone top-level `deaths` folds into a complete scoreline.
 #[test]
 fn flat_deaths_folds_when_nested_absent() {
     let p = core_player(json!({ "deaths": 3 }));
@@ -33,7 +33,7 @@ fn flat_deaths_folds_when_nested_absent() {
     assert_eq!(c.command_win, None);
 }
 
-/// Class-R: a full flat scoreline folds every field, including kills.
+/// a full flat scoreline folds every field, including kills.
 #[test]
 fn flat_kills_fold_into_nested() {
     let p = core_player(json!({
@@ -55,7 +55,7 @@ fn flat_kills_fold_into_nested() {
     assert_eq!(c.command_win, Some(true));
 }
 
-/// Class-R: nested wins when both shapes are present (no double count).
+/// nested wins when both shapes are present (no double count).
 #[test]
 fn nested_counters_win_over_conflicting_flat() {
     let p = core_player(json!({
@@ -77,7 +77,7 @@ fn nested_counters_win_over_conflicting_flat() {
     assert_eq!(c.command_win, Some(true));
 }
 
-/// Class-R: identity-only (no nested, no flat keys) still writes nothing.
+/// identity-only (no nested, no flat keys) still writes nothing.
 #[test]
 fn identity_only_does_not_fold() {
     let p = core_player(json!({}));

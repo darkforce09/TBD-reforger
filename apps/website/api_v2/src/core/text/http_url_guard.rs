@@ -56,8 +56,8 @@ use url::Url;
 /// Every URL column writes through this guard at its boundary:
 /// `announcements.thumbnail_url` (`community_content/handlers/announcements_admin.rs`), `events.banner_image_url`
 /// (`operations/handlers/event_create_update.rs`), `missions.thumbnail_url` (`missions/handlers/mission_lifecycle.rs`),
-/// `users.avatar_url` (`handlers/auth/oauth.rs`, which `format!`-builds a CDN URL out of an
-/// unvalidated Discord avatar hash), and `matches.replay_url`
+/// `users.avatar_url` (`identity_and_access/services/discord_user_profile.rs`, which `format!`-builds
+/// a CDN URL out of an unvalidated Discord avatar hash), and `matches.replay_url`
 /// (`match_telemetry::handlers::match_upsert::upsert_match`, the worked example).
 pub fn is_http_url(candidate: &str) -> bool {
     // Both checks run *before* the parser, because their entire purpose is to make the parse

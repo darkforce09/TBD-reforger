@@ -20,7 +20,7 @@
 //!    [`Registry::MAX_SERIES`] as a hard backstop with its own
 //!    `tbd_metrics_series_dropped_total` counter.
 //!
-//! A slice that needs OTLP export, or handler-level instrumentation from modules that do not
+//! A need for OTLP export, or for handler-level instrumentation from modules that do not
 //! hold the `Arc<Registry>`, is the moment to take the dependency — and the natural home for
 //! the handle is then an `AppState` field.
 

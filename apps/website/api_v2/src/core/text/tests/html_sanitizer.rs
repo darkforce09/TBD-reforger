@@ -25,8 +25,8 @@ fn sanitize_strips_scripts() {
 /// Golden: ammonia HTML-escapes bare `<` / `&`. This is exactly why CMS must not call
 /// [`sanitize_html`] on announcement bodies that Leptos then text-escapes.
 ///
-/// RED perturbation: flip the `assert_ne!` to `assert_eq!` (claim identity) — this test
-/// goes red, proving the pin still observes ammonia's mutation rather than a no-op cleaner.
+/// Flipping the `assert_ne!` to `assert_eq!` (claiming identity) fails this test, which proves
+/// the pin still observes ammonia's mutation rather than a no-op cleaner.
 #[test]
 fn sanitize_html_escapes_bare_angle_brackets_and_ampersands() {
     let authored = "Damage threshold: a < b & c > d";

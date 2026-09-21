@@ -78,7 +78,7 @@ text/
   http_url_guard.rs                    The crate's URL write-boundary guard for absolute `http`/`https` strings.
 wire_format/
   mod.rs                               The JSON wire contract's shared serialization primitives.
-  go_compatible_time.rs                RFC3339 timestamp `#[serde(with = …)]` modules the models share.
+  rfc3339_timestamps.rs                The RFC 3339 UTC timestamp and midnight-UTC date `#[serde(with = …)]` modules the models share.
   raw_json.rs                          The `jsonb` passthrough column type.
 tests/
   http_router.rs                       Sibling unit tests for `http_router.rs`.

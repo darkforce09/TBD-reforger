@@ -69,7 +69,8 @@ pub(super) const RCON_NO_TRANSPORT: &str = "rcon transport unavailable: the API 
 ///   RCON (a new port, an admin password in `server.config.json`, a protocol this repo cannot
 ///   exercise) or a mod-side command sink. Either is strictly larger than process control, and
 ///   neither may be smuggled into the agent: its entire safety argument is that it accepts no
-///   free text. **Separate ticket** (`cargo xtask deploy staging` §SCOPE GAP).
+///   free text. Neither channel exists in this deployment (`cargo xtask deploy staging`
+///   §SCOPE GAP names the boundary).
 /// * `kick` is **unbuildable today for a reason upstream of transport**:
 ///   [`super::rcon_command_parser::RconInput`] has no player field (`action`/`map`/`command`
 ///   only) and the SPA posts a bare `{"action":"kick"}`. Even handed a perfect channel into the

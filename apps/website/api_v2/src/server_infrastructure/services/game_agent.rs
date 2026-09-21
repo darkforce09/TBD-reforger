@@ -59,8 +59,8 @@ pub const AGENT_TIMEOUT: Duration = Duration::from_secs(20);
 /// There is deliberately no `Custom`/free-text variant. The agent's entire safety argument is
 /// that it filters the request to `[a-z]` and then matches a fixed four-element set, so no
 /// operator-supplied text can reach a command. Widening this enum without widening the agent
-/// would only manufacture requests it rejects; widening *both* is a different ticket
-/// (the staging deploy command, §SCOPE GAP).
+/// would only manufacture requests it rejects; widening *both* changes the agent's contract
+/// (the staging deploy command's §SCOPE GAP names the boundary).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AgentAction {
     Status,

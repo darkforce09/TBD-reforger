@@ -114,7 +114,7 @@ pub(super) fn reject_login_on_host_mismatch(cfg: &Config) -> Option<Response> {
          so the oauth_state cookie would be set on '{}' and Discord would return the browser to \
          '{}' — a different cookie host, so the cookie is never sent and the login fails \
          'invalid_state' (which looks like CSRF tampering, not a misconfiguration). FIX: edit \
-         apps/website/api/.env so both use the SAME host string; ports may differ, hosts may not. \
+         apps/website/api_v2/.env so both use the SAME host string; ports may differ, hosts may not. \
          'localhost' and '127.0.0.1' are different hosts to a browser. Prefer changing \
          FRONTEND_URL — DISCORD_REDIRECT_URL must stay byte-identical to the Redirect registered \
          in the Discord Developer Portal.",
@@ -174,7 +174,7 @@ pub(super) fn callback_csrf_reject(
                      DISCORD_REDIRECT_URL are on different hosts — this is almost certainly \
                      that misconfiguration, NOT CSRF tampering. The cookie is host-only, so it \
                      was set on one host and never sent to the other. Align the two hosts in \
-                     apps/website/api/.env."
+                     apps/website/api_v2/.env."
                 ),
                 None => tracing::warn!(
                     "invalid_state with no oauth_state cookie; config hosts agree, so the \

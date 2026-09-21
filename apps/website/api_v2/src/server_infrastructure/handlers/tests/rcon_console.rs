@@ -14,7 +14,7 @@ fn strip_comments(src: &str) -> String {
         .join("\n")
 }
 
-/// Class-R — the two literal shapes of the defect must never appear.
+/// The two literal shapes of the defect must never appear.
 ///
 /// This pins the source, not the behaviour, because both regressions are one line each and both
 /// look harmless in review: discarding the operator's `command`, or minting a `202 accepted:true`
@@ -102,12 +102,12 @@ fn delivery_verdict_comes_from_the_agents_result() {
     assert!(!unreachable.delivered && !unreachable.accepted);
 }
 
-/// Class-R — **the trap.** `systemctl` exits 0 over a dead unit on this host
+/// **The trap.** `systemctl` exits 0 over a dead unit on this host
 /// (`docs/mod/STAGING-SERVER.md:246-250`), which is why the agent returns `result` **and**
 /// `state`. Reading only one of them re-introduces exactly the trust the agent removes.
 ///
 /// The observed state must reach the audit row on every outcome. Drop `{state}` from any arm of
-/// [`rcon_delivery`] and this goes red — which is the perturbation that proves it is looking at
+/// [`rcon_delivery`] and this fails — which proves it is looking at
 /// something.
 #[test]
 fn every_outcome_carries_the_observed_state_into_the_audit_row() {
@@ -141,7 +141,7 @@ fn every_outcome_carries_the_observed_state_into_the_audit_row() {
     assert!(d.outcome.contains("failed"));
 }
 
-/// Class-R — the refuted premise must not creep into the source.
+/// The refuted premise must not creep into the source.
 ///
 /// "The game server is a separate host" is false here, and citing `TBD_SSH_HOST` as evidence for
 /// it is the mistake that makes it look true: that host is separate from the *developer's PC*, not

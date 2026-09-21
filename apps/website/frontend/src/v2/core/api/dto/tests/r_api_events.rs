@@ -243,7 +243,8 @@ fn admin_leave_queue_exercises_every_status_branch() {
     }
 }
 
-/// A `date` column crosses the wire as full midnight UTC (`go_date`), not a bare `YYYY-MM-DD`.
+/// A `date` column crosses the wire as a full midnight-UTC timestamp (the backend's
+/// `rfc3339_utc_date` spelling), not a bare `YYYY-MM-DD`.
 /// The DTO carries both spellings as `String`, so only an assertion catches the wrong one.
 #[test]
 fn leave_dates_are_the_backend_midnight_utc_spelling() {
@@ -253,7 +254,7 @@ fn leave_dates_are_the_backend_midnight_utc_spelling() {
         for (field, value) in [("starts_on", &row.starts_on), ("ends_on", &row.ends_on)] {
             assert!(
                 value.ends_with("T00:00:00Z") && value.len() == 20,
-                "{field} must be go_date-spelled, got {value}"
+                "{field} must be the midnight-UTC timestamp spelling, got {value}"
             );
         }
     }

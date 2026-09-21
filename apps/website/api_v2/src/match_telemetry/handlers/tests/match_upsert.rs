@@ -8,7 +8,7 @@ use crate::match_telemetry::handlers::ingest_parsing::tests::{
 
 const UPSERT_SRC: &str = include_str!("../match_upsert.rs");
 
-/// Class-R: `upsert_match` must call the strict helper for both fields.
+/// `upsert_match` must call the strict helper for both fields.
 #[test]
 fn upsert_match_uses_strict_uuid_for_event_and_mission() {
     let production = production_half(UPSERT_SRC);

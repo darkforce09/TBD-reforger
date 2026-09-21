@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// Serde default for [`RegistryCompatEdge::qty`] — an edge with no stated multiplicity is one.
 fn default_edge_qty() -> i32 {
@@ -61,10 +61,10 @@ pub struct RegistryItem {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub variant_of: Option<String>,
     pub sort_order: i64,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
     /// Feeds the weak ETag (max updated_at).
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -89,9 +89,9 @@ pub struct RegistryCompatEdge {
     /// 1 for every other edge family.
     #[serde(default = "default_edge_qty")]
     pub qty: i32,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
     /// Feeds the weak ETag (max updated_at).
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub updated_at: DateTime<Utc>,
 }

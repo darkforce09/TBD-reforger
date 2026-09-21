@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::core::wire_format::go_time;
+use crate::core::wire_format::rfc3339_utc;
 
 /// Saved mortar firing solution from the Mortar Calculator.
 ///
@@ -60,6 +60,6 @@ pub struct FireMission {
     /// Seconds to splash.
     #[serde(default)]
     pub time_of_flight_s: Option<f64>,
-    #[serde(with = "go_time")]
+    #[serde(with = "rfc3339_utc")]
     pub created_at: DateTime<Utc>,
 }
