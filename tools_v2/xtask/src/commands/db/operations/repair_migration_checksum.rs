@@ -241,11 +241,13 @@ pub fn run(version: Option<i64>, force: bool) -> Result<u8> {
     let mut drifted = 0usize;
     let mut repaired = 0usize;
     let mut refused = 0usize;
+    let mut examined = 0usize;
 
     for (recorded_version, recorded_checksum) in &applied {
         if version.is_some_and(|v| v != *recorded_version) {
             continue;
         }
+        examined += 1;
         let Some(entry) = std::fs::read_dir(&migrations)?
             .filter_map(|e| e.ok())
             .find(|e| {
@@ -315,12 +317,31 @@ pub fn run(version: Option<i64>, force: bool) -> Result<u8> {
         }
     }
 
+    if examined == 0 {
+        // Saying "nothing to repair" here would be a claim about migrations that were never
+        // looked at: the filter matched no applied row at all.
+        let asked = version.map(|v| v.to_string()).unwrap_or_default();
+        eprintln!(
+            "  no applied migration has version {asked}. Applied versions: {}.",
+            version_list(&applied)
+        );
+        return Ok(1);
+    }
     if drifted == 0 {
-        println!("  every applied migration matches its file. Nothing to repair.");
+        println!("  every applied migration examined matches its file. Nothing to repair.");
         return Ok(0);
     }
     println!("  {drifted} drifted, {repaired} repaired, {refused} refused.");
     Ok(if refused > 0 { 1 } else { 0 })
+}
+
+/// Applied versions as a comma-separated list, so a bad `--version` says what was available.
+fn version_list(applied: &[(i64, String)]) -> String {
+    applied
+        .iter()
+        .map(|(v, _)| v.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 fn repair_one(version: i64, current: &str, repaired: &mut usize) -> Result<()> {

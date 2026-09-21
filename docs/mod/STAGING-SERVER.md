@@ -309,10 +309,11 @@ Note the game **build number** in server logs after first start — client must 
 
 ### 4. API secrets (server only)
 
-On the server, create `apps/website/.env` (**never rsync'd from dev**):
+On the server, create `apps/website/api_v2/.env` (**never rsync'd from dev** — that exact path is
+in the deploy's exclude list):
 
 ```bash
-cd /home/sam/tbd/repo/apps/website   # after first rsync or clone
+cd /home/sam/tbd/repo/apps/website/api_v2   # after first rsync or clone
 cp .env.example .env
 # Edit:
 #   SESSION_SECRET=<long-random>
@@ -618,7 +619,7 @@ Or: `cargo xtask mod spawn-verify`
 | Version mismatch (after discovery) | Match Steam `buildid` client ↔ server; `steamcmd +app_update 1874900 validate` |
 | No console.log | Server: `$TBD_PROFILE_DIR/logs/logs_*/console.log`. Client (Proton): `compatdata/1874880/.../ArmaReforger/logs/` |
 | Game stops after SSH logout | `sudo loginctl enable-linger sam` |
-| Overwrote server secrets | Never rsync `apps/website/.env` from dev — recreate on server |
+| Overwrote server secrets | Never rsync `apps/website/api_v2/.env` from dev — recreate on server |
 | **Workbench shows `tbd-framework` read-only (padlock)** | Publishing packs `data.pak`+`meta` into the source dir → WB treats it as a packed addon. Delete `tbd-framework/{data.pak,meta,ServerData.json,*_manifest.json}` (gitignored) and restart the Launcher. |
 | New `.c` file "compiles" locally but Workbench errors | The local dedicated-server check reuses a cached `resourceDatabase.rdb` and skips new files. **Verify in Workbench** (`wb_reload` → grep WB log). |
 | Admin mission browser does nothing in-game | `#tbd` chat is dead (no chat entity); the working path is the **keybind→RPC** (`TBD_MissionBrowser.c`) — but the 2 input actions still need defining. See `CLAUDE-CONTINUATION.md` §16. |

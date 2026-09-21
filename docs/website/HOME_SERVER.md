@@ -104,7 +104,7 @@ Prefer lasting setup: install this PC’s SSH public key on the server + `script
 | Path | Purpose |
 |------|---------|
 | `/home/sam/tbd/repo` | Monorepo checkout / rsync target |
-| `/home/sam/tbd/repo/apps/website/.env` | **Server-only** secrets (never rsync from dev) |
+| `/home/sam/tbd/repo/apps/website/api_v2/.env` | **Server-only** secrets (never rsync from dev) |
 | `/home/sam/tbd/repo/apps/website/frontend/dist` | Built SPA |
 | `/home/sam/tbd/website-data/postgres` | Optional named volume / bind for DB (if not compose default) |
 | `/home/sam/prairielearn/` | **Forbidden** for TBD |
@@ -182,7 +182,7 @@ Health: `docker exec tbd_reforger_db pg_isready -U tbd -d tbd_reforger`
 On the server:
 
 ```bash
-cd /home/sam/tbd/repo/apps/website
+cd /home/sam/tbd/repo/apps/website/api_v2
 cp .env.example .env
 chmod 600 .env
 ```
@@ -247,7 +247,7 @@ rsync -avz --delete \
   --exclude 'node_modules' \
   --exclude 'apps/website/frontend/node_modules' \
   --exclude 'apps/website/frontend/dist' \
-  --exclude 'apps/website/.env' \
+  --exclude 'apps/website/api_v2/.env' \
   --exclude 'target' \
   --exclude 'assets_v2/terrains' \
   --exclude 'assets_v2/scratch' \
@@ -289,9 +289,10 @@ mv packages/map-assets/everon \
 ## Phase D — Run the API
 
 ```bash
-cd /home/sam/tbd/repo/apps/website
-# Ensure .env is present; migrations run on boot
-./target/release/api
+cd /home/sam/tbd/repo/apps/website/api_v2
+# Ensure .env is present; migrations run on boot. The CWD matters: the API resolves its
+# map-asset defaults relative to it (the unit below sets both explicitly instead).
+../../../target/release/api
 # Smoke:
 curl -sf http://127.0.0.1:8080/healthz
 curl -sf http://127.0.0.1:8080/api/v1/health   # if exposed; else /healthz only
