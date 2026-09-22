@@ -39,8 +39,8 @@ WeaponExport/
 
 | Subdirectory | Responsibility | Key Classes |
 |---|---|---|
-| **`Ammo/`** | Magazines and the projectiles they chamber, split by caliber. | `TBD_MagazineInfo`, `TBD_ProjectileInfo`, `TBD_AmmoScanner` |
-| **`Attachment/`** | One pass over every non-optic attachment, producing per-family catalogs and the combined rollup. | `TBD_AttachmentInfo`, `TBD_AttachmentScanner` |
+| **`Ammo/`** | Magazines and the projectiles they chamber, split by caliber. | `TBD_MagazineInfo`, `TBD_ProjectileInfo`, `TBD_AmmoMagazineExtractor`, `TBD_AmmoProjectileExtractor`, `TBD_AmmoScanner` |
+| **`Attachment/`** | One pass over every non-optic attachment, producing per-family catalogs and the combined rollup. | `TBD_AttachmentInfo`, `TBD_AttachmentFamilyExtractor`, `TBD_AttachmentScanner` |
 | **`Bayonet/`** | Bayonets and mounted blades, with melee combat properties. | `TBD_BayonetInfo`, `TBD_BayonetScanner` |
 | **`Handguard/`** | Handguards, rail systems, and foregrips, with handling modifiers. | `TBD_HandguardInfo`, `TBD_HandguardScanner` |
 | **`Illuminator/`** | Weapon lights, IR illuminators, and laser pointers, with lens emission properties. | `TBD_IlluminatorInfo`, `TBD_IlluminatorScanner` |
@@ -50,17 +50,26 @@ WeaponExport/
 | **`Rifle/`** | Rifle-only intrinsic pass, deeper than the master arsenal sweep. Plugin attribute commented out. | `TBD_RifleWeaponInfo`, `TBD_RifleScanner` |
 | **`Stock/`** | Buttstocks. Structurally parallel to `Handguard/`. | `TBD_StockInfo`, `TBD_StockScanner` |
 | **`Underbarrel/`** | Underbarrel launchers and accessories, including secondary muzzles. | `TBD_UnderbarrelInfo`, `TBD_UnderbarrelScanner` |
-| **`Weapon/`** | Every weapon in every addon, bucketed into seven categories. | `TBD_WeaponInfo`, `TBD_WeaponScanner` |
+| **`Weapon/`** | Every weapon in every addon, bucketed into seven categories. | `TBD_WeaponInfo`, `TBD_WeaponMuzzleExtractor`, `TBD_WeaponScanner` |
 
 ---
 
 ## Technical Contracts
 
-1. **The four-file shape:**
-   A domain is `TBD_<Domain>Model.c` (data carriers, no behaviour), `TBD_<Domain>Extractor.c` (reads
-   one prefab, fills one carrier), `TBD_<Domain>Scanner.c` (sweeps the addon set, buckets, and
-   serializes), and `TBD_<Domain>ExportPlugin.c` (the Workbench entry point). `Rifle/` and `M16/`
-   carry no extractor: their per-prefab walk lives inside the scanner.
+1. **The shape of a domain:**
+   A domain is `TBD_<Domain>Model.c` (data carriers, no behaviour), one or more extractors (each
+   reads part of one prefab and fills part of one carrier), `TBD_<Domain>Scanner.c` (sweeps the
+   addon set, buckets, and serializes), and `TBD_<Domain>ExportPlugin.c` (the Workbench entry
+   point).
+
+   How many extractors a domain has follows its carrier, not a fixed count. A domain whose
+   extraction fits in one file has `TBD_<Domain>Extractor.c` and nothing more. Where it does not,
+   each extractor is named for the part of the carrier it fills — `TBD_WeaponMuzzleExtractor`,
+   `TBD_AttachmentMountingExtractor` — and the scanner calls them in turn. `Ammo/` is the one
+   domain with no `TBD_AmmoExtractor` at all: a magazine and a projectile are different objects
+   with different carriers, so it splits along that line instead.
+
+   `Rifle/` and `M16/` carry no extractor: their per-prefab walk lives inside the scanner.
 
 2. **One-way dependency:**
    `ExportPlugin -> Scanner -> Extractor -> Model -> Core`. No domain imports another domain's

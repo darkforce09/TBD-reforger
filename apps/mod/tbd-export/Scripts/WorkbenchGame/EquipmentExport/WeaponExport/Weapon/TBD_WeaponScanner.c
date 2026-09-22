@@ -178,11 +178,11 @@ class TBD_WeaponScanner
 		info.m_sResourceName = canonical;
 		info.m_sFilePath = path;
 		info.m_sId = TBD_EquipmentResourceNames.GenerateSlug(path);
-		info.m_sDisplayName = TBD_WeaponExtractor.DisplayNameFor(comps, path);
-		info.m_sDescription = TBD_WeaponExtractor.DescriptionFor(comps);
-		info.m_sIcon = TBD_WeaponExtractor.IconFor(comps);
+		info.m_sDisplayName = TBD_WeaponNaming.DisplayNameFor(comps, path);
+		info.m_sDescription = TBD_WeaponNaming.DescriptionFor(comps);
+		info.m_sIcon = TBD_WeaponNaming.IconFor(comps);
 		info.m_sCategory = m_sCurrentCategory;
-		info.m_sFamily = TBD_WeaponExtractor.ExtractFamily(path, m_sCurrentCategory);
+		info.m_sFamily = TBD_WeaponNaming.ExtractFamily(path, m_sCurrentCategory);
 		info.m_sAddonId = m_sCurrentAddonId;
 		info.m_bIsAbstract = isAbstract;
 
@@ -196,7 +196,7 @@ class TBD_WeaponScanner
 		}
 
 		// Classification
-		TBD_WeaponExtractor.ExtractClassification(comps, info.m_Classification, m_sCurrentCategory);
+		TBD_WeaponClassificationExtractor.ExtractClassification(comps, info.m_Classification, m_sCurrentCategory);
 
 		// Physical Attributes
 		TBD_WeaponExtractor.ExtractPhysical(comps, info.m_Physical);
@@ -208,10 +208,10 @@ class TBD_WeaponScanner
 		TBD_WeaponExtractor.ExtractBallistics(comps, info.m_Ballistics);
 
 		// Muzzles & Fire Modes
-		TBD_WeaponExtractor.ExtractMuzzles(comps, info.m_aMuzzles);
+		TBD_WeaponMuzzleExtractor.ExtractMuzzles(comps, info.m_aMuzzles);
 
 		// Attachment Slots & Obstructions
-		TBD_WeaponExtractor.ExtractAttachmentSlots(comps, info.m_aAttachmentSlots);
+		TBD_WeaponMountingExtractor.ExtractAttachmentSlots(comps, info.m_aAttachmentSlots);
 
 		// Insert into category bucket
 		InsertCategoryWeapon(m_sCurrentCategory, info);

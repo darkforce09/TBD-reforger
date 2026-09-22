@@ -240,10 +240,10 @@ class TBD_AttachmentScanner
 		info.m_sId = idStem;
 
 		// Identity
-		info.m_sDisplayName = TBD_AttachmentExtractor.DisplayNameFor(comps, path);
-		info.m_sDescription = TBD_AttachmentExtractor.DescriptionFor(comps);
-		info.m_sIcon = TBD_AttachmentExtractor.IconFor(comps);
-		info.m_sFamily = TBD_AttachmentExtractor.DeriveFamily(path, canonical);
+		info.m_sDisplayName = TBD_AttachmentNaming.DisplayNameFor(comps, path);
+		info.m_sDescription = TBD_AttachmentNaming.DescriptionFor(comps);
+		info.m_sIcon = TBD_AttachmentNaming.IconFor(comps);
+		info.m_sFamily = TBD_AttachmentNaming.DeriveFamily(path, canonical);
 
 		// Variant check
 		BaseContainer anc = root.GetAncestor();
@@ -255,15 +255,15 @@ class TBD_AttachmentScanner
 		}
 
 		// Categorize attachment (preliminary)
-		info.m_sCategory = TBD_AttachmentExtractor.CategorizeAttachment(comps, path, "");
+		info.m_sCategory = TBD_AttachmentFamilyExtractor.CategorizeAttachment(comps, path, "");
 
 		// Mounting (pure relational intrinsic keys)
-		TBD_AttachmentExtractor.ExtractMounting(comps, info.m_Mounting, path, info.m_sCategory);
+		TBD_AttachmentMountingExtractor.ExtractMounting(comps, info.m_Mounting, path, info.m_sCategory);
 
 		// If category needs refinement with mounting type
 		if (!info.m_Mounting.m_sAttachmentType.IsEmpty())
 		{
-			string refinedCat = TBD_AttachmentExtractor.CategorizeAttachment(comps, path, info.m_Mounting.m_sAttachmentType);
+			string refinedCat = TBD_AttachmentFamilyExtractor.CategorizeAttachment(comps, path, info.m_Mounting.m_sAttachmentType);
 			if (!refinedCat.IsEmpty())
 				info.m_sCategory = refinedCat;
 		}
@@ -281,42 +281,42 @@ class TBD_AttachmentScanner
 		// Category technical payloads
 		if (info.m_sCategory == "muzzles")
 		{
-			TBD_AttachmentExtractor.ExtractMuzzleData(comps, info.m_Muzzle, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractMuzzleData(comps, info.m_Muzzle, path, info.m_Mounting.m_sAttachmentType);
 			m_aMuzzles.Insert(info);
 		}
 		else if (info.m_sCategory == "bipods")
 		{
-			TBD_AttachmentExtractor.ExtractBipodData(comps, info.m_Bipod, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractBipodData(comps, info.m_Bipod, path, info.m_Mounting.m_sAttachmentType);
 			m_aBipods.Insert(info);
 		}
 		else if (info.m_sCategory == "handguards")
 		{
-			TBD_AttachmentExtractor.ExtractHandguardData(comps, info.m_Handguard, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractHandguardData(comps, info.m_Handguard, path, info.m_Mounting.m_sAttachmentType);
 			m_aHandguards.Insert(info);
 		}
 		else if (info.m_sCategory == "illuminators")
 		{
-			TBD_AttachmentExtractor.ExtractIlluminatorData(comps, info.m_Illuminator, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractIlluminatorData(comps, info.m_Illuminator, path, info.m_Mounting.m_sAttachmentType);
 			m_aIlluminators.Insert(info);
 		}
 		else if (info.m_sCategory == "bayonets")
 		{
-			TBD_AttachmentExtractor.ExtractBayonetData(comps, info.m_Bayonet, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractBayonetData(comps, info.m_Bayonet, path, info.m_Mounting.m_sAttachmentType);
 			m_aBayonets.Insert(info);
 		}
 		else if (info.m_sCategory == "stocks")
 		{
-			TBD_AttachmentExtractor.ExtractStockData(comps, info.m_Stock, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractStockData(comps, info.m_Stock, path, info.m_Mounting.m_sAttachmentType);
 			m_aStocks.Insert(info);
 		}
 		else if (info.m_sCategory == "mounts")
 		{
-			TBD_AttachmentExtractor.ExtractMountData(comps, info.m_Mount, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractMountData(comps, info.m_Mount, path, info.m_Mounting.m_sAttachmentType);
 			m_aMounts.Insert(info);
 		}
 		else if (info.m_sCategory == "camouflage")
 		{
-			TBD_AttachmentExtractor.ExtractCamouflageData(comps, info.m_Camouflage, path, info.m_Mounting.m_sAttachmentType);
+			TBD_AttachmentFamilyExtractor.ExtractCamouflageData(comps, info.m_Camouflage, path, info.m_Mounting.m_sAttachmentType);
 			m_aCamouflage.Insert(info);
 		}
 

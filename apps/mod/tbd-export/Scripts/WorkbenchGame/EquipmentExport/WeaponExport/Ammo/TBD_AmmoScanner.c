@@ -185,9 +185,9 @@ class TBD_AmmoScanner
 		mag.m_sResourceName = canonical;
 		mag.m_sFilePath = path;
 		mag.m_sId = TBD_EquipmentResourceNames.GenerateSlug(path);
-		mag.m_sDisplayName = TBD_AmmoExtractor.DisplayNameFor(comps, path);
-		mag.m_sDescription = TBD_AmmoExtractor.DescriptionFor(comps);
-		mag.m_sIcon = TBD_AmmoExtractor.IconFor(comps);
+		mag.m_sDisplayName = TBD_AmmoNaming.DisplayNameFor(comps, path);
+		mag.m_sDescription = TBD_AmmoNaming.DescriptionFor(comps);
+		mag.m_sIcon = TBD_AmmoNaming.IconFor(comps);
 		mag.m_sAddonId = m_sCurrentAddonId;
 		mag.m_bIsAbstract = isAbstract;
 
@@ -201,27 +201,27 @@ class TBD_AmmoScanner
 		}
 
 		// Relational Foreign Keys: Magazine Wells
-		TBD_AmmoExtractor.ExtractMagazineWells(comps, mag.m_aMagazineWells);
+		TBD_AmmoMagazineExtractor.ExtractMagazineWells(comps, mag.m_aMagazineWells);
 
 		// Capacity & Style
-		TBD_AmmoExtractor.ExtractCapacity(comps, mag.m_Capacity, path);
+		TBD_AmmoMagazineExtractor.ExtractCapacity(comps, mag.m_Capacity, path);
 
 		// Caliber
-		TBD_AmmoExtractor.ExtractCaliber(comps, mag.m_Caliber, path);
+		TBD_AmmoMagazineExtractor.ExtractCaliber(comps, mag.m_Caliber, path);
 
 		// AmmoConfig & Projectile Links
 		string confPath;
-		TBD_AmmoExtractor.ExtractAmmoConfig(comps, mag.m_aAmmoResources, confPath);
+		TBD_AmmoMagazineExtractor.ExtractAmmoConfig(comps, mag.m_aAmmoResources, confPath);
 
 		// Tracers
-		TBD_AmmoExtractor.ExtractTracers(comps, mag.m_aAmmoResources, mag.m_Capacity.m_iRoundCapacity, mag.m_Tracers, mag.m_sDisplayName);
+		TBD_AmmoTracerExtractor.ExtractTracers(comps, mag.m_aAmmoResources, mag.m_Capacity.m_iRoundCapacity, mag.m_Tracers, mag.m_sDisplayName);
 
 		// Physical
-		TBD_AmmoExtractor.ExtractPhysical(comps, mag.m_Capacity.m_iRoundCapacity, mag.m_Capacity.m_fWeightPerRoundKg, mag.m_Physical);
+		TBD_AmmoMagazineExtractor.ExtractPhysical(comps, mag.m_Capacity.m_iRoundCapacity, mag.m_Capacity.m_fWeightPerRoundKg, mag.m_Physical);
 
 		// Categorize & Family
-		mag.m_sCategory = TBD_AmmoExtractor.CategorizeMagazine(mag.m_aMagazineWells, mag.m_Capacity.m_iRoundCapacity, path);
-		mag.m_sFamily = TBD_AmmoExtractor.ExtractFamily(path, mag.m_sCategory);
+		mag.m_sCategory = TBD_AmmoMagazineExtractor.CategorizeMagazine(mag.m_aMagazineWells, mag.m_Capacity.m_iRoundCapacity, path);
+		mag.m_sFamily = TBD_AmmoNaming.ExtractFamily(path, mag.m_sCategory);
 
 		// Insert into category bucket
 		InsertCategoryMagazine(mag.m_sCategory, mag);
@@ -249,26 +249,26 @@ class TBD_AmmoScanner
 		proj.m_sResourceName = canonical;
 		proj.m_sFilePath = path;
 		proj.m_sId = TBD_EquipmentResourceNames.GenerateSlug(path);
-		proj.m_sDisplayName = TBD_AmmoExtractor.DisplayNameFor(comps, path);
-		proj.m_sDescription = TBD_AmmoExtractor.DescriptionFor(comps);
+		proj.m_sDisplayName = TBD_AmmoNaming.DisplayNameFor(comps, path);
+		proj.m_sDescription = TBD_AmmoNaming.DescriptionFor(comps);
 		proj.m_sAddonId = m_sCurrentAddonId;
 		proj.m_bIsAbstract = isAbstract;
 
 		// Ballistics
-		TBD_AmmoExtractor.ExtractBallistics(comps, proj.m_Ballistics);
+		TBD_AmmoProjectileExtractor.ExtractBallistics(comps, proj.m_Ballistics);
 
 		// Warhead & Damage
-		TBD_AmmoExtractor.ExtractWarhead(comps, proj.m_Warhead);
+		TBD_AmmoProjectileExtractor.ExtractWarhead(comps, proj.m_Warhead);
 
 		// Tracer status
-		TBD_AmmoExtractor.ExtractTracerInfo(root, comps, proj.m_Tracer);
+		TBD_AmmoTracerExtractor.ExtractTracerInfo(root, comps, proj.m_Tracer);
 
 		// Visuals
-		TBD_AmmoExtractor.ExtractVisuals(root, proj.m_Visuals);
+		TBD_AmmoProjectileExtractor.ExtractVisuals(root, proj.m_Visuals);
 
 		// Caliber & Bullet Type
 		TBD_MagazineCaliberInfo calInfo = new TBD_MagazineCaliberInfo();
-		TBD_AmmoExtractor.ExtractCaliber(comps, calInfo, path);
+		TBD_AmmoMagazineExtractor.ExtractCaliber(comps, calInfo, path);
 		proj.m_sCaliber = calInfo.m_sCaliberName;
 		proj.m_sBulletType = calInfo.m_sAmmoType;
 
@@ -281,7 +281,7 @@ class TBD_AmmoScanner
 		}
 
 		// Categorize
-		proj.m_sCategory = TBD_AmmoExtractor.CategorizeProjectile(path, proj.m_sCaliber, proj.m_Warhead.m_bIsExplosive);
+		proj.m_sCategory = TBD_AmmoProjectileExtractor.CategorizeProjectile(path, proj.m_sCaliber, proj.m_Warhead.m_bIsExplosive);
 
 		// Insert into category bucket
 		InsertCategoryProjectile(proj.m_sCategory, proj);
