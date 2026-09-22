@@ -193,7 +193,7 @@ class TBD_OpticScanner
 		info.m_Mounting = mounting;
 
 		// Optics & sights parameters
-		TBD_OpticExtractor.ExtractSights(comps, info.m_Sights);
+		TBD_OpticSightsExtractor.ExtractSights(comps, info.m_Sights);
 
 		// Physical attributes
 		TBD_OpticExtractor.ExtractPhysical(comps, info.m_Physical);

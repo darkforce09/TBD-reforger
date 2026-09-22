@@ -109,7 +109,7 @@ class TBD_StockScanner
 
 		// Extract mounting relational keys directly from container data
 		ref TBD_StockMountingInfo mounting = new TBD_StockMountingInfo();
-		TBD_StockExtractor.ExtractMounting(comps, mounting);
+		TBD_StockMountingExtractor.ExtractMounting(comps, mounting);
 
 		string lowerPath = path;
 		lowerPath.ToLower();
@@ -187,15 +187,15 @@ class TBD_StockScanner
 		}
 
 		// Raw string extraction (zero mutation, zero fake fallbacks)
-		info.m_sDisplayName = TBD_StockExtractor.RawDisplayNameFor(comps);
-		info.m_sDescription = TBD_StockExtractor.RawDescriptionFor(comps);
-		info.m_sIcon = TBD_StockExtractor.RawIconFor(comps);
+		info.m_sDisplayName = TBD_StockNaming.RawDisplayNameFor(comps);
+		info.m_sDescription = TBD_StockNaming.RawDescriptionFor(comps);
+		info.m_sIcon = TBD_StockNaming.RawIconFor(comps);
 
 		// Mounting keys
 		info.m_Mounting = mounting;
 
 		// Nested child attachment slots (e.g. cheek pads, cheek risers, sling swivels)
-		TBD_StockExtractor.ExtractNestedAttachmentSlots(comps, info.m_aNestedSlots);
+		TBD_StockMountingExtractor.ExtractNestedAttachmentSlots(comps, info.m_aNestedSlots);
 
 		// Handling & Recoil modifiers (SCR_WeaponAttachmentAttributes)
 		TBD_StockExtractor.ExtractHandlingModifiers(comps, info.m_Handling);

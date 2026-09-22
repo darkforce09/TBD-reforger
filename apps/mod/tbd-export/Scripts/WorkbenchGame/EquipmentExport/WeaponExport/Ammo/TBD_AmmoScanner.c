@@ -16,22 +16,8 @@ class TBD_AmmoScanner
 
 	protected ref TBD_EquipmentExportConfig m_Config;
 
-	// Magazine category buckets
-	protected ref array<ref TBD_MagazineInfo> m_aRifleMags = {};
-	protected ref array<ref TBD_MagazineInfo> m_aMgMags = {};
-	protected ref array<ref TBD_MagazineInfo> m_aHandgunMags = {};
-	protected ref array<ref TBD_MagazineInfo> m_aHeavyMags = {};
-	protected ref array<ref TBD_MagazineInfo> m_aGrenadeMags = {};
-	protected ref array<ref TBD_MagazineInfo> m_aRocketMags = {};
-	protected ref array<ref TBD_MagazineInfo> m_aAllMags = {};
-
-	// Projectile category buckets
-	protected ref array<ref TBD_ProjectileInfo> m_aBulletProjectiles = {};
-	protected ref array<ref TBD_ProjectileInfo> m_aHeavyProjectiles = {};
-	protected ref array<ref TBD_ProjectileInfo> m_aGrenadeProjectiles = {};
-	protected ref array<ref TBD_ProjectileInfo> m_aRocketProjectiles = {};
-	protected ref array<ref TBD_ProjectileInfo> m_aMortarProjectiles = {};
-	protected ref array<ref TBD_ProjectileInfo> m_aAllProjectiles = {};
+	// The rows this scan has classified so far, handed to the writer when the scan finishes.
+	protected ref TBD_AmmoCatalog m_Catalog = new TBD_AmmoCatalog();
 
 	// Deduplication sets
 	protected ref set<string> m_SeenMagResourceNames = new set<string>();
@@ -80,38 +66,25 @@ class TBD_AmmoScanner
 			}
 		}
 
-		Print(string.Format("%1 Initial discovery complete: %2 magazines, %3 projectiles found.", TAG, m_aAllMags.Count(), m_aAllProjectiles.Count()), LogLevel.NORMAL);
+		Print(string.Format("%1 Initial discovery complete: %2 magazines, %3 projectiles found.", TAG, m_Catalog.MagazineCount(), m_Catalog.ProjectileCount()), LogLevel.NORMAL);
 
 		// Transitive Projectile Resolution: resolve every projectile linked in ammo_resources
 		ResolveTransitiveProjectiles();
 
 		int elapsedMs = System.GetTickCount() - startMs;
 		Print(string.Format("%1 Universal scan finished in %2 ms. Total magazines: %3, Total projectiles: %4.",
-			TAG, elapsedMs, m_aAllMags.Count(), m_aAllProjectiles.Count()), LogLevel.NORMAL);
+			TAG, elapsedMs, m_Catalog.MagazineCount(), m_Catalog.ProjectileCount()), LogLevel.NORMAL);
 
 		// Write all JSON catalogs to disk
-		WriteAllFiles(m_Config.m_sDestinationDir, elapsedMs);
+		TBD_AmmoCatalogWriter.WriteAllFiles(m_Config.m_sDestinationDir, elapsedMs, m_Catalog);
 
-		return m_aAllMags.Count() + m_aAllProjectiles.Count();
+		return m_Catalog.MagazineCount() + m_Catalog.ProjectileCount();
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected void ClearAll()
 	{
-		m_aRifleMags.Clear();
-		m_aMgMags.Clear();
-		m_aHandgunMags.Clear();
-		m_aHeavyMags.Clear();
-		m_aGrenadeMags.Clear();
-		m_aRocketMags.Clear();
-		m_aAllMags.Clear();
-
-		m_aBulletProjectiles.Clear();
-		m_aHeavyProjectiles.Clear();
-		m_aGrenadeProjectiles.Clear();
-		m_aRocketProjectiles.Clear();
-		m_aMortarProjectiles.Clear();
-		m_aAllProjectiles.Clear();
+		m_Catalog.Clear();
 
 		m_SeenMagResourceNames.Clear();
 		m_SeenProjResourceNames.Clear();
@@ -224,20 +197,7 @@ class TBD_AmmoScanner
 		mag.m_sFamily = TBD_AmmoNaming.ExtractFamily(path, mag.m_sCategory);
 
 		// Insert into category bucket
-		InsertCategoryMagazine(mag.m_sCategory, mag);
-		m_aAllMags.Insert(mag);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void InsertCategoryMagazine(string category, TBD_MagazineInfo mag)
-	{
-		if (category == "magazines_rifle") m_aRifleMags.Insert(mag);
-		else if (category == "magazines_mg") m_aMgMags.Insert(mag);
-		else if (category == "magazines_handgun") m_aHandgunMags.Insert(mag);
-		else if (category == "magazines_heavy") m_aHeavyMags.Insert(mag);
-		else if (category == "magazines_grenades") m_aGrenadeMags.Insert(mag);
-		else if (category == "magazines_rockets") m_aRocketMags.Insert(mag);
-		else m_aRifleMags.Insert(mag);
+		m_Catalog.InsertMagazine(mag.m_sCategory, mag);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -284,19 +244,7 @@ class TBD_AmmoScanner
 		proj.m_sCategory = TBD_AmmoProjectileExtractor.CategorizeProjectile(path, proj.m_sCaliber, proj.m_Warhead.m_bIsExplosive);
 
 		// Insert into category bucket
-		InsertCategoryProjectile(proj.m_sCategory, proj);
-		m_aAllProjectiles.Insert(proj);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void InsertCategoryProjectile(string category, TBD_ProjectileInfo proj)
-	{
-		if (category == "projectiles_bullets") m_aBulletProjectiles.Insert(proj);
-		else if (category == "projectiles_heavy") m_aHeavyProjectiles.Insert(proj);
-		else if (category == "projectiles_grenades") m_aGrenadeProjectiles.Insert(proj);
-		else if (category == "projectiles_rockets") m_aRocketProjectiles.Insert(proj);
-		else if (category == "projectiles_mortar") m_aMortarProjectiles.Insert(proj);
-		else m_aBulletProjectiles.Insert(proj);
+		m_Catalog.InsertProjectile(proj.m_sCategory, proj);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -304,7 +252,7 @@ class TBD_AmmoScanner
 	protected void ResolveTransitiveProjectiles()
 	{
 		array<string> missing = {};
-		foreach (TBD_MagazineInfo mag : m_aAllMags)
+		foreach (TBD_MagazineInfo mag : m_Catalog.m_aAllMags)
 		{
 			foreach (string res : mag.m_aAmmoResources)
 			{
@@ -344,299 +292,4 @@ class TBD_AmmoScanner
 		}
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Write all magazine catalogs, projectile catalogs, and unified master catalog to disk.
-	void WriteAllFiles(string destDir, int elapsedMs)
-	{
-		// 1. Magazine Catalogs
-		WriteMagazineCategoryCatalog("magazines_rifle", m_aRifleMags, destDir);
-		WriteMagazineCategoryCatalog("magazines_mg", m_aMgMags, destDir);
-		WriteMagazineCategoryCatalog("magazines_handgun", m_aHandgunMags, destDir);
-		WriteMagazineCategoryCatalog("magazines_heavy", m_aHeavyMags, destDir);
-		WriteMagazineCategoryCatalog("magazines_grenades", m_aGrenadeMags, destDir);
-		WriteMagazineCategoryCatalog("magazines_rockets", m_aRocketMags, destDir);
-		WriteMasterMagazinesCatalog(destDir);
-
-		// 2. Projectile Catalogs
-		WriteProjectileCategoryCatalog("projectiles_bullets", m_aBulletProjectiles, destDir);
-		WriteProjectileCategoryCatalog("projectiles_heavy", m_aHeavyProjectiles, destDir);
-		WriteProjectileCategoryCatalog("projectiles_grenades", m_aGrenadeProjectiles, destDir);
-		WriteProjectileCategoryCatalog("projectiles_rockets", m_aRocketProjectiles, destDir);
-		WriteProjectileCategoryCatalog("projectiles_mortar", m_aMortarProjectiles, destDir);
-		WriteMasterProjectilesCatalog(destDir);
-
-		// 3. Unified Master Catalog
-		WriteUnifiedMasterCatalog(destDir, elapsedMs);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void WriteMagazineCategoryCatalog(string category, array<ref TBD_MagazineInfo> list, string destDir)
-	{
-		string filePath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/magazines", category + ".json");
-		string metaPath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/magazines", category + "_meta.json");
-
-		FileHandle f = FileIO.OpenFile(filePath, FileMode.WRITE);
-		if (!f)
-		{
-			Print(string.Format("%1 ERROR: Failed to open %2 for writing!", TAG, filePath), LogLevel.ERROR);
-			return;
-		}
-
-		TBD_EquipmentExportJson.Write(f, "{\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"version\": \"1\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"category\": \"" + category + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"generatedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"totalCount\": " + list.Count().ToString() + ",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"magazines\": [\n", TAG);
-
-		for (int i = 0; i < list.Count(); i++)
-		{
-			TBD_MagazineInfo item = list[i];
-			string itemJson = item.SerializeJson("    ");
-			if (i < list.Count() - 1)
-				itemJson += ",\n";
-			else
-				itemJson += "\n";
-
-			TBD_EquipmentExportJson.Write(f, itemJson, TAG);
-		}
-
-		TBD_EquipmentExportJson.Write(f, "  ]\n}\n", TAG);
-		f.Close();
-
-		// Metadata sidecar
-		FileHandle mf = FileIO.OpenFile(metaPath, FileMode.WRITE);
-		if (mf)
-		{
-			string meta = "{\n";
-			meta += "  \"category\": \"" + category + "\",\n";
-			meta += "  \"totalCount\": " + list.Count().ToString() + ",\n";
-			meta += "  \"exportedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\"\n";
-			meta += "}\n";
-			TBD_EquipmentExportJson.Write(mf, meta, TAG);
-			mf.Close();
-		}
-
-		Print(string.Format("%1 Wrote %2 magazines to %3", TAG, list.Count(), filePath), LogLevel.NORMAL);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void WriteMasterMagazinesCatalog(string destDir)
-	{
-		string filePath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/magazines", "magazines_all.json");
-		string metaPath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/magazines", "magazines_all_meta.json");
-
-		FileHandle f = FileIO.OpenFile(filePath, FileMode.WRITE);
-		if (!f) return;
-
-		TBD_EquipmentExportJson.Write(f, "{\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"version\": \"1\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"category\": \"magazines_all\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"generatedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"totalCount\": " + m_aAllMags.Count().ToString() + ",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"magazines\": [\n", TAG);
-
-		for (int i = 0; i < m_aAllMags.Count(); i++)
-		{
-			string itemJson = m_aAllMags[i].SerializeJson("    ");
-			if (i < m_aAllMags.Count() - 1)
-				itemJson += ",\n";
-			else
-				itemJson += "\n";
-			TBD_EquipmentExportJson.Write(f, itemJson, TAG);
-		}
-
-		TBD_EquipmentExportJson.Write(f, "  ]\n}\n", TAG);
-		f.Close();
-
-		FileHandle mf = FileIO.OpenFile(metaPath, FileMode.WRITE);
-		if (mf)
-		{
-			string meta = "{\n";
-			meta += "  \"category\": \"magazines_all\",\n";
-			meta += "  \"totalCount\": " + m_aAllMags.Count().ToString() + ",\n";
-			meta += "  \"exportedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n";
-			meta += "  \"categories\": {\n";
-			meta += "    \"magazines_rifle\": " + m_aRifleMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_mg\": " + m_aMgMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_handgun\": " + m_aHandgunMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_heavy\": " + m_aHeavyMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_grenades\": " + m_aGrenadeMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_rockets\": " + m_aRocketMags.Count().ToString() + "\n";
-			meta += "  }\n";
-			meta += "}\n";
-			TBD_EquipmentExportJson.Write(mf, meta, TAG);
-			mf.Close();
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void WriteProjectileCategoryCatalog(string category, array<ref TBD_ProjectileInfo> list, string destDir)
-	{
-		string filePath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/projectiles", category + ".json");
-		string metaPath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/projectiles", category + "_meta.json");
-
-		FileHandle f = FileIO.OpenFile(filePath, FileMode.WRITE);
-		if (!f) return;
-
-		TBD_EquipmentExportJson.Write(f, "{\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"version\": \"1\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"category\": \"" + category + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"generatedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"totalCount\": " + list.Count().ToString() + ",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"projectiles\": [\n", TAG);
-
-		for (int i = 0; i < list.Count(); i++)
-		{
-			string itemJson = list[i].SerializeJson("    ");
-			if (i < list.Count() - 1)
-				itemJson += ",\n";
-			else
-				itemJson += "\n";
-			TBD_EquipmentExportJson.Write(f, itemJson, TAG);
-		}
-
-		TBD_EquipmentExportJson.Write(f, "  ]\n}\n", TAG);
-		f.Close();
-
-		FileHandle mf = FileIO.OpenFile(metaPath, FileMode.WRITE);
-		if (mf)
-		{
-			string meta = "{\n";
-			meta += "  \"category\": \"" + category + "\",\n";
-			meta += "  \"totalCount\": " + list.Count().ToString() + ",\n";
-			meta += "  \"exportedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\"\n";
-			meta += "}\n";
-			TBD_EquipmentExportJson.Write(mf, meta, TAG);
-			mf.Close();
-		}
-
-		Print(string.Format("%1 Wrote %2 projectiles to %3", TAG, list.Count(), filePath), LogLevel.NORMAL);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void WriteMasterProjectilesCatalog(string destDir)
-	{
-		string filePath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/projectiles", "projectiles_all.json");
-		string metaPath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition/projectiles", "projectiles_all_meta.json");
-
-		FileHandle f = FileIO.OpenFile(filePath, FileMode.WRITE);
-		if (!f) return;
-
-		TBD_EquipmentExportJson.Write(f, "{\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"version\": \"1\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"category\": \"projectiles_all\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"generatedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"totalCount\": " + m_aAllProjectiles.Count().ToString() + ",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"projectiles\": [\n", TAG);
-
-		for (int i = 0; i < m_aAllProjectiles.Count(); i++)
-		{
-			string itemJson = m_aAllProjectiles[i].SerializeJson("    ");
-			if (i < m_aAllProjectiles.Count() - 1)
-				itemJson += ",\n";
-			else
-				itemJson += "\n";
-			TBD_EquipmentExportJson.Write(f, itemJson, TAG);
-		}
-
-		TBD_EquipmentExportJson.Write(f, "  ]\n}\n", TAG);
-		f.Close();
-
-		FileHandle mf = FileIO.OpenFile(metaPath, FileMode.WRITE);
-		if (mf)
-		{
-			string meta = "{\n";
-			meta += "  \"category\": \"projectiles_all\",\n";
-			meta += "  \"totalCount\": " + m_aAllProjectiles.Count().ToString() + ",\n";
-			meta += "  \"exportedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n";
-			meta += "  \"categories\": {\n";
-			meta += "    \"projectiles_bullets\": " + m_aBulletProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_heavy\": " + m_aHeavyProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_grenades\": " + m_aGrenadeProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_rockets\": " + m_aRocketProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_mortar\": " + m_aMortarProjectiles.Count().ToString() + "\n";
-			meta += "  }\n";
-			meta += "}\n";
-			TBD_EquipmentExportJson.Write(mf, meta, TAG);
-			mf.Close();
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void WriteUnifiedMasterCatalog(string destDir, int elapsedMs)
-	{
-		string filePath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition", "ammunition_all.json");
-		string metaPath = TBD_EquipmentExportPaths.BuildCategoryPath(destDir, "ammunition", "ammunition_all_meta.json");
-
-		FileHandle f = FileIO.OpenFile(filePath, FileMode.WRITE);
-		if (!f) return;
-
-		TBD_EquipmentExportJson.Write(f, "{\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"version\": \"1\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"category\": \"ammunition_all\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"generatedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"totalMagazines\": " + m_aAllMags.Count().ToString() + ",\n", TAG);
-		TBD_EquipmentExportJson.Write(f, "  \"totalProjectiles\": " + m_aAllProjectiles.Count().ToString() + ",\n", TAG);
-
-		// Magazines
-		TBD_EquipmentExportJson.Write(f, "  \"magazines\": [\n", TAG);
-		for (int m = 0; m < m_aAllMags.Count(); m++)
-		{
-			string mJson = m_aAllMags[m].SerializeJson("    ");
-			if (m < m_aAllMags.Count() - 1)
-				mJson += ",\n";
-			else
-				mJson += "\n";
-			TBD_EquipmentExportJson.Write(f, mJson, TAG);
-		}
-		TBD_EquipmentExportJson.Write(f, "  ],\n", TAG);
-
-		// Projectiles
-		TBD_EquipmentExportJson.Write(f, "  \"projectiles\": [\n", TAG);
-		for (int p = 0; p < m_aAllProjectiles.Count(); p++)
-		{
-			string pJson = m_aAllProjectiles[p].SerializeJson("    ");
-			if (p < m_aAllProjectiles.Count() - 1)
-				pJson += ",\n";
-			else
-				pJson += "\n";
-			TBD_EquipmentExportJson.Write(f, pJson, TAG);
-		}
-		TBD_EquipmentExportJson.Write(f, "  ]\n}\n", TAG);
-		f.Close();
-
-		// Metadata sidecar
-		FileHandle mf = FileIO.OpenFile(metaPath, FileMode.WRITE);
-		if (mf)
-		{
-			string meta = "{\n";
-			meta += "  \"category\": \"ammunition_all\",\n";
-			meta += "  \"totalMagazines\": " + m_aAllMags.Count().ToString() + ",\n";
-			meta += "  \"totalProjectiles\": " + m_aAllProjectiles.Count().ToString() + ",\n";
-			meta += "  \"elapsedMs\": " + elapsedMs.ToString() + ",\n";
-			meta += "  \"exportedAt\": \"" + TBD_EquipmentExportJson.IsoNowUtc() + "\",\n";
-			meta += "  \"magazineCategories\": {\n";
-			meta += "    \"magazines_rifle\": " + m_aRifleMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_mg\": " + m_aMgMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_handgun\": " + m_aHandgunMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_heavy\": " + m_aHeavyMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_grenades\": " + m_aGrenadeMags.Count().ToString() + ",\n";
-			meta += "    \"magazines_rockets\": " + m_aRocketMags.Count().ToString() + "\n";
-			meta += "  },\n";
-			meta += "  \"projectileCategories\": {\n";
-			meta += "    \"projectiles_bullets\": " + m_aBulletProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_heavy\": " + m_aHeavyProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_grenades\": " + m_aGrenadeProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_rockets\": " + m_aRocketProjectiles.Count().ToString() + ",\n";
-			meta += "    \"projectiles_mortar\": " + m_aMortarProjectiles.Count().ToString() + "\n";
-			meta += "  }\n";
-			meta += "}\n";
-			TBD_EquipmentExportJson.Write(mf, meta, TAG);
-			mf.Close();
-		}
-
-		Print(string.Format("%1 Master ammunition catalog written: %2 magazines, %3 projectiles to %4",
-			TAG, m_aAllMags.Count(), m_aAllProjectiles.Count(), filePath), LogLevel.NORMAL);
-	}
 }

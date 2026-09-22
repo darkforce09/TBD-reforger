@@ -111,7 +111,7 @@ class TBD_HandguardScanner
 
 		// Extract mounting relational keys directly from container data
 		ref TBD_HandguardMountingInfo mounting = new TBD_HandguardMountingInfo();
-		TBD_HandguardExtractor.ExtractMounting(comps, mounting);
+		TBD_HandguardMountingExtractor.ExtractMounting(comps, mounting);
 
 		string lowerPath = path;
 		lowerPath.ToLower();
@@ -195,7 +195,7 @@ class TBD_HandguardScanner
 		info.m_Mounting = mounting;
 
 		// Nested child attachment slots (modular rails)
-		TBD_HandguardExtractor.ExtractNestedAttachmentSlots(comps, info.m_aNestedSlots);
+		TBD_HandguardMountingExtractor.ExtractNestedAttachmentSlots(comps, info.m_aNestedSlots);
 
 		// Handling & Recoil modifiers (SCR_WeaponAttachmentAttributes)
 		TBD_HandguardExtractor.ExtractHandlingModifiers(comps, info.m_Handling);

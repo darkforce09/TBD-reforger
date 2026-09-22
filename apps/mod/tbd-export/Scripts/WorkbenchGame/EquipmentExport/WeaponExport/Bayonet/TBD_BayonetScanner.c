@@ -195,7 +195,7 @@ class TBD_BayonetScanner
 		info.m_Mounting = mounting;
 
 		// Combat & Handling attributes (extra obstruction length, melee damage)
-		TBD_BayonetExtractor.ExtractCombatHandling(comps, info.m_Combat);
+		TBD_BayonetCombatExtractor.ExtractCombatHandling(comps, info.m_Combat);
 
 		// Physical attributes
 		TBD_BayonetExtractor.ExtractPhysical(comps, info.m_Physical);

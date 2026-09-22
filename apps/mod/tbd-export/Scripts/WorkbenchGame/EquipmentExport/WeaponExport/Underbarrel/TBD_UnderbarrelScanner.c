@@ -189,7 +189,7 @@ class TBD_UnderbarrelScanner
 		info.m_Mounting = mounting;
 
 		// Launcher / secondary weapon system properties (muzzles, mag wells, chamber capacity, zeroing distances)
-		TBD_UnderbarrelExtractor.ExtractLauncher(comps, info.m_Launcher);
+		TBD_UnderbarrelLauncherExtractor.ExtractLauncher(comps, info.m_Launcher);
 
 		// Physical attributes
 		TBD_UnderbarrelExtractor.ExtractPhysical(comps, info.m_Physical);

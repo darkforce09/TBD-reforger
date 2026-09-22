@@ -39,17 +39,17 @@ WeaponExport/
 
 | Subdirectory | Responsibility | Key Classes |
 |---|---|---|
-| **`Ammo/`** | Magazines and the projectiles they chamber, split by caliber. | `TBD_MagazineInfo`, `TBD_ProjectileInfo`, `TBD_AmmoMagazineExtractor`, `TBD_AmmoProjectileExtractor`, `TBD_AmmoScanner` |
+| **`Ammo/`** | Magazines and the projectiles they chamber, split by caliber. | `TBD_MagazineInfo`, `TBD_ProjectileInfo`, `TBD_AmmoMagazineExtractor`, `TBD_AmmoProjectileExtractor`, `TBD_AmmoCatalog`, `TBD_AmmoCatalogWriter` |
 | **`Attachment/`** | One pass over every non-optic attachment, producing per-family catalogs and the combined rollup. | `TBD_AttachmentInfo`, `TBD_AttachmentFamilyExtractor`, `TBD_AttachmentScanner` |
-| **`Bayonet/`** | Bayonets and mounted blades, with melee combat properties. | `TBD_BayonetInfo`, `TBD_BayonetScanner` |
-| **`Handguard/`** | Handguards, rail systems, and foregrips, with handling modifiers. | `TBD_HandguardInfo`, `TBD_HandguardScanner` |
-| **`Illuminator/`** | Weapon lights, IR illuminators, and laser pointers, with lens emission properties. | `TBD_IlluminatorInfo`, `TBD_IlluminatorScanner` |
+| **`Bayonet/`** | Bayonets and mounted blades, with melee combat properties. | `TBD_BayonetInfo`, `TBD_BayonetCombatExtractor`, `TBD_BayonetScanner` |
+| **`Handguard/`** | Handguards, rail systems, and foregrips, with handling modifiers. | `TBD_HandguardInfo`, `TBD_HandguardMountingExtractor`, `TBD_HandguardScanner` |
+| **`Illuminator/`** | Weapon lights, IR illuminators, and laser pointers, with lens emission properties. | `TBD_IlluminatorInfo`, `TBD_IlluminatorEmissionExtractor`, `TBD_IlluminatorScanner` |
 | **`M16/`** | Resolved compatibility matrix for the M16 platform. Plugin attribute commented out. | `TBD_M16WeaponVariantInfo`, `TBD_M16DeepScanner` |
 | **`Muzzle/`** | Suppressors, flash hiders, and brakes, with their acoustic and ballistic modifiers. | `TBD_MuzzleInfo`, `TBD_MuzzleScanner` |
-| **`Optic/`** | Sights and scopes, with magnification, field of view, and eye relief. | `TBD_OpticInfo`, `TBD_OpticScanner` |
+| **`Optic/`** | Sights and scopes, with magnification, field of view, and eye relief. | `TBD_OpticInfo`, `TBD_OpticSightsExtractor`, `TBD_OpticScanner` |
 | **`Rifle/`** | Rifle-only intrinsic pass, deeper than the master arsenal sweep. Plugin attribute commented out. | `TBD_RifleWeaponInfo`, `TBD_RifleScanner` |
-| **`Stock/`** | Buttstocks. Structurally parallel to `Handguard/`. | `TBD_StockInfo`, `TBD_StockScanner` |
-| **`Underbarrel/`** | Underbarrel launchers and accessories, including secondary muzzles. | `TBD_UnderbarrelInfo`, `TBD_UnderbarrelScanner` |
+| **`Stock/`** | Buttstocks. Structurally parallel to `Handguard/`. | `TBD_StockInfo`, `TBD_StockMountingExtractor`, `TBD_StockNaming`, `TBD_StockScanner` |
+| **`Underbarrel/`** | Underbarrel launchers and accessories, including secondary muzzles. | `TBD_UnderbarrelInfo`, `TBD_UnderbarrelLauncherExtractor`, `TBD_UnderbarrelScanner` |
 | **`Weapon/`** | Every weapon in every addon, bucketed into seven categories. | `TBD_WeaponInfo`, `TBD_WeaponMuzzleExtractor`, `TBD_WeaponScanner` |
 
 ---

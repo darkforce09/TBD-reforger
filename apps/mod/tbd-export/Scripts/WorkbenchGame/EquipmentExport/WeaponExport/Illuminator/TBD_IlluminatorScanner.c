@@ -234,7 +234,7 @@ class TBD_IlluminatorScanner
 		info.m_Mounting = mounting;
 
 		// Illumination & laser capabilities
-		TBD_IlluminatorExtractor.ExtractIllumination(comps, info.m_Illumination, mounting.m_sAttachmentType);
+		TBD_IlluminatorEmissionExtractor.ExtractIllumination(comps, info.m_Illumination, mounting.m_sAttachmentType);
 
 		// Physical attributes
 		TBD_IlluminatorExtractor.ExtractPhysical(comps, info.m_Physical);

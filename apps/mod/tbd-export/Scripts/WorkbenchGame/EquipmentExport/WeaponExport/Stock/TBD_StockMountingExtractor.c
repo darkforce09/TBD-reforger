@@ -1,21 +1,14 @@
 //------------------------------------------------------------------------------------------------
-// TBD_IlluminatorExtractor.c
+// TBD_StockMountingExtractor.c
 //
-// Core introspection engine for extracting complete, ground-truth component graphs from
-// tactical weapon lights, IR illuminators, laser aiming modules, and combo devices.
-// Extracts mounting relational keys, illumination parameters (intensity, beam near plane,
-// adjust offset, optical lenses), laser capabilities (laser flag, IR flag, beam/dot color),
-// physical attributes, and visual 3D model meshes.
+// Reads how a buttstock fits a weapon: the attachment type it presents, every type it is
+// compatible with, the types it obstructs, and any slot it offers to a further attachment.
 //
-// 100% genuine introspection:
-//   - ZERO fake/mock data: omitted values serialize as JSON null.
-//   - ZERO hardcoded class checks: works universally with any mod.
-//   - All attributes and relational keys are extracted directly from native Enfusion BaseContainer
-//     objects and container ancestry.
-//   - Localization tokens are preserved raw without stripping # or fabricating humanized strings.
+// Compatibility is widened by walking the attachment type's inheritance chain, because a prefab
+// declaring a specific stock type also fits anything accepting its ancestors.
 //------------------------------------------------------------------------------------------------
 
-class TBD_IlluminatorExtractor
+class TBD_StockMountingExtractor
 {
 	//------------------------------------------------------------------------------------------------
 	//! Extract mounting relational keys directly from container data and genuine container ancestry:
@@ -23,7 +16,7 @@ class TBD_IlluminatorExtractor
 	//!   - compatible_attachment_types: container ancestor classes and declared m_aCompatibleAttachmentTypes
 	//!   - obstructed_attachment_types: classes from m_aObstructedAttachmentTypes
 	//! ZERO hardcoded class checks: works dynamically for any mod.
-	static void ExtractMounting(map<string, ref array<BaseContainer>> comps, TBD_IlluminatorMountingInfo outMounting)
+	static void ExtractMounting(map<string, ref array<BaseContainer>> comps, TBD_StockMountingInfo outMounting)
 	{
 		string primaryType;
 		ref array<string> compatTypes = {};
@@ -65,7 +58,7 @@ class TBD_IlluminatorExtractor
 										string typeCls = typeObj.GetClassName();
 										if (!typeCls.IsEmpty() && !typeCls.StartsWith("AttachmentCamouflage"))
 										{
-											if (primaryType.IsEmpty() || primaryType == "BaseAttachmentType" || primaryType == "AttachmentBase" || primaryType == "AttachmentFlashlight" || primaryType == "AttachmentLaser" || primaryType == "AttachmentIllumination")
+											if (primaryType.IsEmpty() || primaryType == "BaseAttachmentType" || primaryType == "AttachmentBase" || primaryType == "AttachmentStock")
 												primaryType = typeCls;
 
 											TBD_EquipmentComponentGraph.AddUniqueType(compatTypes, typeCls);
@@ -134,11 +127,11 @@ class TBD_IlluminatorExtractor
 		}
 
 		// Fallback check on non-slot components for direct AttachmentType if still empty
-		if (primaryType.IsEmpty() || primaryType == "BaseAttachmentType" || primaryType == "AttachmentFlashlight" || primaryType == "AttachmentLaser")
+		if (primaryType.IsEmpty() || primaryType == "BaseAttachmentType" || primaryType == "AttachmentStock")
 		{
 			foreach (string compCls, array<BaseContainer> compBucket : comps)
 			{
-				if (compCls.EndsWith("AttachmentSlotComponent") || compCls.EndsWith("SlotManagerComponent") || compCls.EndsWith("WeaponComponent"))
+				if (compCls.EndsWith("AttachmentSlotComponent") || compCls.EndsWith("SlotManagerComponent"))
 					continue;
 
 				foreach (BaseContainer c : compBucket)
@@ -166,8 +159,18 @@ class TBD_IlluminatorExtractor
 						}
 					}
 				}
-				if (!primaryType.IsEmpty() && primaryType != "BaseAttachmentType" && primaryType != "AttachmentFlashlight" && primaryType != "AttachmentLaser")
+				if (!primaryType.IsEmpty() && primaryType != "BaseAttachmentType" && primaryType != "AttachmentStock")
 					break;
+			}
+		}
+
+		// Check script inheritance for base AttachmentStock
+		if (!primaryType.IsEmpty())
+		{
+			typename pt = primaryType.ToType();
+			if (pt && pt != AttachmentStock && pt.IsInherited(AttachmentStock))
+			{
+				TBD_EquipmentComponentGraph.AddUniqueType(compatTypes, "AttachmentStock");
 			}
 		}
 
@@ -192,129 +195,160 @@ class TBD_IlluminatorExtractor
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Extract physical attributes: mass, volume, dimensions, inventory layout size.
-	//! ZERO synthetic defaults: omitted fields serialize as null.
-	static void ExtractPhysical(map<string, ref array<BaseContainer>> comps, TBD_IlluminatorPhysicalInfo outPhys)
+	//! Extract nested child attachment slots from AttachmentSlotComponent entries on modular stocks.
+	//! Modular buttstocks declare child slots (e.g. cheek pad/riser slots, sling swivel attachment points).
+	static void ExtractNestedAttachmentSlots(map<string, ref array<BaseContainer>> comps, notnull array<ref TBD_StockSlotInfo> outSlots)
 	{
 		foreach (string cls, array<BaseContainer> bucket : comps)
 		{
-			if (!cls.EndsWith("InventoryItemComponent"))
+			if (!cls.EndsWith("AttachmentSlotComponent"))
 				continue;
 
-			foreach (BaseContainer inv : bucket)
+			foreach (BaseContainer slotComp : bucket)
 			{
-				BaseContainer cur = inv;
-				while (cur)
+				BaseContainer slotObj = slotComp.GetObject("AttachmentSlot");
+				BaseContainer typeObj = slotComp.GetObject("AttachmentType");
+				if (!typeObj)
+					typeObj = slotComp.GetObject("m_AttachmentType");
+				if (!typeObj && slotObj)
+					typeObj = slotObj.GetObject("AttachmentType");
+
+				// If typeObj was empty on child, resolve from ancestor component
+				if (!typeObj)
 				{
-					BaseContainer attrs = cur.GetObject("Attributes");
-					while (attrs)
+					BaseContainer curComp = slotComp.GetAncestor();
+					while (curComp && !typeObj)
 					{
-						// Inventory item size token
-						if (outPhys.m_sInventorySize.IsEmpty())
-						{
-							string sz;
-							if (attrs.Get("m_Size", sz) && !sz.IsEmpty())
-								outPhys.m_sInventorySize = sz;
-						}
-
-						// Item physical attributes
-						BaseContainer phys = attrs.GetObject("ItemPhysAttributes");
-						while (phys)
-						{
-							if (!outPhys.m_bHasWeight)
-							{
-								float weight;
-								if (phys.Get("Weight", weight) && weight > 0)
-								{
-									outPhys.m_fWeightKg = weight;
-									outPhys.m_bHasWeight = true;
-								}
-							}
-
-							if (!outPhys.m_bHasVolume)
-							{
-								float volume;
-								if (phys.Get("ItemVolume", volume) && volume > 0)
-								{
-									outPhys.m_fVolumeCm3 = volume;
-									outPhys.m_bHasVolume = true;
-								}
-							}
-
-							if (!outPhys.m_bHasDimensions)
-							{
-								vector dim;
-								if (phys.Get("ItemDimensions", dim) && dim != "0 0 0")
-								{
-									outPhys.m_vDimensions = dim;
-									outPhys.m_bHasDimensions = true;
-								}
-							}
-
-							phys = phys.GetAncestor();
-						}
-
-						attrs = attrs.GetAncestor();
+						typeObj = curComp.GetObject("AttachmentType");
+						if (!typeObj)
+							typeObj = curComp.GetObject("m_AttachmentType");
+						curComp = curComp.GetAncestor();
 					}
-
-					cur = cur.GetAncestor();
 				}
-			}
-		}
 
-		// Fallback for mass on RigidBody if weight was not defined in ItemPhysAttributes
-		if (!outPhys.m_bHasWeight)
-		{
-			array<BaseContainer> rbBucket = comps.Get("RigidBody");
-			if (rbBucket)
-			{
-				foreach (BaseContainer rb : rbBucket)
+				string typeClass = "";
+				if (typeObj)
+					typeClass = typeObj.GetClassName();
+
+				// Resolve exact slot name and pivot ID across slot container hierarchy
+				string slotName = "";
+				string pivotId = "";
+
+				BaseContainer curSlot = slotObj;
+				while (curSlot)
 				{
-					float mass;
-					if (rb.Get("Mass", mass) && mass > 0)
+					if (slotName.IsEmpty())
+						slotName = curSlot.GetName();
+
+					if (pivotId.IsEmpty())
+						curSlot.Get("PivotID", pivotId);
+
+					curSlot = curSlot.GetAncestor();
+				}
+
+				// If slot name is empty or engine base class name, fallback to pivot ID or type
+				if (slotName.IsEmpty() || slotName.StartsWith("InventoryStorageSlot") || slotName.StartsWith("BaseAttachmentSlot") || slotName.StartsWith("SCR_WeaponAttachmentSlot"))
+				{
+					if (!pivotId.IsEmpty())
+						slotName = pivotId;
+					else if (!typeClass.IsEmpty())
+						slotName = typeClass;
+					else
+						slotName = "Slot_Attachment";
+				}
+
+				// Introspect compatible attachment types accepted by this slot
+				ref array<string> slotCompatTypes = {};
+				if (typeObj)
+				{
+					if (!typeClass.IsEmpty())
 					{
-						outPhys.m_fWeightKg = mass;
-						outPhys.m_bHasWeight = true;
+						TBD_EquipmentComponentGraph.AddUniqueType(slotCompatTypes, typeClass);
+
+						BaseContainer ancType = typeObj.GetAncestor();
+						while (ancType)
+						{
+							string ancCls = ancType.GetClassName();
+							if (!ancCls.IsEmpty())
+								TBD_EquipmentComponentGraph.AddUniqueType(slotCompatTypes, ancCls);
+							ancType = ancType.GetAncestor();
+						}
+					}
+				}
+
+				// Check explicit compatible attachment types on slot container or component
+				BaseContainer curCheck = slotComp;
+				while (curCheck)
+				{
+					BaseContainerList cList = curCheck.GetObjectArray("m_aCompatibleAttachmentTypes");
+					if (!cList)
+						cList = curCheck.GetObjectArray("CompatibleAttachmentTypes");
+
+					if (cList)
+					{
+						for (int c = 0, cn = cList.Count(); c < cn; c++)
+						{
+							BaseContainer ct = cList.Get(c);
+							if (ct)
+							{
+								string ctCls = ct.GetClassName();
+								if (!ctCls.IsEmpty())
+									TBD_EquipmentComponentGraph.AddUniqueType(slotCompatTypes, ctCls);
+							}
+						}
+					}
+					curCheck = curCheck.GetAncestor();
+				}
+
+				if (slotObj)
+				{
+					BaseContainer curSlotCheck = slotObj;
+					while (curSlotCheck)
+					{
+						BaseContainerList sList = curSlotCheck.GetObjectArray("m_aCompatibleAttachmentTypes");
+						if (!sList)
+							sList = curSlotCheck.GetObjectArray("CompatibleAttachmentTypes");
+
+						if (sList)
+						{
+							for (int sc = 0, scn = sList.Count(); sc < scn; sc++)
+							{
+								BaseContainer sct = sList.Get(sc);
+								if (sct)
+								{
+									string sctCls = sct.GetClassName();
+									if (!sctCls.IsEmpty())
+										TBD_EquipmentComponentGraph.AddUniqueType(slotCompatTypes, sctCls);
+								}
+							}
+						}
+						curSlotCheck = curSlotCheck.GetAncestor();
+					}
+				}
+
+				// Deduplicate child slots across components (merge compatible types if same slot name)
+				bool duplicate = false;
+				foreach (TBD_StockSlotInfo existing : outSlots)
+				{
+					if (existing.m_sSlotName == slotName)
+					{
+						duplicate = true;
+						foreach (string nct : slotCompatTypes)
+						{
+							TBD_EquipmentComponentGraph.AddUniqueType(existing.m_aCompatibleAttachmentTypes, nct);
+						}
 						break;
 					}
 				}
-			}
-		}
-	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Extract visual 3D model mesh path directly from MeshObject.Object.
-	static void ExtractVisuals(map<string, ref array<BaseContainer>> comps, TBD_IlluminatorVisualsInfo outVisuals)
-	{
-		string meshPath;
-
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("MeshObject"))
-				continue;
-
-			foreach (BaseContainer mesh : bucket)
-			{
-				BaseContainer cur = mesh;
-				while (cur)
+				if (!duplicate)
 				{
-					string obj;
-					if (cur.Get("Object", obj) && !obj.IsEmpty())
-					{
-						meshPath = TBD_EquipmentResourceNames.NormalizePathSeparators(obj);
-						break;
-					}
-					cur = cur.GetAncestor();
+					TBD_StockSlotInfo s = new TBD_StockSlotInfo();
+					s.m_sSlotName = slotName;
+					s.m_aCompatibleAttachmentTypes = slotCompatTypes;
+					outSlots.Insert(s);
 				}
-
-				if (!meshPath.IsEmpty())
-					break;
 			}
-
-			if (!meshPath.IsEmpty())
-				break;
 		}
-
-		outVisuals.m_sModelMesh = meshPath;
 	}
 }
