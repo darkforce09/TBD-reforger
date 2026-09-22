@@ -9,7 +9,6 @@
 class TBD_EquipmentScanner
 {
 	protected static const string TAG = "[TBD][EquipmentScanner]";
-	protected static const int ANCESTOR_CAP = 16;
 	protected static const int COMPONENT_DEPTH_CAP = 8;
 	protected static const int MAX_ITEMS = 200000;
 
@@ -166,11 +165,11 @@ class TBD_EquipmentScanner
 
 		// Collect full component chain across ancestry
 		map<string, ref array<BaseContainer>> comps = new map<string, ref array<BaseContainer>>();
-		CollectComponentChain(root, comps);
+		TBD_EquipmentComponentGraph.CollectComponentChain(root, comps, COMPONENT_DEPTH_CAP);
 
 		// 1. Hard exclusions: vehicles & characters
 		bool isCharacter = (rootClass == "SCR_ChimeraCharacter" || rootClass == "ChimeraCharacter"
-			|| HasCompSuffix(comps, "CharacterControllerComponent"));
+			|| TBD_EquipmentComponentGraph.HasCompSuffix(comps, "CharacterControllerComponent"));
 		if (isCharacter)
 		{
 			m_iSkippedNonEquipment++;
@@ -178,8 +177,8 @@ class TBD_EquipmentScanner
 		}
 
 		bool isVehicle = (rootClass == "Vehicle" || rootClass.EndsWith("Vehicle")
-			|| HasCompSuffix(comps, "VehicleWheeledSimulation") || HasCompSuffix(comps, "VehicleHelicopterSimulation")
-			|| HasCompSuffix(comps, "VehicleBoatSimulation") || HasCompSuffix(comps, "VehicleTrackedSimulation"));
+			|| TBD_EquipmentComponentGraph.HasCompSuffix(comps, "VehicleWheeledSimulation") || TBD_EquipmentComponentGraph.HasCompSuffix(comps, "VehicleHelicopterSimulation")
+			|| TBD_EquipmentComponentGraph.HasCompSuffix(comps, "VehicleBoatSimulation") || TBD_EquipmentComponentGraph.HasCompSuffix(comps, "VehicleTrackedSimulation"));
 		if (isVehicle)
 		{
 			m_iSkippedNonEquipment++;
@@ -187,17 +186,17 @@ class TBD_EquipmentScanner
 		}
 
 		// Non-carryable static vehicle weapon assemblies / mounts
-		bool hasInvItem = HasCompSuffix(comps, "InventoryItemComponent");
-		if (!hasInvItem && HasCompSuffix(comps, "CompartmentManagerComponent"))
+		bool hasInvItem = TBD_EquipmentComponentGraph.HasCompSuffix(comps, "InventoryItemComponent");
+		if (!hasInvItem && TBD_EquipmentComponentGraph.HasCompSuffix(comps, "CompartmentManagerComponent"))
 		{
 			m_iSkippedNonEquipment++;
 			return;
 		}
 
 		// 2. Detect equipment signals
-		bool hasWeapon = HasCompSuffix(comps, "WeaponComponent") || HasCompSuffix(comps, "GrenadeLauncherComponent");
-		bool hasMagazine = HasCompSuffix(comps, "MagazineComponent");
-		bool hasCloth = HasCompSuffix(comps, "LoadoutClothComponent");
+		bool hasWeapon = TBD_EquipmentComponentGraph.HasCompSuffix(comps, "WeaponComponent") || TBD_EquipmentComponentGraph.HasCompSuffix(comps, "GrenadeLauncherComponent");
+		bool hasMagazine = TBD_EquipmentComponentGraph.HasCompSuffix(comps, "MagazineComponent");
+		bool hasCloth = TBD_EquipmentComponentGraph.HasCompSuffix(comps, "LoadoutClothComponent");
 		bool hasGadget = HasCompInheritedFrom(comps, "SCR_GadgetComponent") || HasCompInheritedFrom(comps, "SCR_BinocularsComponent");
 		bool hasAttachmentAttr = HasAttachmentAttributes(comps);
 		bool isAmmoPath = filePath.Contains("/Ammo/");
@@ -210,7 +209,7 @@ class TBD_EquipmentScanner
 		}
 
 		// Canonical resource locator
-		string canonical = ResolveCanonical(root.GetResourceName());
+		string canonical = TBD_EquipmentResourceNames.ResolveCanonicalResourceName(root.GetResourceName());
 		if (canonical.IsEmpty())
 			canonical = resName;
 
@@ -227,7 +226,7 @@ class TBD_EquipmentScanner
 		TBD_EquipmentScanItem item = new TBD_EquipmentScanItem();
 		item.m_sResourceName = canonical;
 		item.m_sFilePath = filePath;
-		item.m_sId = GenerateSlug(filePath);
+		item.m_sId = TBD_EquipmentResourceNames.GenerateSlug(filePath);
 		item.m_sAddonId = addonId;
 		item.m_sCategoryPath = ExtractCategoryPath(filePath);
 		item.m_sRootClass = rootClass;
@@ -283,59 +282,6 @@ class TBD_EquipmentScanner
 
 		m_mItemIndexByResource.Insert(canonical, m_aDiscoveredItems.Count());
 		m_aDiscoveredItems.Insert(item);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void CollectComponentChain(BaseContainer prefabRoot, notnull map<string, ref array<BaseContainer>> outComps)
-	{
-		BaseContainer cur = prefabRoot;
-		int hops = 0;
-		while (cur && hops < ANCESTOR_CAP)
-		{
-			CollectComponentsRec(cur, outComps, 0);
-			cur = cur.GetAncestor();
-			hops++;
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void CollectComponentsRec(BaseContainer holder, notnull map<string, ref array<BaseContainer>> outComps, int depth)
-	{
-		if (depth > COMPONENT_DEPTH_CAP)
-			return;
-
-		BaseContainerList comps = holder.GetObjectArray("components");
-		if (!comps)
-			return;
-
-		for (int i = 0, n = comps.Count(); i < n; i++)
-		{
-			BaseContainer comp = comps.Get(i);
-			if (!comp)
-				continue;
-
-			string cls = comp.GetClassName();
-			array<BaseContainer> bucket = outComps.Get(cls);
-			if (!bucket)
-			{
-				bucket = {};
-				outComps.Insert(cls, bucket);
-			}
-			bucket.Insert(comp);
-
-			CollectComponentsRec(comp, outComps, depth + 1);
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected bool HasCompSuffix(map<string, ref array<BaseContainer>> comps, string suffix)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (cls.EndsWith(suffix))
-				return true;
-		}
-		return false;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -489,21 +435,6 @@ class TBD_EquipmentScanner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected string GenerateSlug(string filePath)
-	{
-		string s = filePath;
-		int slash = s.LastIndexOf("/");
-		if (slash >= 0)
-			s = s.Substring(slash + 1, s.Length() - slash - 1);
-		if (s.EndsWith(".et"))
-			s = s.Substring(0, s.Length() - 3);
-		s.ToLower();
-		s.Replace("-", "_");
-		s.Replace(" ", "_");
-		return s;
-	}
-
-	//------------------------------------------------------------------------------------------------
 	protected string ExtractCategoryPath(string filePath)
 	{
 		int idx = filePath.IndexOf("Prefabs/");
@@ -524,28 +455,5 @@ class TBD_EquipmentScanner
 		if (lower.EndsWith("_base.et") || lower.Contains("/base/"))
 			return true;
 		return false;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected string ResolveCanonical(string resName)
-	{
-		if (resName.IsEmpty())
-			return string.Empty;
-		if (resName.StartsWith("{"))
-			return resName;
-		ResourceName rn = resName;
-		Resource res = Resource.Load(rn);
-		if (!res || !res.IsValid())
-			return resName;
-		BaseResourceObject obj = res.GetResource();
-		if (!obj)
-			return resName;
-		BaseContainer root = obj.ToBaseContainer();
-		if (!root)
-			return resName;
-		string crn = root.GetResourceName();
-		if (crn.StartsWith("{"))
-			return crn;
-		return resName;
 	}
 }
