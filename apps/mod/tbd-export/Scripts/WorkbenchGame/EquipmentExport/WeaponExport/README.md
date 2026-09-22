@@ -44,10 +44,10 @@ WeaponExport/
 | **`Bayonet/`** | Bayonets and mounted blades, with melee combat properties. | `TBD_BayonetInfo`, `TBD_BayonetCombatExtractor`, `TBD_BayonetScanner` |
 | **`Handguard/`** | Handguards, rail systems, and foregrips, with handling modifiers. | `TBD_HandguardInfo`, `TBD_HandguardMountingExtractor`, `TBD_HandguardScanner` |
 | **`Illuminator/`** | Weapon lights, IR illuminators, and laser pointers, with lens emission properties. | `TBD_IlluminatorInfo`, `TBD_IlluminatorEmissionExtractor`, `TBD_IlluminatorScanner` |
-| **`M16/`** | Resolved compatibility matrix for the M16 platform. Plugin attribute commented out. | `TBD_M16WeaponVariantInfo`, `TBD_M16DeepScanner` |
+| **`M16/`** | Resolved compatibility matrix for the M16 platform. Plugin attribute commented out. | `TBD_M16WeaponVariantInfo`, `TBD_M16CandidateExtractor`, `TBD_M16DeepScanner` |
 | **`Muzzle/`** | Suppressors, flash hiders, and brakes, with their acoustic and ballistic modifiers. | `TBD_MuzzleInfo`, `TBD_MuzzleScanner` |
 | **`Optic/`** | Sights and scopes, with magnification, field of view, and eye relief. | `TBD_OpticInfo`, `TBD_OpticSightsExtractor`, `TBD_OpticScanner` |
-| **`Rifle/`** | Rifle-only intrinsic pass, deeper than the master arsenal sweep. Plugin attribute commented out. | `TBD_RifleWeaponInfo`, `TBD_RifleScanner` |
+| **`Rifle/`** | Rifle-only intrinsic pass, deeper than the master arsenal sweep. Plugin attribute commented out. | `TBD_RifleWeaponInfo`, `TBD_RifleExtractor`, `TBD_RifleScanner` |
 | **`Stock/`** | Buttstocks. Structurally parallel to `Handguard/`. | `TBD_StockInfo`, `TBD_StockMountingExtractor`, `TBD_StockNaming`, `TBD_StockScanner` |
 | **`Underbarrel/`** | Underbarrel launchers and accessories, including secondary muzzles. | `TBD_UnderbarrelInfo`, `TBD_UnderbarrelLauncherExtractor`, `TBD_UnderbarrelScanner` |
 | **`Weapon/`** | Every weapon in every addon, bucketed into seven categories. | `TBD_WeaponInfo`, `TBD_WeaponMuzzleExtractor`, `TBD_WeaponScanner` |
@@ -68,8 +68,6 @@ WeaponExport/
    `TBD_AttachmentMountingExtractor` — and the scanner calls them in turn. `Ammo/` is the one
    domain with no `TBD_AmmoExtractor` at all: a magazine and a projectile are different objects
    with different carriers, so it splits along that line instead.
-
-   `Rifle/` and `M16/` carry no extractor: their per-prefab walk lives inside the scanner.
 
 2. **One-way dependency:**
    `ExportPlugin -> Scanner -> Extractor -> Model -> Core`. No domain imports another domain's

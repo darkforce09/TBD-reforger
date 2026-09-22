@@ -1,9 +1,13 @@
 /**
  * TBD_M16DeepScanner.c
  *
- * Exhaustive deep inspection & compatibility scanner for the M16 weapon platform.
- * Scans all M16 rifle variants, detects muzzles, fire modes, and attachment slots,
- * and matches them against all discovered magazines, optics, and attachments across loaded addons.
+ * Builds the M16 compatibility matrix in two passes: one over every magazine and attachment in
+ * every loaded addon to form the candidate pool, and one over every M16 variant. It then matches
+ * each variant's magazine wells and slot types against that pool and serializes the result.
+ *
+ * TBD_M16Extractor reads a variant, TBD_M16CandidateExtractor reads a pool entry and owns the
+ * rule that decides whether an attachment fits a slot, and TBD_M16Naming names all three. This
+ * class owns the two sweeps, the pairing, and the JSON.
  */
 
 class TBD_M16DeepScanner
@@ -120,15 +124,15 @@ class TBD_M16DeepScanner
 		{
 			if (!m_mMagIndexByResource.Contains(canonical))
 			{
-				string magWell = ReadMagazineWell(comps);
+				string magWell = TBD_M16CandidateExtractor.ReadMagazineWell(comps);
 				if (!magWell.IsEmpty())
 				{
 					TBD_M16CandidateMagazine mag = new TBD_M16CandidateMagazine();
 					mag.m_sResourceName = canonical;
-					mag.m_sDisplayName = DisplayNameFor(comps, path);
+					mag.m_sDisplayName = TBD_M16Naming.DisplayNameFor(comps, path);
 					mag.m_sMagWellClass = magWell;
-					mag.m_iCapacity = ReadMagazineCapacity(comps, path);
-					mag.m_fWeightKg = ReadWeight(comps);
+					mag.m_iCapacity = TBD_M16CandidateExtractor.ReadMagazineCapacity(comps, path);
+					mag.m_fWeightKg = TBD_M16CandidateExtractor.ReadWeight(comps);
 					mag.m_sAddonId = addonId;
 
 					m_mMagIndexByResource.Insert(canonical, m_aAllMagazines.Count());
@@ -139,17 +143,17 @@ class TBD_M16DeepScanner
 		}
 
 		// Check for Attachment / Optic
-		string attachType = ReadAttachmentType(comps);
+		string attachType = TBD_M16CandidateExtractor.ReadAttachmentType(comps);
 		if (!attachType.IsEmpty())
 		{
 			if (!m_mAttachIndexByResource.Contains(canonical))
 			{
 				TBD_M16CandidateAttachment att = new TBD_M16CandidateAttachment();
 				att.m_sResourceName = canonical;
-				att.m_sDisplayName = DisplayNameFor(comps, path);
+				att.m_sDisplayName = TBD_M16Naming.DisplayNameFor(comps, path);
 				att.m_sAttachmentTypeClass = attachType;
 				att.m_bIsOptic = (attachType.Contains("Optic") || TBD_EquipmentComponentGraph.HasCompSuffix(comps, "SightsComponent") || path.Contains("/Optic"));
-				att.m_fWeightKg = ReadWeight(comps);
+				att.m_fWeightKg = TBD_M16CandidateExtractor.ReadWeight(comps);
 				att.m_sAddonId = addonId;
 				att.m_sFilePath = path;
 
@@ -209,11 +213,11 @@ class TBD_M16DeepScanner
 		info.m_sResourceName = canonical;
 		info.m_sFilePath = path;
 		info.m_sId = TBD_EquipmentResourceNames.GenerateSlug(path);
-		info.m_sDisplayName = DisplayNameFor(comps, path);
+		info.m_sDisplayName = TBD_M16Naming.DisplayNameFor(comps, path);
 		info.m_sAddonId = m_sCurrentAddonId;
 		info.m_bIsAbstract = path.EndsWith("_base.et") || path.Contains("/base/");
-		info.m_fWeightKg = ReadWeight(comps);
-		info.m_fVolumeCm3 = ReadVolume(comps);
+		info.m_fWeightKg = TBD_M16CandidateExtractor.ReadWeight(comps);
+		info.m_fVolumeCm3 = TBD_M16CandidateExtractor.ReadVolume(comps);
 
 		// Ancestor / Variant Of
 		BaseContainer anc = root.GetAncestor();
@@ -225,13 +229,13 @@ class TBD_M16DeepScanner
 		}
 
 		// Extract Sights
-		ExtractZeroingDistances(comps, info.m_aZeroingDistances);
+		TBD_M16Extractor.ExtractZeroingDistances(comps, info.m_aZeroingDistances);
 
 		// Extract Muzzles
-		ExtractMuzzles(comps, info.m_aMuzzles);
+		TBD_M16Extractor.ExtractMuzzles(comps, info.m_aMuzzles);
 
 		// Extract Attachment Slots
-		ExtractAttachmentSlots(comps, info.m_aAttachmentSlots);
+		TBD_M16Extractor.ExtractAttachmentSlots(comps, info.m_aAttachmentSlots);
 
 		m_aM16Variants.Insert(info);
 	}
@@ -264,7 +268,7 @@ class TBD_M16DeepScanner
 
 				foreach (TBD_M16CandidateAttachment att : m_aAllAttachments)
 				{
-					if (AttachTypeFits(att.m_sAttachmentTypeClass, slot.m_sRequiredAttachType))
+					if (TBD_M16CandidateExtractor.AttachTypeFits(att.m_sAttachmentTypeClass, slot.m_sRequiredAttachType))
 					{
 						slot.m_aCompatibleItemResourceNames.Insert(att.m_sResourceName);
 						slot.m_aCompatibleItemDisplayNames.Insert(att.m_sDisplayName);
@@ -272,539 +276,6 @@ class TBD_M16DeepScanner
 				}
 			}
 		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Introspection: AttachmentSlotComponent extraction
-	protected void ExtractAttachmentSlots(map<string, ref array<BaseContainer>> comps, notnull array<ref TBD_M16AttachmentSlotInfo> outSlots)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("AttachmentSlotComponent"))
-				continue;
-
-			foreach (BaseContainer slotComp : bucket)
-			{
-				BaseContainer slotObj = slotComp.GetObject("AttachmentSlot");
-				BaseContainer typeObj = slotComp.GetObject("AttachmentType");
-				string typeClass = "";
-				if (typeObj)
-					typeClass = typeObj.GetClassName();
-
-				// Resolve slot name, pivot ID, and default attached prefab across hierarchy
-				string slotName = "";
-				string pivotId = "";
-				string defAttach = "";
-
-				BaseContainer curSlot = slotObj;
-				while (curSlot)
-				{
-					if (slotName.IsEmpty())
-						slotName = curSlot.GetName();
-
-					if (pivotId.IsEmpty())
-						curSlot.Get("PivotID", pivotId);
-
-					if (defAttach.IsEmpty())
-					{
-						if (!curSlot.Get("Prefab", defAttach) || defAttach.IsEmpty())
-							curSlot.Get("m_sAttachment", defAttach);
-					}
-
-					curSlot = curSlot.GetAncestor();
-				}
-
-				// If typeObj was empty on child, resolve from ancestor
-				if (typeClass.IsEmpty())
-				{
-					BaseContainer curComp = slotComp.GetAncestor();
-					while (curComp && typeClass.IsEmpty())
-					{
-						BaseContainer ancType = curComp.GetObject("AttachmentType");
-						if (ancType)
-							typeClass = ancType.GetClassName();
-						curComp = curComp.GetAncestor();
-					}
-				}
-
-				// Clean human-friendly slotName
-				if (slotName.IsEmpty() || slotName.StartsWith("InventoryStorageSlot"))
-				{
-					if (!pivotId.IsEmpty())
-						slotName = pivotId;
-					else if (!typeClass.IsEmpty())
-						slotName = typeClass;
-					else
-						slotName = "attachment_slot";
-				}
-
-				if (slotName.StartsWith("slot_"))
-					slotName = slotName.Substring(5, slotName.Length() - 5);
-
-				if (typeClass.IsEmpty() && slotName.IsEmpty())
-					continue;
-
-				bool duplicate = false;
-				foreach (TBD_M16AttachmentSlotInfo existing : outSlots)
-				{
-					if (existing.m_sSlotName == slotName || (!typeClass.IsEmpty() && existing.m_sRequiredAttachType == typeClass))
-					{
-						duplicate = true;
-						if (existing.m_sDefaultAttachedPrefab.IsEmpty() && !defAttach.IsEmpty())
-							existing.m_sDefaultAttachedPrefab = TBD_EquipmentResourceNames.ResolveCanonicalResourceName(defAttach);
-						break;
-					}
-				}
-
-				if (!duplicate)
-				{
-					TBD_M16AttachmentSlotInfo s = new TBD_M16AttachmentSlotInfo();
-					s.m_sSlotName = slotName;
-					s.m_sRequiredAttachType = typeClass;
-					if (!defAttach.IsEmpty())
-						s.m_sDefaultAttachedPrefab = TBD_EquipmentResourceNames.ResolveCanonicalResourceName(defAttach);
-					outSlots.Insert(s);
-				}
-			}
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Introspection: MuzzleComponent extraction
-	protected void ExtractMuzzles(map<string, ref array<BaseContainer>> comps, notnull array<ref TBD_M16MuzzleInfo> outMuzzles)
-	{
-		int muzzleIdx = 0;
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("MuzzleComponent"))
-				continue;
-
-			// Deduplicate: filter out containers that are ancestors of another container in bucket
-			array<BaseContainer> distinctMuzzles = {};
-			foreach (BaseContainer mc : bucket)
-			{
-				bool isAncestor = false;
-				foreach (BaseContainer other : bucket)
-				{
-					if (mc == other)
-						continue;
-					BaseContainer anc = other.GetAncestor();
-					while (anc)
-					{
-						if (anc == mc)
-						{
-							isAncestor = true;
-							break;
-						}
-						anc = anc.GetAncestor();
-					}
-					if (isAncestor)
-						break;
-				}
-				if (!isAncestor)
-					distinctMuzzles.Insert(mc);
-			}
-
-			foreach (BaseContainer muzComp : distinctMuzzles)
-			{
-				TBD_M16MuzzleInfo m = new TBD_M16MuzzleInfo();
-				m.m_iIndex = muzzleIdx;
-				m.m_sMuzzleClass = cls;
-
-				// MagazineWell (resolve up ancestry chain if needed)
-				BaseContainer cur = muzComp;
-				while (cur && m.m_aMagazineWells.IsEmpty())
-				{
-					BaseContainer wellObj = cur.GetObject("MagazineWell");
-					if (wellObj)
-					{
-						string wCls = wellObj.GetClassName();
-						if (!wCls.IsEmpty() && m.m_aMagazineWells.Find(wCls) == -1)
-							m.m_aMagazineWells.Insert(wCls);
-					}
-					cur = cur.GetAncestor();
-				}
-
-				// Default MagazineTemplate
-				cur = muzComp;
-				while (cur && m.m_sDefaultMagazineTemplate.IsEmpty())
-				{
-					string magTmpl;
-					if (cur.Get("MagazineTemplate", magTmpl) && !magTmpl.IsEmpty())
-						m.m_sDefaultMagazineTemplate = TBD_EquipmentResourceNames.ResolveCanonicalResourceName(magTmpl);
-					cur = cur.GetAncestor();
-				}
-
-				// FireModes
-				BaseContainerList modes = null;
-				cur = muzComp;
-				while (cur && !modes)
-				{
-					modes = cur.GetObjectArray("FireModes");
-					if (!modes)
-						modes = cur.GetObjectArray("m_aFireModes");
-					cur = cur.GetAncestor();
-				}
-
-				if (modes)
-				{
-					for (int fm = 0, fmn = modes.Count(); fm < fmn; fm++)
-					{
-						BaseContainer mode = modes.Get(fm);
-						if (!mode)
-							continue;
-
-						string modeName = "";
-						int burst = 1;
-						int rpm = 0;
-
-						// Read RPM
-						if (!mode.Get("RoundsPerMinute", rpm) || rpm == 0)
-						{
-							if (!mode.Get("m_iRoundsPerMinute", rpm) || rpm == 0)
-							{
-								float rpmFloat;
-								if (mode.Get("m_fRoundsPerMinute", rpmFloat))
-									rpm = rpmFloat;
-							}
-						}
-						if (rpm == 0 && mode.GetAncestor())
-						{
-							mode.GetAncestor().Get("RoundsPerMinute", rpm);
-						}
-
-						// Read Burst
-						if (!mode.Get("BurstCount", burst))
-							mode.Get("m_iBurstCount", burst);
-
-						// Read Name / infer from config reference
-						if (!mode.Get("m_sFireModeName", modeName) || modeName.IsEmpty())
-							mode.Get("m_sName", modeName);
-
-						if (modeName.IsEmpty() || modeName.StartsWith("#") || modeName.StartsWith("AR-"))
-						{
-							string confRef = mode.GetResourceName();
-							if (confRef.IsEmpty() && mode.GetAncestor())
-								confRef = mode.GetAncestor().GetResourceName();
-
-							if (confRef.Contains("Single"))
-							{
-								modeName = "Semi";
-								burst = 1;
-							}
-							else if (confRef.Contains("Burst"))
-							{
-								modeName = "Burst";
-								if (burst <= 1)
-									burst = 3;
-							}
-							else if (confRef.Contains("Auto"))
-							{
-								modeName = "Auto";
-								burst = 0;
-							}
-							else if (confRef.Contains("Safe"))
-							{
-								modeName = "Safe";
-							}
-							else
-							{
-								modeName = "Mode " + (fm + 1).ToString();
-							}
-						}
-
-						m.m_aFireModeNames.Insert(modeName);
-						m.m_aFireModeBursts.Insert(burst);
-						m.m_aFireModeRpms.Insert(rpm);
-					}
-				}
-
-				outMuzzles.Insert(m);
-				muzzleIdx++;
-			}
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Introspection: SightsComponent zeroing distances
-	protected void ExtractZeroingDistances(map<string, ref array<BaseContainer>> comps, notnull array<string> outZeroings)
-	{
-		array<BaseContainer> sights = comps.Get("SightsComponent");
-		if (!sights)
-			sights = comps.Get("SCR_SightsComponent");
-
-		if (!sights)
-			return;
-
-		foreach (BaseContainer sc : sights)
-		{
-			// Range / zeroing properties
-			array<float> ranges = {};
-			sc.Get("m_aZeroingDistances", ranges);
-			if (ranges)
-			{
-				foreach (float r : ranges)
-					outZeroings.Insert(r.ToString() + "m");
-			}
-			else
-			{
-				float singleZero;
-				if (sc.Get("m_fZeroingDistance", singleZero))
-					outZeroings.Insert(singleZero.ToString() + "m");
-			}
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected string ReadMagazineWell(map<string, ref array<BaseContainer>> comps)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("MagazineComponent"))
-				continue;
-			foreach (BaseContainer c : bucket)
-			{
-				BaseContainer w = c.GetObject("MagazineWell");
-				if (w)
-					return w.GetClassName();
-			}
-		}
-		return string.Empty;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected int ReadMagazineCapacity(map<string, ref array<BaseContainer>> comps, string path = "")
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("MagazineComponent"))
-				continue;
-			foreach (BaseContainer c : bucket)
-			{
-				int cap = 0;
-				if (c.Get("MaxAmmo", cap) && cap > 0)
-					return cap;
-				if (c.Get("m_iMaxAmmo", cap) && cap > 0)
-					return cap;
-				if (c.Get("m_iAmmoCount", cap) && cap > 0)
-					return cap;
-				if (c.Get("m_iCapacity", cap) && cap > 0)
-					return cap;
-
-				BaseContainer anc = c.GetAncestor();
-				while (anc)
-				{
-					if (anc.Get("MaxAmmo", cap) && cap > 0)
-						return cap;
-					anc = anc.GetAncestor();
-				}
-			}
-		}
-
-		// Fallback: parse capacity from filename stem e.g. "30rnd", "20rnd", "100rnd"
-		if (!path.IsEmpty())
-		{
-			int rndIdx = path.IndexOf("rnd");
-			if (rndIdx > 0)
-			{
-				int start = rndIdx - 1;
-				while (start >= 0)
-				{
-					string ch = path.Substring(start, 1);
-					if (ch != "0" && ch != "1" && ch != "2" && ch != "3" && ch != "4" && ch != "5" && ch != "6" && ch != "7" && ch != "8" && ch != "9")
-						break;
-					start--;
-				}
-				start++;
-				if (start < rndIdx)
-				{
-					string numStr = path.Substring(start, rndIdx - start);
-					int parsed = numStr.ToInt();
-					if (parsed > 0)
-						return parsed;
-				}
-			}
-		}
-
-		return 0;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected string ReadAttachmentType(map<string, ref array<BaseContainer>> comps)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("InventoryItemComponent"))
-				continue;
-			foreach (BaseContainer inv : bucket)
-			{
-				BaseContainer attrs = inv.GetObject("Attributes");
-				if (!attrs)
-					continue;
-				BaseContainerList custom = attrs.GetObjectArray("CustomAttributes");
-				if (!custom)
-					continue;
-				for (int i = 0, n = custom.Count(); i < n; i++)
-				{
-					BaseContainer ca = custom.Get(i);
-					if (!ca || ca.GetClassName() != "WeaponAttachmentAttributes")
-						continue;
-					BaseContainer t = ca.GetObject("AttachmentType");
-					if (t)
-						return t.GetClassName();
-				}
-			}
-		}
-		return string.Empty;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected bool AttachTypeFits(string itemType, string slotType)
-	{
-		if (itemType == slotType)
-			return true;
-		typename ti = itemType.ToType();
-		typename ts = slotType.ToType();
-		if (!ti || !ts)
-			return false;
-		return ti.IsInherited(ts);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected float ReadWeight(map<string, ref array<BaseContainer>> comps)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("InventoryItemComponent") && !cls.EndsWith("StorageComponent"))
-				continue;
-			foreach (BaseContainer c : bucket)
-			{
-				BaseContainer attrs = c.GetObject("Attributes");
-				if (!attrs)
-					continue;
-				BaseContainer phys = attrs.GetObject("ItemPhysAttributes");
-				if (phys)
-				{
-					float w;
-					if (phys.Get("Weight", w) && w >= 0)
-						return w;
-				}
-			}
-		}
-		return -1.0;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected float ReadVolume(map<string, ref array<BaseContainer>> comps)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("InventoryItemComponent") && !cls.EndsWith("StorageComponent"))
-				continue;
-			foreach (BaseContainer c : bucket)
-			{
-				BaseContainer attrs = c.GetObject("Attributes");
-				if (!attrs)
-					continue;
-				BaseContainer phys = attrs.GetObject("ItemPhysAttributes");
-				if (phys)
-				{
-					float v;
-					if (phys.Get("ItemVolume", v) && v >= 0)
-						return v;
-				}
-			}
-		}
-		return -1.0;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected string DisplayNameFor(map<string, ref array<BaseContainer>> comps, string filePath)
-	{
-		foreach (string cls, array<BaseContainer> bucket : comps)
-		{
-			if (!cls.EndsWith("InventoryItemComponent"))
-				continue;
-			foreach (BaseContainer inv : bucket)
-			{
-				BaseContainer attrs = inv.GetObject("Attributes");
-				if (!attrs)
-					continue;
-				BaseContainer disp = attrs.GetObject("ItemDisplayName");
-				if (!disp)
-					continue;
-				string n;
-				if (disp.Get("Name", n) && !n.IsEmpty() && !n.StartsWith("#") && !n.StartsWith("AR-"))
-					return n;
-			}
-		}
-
-		array<string> uiHolders = {"WeaponComponent", "MagazineComponent"};
-		foreach (string holder : uiHolders)
-		{
-			array<BaseContainer> bucket2 = comps.Get(holder);
-			if (!bucket2)
-				continue;
-			foreach (BaseContainer c : bucket2)
-			{
-				BaseContainer ui = c.GetObject("UIInfo");
-				if (!ui)
-					continue;
-				string n2;
-				if (ui.Get("Name", n2) && !n2.IsEmpty() && !n2.StartsWith("#") && !n2.StartsWith("AR-"))
-					return n2;
-			}
-		}
-
-		return HumanizeStem(filePath);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected string HumanizeStem(string filePath)
-	{
-		string stem = filePath;
-		int slash = stem.LastIndexOf("/");
-		if (slash >= 0)
-			stem = stem.Substring(slash + 1, stem.Length() - slash - 1);
-		if (stem.EndsWith(".et"))
-			stem = stem.Substring(0, stem.Length() - 3);
-
-		// Optics specific names
-		if (stem == "Optic_4x20" || stem == "Optic_4x20_base")
-			return "Colt 4x20 Scope";
-		if (stem.StartsWith("Optic_4x20_"))
-			return "Colt 4x20 Scope (" + HumanizeStem(stem.Substring(11, stem.Length() - 11)) + ")";
-		if (stem == "Collim_AP2k" || stem == "Collim_AP2k_base")
-			return "Aimpoint 2000 (AP2k)";
-		if (stem.StartsWith("Collim_AP2k_"))
-			return "Aimpoint 2000 (" + HumanizeStem(stem.Substring(12, stem.Length() - 12)) + ")";
-
-		// Underbarrel
-		if (stem == "UGL_M203_long" || stem == "UGL_M203_base")
-			return "M203 40mm Grenade Launcher";
-		if (stem.StartsWith("UGL_M203_"))
-			return "M203 40mm (" + HumanizeStem(stem.Substring(9, stem.Length() - 9)) + ")";
-
-		// Magazines
-		if (stem.StartsWith("Magazine_556x45_STANAG_30rnd_"))
-		{
-			string variant = stem.Substring(30, stem.Length() - 30);
-			variant.Replace("_", " ");
-			return "5.56x45mm STANAG 30-round (" + variant + ")";
-		}
-
-		if (stem.StartsWith("Rifle_"))
-			stem = stem.Substring(6, stem.Length() - 6);
-		else if (stem.StartsWith("Magazine_"))
-			stem = stem.Substring(9, stem.Length() - 9);
-		else if (stem.StartsWith("Optic_"))
-			stem = stem.Substring(6, stem.Length() - 6);
-		else if (stem.StartsWith("Collim_"))
-			stem = stem.Substring(7, stem.Length() - 7);
-
-		stem.Replace("_", " ");
-		stem.Trim();
-		return stem;
 	}
 
 	//------------------------------------------------------------------------------------------------
