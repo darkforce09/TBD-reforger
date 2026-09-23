@@ -75,9 +75,26 @@ pub fn remove(c: &mut Corpus, id: &str, force: bool, now_utc: &str) -> Result<Op
     commit(c, post, changed, deleted, BTreeSet::new())
 }
 
+/// The order [`reorder`] gives a ticket anchored after `anchor_order`: the next integer.
+fn order_after(anchor_order: i64) -> i64 {
+    anchor_order + 1
+}
+
+/// The order that places a ticket after every ordered ticket in `tickets`, parents and children
+/// alike: the value [`reorder`] mints when anchored after the highest-ordered ticket. `ticket
+/// check` reads an order of 0 as absent, so the anchor floors at 0 and a corpus without a
+/// positive order yields 1.
+pub(super) fn append_order(tickets: &BTreeMap<String, Ticket>) -> i64 {
+    let highest = tickets
+        .values()
+        .filter_map(|t| t.status().order())
+        .fold(0, i64::max);
+    order_after(highest)
+}
+
 /// `cmd_reorder` semantics: the anchor must exist AND carry an order (both failure
-/// modes print the same string), new order = anchor + 1, and an `idea` ticket
-/// flips to `queued` — every other status keeps its variant and only moves its order.
+/// modes print the same string), the new order is [`order_after`] the anchor's, and an `idea`
+/// ticket flips to `queued` — every other status keeps its variant and only moves its order.
 /// The one sanctioned divergence: a resulting duplicate LIVE order refuses at the
 /// post-image gate instead of landing red state on disk (the wedge that motivated
 /// post-image validation — `validate_registry` reds duplicate live orders and every
@@ -90,7 +107,7 @@ pub fn reorder(c: &mut Corpus, id: &str, after: &str, now_utc: &str) -> Result<O
         .get(after)
         .and_then(|a| a.status().order())
         .ok_or_else(|| format!("Unknown anchor ticket: {after}"))?;
-    let new_order = anchor_order + 1;
+    let new_order = order_after(anchor_order);
     let was_idea = matches!(t.status(), Status::Idea);
     let new_status = match t.status().clone() {
         Status::Idea => Status::Queued { order: new_order },

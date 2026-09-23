@@ -112,6 +112,23 @@ pub(super) fn validate_post_image(
             ));
         }
     }
+    // Order rule: a changed parent ticket whose status is not idea carries a nonzero order —
+    // the rule `ticket check` applies to every parent row, reading an order of 0 as absent.
+    // Children stay exempt, as the check's parents-only walk leaves them. A write that broke
+    // this rule would red the check, and every mutator's preflight would then refuse.
+    for id in changed {
+        if let Some(t) = post.get(id)
+            && crate::store::is_parent_id(id)
+        {
+            let status = t.status();
+            if status.name() != StatusName::Idea && status.order().is_none_or(|n| n == 0) {
+                return Err(format!(
+                    "post-image {id}: order required for status {} — ticket check reds an order-less parent; `ticket reorder {id} <anchor>` mints one",
+                    status.name().as_str()
+                ));
+            }
+        }
+    }
     // Structural children rules.
     for (pid, t) in post {
         if let Ticket::Program(p) = t {

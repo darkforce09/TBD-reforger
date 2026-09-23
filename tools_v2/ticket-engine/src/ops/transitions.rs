@@ -19,10 +19,30 @@ pub(super) fn commit(
     })
 }
 
-/// Build the typed [`Status`] a transition to `name` must carry, sourcing every datum
-/// from the ticket itself — and refusing, up front and by name, anything the ticket
-/// lacks (or forbids). This is where the mid-save wedge class of the Value path dies.
-pub(super) fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Status, String> {
+/// The order a ticket carries into `shipped`, `deferred` or `cancelled`: its own order when it has
+/// one. An order-less parent ticket gets the [`append_order`] of `tickets`, because `ticket check`
+/// requires an order on every parent whose status is not `idea`, and in these statuses the order
+/// carries no dispatch meaning (the wave packer and `queue.json` read live tickets only). An
+/// order-less child stays order-less: the check walks parent tickets only.
+fn order_for_non_live_status(tickets: &BTreeMap<String, Ticket>, t: &Ticket) -> Option<i64> {
+    t.status()
+        .order()
+        .or_else(|| crate::store::is_parent_id(t.id()).then(|| append_order(tickets)))
+}
+
+/// Build the typed [`Status`] a transition to `name` must carry, refusing up front and by name
+/// anything the ticket lacks or forbids, so no refusal lands half-way through a save. Order
+/// follows `ticket check`, which requires one on every parent ticket whose status is not `idea`:
+/// - `queued`, `ready`, `running` and `review` refuse a ticket without an order: there the order
+///   is dispatch priority, chosen deliberately with `ticket reorder`;
+/// - `shipped`, `deferred` and `cancelled` take [`order_for_non_live_status`], which mints the
+///   append order for an order-less parent;
+/// - `idea` refuses a ticket that carries an order, since the idea status has none.
+pub(super) fn status_for_transition(
+    tickets: &BTreeMap<String, Ticket>,
+    t: &Ticket,
+    name: StatusName,
+) -> Result<Status, String> {
     let id = t.id();
     let cur = t.status();
     match name {
@@ -74,18 +94,24 @@ pub(super) fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Stat
         }
         StatusName::Shipped => Ok(Status::Shipped {
             shipped_at: current_shipped_at(t),
-            order: cur.order(),
+            order: order_for_non_live_status(tickets, t),
         }),
-        StatusName::Deferred => Ok(Status::Deferred { order: cur.order() }),
-        StatusName::Cancelled => Ok(Status::Cancelled { order: cur.order() }),
+        StatusName::Deferred => Ok(Status::Deferred {
+            order: order_for_non_live_status(tickets, t),
+        }),
+        StatusName::Cancelled => Ok(Status::Cancelled {
+            order: order_for_non_live_status(tickets, t),
+        }),
     }
 }
 
 /// `cmd_set_status` semantics: trim, refuse empty, refuse a non-enum value, write the
 /// status; `cancelled` stamps `completed_at` (the ONLY set-status target that stamps —
 /// `ship`/`done` own the shipped stamp). Deliberately does
-/// NOT clear `active` (that is `ship`'s job) and does NOT touch order fields beyond
-/// what the target status can carry.
+/// NOT clear `active` (that is `ship`'s job). The ticket keeps its order; the one order this
+/// verb mints is the append order an order-less parent takes into `shipped`, `deferred` or
+/// `cancelled` ([`status_for_transition`]), so no set-status leaves `ticket check` red for lack
+/// of an order.
 pub fn set_status(
     c: &mut Corpus,
     id: &str,
@@ -107,7 +133,7 @@ pub fn set_status(
     };
     let pre = c.tickets.get(id).ok_or_else(|| unknown(id))?;
     let was_live = pre.status().name().is_live();
-    let new_status = status_for_transition(pre, name)?;
+    let new_status = status_for_transition(&c.tickets, pre, name)?;
     let mut post = c.tickets.clone();
     let t = post.get_mut(id).expect("looked up above");
     set_ticket_status(t, new_status);
@@ -123,7 +149,8 @@ pub fn set_status(
 }
 
 /// `cmd_ship` semantics: status→shipped preserving the existing `shipped_at` value and
-/// order (ship never invents the SHA — that stays hand-edited), stamp `completed_at`,
+/// order (an order-less parent takes the append order through [`order_for_non_live_status`];
+/// ship never invents the SHA — that stays hand-edited), stamp `completed_at`,
 /// clear the ticket's own `active`. NOW resolves child ids (the full-corpus map is the
 /// a dotted child id resolves here), and — the invariant —
 /// clears any program whose `active` still names the shipped ticket; that parent
@@ -180,12 +207,12 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
             ));
         }
     }
+    let order = order_for_non_live_status(&c.tickets, t);
     let mut post = c.tickets.clone();
     let mut changed = BTreeSet::from([id.to_string()]);
     {
         let t = post.get_mut(id).expect("checked above");
         let shipped_at = current_shipped_at(t);
-        let order = t.status().order();
         set_ticket_status(t, Status::Shipped { shipped_at, order });
         set_completed_at(t, Some(now_utc.to_string()));
         if let Ticket::Program(p) = t {
