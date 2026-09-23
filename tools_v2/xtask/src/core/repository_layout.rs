@@ -59,21 +59,6 @@ pub mod documentation {
     /// can report which wave is being packed without being told.
     pub const FACTORY_PACK_WAVE: &str = "docs/platform/factory_pack_wave";
 
-    /// Specifications the schema checks read: the mission-creator architecture set.
-    pub const SPECIFICATION_DOCS_DIR: &str = "docs/specs/Mission_Creator_Architecture";
-
-    /// The frontend roadmap, whose slice headers must agree with the registry.
-    pub const FRONTEND_ROADMAP: &str = "docs/website/frontend/ROADMAP.md";
-
-    /// The frontend document index, whose entries must resolve.
-    pub const FRONTEND_INDEX: &str = "docs/website/frontend/INDEX.md";
-
-    /// The mission editor's surface specification.
-    pub const MISSION_EDITOR_SURFACE: &str = "docs/website/frontend/pages/mission-editor.md";
-
-    /// The starting instructions an agent working on the game mod reads first.
-    pub const MOD_AGENT_START: &str = "docs/mod/CLAUDE-CODE-START.md";
-
     /// Where documentation belongs, named by the refusal that fires when markdown is committed
     /// inside an application or asset tree instead.
     pub const LAYOUT_TARGET_DIR: &str = "docs/website/";

@@ -15,8 +15,7 @@ use crate::verifications::language_bans::python_scripts::verify_no_python;
 use crate::verifications::language_bans::shell_scripts::verify_no_shell;
 use crate::verifications::map_assets::map_object_golden;
 use crate::verifications::schemas::checks::{
-    citations, map_glyphs, map_object_enums, n6_sentence, n10_tile_budget,
-    specification_consistency, type_inventory, validate_all,
+    citations, map_glyphs, map_object_enums, type_inventory, validate_all,
 };
 use verification_dispatch::{
     run_ci_schema_parity, run_engine_layers, run_height_labels, run_mission_rest_size_limits,
@@ -70,7 +69,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "schema-validate",
-        help: "Validate golden missions + map-object contracts (enums + glyphs + spec consistency) + height labels",
+        help: "Validate golden missions + map-object contracts (enums + glyphs + type inventory) + height labels",
         group: "schema",
         lane: Lane::Ci,
         steps: &[
@@ -88,13 +87,6 @@ pub static TASKS: &[Task] = &[
                 map_object_enums
             ),
             xt!("cargo xtask schema type-inventory", false, type_inventory),
-            xt!(
-                "cargo xtask schema specification-consistency",
-                false,
-                specification_consistency
-            ),
-            xt!("cargo xtask schema n6", false, n6_sentence),
-            xt!("cargo xtask schema n10", false, n10_tile_budget),
         ],
     },
     Task {

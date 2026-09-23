@@ -151,10 +151,10 @@ pub fn set_status(
 /// `cmd_ship` semantics: status→shipped preserving the existing `shipped_at` value and
 /// order (an order-less parent takes the append order through [`order_for_non_live_status`];
 /// ship never invents the SHA — that stays hand-edited), stamp `completed_at`,
-/// clear the ticket's own `active`. NOW resolves child ids (the full-corpus map is the
-/// a dotted child id resolves here), and — the invariant —
-/// clears any program whose `active` still names the shipped ticket; that parent
-/// counts as changed.
+/// clear the ticket's own `active`. `id` may be a dotted child id as well as a parent id:
+/// the lookup runs against `c.tickets`, which holds every ticket on disk. And — the
+/// invariant — ship clears any program whose `active` still names the shipped ticket; that
+/// program counts as changed.
 ///
 /// **The ship-gate lifecycle** (spec §The gate, §stamp-sha closes the loop).
 /// A shipped ticket must end with `created_at` + `completed_at` + a SHA-shaped

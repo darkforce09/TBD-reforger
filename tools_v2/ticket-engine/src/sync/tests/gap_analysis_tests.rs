@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 fn no_pins() -> CorpusPins {
     CorpusPins {
         game_mod_programme_ticket: String::new(),
-        map_terrain_programme_ticket: String::new(),
         never_minted: vec![],
         gap_implementations: BTreeMap::new(),
     }

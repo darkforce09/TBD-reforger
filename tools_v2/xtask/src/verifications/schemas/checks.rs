@@ -1,7 +1,6 @@
-//! The text and JSON schema gates: contract citations, specification consistency, sentence and
-//! tile-budget limits, map-object enums, type inventory, terrain manifest, and ORBAT slot
-//! flattening. Each gate's acceptance contract is its verdict set plus its exit code; stdout
-//! formatting carries no contract.
+//! The text and JSON schema gates: contract citations, map-object enums, type inventory, terrain
+//! manifest, and ORBAT slot flattening. Each gate's acceptance contract is its verdict set plus
+//! its exit code; stdout formatting carries no contract.
 //!
 //! Two gate slots are retired and print that they are, so the missing surface stays visible
 //! rather than looking like a silent pass:
@@ -68,8 +67,6 @@ struct CitationScan {
 #[path = "../../tests/citation_scope_tests.rs"]
 mod citation_scope_tests;
 
-/* ─────────────────────────── n6 / n10 ─────────────────────────── */
-
 /* ─────────────────────────── map-object enums ─────────────────────────── */
 
 /* ─────────────────────────── type inventory (I1–I7) ─────────────────────────── */
@@ -111,20 +108,6 @@ const INSTANCE_KINDS: [&str; 9] = [
 #[cfg(test)]
 #[path = "tests/checks/instance_kind_lockstep_tests.rs"]
 mod instance_kind_lockstep_tests;
-
-/* ─────────────────────────── specification consistency (12 gates) ─────────────────────────── */
-
-/// The frozen set of `make <target>` names the specification corpus may still cite.
-///
-/// No Makefile exists, so every `make` name in a specification is an instruction nobody can run.
-/// These four are archival citations inside otherwise-live specifications and are tolerated
-/// rather than rewritten. The list may only SHRINK: anything not on it fails the gate.
-const ARCHIVAL_MAKE_TARGETS: &[&str] = &[
-    "map-assets-link",
-    "verify-wgpu-gpu",
-    "ci-local-frontend",
-    "verify-migration",
-];
 
 /* ─────────────────────────── flatten-orbat-slots ─────────────────────────── */
 
@@ -287,18 +270,11 @@ mod mission_validation;
 mod contract_citations;
 pub use contract_citations::citations;
 
-mod content_budgets;
-pub use content_budgets::n6_sentence;
-pub use content_budgets::n10_tile_budget;
-
 mod object_enumerations;
 pub use object_enumerations::map_object_enums;
 
 mod object_type_inventory;
 pub use object_type_inventory::type_inventory;
-
-mod specification_consistency;
-pub use specification_consistency::specification_consistency;
 
 mod kit_registry_references;
 use kit_registry_references::dangling_kits;
@@ -318,7 +294,6 @@ pub use map_glyphs::map_glyphs;
 mod read_json;
 use read_json::read_json;
 use read_json::schema_root;
-use read_json::spec_dir;
 use read_json::verdict;
 
 use wire_field_readers::UNREAD_WIRE_FIELDS;

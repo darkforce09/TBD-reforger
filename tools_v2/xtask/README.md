@@ -9,7 +9,7 @@
 - `src/commands/platform/` owns agent execution, worktree orchestration, receipts, and platform-wave execution. `src/commands/wave/` delegates lock compilation and validation to `ticket-engine`; it is separate from the platform-wave lifecycle.
 - `src/core/` contains repository-root discovery, host execution, Cargo target-directory handling, and shared test-environment utilities.
 - `src/verifications/` groups checks by architecture, licensing, prohibited languages, mod scripts, deployment, registries, database seeds, CI, schemas, and map assets. Map-asset checks delegate engine work to `developer-tools`.
-- `src/verifications/schemas/` separates contract citations, content budgets, object enums and type inventory, specification consistency, kit references, wire-field readers, glyphs, and schema validation.
+- `src/verifications/schemas/` separates contract citations, object enums and type inventory, kit references, wire-field readers, glyphs, and schema validation.
 
 Each domain verification is spelled after the module that implements it: the module file name with underscores written as hyphens, and the entry function is `verify_` plus that module name. The language bans (`no-python`, `no-shell`, `no-node`, `ci-shell`) and `file-length` keep the names their CI jobs use, and several of them share one module because they walk one table.
 

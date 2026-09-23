@@ -23,7 +23,7 @@
 //! DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under contracts_v2 changed" would examine
 //! nothing on a diff of zero contract files, and it would be wrong on the facts anyway: these
 //! gates read `tools_v2/xtask/src/verifications/schemas/checks.rs`, `contracts_v2/rules/`,
-//! `apps/mod/tbd-framework/` and `docs/specs/**`. Nine sub-gates cost ~1.4 s warm.
+//! `apps/mod/tbd-framework/` and `assets_v2/`. The whole set costs ~5 s on a warm debug build.
 
 use std::path::{Path, PathBuf};
 
@@ -40,9 +40,6 @@ const VALIDATE_GATES: &[&str] = &[
     "height-labels",
     "map-object-enums",
     "type-inventory",
-    "specification-consistency",
-    "n6",
-    "n10",
 ];
 const EXTRA_GATES: &[&str] = &["citations"];
 
@@ -73,7 +70,7 @@ pub fn task_validate_gates() -> Vec<String> {
 
 pub fn gate_schema(ctx: &Ctx) -> i32 {
     // DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently: when
-    // `schema-validate` grows a tenth sub-gate and nobody adds it here, the wave gate goes on
+    // `schema-validate` grows a new sub-gate and nobody adds it here, the wave gate goes on
     // printing PASS over whatever that gate checks. Diff the SET against the executable task table
     // every run and refuse when they disagree — including PARTIAL reads. Refusing only an EMPTY
     // read is not enough: a truncated list still passes a one-way ⊆ check while the task runs
@@ -100,7 +97,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
         wprintln!("        list-gates: {}", mk_sorted.join(" "));
         wprintln!("        VALIDATE_GATES: {}", want_sorted.join(" "));
         wprintln!(
-            "        A narrowed read or a tenth sub-gate would keep printing PASS over unchecked"
+            "        A narrowed read or an unlisted sub-gate would keep printing PASS over unchecked"
         );
         wprintln!("        contracts. Fail closed: sync the list, or fix the task row.");
         return 1;
@@ -195,9 +192,9 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
         }
     }
 
-    // Build once and separately, so a compile error reads as a compile error rather than as nine
-    // identical schema failures. The step runner shows the tail, and a broken xtask fails all nine
-    // otherwise.
+    // Build once and separately, so a compile error reads as a compile error rather than as one
+    // identical schema failure per sub-gate. The step runner shows the tail, and a broken xtask
+    // fails every sub-gate otherwise.
     let build_argv = ctx.host.hostrun_argv(&host::v(&[
         "env",
         &format!("CARGO_TARGET_DIR={}", ctx.gate_schema_target),

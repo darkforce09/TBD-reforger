@@ -9,10 +9,6 @@ pub(super) fn schema_root(root: &Path) -> PathBuf {
     developer_tools::repository_layout::contracts_dir(root)
 }
 
-pub(super) fn spec_dir(root: &Path) -> PathBuf {
-    root.join(crate::core::repository_layout::documentation::SPECIFICATION_DOCS_DIR)
-}
-
 /// Print a FAIL header + errors and return exit code 1; or the OK line and 0.
 pub(super) fn verdict(name: &str, ok_line: &str, errors: &[String]) -> u8 {
     if errors.is_empty() {

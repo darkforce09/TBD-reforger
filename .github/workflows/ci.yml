@@ -166,7 +166,7 @@ jobs:
   # `xtask ci verify-citations`. The schema-validate sub-gate SET = the schema-validate step of
   # `cargo xtask platform wave gate`, same order as the task row:
   #   validate map-object-golden map-glyphs height-labels map-object-enums
-  #   type-inventory specification-consistency n6 n10  (+ citations)
+  #   type-inventory  (+ citations)
   # `schema validate` + `citations` alone is a hole: map-object-enums goes RED while validate
   # stays GREEN. Do not narrow back to validate-only.
   # `cargo xtask verify ci-schema-parity` asserts this job's `run:` stays

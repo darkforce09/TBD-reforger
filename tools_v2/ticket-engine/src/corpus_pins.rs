@@ -23,8 +23,6 @@ use crate::repository::CORPUS_PINS;
 pub struct CorpusPins {
     /// The programme ticket whose dotted children are the game-mod slices.
     pub game_mod_programme_ticket: String,
-    /// The programme ticket that owns the map-and-terrain specification set.
-    pub map_terrain_programme_ticket: String,
     /// Ids no ticket row may carry. `ticket check` reds when the registry holds one.
     pub never_minted: Vec<String>,
     /// Editor gap row id → the ticket that implements it, consulted only when no ticket claims

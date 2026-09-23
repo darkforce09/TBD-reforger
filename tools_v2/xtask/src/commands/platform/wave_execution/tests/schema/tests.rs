@@ -26,12 +26,12 @@ fn empty_input_matches_too() {
     assert_eq!(cksum(b""), format!("{}{}", 4294967295u32, 0));
 }
 
-/// An awk that reads 3 of 9 leaves the one-way subset check green over the hole, so the
-/// set must match EXACTLY — an empty or partial read is a hard fail in `gate_schema`.
+/// A read that returns only some of the names leaves a one-way subset check green over the
+/// hole, so the set must match EXACTLY — an empty or partial read is a hard fail in
+/// `gate_schema`.
 ///
-/// Rebased this off the Makefile recipe onto the task table. Note there is no
-/// `if …exists()` guard any more: the old one made the test vacuous the moment the file it
-/// named went away, which is the same defect in miniature that this ticket exists to fix.
+/// Both sides come from code: the task table and the pinned constant. No `if …exists()` guard
+/// skips the comparison, because a guard makes the test vacuous the moment its subject goes away.
 #[test]
 fn the_task_table_and_the_pinned_set_agree() {
     let mut got = task_validate_gates();

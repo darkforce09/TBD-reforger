@@ -48,10 +48,11 @@ pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) 
         )?;
     }
 
-    // Typed op: status→shipped preserving shipped_at + order (the SHA stays
-    // hand-edited: completed_at rides the same mutation, `shipped_at` stays a bare
-    // SHA), clear `active` on the ticket AND on any program whose `active` names it. The op's
-    // post-image validation is a second net behind the preflight above, not a replacement.
+    // Typed op: status→shipped preserving shipped_at and any existing order, minting the
+    // append order for an order-less parent (the SHA stays hand-edited: completed_at rides
+    // the same mutation, `shipped_at` stays a bare SHA), clear `active` on the ticket AND on
+    // any program whose `active` names it. The op's post-image validation is a second net
+    // behind the preflight above, not a replacement.
     let outcome =
         ops::ship(&mut corpus, id, &crate::now_utc_rfc3339()).map_err(anyhow::Error::msg)?;
     corpus

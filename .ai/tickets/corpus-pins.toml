@@ -8,11 +8,6 @@
 # another programme.
 game_mod_programme_ticket = "T-181"
 
-# The programme ticket that owns the map-and-terrain specification set. Its lowercase,
-# hyphen-free spelling prefixes those specification file names, and `cargo xtask schema
-# specification-consistency` compares the hub header against this programme's active slice.
-map_terrain_programme_ticket = "T-090"
-
 # Ids no ticket may carry: documents written before the registry existed cite these numbers as
 # something other than a ticket, so a ticket row claiming one is a collision, not a ticket.
 never_minted = [

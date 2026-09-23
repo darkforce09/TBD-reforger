@@ -11,17 +11,13 @@ fn committed_pins_load_with_both_tables_populated() {
         !pins.gap_implementations.is_empty(),
         "gap_implementations is empty"
     );
-    for programme in [
-        &pins.game_mod_programme_ticket,
-        &pins.map_terrain_programme_ticket,
-    ] {
-        assert!(
-            root.join(crate::repository::TICKETS_DIR)
-                .join(format!("{programme}.toml"))
-                .is_file(),
-            "{programme} is pinned as a programme and has no ticket file"
-        );
-    }
+    let programme = &pins.game_mod_programme_ticket;
+    assert!(
+        root.join(crate::repository::TICKETS_DIR)
+            .join(format!("{programme}.toml"))
+            .is_file(),
+        "{programme} is pinned as a programme and has no ticket file"
+    );
     for id in &pins.never_minted {
         assert!(
             !root
@@ -37,7 +33,7 @@ fn committed_pins_load_with_both_tables_populated() {
 #[test]
 fn lookups_answer_by_exact_id() {
     let pins: CorpusPins = toml::from_str(
-        "game_mod_programme_ticket = \"X-100\"\nmap_terrain_programme_ticket = \"X-200\"\n\
+        "game_mod_programme_ticket = \"X-100\"\n\
          never_minted = [\"X-001\"]\n\
          [gap_implementations]\n\"GAP-001\" = \"X-002\"\n",
     )
@@ -64,7 +60,7 @@ fn a_missing_file_is_an_error_naming_the_path() {
 #[test]
 fn an_unknown_key_is_an_error() {
     let error = toml::from_str::<CorpusPins>(
-        "game_mod_programme_ticket = \"X-100\"\nmap_terrain_programme_ticket = \"X-200\"\n\
+        "game_mod_programme_ticket = \"X-100\"\n\
          never_minted = []\nstray = 1\n\
          [gap_implementations]\n",
     )

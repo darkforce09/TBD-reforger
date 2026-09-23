@@ -2,9 +2,9 @@ use super::*;
 use clap::CommandFactory;
 
 /// [`LANE_COMMANDS`] is a second copy of the clap enum's names, and it exists only because
-/// The schema gate needs the NAMES without a parse. Diff the two so the copy cannot
-/// rot — a new `DbCmd` variant that never reaches the list would make a correct spec citation
-/// read as a typo.
+/// `cargo xtask help` prints the NAMES as the database lane's index without a parse. Diff the
+/// two so the copy cannot rot — a new `DbCmd` variant that never reaches the list would be
+/// missing from that index.
 #[test]
 fn lane_commands_match_the_clap_enum() {
     #[derive(Parser)]

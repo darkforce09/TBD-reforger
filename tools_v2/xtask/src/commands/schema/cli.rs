@@ -15,13 +15,6 @@ pub(crate) enum SchemaCmd {
     ValidateFile { target: String },
     /// @contract citation integrity
     Citations,
-    /// Specification-consistency gates 1-12 over the Mission Creator specification corpus
-    #[command(name = "specification-consistency")]
-    SpecificationConsistency,
-    /// N6 building-geometry sentence single-source
-    N6,
-    /// N10 tile-budget single-source
-    N10,
     /// Semantic golden gates S2-S9 + S11-S15
     #[command(name = "map-object-golden")]
     MapObjectGolden,

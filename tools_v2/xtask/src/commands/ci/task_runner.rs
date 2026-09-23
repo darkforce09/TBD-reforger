@@ -111,7 +111,8 @@ pub enum Step {
     /// `cmd_lines_are_shell_free` pins that.
     Cmd { line: &'static str, silent: bool },
     /// An **in-process** xtask leaf: the same function `cargo xtask <group> <cmd>` dispatches to.
-    /// Nine subprocesses become nine calls, and the sub-gate list cannot drift from the CLI's.
+    /// Each leaf runs as a function call, not a `cargo run` subprocess, and because the call
+    /// targets the CLI's own function, a composite's sub-gate list cannot drift from the CLI's.
     Xtask {
         echo: &'static str,
         silent: bool,

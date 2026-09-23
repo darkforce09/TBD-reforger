@@ -14,11 +14,6 @@ pub(crate) fn run(cmd: SchemaCmd) -> Result<u8> {
                 crate::verifications::schemas::checks::validate_file(&target)?
             }
             SchemaCmd::Citations => crate::verifications::schemas::checks::citations()?,
-            SchemaCmd::SpecificationConsistency => {
-                crate::verifications::schemas::checks::specification_consistency()?
-            }
-            SchemaCmd::N6 => crate::verifications::schemas::checks::n6_sentence()?,
-            SchemaCmd::N10 => crate::verifications::schemas::checks::n10_tile_budget()?,
             SchemaCmd::MapObjectGolden => verifications::map_assets::map_object_golden()?,
             SchemaCmd::HeightLabels { terrain } => {
                 verifications::map_assets::height_labels(&terrain)?

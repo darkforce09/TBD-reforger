@@ -85,7 +85,7 @@ pub(crate) enum TopCmd {
     /// Print a top-level ticket-ledger field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
-    /// Schema and specification gates over contracts_v2
+    /// Contract codegen, contract and map-asset gates, mission-file tools
     Schema {
         #[command(subcommand)]
         cmd: SchemaCmd,

@@ -134,9 +134,8 @@ pub(crate) const SEEDS: &[&str] = &[
 /// Every `cargo xtask db <cmd>` spelling, in [`DbCmd`] order.
 ///
 /// A second list beside the clap enum, deliberately: clap owns the PARSE, this owns the NAMES for
-/// callers that have to resolve a citation without one — `schema specification-consistency`
-/// checks that a spec's `cargo xtask db …` reference names something real.
-/// `lane_commands_match_the_clap_enum` diffs the two, so the copy cannot rot silently.
+/// callers that need them without a parse — `cargo xtask help` prints them as the database lane's
+/// index. `lane_commands_match_the_clap_enum` diffs the two, so the copy cannot rot silently.
 pub(crate) const LANE_COMMANDS: &[&str] = &[
     "up",
     "down",
