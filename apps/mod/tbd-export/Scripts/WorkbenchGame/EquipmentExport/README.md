@@ -7,14 +7,19 @@ Workbench extractors that read the loaded Reforger addon set and write the TBD a
 
 ## Architecture Overview
 
-This directory holds three things: the shared infrastructure under `Core/`, the unfiltered equipment
-discovery pass, and the `WeaponExport/` subtree where the finished per-domain extractors live.
+This directory holds five things: the shared infrastructure under `Core/`, the unfiltered equipment
+discovery pass, the `WeaponExport/` subtree where the finished per-domain weapon extractors live,
+the `WearableExport/` subtree where universal clothing, armor, load-bearing gear, and wearables live,
+and the `ItemExport/` subtree where universal inventory items, medical, radios, navigation, and tools live.
 
 The discovery pass is the broad, shallow sweep — it walks every addon, rejects the world-building
 prefab trees outright, and classifies what remains by prefix (`Vest_`, `Uniform_`, `Helmet_`) to
 produce a census. The weapon subtree is the narrow, deep counterpart: twelve domains that each read
-one class of hardware down to its declared components. Gear extraction beyond the census — vests,
-helmets, uniforms, gadgets — is not built yet and will sit alongside `WeaponExport/` when it is.
+one class of hardware down to its declared components. The wearable subtree extracts complete
+wearables data across ten categories (headgear, face cover, eyewear, jackets, pants, boots, gloves,
+armored vests, vests and carry rigs, backpacks, and accessories). The item subtree extracts universal
+inventory items across eleven categories (medical, radios, navigation, binoculars, flashlights, tools,
+explosives, throwables, weapon parts, survival, and intel/misc).
 
 ```text
 EquipmentExport/
@@ -22,7 +27,9 @@ EquipmentExport/
 ├── TBD_EquipmentScanItem.c        <-- Discovery: one discovered prefab record
 ├── TBD_EquipmentScanner.c         <-- Discovery: unfiltered sweep and prefix classification
 ├── TBD_EquipmentExportPlugin.c    <-- Discovery: Workbench entry point (attribute commented out)
-└── WeaponExport/                  <-- Twelve per-domain weapon extractors
+├── WeaponExport/                  <-- Twelve per-domain weapon extractors
+├── WearableExport/                <-- Universal clothing, armor, rig, and wearables extractor
+└── ItemExport/                    <-- Universal inventory item extractor across 11 categories
 ```
 
 ---
@@ -33,6 +40,8 @@ EquipmentExport/
 |---|---|---|
 | **`Core/`** | Everything more than one domain uses: the export destination, the prefab component-graph walk, and the readers for a prefab's names and resource references. See its own [README](Core/README.md). | `TBD_EquipmentExportPaths`, `TBD_EquipmentExportJson`, `TBD_EquipmentComponentGraph`, `TBD_EquipmentDisplayAttributes`, `TBD_EquipmentResourceNames` |
 | **`WeaponExport/`** | Twelve deep extractors, one per weapon domain: ammunition, attachments, bayonets, handguards, illuminators, M16, muzzles, optics, rifles, stocks, underbarrel devices, and the master arsenal. See its own [README](WeaponExport/README.md). | `TBD_WeaponScanner`, `TBD_AmmoScanner`, `TBD_OpticScanner`, … |
+| **`WearableExport/`** | Universal wearable extractor covering ten categories: headgear, face covers, eyewear, jackets, pants, boots, gloves, armored vests, tactical rigs, backpacks, and accessories. See its own [README](WearableExport/README.md). | `TBD_WearableScanner`, `TBD_WearableExtractor`, `TBD_WearableNaming`, `TBD_WearableModel`, `TBD_WearableExportPlugin` |
+| **`ItemExport/`** | Universal inventory item extractor covering eleven categories: medical, radios, navigation, binoculars, flashlights, tools, explosives, throwables, weapon parts, survival, and intel/misc. See its own [README](ItemExport/README.md). | `TBD_ItemScanner`, `TBD_ItemExtractor`, `TBD_ItemNaming`, `TBD_ItemModel`, `TBD_ItemExportPlugin` |
 
 ---
 

@@ -16,11 +16,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Optics & Sights"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Optics & Sights",
-	description: "Pure ground-truth export of all optics, scopes, collimators, and sights to $profile:TBD_Export/equipment/optics/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Optics & Sights",
+// 	description: "Pure ground-truth export of all optics, scopes, collimators, and sights to $profile:TBD_Export/equipment/optics/",
+// 	category: "TBD"
+// )]
 class TBD_OpticExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][OpticExport]";

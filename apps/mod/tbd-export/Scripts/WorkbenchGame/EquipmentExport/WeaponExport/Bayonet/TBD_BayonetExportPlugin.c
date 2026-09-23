@@ -14,11 +14,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Bayonets"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Bayonets",
-	description: "Pure ground-truth export of all bayonets to $profile:TBD_Export/equipment/bayonets/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Bayonets",
+// 	description: "Pure ground-truth export of all bayonets to $profile:TBD_Export/equipment/bayonets/",
+// 	category: "TBD"
+// )]
 class TBD_BayonetExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][BayonetExport]";

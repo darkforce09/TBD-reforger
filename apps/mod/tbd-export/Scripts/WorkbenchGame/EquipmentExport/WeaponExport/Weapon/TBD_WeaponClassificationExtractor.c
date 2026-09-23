@@ -59,6 +59,8 @@ class TBD_WeaponClassificationExtractor
 			else if (category == "machine_guns") weaponType = "MachineGun";
 			else if (category == "handguns") weaponType = "Handgun";
 			else if (category == "launchers") weaponType = "RocketLauncher";
+			else if (category == "flares") weaponType = "FlareLauncher";
+			else if (category == "heavy_weapons") weaponType = "HeavyMachineGun";
 			else if (category == "grenades") weaponType = "FragGrenade";
 			else if (category == "explosives") weaponType = "Mine";
 			else if (category == "underbarrel") weaponType = "GrenadeLauncher";
@@ -70,6 +72,8 @@ class TBD_WeaponClassificationExtractor
 		{
 			if (category == "handguns") slotType = "secondary";
 			else if (category == "launchers") slotType = "launcher";
+			else if (category == "flares") slotType = "item";
+			else if (category == "heavy_weapons") slotType = "csw";
 			else if (category == "grenades") slotType = "grenade";
 			else if (category == "explosives") slotType = "item";
 			else if (category == "underbarrel") slotType = "attachment";

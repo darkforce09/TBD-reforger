@@ -18,11 +18,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Tactical Lights & Pointers"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Tactical Lights & Pointers",
-	description: "Pure ground-truth export of all tactical weapon lights, IR illuminators, and laser aiming modules to $profile:TBD_Export/equipment/illuminators/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Tactical Lights & Pointers",
+// 	description: "Pure ground-truth export of all tactical weapon lights, IR illuminators, and laser aiming modules to $profile:TBD_Export/equipment/illuminators/",
+// 	category: "TBD"
+// )]
 class TBD_IlluminatorExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][IlluminatorExport]";

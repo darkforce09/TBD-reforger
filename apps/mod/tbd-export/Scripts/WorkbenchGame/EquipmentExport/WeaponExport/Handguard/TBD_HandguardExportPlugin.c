@@ -16,11 +16,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Handguards & Foregrips"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Handguards & Foregrips",
-	description: "Pure ground-truth export of all handguards & foregrips to $profile:TBD_Export/equipment/handguards/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Handguards & Foregrips",
+// 	description: "Pure ground-truth export of all handguards & foregrips to $profile:TBD_Export/equipment/handguards/",
+// 	category: "TBD"
+// )]
 class TBD_HandguardExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][HandguardExport]";

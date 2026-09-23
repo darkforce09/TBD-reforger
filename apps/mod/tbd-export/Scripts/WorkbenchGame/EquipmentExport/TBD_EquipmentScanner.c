@@ -186,11 +186,16 @@ class TBD_EquipmentScanner
 		}
 
 		// Non-carryable static vehicle weapon assemblies / mounts
+		bool isStaticWeapon = (rootClass == "Turret" || filePath.Contains("/Tripods/") || filePath.Contains("/Mortars/"));
+		bool isVehicleAssembly = (filePath.Contains("/VehParts/") || filePath.Contains("Prefabs/Vehicles/"));
 		bool hasInvItem = TBD_EquipmentComponentGraph.HasCompSuffix(comps, "InventoryItemComponent");
 		if (!hasInvItem && TBD_EquipmentComponentGraph.HasCompSuffix(comps, "CompartmentManagerComponent"))
 		{
-			m_iSkippedNonEquipment++;
-			return;
+			if (isVehicleAssembly || !isStaticWeapon)
+			{
+				m_iSkippedNonEquipment++;
+				return;
+			}
 		}
 
 		// 2. Detect equipment signals
@@ -200,9 +205,10 @@ class TBD_EquipmentScanner
 		bool hasGadget = HasCompInheritedFrom(comps, "SCR_GadgetComponent") || HasCompInheritedFrom(comps, "SCR_BinocularsComponent");
 		bool hasAttachmentAttr = HasAttachmentAttributes(comps);
 		bool isAmmoPath = filePath.Contains("/Ammo/");
+		bool hasStatic = isStaticWeapon || TBD_EquipmentComponentGraph.HasCompSuffix(comps, "TurretComponent");
 
 		// If no equipment signal, drop it (it's world clutter, a building, or a logic object)
-		if (!hasInvItem && !hasWeapon && !hasMagazine && !hasCloth && !hasGadget && !hasAttachmentAttr && !isAmmoPath)
+		if (!hasInvItem && !hasWeapon && !hasMagazine && !hasCloth && !hasGadget && !hasAttachmentAttr && !isAmmoPath && !hasStatic)
 		{
 			m_iSkippedNonEquipment++;
 			return;
@@ -264,7 +270,11 @@ class TBD_EquipmentScanner
 			item.m_aSignals.Insert("ammo");
 			m_iAmmoCount++;
 		}
-		if (hasInvItem && !hasWeapon && !hasMagazine && !hasCloth && !hasGadget && !hasAttachmentAttr && !isAmmoPath)
+		if (hasStatic)
+		{
+			item.m_aSignals.Insert("static_weapon");
+		}
+		if (hasInvItem && !hasWeapon && !hasMagazine && !hasCloth && !hasGadget && !hasAttachmentAttr && !isAmmoPath && !hasStatic)
 		{
 			item.m_aSignals.Insert("inventory_item");
 			m_iOtherInventoryCount++;

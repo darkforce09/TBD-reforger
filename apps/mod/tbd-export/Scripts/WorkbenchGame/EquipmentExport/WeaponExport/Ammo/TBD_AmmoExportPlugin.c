@@ -15,11 +15,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Ammunition & Magazines"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Ammunition & Magazines",
-	description: "Deep intrinsic export of all magazines, round capacities, tracer ratios, and projectile ballistics to $profile:TBD_Export/equipment/ammunition/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Ammunition & Magazines",
+// 	description: "Deep intrinsic export of all magazines, round capacities, tracer ratios, and projectile ballistics to $profile:TBD_Export/equipment/ammunition/",
+// 	category: "TBD"
+// )]
 class TBD_AmmoExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][AmmoExport]";

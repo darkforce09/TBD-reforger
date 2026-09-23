@@ -20,11 +20,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Weapon Attachments"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Weapon Attachments",
-	description: "Deep intrinsic export of all weapon attachments (muzzles, suppressors, bipods, grips, handguards, illuminators, bayonets, stocks, mounts, camouflage) to $profile:TBD_Export/equipment/attachments/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Weapon Attachments",
+// 	description: "Deep intrinsic export of all weapon attachments (muzzles, suppressors, bipods, grips, handguards, illuminators, bayonets, stocks, mounts, camouflage) to $profile:TBD_Export/equipment/attachments/",
+// 	category: "TBD"
+// )]
 class TBD_AttachmentExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][AttachmentExport]";

@@ -20,6 +20,8 @@ class TBD_WeaponScanner
 	protected ref array<ref TBD_WeaponInfo> m_aGrenades = {};
 	protected ref array<ref TBD_WeaponInfo> m_aExplosives = {};
 	protected ref array<ref TBD_WeaponInfo> m_aUnderbarrel = {};
+	protected ref array<ref TBD_WeaponInfo> m_aFlares = {};
+	protected ref array<ref TBD_WeaponInfo> m_aHeavyWeapons = {};
 	protected ref array<ref TBD_WeaponInfo> m_aAllWeapons = {};
 
 	protected ref set<string> m_SeenResourceNames = new set<string>();
@@ -49,12 +51,14 @@ class TBD_WeaponScanner
 		GameProject.GetLoadedAddons(guids);
 		array<string> extEt = { "et" };
 
-		// Scan order: Rifles, MachineGuns, Handguns, Launchers, Grenades, Explosives, Underbarrel
+		// Scan order: Rifles, MachineGuns, Handguns, Launchers, Flares, HeavyWeapons, Grenades, Explosives, Underbarrel
 		array<string> categories = {
 			"rifles",
 			"machine_guns",
 			"handguns",
 			"launchers",
+			"flares",
+			"heavy_weapons",
 			"grenades",
 			"explosives",
 			"underbarrel"
@@ -92,6 +96,8 @@ class TBD_WeaponScanner
 		if (category == "machine_guns") return "Prefabs/Weapons/MachineGuns";
 		if (category == "handguns") return "Prefabs/Weapons/Handguns";
 		if (category == "launchers") return "Prefabs/Weapons/Launchers";
+		if (category == "flares") return "Prefabs/Weapons/Flares";
+		if (category == "heavy_weapons") return "Prefabs/Weapons/HeavyWeapons";
 		if (category == "grenades") return "Prefabs/Weapons/Grenades";
 		if (category == "explosives") return "Prefabs/Weapons/Explosives";
 		if (category == "underbarrel") return "Prefabs/Weapons/Attachments/Underbarrel";
@@ -105,6 +111,8 @@ class TBD_WeaponScanner
 		if (category == "machine_guns") return m_aMachineGuns.Count();
 		if (category == "handguns") return m_aHandguns.Count();
 		if (category == "launchers") return m_aLaunchers.Count();
+		if (category == "flares") return m_aFlares.Count();
+		if (category == "heavy_weapons") return m_aHeavyWeapons.Count();
 		if (category == "grenades") return m_aGrenades.Count();
 		if (category == "explosives") return m_aExplosives.Count();
 		if (category == "underbarrel") return m_aUnderbarrel.Count();
@@ -118,6 +126,8 @@ class TBD_WeaponScanner
 		m_aMachineGuns.Clear();
 		m_aHandguns.Clear();
 		m_aLaunchers.Clear();
+		m_aFlares.Clear();
+		m_aHeavyWeapons.Clear();
 		m_aGrenades.Clear();
 		m_aExplosives.Clear();
 		m_aUnderbarrel.Clear();
@@ -225,6 +235,8 @@ class TBD_WeaponScanner
 		else if (category == "machine_guns") m_aMachineGuns.Insert(info);
 		else if (category == "handguns") m_aHandguns.Insert(info);
 		else if (category == "launchers") m_aLaunchers.Insert(info);
+		else if (category == "flares") m_aFlares.Insert(info);
+		else if (category == "heavy_weapons") m_aHeavyWeapons.Insert(info);
 		else if (category == "grenades") m_aGrenades.Insert(info);
 		else if (category == "explosives") m_aExplosives.Insert(info);
 		else if (category == "underbarrel") m_aUnderbarrel.Insert(info);
@@ -238,6 +250,8 @@ class TBD_WeaponScanner
 		WriteCategoryCatalog("machine_guns", m_aMachineGuns, destDir);
 		WriteCategoryCatalog("handguns", m_aHandguns, destDir);
 		WriteCategoryCatalog("launchers", m_aLaunchers, destDir);
+		WriteCategoryCatalog("flares", m_aFlares, destDir);
+		WriteCategoryCatalog("heavy_weapons", m_aHeavyWeapons, destDir);
 		WriteCategoryCatalog("grenades", m_aGrenades, destDir);
 		WriteCategoryCatalog("explosives", m_aExplosives, destDir);
 		WriteCategoryCatalog("underbarrel", m_aUnderbarrel, destDir);
@@ -344,6 +358,8 @@ class TBD_WeaponScanner
 			meta += "    \"machine_guns\": " + m_aMachineGuns.Count().ToString() + ",\n";
 			meta += "    \"handguns\": " + m_aHandguns.Count().ToString() + ",\n";
 			meta += "    \"launchers\": " + m_aLaunchers.Count().ToString() + ",\n";
+			meta += "    \"flares\": " + m_aFlares.Count().ToString() + ",\n";
+			meta += "    \"heavy_weapons\": " + m_aHeavyWeapons.Count().ToString() + ",\n";
 			meta += "    \"grenades\": " + m_aGrenades.Count().ToString() + ",\n";
 			meta += "    \"explosives\": " + m_aExplosives.Count().ToString() + ",\n";
 			meta += "    \"underbarrel\": " + m_aUnderbarrel.Count().ToString() + "\n";
@@ -353,7 +369,7 @@ class TBD_WeaponScanner
 			mf.Close();
 		}
 
-		Print(string.Format("[TBD][WeaponExport] Master weapons catalog written: %1 total items across 7 categories.", m_aAllWeapons.Count()), LogLevel.NORMAL);
+		Print(string.Format("[TBD][WeaponExport] Master weapons catalog written: %1 total items across 9 categories.", m_aAllWeapons.Count()), LogLevel.NORMAL);
 	}
 
 	//------------------------------------------------------------------------------------------------

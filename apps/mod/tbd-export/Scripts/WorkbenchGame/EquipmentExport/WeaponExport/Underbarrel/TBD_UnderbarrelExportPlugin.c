@@ -14,11 +14,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Underbarrel Devices"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Underbarrel Devices",
-	description: "Pure ground-truth export of all underbarrel devices and grenade launchers to $profile:TBD_Export/equipment/underbarrel/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Underbarrel Devices",
+// 	description: "Pure ground-truth export of all underbarrel devices and grenade launchers to $profile:TBD_Export/equipment/underbarrel/",
+// 	category: "TBD"
+// )]
 class TBD_UnderbarrelExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][UnderbarrelExport]";

@@ -15,11 +15,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Muzzle Devices"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Muzzle Devices",
-	description: "Pure ground-truth export of all muzzle devices, suppressors, and flash hiders to $profile:TBD_Export/equipment/muzzles/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Muzzle Devices",
+// 	description: "Pure ground-truth export of all muzzle devices, suppressors, and flash hiders to $profile:TBD_Export/equipment/muzzles/",
+// 	category: "TBD"
+// )]
 class TBD_MuzzleExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][MuzzleExport]";

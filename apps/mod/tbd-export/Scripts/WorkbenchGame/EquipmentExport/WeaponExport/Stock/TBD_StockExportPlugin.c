@@ -15,11 +15,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Buttstocks"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Buttstocks",
-	description: "Pure ground-truth export of all buttstocks to $profile:TBD_Export/equipment/stocks/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Buttstocks",
+// 	description: "Pure ground-truth export of all buttstocks to $profile:TBD_Export/equipment/stocks/",
+// 	category: "TBD"
+// )]
 class TBD_StockExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][StockExport]";

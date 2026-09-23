@@ -15,11 +15,11 @@
  * Menu: Workbench > Plugins > TBD > "Export All Weapons (Master Arsenal)"
  */
 
-[WorkbenchPluginAttribute(
-	name: "Export All Weapons (Master Arsenal)",
-	description: "Deep intrinsic export of all weapons (rifles, machine guns, handguns, launchers, grenades, explosives, underbarrel) to $profile:TBD_Export/equipment/weapons/",
-	category: "TBD"
-)]
+// [WorkbenchPluginAttribute(
+// 	name: "Export All Weapons (Master Arsenal)",
+// 	description: "Deep intrinsic export of all weapons (rifles, machine guns, handguns, launchers, grenades, explosives, underbarrel) to $profile:TBD_Export/equipment/weapons/",
+// 	category: "TBD"
+// )]
 class TBD_WeaponExportPlugin : WorkbenchPlugin
 {
 	protected static const string TAG = "[TBD][WeaponExport]";
