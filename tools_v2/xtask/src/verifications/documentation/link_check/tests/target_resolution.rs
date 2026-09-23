@@ -65,17 +65,61 @@ fn other_schemes_and_hosts_are_external() {
 }
 
 #[test]
-fn a_url_of_this_repository_is_a_permalink_or_a_break() {
-    let permalink = format!("{PERMALINK_BASE}{COMMIT}/apps/website/api_v2/src/main.rs#L3");
-    assert!(matches!(classify(&permalink), Destination::Permalink(_)));
-    for page in [
+fn a_code_view_of_this_repository_is_a_permalink_or_unpinned() {
+    let blob = format!("{PERMALINK_BASE}{COMMIT}/apps/website/api_v2/src/main.rs#L3");
+    assert!(matches!(classify(&blob), Destination::Permalink(_)));
+    let tree = PERMALINK_BASE.replace("/blob/", &format!("/tree/{COMMIT}/apps"));
+    assert!(matches!(classify(&tree), Destination::Permalink(_)));
+    for view in [
         format!("{PERMALINK_BASE}main/README.md"),
         format!("{PERMALINK_BASE}0123456/README.md"),
         PERMALINK_BASE.replace("/blob/", "/tree/main/apps"),
-        PERMALINK_BASE.replace("/blob/", ""),
     ] {
-        assert_eq!(classify(&page), Destination::RepositoryUrl, "{page}");
+        assert_eq!(classify(&view), Destination::UnpinnedCodeView, "{view}");
     }
+}
+
+#[test]
+fn every_other_page_of_this_repository_is_external() {
+    let home = PERMALINK_BASE.trim_end_matches("/blob/");
+    for page in [
+        home.to_string(),
+        format!("{home}/"),
+        format!("{home}/issues/3"),
+        format!("{home}/releases"),
+    ] {
+        assert_eq!(classify(&page), Destination::External, "{page}");
+    }
+}
+
+#[test]
+fn a_fragment_asks_rendered_markdown_for_an_anchor_and_text_for_lines() {
+    assert_eq!(
+        fragment_need("docs/guide.md", false, "Setup%20steps"),
+        FragmentNeed::Anchor("Setup steps".to_string())
+    );
+    assert_eq!(
+        fragment_need("docs/guide.md", true, "L4-L9"),
+        FragmentNeed::Lines(4, 9)
+    );
+    assert_eq!(
+        fragment_need("src/main.rs", false, "L2"),
+        FragmentNeed::Lines(2, 2)
+    );
+    assert_eq!(
+        fragment_need("src/main.rs", false, "main"),
+        FragmentNeed::Unmatchable("main".to_string())
+    );
+    assert_eq!(
+        decode_fragment("%FF"),
+        "%FF",
+        "an undecodable fragment stays as written"
+    );
+    assert_eq!(
+        unmatchable_anchor_problem("src/main.rs", "main"),
+        "`src/main.rs` is not rendered Markdown, so `main` matches nothing; only a #L<n> or \
+         #L<n>-L<m> line anchor applies"
+    );
 }
 
 #[test]

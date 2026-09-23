@@ -137,9 +137,14 @@ pub mod documentation {
 
     /// The prefix of a GitHub permalink into this repository: the commit and the repository-
     /// relative path follow it, as `<prefix><commit>/<path>`. `cargo xtask verify link-check`
-    /// looks every permalink's object up in the local history and refuses any other URL of this
-    /// repository.
+    /// looks the object of every blob or tree view pinned to a full commit up in the local
+    /// history, and refuses a blob or tree view of a branch, a tag or an abbreviated commit.
     pub const PERMALINK_BASE: &str = "https://github.com/darkforce09/TBD-reforger/blob/";
+
+    // The agent artifact tree, spelled once in `ticket_engine::repository`: run reports, handoff
+    // notes and research dumps rather than documentation, so `cargo xtask verify link-check`
+    // judges none of its files, its README.md included.
+    pub use ticket_engine::repository::ARTIFACTS_DIR;
 
     // The ticket domain's documentation locations, spelled once in
     // `ticket_engine::repository::documentation`: the tree root, the specification and plan

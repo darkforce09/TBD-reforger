@@ -11,12 +11,13 @@ tools_v2/xtask/src/verifications/documentation/link_check/
 ├── inline_html.rs            HTML tags in a run: where a tag ends, and the anchors an <a> tag declares
 ├── judged_documents.rs       which tracked files are judged, and the area each belongs to
 ├── link_destination.rs       inline link tails, reference definition lines and reference labels
-├── link_targets.rs           the link rule: targets, fragments, references and batched permalinks
+├── link_targets.rs           the link rule: checkout targets, fragments, references, link totals
 ├── markdown_inlines.rs       the inline pass: links, references, code spans, rendered heading text
 ├── markdown_lines.rs         the shape of one line: list markers, headings, breaks, quotes, tabs
 ├── markdown_scan.rs          the block pass: code and comments set aside, runs, definitions, headings
-├── repository_permalinks.rs  URLs of this repository and the git objects their permalinks name
-├── target_resolution.rs      destination kinds, checkout path resolution, line anchors
+├── permalink_targets.rs      the link rule's permalinks: held for the run, settled in two git batches
+├── repository_permalinks.rs  blob and tree views of this repository, and the git objects they name
+├── target_resolution.rs      destination kinds, checkout path resolution, line anchors, fragment needs
 └── tests/                    unit tests for every module here
 ```
 
@@ -33,10 +34,13 @@ undefined, the headings' rendered text, the `<a id|name>` anchors, and the code 
 blocks.
 
 `link_targets.rs` classifies each destination through `target_resolution.rs` and judges it: a
-checkout path must resolve to a tracked file or a folder holding one, a fragment must match a
-heading anchor from `heading_anchors.rs` or fit a line anchor, and every permalink of the run is
-looked up in one `git cat-file --batch-check`, with the blobs a fragment needs read in one
-`git cat-file --batch`, through `repository_permalinks.rs`. The rules are written out in the
+checkout path must resolve to a tracked file or a folder holding one, and a fragment must match a
+heading anchor from `heading_anchors.rs` or fit a line anchor. A blob or tree view of this
+repository pinned to a full commit id is a permalink, which `permalink_targets.rs` holds until the
+run ends; then one `git cat-file --batch-check` looks every permalink up and one
+`git cat-file --batch` reads the blobs a fragment needs, through `repository_permalinks.rs`. A
+blob or tree view of a branch, a tag or an abbreviated commit breaks; every other page of this
+repository is external. The rules are written out in the
 [Documentation Gates README](/tools_v2/xtask/src/verifications/documentation/README.md).
 
 ## Boundaries

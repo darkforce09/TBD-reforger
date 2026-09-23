@@ -4,7 +4,7 @@ use std::{collections::BTreeSet, path::Path};
 
 /// Every [`documentation`] item that names locations a checkout must hold, by name, with every
 /// location it names: one for a path constant or a re-export, each element for a list.
-const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 21] = [
+const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 22] = [
     ("FACTORY_PACK_WAVE", &[documentation::FACTORY_PACK_WAVE]),
     ("LAYOUT_TARGET_DIR", &[documentation::LAYOUT_TARGET_DIR]),
     ("HOME_SERVER_RUNBOOK", &[documentation::HOME_SERVER_RUNBOOK]),
@@ -45,6 +45,7 @@ const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 21] = [
         "PROJECT_INSTRUCTIONS",
         &[documentation::PROJECT_INSTRUCTIONS],
     ),
+    ("ARTIFACTS_DIR", &[documentation::ARTIFACTS_DIR]),
     ("TREE_DIR", &[documentation::TREE_DIR]),
     ("SPECS_DIR", &[documentation::SPECS_DIR]),
     ("PLANS_DIR", &[documentation::PLANS_DIR]),

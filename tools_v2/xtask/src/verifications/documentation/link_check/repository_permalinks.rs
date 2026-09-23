@@ -1,18 +1,21 @@
 //! Permalinks into this repository and the git objects they name.
 //!
-//! **Role:** reads a URL of this repository on GitHub — a sha permalink
-//! `PERMALINK_BASE<commit>/<path>[#L<n>[-L<m>]]` or any other page of the repository — and looks
-//! the objects of every permalink up in the local history: one `git cat-file --batch-check` for
-//! all of them, and one `git cat-file --batch` for the blobs whose text a fragment needs.
+//! **Role:** reads a code view of this repository on GitHub — a blob view
+//! `PERMALINK_BASE<commit>/<path>[#L<n>[-L<m>]]` or a tree view, `tree/` in place of `blob/` —
+//! and looks the objects of every permalink up in the local history: one
+//! `git cat-file --batch-check` for all of them, and one `git cat-file --batch` for the blobs
+//! whose text a fragment needs.
 //!
-//! **Position:** [`super::target_resolution::classify`] calls [`read_repository_url`]; the link
-//! rule ([`super::link_targets`]) collects the permalinks of the whole run and settles them
-//! through a [`PermalinkObjects`] source at the end, [`GitObjects`] in a real run.
+//! **Position:** [`super::target_resolution::classify`] calls [`read_code_view`]; the permalink
+//! half of the link rule ([`super::permalink_targets`]) collects the permalinks of the whole run
+//! and settles them through a [`PermalinkObjects`] source at the end, [`GitObjects`] in a real
+//! run.
 //!
 //! **Signals & state:** none held; each lookup is one child process.
 //!
-//! **Invariants:** a permalink names its commit by the full 40- or 64-character id, so a branch
-//! name, an abbreviated id, a folder view or the repository page is not one; git missing, killed,
+//! **Invariants:** a permalink is a blob or tree view that names its commit by the full 40- or
+//! 64-character id, so a view of a branch, a tag or an abbreviated id is not one, and a page of
+//! the repository other than a blob or tree view is no code view at all; git missing, killed,
 //! timed out, exiting non-zero or answering in an unexpected shape is a [`NotRun`] cause, never a
 //! set of missing objects.
 
@@ -41,12 +44,45 @@ const LOOKUP_DEADLINE: Duration = Duration::from_secs(120);
 /// The lengths of a full commit id: SHA-1 and SHA-256 repositories.
 const COMMIT_ID_LENGTHS: [usize; 2] = [40, 64];
 
+/// The GitHub view a code URL of this repository opens.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum PermalinkView {
+    /// `blob/`: a file, or a folder GitHub opens as its tree view.
+    Blob,
+    /// `tree/`: a folder; the commit alone names the repository root.
+    Tree,
+}
+
+impl PermalinkView {
+    /// Every view, in the order a URL is matched against them.
+    const ALL: [PermalinkView; 2] = [PermalinkView::Blob, PermalinkView::Tree];
+
+    /// The path segment between the repository and the commit that opens the view.
+    fn segment(self) -> &'static str {
+        match self {
+            PermalinkView::Blob => "/blob/",
+            PermalinkView::Tree => "/tree/",
+        }
+    }
+}
+
+/// A blob or tree view of this repository.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum CodeView {
+    /// Pinned to a full commit id.
+    Permalink(Permalink),
+    /// Named by a branch, a tag or an abbreviated commit id, so what it opens moves with the name.
+    Unpinned,
+}
+
 /// A sha permalink into this repository.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Permalink {
+    pub(super) view: PermalinkView,
     /// The full commit id, lowercase.
     pub(super) commit: String,
-    /// The repository-relative path, percent-decoded, without leading or trailing `/`.
+    /// The repository-relative path, percent-decoded, without leading or trailing `/`; empty for
+    /// the repository root.
     pub(super) path: String,
     /// Whether the query asks for the plain view (`?plain=1`).
     pub(super) plain_view: bool,
@@ -72,8 +108,10 @@ pub(super) struct BlobObject {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum ObjectLookup {
     Blob(BlobObject),
-    /// A tree or another non-blob object: a folder view.
-    NotBlob {
+    /// A folder.
+    Tree,
+    /// Another kind of object, such as the commit a submodule entry records.
+    Other {
         kind: String,
     },
     /// Nothing in the local history, or more than one object.
@@ -132,38 +170,39 @@ impl PermalinkObjects for GitObjects<'_> {
     }
 }
 
-/// Read a URL of this repository: `None` when `destination` is not one, `Some(None)` when it is
-/// one but not a sha permalink, and the permalink otherwise.
-pub(super) fn read_repository_url(destination: &str) -> Option<Option<Permalink>> {
+/// Read a blob or tree view of this repository: `None` when `destination` is none — another
+/// host, or another page of this repository such as its home page, an issue or a release.
+///
+/// The commit runs from the view segment to the next `/`, `?` or `#`; the path runs from there
+/// to the query or the fragment, and an empty path names the repository root.
+pub(super) fn read_code_view(destination: &str) -> Option<CodeView> {
     let location = strip_prefix_ignoring_case(destination, "https://")
         .or_else(|| strip_prefix_ignoring_case(destination, "http://"))
         .or_else(|| destination.strip_prefix("//"))?;
     let location = strip_prefix_ignoring_case(location, "www.").unwrap_or(location);
     let rest = strip_prefix_ignoring_case(location, repository_location())?;
-    if !(rest.is_empty() || rest == ".git" || rest.starts_with(['/', '?', '#'])) {
-        return None;
-    }
-    Some(permalink(rest))
-}
-
-/// The permalink a repository URL's remainder spells after the repository location.
-fn permalink(rest: &str) -> Option<Permalink> {
-    let (commit, target) = rest.strip_prefix("/blob/")?.split_once('/')?;
+    let (view, after_view) = PermalinkView::ALL
+        .into_iter()
+        .find_map(|view| rest.strip_prefix(view.segment()).map(|after| (view, after)))?;
+    let commit_end = after_view.find(['/', '?', '#']).unwrap_or(after_view.len());
+    let (commit, target) = after_view.split_at(commit_end);
     let full_id =
         COMMIT_ID_LENGTHS.contains(&commit.len()) && commit.chars().all(|c| c.is_ascii_hexdigit());
     if !full_id {
-        return None;
+        return Some(CodeView::Unpinned);
     }
     let (before_fragment, fragment) = split_fragment(target);
     let (path, query) = before_fragment
         .split_once('?')
         .map_or((before_fragment, None), |(path, query)| (path, Some(query)));
-    Some(Permalink {
+    let path = percent_decode(path).unwrap_or_else(|| path.to_string());
+    Some(CodeView::Permalink(Permalink {
+        view,
         commit: commit.to_ascii_lowercase(),
-        path: percent_decode(path)?.trim_matches('/').to_string(),
+        path: path.trim_matches('/').to_string(),
         plain_view: query.is_some_and(|query| query.split('&').any(|pair| pair == "plain=1")),
         fragment,
-    })
+    }))
 }
 
 /// The host and path of this repository on GitHub: [`PERMALINK_BASE`] without its scheme and
@@ -173,7 +212,7 @@ fn repository_location() -> &'static str {
         .strip_prefix("https://")
         .unwrap_or(PERMALINK_BASE);
     without_scheme
-        .strip_suffix("/blob/")
+        .strip_suffix(PermalinkView::Blob.segment())
         .unwrap_or(without_scheme)
 }
 
@@ -217,7 +256,8 @@ pub(super) fn parse_lookup(stdout: &str, expected: usize) -> Result<Vec<ObjectLo
                         })
                     })
                     .map_err(|_| format!("unreadable blob size in `{answer}`")),
-                [_, kind, _] => Ok(ObjectLookup::NotBlob {
+                [_, "tree", _] => Ok(ObjectLookup::Tree),
+                [_, kind, _] => Ok(ObjectLookup::Other {
                     kind: (*kind).to_string(),
                 }),
                 _ => Err(format!("unreadable answer `{answer}`")),

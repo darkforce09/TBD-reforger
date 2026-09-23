@@ -86,6 +86,22 @@ fn the_project_instructions_and_every_readme_are_judged() {
 }
 
 #[test]
+fn nothing_in_the_agent_artifact_tree_is_judged_its_readme_included() {
+    for path in [
+        format!("{ARTIFACTS_DIR}/{README}"),
+        format!("{ARTIFACTS_DIR}/research/{README}"),
+        format!("{ARTIFACTS_DIR}/handoff.md"),
+    ] {
+        assert_eq!(area(&path), None, "{path}");
+    }
+    assert_eq!(
+        area(&format!("{ARTIFACTS_DIR}_elsewhere/{README}")),
+        Some(DocumentArea::Readmes),
+        "a sibling whose name merely begins the same way is outside the tree"
+    );
+}
+
+#[test]
 fn only_the_frozen_records_are_frozen_and_every_area_has_a_label() {
     for kind in DocumentArea::ALL {
         assert_eq!(kind.is_frozen(), kind == DocumentArea::FrozenDocumentation);

@@ -96,7 +96,9 @@ The judged documents are every tracked Markdown file under the documentation roo
 program records (`PROGRAM_RECORDS_PREFIX`), every tracked README.md anywhere (the repository root's
 included), the project instructions (`PROJECT_INSTRUCTIONS`), the Markdown files directly in the
 ticket folder (`TICKETS_DIR`), and the Markdown and `.mdc` files under the Cursor rule folders
-(`CURSOR_RULE_DIRS`). The ticket records and the archive are frozen: only the link rules judge them.
+(`CURSOR_RULE_DIRS`). Nothing in the agent artifact tree (`ARTIFACTS_DIR`: `.ai/artifacts`) is
+judged, its README.md included. The ticket records and the archive are frozen: only the link rules
+judge them.
 
 Each document is scanned the way a renderer reads it. Inline links and images, angle destinations,
 autolinks, and reference definitions with their full, collapsed and shortcut uses count as links;
@@ -113,18 +115,24 @@ break names its rule:
    itself) matches none of its anchors. A heading's anchor is its rendered text lowercased, with
    every character other than a letter, digit, space, hyphen or underscore dropped and each space
    made a hyphen; a repeat gets `-1`, `-2` in document order; setext headings count, headings in
-   code do not, and every `<a id>` or `<a name>` adds an anchor. A fragment on a folder, or any
-   fragment but a line anchor on a file GitHub does not render as Markdown, is missing too.
+   code do not, and every `<a id>` or `<a name>` adds an anchor. A fragment on a folder (a tree
+   permalink included), or any fragment but a line anchor on a file GitHub does not render as
+   Markdown, is missing too.
 5. line anchor out of range: `#L<n>` or `#L<n>-L<m>` on a file shown as text (any file but
    Markdown, or Markdown with `?plain=1`) must lie within its line count.
-6. non-permalink repository URL: a URL of this repository that is not a permalink, such as a
-   branch view, a folder view, an abbreviated commit or the repository page.
-7. unknown permalink blob: a permalink `PERMALINK_BASE<commit>/<path>`, with the full commit id,
-   names an object the local history lacks. All permalinks of a run are looked up in one
-   `git cat-file --batch-check`, and the blobs a fragment needs are read in one
+6. non-permalink repository URL: a blob or tree view of this repository that names a branch, a
+   tag or an abbreviated commit instead of the full commit id.
+7. unknown permalink object: the local history holds nothing at a permalink's `<commit>:<path>`,
+   or, for a tree view, something other than a folder. A permalink is a blob view
+   `PERMALINK_BASE<commit>/<path>` or a tree view (`tree/` in place of `blob/`; the commit alone
+   names the repository root) with the full 40- or 64-character commit id; a blob view also holds
+   on a folder, which GitHub opens as its tree view. All permalinks of a run, of both views, are
+   looked up in one `git cat-file --batch-check`, and the blobs a fragment needs are read in one
    `git cat-file --batch`, so a shallow clone reports older commits as unknown.
 
-External destinations (any other scheme or host) are counted and never fetched. Every break prints
+External destinations are counted and never fetched: any other scheme or host, and every page of
+this repository other than a blob or tree view, such as its home page (with or without a trailing
+`/`), issues, pull requests, actions, releases, wiki, commits and comparisons. Every break prints
 as `path:line: rule: message`. Without `--report` the gate prints every failing document with its
 break count, the first 20 breaks in full, and the totals; with `--report` it prints every break.
 The totals count documents, links by kind, breaks by rule, and breaks by area: the documentation

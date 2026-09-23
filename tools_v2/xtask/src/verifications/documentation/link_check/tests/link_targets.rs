@@ -1,9 +1,11 @@
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 
 use verification_core::NotRun;
 
 use super::super::super::fixture_checkout::FixtureCheckout;
 use super::super::Break;
+use super::super::repository_permalinks::{BlobObject, ObjectLookup};
 use super::*;
 
 const COMMIT: &str = "0123456789abcdef0123456789abcdef01234567";
@@ -31,10 +33,7 @@ impl FakeObjects {
     }
 
     fn tree(mut self, name: &str) -> FakeObjects {
-        let tree = ObjectLookup::NotBlob {
-            kind: "tree".to_string(),
-        };
-        self.lookups.insert(name.to_string(), tree);
+        self.lookups.insert(name.to_string(), ObjectLookup::Tree);
         self
     }
 
@@ -189,7 +188,7 @@ fn an_encoded_fragment_decodes_before_it_is_matched() {
 }
 
 #[test]
-fn an_undefined_reference_and_a_repository_page_break() {
+fn an_undefined_reference_and_an_unpinned_code_view_break() {
     let mut fixture = checkout("references");
     let text = format!("[a][nowhere] [b]({}main/README.md)\n", PERMALINK_BASE);
     let (breaks, _) = judge_document(&mut fixture, "README.md", &text, &FakeObjects::default());
@@ -261,7 +260,10 @@ fn permalinks_are_settled_in_one_lookup_and_one_contents_batch() {
             ),
             ("documentation_v2/archive/x.md:2", "missing anchor"),
             ("documentation_v2/archive/x.md:3", "missing anchor"),
-            ("documentation_v2/archive/x.md:4", "unknown permalink blob"),
+            (
+                "documentation_v2/archive/x.md:4",
+                "unknown permalink object"
+            ),
         ]
     );
     assert!(breaks[3].ends_with(&format!(
@@ -312,8 +314,92 @@ fn external_links_are_counted_and_never_fetched() {
     assert_eq!(
         rule.totals(),
         [
-            "  links: 3 judged — 1 into this checkout, 0 permalink(s), 0 other page(s) of this \
-          repository, 2 external and not fetched"
+            "  links: 3 judged — 1 into this checkout, 0 permalink(s), 0 code view(s) of this \
+             repository without a full commit id, 2 external and not fetched"
+        ]
+    );
+}
+
+#[test]
+fn a_tree_permalink_passes_on_a_folder_and_shares_the_lookup_batch() {
+    let mut fixture = checkout("tree-permalinks");
+    let objects = FakeObjects::default()
+        .tree(&format!("{COMMIT}:apps/old"))
+        .tree(&format!("{COMMIT}:"))
+        .blob(&format!("{COMMIT}:apps/old/main.rs"), "c0de", "one\n");
+    let home = PERMALINK_BASE.trim_end_matches("/blob/");
+    let text = format!(
+        "[a]({home}/tree/{COMMIT}/apps/old) [b]({home}/tree/{COMMIT}) [c]({PERMALINK_BASE}{COMMIT}/apps/old)\n\
+         [d]({home}/tree/{COMMIT}/apps/old#L1) [e]({home}/tree/{COMMIT}/apps/old/main.rs)\n\
+         [f]({home}/tree/{COMMIT}/apps/gone) [g]({home}/tree/main/apps/old)\n"
+    );
+    let (breaks, not_run) = judge_document(&mut fixture, "README.md", &text, &objects);
+    assert_eq!(not_run, 0);
+    assert_eq!(
+        *objects.batches.borrow(),
+        [4],
+        "a blob and a tree view of `apps/old` share one name; no fragment needs a blob's text"
+    );
+    // An unpinned view breaks as its document is judged; a permalink when the run settles.
+    assert_eq!(
+        breaks,
+        [
+            format!(
+                "README.md:3: non-permalink repository URL: `{home}/tree/main/apps/old` opens a \
+                 branch, a tag or an abbreviated commit instead of a full commit id; link a \
+                 repo-root path, or a permalink {PERMALINK_BASE}<commit>/<path> (`tree/` in \
+                 place of `blob/` for a folder)"
+            ),
+            format!(
+                "README.md:2: missing anchor: `{home}/tree/{COMMIT}/apps/old#L1`: `apps/old` is \
+                 a folder, which has no anchors"
+            ),
+            format!(
+                "README.md:2: unknown permalink object: `{home}/tree/{COMMIT}/apps/old/main.rs`: \
+                 `{COMMIT}:apps/old/main.rs` is a file in the local history, and a tree view \
+                 opens a folder"
+            ),
+            format!(
+                "README.md:3: unknown permalink object: `{home}/tree/{COMMIT}/apps/gone`: \
+                 `{COMMIT}:apps/gone` is missing in the local history"
+            ),
+        ]
+    );
+}
+
+#[test]
+fn every_other_page_of_this_repository_is_external_and_never_fetched() {
+    let mut fixture = checkout("repository-pages");
+    let home = PERMALINK_BASE.trim_end_matches("/blob/");
+    let text = format!(
+        "**Repo:** [github.com/darkforce09/TBD-reforger]({home}) [slash]({home}/)\n\
+         [issue]({home}/issues/3) [pulls]({home}/pulls) [runs]({home}/actions)\n\
+         [release]({home}/releases/tag/v1.0) [wiki]({home}/wiki) [log]({home}/commits/main)\n\
+         [diff]({home}/compare/main...next)\n"
+    );
+    fixture.tracked("apps/mod/README.md", &text);
+    let tree = fixture.tree();
+    let context = RuleContext {
+        repo_root: fixture.root(),
+        tree: &tree,
+    };
+    let objects = FakeObjects::default();
+    let mut rule = LinkTargets::new(&objects);
+    let mut findings = RuleFindings::default();
+    let scanned = scan(&text);
+    let document = JudgedDocument {
+        path: "apps/mod/README.md",
+        scan: &scanned,
+    };
+    rule.judge(&document, &context, &mut findings);
+    rule.finish(&context, &mut findings);
+    assert!(findings.breaks.is_empty(), "{:?}", findings.breaks);
+    assert!(objects.batches.borrow().is_empty(), "no permalink, no git");
+    assert_eq!(
+        rule.totals(),
+        [
+            "  links: 9 judged — 0 into this checkout, 0 permalink(s), 0 code view(s) of this \
+             repository without a full commit id, 9 external and not fetched"
         ]
     );
 }

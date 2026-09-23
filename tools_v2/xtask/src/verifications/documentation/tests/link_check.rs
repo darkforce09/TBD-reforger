@@ -7,7 +7,7 @@ use crate::cli::{Cli, TopCmd};
 use crate::commands::verify::cli::VerifyCmd;
 use crate::core::repository_layout::TICKETS_DIR;
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, CURSOR_RULE_DIRS, PROGRAM_RECORDS_PREFIX, PROJECT_INSTRUCTIONS,
+    ARCHIVE_DIR, ARTIFACTS_DIR, CURSOR_RULE_DIRS, PROGRAM_RECORDS_PREFIX, PROJECT_INSTRUCTIONS,
 };
 use clap::Parser;
 
@@ -76,6 +76,7 @@ fn every_area(tag: &str) -> FixtureCheckout {
         .tracked(PROJECT_INSTRUCTIONS, broken)
         .tracked("apps/tool/README.md", broken)
         .tracked(&format!("{PROGRAM_RECORDS_PREFIX}program_plan.md"), broken)
+        .tracked(&format!("{ARTIFACTS_DIR}/README.md"), broken)
         .tracked("apps/tool/NOTES.md", broken)
         .tracked(&format!("{TICKETS_DIR}/nested/deep.md"), broken)
         .tracked("apps/tool/main.rs", "fn main() {}\n");
@@ -112,11 +113,11 @@ fn the_totals_count_breaks_by_rule_and_by_area() {
     let totals = run.totals.join("\n");
     for expected in [
         "  documents: 6 judged (1 frozen record(s)), 6 with breaks, 0 unreadable",
-        "  links: 6 judged — 6 into this checkout, 0 permalink(s), 0 other page(s) of this \
-         repository, 0 external and not fetched",
+        "  links: 6 judged — 6 into this checkout, 0 permalink(s), 0 code view(s) of this \
+         repository without a full commit id, 0 external and not fetched",
         "  breaks by rule: 6 in all",
         "    missing target: 6",
-        "    unknown permalink blob: 0",
+        "    unknown permalink object: 0",
         "    documentation_v2 live documents: 1 break(s) in 1 of 1 document(s)",
         "    documentation_v2 frozen records: 1 break(s) in 1 of 1 document(s)",
         "    README.md files elsewhere: 1 break(s) in 1 of 1 document(s)",

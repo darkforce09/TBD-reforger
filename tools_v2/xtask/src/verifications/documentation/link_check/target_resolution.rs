@@ -2,22 +2,24 @@
 //!
 //! **Role:** classifies a destination, resolves a checkout path against the tracked tree (from the
 //! repository root when it starts with `/`, from the linking document's folder otherwise, with
-//! percent-decoding and `.`/`..` normalised), and reads the `#L<n>` and `#L<n>-L<m>` line anchors.
+//! percent-decoding and `.`/`..` normalised), reads the `#L<n>` and `#L<n>-L<m>` line anchors,
+//! and says what a fragment asks of the file it is written on.
 //!
-//! **Position:** called by the link rule ([`super::link_targets`]) for every destination; the
-//! permalink shape comes from [`super::repository_permalinks`], the tracked files and folders
-//! from [`TrackedTree`].
+//! **Position:** called by the link rule ([`super::link_targets`]) for every destination and by
+//! its permalink half ([`super::permalink_targets`]) for permalink fragments; the code view shape
+//! comes from [`super::repository_permalinks`], the tracked files and folders from
+//! [`TrackedTree`].
 //!
 //! **Signals & state:** none; pure functions.
 //!
 //! **Invariants:** a destination with a URI scheme (letters, digits, `+` and `-`, then `:`) or
-//! starting `//` is off the checkout and never fetched, except a URL of this repository, which is
-//! either a sha permalink or a break; a path that climbs above the repository root escapes it;
-//! only tracked files and folders holding a tracked file exist.
+//! starting `//` is off the checkout and never fetched, except a blob or tree view of this
+//! repository, which is either a sha permalink or a break; a path that climbs above the
+//! repository root escapes it; only tracked files and folders holding a tracked file exist.
 
-use super::super::path_regions::parent_folder;
+use super::super::path_regions::{is_markdown, parent_folder};
 use super::super::tracked_tree::TrackedTree;
-use super::repository_permalinks::{self, Permalink};
+use super::repository_permalinks::{self, CodeView, Permalink};
 
 /// What a destination names.
 #[derive(Debug, PartialEq, Eq)]
@@ -32,12 +34,24 @@ pub(super) enum Destination {
         plain_view: bool,
         fragment: Option<String>,
     },
-    /// A sha permalink into this repository.
+    /// A sha permalink into this repository: a blob or tree view pinned to a full commit id.
     Permalink(Permalink),
-    /// Any other URL of this repository: a branch view, a folder view, the repository page.
-    RepositoryUrl,
-    /// Another host or scheme.
+    /// A blob or tree view of this repository named by a branch, a tag or an abbreviated commit.
+    UnpinnedCodeView,
+    /// Another host or scheme, or a page of this repository other than a blob or tree view: its
+    /// home page, issues, pull requests, actions, releases, wiki, commits or comparisons.
     External,
+}
+
+/// What a fragment asks of the file it is written on.
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum FragmentNeed {
+    /// A heading or explicit anchor of a rendered Markdown file.
+    Anchor(String),
+    /// A line range of a file shown as text.
+    Lines(usize, usize),
+    /// Neither: a non-Markdown file takes line anchors only.
+    Unmatchable(String),
 }
 
 /// A checkout path a destination resolves to.
@@ -60,9 +74,9 @@ pub(super) fn classify(destination: &str) -> Destination {
     }
     let web = destination.starts_with("//");
     if web || has_scheme(destination) {
-        return match repository_permalinks::read_repository_url(destination) {
-            Some(Some(permalink)) => Destination::Permalink(permalink),
-            Some(None) => Destination::RepositoryUrl,
+        return match repository_permalinks::read_code_view(destination) {
+            Some(CodeView::Permalink(permalink)) => Destination::Permalink(permalink),
+            Some(CodeView::Unpinned) => Destination::UnpinnedCodeView,
             None => Destination::External,
         };
     }
@@ -184,6 +198,32 @@ pub(super) fn line_anchor_problem(first: usize, last: usize, lines: usize) -> Op
     } else {
         None
     }
+}
+
+/// What `fragment` asks of `file`: a heading anchor when GitHub renders the file as Markdown, a
+/// line range otherwise.
+pub(super) fn fragment_need(file: &str, plain_view: bool, fragment: &str) -> FragmentNeed {
+    let anchor = decode_fragment(fragment);
+    if is_markdown(file) && !plain_view {
+        return FragmentNeed::Anchor(anchor);
+    }
+    match line_anchor(&anchor) {
+        Some((first, last)) => FragmentNeed::Lines(first, last),
+        None => FragmentNeed::Unmatchable(anchor),
+    }
+}
+
+/// Why `anchor` matches nothing in `file`, which GitHub does not render as Markdown.
+pub(super) fn unmatchable_anchor_problem(file: &str, anchor: &str) -> String {
+    format!(
+        "`{file}` is not rendered Markdown, so `{anchor}` matches nothing; only a #L<n> or \
+         #L<n>-L<m> line anchor applies"
+    )
+}
+
+/// A fragment percent-decoded, or as written when it does not decode.
+pub(super) fn decode_fragment(fragment: &str) -> String {
+    percent_decode(fragment).unwrap_or_else(|| fragment.to_string())
 }
 
 /// `(before, fragment)` for a destination; an empty fragment is none.

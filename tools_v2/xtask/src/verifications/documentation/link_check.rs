@@ -8,8 +8,8 @@
 //!
 //! **Position:** `cargo xtask verify link-check [--report] [--path <dir>]...` calls
 //! [`verify_link_check`]. The judged files and their areas come from [`judged_documents`], the
-//! link rule is [`link_targets::LinkTargets`], and the tracked tree, the scope and the report
-//! come from the parent module.
+//! link rule is [`link_targets::LinkTargets`] with its permalink half in [`permalink_targets`],
+//! and the tracked tree, the scope and the report come from the parent module.
 //!
 //! **Signals & state:** none held between runs; a run owns its rules, whose caches and batched
 //! checks last until the run prints.
@@ -28,6 +28,7 @@ mod link_targets;
 mod markdown_inlines;
 mod markdown_lines;
 mod markdown_scan;
+mod permalink_targets;
 mod repository_permalinks;
 mod target_resolution;
 
@@ -67,7 +68,7 @@ enum BreakRule {
     MissingAnchor,
     LineAnchorOutOfRange,
     NonPermalinkRepositoryUrl,
-    UnknownPermalinkBlob,
+    UnknownPermalinkObject,
 }
 
 impl BreakRule {
@@ -79,7 +80,7 @@ impl BreakRule {
         BreakRule::MissingAnchor,
         BreakRule::LineAnchorOutOfRange,
         BreakRule::NonPermalinkRepositoryUrl,
-        BreakRule::UnknownPermalinkBlob,
+        BreakRule::UnknownPermalinkObject,
     ];
 
     /// The rule's name on break lines and in the totals.
@@ -91,7 +92,7 @@ impl BreakRule {
             BreakRule::MissingAnchor => "missing anchor",
             BreakRule::LineAnchorOutOfRange => "line anchor out of range",
             BreakRule::NonPermalinkRepositoryUrl => "non-permalink repository URL",
-            BreakRule::UnknownPermalinkBlob => "unknown permalink blob",
+            BreakRule::UnknownPermalinkObject => "unknown permalink object",
         }
     }
 }
