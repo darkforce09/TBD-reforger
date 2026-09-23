@@ -122,8 +122,13 @@ pub mod documentation {
     pub const PROGRAM_RECORDS_PREFIX: &str = "documentation_v2/refactor_";
 
     /// The Cursor rule folders: agent instructions that name documents and commands.
-    #[allow(dead_code)] // the one spelling of these locations for the whole crate
+    /// `cargo xtask verify link-check` judges the links of their Markdown and `.mdc` files.
     pub const CURSOR_RULE_DIRS: &[&str] = &[".cursor/rules", "apps/mod/.cursor/rules"];
+
+    /// The project instructions at the repository root: the laws, the directory atlas and the
+    /// canonical commands every agent reads first. `cargo xtask verify link-check` judges its
+    /// links.
+    pub const PROJECT_INSTRUCTIONS: &str = "CLAUDE.md";
 
     /// A documentation root that must not exist: every document lives under
     /// [`DOCUMENTATION_ROOT`], and `cargo xtask verify markdown-placement` fails while this folder
@@ -131,8 +136,9 @@ pub mod documentation {
     pub const RETIRED_DOCS_ROOT: &str = "docs";
 
     /// The prefix of a GitHub permalink into this repository: the commit and the repository-
-    /// relative path follow it, as `<prefix><commit>/<path>`.
-    #[allow(dead_code)] // the one spelling of this prefix for the whole crate
+    /// relative path follow it, as `<prefix><commit>/<path>`. `cargo xtask verify link-check`
+    /// looks every permalink's object up in the local history and refuses any other URL of this
+    /// repository.
     pub const PERMALINK_BASE: &str = "https://github.com/darkforce09/TBD-reforger/blob/";
 
     // The ticket domain's documentation locations, spelled once in

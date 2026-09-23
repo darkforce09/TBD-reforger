@@ -1,14 +1,17 @@
 # Documentation Gates
 
-The repository checks that keep documentation where it belongs and shaped the same way everywhere:
-`readme-coverage` (every folder carries a README.md whose Contents block matches the folder) and
-`markdown-placement` (Markdown lives in the documentation tree, and live documents stay short).
+The repository checks that keep documentation where it belongs, shaped the same way everywhere and
+linked correctly: `readme-coverage` (every folder carries a README.md whose Contents block matches
+the folder), `markdown-placement` (Markdown lives in the documentation tree, and live documents stay
+short) and `link-check` (every link in the documentation reaches what it names).
 
 ## Contents
 
 ```text
 tools_v2/xtask/src/verifications/documentation/
 ├── gate_scope.rs          the --path scope: normalises each value, refuses one naming no tracked folder
+├── link_check/            the link check's scan, anchors, target resolution, permalinks and link rule
+├── link_check.rs          the link-check gate: the rule pipeline, one verdict per document, the totals
 ├── markdown_fences.rs     recognises the lines that open and close a fenced code block
 ├── markdown_placement.rs  the markdown-placement gate: code-tree Markdown, the retired root, the size limit
 ├── mod.rs                 registers the gates and holds what they share: preparation, reading, printing
@@ -87,20 +90,67 @@ line, a missing heading at line 1, and every other violation at the line it conc
    two documents that `cargo xtask ticket sync` rewrites between markers (`ROADMAP`,
    `GAP_ANALYSIS`), whose sync-managed tables stay in one file.
 
+### link-check
+
+The judged documents are every tracked Markdown file under the documentation root except the
+program records (`PROGRAM_RECORDS_PREFIX`), every tracked README.md anywhere (the repository root's
+included), the project instructions (`PROJECT_INSTRUCTIONS`), the Markdown files directly in the
+ticket folder (`TICKETS_DIR`), and the Markdown and `.mdc` files under the Cursor rule folders
+(`CURSOR_RULE_DIRS`). The ticket records and the archive are frozen: only the link rules judge them.
+
+Each document is scanned the way a renderer reads it. Inline links and images, angle destinations,
+autolinks, and reference definitions with their full, collapsed and shortcut uses count as links;
+front matter, fenced and indented code blocks, HTML comments and inline code spans do not. Each
+break names its rule:
+
+1. missing target: a destination starting with `/` resolves from the repository root, any other
+   from the document's folder, after percent-decoding and `.`/`..` normalisation; it must name a
+   tracked file or a folder that holds one. An untracked file is missing.
+2. escapes repository: the path climbs above the repository root.
+3. undefined reference: a full (`[text][label]`) or collapsed (`[text][]`) reference names a label
+   the document never defines; a shortcut (`[text]`) without a definition is plain text.
+4. missing anchor: a fragment on a rendered Markdown target (or `#fragment` alone, on the document
+   itself) matches none of its anchors. A heading's anchor is its rendered text lowercased, with
+   every character other than a letter, digit, space, hyphen or underscore dropped and each space
+   made a hyphen; a repeat gets `-1`, `-2` in document order; setext headings count, headings in
+   code do not, and every `<a id>` or `<a name>` adds an anchor. A fragment on a folder, or any
+   fragment but a line anchor on a file GitHub does not render as Markdown, is missing too.
+5. line anchor out of range: `#L<n>` or `#L<n>-L<m>` on a file shown as text (any file but
+   Markdown, or Markdown with `?plain=1`) must lie within its line count.
+6. non-permalink repository URL: a URL of this repository that is not a permalink, such as a
+   branch view, a folder view, an abbreviated commit or the repository page.
+7. unknown permalink blob: a permalink `PERMALINK_BASE<commit>/<path>`, with the full commit id,
+   names an object the local history lacks. All permalinks of a run are looked up in one
+   `git cat-file --batch-check`, and the blobs a fragment needs are read in one
+   `git cat-file --batch`, so a shallow clone reports older commits as unknown.
+
+External destinations (any other scheme or host) are counted and never fetched. Every break prints
+as `path:line: rule: message`. Without `--report` the gate prints every failing document with its
+break count, the first 20 breaks in full, and the totals; with `--report` it prints every break.
+The totals count documents, links by kind, breaks by rule, and breaks by area: the documentation
+root's live documents and frozen records, the ticket folder, the Cursor rules, the project
+instructions, and the other READMEs.
+
+A rule is a `DocumentRule` in `link_check.rs`: it says which areas it judges, judges one scanned
+document at a time, settles any batched work when the run ends, and adds its own totals lines. A
+new rule joins the list in `verify_link_check` and reads the scan it is given.
+
 ## Public surface
 
 - `cargo xtask verify readme-coverage [--path <dir>]...`
 - `cargo xtask verify markdown-placement [--path <dir>]...`
+- `cargo xtask verify link-check [--report] [--path <dir>]...`
 
 `--path` is repeatable and repository-relative: a gate judges only the folders (readme-coverage) or
-files (markdown-placement) at or under the named folders. `.` or the checkout root means the whole
-repository, which is also the default. A value that climbs out with `..`, lies outside the checkout,
-names a file or names no tracked folder is refused with exit 2.
+files (markdown-placement, link-check) at or under the named folders. `.` or the checkout root means
+the whole repository, which is also the default. A value that climbs out with `..`, lies outside the
+checkout, names a file or names no tracked folder is refused with exit 2.
 
 ## Boundaries
 
-- Depends on: `verification_core` (verdicts, the shared report, the process runner), `git ls-files`,
-  the `regex` crate for globs, and the layout constants in `repository_layout.rs`.
+- Depends on: `verification_core` (verdicts, the shared report, the process runner), `git ls-files`
+  and `git cat-file`, the `regex` crate for globs, and the layout constants in
+  `repository_layout.rs`.
 - Used by: the verify command group, through `dispatch.rs`.
 - Rules: every path comes from the layout module; a check that could not examine its input reports
   "did not run", never a pass; production files stay under 500 lines, and tests live in the sibling

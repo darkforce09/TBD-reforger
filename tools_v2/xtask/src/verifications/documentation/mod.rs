@@ -1,16 +1,16 @@
-//! The documentation gates: README coverage with its Contents check, and Markdown placement with
-//! its size limit.
+//! The documentation gates: README coverage with its Contents check, Markdown placement with its
+//! size limit, and the link check.
 //!
 //! **Role:** holds one module per gate and the machinery every gate shares: the tracked-file tree
 //! ([`tracked_tree`]), the `--path` scope ([`gate_scope`]), the repository regions
 //! ([`path_regions`]), fenced-block recognition ([`markdown_fences`]), and [`GateRun`], which
 //! carries a gate's verdicts to [`verification_core::Report`].
 //!
-//! **Position:** `cargo xtask verify readme-coverage` and `cargo xtask verify markdown-placement`
-//! reach [`readme_coverage::verify_readme_coverage`] and
-//! [`markdown_placement::verify_markdown_placement`] through the verify dispatcher. Every path a
-//! gate judges comes from `git ls-files`, and every region it applies comes from
-//! [`crate::core::repository_layout::documentation`].
+//! **Position:** `cargo xtask verify readme-coverage`, `cargo xtask verify markdown-placement`
+//! and `cargo xtask verify link-check` reach [`readme_coverage::verify_readme_coverage`],
+//! [`markdown_placement::verify_markdown_placement`] and [`link_check::verify_link_check`]
+//! through the verify dispatcher. Every path a gate judges comes from `git ls-files`, and every
+//! region it applies comes from [`crate::core::repository_layout::documentation`].
 //!
 //! **Signals & state:** none held; a run lists the tracked files once, judges them, prints its
 //! verdicts and returns its exit status.
@@ -21,6 +21,7 @@
 //! that builds a [`GateRun`] from [`prepare`]'s tree and scope, so another gate registers here the
 //! same way.
 
+pub(crate) mod link_check;
 pub(crate) mod markdown_placement;
 pub(crate) mod readme_coverage;
 

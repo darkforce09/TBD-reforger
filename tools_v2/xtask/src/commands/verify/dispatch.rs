@@ -104,6 +104,17 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                     &paths,
                 )
             }
+            VerifyCmd::LinkCheck { report, paths } => {
+                use crate::verifications::documentation::link_check::{
+                    BreakListing, verify_link_check,
+                };
+                let listing = if report {
+                    BreakListing::Every
+                } else {
+                    BreakListing::First
+                };
+                verify_link_check(&find_repo_root()?, &paths, listing)
+            }
         };
         Ok(code)
     }

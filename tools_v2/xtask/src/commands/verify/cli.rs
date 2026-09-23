@@ -102,4 +102,16 @@ pub(crate) enum VerifyCmd {
         #[arg(long = "path", value_name = "DIR")]
         paths: Vec<String>,
     },
+    /// Every link in the documentation root, the READMEs, the project instructions, the ticket
+    /// folder's documents and the Cursor rules reaches a tracked file or folder, a heading or
+    /// line anchor, a defined reference, or a sha permalink of this repository
+    #[command(name = "link-check")]
+    LinkCheck {
+        /// Print every break as `path:line: rule: message` instead of the first ones
+        #[arg(long)]
+        report: bool,
+        /// Judge only the documents at or under this repository-relative folder (repeatable)
+        #[arg(long = "path", value_name = "DIR")]
+        paths: Vec<String>,
+    },
 }
