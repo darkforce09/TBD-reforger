@@ -53,16 +53,19 @@ suffix and a fragment, and passes a tracked file, a folder holding one, or an ex
 spelling; every other path waits until the run ends, when `git_ignore_rules.rs` asks git about
 all of them in one `git check-ignore --stdin -z` and an ignored path passes. `command_citations.rs`
 finds each `cargo xtask` in the inline code spans and the fenced block lines, reads the words up
-to where shell syntax or prose ends the command, and walks them down xtask's clap command tree;
-a word that names no subcommand where one belongs breaks. The rules are written out in the
+to where shell syntax or prose ends the command, and walks them down xtask's clap command tree,
+in which `mk` and `ci` declare the build recipes and the CI task names as the possible values of
+their first argument; a word that names no subcommand where one belongs breaks, and so does a
+first argument that is none of the values its command declares. The rules are written out in the
 [Documentation Gates README](/tools_v2/xtask/src/verifications/documentation/README.md).
 
 ## Boundaries
 
 - Depends on: `markdown_fences.rs`, `path_regions.rs` and the tracked tree of the parent module,
-  the layout constants, xtask's clap command tree, and `git cat-file` and `git check-ignore`
-  through `verification_core`'s process runner.
+  the layout constants, xtask's clap command tree with the build recipes (`recipes.rs`) and the
+  CI task table (`task_definitions.rs`), and `git cat-file` and `git check-ignore` through
+  `verification_core`'s process runner.
 - Used by: the link-check gate in `link_check.rs`.
 - Rules: the scan and the anchors are pure functions of text; only `link_targets.rs` reads target
   files; only `repository_permalinks.rs` and `git_ignore_rules.rs` run git, each in one batch per
-  run; only `command_citations.rs` reads the command tree.
+  run; only `command_citations.rs` reads the command tree and the recipe and task tables.

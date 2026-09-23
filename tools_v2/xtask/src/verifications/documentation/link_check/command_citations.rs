@@ -3,29 +3,35 @@
 //! **Role:** finds every `cargo xtask` in a live document's inline code spans and in each line of
 //! its fenced code blocks, whatever their info string (a line ending in `\` continues on the next
 //! one), reads the words that follow up to where shell syntax or the surrounding prose ends the
-//! command ([`command_words`]), and walks them down xtask's own clap command tree
+//! command ([`command_words`]), walks them down xtask's own clap command tree, and judges the
+//! first positional argument of the command reached against the values it declares
 //! ([`walk_command`]).
 //!
 //! **Position:** a [`DocumentRule`] of the link-check pipeline in [`super::super::link_check`];
 //! it reads the code spans and fenced blocks of the scan ([`super::markdown_scan`]). The tree is
-//! [`crate::cli::Cli`]'s, built once per run by [`xtask_command_tree`]; the tests hand the rule a
-//! tree of their own.
+//! [`crate::cli::Cli`]'s, built once per run by [`xtask_command_tree`], which declares the names
+//! `mk` and `ci` look up at run time ([`recipes::TARGETS`], [`task_runner::TASKS`]) as the
+//! possible values of their first argument; the tests hand the rule a tree of their own.
 //!
 //! **Signals & state:** the counts of one run.
 //!
 //! **Invariants:** frozen records are never judged; only `cargo` standing as a word of its own
-//! opens a citation, so `hcargo xtask` is none; while the command reached has subcommands, each
-//! word that is neither a flag nor a placeholder must name one of them or an alias of one, a flag
-//! that takes a value takes the next word with it, and a placeholder ends the walk without a
-//! break; the words after a leaf command are its arguments and are never judged; a break names the
-//! command path up to and including the first word that names no subcommand.
+//! opens a citation, so `hcargo xtask` is none; a flag is skipped wherever it stands, and a flag
+//! that takes a value takes the next word with it; while the command reached has subcommands,
+//! every other word must name one of them or an alias of one, and a placeholder ends the walk
+//! without a break; the next word is the command's first positional argument, which must be one
+//! of the possible values that argument declares or an alias of one, a placeholder passing; an
+//! argument that declares none, and every later word, is never judged; a break names the command
+//! path up to and including the first word that names nothing there.
 
-use clap::{Command, CommandFactory};
+use clap::{Arg, Command, CommandFactory};
 
 use super::judged_documents::DocumentArea;
 use super::markdown_scan::CodeBlock;
 use super::{BreakRule, DocumentRule, JudgedDocument, RuleContext, RuleFindings};
 use crate::cli::Cli;
+use crate::commands::build::recipes;
+use crate::commands::ci::task_runner;
 
 /// The program word of a citation.
 const CARGO: &str = "cargo";
@@ -36,21 +42,56 @@ const XTASK: &str = "xtask";
 /// What walking a cited command's words down the command tree concluded.
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum CitedCommand {
-    /// Every word resolved, up to a leaf command or the end of the words.
+    /// Every judged word resolved: the subcommands, and the first argument's value when that
+    /// argument declares possible values.
     Exists,
-    /// A placeholder stands where a subcommand belongs, so the rest cannot be judged.
+    /// A placeholder stands where a subcommand or a declared value belongs, so it cannot be
+    /// judged.
     ReachesPlaceholder,
-    /// The command path up to and including the first word that names no subcommand, spelled
-    /// `cargo xtask …`.
+    /// The command path up to and including the first word that names no subcommand, or no
+    /// declared value of the first argument, spelled `cargo xtask …`.
     Unknown(String),
 }
 
 /// xtask's own command tree, built the way clap builds it before parsing, so the subcommands and
-/// flags clap adds itself are part of it.
+/// flags clap adds itself are part of it. `mk` and `ci` take their first argument as a free
+/// string and look it up at run time, in the build recipes ([`recipes::TARGETS`]) and in the CI
+/// task table ([`task_runner::TASKS`]); the tree declares those names as the argument's possible
+/// values, so a cited recipe or task is judged like any value clap declares.
 pub(super) fn xtask_command_tree() -> Command {
-    let mut tree = Cli::command();
+    let mut tree = Cli::command().mut_subcommands(|command| match command.get_name() {
+        "mk" => with_first_argument_values(command, recipes::TARGETS.to_vec()),
+        "ci" => {
+            let tasks = task_runner::TASKS.iter().map(|task| task.name).collect();
+            with_first_argument_values(command, tasks)
+        }
+        _ => command,
+    });
     tree.build();
     tree
+}
+
+/// `command` with `names` declared as the possible values of its first positional argument. The
+/// arguments keep their order, so the build numbers the positionals as it does for the parser.
+fn with_first_argument_values(command: Command, names: Vec<&'static str>) -> Command {
+    let Some(first) = first_positional(&command).map(|argument| argument.get_id().clone()) else {
+        return command;
+    };
+    command.mut_args(|argument| {
+        if *argument.get_id() == first {
+            argument.value_parser(names.clone())
+        } else {
+            argument
+        }
+    })
+}
+
+/// The first positional argument of `command`: the one with the lowest index, or before the build
+/// numbers them, the first one declared.
+fn first_positional(command: &Command) -> Option<&Arg> {
+    command
+        .get_positionals()
+        .min_by_key(|argument| argument.get_index())
 }
 
 /// The text after each `cargo xtask` in `text`, in order. `cargo` must stand as a word of its
@@ -159,20 +200,21 @@ fn unquote(word: &str) -> (&str, bool) {
     (word, false)
 }
 
-/// Walk `words` down the command tree from `root`.
+/// Walk `words` down the command tree from `root`, then judge the word that stands as the first
+/// positional argument of the command reached.
 pub(super) fn walk_command(root: &Command, words: &[&str]) -> CitedCommand {
     let mut command = root;
     let mut path: Vec<&str> = Vec::new();
     let mut remaining = words.iter();
-    while command.has_subcommands() && !command.is_allow_external_subcommands_set() {
-        let Some(&word) = remaining.next() else {
-            break;
+    let argument = loop {
+        if command.is_allow_external_subcommands_set() {
+            return CitedCommand::Exists;
+        }
+        let Some(word) = next_operand(command, &mut remaining) else {
+            return CitedCommand::Exists;
         };
-        if is_flag(word) {
-            if flag_takes_value(command, word) {
-                remaining.next();
-            }
-            continue;
+        if !command.has_subcommands() {
+            break word;
         }
         if is_placeholder(word) {
             return CitedCommand::ReachesPlaceholder;
@@ -182,14 +224,59 @@ pub(super) fn walk_command(root: &Command, words: &[&str]) -> CitedCommand {
                 path.push(word);
                 command = subcommand;
             }
-            None if command.get_positionals().next().is_some() => break,
-            None => {
-                path.push(word);
-                return CitedCommand::Unknown(format!("{CARGO} {XTASK} {}", path.join(" ")));
-            }
+            None if command.get_positionals().next().is_some() => break word,
+            None => return unknown_command(&path, word),
+        }
+    };
+    judge_first_argument(command, &path, argument)
+}
+
+/// The next of `words` that is neither a flag nor the value an option of `command` takes with
+/// it.
+fn next_operand<'w>(
+    command: &Command,
+    words: &mut std::slice::Iter<'_, &'w str>,
+) -> Option<&'w str> {
+    while let Some(&word) = words.next() {
+        if !is_flag(word) {
+            return Some(word);
+        }
+        if flag_takes_value(command, word) {
+            words.next();
         }
     }
-    CitedCommand::Exists
+    None
+}
+
+/// Judge `word`, standing as the first positional argument of `command` at `path`. When that
+/// argument declares possible values, `word` must be one of them or an alias of one, and a
+/// placeholder cannot be judged; an argument that declares none takes any word.
+fn judge_first_argument(command: &Command, path: &[&str], word: &str) -> CitedCommand {
+    let Some(argument) = first_positional(command) else {
+        return CitedCommand::Exists;
+    };
+    let values = argument.get_possible_values();
+    if values.is_empty() {
+        CitedCommand::Exists
+    } else if is_placeholder(word) {
+        CitedCommand::ReachesPlaceholder
+    } else if values
+        .iter()
+        .any(|value| value.matches(word, argument.is_ignore_case_set()))
+    {
+        CitedCommand::Exists
+    } else {
+        unknown_command(path, word)
+    }
+}
+
+/// The break for `word`, the first word that names nothing where it stands after `path`: the
+/// cited command spelled up to and including it.
+fn unknown_command(path: &[&str], word: &str) -> CitedCommand {
+    CitedCommand::Unknown(format!(
+        "{CARGO} {XTASK} {}",
+        [path, &[word]].concat().join(" ")
+    ))
 }
 
 /// Whether `word` is a flag: `-x`, `--name` or `--name=value`.

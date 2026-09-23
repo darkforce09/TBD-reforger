@@ -104,7 +104,10 @@ pub(crate) enum VerifyCmd {
     },
     /// Every link in the documentation root, the READMEs, the project instructions, the ticket
     /// folder's documents and the Cursor rules reaches a tracked file or folder, a heading or
-    /// line anchor, a defined reference, or a sha permalink of this repository
+    /// line anchor, a defined reference, or a sha permalink of this repository; every repository
+    /// path a live document writes in backticks names a tracked or ignored file or folder; and
+    /// every `cargo xtask` command a live document cites exists, with the value of its first
+    /// argument when that argument has a closed set of values
     #[command(name = "link-check")]
     LinkCheck {
         /// Print every break as `path:line: rule: message` instead of the first ones

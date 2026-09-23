@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use clap::{Arg, ArgAction};
+use clap::{Arg, ArgAction, ValueEnum, value_parser};
 
 use super::super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts};
 use super::super::super::tracked_tree::TrackedTree;
@@ -9,8 +9,17 @@ use super::super::{Break, BreakListing, judge as judge_gate};
 use super::*;
 use crate::core::repository_layout::documentation::ARCHIVE_DIR;
 
+/// The values of the fixture's `run` argument, one of them with an alias.
+#[derive(Clone, ValueEnum)]
+enum Pace {
+    #[value(alias = "quick")]
+    Fast,
+    Thorough,
+}
+
 /// A small command tree shaped like xtask's: groups with verbs, an alias, a group option that
-/// takes a value, a leaf with arguments, and a leaf group root.
+/// takes a value, a leaf with arguments, a leaf group root, a leaf whose first argument is a value
+/// enum behind an option and a switch, and a group whose own argument declares a list of values.
 fn fixture_tree() -> Command {
     let mut tree = Command::new("xtask")
         .disable_help_subcommand(true)
@@ -34,7 +43,19 @@ fn fixture_tree() -> Command {
                 )
                 .subcommand(Command::new("link-check")),
         )
-        .subcommand(Command::new("ci").arg(Arg::new("target")));
+        .subcommand(Command::new("ci").arg(Arg::new("target")))
+        .subcommand(
+            Command::new("run")
+                .arg(Arg::new("format").long("format"))
+                .arg(Arg::new("verbose").short('v').action(ArgAction::SetTrue))
+                .arg(Arg::new("pace").value_parser(value_parser!(Pace)))
+                .arg(Arg::new("rest").num_args(0..)),
+        )
+        .subcommand(
+            Command::new("switch")
+                .arg(Arg::new("state").value_parser(["on", "off"]))
+                .subcommand(Command::new("status")),
+        );
     tree.build();
     tree
 }
@@ -299,6 +320,142 @@ fn the_xtask_tree_resolves_its_own_commands() {
     assert_eq!(
         walk(&tree, "cargo xtask no-such-group verb"),
         unknown("cargo xtask no-such-group")
+    );
+}
+
+#[test]
+fn a_value_enum_argument_takes_one_of_its_values_or_an_alias() {
+    let tree = fixture_tree();
+    for text in [
+        "cargo xtask run fast",
+        "cargo xtask run thorough",
+        "cargo xtask run quick",
+        "cargo xtask run fast then any words",
+    ] {
+        assert_eq!(walk(&tree, text), CitedCommand::Exists, "{text}");
+    }
+    assert_eq!(
+        walk(&tree, "cargo xtask run slow"),
+        unknown("cargo xtask run slow")
+    );
+}
+
+#[test]
+fn a_flag_before_the_value_is_skipped_with_the_value_its_option_takes() {
+    let tree = fixture_tree();
+    for text in [
+        "cargo xtask run --format json fast",
+        "cargo xtask run --format=json fast",
+        "cargo xtask run -v fast",
+        "cargo xtask run --unknown-switch thorough",
+    ] {
+        assert_eq!(walk(&tree, text), CitedCommand::Exists, "{text}");
+    }
+    assert_eq!(
+        walk(&tree, "cargo xtask run --format json slow"),
+        unknown("cargo xtask run slow")
+    );
+    assert_eq!(
+        walk(&tree, "cargo xtask run -v json"),
+        unknown("cargo xtask run json"),
+        "a switch takes no value"
+    );
+}
+
+#[test]
+fn a_placeholder_where_a_declared_value_belongs_passes() {
+    let tree = fixture_tree();
+    for text in [
+        "cargo xtask run <pace>",
+        "cargo xtask run --format json [pace]",
+        "cargo xtask run …",
+    ] {
+        assert_eq!(
+            walk(&tree, text),
+            CitedCommand::ReachesPlaceholder,
+            "{text}"
+        );
+    }
+    assert_eq!(
+        walk(&tree, "cargo xtask ticket show <id>"),
+        CitedCommand::Exists,
+        "an argument that declares no values is never judged"
+    );
+}
+
+#[test]
+fn a_group_word_that_names_no_subcommand_is_judged_as_the_group_argument() {
+    let tree = fixture_tree();
+    for text in ["cargo xtask switch status", "cargo xtask switch on"] {
+        assert_eq!(walk(&tree, text), CitedCommand::Exists, "{text}");
+    }
+    assert_eq!(
+        walk(&tree, "cargo xtask switch sideways"),
+        unknown("cargo xtask switch sideways")
+    );
+}
+
+#[test]
+fn every_build_recipe_and_ci_task_is_a_value_the_xtask_tree_declares() {
+    let tree = xtask_command_tree();
+    for recipe in recipes::TARGETS {
+        let text = format!("cargo xtask mk {recipe}");
+        assert_eq!(walk(&tree, &text), CitedCommand::Exists, "{text}");
+    }
+    for task in task_runner::TASKS {
+        let text = format!("cargo xtask ci {}", task.name);
+        assert_eq!(walk(&tree, &text), CitedCommand::Exists, "{text}");
+    }
+}
+
+#[test]
+fn an_unknown_recipe_or_task_names_the_command_and_the_value() {
+    let tree = xtask_command_tree();
+    assert_eq!(
+        walk(&tree, "cargo xtask mk no-such-recipe"),
+        unknown("cargo xtask mk no-such-recipe")
+    );
+    assert_eq!(
+        walk(&tree, "cargo xtask mk --dry-run no-such-recipe"),
+        unknown("cargo xtask mk no-such-recipe")
+    );
+    assert_eq!(
+        walk(&tree, "cargo xtask ci no-such-task"),
+        unknown("cargo xtask ci no-such-task")
+    );
+    for text in [
+        "cargo xtask mk --dry-run leptos",
+        "cargo xtask mk -n rust-api",
+        "cargo xtask mk --list",
+        "cargo xtask ci --help",
+        "cargo xtask ci",
+    ] {
+        assert_eq!(walk(&tree, text), CitedCommand::Exists, "{text}");
+    }
+    for text in ["cargo xtask mk <target>", "cargo xtask ci <task>"] {
+        assert_eq!(
+            walk(&tree, text),
+            CitedCommand::ReachesPlaceholder,
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn a_value_break_renders_and_a_placeholder_value_counts_as_reached() {
+    let text = "# Tool\n\n`cargo xtask run slow`, `cargo xtask run <pace>` and \
+                `cargo xtask run fast`.\n";
+    let (breaks, totals) = judge_document(text);
+    assert_eq!(
+        breaks,
+        ["apps/tool/README.md:3: cited command does not exist: `cargo xtask run slow`"]
+    );
+    assert!(
+        totals.contains(
+            "3 judged in live documents — 1 name an existing command, 1 reach a placeholder, 1 \
+             name no command"
+        ),
+        "{totals}"
     );
 }
 

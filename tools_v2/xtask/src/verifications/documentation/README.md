@@ -154,12 +154,19 @@ break names its rule:
    `,`, `:` or `.` (the word counts without it), since a citation inside a sentence carries the
    sentence's punctuation and no subcommand name ends in one; quotes around a word are removed.
    The words are walked down xtask's own clap command tree (`crate::cli::Cli`, built as clap builds
-   it before parsing): while the command reached has subcommands, a flag (`-x`, `--name`,
-   `--name=value`) is skipped together with the value an option of that command takes, a
-   placeholder (`<…>`, `[…]`, `{…}`, `…`, `...`) ends the walk without a break, and any other word
-   must name a subcommand or one of its aliases. The words after a leaf command are its arguments
-   and are never judged, so `cargo xtask`, `cargo xtask --help` and every target of `mk` and `ci`
-   pass. The break names the path up to and including the first word that names no subcommand.
+   it before parsing). A flag (`-x`, `--name`, `--name=value`) is skipped wherever it stands,
+   together with the value an option of the command reached takes. While that command has
+   subcommands, a placeholder (`<…>`, `[…]`, `{…}`, `…`, `...`) ends the walk without a break, and
+   any other word must name a subcommand or one of its aliases. The next word stands as the first
+   positional argument of the command reached: when that argument declares possible values (a
+   `ValueEnum` type, or a list given to `value_parser`), the word must be one of them or an alias
+   of one, and a placeholder passes. `mk` and `ci` take their first argument as a free string and
+   look it up at run time, in the build recipes (`TARGETS` in `recipes.rs`) and in the CI task
+   table (`TASKS` in `task_definitions.rs`), so the tree declares those names as that argument's
+   possible values: `cargo xtask mk leptos` and `cargo xtask ci ci-local` pass, and a recipe or
+   task neither table holds breaks. An argument that declares no values, and every word after the
+   first argument, is never judged, so `cargo xtask` and `cargo xtask --help` pass. The break names
+   the path up to and including the first word that names no subcommand or no declared value.
 
 External destinations are counted and never fetched: any other scheme or host, and every page of
 this repository other than a blob or tree view, such as its home page (with or without a trailing
@@ -190,7 +197,8 @@ checkout, names a file or names no tracked folder is refused with exit 2.
 
 - Depends on: `verification_core` (verdicts, the shared report, the process runner), `git ls-files`,
   `git cat-file` and `git check-ignore`, the `regex` crate for globs, xtask's own clap command tree
-  (`crate::cli::Cli`, read through `clap::CommandFactory`), and the layout constants in
+  (`crate::cli::Cli`, read through `clap::CommandFactory`) with the build recipes and the CI task
+  table it declares as the values of `mk` and `ci`, and the layout constants in
   `repository_layout.rs`.
 - Used by: the verify command group, through `dispatch.rs`.
 - Rules: every path comes from the layout module; a check that could not examine its input reports
