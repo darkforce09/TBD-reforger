@@ -67,7 +67,6 @@ pub fn router(state: AppState) -> Router {
     // it is created here rather than reported missing like the read-only asset roots below.
     let uploads_dir = state.cfg.upload_dir.clone();
     ensure_runtime_dir("UPLOAD_DIR", &uploads_dir);
-    ensure_runtime_dir("MISSION_STAGE_DIR", &state.cfg.mission_stage_dir);
     let mut r = Router::new()
         // Public callers get `{"status": …}` and the 200/503 split, nothing else. The detail is
         // behind the same `X-Service-Token` that gates `/metrics`. See [`healthz`].
@@ -209,8 +208,8 @@ pub fn router(state: AppState) -> Router {
 #[path = "tests/http_router.rs"]
 mod tests;
 
-/// Creates a directory the API writes into, at router build, so the first upload or injection
-/// does not depend on a deployment having prepared it. A failure is logged with the variable
+/// Creates a directory the API writes into, at router build, so the first upload does not depend
+/// on a deployment having prepared it. A failure is logged with the variable
 /// that names the directory and left to surface as a 500 on the write, where the handler already
 /// reports it.
 fn ensure_runtime_dir(env_var: &str, dir: &str) {

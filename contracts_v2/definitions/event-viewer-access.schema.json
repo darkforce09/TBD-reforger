@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventViewerAccess",
+  "description": "The viewer_access object of GET /api/v1/events/:id. A hidden event answers 404 exactly like a missing one. A partial viewer (admitted only by squad or slot policies) sees only admitted missions and seats and no event briefing. The hub also carries reservation_quotas (ReservationQuotaAvailability per pool, in member, guest, open order) and remaining_event_places (null when the event is uncapped); each ORBAT slot of GET /api/v1/event-missions/:emid/orbat carries SlotViewerEligibility flattened into the slot.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "visibility",
+    "quota_class",
+    "membership_verification_pending"
+  ],
+  "properties": {
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "full",
+        "partial"
+      ]
+    },
+    "quota_class": {
+      "type": "string",
+      "enum": [
+        "member",
+        "guest"
+      ],
+      "description": "The pool a new place comes from first."
+    },
+    "membership_verification_pending": {
+      "type": "boolean",
+      "description": "Discord verification is pending or stale for a guild this event's policies rely on."
+    }
+  },
+  "definitions": {
+    "ReservationQuotaAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quota_kind",
+        "seat_limit",
+        "allocated",
+        "remaining",
+        "opens_at",
+        "open",
+        "closed_reason"
+      ],
+      "properties": {
+        "quota_kind": {
+          "type": "string",
+          "enum": [
+            "member",
+            "guest",
+            "open"
+          ]
+        },
+        "seat_limit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "allocated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "remaining": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "opens_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "closed_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "not_yet_open",
+            "no_places",
+            "full",
+            null
+          ]
+        }
+      }
+    },
+    "SlotViewerEligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "viewer_access",
+        "policy_source"
+      ],
+      "properties": {
+        "viewer_access": {
+          "type": "string",
+          "enum": [
+            "eligible",
+            "restricted"
+          ]
+        },
+        "policy_source": {
+          "type": "string",
+          "enum": [
+            "event",
+            "squad",
+            "slot"
+          ]
+        }
+      }
+    },
+    "EventMissionViewerState": {
+      "description": "Viewer fields of each hub mission: viewer_eligible (some seat admits the viewer now), my_reservation_state, my_attendance_state, my_slot_id, my_release_reason and my_withdrawn_at (a released signup keeps its tombstone), my_waiting_position (one-based queue position while waitlisted). Absent fields have no value.",
+      "type": "object",
+      "required": [
+        "viewer_eligible"
+      ],
+      "properties": {
+        "viewer_eligible": {
+          "type": "boolean"
+        },
+        "my_reservation_state": {
+          "type": "string",
+          "enum": [
+            "registered",
+            "waitlisted",
+            "withdrawn",
+            "legacy_unknown"
+          ]
+        },
+        "my_attendance_state": {
+          "type": "string",
+          "enum": [
+            "attended",
+            "no_show"
+          ]
+        },
+        "my_slot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "my_release_reason": {
+          "type": "string",
+          "enum": [
+            "participant_withdrew",
+            "mission_removed",
+            "event_cancelled",
+            "event_deleted",
+            "eligibility_lost",
+            "access_policy_changed",
+            "account_unavailable",
+            "seat_cleared"
+          ]
+        },
+        "my_withdrawn_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "my_waiting_position": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

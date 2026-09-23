@@ -1,0 +1,80 @@
+{
+  "artifact": {
+    "artifact_digest": "bcfb3b1c4109fe03ac0292372a3fdfb86052d44979c2f2638e7e419e7f234577",
+    "catalog_sha256": "26fa7c98e52915f6f2d476d2373e9cbdc5ad09b2e64ce812e9c7b23c88947b07",
+    "compiler_version": "website-map-engine 0.1.0",
+    "created_at": "2026-07-24T11:05:00Z",
+    "created_by": "000000000000000003",
+    "diagnostics": [],
+    "document_bytes": 1278,
+    "document_sha256": "815fa594db434d9a8ffa297dda126ddab4a6493d3fa1db1c62525abe4f409739",
+    "id": "00000000-0000-4000-f000-000000000004",
+    "metadata": {
+      "author": "000000000000000003",
+      "custom_terrain_name": "",
+      "game_mode": "pve_coop",
+      "id": "00000000-0000-4000-c000-000000000004",
+      "max_players": 32,
+      "terrain": "everon",
+      "time_of_day": "03:15:00",
+      "title": "Operation Cold Anvil",
+      "weather": "heavy_rain"
+    },
+    "metadata_sha256": "f34053e5497da9c897a19d4ba986f2f86f0661e2c2dda3ab21da5960518e2128",
+    "mission_id": "00000000-0000-4000-c000-000000000004",
+    "mission_version_id": "00000000-0000-4000-8000-000000000014",
+    "modpack_id": "00000000-0000-4000-a000-000000000001",
+    "modpack_version": "2.1",
+    "schema_version": "1.1",
+    "terrain": "everon",
+    "version_payload_sha256": "bb173e5b5b0e64ac00020ce933fa6cf5a9829548d7d10a8cc85a327653517b3e"
+  },
+  "version": {
+    "created_at": "2026-07-24T11:00:00Z",
+    "created_by": "000000000000000003",
+    "editor_notes": "Resubmitted with placed seats",
+    "id": "00000000-0000-4000-8000-000000000014",
+    "json_payload": {
+      "editor": {
+        "editorLayers": [],
+        "factions": [
+          {
+            "id": "f1",
+            "key": "BLUFOR",
+            "name": "US Army",
+            "squadIds": [
+              "sq1"
+            ]
+          }
+        ],
+        "slots": [
+          {
+            "id": "s1",
+            "index": 0,
+            "position": {
+              "rotation": 270,
+              "x": 4839.2,
+              "y": 6620.8,
+              "z": 0
+            },
+            "role": "SL",
+            "squadId": "sq1"
+          }
+        ],
+        "squads": [
+          {
+            "callsign": "Alpha",
+            "factionId": "f1",
+            "id": "sq1",
+            "name": "A 1-1",
+            "slotIds": [
+              "s1"
+            ]
+          }
+        ]
+      }
+    },
+    "mission_id": "00000000-0000-4000-c000-000000000004",
+    "semver": "0.4.0"
+  }
+}

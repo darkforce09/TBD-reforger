@@ -1,11 +1,13 @@
 //! The mission overview route: fetch one mission, then lay its dossier out.
 //!
 //! **Role:** owns the request for the mission detail, decides whether the viewer may edit its
-//! armory, and arranges the header, the shared dossier body and the Edit Armory dialog.
+//! armory and read its review record, and arranges the header, the shared dossier body, the review
+//! record and the Edit Armory dialog.
 //! **Position:** the `/missions/:id` route, behind the sign-in gate.
 //! **Signals & state:** a `LocalResource` keyed on the route parameter and on the armory editor's
 //! saved counter, so a successful write re-reads the mission and the read-only armory shows what
-//! was just stored. Reads the session store from context.
+//! was just stored. Reads the session store from context through a memo of the viewer's account
+//! id and administrator standing, the only two facts the dossier renders from.
 //! **Invariants:** the armory handle is created before the resource, because the resource depends
 //! on it, and it is owned by the component rather than by the render closure, so the draft
 //! survives a refetch. The fetch is browser-only; natively it resolves to `None` and the page
@@ -18,6 +20,7 @@ use super::header::dossier_header;
 use crate::v2::core::api::dto::MissionDetail;
 use crate::v2::core::auth::Role;
 use crate::v2::core::ui::AuthGate;
+use crate::v2::pages::mission_hub::mission_review::review_record::MissionReviewRecord;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
@@ -29,6 +32,15 @@ pub fn MissionOverviewPage() -> impl IntoView {
             <MissionOverviewInner />
         </AuthGate>
     }
+}
+
+/// What the edit predicate knows about the viewer.
+#[derive(Clone, PartialEq)]
+struct EditingViewer {
+    /// The viewer's account id; empty when nobody is signed in.
+    account_id: String,
+    /// Whether the viewer's account is an administrator.
+    is_admin: bool,
 }
 
 /// The dossier itself, once the session gate has let the viewer through.
@@ -63,14 +75,27 @@ fn MissionOverviewInner() -> impl IntoView {
             }
         }
     });
-    let me = move || store.user.get().map(|u| u.discord_id).unwrap_or_default();
+    // Memoized, so the dossier below is rebuilt when the viewer's account or administrator
+    // standing changes and not on every profile poll; a rebuild discards the dossier's local
+    // state, such as a review comment being typed.
+    let viewer = Memo::new(move |_| {
+        store.user.with(|user| EditingViewer {
+            account_id: user
+                .as_ref()
+                .map(|u| u.discord_id.clone())
+                .unwrap_or_default(),
+            is_admin: user.as_ref().is_some_and(|u| u.role == Role::Admin),
+        })
+    });
 
     // Mirrors the API's own predicate exactly — author or administrator, and deliberately not a
     // role tier. The server's tier is authorship, so a role check here would hide the button from
-    // someone the endpoint would serve and show it to someone it would refuse.
+    // someone the endpoint would serve and show it to someone it would refuse. The review record
+    // is served to exactly the same two.
     let can_edit = move |m: &MissionDetail| {
-        m.author_id == me() || store.user.get().map(|u| u.role) == Some(Role::Admin)
+        viewer.with(|viewer| m.author_id == viewer.account_id || viewer.is_admin)
     };
+    let refetch = Callback::new(move |()| mission.refetch());
 
     view! {
         <Suspense fallback=move || {
@@ -82,7 +107,7 @@ fn MissionOverviewInner() -> impl IntoView {
                     .map(|opt| match opt {
                         Some(m) => {
                             let editable = can_edit(&m);
-                            body(m, editor, editable).into_any()
+                            body(m, editor, editable, refetch).into_any()
                         }
                         None => view! { <p class="text-error">"Failed to load data."</p> }.into_any(),
                     })
@@ -92,14 +117,34 @@ fn MissionOverviewInner() -> impl IntoView {
     }
 }
 
-/// The dossier layout: the header above the glass card that holds the shared body.
-fn body(m: MissionDetail, ed: ArmoryEditor, editable: bool) -> impl IntoView {
+/// The dossier layout: the header above the glass card that holds the shared body, and — for the
+/// author and administrators — the review record under it.
+fn body(
+    m: MissionDetail,
+    ed: ArmoryEditor,
+    editable: bool,
+    refetch: Callback<()>,
+) -> impl IntoView {
+    let review_record = editable.then(|| {
+        view! {
+            <div class="mt-6 rounded-xl p-6 glass">
+                <MissionReviewRecord
+                    mission_id=m.id.clone()
+                    status=m.status.clone()
+                    reviewed_at=m.reviewed_at.clone()
+                    approved_artifact_id=m.approved_artifact_id.clone()
+                    on_resubmitted=refetch
+                />
+            </div>
+        }
+    });
     view! {
         <div class="mx-auto w-full max-w-3xl">
             {dossier_header(&m, ed, editable)}
             <div class="relative flex flex-col gap-3 overflow-hidden rounded-xl p-6 glass">
                 {dossier_body(&m)}
             </div>
+            {review_record}
         </div>
     }
 }

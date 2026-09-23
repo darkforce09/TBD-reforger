@@ -90,8 +90,9 @@ modded class SCR_MenuSpawnLogic
 		if (r == TBD_EDeployResult.RETRY)
 			sm.ScheduleDeployRetry(playerId);
 
-		// DEPLOYED / ALREADY / FAILED / DENIED: never let vanilla spawn a second body on a
-		// framework mission. FAILED keeps the player on the wait screen (logged ERROR).
+		// DEPLOYED / ALREADY / FAILED / DENIED / AUTHORIZING / UNAUTHORIZED: never let vanilla spawn a
+		// second body on a framework mission. FAILED keeps the player on the wait screen (logged
+		// ERROR); the platform's decision finishes an AUTHORIZING deploy on its own.
 		// T-181.21 — DENIED means the player has spent their one life. It is NOT retried here,
 		// on purpose: retrying a policy decision would just re-log the refusal forever, and the
 		// only legitimate way back in is an admin (TBD_SpawnManager.AdminRespawn). Nothing extra

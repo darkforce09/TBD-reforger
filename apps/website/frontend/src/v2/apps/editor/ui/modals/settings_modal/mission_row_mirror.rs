@@ -72,6 +72,12 @@ impl ShapeMirror {
             shape.set(None);
             return;
         }
+        // A review workspace shows the row fields its artifact compiled from, not today's row.
+        if !crate::v2::apps::editor::shell::review_mode::writes_mission() {
+            let reviewed = crate::v2::apps::editor::shell::document_commands::hydrated_row();
+            shape.set(reviewed.map(RowShape::from));
+            return;
+        }
         if shape.get_untracked().is_none() {
             if let Some(h) = crate::v2::apps::editor::shell::document_commands::hydrated_row() {
                 shape.set(Some(RowShape::from(h)));
@@ -142,6 +148,13 @@ impl ShapeMirror {
         {
             return;
         }
+        if !crate::v2::apps::editor::shell::review_mode::writes_mission() {
+            self.toasts
+                .error(crate::v2::apps::editor::shell::review_mode::saves_nothing_message());
+            shape.set(None);
+            shape.set(Some(previous));
+            return;
+        }
         SHAPE_SEQ.with(|s| s.borrow_mut().begin_patch());
         shape.set(Some(RowShape {
             game_mode: next.clone(),
@@ -193,6 +206,13 @@ impl ShapeMirror {
         if !crate::v2::apps::editor::ui::docks::top_strip::is_mission_row_id(&id)
             || field.read(&previous) == next
         {
+            return;
+        }
+        if !crate::v2::apps::editor::shell::review_mode::writes_mission() {
+            self.toasts
+                .error(crate::v2::apps::editor::shell::review_mode::saves_nothing_message());
+            shape.set(None);
+            shape.set(Some(previous));
             return;
         }
         if field == PresentationField::Thumbnail && !is_acceptable_thumbnail_url(&next) {

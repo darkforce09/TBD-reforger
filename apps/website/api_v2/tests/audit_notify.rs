@@ -105,16 +105,21 @@ async fn seed_slot(pool: &PgPool, em: Uuid, callsign: &str) -> Uuid {
 }
 
 async fn seed_registration(pool: &PgPool, em: Uuid, who: &str, slot: Option<Uuid>) -> Uuid {
-    sqlx::query_scalar(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) \
-         VALUES ($1, $2, $3, 'registered') RETURNING id",
+    let mut fixture = (pool).begin().await.unwrap();
+    let allocation = common::participant_allocation(&mut fixture, em, who).await;
+    let id = sqlx::query_scalar(
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, allocation_id) \
+         VALUES ($1, $2, $3, 'registered', $4) RETURNING id",
     )
     .bind(em)
     .bind(who)
     .bind(slot)
-    .fetch_one(pool)
+    .bind(allocation)
+    .fetch_one(&mut *fixture)
     .await
-    .expect("seed registration")
+    .expect("seed registration");
+    fixture.commit().await.unwrap();
+    id
 }
 
 async fn audit_rows(pool: &PgPool, action: &str, target_id: &str) -> Vec<AuditRow> {
@@ -362,7 +367,7 @@ async fn clearing_a_slot_writes_an_event_slot_kick_audit_row() {
     assert_eq!(meta["slot_id"], Value::String(slot.to_string()));
     assert_eq!(meta["registration_id"], Value::String(reg.to_string()));
 
-    sqlx::query("DELETE FROM event_registrations WHERE id = $1")
+    sqlx::query("WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE id = $1)) DELETE FROM event_registrations WHERE id = $1")
         .bind(reg)
         .execute(&pool)
         .await

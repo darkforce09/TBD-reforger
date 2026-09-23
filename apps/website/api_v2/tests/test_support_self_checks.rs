@@ -24,6 +24,41 @@ use common::source_text::{
     users_insert_arma_id_value,
 };
 
+#[test]
+fn missing_database_child_probe() {
+    if std::env::var_os("TBD_MISSING_DATABASE_CHILD").is_some() {
+        let _ = common::database::require_test_database_url();
+        panic!("database resolver incorrectly returned without configuration");
+    }
+}
+
+#[test]
+fn missing_database_fails_in_ci_and_verification_gates() {
+    for flag in ["CI", "TBD_API_VERIFICATION"] {
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "missing_database_child_probe", "--nocapture"])
+            .env_remove("TEST_DATABASE_URL")
+            .env("TBD_MISSING_DATABASE_CHILD", "1")
+            .env(flag, "true")
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "missing database passed with {flag}"
+        );
+        let message = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            message.contains("TEST_DATABASE_URL is required for database tests"),
+            "wrong failure: {message}"
+        );
+        assert!(!message.contains("resolver incorrectly returned"));
+    }
+}
+
 /// The derived database name is per-binary, stable, and allow-listed.
 #[test]
 fn per_binary_database_name_is_derived_from_the_binary() {

@@ -1,6 +1,7 @@
 //! Client<->server transport for the admin mission browser. Works on dedicated
 //! servers (no chat dependency): the admin's client RPCs the server, the server
-//! validates the player is a listed admin and drives TBD_FrameworkManager.
+//! validates the player is a listed admin and relays the selection to the platform as a
+//! deployment request (TBD_MissionDeploymentRelay); the outcome reaches the admin in chat.
 //!
 //! Added as methods on the player controller (which is replicated and owned by
 //! one client), so server->owner replies route to the requesting admin only.
@@ -120,7 +121,7 @@ modded class SCR_PlayerController
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Load key: request the server to switch to the currently highlighted mission.
+	//! Load key: ask the server to request a deployment of the highlighted mission.
 	protected void TBD_OnLoadAction(float value, EActionTrigger trigger)
 	{
 		if (!m_TBD_MissionLines || m_TBD_MissionLines.IsEmpty())
@@ -128,7 +129,7 @@ modded class SCR_PlayerController
 			Print("[TBD][browser] no mission selected — press Cycle first.");
 			return;
 		}
-		Print(string.Format("[TBD][browser] loading mission #%1…", m_TBD_CycleIndex + 1));
+		Print(string.Format("[TBD][browser] requesting a deployment of mission #%1", m_TBD_CycleIndex + 1));
 		TBD_RequestSelectMission(m_TBD_CycleIndex + 1);
 	}
 
@@ -177,7 +178,8 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcAsk_SelectMission, number);
 	}
 
-	//! @authority server — executes on the server; validates the caller is a listed admin before acting.
+	//! @authority server - executes on the server; validates the caller is a listed admin before
+	//! relaying the selection. Nothing restarts here: the platform decides and runs the deployment.
 	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_SelectMission(int number)
@@ -191,12 +193,9 @@ modded class SCR_PlayerController
 			return;
 		}
 
-		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
-		if (!fm)
-			return;
-
-		string status = fm.SelectMissionByNumber(number);
-		Print(string.Format("[TBD][browser] admin %1 -> %2", playerId, status));
+		string reply = TBD_MissionDeploymentRelay.RequestByNumber(playerId, number);
+		Print(string.Format("[TBD][browser] admin %1 -> %2", playerId, reply));
+		TBD_PlayerChat.Tell(playerId, reply);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -338,27 +337,26 @@ class TBD_MissionBrowserService
 	protected static const int MAX_LIST_LINES = 100;
 
 	//------------------------------------------------------------------------------------------------
-	//! Server: build "n) name [terrain] N slots" lines from the cached list.
+	//! Server: "n) Title [terrain]" lines of the deployable mission list (TBD_DeployableMissionList).
 	static string BuildListPayload()
 	{
-		array<ref TBD_MissionListEntry> entries = TBD_MissionListLoader.GetEntries();
-		if (!entries || entries.IsEmpty())
-			return "No missions loaded yet.";
+		int count = TBD_DeployableMissionList.Count();
+		if (count == 0)
+			return TBD_DeployableMissionList.DescribeEmpty();
 
-		int shown = entries.Count();
+		int shown = count;
 		if (shown > MAX_LIST_LINES)
 			shown = MAX_LIST_LINES;
 
 		string result;
 		for (int i = 0; i < shown; i++)
 		{
-			TBD_MissionListEntry e = entries[i];
 			if (i > 0)
 				result = result + "\n";
-			result = result + string.Format("%1) %2 [%3] %4 slots", i + 1, e.name, e.terrain, e.slotCount);
+			result = result + TBD_DeployableMissionList.DescribeEntry(i + 1);
 		}
-		if (entries.Count() > shown)
-			result = result + string.Format("\n… and %1 more (list capped at %2).", entries.Count() - shown, MAX_LIST_LINES);
+		if (count > shown)
+			result = result + string.Format("\n... and %1 more (list capped at %2).", count - shown, MAX_LIST_LINES);
 		return result;
 	}
 

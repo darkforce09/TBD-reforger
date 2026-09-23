@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventMissionOrbat",
+  "description": "GET /api/v1/event-missions/:emid/orbat: the ORBAT grouped by squad, projected for the viewer. A partial viewer receives only admitted seats and no occupant outside them; a mission of a hidden event, or without admitted seats for a partial viewer, answers 404 like a missing one.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "data"
+  ],
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/OrbatSquad"
+      }
+    }
+  },
+  "definitions": {
+    "OrbatSquad": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "faction",
+        "squad",
+        "filled",
+        "total",
+        "slots"
+      ],
+      "properties": {
+        "faction": {
+          "type": "string"
+        },
+        "callsign": {
+          "type": "string"
+        },
+        "squad": {
+          "type": "string"
+        },
+        "filled": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reserved_by": {
+          "type": "string"
+        },
+        "reserved_by_name": {
+          "type": "string"
+        },
+        "slots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrbatSlot"
+          }
+        }
+      }
+    },
+    "OrbatSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "number",
+        "role",
+        "slot_index",
+        "assigned_to",
+        "viewer_access",
+        "policy_source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "number": {
+          "type": "integer"
+        },
+        "role": {
+          "type": "string"
+        },
+        "loadout": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "slot_index": {
+          "type": "integer"
+        },
+        "assigned_to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assigned_name": {
+          "type": "string"
+        },
+        "viewer_access": {
+          "type": "string",
+          "enum": [
+            "eligible",
+            "restricted"
+          ]
+        },
+        "policy_source": {
+          "type": "string",
+          "enum": [
+            "event",
+            "squad",
+            "slot"
+          ]
+        }
+      }
+    }
+  }
+}

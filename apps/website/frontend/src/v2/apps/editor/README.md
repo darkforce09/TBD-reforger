@@ -10,12 +10,15 @@ editor/
 ├── arsenal/            loadout domain — rows, compatibility rules, asset catalog, 3D doll
 ├── bridge/             the engine seam — canvas mount, boot, viewport, overlays, host state
 ├── input/              DOM pointer and keyboard events turned into map-engine commands
-├── shell/              the browser session — drafts, hydrate, tab locking, preferences
+├── shell/              the browser session — drafts, hydrate, tab locking, review mode, preferences
 ├── ui/                 the rendered surfaces — docks, outliner, inspectors, modals, arsenal panels
 └── tests/              sibling test files mounted by `mission_editor.rs`
 ```
 
-**Depended on by:** `app_routes.rs`, which mounts it full screen from the mission routes.
+**Depended on by:** `app_routes.rs`, which mounts it full screen from the mission routes, and the
+review workspace route (`v2/pages/mission_hub/review_workspace`), which opens its read-only review
+mode (`shell/review_mode.rs`) on an artifact's version and mounts the same page.
 
 **Boundary:** a document mutation travels through `website_map_engine::editing`, never straight
-out of a panel. Nothing under `v2/pages` reaches in, and no sibling workspace does either.
+out of a panel. A page reaches in only through the editor page itself, the review mode and the
+shell's shared helpers; no sibling workspace reaches in at all.

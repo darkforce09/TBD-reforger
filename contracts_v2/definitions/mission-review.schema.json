@@ -1,0 +1,673 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MissionReviewHistory",
+  "description": "GET /api/v1/missions/:id/reviews (the mission's author or an administrator): every review of the mission, newest first, and the review thread in order.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reviews",
+    "comments"
+  ],
+  "properties": {
+    "reviews": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MissionReview"
+      }
+    },
+    "comments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ReviewComment"
+      }
+    }
+  },
+  "definitions": {
+    "ReviewState": {
+      "description": "A pending review decides nothing yet; a superseded one was replaced by a later submission before a decision.",
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "approved_with_conditions",
+        "rejected",
+        "superseded"
+      ]
+    },
+    "ReviewCommentKind": {
+      "description": "A thread comment, the feedback of a rejection, or the conditions of an approval.",
+      "type": "string",
+      "enum": [
+        "comment",
+        "rejection",
+        "approval_conditions"
+      ]
+    },
+    "MissionReview": {
+      "description": "One review: the artifact it decides and its outcome.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "artifact_id",
+        "artifact_digest",
+        "mission_version_id",
+        "semver",
+        "submitted_by",
+        "submitted_at",
+        "state"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "mission_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "semver": {
+          "type": "string",
+          "minLength": 1
+        },
+        "submitted_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "$ref": "#/definitions/ReviewState"
+        },
+        "decided_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decided_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ReviewComment": {
+      "description": "One comment of the review thread, with the review, version and artifact it concerns.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "author_id",
+        "author_name",
+        "kind",
+        "body",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "review_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "author_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_name": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/ReviewCommentKind"
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "pattern": "\\S",
+          "description": "Trimmed; at most 8000 bytes of UTF-8."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ReviewCommentRequest": {
+      "description": "POST /api/v1/missions/:id/review-comments body (the author or an administrator). Answers 201 with the ReviewComment.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "body"
+      ],
+      "properties": {
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "pattern": "\\S",
+          "description": "Trimmed before storage; at most 8000 bytes of UTF-8 and not blank."
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ApprovalDecision": {
+      "description": "POST /api/v1/approvals/:id/approve body (administrator): the artifact under review and any conditions. Answers the decided MissionRow; a different artifact answers 409 REVIEWED_ARTIFACT_CHANGED naming the artifact under review.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id"
+      ],
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "conditions": {
+          "type": "string",
+          "maxLength": 8000,
+          "description": "Trimmed; a blank value approves without conditions. At most 8000 bytes of UTF-8."
+        }
+      }
+    },
+    "RejectionDecision": {
+      "description": "POST /api/v1/approvals/:id/reject body (administrator). The reason becomes the rejection comment of the review. Answers the decided MissionRow.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "reason"
+      ],
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000,
+          "pattern": "\\S",
+          "description": "Trimmed before storage; at most 8000 bytes of UTF-8 and not blank."
+        }
+      }
+    },
+    "ArtifactDiagnostic": {
+      "description": "A finding the compiler reported while producing the artifact.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "severity",
+        "subject",
+        "subject_id",
+        "message"
+      ],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ]
+        },
+        "subject": {
+          "type": "string"
+        },
+        "subject_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "ArtifactMetadata": {
+      "description": "The mission fields the compiler read, in the canonical form the metadata digest covers.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "author",
+        "terrain",
+        "custom_terrain_name",
+        "game_mode",
+        "max_players",
+        "time_of_day",
+        "weather"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "custom_terrain_name": {
+          "type": "string"
+        },
+        "game_mode": {
+          "$ref": "#/definitions/GameMode"
+        },
+        "max_players": {
+          "type": "integer"
+        },
+        "time_of_day": {
+          "type": "string"
+        },
+        "weather": {
+          "$ref": "#/definitions/WeatherType"
+        }
+      }
+    },
+    "MissionArtifact": {
+      "description": "GET /api/v1/missions/:id/artifacts/:artifactId (the mission's author or an administrator): an immutable artifact's provenance. The exact compiled bytes are served by GET .../artifacts/:artifactId/document with their SHA-256 as a strong entity tag.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "mission_version_id",
+        "version_payload_sha256",
+        "metadata",
+        "metadata_sha256",
+        "catalog_sha256",
+        "compiler_version",
+        "schema_version",
+        "terrain",
+        "document_sha256",
+        "document_bytes",
+        "diagnostics",
+        "artifact_digest",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "version_payload_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "metadata": {
+          "$ref": "#/definitions/ArtifactMetadata"
+        },
+        "metadata_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "catalog_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "modpack_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "modpack_version": {
+          "type": "string"
+        },
+        "compiler_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "terrain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "document_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "document_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8388608
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArtifactDiagnostic"
+          }
+        },
+        "artifact_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "created_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "MissionVersion": {
+      "description": "One immutable saved version of a mission.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "semver",
+        "json_payload",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "semver": {
+          "type": "string",
+          "minLength": 1
+        },
+        "json_payload": {
+          "type": "object"
+        },
+        "editor_notes": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ReviewWorkspace": {
+      "description": "GET /api/v1/missions/:id/artifacts/:artifactId/workspace (the mission's author or an administrator): the artifact and exactly the version it compiled from, verified against the payload digest the artifact recorded, for the editor to open read-only.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact",
+        "version"
+      ],
+      "properties": {
+        "artifact": {
+          "$ref": "#/definitions/MissionArtifact"
+        },
+        "version": {
+          "$ref": "#/definitions/MissionVersion"
+        }
+      }
+    },
+    "ApprovalQueueRow": {
+      "description": "One mission awaiting review. The review fields are absent for a mission submitted before artifacts existed; it is decided only after its author resubmits it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mission_id",
+        "title",
+        "terrain",
+        "author_id",
+        "author_name",
+        "submitted_at"
+      ],
+      "properties": {
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "author_id": {
+          "type": "string"
+        },
+        "author_name": {
+          "type": "string"
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "review_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "version_semver": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "ApprovalQueuePage": {
+      "description": "GET /api/v1/approvals (administrator): missions awaiting review, oldest submission first.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data",
+        "total",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApprovalQueueRow"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "TerrainType": {
+      "type": "string",
+      "enum": [
+        "everon",
+        "arland",
+        "custom"
+      ]
+    },
+    "GameMode": {
+      "type": "string",
+      "enum": [
+        "pve_coop",
+        "pvp",
+        "zeus"
+      ]
+    },
+    "WeatherType": {
+      "type": "string",
+      "enum": [
+        "clear",
+        "overcast",
+        "heavy_rain",
+        "dense_fog"
+      ]
+    },
+    "MissionStatus": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "pending_approval",
+        "live",
+        "rejected",
+        "archived"
+      ]
+    },
+    "MissionRow": {
+      "description": "A mission library row, as submission (POST /api/v1/missions/:id/submit) and both review decisions answer it. approved_artifact_id names the artifact the latest approval decided.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "author_id",
+        "terrain",
+        "game_mode",
+        "weather",
+        "time_of_day",
+        "max_players",
+        "status",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author_id": {
+          "type": "string"
+        },
+        "terrain": {
+          "$ref": "#/definitions/TerrainType"
+        },
+        "custom_terrain_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "game_mode": {
+          "$ref": "#/definitions/GameMode"
+        },
+        "weather": {
+          "$ref": "#/definitions/WeatherType"
+        },
+        "time_of_day": {
+          "type": "string",
+          "pattern": "^[0-9]{2}:[0-9]{2}:[0-9]{2}$"
+        },
+        "max_players": {
+          "type": "integer"
+        },
+        "status": {
+          "$ref": "#/definitions/MissionStatus"
+        },
+        "thumbnail_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "briefing": {
+          "type": "string",
+          "minLength": 1
+        },
+        "current_version_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "approved_artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "rejection_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewed_by": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

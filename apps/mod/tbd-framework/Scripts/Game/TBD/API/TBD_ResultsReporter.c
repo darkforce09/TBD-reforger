@@ -120,7 +120,7 @@ class TBD_ResultsReporter
 		// RFC 3339 the backend's `DateTime<Utc>` parses. The compile probe proved the symbols
 		// resolve; only a boot can show the VALUE, and this puts it in every boot's log.
 		TBD_Log.Kv(CH_RESULTS, "armed", string.Format("utcNow=%1 backend=%2 event='%3'",
-			UtcNowIso8601(), DescribeBackend(), TBD_BackendConfig.GetEventId()));
+			UtcNowIso8601(), DescribeBackend(), TBD_DeployedMission.GetEventId()));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -354,7 +354,7 @@ class TBD_ResultsReporter
 		if (!sm)
 			return;
 
-		string sourceEventId = TBD_BackendConfig.GetEventId();
+		string sourceEventId = TBD_DeployedMission.GetEventId();
 
 		array<int> players = {};
 		int count = GetGame().GetPlayerManager().GetPlayers(players);
@@ -534,14 +534,13 @@ class TBD_ResultsReporter
 	{
 		string json = "{\"match\":{";
 		json += string.Format("\"source_match_id\":\"%1\"", JsonEscape(s_sSourceMatchId));
-		json += string.Format(",\"event_id\":\"%1\"", JsonEscape(TBD_BackendConfig.GetEventId()));
+		json += string.Format(",\"event_id\":\"%1\"", JsonEscape(TBD_DeployedMission.GetEventId()));
 
-		// The mod's configured missionId. In production this is the mission's UUID — the same id
-		// `GET /api/v1/missions/{id}/compiled` is fetched with, and that route hard-requires a UUID
-		// (`Uuid::parse_str` else 400, handlers/missions.rs). On a local `$profile:` fallback boot
-		// it is a content-hash id like `msn_8f3a2c`, which `parse_uuid_opt` correctly drops to NULL
-		// — there is no mission row for it, so a NULL is the truthful answer.
-		json += string.Format(",\"mission_id\":\"%1\"", JsonEscape(TBD_BackendConfig.GetMissionId()));
+		// The catalog mission of the running deployment (TBD_DeployedMission), a UUID. A world
+		// running no deployed mission, or a hand-staged cached artifact with an id that is not a
+		// UUID, sends what it has, and `parse_uuid_opt` stores NULL for anything that is not a
+		// UUID: no mission row matches it, so NULL is the truthful answer.
+		json += string.Format(",\"mission_id\":\"%1\"", JsonEscape(TBD_DeployedMission.GetMissionId()));
 		json += string.Format(",\"terrain\":\"%1\"", JsonEscape(GetTerrain()));
 		json += string.Format(",\"started_at\":\"%1\"", s_sStartedAtUtc);
 		json += string.Format(",\"ended_at\":\"%1\"", s_sEndedAtUtc);
@@ -593,7 +592,7 @@ class TBD_ResultsReporter
 	//! `GetTickCount()` disambiguates two rounds of the same mission starting in the same second.
 	protected static string BuildSourceMatchId(string startedAtUtc)
 	{
-		string missionId = TBD_BackendConfig.GetMissionId();
+		string missionId = TBD_DeployedMission.GetMissionId();
 		if (missionId.IsEmpty())
 			missionId = "unknown-mission";
 

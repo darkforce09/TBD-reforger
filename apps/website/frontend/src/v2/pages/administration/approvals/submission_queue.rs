@@ -1,21 +1,25 @@
 //! The pending queue: every mission waiting on a decision, and the pane it sits beside.
 //!
-//! **Role:** the queue heading with its count, one selectable row per submission, and the split
-//! that puts the queue beside the review drawer.
+//! **Role:** the queue heading with its count, one selectable row per submission — with the version
+//! and artifact under review and when the review opened, or the note that the mission predates
+//! reviews — and the split that puts the queue beside the review drawer.
 //! **Position:** the whole body of the approvals route.
-//! **Signals & state:** reads and writes `selected_id`; the fetched rows are parked in a stored
-//! value that both the list and the drawer read.
+//! **Signals & state:** reads and writes the desk's `selected_id`; the fetched rows are parked in a
+//! stored value that both the list and the drawer read.
 //! **Invariants:** the count is the server's total, not the length of the page on screen — the
 //! queue is paginated, so a page of a longer backlog must not report the page's size. Selection
 //! falls back to the first row, so a queue with anything in it always has something open. An empty
 //! queue shows the empty pane rather than a drawer over nothing.
 #![allow(dead_code)]
 
+use super::page::ApprovalsDesk;
 use super::review_drawer::ReviewInspector;
 use crate::v2::core::api::dto::ApprovalRow;
 use crate::v2::core::ui::split_pane::{SplitPane, SplitPaneEmpty};
 use crate::v2::core::ui::{cn, MaterialIcon};
 use crate::v2::core::utils::datefmt::format_short_date;
+use crate::v2::core::utils::utc_timestamp::utc_label;
+use crate::v2::pages::mission_hub::mission_review::review_wording::reviewed_artifact_line;
 use leptos::prelude::*;
 
 /// A terrain's wire name with its first letter capitalised, or a dash when there is none.
@@ -30,14 +34,26 @@ pub(super) fn terrain_label(t: &str) -> String {
     }
 }
 
+/// What is under review for a queue row: the version and artifact, and when the review opened.
+/// `None` for a mission that predates reviews, which has nothing under review.
+pub(super) fn review_line(row: &ApprovalRow) -> Option<String> {
+    let semver = row.version_semver.as_deref()?;
+    let digest = row.artifact_digest.as_deref()?;
+    Some(format!(
+        "{} · submitted {}",
+        reviewed_artifact_line(semver, digest),
+        utc_label(&row.submitted_at)
+    ))
+}
+
+/// The queue's note for a mission that predates reviews.
+pub(super) const PREDATES_REVIEWS: &str =
+    "Predates reviews — nothing to decide until its author resubmits it";
+
 /// The queue beside the review drawer.
-pub(super) fn board(
-    pending: Vec<ApprovalRow>,
-    total: i64,
-    selected_id: RwSignal<Option<String>>,
-    refetch: Callback<()>,
-) -> impl IntoView {
+pub(super) fn board(pending: Vec<ApprovalRow>, total: i64, desk: ApprovalsDesk) -> impl IntoView {
     let rows_sv = StoredValue::new(pending);
+    let selected_id = desk.selected_id;
     // The server's total, not the length of this page: the queue is paginated, so one page of a
     // longer backlog must not report the page's size.
     let master_header = view! {
@@ -72,58 +88,19 @@ pub(super) fn board(
                 let sel = selected();
                 rows.into_iter()
                     .map(|r| {
-                        let active = sel
-                            .as_ref()
-                            .map(|s| s.mission_id == r.mission_id)
-                            .unwrap_or(false);
-                        let rid = r.mission_id.clone();
-                        view! {
-                            <button
-                                type="button"
-                                on:click=move |_| selected_id.set(Some(rid.clone()))
-                                class=cn(
-                                    &[
-                                        "group w-full rounded-r-xl border-l-4 px-4 py-3 text-left transition-all duration-200",
-                                        if active {
-                                            "border-primary bg-primary/15 shadow-[inset_0_0_18px_rgba(173,198,255,0.15)]"
-                                        } else {
-                                            "border-transparent hover:bg-white/[0.03]"
-                                        },
-                                    ],
-                                )
-                            >
-                                <span class=cn(
-                                    &[
-                                        "font-mono text-code-md",
-                                        if active { "text-primary" } else { "text-outline" },
-                                    ],
-                                )>"[" {format_short_date(&r.submitted_at)} "]"</span>
-                                <h3 class=cn(
-                                    &[
-                                        "mt-1 truncate text-label-md font-semibold",
-                                        if active {
-                                            "text-on-surface"
-                                        } else {
-                                            "text-on-surface-variant group-hover:text-on-surface"
-                                        },
-                                    ],
-                                )>{r.title.clone()}</h3>
-                                <p class="mt-0.5 truncate text-label-sm text-on-surface-variant">
-                                    "By " {r.author_name.clone()} " · " {terrain_label(&r.terrain)}
-                                </p>
-                            </button>
-                        }
+                        let active = sel.as_ref().is_some_and(|s| s.mission_id == r.mission_id);
+                        queue_row(r, active, selected_id)
                     })
                     .collect_view()
                     .into_any()
             }
         }}
     }
-        .into_any();
+    .into_any();
 
     let detail = view! {
         {move || match selected() {
-            Some(row) => view! { <ReviewInspector row=row refetch=refetch /> }.into_any(),
+            Some(row) => view! { <ReviewInspector row=row desk=desk /> }.into_any(),
             None => {
                 view! {
                     <SplitPaneEmpty
@@ -138,4 +115,57 @@ pub(super) fn board(
     .into_any();
 
     view! { <SplitPane master_header=master_header master=master detail=detail /> }
+}
+
+/// One selectable queue row.
+fn queue_row(r: ApprovalRow, active: bool, selected_id: RwSignal<Option<String>>) -> impl IntoView {
+    let rid = r.mission_id.clone();
+    let review = review_line(&r);
+    view! {
+        <button
+            type="button"
+            on:click=move |_| selected_id.set(Some(rid.clone()))
+            class=cn(
+                &[
+                    "group w-full rounded-r-xl border-l-4 px-4 py-3 text-left transition-all duration-200",
+                    if active {
+                        "border-primary bg-primary/15 shadow-[inset_0_0_18px_rgba(173,198,255,0.15)]"
+                    } else {
+                        "border-transparent hover:bg-white/[0.03]"
+                    },
+                ],
+            )
+        >
+            <span class=cn(
+                &["font-mono text-code-md", if active { "text-primary" } else { "text-outline" }],
+            )>"[" {format_short_date(&r.submitted_at)} "]"</span>
+            <h3 class=cn(
+                &[
+                    "mt-1 truncate text-label-md font-semibold",
+                    if active {
+                        "text-on-surface"
+                    } else {
+                        "text-on-surface-variant group-hover:text-on-surface"
+                    },
+                ],
+            )>{r.title.clone()}</h3>
+            <p class="mt-0.5 truncate text-label-sm text-on-surface-variant">
+                "By " {r.author_name.clone()} " · " {terrain_label(&r.terrain)}
+            </p>
+            {match review {
+                Some(line) => {
+                    view! {
+                        <p class="mt-0.5 truncate font-mono text-code-md text-outline">{line}</p>
+                    }
+                        .into_any()
+                }
+                None => {
+                    view! {
+                        <p class="mt-0.5 text-label-sm text-tactical-yellow">{PREDATES_REVIEWS}</p>
+                    }
+                        .into_any()
+                }
+            }}
+        </button>
+    }
 }

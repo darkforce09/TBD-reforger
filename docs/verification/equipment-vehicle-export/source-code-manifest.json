@@ -1,0 +1,25 @@
+{
+  "files":[
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Capabilities/TBD_SourceCapabilityBuilder.c", "sha256": "0a56ae8a11f06fac74f16bf25a347abfbefa8b20d68d38d9f5ae56c071a6335a"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Capabilities/TBD_SourceCapabilityRules.c", "sha256": "9612224d5092f76ad6838fb69b08f373e6b15bc1bca102816c365e926ed78111"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Discovery/TBD_SourceResourceDiscovery.c", "sha256": "2d886ec083c9bf91629b397e527522a7f8145a172b14d6e9b8073d970606050b"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Generation/TBD_SourceExportEnvironment.c", "sha256": "1d0ef8cc6afa3b84bac0cd6c90c936142b860d734bd2d8fd9c823b955b2d93fe"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Generation/TBD_SourceExportGeneration.c", "sha256": "50bbc6dd2a8a21f67cbffb093daf1b949a48fe95136be94aee126f7cea2915d4"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Plugins/TBD_EquipmentVehicleExportPlugin.c", "sha256": "87b9289d75d1a31dcc6426b37dd9dd8bf43b3bef14eb1359d0e17ca3ad62f1f8"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Serialization/TBD_SourceExportJson.c", "sha256": "04cfd301a2aecb6af4f4b0eaf212419856ba2702057bd98f23fc3355c154cbac"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Source/TBD_SourceContainerReader.c", "sha256": "9a5f37b07a24ae3337a51d9c0b6bead67ae0dce2ecfe18a68170bd1319f93a3d"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Source/TBD_SourceExportModel.c", "sha256": "c731dbefa07e5a7f248e4a2c334eae01ac9a60a25ad9ad92827b468fe661096b"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Source/TBD_SourcePropertyReader.c", "sha256": "4cb9db5bf3ea3a86428dcce5bef5e4bb61df674e98a674fa2bbebad1714a9803"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/EMCP_WB_SourceExport.c", "sha256": "7537424247f1ff38ce15cd1dc9a21436ca993f94bd53b5d589a25a07c232993a"},
+    {"path": "apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/TBD_SourceReaderVerification.c", "sha256": "e628cb0588ad04229afe0e6202cffe663c9697bf5cc3e09d6a59f19dca79b217"},
+    {"path": "contracts_v2/definitions/equipment-vehicle-export.schema.json", "sha256": "9081fe46ae711f3006540f6b817ece5d4a8337e35d6dfd6b9bb884ab3daa50cf"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/files.rs", "sha256": "54c781cf6d55396feaed8702e103733a845d53168dab66d5e2b3ae9000699b2c"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/graph.rs", "sha256": "a2ff93bc66a74289d482f8fa9eef3ae0f7e1aeab9294c845288349ad04aa4dc8"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/legacy_archive.rs", "sha256": "a97852a4aca89de718d75daabce56ebd3dc163e24185ffdeaaf83e2f44638f5b"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/mod.rs", "sha256": "047090f5ff976ade649e6015df388120dd1b3f53729906cb2a41f15952f4bef8"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs", "sha256": "60c7846ffde4d56bf76f6740e73c47d5c8f16b8169205d049bcb1b7a176bd652"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/relationships.rs", "sha256": "6c5a3224bee6bb3fffa4cff3c27bd03964863487feeeadcce8d6536efe4531a4"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs", "sha256": "651080f5c3284202412e8b0a46d93b1cca1e7a54b4bec01d8511361f56900581"},
+    {"path": "tools_v2/xtask/src/commands/mod_ops/equipment_vehicle_export/validation.rs", "sha256": "bc927980c3851aa6bb0eadd15d06b254e11a73ca35253c530817240174fb2fe8"}
+  ]
+}

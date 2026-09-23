@@ -70,6 +70,8 @@ pub mod world;
 mod feature_gate_tripwire;
 
 /// Reduce Rust source to the text a build compiles, for the guards that read this crate's own source.
-#[cfg(test)]
+// Every such guard lives under `data::store` or `editing` (which implies `store`), so the helper
+// compiles under exactly the gate its callers do.
+#[cfg(all(test, feature = "store"))]
 #[path = "tests/source_scrub.rs"]
 mod source_scrub;

@@ -37,8 +37,9 @@ enum Hub {
     Idle,
     /// The hub request for the selected operation came back an error.
     Failed,
-    /// A hub, and the operation id it was fetched for.
-    Loaded(String, EventHub),
+    /// A hub, and the operation id it was fetched for. The hub is boxed: it is far larger than the
+    /// other two states, which carry nothing.
+    Loaded(String, Box<EventHub>),
 }
 
 /// The `/events` route: the schedule behind the sign-in gate.
@@ -121,7 +122,7 @@ fn board(events: Vec<Value>) -> impl IntoView {
                         )
                         .await
                         {
-                            Ok(h) => Hub::Loaded(id, h),
+                            Ok(h) => Hub::Loaded(id, Box::new(h)),
                             Err(_) => Hub::Failed,
                         }
                     }
@@ -177,6 +178,7 @@ fn board(events: Vec<Value>) -> impl IntoView {
                 // The value in hand is the one asked for: the full hub, inline slotting and all.
                 (Some(want), Some(Hub::Loaded(got, ev))) if got == want => {
                     let on_change = Callback::new(move |()| hub.refetch());
+                    let ev = *ev;
                     event_hub_view(ev, on_change).into_any()
                 }
                 (Some(_), Some(Hub::Failed)) => {

@@ -81,7 +81,7 @@ pub async fn get_dashboard(
         match ev {
             Some(ev) => {
                 let em: Option<EventMission> = sqlx::query_as(
-                    "SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE event_id = $1 ORDER BY start_time ASC LIMIT 1",
+                    "SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE deleted_at IS NULL AND event_id = $1 ORDER BY start_time ASC LIMIT 1",
                 )
                 .bind(ev.id)
                 .fetch_optional(pool)
@@ -93,8 +93,8 @@ pub async fn get_dashboard(
                 let registered: i64 = sqlx::query_scalar(
                     "SELECT count(*) FROM event_registrations \
                      JOIN event_missions ON event_missions.id = event_registrations.event_mission_id \
-                     WHERE event_missions.event_id = $1 \
-                       AND event_registrations.state::text IN ('registered', 'waitlisted')",
+                     WHERE event_missions.deleted_at IS NULL AND event_missions.event_id = $1 \
+                       AND event_registrations.reservation_state::text IN ('registered', 'waitlisted', 'legacy_unknown')",
                 )
                 .bind(ev.id)
                 .fetch_one(pool)
@@ -148,7 +148,7 @@ pub async fn get_dashboard(
         match slot {
             Some(slot) => {
                 let em: Option<EventMission> =
-                    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE id = $1")
+                    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE deleted_at IS NULL AND id = $1")
                         .bind(slot.event_mission_id)
                         .fetch_optional(pool)
                         .await?;

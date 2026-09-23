@@ -1686,7 +1686,7 @@ documentation now describe the two outcomes the gate actually has.
 `git grep -n 'is_executable' tools_v2/xtask/src/commands/mod_ops` still reports nine lines. All
 nine are live checks on real executables — the Enfusion compile host (`compile_host.rs` and its two
 call sites), the playtest launcher (`playtest_server/usage_fail.rs`) and the world-boot service
-token resolver (`world_boot/resolve_service_token.rs` and its two call sites). None is in
+token resolver (`world_boot::resolve_service_token` and its two call sites). None is in
 `development_server`, which is the module this phase was measuring; deleting the other three
 implementations would remove live behaviour, so they stay.
 
@@ -2328,10 +2328,10 @@ inventory lines. Test totals are unchanged: 259 + 200 + 1 + 68 + 652 + 1 = 1181 
 Two filters do not reach zero, and each names something this phase must not rewrite:
 
 - The deleted-script filter matches the host control agent's file name at
-  `commands/deploy/staging/agent.rs:307`, `staging/agent/render_agent_files.rs:10,58`,
-  `staging/agent_selftest.rs:122` and `staging/remote/ssh_argv.rs:421`. That name is not a deleted
-  script: `render_agent_files.rs` WRITES that file on every staging deploy, systemd socket-activates
-  it on the game host, `apps/website/api_v2/tests/game_agent_rcon.rs:102,178` asserts the filename,
+  `commands::deploy::staging::agent`, `staging::agent::render_agent_files`,
+  `staging::agent_selftest` and `staging/remote/ssh_argv.rs:421`. That name is not a deleted
+  script: `render_agent_files` WRITES that file on every staging deploy, systemd socket-activates
+  it on the game host, the `game_agent_rcon` integration test asserts the filename,
   and `docs/platform/PLAYTEST_RUNBOOK.md` documents it for operators. Renaming it changes a live
   operational contract across two crates and a deployed host, which is the same reason the closure
   plan keeps the deployment preflight's remote `packages/map-assets` probe.
@@ -2483,8 +2483,8 @@ Two filters do not reach zero, and each names something this phase must not rewr
   `inland_water_archive.rs:10` describe each stage as a port of a deleted Node or shell script.
   The live fact under each is what the stage does; the file names go.
 - The plan's R3 row targets zero shell, Python and Node file spellings in `tools_v2`. Five of them
-  name the host control agent the file `commands/deploy/staging/agent/render_agent_files.rs` writes
-  onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name. It is a
+  name the host control agent the file `commands::deploy::staging::agent::render_agent_files` writes
+  onto the game host and the `game_agent_rcon` integration test asserts by name. It is a
   live remote artifact, not a deleted script, so R3 needs the same explicit retained-name carve-out
   the plan's decision 8 gives the deployment preflight's `packages/map-assets` probe — not a
   rename.
@@ -2762,9 +2762,9 @@ declaring their own. No production file in `tools_v2/` or `apps/ticketboard/` sp
 - The eighteen inline `#[cfg(test)] mod tests { … }` blocks are extracted to
   one file per module under `apps/ticketboard/src/tests/`, declared with `#[path]`, as Law 7 requires. Test
   module paths are unchanged, so every test keeps its name: 173 before, 173 after.
-- `detail.rs`, `verbs.rs` and `viewer.rs` fall under 500 lines once their tests move out, so their
-  three SIZE-3 rows leave `.coding-standards-allowlist.yaml`. `app.rs`, `board.rs`, `estimates.rs`,
-  `metrics.rs` and `mutate.rs` keep theirs.
+- The ticketboard's `detail`, `verbs` and `viewer` modules fall under 500 lines once their tests
+  move out, so their three SIZE-3 rows leave `.coding-standards-allowlist.yaml`. The `app`, `board`,
+  `estimates`, `metrics` and `mutate` modules keep theirs.
 
 **`documentation_v2/ARCHITECTURE_PLAN.md`** §4 is no longer a per-file pin table. It names the
 three `documentation` submodules and what each owns, adds `docs/platform/factory_pack_wave` to the
@@ -2941,7 +2941,7 @@ suite means the rules looked.
 | R1 | Ticket identifiers in `tools_v2` sources, manifests and documents, fixture trees excluded | 2,087 lines: 1,307 comment lines, 165 production non-comment lines, 17 in documents and manifests, 598 test-file string literals | 596 lines, every one a string literal in a test file: **0** comment lines, **0** production lines, **0** in documents and manifests |
 | R1b | Ticket identifiers and node script names in the browser-oracle freeze manifest | 0 | 0 |
 | R2 | Dead names anywhere under `tools_v2` | 84 | 0 |
-| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 257 | 9, every one the host control agent the staging deploy renders onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name; **0** otherwise |
+| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 257 | 9, every one the host control agent the staging deploy renders onto the game host and the `game_agent_rcon` integration test asserts by name; **0** otherwise |
 | R7 | Words that narrate a change rather than the present state | 83 | 0 |
 | R18 | Distinct `.rs` basenames named in production prose that exist nowhere in the workspace | 171 | 0 |
 
@@ -3067,7 +3067,7 @@ very tokens the matrix drives to zero.
 | R1 | Ticket identifiers in `tools_v2` sources, manifests, documents and data, fixture trees excluded | 2959 lines (1887 comment lines, 407 production non-comment lines, 20 in documents and data) | 596 lines, every one a string literal inside a test file — the ticket domain's own test data; **0** comment lines, **0** production lines, **0** in documents and data |
 | R1b | Ticket identifiers and node script names in the browser-oracle freeze manifest | 4 | 0 |
 | R2 | Dead names anywhere under `tools_v2` | 201 | 0 |
-| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 597 | 9, every one the host control agent this repository renders onto the game host and `apps/website/api_v2/tests/game_agent_rcon.rs` asserts by name; **0** otherwise |
+| R3 | Shell, Python and Node file names in `tools_v2` sources, documents and manifests, language-ban tests excluded | 597 | 9, every one the host control agent this repository renders onto the game host and the `game_agent_rcon` integration test asserts by name; **0** otherwise |
 | R4 | Empty directories under `tools_v2` | 138 | 0 |
 | R5 | Root script tree tracked; repository-wide references to it | 17 tracked files; 355 reference lines | 0 tracked files; 0 reference lines. The directory survives on disk holding one untracked, gitignored dependency tree — the open operator step below |
 | R5a | R5's references minus `tools_v2` documents and minus comment lines | 160 | 0 |
@@ -3329,7 +3329,7 @@ row exists to hold, measured.
    literal, 0 inside a comment, 0 in code. Production sources, documents and manifests carry none.
 2. **R3 finishes at 9 lines.** All nine name one file: the control agent that
    `cargo xtask deploy staging` renders onto the game host, where systemd socket-activates it and
-   `apps/website/api_v2/tests/game_agent_rcon.rs` asserts its name. It is a live remote artifact
+   the `game_agent_rcon` integration test asserts its name. It is a live remote artifact
    rather than a deleted script, and `tools_v2/xtask/src/tests/tooling_prose_rules.rs` carves it out
    by name — the single exception in the rule.
 3. **R8 part two finishes at 3 lines, not the 2 the plan anticipated.** All three sit in test

@@ -1,0 +1,59 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "game_build": {
+    "status": "present",
+    "value": "1.8.0.13",
+    "reason": null
+  },
+  "started_at": "2026-09-23T10:40:06Z",
+  "finished_at": "2026-09-23T10:55:58Z",
+  "resources": 3265,
+  "equipment_index": 1327,
+  "vehicle_index": 219,
+  "discovered_resources": 1546,
+  "extraction_errors": [],
+  "old_prefab_references_checked": 1336,
+  "old_prefab_references_missing": [],
+  "field_mapping_count": 706,
+  "field_dispositions": {
+    "replace_with_source_relationship": 533,
+    "correct_source": 67,
+    "remove_synthesized": 77,
+    "retain": 26,
+    "rename": 3
+  },
+  "english_name_statuses": {
+    "present": 17967,
+    "unavailable": 9873
+  },
+  "type_hierarchy_statuses": {
+    "unavailable": 87,
+    "present": 1123
+  },
+  "reference_occurrences": {
+    "binary": 203820,
+    "gameplay": 104573
+  },
+  "resources_by_capability": {
+    "physics": 2174,
+    "protection": 1455,
+    "visuals": 2472,
+    "attachment": 1029,
+    "inventory": 1422,
+    "storage": 993,
+    "utility": 929,
+    "vehicle_systems": 430,
+    "medical_effects": 22,
+    "projectile": 323,
+    "sights": 248,
+    "weapon": 336,
+    "communications": 129,
+    "magazine": 260
+  },
+  "record_and_snapshot_bytes": 4001597328,
+  "vehicle_catalog_exact_resource_set_preserved": true,
+  "unavailable_name_reasons": {
+    "empty_source_name": 9856,
+    "unresolved_localization_key": 17
+  }
+}

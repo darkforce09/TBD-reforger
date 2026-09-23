@@ -1,0 +1,12 @@
+{
+  "valid": true,
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_count": 3265,
+  "source_node_count": 580993,
+  "fact_count": 6282833,
+  "errors": [],
+  "warning_count": 9873,
+  "hashed_files": 6531,
+  "full_report": "/home/Samuel/Games/ArmaReforger-Base/profile/TBD_Export/equipment_vehicle_exports/validation_reports/6A6E9885CF2F83F9.json",
+  "full_report_sha256": "2d9e6faa13611d5139cb6b743a93caeed45eda2c4da21fe065b34be5a484f881"
+}

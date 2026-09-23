@@ -423,10 +423,11 @@ async fn create_version_mirrors_authored_payload_title_onto_mission_row() {
 ///
 /// The handler carries its own unit tests; this is the live HTTP layer. Create two
 /// non-vacuous versions (0.1.0 is the seed), leave the tip on the newer, then set-current to the
-/// older and assert `current_version_id` + `/compiled` serve the older payload.
+/// older and assert `current_version_id`, and that submission compiles the older payload into the
+/// artifact under review.
 ///
-/// Perturbation RED: drop the UPDATE in `set_current_version` → tip stays on 0.3.0 and compiled
-/// still returns BRAVO / RIFLEMAN.
+/// Perturbation RED: drop the UPDATE in `set_current_version` → tip stays on 0.3.0 and the
+/// submitted artifact carries BRAVO / RIFLEMAN.
 #[tokio::test]
 async fn set_current_version_repaints_tip_over_http() {
     let Some((app, tok)) = app_and_token("mission_maker").await else {
@@ -453,9 +454,8 @@ async fn set_current_version_repaints_tip_over_http() {
     assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
     let mid = json(&b)["id"].as_str().unwrap().to_string();
     let versions = format!("/api/v1/missions/{mid}/versions");
-    let compiled = format!("/api/v1/missions/{mid}/compiled");
 
-    // Older tip candidate — ALPHA / SL. Distinct from the newer BRAVO / RIFLEMAN so compiled
+    // Older tip candidate — ALPHA / SL. Distinct from the newer BRAVO / RIFLEMAN so the artifact
     // proves which version the tip actually points at (not just that some version exists).
     let older = r#"{"semver":"0.2.0","payload":{"editor":{
         "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
@@ -509,25 +509,6 @@ async fn set_current_version_repaints_tip_over_http() {
 
     let (st, b) = call(
         &app,
-        "GET",
-        &compiled,
-        None,
-        Some("test-service-token"),
-        None,
-    )
-    .await;
-    assert_eq!(
-        st,
-        StatusCode::OK,
-        "compiled at newer tip: {}",
-        String::from_utf8_lossy(&b)
-    );
-    let tip_new = json(&b);
-    assert_eq!(tip_new["slots"][0]["groupCallsign"], "BRAVO");
-    assert_eq!(tip_new["slots"][0]["role"], "RIFLEMAN");
-
-    let (st, b) = call(
-        &app,
         "POST",
         &format!("/api/v1/missions/{mid}/versions/{older_vid}/set-current"),
         t,
@@ -570,20 +551,54 @@ async fn set_current_version_repaints_tip_over_http() {
         Some(older_vid.as_str())
     );
 
-    // Cheap compiled pin: mod path must serve the older payload, not the abandoned tip.
+    // Submission compiles the re-pointed tip, not the abandoned newer version.
     let (st, b) = call(
         &app,
-        "GET",
-        &compiled,
+        "POST",
+        &format!("/api/v1/missions/{mid}/submit"),
+        t,
         None,
-        Some("test-service-token"),
         None,
     )
     .await;
     assert_eq!(
         st,
         StatusCode::OK,
-        "compiled after set-current: {}",
+        "submit: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}/reviews"),
+        t,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    let reviews = json(&b);
+    assert_eq!(
+        reviews["reviews"][0]["mission_version_id"],
+        older_vid.as_str()
+    );
+    let artifact = reviews["reviews"][0]["artifact_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}/artifacts/{artifact}/document"),
+        t,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "artifact document: {}",
         String::from_utf8_lossy(&b)
     );
     let tip_old = json(&b);

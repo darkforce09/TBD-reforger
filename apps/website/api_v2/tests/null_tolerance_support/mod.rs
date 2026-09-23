@@ -56,6 +56,17 @@ pub const NULL_UID: &str = "000000000000000099";
 /// The service token `Config::for_tests` installs, for the `X-Service-Token` routes.
 pub const SERVICE_TOKEN: &str = "test-service-token";
 
+/// How a swept route authenticates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SweepCaller {
+    /// The suite's administrator bearer session.
+    Member,
+    /// The shared `X-Service-Token`.
+    Service,
+    /// The seeded server's `mod_runtime` machine credential.
+    Machine,
+}
+
 /// The only columns [`database_fixtures::blast_nulls`] must leave alone, because the endpoints under test *find*
 /// the seeded rows through them — NULL them and the sweep silently stops reaching the code it
 /// is meant to exercise, which is failure mode 2 above. Deliberately as small as possible;
@@ -65,7 +76,15 @@ pub const REACHABILITY_KEEP: &[&str] = &[
     "orbat_slots.assigned_to",
     // `operations/handlers/member_service_record.rs` service history: `WHERE match_player_stats.discord_id = $me`.
     "match_player_stats.discord_id",
+    // `operations/handlers/game_runtime_roster.rs`: a machine credential reads only the roster
+    // of an event bound to its own server.
+    "events.server_id",
 ];
+
+/// Columns NULL only in other row states: a CHECK constraint requires them for the state the
+/// seed stores (an active reservation always names its event allocation), so the blast keeps
+/// them rather than asserting a row the schema itself rejects.
+pub const STATE_BOUND_KEEP: &[&str] = &["event_registrations.allocation_id"];
 
 /// `(table, column)` pairs that are nullable in the schema *and* `Option<..>` on the model, so
 /// a read site is allowed to select them without `COALESCE`. This is the allowlist for
@@ -74,13 +93,74 @@ pub const REACHABILITY_KEEP: &[&str] = &[
 ///
 /// A nullable column that is NOT here and NOT `COALESCE`d is the bug these suites exist for.
 pub const OPTION_FIELDS: &[(&str, &str)] = &[
+    // operations::services::access_administration::persistence::{GroupRow, RosterRow, SlotPolicyRow}
+    // and event_access::subject_loading::RosterRow: exactly one of the author and the system
+    // origin is present; a slot without an explicit policy inherits.
+    ("event_groups", "created_by"),
+    ("event_groups", "system_origin"),
+    ("event_group_roster", "added_by"),
+    // operations::handlers::event_hub ViewerRegistration: released reservations name a reason
+    // and the time the place was released.
+    ("event_registrations", "release_reason"),
+    ("event_registrations", "withdrawn_at"),
+    // event_reservations::participant_allocations::load_reservation_quotas: NULL is uncapped.
+    ("event_reservation_quota_pools", "seat_limit"),
+    ("event_group_roster", "system_origin"),
+    ("orbat_slots", "access_policy"),
+    // server_infrastructure::models::machine_credential::MachineCredential: unused and
+    // unrevoked credentials carry no use or revocation facts.
+    ("server_machine_credentials", "last_used_at"),
+    ("server_machine_credentials", "revoked_at"),
+    ("server_machine_credentials", "revoked_by"),
+    ("server_machine_credentials", "revoke_reason"),
+    // server_infrastructure::services::runtime_sessions::SessionState: an open session has no
+    // end reason.
+    ("server_runtime_sessions", "end_reason"),
+    // server_infrastructure::models::fleet_command::FleetCommandReceipt and the executor claim:
+    // an unclaimed command has no claim, and an unfinished one no outcome.
+    ("fleet_commands", "claimed_by"),
+    ("fleet_commands", "claimed_at"),
+    ("fleet_commands", "executing_at"),
+    ("fleet_commands", "finished_at"),
+    ("fleet_commands", "outcome"),
+    ("fleet_commands", "failure_reason"),
+    // missions::models::mission::Mission: a mission never approved from an artifact.
+    ("missions", "approved_artifact_id"),
+    // missions::services::mission_artifacts::artifact_store::MissionArtifact: compiled without
+    // a current modpack.
+    ("mission_artifacts", "modpack_id"),
+    ("mission_artifacts", "modpack_version"),
+    // missions::models::mission_review::MissionReview: a pending review is undecided.
+    ("mission_reviews", "decided_by"),
+    ("mission_reviews", "decided_at"),
+    // missions::models::mission_review::ReviewComment: a thread comment need not concern a
+    // review, a version or an artifact.
+    ("mission_review_comments", "review_id"),
+    ("mission_review_comments", "mission_version_id"),
+    ("mission_review_comments", "artifact_id"),
+    // missions::models::mission_deployment::{MissionDeployment, RuntimeDeployment}: a
+    // deployment need not run an event mission, and only a finished one has its outcome.
+    ("mission_deployments", "event_mission_id"),
+    ("mission_deployments", "confirmed_runtime_session_id"),
+    ("mission_deployments", "finished_at"),
+    ("mission_deployments", "failure_reason"),
+    // server_infrastructure::services::runtime_sessions: a runtime that runs no artifact.
+    ("server_runtime_sessions", "loaded_artifact_id"),
+    ("server_runtime_sessions", "loaded_artifact_sha256"),
     // identity_and_access::models::user_account::User
     ("users", "arma_id"),
     ("users", "banned_by"),
     ("users", "banned_at"),
     ("users", "last_login_at"),
+    // identity_and_access::services::session_storage::SessionRow: absent revocation and development provenance are real states.
+    ("authentication_sessions", "revoked_at"),
+    ("authentication_sessions", "development_role"),
+    // operations::services::event_access::context::GuildEligibilitySnapshot: None means never verified.
+    ("discord_membership_snapshots", "verified_at"),
     // identity_and_access::models::user_account::RefreshToken
     ("refresh_tokens", "revoked_at"),
+    // Identity confirmation reads the code's optional consumed Arma identity.
+    ("identity_link_codes", "arma_id"),
     // community_content::models::announcement::Announcement
     ("announcements", "published_at"),
     // missions::models::mission::Mission
@@ -98,6 +178,7 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("orbat_slots", "assigned_at"),
     // operations::models::event::EventRegistration
     ("event_registrations", "slot_id"),
+    ("event_registrations", "attendance_state"), // Option<RegistrationState>; undecided attendance.
     // operations::models::leave_request::LeaveRequest
     ("leave_requests", "reviewed_by"),
     // match_telemetry::models::match_record::Match

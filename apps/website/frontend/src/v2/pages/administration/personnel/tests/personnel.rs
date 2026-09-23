@@ -182,18 +182,41 @@ fn ban_and_warn_use_dialog_not_window_prompt() {
 }
 
 #[test]
-fn role_patch_surfaces_api_error_message() {
-    // The role editor used to discard the refusal body and show a flat sentence instead.
+fn role_ui_explains_discord_authority_without_website_override() {
     let production = production_src();
-    let flat = format!("{}{}", r#"toasts.error("Failed to update role")"#, "");
+    let role_ui = production
+        .split_once("pub(super) fn role_editor(")
+        .expect("personnel exposes role information")
+        .1
+        .split_once("pub(super) fn ban_dialog(")
+        .expect("role information remains separate from moderation")
+        .0;
     assert!(
-        !production.contains(&flat),
-        "role PATCH must not toast a flat Failed to update role (discarded server message)"
+        role_ui.contains(
+            "<p>\"Website access follows verified TBD Discord membership and role mappings.\"</p>"
+        ) && role_ui
+            .contains("<p>\"Change the member’s Discord roles to change their access.\"</p>"),
+        "role information must explain both Discord authority and where administrators change access"
     );
     assert!(
-        production.contains("api_error_message") && production.contains("Failed to update role"),
-        "role PATCH Err must use api_error_message(..., \"Failed to update role\")"
+        role_ui.contains("\"Current role: \"") && role_ui.contains("role.get()"),
+        "role information must display the account's current verified role"
     );
+    for independent_override in [
+        "<select",
+        "<input",
+        "on:change=",
+        "api_patch",
+        "api_put",
+        "api_post",
+        "role.set(",
+        "ROLE_OPTIONS",
+    ] {
+        assert!(
+            !role_ui.contains(independent_override),
+            "role information must not expose an independent website override: {independent_override}"
+        );
+    }
 }
 
 #[test]

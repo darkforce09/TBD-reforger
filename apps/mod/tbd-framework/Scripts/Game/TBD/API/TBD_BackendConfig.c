@@ -1,11 +1,21 @@
 //! Server-side backend connection settings. Copy backend.example.json to
 //! $profile:TBD_BackendConfig.json on dedicated hosts.
+//!
+//! Two secrets authenticate two route families:
+//!   * `serverToken` - the shared `X-Service-Token` of link confirmation and match results;
+//!   * `machineCredential` - this server's own `mod_runtime` machine credential
+//!     (`tbdm_<32 hex>_<64 hex>`, issued by an administrator for this server), sent as
+//!     `Authorization: Bearer` to every `/api/v1/game-runtime/` and `/api/v1/fleet-executor/`
+//!     route: the deployed mission and its artifact, the runtime session and its heartbeats, the
+//!     event roster, deployment authorization and ended lives, fleet commands, the deployable
+//!     mission list and in-game deployment requests.
+//! Neither is ever logged. The mission and its event are not configured here: the server runs the
+//! mission deployed to it on the platform (TBD_DeployedMission).
 class TBD_BackendConfigStruct
 {
 	string backendUrl;
 	string serverToken;
-	string missionId;
-	string eventId;
+	string machineCredential;
 }
 
 class TBD_BackendConfig
@@ -20,7 +30,7 @@ class TBD_BackendConfig
 
 		if (!FileIO.FileExists(s_ConfigPath))
 		{
-			Print("[TBD] Missing backend config at " + s_ConfigPath + " — REST loader disabled until configured.", LogLevel.WARNING);
+			Print("[TBD] Missing backend config at " + s_ConfigPath + " - no platform connection until configured.", LogLevel.WARNING);
 			return false;
 		}
 
@@ -37,6 +47,26 @@ class TBD_BackendConfig
 			return false;
 		}
 
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Re-read the profile file while the server runs. The settings in force are replaced only by a
+	//! file that reads and parses, so a file caught half-written changes nothing.
+	static bool Reload()
+	{
+		if (!FileIO.FileExists(s_ConfigPath))
+			return false;
+
+		JsonLoadContext ctx = new JsonLoadContext();
+		if (!ctx.LoadFromFile(s_ConfigPath))
+			return false;
+
+		TBD_BackendConfigStruct reloaded = new TBD_BackendConfigStruct();
+		if (!ctx.ReadValue("", reloaded))
+			return false;
+
+		s_Config = reloaded;
 		return true;
 	}
 
@@ -63,19 +93,12 @@ class TBD_BackendConfig
 	}
 
 	//------------------------------------------------------------------------------------------------
-	static string GetMissionId()
+	//! This server's `mod_runtime` machine credential without surrounding whitespace, or empty.
+	static string GetMachineCredential()
 	{
 		if (!s_Config)
 			return string.Empty;
-		return s_Config.missionId;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	static string GetEventId()
-	{
-		if (!s_Config)
-			return string.Empty;
-		return s_Config.eventId;
+		return s_Config.machineCredential.Trim();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -103,15 +126,6 @@ class TBD_BackendConfig
 			return false;
 		}
 		return true;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Sets the active missionId and persists it (the loader re-reads it after a scenario reload).
-	static bool SetMissionId(string missionId)
-	{
-		EnsureConfig();
-		s_Config.missionId = missionId;
-		return Save();
 	}
 
 	//------------------------------------------------------------------------------------------------

@@ -33,14 +33,16 @@ pub const MAX_MULTIPART_BODY: usize = 6 << 20;
 /// Numeric role ordering — a higher role satisfies a lower requirement.
 ///
 /// `mission_maker` outranks `leader`: mission authorship is the broader grant on this platform,
-/// and the ordering is deliberate rather than alphabetical.
+/// and the ordering is deliberate rather than alphabetical. Unknown roles rank below guest
+/// and cannot satisfy a recognized role requirement.
 pub fn role_rank(role: &str) -> i32 {
     match role {
         "admin" => 4,
         "mission_maker" => 3,
         "leader" => 2,
         "enlisted" => 1,
-        _ => 0,
+        "guest" => 0,
+        _ => -1,
     }
 }
 
@@ -48,3 +50,4 @@ pub fn role_rank(role: &str) -> i32 {
 pub fn json_error(status: StatusCode, msg: &str) -> (StatusCode, Json<serde_json::Value>) {
     (status, Json(json!({ "error": msg })))
 }
+pub mod authorized_event_stream;

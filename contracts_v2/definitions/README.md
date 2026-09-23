@@ -1,6 +1,6 @@
 # Wire Schema Definitions (`contracts_v2/definitions/`)
 
-The 25 authoritative JSON Schema files. Every cross-boundary payload on the platform is shaped by one of them.
+The authoritative JSON Schema files. Every cross-boundary payload on the platform is shaped by one of them.
 
 ---
 
@@ -10,9 +10,27 @@ The 25 authoritative JSON Schema files. Every cross-boundary payload on the plat
 definitions/
 ├── README.md
 │
+│   # Web API
+├── current-profile.schema.json               <-- GET /me: the caller's account and membership state
+├── reservation-response.schema.json          <-- Registration result: reservation and attendance apart
+├── event-hub.schema.json                     <-- GET /events/:id projected for the viewer
+├── event-orbat.schema.json                   <-- GET /event-missions/:id/orbat with seat access
+├── event-viewer-access.schema.json           <-- Visibility, pool class, pool availability, my_* fields
+├── event-access-administration.schema.json   <-- Policies, groups, quotas, evidence and their changes
+├── waitlist-promotion-response.schema.json   <-- Leader promotion from the waiting list
+├── machine-credential.schema.json            <-- Per-server executor credentials (secret shown once)
+├── fleet-command.schema.json                 <-- Command ledger: receipts, claims, executor reports
+│
+│   # Game runtime (machine credential)
+├── game-runtime-session.schema.json          <-- Runtime sessions and generation-fenced heartbeats
+├── game-runtime-roster.schema.json           <-- Roster wire version 2 (camelCase)
+├── game-runtime-deployment.schema.json       <-- Deployment decisions and ended lives
+│
 │   # Missions
 ├── mission.schema.json                       <-- Mission contract: slots, sides, zones, flow
 ├── mission-editor-payload.schema.json        <-- Editor superset posted to /missions/:id/versions
+├── mission-review.schema.json                <-- Artifacts, reviews, decisions, thread, workspace
+├── mission-deployment.schema.json            <-- Deployments, runtime reads, fleet scenarios
 │
 │   # Arsenal and loadouts
 ├── registry-items.schema.json                <-- Item catalog keyed by Enfusion resource name
@@ -61,6 +79,12 @@ definitions/
 | `registry-items` | API, frontend, developer-tools | Generated: `registry_items.rs` |
 | `registry-compat` | API, frontend | Generated: `registry_compat.rs` |
 | `faction-library` | API, frontend | Generated: `faction_library.rs` |
+| `current-profile`, `reservation-response` | API, frontend | Generated into the owning domain's `models/generated/`; contract tests decode live responses |
+| `event-hub`, `event-orbat`, `event-viewer-access`, `event-access-administration`, `waitlist-promotion-response` | API, frontend | Generated: `operations/models/generated/`; `tests/event_access_contract.rs` validates live responses and the frontend goldens |
+| `machine-credential`, `fleet-command`, `game-runtime-session` | API, frontend, host agent, game mod | Generated: `server_infrastructure/models/generated/`; `tests/game_runtime_contract.rs` validates live responses |
+| `game-runtime-roster`, `game-runtime-deployment` | API, game mod | Generated: `operations/models/generated/`; `tests/game_runtime_contract.rs` validates live responses |
+| `mission-review` | API, frontend | Generated: `missions/models/generated/mission_review.rs`; `tests/mission_review_contract.rs` validates live responses and request bodies |
+| `mission-deployment` | API, frontend, game mod | Generated: `missions/models/generated/mission_deployment.rs`; `tests/mission_review_contract.rs` validates live responses and request bodies |
 | `loadout-export` | API, game mod | Hand-written `loadout_projection.rs`, held by round-trip tests |
 | `mission` | API, map engine, game mod | Hand-mapped in the map engine's scenario document model |
 | `terrain-manifest` | Map engine, developer-tools | Hand-mapped in the world loader |

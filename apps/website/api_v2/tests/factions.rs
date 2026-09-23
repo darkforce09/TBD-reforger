@@ -67,8 +67,8 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "factions-secret"));
     let app = http_router::router(state.clone());
-    let maker = common::access_token(&state, "factions", MAKER, "mission_maker", true);
-    let enlisted = common::access_token(&state, "factions", ENLISTED, "enlisted", true);
+    let maker = common::access_token(&state, "factions", MAKER, "mission_maker", true).await;
+    let enlisted = common::access_token(&state, "factions", ENLISTED, "enlisted", true).await;
     Some((app, pool, maker, enlisted))
 }
 

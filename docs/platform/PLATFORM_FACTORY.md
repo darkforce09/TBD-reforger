@@ -597,8 +597,8 @@ finish after the reset.
 Two tickets change the economics of everything after them, and should land early regardless of
 wave order:
 
-- **`cargo xtask mod world-boot --compiled`** (T-186) — feeds an API-compiled mission into the real Enfusion
-  parser. No such test exists today, which is why the single-faction hard-reject shipped. This
+- **`cargo xtask mod world-boot --compiled`** (T-186) — feeds the artifact the platform compiles on
+  submission into the real Enfusion parser. No such test exists today, which is why the single-faction hard-reject shipped. This
   converts every future contract drift from *discovered in production* into a CI failure.
 - **Seed a populated content golden** (T-193 area) — every frontend fixture is currently an empty
   `{"data":[]}`, which is precisely why six pages were shipped with their populated render branch

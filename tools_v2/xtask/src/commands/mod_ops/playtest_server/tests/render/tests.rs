@@ -185,35 +185,33 @@ fn a_non_object_a2s_is_an_error_not_a_silent_overwrite() {
 }
 
 #[test]
-fn backend_config_patch_sets_event_id_even_when_empty_and_keeps_the_token() {
+fn backend_config_patch_writes_the_credential_and_keeps_the_token() {
     let dir = std::env::temp_dir().join(format!("tbd-rps-be-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let p = dir.join("TBD_BackendConfig.json");
     std::fs::write(
         &p,
-        "{\n  \"backendUrl\": \"http://old\",\n  \"serverToken\": \"from-dotenv\"\n}",
+        "{\n  \"backendUrl\": \"http://old\",\n  \"serverToken\": \"from-dotenv\",\n  \"machineCredential\": \"placeholder\"\n}",
     )
     .unwrap();
     let mut o = crate::commands::mod_ops::playtest_server::Opts::defaults("/home/u");
-    o.mission_id = "msn_1".into();
-    patch_backend_config(p.to_str().unwrap(), &o).unwrap();
+    patch_backend_config(p.to_str().unwrap(), &o, None).unwrap();
     let got = std::fs::read_to_string(&p).unwrap();
-    assert!(got.contains("\"missionId\": \"msn_1\""));
-    assert!(
-        got.contains("\"eventId\": \"\""),
-        "eventId is always written"
-    );
+    assert!(got.contains("\"backendUrl\": \"http://127.0.0.1:8080\""));
     assert!(
         got.contains("\"serverToken\": \"from-dotenv\""),
         "an empty --token must leave setup server-profile's substitution alone: {got}"
     );
-    // ...and an explicit token replaces it.
-    o.token = "explicit".into();
-    patch_backend_config(p.to_str().unwrap(), &o).unwrap();
     assert!(
-        std::fs::read_to_string(&p)
-            .unwrap()
-            .contains("\"serverToken\": \"explicit\"")
+        got.contains("\"machineCredential\": \"placeholder\""),
+        "offline runs get none"
     );
+    assert!(!got.contains("missionId") && !got.contains("eventId"));
+    // ...an explicit token replaces it, and an issued credential is written.
+    o.token = "explicit".into();
+    patch_backend_config(p.to_str().unwrap(), &o, Some("tbdm_issued")).unwrap();
+    let got = std::fs::read_to_string(&p).unwrap();
+    assert!(got.contains("\"serverToken\": \"explicit\""));
+    assert!(got.contains("\"machineCredential\": \"tbdm_issued\""));
     let _ = std::fs::remove_dir_all(&dir);
 }

@@ -1,22 +1,9 @@
-//! `recompute_user_stats` in `command_center/services/`, proven reachable and correct.
+//! Public user-stat recomputation counts distinct matches and one past-registration population.
 //!
-//! # What this file has to prove, and why it is shaped like this
-//!
-//! The function is `pub fn` in `command_center/services/user_stats.rs`, and this file proves
-//! two different things about it.
-//!
-//! 1. **Reachability from where it should be.** This file `use`s
-//!    `website_api::command_center::services::user_stats::recompute_user_stats` from *outside the
-//!    crate*. A `pub(super)` definition inside the ingest handler module is not reachable from
-//!    an integration test, so the existence of this binary is the proof.
-//! 2. **Behaviour unchanged.** The numbers below are arithmetic written out in the comments, not
-//!    whatever the query returned: four matches (one of them a second stat line for the *same*
-//!    match, so `count(DISTINCT match_id)` and `count(*)` disagree), and three past registrations
-//!    of which two are `attended`. Those two fixtures exist specifically so a plausible rewrite of
-//!    the moved SQL goes red rather than passing on a degenerate case.
-//!
-//! The telemetry ingest suites and `tests/identity_link.rs` are the other half: they exercise
-//! the same function through `POST /ingest/match-results` and the identity-link confirm.
+//! Four player-stat rows across three matches distinguish deployments from raw row counts.
+//! Attendance uses the same past registrations for numerator and denominator, excludes future
+//! operations regardless of their recorded state, and rounds the percentage to two decimals.
+//! Telemetry and identity-link integration suites also exercise this service through HTTP.
 
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -72,7 +59,11 @@ impl Fixture {
             .await
             .expect("clean matches");
         sqlx::query(
-            "DELETE FROM event_registrations WHERE event_mission_id IN \
+            "WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE event_mission_id IN \
+             (SELECT em.id FROM event_missions em JOIN events e ON e.id = em.event_id \
+               WHERE e.created_by = $1))), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE event_mission_id IN \
+             (SELECT em.id FROM event_missions em JOIN events e ON e.id = em.event_id \
+               WHERE e.created_by = $1))) DELETE FROM event_registrations WHERE event_mission_id IN \
              (SELECT em.id FROM event_missions em JOIN events e ON e.id = em.event_id \
                WHERE e.created_by = $1)",
         )
@@ -163,16 +154,27 @@ impl Fixture {
         .fetch_one(pool)
         .await
         .expect("seed event_mission");
+        let mut fixture = pool.begin().await.unwrap();
+        let allocation = if matches!(
+            state,
+            "registered" | "legacy_unknown" | "attended" | "no_show"
+        ) {
+            Some(common::participant_allocation(&mut fixture, em_id, self.player).await)
+        } else {
+            None
+        };
         sqlx::query(
-            "INSERT INTO event_registrations (event_mission_id, discord_id, state, registered_at) \
-             VALUES ($1, $2, $3::registration_state, now())",
+            "INSERT INTO event_registrations (event_mission_id, discord_id, reservation_state, attendance_state, legacy_attendance_state, registered_at, allocation_id) \
+             VALUES ($1, $2, CASE WHEN $3 IN ('attended', 'no_show') THEN 'legacy_unknown'::registration_state ELSE $3::registration_state END, CASE WHEN $3 IN ('attended', 'no_show') THEN $3::registration_state END, CASE WHEN $3 IN ('attended', 'no_show') THEN $3::registration_state END, now(), $4)",
         )
         .bind(em_id)
         .bind(self.player)
         .bind(state)
-        .execute(pool)
+        .bind(allocation)
+        .execute(&mut *fixture)
         .await
         .expect("seed registration");
+        fixture.commit().await.unwrap();
     }
 
     async fn stored_stats(&self, pool: &PgPool) -> (i64, f64) {
@@ -186,7 +188,7 @@ impl Fixture {
     }
 }
 
-/// The relocated function, called from outside the crate, writing the numbers the arithmetic says.
+/// The public service writes deployment and attendance aggregates derived from the same facts.
 ///
 /// Fixture (all figures are written out, none are copied from a run):
 /// * **three distinct matches**, one of which carries **two** stat lines for this player — so
@@ -197,16 +199,8 @@ impl Fixture {
 ///   `start_time <= now()`, so it must not join the denominator; a rewrite that dropped that
 ///   filter reads `2 / 4 * 100 = 50` and fails here.
 ///
-/// # The asymmetry this deliberately pins rather than fixes
-///
-/// The numerator (`state = 'attended'`) is **not** time-filtered while the denominator is. The
-/// second step below marks a *future* op attended and requires the rate to move to 100 — which is what the
-/// shipped SQL does, and which means `attendance_rate` can in principle exceed 100.
-///
-/// That is a real latent defect, pinned here rather than fixed: quietly correcting the SQL
-/// while relocating it is exactly how a "no behaviour change" claim stops being true. Pinning
-/// it means the fix, when someone takes it, arrives as a deliberate red test rather than as a
-/// silent difference nobody notices.
+/// A future `attended` registration joins neither count. Moving it into the past joins both,
+/// producing three attended out of four past registrations, or exactly 75 percent.
 #[tokio::test]
 async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
     let Some((pool, f)) = Fixture::boot("000000000000336001", "stats-correct").await else {
@@ -229,7 +223,7 @@ async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
         .await;
     f.seed_registration(&pool, "past-attended-2", 24, "attended")
         .await;
-    f.seed_registration(&pool, "past-registered", 12, "registered")
+    f.seed_registration(&pool, "past-no-show", 12, "no_show")
         .await;
     // Future op the player has signed up for but not yet played. Outside `start_time <= now()`,
     // so it is not a denominator.
@@ -246,23 +240,41 @@ async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
         "three DISTINCT matches, four stat lines — got {deployments}"
     );
     assert!(
-        (rate - 200.0 / 3.0).abs() < 0.01,
-        "2 attended of 3 past registrations is 66.66…%, got {rate}"
+        (rate - 66.67).abs() < 1e-9,
+        "2 attended of 3 past registrations rounds to 66.67%, got {rate}"
     );
 
-    // ── phase 2: the untimed numerator, pinned ──
+    // Future attendance cannot inflate the numerator or dilute the denominator.
     f.seed_registration(&pool, "future-attended", -72, "attended")
         .await;
     recompute_user_stats(&pool, f.player)
         .await
         .expect("recompute must succeed");
-    let (_, rate) = f.stored_stats(&pool).await;
+    let (deployments, rate) = f.stored_stats(&pool).await;
+    assert_eq!(deployments, 3);
     assert!(
-        (rate - 100.0).abs() < 0.01,
-        "the shipped SQL counts attended rows without a time filter, so a future op marked \
-         attended raises the numerator against an unchanged denominator: expected 3/3 = 100, \
-         got {rate}. If this is now 75, the SQL was changed — which is a behaviour change, not \
-         a move."
+        (rate - 66.67).abs() < 1e-9,
+        "a future attended registration must leave both past counts unchanged at 2/3: got {rate}"
+    );
+
+    let moved = sqlx::query(
+        "UPDATE event_missions SET start_time = now() - interval '1 hour' \
+         WHERE mission_id IN (SELECT id FROM missions \
+             WHERE author_id = $1 AND title = 'Stats future-attended')",
+    )
+    .bind(f.tag)
+    .execute(&pool)
+    .await
+    .expect("move the attended operation into the past")
+    .rows_affected();
+    assert_eq!(moved, 1);
+    recompute_user_stats(&pool, f.player)
+        .await
+        .expect("recompute the expanded past population");
+    assert_eq!(
+        f.stored_stats(&pool).await,
+        (3, 75.0),
+        "the newly past attended operation joins numerator and denominator together: 3/4"
     );
 
     f.reset(&pool).await;
@@ -332,7 +344,7 @@ fn the_sql_lives_only_in_the_service() {
     );
     for handler in [
         include_str!("../src/match_telemetry/handlers/match_results.rs"),
-        include_str!("../src/match_telemetry/handlers/attendance_attribution.rs"),
+        include_str!("../src/operations/services/participation_attribution.rs"),
         include_str!("../src/identity_and_access/handlers/arma_link_confirmation.rs"),
         include_str!("../src/identity_and_access/handlers/arma_link_codes.rs"),
         include_str!("../src/operations/handlers/member_service_record.rs"),
@@ -348,4 +360,62 @@ fn the_sql_lives_only_in_the_service() {
              must stay its only writer"
         );
     }
+}
+
+/// Schedule passage changes displayed rates even when no business write refreshes the cache.
+#[tokio::test]
+async fn attendance_read_crosses_database_clock_boundary_without_a_write() {
+    use website_api::identity_and_access::services::user_lookup::load_user;
+    let (pool, f) = Fixture::boot("000000000000336004", "stats-clock")
+        .await
+        .unwrap();
+    f.seed_registration(&pool, "decided", -1, "attended").await;
+    recompute_user_stats(&pool, f.player).await.unwrap();
+    assert_eq!(f.stored_stats(&pool).await.1, 0.0);
+    assert_eq!(
+        load_user(&pool, f.player)
+            .await
+            .unwrap()
+            .unwrap()
+            .attendance_rate,
+        0.0
+    );
+    // PostgreSQL supplies and observes the boundary; this does not assume host clock agreement.
+    let boundary: chrono::DateTime<chrono::Utc> = sqlx::query_scalar(
+        "UPDATE event_missions SET start_time = clock_timestamp() + interval '200 milliseconds'
+        WHERE mission_id IN (SELECT id FROM missions WHERE author_id = $1) RETURNING start_time",
+    )
+    .bind(f.tag)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        loop {
+            let elapsed: bool = sqlx::query_scalar("SELECT clock_timestamp() >= $1")
+                .bind(boundary)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+            if elapsed {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("database clock reaches the scheduled boundary");
+    assert_eq!(
+        f.stored_stats(&pool).await.1,
+        0.0,
+        "there was no aggregate write"
+    );
+    assert_eq!(
+        load_user(&pool, f.player)
+            .await
+            .unwrap()
+            .unwrap()
+            .attendance_rate,
+        100.0
+    );
+    f.reset(&pool).await;
 }

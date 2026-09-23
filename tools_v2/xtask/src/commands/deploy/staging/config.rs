@@ -63,8 +63,9 @@ pub struct Env {
     pub profile_dir: String,
     pub addons_staging: String,
     pub game_server_token: String,
-    pub mission_id: String,
-    pub event_id: String,
+    /// `TBD_MOD_RUNTIME_CREDENTIAL`: the game runtime's `mod_runtime` machine credential, written
+    /// into the profile's `TBD_BackendConfig.json` as `machineCredential`.
+    pub mod_runtime_credential: String,
     pub backend_url: String,
     pub addon_guid: String,
     pub scenario: String,
@@ -90,7 +91,8 @@ pub struct Env {
     pub modpack_url: String,
     pub modpack_token: String,
     pub workshop_mod_name: String,
-    pub run_game_server_rest_smoke: bool,
+    /// The host agent install, when `TBD_INSTALL_HOST_AGENT=1`.
+    pub host_agent: Option<super::host_agent::HostAgentSettings>,
     pub ssh_pass: Option<String>,
     pub ssh_identity_file: Option<String>,
 }
@@ -207,6 +209,31 @@ impl Env {
             "TBD_GAME_SERVER_TOKEN required",
         )?;
 
+        let mod_runtime_credential = req(
+            "TBD_MOD_RUNTIME_CREDENTIAL",
+            35,
+            "TBD_MOD_RUNTIME_CREDENTIAL required: issue a mod_runtime credential for this server",
+        )?;
+        let backend_url = def("TBD_BACKEND_URL", "http://127.0.0.1:8080");
+        let host_agent = if def("TBD_INSTALL_HOST_AGENT", "0") == "1" {
+            Some(super::host_agent::HostAgentSettings {
+                credential: req(
+                    "TBD_HOST_AGENT_CREDENTIAL",
+                    42,
+                    "required with TBD_INSTALL_HOST_AGENT=1: issue a host_agent credential for this server",
+                )?,
+                rcon_password: req(
+                    "TBD_RCON_PASSWORD",
+                    43,
+                    "required with TBD_INSTALL_HOST_AGENT=1",
+                )?,
+                rcon_port: def("TBD_RCON_PORT", "19999"),
+                api_base_url: def("TBD_HOST_AGENT_API_URL", &backend_url),
+            })
+        } else {
+            None
+        };
+
         let bind_ip = def("TBD_BIND_IP", "192.168.0.140");
         Ok(Env {
             ssh_host,
@@ -214,9 +241,8 @@ impl Env {
             profile_dir: profile_dir.clone(),
             addons_staging,
             game_server_token,
-            mission_id: def("TBD_MISSION_ID", "msn_8f3a2c"),
-            event_id: def("TBD_EVENT_ID", "b0000000-0000-4000-8000-000000000001"),
-            backend_url: def("TBD_BACKEND_URL", "http://127.0.0.1:8080"),
+            mod_runtime_credential,
+            backend_url,
             addon_guid: def("TBD_ADDON_GUID", "B2C3D4E5F6A78901"),
             // NOT `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"`. That idiom — which
             // is what this line was — is silently truncated by bash: the `}` of the ResourceGUID
@@ -261,7 +287,7 @@ impl Env {
             modpack_url: get("TBD_MODPACK_URL"),
             modpack_token: get("TBD_MODPACK_TOKEN"),
             workshop_mod_name: def("TBD_WORKSHOP_MOD_NAME", "TBD_Framework"),
-            run_game_server_rest_smoke: def("TBD_RUN_GAME_SERVER_REST_SMOKE", "0") == "1",
+            host_agent,
             ssh_pass: map.get("TBD_SSH_PASS").filter(|v| !v.is_empty()).cloned(),
             ssh_identity_file: map
                 .get("TBD_SSH_IDENTITY_FILE")
@@ -293,6 +319,13 @@ impl Env {
         if self.remote_dir.contains("prairielearn") {
             eprintln!("Refusing to deploy: TBD_REMOTE_DIR must not be under prairielearn/");
             return Err(1);
+        }
+        super::host_agent::validate_machine_credential(
+            "TBD_MOD_RUNTIME_CREDENTIAL",
+            &self.mod_runtime_credential,
+        )?;
+        if let Some(host_agent) = &self.host_agent {
+            host_agent.validate(&self.server_mode)?;
         }
         match self.server_mode.as_str() {
             "addons" => {}

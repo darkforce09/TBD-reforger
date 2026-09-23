@@ -1,19 +1,23 @@
-//! The hub body: the operation hero, and the mission dossiers under it.
+//! The hub body: the operation hero, its places, and the mission dossiers under it.
 //!
 //! **Role:** renders the shared body of an operation — the hero section with its name, T-minus
-//! clock, local start time, briefing, voice-server chip and modpack link — and the list of
-//! mission dossiers beneath it.
+//! clock, local start time, briefing, voice-server chip and modpack link — the Places panel, and
+//! the list of mission dossiers beneath it, each with the viewer's standing on that mission.
 //! **Position:** the whole of the `/events/:id` route inside that route's chrome, and the detail
 //! column of the `/events` schedule. Both callers own their own chrome and hand in the refetch
 //! callback.
 //! **Signals & state:** reads the session store from context and owns the modpack resource the
 //! chip renders from.
 //! **Invariants:** the operation briefing goes through the same trim-aware rule mission
-//! briefings do, so a whitespace-only briefing reads as blank in both places. The modpack fetch
-//! is a browser-only path and resolves to `None` in a native build, which simply omits the chip.
+//! briefings do, so a whitespace-only briefing reads as blank in both places — and a partial
+//! viewer, whose dossier carries no briefing because it is withheld from them, is told so rather
+//! than told there is none. The modpack fetch is a browser-only path and resolves to `None` in a
+//! native build, which simply omits the chip.
 #![allow(dead_code)]
 
 use super::mission_dossier::{briefing_text, mission_dossier};
+use super::registration_access::mission_standing::MissionStanding;
+use super::registration_access::places_panel::places_panel;
 use crate::v2::core::api::dto::{EventHub, ModpackDto};
 use crate::v2::core::ui::MaterialIcon;
 use crate::v2::core::utils::countdown::countdown_label;
@@ -28,7 +32,12 @@ use crate::v2::core::api::client::api_get;
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::api::dto::DataEnvelope;
 
-/// The shared hub body: the hero, then one dossier per mission.
+/// What a partial viewer reads where the operation briefing would be: the briefing is shown only to
+/// viewers the operation's own policy admits.
+pub(crate) const BRIEFING_WITHHELD: &str =
+    "The operation briefing is shown only to participants the operation's own access policy admits.";
+
+/// The shared hub body: the hero, the Places panel, then one dossier per mission.
 ///
 /// `on_change` is run by every slotting mutation below, and is what reloads the operation so the
 /// states derived from it stay live.
@@ -72,8 +81,19 @@ pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl Into
     let countdown = countdown_label(&ev.start_time);
     let when = format_local_datetime(&ev.start_time);
     // The operation-level briefing is authorable and already shown on the schedule card; it
-    // reads with the same trim/empty rule mission dossier briefings do.
-    let operation_briefing = briefing_text(ev.briefing.as_deref());
+    // reads with the same trim/empty rule mission dossier briefings do. A partial viewer is not
+    // sent it at all, which is not the same as there being none.
+    let operation_briefing = if ev.viewer_access.visibility == "full" {
+        briefing_text(ev.briefing.as_deref())
+    } else {
+        BRIEFING_WITHHELD.to_string()
+    };
+    let places = places_panel(&ev);
+    let standings: Vec<MissionStanding> = ev
+        .missions
+        .iter()
+        .map(|mission| MissionStanding::of(&ev, mission))
+        .collect();
     let missions = ev.missions;
     let has_missions = !missions.is_empty();
     view! {
@@ -132,6 +152,8 @@ pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl Into
             </div>
         </section>
 
+        {places}
+
         <h2 class="mb-4 text-label-md text-on-surface-variant uppercase tracking-wide">
             "Mission Dossiers"
         </h2>
@@ -140,8 +162,9 @@ pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl Into
                 <div class="flex flex-col gap-6">
                     {missions
                         .into_iter()
+                        .zip(standings)
                         .enumerate()
-                        .map(|(i, m)| mission_dossier(i + 1, m, on_change))
+                        .map(|(i, (m, standing))| mission_dossier(i + 1, m, standing, on_change))
                         .collect_view()}
                 </div>
             }

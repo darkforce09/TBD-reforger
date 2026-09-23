@@ -181,20 +181,16 @@ fn compile_documents_save_cargo_refuse() {
         helper.contains("validate_mission_editor_payload_with_catalog"),
         "Save helper must call the catalogued validator"
     );
-    const HANDLER: &str = include_str!("../../handlers/mission_export.rs");
-    let handler_prod = HANDLER
-        .split("#[cfg(test)]")
-        .next()
-        .expect("mission_export.rs must declare a sibling test module");
-    let compiled = handler_prod
-        .split("pub async fn get_compiled_mission(")
+    const ARTIFACTS: &str = include_str!("../mission_artifacts/artifact_store.rs");
+    let compile = ARTIFACTS
+        .split("pub async fn compile_artifact(")
         .nth(1)
-        .and_then(|s| s.split("\nfn unreadable_stored_payload(").next())
-        .expect("get_compiled_mission body");
+        .and_then(|s| s.split("\nasync fn load_artifact_by_digest(").next())
+        .expect("compile_artifact body");
     assert!(
-        compiled.contains("load_cargo_phys_catalog")
-            && compiled.contains("flatten_to_mod_document_with_catalog("),
-        "/compiled must load catalog + with_catalog; got:\n{compiled}"
+        compile.contains("load_catalog_snapshot")
+            && compile.contains("flatten_to_mod_document_with_catalog("),
+        "artifacts must compile against the loaded catalog; got:\n{compile}"
     );
 }
 

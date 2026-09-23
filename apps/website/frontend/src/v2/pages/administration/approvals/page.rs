@@ -1,19 +1,34 @@
 //! The approvals route: the queue of missions waiting on a reviewer.
 //!
 //! **Role:** fetches the pending queue, puts it behind the administrator gate, and hands the rows
-//! to the queue and drawer below.
+//! to the queue and drawer below together with the desk they share.
 //! **Position:** the `/admin/approvals` route, rendered inside the navigation frame.
-//! **Signals & state:** owns `selected_id` (which submission is open) and the refetch the two
-//! decisions call. The queue lives in a `LocalResource` read inside a suspense boundary.
+//! **Signals & state:** owns the desk — `selected_id` (which submission is open), the refetch every
+//! decision calls, and the notice a stale decision leaves behind. The queue lives in a
+//! `LocalResource` read inside a suspense boundary.
 //! **Invariants:** the request future is not `Send`, so the fetch is a browser-only path and a
 //! native build resolves to nothing and renders the failure branch. The endpoint lists pending
-//! submissions and nothing else, so every row reaching the drawer is one a decision can be made on.
+//! submissions and nothing else, so every row reaching the drawer is awaiting a decision — though a
+//! row that predates reviews has no artifact to decide yet. The notice lives here rather than in the
+//! drawer because reading the queue again rebuilds the drawer, and the reviewer must still be told
+//! why their decision did not land.
 #![allow(dead_code)]
 
 use super::submission_queue::board;
 use crate::v2::core::api::dto::{ApprovalRow, Paginated};
 use crate::v2::core::ui::AdminGate;
 use leptos::prelude::*;
+
+/// What the queue and the drawer share.
+#[derive(Clone, Copy)]
+pub(super) struct ApprovalsDesk {
+    /// Which submission is open; the first row when none is picked.
+    pub(super) selected_id: RwSignal<Option<String>>,
+    /// Reads the queue again.
+    pub(super) refetch: Callback<()>,
+    /// The mission a refused decision concerned, and what the reviewer is told about it.
+    pub(super) notice: RwSignal<Option<(String, String)>>,
+}
 
 /// The approvals screen, behind the administrator gate.
 #[component]
@@ -42,8 +57,11 @@ fn MissionApprovalsInner() -> impl IntoView {
             None::<Paginated<ApprovalRow>>
         }
     });
-    let selected_id = RwSignal::new(None::<String>);
-    let refetch = Callback::new(move |()| approvals.refetch());
+    let desk = ApprovalsDesk {
+        selected_id: RwSignal::new(None::<String>),
+        refetch: Callback::new(move |()| approvals.refetch()),
+        notice: RwSignal::new(None),
+    };
     view! {
         <Suspense fallback=move || {
             view! { <p class="text-on-surface-variant">"Loading…"</p> }
@@ -52,14 +70,12 @@ fn MissionApprovalsInner() -> impl IntoView {
                 approvals
                     .get()
                     .map(|opt| match opt {
-                        Some(page) => {
-                            board(page.data, page.total, selected_id, refetch).into_any()
-                        }
+                        Some(page) => board(page.data, page.total, desk).into_any(),
                         None => {
                             view! { <p class="text-error">"Failed to load data."</p> }.into_any()
                         }
                     })
             }}
-    </Suspense>
+        </Suspense>
     }
 }

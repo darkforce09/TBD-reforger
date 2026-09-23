@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "generation_id": "6A6E9885CF2F83F9",
+  "current_pointer": "/home/Samuel/Games/ArmaReforger-Base/profile/TBD_Export/equipment_vehicle_exports/current.json",
+  "published_directory": "/home/Samuel/Games/ArmaReforger-Base/profile/TBD_Export/equipment_vehicle_exports/published/6A6E9885CF2F83F9",
+  "manifest_sha256": "5369685bee732559eecad20e90c0c268299018d24413cc21f982f88bd75151b7",
+  "manifest_file_count": 6531,
+  "resource_count": 3265,
+  "manifest_matches_validation_hashes": true,
+  "archive_directory": "/home/Samuel/Games/ArmaReforger-Base/profile/TBD_Export/equipment_vehicle_exports/legacy/6A6E9885CF2F83F9",
+  "archived_files_verified_against_original_audit": 160,
+  "archive_hash_mismatches": [],
+  "publication_log": "Published 6A6E9885CF2F83F9: 3265 resources; current pointer /var/home/Samuel/.local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/TBD_Export/equipment_vehicle_exports/current.json"
+}

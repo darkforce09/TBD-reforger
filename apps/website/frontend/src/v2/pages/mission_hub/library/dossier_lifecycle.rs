@@ -4,21 +4,24 @@
 //! the three actions that move it: submit for review, archive or restore, and delete.
 //! **Position:** two sections inside the dossier's scroll area plus the confirmation dialog the
 //! delete button opens, which renders outside that scroll area.
-//! **Signals & state:** the three busy latches are owned by the dossier and passed in, so the
-//! Manage row and the confirmation dialog agree on when a delete is in flight. Reads the session
-//! store and the toast queue from context; `changed` re-reads the dossier and the card grid.
+//! **Signals & state:** the archive and delete busy latches are owned by the dossier and passed
+//! in, so the Manage row and the confirmation dialog agree on when a delete is in flight; the
+//! submission control owns its own. Reads the session store and the toast queue from context;
+//! `changed` re-reads the dossier and the card grid.
 //! **Invariants:** every gate here mirrors the API's own predicate — author or administrator, and
 //! for submission only a draft or a returned mission — so nobody is shown a control that is
-//! guaranteed to be refused. All three writes are browser-only.
+//! guaranteed to be refused. A refused submission names its reason and lists every finding the
+//! compile reported. All three writes are browser-only.
 
 use crate::v2::core::ui::MaterialIcon;
+use crate::v2::pages::mission_hub::mission_review::submission_action::SubmitForReview;
 use leptos::prelude::*;
 
 /// The reviewer's verdict, shown above the dossier body because it is why the author opened it.
 ///
-/// The rejection reason is the only thing an author is ever told about a review: the approvals
-/// queue is administrator-only, so there is nothing for them to go and read instead. A rejection
-/// with no reason says so rather than rendering a blank panel that reads as a loading bug.
+/// The rejection reason is the headline of a returned mission; the review record below the
+/// dossier carries the rest of the review. A rejection with no reason says so rather than
+/// rendering a blank panel that reads as a loading bug.
 pub(super) fn returned_section(
     show_returned: bool,
     rejection_reason: Option<String>,
@@ -86,7 +89,6 @@ pub(super) fn manage_section(
     id_sv: StoredValue<String>,
     changed: Callback<()>,
     status_busy: RwSignal<bool>,
-    submit_busy: RwSignal<bool>,
     delete_busy: RwSignal<bool>,
     confirm_delete_open: RwSignal<bool>,
 ) -> impl IntoView {
@@ -135,61 +137,29 @@ pub(super) fn manage_section(
         }
     };
 
-    // The failure wording comes from the server because the two a real author will hit say
-    // different things and only the server knows which: the mission was already queued or
-    // archived under them, or it is not theirs. Folding both into one fixed string would leave
-    // them re-clicking a button that cannot work.
-    let submit_for_review = move |_| {
-        #[cfg(target_arch = "wasm32")]
-        {
-            if submit_busy.get_untracked() {
-                return;
-            }
-            submit_busy.set(true);
-            let toasts = crate::v2::core::ui::toast::use_toasts();
-            let path = format!("/missions/{}/submit", id_sv.get_value());
-            leptos::task::spawn_local(async move {
-                match crate::v2::core::api::client::api_post_ok(store, &path, serde_json::json!({}))
-                    .await
-                {
-                    Ok(()) => {
-                        toasts.success("Submitted for review");
-                        changed.run(());
-                    }
-                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
-                        &e,
-                        "Could not submit mission for review",
-                    )),
-                }
-                submit_busy.set(false);
-            });
-        }
-    };
-
     can_manage.then(|| {
         view! {
                             <section>
                                 <h3 class="mb-2 font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
                                     "Manage"
                                 </h3>
+                                // Primary-styled and on its own line because on a draft this is
+                                // the only action that moves the mission forward — nothing else
+                                // puts it in front of a reviewer — and a refusal lists findings
+                                // under it.
+                                {can_submit
+                                    .then(|| {
+                                        view! {
+                                            <div class="mb-2">
+                                                <SubmitForReview
+                                                    mission_id=id_sv.get_value()
+                                                    label=submit_label
+                                                    on_submitted=changed
+                                                />
+                                            </div>
+                                        }
+                                    })}
                                 <div class="flex flex-wrap gap-2">
-                                    // Primary-styled because on a draft this is the only
-                                    // action that moves the mission forward: nothing else
-                                    // puts it in front of a reviewer.
-                                    {can_submit
-                                        .then(|| {
-                                            view! {
-                                                <button
-                                                    type="button"
-                                                    on:click=submit_for_review
-                                                    prop:disabled=move || submit_busy.get()
-                                                    class="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/15 px-4 py-2 text-label-md font-semibold text-primary transition-colors hover:bg-primary/25 disabled:opacity-60"
-                                                >
-                                                    <MaterialIcon name="send" class="text-[16px]" />
-                                                    {submit_label}
-                                                </button>
-                                            }
-                                        })}
                                     <button
                                         type="button"
                                         on:click=toggle_archive

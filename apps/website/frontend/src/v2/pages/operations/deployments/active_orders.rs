@@ -1,23 +1,21 @@
 //! The active-orders banner: the caller's next deployment, and the queue behind it.
 //!
-//! **Role:** renders the soonest upcoming deployment as the banner — name, lifecycle badge,
+//! **Role:** renders the soonest upcoming deployment as the banner — name, reservation and attendance,
 //! local start time, countdown, terrain, assigned slot and the two links into the operation —
-//! with the remaining deployments listed beneath it. Owns the readers for the fields of an
-//! upcoming row.
+//! with the remaining deployments listed beneath it. Reads typed upcoming deployment rows.
 //! **Position:** inside the banner section at the top of the right-hand column.
 //! **Signals & state:** none — the banner is built from the values handed to it.
 //! **Invariants:** a link is rendered only when the ids it needs are actually on the wire; a row
 //! without an operation to link to is inert markup rather than an anchor to a partial path.
 #![allow(dead_code)]
 
-use super::page::vstr;
+use crate::v2::core::api::dto::DeploymentUpcoming;
 use crate::v2::core::ui::{badge_class, MaterialIcon};
 use crate::v2::core::utils::countdown::countdown_label;
 use crate::v2::core::utils::datefmt::format_local_datetime;
 use leptos::prelude::*;
-use serde_json::Value;
 
-/// The badge variant a `registration_state` is shown in.
+/// Reservation and attendance badges use the same status colors.
 fn state_variant(state: &str) -> &'static str {
     match state {
         "registered" | "attended" => "success",
@@ -39,10 +37,10 @@ fn terrain_label(t: &str) -> String {
 /// "BLUFOR · Command · Platoon Leader" from whichever of `faction` / `squad` / `role` the backend
 /// actually filled — an unassigned registration carries none of the three, and joining blindly would
 /// render a row of bare separators.
-fn slot_line(u: &Value) -> String {
-    ["faction", "squad", "role"]
-        .iter()
-        .map(|k| vstr(u, k))
+fn slot_line(upcoming: &DeploymentUpcoming) -> String {
+    [&upcoming.faction, &upcoming.squad, &upcoming.role]
+        .into_iter()
+        .map(String::as_str)
         .filter(|p| !p.is_empty())
         .collect::<Vec<_>>()
         .join(" · ")
@@ -52,27 +50,26 @@ fn slot_line(u: &Value) -> String {
 ///
 /// `upcoming` is ordered soonest-first by the backend, so the first row is the banner and the
 /// rest queue beneath it without a second heading — the banner already carries one.
-pub(super) fn active_orders(upcoming: Vec<Value>) -> impl IntoView {
+pub(super) fn active_orders(upcoming: Vec<DeploymentUpcoming>) -> impl IntoView {
     let mut it = upcoming.into_iter();
     let Some(next) = it.next() else {
         // `has_active` is checked by the caller; this arm exists so the function is total.
         return ().into_any();
     };
-    let rest: Vec<Value> = it.collect();
-    let name = vstr(&next, "name");
-    let name = if name.is_empty() {
+    let rest: Vec<DeploymentUpcoming> = it.collect();
+    let slot = slot_line(&next);
+    let name = if next.name.is_empty() {
         "Untitled Operation".to_string()
     } else {
-        name
+        next.name
     };
-    let start = vstr(&next, "start_time");
-    let when = format_local_datetime(&start);
-    let countdown = countdown_label(&start);
-    let terrain = terrain_label(&vstr(&next, "terrain"));
-    let state = vstr(&next, "state");
-    let slot = slot_line(&next);
-    let event_id = vstr(&next, "event_id");
-    let emid = vstr(&next, "event_mission_id");
+    let when = format_local_datetime(&next.start_time);
+    let countdown = countdown_label(&next.start_time);
+    let terrain = terrain_label(&next.terrain);
+    let state = next.reservation_state;
+    let attendance = next.attendance_state;
+    let event_id = next.event_id;
+    let emid = next.event_mission_id;
     // The slotting link is rendered only when both ids are on the wire: a registration with no
     // mission id has no order of battle to change.
     let orbat_href = (!event_id.is_empty() && !emid.is_empty())
@@ -87,8 +84,12 @@ pub(super) fn active_orders(upcoming: Vec<Value>) -> impl IntoView {
                     </h3>
                     {(!state.is_empty())
                         .then(|| {
-                            view! { <span class=badge_class(state_variant(&state))>{state.clone()}</span> }
+                            view! { <span class=badge_class(state_variant(&state))>"Reservation: "{state.clone()}</span> }
                         })}
+                    {attendance.map(|attendance| {
+                        let class = badge_class(state_variant(&attendance));
+                        view! { <span class=class>"Attendance: "{attendance}</span> }
+                    })}
                 </div>
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-1 font-mono text-sm text-on-surface-variant">
                     <span>{when}</span>
@@ -141,15 +142,15 @@ pub(super) fn active_orders(upcoming: Vec<Value>) -> impl IntoView {
                             {rest
                                 .into_iter()
                                 .map(|u| {
-                                    let n = vstr(&u, "name");
-                                    let n = if n.is_empty() {
+                                    let n = if u.name.is_empty() {
                                         "Untitled Operation".to_string()
                                     } else {
-                                        n
+                                        u.name
                                     };
-                                    let s = vstr(&u, "start_time");
-                                    let st = vstr(&u, "state");
-                                    let eid = vstr(&u, "event_id");
+                                    let s = u.start_time;
+                                    let st = u.reservation_state;
+                                    let attendance = u.attendance_state;
+                                    let eid = u.event_id;
                                     let row = view! {
                                         <>
                                             <span class="min-w-0 flex-1 truncate text-on-surface">{n}</span>
@@ -159,9 +160,13 @@ pub(super) fn active_orders(upcoming: Vec<Value>) -> impl IntoView {
                                             {(!st.is_empty())
                                                 .then(|| {
                                                     view! {
-                                                        <span class=badge_class(state_variant(&st))>{st.clone()}</span>
+                                                        <span class=badge_class(state_variant(&st))>"Reservation: "{st.clone()}</span>
                                                     }
                                                 })}
+                                            {attendance.map(|attendance| {
+                                                let class = badge_class(state_variant(&attendance));
+                                                view! { <span class=class>"Attendance: "{attendance}</span> }
+                                            })}
                                         </>
                                     };
                                     // A row is a link when it has an event to link to, and inert

@@ -40,19 +40,28 @@ fn collapse_ws(s: &str) -> String {
 }
 
 /// AdminGate must not use browse-mode `has_min_role(None)=>true`.
-/// Binds to the live `if` condition (same spirit as wiki Memo bind): a dead
-/// `has_min_role_authed(...)` pin beside `if true` must FAIL. Bans browse-mode one-shot.
+/// Binds to the admission memo and to the `Show` condition that reads it (same spirit as wiki
+/// Memo bind): a dead `has_min_role_authed(...)` memo beside `when=move || true` must FAIL. Bans
+/// browse-mode one-shot.
 #[test]
 fn admin_gate_uses_authed_reactive_role() {
     let src = crate::v2::core::test_support::pins::ui_source();
     let src: &str = &src;
     let production = src;
     let code = collapse_ws(&strip_rust_comments(production));
-    // require the live `if` — presence of the helper call alone is false-green.
+    // Require the memo and its live use — presence of the helper call alone is false-green.
     assert!(
-        code.contains("if has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin)"),
-        "AdminGate must gate via `if has_min_role_authed(auth.user.get()…, Role::Admin)` \
-         (dead pin + if true is a fail; browse-mode None=>true is a fail)"
+        code.contains(
+            "Memo::new(move |_| has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin))"
+        ),
+        "AdminGate's admission must be a memo over `has_min_role_authed(auth.user.get()…, \
+         Role::Admin)` (browse-mode None=>true is a fail)"
+    );
+    assert!(
+        code.contains("let admitted = admin_admission(expect_context::<AuthStore>());")
+            && code.contains("<Show when=move || admitted.get() fallback=admin_access_required>"),
+        "AdminGate must render its children from that memo (a dead memo beside an \
+         unconditional `Show` is a fail)"
     );
     // Mask the authed helper so a free `has_min_role(` / one-shot store call stands out.
     let masked = code.replace("has_min_role_authed", "HAS_MIN_ROLE_AUTHED");

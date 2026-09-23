@@ -36,10 +36,9 @@ use anyhow::Result;
 use verification_core::proc::{self, Run};
 use verification_core::verdict::NotRun;
 
-use super::agent::{self, AgentEnv};
 use super::boot::{self, Out};
 use super::config::Env;
-use super::payloads::{AGENT_INSTALL_PAYLOAD, profile_payload, smoke_payload, unit_payload};
+use super::payloads::{profile_payload, smoke_payload, unit_payload};
 use super::{Cli, Paths};
 
 /// How `ssh` is invoked: plain, via `sshpass`, or with an identity file.
@@ -210,6 +209,11 @@ pub use ssh_argv::ssh_argv;
 
 mod verify_boot_remote;
 use verify_boot_remote::verify_boot_remote;
+
+mod deployed_scenario;
+use deployed_scenario::deployed_scenario;
+#[cfg(test)]
+pub(crate) use deployed_scenario::scenario_of_config;
 
 #[cfg(test)]
 pub(crate) use ssh_argv::{exec_start, rsync_argv, v6_verdict};

@@ -211,8 +211,18 @@ pub enum DbCmd {
     #[command(name = "registry-import")]
     RegistryImport,
     /// `make rust-test-it` — fresh `rust_it` DB, run the suite, reap the per-binary leftovers.
+    /// A selection narrows the run for development only; readiness receipts use the full suite.
     #[command(name = "test-it")]
-    TestIt,
+    TestIt {
+        /// Run only this integration test binary (repeatable).
+        #[arg(long = "test")]
+        tests: Vec<String>,
+        /// Include the library unit tests in a narrowed selection.
+        #[arg(long)]
+        lib: bool,
+        /// Run only test cases whose names contain this text.
+        filter: Option<String>,
+    },
     /// Acceptance harness: every arm carries its own RED proof.
     Selftest,
     /// Repoint a recorded migration checksum after a comments-only edit to an applied migration.
@@ -262,7 +272,11 @@ pub fn run(cmd: DbCmd) -> Result<u8> {
             ]),
         },
         DbCmd::RegistryImport => registry_import(),
-        DbCmd::TestIt => test_it::run(),
+        DbCmd::TestIt { tests, lib, filter } => test_it::run(test_it::TestSelection {
+            binaries: tests,
+            library: lib,
+            name_filter: filter,
+        }),
         DbCmd::RepairMigrationChecksum { version, force } => {
             repair_migration_checksum::run(version, force)
         }

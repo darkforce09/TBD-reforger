@@ -199,7 +199,7 @@ alongside it, so it serves **the deployed checkout**, not the Workshop copy (T-6
 that config mode "requires a Workshop publish" is **false**: it was measured on `-addons`.
 **`-addons` is not `-addonsDir`, and that distinction is the whole fix (T-604).**
 
-> **Gates V2–V4 are off by default.** They curl `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster`. The backend serves `/api/v1` only, so both answer **404** — not 200, and with no 401 auth gate — and the smoke would abort the deploy at its first check. `cargo xtask deploy staging` therefore **skips** the V2–V4 smoke unless `TBD_RUN_GAME_SERVER_REST_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
+> **The V2–V4 game-runtime smoke runs on every deploy**, on the server against its own API with the runtime's `mod_runtime` credential (`TBD_MOD_RUNTIME_CREDENTIAL`): V2 reads `GET /api/v1/game-runtime/deployment` (200, or 404 `NO_DEPLOYMENT` before the first deployment), V3 fetches that deployment's artifact and checks its SHA-256, and V4 reads the deployment without a credential and expects 401. A failed check aborts the deploy before the game server restarts. Mission documents are schema-validated when the platform compiles them on submission, so the deploy validates no mission file.
 
 **Do not touch PrairieLearn:** all TBD paths live under `/home/sam/tbd/` only. Never deploy to `/home/sam/prairielearn/`.
 
@@ -219,7 +219,7 @@ flowchart TB
     pg[Postgres_127_0_0_1_5432]
     arma[ArmaReforgerServer_UDP_TCP_2001]
     pg --> api
-    arma -->|"GET /api/missions/msn_8f3a2c/compiled"| api
+    arma -->|"GET /api/v1/game-runtime/deployment + artifacts/:id"| api
   end
   client -->|"local tbd-framework mod"| client
   client -->|"Direct Connect :2001"| arma
@@ -317,7 +317,7 @@ cd /home/sam/tbd/repo/apps/website/api_v2   # after first rsync or clone
 cp .env.example .env
 # Edit:
 #   SESSION_SECRET=<long-random>
-#   GAME_SERVER_TOKENS=<same value as TBD_GAME_SERVER_TOKEN in tools_v2/xtask/deploy/deploy.env>
+#   SERVICE_TOKEN=<same value as TBD_GAME_SERVER_TOKEN in tools_v2/xtask/deploy/deploy.env>
 ```
 
 ### 5. Docker stack
@@ -331,17 +331,85 @@ First build may take 5–15 minutes.
 
 ### 6. API smoke (before game server)
 
-> **BLOCKED on T-092** — these routes are not registered in the current backend (expect **404**). Kept as the target contract; re-run when T-092 ships.
+`cargo xtask deploy staging` runs this on every deploy (V2–V4). By hand, on the server:
 
 ```bash
-TOKEN='<your-game-server-token>'
-curl -sf -H "Authorization: Bearer $TOKEN" \
-  http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled | head -c 200
-curl -sf -H "Authorization: Bearer $TOKEN" \
-  http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster
+CRED='<this server'"'"'s mod_runtime credential>'
+curl -s -w '\n%{http_code}\n' -H "Authorization: Bearer $CRED" \
+  http://127.0.0.1:8080/api/v1/game-runtime/deployment | head -c 400   # 200, or 404 NO_DEPLOYMENT
 curl -s -o /dev/null -w '%{http_code}\n' \
-  http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled   # expect 401
+  http://127.0.0.1:8080/api/v1/game-runtime/deployment   # expect 401
 ```
+
+With a deployment, `GET /api/v1/game-runtime/artifacts/<artifact_id>` with the same credential
+answers the artifact's bytes; their SHA-256 equals the deployment's `artifact_sha256` and the
+`ETag`. `cargo xtask mod test-game-runtime-api` (with `TBD_API_BASE` and
+`TBD_MACHINE_CREDENTIAL`) runs the same checks from any machine that reaches the API.
+
+The event roster is not on this list: it is a game-runtime route read with the server's machine
+credential, see **6a**.
+
+### 6a. Machine credential and game-runtime routes
+
+Everything the game runtime says to the platform about itself goes to `/api/v1/game-runtime/` or
+`/api/v1/fleet-executor/` and authenticates with **this server's own `mod_runtime` machine credential**
+(`Authorization: Bearer tbdm_<32 hex>_<64 hex>`), not with the shared service token:
+
+| Route | What the mod does with it |
+|---|---|
+| `GET /api/v1/game-runtime/deployment` | at every boot: the deployment this server runs (the one in flight, else the latest confirmed): `deployment_id`, `mission_id`, `artifact_id`, `artifact_sha256`, `artifact_bytes`, `terrain_key`, and `event_id` / `event_mission_id` for an event; 404 `NO_DEPLOYMENT` = run no mission |
+| `GET /api/v1/game-runtime/artifacts/{artifactId}` | the artifact's exact bytes; loaded only when their SHA-256 equals `artifact_sha256`, then cached in `$profile:TBD_MissionArtifactCache/` |
+| `POST /api/v1/game-runtime/sessions` | starts the runtime session once the artifact has loaded, reporting it (`loaded_artifact_id`, `loaded_artifact_sha256`, or `{}` for none - the report confirms the deployment) (201: `runtime_session_id`, `generation`, `heartbeat_interval_seconds`, `expires_after_seconds`); a new session supersedes the server's previous one and ends the lives open in it |
+| `POST /api/v1/game-runtime/sessions/{id}/heartbeats` | every `heartbeat_interval_seconds` (15): `generation`, a strictly increasing `sequence`, and the readings (online, players, player limit, FPS, uptime, in-game time and weather) |
+| `POST /api/v1/game-runtime/sessions/{id}/end` | when the world ends, after an offline heartbeat |
+| `GET /api/v1/game-runtime/events/{eventId}/roster` | wire version 2: `assignments` (`armaId`, `slotUid`, `orbatSlotId`, `eventMissionId`) for seating, `slots` for naming deployments; 403 when the event is not bound to this server |
+| `POST /api/v1/game-runtime/sessions/{id}/deployments` | before a player spawns into an event seat: `event_mission_id`, `orbat_slot_id`, `arma_id`, `player_life_id` -> `allowed` (with `occupancy_id`) or `denied` (with `reason` and `message`) |
+| `POST /api/v1/game-runtime/sessions/{id}/deployments/{occupancyId}/end` | when that life ends (death, disconnect, seat change, round end, world end) |
+| `GET /api/v1/game-runtime/missions`, `POST /api/v1/game-runtime/deployments` | the in-game admin list (`#tbd missions`) and an in-game admin's deployment request (`#tbd mission <n>`, with the admin's game identity); the server restarts only when the platform's deployment command runs |
+| `POST /api/v1/fleet-executor/commands/claim`, `.../{commandId}/executing`, `.../{commandId}/result` | every 5 s while a session is open: `broadcast`, `kick`, `load_mission` (verified artifact into the cache, `succeeded`, then an in-process scenario restart) |
+
+The service token (`serverToken`) stays in use only for `ingest/link-confirm` and
+`ingest/match-results`. The profile names no mission and no event: the server runs the mission
+deployed to it, and the event comes with the deployment. With no deployment it runs **no mission**
+(ERROR) - there is no default; with the platform unreachable at boot it runs the last verified
+cached artifact (WARNING) and reports it once a session can start.
+
+**Set it up once per server:**
+
+1. For an event: bind it to this server, `PATCH /api/v1/events/<event uuid>` with
+   `{"server_id":"<server uuid>"}` (administrator). An event that is not bound to this server
+   answers the roster with **403**, and a deployment of its event mission here is refused.
+2. Issue the credential: `/admin/server` -> select the server -> credentials -> issue one for the
+   **game runtime** (or `POST /api/v1/servers/<server uuid>/credentials` with
+   `{"executor_kind":"mod_runtime","label":"staging runtime"}`). The secret is shown **once**.
+3. Put it in `deploy.env` as `TBD_MOD_RUNTIME_CREDENTIAL`; every deploy writes it into
+   `$TBD_PROFILE_DIR/profile/TBD_BackendConfig.json` as `machineCredential`.
+4. Deploy a mission to the server: `POST /api/v1/servers/<server uuid>/deployments` with
+   `{"mission_id":"...","artifact_id":"<approved artifact>"}` (plus `"event_mission_id"` for an
+   event; administrator), or in game `#tbd missions` then `#tbd mission <n>`.
+
+> **`cargo xtask deploy staging` rewrites `TBD_BackendConfig.json` from `backend.example.json` on
+> every deploy**, with `serverToken` from `TBD_GAME_SERVER_TOKEN` and `machineCredential` from
+> `TBD_MOD_RUNTIME_CREDENTIAL`; the deploy refuses to run without a well-formed credential.
+> Hand-edits to the file do not survive the next deploy. The mod re-reads the file every minute
+> while it waits on the platform, so a running server picks up a changed credential without a
+> restart.
+
+**While the event roster has not loaded, every deployment into an event seat is refused** (the
+player keeps the seat and is told to try again shortly). A fetch without an answer is repeated with
+backoff (2 s up to 60 s); a refusal (401, 403, 404, a wire version other than 2) is logged at ERROR
+once and repeated every 60 s.
+
+Check the roster the way the server reads it:
+
+```bash
+CRED='tbdm_...'   # this server's mod_runtime machine credential
+EID='<event uuid>'
+curl -s -w '\n%{http_code}\n' -H "Authorization: Bearer $CRED" \
+  "http://127.0.0.1:8080/api/v1/game-runtime/events/$EID/roster" | head -c 600
+```
+
+Expect `200` and `{"version":2,"eventId":"...","missionId":"...","assignments":[...],"slots":[...]}`.
 
 ### 7. User systemd + linger
 
@@ -365,12 +433,43 @@ sudo firewall-cmd --reload
 
 ```bash
 cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env   # if not done
-# Fill TBD_SSH_PASS (or SSH key), TBD_GAME_SERVER_TOKEN, paths
+# Fill TBD_SSH_PASS (or SSH key), TBD_GAME_SERVER_TOKEN, TBD_MOD_RUNTIME_CREDENTIAL, paths
 cargo xtask deploy staging
 cargo xtask deploy staging --dry-run   # preview only
 ```
 
-Flow: validate mission JSON → rsync → profile + addon symlink → Docker rebuild → API smoke (**skipped by default** — `TBD_RUN_GAME_SERVER_REST_SMOKE=1` runs it) → restart game server → remote log grep.
+Flow: rsync → profile + addon symlink → Docker rebuild → game-runtime smoke (V2–V4) → restart game server → boot verification → host agent (with `TBD_INSTALL_HOST_AGENT=1`, see **Host agent** below) → remote log grep.
+
+### Host agent
+
+Server Control's start, stop, restart and player-list commands (`POST /api/v1/servers/{id}/commands`)
+are executed on the host by `fleet-host-agent` (`apps/fleet_host_agent`), a `systemctl --user` unit
+that polls the API outbound with its own **`host_agent`** machine credential and reports each step
+to the command ledger (`docs/verification/api_v2/fleet_command_ledger.md`). The game runtime
+executes `broadcast`, `kick` and `load_mission` with its `mod_runtime` credential; each executor
+claims only its own actions, so the two credentials are separate.
+
+1. Issue the agent's credential: `/admin/server` → select the server → credentials → **host
+   agent** (or `POST /api/v1/servers/<server uuid>/credentials` with
+   `{"executor_kind":"host_agent","label":"staging host agent"}`). The secret is shown once.
+2. In `deploy.env`: `TBD_INSTALL_HOST_AGENT=1`, `TBD_HOST_AGENT_CREDENTIAL=<secret>`,
+   `TBD_RCON_PASSWORD` (3 to 256 bytes, no whitespace or quotes), optionally `TBD_RCON_PORT`
+   (default 19999) and `TBD_HOST_AGENT_API_URL` (https, or http on a loopback host). The agent
+   switches `game.scenarioId` in the server config for cross-terrain deployments, so it needs
+   `TBD_SERVER_MODE=config`.
+3. `cargo xtask deploy staging`. With the agent enabled the rendered `server.json` carries an
+   `rcon` block on `127.0.0.1`, and the deploy builds `fleet-host-agent` on the host, writes
+   `~/.config/fleet-host-agent/agent.toml` and the secret files (mode 600), installs and starts
+   `fleet-host-agent.service`, and fails unless the unit is `active`:
+   ```
+   ==> host agent (fleet-host-agent)
+     fleet-host-agent.service active, polling https://…
+   ```
+4. From `/admin/server`, issue **restart**: the command goes `queued` → `claimed` → `executing` →
+   `succeeded`, with the unit's `active_state` in its receipt.
+
+Without `TBD_INSTALL_HOST_AGENT=1` the deploy prints `[SKIP] host agent` and host commands stay
+`queued` until they expire.
 
 ---
 
@@ -378,10 +477,10 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 
 | Step | Command | Pass |
 |------|---------|------|
-| V1 Mission JSON | `cargo xtask schema validate-file contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json` (from monorepo root) | exit 0 |
-| V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
-| V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
-| V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |
+| V2 Deployment | run by the deploy; by hand as in **6** | HTTP 200 with this server's deployment, or 404 `NO_DEPLOYMENT` before the first one; 401 = the credential is wrong or revoked |
+| V3 Roster | SSH: `curl -s -H "Authorization: Bearer $CRED" http://127.0.0.1:8080/api/v1/game-runtime/events/$EID/roster` with the server's machine credential (**6a**) | HTTP 200, `"version":2`; 403 = the event is not bound to this server, 401 = the credential is wrong or revoked |
+| V4 Auth gate | run by the deploy: the deployment read without a credential | HTTP 401 |
+| V3a Artifact | run by the deploy: `GET /api/v1/game-runtime/artifacts/<artifact_id>` with the credential | HTTP 200; SHA-256 of the body equals the deployment's `artifact_sha256` and the `ETag` |
 | V5 Game listening | SSH: `ss -ulnp \| grep -E '2001\|17777'` — **both** game (2001) and A2S (17777) bound | yes |
 | V6 Game logs | `cargo xtask mod remote-logs` | exit **0** (player seated) or **2** (booted, nobody joined yet). **1** = fail, **3** = log unreachable. **2 is not a failure** — see the exit contract below |
 | V7 Server healthy (not crashed) | log reaches LOBBY (`[TBD][Stage]` … `LOBBY`) and has **no** `Unable to start replication` | yes |
@@ -421,9 +520,34 @@ Match the **prefix**, not the sentence. Everything after each prefix is expected
   lines on a fully working loadout pass** — measured 0 vs **93** `[Slot]` lines on the boot above.
 - Slot-count expectations (`18×`) are mission-specific; the golden that produced 18 is
   `msn_8f3a2c`. Count against **your** mission's slot count, not a number copied from this page.
-- `[TBD] Roster loaded` only appears when an `eventId` is configured; an unconfigured host logs
-  `[TBD] RosterLoader: eventId not configured — using round-robin slot assignment.` instead.
-  That is **not** a failure.
+- Platform lines (**6a**; compile-verified, not yet observed on a live boot). Match the prefix:
+
+  | Expect | Prefix to grep | When |
+  |---|---|---|
+  | runtime session held | `[TBD][Runtime] session-started session=` | a machine credential is configured |
+  | no credential yet | `[TBD][Runtime] no runtime session until a machine credential is configured` | legal on a host without one; **not** a failure |
+  | session lost for good | `[TBD][Runtime] runtime session loop STOPPED` (ERROR) | superseded by another runtime, or the credential revoked or rejected - restart after fixing |
+  | mission SHA-256 self-test | `[TBD][Sha256] self-test-passed vectors=` | once per process; an ERROR `self-test FAILED` means every artifact will be refused as a mismatch |
+  | deployment read | `[TBD][Mission] deployment deployment=... mission=... artifact=... sha256=...` | a mission is deployed to this server |
+  | artifact verified | `[TBD][Mission] artifact-verified artifact=... sha256=... bytes=... from=platform` (or `from=cache`) | the SHA-256 of the exact bytes matched |
+  | mission loaded | `[TBD][Mission] loaded id=... source=platform` (`cache`, `last-verified-cache`) | the artifact parsed and validated |
+  | platform down at boot | `[TBD][Mission] RUNNING THE LAST VERIFIED ARTIFACT - ...` (WARNING) | the deployment could not be read; the cached artifact runs |
+  | nothing deployed | `[TBD][Mission] NO MISSION - the platform deploys no mission to this server (404 NO_DEPLOYMENT)` (ERROR) | deploy one; the server stays in LOADING |
+  | not loaded yet | `[TBD][Mission] NO MISSION YET - ...` (ERROR, once per cause) | no credential and nothing cached, no answer, a refusal, or a `SHA-256 MISMATCH`; retried |
+  | fleet commands | `[TBD][Fleet] claimed command=...`, `executing`, `reported`, `ABANDONED` (ERROR) | a command for this runtime; `load_mission` ends in `[TBD][Fleet] restart ...` |
+  | roster loaded | `[TBD][Roster] loaded event=` (`version=2 assignments=... slots=...`) | the deployment names an event |
+  | roster after the deadline | `[TBD][Roster] slot-table-loaded event=` | the roster arrived after seating settled; deployments are authorized from then on |
+  | no event | `[TBD][Roster] the running mission is deployed for no event - round-robin slot assignment` | **not** a failure |
+  | roster refused | `[TBD][Roster] roster of event ... not loaded (...)` (ERROR, once per distinct refusal) | 401 / 403 / 404 / wrong wire version / no credential / a roster of another mission; retried every 60 s |
+  | roster unreachable | `[TBD][Roster] roster fetch failed (...) - attempt N, fetching again in ... ms` | network or 5xx; retried with backoff |
+  | a deployment asked for | `[TBD][Deployment] authorization-requested player=` | a player deploys into an event seat |
+  | allowed | `[TBD][Deployment] deployment-allowed player=... slot=... occupancy=...` | the platform allowed it; the spawn continues |
+  | denied | `[TBD][Deployment] deployment-denied player=... slot=... reason=...` | the platform denied it; the player is told why and the seat is given back |
+  | refused here | `[TBD][Deployment] deployment-refused player=... slot=... - the event roster has not loaded on this server yet, ...` | fail closed until the roster loads; the player keeps the seat |
+  | life ended | `[TBD][Deployment] life-ended player=...` then `[TBD][Deployment] life-end-reported occupancy=...` | death, disconnect, seat change, round or world end |
+
+  Refusals are also in the admin audit trail (`#tbd audit`, admin screen) as `DEPLOYMENT: ...`
+  entries, once per cause (per player, seat and reason for a denial) per round.
 
 To check a log you already have (a downloaded `console.log`, or one from `cargo xtask mod world-boot`
 --keep-logs`) without SSH, run the same verdict locally:
@@ -443,11 +567,12 @@ cargo xtask mod remote-logs --selftest   # proves the verdict logic can FAIL
 
 ```bash
 cargo xtask mod playtest \
-  --mission-id=<compiled-mission-id> \
+  --mission=<mission-uuid> \
   --admin=<your-identityId-or-17-digit-SteamID>
 ```
 
-It stages the profile, points the mod at the API and your mission, symlinks the addon dir,
+It stages the profile, deploys your mission's approved artifact to a playtest server row with a
+fresh `mod_runtime` credential (see `docs/platform/PLAYTEST_RUNBOOK.md` §2.4), symlinks the addon dir,
 renders `server.json`, launches with **both** flags, then **waits for and asserts** the room
 registration and that the *local* addon won before printing anything. On success it prints the
 join address and the Direct Join Code parsed out of that boot's own log. Add `--dry-run` to see
@@ -611,7 +736,14 @@ Or: `cargo xtask mod spawn-verify`
 | Server dies with `Unable to start replication` | `a2sPort` equals `bindPort` (e.g. both `2001`). Set `-a2sPort 17777` (≠ game port) and restart. The `Starting RPL server … 2001` line is printed even on this failure — check for the `(E)` line right after. |
 | Server exits but systemd won't restart it | Failed init exits **status 0**, so `Restart=on-failure` ignores it. Fix the underlying error (usually the a2sPort collision above). |
 | WiFi server + LAN client | Not the issue if same subnet and `ping 192.168.0.140` works — a WiFi host just triggers a "High ping server" warning on join. |
-| API 401 on mission | `TBD_GAME_SERVER_TOKEN` ≠ `GAME_SERVER_TOKENS` in server `.env` / `TBD_BackendConfig.json` |
+| API 401 on `ingest/link-confirm` or `ingest/match-results` | `TBD_GAME_SERVER_TOKEN` ≠ `SERVICE_TOKEN` in the server's `apps/website/api_v2/.env` |
+| V2–V4 smoke answers 401 with the credential | `TBD_MOD_RUNTIME_CREDENTIAL` is not a live `mod_runtime` credential of this server: issue one in Server Control, put it in `deploy.env`, deploy again |
+| Every player told "the event roster has not loaded on this server yet" | The roster fetch fails: read the `[TBD][Roster]` ERROR. No `machineCredential` in `TBD_BackendConfig.json` (a deploy rewrites the file - add it back, **6a**), the event not bound to this server (403), or a revoked credential (401). The running server picks up a fix within a minute. |
+| `[TBD][Runtime] runtime session loop STOPPED` | Another runtime started a session for this server (two servers sharing one credential), or the credential was revoked or rejected. Issue a fresh `mod_runtime` credential if needed, put it in the profile, restart the game server. |
+| `[TBD][Mission] NO MISSION - the platform deploys no mission to this server` | Nothing is deployed to the server: deploy a mission (**6a** step 4, or `#tbd mission <n>`). The server stays in LOADING until then; there is no default mission. |
+| `[TBD][Mission] NO MISSION YET - no machine credential is configured ...` | No `machineCredential` and nothing cached: add the credential (**6a**); it is picked up within a minute. |
+| `[TBD][Mission] ... SHA-256 MISMATCH for artifact ...` | The bytes received do not hash to the published digest: nothing loads and the read repeats every minute. Check the `[TBD][Sha256] self-test` line first - a failed self-test means this engine build hashes wrongly. |
+| `[TBD][Mission] RUNNING THE LAST VERIFIED ARTIFACT` | The deployment could not be read at boot (platform down, credential refused); the cached artifact runs and is reported when a session starts. A deployment requested meanwhile is settled by that report. |
 | API won't start | Check `docker compose logs api`; `DATABASE_URL` must use hostname `postgres` inside container |
 | Port 8080 in use | Remap in `docker-compose.staging.yml` (e.g. `8081:8080`) |
 | Empty mod / compile errors | Client launch options; server missing symlink in `addons-staging`; rsync `resourceDatabase.rdb` |
@@ -669,11 +801,11 @@ all fine.
 
 | Script | Purpose |
 |--------|---------|
-| `cargo xtask deploy staging` | Full deploy pipeline. Local-only entry points that touch no server: `--dry-run`, `--render-only <path>`, `--render-agent <dir>`, `--agent-selftest <dir>`, **`--verify-boot <console.log>`**, **`--verify-boot-selftest`** |
+| `cargo xtask deploy staging` | Full deploy pipeline. Local-only entry points that touch no server: `--dry-run`, `--render-only <path>`, **`--verify-boot <console.log>`**, **`--verify-boot-selftest`** |
 | `cargo xtask mod playtest` | Boot a joinable, mod-loaded, admin-capable server **locally** (T-604). The reference for the `-addonsDir` + `-config` shape staging now uses |
 | `cargo xtask mod remote-logs` | SSH log verification. Four outcomes — **0 / 1 / 2=PARTIAL / 3=ENV**; `!= 0` is not "failed" |
 | `cargo xtask mod bootstrap-staging` | Discovery + mkdir |
-| `cargo xtask setup server-profile` | Profile + mission fallback |
+| `cargo xtask setup server-profile` | Profile + backend config (`machineCredential` from `TBD_MACHINE_CREDENTIAL`) |
 | `cargo xtask setup client-addons` | Client mod symlink + Steam launch options |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | [`tools_v2/xtask/deploy/systemd/tbd-reforger.service`](../../tools_v2/xtask/deploy/systemd/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |

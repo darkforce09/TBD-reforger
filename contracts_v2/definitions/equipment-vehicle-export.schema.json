@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tbd.local/contracts/equipment-vehicle-export.schema.json",
+  "title": "Workbench source equipment and vehicle export, version 2",
+  "oneOf": [
+    {"$ref": "#/$defs/generation"},
+    {"$ref": "#/$defs/record"},
+    {"$ref": "#/$defs/snapshot"}
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "texts": {"type": "array", "items": {"$ref": "#/$defs/text"}, "uniqueItems": true},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resource_name", "node_id", "property", "method"],
+      "properties": {
+        "resource_name": {"$ref": "#/$defs/text"},
+        "node_id": {"$ref": "#/$defs/text"},
+        "property": {"$ref": "#/$defs/text"},
+        "method": {"enum": ["BaseContainer.Get", "BaseContainer.GetObject", "BaseContainer.GetObjectArray", "WidgetManager.Translate", "native_getter"]}
+      }
+    },
+    "fact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "value", "native_type", "native_unit", "unit_evidence", "origin", "source", "reason"],
+      "properties": {
+        "status": {"enum": ["present", "not_present", "not_applicable", "unavailable", "error"]},
+        "value": {},
+        "native_type": {"type": ["string", "null"]},
+        "native_unit": {"type": ["string", "null"]},
+        "unit_evidence": {"type": ["string", "null"]},
+        "origin": {"enum": ["declared", "inherited", "engine_default", "native_getter", "unknown"]},
+        "source": {"$ref": "#/$defs/source"},
+        "reason": {"type": ["string", "null"]},
+        "object_base_class": {"type": ["string", "null"]},
+        "enum_values": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["name", "value"],
+            "properties": {"name": {"type": "string"}, "value": {"type": "integer"}}
+          }
+        }
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "present"}}}, "then": {"properties": {"reason": {"type": "null"}, "native_type": {"$ref": "#/$defs/text"}}}, "else": {"properties": {"value": {"type": "null"}, "reason": {"$ref": "#/$defs/text"}}}},
+        {"if": {"properties": {"native_unit": {"type": "string"}}}, "then": {"properties": {"unit_evidence": {"$ref": "#/$defs/text"}}}, "else": {"properties": {"unit_evidence": {"type": "null"}}}}
+      ]
+    },
+    "facts": {"type": "object", "additionalProperties": {"$ref": "#/$defs/fact"}},
+    "node": {
+      "type": "object", "additionalProperties": false,
+      "required": ["node_id", "view", "class_name", "instance_name", "resource_name", "source_addons", "ancestor_id", "children", "properties", "declared_properties", "native_instance_id", "instance_identity_kind"],
+      "properties": {
+        "node_id": {"$ref": "#/$defs/text"},
+        "view": {"enum": ["effective", "ancestor"]},
+        "class_name": {"$ref": "#/$defs/text"},
+        "instance_name": {"type": "string"},
+        "native_instance_id": {"type": ["string", "null"]},
+        "instance_identity_kind": {"enum": ["native_container_id", "exporter_structural_path"]},
+        "resource_name": {"type": "string"},
+        "source_addons": {"$ref": "#/$defs/texts"},
+        "ancestor_id": {"type": ["string", "null"]},
+        "children": {"$ref": "#/$defs/texts"},
+        "properties": {"$ref": "#/$defs/facts"},
+        "declared_properties": {"$ref": "#/$defs/texts"}
+      }
+    },
+    "snapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_type", "schema_version", "resource_id", "resource_name", "root_node", "nodes"],
+      "properties": {
+        "document_type": {"const": "source_snapshot"}, "schema_version": {"const": 2},
+        "resource_id": {"$ref": "#/$defs/text"}, "resource_name": {"$ref": "#/$defs/text"},
+        "root_node": {"$ref": "#/$defs/text"},
+        "nodes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/node"}}
+      }
+    },
+    "capability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["node_id", "facts"],
+      "properties": {"node_id": {"$ref": "#/$defs/text"}, "facts": {"$ref": "#/$defs/facts"}}
+    },
+    "reference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["node_id", "property", "resource_name", "kind", "method"],
+      "properties": {
+        "node_id": {"$ref": "#/$defs/text"}, "property": {"$ref": "#/$defs/text"},
+        "resource_name": {"$ref": "#/$defs/text"}, "kind": {"enum": ["gameplay", "binary"]},
+        "method": {"enum": ["BaseContainer.Get", "BaseContainer.GetResourceName"]}
+      }
+    },
+    "record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_type", "schema_version", "resource_id", "resource_name", "resource_guid", "identity_kind", "source_addons", "capabilities", "names", "references", "type_names"],
+      "properties": {
+        "document_type": {"const": "resource_record"}, "schema_version": {"const": 2},
+        "resource_id": {"$ref": "#/$defs/text"}, "resource_name": {"$ref": "#/$defs/text"},
+        "resource_guid": {"type": ["string", "null"]}, "identity_kind": {"enum": ["resource_guid", "resource_name"]},
+        "source_addons": {"$ref": "#/$defs/texts"},
+        "capabilities": {
+          "type": "object", "propertyNames": {"enum": ["inventory", "storage", "weapon", "magazine", "projectile", "attachment", "sights", "protection", "medical_effects", "communications", "vehicle_systems", "utility", "visuals", "physics"]},
+          "additionalProperties": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/capability"}}
+        },
+        "names": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["node_id", "source_text", "display_name_en", "locale"],
+            "properties": {"node_id": {"$ref": "#/$defs/text"}, "source_text": {"$ref": "#/$defs/fact"}, "display_name_en": {"$ref": "#/$defs/fact"}, "locale": {"const": "en_us"}}
+          }
+        },
+        "references": {"type": "array", "items": {"$ref": "#/$defs/reference"}},
+        "type_names": {"$ref": "#/$defs/texts"}
+      }
+    },
+    "entry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resource_id", "resource_name", "record_file", "source_file", "domains"],
+      "properties": {
+        "resource_id": {"$ref": "#/$defs/text"}, "resource_name": {"$ref": "#/$defs/text"},
+        "record_file": {"$ref": "#/$defs/text"}, "source_file": {"$ref": "#/$defs/text"},
+        "domains": {"type": "array", "uniqueItems": true, "items": {"enum": ["equipment", "vehicle", "dependency"]}}
+      }
+    },
+    "metadata_value": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "value", "reason"],
+      "properties": {"status": {"enum": ["present", "unavailable"]}, "value": {"type": ["string", "null"]}, "reason": {"type": ["string", "null"]}},
+      "allOf": [{"if": {"properties": {"status": {"const": "present"}}}, "then": {"properties": {"value": {"$ref": "#/$defs/text"}, "reason": {"type": "null"}}}, "else": {"properties": {"value": {"type": "null"}, "reason": {"$ref": "#/$defs/text"}}}}]
+    },
+    "generation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["document_type", "schema_version", "generation_id", "scope", "status", "started_at", "finished_at", "environment", "resources", "equipment_ids", "vehicle_ids", "discovered_resources", "errors", "reader_verification", "type_hierarchy"],
+      "properties": {
+        "document_type": {"const": "export_generation"}, "schema_version": {"const": 2},
+        "generation_id": {"type": "string", "pattern": "^[A-Za-z0-9_-]+$"},
+        "scope": {"enum": ["complete", "diagnostic"]}, "status": {"enum": ["completed", "failed"]},
+        "started_at": {"$ref": "#/$defs/text"}, "finished_at": {"$ref": "#/$defs/text"},
+        "environment": {
+          "type": "object", "additionalProperties": false,
+          "required": ["game_build", "exporter_revision", "addon_load_order", "settings"],
+          "properties": {
+            "game_build": {"$ref": "#/$defs/metadata_value"}, "exporter_revision": {"$ref": "#/$defs/metadata_value"},
+            "addon_load_order": {"type": "array", "minItems": 1, "items": {
+              "type": "object", "additionalProperties": false, "required": ["guid", "addon_id", "title", "version"],
+              "properties": {"guid": {"$ref": "#/$defs/text"}, "addon_id": {"$ref": "#/$defs/text"}, "title": {"type": "string"}, "version": {"$ref": "#/$defs/metadata_value"}}
+            }},
+            "settings": {"type": "object", "required": ["source_only", "locale"], "properties": {"source_only": {"const": true}, "locale": {"const": "en_us"}}}
+          }
+        },
+        "resources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/entry"}},
+        "equipment_ids": {"$ref": "#/$defs/texts"}, "vehicle_ids": {"$ref": "#/$defs/texts"},
+        "discovered_resources": {"$ref": "#/$defs/texts"}, "errors": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+        "type_hierarchy": {
+          "type": "object", "additionalProperties": false, "required": ["method", "scope", "types"],
+          "properties": {
+            "method": {"const": "TypeName.IsInherited"}, "scope": {"const": "referenced_types_and_native_ancestors"},
+            "types": {"type": "object", "additionalProperties": {
+              "type": "object", "additionalProperties": false, "required": ["status", "ancestor_types", "reason"],
+              "properties": {"status": {"enum": ["present", "unavailable"]}, "ancestor_types": {"$ref": "#/$defs/texts"}, "reason": {"type": ["string", "null"]}}
+            }}
+          }
+        },
+        "reader_verification": {
+          "type": "object", "additionalProperties": false, "required": ["status", "checks"],
+          "properties": {"status": {"enum": ["passed", "failed", "not_run"]}, "checks": {"$ref": "#/$defs/texts"}}
+        }
+      }
+    }
+  }
+}

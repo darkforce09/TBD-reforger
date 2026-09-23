@@ -1090,25 +1090,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 			return;
 
 		Print("[TBD][Safestart] broadcast: " + text, LogLevel.NORMAL);
-
-		PlayerManager players = GetGame().GetPlayerManager();
-		if (!players)
-			return;
-
-		array<int> ids = {};
-		int count = players.GetPlayers(ids);
-		for (int i = 0; i < count; i++)
-		{
-			PlayerController controller = players.GetPlayerController(ids[i]);
-			if (!controller)
-				continue;
-
-			SCR_ChatComponent chat = SCR_ChatComponent.Cast(controller.FindComponent(SCR_ChatComponent));
-			if (!chat)
-				continue;
-
-			chat.SendPrivateMessage(text, ids[i]);
-		}
+		TBD_PlayerChat.TellEveryone(text);
 	}
 
 	//------------------------------------------------------------------------------------------------

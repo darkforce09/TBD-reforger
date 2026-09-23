@@ -472,7 +472,7 @@ Living snapshot of what exists in the monorepo vs this plan. Update when phases 
 | VOIP (Phase 3, partner) | Not started |
 | Workshop publish / monetized server gates | Phase B (deferred) |
 
-**Local dev server:** `cargo xtask mod dev-server -- --mission-id=<id>` (shim → `run-playtest-server.sh`; needs a mission id).
+**Local dev server:** `cargo xtask mod playtest --mission=<uuid>` (deploys the mission's approved artifact to a local server through the platform) or `--artifact-file=<compiled document>` offline.
 
 **Staging:** `bash scripts/deploy-staging.sh` → [`STAGING-SERVER.md`](STAGING-SERVER.md)
 

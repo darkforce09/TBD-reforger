@@ -12,10 +12,12 @@ use sqlx::PgPool;
 
 use crate::community_content::services::discord_webhook::WebhookService;
 use crate::core::authentication_primitives::Manager;
+use crate::core::authentication_primitives::session_authority::SessionAuthority;
 use crate::core::configuration::Config;
 use crate::core::middleware::IpLimiter;
 use crate::core::realtime_hub::Hub;
 use crate::identity_and_access::services::discord_client::DiscordService;
+use crate::identity_and_access::services::session_authorization::DatabaseSessionAuthority;
 
 /// Everything shared across the HTTP layer. Cheap to clone (all `Arc`/pool handles).
 #[derive(Clone)]
@@ -23,6 +25,7 @@ pub struct AppState {
     pub pool: PgPool,
     pub cfg: Arc<Config>,
     pub jwt: Arc<Manager>,
+    pub session_authority: Arc<dyn SessionAuthority>,
     /// Normalized (trailing-slash-trimmed) CORS allow-list.
     pub cors_origins: Arc<HashSet<String>>,
     pub rl_global: Arc<IpLimiter>,
@@ -52,7 +55,12 @@ impl AppState {
             .iter()
             .map(|o| o.trim_end_matches('/').to_string())
             .collect();
+        let cfg = Arc::new(cfg);
         Self {
+            session_authority: Arc::new(DatabaseSessionAuthority {
+                pool: pool.clone(),
+                config: cfg.clone(),
+            }),
             pool,
             cors_origins: Arc::new(cors_origins),
             jwt: Arc::new(jwt),
@@ -61,7 +69,7 @@ impl AppState {
             hub: Arc::new(Hub::new()),
             discord: Arc::new(discord),
             webhook: Arc::new(webhook),
-            cfg: Arc::new(cfg),
+            cfg,
         }
     }
 }
@@ -99,5 +107,11 @@ impl FromRef<AppState> for Arc<DiscordService> {
 impl FromRef<AppState> for Arc<WebhookService> {
     fn from_ref(s: &AppState) -> Self {
         s.webhook.clone()
+    }
+}
+
+impl FromRef<AppState> for Arc<dyn SessionAuthority> {
+    fn from_ref(state: &AppState) -> Self {
+        state.session_authority.clone()
     }
 }

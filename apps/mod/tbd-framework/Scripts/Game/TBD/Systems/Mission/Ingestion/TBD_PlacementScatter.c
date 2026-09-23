@@ -35,7 +35,7 @@
 //! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. It cannot run a round. Whether a squad with
 //! radius 20 actually spreads, and whether radius 0 matches today's pin, is a human
-//! checklist item. Live `/compiled` will not carry the keys until flatten emits them.
+//! checklist item. Compiled artifacts will not carry the keys until flatten emits them.
 //! @contract mission.schema.json#/$defs/slot
 //! @contract mission.schema.json#/$defs/group
 

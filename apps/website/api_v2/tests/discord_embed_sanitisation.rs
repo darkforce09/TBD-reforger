@@ -281,7 +281,8 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
         "admin",
     )
     .await;
-    let admin = common::access_token(&state, "discord_embed_sanitisation", ACTOR, "admin", true);
+    let admin =
+        common::access_token(&state, "discord_embed_sanitisation", ACTOR, "admin", true).await;
 
     // Leading `=`, an embedded tab, and a CR — the full hostile set in one authored title.
     const HOSTILE: &str = "=HYPERLINK(\"http://evil.example\",\"payroll\")\tQ4\rOps";

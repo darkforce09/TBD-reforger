@@ -1,10 +1,10 @@
 //! Scheduled republish of `server_statuses` rows onto their SSE topics.
 //!
-//! Ingest (`POST /ingest/server-status`) is the only writer of live rows and publishes
-//! in-request. Without a second producer, an SSE client that connects while ingest is quiet
-//! flips to `connected` and then receives nothing after the optional one-shot snapshot. This
-//! worker closes that loop: boot poll plus interval poll of `server_statuses`, same payload
-//! shape as ingest.
+//! The game-runtime heartbeat (`POST /game-runtime/sessions/{id}/heartbeats`) and session
+//! expiry are the only writers of live rows, and both publish as they write. Without a second
+//! producer, an SSE client that connects while servers are quiet flips to `connected` and then
+//! receives nothing after the optional one-shot snapshot. This worker closes that loop: boot
+//! poll plus interval poll of `server_statuses`, same payload shape as the heartbeat.
 
 use std::future::Future;
 use std::sync::Arc;

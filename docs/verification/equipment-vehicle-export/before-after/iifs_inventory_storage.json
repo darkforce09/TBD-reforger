@@ -1,0 +1,190 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+  "before": {
+    "file": "equipment/wearables/backpacks.json",
+    "values": {
+      "physical": {
+        "weight_kg": 3.63,
+        "volume_cm3": 25001,
+        "dimensions": "25 25 25",
+        "inventory_size": "3"
+      },
+      "storage": {
+        "has_storage": true,
+        "max_weight_kg": 40,
+        "max_volume_cm3": 15000,
+        "cargo_grid_w": 4,
+        "cargo_grid_h": 75
+      }
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/95/95D4766BBE46F23D.json",
+    "source_file": "sources/arma_reforger/95/95D4766BBE46F23D.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/4",
+        "class_name": "SCR_UniversalInventoryStorageComponent",
+        "facts": {
+          "MaxCumulativeVolume": {
+            "status": "present",
+            "value": 15000.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4",
+              "property": "MaxCumulativeVolume",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "MaxItemSize": {
+            "status": "present",
+            "value": [
+              25.0,
+              25.0,
+              25.0
+            ],
+            "native_type": "VECTOR3",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4",
+              "property": "MaxItemSize",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "m_fMaxWeight": {
+            "status": "present",
+            "value": 40.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4",
+              "property": "m_fMaxWeight",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/4/properties/Attributes",
+        "class_name": "SCR_ItemAttributeCollection",
+        "facts": {
+          "m_Size": {
+            "status": "present",
+            "value": 3,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4/properties/Attributes",
+              "property": "m_Size",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": [
+              {
+                "name": "SLOT_1x1",
+                "value": 1
+              },
+              {
+                "name": "SLOT_2x1",
+                "value": 2
+              },
+              {
+                "name": "SLOT_2x2",
+                "value": 3
+              },
+              {
+                "name": "SLOT_3x3",
+                "value": 4
+              }
+            ]
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/4/properties/Attributes/properties/ItemPhysAttributes",
+        "class_name": "ItemPhysicalAttributes",
+        "facts": {
+          "ItemDimensions": {
+            "status": "present",
+            "value": [
+              25.0,
+              25.0,
+              25.0
+            ],
+            "native_type": "VECTOR3",
+            "native_unit": "cm",
+            "unit_evidence": "ArmaReforgerScriptAPIPublic/ItemPhysicalAttributes.GetDimensions native attribute documentation",
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4/properties/Attributes/properties/ItemPhysAttributes",
+              "property": "ItemDimensions",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "ItemVolume": {
+            "status": "present",
+            "value": 25001.0,
+            "native_type": "SCALAR",
+            "native_unit": "cm3",
+            "unit_evidence": "ArmaReforgerScriptAPIPublic/ItemPhysicalAttributes.GetVolume native attribute documentation",
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4/properties/Attributes/properties/ItemPhysAttributes",
+              "property": "ItemVolume",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Weight": {
+            "status": "present",
+            "value": 3.630000114440918,
+            "native_type": "SCALAR",
+            "native_unit": "kg",
+            "unit_evidence": "ArmaReforgerScriptAPIPublic/ItemPhysicalAttributes.GetWeight native attribute documentation",
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et",
+              "node_id": "root/properties/components/4/properties/Attributes/properties/ItemPhysAttributes",
+              "property": "Weight",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

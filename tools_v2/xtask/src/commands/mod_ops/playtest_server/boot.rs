@@ -61,6 +61,10 @@ pub struct BootCtx<'a> {
     pub addon_guid: &'a str,
     pub lan_ip: &'a str,
     pub scenario: &'a str,
+    /// What the server runs, for the boot banner: `mission <uuid>` or `artifact file <path>`.
+    pub running: &'a str,
+    /// Runs once the server is up and its banner printed, before the wait for its exit.
+    pub after_ready: &'a dyn Fn(),
 }
 
 /// Which of the four ways the wait loop can end.

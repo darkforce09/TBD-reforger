@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CurrentProfileResponse",
+  "description": "GET /api/v1/me. Backend identity models define the snake_case contract.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "user",
+    "arma_linked",
+    "membership_stale",
+    "membership_override_active",
+    "can_manage_membership_override"
+  ],
+  "properties": {
+    "user": {
+      "$ref": "#/definitions/UserAccount"
+    },
+    "arma_linked": {
+      "type": "boolean"
+    },
+    "membership_stale": {
+      "type": "boolean"
+    },
+    "membership_override_active": {
+      "type": "boolean"
+    },
+    "can_manage_membership_override": {
+      "type": "boolean"
+    }
+  },
+  "definitions": {
+    "UserAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "username",
+        "discord_handle",
+        "avatar_url",
+        "arma_id",
+        "arma_character",
+        "role",
+        "is_banned",
+        "total_deployments",
+        "attendance_rate",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "discord_handle": {
+          "type": "string"
+        },
+        "avatar_url": {
+          "type": "string"
+        },
+        "arma_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "arma_character": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "guest",
+            "enlisted",
+            "leader",
+            "mission_maker",
+            "admin"
+          ]
+        },
+        "is_banned": {
+          "type": "boolean"
+        },
+        "ban_reason": {
+          "type": "string"
+        },
+        "banned_by": {
+          "type": "string"
+        },
+        "banned_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "total_deployments": {
+          "type": "integer"
+        },
+        "attendance_rate": {
+          "type": "number"
+        },
+        "last_login_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

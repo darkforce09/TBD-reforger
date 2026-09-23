@@ -1,0 +1,76 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{0D9A5DCF89AE7AA9}Prefabs/Items/Medicine/MorphineInjection_01/MorphineInjection_01.et",
+  "before": {
+    "file": "equipment/items/medical.json",
+    "values": {
+      "medical": {
+        "consumable_type": "MORPHINE",
+        "effect_value": 0.5
+      }
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/0D/0D9A5DCF89AE7AA9.json",
+    "source_file": "sources/arma_reforger/0D/0D9A5DCF89AE7AA9.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/4/properties/m_ConsumableEffect",
+        "class_name": "SCR_ConsumableMorphine",
+        "facts": {
+          "m_fItemAbsoluteRegenerationAmount": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{0D9A5DCF89AE7AA9}Prefabs/Items/Medicine/MorphineInjection_01/MorphineInjection_01.et",
+              "node_id": "root/properties/components/4/properties/m_ConsumableEffect",
+              "property": "m_fItemAbsoluteRegenerationAmount",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "m_fItemRegenerationDuration": {
+            "status": "present",
+            "value": 25.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{0D9A5DCF89AE7AA9}Prefabs/Items/Medicine/MorphineInjection_01/MorphineInjection_01.et",
+              "node_id": "root/properties/components/4/properties/m_ConsumableEffect",
+              "property": "m_fItemRegenerationDuration",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "m_fItemRegenerationSpeed": {
+            "status": "present",
+            "value": 0.5,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{0D9A5DCF89AE7AA9}Prefabs/Items/Medicine/MorphineInjection_01/MorphineInjection_01.et",
+              "node_id": "root/properties/components/4/properties/m_ConsumableEffect",
+              "property": "m_fItemRegenerationSpeed",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

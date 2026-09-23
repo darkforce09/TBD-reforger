@@ -1,0 +1,293 @@
+[
+  {
+    "allocation": {
+      "acquired_at": "2026-07-16T09:14:22Z",
+      "quota_kind": "member"
+    },
+    "available": true,
+    "discord_id": "000000000000000001",
+    "guilds": [
+      {
+        "current": false,
+        "guild_id": "100000000000000001",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      },
+      {
+        "current": false,
+        "guild_id": "100000000000000777",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      }
+    ],
+    "registrations": [
+      {
+        "admitting_grants": [
+          1
+        ],
+        "current_authority_admits": true,
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "last_verified_admits": true,
+        "policy_source": "event",
+        "queue_entered_at": "2026-07-16T09:14:22Z",
+        "registration_id": "00000000-0000-4000-a100-000000000001",
+        "reservation_state": "registered",
+        "slot_id": "00000000-0000-4000-5000-000000000001"
+      }
+    ],
+    "roster_groups": [
+      {
+        "added_at": "2026-07-15T14:26:00Z",
+        "added_by": "000000000000000001",
+        "group_id": "00000000-0000-4000-b100-000000000001",
+        "system_origin": null
+      }
+    ],
+    "tbd_member": false,
+    "username": "Dev Operator"
+  },
+  {
+    "allocation": {
+      "acquired_at": "2026-07-16T09:15:40Z",
+      "quota_kind": "member"
+    },
+    "available": true,
+    "discord_id": "000000000000000002",
+    "guilds": [
+      {
+        "current": false,
+        "guild_id": "100000000000000001",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      },
+      {
+        "current": false,
+        "guild_id": "100000000000000777",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      }
+    ],
+    "registrations": [
+      {
+        "admitting_grants": [
+          1
+        ],
+        "current_authority_admits": true,
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "last_verified_admits": true,
+        "policy_source": "event",
+        "queue_entered_at": "2026-07-16T09:15:40Z",
+        "registration_id": "00000000-0000-4000-a100-000000000002",
+        "reservation_state": "registered",
+        "slot_id": "00000000-0000-4000-5000-000000000002"
+      }
+    ],
+    "roster_groups": [
+      {
+        "added_at": "2026-07-15T14:27:00Z",
+        "added_by": "000000000000000001",
+        "group_id": "00000000-0000-4000-b100-000000000001",
+        "system_origin": null
+      }
+    ],
+    "tbd_member": false,
+    "username": "Rhodes"
+  },
+  {
+    "allocation": {
+      "acquired_at": "2026-07-16T09:16:05Z",
+      "quota_kind": "member"
+    },
+    "available": true,
+    "discord_id": "000000000000000003",
+    "guilds": [
+      {
+        "current": false,
+        "guild_id": "100000000000000001",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      },
+      {
+        "current": false,
+        "guild_id": "100000000000000777",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      }
+    ],
+    "registrations": [
+      {
+        "admitting_grants": [
+          1
+        ],
+        "current_authority_admits": true,
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "last_verified_admits": true,
+        "policy_source": "event",
+        "queue_entered_at": "2026-07-16T09:16:05Z",
+        "registration_id": "00000000-0000-4000-a100-000000000003",
+        "reservation_state": "registered",
+        "slot_id": "00000000-0000-4000-5000-000000000003"
+      }
+    ],
+    "roster_groups": [
+      {
+        "added_at": "2026-07-15T14:28:00Z",
+        "added_by": "000000000000000001",
+        "group_id": "00000000-0000-4000-b100-000000000001",
+        "system_origin": null
+      }
+    ],
+    "tbd_member": false,
+    "username": "Vance"
+  },
+  {
+    "allocation": {
+      "acquired_at": "2026-07-17T20:01:11Z",
+      "quota_kind": "member"
+    },
+    "available": true,
+    "discord_id": "000000000000000004",
+    "guilds": [
+      {
+        "current": false,
+        "guild_id": "100000000000000001",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      },
+      {
+        "current": false,
+        "guild_id": "100000000000000777",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      }
+    ],
+    "registrations": [
+      {
+        "admitting_grants": [
+          1
+        ],
+        "current_authority_admits": true,
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "last_verified_admits": true,
+        "policy_source": "event",
+        "queue_entered_at": "2026-07-17T20:01:11Z",
+        "registration_id": "00000000-0000-4000-a100-000000000004",
+        "reservation_state": "registered",
+        "slot_id": "00000000-0000-4000-5000-000000000004"
+      }
+    ],
+    "roster_groups": [
+      {
+        "added_at": "2026-07-15T14:29:00Z",
+        "added_by": "000000000000000001",
+        "group_id": "00000000-0000-4000-b100-000000000001",
+        "system_origin": null
+      }
+    ],
+    "tbd_member": false,
+    "username": "Okafor"
+  },
+  {
+    "allocation": {
+      "acquired_at": "2026-07-17T20:03:47Z",
+      "quota_kind": "guest"
+    },
+    "available": true,
+    "discord_id": "000000000000000005",
+    "guilds": [
+      {
+        "current": false,
+        "guild_id": "100000000000000001",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      },
+      {
+        "current": false,
+        "guild_id": "100000000000000777",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      }
+    ],
+    "registrations": [
+      {
+        "admitting_grants": [
+          1
+        ],
+        "current_authority_admits": true,
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "last_verified_admits": true,
+        "policy_source": "event",
+        "queue_entered_at": "2026-07-17T20:03:47Z",
+        "registration_id": "00000000-0000-4000-a100-000000000005",
+        "reservation_state": "registered",
+        "slot_id": "00000000-0000-4000-5000-000000000005"
+      }
+    ],
+    "roster_groups": [
+      {
+        "added_at": "2026-07-15T14:30:00Z",
+        "added_by": "000000000000000001",
+        "group_id": "00000000-0000-4000-b100-000000000001",
+        "system_origin": null
+      }
+    ],
+    "tbd_member": false,
+    "username": "Brandt"
+  },
+  {
+    "allocation": null,
+    "available": false,
+    "discord_id": "000000000000000006",
+    "guilds": [
+      {
+        "current": false,
+        "guild_id": "100000000000000001",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      },
+      {
+        "current": false,
+        "guild_id": "100000000000000777",
+        "membership_status": "unknown",
+        "override_until": null,
+        "verified_at": null
+      }
+    ],
+    "registrations": [
+      {
+        "admitting_grants": [
+          1
+        ],
+        "current_authority_admits": true,
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "last_verified_admits": true,
+        "policy_source": "event",
+        "queue_entered_at": "2026-07-19T07:44:00Z",
+        "registration_id": "00000000-0000-4000-a100-000000000006",
+        "reservation_state": "waitlisted",
+        "slot_id": null
+      }
+    ],
+    "roster_groups": [
+      {
+        "added_at": "2026-07-15T14:31:00Z",
+        "added_by": "000000000000000001",
+        "group_id": "00000000-0000-4000-b100-000000000001",
+        "system_origin": null
+      }
+    ],
+    "tbd_member": false,
+    "username": "Kessler"
+  }
+]

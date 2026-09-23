@@ -10,9 +10,12 @@
 //! so several callers wanting a refresh at once must share one attempt or all but the first are
 //! refused, wrongly ending the session. The access token is never written to durable storage.
 
+pub mod refresh_transaction;
 pub mod role;
 pub mod route_guard;
 pub mod session;
+pub mod session_identity;
+pub mod session_restore;
 pub mod single_flight;
 pub mod store;
 pub mod url_guard;

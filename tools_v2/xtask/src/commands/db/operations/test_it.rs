@@ -1,95 +1,107 @@
-//! `cargo xtask db test-it`: the integration-test lane.
+//! Isolated integration-test invocation and ownership-checked database cleanup.
 //!
-//! Split into its own file because this is the one genuinely non-trivial recipe left in the
-//! Makefile: four command lines, two of which carry make prefixes that change their semantics
-//! (`-` = ignore this line's status, `@` = do not echo), and a `while read -r db` loop over
-//! `psql -Atc` output that drops databases. The compose lane next door is four one-liners.
-//!
-//! ── THE FOUR LINES, AND WHAT EACH ONE HIDES ──────────────────────────────────────────────────
-//!
-//! ```text
-//! -podman exec tbd_reforger_db psql … -qc "DROP DATABASE IF EXISTS rust_it WITH (FORCE);"
-//!  podman exec tbd_reforger_db psql … -qc "CREATE DATABASE rust_it;"
-//!  cd apps/website/api_v2 && TEST_DATABASE_URL=…/rust_it?sslmode=disable cargo test
-//! @podman exec … -Atc "SELECT … LIKE 'rust_it\_%\_it' ESCAPE '\'" | while read -r db; do …; done
-//! ```
-//!
-//! 1. The leading `-` is why a first run works at all: `DROP … IF EXISTS` still exits non-zero
-//!    when the CONTAINER is unreachable, and make is told to carry on regardless. Measured
-//!    in-container, where podman is absent: `make: [Makefile:205: rust-test-it] Error 127
-//!    (ignored)` — then line 2 fails the same way and aborts. Preserved: the port ignores the
-//!    first line's status and honours the second's.
-//! 2. `ESCAPE '\'` makes the underscores in `rust_it\_%\_it` LITERAL. Without it, `_` is SQL's
-//!    single-character wildcard and the pattern would match names nobody meant to drop. This is
-//!    the per-binary naming (`<base>_<suite>_it`, `apps/website/api_v2/tests/common/mod.rs`)
-//!    read back out.
-//! 3. `[ -n "$db" ] || continue` guards the empty line `read` yields on a blank result set.
-//! 4. `>/dev/null` is on the DROP's stdout only — psql's stderr stays on the terminal.
-//!
-//! ── WHAT THE PORT CHANGES, AND WHY EACH CHANGE IS NOT A PARITY BREAK ─────────────────────────
-//!
-//! - **The reap query's rc is read.** In bash the pipeline reports the `while` loop's status, so
-//!   `psql` dying (container down, wrong name, bad credentials) produced a GREEN target that
-//!   reaped nothing. `selftest`'s arm 5 runs the Makefile's own pipeline against a dead container
-//!   and asserts it still exits 0 — that is the fail-open, measured, not asserted from reading.
-//! - **Every name is re-checked against the allow-list before its DROP.** The recipe is
-//!   safe by construction (its base is the literal `rust_it`); this port accepts `TBD_IT_BASE_DB`
-//!   so the selftest can use a scratch base that does not race sibling slices, and that knob is
-//!   exactly the "stray env var" the allow-list exists to stop. Guarded twice: once on the base, once per
-//!   returned name.
-//! - **The reap runs even when the suite fails.** make aborts the recipe on a red `cargo test`,
-//!   skipping the prune on precisely the runs that leave leftovers. Output is unchanged
-//!   (the reap is silent), so this costs nothing in parity — see [`join_rc`].
+//! An operator label selects a human-readable prefix, never a shared database to erase.
+//! Each invocation reserves a random namespace with CREATE DATABASE before running tests.
+//! Its complete namespace fits inside the per-suite identifier's preserved prefix.
 
+use std::io::Read;
 use std::process::{Command, Stdio};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 
 use super::{IT_BASE_DB, IT_MAINT_DB, echo, finish_status, runtime, web};
 use crate::commands::deploy::database_operations as dbc;
 
-/// The reap SELECT, byte-identical to Makefile:210 once `{base}` is substituted.
-///
-/// `LIKE 'rust_it\_%\_it' ESCAPE '\'` — the backslashes make the underscores LITERAL, so this is
-/// "the base, an underscore, anything, then `_it`" (the per-binary databases) and not the
-/// single-character wildcard `_` would otherwise be.
-pub(crate) fn reap_select(base: &str) -> String {
-    format!(
-        "SELECT datname FROM pg_database WHERE datname = '{base}' OR datname LIKE '{base}\\_%\\_it' ESCAPE '\\'"
-    )
+/// A plain identifier that can safely appear unquoted in PostgreSQL commands.
+fn is_scratch_identifier(name: &str) -> bool {
+    name.len() <= 63
+        && name
+            .as_bytes()
+            .first()
+            .is_some_and(|b| b.is_ascii_lowercase() || *b == b'_')
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
+        && dbc::is_safe_scratch_database_name(name)
 }
 
-/// `TBD_IT_BASE_DB`, defaulting to `rust_it`, refused unless the scratch-database allow-list
-/// accepts it. Returns the refusal text so callers can print it AND tests can assert on it.
-pub(crate) fn guarded_base() -> Result<String, String> {
-    let base = std::env::var("TBD_IT_BASE_DB")
-        .ok()
-        .filter(|v| !v.is_empty())
-        .unwrap_or_else(|| IT_BASE_DB.to_string());
-    if dbc::is_safe_scratch_database_name(&base) {
-        return Ok(base);
+fn validate_label(label: &str) -> Result<(), String> {
+    if label
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'_')
+        && dbc::is_safe_scratch_database_name(label)
+    {
+        return Ok(());
     }
     Err(format!(
-        "\
-───────────────────────────────────────────────────────────────────────
-REFUSING to run the integration suite against database `{base}` (scratch allow-list).
-
-  Allowed without confirmation: rust_it, tbd_gate*, *_cold, *_it, *_probe
-
-  `cargo xtask db test-it` DROPs its base database and every
-  `<base>_<suite>_it` sibling before and after the run. Against the live
-  dev database `tbd_reforger` that is unrecoverable without a backup.
-
-  This is the same allow-list the integration harness carries at
-  apps/website/api_v2/tests/common/mod.rs:87, which already stopped one
-  exported TEST_DATABASE_URL from wiping the live database.
-
-  Unset TBD_IT_BASE_DB to use the default scratch database `rust_it`.
-───────────────────────────────────────────────────────────────────────"
+        "REFUSING integration database label {label:?} (scratch allow-list). \
+         Use an ASCII label matching rust_it, tbd_gate*, *_cold, *_it, or *_probe. \
+         The label is never dropped; each invocation allocates its own database."
     ))
 }
 
-/// A `<runtime> exec <container> psql -U <user> -d <maint> …` command, pre-bridged.
+/// Read and validate the optional operator label before allocating any database.
+pub(crate) fn guarded_base() -> Result<String, String> {
+    let label = std::env::var("TBD_IT_BASE_DB")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| IT_BASE_DB.to_string());
+    validate_label(&label)?;
+    Ok(label)
+}
+
+/// Keep the namespace at most 42 bytes so its trailing separator fits in the
+/// integration harness's 43-byte prefix even when a long suite name is hashed.
+fn namespace_from_random(label: &str, random: [u8; 16]) -> String {
+    let prefix: String = label
+        .chars()
+        .take(5)
+        .map(|c| c.to_ascii_lowercase())
+        .collect();
+    let suffix: String = random.iter().map(|byte| format!("{byte:02x}")).collect();
+    format!("i{prefix}_{suffix}_it")
+}
+
+fn invocation_database_name(label: &str) -> Result<String> {
+    validate_label(label).map_err(anyhow::Error::msg)?;
+    let mut random = [0_u8; 16];
+    std::fs::File::open("/dev/urandom")
+        .and_then(|mut source| source.read_exact(&mut random))
+        .context("read OS randomness for the integration database namespace")?;
+    let name = namespace_from_random(label, random);
+    ensure!(
+        is_scratch_identifier(&name),
+        "invalid generated database namespace"
+    );
+    Ok(name)
+}
+
+/// Select only exact namespace matches; underscores have no wildcard meaning.
+pub(crate) fn reap_select(base: &str) -> String {
+    // Quoting remains defensive even though reap validates the identifier first.
+    let quoted = base.replace('\'', "''");
+    format!(
+        "SELECT datname FROM pg_database WHERE datname = '{quoted}' OR \
+         (left(datname, {}) = '{quoted}_' AND right(datname, 3) = '_it' \
+         AND length(datname) > {})",
+        base.len() + 1,
+        base.len() + 4,
+    )
+}
+
+/// Independently reject unrelated or malformed rows returned by the cleanup query.
+fn owns_database(base: &str, database: &str) -> bool {
+    is_scratch_identifier(base)
+        && is_scratch_identifier(database)
+        && (database == base
+            || database
+                .strip_prefix(base)
+                .and_then(|suffix| suffix.strip_prefix('_'))
+                .and_then(|suffix| suffix.strip_suffix("_it"))
+                .is_some_and(|suite| !suite.is_empty()))
+}
+
+/// A pre-bridged container psql command against the maintenance database.
 fn psql_cmd(sql_flag: &str, sql: &str) -> (Command, String) {
     let (rt, logical) = runtime();
     let container = dbc::db_container();
@@ -111,69 +123,142 @@ fn psql_cmd(sql_flag: &str, sql: &str) -> (Command, String) {
     (cmd, echo_line)
 }
 
-/// The whole target, in order.
-pub(crate) fn run() -> Result<u8> {
-    let base = match guarded_base() {
-        Ok(b) => b,
-        Err(msg) => {
-            eprintln!("{msg}");
+/// A development narrowing of the suite. The empty selection is the canonical complete run.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(crate) struct TestSelection {
+    pub binaries: Vec<String>,
+    pub library: bool,
+    pub name_filter: Option<String>,
+}
+
+impl TestSelection {
+    fn is_complete_suite(&self) -> bool {
+        self.binaries.is_empty() && !self.library && self.name_filter.is_none()
+    }
+}
+
+fn is_selector_text(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b':')
+}
+
+/// Cargo arguments for the selection; libtest always retains successful property records.
+pub(crate) fn cargo_test_arguments(selection: &TestSelection) -> Result<Vec<String>, String> {
+    let mut arguments: Vec<String> = ["test", "--locked", "--no-fail-fast"]
+        .map(String::from)
+        .to_vec();
+    if selection.library {
+        arguments.push("--lib".into());
+    }
+    for binary in &selection.binaries {
+        if !is_selector_text(binary) || binary.contains(':') {
+            return Err(format!("REFUSING test binary selector {binary:?}"));
+        }
+        arguments.extend(["--test".into(), binary.clone()]);
+    }
+    arguments.extend(["--".into(), "--show-output".into()]);
+    if let Some(filter) = &selection.name_filter {
+        if !is_selector_text(filter) {
+            return Err(format!("REFUSING test name filter {filter:?}"));
+        }
+        arguments.push(filter.clone());
+    }
+    Ok(arguments)
+}
+
+pub(crate) fn run(selection: TestSelection) -> Result<u8> {
+    let property_configuration = crate::verifications::property_test_configuration::PropertyTestConfiguration::from_environment()?;
+    println!("{}", property_configuration.marker());
+    let arguments = match cargo_test_arguments(&selection) {
+        Ok(arguments) => arguments,
+        Err(message) => {
+            eprintln!("{message}");
+            return Ok(2);
+        }
+    };
+    if !selection.is_complete_suite() {
+        println!("test-selection: narrowed development run; not a readiness receipt");
+    }
+    let label = match guarded_base() {
+        Ok(label) => label,
+        Err(message) => {
+            eprintln!("{message}");
             return Ok(1);
         }
     };
+    let base = invocation_database_name(&label)?;
     let web = web()?;
 
-    // Line 1 — leading `-`: make ignores this one's status (the database usually does not exist).
-    let (mut drop_cmd, drop_echo) = psql_cmd(
-        "-qc",
-        &format!("DROP DATABASE IF EXISTS {base} WITH (FORCE);"),
-    );
-    echo(&drop_echo);
-    let _ = drop_cmd.status();
-
-    // Line 2 — no `-`: a failure here aborts the target.
+    // CREATE claims ownership atomically. A random-name collision fails without
+    // dropping, cleaning, or otherwise touching a database owned by another run.
     let (mut create_cmd, create_echo) = psql_cmd("-qc", &format!("CREATE DATABASE {base};"));
     echo(&create_echo);
-    let st = create_cmd.status().context("psql CREATE DATABASE")?;
-    let rc = finish_status("psql -qc CREATE DATABASE", st);
+    let status = create_cmd.status().context("psql CREATE DATABASE")?;
+    let rc = finish_status("psql -qc CREATE DATABASE", status);
     if rc != 0 {
         return Ok(rc);
     }
 
-    // Line 3 — the suite itself.
     let url = format!("postgres://tbd:tbd@localhost:5434/{base}?sslmode=disable");
     echo(&format!(
-        "cd {} && TEST_DATABASE_URL={url} cargo test",
+        "cd {} && cargo test (isolated database {base})",
         web.rel
     ));
-    let st = Command::new("cargo")
-        .arg("test")
-        .current_dir(&web.abs)
-        .env("TEST_DATABASE_URL", &url)
-        .status()
-        .context("failed to spawn cargo test")?;
-    let test_rc = finish_status("cargo test", st);
-
-    // Line 4 — `@`-silent reap. Runs even when the suite failed: that is precisely the run that
-    // leaks per-binary databases, and the Makefile skipped it there.
-    let reap_rc = reap(&base)?;
-    Ok(join_rc(test_rc, reap_rc))
+    run_with_cleanup(
+        || {
+            let status = Command::new("cargo")
+                .args(&arguments)
+                .env(
+                    "PROPTEST_RNG_SEED",
+                    property_configuration.rng_seed.to_string(),
+                )
+                .env_remove("PROPTEST_CASES")
+                .current_dir(&web.abs)
+                .env("TEST_DATABASE_URL", &url)
+                .env("TBD_API_VERIFICATION", "true")
+                .status()
+                .context("failed to spawn cargo test")?;
+            Ok(finish_status("cargo test", status))
+        },
+        || reap(&base),
+    )
 }
 
-/// Which rc survives when both the suite and the reap have an opinion.
-///
-/// Split out as a pure function so the "a failing suite must not skip the reap" decision is
-/// unit-testable: `reap_rc` is an *argument*, so it cannot have been short-circuited away.
+/// Attempt cleanup after every test outcome, including failure to start Cargo.
+fn run_with_cleanup(
+    execute: impl FnOnce() -> Result<u8>,
+    cleanup: impl FnOnce() -> Result<u8>,
+) -> Result<u8> {
+    let result = execute();
+    let cleanup_result = cleanup();
+    match (result, cleanup_result) {
+        (Ok(test_rc), Ok(cleanup_rc)) => Ok(join_rc(test_rc, cleanup_rc)),
+        (Err(error), Ok(0)) => Err(error),
+        (Err(error), Ok(cleanup_rc)) => {
+            Err(error.context(format!("database cleanup also exited {cleanup_rc}")))
+        }
+        (Ok(test_rc), Err(error)) => {
+            Err(error.context(format!("database cleanup failed after test exit {test_rc}")))
+        }
+        (Err(error), Err(cleanup_error)) => {
+            Err(error.context(format!("database cleanup also failed: {cleanup_error:#}")))
+        }
+    }
+}
+
 pub(crate) fn join_rc(test_rc: u8, reap_rc: u8) -> u8 {
     if test_rc != 0 { test_rc } else { reap_rc }
 }
 
-/// The prune: drop the base database and every `<base>_<suite>_it` sibling.
-///
-/// The bash was `psql -Atc … | while read -r db; do [ -n "$db" ] || continue; psql -qc "DROP …"
-/// >/dev/null; done`. Two things change: the query's rc is checked (the pipeline's was invisible —
-/// see the module header), and each name is re-checked against the allow-list before its
-/// DROP. `read -r` strips leading/trailing IFS whitespace, which is what the `.trim()` matches.
+/// Drop the invocation database and its suites, independently checking ownership.
 pub(crate) fn reap(base: &str) -> Result<u8> {
+    ensure!(
+        is_scratch_identifier(base),
+        "invalid cleanup namespace {base:?}"
+    );
     let (rc, stdout, stderr) = dbc::ct_capture(
         false,
         &[
@@ -187,30 +272,20 @@ pub(crate) fn reap(base: &str) -> Result<u8> {
         ],
     )?;
     if rc != 0 {
-        // The bash swallowed this: `psql | while read` reports the LOOP's status, so a dead
-        // container greened the target while reaping nothing.
         eprint!("{stderr}");
-        eprintln!(
-            "FATAL: reap query failed (psql rc={rc}). Refusing to report a completed prune from a query that never ran."
-        );
+        eprintln!("FATAL: cleanup query failed (psql rc={rc}); database cleanup did not complete.");
         return Ok(if rc > 0 { rc.clamp(1, 255) as u8 } else { 1 });
     }
     let (rt, _) = runtime();
     let container = dbc::db_container();
     let mut worst = 0u8;
-    for line in stdout.lines() {
-        let db = line.trim();
-        if db.is_empty() {
-            continue;
-        }
-        if !dbc::is_safe_scratch_database_name(db) {
-            eprintln!(
-                "REFUSING to drop `{db}` — outside the scratch allow-list (rust_it, tbd_gate*, *_cold, *_it, *_probe)."
-            );
+    for database in stdout.lines().filter(|line| !line.is_empty()) {
+        if !owns_database(base, database) {
+            eprintln!("REFUSING to drop {database:?} — not owned by namespace {base:?}.");
             worst = 1;
             continue;
         }
-        let st = Command::new(&rt[0])
+        let status = Command::new(&rt[0])
             .args(&rt[1..])
             .args([
                 "exec",
@@ -221,13 +296,12 @@ pub(crate) fn reap(base: &str) -> Result<u8> {
                 "-d",
                 IT_MAINT_DB,
                 "-qc",
-                &format!("DROP DATABASE IF EXISTS {db} WITH (FORCE);"),
+                &format!("DROP DATABASE IF EXISTS {database} WITH (FORCE);"),
             ])
-            // bash: `>/dev/null` on stdout only — psql's stderr stays visible.
             .stdout(Stdio::null())
             .status()
             .context("psql DROP DATABASE")?;
-        let rc = finish_status("psql -qc DROP DATABASE", st);
+        let rc = finish_status("psql -qc DROP DATABASE", status);
         if rc != 0 {
             worst = rc;
         }

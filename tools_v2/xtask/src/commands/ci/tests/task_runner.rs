@@ -71,6 +71,42 @@ fn ci_local_step_set_is_frozen() {
 }
 
 #[test]
+fn ci_local_schema_checks_freshness_first_without_regenerating_outputs() {
+    let schema = find("ci-local-schema").expect("ci-local-schema row");
+    assert_eq!(
+        step_names(schema),
+        [
+            "verify-codegen-fresh",
+            "schema-validate",
+            "verify-citations"
+        ],
+        "schema validation must fail on stale generated files before running other checks"
+    );
+    let mut pending = vec![schema];
+    let mut visited = std::collections::BTreeSet::new();
+    while let Some(task) = pending.pop() {
+        if !visited.insert(task.name) {
+            continue;
+        }
+        assert_ne!(
+            task.name, "schema-codegen",
+            "schema verification must not repair the stale outputs it is checking"
+        );
+        for step in task.steps {
+            if let Step::Task(name) = step {
+                pending.push(find(name).expect("schema dependency must resolve"));
+            } else if let Some(command) = step_echo(step) {
+                assert!(
+                    !command.contains("schema-codegen") && !command.contains("schema codegen"),
+                    "{} invokes mutating codegen: {command}",
+                    task.name
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn list_gates_equals_the_wave_gate_constant() {
     // `gate_schema` refuses to report PASS unless its hardcoded set agrees with the live task
     // table, and `xtask schema list-gates` is what prints that table's sub-gate set. The second

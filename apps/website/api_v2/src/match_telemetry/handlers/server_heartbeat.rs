@@ -1,8 +1,14 @@
-//! `POST /api/v1/ingest/server-status` — the game server's live-status heartbeat: the partial
-//! upsert, the time-series sample, the low-FPS edge warning, and the SSE fan-out.
+//! `POST /api/v1/game-runtime/sessions/:sessionId/heartbeats` — the game runtime's live-status
+//! heartbeat: the session fence, the partial upsert, the time-series sample, the low-FPS edge
+//! warning, and the SSE fan-out.
+//!
+//! The server is the one the `mod_runtime` machine credential belongs to, never a value in the
+//! body. Each heartbeat names its runtime session, that session's generation and a sequence that
+//! strictly increases within the session; the fence and the status write commit together, so a
+//! delayed or stale-runtime heartbeat can never overwrite the state a newer one reported.
 
-use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
+use axum::extract::{Path, State};
 use axum::response::Json;
 use chrono::Utc;
 use serde::Deserialize;
@@ -13,8 +19,10 @@ use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::core::middleware::ServiceAuth;
+use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::models::server::ServerStatus;
+use crate::server_infrastructure::services::machine_credentials::MachineCaller;
+use crate::server_infrastructure::services::runtime_sessions::{HeartbeatFence, admit_heartbeat};
 use crate::server_infrastructure::services::status_broadcast::publish_server_status;
 
 use super::ingest_parsing::{coalesce_str, foreign_key_error, parse_uuid_opt};
@@ -42,11 +50,14 @@ const LOW_FPS_THRESHOLD: f64 = 20.0;
 /// the existing row), `Some` sets it. `current_match_id` needs three states rather than two
 /// — absent keeps, and an explicit `""` clears — because a match really does end and the
 /// live row has to stop pointing at it; the empty-string-means-none convention is what
-/// [`parse_uuid_opt`] implements. A heartbeat with nothing but a `server_id` carries no
+/// [`parse_uuid_opt`] implements. A heartbeat with nothing but its session fence carries no
 /// reading at all, so it is a 400 rather than a write of nothing.
 #[derive(Debug, Deserialize)]
 pub struct ServerStatusInput {
-    server_id: String,
+    /// Refused when present: the server is the credential's, never the sender's claim.
+    server_id: Option<serde::de::IgnoredAny>,
+    generation: Option<i64>,
+    sequence: Option<i64>,
     is_online: Option<bool>,
     player_count: Option<i64>,
     max_players: Option<i64>,
@@ -61,7 +72,21 @@ pub struct ServerStatusInput {
 }
 
 impl ServerStatusInput {
-    /// True when the body says nothing beyond naming the server.
+    /// The session fence every heartbeat must carry.
+    fn fence(&self, runtime_session_id: Uuid) -> Result<HeartbeatFence, ApiError> {
+        let (Some(generation), Some(sequence)) = (self.generation, self.sequence) else {
+            return Err(ApiError::bad_request(
+                "generation and sequence are required",
+            ));
+        };
+        Ok(HeartbeatFence {
+            runtime_session_id,
+            generation,
+            sequence,
+        })
+    }
+
+    /// True when the body says nothing beyond its session fence.
     fn is_empty_reading(&self) -> bool {
         self.is_online.is_none()
             && self.player_count.is_none()
@@ -89,36 +114,44 @@ struct EffectiveStatus {
     ingame_weather: String,
 }
 
-/// `POST /api/v1/ingest/server-status` — upsert live status, append history, WARN on
-/// low-FPS edge, fan out to SSE (service-token).
+/// Fence the runtime session, upsert live status, append history, WARN on low-FPS edge, fan out
+/// to SSE (`mod_runtime` machine credential).
 ///
-/// @route POST /api/v1/ingest/server-status
+/// @route POST /api/v1/game-runtime/sessions/:sessionId/heartbeats
 pub async fn ingest_server_status(
     State(state): State<AppState>,
-    _svc: ServiceAuth,
+    caller: MachineCaller,
+    Path(session): Path<String>,
     body: Result<Json<ServerStatusInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
-    let Json(input) = body.map_err(|_| ApiError::bad_request("server_id required"))?;
-    if input.server_id.trim().is_empty() {
-        return Err(ApiError::bad_request("server_id required"));
+    caller.require_executor(ExecutorKind::ModRuntime)?;
+    let session = Uuid::parse_str(&session)
+        .map_err(|_| ApiError::bad_request("invalid runtime session id"))?;
+    let Json(input) =
+        body.map_err(|_| ApiError::bad_request("generation and sequence are required"))?;
+    if input.server_id.is_some() {
+        return Err(ApiError::bad_request(
+            "server_id is not accepted: the machine credential identifies the server",
+        ));
     }
-    let Ok(server_id) = Uuid::parse_str(input.server_id.trim()) else {
-        return Err(ApiError::bad_request("invalid server_id"));
-    };
+    let fence = input.fence(session)?;
     // A heartbeat that reports nothing is not a "server is at zero" reading, it is a
     // malformed request — writing eight defaults for it turns it into one.
     if input.is_empty_reading() {
         return Err(ApiError::bad_request(
-            "heartbeat must carry at least one field besides server_id",
+            "heartbeat must carry at least one reading besides its session fence",
         ));
     }
+    let server_id = caller.server_id;
+    let mut transaction = state.pool.begin().await?;
+    admit_heartbeat(&mut transaction, &caller, fence).await?;
 
     // Edge-trigger the low-FPS warning: only when crossing below the threshold. Read the
-    // pre-update value before the upsert.
+    // pre-update value before the upsert; the session lock orders heartbeats of one server.
     let prev_fps: Option<f64> =
         sqlx::query_scalar("SELECT server_fps::float8 FROM server_statuses WHERE server_id = $1")
             .bind(server_id)
-            .fetch_optional(&state.pool)
+            .fetch_optional(&mut *transaction)
             .await?;
     let prev_healthy = prev_fps.map(|f| f >= LOW_FPS_THRESHOLD).unwrap_or(true);
 
@@ -164,11 +197,9 @@ pub async fn ingest_server_status(
     .bind(coalesce_str(&input.ingame_weather))
     .bind(set_match_id)
     .bind(now)
-    .fetch_one(&state.pool)
-    // `server_id` is bound straight from the body with no existence check, and since `0018`
-    // constraint 10 enforces it a heartbeat for an unregistered server would otherwise be a 500.
-    // Both pointers on this INSERT are covered: `server_id` today, `current_match_id` the moment
-    // its constraint lands.
+    .fetch_one(&mut *transaction)
+    // `server_id` is the credential's registered server; a `current_match_id` naming no match
+    // is the sender's error and answers 400.
     .await
     .map_err(|e| foreign_key_error(&e).unwrap_or_else(|| e.into()))?;
 
@@ -183,16 +214,10 @@ pub async fn ingest_server_status(
         .bind(server_id)
         .bind(eff.player_count)
         .bind(eff.server_fps)
-        // **Deliberately NOT mapped.** `server_status_histories_server_id_fkey` names the
-        // same parent as the statement above, which just succeeded — so by the time this runs the
-        // server provably existed, and the only way to reach a 23503 here is a deregistration
-        // landing between the two statements. That is a race in the platform's own state, not a
-        // bad body: answering 400 "unknown server_id" would tell the bridge to stop sending a
-        // payload that was correct when it was sent. A 500 for a genuine race is the honest
-        // answer, and an arm no test can reach is an arm no test can prove.
-        .execute(&state.pool)
+        .execute(&mut *transaction)
         .await?;
     }
+    transaction.commit().await?;
 
     // Only a heartbeat that actually reported FPS can trip the low-FPS edge; the online
     // check reads the merged row so a heartbeat that omits `is_online` still warns for a

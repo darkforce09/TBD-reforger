@@ -16,7 +16,7 @@ use leptos::prelude::*;
 use crate::v2::core::auth::persist;
 use crate::v2::core::auth::AuthStore;
 #[cfg(target_arch = "wasm32")]
-use crate::v2::core::auth::{RefreshResponse, Session};
+use crate::v2::core::auth::RefreshResponse;
 
 /// The message shown for each failure code the backend can redirect with.
 fn auth_error_copy(code: &str) -> &'static str {
@@ -118,40 +118,67 @@ pub fn AuthCallbackPage() -> impl IntoView {
     {
         match parse_callback_hash() {
             Err(msg) => {
+                store.bootstrapping.set(false);
                 scrub_callback_hash();
                 error.set(Some(msg));
                 busy.set(false);
             }
-            Ok((tokens, arma_fallback)) => {
+            Ok((tokens, _arma_fallback)) => {
                 scrub_callback_hash();
+                store.clear_session();
                 store.set_tokens(tokens.clone());
-                persist(&store.persist_state());
+                store.bootstrapping.set(true);
+                let profile_request = store.begin_profile_request();
+                let generation = store.current_generation();
                 leptos::task::spawn_local(async move {
+                    use futures::future::FutureExt;
+                    let installed = crate::v2::core::api::client::refresh::with_refresh_lock(
+                        async move {
+                            if !store.is_current_generation(generation) {
+                                return false;
+                            }
+                            persist(&store.persist_state())
+                        }
+                        .boxed_local(),
+                    )
+                    .await;
+                    if !installed {
+                        if store.is_current_generation(generation) {
+                            store.clear_session();
+                        }
+                        error.set(Some("This browser could not safely store the sign-in session. Reload using a supported browser over HTTPS.".to_owned()));
+                        busy.set(false);
+                        return;
+                    }
                     match crate::v2::core::api::client::api_get::<
                         crate::v2::core::api::dto::MeResponse,
                     >(store, "/me")
                     .await
                     {
                         Ok(me) => {
-                            store.set_session(Session {
-                                access_token: store
-                                    .access_token
-                                    .get_untracked()
-                                    .unwrap_or_default(),
-                                refresh_token: store
-                                    .refresh_token
-                                    .get_untracked()
-                                    .unwrap_or_default(),
-                                expires_at: store.expires_at.get_untracked().unwrap_or_default(),
-                                user: me.user,
-                                arma_linked: me.arma_linked || arma_fallback,
-                            });
-                            persist(&store.persist_state());
+                            if !store.adopt_profile(profile_request, &me) {
+                                error.set(Some(auth_error_copy("no_session").to_owned()));
+                                busy.set(false);
+                                return;
+                            }
+                            store.bootstrapping.set(false);
+                            if !crate::v2::core::auth::session::persist_profile_if_current(
+                                &store.persist_state(),
+                            )
+                            .await
+                            {
+                                error.set(Some("The sign-in session changed or could not be stored. Reload to continue.".to_owned()));
+                                busy.set(false);
+                                return;
+                            }
                             if let Some(win) = web_sys::window() {
                                 let _ = win.location().set_href("/");
                             }
                         }
                         Err(_) => {
+                            if store.is_current_generation(generation) {
+                                store.bootstrapping.set(false);
+                            }
                             // Keep the minted tokens: a reload can still bootstrap from them.
                             error.set(Some(auth_error_copy("server_error").to_string()));
                             busy.set(false);

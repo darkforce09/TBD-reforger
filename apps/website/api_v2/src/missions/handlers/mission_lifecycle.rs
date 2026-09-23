@@ -1,5 +1,5 @@
-//! Mission lifecycle writes: create, metadata patch, soft delete, and submission to the approval
-//! queue.
+//! Mission lifecycle writes: create, metadata patch and soft delete. Submission to the approval
+//! queue lives in [`super::mission_submission`].
 //!
 //! Every handler here is `MissionMakerUser` tier on top of the author-or-admin [`can_edit`]
 //! predicate, so a demotion revokes the write even for the mission's own author.
@@ -10,17 +10,17 @@ use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
 use serde_json::value::RawValue;
-use sqlx::{PgPool, Postgres, QueryBuilder};
+use sqlx::{PgConnection, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::administration::models::audit_log::AuditSeverity;
-use crate::administration::services::audit_writer::{actor_display_name, write_audit};
+use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::MissionMakerUser;
 use crate::missions::handlers::mission_versions::validate_payload;
 use crate::missions::models::mission::{Mission, MissionStatus, WeatherType};
 use crate::missions::services::mission_lookup::load_mission_or_404;
+use crate::missions::services::mission_write_lock::lock_editable_mission;
 use crate::missions::validation::access::can_edit;
 use crate::missions::validation::mission_fields::{
     valid_game_mode, valid_terrain, valid_time_of_day, valid_weather, validated_mission_title,
@@ -90,10 +90,7 @@ pub async fn create_mission(
             "title, terrain, game_mode and max_players are required",
         ));
     }
-    // An ABSENT/empty `time_of_day` keeps its documented default; a value that was SUPPLIED and is
-    // not a clock is the author's mistake and is refused. Those are different facts and the split
-    // is deliberate: reading `"   "` as "unspecified" silently downgrades an explicit request, and
-    // trimming it here would put a whitespace rule in a second place.
+    // An absent/empty clock uses its default; supplied non-clock values are rejected verbatim.
     let time_of_day = if input.time_of_day.is_empty() {
         "14:00".to_string()
     } else {
@@ -176,7 +173,7 @@ pub async fn update_mission(
     body: Result<Json<PatchMissionInput>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
     let user = &maker.0;
-    let m = load_mission_or_404(&state.pool, &id).await?;
+    let mut m = load_mission_or_404(&state.pool, &id).await?;
     if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
@@ -190,7 +187,7 @@ pub async fn update_mission(
         .map(validated_thumbnail_url)
         .transpose()?;
 
-    let mut qb = QueryBuilder::new("UPDATE missions SET updated_at = now()");
+    let mut qb = QueryBuilder::new("UPDATE missions SET updated_at = statement_timestamp()");
     // Validated before it is bound: `""` / `"   "` would otherwise clobber a real title.
     if let Some(t) = &input.title {
         let title = validated_mission_title(t)?;
@@ -243,21 +240,42 @@ pub async fn update_mission(
     if let Some(t) = &thumbnail_url {
         qb.push(", thumbnail_url = ").push_bind(t.clone());
     }
+    let mut tx = state.pool.begin().await?;
+    lock_editable_mission(&mut tx, &mut m, user, &state.cfg).await?;
     if let Some(target) = &input.status {
-        apply_status_patch(&state.pool, &m, target, &mut qb).await?;
+        apply_status_patch(&mut tx, &m, target, &mut qb).await?;
     }
     qb.push(" WHERE id = ").push_bind(m.id);
-    qb.build()
-        .execute(&state.pool)
-        .await
-        .map_err(ApiError::from)?;
+    qb.build().execute(&mut *tx).await.map_err(ApiError::from)?;
+    if let Some(target) = input.status.as_deref()
+        && m.status.as_wire() != target
+    {
+        let action = if target == "archived" {
+            "mission.archive"
+        } else {
+            "mission.unarchive"
+        };
+        append_actor_audit(
+            &mut tx,
+            &user.discord_id,
+            action,
+            "mission",
+            &m.id.to_string(),
+            &format!(
+                "Mission status changed from {} to {target}",
+                m.status.as_wire()
+            ),
+        )
+        .await?;
+    }
+    tx.commit().await?;
 
     Ok(Json(load_mission_or_404(&state.pool, &id).await?))
 }
 
 /// Validate + push the only status changes PATCH may make (archive / unarchive).
 async fn apply_status_patch(
-    pool: &PgPool,
+    connection: &mut PgConnection,
     m: &Mission,
     target: &str,
     qb: &mut QueryBuilder<Postgres>,
@@ -278,10 +296,12 @@ async fn apply_status_patch(
     match status {
         MissionStatus::Archived => {
             let upcoming: i64 = sqlx::query_scalar(
-                "SELECT count(*) FROM event_missions WHERE mission_id = $1 AND start_time > now()",
+                "SELECT count(*) FROM event_missions em JOIN events e ON e.id = em.event_id \
+                 WHERE em.mission_id = $1 AND em.deleted_at IS NULL AND e.deleted_at IS NULL \
+                   AND em.start_time > statement_timestamp()",
             )
             .bind(m.id)
-            .fetch_one(pool)
+            .fetch_one(connection)
             .await?;
             if upcoming > 0 {
                 return Err(ApiError::conflict(
@@ -316,126 +336,37 @@ pub async fn delete_mission(
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
     let user = &maker.0;
-    let m = load_mission_or_404(&state.pool, &id).await?;
-    if !can_edit(user, &m) {
-        return Err(ApiError::forbidden("not your mission"));
-    }
-    let attached: i64 =
-        sqlx::query_scalar("SELECT count(*) FROM event_missions WHERE mission_id = $1")
-            .bind(m.id)
-            .fetch_one(&state.pool)
-            .await?;
+    let mut m = load_mission_or_404(&state.pool, &id).await?;
+    let mut tx = state.pool.begin().await?;
+    lock_editable_mission(&mut tx, &mut m, user, &state.cfg).await?;
+    let attached: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM event_missions em JOIN events e ON e.id = em.event_id \
+         WHERE em.mission_id = $1 AND em.deleted_at IS NULL AND e.deleted_at IS NULL",
+    )
+    .bind(m.id)
+    .fetch_one(&mut *tx)
+    .await?;
     if attached > 0 {
         return Err(ApiError::conflict(
             "mission is attached to an event — detach it (or archive the mission) instead",
         ));
     }
-    sqlx::query("UPDATE missions SET deleted_at = now() WHERE id = $1")
+    sqlx::query("UPDATE missions SET deleted_at = statement_timestamp() WHERE id = $1")
         .bind(m.id)
-        .execute(&state.pool)
+        .execute(&mut *tx)
         .await?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
-/// `POST /api/v1/missions/:id/submit` — draft/rejected → pending (author/admin).
-///
-/// **The only writer of `pending_approval` in the crate.** [`apply_status_patch`] refuses that
-/// value outright (PATCH `{"status":"pending_approval"}` → 400), so the admin approvals queue can
-/// only ever show rows this handler wrote. It is the one door in, and a surface that wants a
-/// mission reviewed has to call it.
-///
-/// ── Authorisation ───────────────────────────────────────────────────────────────────────────────
-/// [`can_edit`] = author **or** admin, the same predicate PATCH and DELETE use: a `mission_maker`
-/// who is not the author gets **403 "not your mission"**; an admin who is not the author gets
-/// **200** and the mission moves to `pending_approval`. The admin override is deliberate and
-/// consistent with the rest of the domain (an admin can already retitle, archive and delete any
-/// mission), and `GET /approvals` is admin-only, so the reviewer tier is unchanged either way.
-/// Accepted transitions are `draft` and `rejected`; `pending_approval` / `live` / `archived` all
-/// answer 409, so a double submit cannot enqueue a mission twice.
-///
-/// The extractor is [`MissionMakerUser`], same tier as PATCH — demotion revokes submit, and
-/// [`can_edit`] remains the author-or-admin gate on top of the role tier.
-///
-/// @route POST /api/v1/missions/:id/submit
-pub async fn submit_mission(
-    State(state): State<AppState>,
-    maker: MissionMakerUser,
-    Path(id): Path<String>,
-) -> Result<Json<Mission>, ApiError> {
-    let user = &maker.0;
-    let m = load_mission_or_404(&state.pool, &id).await?;
-    if !can_edit(user, &m) {
-        return Err(ApiError::forbidden("not your mission"));
-    }
-    if m.status != MissionStatus::Draft && m.status != MissionStatus::Rejected {
-        return Err(ApiError::conflict(
-            "only draft or rejected missions can be submitted",
-        ));
-    }
-    // `reviewed_by` / `reviewed_at` are cleared for the same reason `rejection_reason` is: this
-    // row is leaving the reviewed state, and a resubmission is a NEW review round. Leaving them
-    // set would show a mission awaiting review carrying the previous reviewer's stamp, i.e.
-    // "already reviewed". Both columns are `skip_serializing_if = "Option::is_none"`
-    // (`missions::models::mission`), so NULLing them removes the fields exactly as they are absent
-    // on a never-reviewed mission — no literal `null` and no wire-shape change for any other row.
-    //
-    // The `status IN (…)` predicate makes the guard above ATOMIC rather than advisory: the check
-    // reads a row loaded by an earlier statement, so a write naming the id alone would silently
-    // overwrite anything that moved the mission in between — most reachably [`apply_status_patch`],
-    // which accepts `archived` from *any* status, so a concurrent PATCH-to-archived plus this
-    // UPDATE would leave a mission un-archived and queued. `deleted_at IS NULL` mirrors
-    // [`load_mission_or_404`]'s read for the same reason: a concurrent soft delete must not get its
-    // status rewritten underneath it.
-    let done = sqlx::query(
-        "UPDATE missions SET status = 'pending_approval', rejection_reason = '', \
-         reviewed_by = NULL, reviewed_at = NULL, updated_at = now() \
-         WHERE id = $1 AND status IN ('draft', 'rejected') AND deleted_at IS NULL",
-    )
-    .bind(m.id)
-    .execute(&state.pool)
-    .await?;
-    // Deliberately the SAME 409 the pre-check returns: every way to reach zero rows here means
-    // "this mission is not submittable", and a second error string for a lost race would only tell
-    // the client something it must handle identically (reload, look again).
-    if done.rows_affected() == 0 {
-        return Err(ApiError::conflict(
-            "only draft or rejected missions can be submitted",
-        ));
-    }
-    // The audit log is the ONLY durable record that a submission happened. The mission row has no
-    // `submitted_by`/`submitted_at`; `GET /approvals` projects `updated_at` as `submitted_at`, and
-    // that column is bumped by every later PATCH, so a pending mission's queue timestamp moves
-    // forward with each edit. Without this row, "who put this in my queue, and when" is
-    // unanswerable the moment the author touches the mission again, and unrecoverable once a
-    // reviewer approves it. Both counterparts (`mission.approve`, `mission.reject`) audit too.
-    //
-    // `Info`, matching `mission.approve` — a submission is routine, and `Warn` is reserved for the
-    // destructive half (`mission.reject`). The actor is the CALLER, not the author, because the two
-    // differ whenever an admin submits on someone's behalf; the message names both in that case so
-    // the entry cannot be misread as the author having submitted it themselves.
-    let actor = &user.discord_id;
-    let actor_name = actor_display_name(&state.pool, actor).await;
-    let message = if *actor == m.author_id {
-        format!("{actor_name} submitted mission '{}' for approval", m.title)
-    } else {
-        let author_name = actor_display_name(&state.pool, &m.author_id).await;
-        format!(
-            "{actor_name} submitted {author_name}'s mission '{}' for approval",
-            m.title
-        )
-    };
-    write_audit(
-        &state.pool,
-        AuditSeverity::Info,
-        Some(actor),
-        &actor_name,
-        "mission.submit",
-        &message,
+    // The database's mission.delete record describes the row change; this records its authority.
+    append_actor_audit(
+        &mut tx,
+        &user.discord_id,
+        "mission.delete_authorized",
         "mission",
         &m.id.to_string(),
+        "Authorized mission soft deletion; retained gameplay and signup history remain available",
     )
-    .await;
-    Ok(Json(load_mission_or_404(&state.pool, &id).await?))
+    .await?;
+    tx.commit().await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // Wire spelling of the status enum, for the idempotent-no-op comparison above.

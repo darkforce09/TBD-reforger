@@ -69,8 +69,8 @@ async fn decorate(
 const MISSION_COLS: &str = "id, title, author_id, terrain, COALESCE(custom_terrain_name, '') AS custom_terrain_name, \
      game_mode, weather, time_of_day::text AS time_of_day, max_players, status, \
      COALESCE(thumbnail_url, '') AS thumbnail_url, COALESCE(briefing, '') AS briefing, \
-     current_version_id, COALESCE(rejection_reason, '') AS rejection_reason, reviewed_by, reviewed_at, \
-     COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
+     current_version_id, approved_artifact_id, COALESCE(rejection_reason, '') AS rejection_reason, \
+     reviewed_by, reviewed_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
      COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at";
 
 #[derive(Debug, Deserialize)]

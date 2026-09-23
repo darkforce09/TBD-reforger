@@ -50,6 +50,12 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     // `match_player_stats`, and `leaderboard_totals` sums every row for a discord_id, so a
     // second run would double-count. Clear the stats first and keep this test's ids to itself.
     let clean = |pool: PgPool| async move {
+        sqlx::query("WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1")
+            .bind(DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+
         sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
             .bind(ARMA)
             .execute(&pool)
@@ -57,11 +63,6 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
             .unwrap();
         sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
             .bind(SRC)
-            .execute(&pool)
-            .await
-            .unwrap();
-        sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
-            .bind(DISCORD)
             .execute(&pool)
             .await
             .unwrap();
@@ -96,14 +97,18 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     .fetch_one(&pool)
     .await
     .unwrap();
+    let mut fixture = pool.begin().await.unwrap();
+    let allocation = common::participant_allocation(&mut fixture, event_mission_id, DISCORD).await;
     sqlx::query(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, state) VALUES ($1, $2, 'registered')",
+        "INSERT INTO event_registrations (event_mission_id, discord_id, reservation_state, allocation_id) VALUES ($1, $2, 'registered', $3)",
     )
     .bind(event_mission_id)
     .bind(DISCORD)
-    .execute(&pool)
+    .bind(allocation)
+    .execute(&mut *fixture)
     .await
     .unwrap();
+    fixture.commit().await.unwrap();
 
     let post = |b: String| {
         let app = app.clone();
@@ -261,6 +266,12 @@ async fn attendance_marks_only_the_played_event_mission() {
     .unwrap();
 
     let clean = |pool: PgPool| async move {
+        sqlx::query("WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1")
+            .bind(DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+
         sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
             .bind(ARMA)
             .execute(&pool)
@@ -268,11 +279,6 @@ async fn attendance_marks_only_the_played_event_mission() {
             .unwrap();
         sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
             .bind(SRC)
-            .execute(&pool)
-            .await
-            .unwrap();
-        sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
-            .bind(DISCORD)
             .execute(&pool)
             .await
             .unwrap();
@@ -322,15 +328,19 @@ async fn attendance_marks_only_the_played_event_mission() {
     .await
     .unwrap();
     for em in [em_played, em_other] {
+        let mut fixture = pool.begin().await.unwrap();
+        let allocation = common::participant_allocation(&mut fixture, em, DISCORD).await;
         sqlx::query(
-            "INSERT INTO event_registrations (event_mission_id, discord_id, state) \
-             VALUES ($1, $2, 'registered')",
+            "INSERT INTO event_registrations (event_mission_id, discord_id, reservation_state, allocation_id) \
+             VALUES ($1, $2, 'registered', $3)",
         )
         .bind(em)
         .bind(DISCORD)
-        .execute(&pool)
+        .bind(allocation)
+        .execute(&mut *fixture)
         .await
         .unwrap();
+        fixture.commit().await.unwrap();
     }
 
     let body = format!(
@@ -377,14 +387,14 @@ async fn attendance_marks_only_the_played_event_mission() {
     let em_ids = vec![em_played, em_other];
     let still_registered: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM event_registrations \
-         WHERE event_mission_id = ANY($1) AND state::text IN ('registered', 'waitlisted')",
+         WHERE event_mission_id = ANY($1) AND reservation_state::text IN ('registered', 'waitlisted')",
     )
     .bind(&em_ids)
     .fetch_one(&pool)
     .await
     .unwrap();
     assert_eq!(
-        still_registered, 1,
+        still_registered, 2,
         "unplayed mission keeps the event's registered count non-zero"
     );
 
@@ -395,12 +405,26 @@ async fn attendance_marks_only_the_played_event_mission() {
         .execute(&pool)
         .await
         .unwrap();
-    // Reset the played reg so a wrong all-event write would be visible on both rows.
-    sqlx::query("UPDATE event_registrations SET state = 'registered' WHERE discord_id = $1")
+    // Reset the played reg so a wrong all-event write would be visible on both rows. The first
+    // report is removed with its participation: a finalized exact match would otherwise keep
+    // deriving attendance for the played attachment.
+    let mut reset = pool.begin().await.unwrap();
+    sqlx::query("DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)")
         .bind(DISCORD)
-        .execute(&pool)
+        .execute(&mut *reset)
         .await
         .unwrap();
+    sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+        .bind(SRC)
+        .execute(&mut *reset)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE event_registrations SET attendance_state = NULL WHERE discord_id = $1")
+        .bind(DISCORD)
+        .execute(&mut *reset)
+        .await
+        .unwrap();
+    reset.commit().await.unwrap();
     let body2 = format!(
         r#"{{"match":{{"source_match_id":"{SRC2}","outcome":"success","event_id":"{event_id}"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":1,"deaths":0,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
@@ -487,6 +511,12 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
     .await
     .unwrap();
     let clean = |pool: PgPool| async move {
+        sqlx::query("WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1")
+            .bind(DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+
         sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
             .bind(ARMA)
             .execute(&pool)
@@ -494,11 +524,6 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
             .unwrap();
         sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
             .bind(vec![SRC1.to_string(), SRC2.to_string()])
-            .execute(&pool)
-            .await
-            .unwrap();
-        sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
-            .bind(DISCORD)
             .execute(&pool)
             .await
             .unwrap();
@@ -543,15 +568,19 @@ async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
         .fetch_one(&pool)
         .await
         .unwrap();
+        let mut fixture = pool.begin().await.unwrap();
+        let allocation = common::participant_allocation(&mut fixture, em, DISCORD).await;
         sqlx::query(
-            "INSERT INTO event_registrations (event_mission_id, discord_id, state) \
-             VALUES ($1, $2, 'registered')",
+            "INSERT INTO event_registrations (event_mission_id, discord_id, reservation_state, allocation_id) \
+             VALUES ($1, $2, 'registered', $3)",
         )
         .bind(em)
         .bind(DISCORD)
-        .execute(&pool)
+        .bind(allocation)
+        .execute(&mut *fixture)
         .await
         .unwrap();
+        fixture.commit().await.unwrap();
         ems.push(em);
     }
     let (em_1, em_2) = (ems[0], ems[1]);

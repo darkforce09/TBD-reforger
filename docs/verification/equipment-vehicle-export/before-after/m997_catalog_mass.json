@@ -1,0 +1,39 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+  "before": {
+    "file": "vehicles/vehicles_all.json",
+    "values": {
+      "massKg": 1
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/00/00C9BBE426F7D459.json",
+    "source_file": "sources/arma_reforger/00/00C9BBE426F7D459.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/10",
+        "class_name": "RigidBody",
+        "facts": {
+          "Mass": {
+            "status": "present",
+            "value": 2791.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/10",
+              "property": "Mass",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

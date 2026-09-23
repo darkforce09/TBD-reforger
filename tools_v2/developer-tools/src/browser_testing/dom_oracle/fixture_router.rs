@@ -9,6 +9,7 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::browser_testing::session_tokens::gate_access_token;
 use serde_json::{Value, json};
 
 /// The fixture corpus — shared with the frontend's R-api round-trip tests and the editor smokes.
@@ -80,7 +81,7 @@ pub(super) fn fixture_for(method: &str, url: &str) -> Option<(PathBuf, &'static 
 pub(super) fn route(method: &str, url: &str) -> Reply {
     if url.contains("/api/v1/auth/refresh") {
         return Reply::Canned(json!({
-            "access_token": "acc-v",
+            "access_token": gate_access_token("dom-oracle"),
             "refresh_token": "rt-v2",
             "expires_at": "2026-01-01T01:00:00Z"
         }));
@@ -98,6 +99,32 @@ pub(super) fn route(method: &str, url: &str) -> Reply {
         }),
         None => Reply::Passthrough,
     }
+}
+
+/// Whether the API refuses `url` as sent, for a capture that starts from a stored session.
+///
+/// Every `/api/v1/` route authenticates its caller except the refresh and logout exchanges, which
+/// carry their own credential. A seeded capture's first requests leave before the SPA holds an
+/// access token; the API answers them `401`, and the SPA's refresh-and-retry is what installs the
+/// session, so the corpus answers them the same way.
+pub(super) fn refuses_without_bearer(url: &str, headers: &Value) -> bool {
+    url.contains("/api/v1/")
+        && !url.contains("/api/v1/auth/refresh")
+        && !url.contains("/api/v1/auth/logout")
+        && !carries_bearer(headers)
+}
+
+/// Whether the request headers carry a non-empty `Authorization: Bearer` credential.
+fn carries_bearer(headers: &Value) -> bool {
+    headers.as_object().is_some_and(|headers| {
+        headers.iter().any(|(name, value)| {
+            name.eq_ignore_ascii_case("authorization")
+                && value
+                    .as_str()
+                    .and_then(|value| value.strip_prefix("Bearer "))
+                    .is_some_and(|token| !token.trim().is_empty())
+        })
+    })
 }
 
 /// The capture failure raised when a route's data never arrived.

@@ -1,4 +1,4 @@
-//! Minting access tokens for integration suites, through the router or the JWT issuer.
+//! Minting persisted integration-test sessions through the router or session service.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -14,41 +14,14 @@ use website_api::core::application_state::AppState;
 /// out of step with production's row shape.
 pub(crate) const DEV_LOGIN_ARMA_ID: &str = "dev-arma-76561190000000001";
 
-/// The single identity `GET /auth/dev-login` mints for **every** role (`DEV_USER_ID` in
-/// `src/identity_and_access/handlers/developer_login.rs`). It is shared by every suite that
-/// calls dev-login, and each call rewrites that row's `username`, `discord_handle`, `role`
-/// and `last_login_at` in the handler's `ON CONFLICT` branch — so a suite must never assume
-/// anything about this row beyond what its own most recent dev-login call just wrote.
+/// The development administrator identity. Other development roles use distinct accounts.
+/// Suites that mutate account state should use dedicated actor IDs.
 pub const DEV_LOGIN_USER: &str = "000000000000000001";
 
 /// Mint an access token through `GET /api/v1/auth/dev-login?role={role}`.
 ///
-/// `suite` is the calling file (`"events"`), `role` the tier being requested. Both appear
-/// in the failure message, which is the entire point of this helper: on **any** failure it
-/// reports the HTTP status, the response body, the URI and who was asking. Reading the
-/// `Location` header through `HeaderMap`'s `Index` impl instead — what every hand-rolled copy
-/// of this extractor did — panics with `no entry found for key "location"`, naming neither
-/// the cause nor the caller, so a 404 (route not registered) and a 500 (database unreachable)
-/// are indistinguishable from a code defect.
-///
-/// # `dev_login` has no ban check
-///
-/// A missing `Location` is **not** a banned account, however plausible that reads:
-///
-/// * `src/identity_and_access/handlers/developer_login.rs` — `dev_login` never reads
-///   `is_banned`. Its upsert *writes* `is_banned = false` on insert, its `ON CONFLICT` branch
-///   does not touch the column, and it then calls `issue_session` unconditionally.
-/// * `src/identity_and_access/services/session_issuance.rs` — `issue_session` is
-///   `issue_access` + `issue_refresh`. Neither loads the user row, so `is_banned` is never
-///   consulted on this path. A banned shared row still gets a **302**.
-/// * `src/identity_and_access/handlers/session_tokens.rs` — the ban check lives in `refresh`
-///   (`POST /auth/refresh`), which 403s `"account is banned"`. That is a different route.
-///
-/// The real mechanism behind a missing `Location` is a **shared-fixture collision**: suites
-/// mutate the shared `users` row's role, faction links and `arma_id` out from under each
-/// other, and dev-login's response is then not what the next suite expects. Give your suite
-/// its own actor ids (see [`super::fixtures::seed_user`]) rather than reaching for a ban
-/// explanation.
+/// Failure reports identify the calling suite, requested role, HTTP status, body, and redirect.
+/// The production session service validates account availability before issuing credentials.
 pub async fn dev_login_token(app: &Router, suite: &str, role: &str) -> String {
     let uri = format!("/api/v1/auth/dev-login?role={role}");
     let resp = app
@@ -83,10 +56,9 @@ pub async fn dev_login_token(app: &Router, suite: &str, role: &str) -> String {
 
     if status != StatusCode::FOUND {
         let msg = ctx.report(
-            "expected 302 Found. A non-302 means the dev-login handler did not run: 404 = \
-             route not registered (Config::for_tests must set APP_ENV=development), 500 = \
-             the handler's users upsert failed (unique index on users.arma_id is the usual \
-             cause on a shared integration database).",
+            "expected 302 Found. Check the response body: 404 indicates an unavailable \
+             development route, 401/403 an unavailable account, and 500 a persistence or \
+             session-issuance failure.",
         );
         panic!("{msg}");
     }
@@ -149,7 +121,7 @@ impl DevLoginFailure<'_> {
              dev-login did not mint a session.\n\
              \n  \
              suite:    tests/{suite}.rs\n  \
-             actor:    dev-login shared user {DEV_LOGIN_USER}, role={role}\n  \
+             actor:    development role={role}\n  \
              request:  GET {uri}\n  \
              status:   {status}\n  \
              location: {location}\n  \
@@ -161,31 +133,37 @@ impl DevLoginFailure<'_> {
     }
 }
 
-/// Mint an access token **without** rewriting the shared `dev-login` row.
+/// Seed explicit verified membership and issue a persisted session for a suite-owned account.
 ///
-/// Prefer this whenever the suite needs a specific `discord_id` (private actor) or must not
-/// leave `users.role` on `DEV_LOGIN_USER` as `enlisted` for a sibling binary that reads the
-/// DB (a sibling binary asserts `role == admin` via `GET /me`). JWT role gates
-/// (`MissionMakerUser`, `AdminUser`, …) read the claim, not the row — so this loses no
-/// coverage versus [`dev_login_token`] for authz paths.
-///
-/// `suite` appears in the panic so a mint failure names the caller the same way
-/// [`dev_login_token`] does.
-pub fn access_token(
+/// Existing Arma identity and ban state remain intact. `arma_linked` supplies the initial identity
+/// only when the account does not exist; token claims are derived from the persisted account.
+pub async fn access_token(
     state: &AppState,
     suite: &str,
     discord_id: &str,
     role: &str,
     arma_linked: bool,
 ) -> String {
-    state
-        .jwt
-        .issue_access(discord_id, role, arma_linked)
+    let initial_arma_id = arma_linked.then(|| format!("test-arma:{discord_id}"));
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
+         arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'Integration Test', 'integration-test', '', $2, '', $3::user_role, \
+         false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
+    )
+    .bind(discord_id)
+    .bind(initial_arma_id)
+    .bind(role)
+    .execute(&state.pool)
+    .await
+    .unwrap_or_else(|error| panic!("tests/{suite}.rs: create actor {discord_id}: {error}"));
+
+    super::fixtures::seed_membership(&state.pool, discord_id, &state.cfg.discord_guild_id, role)
+        .await;
+    website_api::identity_and_access::services::session_issuance::issue_session(state, discord_id)
+        .await
         .unwrap_or_else(|e| {
-            panic!(
-                "tests/{suite}.rs: issue_access(discord_id={discord_id}, role={role}, \
-                 arma_linked={arma_linked}): {e}"
-            )
+            panic!("tests/{suite}.rs: issue_session(discord_id={discord_id}, role={role}): {e:?}")
         })
         .0
 }

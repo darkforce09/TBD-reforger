@@ -1,22 +1,20 @@
 //! `cargo xtask setup server-profile`: write the dedicated-server profile this checkout boots with.
 //!
 //! Path pins:
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=contracts_v2`, `WEB=apps/website/api_v2`.
+//! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `WEB=apps/website/api_v2`.
 //!
-//! Builds a dedicated-server profile tree (`profile/TBD_BackendConfig.json`, mission fallback,
-//! optional registry). Acceptance is bash/port stdout+stderr+rc (+ tree modes/bytes) on a clean
-//! tree and ≥2 broken arms — not a green run alone.
+//! Builds a dedicated-server profile tree: `profile/TBD_BackendConfig.json` from the committed
+//! example, with the service token and the game runtime's machine credential filled in when they
+//! are known, and the optional registry. The mission a server runs is not part of the profile:
+//! the mod reads the server's deployment with its machine credential (or boots the last verified
+//! artifact it cached), so a profile without a credential boots no mission.
 //!
-//! Fail-opens closed vs bash:
-//! - Missing `backend.example.json` / golden still hard-fail (bash `set -e` on `cp`, explicit
-//!   golden check). Registry copy keeps bash's `cp … 2>/dev/null || true`.
-//! - `.env` SERVICE_TOKEN parse matches the world-boot gate's (strip CR, one quote layer,
-//!   `sed -n 's/^SERVICE_TOKEN=//p' | head -1`); absent line leaves the placeholder.
-//!
-//! Preserved oddities:
-//! - Success banner still lists the Workbench checklist verbatim.
-//! - Missing-backend stderr uses the GNU `cp: cannot stat '…': No such file or directory` shape
-//!   so broken-arm diffs stay byte-aligned with bash on Linux.
+//! - `SERVICE_TOKEN` (environment, else the first `SERVICE_TOKEN=` line of
+//!   `apps/website/api_v2/.env`) replaces the example's `serverToken` placeholder.
+//! - `TBD_MACHINE_CREDENTIAL` (environment) becomes `machineCredential`; without it the example's
+//!   placeholder stays, which the mod reports as unset.
+//! - A missing `backend.example.json` fails with the GNU `cp: cannot stat` shape; the registry
+//!   copy is best-effort.
 
 use std::fs;
 use std::io::{self, Write};
@@ -25,14 +23,11 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-use developer_tools::repository_layout::mission_fixtures_valid_dir;
-
 use crate::core::repository_root::find_repo_root;
 
-const MISSION_ID: &str = "msn_8f3a2c";
 const PLACEHOLDER: &str = "replace-with-SERVICE_TOKEN-value";
-/// Golden mission seeded as the `MISSION_ID` disk fallback.
-const GOLDEN_MISSION_FILE: &str = "bridgehead-at-levie.json";
+/// Where the game runtime's machine credential comes from.
+const MACHINE_CREDENTIAL_VARIABLE: &str = "TBD_MACHINE_CREDENTIAL";
 const BACKEND_EXAMPLE_REL: &str = "apps/mod/tbd-framework/Data/backend.example.json";
 const REGISTRY_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
 
@@ -62,11 +57,12 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
     let paths = Paths::from_root(root);
     let profile = resolve_profile(profile_arg, &paths.mod_root);
     let profile_root = profile.join("profile");
-    let missions = profile_root.join("missions");
 
-    fs::create_dir_all(&missions).with_context(|| format!("mkdir -p {}", missions.display()))?;
+    fs::create_dir_all(&profile_root)
+        .with_context(|| format!("mkdir -p {}", profile_root.display()))?;
 
-    // 700 BEFORE anything is written — see former script comments (SERVICE_TOKEN file).
+    // 700 before anything is written: the backend config carries the service token and the
+    // machine credential.
     set_mode(&profile_root, 0o700)?;
 
     let backend_src = root.join(BACKEND_EXAMPLE_REL);
@@ -89,18 +85,10 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
         substitute_token(&backend_dst, &token)?;
     }
 
-    let golden = mission_fixtures_valid_dir(root).join(GOLDEN_MISSION_FILE);
-    if !golden.is_file() {
-        eprintln!("ERROR: golden mission not found: {}", golden.display());
-        eprintln!(
-            "       This script seeds the {MISSION_ID} disk fallback from that file. If the golden"
-        );
-        eprintln!("       was renamed, point GOLDEN at the one whose meta.id is {MISSION_ID}.");
-        return Ok(1);
+    let credential = std::env::var(MACHINE_CREDENTIAL_VARIABLE).unwrap_or_default();
+    if !credential.is_empty() {
+        set_machine_credential(&backend_dst, &credential)?;
     }
-    let mission_dst = missions.join(format!("{MISSION_ID}.json"));
-    fs::copy(&golden, &mission_dst)
-        .with_context(|| format!("cp {} -> {}", golden.display(), mission_dst.display()))?;
 
     // Optional registry override — bash `cp … 2>/dev/null || true`.
     let registry_src = root.join(REGISTRY_REL);
@@ -113,7 +101,16 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
         profile_root.display()
     );
     println!("  profile/TBD_BackendConfig.json");
-    println!("  profile/missions/{MISSION_ID}.json");
+    if credential.is_empty() {
+        println!(
+            "  machineCredential: not set — set {MACHINE_CREDENTIAL_VARIABLE} to a mod_runtime credential of"
+        );
+        println!(
+            "  this server; until then it boots no mission (or the last verified artifact it cached)"
+        );
+    } else {
+        println!("  machineCredential: set from {MACHINE_CREDENTIAL_VARIABLE}");
+    }
     println!();
     println!("Workbench checklist:");
     println!("  1. Open tbd-framework/addon.gproj");
@@ -194,6 +191,29 @@ fn substitute_token(config_path: &Path, token: &str) -> Result<()> {
         .open(config_path)
         .with_context(|| format!("open {}", config_path.display()))?;
     f.write_all(new_body.as_bytes())
+        .with_context(|| format!("write {}", config_path.display()))?;
+    Ok(())
+}
+
+/// Write `machineCredential` into the backend config, keeping its other keys and their order.
+fn set_machine_credential(config_path: &Path, credential: &str) -> Result<()> {
+    let body = fs::read_to_string(config_path)
+        .with_context(|| format!("read {}", config_path.display()))?;
+    let mut config: serde_json::Value =
+        serde_json::from_str(&body).with_context(|| format!("parse {}", config_path.display()))?;
+    let object = config
+        .as_object_mut()
+        .with_context(|| format!("{} is not a JSON object", config_path.display()))?;
+    object.insert(
+        "machineCredential".to_string(),
+        serde_json::Value::String(credential.to_string()),
+    );
+    let mut f = fs::OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(config_path)
+        .with_context(|| format!("open {}", config_path.display()))?;
+    f.write_all(format!("{}\n", serde_json::to_string_pretty(&config)?).as_bytes())
         .with_context(|| format!("write {}", config_path.display()))?;
     Ok(())
 }

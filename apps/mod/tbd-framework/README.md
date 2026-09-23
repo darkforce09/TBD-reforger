@@ -22,12 +22,14 @@ See `Tbd_framework/REFERENCE-ONLY.md` (gitignored reference copy — present onl
 ## Features (current)
 
 - Backend config from `$profile:TBD_BackendConfig.json`
-- Mission loader: REST `GET /api/v1/missions/{id}/compiled` (service-token / `X-Service-Token`; handler `get_compiled_mission` at `apps/website/api_v2/src/app.rs` + `handlers/missions.rs`, T-092.2) → `$profile:missions/{id}.json` fallback on REST failure
+- Deployed mission (`Systems/Mission/Loaders/TBD_DeployedMission.c`): the server runs the mission deployed to it on the platform - `GET /api/v1/game-runtime/deployment`, then the artifact's exact bytes (`GET /api/v1/game-runtime/artifacts/{id}`, or the profile cache when the cached id and SHA-256 match), loaded only when the SHA-256 of the bytes equals the published one (script SHA-256, `Core/Hashing/`). No deployment, no mission - there is no default; the platform unreachable at boot runs the last verified cached artifact with a WARNING
+- Fleet command executor (`API/FleetCommands/`) - `broadcast`, `kick` and `load_mission` (verified artifact, cache, then an in-process scenario restart); in-game admins deploy through the platform (`#tbd missions`, `#tbd mission <n>`)
 - Registry alias resolution (`TBD_Registry.c`)
 - **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1) — **kit aliases** + round-robin/roster assign; **no in-game slot picker yet** (**T-068.13** production LOBBY UI, after **T-092.2**)
 - **Player loadout on spawn:** **T-068.12** — per-slot compiled loadout → `EquipCloth`/`EquipWeapon` on **human player** (not test NPC)
 - **Loadout equip test (T-068.5 / T-068.5.1):** `TBD_LoadoutEquipComponent` — `$profile:TBD_LoadoutTest.json`, **test NPC** @ 6400 only
-- Roster loader (`TBD_RosterLoader.c`) — polls `GET /api/game/events/{id}/roster`
+- Roster loader (`TBD_RosterLoader.c`) - reads `GET /api/v1/game-runtime/events/{id}/roster` (wire version 2) with this server's `mod_runtime` machine credential (`machineCredential`)
+- Runtime session (`API/TBD_RuntimeSession.c`) - platform session with sequenced heartbeats while the world runs; deployments into event roster slots are authorized by the platform (`Systems/Spawning/TBD_DeploymentAuthorization.c`) and every life's end is reported
 - Game stage enum + manager (`LOADING → … → DEBRIEF`)
 - Radio bridge hook stubs (partner VOIP wires later)
 - **`TBD_GameMode.et`** prefab — managers + `TBD_LoadoutEquipComponent` (dev loadout test)
@@ -117,8 +119,9 @@ profile/
   TBD_BackendConfig.json    # copy from Data/backend.example.json
   TBD_Registry.json         # optional override
   TBD_LoadoutTest.json      # copy from web loadout-export.json (T-068.4 download) for loadout equip test
-  missions/
-    msn_8f3a2c.json         # cached after successful REST fetch
+  TBD_MissionArtifactCache/
+    document.json           # the last verified mission artifact, exact bytes
+    identity.json           # its deployment: artifact id + SHA-256, mission, event, terrain
 ```
 
 **Workbench `$profile:`** resolves under the Proton prefix, e.g.  
@@ -126,6 +129,7 @@ profile/
 (paste exact path in verify — differs from dedicated-server `.local-test-profile/`).
 
 Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `apps/website/api_v2/.env`.
+`machineCredential` is not written by the script: an administrator issues a `mod_runtime` machine credential for this server (`tbdm_...`) and it is pasted into `TBD_BackendConfig.json`. Until then the example's placeholder counts as unset: no deployment is read (the last verified cached artifact runs with a WARNING, or no mission at all), no runtime session, no roster and no fleet commands (the platform loops re-read the file every minute and pick the credential up without a restart). The mission and its event are not configured in the profile: they come with the deployment.
 
 ### Expected log lines
 
@@ -133,7 +137,6 @@ Verified against a real boot (T-612, 2026-08-01). Everything after each tag/`key
 expected to vary — pin the prefix, never the sentence (`cargo xtask mod remote-logs` does):
 
 ```
-[TBD][Mission] loaded id=msn_8f3a2c name='Bridgehead at Levie' slots=18 source=backend
 [TBD] Registry loaded (21 aliases).
 [TBD][Slots] Slot-1 blufor:Alpha:SL:0 (blufor:Alpha:SL:0) kit kit:rifleman_m16 at <…>   ← ×18 for msn_8f3a2c
 [TBD][Loadout][Slot] slot=… primary equip OK {GUID}…Rifle_M16A2.et                      ← per authored gear item
@@ -143,10 +146,44 @@ expected to vary — pin the prefix, never the sentence (`cargo xtask mod remote
 [TBD][Stage] LOADING -> LOBBY
 [TBD] Stage → LOBBY
 NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
-[TBD] Roster loaded (… assignments).                                                    ← when a roster is configured
 [TBD] SpawnManager: assigned slot blufor:Alpha:SL:0 to player 1 at (…)                  ← once a client joins
 [TBD] SpawnManager: bound player 1 to slot blufor:Alpha:SL:0 body (kit …)
 ```
+
+Mission lines observed on a headless dedicated-server boot without a platform connection
+(2026-09-23): a bare boot, then the golden `bridgehead-at-levie.json` (13,096 bytes) and a 1 MiB
+padded copy staged as the cached artifact:
+
+```
+[TBD][Sha256] self-test-passed vectors=11 bytesAbove127=utf8
+[TBD][Mission] NO MISSION YET - no machine credential is configured (backend=none), and no verified artifact is cached in $profile:TBD_MissionArtifactCache. ...
+[TBD][Mission] RUNNING THE LAST VERIFIED ARTIFACT - no machine credential is configured (backend=none). artifact=... mission=msn_8f3a2c ...
+[TBD][Mission] artifact-verified artifact=... sha256=c1f1ffd6...45d0 bytes=13096 from=cache hashMs=... hashWorkMs=...
+[TBD][Mission] loaded id=msn_8f3a2c name='Bridgehead at Levie' slots=18 source=last-verified-cache
+[TBD][Runtime] no runtime session until a machine credential is configured - backend=none
+[TBD][Fleet] claiming fleet commands every 5 s while this world holds a runtime session
+```
+
+Mission and platform lines with a machine credential and a mission deployed to the server
+(compile-verified; not yet observed on a live boot):
+
+```
+[TBD][Mission] deployment-read backend=...
+[TBD][Mission] deployment deployment=... state=... mission=... artifact=... sha256=... bytes=... terrain=... event=... eventMission=...
+[TBD][Mission] artifact-verified artifact=... sha256=... bytes=... from=platform hashMs=... hashWorkMs=...
+[TBD][Mission] loaded id=... name='...' slots=... source=platform
+[TBD][Runtime] session-started session=... generation=... heartbeatSeconds=... expiresAfterSeconds=... artifact=... sha256=...
+[TBD][Roster] loaded event=... version=2 assignments=... slots=...
+[TBD][Deployment] authorization-requested player=... slot=... orbatSlot=... eventMission=... life=...
+[TBD][Deployment] deployment-allowed player=... slot=... occupancy=... authorizedBy=... life=...
+[TBD][Deployment] life-end-reported occupancy=... session=... HTTP_CODE_200 response=...
+```
+
+`source=` is `platform` (fetched and verified), `cache` (the deployment's artifact from the profile
+cache) or `last-verified-cache` (the deployment could not be read). A server without a mission logs
+`[TBD][Mission] NO MISSION - ...` (the platform answered `NO_DEPLOYMENT`, or the verified artifact
+failed validation) or `[TBD][Mission] NO MISSION YET - ...` (the deployment or artifact could not be
+loaded; the read repeats) at ERROR, and stays in LOADING.
 
 **Gone since June (T-612 — do not grep for these):** `[TBD] Mission loaded from backend:`,
 `built slot spawn`, `spawn requested`, `[TBD][Loadout][Player]`. The only `Mission loaded`

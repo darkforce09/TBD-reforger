@@ -77,13 +77,18 @@ pub(super) async fn upsert_match(
     };
 
     if let Some(src) = source_match_id {
-        let existing: Option<(Uuid, Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
-            "SELECT id, event_id, mission_id FROM matches WHERE source_match_id = $1",
+        let existing: Option<(Uuid, Option<Uuid>, Option<Uuid>, bool)> = sqlx::query_as(
+            "SELECT id, event_id, mission_id, finalized_at IS NOT NULL FROM matches WHERE source_match_id = $1",
         )
         .bind(src)
         .fetch_optional(&mut *tx)
         .await?;
-        if let Some((id, prior_event, prior_mission)) = existing {
+        if let Some((id, prior_event, prior_mission, finalized)) = existing {
+            if finalized && outcome == MissionOutcome::Pending {
+                return Err(ApiError::conflict(
+                    "a finalized match cannot return to pending",
+                ));
+            }
             // `COALESCE($n, <column>)` — a bare column name on the right of a SET reads the
             // pre-update row, so an omitted field keeps what is already there instead of
             // overwriting it with a decoded default. `outcome` is bound unconditionally
@@ -121,7 +126,7 @@ pub(super) async fn upsert_match(
                   terrain = COALESCE($3, terrain), \
                   started_at = COALESCE($4, started_at), \
                   ended_at = COALESCE($5, ended_at), \
-                  outcome = $6, \
+                  outcome = $6, finalized_at = COALESCE(finalized_at, CASE WHEN $6::mission_outcome <> 'pending' THEN clock_timestamp() END), \
                   winning_faction = COALESCE($7, winning_faction), \
                   aar_replay_url = COALESCE($8, aar_replay_url) \
                  WHERE id = $9 \
@@ -163,8 +168,8 @@ pub(super) async fn upsert_match(
     let row: (Uuid, Option<Uuid>) = sqlx::query_as(
         "INSERT INTO matches \
          (source_match_id, event_id, mission_id, terrain, started_at, ended_at, outcome, \
-          winning_faction, aar_replay_url, created_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, ''), COALESCE($9, ''), now()) \
+          winning_faction, aar_replay_url, created_at, finalized_at) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, ''), COALESCE($9, ''), now(), CASE WHEN $7::mission_outcome <> 'pending' THEN clock_timestamp() END) \
          RETURNING id, event_id",
     )
     .bind(source_match_id)

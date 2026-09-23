@@ -44,6 +44,7 @@ pub enum RegistrationState {
     Withdrawn,
     Attended,
     NoShow,
+    LegacyUnknown,
 }
 
 impl RegistrationState {
@@ -55,6 +56,7 @@ impl RegistrationState {
             RegistrationState::Withdrawn => "withdrawn",
             RegistrationState::Attended => "attended",
             RegistrationState::NoShow => "no_show",
+            RegistrationState::LegacyUnknown => "legacy_unknown",
         }
     }
 }
@@ -148,6 +150,8 @@ pub struct EventRegistration {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub slot_id: Option<Uuid>,
     pub state: RegistrationState,
+    pub reservation_state: RegistrationState,
+    pub attendance_state: Option<RegistrationState>,
     #[serde(with = "rfc3339_utc")]
     pub registered_at: DateTime<Utc>,
 }

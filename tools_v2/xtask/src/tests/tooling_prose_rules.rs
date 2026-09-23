@@ -87,12 +87,6 @@ fn history_word_pattern() -> Regex {
 /// A shell, Python or Node source file name. The tooling ships none of them.
 const SCRIPT_FILE_NAME: &str = r"[A-Za-z0-9_./-]+\.(sh|py|mjs|cjs)\b";
 
-/// The one script name that is not a deleted script: `render_agent_files` writes it onto the game
-/// host on every staging deploy, systemd socket-activates it there, and
-/// `apps/website/api_v2/tests/game_agent_rcon.rs` asserts the file name. Renaming it would change a
-/// live remote artifact, so the rule names it instead.
-const LIVE_REMOTE_SCRIPT: &str = "tbd-reforger-agent.sh";
-
 /// A repository path literal. Only a layout module may spell one.
 const REPOSITORY_PATH_LITERAL: &str = r#""(scripts|docs|\.ai|documentation_v2)/"#;
 
@@ -292,10 +286,9 @@ fn nothing_names_a_script_file_the_tooling_does_not_ship() {
     let root = crate::core::repository_root::test_repo_root();
     let files = tracked_tooling_files(&root);
     let pattern = Regex::new(SCRIPT_FILE_NAME).expect("script file name");
-    let select = |path: &str, line: &str| {
+    let select = |path: &str, _line: &str| {
         (path.ends_with(".rs") || path.ends_with(".md") || path.ends_with(".toml"))
             && !path.starts_with(SYNTHETIC_OFFENDER_TESTS)
-            && !line.contains(LIVE_REMOTE_SCRIPT)
     };
     assert_clean(
         "a shell, Python or Node file name survives; name the command that does the work:",
@@ -438,9 +431,6 @@ fn every_rule_fires_on_a_line_that_breaks_it() {
 
     let script = Regex::new(SCRIPT_FILE_NAME).expect("script file name");
     assert_eq!(lines.iter().filter(|l| script.is_match(l)).count(), 1);
-    let rendered = format!("writes {LIVE_REMOTE_SCRIPT} onto the host");
-    assert!(script.is_match(&rendered));
-    assert!(rendered.contains(LIVE_REMOTE_SCRIPT));
 
     let token = Regex::new(r"\b[a-z0-9_]{2,}\.rs\b").expect("rust file token");
     let named: Vec<&str> = lines

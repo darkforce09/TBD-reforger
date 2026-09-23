@@ -3,6 +3,16 @@ use std::path::PathBuf;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum ModCmd {
+    /// Validate a complete, source-only Workbench equipment and vehicle generation.
+    ValidateEquipmentVehicleExport {
+        #[arg(long)]
+        input: PathBuf,
+    },
+    /// Validate, seal and atomically publish a Workbench equipment and vehicle generation.
+    PublishEquipmentVehicleExport {
+        #[arg(long)]
+        input: PathBuf,
+    },
     /// Assert a TBD dedicated-server console.log shows a HEALTHY boot.
     /// Exit: 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "remote-logs")]
@@ -37,9 +47,6 @@ pub(crate) enum ModCmd {
         /// Extended-regex display filter (default: the TBD tag/event pattern)
         pattern: Option<String>,
     },
-    /// Manual mod/website test suite
-    #[command(name = "manual-test")]
-    ManualTest,
     /// TBD mod/Workbench MCP bootstrap
     #[command(name = "dev-bootstrap")]
     DevBootstrap {
@@ -50,14 +57,14 @@ pub(crate) enum ModCmd {
     /// Argument gate in front of `mod playtest`; bare invocation prints usage and exits 2
     #[command(name = "dev-server", disable_help_flag = true)]
     DevServer {
-        /// Passthrough to the playtest server (`--mission-id=…`, `--admin=…`, …).
+        /// Passthrough to the playtest server (`--mission=…`, `--admin=…`, …).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Switch Workbench profile missionId / stage a golden
+    /// Stage a golden as the Workbench profile's cached artifact, or clear it
     #[command(name = "test-mission")]
     TestMission {
-        /// Golden basename (no .json), `backend`, or omit to show current
+        /// Golden basename (no .json), `backend` (clear the cache), or omit to show current
         target: Option<String>,
     },
     /// One-time staging-host discovery + mkdir
@@ -66,9 +73,10 @@ pub(crate) enum ModCmd {
     /// Insert the pinned Milestone #1 website announcement
     #[command(name = "seed-announcement")]
     SeedAnnouncement,
-    /// Game-server API smoke over the mod bridge
-    #[command(name = "test-phase1-api")]
-    TestPhase1Api,
+    /// The game-runtime API a server's mod calls, with its `mod_runtime` credential
+    /// (`TBD_MACHINE_CREDENTIAL`; `TBD_API_BASE`).
+    #[command(name = "test-game-runtime-api")]
+    TestGameRuntimeApi,
     /// Dedicated playtest server lifecycle
     #[command(name = "playtest", disable_help_flag = true)]
     Playtest {
@@ -93,7 +101,7 @@ pub(crate) enum ModCmd {
     /// Exit: 0 PASS · 1 CODE · 2 usage · 3 ENVIRONMENT.
     #[command(name = "world-boot", disable_help_flag = true)]
     WorldBoot {
-        /// Passthrough (`--selftest`, `--compiled`, `--mission=…`, `--keep-logs`).
+        /// Passthrough (`--selftest`, `--compiled[=uuid]`, `--mission=<golden>`, `--keep-logs`).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },

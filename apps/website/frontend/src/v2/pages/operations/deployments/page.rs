@@ -5,9 +5,10 @@
 //! history table, the leave-of-absence panel and, for an administrator, the leave review queue.
 //! **Position:** the `/deployments` route, rendered inside the navigation frame behind the
 //! sign-in gate.
-//! **Signals & state:** reads the session store from context for the caller's name, tier and
-//! administrator status. Owns the one resource; both lists arrive in the same payload, so
-//! nothing on this page can go stale against anything else on it.
+//! **Signals & state:** reads the caller's name and tier, which also decide administrator status,
+//! from the session store through a memo, so a profile poll that changes neither does not rebuild
+//! the record. Owns the one resource; both lists arrive in the same payload, so nothing on this
+//! page can go stale against anything else on it.
 //! **Invariants:** the personal-telemetry block is an explicit empty affordance, not invented
 //! numbers — the only genuinely served figure is the total deployment count. The fetch is a
 //! browser-only path and resolves to `None` in a native build.
@@ -49,10 +50,27 @@ pub fn DeploymentsPage() -> impl IntoView {
     }
 }
 
+/// Whose service record the page shows: the caller's display name and tier.
+#[derive(Clone, PartialEq)]
+struct RecordHolder {
+    username: String,
+    role: Role,
+}
+
 /// The signed-in half of the page: the one fetch and its two render states.
 #[component]
 fn DeploymentsInner() -> impl IntoView {
     let store = expect_context::<AuthStore>();
+    // Memoized, so the record is rebuilt when the caller's name or tier changes and not on every
+    // profile poll; a rebuild discards the leave-of-absence form's unsent input.
+    let holder = Memo::new(move |_| {
+        store.user.with(|user| {
+            user.as_ref().map(|u| RecordHolder {
+                username: u.username.clone(),
+                role: u.role,
+            })
+        })
+    });
     let data = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
@@ -73,7 +91,7 @@ fn DeploymentsInner() -> impl IntoView {
             {move || {
                 data.get()
                     .map(|opt| match opt {
-                        Some(d) => dossier(d).into_any(),
+                        Some(d) => dossier(d, holder.get()).into_any(),
                         None => {
                             view! { <p class="text-error">"Failed to load data."</p> }.into_any()
                         }
@@ -83,15 +101,16 @@ fn DeploymentsInner() -> impl IntoView {
     }
 }
 
-/// The two-column service record, over a fetched payload.
-fn dossier(d: Deployments) -> impl IntoView {
-    let user = expect_context::<AuthStore>().user.get();
-    let username = user
+/// The two-column service record, over a fetched payload and the caller it belongs to.
+fn dossier(d: Deployments, holder: Option<RecordHolder>) -> impl IntoView {
+    let username = holder
         .as_ref()
-        .map(|u| u.username.clone())
+        .map(|h| h.username.clone())
         .unwrap_or_default();
-    let role = user.as_ref().map(|u| u.role.as_str()).unwrap_or_default();
-    let is_admin = user.as_ref().is_some_and(|u| matches!(u.role, Role::Admin));
+    let role = holder.as_ref().map(|h| h.role.as_str()).unwrap_or_default();
+    let is_admin = holder
+        .as_ref()
+        .is_some_and(|h| matches!(h.role, Role::Admin));
     let has_active = !d.upcoming.is_empty();
     let has_history = !d.service_history.is_empty();
     let upcoming = d.upcoming.clone();

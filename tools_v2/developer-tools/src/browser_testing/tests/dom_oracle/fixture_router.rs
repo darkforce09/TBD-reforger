@@ -153,3 +153,37 @@ fn the_refusal_names_every_missing_file_and_the_url_that_wanted_it() {
     assert!(msg.contains("GET__admin__leave-requests.json"));
     assert!(msg.contains("/api/v1/admin/leave-requests"));
 }
+
+#[test]
+fn a_seeded_capture_refuses_api_requests_without_a_bearer() {
+    let none = serde_json::json!({});
+    assert!(refuses_without_bearer(&format!("{BASE}/api/v1/me"), &none));
+    assert!(refuses_without_bearer(
+        &format!("{BASE}/api/v1/events?page=1"),
+        &none
+    ));
+    let blank = serde_json::json!({ "Authorization": "Bearer  " });
+    assert!(refuses_without_bearer(&format!("{BASE}/api/v1/me"), &blank));
+}
+
+#[test]
+fn a_bearer_or_a_credential_exchange_is_answered_from_the_corpus() {
+    let bearer = serde_json::json!({ "authorization": "Bearer a.b.c" });
+    assert!(!refuses_without_bearer(
+        &format!("{BASE}/api/v1/me"),
+        &bearer
+    ));
+    let none = serde_json::json!({});
+    assert!(!refuses_without_bearer(
+        &format!("{BASE}/api/v1/auth/refresh"),
+        &none
+    ));
+    assert!(!refuses_without_bearer(
+        &format!("{BASE}/api/v1/auth/logout"),
+        &none
+    ));
+    assert!(!refuses_without_bearer(
+        &format!("{BASE}/pkg/app.wasm"),
+        &none
+    ));
+}

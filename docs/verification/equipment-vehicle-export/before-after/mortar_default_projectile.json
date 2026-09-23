@@ -1,0 +1,76 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{8094D99689ABE241}Prefabs/Weapons/Mortars/M252/Mortar_M252.et",
+  "before": {
+    "file": "equipment/statics/mortars.json",
+    "values": {
+      "physical": {
+        "mass_kg": 15,
+        "debris_model": null
+      },
+      "armament": {
+        "has_armament": true,
+        "is_integral": true,
+        "mounted_weapon_template": null,
+        "caliber": "81mm",
+        "magazine_well": "MagazineWellMortar",
+        "supported_ammo": [
+          "{38BAE094333E31BF}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_HE_M821.et"
+        ],
+        "initial_magazines": []
+      }
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/80/8094D99689ABE241.json",
+    "source_file": "sources/arma_reforger/80/8094D99689ABE241.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/19/properties/Attributes/properties/ItemPhysAttributes",
+        "class_name": "ItemPhysicalAttributes",
+        "facts": {
+          "Weight": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": "kg",
+            "unit_evidence": "ArmaReforgerScriptAPIPublic/ItemPhysicalAttributes.GetWeight native attribute documentation",
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{8094D99689ABE241}Prefabs/Weapons/Mortars/M252/Mortar_M252.et",
+              "node_id": "root/properties/components/19/properties/Attributes/properties/ItemPhysAttributes",
+              "property": "Weight",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/27/properties/components/0",
+        "class_name": "SCR_MortarMuzzleComponent",
+        "facts": {
+          "AmmoTemplate": {
+            "status": "present",
+            "value": "{38BAE094333E31BF}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_HE_M821.et",
+            "native_type": "RESOURCE_NAME",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{8094D99689ABE241}Prefabs/Weapons/Mortars/M252/Mortar_M252.et",
+              "node_id": "root/properties/components/27/properties/components/0",
+              "property": "AmmoTemplate",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

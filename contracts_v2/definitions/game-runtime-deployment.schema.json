@@ -1,0 +1,172 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DeploymentDecision",
+  "description": "POST /api/v1/game-runtime/sessions/:sessionId/deployments response (mod_runtime machine credential). A refusal is a decision (200 with decision denied), not an error. An allowed decision is recorded under the runtime's player_life_id, so a retried request returns it unchanged.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/DeploymentAllowed"
+    },
+    {
+      "$ref": "#/definitions/DeploymentDenied"
+    }
+  ],
+  "definitions": {
+    "DeploymentAllowed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "occupancy_id",
+        "runtime_session_id",
+        "event_mission_id",
+        "orbat_slot_id",
+        "arma_id",
+        "player_life_id",
+        "authorized_by",
+        "started_at"
+      ],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "const": "allowed"
+        },
+        "occupancy_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "runtime_session_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "orbat_slot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "player_life_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authorized_by": {
+          "type": "string",
+          "enum": [
+            "reservation",
+            "open_slot_policy"
+          ]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "An open life: what entitled the player to the slot, and when the life started."
+    },
+    "DeploymentDenied": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision",
+        "reason",
+        "message"
+      ],
+      "properties": {
+        "decision": {
+          "type": "string",
+          "const": "denied"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "IDENTITY_NOT_LINKED",
+            "ACCOUNT_UNAVAILABLE",
+            "SLOT_RESERVED",
+            "RESERVED_ANOTHER_SLOT",
+            "ACCESS_POLICY",
+            "MEMBERSHIP_VERIFICATION_REQUIRED",
+            "LIVE_SLOT_OCCUPIED",
+            "PLAYER_ALREADY_DEPLOYED",
+            "SLOT_NOT_IN_LOADED_MISSION"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "occupancy_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "description": "A refusal and its reason; occupancy_id names the open life that blocks a player already deployed."
+    },
+    "DeploymentRequest": {
+      "description": "POST /api/v1/game-runtime/sessions/:sessionId/deployments body. event_mission_id and orbat_slot_id come from the roster's slots; player_life_id is chosen by the runtime per spawn attempt and identifies retries.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_mission_id",
+        "orbat_slot_id",
+        "arma_id",
+        "player_life_id"
+      ],
+      "properties": {
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "orbat_slot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "arma_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "player_life_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "EndedLife": {
+      "description": "POST /api/v1/game-runtime/sessions/:sessionId/deployments/:occupancyId/end response. Ending names exactly one life; repeating it reports how that life ended.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "occupancy_id",
+        "ended",
+        "end_reason"
+      ],
+      "properties": {
+        "occupancy_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "ended": {
+          "type": "boolean",
+          "const": true
+        },
+        "end_reason": {
+          "type": "string",
+          "enum": [
+            "life_ended",
+            "session_superseded",
+            "session_expired",
+            "session_ended",
+            "credential_revoked"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,44 +1,31 @@
-//! Leader and admin writes on an ORBAT: seating a member in a slot, clearing a seat, and
-//! holding or releasing a whole squad.
-//!
-//! The squad hold gates the first two. Outside an admin, only the leader currently holding a
-//! squad may seat or clear its slots, which is a stricter rule than self-service registration
-//! applies — see [`can_manage_squad`].
-
+//! Squad managers change seats under the event-scope lock order with current authority,
+//! eligibility of the assignee, quota, capacity and seatability of existing place holders.
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json, Response};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::slot_registration::{release_other_seats, squad_reserved_by};
+use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::LeaderUser;
-use crate::operations::models::event::{OrbatReservation, OrbatSlot};
+use crate::identity_and_access::services::discord_membership_enrollment::request_event_membership_verification;
+use crate::operations::models::event::OrbatReservation;
 use crate::operations::services::event_lookup::load_em;
-
-/// Admin, or the leader holding this squad. This is stricter than the gate in
-/// `register_for_event_mission`: an *unreserved* squad is freely claimable there and NOT
-/// manageable here, so the two share [`squad_reserved_by`] but not the decision. The reservation
-/// lookup is name-scoped, not faction-scoped — that limit is the schema's and is documented on
-/// [`squad_reserved_by`].
-async fn can_manage_squad(
-    pool: &PgPool,
-    is_admin: bool,
-    me: &str,
-    em_id: Uuid,
-    squad: &str,
-) -> bool {
-    if is_admin {
-        return true;
-    }
-    let res = squad_reserved_by(pool, em_id, squad).await.ok().flatten();
-    res.as_deref() == Some(me)
-}
+use crate::operations::services::event_reservations::{
+    claim_refusals::awaits_membership_verification,
+    mutation_authority::{
+        load_slot, require_leader, require_registration_open, require_squad_management,
+    },
+    reservation_release::{clear_seat, release_reasons, release_unused_allocations},
+    reservation_scope::{AttachmentScope, ReservationScope},
+    scope_snapshot::ScopeSnapshot,
+    seat_claims::{ClaimRequest, apply_claim, decide_claim},
+    waitlist_promotion::promote_waiting_participants,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct AssignSlotInput {
@@ -46,8 +33,6 @@ pub struct AssignSlotInput {
     discord_id: String,
 }
 
-/// `PUT /api/v1/event-missions/:emid/slots/:slotId/assign` — assign a user (leader/admin).
-///
 /// @route PUT /api/v1/event-missions/:emid/slots/:slotId/assign
 pub async fn assign_slot(
     State(state): State<AppState>,
@@ -56,84 +41,87 @@ pub async fn assign_slot(
     body: Result<Json<AssignSlotInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
-    let Ok(slot_id) = Uuid::parse_str(&slot_id_s) else {
-        return Err(ApiError::bad_request("invalid slot id"));
-    };
+    let slot_id =
+        Uuid::parse_str(&slot_id_s).map_err(|_| ApiError::bad_request("invalid slot id"))?;
     let Json(input) = body.map_err(|_| ApiError::bad_request("discord_id required"))?;
-    if input.discord_id.is_empty() {
-        return Err(ApiError::bad_request("discord_id required"));
-    }
-    let exists: Option<i32> = sqlx::query_scalar("SELECT 1 FROM users WHERE discord_id = $1")
-        .bind(&input.discord_id)
-        .fetch_optional(&state.pool)
-        .await?;
-    if exists.is_none() {
-        return Err(ApiError::bad_request("user not found"));
-    }
-    let slot: Option<OrbatSlot> =
-        sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
-            .bind(slot_id)
-            .bind(em.id)
-            .fetch_optional(&state.pool)
-            .await?;
-    let Some(slot) = slot else {
-        return Err(ApiError::not_found("slot not found"));
-    };
-    let is_admin = leader.0.role == "admin";
-    if !can_manage_squad(
-        &state.pool,
-        is_admin,
-        &leader.0.discord_id,
-        em.id,
-        &slot.squad,
-    )
-    .await
-    {
-        return Err(ApiError::forbidden(
-            "reserve this squad to assign its slots",
+    if input.discord_id.is_empty() || input.discord_id.len() > 128 {
+        return Err(ApiError::bad_request(
+            "discord_id required (maximum 128 bytes)",
         ));
     }
-
     let mut tx = state.pool.begin().await?;
-    // ══ A LEADER ASSIGNMENT IS A SEAT MOVE TOO ════════════════════════════════════════════
-    // The same seat-move register performs, reached by a different door: the claim below writes
-    // the new seat and the upsert under it repoints the registration at that seat, so any seat
-    // the assignee already holds in this operation has to be released in the same breath or they
-    // end up with one person, two seats and one registration row. A leader filling a squad from
-    // the member directory is the likeliest way to reach it, because the directory does not show
-    // that the person is already seated elsewhere. A test drives PUT .../slots/:id/assign against
-    // a user already holding another seat in the same operation and asserts they end up with one.
-    //
-    // The mission-row lock is needed for the same reason register takes it: release-then-claim is
-    // a check-then-write pair, so without it a leader assignment and a self-registration can
-    // interleave between the release and the claim. Same row, same order as the other two
-    // handlers, so there is no lock-ordering cycle.
-    sqlx::query("SELECT id FROM event_missions WHERE id = $1 FOR UPDATE")
-        .bind(em.id)
-        .fetch_one(&mut *tx)
-        .await?;
-    release_other_seats(&mut tx, em.id, &input.discord_id, Some(slot_id)).await?;
-    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
-        .bind(&input.discord_id)
-        .bind(slot_id)
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) \
-         VALUES ($1, $2, $3, 'registered') \
-         ON CONFLICT (event_mission_id, discord_id) DO UPDATE SET slot_id = EXCLUDED.slot_id, state = EXCLUDED.state",
+    let scope = ReservationScope::lock(
+        &mut tx,
+        em.event_id,
+        AttachmentScope::Active,
+        Some((&leader.0, &state.cfg)),
+        std::slice::from_ref(&input.discord_id),
+    )
+    .await?;
+    scope.require_active_mission(em.id)?;
+    let actor = scope.actor()?.clone();
+    let slot = load_slot(&mut tx, em.id, slot_id).await?;
+    require_squad_management(&mut tx, &actor, em.id, &slot.squad).await?;
+    let snapshot = ScopeSnapshot::load(&mut tx, &scope, &state.cfg.discord_guild_id).await?;
+    if !snapshot
+        .facts(&input.discord_id)
+        .is_some_and(|facts| facts.available)
+    {
+        return Err(ApiError::forbidden("account is unavailable"));
+    }
+    require_registration_open(&scope.event, actor.role == "admin")?;
+    let unchanged: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2
+         AND slot_id = $3 AND reservation_state = 'registered' AND withdrawn_at IS NULL AND release_reason IS NULL)",
     )
     .bind(em.id)
     .bind(&input.discord_id)
     .bind(slot_id)
-    .execute(&mut *tx)
+    .fetch_one(&mut *tx)
+    .await?;
+    if unchanged && slot.assigned_to.as_deref() == Some(&input.discord_id) {
+        tx.commit().await?;
+        return Ok(Json(json!({ "assigned_to": input.discord_id })));
+    }
+    let request = ClaimRequest {
+        mission: em.id,
+        account: &input.discord_id,
+        seat: Some(slot_id),
+        // Squad management authority was checked above; holds never block their manager.
+        bypass_squad_hold: true,
+    };
+    let decision = match decide_claim(&mut tx, &snapshot, &request).await {
+        Ok(decision) => decision,
+        Err(error) => {
+            if awaits_membership_verification(&error) {
+                drop(tx);
+                request_event_membership_verification(
+                    &state.pool,
+                    em.event_id,
+                    &input.discord_id,
+                    &state.cfg.discord_guild_id,
+                )
+                .await?;
+            }
+            return Err(error);
+        }
+    };
+    // Moving the assignee between seats frees no place, so nobody is promoted here.
+    apply_claim(&mut tx, scope.event.id, &request, decision).await?;
+    append_actor_audit(
+        &mut tx,
+        &actor.discord_id,
+        "event.slot_assigned",
+        "orbat_slot",
+        &slot_id.to_string(),
+        &format!("Assigned account {} to slot {slot_id}", input.discord_id),
+    )
     .await?;
     tx.commit().await?;
     Ok(Json(json!({ "assigned_to": input.discord_id })))
 }
 
-/// `DELETE /api/v1/event-missions/:emid/slots/:slotId/assign` — unassign (leader/admin).
-///
+/// Clearing a seat retains the participant's allocated reservation until explicit withdrawal.
 /// @route DELETE /api/v1/event-missions/:emid/slots/:slotId/assign
 pub async fn clear_slot(
     State(state): State<AppState>,
@@ -141,48 +129,46 @@ pub async fn clear_slot(
     Path((emid, slot_id_s)): Path<(String, String)>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
-    let Ok(slot_id) = Uuid::parse_str(&slot_id_s) else {
-        return Err(ApiError::bad_request("invalid slot id"));
-    };
-    let slot: Option<OrbatSlot> =
-        sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
-            .bind(slot_id)
-            .bind(em.id)
-            .fetch_optional(&state.pool)
-            .await?;
-    let Some(slot) = slot else {
-        return Err(ApiError::not_found("slot not found"));
-    };
-    let is_admin = leader.0.role == "admin";
-    if !can_manage_squad(
-        &state.pool,
-        is_admin,
-        &leader.0.discord_id,
-        em.id,
-        &slot.squad,
-    )
-    .await
-    {
-        return Err(ApiError::forbidden(
-            "reserve this squad to manage its slots",
-        ));
-    }
+    let slot_id =
+        Uuid::parse_str(&slot_id_s).map_err(|_| ApiError::bad_request("invalid slot id"))?;
     let mut tx = state.pool.begin().await?;
-    sqlx::query("UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL WHERE id = $1 AND event_mission_id = $2")
-        .bind(slot_id)
-        .bind(em.id)
-        .execute(&mut *tx)
+    let scope = ReservationScope::lock(
+        &mut tx,
+        em.event_id,
+        AttachmentScope::Active,
+        Some((&leader.0, &state.cfg)),
+        &[],
+    )
+    .await?;
+    scope.require_active_mission(em.id)?;
+    let actor = scope.actor()?.clone();
+    let slot = load_slot(&mut tx, em.id, slot_id).await?;
+    require_squad_management(&mut tx, &actor, em.id, &slot.squad).await?;
+    let (occupant, repaired) = clear_seat(&mut tx, em.id, slot_id).await?;
+    if let Some(occupant) = &occupant {
+        release_unused_allocations(
+            &mut tx,
+            scope.event.id,
+            std::slice::from_ref(occupant),
+            release_reasons::SEAT_CLEARED,
+        )
         .await?;
-    sqlx::query("UPDATE event_registrations SET slot_id = NULL WHERE event_mission_id = $1 AND slot_id = $2")
-        .bind(em.id)
-        .bind(slot_id)
-        .execute(&mut *tx)
+        promote_waiting_participants(&mut tx, &scope, &state.cfg.discord_guild_id).await?;
+    }
+    if occupant.is_some() || repaired > 0 {
+        append_actor_audit(
+            &mut tx,
+            &actor.discord_id,
+            "event.slot_cleared",
+            "orbat_slot",
+            &slot_id.to_string(),
+            "Cleared assigned seat; reservation allocation remains until withdrawal",
+        )
         .await?;
+    }
     tx.commit().await?;
     Ok(Json(json!({ "cleared": true })))
 }
-
-// --- Squad reservation (leader) ---
 
 #[derive(Debug, Deserialize)]
 pub struct SquadBody {
@@ -190,8 +176,6 @@ pub struct SquadBody {
     squad: String,
 }
 
-/// `POST /api/v1/event-missions/:emid/squads/reserve` — hold a squad (leader).
-///
 /// @route POST /api/v1/event-missions/:emid/squads/reserve
 pub async fn reserve_squad(
     State(state): State<AppState>,
@@ -204,46 +188,58 @@ pub async fn reserve_squad(
     if input.squad.is_empty() {
         return Err(ApiError::bad_request("squad is required"));
     }
-    let me = &leader.0.discord_id;
-
-    let n: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND squad = $2",
+    let mut tx = state.pool.begin().await?;
+    let scope = ReservationScope::lock(
+        &mut tx,
+        em.event_id,
+        AttachmentScope::Active,
+        Some((&leader.0, &state.cfg)),
+        &[],
+    )
+    .await?;
+    scope.require_active_mission(em.id)?;
+    let actor = scope.actor()?.clone();
+    require_leader(&actor)?;
+    require_registration_open(&scope.event, actor.role == "admin")?;
+    let exists: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM orbat_slots WHERE event_mission_id = $1 AND squad = $2)",
     )
     .bind(em.id)
     .bind(&input.squad)
-    .fetch_one(&state.pool)
+    .fetch_one(&mut *tx)
     .await?;
-    if n == 0 {
+    if !exists {
         return Err(ApiError::not_found("squad not found in this ORBAT"));
     }
-
     let existing: Option<OrbatReservation> = sqlx::query_as(
         "SELECT * FROM orbat_reservations WHERE event_mission_id = $1 AND squad = $2",
     )
     .bind(em.id)
     .bind(&input.squad)
-    .fetch_optional(&state.pool)
+    .fetch_optional(&mut *tx)
     .await?;
     if let Some(existing) = existing {
-        if existing.reserved_by != *me {
+        if existing.reserved_by != actor.discord_id {
             return Err(ApiError::conflict("squad is already reserved"));
         }
+        tx.commit().await?;
         return Ok((StatusCode::OK, Json(existing)).into_response());
     }
-
-    let res: OrbatReservation = sqlx::query_as(
-        "INSERT INTO orbat_reservations (event_mission_id, squad, reserved_by) VALUES ($1, $2, $3) RETURNING *",
+    let res: OrbatReservation = sqlx::query_as("INSERT INTO orbat_reservations (event_mission_id, squad, reserved_by) VALUES ($1, $2, $3) RETURNING *")
+        .bind(em.id).bind(&input.squad).bind(&actor.discord_id).fetch_one(&mut *tx).await?;
+    append_actor_audit(
+        &mut tx,
+        &actor.discord_id,
+        "event.squad_reserved",
+        "event_mission",
+        &em.id.to_string(),
+        &format!("Reserved squad {}", input.squad),
     )
-    .bind(em.id)
-    .bind(&input.squad)
-    .bind(me)
-    .fetch_one(&state.pool)
     .await?;
+    tx.commit().await?;
     Ok((StatusCode::CREATED, Json(res)).into_response())
 }
 
-/// `POST /api/v1/event-missions/:emid/squads/release` — lift a squad hold (leader/admin).
-///
 /// @route POST /api/v1/event-missions/:emid/squads/release
 pub async fn release_squad(
     State(state): State<AppState>,
@@ -256,18 +252,29 @@ pub async fn release_squad(
     if input.squad.is_empty() {
         return Err(ApiError::bad_request("squad is required"));
     }
+    let mut tx = state.pool.begin().await?;
+    let scope = ReservationScope::lock(
+        &mut tx,
+        em.event_id,
+        AttachmentScope::Active,
+        Some((&leader.0, &state.cfg)),
+        &[],
+    )
+    .await?;
+    scope.require_active_mission(em.id)?;
+    let actor = scope.actor()?.clone();
+    require_leader(&actor)?;
     let res: Option<OrbatReservation> = sqlx::query_as(
         "SELECT * FROM orbat_reservations WHERE event_mission_id = $1 AND squad = $2",
     )
     .bind(em.id)
     .bind(&input.squad)
-    .fetch_optional(&state.pool)
+    .fetch_optional(&mut *tx)
     .await?;
     let Some(res) = res else {
         return Err(ApiError::not_found("squad is not reserved"));
     };
-    let is_admin = leader.0.role == "admin";
-    if res.reserved_by != leader.0.discord_id && !is_admin {
+    if res.reserved_by != actor.discord_id && actor.role != "admin" {
         return Err(ApiError::forbidden(
             "only the reserver or an admin can release this squad",
         ));
@@ -275,7 +282,17 @@ pub async fn release_squad(
     sqlx::query("DELETE FROM orbat_reservations WHERE event_mission_id = $1 AND squad = $2")
         .bind(em.id)
         .bind(&input.squad)
-        .execute(&state.pool)
+        .execute(&mut *tx)
         .await?;
+    append_actor_audit(
+        &mut tx,
+        &actor.discord_id,
+        "event.squad_released",
+        "event_mission",
+        &em.id.to_string(),
+        &format!("Released squad {}", input.squad),
+    )
+    .await?;
+    tx.commit().await?;
     Ok(Json(json!({ "released": true })))
 }

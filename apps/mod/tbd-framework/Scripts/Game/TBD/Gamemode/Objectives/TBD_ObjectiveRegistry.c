@@ -22,7 +22,7 @@
 //! caller — `TBD_ObjectivesComponent` — is authority-gated.
 //!
 //! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
-//! Statics OUTLIVE A WORLD inside one process (recorded landmine — `SelectMissionByNumber` restarts
+//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction` restarts
 //! the scenario in-process). `TBD_ObjectivesComponent.OnDelete` MUST call `Clear()`, or mission B
 //! inherits mission A's captured objectives and can win at kickoff.
 //! ============================================================================================
@@ -82,7 +82,7 @@
 //! is where an operator finds out that a document authored something this build does not run.
 //!
 //! == What this file CANNOT prove ==============================================================
-//! The gate is `cargo xtask mod compile`. `flatten.rs` emits NO `objectives[]` on `/compiled`
+//! The gate is `cargo xtask mod compile`. `flatten.rs` emits NO `objectives[]` into compiled artifacts
 //! (that is T-946.36, not this slice), so the only document that reaches this reader today is a
 //! hand-staged schemaVersion 1.3 one -- `contracts_v2/fixtures/missions/valid/schema-1_3-wire-fields.json`
 //! is the staged case, the same precedent T-685 shipped against. Whether an objective actually
@@ -160,7 +160,7 @@ class TBD_ObjectiveEntityDocStruct
 //! answer for a machine that is not the authority.
 //!
 //! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
-//! Statics OUTLIVE A WORLD inside one process (recorded landmine -- `SelectMissionByNumber`
+//! Statics OUTLIVE A WORLD inside one process (recorded landmine -- `TBD_FleetLoadMissionAction`
 //! restarts the scenario in-process). `TBD_ObjectiveRegistry.Clear()` calls `Clear()` here, or
 //! mission B's objectives inherit mission A's framing.
 class TBD_ObjectiveEntityReader

@@ -6,6 +6,9 @@ use anyhow::Result;
 pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
     {
         let code = match cmd {
+            VerifyCmd::ApiReadiness { evidence, execute } => {
+                crate::verifications::api_readiness::verify(&find_repo_root()?, &evidence, execute)?
+            }
             VerifyCmd::FileLength => {
                 crate::verifications::language_bans::node_and_file_limits::verify_file_length()?
             }

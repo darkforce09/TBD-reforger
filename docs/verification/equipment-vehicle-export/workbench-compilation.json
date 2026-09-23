@@ -1,0 +1,6 @@
+{
+  "log_file": "/home/Samuel/.local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/logs/logs_2026-09-23_11-34-12/script.log",
+  "latest_successful_module_load": "12:36:05.498   SCRIPT       : Module: WorkbenchGame; loaded 292x files; 945x classes; used 3879K of static memory; defines: \"ENF_WB,WORKBENCH,PLATFORM_WINDOWS,ENABLE_DIAG,ENF_ENABLE_VHC_OVERRIDE,ENF_ENABLE_RPLCOMPONENT_IN_GAMECODE\"; CRC32: a36ff248",
+  "source_code_manifest": "source-code-manifest.json",
+  "cold_restart": "User restarted Workbench after the source-reader files were installed; subsequent changes use successful script reloads."
+}

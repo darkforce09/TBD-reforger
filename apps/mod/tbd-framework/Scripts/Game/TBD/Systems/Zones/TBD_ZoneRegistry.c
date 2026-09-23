@@ -10,7 +10,7 @@
 //!
 //! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
 //! A recorded landmine in this program is that statics OUTLIVE A WORLD inside one process
-//! (`SelectMissionByNumber` restarts the scenario in-process). A registry built for mission A and
+//! (`TBD_FleetLoadMissionAction` restarts the scenario in-process). A registry built for mission A and
 //! left standing would confine mission B's players to mission A's AO. `Clear()` exists for that
 //! and `TBD_PlayAreaComponent.OnDelete` is required to call it.
 //!

@@ -1,10 +1,11 @@
-//! `ingest_event_roster` filters whitespace `arma_id` and emits btrimmed keys.
+//! The game-runtime roster (`game_runtime_roster::event_roster`) filters whitespace `arma_id`
+//! and emits btrimmed keys.
 //!
 //! # Scope
 //!
 //! This binary is the HTTP half: plant a whitespace-only `users.arma_id` on an
-//! assigned seat and assert GET `/ingest/events/:id/roster` does **not** emit it as a seating
-//! key. Also pins that a padded real id emits the trimmed form (agreeing with refresh /
+//! assigned seat and assert GET `/game-runtime/events/:id/roster` does **not** emit it as a
+//! seating key. Also pins that a padded real id emits the trimmed form (agreeing with refresh /
 //! link-confirm / telemetry).
 
 use axum::Router;
@@ -32,10 +33,9 @@ const WS_ARMA: &str = " ";
 const SEED_ARMA: &str = "roster-ws-seed-arma-1";
 /// Real content id used for the positive + padded-emit cases (trimmed form).
 const REAL_ARMA: &str = "roster-ws-real-arma-1";
-const SVC: &str = "test-service-token";
 
-/// Editor payload: one BLUFOR squad / one SL seat. Attach without explicit `orbat` so
-/// materialize and roster `pair_slots` walk the same graph.
+/// Editor payload: one BLUFOR squad / one SL seat. Attach without explicit `orbat`, so the
+/// ORBAT the attach materializes and the artifact the deployment binds walk the same graph.
 const EDITOR_PAYLOAD: &str = r#"{
   "editor": {
     "factions": [{"id":"f1","key":"BLUFOR","name":"US","squadIds":["sq1"]}],
@@ -68,12 +68,20 @@ async fn cleanup(pool: &PgPool) {
         .execute(pool)
         .await
         .expect("roster-ws release arma");
+    sqlx::query(
+        "DELETE FROM mission_deployment_slots WHERE orbat_slot_id IN
+             (SELECT id FROM orbat_slots WHERE assigned_to = $1)",
+    )
+    .bind(ACTOR)
+    .execute(pool)
+    .await
+    .expect("roster-ws clear seat bindings");
     sqlx::query("DELETE FROM orbat_slots WHERE assigned_to = $1")
         .bind(ACTOR)
         .execute(pool)
         .await
         .expect("roster-ws clear seats");
-    sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
+    sqlx::query("WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1")
         .bind(ACTOR)
         .execute(pool)
         .await
@@ -84,20 +92,17 @@ async fn admin_token(app: &Router) -> String {
     common::dev_login_token(app, "roster_whitespace_arma_id", "admin").await
 }
 
+/// `bearer` is a member session or, for the game-runtime roster, a machine credential secret.
 async fn call(
     app: &Router,
     method: &str,
     uri: &str,
-    tok: Option<&str>,
-    svc: Option<&str>,
+    bearer: Option<&str>,
     body: Option<&str>,
 ) -> (StatusCode, Value) {
     let mut b = Request::builder().method(method).uri(uri);
-    if let Some(t) = tok {
+    if let Some(t) = bearer {
         b = b.header(header::AUTHORIZATION, format!("Bearer {t}"));
-    }
-    if let Some(s) = svc {
-        b = b.header("x-service-token", s);
     }
     if body.is_some() {
         b = b.header(header::CONTENT_TYPE, "application/json");
@@ -114,14 +119,19 @@ async fn call(
     )
 }
 
-/// Mission + published editor version + event attach (derive ORBAT) + one free slot id.
-async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
+/// Mission + published editor version + event attach (derive ORBAT), submitted, approved and
+/// deployed on the event's server through the real routes. Answers the event, one free slot id
+/// and the credential of the server's runtime.
+async fn seeded_event_with_slot(
+    app: &Router,
+    pool: &PgPool,
+    admin: &str,
+) -> (String, String, String) {
     let (st, m) = call(
         app,
         "POST",
         "/api/v1/missions",
         Some(admin),
-        None,
         Some(
             r#"{"title":"Roster Whitespace","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
         ),
@@ -137,7 +147,6 @@ async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
         "POST",
         &format!("/api/v1/missions/{mid}/versions"),
         Some(admin),
-        None,
         Some(&ver),
     )
     .await;
@@ -148,7 +157,6 @@ async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
         "POST",
         "/api/v1/events",
         Some(admin),
-        None,
         Some(r#"{"start_time":"2027-11-01T00:00:00Z"}"#),
     )
     .await;
@@ -162,7 +170,6 @@ async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
         "POST",
         &format!("/api/v1/events/{eid}/missions"),
         Some(admin),
-        None,
         Some(&attach),
     )
     .await;
@@ -175,7 +182,6 @@ async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
         &format!("/api/v1/event-missions/{emid}/orbat"),
         Some(admin),
         None,
-        None,
     )
     .await;
     assert_eq!(st, StatusCode::OK, "orbat: {orbat}");
@@ -183,7 +189,89 @@ async fn seeded_event_with_slot(app: &Router, admin: &str) -> (String, String) {
         .as_str()
         .expect("slot id")
         .to_string();
-    (eid, slot_id)
+
+    // The roster is the bindings of the deployment the server runs.
+    let (st, submitted) = call(
+        app,
+        "POST",
+        &format!("/api/v1/missions/{mid}/submit"),
+        Some(admin),
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "submit: {submitted}");
+    let (st, history) = call(
+        app,
+        "GET",
+        &format!("/api/v1/missions/{mid}/reviews"),
+        Some(admin),
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "reviews: {history}");
+    let artifact = history["reviews"][0]["artifact_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let approval = format!(r#"{{"artifact_id":"{artifact}"}}"#);
+    let (st, approved) = call(
+        app,
+        "POST",
+        &format!("/api/v1/approvals/{mid}/approve"),
+        Some(admin),
+        Some(&approval),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "approve: {approved}");
+    let scenario =
+        r#"{"scenario_id":"{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf","display_name":"Everon"}"#;
+    let (st, registered) = call(
+        app,
+        "PUT",
+        "/api/v1/fleet/scenarios/everon",
+        Some(admin),
+        Some(scenario),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "scenario: {registered}");
+    let secret =
+        common::event_runtime_credential(pool, eid.parse().unwrap(), common::DEV_LOGIN_USER).await;
+    let server: String =
+        sqlx::query_scalar("SELECT server_id::text FROM events WHERE id = $1::uuid")
+            .bind(&eid)
+            .fetch_one(pool)
+            .await
+            .unwrap();
+    let request = format!(
+        r#"{{"mission_id":"{mid}","artifact_id":"{artifact}","event_mission_id":"{emid}"}}"#
+    );
+    let (st, deployment) = call(
+        app,
+        "POST",
+        &format!("/api/v1/servers/{server}/deployments"),
+        Some(admin),
+        Some(&request),
+    )
+    .await;
+    assert_eq!(st, StatusCode::ACCEPTED, "deployment: {deployment}");
+    assert_eq!(deployment["bound_slots"], 1, "{deployment}");
+    (eid, slot_id, secret)
+}
+
+/// Roster wire version 2: the assignments as `armaId` → `slotUid`.
+fn seating(body: &Value) -> std::collections::BTreeMap<String, String> {
+    assert_eq!(body["version"], 2, "roster wire version: {body}");
+    body["assignments"]
+        .as_array()
+        .expect("assignments array")
+        .iter()
+        .map(|assignment| {
+            (
+                assignment["armaId"].as_str().unwrap().to_owned(),
+                assignment["slotUid"].as_str().unwrap().to_owned(),
+            )
+        })
+        .collect()
 }
 
 async fn assign_actor(pool: &PgPool, slot_id: &str) {
@@ -212,13 +300,13 @@ async fn plant_arma(pool: &PgPool, arma: &str) {
     assert_eq!(stored.as_deref(), Some(arma));
 }
 
-async fn roster(app: &Router, event_id: &str) -> Value {
+/// The roster as the runtime of the event's registered server reads it.
+async fn roster(app: &Router, runtime: &str, event_id: &str) -> Value {
     let (st, body) = call(
         app,
         "GET",
-        &format!("/api/v1/ingest/events/{event_id}/roster"),
-        None,
-        Some(SVC),
+        &format!("/api/v1/game-runtime/events/{event_id}/roster"),
+        Some(runtime),
         None,
     )
     .await;
@@ -238,13 +326,13 @@ async fn roster_whitespace_arma_id_is_not_seated() {
     };
     cleanup(&pool).await;
     let admin = admin_token(&app).await;
-    let (eid, slot_id) = seeded_event_with_slot(&app, &admin).await;
+    let (eid, slot_id, runtime) = seeded_event_with_slot(&app, &pool, &admin).await;
     plant_arma(&pool, WS_ARMA).await;
     assert!(WS_ARMA.trim().is_empty());
     assign_actor(&pool, &slot_id).await;
 
-    let body = roster(&app, &eid).await;
-    let assignments = body["assignments"].as_object().expect("assignments object");
+    let body = roster(&app, &runtime, &eid).await;
+    let assignments = seating(&body);
     assert!(
         !assignments.contains_key(WS_ARMA),
         "whitespace arma_id must not be a seating key; got {body}"
@@ -271,16 +359,27 @@ async fn roster_real_arma_id_is_seated() {
     };
     cleanup(&pool).await;
     let admin = admin_token(&app).await;
-    let (eid, slot_id) = seeded_event_with_slot(&app, &admin).await;
+    let (eid, slot_id, runtime) = seeded_event_with_slot(&app, &pool, &admin).await;
     plant_arma(&pool, REAL_ARMA).await;
     assign_actor(&pool, &slot_id).await;
 
-    let body = roster(&app, &eid).await;
-    let assignments = body["assignments"].as_object().expect("assignments object");
+    let body = roster(&app, &runtime, &eid).await;
+    let assignments = seating(&body);
     assert_eq!(
-        assignments.get(REAL_ARMA).and_then(|v| v.as_str()),
+        assignments.get(REAL_ARMA).map(String::as_str),
         Some("s1"),
         "real arma_id must map to editor slot uid s1; got {body}"
+    );
+    let assigned = &body["assignments"][0];
+    assert_eq!(
+        assigned["orbatSlotId"],
+        slot_id.as_str(),
+        "the seat a deployment request names"
+    );
+    assert_eq!(
+        body["slots"].as_array().unwrap().len(),
+        1,
+        "every compiled slot is listed: {body}"
     );
 
     cleanup(&pool).await;
@@ -296,19 +395,19 @@ async fn roster_padded_arma_id_emits_trimmed_key() {
     };
     cleanup(&pool).await;
     let admin = admin_token(&app).await;
-    let (eid, slot_id) = seeded_event_with_slot(&app, &admin).await;
+    let (eid, slot_id, runtime) = seeded_event_with_slot(&app, &pool, &admin).await;
     let padded = format!("  {REAL_ARMA}  ");
     plant_arma(&pool, &padded).await;
     assign_actor(&pool, &slot_id).await;
 
-    let body = roster(&app, &eid).await;
-    let assignments = body["assignments"].as_object().expect("assignments object");
+    let body = roster(&app, &runtime, &eid).await;
+    let assignments = seating(&body);
     assert!(
         !assignments.contains_key(&padded),
         "padded raw must not be the seating key; got {body}"
     );
     assert_eq!(
-        assignments.get(REAL_ARMA).and_then(|v| v.as_str()),
+        assignments.get(REAL_ARMA).map(String::as_str),
         Some("s1"),
         "padded arma_id must emit btrimmed key; got {body}"
     );

@@ -1,5 +1,12 @@
-//! `OnBackendFetchSuccess` must refuse oversized REST bodies before `ParseMissionJson`, using the
-//! same `MISSION_FILE_MAX_BYTES` ceiling as `LoadFromProfileFile`.
+//! Every mission document the mod loads is held to `MISSION_FILE_MAX_BYTES` (8 MiB) before it is
+//! parsed. The document arrives from the platform's artifact route (REST) or from the mod's
+//! artifact cache, and three places enforce the ceiling:
+//!
+//! * `TBD_MissionLoader.LoadDocument` calls `IsMissionBodyWithinCap(data)` before
+//!   `ParseMissionJson(data)`, and the helper compares `data.Length() <= MISSION_FILE_MAX_BYTES`;
+//! * `TBD_MissionArtifactVerification` refuses a received document longer than the ceiling;
+//! * `TBD_MissionArtifactCache` refuses a cached file outside `1..MISSION_FILE_MAX_BYTES` before
+//!   reading it.
 //!
 //! Two false-green shapes this gate is built to refuse:
 //!   (1) a `//` comment containing `MISSION_FILE_MAX_BYTES` counting as the size check before
@@ -12,9 +19,10 @@
 //!
 //! ── RED ARMS CANNOT FAIL OPEN ────────────────────────────────────────────────────────────────
 //!
-//! The RED arms are in-memory string transforms; live files are never written. A probe that cannot
-//! answer is an explicit fail, never a pass: [`gate::probe_str`] cannot return a tool error today,
-//! and the arm that would report one is kept so a future fallible probe stays fail-closed.
+//! The RED arms are in-memory string transforms of the loader; live files are never written. A
+//! probe that cannot answer is an explicit fail, never a pass: [`gate::probe_str`] cannot return a
+//! tool error today, and the arm that would report one is kept so a future fallible probe stays
+//! fail-closed.
 //!
 //! Output and the binary 0/1 status are a contract: the wave gate prints the last 15 lines of a
 //! failed step.
@@ -25,100 +33,82 @@ use anyhow::Result;
 use regex::Regex;
 use verification_core::{Pattern, Verdict, gate};
 
-const FILE_REL: &str =
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionLoader.c";
+const LOADERS_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders";
+const LOADER_FILE: &str = "TBD_MissionLoader.c";
+const VERIFICATION_FILE: &str = "TBD_MissionArtifactVerification.c";
+const CACHE_FILE: &str = "TBD_MissionArtifactCache.c";
+
+/// The three sources the ceiling lives in.
+struct Sources {
+    loader: String,
+    verification: String,
+    cache: String,
+}
 
 /// Entry point. `0` when live pins hold and every RED proof bit; `1` on any failure; `2` when a
 /// RED arm cannot be set up, which is a gate that did not run rather than one that found nothing.
 pub fn verify_mission_rest_size_limits(repo_root: &Path) -> Result<u8> {
-    let file = repo_root.join(FILE_REL);
-    if !file.is_file() {
-        println!("FAIL: missing {}", file.display());
+    let Some(live) = read_sources(repo_root) else {
         return Ok(1);
-    }
-
-    let live = match std::fs::read_to_string(&file) {
-        Ok(s) => s,
-        Err(e) => {
-            println!("FAIL: cannot read {}: {e}", file.display());
-            return Ok(1);
-        }
     };
 
     let mut failed = false;
-
     if !assert_rest_size_gate(&live, "live")? {
         failed = true;
     }
 
-    // ── RED 1: comment-only "size check" (comment mentions the constant; live call removed) ──
-    let red1 = match red1_strip_cap_call(&live) {
-        Ok(s) => s,
-        Err(msg) => {
-            eprintln!("{msg}");
-            return Ok(2);
-        }
-    };
-    if assert_rest_size_gate(&red1, "RED-comment-only")? {
-        println!(
-            "FAIL: RED comment-only still passed — order pin ignores comments? or call not required"
-        );
-        failed = true;
-    } else {
-        println!(
-            "RED proof: comment-only MISSION_FILE_MAX_BYTES (no live IsMissionBodyWithinCap) → FAIL (expected)"
-        );
-    }
-
-    // ── RED 2: post-parse check (call moved after ParseMissionJson) ──
-    let red2 = match red2_relocate_after_parse(&live) {
-        Ok(s) => s,
-        Err(msg) => {
-            eprintln!("{msg}");
-            return Ok(2);
-        }
-    };
-    if assert_rest_size_gate(&red2, "RED-post-parse")? {
-        println!("FAIL: RED post-parse still passed — order pin is not discriminating");
-        failed = true;
-    } else {
-        println!("RED proof: IsMissionBodyWithinCap after ParseMissionJson → FAIL (expected)");
-    }
-
-    // ── RED 3: helper stubbed to `return true;` ──
-    let red3 = match red3_stub_return_true(&live) {
-        Ok(s) => s,
-        Err(msg) => {
-            eprintln!("{msg}");
-            return Ok(2);
-        }
-    };
-    if assert_rest_size_gate(&red3, "RED-return-true")? {
-        println!("FAIL: RED return-true helper still passed — body pin is not discriminating");
-        failed = true;
-    } else {
-        println!("RED proof: IsMissionBodyWithinCap return true → FAIL (expected)");
-    }
-
-    // Live file must still PASS after all RED perturbations (in-memory only; FILE untouched).
-    // Re-read from disk so a concurrent edit is still caught.
-    let restored = match std::fs::read_to_string(&file) {
-        Ok(s) => s,
-        Err(e) => {
-            println!("FAIL: cannot re-read {}: {e}", file.display());
+    type RedArm = fn(&str) -> std::result::Result<String, String>;
+    let arms: [(&str, RedArm, &str); 3] = [
+        (
+            "RED-comment-only",
+            red1_strip_cap_call,
+            "comment-only MISSION_FILE_MAX_BYTES (no live IsMissionBodyWithinCap)",
+        ),
+        (
+            "RED-post-parse",
+            red2_relocate_after_parse,
+            "IsMissionBodyWithinCap after ParseMissionJson",
+        ),
+        (
+            "RED-return-true",
+            red3_stub_return_true,
+            "IsMissionBodyWithinCap return true",
+        ),
+    ];
+    for (label, arm, description) in arms {
+        let perturbed = match arm(&live.loader) {
+            Ok(s) => s,
+            Err(msg) => {
+                eprintln!("{msg}");
+                return Ok(2);
+            }
+        };
+        let red = Sources {
+            loader: perturbed,
+            verification: live.verification.clone(),
+            cache: live.cache.clone(),
+        };
+        if assert_rest_size_gate(&red, label)? {
+            println!("FAIL: {label} still passed — the pins are not discriminating");
             failed = true;
-            String::new()
+        } else {
+            println!("RED proof: {description} → FAIL (expected)");
         }
-    };
-    if restored.is_empty() {
-        // already marked failed
-    } else if assert_rest_size_gate(&restored, "live-restore")? {
-        println!(
+    }
+
+    // The live files must still PASS after all RED perturbations (in memory only; files
+    // untouched). Re-read from disk so a concurrent edit is still caught.
+    match read_sources(repo_root) {
+        None => failed = true,
+        Some(restored) if assert_rest_size_gate(&restored, "live-restore")? => println!(
             "GREEN proof: live IsMissionBodyWithinCap before ParseMissionJson + Length() compare → PASS"
-        );
-    } else {
-        println!("FAIL: live file no longer passes after RED proofs (FILE should be untouched)");
-        failed = true;
+        ),
+        Some(_) => {
+            println!(
+                "FAIL: live files no longer pass after RED proofs (files should be untouched)"
+            );
+            failed = true;
+        }
     }
 
     if failed {
@@ -129,27 +119,34 @@ pub fn verify_mission_rest_size_limits(repo_root: &Path) -> Result<u8> {
     Ok(0)
 }
 
-/// Runs every pin over one source text. Returns `true` when all of them held.
-fn assert_rest_size_gate(src: &str, label: &str) -> Result<bool> {
-    let raw_body = extract_success(src);
+fn read_sources(repo_root: &Path) -> Option<Sources> {
+    let directory = repo_root.join(LOADERS_REL);
+    let read = |name: &str| {
+        let path = directory.join(name);
+        match std::fs::read_to_string(&path) {
+            Ok(text) => Some(text),
+            Err(e) => {
+                println!("FAIL: cannot read {}: {e}", path.display());
+                None
+            }
+        }
+    };
+    Some(Sources {
+        loader: read(LOADER_FILE)?,
+        verification: read(VERIFICATION_FILE)?,
+        cache: read(CACHE_FILE)?,
+    })
+}
+
+/// Runs every pin over one set of sources. Returns `true` when all of them held.
+fn assert_rest_size_gate(sources: &Sources, label: &str) -> Result<bool> {
+    let src = &sources.loader;
+    let raw_body = extract_load_document(src);
     if raw_body.is_empty() {
-        println!("FAIL ({label}): could not extract OnBackendFetchSuccess");
+        println!("FAIL ({label}): could not extract LoadDocument");
         return Ok(false);
     }
-
     let stripped = strip_c_comments(&raw_body);
-
-    // Cap constant must appear in the success handler (not only in the profile path).
-    let v = gate::require_str(
-        &format!(
-            "({label}) OnBackendFetchSuccess has no non-comment MISSION_FILE_MAX_BYTES reference"
-        ),
-        &Pattern::literal("MISSION_FILE_MAX_BYTES"),
-        &stripped,
-    );
-    if !held_or_print(v) {
-        return Ok(false);
-    }
 
     // The size check must be a live IsMissionBodyWithinCap( call before ParseMissionJson(
     let check_line = first_line_matching(&stripped, "IsMissionBodyWithinCap(");
@@ -157,7 +154,7 @@ fn assert_rest_size_gate(src: &str, label: &str) -> Result<bool> {
     match (check_line, parse_line) {
         (None, _) | (_, None) => {
             println!(
-                "FAIL ({label}): missing IsMissionBodyWithinCap( and/or ParseMissionJson( in OnBackendFetchSuccess (non-comment)"
+                "FAIL ({label}): missing IsMissionBodyWithinCap( and/or ParseMissionJson( in LoadDocument (non-comment)"
             );
             return Ok(false);
         }
@@ -202,26 +199,14 @@ fn assert_rest_size_gate(src: &str, label: &str) -> Result<bool> {
         r"return[[:space:]]+data\.Length\(\)[[:space:]]*<=[[:space:]]*MISSION_FILE_MAX_BYTES[[:space:]]*;",
     )
     .expect("return real");
-    let has_true = match gate::probe_str(&pat_true, &helper) {
-        Ok(b) => b,
-        Err(_) => {
-            // Closed fail-open: a probe that cannot run must not green the stub check.
-            println!(
-                "FAIL ({label}): always-true stub probe did not execute (grep exited err / err)."
-            );
-            println!("      Refusing to report OK on a check that never compared anything.");
-            return Ok(false);
-        }
-    };
-    let has_real = match gate::probe_str(&pat_real, &helper) {
-        Ok(b) => b,
-        Err(_) => {
-            println!(
-                "FAIL ({label}): always-true stub probe did not execute (grep exited err / err)."
-            );
-            println!("      Refusing to report OK on a check that never compared anything.");
-            return Ok(false);
-        }
+    let (Ok(has_true), Ok(has_real)) = (
+        gate::probe_str(&pat_true, &helper),
+        gate::probe_str(&pat_real, &helper),
+    ) else {
+        // Closed fail-open: a probe that cannot run must not green the stub check.
+        println!("FAIL ({label}): always-true stub probe did not execute.");
+        println!("      Refusing to report OK on a check that never compared anything.");
+        return Ok(false);
     };
     if has_true && !has_real {
         println!(
@@ -230,28 +215,33 @@ fn assert_rest_size_gate(src: &str, label: &str) -> Result<bool> {
         return Ok(false);
     }
 
-    let cap_const =
-        Pattern::regex(r"MISSION_FILE_MAX_BYTES = 8 \* 1024 \* 1024").expect("cap const");
-    let v = gate::require_str(
-        &format!("({label}) MISSION_FILE_MAX_BYTES is not the pinned 8*1024*1024"),
-        &cap_const,
-        src,
-    );
-    if !held_or_print(v) {
-        return Ok(false);
-    }
-
-    let v = gate::require_str(
-        &format!(
-            "({label}) LoadFromProfileFile no longer compares fileSize to MISSION_FILE_MAX_BYTES"
+    let pins = [
+        (
+            "MISSION_FILE_MAX_BYTES is not the pinned 8*1024*1024",
+            Pattern::regex(r"MISSION_FILE_MAX_BYTES = 8 \* 1024 \* 1024").expect("cap const"),
+            src.as_str(),
         ),
-        &Pattern::literal("fileSize > MISSION_FILE_MAX_BYTES"),
-        src,
-    );
-    if !held_or_print(v) {
-        return Ok(false);
+        (
+            "the artifact verification no longer refuses a document over MISSION_FILE_MAX_BYTES",
+            Pattern::literal("document.Length() > TBD_MissionLoader.MISSION_FILE_MAX_BYTES"),
+            sources.verification.as_str(),
+        ),
+        (
+            "the artifact cache no longer refuses a file over MISSION_FILE_MAX_BYTES before reading it",
+            Pattern::literal("byteCount > TBD_MissionLoader.MISSION_FILE_MAX_BYTES"),
+            sources.cache.as_str(),
+        ),
+    ];
+    for (message, pattern, text) in pins {
+        let live = strip_c_comments(text);
+        if !held_or_print(gate::require_str(
+            &format!("({label}) {message}"),
+            &pattern,
+            &live,
+        )) {
+            return Ok(false);
+        }
     }
-
     Ok(true)
 }
 
@@ -272,36 +262,33 @@ fn first_line_matching(text: &str, needle: &str) -> Option<usize> {
         .map(|(i, _)| i + 1)
 }
 
-/// Extract OnBackendFetchSuccess body (from its signature through the next method).
-fn extract_success(src: &str) -> String {
-    let start = Regex::new(
-        r"(?m)^[[:space:]]*protected static void OnBackendFetchSuccess\(RestCallback cb\)",
-    )
-    .expect("success start");
-    let end = Regex::new(
-        r"(?m)^[[:space:]]*protected static void OnBackendFetchError\(RestCallback cb\)",
-    )
-    .expect("success end");
-    extract_until(src, &start, &end)
+/// The closing brace of a method, which sits at one tab of indentation.
+fn method_end() -> Regex {
+    Regex::new(r"^\t\}[[:space:]]*$").expect("method end")
 }
 
-/// Extract IsMissionBodyWithinCap method body (signature through ParseMissionJson).
+/// `LoadDocument`, from its signature through its closing brace.
+fn extract_load_document(src: &str) -> String {
+    let start =
+        Regex::new(r"(?m)^[[:space:]]*static bool LoadDocument\(string data, string source\)")
+            .expect("load start");
+    extract_until(src, &start, &method_end())
+}
+
+/// `IsMissionBodyWithinCap`, from its signature through its closing brace.
 fn extract_helper(src: &str) -> String {
     let start =
         Regex::new(r"(?m)^[[:space:]]*protected static bool IsMissionBodyWithinCap\(string data\)")
             .expect("helper start");
-    let end = Regex::new(r"(?m)^[[:space:]]*protected static bool ParseMissionJson\(string data\)")
-        .expect("helper end");
-    extract_until(src, &start, &end)
+    extract_until(src, &start, &method_end())
 }
 
 fn extract_until(src: &str, start: &Regex, end: &Regex) -> String {
     let Some(m) = start.find(src) else {
         return String::new();
     };
-    let rest = &src[m.start()..];
     let mut out = String::new();
-    for line in rest.lines() {
+    for line in src[m.start()..].lines() {
         out.push_str(line);
         out.push('\n');
         if end.is_match(line) {
@@ -311,7 +298,7 @@ fn extract_until(src: &str, start: &Regex, end: &Regex) -> String {
     out
 }
 
-/// Python `strip_c_comments`: drop `//` and `/* */`, keep newlines inside block comments.
+/// Drop `//` and `/* */` comments, keeping the newlines inside block comments.
 fn strip_c_comments(src: &str) -> String {
     let chars: Vec<char> = src.chars().collect();
     let n = chars.len();
@@ -342,83 +329,69 @@ fn strip_c_comments(src: &str) -> String {
     out
 }
 
-fn red1_strip_cap_call(src: &str) -> std::result::Result<String, String> {
-    let pat = Regex::new(r"(?s)\n\t\tif \(!IsMissionBodyWithinCap\(data\)\)\n\t\t\{.*?\n\t\t\}\n")
-        .expect("red1");
-    let Some(m) = pat.find(src) else {
-        return Err(
-            "RED1 setup failed: could not strip IsMissionBodyWithinCap call (n=0)".to_string(),
-        );
-    };
-    // Count must be exactly 1 — refuse to prove on a tree with zero/many matches.
-    if pat.find_iter(src).count() != 1 {
-        let n = pat.find_iter(src).count();
-        return Err(format!(
-            "RED1 setup failed: could not strip IsMissionBodyWithinCap call (n={n})"
-        ));
+/// The cap check in `LoadDocument`, exactly once.
+fn cap_check_block() -> Regex {
+    Regex::new(r"(?s)\n\t\tif \(!IsMissionBodyWithinCap\(data\)\)\n\t\t\{.*?\n\t\t\}\n")
+        .expect("cap block")
+}
+
+fn exactly_one(
+    pattern: &Regex,
+    src: &str,
+    what: &str,
+) -> std::result::Result<(usize, usize), String> {
+    let found: Vec<_> = pattern.find_iter(src).collect();
+    match found.as_slice() {
+        [only] => Ok((only.start(), only.end())),
+        _ => Err(format!("{what} setup failed (n={})", found.len())),
     }
-    let mut out = String::with_capacity(src.len());
-    out.push_str(&src[..m.start()]);
-    out.push('\n');
-    out.push_str(&src[m.end()..]);
-    Ok(out)
+}
+
+fn red1_strip_cap_call(src: &str) -> std::result::Result<String, String> {
+    let (start, end) = exactly_one(
+        &cap_check_block(),
+        src,
+        "RED1: strip IsMissionBodyWithinCap call",
+    )?;
+    Ok(format!("{}\n{}", &src[..start], &src[end..]))
 }
 
 fn red2_relocate_after_parse(src: &str) -> std::result::Result<String, String> {
-    let block_re = Regex::new(
-        r"(?s)\n\t\t// REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load\..*?\n\t\t\}\n",
-    )
-    .expect("red2 block");
-    let Some(m) = block_re.find(src) else {
-        return Err("RED2 setup failed: could not find the REST size-gate block".to_string());
-    };
-    let gate_block = m.as_str().to_string();
-    let src_wo = format!("{}\n{}", &src[..m.start()], &src[m.end()..]);
-    let parse_re =
-        Regex::new(r"(?s)(if \(!ParseMissionJson\(data\)\)\n\t\t\{.*?\n\t\t\}\n)").expect("parse");
-    let Some(caps) = parse_re.captures(&src_wo) else {
-        return Err(
-            "RED2 setup failed: could not relocate gate after ParseMissionJson (n=0)".to_string(),
-        );
-    };
-    let n = parse_re.find_iter(&src_wo).count();
-    if n != 1 {
-        return Err(format!(
-            "RED2 setup failed: could not relocate gate after ParseMissionJson (n={n})"
-        ));
-    }
-    let first = caps.get(0).unwrap();
-    let body = caps.get(1).unwrap().as_str();
-    let mut out = String::new();
-    out.push_str(&src_wo[..first.start()]);
-    out.push_str(body);
-    out.push_str(&gate_block);
-    out.push_str(&src_wo[first.end()..]);
-    Ok(out)
+    let (start, end) = exactly_one(&cap_check_block(), src, "RED2: find the size-gate block")?;
+    let gate_block = src[start..end].to_string();
+    let without = format!("{}\n{}", &src[..start], &src[end..]);
+    let parse = Regex::new(r"(?s)\t\tif \(!ParseMissionJson\(data\)\)\n\t\t\treturn false;\n")
+        .expect("parse");
+    let (parse_start, parse_end) = exactly_one(
+        &parse,
+        &without,
+        "RED2: relocate the gate after ParseMissionJson",
+    )?;
+    Ok(format!(
+        "{}{}{}{}",
+        &without[..parse_start],
+        &without[parse_start..parse_end],
+        gate_block,
+        &without[parse_end..]
+    ))
 }
 
 fn red3_stub_return_true(src: &str) -> std::result::Result<String, String> {
-    let pat = Regex::new(
+    let pattern = Regex::new(
         r"(protected static bool IsMissionBodyWithinCap\(string data\)\n\t\{\n\t\t)return data\.Length\(\) <= MISSION_FILE_MAX_BYTES;",
     )
     .expect("red3");
-    let Some(caps) = pat.captures(src) else {
-        return Err("RED3 setup failed: could not stub IsMissionBodyWithinCap (n=0)".to_string());
-    };
-    if pat.find_iter(src).count() != 1 {
-        let n = pat.find_iter(src).count();
-        return Err(format!(
-            "RED3 setup failed: could not stub IsMissionBodyWithinCap (n={n})"
-        ));
-    }
-    let m = caps.get(0).unwrap();
-    let prefix = caps.get(1).unwrap().as_str();
-    let mut out = String::new();
-    out.push_str(&src[..m.start()]);
-    out.push_str(prefix);
-    out.push_str("return true;");
-    out.push_str(&src[m.end()..]);
-    Ok(out)
+    let (start, end) = exactly_one(&pattern, src, "RED3: stub IsMissionBodyWithinCap")?;
+    let prefix = pattern
+        .captures(&src[start..end])
+        .and_then(|caps| caps.get(1))
+        .map(|m| m.as_str().to_string())
+        .unwrap_or_default();
+    Ok(format!(
+        "{}{prefix}return true;{}",
+        &src[..start],
+        &src[end..]
+    ))
 }
 
 #[cfg(test)]

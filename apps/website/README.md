@@ -22,7 +22,7 @@ cargo xtask mk leptos-debug  # debug wasm only (not for judging FPS)
 
 - **FRONTEND_URL** (dev callback): `http://127.0.0.1:3000`
 - **Map assets:** the API serves `GET /map-assets/*` from `MAP_ASSETS_DIR` (default `../../../assets_v2/terrains` from the `api_v2/` working directory). Trunk proxies same-origin. Pull LFS: `cargo xtask ci lfs-dem` / `cargo xtask ci lfs-sat` — see [`DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md) §Map assets.
-- **Runtime storage:** uploads and staged missions go to `UPLOAD_DIR` / `MISSION_STAGE_DIR` (development default `assets_v2/scratch/website-api/`, never inside the crate).
+- **Runtime storage:** uploads go to `UPLOAD_DIR` (development default `assets_v2/scratch/website-api/uploads`, never inside the crate).
 - **Prod SPA flip:** set `SPA_DIST_DIR=../frontend/dist` (relative to `api_v2/`) so Axum can serve the Trunk release build.
 - **Seeds:** `api_v2/seeds/` — `cargo xtask db seed` applies `discord_roles.sql` + `registry_dev.sql`; `mock_data.sql` is manual `psql` only.
 

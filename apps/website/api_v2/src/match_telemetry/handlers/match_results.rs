@@ -1,83 +1,32 @@
 //! `POST /api/v1/ingest/match-results` — the finished-match report: roster validation, the match
-//! upsert, the per-player stat rows, attendance attribution, and the post-commit recompute.
+//! upsert, per-player facts, attendance attribution, and transactional aggregate recomputation.
 
 use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::response::Json;
 use serde_json::{Value, json};
 
-use crate::administration::models::audit_log::AuditSeverity;
-use crate::administration::services::audit_writer::write_audit;
-use crate::command_center::services::user_stats::{
-    recompute_user_stats, refresh_leaderboard_best_effort,
-};
+use crate::administration::services::required_audit::append_system_audit;
+use crate::command_center::services::leaderboard_view::refresh_leaderboard_on_connection;
+use crate::command_center::services::user_stats::recompute_user_stats_on_connection;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::ServiceAuth;
+use crate::identity_and_access::services::identity_ownership::{lock_accounts, lock_identities};
 use crate::match_telemetry::models::match_record::MissionOutcome;
 
-use super::attendance_attribution::{mark_attended, retract_prior_attendance};
-use super::ingest_parsing::{AUDIT_UNLINKED_ID_SAMPLE, require_role_played, source_match_key};
+use super::ingest_parsing::{
+    AUDIT_UNLINKED_ID_SAMPLE, parse_uuid_opt_strict, require_role_played, source_match_key,
+};
 use super::match_results_contract::MatchResultsInput;
 use super::match_upsert::upsert_match;
+use crate::match_telemetry::services::result_serialization::lock_source_and_prior_identities;
+use crate::operations::services::participation_attribution::{
+    lock_obligated_registrants, prior_match_accounts, reconcile_match,
+};
 
-/// `POST /api/v1/ingest/match-results` — idempotent match + per-player stats,
-/// attendance marking, user-stat recompute, leaderboard refresh (service-token).
-///
-/// **A player whose `arma_id` resolves to no account keeps their row, and the 200 says so out
-/// loud.** The row was never the problem; the *silence* was. `discord_id` on
-/// `match_player_stats` is a cached answer to "who owns this `arma_id`" (see
-/// `identity_and_access::handlers::arma_link_confirmation`'s `BACKFILL_MATCH_STATS`),
-/// `leaderboard_totals` filters `WHERE discord_id IS NOT NULL` (`0001_initial_schema.sql:289`)
-/// and `recompute_user_stats` counts only non-NULL rows — so an unresolved row is invisible to
-/// every aggregate on the platform. Reporting only `{"players": n}`, the *submitted* count, hides
-/// that. Measured on a throwaway database: one POST carrying `kills=17 deaths=3
-/// longest_kill_m=842 vehicles_destroyed=4` for an unlinked `arma_id` returns
-/// `{"match_id":"…","players":1}`, writes the row with `discord_id` NULL, and leaves
-/// `leaderboard_totals` with **zero** rows for that player and `users.total_deployments` at
-/// **0**. Nothing anywhere records that a scoreline has gone missing.
-///
-/// **Three fixes were on the table and only one of them is honest:**
-///
-/// * **400 the POST** — rejected, for three reasons of increasing force. (1) The row is *real
-///   telemetry*: the `arma_id` is real, the match happened, the counters were measured, and the
-///   row is *recoverable* — the link-confirm handler claims exactly the `discord_id IS NULL` rows
-///   at link time, so parking it loses a player from the aggregates while rejecting it loses the
-///   data. (2) There is no per-player 400 to be had: the roster is validated before the
-///   transaction and the transaction is atomic, so one unresolved player would reject the **whole
-///   op** — the match row and every other player's line with it. (3) Decisively, it is not a
-///   sender error at all. `users.arma_id` is written by exactly two things, the dev seed and
-///   `POST /ingest/link-confirm`, and the shipping mod **does not implement the link flow** —
-///   `TBD_ResultsReporter.c:23-35` says so in its own header ("in production no player has an
-///   `arma_id` … There is no `#tbd link` command"). An unresolved `arma_id` is not the edge case
-///   today; it is *every player in every production match*. A 400 would reject 100% of live
-///   ingest to report a condition the platform is currently always in.
-/// * **Drop the row instead of storing it NULL** — rejected outright, and named only because it
-///   is the reading of "stop losing rows" that would make the loss permanent. It would also break
-///   the retroactive link: with no row to claim, linking would backfill nothing.
-/// * **Keep the row, keep the 200, and end the silence** — taken. Nothing stored changes. The
-///   response stops implying the roster landed (`linked` / `unlinked` / `unlinked_arma_ids`
-///   beside the unchanged `players`), and one audit row per affected ingest names the count and
-///   the ids, so the drop is discoverable by an operator and not only by whoever is reading the
-///   game server's console.
-///
-/// **The audit row is `Info`, not `Warn`, and that is the whole judgement rather than a
-/// default.** An unresolved `arma_id` is a normal, expected, self-healing state — the player
-/// simply has not linked yet, and the link is retroactive. A `Warn` would fire on every single
-/// production ingest, and a warning that is always on is a warning nobody reads. `Info` records
-/// the fact at the severity the fact actually has.
-///
-/// Two consequences a reader will ask about, both intended. A **retry** appends a second audit
-/// row: the log records requests, retries must stay legal, and "we were told this twice" is true.
-/// And `linked + unlinked == players` **always**, because those two count player *lines* —
-/// `unlinked_arma_ids` is the distinct set, since the same `arma_id` may legitimately appear
-/// twice under different `source_event_id`s and an operator chasing links wants each person once.
-///
-/// What this does **not** do is widen `leaderboard_totals` or `recompute_user_stats` to include
-/// unowned rows. Both are per-account aggregates and an unowned row has no account to aggregate
-/// onto; the fix for its absence is the link, not a leaderboard entry with no one on the other
-/// end of it.
-///
+/// Atomically accept the complete roster and recompute its currently verified account attribution.
+/// Unowned identities retain gameplay facts and are reported in the response and required audit.
 /// @route POST /api/v1/ingest/match-results
 pub async fn ingest_match_results(
     State(state): State<AppState>,
@@ -107,8 +56,10 @@ pub async fn ingest_match_results(
     // `(match_id, arma_id, source_event_id)`, and a blank key silently collapses distinct
     // players onto one row. An empty string is the same lie as a missing field.
     for p in &input.players {
-        if p.arma_id.trim().is_empty() {
-            return Err(ApiError::bad_request("player arma_id is required"));
+        if p.arma_id.trim().is_empty() || p.arma_id.trim().len() > 128 {
+            return Err(ApiError::bad_request(
+                "player arma_id must contain 1 to 128 bytes",
+            ));
         }
         if p.source_event_id.trim().is_empty() {
             return Err(ApiError::bad_request("player source_event_id is required"));
@@ -120,14 +71,32 @@ pub async fn ingest_match_results(
         // Nested `counters` still 400s at decode if the block is present-but-partial.
     }
 
+    let requested_event = parse_uuid_opt_strict("event_id", &m.event_id)?;
+    let requested_mission = parse_uuid_opt_strict("mission_id", &m.mission_id)?;
     let mut tx = state.pool.begin().await?;
-    // `event_id` from the upsert is not the attendance key: the UPDATE below joins the *merged*
-    // match row so both `event_id` and `mission_id` must be present.
-    //
-    // `retract_from`: when a re-POST moves this match off a fully attributed
-    // `(event_id, mission_id)` pair, attendance on that prior event_mission must be undone
-    // for these players (unless another match still attributes them there).
-    let (match_id, retract_from) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
+    let mut all_identities = lock_source_and_prior_identities(&mut tx, source_match_id).await?;
+    // Registrants of the old and new exact attachment may gain or lose a no-show obligation.
+    let obligated =
+        lock_obligated_registrants(&mut tx, source_match_id, requested_event, requested_mission)
+            .await?;
+    all_identities.extend(input.players.iter().map(|p| p.arma_id.trim().to_owned()));
+    let identities: Vec<&str> = all_identities.iter().map(String::as_str).collect();
+    lock_identities(&mut tx, &identities).await?;
+    let mut affected: Vec<String> = sqlx::query_scalar(
+        "SELECT discord_id FROM users WHERE arma_id = ANY($1) AND deleted_at IS NULL",
+    )
+    .bind(&identities)
+    .fetch_all(&mut *tx)
+    .await?;
+    let previous: Vec<String> = sqlx::query_scalar("SELECT DISTINCT discord_id FROM match_player_stats WHERE arma_id = ANY($1) AND discord_id IS NOT NULL")
+        .bind(&identities).fetch_all(&mut *tx).await?;
+    affected.extend(previous);
+    affected.extend(prior_match_accounts(&mut tx, source_match_id).await?);
+    affected.extend(obligated);
+    affected.sort_unstable();
+    affected.dedup();
+    lock_accounts(&mut tx, &affected).await?;
+    let (match_id, _) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
 
     let mut resolved: Vec<String> = Vec::new();
     // `unlinked_rows` counts player *lines* with no owner so it sums with the linked count to
@@ -241,57 +210,33 @@ pub async fn ingest_match_results(
         }
     }
 
-    // Attendance, inside the same transaction and in this order: retract the pair this match has
-    // moved off before marking the pair it now names, so a re-point cannot leave both attended.
-    // See `attendance_attribution` for each statement's attribution guard.
-    if !resolved.is_empty() {
-        if let Some((old_event, old_mission)) = retract_from {
-            retract_prior_attendance(&mut tx, &resolved, old_event, old_mission, match_id).await?;
-        }
-        mark_attended(&mut tx, match_id, &resolved).await?;
-    }
-    tx.commit().await?;
-
-    // The drop goes on the record. Deliberately the FIRST thing after the commit:
-    // `recompute_user_stats` below propagates with `?`, so an audit written after it would be
-    // skipped by exactly the failure that most needs a trace. Post-commit rather than inside the
-    // transaction because it must describe what actually landed, and best-effort (`write_audit`
-    // returns `()`) because a missing audit row must not fail an ingest that succeeded.
+    reconcile_match(&mut tx, match_id, &affected).await?;
     if !unlinked_ids.is_empty() {
         let shown = unlinked_ids.len().min(AUDIT_UNLINKED_ID_SAMPLE);
         let mut ids = unlinked_ids[..shown].join(", ");
         if unlinked_ids.len() > shown {
             ids.push_str(&format!(", +{} more", unlinked_ids.len() - shown));
         }
-        write_audit(
-            &state.pool,
-            AuditSeverity::Info,
-            None,
-            "system",
+        append_system_audit(
+            &mut tx,
             "match.unlinked_players",
+            "match",
+            &match_id.to_string(),
             &format!(
                 "{unlinked_rows} of {} player line(s) had no linked account, so their stats are \
                  stored but excluded from the leaderboard and deployment counts until the \
                  identity is linked. Unlinked arma_id(s): {ids}",
                 input.players.len()
             ),
-            "match",
-            &match_id.to_string(),
         )
-        .await;
+        .await?;
     }
 
-    // Recompute denormalized user stats + refresh the leaderboard view.
-    for did in &resolved {
-        recompute_user_stats(&state.pool, did).await?;
+    for did in &affected {
+        recompute_user_stats_on_connection(&mut tx, did).await?;
     }
-    refresh_leaderboard_best_effort(
-        &state.pool,
-        "Leaderboard refresh failed after match ingest",
-        "match",
-        &match_id.to_string(),
-    )
-    .await;
+    refresh_leaderboard_on_connection(&mut tx).await?;
+    tx.commit().await?;
 
     // `players` is the submitted count and stays that way, because it is the only field a caller
     // may already read (the committed test asserts it, and the stored match model carries nothing

@@ -2,22 +2,21 @@
 //!
 //! Every way of signing in — the Discord callback and the development login shortcut —
 //! ends here: an access JWT plus a single-use opaque refresh token, handed to the SPA in
-//! a URL fragment so the credentials never enter a query string that an upstream proxy
-//! would log. [`revoke_token_family`] is the response to a detected refresh-token reuse
-//! and to a banned account: the whole family dies, not just the presented token.
+//! a URL fragment so credentials do not enter proxy query logs. Persistence and signing
+//! succeed in the same account-serialized transaction.
 
 use axum::body::Body;
 use axum::http::{StatusCode, header};
 use axum::response::Response;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
 use crate::core::application_state::AppState;
-use crate::core::authentication_primitives;
 use crate::core::error_handling::api_error::ApiError;
 
-/// Opaque refresh token lifetime (30 days).
-const REFRESH_TTL_DAYS: i64 = 30;
+use super::account_authority::{load_account_authority, lock_account};
+use super::session_storage::{create_session, insert_refresh};
+use crate::identity_and_access::models::user_account::UserRole;
 
 /// True when `arma_id` is present **and** non-whitespace after trim.
 ///
@@ -32,50 +31,81 @@ pub fn arma_id_is_linked(arma_id: &Option<String>) -> bool {
     arma_id.as_deref().is_some_and(|s| !s.trim().is_empty())
 }
 
-/// Mint a fresh access + refresh pair for a user.
+/// Mint a session from current authoritative permissions.
 pub async fn issue_session(
     state: &AppState,
     discord_id: &str,
-    role: &str,
-    arma_linked: bool,
 ) -> Result<(String, DateTime<Utc>, String), ApiError> {
+    issue_session_with_development_role(state, discord_id, None).await
+}
+
+/// Explicit development credentials are unusable by a production-configured API.
+pub async fn issue_development_session(
+    state: &AppState,
+    discord_id: &str,
+    role: UserRole,
+) -> Result<(String, DateTime<Utc>, String), ApiError> {
+    if !state.cfg.is_development() {
+        return Err(ApiError::not_found("not found"));
+    }
+    issue_session_with_development_role(state, discord_id, Some(role)).await
+}
+
+async fn issue_session_with_development_role(
+    state: &AppState,
+    discord_id: &str,
+    development_role: Option<UserRole>,
+) -> Result<(String, DateTime<Utc>, String), ApiError> {
+    let mut tx = state.pool.begin().await?;
+    lock_account(&mut tx, discord_id).await?;
+    let account = load_account_authority(&mut tx, discord_id, &state.cfg.discord_guild_id)
+        .await?
+        .filter(|a| a.deleted_at.is_none())
+        .ok_or_else(|| ApiError::unauthorized("user not found"))?;
+    let role = account
+        .permissions(account.observed_at)
+        .effective_role
+        .ok_or_else(|| ApiError::forbidden("account is banned"))?;
+    let session_id = create_session(&mut tx, discord_id, development_role).await?;
+    let refresh = insert_refresh(&mut tx, discord_id, session_id).await?;
     let (access, exp) = state
         .jwt
-        .issue_access(discord_id, role, arma_linked)
+        .issue_access(
+            discord_id,
+            session_id,
+            development_role.unwrap_or(role).as_str(),
+            arma_id_is_linked(&account.arma_id),
+        )
         .map_err(|_| ApiError::internal("could not issue token"))?;
-    let refresh = issue_refresh(&state.pool, discord_id).await?;
+    crate::administration::services::required_audit::append_required_audit(
+        &mut tx,
+        discord_id,
+        "auth.session_created",
+        discord_id,
+        "Authentication session created",
+    )
+    .await?;
+    tx.commit().await?;
     Ok((access, exp, refresh))
 }
 
-/// Create + store a new opaque refresh token (hashed); return the raw value.
+/// Issue a persisted refresh-only session; permissions are checked when it is redeemed.
 pub async fn issue_refresh(pool: &PgPool, discord_id: &str) -> Result<String, ApiError> {
-    let raw = authentication_primitives::random_token(32);
-    let hash = authentication_primitives::hash_token(&raw);
-    let expires_at = Utc::now() + Duration::days(REFRESH_TTL_DAYS);
-    sqlx::query(
-        "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) \
-         VALUES ($1, $2, $3, now())",
+    let mut tx = pool.begin().await?;
+    lock_account(&mut tx, discord_id).await?;
+    let available: bool = sqlx::query_scalar(
+        "SELECT NOT is_banned AND deleted_at IS NULL FROM users WHERE discord_id = $1",
     )
     .bind(discord_id)
-    .bind(&hash)
-    .bind(expires_at)
-    .execute(pool)
+    .fetch_one(&mut *tx)
     .await?;
-    Ok(raw)
-}
-
-/// Revoke every active refresh token for a user — the response to detected reuse or
-/// a banned account. Best-effort: a failure is logged but the caller's 401/403 stands.
-pub async fn revoke_token_family(pool: &PgPool, discord_id: &str) {
-    if let Err(e) = sqlx::query(
-        "UPDATE refresh_tokens SET revoked_at = now() WHERE discord_id = $1 AND revoked_at IS NULL",
-    )
-    .bind(discord_id)
-    .execute(pool)
-    .await
-    {
-        tracing::error!(error = %e, discord_id, "token family revocation failed");
+    if !available {
+        return Err(ApiError::unauthorized("account unavailable"));
     }
+    let session_id = create_session(&mut tx, discord_id, None).await?;
+    let refresh = insert_refresh(&mut tx, discord_id, session_id).await?;
+    tx.commit().await?;
+    Ok(refresh)
 }
 
 /// Build the SPA callback URL with values in the URL fragment (kept out of query

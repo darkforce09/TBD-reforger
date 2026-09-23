@@ -100,7 +100,7 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Statics OUTLIVE A WORLD inside one process (recorded landmine — `SelectMissionByNumber`
+	//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction`
 	//! restarts the scenario in-process). Without this, mission B's players would be confined to
 	//! mission A's AO by a registry nobody rebuilt, and the tick would keep firing against a dead
 	//! component. `ScriptCallQueue.Remove` cancels by function, which is exactly right: there is

@@ -14,6 +14,11 @@ use anyhow::{Context, Result};
 use regex::Regex;
 use serde_json::{Value, json};
 
+use crate::commands::mod_ops::website_api_client::{
+    ApiClient, CurlTransport, StagedArtifact, artifact_document, create_mission, delete_mission,
+    development_login, mission, own_missions_titled, pending_review_artifact, stage_artifact_cache,
+    submit_mission,
+};
 use crate::commands::mod_ops::world_boot_verdict::MissionCtx;
 use crate::core::repository_root::find_repo_root;
 
@@ -34,8 +39,9 @@ struct RunState {
     run_dir: PathBuf,
     keep_logs: bool,
     cleaned: AtomicBool,
-    svc_token: Option<String>,
-    dev_access_token: Option<String>,
+    /// The mission maker's development token, when the compiled lane logged in: the sweep
+    /// deletes the fixture missions it created.
+    api_token: Option<String>,
     api_base: String,
     child: Option<Child>,
 }
@@ -50,12 +56,7 @@ impl RunState {
             return;
         }
         kill_run(&self.run_dir.join("server.pid"));
-        sweep_fixture_missions(
-            &self.run_dir,
-            &self.api_base,
-            self.svc_token.as_deref(),
-            self.dev_access_token.as_deref(),
-        );
+        sweep_fixture_missions(&self.run_dir, &self.api_base, self.api_token.as_deref());
         if self.keep_logs {
             println!("run dir kept: {}", self.run_dir.display());
         } else {
@@ -76,7 +77,6 @@ const EXPECTED_EQUIP_OK: usize = 4; // perturb to 3 → `mod world-boot --selfte
 mod execution;
 use execution::api_doc_fail;
 use execution::api_env_fail;
-use execution::api_http_fail;
 pub use execution::run;
 
 mod compiled_lane;
@@ -89,14 +89,11 @@ use compiled_lane::spawn_server;
 use compiled_lane::sweep_fixture_missions;
 use compiled_lane::write_server_json;
 
-mod resolve_service_token;
-use resolve_service_token::curl_http;
-use resolve_service_token::dev_login_token;
-use resolve_service_token::env_u64;
-use resolve_service_token::host_command;
-use resolve_service_token::is_executable;
-use resolve_service_token::read_addon_guid;
-use resolve_service_token::read_scenario_id;
-use resolve_service_token::require_host;
-use resolve_service_token::resolve_service_token;
-use resolve_service_token::tempfile_dir;
+mod boot_environment;
+use boot_environment::env_u64;
+use boot_environment::host_command;
+use boot_environment::is_executable;
+use boot_environment::read_addon_guid;
+use boot_environment::read_scenario_id;
+use boot_environment::require_host;
+use boot_environment::tempfile_dir;

@@ -1,14 +1,14 @@
 //! The month grid and the day panel: where an operation is read, selected and opened for editing.
 //!
 //! **Role:** the screen's body — the heading with the schedule action, the month calendar with one
-//! cell per day, and the panel listing the selected day's operations with the edit and delete
-//! controls under it.
+//! cell per day, and the panel listing the selected day's operations with the edit, access and
+//! delete controls under it.
 //! **Position:** the whole of the operations calendar route below its own header, above the four
 //! dialogs.
 //! **Signals & state:** reads `view` for the month on screen, `selected` for the highlighted day
 //! and `selected_event` for the operation in focus; writes all three. Opening the edit form seeds
 //! every `edit_*` field from the selected row and then sets `edit_open`, which is what starts the
-//! roster fetch.
+//! roster fetch; opening the access panel hands it the operation in focus.
 //! **Invariants:** the grid is padded with attribute-less blanks — leading ones for the weekday the
 //! month starts on, trailing ones to a whole number of weeks — so the columns stay aligned. Cells
 //! show at most three operation marks. The edit form is seeded from the list row rather than from a
@@ -51,6 +51,7 @@ pub(super) fn event_table(st: Manager) -> impl IntoView {
         edit_open,
         ..
     } = st;
+    let access = st.access;
     let shift_month = move |delta: i32| st.shift_month(delta);
     let select_day = move |y: i32, m: i32, d: u32| st.select_day(y, m, d);
     let events_by_day = move || st.events_by_day();
@@ -77,6 +78,20 @@ pub(super) fn event_table(st: Manager) -> impl IntoView {
         edit_orig.set(Some(op));
         edit_attach_open.set(false);
         edit_open.set(true);
+    };
+
+    // The access panel reads its own view of the operation; it needs only the id and the name.
+    let open_access = move |_| {
+        let Some(id) = selected_event.get_untracked() else {
+            return;
+        };
+        let name = day_ops()
+            .into_iter()
+            .find(|o| o.id == id)
+            .and_then(|o| o.name_override)
+            .filter(|n| !n.is_empty())
+            .unwrap_or_else(|| "Untitled Operation".into());
+        access.open_on(id, name);
     };
 
     view! {
@@ -335,6 +350,14 @@ pub(super) fn event_table(st: Manager) -> impl IntoView {
                                         class="w-full rounded-full border border-white/10 py-3 text-sm font-medium text-on-surface transition hover:bg-white/5"
                                     >
                                         "Edit Selected Operation"
+                                    </button>
+                                    <button
+                                        type="button"
+                                        on:click=open_access
+                                        data-testid="open-access-panel"
+                                        class="w-full rounded-full border border-white/10 py-3 text-sm font-medium text-on-surface transition hover:bg-white/5"
+                                    >
+                                        "Access, Groups & Places"
                                     </button>
                                     <button
                                         type="button"

@@ -1,19 +1,20 @@
 //! The standalone slotting view: one mission's order of battle, on its own page.
 //!
 //! **Role:** reads the operation and mission ids from the path, fetches the operation, and
-//! renders the back link, the mission heading and the shared slotting selector for that mission.
+//! renders the back link, the mission heading, the notices about the viewer's standing on the
+//! mission, and the shared slotting selector for that mission.
 //! **Position:** the `/events/:id/missions/:emid/orbat` route, rendered inside the navigation
 //! frame behind the sign-in gate.
 //! **Signals & state:** reads the session store and the route params from context. Owns the
 //! operation resource and the callback the selector runs after every mutation.
-//! **Invariants:** the mission heading and the caller's registration state are looked up in the
-//! operation by mission id, so a path naming a mission this operation does not carry still
-//! renders — with the generic heading and no registration. The selector is mounted only when the
-//! path actually carries a mission id. The fetch is a browser-only path and resolves to `None`
-//! in a native build.
+//! **Invariants:** the mission heading and the caller's standing on the mission are looked up in
+//! the operation by mission id, so a path naming a mission this operation does not carry still
+//! renders — with the generic heading and a standing that withholds no action, leaving the
+//! decision to the backend. The selector is mounted only when the path actually carries a mission
+//! id. The fetch is a browser-only path and resolves to `None` in a native build.
 #![allow(dead_code)]
 
-use super::super::event_detail::OrbatSelector;
+use super::super::event_detail::{standing_notices, MissionStanding, OrbatSelector};
 use crate::v2::core::api::dto::EventHub;
 use crate::v2::core::ui::{AuthGate, MaterialIcon};
 use leptos::prelude::*;
@@ -87,7 +88,11 @@ fn OrbatSelectionInner() -> impl IntoView {
                         let title = dossier
                             .map(|d| d.title.clone())
                             .unwrap_or_else(|| "Order of Battle".into());
-                        let my_state = dossier.and_then(|d| d.my_state.clone());
+                        let standing = match (ev.as_ref(), dossier) {
+                            (Some(hub), Some(mission)) => MissionStanding::of(hub, mission),
+                            _ => MissionStanding::unlisted(),
+                        };
+                        let notices = standing_notices(&standing);
                         let href = format!("/events/{id}");
                         view! {
                             <div class="mx-auto w-full max-w-5xl">
@@ -104,13 +109,14 @@ fn OrbatSelectionInner() -> impl IntoView {
                                     <p class="max-w-3xl text-on-surface-variant">
                                         "Select your faction, squad, and slot, then register for deployment."
                                     </p>
+                                    {notices}
                                 </header>
                                 {(!emid.is_empty())
                                     .then(|| {
                                         view! {
                                             <OrbatSelector
                                                 emid=emid.clone()
-                                                my_state=my_state
+                                                standing=standing
                                                 on_change=on_change
                                             />
                                         }

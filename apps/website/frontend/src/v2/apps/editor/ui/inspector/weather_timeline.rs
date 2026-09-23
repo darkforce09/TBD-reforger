@@ -33,7 +33,7 @@ pub const WEATHER_TIMELINE_READERS: &[(&str, &str)] = &[
         "flatten",
         "map_engine_core::mission::flatten::EditorPayload.authored_blocks_root → \
          ExtensionBlocks::from_payload → the compiled document's `weatherTimeline` block \
-         (needs the named EditorPayload field T-291 owns; without it /compiled drops the key)",
+         (read through its named EditorPayload field; without that field the artifact document drops the key)",
     ),
     (
         "mod",

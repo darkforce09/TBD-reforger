@@ -54,18 +54,10 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
     Some((app, pool, state))
 }
 
-/// Mint a bearer token for `role` **without** going through `/auth/dev-login`.
-///
-/// A dev-login for `enlisted` would upsert a `users` row, and a suite that only needs a role
-/// claim has no business writing one. This mints a private JWT for a discord id this suite owns
-/// and nothing else uses, so it cannot perturb the real admin/enlisted/… rows. Coverage is
-/// unchanged: `AdminUser` gates on the JWT's `role` claim, which is exactly what this signs.
-fn token(state: &AppState, role: &str) -> String {
-    state
-        .jwt
-        .issue_access("000000000000000235", role, true)
-        .expect("mint access token")
-        .0
+/// Separate persisted accounts keep role-gate scenarios independent.
+async fn token(state: &AppState, role: &str) -> String {
+    let actor = format!("servers-{}-{role}", Uuid::new_v4());
+    common::access_token(state, "servers_crud", &actor, role, true).await
 }
 
 /// One request → `(status, parsed body)`. `bearer: None` sends no `Authorization` header.
@@ -116,7 +108,7 @@ async fn servers_crud_full_lifecycle() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let admin = token(&state, "admin");
+    let admin = token(&state, "admin").await;
 
     // ── CREATE ───────────────────────────────────────────────────────────────────
     let (st, created) = req(
@@ -340,7 +332,7 @@ async fn servers_list_terrain_from_current_match_join() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let admin = token(&state, "admin");
+    let admin = token(&state, "admin").await;
     const SRC: &str = "servers-terrain-join";
 
     // Parallel-safe: wipe any leftover match from a prior crash (matches has no cascade from
@@ -421,7 +413,7 @@ async fn servers_writes_are_admin_only() {
     let Some((app, _, state)) = boot_servers("Tier").await else {
         return;
     };
-    let admin = token(&state, "admin");
+    let admin = token(&state, "admin").await;
     let (_, created) = req(
         &app,
         Method::POST,
@@ -434,7 +426,7 @@ async fn servers_writes_are_admin_only() {
 
     // Reading is unchanged — every member tier still sees the Server Intel list.
     for role in ["enlisted", "leader", "mission_maker"] {
-        let t = token(&state, role);
+        let t = token(&state, role).await;
         let (st, _) = req(&app, Method::GET, "/api/v1/servers", Some(&t), None).await;
         assert_eq!(st, StatusCode::OK, "{role} reads stay member-tier");
     }
@@ -456,7 +448,7 @@ async fn servers_writes_are_admin_only() {
         (Method::DELETE, format!("/api/v1/servers/{id}"), None),
     ] {
         for role in ["enlisted", "leader", "mission_maker"] {
-            let t = token(&state, role);
+            let t = token(&state, role).await;
             let (st, b) = req(&app, method.clone(), &uri, Some(&t), body.clone()).await;
             assert_eq!(
                 st,
@@ -487,7 +479,7 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     let Some((app, pool, state)) = boot_servers("Valid").await else {
         return;
     };
-    let admin = token(&state, "admin");
+    let admin = token(&state, "admin").await;
 
     let reject = |body: Value, why: &'static str| {
         let app = app.clone();

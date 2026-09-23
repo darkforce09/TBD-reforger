@@ -167,42 +167,6 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         dry_run: cli.dry_run,
     };
     let host = env.ssh_host.clone();
-    let agent_env = AgentEnv::from_env();
-    if let Err(code) = agent_env.validate_names() {
-        return Ok(code);
-    }
-
-    // ── V1 ──────────────────────────────────────────────────────────────────────────────────
-    println!("==> V1 validate mission JSON");
-    if !cli.dry_run {
-        let mission = paths
-            .schema
-            .join(format!("golden-missions/{}.json", env.mission_id));
-        // Spawned as a subprocess rather than called in-process, because that is what the bash
-        // did and because the schema validator's exit status is its contract.
-        let out = Run::new("cargo")
-            .arg("run")
-            .arg("-q")
-            .arg("-p")
-            .arg("xtask")
-            .arg("--")
-            .arg("schema")
-            .arg("validate-file")
-            .arg(&mission)
-            .cwd(&paths.mono_root)
-            .timeout(Duration::from_secs(1800))
-            .merged_output();
-        match out {
-            Ok(o) => {
-                let _ = io::stdout().write_all(o.text.as_bytes());
-                if o.code != 0 {
-                    return Ok(o.code as u8);
-                }
-            }
-            Err(e) => return Ok(not_run_exit(&e)),
-        }
-    }
-
     // ── rsync ───────────────────────────────────────────────────────────────────────────────
     println!("==> rsync to {}", env.remote_dir);
     if cli.dry_run {
@@ -263,16 +227,12 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         return Ok(code);
     }
 
-    // ── V2–V4 API smoke ─────────────────────────────────────────────────────────────────────
-    println!("==> API smoke (V2–V4)");
-    if !env.run_game_server_rest_smoke {
-        println!("[SKIP] V2–V4 API smoke — routes not in the current backend; would 404.");
+    // ── V2–V4 game-runtime smoke ────────────────────────────────────────────────────────────
+    println!("==> game-runtime smoke (V2–V4)");
+    if cli.dry_run {
         println!(
-            "       Set TBD_RUN_GAME_SERVER_REST_SMOKE=1 to run it anyway. See {}.",
-            crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
+            "[dry-run] deployment read with and without the runtime credential, artifact hash"
         );
-    } else if cli.dry_run {
-        println!("[dry-run] curl mission + roster + 401 on server localhost");
     } else if let Err(code) = runner.ssh_ok(
         &base,
         &host,
@@ -305,9 +265,21 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         // it. Render is split from push: an invalid or empty mod list fails here, on the dev
         // machine, instead of landing on the server and failing at boot.
         if env.server_mode == "config" {
+            let scenario = match deployed_scenario(&runner, &base, &host, &env) {
+                Ok(Some(live)) => {
+                    if live != env.scenario {
+                        println!(
+                            "  keeping the deployed scenario {live} (TBD_SCENARIO seeds only a new server)"
+                        );
+                    }
+                    live
+                }
+                Ok(None) => env.scenario.clone(),
+                Err(code) => return Ok(code),
+            };
             let local =
                 std::env::temp_dir().join(format!("tbd-server.config.{}.json", std::process::id()));
-            if let Err(code) = super::super::render::render_server_config(&env, &local) {
+            if let Err(code) = super::super::render::render_server_config(&env, &scenario, &local) {
                 return Ok(code);
             }
             let body = fs::read_to_string(&local).unwrap_or_default();
@@ -335,30 +307,33 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
         }
     }
 
-    // ── Install the host control agent ──────────────────────────────────────────────────────
-    //
-    // OFF BY DEFAULT. The render above is proven by --agent-selftest; THIS step is not, because
-    // exercising it means mutating the live staging host, which no test may touch.
-    // It also buys nothing until the API side lands — nothing would connect to the socket.
-    //
-    // The agent is enabled via its SOCKET, never its service: socket activation means the agent
-    // process only exists for the lifetime of one connection, so there is no long-lived listener
-    // to leak, wedge, or restart.
-    println!("==> host control agent");
-    if !agent_env.install {
-        println!("[SKIP] agent install — TBD_INSTALL_AGENT=1 to enable.");
-        println!("       Preview the exact bytes with: --render-agent <dir>");
-        println!("       Prove the behaviour with:     --agent-selftest <dir>");
-    } else if cli.dry_run {
-        println!("[dry-run] render agent, scp -> {}", agent_env.remote_path);
-        println!("[dry-run]   unit under control: {}", agent_env.unit);
-        println!(
-            "[dry-run]   socket: $XDG_RUNTIME_DIR/{} (SocketMode=0600)",
-            agent_env.socket
-        );
-        println!("[dry-run] systemctl --user enable --now tbd-reforger-agent.socket");
-    } else if let Some(code) = install_agent(&runner, &base, &host, &agent_env)? {
-        return Ok(code);
+    // ── Host agent ──────────────────────────────────────────────────────────────────────────
+    println!("==> host agent (fleet-host-agent)");
+    match &env.host_agent {
+        None => println!("[SKIP] host agent — TBD_INSTALL_HOST_AGENT=1 to install it."),
+        Some(_) if cli.dry_run => {
+            println!(
+                "[dry-run] build fleet-host-agent on the host, install ~/.local/bin/fleet-host-agent"
+            );
+            println!(
+                "[dry-run] write ~/.config/fleet-host-agent/{{agent.toml,machine-credential,rcon-password}}"
+            );
+            println!("[dry-run] systemctl --user enable --now fleet-host-agent.service");
+        }
+        Some(settings) => {
+            if let Err(code) = runner.ssh_ok(
+                &base,
+                &host,
+                &["bash".to_string(), "-s".to_string()],
+                Some(super::super::host_agent::install_payload(
+                    settings,
+                    &env.remote_dir,
+                    &env.server_config_remote,
+                )),
+            ) {
+                return Ok(code);
+            }
+        }
     }
 
     // ── V6 ──────────────────────────────────────────────────────────────────────────────────
@@ -396,57 +371,4 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     }
     println!("==> deploy complete");
     Ok(0)
-}
-
-/// Render, validate and push the agent, then enable it and re-read the socket's state.
-pub(super) fn install_agent(
-    runner: &Runner,
-    base: &SshBase,
-    host: &str,
-    agent_env: &AgentEnv,
-) -> Result<Option<u8>> {
-    // Render LOCALLY and validate BEFORE anything is pushed — the posture: a broken artefact
-    // fails here, on the dev machine, not after it has landed on the server.
-    let local = std::env::temp_dir().join(format!("tbd-agent.{}", std::process::id()));
-    let _ = fs::remove_dir_all(&local);
-    if let Err(code) = agent::render_agent_files(agent_env, &local) {
-        return Ok(Some(code));
-    }
-    if let Err(code) = agent::validate_agent_files(agent_env, &local) {
-        return Ok(Some(code));
-    }
-    let files: [(&str, String); 3] = [
-        (
-            "tbd-reforger-agent.sh",
-            format!(
-                "mkdir -p \"$HOME/.config/systemd/user\" && cat > '{p}' && chmod 0700 '{p}'",
-                p = agent_env.remote_path
-            ),
-        ),
-        (
-            "tbd-reforger-agent.socket",
-            "cat > \"$HOME/.config/systemd/user/tbd-reforger-agent.socket\"".to_string(),
-        ),
-        (
-            "tbd-reforger-agent@.service",
-            "cat > \"$HOME/.config/systemd/user/tbd-reforger-agent@.service\"".to_string(),
-        ),
-    ];
-    for (name, remote) in files {
-        let body = fs::read_to_string(local.join(name)).unwrap_or_default();
-        if let Err(code) = runner.ssh_ok(base, host, &[remote], Some(body)) {
-            let _ = fs::remove_dir_all(&local);
-            return Ok(Some(code));
-        }
-    }
-    let _ = fs::remove_dir_all(&local);
-    if let Err(code) = runner.ssh_ok(
-        base,
-        host,
-        &["bash".to_string(), "-s".to_string()],
-        Some(AGENT_INSTALL_PAYLOAD.to_string()),
-    ) {
-        return Ok(Some(code));
-    }
-    Ok(None)
 }

@@ -1,7 +1,7 @@
 //! The operations calendar route: the month grid, the day panel and the four dialogs over them.
 //!
 //! **Role:** builds the screen's state, puts it behind the administrator gate, and composes the
-//! panels in the order the layout depends on.
+//! panels and the access sheet in the order the layout depends on.
 //! **Position:** the `/admin/events` route, rendered inside the navigation frame.
 //! **Signals & state:** creates the [`Manager`] handle every panel below reads; owns nothing else.
 //! **Invariants:** the state is built inside this component, so its signals and its three fetches
@@ -9,6 +9,7 @@
 //! because it and the edit form share a stacking level, and document order is what puts it on top.
 #![allow(dead_code)]
 
+use super::access::access_sheet;
 use super::confirm_dialogs::{delete_confirm, detach_confirm};
 use super::edit_dialog::edit_dialog;
 use super::event_table::event_table;
@@ -29,7 +30,8 @@ pub fn EventManagerPage() -> impl IntoView {
     }
 }
 
-/// The screen an administrator sees: the calendar, the day panel and the four dialogs.
+/// The screen an administrator sees: the calendar, the day panel, the four dialogs and the access
+/// sheet.
 #[component]
 fn EventManagerInner() -> impl IntoView {
     let st = Manager::new();
@@ -39,6 +41,7 @@ fn EventManagerInner() -> impl IntoView {
             {delete_confirm(st)}
             {schedule_dialog(st)}
             {edit_dialog(st)}
+            {access_sheet(st.access)}
             {detach_confirm(st)}
         </div>
     }

@@ -12,8 +12,7 @@
 //! | file | owns |
 //! |------|------|
 //! | this file | [`Paths`], the CLI parse, and mode dispatch |
-//! | [`agent`] | the host control agent: the rendered artefact and its structural gates |
-//! | [`agent_selftest`] | driving that artefact against a stub systemd |
+//! | [`host_agent`] | the host agent's settings, its server-config `rcon` block and its install |
 //! | [`boot`] | the boot verdict over a `console.log`, plus its selftest |
 //! | [`config`] | the deploy file, the defaults it fills in, and the launch-mode gate |
 //! | [`render`] | modpack resolution and the `server.config.json` render and validate |
@@ -30,9 +29,9 @@
 //! would be spawned. That is structural fidelity rather than live proof, and each test says so
 //! in its name.
 //!
-//! Everything reachable offline — `--help`, `--render-only`, `--render-agent`,
-//! `--agent-selftest`, `--verify-boot`, `--verify-boot-selftest`, `--dry-run`, bad-flag and
-//! missing-value handling — is exercised by this crate's tests.
+//! Everything reachable offline — `--help`, `--render-only`, `--verify-boot`,
+//! `--verify-boot-selftest`, `--dry-run`, bad-flag and missing-value handling, and the exact text
+//! of every remote payload — is exercised by this crate's tests.
 //!
 //! ── WHY THREE CHECKS REFUSE RATHER THAN SKIP ─────────────────────────────────────────────────
 //!
@@ -41,11 +40,8 @@
 //!
 //! 1. [`config`] parses the deploy file as `KEY=VALUE` and never executes it, so a stray command
 //!    in it is inert rather than run with the deploy's privileges.
-//! 2. [`agent`] parses the agent's JSON contract with `serde_json`, compiled in, so that case
-//!    cannot vanish on a host without a JSON tool and leave the selftest reporting
-//!    `N passed, 0 failed` over a smaller denominator. `systemd-analyze verify` stays
-//!    conditional — it tests the host's systemd, not this artefact — but says out loud that it
-//!    was skipped.
+//! 2. [`host_agent`] refuses a credential, RCON password or API origin the agent or the engine
+//!    would refuse, before anything is deployed, and its install reads the unit's state back.
 //! 3. [`remote`] checks the status of the console-log pull. A partial transfer yields a
 //!    non-empty file, so a size check alone would read a truncated log as a complete one.
 //!
@@ -55,25 +51,23 @@
 //!
 //! * `--render-only` runs after the deploy file's existence check and its required values, so it
 //!   needs a filled deploy file even though it touches no server; the render legitimately reads
-//!   `TBD_PROFILE_DIR` for `TBD_SERVER_CONFIG_REMOTE`. `--render-agent`, `--agent-selftest` and
-//!   `--verify-boot*` run before that point and are genuinely credential-free.
+//!   `TBD_PROFILE_DIR` for `TBD_SERVER_CONFIG_REMOTE`. `--verify-boot*` runs before that point
+//!   and is genuinely credential-free.
 //! * `--render-only --dry-run` takes `--dry-run` as the output path: a value argument is read as
 //!   a value, with no lookahead for a leading dash, so a file may legitimately be named that.
 //! * Deploy-file values override the process environment, so `TBD_A2S_PORT=1 cargo xtask deploy
 //!   staging` is ignored when the deploy file sets that key.
 //! * `TBD_SCENARIO`'s default carries a `{ResourceGUID}`; the validator that catches a truncated
 //!   GUID is kept, because a truncated default is silent everywhere else.
-//! * The mission-JSON validate prints its banner and then does nothing under `--dry-run`.
 //! * `TBD_WORKSHOP_MOD_ID` emptiness is read from the deploy file's value, so exporting an empty
 //!   one on the command line does not trip the config-mode requirement.
 
 use anyhow::Result;
 use std::path::PathBuf;
 
-mod agent;
-mod agent_selftest;
 mod boot;
 mod config;
+mod host_agent;
 mod payloads;
 mod pycompat;
 mod remote;
@@ -87,8 +81,6 @@ mod render;
 pub struct Paths {
     /// Repository root: the rsync source, and the base for every other path.
     pub mono_root: PathBuf,
-    /// The wire-contract tree, home of the golden missions the mission-JSON step validates.
-    pub schema: PathBuf,
     /// Host secrets and remote paths. Gitignored, rsync-excluded, development machine only.
     pub deploy_env: PathBuf,
 }
@@ -97,7 +89,6 @@ impl Paths {
     pub fn resolve() -> Result<Paths> {
         let mono_root = crate::core::repository_root::find_repo_root()?;
         Ok(Paths {
-            schema: developer_tools::repository_layout::contracts_dir(&mono_root),
             deploy_env: mono_root.join(crate::core::repository_layout::DEPLOY_ENV),
             mono_root,
         })
@@ -107,7 +98,6 @@ impl Paths {
 /// The `--help` block.
 const USAGE: &str = "\
 Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]
-                                  [--render-agent <dir>] [--agent-selftest <dir>]
                                   [--verify-boot <console.log>] [--verify-boot-selftest]";
 
 /// Everything the CLI loop can produce. Mirrors the bash's five mode variables plus `DRY_RUN`.
@@ -115,8 +105,6 @@ Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]
 pub struct Cli {
     pub dry_run: bool,
     pub render_only_out: Option<String>,
-    pub render_agent_out: Option<String>,
-    pub agent_selftest_out: Option<String>,
     pub verify_boot_log: Option<String>,
     pub verify_boot_selftest: bool,
 }
@@ -162,31 +150,6 @@ pub fn parse(args: &[String]) -> Parsed {
                     }
                 }
             }
-            // Render the host control agent and its systemd units into a LOCAL directory and
-            // exit 0, before any rsync/ssh: the artefact is inspectable without deploying it.
-            "--render-agent" => {
-                i += 1;
-                match args.get(i) {
-                    Some(v) if !v.is_empty() => cli.render_agent_out = Some(v.clone()),
-                    _ => {
-                        eprintln!("--render-agent requires an output directory");
-                        return Parsed::Stop(2);
-                    }
-                }
-            }
-            // Render the agent, then RUN it against a stub systemctl whose answers this
-            // program controls, and assert the agent reports the unit's real state. See
-            // `agent::selftest` for why that is the whole point.
-            "--agent-selftest" => {
-                i += 1;
-                match args.get(i) {
-                    Some(v) if !v.is_empty() => cli.agent_selftest_out = Some(v.clone()),
-                    _ => {
-                        eprintln!("--agent-selftest requires a working directory");
-                        return Parsed::Stop(2);
-                    }
-                }
-            }
             // Run the boot verdict over a console.log you already have — no ssh, no
             // deploy.env, no staging host. Same split --render-only made for the server config:
             // a check that only runs mid-deploy is a check nobody runs.
@@ -227,8 +190,8 @@ pub fn run(args: &[String]) -> Result<u8> {
 
     // ── Mode dispatch, in the bash's order ───────────────────────────────────────────────────
     //
-    // The ORDER IS THE CONTRACT, not an implementation detail: --render-agent, --agent-selftest
-    // and both --verify-boot forms sit BEFORE the deploy.env existence check, so they run on a
+    // The ORDER IS THE CONTRACT, not an implementation detail: both --verify-boot forms sit
+    // BEFORE the deploy.env existence check, so they run on a
     // machine with no staging credentials at all. --render-only sits AFTER it (bash line 1514 vs
     // the check at 1072) and therefore needs a filled deploy.env despite the header advertising
     // it as "no rsync, no ssh, no deploy". That is preserved, not fixed: the render genuinely
@@ -236,14 +199,6 @@ pub fn run(args: &[String]) -> Result<u8> {
     // render would have to invent values and would then be rendering a different config than the
     // deploy does — the exact "validating something you did not deploy" defect this file is
     // written against.
-    if let Some(out) = cli.render_agent_out.as_deref() {
-        println!("==> render host control agent (local only, no deploy) -> {out}");
-        return agent::render_and_validate(std::path::Path::new(out));
-    }
-    if let Some(out) = cli.agent_selftest_out.as_deref() {
-        println!("==> agent selftest (local only, no deploy) -> {out}");
-        return agent_selftest::run(std::path::Path::new(out));
-    }
     if cli.verify_boot_selftest {
         println!("==> boot verdict selftest (local only, no deploy, no ssh)");
         return Ok(boot::selftest(&paths));

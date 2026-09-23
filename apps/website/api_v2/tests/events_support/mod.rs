@@ -78,16 +78,35 @@ pub fn arma(discord_id: &str) -> String {
     common::unique_arma(&format!("events-arma-{discord_id}"))
 }
 
+/// The TBD guild of the test configuration; event access defaults to its verified members.
+pub fn tbd_guild() -> String {
+    Config::for_tests("postgres://unused", "events-secret").discord_guild_id
+}
+
 /// Router + pool over this binary's private database, or `None` when the suite must skip.
+/// Dev-login identities are verified TBD members, as the default event policy requires.
 pub async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
+    common::fixtures::verify_dev_login_members(&pool, &tbd_guild()).await;
     let app = http_router::router(AppState::new(
         pool.clone(),
         Config::for_tests(url, "events-secret"),
     ));
     Some((app, pool))
+}
+
+/// Seed an actor who is a verified TBD member, like every real signup under the default policy.
+pub async fn seed_member(
+    pool: &PgPool,
+    discord_id: &str,
+    username: &str,
+    arma_id: &str,
+    role: &str,
+) {
+    common::seed_user(pool, discord_id, username, arma_id, role).await;
+    common::fixtures::seed_membership(pool, discord_id, &tbd_guild(), role).await;
 }
 
 /// A bearer for `role`, minted through the real dev-login route.

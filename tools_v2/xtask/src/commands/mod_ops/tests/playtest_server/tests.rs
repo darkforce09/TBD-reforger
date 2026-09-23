@@ -44,8 +44,8 @@ fn empty_values_are_carried_not_dropped() {
     // `--admin=` must reach validation and be REJECTED, not silently skipped (baseline a15).
     assert_eq!(opts(&["--admin="]).admins, vec![""]);
     assert!(!admin_id_is_valid(""));
-    // `--mission-id=` must reach the required check (baseline a08).
-    assert!(opts(&["--mission-id="]).mission_id.is_empty());
+    // `--mission=` must reach the required check.
+    assert!(opts(&["--mission="]).mission.is_empty());
 }
 
 #[test]
@@ -142,7 +142,7 @@ fn help_text_matches_the_options_we_parse() {
 
 #[test]
 fn help_opens_with_the_runnable_command_and_lists_every_option() {
-    assert_eq!(HELP.lines().count(), 21);
+    assert_eq!(HELP.lines().count(), 22);
     assert!(HELP.starts_with("Usage:\n  cargo xtask mod playtest"));
     assert!(HELP.ends_with("boots no game server\n"));
 }

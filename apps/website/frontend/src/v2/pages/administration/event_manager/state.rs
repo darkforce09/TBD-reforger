@@ -8,7 +8,7 @@
 //! `selected_event` the operation the day panel has focus on. `events` lists every operation in
 //! every state, `missions` the global library the attach pickers offer, and `hub` the attached
 //! roster of the operation the edit dialog is open on. The `*_busy` flags are set around their
-//! request and cleared when it settles.
+//! request and cleared when it settles. `access` is the access panel's own handle.
 //! **Invariants:** the resources are browser-only — a native build resolves each to nothing.
 //! `hub` is keyed on the edit dialog being open, so closing it stops fetching, and it answers with
 //! the event id it belongs to because a resource keeps serving its previous value while the next
@@ -16,6 +16,7 @@
 //! grid, the grouping and the forms all agree on which day an operation is on.
 #![allow(dead_code)]
 
+use super::access::AccessPanel;
 use super::dates::{day_key, iso_day_key};
 #[cfg(target_arch = "wasm32")]
 use crate::v2::core::api::dto::EventHub;
@@ -110,6 +111,8 @@ pub(super) struct Manager {
     pub(super) edit_attach_open: RwSignal<bool>,
     /// Set while an attach request from the edit form is in flight.
     pub(super) attach_busy: RwSignal<bool>,
+    /// The access panel of the operation in focus.
+    pub(super) access: AccessPanel,
 }
 
 impl Manager {
@@ -234,6 +237,7 @@ impl Manager {
             detach_busy: RwSignal::new(false),
             edit_attach_open: RwSignal::new(false),
             attach_busy: RwSignal::new(false),
+            access: AccessPanel::new(store),
         }
     }
 

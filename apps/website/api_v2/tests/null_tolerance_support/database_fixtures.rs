@@ -16,7 +16,7 @@ use website_api::core::configuration::Config;
 use website_api::core::database;
 use website_api::core::http_router;
 
-use super::{NULL_UID, REACHABILITY_KEEP, SERVICE_TOKEN};
+use super::{NULL_UID, REACHABILITY_KEEP, SERVICE_TOKEN, STATE_BOUND_KEEP, SweepCaller};
 use crate::common;
 
 /// Boot the router and mint a real admin session for [`super::NULL_UID`].
@@ -45,15 +45,48 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
     // Drop any previous run's rows. `cargo xtask db test-it` always starts from a fresh database, but a
     // repeated local `cargo test` would otherwise accumulate NULL rows until a paginated list
     // endpoint stopped returning the seeded one — which would make KNOWN_OPEN_ROUTES look healed.
-    // The schema carries no foreign keys, so order is free.
+    // Rows go before the rows their foreign keys reference.
     for sql in [
-        "DELETE FROM event_registrations WHERE discord_id = $1",
+        "WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1",
         "DELETE FROM orbat_reservations WHERE reserved_by = $1",
         "DELETE FROM orbat_slots WHERE assigned_to = $1",
         "DELETE FROM event_missions WHERE event_id IN (SELECT id FROM events WHERE created_by = $1)",
         "DELETE FROM events WHERE created_by = $1",
         "DELETE FROM match_player_stats WHERE discord_id = $1",
         "DELETE FROM mission_armories WHERE mission_id IN (SELECT id FROM missions WHERE author_id = $1)",
+        "DELETE FROM mission_deployment_slots WHERE deployment_id IN (SELECT id FROM mission_deployments WHERE requested_by = $1)",
+        "DELETE FROM mission_deployments WHERE requested_by = $1",
+        "DELETE FROM mission_review_comments WHERE mission_id IN (SELECT id FROM missions WHERE author_id = $1)",
+        "DELETE FROM mission_reviews WHERE mission_id IN (SELECT id FROM missions WHERE author_id = $1)",
+        "UPDATE missions SET approved_artifact_id = NULL WHERE author_id = $1",
+    ] {
+        sqlx::query(sql)
+            .bind(NULL_UID)
+            .execute(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
+    }
+    // Artifacts refuse deletion through their trigger; a previous run's are removed with it
+    // disabled inside this transaction only, as the blast does.
+    let mut transaction = pool.begin().await.unwrap();
+    for sql in [
+        "ALTER TABLE mission_artifacts DISABLE TRIGGER mission_artifacts_are_immutable",
+        "DELETE FROM mission_artifacts WHERE mission_id IN (SELECT id FROM missions WHERE author_id = $1)",
+        "ALTER TABLE mission_artifacts ENABLE TRIGGER mission_artifacts_are_immutable",
+    ] {
+        let statement = sqlx::query(sql);
+        let statement = if sql.contains("$1") {
+            statement.bind(NULL_UID)
+        } else {
+            statement
+        };
+        statement
+            .execute(&mut *transaction)
+            .await
+            .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
+    }
+    transaction.commit().await.unwrap();
+    for sql in [
         "DELETE FROM mission_versions WHERE created_by = $1",
         "DELETE FROM mission_bookmarks WHERE discord_id = $1",
         "DELETE FROM missions WHERE author_id = $1",
@@ -78,6 +111,9 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
         "DELETE FROM vehicle_databases WHERE name = 'Null Tank'",
         "DELETE FROM server_status_histories WHERE server_id IN (SELECT id FROM servers WHERE name = 'Null Srv')",
         "DELETE FROM server_statuses WHERE server_id IN (SELECT id FROM servers WHERE name = 'Null Srv')",
+        "DELETE FROM fleet_commands WHERE server_id IN (SELECT id FROM servers WHERE name = 'Null Srv')",
+        "DELETE FROM server_runtime_sessions WHERE server_id IN (SELECT id FROM servers WHERE name = 'Null Srv')",
+        "DELETE FROM server_machine_credentials WHERE server_id IN (SELECT id FROM servers WHERE name = 'Null Srv')",
         "DELETE FROM servers WHERE name = 'Null Srv'",
         "DELETE FROM registry_compat WHERE modpack_id IN (SELECT id FROM modpacks WHERE name = 'Null Pack')",
         "DELETE FROM registry_items WHERE modpack_id IN (SELECT id FROM modpacks WHERE name = 'Null Pack')",
@@ -89,18 +125,12 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
             .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
     }
 
-    let raw = format!("null-tolerance-{}", Uuid::new_v4());
-    sqlx::query(
-        "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) \
-         VALUES ($1, $2, now() + interval '1 hour', now())",
+    common::fixtures::seed_membership(&pool, NULL_UID, "test-tbd-guild", "admin").await;
+    let raw = website_api::identity_and_access::services::session_issuance::issue_refresh(
+        &pool, NULL_UID,
     )
-    .bind(NULL_UID)
-    .bind(website_api::core::authentication_primitives::hash_token(
-        &raw,
-    ))
-    .execute(&pool)
     .await
-    .expect("seed session");
+    .expect("seed persisted session");
 
     let app = http_router::router(AppState::new(
         pool.clone(),
@@ -125,13 +155,24 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
     Some((app, pool, tok))
 }
 
-pub async fn get(app: &Router, uri: &str, tok: &str, service: bool) -> (StatusCode, String) {
-    let mut b = Request::builder().uri(uri);
-    if service {
-        b = b.header("X-Service-Token", SERVICE_TOKEN);
-    } else {
-        b = b.header(header::AUTHORIZATION, format!("Bearer {tok}"));
-    }
+pub async fn get(
+    app: &Router,
+    uri: &str,
+    tok: &str,
+    machine: &str,
+    caller: SweepCaller,
+) -> (StatusCode, String) {
+    let b = match caller {
+        SweepCaller::Service => Request::builder()
+            .uri(uri)
+            .header("X-Service-Token", SERVICE_TOKEN),
+        SweepCaller::Member => Request::builder()
+            .uri(uri)
+            .header(header::AUTHORIZATION, format!("Bearer {tok}")),
+        SweepCaller::Machine => Request::builder()
+            .uri(uri)
+            .header(header::AUTHORIZATION, format!("Bearer {machine}")),
+    };
     let resp = app
         .clone()
         .oneshot(b.body(Body::empty()).unwrap())
@@ -151,6 +192,14 @@ pub struct Seed {
     pub event_mission: Uuid,
     pub announcement: Uuid,
     pub server: Uuid,
+    /// The seeded server's `mod_runtime` machine credential secret.
+    pub machine_secret: String,
+    /// A queued fleet command of the seeded server.
+    pub command: Uuid,
+    /// The live mission's artifact, with a pending review and one thread comment.
+    pub artifact: Uuid,
+    /// A deployment of that artifact on the seeded server, in flight.
+    pub deployment: Uuid,
     pub faction: Uuid,
     pub wiki_slug: String,
     /// `(table, WHERE clause identifying this suite's row(s))` — the blast list.
@@ -211,6 +260,31 @@ pub async fn seed(pool: &PgPool) -> Seed {
     );
     rows.push(("servers", format!("id = '{server}'")));
 
+    let credential = Uuid::new_v4();
+    let machine_secret = format!("tbdm_{}_{}", credential.simple(), "0f".repeat(32));
+    exec!(
+        "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by) \
+         VALUES ($1, $2, 'mod_runtime', $3, 'Null runtime', $4)",
+        credential,
+        server,
+        website_api::core::authentication_primitives::hash_token(&machine_secret),
+        NULL_UID
+    );
+    rows.push((
+        "server_machine_credentials",
+        format!("server_id = '{server}'"),
+    ));
+
+    let command = Uuid::new_v4();
+    exec!(
+        "INSERT INTO fleet_commands (id, server_id, executor_kind, action, idempotent, process_changing, requested_by, expires_at) \
+         VALUES ($1, $2, 'host_agent', 'list_players', true, false, $3, now() + interval '1 hour')",
+        command,
+        server,
+        NULL_UID
+    );
+    rows.push(("fleet_commands", format!("server_id = '{server}'")));
+
     exec!(
         "INSERT INTO server_statuses (server_id, is_online, player_count, max_players, server_fps, uptime_seconds, ingame_time, ingame_weather, updated_at) \
          VALUES ($1, true, 5, 64, 30, 10, '12:00', 'clear', now())",
@@ -253,6 +327,85 @@ pub async fn seed(pool: &PgPool) -> Seed {
         mission
     );
 
+    // An artifact of the live mission's version, the review that decided it and one thread
+    // comment, so the review, artifact and workspace routes decode real rows. The recorded
+    // payload digest is the version's own, which the workspace verifies before serving it.
+    let artifact = Uuid::new_v4();
+    exec!(
+        "INSERT INTO mission_artifacts (id, mission_id, mission_version_id, version_payload_sha256, \
+         metadata, metadata_sha256, catalog_sha256, modpack_id, modpack_version, compiler_version, \
+         schema_version, terrain, document, document_sha256, document_bytes, artifact_digest, created_by) \
+         SELECT $1, $2, v.id, encode(sha256(convert_to(v.json_payload::text, 'UTF8')), 'hex'), \
+         '{}'::jsonb, repeat('a', 64), repeat('b', 64), $4, '0.0.1', 'website-map-engine 0.0.0', \
+         '1', 'everon', convert_to('{}', 'UTF8'), encode(sha256(convert_to('{}', 'UTF8')), 'hex'), 2, \
+         encode(sha256(convert_to($1::text, 'UTF8')), 'hex'), $5 \
+         FROM mission_versions v WHERE v.id = $3",
+        artifact,
+        mission,
+        version,
+        modpack,
+        NULL_UID
+    );
+    rows.push(("mission_artifacts", format!("mission_id = '{mission}'")));
+    exec!(
+        "UPDATE missions SET approved_artifact_id = $1 WHERE id = $2",
+        artifact,
+        mission
+    );
+    let review = Uuid::new_v4();
+    exec!(
+        "INSERT INTO mission_reviews (id, mission_id, artifact_id, submitted_by) VALUES ($1, $2, $3, $4)",
+        review,
+        mission,
+        artifact,
+        NULL_UID
+    );
+    rows.push(("mission_reviews", format!("mission_id = '{mission}'")));
+    exec!(
+        "INSERT INTO mission_review_comments (mission_id, review_id, mission_version_id, artifact_id, author_id, kind, body) \
+         VALUES ($1, $2, $3, $4, $5, 'comment', 'Null thread')",
+        mission,
+        review,
+        version,
+        artifact,
+        NULL_UID
+    );
+    rows.push((
+        "mission_review_comments",
+        format!("mission_id = '{mission}'"),
+    ));
+
+    // The artifact deployed on the seeded server, in flight: the game-runtime reads and the
+    // operator deployment reads decode a real row.
+    exec!(
+        "INSERT INTO fleet_scenarios (terrain_key, scenario_id, display_name, updated_by) \
+         VALUES ('everon', '{0000000000000001}Missions/Null.conf', 'Null Everon', $1) \
+         ON CONFLICT (terrain_key) DO NOTHING",
+        NULL_UID
+    );
+    let load_command = Uuid::new_v4();
+    exec!(
+        "INSERT INTO fleet_commands (id, server_id, executor_kind, action, idempotent, process_changing, requested_by, expires_at) \
+         VALUES ($1, $2, 'mod_runtime', 'load_mission', false, true, $3, now() + interval '1 hour')",
+        load_command,
+        server,
+        NULL_UID
+    );
+    let deployment = Uuid::new_v4();
+    exec!(
+        "INSERT INTO mission_deployments (id, server_id, mission_id, artifact_id, terrain_key, scenario_id, \
+         transition, fleet_command_id, requested_by, requested_via, deadline_at) \
+         VALUES ($1, $2, $3, $4, 'everon', '{0000000000000001}Missions/Null.conf', 'scenario_restart', \
+         $5, $6, 'web', now() + interval '1 hour')",
+        deployment,
+        server,
+        mission,
+        artifact,
+        load_command,
+        NULL_UID
+    );
+    rows.push(("mission_deployments", format!("server_id = '{server}'")));
+
     exec!(
         "INSERT INTO mission_armories (mission_id, faction, category, item_name, quantity, icon, sort_order) \
          VALUES ($1, 'USA', 'primary', 'L85A3', 4, 'ico', 0)",
@@ -279,10 +432,11 @@ pub async fn seed(pool: &PgPool) -> Seed {
     rows.push(("announcements", format!("id = '{announcement}'")));
 
     exec!(
-        "INSERT INTO events (id, name_override, start_time, briefing, banner_image_url, status, registration_locked, max_slots, created_by, created_at, updated_at) \
-         VALUES ($1, 'Null Event', now() + interval '30 days', 'brief', 'banner', 'scheduled', false, 16, $2, now(), now())",
+        "INSERT INTO events (id, name_override, start_time, briefing, banner_image_url, status, registration_locked, max_slots, created_by, server_id, created_at, updated_at) \
+         VALUES ($1, 'Null Event', now() + interval '30 days', 'brief', 'banner', 'scheduled', false, 16, $2, $3, now(), now())",
         event,
-        NULL_UID
+        NULL_UID,
+        server
     );
     rows.push(("events", format!("id = '{event}'")));
 
@@ -314,8 +468,10 @@ pub async fn seed(pool: &PgPool) -> Seed {
     ));
 
     exec!(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state, registered_at) \
-         VALUES ($1, $2, $3, 'registered', now())",
+        "WITH allocation AS (INSERT INTO event_participant_allocations (event_id, discord_id, quota_kind) \
+         SELECT event_id, $2, 'member' FROM event_missions WHERE id = $1 RETURNING id) \
+         INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, registered_at, allocation_id) \
+         SELECT $1, $2, $3, 'registered', now(), id FROM allocation",
         event_mission,
         NULL_UID,
         slot
@@ -338,9 +494,10 @@ pub async fn seed(pool: &PgPool) -> Seed {
 
     // `matches` / `match_player_stats` — the two structs whose NULL→zero conversion lives
     // entirely in SQL, so a missing COALESCE on either is a decode failure at runtime.
+    // Pending permits NULL finalization; terminal matches require an immutable observation time.
     exec!(
         "INSERT INTO matches (id, source_match_id, event_id, mission_id, terrain, started_at, ended_at, outcome, winning_faction, aar_replay_url, created_at) \
-         VALUES ($1, 'src-1', $2, $3, 'everon', now() - interval '1 day', now(), 'success', 'USA', 'https://example.invalid/aar', now())",
+         VALUES ($1, 'src-1', $2, $3, 'everon', now() - interval '1 day', now(), 'pending', 'USA', 'https://example.invalid/aar', now())",
         a_match,
         event,
         mission
@@ -426,6 +583,10 @@ pub async fn seed(pool: &PgPool) -> Seed {
         event_mission,
         announcement,
         server,
+        machine_secret,
+        command,
+        artifact,
+        deployment,
         faction,
         wiki_slug,
         rows,
@@ -456,6 +617,12 @@ pub async fn nullable_columns(pool: &PgPool) -> BTreeMap<String, BTreeSet<String
     out
 }
 
+/// Tables whose rows never change after insert, with the trigger that refuses the change.
+const IMMUTABILITY_TRIGGERS: &[(&str, &str)] = &[
+    ("mission_versions", "mission_versions_are_immutable"),
+    ("mission_artifacts", "mission_artifacts_are_immutable"),
+];
+
 /// `UPDATE <table> SET <every nullable column> = NULL WHERE <this suite's rows>`, then prove it
 /// landed. Returns the columns actually set to NULL.
 ///
@@ -473,7 +640,11 @@ pub async fn blast_nulls(
     };
     let targets: Vec<String> = cols
         .iter()
-        .filter(|c| !REACHABILITY_KEEP.contains(&format!("{table}.{c}").as_str()))
+        .filter(|c| {
+            let column = format!("{table}.{c}");
+            !REACHABILITY_KEEP.contains(&column.as_str())
+                && !STATE_BOUND_KEEP.contains(&column.as_str())
+        })
         .cloned()
         .collect();
     if targets.is_empty() {
@@ -500,12 +671,39 @@ pub async fn blast_nulls(
         .join(", ");
     // `table`/`sets` come from `information_schema`, `where_sql` from this file's own literals —
     // no request data reaches either, so the injection audit is satisfied by construction.
+    //
+    // An immutable table refuses every UPDATE through its trigger, while rows written before the
+    // table became immutable can still hold NULLs. The blast recreates such a row the way a
+    // migration would: its refusal trigger is disabled inside the blasting transaction only, and
+    // `ALTER TABLE` holds an exclusive lock until commit, so no other session sees it disabled.
+    let mut transaction = pool.begin().await.unwrap();
+    let refusal = IMMUTABILITY_TRIGGERS
+        .iter()
+        .find(|(immutable, _)| *immutable == table)
+        .map(|(_, trigger)| *trigger);
+    if let Some(trigger) = refusal {
+        sqlx::query(AssertSqlSafe(format!(
+            "ALTER TABLE {table} DISABLE TRIGGER {trigger}"
+        )))
+        .execute(&mut *transaction)
+        .await
+        .unwrap_or_else(|e| panic!("disable {trigger}: {e}"));
+    }
     sqlx::query(AssertSqlSafe(format!(
         "UPDATE {table} SET {sets} WHERE {where_sql}"
     )))
-    .execute(pool)
+    .execute(&mut *transaction)
     .await
     .unwrap_or_else(|e| panic!("blast {table}: {e}"));
+    if let Some(trigger) = refusal {
+        sqlx::query(AssertSqlSafe(format!(
+            "ALTER TABLE {table} ENABLE TRIGGER {trigger}"
+        )))
+        .execute(&mut *transaction)
+        .await
+        .unwrap_or_else(|e| panic!("enable {trigger}: {e}"));
+    }
+    transaction.commit().await.unwrap();
 
     // Self-check: the NULLs must actually be there, or every assertion below is vacuous.
     let checks = targets
@@ -527,136 +725,262 @@ pub async fn blast_nulls(
     targets
 }
 
-/// `(route template as registered by the api_v2 route tables, concrete URI, needs X-Service-Token)`.
+/// `(route template as registered by the api_v2 route tables, concrete URI, how it authenticates)`.
 ///
 /// The template is carried alongside the URI so
 /// `every_get_route_is_swept_or_skipped_with_a_reason` can prove this table covers the whole
 /// router instead of trusting that someone remembered to extend it.
-pub fn route_sweep(s: &Seed) -> Vec<(&'static str, String, bool)> {
+pub fn route_sweep(s: &Seed) -> Vec<(&'static str, String, SweepCaller)> {
     let (m, pm, v) = (s.mission, s.pending_mission, s.version);
     let (e, em, a) = (s.event, s.event_mission, s.announcement);
     let (srv, fac, slug) = (s.server, s.faction, &s.wiki_slug);
     vec![
-        ("/healthz", "/healthz".into(), false),
+        ("/healthz", "/healthz".into(), SweepCaller::Member),
         // Swept rather than listed in ROUTE_SWEEP_SKIP: `/metrics` reads no model,
         // but it does run a live `SELECT 1` and read the pool, so the NULL blast is a free
         // check that the scrape path cannot 5xx. Service-token gated (`ServiceAuth`).
-        ("/metrics", "/metrics".into(), true),
-        ("/dashboard", "/api/v1/dashboard".into(), false),
-        ("/me", "/api/v1/me".into(), false),
-        ("/me/deployments", "/api/v1/me/deployments".into(), false),
+        ("/metrics", "/metrics".into(), SweepCaller::Service),
+        (
+            "/dashboard",
+            "/api/v1/dashboard".into(),
+            SweepCaller::Member,
+        ),
+        ("/me", "/api/v1/me".into(), SweepCaller::Member),
+        (
+            "/me/deployments",
+            "/api/v1/me/deployments".into(),
+            SweepCaller::Member,
+        ),
         (
             "/me/leave-requests",
             "/api/v1/me/leave-requests".into(),
-            false,
+            SweepCaller::Member,
         ),
-        ("/me/link/status", "/api/v1/me/link/status".into(), false),
-        ("/members", "/api/v1/members?q=Null".into(), false),
-        ("/missions", "/api/v1/missions".into(), false),
-        ("/missions/{id}", format!("/api/v1/missions/{m}"), false),
+        (
+            "/me/link/status",
+            "/api/v1/me/link/status".into(),
+            SweepCaller::Member,
+        ),
+        (
+            "/members",
+            "/api/v1/members?q=Null".into(),
+            SweepCaller::Member,
+        ),
+        ("/missions", "/api/v1/missions".into(), SweepCaller::Member),
+        (
+            "/missions/{id}",
+            format!("/api/v1/missions/{m}"),
+            SweepCaller::Member,
+        ),
         (
             "/missions/{id}/armory",
             format!("/api/v1/missions/{m}/armory"),
-            false,
+            SweepCaller::Member,
         ),
         (
             "/missions/{id}/export",
             format!("/api/v1/missions/{m}/export"),
-            false,
+            SweepCaller::Member,
         ),
         (
             "/missions/{id}/versions/{vid}",
             format!("/api/v1/missions/{m}/versions/{v}"),
-            false,
+            SweepCaller::Member,
         ),
         (
-            "/missions/{id}/compiled",
-            format!("/api/v1/missions/{m}/compiled"),
-            true,
+            "/missions/{id}/reviews",
+            format!("/api/v1/missions/{m}/reviews"),
+            SweepCaller::Member,
         ),
-        ("/events", "/api/v1/events".into(), false),
-        ("/events/{id}", format!("/api/v1/events/{e}"), false),
+        (
+            "/missions/{id}/artifacts/{artifact_id}",
+            format!("/api/v1/missions/{m}/artifacts/{}", s.artifact),
+            SweepCaller::Member,
+        ),
+        (
+            "/missions/{id}/artifacts/{artifact_id}/document",
+            format!("/api/v1/missions/{m}/artifacts/{}/document", s.artifact),
+            SweepCaller::Member,
+        ),
+        (
+            "/missions/{id}/artifacts/{artifact_id}/workspace",
+            format!("/api/v1/missions/{m}/artifacts/{}/workspace", s.artifact),
+            SweepCaller::Member,
+        ),
+        ("/events", "/api/v1/events".into(), SweepCaller::Member),
+        (
+            "/events/{id}",
+            format!("/api/v1/events/{e}"),
+            SweepCaller::Member,
+        ),
+        // Administrator access views read groups, rosters, slot policies and quota pools.
+        (
+            "/events/{id}/access",
+            format!("/api/v1/events/{e}/access"),
+            SweepCaller::Member,
+        ),
+        (
+            "/events/{id}/access/participants",
+            format!("/api/v1/events/{e}/access/participants"),
+            SweepCaller::Member,
+        ),
         (
             "/events/{id}/fire-missions",
             format!("/api/v1/events/{e}/fire-missions"),
-            false,
+            SweepCaller::Member,
         ),
         (
             "/event-missions/{emid}/orbat",
             format!("/api/v1/event-missions/{em}/orbat"),
-            false,
+            SweepCaller::Member,
         ),
-        ("/announcements", "/api/v1/announcements".into(), false),
+        (
+            "/announcements",
+            "/api/v1/announcements".into(),
+            SweepCaller::Member,
+        ),
         (
             "/announcements/{id}",
             format!("/api/v1/announcements/{a}"),
-            false,
+            SweepCaller::Member,
         ),
         // Admin CMS master list (drafts + published); the public feed is `/announcements` above.
         (
             "/cms/announcements",
             "/api/v1/cms/announcements".into(),
-            false,
+            SweepCaller::Member,
         ),
-        ("/approvals", "/api/v1/approvals".into(), false),
-        ("/admin/users", "/api/v1/admin/users".into(), false),
+        (
+            "/approvals",
+            "/api/v1/approvals".into(),
+            SweepCaller::Member,
+        ),
+        (
+            "/admin/users",
+            "/api/v1/admin/users".into(),
+            SweepCaller::Member,
+        ),
         (
             "/admin/audit-logs",
             "/api/v1/admin/audit-logs".into(),
-            false,
+            SweepCaller::Member,
         ),
         (
             "/admin/audit-logs/export.csv",
             "/api/v1/admin/audit-logs/export.csv".into(),
-            false,
+            SweepCaller::Member,
         ),
         (
             "/admin/leave-requests",
             "/api/v1/admin/leave-requests".into(),
-            false,
+            SweepCaller::Member,
         ),
         // Swept, not skipped: the endpoint aggregates jsonb over mission_versions'
         // latest payloads, which is precisely the NULL-blast class this sweep protects.
         (
             "/admin/mission-default-overrides",
             "/api/v1/admin/mission-default-overrides".into(),
-            false,
+            SweepCaller::Member,
         ),
-        ("/leaderboards", "/api/v1/leaderboards".into(), false),
+        (
+            "/leaderboards",
+            "/api/v1/leaderboards".into(),
+            SweepCaller::Member,
+        ),
         (
             "/users/{discordId}/stats",
             format!("/api/v1/users/{NULL_UID}/stats"),
-            false,
+            SweepCaller::Member,
         ),
-        ("/servers", "/api/v1/servers".into(), false),
+        ("/servers", "/api/v1/servers".into(), SweepCaller::Member),
         (
             "/servers/{id}/status",
             format!("/api/v1/servers/{srv}/status"),
-            false,
+            SweepCaller::Member,
         ),
-        ("/modpacks", "/api/v1/modpacks".into(), false),
+        (
+            "/servers/{id}/credentials",
+            format!("/api/v1/servers/{srv}/credentials"),
+            SweepCaller::Member,
+        ),
+        (
+            "/servers/{id}/commands",
+            format!("/api/v1/servers/{srv}/commands"),
+            SweepCaller::Member,
+        ),
+        (
+            "/servers/{id}/commands/{commandId}",
+            format!("/api/v1/servers/{srv}/commands/{}", s.command),
+            SweepCaller::Member,
+        ),
+        ("/modpacks", "/api/v1/modpacks".into(), SweepCaller::Member),
         (
             "/modpacks/current",
             "/api/v1/modpacks/current".into(),
-            false,
+            SweepCaller::Member,
         ),
-        ("/wiki", "/api/v1/wiki".into(), false),
-        ("/wiki/{slug}", format!("/api/v1/wiki/{slug}"), false),
+        ("/wiki", "/api/v1/wiki".into(), SweepCaller::Member),
+        (
+            "/wiki/{slug}",
+            format!("/api/v1/wiki/{slug}"),
+            SweepCaller::Member,
+        ),
         (
             "/vehicle-database",
             "/api/v1/vehicle-database".into(),
-            false,
+            SweepCaller::Member,
         ),
-        ("/factions", "/api/v1/factions".into(), false),
-        ("/factions/{id}", format!("/api/v1/factions/{fac}"), false),
-        ("/registry", "/api/v1/registry".into(), false),
-        ("/registry/compat", "/api/v1/registry/compat".into(), false),
-        ("/ingest/missions", "/api/v1/ingest/missions".into(), true),
+        ("/factions", "/api/v1/factions".into(), SweepCaller::Member),
         (
-            "/ingest/events/{id}/roster",
-            format!("/api/v1/ingest/events/{e}/roster"),
-            true,
+            "/factions/{id}",
+            format!("/api/v1/factions/{fac}"),
+            SweepCaller::Member,
         ),
-        ("/missions/{id}", format!("/api/v1/missions/{pm}"), false),
+        ("/registry", "/api/v1/registry".into(), SweepCaller::Member),
+        (
+            "/registry/compat",
+            "/api/v1/registry/compat".into(),
+            SweepCaller::Member,
+        ),
+        (
+            "/game-runtime/events/{id}/roster",
+            format!("/api/v1/game-runtime/events/{e}/roster"),
+            SweepCaller::Machine,
+        ),
+        (
+            "/game-runtime/deployment",
+            "/api/v1/game-runtime/deployment".into(),
+            SweepCaller::Machine,
+        ),
+        (
+            "/game-runtime/artifacts/{artifactId}",
+            format!("/api/v1/game-runtime/artifacts/{}", s.artifact),
+            SweepCaller::Machine,
+        ),
+        (
+            "/game-runtime/missions",
+            "/api/v1/game-runtime/missions".into(),
+            SweepCaller::Machine,
+        ),
+        (
+            "/servers/{id}/deployments",
+            format!("/api/v1/servers/{srv}/deployments"),
+            SweepCaller::Member,
+        ),
+        (
+            "/servers/{id}/deployments/{deploymentId}",
+            format!("/api/v1/servers/{srv}/deployments/{}", s.deployment),
+            SweepCaller::Member,
+        ),
+        (
+            "/fleet/scenarios",
+            "/api/v1/fleet/scenarios".into(),
+            SweepCaller::Member,
+        ),
+        (
+            "/missions/{id}",
+            format!("/api/v1/missions/{pm}"),
+            SweepCaller::Member,
+        ),
     ]
 }

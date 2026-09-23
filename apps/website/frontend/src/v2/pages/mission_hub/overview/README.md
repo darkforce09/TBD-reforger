@@ -10,7 +10,10 @@
 - **`slot_census.rs`**: BLUFOR / OPFOR / INDFOR role breakdown table.
 
 ## Files
-- **`page.rs`**: the route — the fetch, the edit predicate and the layout.
+- **`page.rs`**: the route — the fetch, the edit predicate and the layout, with the review record
+  (`mission_review/review_record.rs`) under the dossier for the author and administrators: every
+  review with its decision, conditions or rejection reason, the approved artifact, the thread with
+  a reply box, and each artifact's read-only review workspace link.
 - **`header.rs`**: the title, the attribution line and the Edit Armory button.
 - **`dossier_body.rs`**: the shared read-only dossier — badges, detail grid, faction armory — plus
   the formatters the mission library reads it through.

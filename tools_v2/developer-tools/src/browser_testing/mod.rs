@@ -8,6 +8,8 @@ pub mod fixture_injection;
 
 pub mod server;
 
+pub mod session_tokens;
+
 pub mod editor_smoke_tests;
 
 pub mod route_drift;

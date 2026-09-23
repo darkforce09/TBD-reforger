@@ -69,8 +69,8 @@ where
 ///
 /// Trimmed **once** here and the trimmed value is what gets stored, so the read side and the write
 /// side agree. Checked, not assumed: nothing in the crate trims or `btrim`s `servers.name` on read
-/// (`server_intel.rs::list_servers`, `server_intel.rs::get_server_status` and
-/// `rcon_console.rs::send_rcon` all select it raw), and it is not a key in any `WHERE`, join or
+/// (`server_intel.rs::list_servers` and `server_intel.rs::get_server_status` select it raw), and
+/// it is not a key in any `WHERE`, join or
 /// `ORDER BY` comparison other than the `ORDER BY name ASC` display sort, so normalising it cannot
 /// change which row anything matches.
 ///
@@ -245,8 +245,7 @@ pub async fn update_server(
     Path(id): Path<String>,
     body: Result<Json<ServerInput>, JsonRejection>,
 ) -> Result<Json<ServerIntelDto>, ApiError> {
-    // Mirrors `get_server_status` rather than `send_rcon`'s 404: same resource, same domain, and
-    // an unparseable uuid is a malformed request, not a missing row.
+    // Mirrors `get_server_status`: an unparseable uuid is a malformed request, not a missing row.
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };

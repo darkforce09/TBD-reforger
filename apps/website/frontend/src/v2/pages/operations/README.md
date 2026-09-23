@@ -5,8 +5,9 @@ what the record looks like afterwards.
 
 ## Pages
 1. **`schedule/` (`/events`)**: the operation list beside the hub of the one in focus.
-2. **`event_detail/` (`/events/:id`)**: the operation dossier — hero, mission dossiers, faction
-   cards and the inline slotting selector.
+2. **`event_detail/` (`/events/:id`)**: the operation dossier — hero, the places the viewer's pools
+   have, mission dossiers with the viewer's standing on each, faction cards and the inline slotting
+   selector with its restricted seats and waiting list.
 3. **`orbat_selection/` (`/events/:id/missions/:emid/orbat`)**: one mission's slotting, on a page
    of its own for direct links.
 4. **`deployments/` (`/deployments`)**: the caller's own service record — active orders, combat

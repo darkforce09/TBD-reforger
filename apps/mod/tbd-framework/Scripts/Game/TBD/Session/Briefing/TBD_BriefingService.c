@@ -150,8 +150,8 @@ class TBD_BriefingService
 		}
 
 		// T-181.26 — SANITISED like every other authored string that reaches the payload. It was the
-		// one that was not, and the local-file load path (`TBD_MissionLoader.LoadFromProfileFile`)
-		// applies NO json-schema validation, so `slot.faction`'s `^[a-z][a-z0-9_]*$` pattern is not
+		// one that was not, and a hand-staged artifact in the profile cache (TBD_MissionArtifactCache)
+		// meets NO json-schema validation, so `slot.faction`'s `^[a-z][a-z0-9_]*$` pattern is not
 		// enforced on a hand-staged mission. Only the display copy is flattened; the comparisons
 		// below (`BuildOrders` / `BuildOrbat` / `BuildZones`) keep the raw key, because a faction
 		// must match itself exactly or side discipline stops meaning anything.

@@ -137,12 +137,12 @@ fragment for API testing.
 `SKIP_MIGRATE=1` keeps the binary from running migrations, for a harness that owns the schema of a
 shared database itself.
 
-What the API writes — CMS uploads (served back at `/uploads`) and the `mission.json` files an admin
-injects for the game server — goes to `UPLOAD_DIR` and `MISSION_STAGE_DIR`. Development defaults
-both to `../../../assets_v2/scratch/website-api/{uploads,missions}` (the repository's gitignored
-scratch tree, outside this crate); outside development both are required and must be absolute, and
-the production unit points them at its systemd state directory. Test configurations use a temporary
-directory, so no suite writes into the checkout.
+What the API writes — CMS uploads, served back at `/uploads` — goes to `UPLOAD_DIR`. Development
+defaults it to `../../../assets_v2/scratch/website-api/uploads` (the repository's gitignored
+scratch tree, outside this crate); outside development it is required and must be absolute, and
+the production unit points it at its systemd state directory. Test configurations use a temporary
+directory, so no suite writes into the checkout. Game runtimes read mission artifacts over HTTPS
+from `/api/v1/game-runtime/`; nothing is staged on disk for them.
 
 Applied migrations are immutable: `sqlx` compares each file's SHA-384 against the hash it recorded
 when the migration ran, comments included, and `tests/migrations_are_immutable.rs` pins every file so

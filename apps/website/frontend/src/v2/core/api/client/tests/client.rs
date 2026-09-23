@@ -364,7 +364,14 @@ fn api_post_raw_takes_an_already_serialised_string_body() {
 fn every_auth_path_goes_through_the_one_single_flight_cell() {
     let p = prod();
     let cells = p.matches("REFRESH_SF.with(|s| s.clone())").count();
-    let guards = p.matches("send_with_refresh(").count();
+    let guards: usize = ["async fn request<", "pub async fn api_upload_file<"]
+        .iter()
+        .map(|signature| {
+            item(signature)
+                .matches("send_with_refresh_for_generation(")
+                .count()
+        })
+        .sum();
     let refreshes = p.matches("refresh_locked(store)").count();
     assert!(
         cells >= 2,
@@ -727,7 +734,7 @@ fn a_failed_refresh_still_releases_the_lock() {
 /* ═════════════ the wasm binding (source pins) ═════════════ */
 
 /// **The POST is inside the lock.** `refresh_locked` is the only caller of `refresh_via_gloo`,
-/// and it reaches it through `with_refresh_lock` + `refresh_cross_tab`. A helper that called
+/// and it reaches it through `with_refresh_lock` after checking session ownership. A helper that called
 /// the request directly would be back to per-tab-only serialisation, and
 /// `every_auth_path_goes_through_the_one_single_flight_cell` alone would not notice — its
 /// needle is `refresh_locked`, which a rename satisfies.
@@ -741,9 +748,9 @@ fn the_refresh_post_is_reachable_only_from_inside_the_cross_tab_lock() {
     );
     let locked = item("async fn refresh_locked(");
     for needed in [
-        "refresh_cross_tab(",
         "with_refresh_lock",
-        "refresh_via_gloo(store, token)",
+        "persisted_belongs_to_session(",
+        "refresh_via_gloo(store, persisted.refresh_token)",
         "peer_rotation_supersedes(",
         "load_persisted()",
     ] {
@@ -766,7 +773,7 @@ fn the_cross_tab_lock_uses_web_locks_so_a_dead_tab_releases_it() {
         src.contains("\"locks\""),
         "the lock manager must be `navigator.locks` — the API that releases on page death"
     );
-    let held = item("async fn with_refresh_lock(");
+    let held = item("async fn with_refresh_lock<");
     assert!(
         held.contains("request.call2(") && held.contains("REFRESH_LOCK_NAME"),
         "the critical section must be `navigator.locks.request(REFRESH_LOCK_NAME, cb)`"
@@ -935,4 +942,29 @@ fn the_source_pins_reject_every_dead_code_wrapper() {
     // The honest shape still reads as present, or every assertion above pins nothing.
     let live = format!("pub async fn api_post_raw() {{\n    {needle};\n}}\n#[cfg(test)]\n");
     assert!(live_code(&live).contains(needle));
+}
+
+/// A request issued during the cold start waits for the session restore before it captures the
+/// generation it belongs to. Capturing first tags it with the generation the restore ends, and its
+/// answer is then discarded as a `401`. The request paths are browser-only, so this is a source pin.
+#[test]
+fn every_request_path_waits_for_the_session_restore_before_capturing_its_generation() {
+    use crate::v2::core::test_support::class_r_scrub::{live_code, only_body};
+    let production = live_code(include_str!("../requests.rs"));
+    for marker in [
+        "async fn request<T: DeserializeOwned",
+        "pub async fn api_upload_file<",
+    ] {
+        let body = only_body(&production, marker);
+        let restored = body
+            .find("store.session_restored().await")
+            .unwrap_or_else(|| panic!("`{marker}` does not wait for the session restore"));
+        let captured = body
+            .find("store.current_generation()")
+            .unwrap_or_else(|| panic!("`{marker}` captures no session generation"));
+        assert!(
+            restored < captured,
+            "`{marker}` captures its generation before the session restore settles"
+        );
+    }
 }

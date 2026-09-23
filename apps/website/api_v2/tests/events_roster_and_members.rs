@@ -1,5 +1,5 @@
 //! The read paths that serve a roster to the game server and a member directory to the SPA:
-//! the service-token roster export (which must degrade by omitting a mission whose tip no
+//! the machine-credential roster export (which must degrade by omitting a mission whose tip no
 //! longer compiles, not by 500ing), and `GET /members` offset pagination. The suite-private
 //! fixture guards live here too, since they pin the ids and the `arma_id` mint every events
 //! suite seeds through. Skips without `TEST_DATABASE_URL`.
@@ -80,7 +80,7 @@ async fn members_list_honours_offset_pagination() {
     for i in 0..N {
         let discord_id = format!("000000000000495{i:03}");
         let username = format!("{PREFIX}{i:02}");
-        common::seed_user(
+        events_support::seed_member(
             &pool,
             &discord_id,
             &username,
@@ -158,9 +158,10 @@ async fn members_list_honours_offset_pagination() {
     );
 }
 
-/// Service-token ingest call (roster / compiled). Bearer routes stay on [`call`].
-async fn call_svc(
+/// Machine-credential game-runtime call (roster). Member routes stay on [`call`].
+async fn call_machine(
     app: &Router,
+    secret: &str,
     method: &str,
     uri: &str,
     body: Option<&str>,
@@ -168,7 +169,7 @@ async fn call_svc(
     let mut b = Request::builder()
         .method(method)
         .uri(uri)
-        .header("x-service-token", "test-service-token");
+        .header(header::AUTHORIZATION, format!("Bearer {secret}"));
     if body.is_some() {
         b = b.header(header::CONTENT_TYPE, "application/json");
     }
@@ -198,17 +199,15 @@ const T551_GOOD_EDITOR: &str = r#"{
   }
 }"#;
 
-/// The events roster omits seating when the tip is over-capacity and the registry phys
-/// catalog is loaded. Same numbers as the `/compiled` IT: 4×60 cm³ into a 200 cm³ vest.
+/// The roster seats players from the artifact the server runs, compiled against the loaded cargo
+/// catalog, and a later over-capacity tip changes nothing: the tip is not what the server runs,
+/// and it can never become an artifact. Same numbers as the capacity refusal at Save: 4×60 cm³
+/// into a 200 cm³ vest.
 ///
-/// Control: good tip seats the assigned arma_id. After a direct SQL tip swap to the
-/// over-capacity payload (Save would 400 — residual rows bypass Save), roster stays 200
-/// but that mission's assignments are omitted.
-///
-/// RED: `ingest_event_roster` calls no-arg `flatten_to_mod_document` again (empty catalog)
-/// → over-capacity tip still compiles → arma_id remains in `assignments`.
+/// RED: compile the roster from the current version again, or compile artifacts against an
+/// empty catalog — the over-capacity tip then reaches the roster or becomes an artifact.
 #[tokio::test]
-async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
+async fn roster_seats_the_deployed_artifact_and_an_over_capacity_tip_never_compiles() {
     let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
@@ -255,7 +254,7 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
     .expect("seed vest phys");
 
     let admin = token(&app, "admin").await;
-    common::seed_user(&pool, OTHER, "roster-kit-other", &actor_arma, "enlisted").await;
+    events_support::seed_member(&pool, OTHER, "roster-kit-other", &actor_arma, "enlisted").await;
 
     let create = format!(
         r#"{{"title":"Roster Kit Cargo {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
@@ -320,21 +319,91 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
         .await
         .expect("assign seat");
 
-    // Control — good tip + loaded catalog still seats (guards "always empty" vacuity).
-    let (st, body) = call_svc(
+    // The event runs on a registered server requiring the current modpack, and the approved
+    // artifact is deployed there for this event mission.
+    let runtime = common::event_runtime_credential(&pool, eid.parse().unwrap(), DEV_USER).await;
+    let server: String =
+        sqlx::query_scalar("SELECT server_id::text FROM events WHERE id = $1::uuid")
+            .bind(&eid)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    sqlx::query("UPDATE servers SET required_modpack_id = $1 WHERE id = $2::uuid")
+        .bind(pack_id)
+        .bind(&server)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (st, submitted) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{mid}/submit"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "submit: {submitted}");
+    let (_, history) = call(
         &app,
         "GET",
-        &format!("/api/v1/ingest/events/{eid}/roster"),
+        &format!("/api/v1/missions/{mid}/reviews"),
+        &admin,
+        None,
+    )
+    .await;
+    let artifact = history["reviews"][0]["artifact_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let (st, approved) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/approvals/{mid}/approve"),
+        &admin,
+        Some(&format!(r#"{{"artifact_id":"{artifact}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "approve: {approved}");
+    let (st, _) = call(
+        &app,
+        "PUT",
+        "/api/v1/fleet/scenarios/everon",
+        &admin,
+        Some(r#"{"scenario_id":"{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf","display_name":"Everon"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let (st, deployment) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/servers/{server}/deployments"),
+        &admin,
+        Some(&format!(
+            r#"{{"mission_id":"{mid}","artifact_id":"{artifact}","event_mission_id":"{emid}"}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::ACCEPTED, "deployment: {deployment}");
+
+    // Control — the deployed artifact seats the assigned arma_id (guards "always empty").
+    let (st, body) = call_machine(
+        &app,
+        &runtime,
+        "GET",
+        &format!("/api/v1/game-runtime/events/{eid}/roster"),
         None,
     )
     .await;
     assert_eq!(st, StatusCode::OK, "control roster: {body}");
-    let assignments = body["assignments"]
-        .as_object()
-        .unwrap_or_else(|| panic!("assignments object: {body}"));
+    let assignments: Vec<&str> = body["assignments"]
+        .as_array()
+        .unwrap_or_else(|| panic!("assignments array: {body}"))
+        .iter()
+        .map(|assignment| assignment["armaId"].as_str().unwrap())
+        .collect();
     assert!(
-        assignments.contains_key(&actor_arma),
-        "good tip must seat assigned arma_id; got {body}"
+        assignments.contains(&actor_arma.as_str()),
+        "the deployed artifact must seat the assigned arma_id; got {body}"
     );
 
     // Bypass Save (would 400) — plant the over-capacity residual tip.
@@ -366,29 +435,63 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
         .await
         .expect("point tip at over-capacity version");
 
-    let (st, body) = call_svc(
+    // The roster still reads the deployed artifact, never the tip.
+    let (st, again) = call_machine(
         &app,
+        &runtime,
         "GET",
-        &format!("/api/v1/ingest/events/{eid}/roster"),
+        &format!("/api/v1/game-runtime/events/{eid}/roster"),
         None,
     )
     .await;
+    assert_eq!(st, StatusCode::OK, "{again}");
     assert_eq!(
-        st,
-        StatusCode::OK,
-        "roster must stay 200 and omit the mission, not 500: {}",
-        body
+        again["assignments"], body["assignments"],
+        "a tip change never reaches the roster"
     );
-    let assignments = body["assignments"]
-        .as_object()
-        .unwrap_or_else(|| panic!("assignments object: {body}"));
-    assert!(
-        !assignments.contains_key(&actor_arma),
-        "over-capacity tip must omit seating for this mission; got {body}"
-    );
-    assert!(
-        assignments.is_empty(),
-        "sole attached mission omitted → empty assignments; got {body}"
+    // And an over-capacity version can never become an artifact: a draft whose tip is the
+    // same payload is refused at submission.
+    let (st, draft) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        &admin,
+        Some(&format!(
+            r#"{{"title":"Roster Kit Overloaded {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{draft}");
+    let draft_id = draft["id"].as_str().unwrap().to_string();
+    let overloaded = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO mission_versions (id, mission_id, semver, json_payload, editor_notes, created_by, created_at) \
+         VALUES ($1, $2::uuid, '9.9.9', $3::jsonb, '', '000000000000000001', now())",
+    )
+    .bind(overloaded)
+    .bind(&draft_id)
+    .bind(&bad_payload)
+    .execute(&pool)
+    .await
+    .expect("insert over-capacity draft version");
+    sqlx::query("UPDATE missions SET current_version_id = $1 WHERE id = $2::uuid")
+        .bind(overloaded)
+        .bind(&draft_id)
+        .execute(&pool)
+        .await
+        .expect("point the draft's tip at the over-capacity version");
+    let (st, refused) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{draft_id}/submit"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+    assert_eq!(
+        refused["details"]["code"], "UNCOMPILABLE_VERSION",
+        "{refused}"
     );
 
     // Cleanup so the shared gate DB does not accumulate forever-current packs / seats.
@@ -398,12 +501,11 @@ async fn roster_omits_over_capacity_mission_when_catalog_loaded() {
     .bind(&slot_id)
     .execute(&pool)
     .await;
-    let _ = sqlx::query("DELETE FROM registry_items WHERE modpack_id = $1")
+    // The artifact names the modpack it compiled against, so the pack stays and stops being
+    // current.
+    sqlx::query("UPDATE modpacks SET is_current = false WHERE id = $1")
         .bind(pack_id)
         .execute(&pool)
-        .await;
-    let _ = sqlx::query("DELETE FROM modpacks WHERE id = $1")
-        .bind(pack_id)
-        .execute(&pool)
-        .await;
+        .await
+        .unwrap();
 }

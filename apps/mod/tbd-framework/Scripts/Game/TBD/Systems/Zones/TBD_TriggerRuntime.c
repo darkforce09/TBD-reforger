@@ -298,7 +298,7 @@ class TBD_Trigger
 //!
 //! -- Static, and therefore explicitly cleared ------------------------------------------------
 //! A recorded landmine in this program is that statics OUTLIVE A WORLD inside one process
-//! (`SelectMissionByNumber` restarts the scenario in-process via
+//! (`TBD_FleetLoadMissionAction` restarts the scenario in-process via
 //! `GameStateTransitions.RequestScenarioRestart()`). Mission A's triggers left standing would fire
 //! into mission B. Two independent defences, because one of them is a promise and the other is a
 //! measurement:
@@ -2112,7 +2112,7 @@ modded class SCR_BaseGameMode
 	//------------------------------------------------------------------------------------------------
 	//! @authority server - triggers are evaluated where the mission document lives.
 	//!
-	//! Statics outlive a world inside one process (`SelectMissionByNumber` restarts the scenario
+	//! Statics outlive a world inside one process (`TBD_FleetLoadMissionAction` restarts the scenario
 	//! in-process), so the registry is cleared HERE, at the start of each world, rather than in a
 	//! teardown hook this class does not have. Clearing on the way in is strictly stronger: it does
 	//! not depend on the previous world having shut down tidily.

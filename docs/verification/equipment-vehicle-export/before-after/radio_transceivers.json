@@ -1,0 +1,205 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+  "before": {
+    "file": "equipment/items/radios.json",
+    "values": {
+      "radio": {
+        "radio_type": "VHF_HANDHELD",
+        "min_frequency": 32000,
+        "max_frequency": 68000,
+        "channel_count": 2,
+        "power_watts": 1300,
+        "encryption": true
+      }
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/73/73950FBA2D7DB5C5.json",
+    "source_file": "sources/arma_reforger/73/73950FBA2D7DB5C5.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/2/properties/Transceivers/0",
+        "class_name": "RadioTransceiver",
+        "facts": {
+          "ChannelFrequency": {
+            "status": "present",
+            "value": 32000,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/0",
+              "property": "ChannelFrequency",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Frequency resolution": {
+            "status": "present",
+            "value": 200,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/0",
+              "property": "Frequency resolution",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Max tunable frequency": {
+            "status": "present",
+            "value": 68000,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/0",
+              "property": "Max tunable frequency",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Min tunable frequency": {
+            "status": "present",
+            "value": 32000,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/0",
+              "property": "Min tunable frequency",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Transmitting Range": {
+            "status": "present",
+            "value": 1300.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/0",
+              "property": "Transmitting Range",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/2/properties/Transceivers/1",
+        "class_name": "RadioTransceiver",
+        "facts": {
+          "ChannelFrequency": {
+            "status": "present",
+            "value": 48000,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/1",
+              "property": "ChannelFrequency",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Frequency resolution": {
+            "status": "present",
+            "value": 200,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/1",
+              "property": "Frequency resolution",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Max tunable frequency": {
+            "status": "present",
+            "value": 68000,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/1",
+              "property": "Max tunable frequency",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Min tunable frequency": {
+            "status": "present",
+            "value": 32000,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/1",
+              "property": "Min tunable frequency",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "Transmitting Range": {
+            "status": "present",
+            "value": 1300.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et",
+              "node_id": "root/properties/components/2/properties/Transceivers/1",
+              "property": "Transmitting Range",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

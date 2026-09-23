@@ -1,9 +1,10 @@
 //! Server-side admin chat command intercept. Listed admins drive the in-game
 //! mission browser with `#tbd` chat commands:
-//!   #tbd missions             — list available missions
-//!   #tbd mission <n>          — load mission number n (reloads the world)
-//!   #tbd backend <url> [tok]  — repoint the backend + refresh the list
-//!   #tbd refresh              — refresh the mission list
+//!   #tbd missions             - list the missions the platform lets this server deploy
+//!   #tbd mission <n>          - ask the platform to deploy mission n (TBD_MissionDeploymentRelay);
+//!                               the server restarts only when the platform runs the deployment
+//!   #tbd backend <url> [tok]  - repoint the backend (and the service token) + refresh the list
+//!   #tbd refresh              - refresh the mission list
 //!   #tbd validate             — replay the mission validation findings (T-181.14)
 //!   #tbd dead                 — who has spent their life
 //!   #tbd respawn <playerId>   — the one-life escape hatch (T-181.11.1)
@@ -56,14 +57,13 @@ modded class SCR_ChatComponent
 			return;
 		}
 
-		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
-		if (!fm)
+		if (!TBD_FrameworkManager.GetInstance())
 		{
 			TBD_AdminCommands.Reply(this, senderId, "TBD: framework not ready.");
 			return;
 		}
 
-		TBD_AdminCommands.Dispatch(this, fm, msg, senderId);
+		TBD_AdminCommands.Dispatch(this, msg, senderId);
 	}
 }
 
@@ -71,7 +71,7 @@ modded class SCR_ChatComponent
 class TBD_AdminCommands
 {
 	//------------------------------------------------------------------------------------------------
-	static void Dispatch(SCR_ChatComponent chat, TBD_FrameworkManager fm, string msg, int senderId)
+	static void Dispatch(SCR_ChatComponent chat, string msg, int senderId)
 	{
 		array<string> parts = new array<string>();
 		msg.Split(" ", parts, true);
@@ -91,7 +91,7 @@ class TBD_AdminCommands
 
 		if (sub.IsEmpty() || sub == "missions" || sub == "list")
 		{
-			array<string> lines = fm.BuildMissionListText();
+			array<string> lines = TBD_DeployableMissionList.BuildListLines();
 			foreach (string line : lines)
 				Reply(chat, senderId, line);
 			return;
@@ -99,8 +99,8 @@ class TBD_AdminCommands
 
 		if (sub == "refresh")
 		{
-			fm.RefreshMissionList();
-			Reply(chat, senderId, "TBD: refreshing mission list…");
+			TBD_DeployableMissionList.Refresh();
+			Reply(chat, senderId, "TBD: refreshing the mission list...");
 			return;
 		}
 
@@ -122,7 +122,7 @@ class TBD_AdminCommands
 				Reply(chat, senderId, "Usage: #tbd mission <number>");
 				return;
 			}
-			Reply(chat, senderId, fm.SelectMissionByNumber(parts[2].ToInt()));
+			Reply(chat, senderId, TBD_MissionDeploymentRelay.RequestByNumber(senderId, parts[2].ToInt()));
 			return;
 		}
 
@@ -134,7 +134,7 @@ class TBD_AdminCommands
 				url = parts[2];
 			if (parts.Count() > 3)
 				token = parts[3];
-			Reply(chat, senderId, fm.SetBackend(url, token));
+			Reply(chat, senderId, SetBackend(url, token));
 			return;
 		}
 
@@ -254,6 +254,20 @@ class TBD_AdminCommands
 		}
 
 		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Repoint the backend URL (and the service token when given), then refresh the mission list.
+	protected static string SetBackend(string url, string token)
+	{
+		if (url.IsEmpty())
+			return "Usage: #tbd backend <url> [token]";
+
+		if (!TBD_BackendConfig.SetBackend(url, token))
+			return "TBD: failed to set backend.";
+
+		TBD_DeployableMissionList.Refresh();
+		return string.Format("TBD: backend set to %1 - refreshing the mission list...", url);
 	}
 
 	//------------------------------------------------------------------------------------------------

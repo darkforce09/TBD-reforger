@@ -1,19 +1,23 @@
-//! The server picker and the selected server's card: its identity, its controls and its telemetry.
+//! The server picker and the selected server's card: its identity, its telemetry, its fleet command
+//! console and its mission deployments.
 //!
-//! **Role:** the master list of configured servers, the header with the restart, stop and launch
-//! controls, and the three telemetry columns under it, plus the small readings they format.
-//! **Position:** the two panes of the server control screen, above the console.
-//! **Signals & state:** the list writes `selected_id`; the card reads `busy` to disable its
-//! controls while a request is out, and passes `console_log` and `command` on to the console.
-//! **Invariants:** the card shows only what `GET /servers` actually carries. Terrain and the active
-//! mission are not on that payload, so they read as a dash rather than as invented values. Stop has
-//! no endpoint of any kind and is disabled with copy that says so; launch cannot be done from a
-//! browser and says that instead of pretending. A server with no telemetry reads as zeros and
-//! dashes rather than as an offline server that happens to have numbers.
-#![allow(dead_code)]
+//! **Role:** the master list of configured servers, the header with the credential and launch
+//! controls, the three telemetry columns under it with the small readings they format, and the two
+//! sections that act on the server — fleet commands and mission deployments.
+//! **Position:** the two panes of the server control screen.
+//! **Signals & state:** the list writes `selected_id`. The card creates the state of the server it
+//! shows — its command console, its deployments panel and its credential sheet — so switching
+//! servers never shows one server's commands, deployments, credentials or a secret just issued for
+//! it under another's name.
+//! **Invariants:** the card shows only what `GET /servers` carries: a server with no telemetry reads
+//! as zeros and dashes rather than as an offline server that happens to have numbers, and a server
+//! between matches reads its terrain as a dash. Launching the game cannot be done from a browser, so
+//! the launch control says that instead of pretending. The kick form is offered the runtime session
+//! that confirmed the server's newest confirmed deployment — the one session id the web reads.
 
-use super::rcon::{post_rcon, rcon_body_restart};
-use super::rcon_console::rcon_console;
+use super::fleet_commands::{command_history, command_requests, CommandConsole};
+use super::machine_credentials::{credential_sheet, CredentialPanel};
+use super::mission_deployments::{deployment_list, deployment_request, DeploymentPanel};
 use crate::v2::core::api::dto::{ModpackDto, ServerRowDto, ServerStatusDto};
 use crate::v2::core::ui::{cn, MaterialIcon};
 use leptos::prelude::*;
@@ -64,6 +68,20 @@ pub(super) fn modpack_label(mp: Option<&ModpackDto>) -> String {
     }
 }
 
+/// The theatre the current match runs on, capitalised, or a dash between matches.
+pub(super) fn terrain_reading(server: &ServerRowDto) -> String {
+    match server.terrain.as_deref().filter(|t| !t.is_empty()) {
+        Some(terrain) => {
+            let mut chars = terrain.chars();
+            chars
+                .next()
+                .map(|first| first.to_uppercase().collect::<String>() + chars.as_str())
+                .unwrap_or_default()
+        }
+        None => "—".to_string(),
+    }
+}
+
 /// The server the screen opens on: the active one, else the first, else none.
 pub(super) fn pick_default_id(servers: &[ServerRowDto]) -> Option<String> {
     servers
@@ -80,7 +98,6 @@ pub(super) fn server_list(
 ) -> impl IntoView {
     servers
         .iter()
-        .cloned()
         .map(|s| {
             let id = s.id.clone();
             let id_click = id.clone();
@@ -133,20 +150,15 @@ pub(super) fn server_list(
         .collect_view()
 }
 
-/// The selected server's card: identity, controls, telemetry, and the console below them.
-pub(super) fn server_detail(
-    s: ServerRowDto,
-    console_log: RwSignal<Vec<String>>,
-    busy: RwSignal<bool>,
-    command: RwSignal<String>,
-) -> impl IntoView {
+/// The selected server's card: identity, telemetry, the command console and the deployments.
+pub(super) fn server_detail(s: ServerRowDto) -> impl IntoView {
     let store = expect_context::<crate::v2::core::auth::AuthStore>();
     let toasts = crate::v2::core::ui::toast::use_toasts();
-    let server_id = s.id.clone();
     let name = s.name.clone();
     let endpoint = format_endpoint(&s.ip, s.port);
     let status = s.status.clone();
     let mod_label = modpack_label(s.required_modpack.as_ref());
+    let terrain = terrain_reading(&s);
 
     let (players, max_players, uptime, fps) = match &status {
         Some(st) => (
@@ -157,44 +169,26 @@ pub(super) fn server_detail(
         ),
         None => (0, 0, "—".to_string(), "—".to_string()),
     };
-    // Terrain is not on the server payload at all, so it reads as a dash rather than as an
-    // invented map name.
-    let terrain = "—".to_string();
     let mission = status
         .as_ref()
         .and_then(|st: &ServerStatusDto| st.current_match_id.clone())
         .unwrap_or_else(|| "—".to_string());
 
-    let restart_id = server_id.clone();
-    let on_restart = {
-        let console_log = console_log;
-        let busy = busy;
-        let toasts = toasts;
-        move |_| {
-            post_rcon(
-                store,
-                restart_id.clone(),
-                rcon_body_restart(),
-                "$ restart".into(),
-                console_log,
-                busy,
-                toasts,
-            );
-        }
-    };
-
     let on_launch = move |_| {
         #[cfg(target_arch = "wasm32")]
         toasts.message("Launch requires the Reforger client");
-        #[cfg(not(target_arch = "wasm32"))]
-        let _ = toasts;
     };
 
+    let credentials = CredentialPanel::new(store, s.id.clone(), name.clone());
+    let console = CommandConsole::new(store, toasts, s.id.clone());
+    let deployments = DeploymentPanel::new(store, toasts, s.id.clone());
+    let suggested_session = Signal::derive(move || deployments.latest_confirmed_session());
+
     view! {
-        <div class="flex h-full min-w-0 flex-1 flex-col">
+        <div class="flex min-h-full min-w-0 flex-1 flex-col">
             <header class="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 p-6 pb-6">
                 <div class="min-w-0">
-                    <h2 class="truncate text-headline-lg text-on-surface">{name}</h2>
+                    <h2 class="truncate text-headline-lg text-on-surface">{name.clone()}</h2>
                     <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
                         <MaterialIcon name="lan" class="text-[16px] text-on-surface-variant" />
                         <span class="font-mono text-code-md text-on-surface">{endpoint}</span>
@@ -203,23 +197,12 @@ pub(super) fn server_detail(
                 <div class="flex items-center gap-2">
                     <button
                         type="button"
-                        data-testid="server-control-restart"
-                        prop:disabled=move || busy.get()
-                        class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2.5 text-label-md text-on-surface transition hover:bg-white/5 disabled:opacity-50"
-                        on:click=on_restart
+                        data-testid="server-control-credentials"
+                        on:click=move |_| credentials.open_sheet()
+                        class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2.5 text-label-md text-on-surface transition hover:bg-white/5"
                     >
-                        <MaterialIcon name="restart_alt" class="text-[18px]" />
-                        "Restart"
-                    </button>
-                    <button
-                        type="button"
-                        data-testid="server-control-stop"
-                        disabled=true
-                        title="No Stop HTTP or RCON endpoint — process stop is not wired"
-                        class="flex items-center gap-1.5 rounded-full border border-error-alert/30 px-4 py-2.5 text-label-md text-error-alert opacity-50"
-                    >
-                        <MaterialIcon name="stop" class="text-[18px]" />
-                        "Stop"
+                        <MaterialIcon name="key" class="text-[18px]" />
+                        "Credentials"
                     </button>
                     <button
                         type="button"
@@ -242,12 +225,29 @@ pub(super) fn server_detail(
                 {telemetry_col("Terrain", &terrain, "Active Mission", &mission)}
                 {telemetry_col("Server FPS", &fps, "Mod Configuration", &mod_label)}
             </div>
-            {rcon_console(
-                server_id,
-                console_log,
-                busy,
-                command,
-            )}
+            <div class="grid gap-6 p-6 2xl:grid-cols-2">
+                <section class="space-y-4" data-testid="server-control-fleet-commands">
+                    {section_heading("terminal", "Fleet commands")}
+                    {command_requests(console, name, suggested_session)}
+                    {command_history(console)}
+                </section>
+                <section class="space-y-4" data-testid="server-control-deployments">
+                    {section_heading("rocket_launch", "Mission deployments")}
+                    {deployment_request(deployments)}
+                    {deployment_list(deployments)}
+                </section>
+            </div>
+            {credential_sheet(credentials)}
+        </div>
+    }
+}
+
+/// A section's heading: its glyph and its name.
+fn section_heading(icon: &'static str, title: &'static str) -> impl IntoView {
+    view! {
+        <div class="flex items-center gap-2">
+            <MaterialIcon name=icon class="text-[18px] text-on-surface-variant" />
+            <h3 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">{title}</h3>
         </div>
     }
 }

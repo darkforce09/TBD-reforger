@@ -1,7 +1,9 @@
-//! Game-server rows, their live telemetry, and the decoder for the telemetry stream.
+//! Game-server rows, their live telemetry, the decoder for the telemetry stream, and the machine
+//! credentials that authenticate a server's programs.
 //!
 //! **Role:** the server list the intel page renders, the status frame the live stream pushes,
-//! and the audit line written when a frame cannot be read.
+//! the audit line written when a frame cannot be read, and the credential list, issue answer and
+//! issue request the server control screen works with.
 //! **Position:** deserialised straight from the backend's JSON and handed to the pages that
 //! render it; re-serialised unchanged by the round-trip tests.
 //! **Signals & state:** none — these are plain data.
@@ -10,7 +12,8 @@
 //! wire-contract work that must be tested. A frame that fails to deserialise becomes a named
 //! rejection, never silence: "the app cannot read this backend's frames" and "no frame has arrived
 //! yet" are different facts, and rendering the second while the first is true is the bug the
-//! distinction exists to prevent.
+//! distinction exists to prevent. A credential row never carries its secret; the one answer that
+//! does derives no `Debug`, so the secret cannot reach a log line through a formatter.
 
 use serde::{Deserialize, Serialize};
 
@@ -137,4 +140,67 @@ pub struct ServerRowDto {
     pub required_modpack: Option<ModpackDto>,
     /// The theatre the current match runs on, and null when the server is between matches.
     pub terrain: Option<String>,
+}
+
+/// The program a machine credential authenticates on its server.
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExecutorKind {
+    /// The host process supervisor: process control, the RCON player list and cross-terrain
+    /// restarts.
+    HostAgent,
+    /// The game runtime itself: runtime sessions, heartbeats, roster reads, broadcasts, kicks and
+    /// deployments.
+    ModRuntime,
+}
+
+/// One issued machine credential: its provenance, its use and its revocation — never its secret.
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineCredential {
+    pub id: String,
+    pub server_id: String,
+    /// `host_agent` or `mod_runtime`, carried as the string the backend stores so that a program
+    /// kind added later still lists.
+    pub executor_kind: String,
+    pub label: String,
+    /// The administrator who issued it.
+    pub created_by: String,
+    pub created_at: String,
+    /// Absent until the credential first authenticates a request.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_used_at: Option<String>,
+    /// Absent while the credential is live.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoked_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoked_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoke_reason: Option<String>,
+}
+
+/// `GET /servers/:id/credentials`: every credential the server has had, live and revoked.
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineCredentialList {
+    pub items: Vec<MachineCredential>,
+}
+
+/// `POST /servers/:id/credentials` answer: the stored credential and its secret. The secret
+/// authenticates exactly one program of exactly one server and the backend never shows it again.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct IssuedMachineCredential {
+    pub credential: MachineCredential,
+    pub secret: String,
+}
+
+/// `POST /servers/:id/credentials` body.
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineCredentialIssue {
+    pub executor_kind: ExecutorKind,
+    /// One to 128 characters naming where the credential is installed.
+    pub label: String,
 }

@@ -58,8 +58,7 @@ pub fn is_safe_test_database_name(name: &str) -> bool {
 /// Fail loud if `database_url` does not point at a safe test database name.
 ///
 /// Call this immediately after reading `TEST_DATABASE_URL` (and before connect /
-/// migrate / any DELETE). Unset URL is the caller's skip path — this only runs when
-/// a URL is present.
+/// migrate / any DELETE). The resolver rejects an absent URL before this guard is reached.
 pub fn assert_test_database_url(database_url: &str) {
     let name = database_name_from_url(database_url).unwrap_or_else(|| {
         panic!(
@@ -67,7 +66,7 @@ pub fn assert_test_database_url(database_url: &str) {
              ───────────────────────────────────────────────────────────────────────\n\
              TEST_DATABASE_URL is set but its database name could not be parsed.\n\
              \n  \
-             url: {database_url}\n\
+             url: <redacted>\n\
              \n  \
              Expected a postgres URL whose path is a single ASCII name, e.g.\n  \
              postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable\n\
@@ -80,7 +79,7 @@ pub fn assert_test_database_url(database_url: &str) {
              ───────────────────────────────────────────────────────────────────────\n\
              TEST_DATABASE_URL refuses to target database `{name}`.\n\
              \n  \
-             url: {database_url}\n\
+             url: <redacted>\n\
              \n  \
              Allowed names: rust_it, tbd_gate*, *_cold, *_it, *_probe.\n  \
              The live dev database `tbd_reforger` is never allowed — pointing the\n  \
@@ -104,8 +103,7 @@ pub fn assert_test_database_url(database_url: &str) {
 /// exists to prevent.
 const SUITE: &str = env!("CARGO_CRATE_NAME");
 
-/// Resolved once per test binary: the per-binary database URL, or `None` when
-/// `TEST_DATABASE_URL` is unset (the suite-skip path).
+/// Resolved once per test binary. Missing configuration panics; initialized values are Some.
 static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
 
 /// Derive this binary's private database name from the operator's base name.
@@ -156,8 +154,8 @@ pub fn with_database_name(url: &str, database: &str) -> Option<String> {
 
 /// Read `TEST_DATABASE_URL` and hand back **this binary's own** database URL.
 ///
-/// `None` when unset (suite skip); panics when the operator's URL — or the name derived
-/// from it — is not an allow-listed test database.
+/// Always returns Some after provisioning. Panics on missing configuration or an unsafe target.
+/// The Option return shape preserves existing fixture callers without allowing skipped tests.
 ///
 /// # Why this does not return what the operator exported
 ///
@@ -189,7 +187,9 @@ pub fn require_test_database_url() -> Option<String> {
 /// One-shot: derive the per-binary name, guard it, create the database, migrate it, and
 /// prime the shared `dev-login` row. Runs at most once per test binary.
 fn resolve_and_provision() -> Option<String> {
-    let base_url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let base_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
+        panic!("TEST_DATABASE_URL is required for database tests, including CI and verification gates; run cargo xtask db test-it. A test without its database cannot pass.")
+    });
     // The operator's own name is checked first and unchanged — a URL pointing at the live
     // database must still panic here, before anything below can create or drop anything.
     assert_test_database_url(&base_url);
@@ -205,7 +205,7 @@ fn resolve_and_provision() -> Option<String> {
          interpolated into DDL below and must never need quoting or escaping"
     );
     let derived_url = with_database_name(&base_url, &derived_name)
-        .unwrap_or_else(|| panic!("cannot rewrite database name in `{base_url}`"));
+        .unwrap_or_else(|| panic!("cannot rewrite test database name"));
     // The guard applies to what we actually connect to, not only to what was exported.
     // If a future base name derives to something the allow-list refuses, that is a hard
     // stop here rather than a database created outside the list.
@@ -251,7 +251,7 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
     // database is involved at all.
     let mut admin = PgConnection::connect(base_url).await.unwrap_or_else(|e| {
         panic!(
-            "connect to `{base_url}` to create tests/{SUITE}.rs's database: {e}\n  \
+            "connect to base database to create tests/{SUITE}.rs's database: {e}\n  \
              The base database must exist — `cargo xtask db test-it` creates rust_it."
         )
     });
@@ -279,7 +279,7 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
 
     let pool = website_api::core::database::connect(derived_url)
         .await
-        .unwrap_or_else(|e| panic!("connect to `{derived_url}`: {e}"));
+        .unwrap_or_else(|e| panic!("connect to derived test database: {e}"));
     website_api::core::database::migrate(&pool)
         .await
         .unwrap_or_else(|e| panic!("migrate `{derived_name}`: {e}"));

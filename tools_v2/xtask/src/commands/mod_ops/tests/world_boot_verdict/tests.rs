@@ -6,7 +6,7 @@ fn good() -> String {
     format!(
         "DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{SCEN}'.\n\
 SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'\n\
-SCRIPT    (E): [TBD] missionId not configured — cannot load mission.\n"
+SCRIPT    (E): [TBD][Mission] NO MISSION YET - no machine credential is configured (backend=), and no verified artifact is cached in $profile:TBD_MissionArtifactCache.\n"
     )
 }
 

@@ -27,10 +27,10 @@ pub(super) fn env_fail(msg: &str, hint: &str) -> u8 {
 /// is seen first) while `--help --bogus` is rc 0. Baselines `a05` / `a06` pin both directions.
 /// A conventional parser that collected everything before deciding would quietly change both.
 ///
-/// PRESERVED ODDITY — `--admin=` and `--mission-id=` accept an EMPTY value, and the empty string is
+/// PRESERVED ODDITY — `--admin=` and `--mission=` accept an EMPTY value, and the empty string is
 /// carried forward rather than ignored. `--admin=` therefore fails admin validation with
 /// `--admin='' is neither an identityId nor a SteamID` (baseline `a15`) rather than being skipped,
-/// and `--mission-id=` fails the required check (baseline `a08`).
+/// and `--mission=` fails the required check.
 pub(super) fn parse(args: &[String], home: &str) -> Parsed {
     let mut o = Opts::defaults(home);
     // bash `${arg#*=}` — strip through the FIRST `=`. A value may itself contain `=`.
@@ -39,9 +39,10 @@ pub(super) fn parse(args: &[String], home: &str) -> Parsed {
     }
     for arg in args {
         match arg.as_str() {
-            a if a.starts_with("--mission-id=") => o.mission_id = val(a),
-            a if a.starts_with("--mission-file=") => o.mission_file = val(a),
-            a if a.starts_with("--event-id=") => o.event_id = val(a),
+            a if a.starts_with("--mission=") => o.mission = val(a),
+            a if a.starts_with("--event-mission=") => o.event_mission = val(a),
+            a if a.starts_with("--server=") => o.server = val(a),
+            a if a.starts_with("--artifact-file=") => o.artifact_file = val(a),
             a if a.starts_with("--backend-url=") => o.backend_url = val(a),
             a if a.starts_with("--token=") => o.token = val(a),
             a if a.starts_with("--admin=") => o.admins.push(val(a)),
@@ -158,7 +159,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
 
     // ═══ KILL DISCIPLINE, THE LIVENESS PROBE, AND THE RUN LOCK ══════════════════════════════
     // Reached this early on purpose, ahead of every other check, for two reasons: `--selftest`
-    // has to be able to get here without a mission id, and `assert_no_live_server` has to run
+    // has to be able to get here without a mission, and `assert_no_live_server` has to run
     // BEFORE staging rewrites server.json underneath a server that is still running.
     let paths = lifecycle::RunPaths::new(&o.run_dir);
 
@@ -167,14 +168,23 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     // did not achieve when the bridge flakes — which no green boot exercises. Boots no game
     // server.
     //
-    // ORDERING ODDITY, PRESERVED: this runs before the `--mission-id` check and before port
+    // ORDERING ODDITY, PRESERVED: this runs before the `--mission` check and before port
     // validation, so `--selftest --port=1 --a2s-port=1` still selftests (baseline `f03`).
     if o.selftest {
         return lifecycle::selftest(host);
     }
 
-    if o.mission_id.is_empty() {
-        return usage_fail("--mission-id is required — it is what the mod loads");
+    if o.mission.is_empty() == o.artifact_file.is_empty() {
+        return usage_fail(
+            "give exactly one of --mission=<uuid> (deploy it through the platform) and \
+             --artifact-file=<path> (boot a compiled document offline)",
+        );
+    }
+    if !o.artifact_file.is_empty() && !Path::new(&o.artifact_file).is_file() {
+        return usage_fail(&format!(
+            "--artifact-file={} does not exist",
+            o.artifact_file
+        ));
     }
 
     // `a2sPort` and `bindPort` are separate UDP sockets. Equal ports make the engine log
@@ -264,8 +274,13 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         );
     }
 
+    let running = if o.mission.is_empty() {
+        format!("artifact file {}", o.artifact_file)
+    } else {
+        format!("mission {}", o.mission)
+    };
     let server_name = if o.server_name.is_empty() {
-        format!("TBD Playtest ({})", o.mission_id)
+        format!("TBD Playtest ({running})")
     } else {
         o.server_name.clone()
     };
@@ -306,37 +321,61 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         );
     }
 
-    // Token: explicit flag wins; otherwise `setup server-profile` already substituted the one from
-    // `apps/website/api_v2/.env` and we leave its work alone. (former python3 site 1 of 3)
-    if let Err(e) = render::patch_backend_config(&backend_cfg, &o) {
-        // bash printed python's traceback on stderr and then this exact line. The cause keeps its
-        // own line so the `ERROR:` line stays byte-identical to the baseline.
-        eprintln!("{e}");
-        eprintln!("ERROR: could not patch {backend_cfg}");
-        return 1;
-    }
-
-    if !o.mission_file.is_empty() {
-        if !Path::new(&o.mission_file).is_file() {
-            return usage_fail(&format!("--mission-file={} does not exist", o.mission_file));
+    // The mission: a deployment the platform records and the runtime confirms, or an offline
+    // artifact. A dry run provisions nothing.
+    let mut scenario = scenario;
+    let provisioned = if o.mission.is_empty() || o.dry_run {
+        if o.dry_run && !o.mission.is_empty() {
+            println!(
+                "[dry-run] would deploy mission {} through {}",
+                o.mission, o.backend_url
+            );
         }
-        // `TBD_MissionLoader.LoadFromProfileFile` reads `$profile:missions/<missionId>.json`, so the
-        // file on disk must be named for the ID, not for the golden it came from (`cargo xtask setup
-        // server-profile` carries the same note). Copy rather than re-serialise: the mod must parse
-        // these exact bytes.
-        let missions = format!("{}/profile/profile/missions", o.run_dir);
-        let _ = std::fs::create_dir_all(&missions);
-        let dst = format!("{missions}/{}.json", o.mission_id);
-        match std::fs::copy(&o.mission_file, &dst) {
-            Ok(n) => println!(
-                "    staged {n} bytes as the on-disk fallback for {}",
-                o.mission_id
+        None
+    } else {
+        match platform_deployment::provision(&o, &scenario) {
+            Ok(provisioned) => {
+                println!(
+                    "    deployment {} of artifact {} on server {} (scenario {})",
+                    provisioned.deployment_id,
+                    provisioned.artifact_id,
+                    provisioned.server_id,
+                    provisioned.scenario_id
+                );
+                scenario = provisioned.scenario_id.clone();
+                Some(provisioned)
+            }
+            Err(e) => {
+                eprintln!("ERROR: {e:#}");
+                return env_fail(
+                    "could not provision the deployment on the platform",
+                    "Bring the stack up (cargo xtask db up && cargo xtask mk rust-api) with APP_ENV=development, or boot offline with --artifact-file=<compiled document>.",
+                );
+            }
+        }
+    };
+    if !o.artifact_file.is_empty() {
+        match platform_deployment::stage_offline_artifact(&o) {
+            Ok(artifact) => println!(
+                "    staged {} as the cached artifact {artifact}",
+                o.artifact_file
             ),
             Err(e) => {
-                eprintln!("cp: cannot copy '{}' to '{dst}': {e}", o.mission_file);
+                eprintln!("ERROR: {e:#}");
                 return 1;
             }
         }
+    }
+
+    // Token: an explicit flag wins; otherwise `setup server-profile` already substituted the one
+    // from `apps/website/api_v2/.env` and that work is left alone. The machine credential is the
+    // one this run was issued.
+    let credential = provisioned.as_ref().map(|p| p.credential_secret.as_str());
+    if let Err(e) = render::patch_backend_config(&backend_cfg, &o, credential) {
+        // The cause keeps its own line so the `ERROR:` line stays byte-identical to the baseline.
+        eprintln!("{e}");
+        eprintln!("ERROR: could not patch {backend_cfg}");
+        return 1;
     }
 
     // ── addon staging dir ────────────────────────────────────────────────────────────────────
@@ -406,7 +445,12 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         return 0;
     }
 
-    boot::boot_and_wait(&boot::BootCtx {
+    let confirm = || {
+        if let Some(provisioned) = &provisioned {
+            platform_deployment::confirm(provisioned, &o.run_dir);
+        }
+    };
+    let code = boot::boot_and_wait(&boot::BootCtx {
         host,
         paths: &paths,
         opts: &o,
@@ -415,7 +459,13 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
         addon_guid: &addon_guid,
         lan_ip: &lan_ip,
         scenario: &scenario,
-    })
+        running: &running,
+        after_ready: &confirm,
+    });
+    if let Some(provisioned) = &provisioned {
+        platform_deployment::release(provisioned, &o.run_dir);
+    }
+    code
 }
 
 /// bash `[ -x PATH ]`: a regular file with any execute bit.

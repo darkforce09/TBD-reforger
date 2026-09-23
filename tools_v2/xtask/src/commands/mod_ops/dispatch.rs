@@ -4,6 +4,12 @@ use anyhow::Result;
 
 pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
     match cmd {
+        ModCmd::ValidateEquipmentVehicleExport { input } => {
+            super::equipment_vehicle_export::validate_command(&input)
+        }
+        ModCmd::PublishEquipmentVehicleExport { input } => {
+            super::equipment_vehicle_export::publish_command(&input)
+        }
         ModCmd::RemoteLogs { file, selftest } => {
             crate::commands::debug::remote_logs::run(file, selftest)
         }
@@ -22,7 +28,6 @@ pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
         ModCmd::SpawnVerify { selftest, pattern } => {
             crate::verifications::mod_scripts::spawn_verification::run(selftest, pattern)
         }
-        ModCmd::ManualTest => crate::commands::mod_ops::manual_test::run(&find_repo_root()?),
         ModCmd::DevBootstrap { args } => {
             crate::commands::mod_ops::development_bootstrap::run(&args)
         }
@@ -32,9 +37,7 @@ pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
         }
         ModCmd::BootstrapStaging => crate::commands::setup::staging_server::run(),
         ModCmd::SeedAnnouncement => crate::commands::db::milestone_announcement::run(),
-        ModCmd::TestPhase1Api => {
-            crate::commands::mod_ops::backend_api_test::run(&find_repo_root()?)
-        }
+        ModCmd::TestGameRuntimeApi => crate::commands::mod_ops::game_runtime_api_smoke::run(),
         ModCmd::Playtest { args } => crate::commands::mod_ops::playtest_server::run(&args),
         ModCmd::Compile { args } => crate::commands::mod_ops::compile::run(&args),
         ModCmd::CompileSelftest => crate::commands::mod_ops::compile::run_selftest(),

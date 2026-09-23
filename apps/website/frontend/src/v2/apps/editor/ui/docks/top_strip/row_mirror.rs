@@ -212,6 +212,10 @@ impl RowMirror {
         if value.is_empty() || !is_mission_row_id(&id) {
             return;
         }
+        // A review workspace keeps authored time and weather in the document only.
+        if !crate::v2::apps::editor::shell::review_mode::writes_mission() {
+            return;
+        }
         let queued = MIRROR.with(|m| m.borrow_mut().entry(field.column).or_default().queue(value));
         if queued {
             self.arm(field, id);

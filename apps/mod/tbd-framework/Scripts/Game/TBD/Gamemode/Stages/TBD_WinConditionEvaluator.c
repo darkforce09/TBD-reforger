@@ -36,7 +36,7 @@
 //! anyway, which is the correct answer for a machine that is not the authority.
 //!
 //! == Static, and therefore explicitly cleared ================================================
-//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `SelectMissionByNumber` restarts
+//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction` restarts
 //! the scenario in-process). Cleared in `OnGameStart` on the way IN, which is strictly stronger
 //! than a teardown hook: it does not depend on the previous world having shut down tidily. Without
 //! it, mission B would inherit mission A's `s_bEnded` and could never end at all.

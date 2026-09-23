@@ -4,8 +4,11 @@ name: ci
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
-# The website-api/map-engine/website-frontend jobs are all cargo gates (fmt + clippy -D + build +
-# test); contracts.yml stays the path-filtered citations/codegen supplement.
+# The website-api, map-engine and website-frontend jobs are the cargo gates: each runs a fmt
+# check, clippy and tests, and the comment above each job lists its exact commands. website-api
+# and map-engine pass `-D warnings` to clippy, so a warning fails those jobs; website-frontend
+# runs clippy without it, so its clippy warnings are reported but do not fail the job.
+# contracts.yml is the path-filtered citations/codegen supplement.
 on:
   push:
     branches: [main]
@@ -20,8 +23,13 @@ permissions:
   contents: read
 
 jobs:
-  # --- backend: Rust 1.95 + Postgres 18 — the sole backend.
-  # fmt (FMT-1) + clippy (GO-2..8 analog) + build + integration tests (TEST-1). ---
+  # --- website-api: the sole backend (Rust 1.95 + Postgres 18) ---
+  # fmt (FMT-1): `cargo fmt --check` on website-api, then `cargo fmt --all --check` on every
+  # workspace member. clippy (GO-2..8 analog): `cargo clippy --all-targets -- -D warnings` on
+  # website-api (host target, default features), so any warning fails the job. build:
+  # `cargo build --all-targets` on website-api. tests: `cargo test -p developer-tools --lib`,
+  # then website-api's `cargo test` (unit + integration, TEST-1) against the Postgres service
+  # below.
   website-api:
     name: website-api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
@@ -102,8 +110,12 @@ jobs:
           SQLX_OFFLINE: "true"
         run: cargo xtask ci website-api-test
 
-  # --- map-engine: the engine crate gates (fmt + clippy native/wasm32 + native tests) ---
-  # The crate's tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
+  # --- map-engine: website-map-engine + website-graphics-engine (`cargo xtask mk wasm-ci`) ---
+  # fmt: `cargo fmt --check` on both crates. clippy, two passes over both crates, each with
+  # `-D warnings` so any warning fails the job: host target with `--all-targets --all-features`,
+  # then `--target wasm32-unknown-unknown` (default features, without `--all-targets`). tests:
+  # `cargo test --all-features` on each crate, host target. No separate build step, no trunk.
+  # website-map-engine's tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
   # `lfs: true` checkout would drag the 206 MB satellite bundle every run).
   map-engine:
     name: map-engine (wasm-ci)
@@ -121,8 +133,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask mk wasm-ci
 
-  # --- website-frontend: the Rust/Leptos SPA ---
-  # fmt + clippy(wasm32) + native tests + trunk release build. The editor S/V/R/T smokes + the
+  # --- website-frontend: the Rust/Leptos SPA crate (`cargo xtask mk ci-local-leptos`) ---
+  # fmt: `cargo fmt -p website-frontend --check`. clippy: `cargo clippy -p website-frontend
+  # --target wasm32-unknown-unknown --all-targets` WITHOUT `-D warnings`, so clippy warnings are
+  # reported but do not fail the job; only errors (including deny-by-default lints) do. tests:
+  # `cargo test -p website-frontend`, host target. build: `trunk build --release` in
+  # apps/website/frontend. The editor S/V/R/T smokes + the
   # frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
   # they run in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path
   # PRs). `gate doctor` fails those fast if the env drifts.
@@ -145,8 +161,9 @@ jobs:
         run: cargo xtask mk ci-local-leptos
 
   # --- schema: the full schema-validate set + citations ---
-  # Class-R parity: this job MUST match `xtask ci schema-validate` + `xtask ci verify-citations`
-  # (i.e. `xtask ci ci-local-schema`). Sub-gate SET = the schema-validate step of
+  # Class-R parity: this job MUST match `xtask ci ci-local-schema`, which runs
+  # `xtask ci verify-codegen-fresh`, then `xtask ci schema-validate`, then
+  # `xtask ci verify-citations`. The schema-validate sub-gate SET = the schema-validate step of
   # `cargo xtask platform wave gate`, same order as the task row:
   #   validate map-object-golden map-glyphs height-labels map-object-enums
   #   type-inventory specification-consistency n6 n10  (+ citations)
@@ -202,8 +219,10 @@ jobs:
   #   verify-no-shell   Same table as no-python: any tracked shell/Make/Python/Node-script path
   #                     fails. New tooling goes in xtask (LANG-1).
   #
-  # Needs cargo (two of the three are xtask) but no database, no LFS and no wasm target, so it is a
-  # cheap job that fails fast and early rather than riding on the back of the 25-minute API job.
+  # Every step is `cargo xtask`: `verify` no-python, no-node, file-length, no-shell, ci-shell and
+  # engine-layers, then `ticket check --strict`. It needs cargo but no database, no LFS and no
+  # wasm target, so it is a cheap job that fails fast and early rather than riding on the back of
+  # the 25-minute API job.
   language-gates:
     name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length)
     runs-on: ubuntu-latest

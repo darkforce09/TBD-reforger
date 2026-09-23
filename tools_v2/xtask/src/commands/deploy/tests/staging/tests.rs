@@ -7,24 +7,30 @@ fn v(items: &[&str]) -> Vec<String> {
 #[test]
 fn usage_names_the_runnable_command_and_every_mode_flag() {
     let lines: Vec<&str> = USAGE.lines().collect();
-    assert_eq!(lines.len(), 3);
+    assert_eq!(lines.len(), 2);
     assert_eq!(
         lines[0],
         "Usage: cargo xtask deploy staging [--dry-run] [--render-only <path>]"
     );
-    assert!(lines[1].trim_start().starts_with("[--render-agent <dir>]"));
-    assert!(lines[2].ends_with("[--verify-boot-selftest]"));
+    assert!(
+        lines[1]
+            .trim_start()
+            .starts_with("[--verify-boot <console.log>]")
+    );
+    assert!(lines[1].ends_with("[--verify-boot-selftest]"));
 }
 
 #[test]
 fn missing_value_stops_with_two() {
-    for flag in [
-        "--render-only",
-        "--render-agent",
-        "--agent-selftest",
-        "--verify-boot",
-    ] {
+    for flag in ["--render-only", "--verify-boot"] {
         assert_eq!(parse(&v(&[flag])), Parsed::Stop(2), "{flag}");
+    }
+}
+
+#[test]
+fn agent_render_and_selftest_flags_are_unknown_options() {
+    for flag in ["--render-agent", "--agent-selftest"] {
+        assert_eq!(parse(&v(&[flag, "/tmp/x"])), Parsed::Stop(2), "{flag}");
     }
 }
 
@@ -71,7 +77,6 @@ fn flags_accumulate() {
 fn paths_resolve_against_the_running_checkout() {
     let p = Paths::resolve().expect("repo root");
     assert!(ticket_engine::repository::is_repo_root(&p.mono_root));
-    assert!(p.schema.ends_with("contracts_v2"));
     assert!(
         p.deploy_env
             .ends_with(crate::core::repository_layout::DEPLOY_ENV)

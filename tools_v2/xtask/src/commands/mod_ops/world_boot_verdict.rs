@@ -19,8 +19,9 @@ use std::path::{Path, PathBuf};
 use regex::Regex;
 use verification_core::pattern::Pattern;
 
-/// Errors that are CORRECT on a bare boot (no backend / no missionId).
-const EXPECTED_ERRORS: &str = r"missionId not configured|MissionList: backend not configured";
+/// Errors that are CORRECT on a bare boot: with no machine credential and no cached artifact the
+/// mod runs no mission and says so at ERROR level.
+const EXPECTED_ERRORS: &str = r"NO MISSION YET - no machine credential is configured";
 
 /// Structural breakage — fail whoever "owns" the text.
 const HARD_FAIL: &str = r"WORLD +\(E\): Unknown class|Virtual Machine Exception|Unable to find component class|Cannot find component";
@@ -342,7 +343,7 @@ pub fn cmd_selftest() -> u8 {
         "good.log",
         r#"DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
 SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
-SCRIPT    (E): [TBD] missionId not configured — cannot load mission.
+SCRIPT    (E): [TBD][Mission] NO MISSION YET - no machine credential is configured (backend=), and no verified artifact is cached in $profile:TBD_MissionArtifactCache.
 "#,
     );
     write_fixture(

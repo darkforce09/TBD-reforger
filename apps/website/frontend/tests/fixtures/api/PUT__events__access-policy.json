@@ -1,0 +1,164 @@
+{
+  "access": {
+    "access_revision": 5,
+    "event_id": "c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
+    "event_policy": {
+      "grants": [
+        {
+          "conditions": [
+            {
+              "kind": "tbd_member"
+            }
+          ]
+        },
+        {
+          "conditions": [
+            {
+              "group_id": "00000000-0000-4000-b100-000000000001",
+              "kind": "event_group"
+            }
+          ]
+        }
+      ]
+    },
+    "groups": [
+      {
+        "id": "00000000-0000-4000-b100-000000000001",
+        "name": "Byte Parity roster",
+        "provenance": {
+          "created_at": "2026-07-15T14:20:00Z",
+          "created_by": "000000000000000001",
+          "system_origin": null
+        },
+        "roster": [
+          {
+            "added_at": "2026-07-15T14:26:00Z",
+            "added_by": "000000000000000001",
+            "discord_id": "000000000000000001",
+            "system_origin": null,
+            "username": "Dev Operator"
+          },
+          {
+            "added_at": "2026-07-15T14:27:00Z",
+            "added_by": "000000000000000001",
+            "discord_id": "000000000000000002",
+            "system_origin": null,
+            "username": "Rhodes"
+          },
+          {
+            "added_at": "2026-07-15T14:28:00Z",
+            "added_by": "000000000000000001",
+            "discord_id": "000000000000000003",
+            "system_origin": null,
+            "username": "Vance"
+          },
+          {
+            "added_at": "2026-07-15T14:29:00Z",
+            "added_by": "000000000000000001",
+            "discord_id": "000000000000000004",
+            "system_origin": null,
+            "username": "Okafor"
+          },
+          {
+            "added_at": "2026-07-15T14:30:00Z",
+            "added_by": "000000000000000001",
+            "discord_id": "000000000000000005",
+            "system_origin": null,
+            "username": "Brandt"
+          },
+          {
+            "added_at": "2026-07-15T14:31:00Z",
+            "added_by": "000000000000000001",
+            "discord_id": "000000000000000006",
+            "system_origin": null,
+            "username": "Kessler"
+          }
+        ],
+        "source": {
+          "kind": "managed_roster"
+        }
+      },
+      {
+        "id": "00000000-0000-4000-b100-000000000002",
+        "name": "Allied reconnaissance",
+        "provenance": {
+          "created_at": "2026-07-15T14:21:00Z",
+          "created_by": "000000000000000001",
+          "system_origin": null
+        },
+        "roster": [],
+        "source": {
+          "guild_id": "100000000000000777",
+          "kind": "partner_guild",
+          "required_role_ids": [
+            "200000000000000888"
+          ]
+        }
+      }
+    ],
+    "max_slots": 0,
+    "quota_usage": {
+      "guest": 1,
+      "legacy_unclassified": 0,
+      "member": 4,
+      "open": 0,
+      "total": 5
+    },
+    "reservation_quotas": {
+      "guest": {
+        "opens_at": "2026-07-15T14:05:44.629713Z",
+        "seats": 2
+      },
+      "member": {
+        "opens_at": "2026-07-15T14:05:44.629713Z",
+        "seats": null
+      },
+      "open": {
+        "opens_at": "2026-07-15T14:05:44.629713Z",
+        "seats": 0
+      }
+    },
+    "slot_policies": [
+      {
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "faction": "BLUFOR",
+        "policy": {
+          "grants": [
+            {
+              "conditions": [
+                {
+                  "discord_id": "000000000000000006",
+                  "kind": "named_account"
+                }
+              ]
+            }
+          ]
+        },
+        "slot_id": "00000000-0000-4000-5000-000000000013",
+        "slot_index": 3,
+        "squad": "Bravo"
+      }
+    ],
+    "squad_policies": [
+      {
+        "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+        "faction": "OPFOR",
+        "policy": {
+          "grants": [
+            {
+              "conditions": [
+                {
+                  "group_id": "00000000-0000-4000-b100-000000000002",
+                  "kind": "event_group"
+                }
+              ]
+            }
+          ]
+        },
+        "squad": "Recon"
+      }
+    ]
+  },
+  "promoted_registrations": [],
+  "released_registrations": []
+}

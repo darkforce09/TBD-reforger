@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventRoster",
+  "description": "GET /api/v1/game-runtime/events/:id/roster (mod_runtime machine credential of the event's bound server). Game wire: camelCase keys. assignments lists each seated player's compiled slot; slots lists every compiled slot with the ids a deployment request names. A player registered on two missions of one event is seated in the earliest by start time.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "eventId",
+    "missionId",
+    "assignments",
+    "slots"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 2
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "missionId": {
+      "type": "string",
+      "description": "The catalog mission when the event holds exactly one mission, otherwise empty."
+    },
+    "assignments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RosterAssignment"
+      }
+    },
+    "slots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RosterSlot"
+      }
+    }
+  },
+  "definitions": {
+    "RosterAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "armaId",
+        "slotUid",
+        "orbatSlotId",
+        "eventMissionId"
+      ],
+      "properties": {
+        "armaId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slotUid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "orbatSlotId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "eventMissionId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "RosterSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eventMissionId",
+        "slotUid",
+        "orbatSlotId"
+      ],
+      "properties": {
+        "eventMissionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "slotUid": {
+          "type": "string",
+          "minLength": 1
+        },
+        "orbatSlotId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    }
+  }
+}

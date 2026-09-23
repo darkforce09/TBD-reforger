@@ -23,7 +23,7 @@ async fn event_orbat_registration_and_race() {
     let leader = token(&app, "leader").await;
     let enl = token(&app, "enlisted").await;
     // A distinct second user for the seeded conflict paths.
-    common::seed_user(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
+    events_support::seed_member(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
 
     // Mission (admin ≥ mission_maker) + event + attach with a 2-slot ORBAT.
     let (st, m) = call(
@@ -230,7 +230,7 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         return;
     };
     let admin = token(&app, "admin").await;
-    common::seed_user(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
+    events_support::seed_member(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
 
     // Two event-missions: the one under test, plus a second one that must stay untouched
     // when we withdraw from the first (the by-user release has to be event-scoped).
@@ -410,7 +410,25 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         .execute(&pool)
         .await
         .unwrap();
-    assert!(reg_slot(&emid).await.is_none(), "no registration row");
+    assert_eq!(
+        reg_slot(&emid).await,
+        Some(None),
+        "withdrawal preserves the signup with no seat"
+    );
+    sqlx::query(
+        "WITH removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (
+        SELECT id FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2))
+        DELETE FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
+    )
+    .bind(emid.parse::<uuid::Uuid>().unwrap())
+    .bind(DEV_USER)
+    .execute(&pool)
+    .await
+    .unwrap();
+    assert!(
+        reg_slot(&emid).await.is_none(),
+        "explicitly seed a legacy orphan with no signup"
+    );
     assert_eq!(
         withdraw(&emid).await,
         StatusCode::OK,
@@ -446,9 +464,8 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         "my seat in a different event-mission must survive"
     );
 
-    // And holding nothing here is still a 404 — the fallback widened what withdraw can free,
-    // not who is allowed to call it or what it reports when there is nothing to do.
-    assert_eq!(withdraw(&emid).await, StatusCode::NOT_FOUND);
+    // Retried withdrawal is idempotent against the retained historical signup.
+    assert_eq!(withdraw(&emid).await, StatusCode::OK);
 
     // No multi-seat seed: a partial unique on
     // (event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL makes the
@@ -524,7 +541,7 @@ async fn register_moves_the_caller_s_seat() {
     for id in [OTHER, THIRD] {
         // `arma_id` carries its own unique index, so seeded users cannot all share the empty
         // string the way one of them can — `arma()` derives a distinct one per actor.
-        common::seed_user(&pool, id, "Seeded", &arma(id), "enlisted").await;
+        events_support::seed_member(&pool, id, "Seeded", &arma(id), "enlisted").await;
     }
 
     // The operation under test (3 slots), plus a second one the release must never reach.
@@ -657,17 +674,21 @@ async fn register_moves_the_caller_s_seat() {
         .execute(&pool)
         .await
         .unwrap();
+    let mut fixture = pool.begin().await.unwrap();
+    let allocation = common::participant_allocation(&mut fixture, uid(&emid), OTHER).await;
     sqlx::query(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) VALUES ($1, $2, $3, 'registered')",
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, allocation_id) VALUES ($1, $2, $3, 'registered', $4)",
     )
     .bind(uid(&emid))
     .bind(OTHER)
     .bind(uid(&slot2))
-    .execute(&pool)
+    .bind(allocation)
+    .execute(&mut *fixture)
     .await
     .unwrap();
+    fixture.commit().await.unwrap();
     sqlx::query(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) VALUES ($1, $2, NULL, 'waitlisted')",
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state) VALUES ($1, $2, NULL, 'waitlisted')",
     )
     .bind(uid(&emid))
     .bind(THIRD)
@@ -774,17 +795,27 @@ async fn register_moves_the_caller_s_seat() {
     // The contrast that makes the "no promotion" decision above meaningful: when the caller
     // actually leaves, the registered head-count drops and the waitlist moves. `assign_slot`
     // just registered THIRD, so seed a fresh waitlister to be promoted.
-    sqlx::query("UPDATE event_registrations SET state = 'waitlisted', slot_id = NULL WHERE event_mission_id = $1 AND discord_id = $2")
+    // Returning OTHER to the queue releases its seat and its event place together.
+    let mut requeue = pool.begin().await.unwrap();
+    sqlx::query("UPDATE event_registrations SET reservation_state = 'waitlisted', slot_id = NULL, allocation_id = NULL WHERE event_mission_id = $1 AND discord_id = $2")
         .bind(uid(&emid))
         .bind(OTHER)
-        .execute(&pool)
+        .execute(&mut *requeue)
         .await
         .unwrap();
     sqlx::query("UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL WHERE id = $1")
         .bind(uid(&slot2))
-        .execute(&pool)
+        .execute(&mut *requeue)
         .await
         .unwrap();
+    sqlx::query("UPDATE event_participant_allocations SET released_at = clock_timestamp(), release_reason = 'fixture_requeued'
+        WHERE discord_id = $1 AND released_at IS NULL AND event_id = (SELECT event_id FROM event_missions WHERE id = $2)")
+        .bind(OTHER)
+        .bind(uid(&emid))
+        .execute(&mut *requeue)
+        .await
+        .unwrap();
+    requeue.commit().await.unwrap();
     assert_eq!(withdraw(&emid).await, StatusCode::OK);
     assert_eq!(
         reg(&emid, OTHER).await.unwrap().1,

@@ -5,7 +5,7 @@
 //! to, and the state directory the runtime files move into.
 
 /// The user-systemd `StateDirectory=` name the API unit declares; `%S/<this>` is where the API
-/// keeps what it writes (CMS uploads, staged missions), outside the checkout the rsync deletes in.
+/// keeps what it writes (CMS uploads), outside the checkout the rsync deletes in.
 pub const STATE_DIRECTORY: &str = "tbd-website-api";
 
 /// The Postgres container `apps/website/docker-compose.staging.yml` starts on the server.
@@ -60,12 +60,12 @@ pub fn migration_checksum_repair(remote_dir: &str) -> String {
     )
 }
 
-/// Create the unit's state directory and move any runtime files an older layout left inside the
-/// checkout (`apps/website/api_v2/{uploads,missions}`) into it. Idempotent: with nothing left to
-/// move it only ensures the directories exist.
+/// Create the unit's state directory and move any uploads an older layout left inside the
+/// checkout (`apps/website/api_v2/uploads`) into it. Idempotent: with nothing left to move it
+/// only ensures the directory exists.
 pub fn runtime_state_move(remote_dir: &str) -> String {
     format!(
-        "state=\"${{XDG_STATE_HOME:-$HOME/.local/state}}/{STATE_DIRECTORY}\" &&     mkdir -p \"$state/uploads\" \"$state/missions\" &&     for tree in uploads missions; do       src='{remote_dir}/apps/website/api_v2/'\"$tree\";       if [ -d \"$src\" ]; then         rsync -a --remove-source-files \"$src/\" \"$state/$tree/\" &&         find \"$src\" -depth -type d -empty -delete;       fi;     done"
+        "state=\"${{XDG_STATE_HOME:-$HOME/.local/state}}/{STATE_DIRECTORY}\" &&     mkdir -p \"$state/uploads\" &&     for tree in uploads; do       src='{remote_dir}/apps/website/api_v2/'\"$tree\";       if [ -d \"$src\" ]; then         rsync -a --remove-source-files \"$src/\" \"$state/$tree/\" &&         find \"$src\" -depth -type d -empty -delete;       fi;     done"
     )
 }
 

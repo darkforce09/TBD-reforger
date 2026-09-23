@@ -1,0 +1,375 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventHub",
+  "description": "GET /api/v1/events/:id: the event dossier projected for the viewer. A hidden event answers 404 exactly like a missing one. A partial viewer receives only admitted missions and no event briefing. remaining_event_places is null when the event is uncapped.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "start_time",
+    "status",
+    "registration_locked",
+    "max_slots",
+    "created_by",
+    "created_at",
+    "updated_at",
+    "missions",
+    "viewer_access",
+    "reservation_quotas",
+    "remaining_event_places"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name_override": {
+      "type": "string"
+    },
+    "start_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "briefing": {
+      "type": "string"
+    },
+    "banner_image_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "open",
+        "locked",
+        "live",
+        "completed",
+        "cancelled"
+      ]
+    },
+    "registration_locked": {
+      "type": "boolean"
+    },
+    "max_slots": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "modpack_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "missions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EventMissionDossier"
+      }
+    },
+    "viewer_access": {
+      "$ref": "#/definitions/EventViewerAccess"
+    },
+    "reservation_quotas": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/definitions/ReservationQuotaAvailability"
+      }
+    },
+    "remaining_event_places": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    }
+  },
+  "definitions": {
+    "EventViewerAccess": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "visibility",
+        "quota_class",
+        "membership_verification_pending"
+      ],
+      "properties": {
+        "visibility": {
+          "type": "string",
+          "enum": [
+            "full",
+            "partial"
+          ]
+        },
+        "quota_class": {
+          "type": "string",
+          "enum": [
+            "member",
+            "guest"
+          ],
+          "description": "The pool a new place comes from first."
+        },
+        "membership_verification_pending": {
+          "type": "boolean",
+          "description": "Discord verification is pending or stale for a guild this event's policies rely on."
+        }
+      }
+    },
+    "ReservationQuotaAvailability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quota_kind",
+        "seat_limit",
+        "allocated",
+        "remaining",
+        "opens_at",
+        "open",
+        "closed_reason"
+      ],
+      "properties": {
+        "quota_kind": {
+          "type": "string",
+          "enum": [
+            "member",
+            "guest",
+            "open"
+          ]
+        },
+        "seat_limit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "allocated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "remaining": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "opens_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "open": {
+          "type": "boolean"
+        },
+        "closed_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "not_yet_open",
+            "no_places",
+            "full",
+            null
+          ]
+        }
+      }
+    },
+    "MissionArmory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mission_id",
+        "faction",
+        "category",
+        "item_name",
+        "sort_order"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "item_name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Absent means unlimited."
+        },
+        "icon": {
+          "type": "string"
+        },
+        "sort_order": {
+          "type": "integer"
+        }
+      }
+    },
+    "ArmoryFaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "faction",
+        "items"
+      ],
+      "properties": {
+        "faction": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionArmory"
+          }
+        }
+      }
+    },
+    "EventMissionDossier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_mission_id",
+        "mission_id",
+        "title",
+        "terrain",
+        "game_mode",
+        "start_time",
+        "factions",
+        "armory_by_faction",
+        "filled",
+        "total",
+        "viewer_eligible"
+      ],
+      "properties": {
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "terrain": {
+          "type": "string"
+        },
+        "game_mode": {
+          "type": "string"
+        },
+        "briefing": {
+          "type": "string"
+        },
+        "thumbnail_url": {
+          "type": "string"
+        },
+        "start_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "factions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "armory_by_faction": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ArmoryFaction"
+          }
+        },
+        "filled": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "viewer_eligible": {
+          "type": "boolean",
+          "description": "Some seat of this mission admits the viewer under current membership authority."
+        },
+        "my_state": {
+          "type": "string",
+          "enum": [
+            "registered",
+            "waitlisted",
+            "withdrawn",
+            "legacy_unknown",
+            "attended",
+            "no_show"
+          ]
+        },
+        "my_reservation_state": {
+          "type": "string",
+          "enum": [
+            "registered",
+            "waitlisted",
+            "withdrawn",
+            "legacy_unknown"
+          ]
+        },
+        "my_attendance_state": {
+          "type": "string",
+          "enum": [
+            "attended",
+            "no_show"
+          ]
+        },
+        "my_slot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "my_release_reason": {
+          "type": "string",
+          "enum": [
+            "participant_withdrew",
+            "mission_removed",
+            "event_cancelled",
+            "event_deleted",
+            "eligibility_lost",
+            "access_policy_changed",
+            "account_unavailable",
+            "seat_cleared"
+          ]
+        },
+        "my_withdrawn_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "my_waiting_position": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

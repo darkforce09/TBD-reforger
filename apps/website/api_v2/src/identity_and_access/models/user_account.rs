@@ -12,11 +12,12 @@ use uuid::Uuid;
 use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
 
 /// Web permission level, synced from Discord roles. Backed by the Postgres ENUM
-/// `user_role`. Ordering (low→high): enlisted < leader < mission_maker < admin.
+/// `user_role`. Ordering (low→high): guest < enlisted < leader < mission_maker < admin.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "user_role", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum UserRole {
+    Guest,
     Enlisted,
     Leader,
     MissionMaker,
@@ -27,6 +28,7 @@ impl UserRole {
     /// The Postgres/JSON wire string (snake_case).
     pub fn as_str(self) -> &'static str {
         match self {
+            UserRole::Guest => "guest",
             UserRole::Enlisted => "enlisted",
             UserRole::Leader => "leader",
             UserRole::MissionMaker => "mission_maker",

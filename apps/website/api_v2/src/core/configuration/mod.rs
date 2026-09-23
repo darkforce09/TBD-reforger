@@ -6,12 +6,10 @@
 //! `oauth_unconfigured` / `discord_unreachable` — a misconfiguration wearing the costume of an
 //! outage. A `.env` file is loaded when present, but is optional.
 //!
-//! `DISCORD_BOT_TOKEN` and `GAME_AGENT_SOCKET` are optional: empty means "not configured".
-//! Each is read only through an accessor ([`Config::require_discord_bot_token`],
-//! [`Config::require_game_agent_socket`]) that turns "unset" into a named error at the point of
-//! use, instead of an empty `Bot ` header or a `Path::new("")` that connects to nothing. A
-//! variable is added here together with the code that reads it, so this file cannot accumulate
-//! settings that look configured and do nothing.
+//! `DISCORD_BOT_TOKEN` is optional: empty means "not configured". It is read only through
+//! [`Config::require_discord_bot_token`], which turns "unset" into a named error at the point of
+//! use instead of an empty `Bot ` header. A variable is added here together with the code that
+//! reads it, so this file cannot accumulate settings that look configured and do nothing.
 //!
 //! The four `TBD_DB_POOL_*` knobs are read at pool open by
 //! [`DbPoolConfig::from_env`], not by [`Config::load`]: `Config` carries no field nobody
@@ -19,7 +17,6 @@
 //! is a [`ConfigError::MalformedValue`] naming the variable.
 //!
 //! [`DbPoolConfig::from_env`]: crate::core::database::connection_pool::DbPoolConfig::from_env
-//! [`server_infrastructure::handlers::rcon_console::send_rcon`]: crate::server_infrastructure::handlers::rcon_console::send_rcon
 
 pub mod proxy_network;
 
@@ -33,8 +30,6 @@ const DEFAULT_MISSION_VERSION_MAX_BODY_BYTES: i64 = 256 << 20;
 
 /// Development default for `UPLOAD_DIR`, relative to the crate directory the developer runs from.
 const DEVELOPMENT_UPLOAD_DIR: &str = "../../../assets_v2/scratch/website-api/uploads";
-/// Development default for `MISSION_STAGE_DIR`, beside [`DEVELOPMENT_UPLOAD_DIR`].
-const DEVELOPMENT_MISSION_STAGE_DIR: &str = "../../../assets_v2/scratch/website-api/missions";
 
 /// All runtime settings for the API.
 #[derive(Debug, Clone)]
@@ -80,10 +75,6 @@ pub struct Config {
     /// the process working directory is a deployment detail and the checkout is what the deploy
     /// rsyncs with `--delete` — see `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
     pub upload_dir: String,
-    /// Directory `POST /missions/{id}/inject` stages `mission.json` files into for the game-server
-    /// bridge. Same rules as [`Self::upload_dir`]; the development default is
-    /// `../../../assets_v2/scratch/website-api/missions`.
-    pub mission_stage_dir: String,
 
     // Database
     pub database_url: String,
@@ -105,12 +96,6 @@ pub struct Config {
 
     // Game-server ingest authentication
     pub service_token: String,
-
-    /// Absolute path of the host control agent socket, e.g.
-    /// `/run/user/1000/tbd-reforger-agent.sock` (the systemd unit renders it as
-    /// `%t/tbd-reforger-agent.sock`). **Empty = no transport**, and `send_rcon` keeps answering
-    /// 503 rather than pretending. Read through [`Config::require_game_agent_socket`].
-    pub game_agent_socket: String,
 }
 
 /// Configuration load error — a required variable was empty or unusable.
@@ -156,11 +141,6 @@ impl Config {
                 DEVELOPMENT_UPLOAD_DIR,
                 &app_env,
             ),
-            mission_stage_dir: runtime_storage_dir(
-                &env::var("MISSION_STAGE_DIR").unwrap_or_default(),
-                DEVELOPMENT_MISSION_STAGE_DIR,
-                &app_env,
-            ),
             env: app_env,
             database_url: env::var("DATABASE_URL").unwrap_or_default(),
             mission_version_max_body_bytes: get_env_int(
@@ -176,7 +156,6 @@ impl Config {
             discord_bot_token: env::var("DISCORD_BOT_TOKEN").unwrap_or_default(),
             discord_webhook_url: env::var("DISCORD_WEBHOOK_URL").unwrap_or_default(),
             service_token: env::var("SERVICE_TOKEN").unwrap_or_default(),
-            game_agent_socket: env::var("GAME_AGENT_SOCKET").unwrap_or_default(),
         };
 
         cfg.validate()
@@ -222,54 +201,24 @@ impl Config {
                 "contains whitespace",
             ));
         }
-        // The agent socket is optional (empty = no transport, which `send_rcon` reports honestly
-        // as 503). A *set* value that cannot work dies at boot, not at 03:00 when an admin clicks
-        // Restart. Two rules, both for failures that would otherwise arrive disguised as "the
-        // game server is unreachable":
-        //
-        // 1. Leading/trailing whitespace — the copy-paste / secrets-manager newline.
-        //    `"/run/user/1000/x.sock\n"` is a plausible `.env` value and `connect(2)` on it is
-        //    ENOENT, which reads as an unreachable agent. Inner spaces are legal in a path and
-        //    are NOT rejected.
-        // 2. Not absolute — `UnixStream::connect` resolves a relative path against the API
-        //    process's CWD, a systemd/launcher detail nobody sets deliberately. It would either
-        //    miss (ENOENT) or, worse, hit a different socket than intended.
-        if !self.game_agent_socket.is_empty() {
-            if self.game_agent_socket != self.game_agent_socket.trim() {
-                return Err(ConfigError::Malformed(
-                    "GAME_AGENT_SOCKET",
-                    "has leading or trailing whitespace",
-                ));
-            }
-            if !Path::new(&self.game_agent_socket).is_absolute() {
-                return Err(ConfigError::Malformed(
-                    "GAME_AGENT_SOCKET",
-                    "must be an absolute path",
-                ));
-            }
-        }
         // What the API writes must land where the operator said, never in a directory that
         // happens to be the process's CWD. Empty can only survive `load` outside development (the
         // development default fills it), and there it is a missing setting, not a default.
-        for (name, value) in [
-            ("UPLOAD_DIR", &self.upload_dir),
-            ("MISSION_STAGE_DIR", &self.mission_stage_dir),
-        ] {
-            if value.is_empty() {
-                return Err(ConfigError::Missing(name));
-            }
-            if value != value.trim() {
-                return Err(ConfigError::Malformed(
-                    name,
-                    "has leading or trailing whitespace",
-                ));
-            }
-            if !self.is_development() && !Path::new(value).is_absolute() {
-                return Err(ConfigError::Malformed(
-                    name,
-                    "must be an absolute path outside development",
-                ));
-            }
+        let upload_dir = &self.upload_dir;
+        if upload_dir.is_empty() {
+            return Err(ConfigError::Missing("UPLOAD_DIR"));
+        }
+        if upload_dir != upload_dir.trim() {
+            return Err(ConfigError::Malformed(
+                "UPLOAD_DIR",
+                "has leading or trailing whitespace",
+            ));
+        }
+        if !self.is_development() && !Path::new(upload_dir).is_absolute() {
+            return Err(ConfigError::Malformed(
+                "UPLOAD_DIR",
+                "must be an absolute path outside development",
+            ));
         }
         // `TRUSTED_PROXIES` decides whether a client-supplied header is believed, so a typo in it
         // must not be survivable. Unset stays legal and means "trust none"; a *set* entry that
@@ -305,31 +254,6 @@ impl Config {
         Ok(&self.discord_bot_token)
     }
 
-    /// True when a game-agent socket path is configured at all.
-    ///
-    /// Same shape as [`Self::discord_bot_configured`]: an unconfigured channel must be
-    /// distinguishable from a broken one, or "nobody set this up" hides inside whatever
-    /// `connect(2)` happens to return.
-    pub fn game_agent_configured(&self) -> bool {
-        !self.game_agent_socket.is_empty()
-    }
-
-    /// The agent socket path, or a named [`ConfigError::Missing`] when unset.
-    ///
-    /// The **only** supported way to read `GAME_AGENT_SOCKET`. The raw field is `""` when
-    /// unconfigured, and `Path::new("")` is a real path that `UnixStream::connect` answers with
-    /// ENOENT — indistinguishable at the call site from a game host whose agent has crashed.
-    /// Going through this accessor turns "nobody configured a transport" into a named condition
-    /// the handler can report as such.
-    ///
-    /// Validation guarantees the returned path is absolute and free of surrounding whitespace.
-    pub fn require_game_agent_socket(&self) -> Result<&Path, ConfigError> {
-        if !self.game_agent_configured() {
-            return Err(ConfigError::Missing("GAME_AGENT_SOCKET"));
-        }
-        Ok(Path::new(&self.game_agent_socket))
-    }
-
     /// Body cap (bytes) for `POST /missions/:id/versions`, falling back to 256 MB.
     pub fn mission_version_body_limit(&self) -> i64 {
         if self.mission_version_max_body_bytes > 0 {
@@ -360,7 +284,6 @@ impl Config {
             map_assets_dir: String::new(),
             glyph_assets_dir: String::new(),
             upload_dir: scratch.join("uploads").display().to_string(),
-            mission_stage_dir: scratch.join("missions").display().to_string(),
             database_url: database_url.into(),
             mission_version_max_body_bytes: DEFAULT_MISSION_VERSION_MAX_BODY_BYTES,
             jwt_secret: jwt_secret.into(),
@@ -368,13 +291,12 @@ impl Config {
             discord_client_id: String::new(),
             discord_client_secret: String::new(),
             discord_redirect_url: String::new(),
-            discord_guild_id: String::new(),
+            discord_guild_id: "test-tbd-guild".to_string(),
             discord_bot_token: String::new(),
             discord_webhook_url: String::new(),
             service_token: "test-service-token".into(),
             // Unconfigured by default: a test that wants the RCON transport stands up its
             // own socket and sets this, so no suite can accidentally reach a real agent.
-            game_agent_socket: String::new(),
         }
     }
 }

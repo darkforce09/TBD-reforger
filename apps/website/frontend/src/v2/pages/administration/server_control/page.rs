@@ -1,20 +1,23 @@
-//! The server control route: the configured servers, and the one an administrator is working on.
+//! The server control route: the configured servers, the one an administrator is working on, and
+//! the fleet's scenario registry.
 //!
 //! **Role:** fetches the server list, puts it behind the administrator gate, and arranges the
-//! picker beside the selected server's card.
+//! picker — with the control that opens the fleet scenario sheet — beside the selected server's
+//! card.
 //! **Position:** the `/admin/server` route, rendered inside the navigation frame.
-//! **Signals & state:** owns `selected_id` (which server the detail pane shows), `console_log` (the
-//! RCON transcript), `busy` (a request is out) and `command` (the console's input). The fetched
-//! list lives in a `LocalResource` read inside a suspense boundary.
+//! **Signals & state:** owns `selected_id` (which server the detail pane shows) and the fleet
+//! scenario registry, which belongs to the whole fleet rather than to one server. The fetched list
+//! lives in a `LocalResource` read inside a suspense boundary.
 //! **Invariants:** the request future is not `Send`, so the fetch is a browser-only path and a
-//! native build resolves to nothing and renders the failure branch. The transcript and the busy
-//! flag belong to the screen, not to a server, so switching servers keeps the session's history and
-//! cannot leave a control stuck disabled.
+//! native build resolves to nothing and renders the failure branch. Each server card builds its own
+//! console and deployments state, so switching servers never shows one server's commands or
+//! deployments under another's name.
 #![allow(dead_code)]
 
+use super::fleet_scenarios::{scenario_sheet, ScenarioRegistry};
 use super::server_cards::{pick_default_id, server_detail, server_list};
 use crate::v2::core::api::dto::{DataEnvelope, ServerRowDto};
-use crate::v2::core::ui::AdminGate;
+use crate::v2::core::ui::{AdminGate, MaterialIcon};
 use leptos::prelude::*;
 
 /// The server control screen, behind the administrator gate.
@@ -44,6 +47,7 @@ fn ServerControlInner() -> impl IntoView {
             None::<DataEnvelope<ServerRowDto>>
         }
     });
+    let scenarios = ScenarioRegistry::new(store, crate::v2::core::ui::toast::use_toasts());
 
     view! {
         <div class="relative h-full w-full overflow-hidden">
@@ -56,7 +60,7 @@ fn ServerControlInner() -> impl IntoView {
                 }>
                     {move || {
                         servers.get().map(|opt| match opt {
-                            Some(env) => control_board(env.data).into_any(),
+                            Some(env) => control_board(env.data, scenarios).into_any(),
                             None => {
                                 view! {
                                     <p class="px-8 py-10 text-error">"Failed to load servers."</p>
@@ -67,6 +71,7 @@ fn ServerControlInner() -> impl IntoView {
                     }}
                 </Suspense>
             </div>
+            {scenario_sheet(scenarios)}
         </div>
     }
 }
@@ -75,11 +80,8 @@ fn ServerControlInner() -> impl IntoView {
 ///
 /// The list is cloned once for each pane: the picker reads names and statuses, the card reads the
 /// one row the picker selected.
-fn control_board(list: Vec<ServerRowDto>) -> impl IntoView {
+fn control_board(list: Vec<ServerRowDto>, scenarios: ScenarioRegistry) -> impl IntoView {
     let selected_id = RwSignal::new(pick_default_id(&list).unwrap_or_default());
-    let console_log = RwSignal::new(Vec::<String>::new());
-    let busy = RwSignal::new(false);
-    let command = RwSignal::new(String::new());
     let list_master = list.clone();
     let list_detail = list;
 
@@ -87,7 +89,7 @@ fn control_board(list: Vec<ServerRowDto>) -> impl IntoView {
         <crate::v2::core::ui::split_pane::SplitPane
             transparent=true
             master_width="17rem"
-            master_header=master_header(list_master.len()).into_any()
+            master_header=master_header(list_master.len(), scenarios).into_any()
             master=view! {
                 {move || {
                     server_list(&list_master, selected_id)
@@ -109,13 +111,7 @@ fn control_board(list: Vec<ServerRowDto>) -> impl IntoView {
                         }
                             .into_any();
                     };
-                    server_detail(
-                        s.clone(),
-                        console_log,
-                        busy,
-                        command,
-                    )
-                        .into_any()
+                    server_detail(s.clone()).into_any()
                 }}
             }
                 .into_any()
@@ -123,12 +119,25 @@ fn control_board(list: Vec<ServerRowDto>) -> impl IntoView {
     }
 }
 
-/// The picker pane's heading: the word "Servers" and how many there are.
-fn master_header(count: usize) -> impl IntoView {
+/// The picker pane's heading: the word "Servers", how many there are, and the fleet scenario
+/// sheet's control.
+fn master_header(count: usize, scenarios: ScenarioRegistry) -> impl IntoView {
     view! {
-        <h1 class="w-full text-label-md font-semibold tracking-wide text-on-surface uppercase">
-            "Servers"
-            <span class="ml-2 font-mono text-code-md text-outline">{count as i64}</span>
-        </h1>
+        <div class="flex w-full items-center justify-between gap-2">
+            <h1 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">
+                "Servers"
+                <span class="ml-2 font-mono text-code-md text-outline">{count as i64}</span>
+            </h1>
+            <button
+                type="button"
+                data-testid="server-control-fleet-scenarios"
+                title="Which scenario the fleet runs for each terrain"
+                on:click=move |_| scenarios.open_sheet()
+                class="flex items-center gap-1 rounded-full border border-white/10 px-3 py-1 text-xs text-on-surface transition hover:bg-white/5"
+            >
+                <MaterialIcon name="map" class="text-[14px]" />
+                "Fleet scenarios"
+            </button>
+        </div>
     }
 }

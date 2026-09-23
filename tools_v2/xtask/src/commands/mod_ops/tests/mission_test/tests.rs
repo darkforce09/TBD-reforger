@@ -24,44 +24,33 @@ fn unknown_golden_exits_1() {
 }
 
 #[test]
-fn backend_and_stage_round_trip() {
+fn golden_stages_the_cached_artifact_and_backend_clears_it() {
     let _g = HOME_LOCK.lock().unwrap();
     let (home, prof, root) = primed_home("roundtrip");
     unsafe { std::env::set_var("HOME", &home) };
 
     let code = run_with_root(&root, Some("bridgehead-at-levie")).unwrap();
     assert_eq!(code, 0);
+    let cache = prof.join(ARTIFACT_CACHE_DIRECTORY);
+    let document = fs::read(cache.join("document.json")).unwrap();
+    let identity: Value =
+        serde_json::from_str(&fs::read_to_string(cache.join("identity.json")).unwrap()).unwrap();
+    assert_eq!(identity["artifact_sha256"], sha256_hex(&document));
+    assert_eq!(
+        identity["artifact_id"],
+        "workbench-golden-bridgehead-at-levie"
+    );
+    assert_eq!(identity["mission_id"], "msn_8f3a2c");
+    assert!(prof.join("TBD_Registry.json").is_file());
+    // The backend config is not touched: the mission is not a config key.
     let cfg: Value =
         serde_json::from_str(&fs::read_to_string(prof.join("TBD_BackendConfig.json")).unwrap())
             .unwrap();
-    assert_eq!(cfg["missionId"], "msn_8f3a2c");
-    assert!(prof.join("missions/msn_8f3a2c.json").is_file());
-    assert!(prof.join("TBD_Registry.json").is_file());
+    assert!(cfg.get("missionId").is_none());
 
     let code = run_with_root(&root, Some("backend")).unwrap();
     assert_eq!(code, 0);
-    let cfg: Value =
-        serde_json::from_str(&fs::read_to_string(prof.join("TBD_BackendConfig.json")).unwrap())
-            .unwrap();
-    assert_eq!(cfg["missionId"], BACKEND_MISSION);
-}
-
-#[test]
-fn set_mission_id_no_trailing_newline() {
-    let dir = tempfile_dir("json-nl");
-    let cfg = dir.join("TBD_BackendConfig.json");
-    fs::write(
-        &cfg,
-        r#"{"backendUrl":"http://x","serverToken":"t","missionId":"old","eventId":"e"}"#,
-    )
-    .unwrap();
-    set_mission_id(&cfg, "msn_x").unwrap();
-    let body = fs::read_to_string(&cfg).unwrap();
-    assert!(
-        !body.ends_with('\n'),
-        "python json.dump has no trailing newline"
-    );
-    assert!(body.contains("\"missionId\": \"msn_x\""));
+    assert!(!cache.exists());
 }
 
 fn tempfile_dir(tag: &str) -> PathBuf {
@@ -98,12 +87,10 @@ fn primed_home(tag: &str) -> (PathBuf, PathBuf, PathBuf) {
     let home = tempfile_dir(&format!("{tag}-home"));
     let root = throwaway_root(&format!("{tag}-root"), true);
     let prof = home.join(CFG_REL);
-    fs::create_dir_all(prof.join("missions")).unwrap();
+    fs::create_dir_all(&prof).unwrap();
     fs::write(
         prof.join("TBD_BackendConfig.json"),
-        format!(
-            "{{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"tok\",\n  \"missionId\": \"{BACKEND_MISSION}\",\n  \"eventId\": \"b0000000-0000-4000-8000-000000000001\"\n}}"
-        ),
+        "{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"tok\",\n  \"machineCredential\": \"\"\n}\n",
     )
     .unwrap();
     (home, prof, root)

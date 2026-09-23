@@ -3,9 +3,12 @@
 //! tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv). Paths use the React shape ("/events/:id") so the
 //! extracted manifest diffs byte-equal to the React oracle.
 //!
-//! T-805 — `auth` is enforced client-side (see [`required_role`] / [`role_may_enter`] /
-//! [`auth_denial_redirect`]); the SPA still serves 200 for every path — the guard redirects after
-//! mount, it does not change the server's catch-all.
+//! Each route's `auth` tier is enforced client-side. [`role_may_enter`] decides whether a viewer's
+//! role clears the matched route's declaration and refuses every viewer when the declaration is
+//! not a recognised tier; [`auth_denial_redirect`] names where a refused viewer is sent (admin
+//! pages have no redirect and render their own `<AdminGate>` refusal). The route guard in
+//! `v2::core::auth::route_guard` applies both in the browser after mount; the server's catch-all
+//! answers every path with 200 whatever its tier.
 
 use crate::v2::core::auth::{has_min_role_authed, Role};
 
@@ -96,6 +99,15 @@ pub static ROUTES: &[RouteDef] = &[
     RouteDef {
         path: "/missions/:id/edit",
         component: "MissionEditorPage",
+        full_bleed: true,
+        chromeless: true,
+        auth: "mission_maker",
+    },
+    RouteDef {
+        // The Scenario Creator opened read-only on the version an artifact compiled from; the
+        // backend serves it to the mission's author and to administrators.
+        path: "/missions/:id/artifacts/:artifact_id/workspace",
+        component: "ReviewWorkspacePage",
         full_bleed: true,
         chromeless: true,
         auth: "mission_maker",
@@ -260,6 +272,7 @@ pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
         "/leaderboards" => ("Operations", "Global Leaderboards"),
         "/missions" => ("Mission Hub", "Mission Library"),
         "/missions/:id" => ("Mission Hub", "Mission Overview"),
+        "/missions/:id/artifacts/:artifact_id/workspace" => ("Mission Hub", "Review Workspace"),
         "/events" => ("Operations", "Event Schedule"),
         "/events/:id" => ("Operations", "Event Hub"),
         "/events/:id/missions/:emid/orbat" => ("Operations", "ORBAT Selection"),
@@ -291,35 +304,43 @@ pub fn chromeless(path: &str) -> bool {
     match_route(path).map(|r| r.chromeless).unwrap_or(false)
 }
 
-/// Declared RequireMinRole tier for `path`, or `None` when the route is open (`auth: "none"`).
-/// T-805 — the table always declared this; the client now enforces it.
-pub fn required_role(path: &str) -> Option<Role> {
-    Role::from_route_auth(match_route(path)?.auth)
-}
-
-/// Action-gate: may this signed-in (or guest) role enter `path`?
-/// Mirrors API `RequireMinRole` / [`has_min_role_authed`] — guests never pass a declared tier.
-pub fn role_may_enter(path: &str, role: Option<Role>) -> bool {
-    match required_role(path) {
-        None => true,
-        Some(min) => has_min_role_authed(role, min),
-    }
-}
-
-/// Where to send a user who fails [`role_may_enter`].
+/// Whether a viewer holding `role` may enter `path`, judged by the matched route's `auth`
+/// declaration.
 ///
-/// Editor (`auth: "mission_maker"`) → mission overview with `?role_notice=mission_maker`.
-/// Other declared tiers (admin pages) return `None` so existing `<AdminGate>` copy stays the
-/// surface — T-805's defect was the editor only.
+/// An open route (`"none"`) and a path no route matches admit every viewer. A declared tier admits
+/// a signed-in viewer whose role clears it under [`has_min_role_authed`], so a signed-in
+/// [`Role::Guest`] clears a `"guest"` tier; an anonymous viewer (`None`: signed out, or a session
+/// not yet bootstrapped) never clears a declared tier. An unrecognised declaration refuses every
+/// viewer.
+pub fn role_may_enter(path: &str, role: Option<Role>) -> bool {
+    let Some(route) = match_route(path) else {
+        return true;
+    };
+    route_auth_allows(route.auth, role)
+}
+
+/// Invalid route declarations fail closed for every account tier.
+fn route_auth_allows(auth: &str, role: Option<Role>) -> bool {
+    auth == "none"
+        || Role::from_route_auth(auth).is_some_and(|minimum| has_min_role_authed(role, minimum))
+}
+
+/// Where the route guard sends a viewer that [`role_may_enter`] refuses, or `None` to leave the
+/// viewer on the page.
+///
+/// A `mission_maker` route under `/missions/:id/` (the editor, the review workspace) returns that
+/// mission's overview, `/missions/:id?role_notice=mission_maker`; any other `mission_maker` route
+/// returns the library, `/missions?role_notice=mission_maker`. Every other route, and a path no
+/// route matches, returns `None`. The admin pages need no redirect because each wraps its body in
+/// `<AdminGate>`, which renders the refusal in place of the page.
 pub fn auth_denial_redirect(path: &str) -> Option<String> {
     let route = match_route(path)?;
     if route.auth != "mission_maker" {
         return None;
     }
-    // `/missions/:id/edit` → `/missions/:id?role_notice=mission_maker`
+    // `/missions/:id/…` → `/missions/:id?role_notice=mission_maker`
     let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-    // missions / :id / edit
-    if segments.len() == 3 && segments[0] == "missions" && segments[2] == "edit" {
+    if segments.len() >= 3 && segments[0] == "missions" {
         return Some(format!(
             "/missions/{}?role_notice={}",
             segments[1], route.auth
@@ -329,60 +350,5 @@ pub fn auth_denial_redirect(path: &str) -> Option<String> {
 }
 
 #[cfg(test)]
-mod t805_route_auth {
-    use super::{auth_denial_redirect, required_role, role_may_enter, ROUTES};
-    use crate::v2::core::auth::Role;
-
-    #[test]
-    fn editor_route_declares_mission_maker() {
-        let edit = ROUTES
-            .iter()
-            .find(|r| r.path == "/missions/:id/edit")
-            .expect("editor route in ROUTES");
-        assert_eq!(edit.auth, "mission_maker");
-        assert_eq!(
-            required_role("/missions/abc-uuid/edit"),
-            Some(Role::MissionMaker)
-        );
-    }
-
-    #[test]
-    fn enlisted_blocked_maker_and_admin_pass() {
-        let path = "/missions/1877c175-0000-0000-0000-000000000001/edit";
-        assert!(
-            !role_may_enter(path, Some(Role::Enlisted)),
-            "enlisted must not enter the editor"
-        );
-        assert!(
-            !role_may_enter(path, Some(Role::Leader)),
-            "leader is below mission_maker"
-        );
-        assert!(
-            !role_may_enter(path, None),
-            "guest must not enter (has_min_role_authed None=>false)"
-        );
-        assert!(role_may_enter(path, Some(Role::MissionMaker)));
-        assert!(role_may_enter(path, Some(Role::Admin)));
-    }
-
-    #[test]
-    fn denial_redirects_to_overview_with_role_notice() {
-        let dest = auth_denial_redirect("/missions/abc/edit").expect("editor denial target");
-        assert_eq!(dest, "/missions/abc?role_notice=mission_maker");
-        assert!(
-            auth_denial_redirect("/missions/abc").is_none(),
-            "open routes have no denial redirect"
-        );
-        assert!(
-            auth_denial_redirect("/admin/events").is_none(),
-            "admin pages keep AdminGate — no redirect from this helper"
-        );
-    }
-
-    #[test]
-    fn open_routes_have_no_required_role() {
-        assert_eq!(required_role("/missions"), None);
-        assert_eq!(required_role("/missions/abc"), None);
-        assert!(role_may_enter("/missions/abc", Some(Role::Enlisted)));
-    }
-}
+#[path = "tests/route_authorization.rs"]
+mod tests;

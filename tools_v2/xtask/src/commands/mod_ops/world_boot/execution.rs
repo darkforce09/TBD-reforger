@@ -133,8 +133,7 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
         run_dir: run_dir.clone(),
         keep_logs: opts.keep_logs,
         cleaned: AtomicBool::new(false),
-        svc_token: None,
-        dev_access_token: None,
+        api_token: None,
         api_base: api_base.clone(),
         child: None,
     };
@@ -143,14 +142,15 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
     let mut mission_path = opts.mission.clone();
     let mut warn_key = String::new();
     let mut compiled_uuid = opts.compiled_uuid.clone();
+    let mut compiled_artifact: Option<String> = None;
 
     if opts.compiled {
         println!("==> seeding a compiled mission via {api_base}");
         if let Err(GateExit(code)) = compiled_lane(
             &mut state,
-            root,
             &api_base,
             &mut compiled_uuid,
+            &mut compiled_artifact,
             &mut mission_path,
             &mut warn_key,
         ) {
@@ -161,7 +161,8 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
 
     let mut mission_id = String::new();
     if let Some(ref mission) = mission_path {
-        let doc: Value = serde_json::from_str(&fs::read_to_string(mission)?)
+        let document = fs::read(mission).with_context(|| format!("read mission {mission}"))?;
+        let doc: Value = serde_json::from_slice(&document)
             .with_context(|| format!("parse mission {mission}"))?;
         mission_id = doc
             .pointer("/meta/id")
@@ -173,18 +174,31 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
             state.cleanup();
             return Ok(1);
         }
-        let dest_dir = run_dir.join("profile/profile/missions");
-        fs::create_dir_all(&dest_dir)?;
-        fs::copy(mission, dest_dir.join(format!("{mission_id}.json")))?;
+        // The mod boots the last verified artifact when it has no credential: stage the
+        // document there, under the platform's artifact id when the compiled lane fetched one.
+        let artifact_id = compiled_artifact
+            .clone()
+            .unwrap_or_else(|| format!("world-boot-{mission_id}"));
+        let profile = run_dir.join("profile/profile");
+        stage_artifact_cache(
+            &profile,
+            &document,
+            &StagedArtifact {
+                artifact_id: &artifact_id,
+                mission_id: &mission_id,
+                terrain_key: doc
+                    .pointer("/meta/terrain")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(""),
+            },
+        )?;
         fs::write(
-            run_dir.join("profile/profile/TBD_BackendConfig.json"),
-            format!(
-                "{{\"backendUrl\":\"\",\"serverToken\":\"\",\"missionId\":\"{mission_id}\",\"eventId\":\"\"}}\n"
-            ),
+            profile.join("TBD_BackendConfig.json"),
+            "{\"backendUrl\":\"\",\"serverToken\":\"\",\"machineCredential\":\"\"}\n",
         )?;
         fs::copy(
             mod_src.join("Data/registry.json"),
-            run_dir.join("profile/profile/TBD_Registry.json"),
+            profile.join("TBD_Registry.json"),
         )?;
         if warn_key.is_empty() {
             warn_key = mission_id.clone();
@@ -301,21 +315,6 @@ pub(super) fn api_env_fail(api_base: &str, msg: &str, hint: Option<&str>) -> Gat
 pub(super) fn api_doc_fail(msg: &str) -> GateExit {
     println!("\nCOMPILED BOOT: FAIL — {msg}");
     println!("  The API would not produce a compiled document. That is a COMPILER/CONTRACT defect, not an environment one — re-running will not fix it.");
-    println!("  Check the API log: a 500 is schema validation (validated_compiled_body in apps/website/api_v2/src/handlers/missions/missions.rs); a 409 is no placed slots.");
+    println!("  The submission's 422 code says which: NO_PLACED_SLOTS, UNCOMPILABLE_VERSION, DOCUMENT_CONTRACT_VIOLATION or UNSUPPORTED_AUTHORED_DATA (the findings name each authored path).");
     GateExit(1)
-}
-
-#[rustfmt::skip]
-pub(super) fn api_http_fail(api_base: &str, code: u16, what: &str, doc_msg: &str) -> GateExit {
-    if code == 404 {
-        return api_env_fail(api_base, &format!("{what} -> HTTP 404 — nothing at that id/route on {api_base}"),
-            Some("Check the mission id you passed and that the API is the one you think it is."));
-    }
-    if (500..600).contains(&code) {
-        let hint = format!("Check the API log first, then:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})");
-        return api_env_fail(api_base,
-            &format!("{what} -> HTTP {code} — the API could not serve the request. A stopped or unmigrated Postgres surfaces here as a 500; the API log says which."),
-            Some(&hint));
-    }
-    api_doc_fail(doc_msg)
 }

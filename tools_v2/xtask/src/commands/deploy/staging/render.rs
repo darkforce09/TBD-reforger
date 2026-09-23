@@ -261,8 +261,18 @@ pub fn modpack_mods_json(doc_text: &str, src: &str) -> Result<String, u8> {
 /// it by re-parsing the file. Escaping the values here would be a behaviour change that silently
 /// accepted configs the engine may still reject, and would make the "is not valid JSON" branch of
 /// the validator unreachable.
-pub fn render_server_config(env: &Env, out: &Path) -> Result<(), u8> {
+///
+/// `scenario` is the scenario the server runs: deployments own it once the host agent has
+/// switched it, so the deploy passes the live config's value and `TBD_SCENARIO` seeds only a
+/// server that has none. With the host agent configured, the config gains its loopback `rcon`
+/// block.
+pub fn render_server_config(env: &Env, scenario: &str, out: &Path) -> Result<(), u8> {
     let (doc, src_label) = resolve_modpack_doc(env)?;
+    let rcon = env
+        .host_agent
+        .as_ref()
+        .map(|agent| format!("\n  {}", agent.rcon_block()))
+        .unwrap_or_default();
     let mods_json = modpack_mods_json(&doc, &src_label)?;
 
     // A JSON array of admin identityIds from the comma-separated env var. Also raw — an id that
@@ -282,7 +292,7 @@ pub fn render_server_config(env: &Env, out: &Path) -> Result<(), u8> {
   "bindPort": {game_port},
   "publicAddress": "{public_address}",
   "publicPort": {game_port},
-  "a2s": {{ "address": "0.0.0.0", "port": {a2s_port} }},
+  "a2s": {{ "address": "0.0.0.0", "port": {a2s_port} }},{rcon}
   "game": {{
     "name": "{server_name}",
     "password": "",
@@ -309,7 +319,6 @@ pub fn render_server_config(env: &Env, out: &Path) -> Result<(), u8> {
         a2s_port = env.a2s_port,
         server_name = env.server_name,
         admin_password = env.admin_password,
-        scenario = env.scenario,
         max_players = env.max_players,
     );
     if let Err(e) = fs::write(out, &body) {
@@ -452,7 +461,7 @@ pub fn render_only(env: &Env, out: &str) -> u8 {
         return 2;
     }
     println!("==> render server config (local only, no deploy) -> {out}");
-    match render_server_config(env, Path::new(out)) {
+    match render_server_config(env, &env.scenario, Path::new(out)) {
         Ok(()) => 0,
         Err(code) => code,
     }

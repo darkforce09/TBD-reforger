@@ -44,7 +44,9 @@ use crate::core::middleware::AuthUser;
 use crate::core::wire_format::rfc3339_utc;
 use crate::identity_and_access::services::user_lookup::load_user;
 use crate::match_telemetry::models::match_record::{Match, MatchPlayerStat};
-use crate::missions::services::mission_lookup::mission_title_terrain;
+use crate::missions::services::mission_lookup::{
+    historical_mission_title_terrain, mission_title_terrain,
+};
 use crate::operations::models::{Event, EventMission, EventRegistration, OrbatSlot};
 
 #[derive(Debug, Serialize)]
@@ -56,6 +58,8 @@ struct DeploymentUpcoming {
     #[serde(with = "rfc3339_utc")]
     start_time: DateTime<Utc>,
     state: String,
+    reservation_state: String,
+    attendance_state: Option<String>,
     #[serde(skip_serializing_if = "String::is_empty")]
     faction: String,
     #[serde(skip_serializing_if = "String::is_empty")]
@@ -84,8 +88,8 @@ struct ServiceRecord {
 /// ingest, identity link and unlink. Recomputing the same two ratios with a second query here is
 /// precisely how the service record and the leaderboard come to disagree about one player — the
 /// two-definitions-drift failure that keeping **one** `recompute_user_stats` in the services layer
-/// prevents (`command_center/services/user_stats.rs`). The refreshes are best-effort, so the view can lag a
-/// failed refresh; it lags identically for both readers, which is the property that matters.
+/// prevents (`command_center/services/user_stats.rs`). Ingestion and identity changes refresh
+/// the view in their business transaction; a required refresh failure rolls back those changes.
 ///
 /// The view also owns the divide-by-zero: `kd_ratio` is
 /// `CASE WHEN sum(deaths) = 0 THEN sum(kills) ELSE round(sum(kills) / sum(deaths), 2) END`, so a
@@ -129,13 +133,13 @@ pub async fn get_my_deployments(
     // a silent 500.
     let regs: Vec<EventRegistration> = sqlx::query_as(
         "SELECT event_registrations.id, event_registrations.event_mission_id, \
-         event_registrations.discord_id, event_registrations.slot_id, event_registrations.state, \
+         event_registrations.discord_id, event_registrations.slot_id, event_registrations.state, event_registrations.reservation_state, event_registrations.attendance_state, \
          event_registrations.registered_at \
          FROM event_registrations \
          JOIN event_missions ON event_missions.id = event_registrations.event_mission_id \
          JOIN events ON events.id = event_missions.event_id \
          WHERE event_registrations.discord_id = $1 AND event_missions.start_time > now() \
-           AND events.deleted_at IS NULL \
+           AND events.deleted_at IS NULL AND event_missions.deleted_at IS NULL AND event_registrations.reservation_state IN ('registered', 'waitlisted') \
          ORDER BY event_missions.start_time ASC",
     )
     .bind(me)
@@ -173,6 +177,8 @@ pub async fn get_my_deployments(
             terrain: mt.map(|(_, t)| t.as_str().to_string()).unwrap_or_default(),
             start_time: em.start_time,
             state: reg.state.as_str().to_string(),
+            reservation_state: reg.reservation_state.as_str().to_string(),
+            attendance_state: reg.attendance_state.map(|state| state.as_str().to_string()),
             faction,
             squad,
             role,
@@ -195,7 +201,7 @@ pub async fn get_my_deployments(
         let (date, outcome, aar, operation) = match m {
             Some(mm) => {
                 let op = match mm.mission_id {
-                    Some(mid) => mission_title_terrain(&state.pool, mid)
+                    Some(mid) => historical_mission_title_terrain(&state.pool, mid)
                         .await?
                         .map(|(t, _)| t)
                         .unwrap_or_default(),
@@ -261,7 +267,7 @@ pub async fn get_my_deployments(
 }
 
 async fn load_event_mission(pool: &sqlx::PgPool, id: Uuid) -> sqlx::Result<Option<EventMission>> {
-    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE id = $1")
+    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE deleted_at IS NULL AND id = $1")
         .bind(id)
         .fetch_optional(pool)
         .await

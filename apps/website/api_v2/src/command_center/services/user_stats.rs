@@ -1,90 +1,51 @@
-//! Denormalized user statistics — `users.total_deployments` + `users.attendance_rate`, and the
-//! best-effort `leaderboard_totals` refresh that always travels with them.
-//!
-//! # Why this is a service and not a handler internal
-//!
-//! [`recompute_user_stats`] is the **sole writer** of those two columns, and two handler domains
-//! depend on it: match telemetry ingest and identity linking. Re-deriving the SQL per caller is
-//! what this file exists to prevent — two definitions of "a deployment" drifting apart is a
-//! silent-wrong-number failure, and an ingest handler is not a place other handlers should be
-//! reaching into. `tests/user_stats_service.rs` pins the numbers from outside the crate,
-//! which is what the `pub` visibility here is for.
-//!
-//! # The best-effort pair
-//!
-//! Three call sites (`match_telemetry::handlers::match_results::ingest_match_results`,
-//! `identity_and_access::handlers::arma_link_codes::unlink`, and
-//! `identity_and_access::handlers::arma_link_confirmation::ingest_link_confirm`) want the
-//! identical `if … .await.is_err() { write_audit(Warn, …) }` block around
-//! [`super::leaderboard_view::refresh_leaderboard`], differing only in the message and the audit
-//! target. [`refresh_leaderboard_best_effort`] and [`recompute_user_stats_best_effort`] are that
-//! block, once.
-//!
-//! Both are deliberately **infallible**. These refresh derived numbers *after* their caller's
-//! transaction has committed: the rows are already correct, the next ingest recomputes them
-//! anyway, and failing the request here would turn a cosmetic staleness into a 500 that makes a
-//! successful link look like a failed one. What must never happen is that the failure is
-//! *silent* — hence the `Warn` audit row, which is the observable this file guarantees.
-
-use sqlx::PgPool;
-
+//! Canonical deployment and attendance aggregates used by ingestion and identity changes.
+//! Business transactions recompute before commit; maintenance wrappers report recoverable failures.
 use super::leaderboard_view::refresh_leaderboard;
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::write_audit;
 use crate::core::error_handling::api_error::ApiError;
+use sqlx::{PgConnection, PgPool};
 
-/// Recompute a user's denormalized deployment + attendance metrics.
-///
-/// The identity-link confirm backfills `match_player_stats.discord_id` for matches played
-/// before the link existed, and unlink releases them again — both change exactly the two counts
-/// this function derives, so both have to call it or `users.total_deployments` reports a number
-/// the rows contradict. Measured before it was reachable: a player with three claimed pre-link
-/// matches still read `total_deployments = 0`, and for anyone who links *after* their last op
-/// nothing else ever recomputes it.
-///
-/// Takes `&PgPool` rather than a transaction on purpose: it reads committed state, so callers
-/// must run it *after* their commit, never inside it.
+/// One snapshot calculation shared by displayed rates and transactionally maintained caches.
+/// `$1` identifies the account; scheduled time is evaluated by PostgreSQL.
+pub const ATTENDANCE_RATE_SQL: &str =
+    "SELECT COALESCE(ROUND(100.0 * count(*) FILTER (WHERE r.attendance_state::text = 'attended')
+    / NULLIF(count(*), 0), 2), 0) FROM event_registrations r
+    JOIN event_missions em ON em.id = r.event_mission_id
+    WHERE r.discord_id = $1 AND em.start_time <= statement_timestamp() AND r.attendance_state IS NOT NULL";
+
+/// Recompute committed facts while serializing with account changes.
 pub async fn recompute_user_stats(pool: &PgPool, discord_id: &str) -> Result<(), ApiError> {
-    let deployments: i64 = sqlx::query_scalar(
-        "SELECT count(DISTINCT match_id) FROM match_player_stats WHERE discord_id = $1",
-    )
-    .bind(discord_id)
-    .fetch_one(pool)
-    .await?;
-    let attended: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM event_registrations WHERE discord_id = $1 AND state::text = 'attended'",
-    )
-    .bind(discord_id)
-    .fetch_one(pool)
-    .await?;
-    let past_registered: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM event_registrations \
-         JOIN event_missions ON event_missions.id = event_registrations.event_mission_id \
-         WHERE event_registrations.discord_id = $1 AND event_missions.start_time <= now()",
-    )
-    .bind(discord_id)
-    .fetch_one(pool)
-    .await?;
-    let rate = if past_registered > 0 {
-        attended as f64 / past_registered as f64 * 100.0
-    } else {
-        0.0
-    };
-    sqlx::query(
-        "UPDATE users SET total_deployments = $1, attendance_rate = $2::float8::numeric WHERE discord_id = $3",
-    )
-    .bind(deployments)
-    .bind(rate)
-    .bind(discord_id)
-    .execute(pool)
-    .await?;
+    let mut tx = pool.begin().await?;
+    sqlx::query("SELECT discord_id FROM users WHERE discord_id = $1 FOR NO KEY UPDATE")
+        .bind(discord_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+    recompute_user_stats_on_connection(&mut tx, discord_id).await?;
+    tx.commit().await?;
     Ok(())
 }
 
-/// [`recompute_user_stats`], with a `Warn` audit row instead of an error.
-///
-/// `message` is the caller's "…after X" sentence; the audit target is always the user, because
-/// that is the row whose numbers went stale.
+/// One statement derives both counters from the same snapshot, including this transaction's writes.
+/// Attendance rate uses decided observations only; pending, waitlisted, and withdrawn signups
+/// without attendance evidence do not become no-shows merely because scheduled time has passed.
+pub async fn recompute_user_stats_on_connection(
+    connection: &mut PgConnection,
+    discord_id: &str,
+) -> Result<(), ApiError> {
+    let mut query = sqlx::QueryBuilder::<sqlx::Postgres>::new(
+        "UPDATE users SET total_deployments = (
+        SELECT count(DISTINCT match_id) FROM match_player_stats WHERE discord_id = $1),
+        attendance_rate = (",
+    );
+    query
+        .push(ATTENDANCE_RATE_SQL)
+        .push(") WHERE discord_id = $1");
+    query.build().bind(discord_id).execute(connection).await?;
+    Ok(())
+}
+
+/// Recompute aggregates, recording a warning if this maintenance operation fails.
 pub async fn recompute_user_stats_best_effort(pool: &PgPool, discord_id: &str, message: &str) {
     if recompute_user_stats(pool, discord_id).await.is_err() {
         write_audit(
@@ -101,11 +62,7 @@ pub async fn recompute_user_stats_best_effort(pool: &PgPool, discord_id: &str, m
     }
 }
 
-/// [`super::leaderboard_view::refresh_leaderboard`], with a `Warn` audit row instead of an error.
-///
-/// The target is the caller's, not the user's: a refresh failure after match ingest is about the
-/// match, and after an identity link it is about the user. Both are wanted in the audit console,
-/// so neither is hard-coded here.
+/// Refresh the leaderboard, recording a warning on the caller's target if maintenance fails.
 pub async fn refresh_leaderboard_best_effort(
     pool: &PgPool,
     message: &str,

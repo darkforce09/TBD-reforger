@@ -6,8 +6,8 @@
 //! the tokens in the URL fragment — or to an error reason on any failure.
 //!
 //! **Role-sync invariant.** Roles are only ever written when Discord actually answered.
-//! See [`RoleSnapshot`] — an unreachable Discord must leave the stored snapshot and the
-//! user's tier untouched, because losing the snapshot is permanent.
+//! An unreachable Discord preserves the verified snapshot. Session issuance evaluates its
+//! age and any audited grace extension without treating transport failure as departure.
 
 use axum::body::Body;
 use axum::extract::{Query, State};
@@ -19,15 +19,15 @@ use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::Response;
 use serde::Deserialize;
 
-use crate::administration::models::audit_log::AuditSeverity;
-use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::authentication_primitives;
 // `users.avatar_url` is public tier; guarded at this write boundary like every other URL
 // column.
 use crate::core::text::http_url_guard::is_http_url;
 use crate::identity_and_access::services::discord_client::GuildMember;
-use crate::identity_and_access::services::discord_role_sync;
+use crate::identity_and_access::services::discord_membership_cache::{
+    accept_membership_observation, claim_membership_refresh, record_membership_failure,
+};
 use crate::identity_and_access::services::session_issuance::{
     arma_id_is_linked, issue_session, redirect_auth_error, session_redirect,
 };
@@ -110,21 +110,6 @@ pub async fn discord_callback(
             return err("discord_unreachable");
         }
     };
-    // Member roles drive the web role — but only when Discord actually answered.
-    let snapshot = if guild_configured(&state.cfg.discord_guild_id) {
-        classify_member_lookup(
-            &du.id,
-            state.discord.fetch_guild_member(&tok.access_token).await,
-        )
-    } else {
-        tracing::error!(
-            discord_id = %du.id,
-            "DISCORD_GUILD_ID is not configured — skipping role sync; \
-             stored Discord roles and web role left unchanged"
-        );
-        RoleSnapshot::Unavailable
-    };
-
     // **The write boundary for `users.avatar_url`, the highest-exposure column of the group.**
     // It is public tier (anyone who can trigger a login writes it), and it reaches an
     // `<img src>` on four SPA surfaces — leaderboards, the layout chrome, settings and the event
@@ -174,26 +159,62 @@ pub async fn discord_callback(
         return err("server_error");
     }
 
-    // Only a real answer from Discord may touch roles. `sync_roles` DELETEs every
-    // `user_discord_roles` row for this user before re-inserting, so calling it with a
-    // stand-in empty vec is what erases admins on a transient failure.
-    if let Some(role_ids) = snapshot.ids_to_persist() {
-        let Ok(role) = discord_role_sync::sync_roles(&state.pool, &du.id, role_ids).await else {
-            return err("server_error");
-        };
-        if sqlx::query("UPDATE users SET role = $1, updated_at = now() WHERE discord_id = $2")
-            .bind(role)
-            .bind(&du.id)
-            .execute(&state.pool)
+    let lease = match claim_membership_refresh(
+        &state.pool,
+        &du.id,
+        &state.cfg.discord_guild_id,
+        true,
+    )
+    .await
+    {
+        Ok(lease) => lease,
+        Err(_) => return err("server_error"),
+    };
+    let snapshot = if guild_configured(&state.cfg.discord_guild_id) {
+        classify_member_lookup(
+            &du.id,
+            state.discord.fetch_guild_member(&tok.access_token).await,
+        )
+    } else {
+        RoleSnapshot::Unavailable
+    };
+    if let Some(lease) = lease {
+        let persisted = match &snapshot {
+            RoleSnapshot::Authoritative(roles) => accept_membership_observation(
+                &state.pool,
+                &lease,
+                Some(&GuildMember {
+                    nick: String::new(),
+                    roles: roles.clone(),
+                }),
+                &state.cfg.discord_guild_id,
+            )
             .await
-            .is_err()
-        {
+            .map(|_| ()),
+            RoleSnapshot::Nonmember => accept_membership_observation(
+                &state.pool,
+                &lease,
+                None,
+                &state.cfg.discord_guild_id,
+            )
+            .await
+            .map(|_| ()),
+            RoleSnapshot::Unavailable => {
+                record_membership_failure(
+                    &state.pool,
+                    &lease,
+                    chrono::Duration::seconds(60),
+                    "OAuth membership unavailable",
+                )
+                .await
+            }
+        };
+        if persisted.is_err() {
             return err("server_error");
         }
     }
 
-    // Reload for current ban + Arma-link state — and for the role, which is either the
-    // one just synced above or the untouched stored one when Discord was unreachable.
+    // Profile facts supply the callback link flag; session issuance rechecks account authority.
     let Ok(Some(fresh)) = load_user(&state.pool, &du.id).await else {
         return err("server_error");
     };
@@ -202,43 +223,9 @@ pub async fn discord_callback(
     }
     let arma_linked = arma_id_is_linked(&fresh.arma_id);
 
-    let Ok((access, exp, refresh)) =
-        issue_session(&state, &du.id, fresh.role.as_str(), arma_linked).await
-    else {
+    let Ok((access, exp, refresh)) = issue_session(&state, &du.id).await else {
         return err("server_error");
     };
-
-    // A skipped sync is a degraded login, not a normal one: surface it where admins
-    // actually look, not only in the process log.
-    if snapshot.ids_to_persist().is_none() {
-        write_audit(
-            &state.pool,
-            AuditSeverity::Warn,
-            Some(&du.id),
-            &fresh.username,
-            "auth.role_sync_skipped",
-            &format!(
-                "Discord roles unavailable at login — kept {} for {}",
-                fresh.role.as_str(),
-                fresh.username
-            ),
-            "user",
-            &du.id,
-        )
-        .await;
-    }
-
-    write_audit(
-        &state.pool,
-        AuditSeverity::Info,
-        Some(&du.id),
-        &fresh.username,
-        "auth.login",
-        &format!("{} signed in via Discord", fresh.username),
-        "user",
-        &du.id,
-    )
-    .await;
 
     with_set_cookie(
         session_redirect(fe, &access, &refresh, exp, arma_linked),
@@ -246,37 +233,15 @@ pub async fn discord_callback(
     )
 }
 
-/// What the Discord guild-member lookup actually told us about a user's roles.
-///
-/// The distinction is the whole point of this type.
-/// [`crate::identity_and_access::services::discord_role_sync::sync_roles`] DELETEs every
-/// `user_discord_roles` row for the user before re-inserting, then resolves the web role from
-/// what it just wrote — so handing it an empty vec both demotes the user to enlisted *and*
-/// destroys the snapshot. `resync_all_roles` reads that same table, so once it is gone there
-/// is nothing left to restore from: a two-second Discord timeout during one login permanently
-/// unmakes an admin.
-///
-/// An empty role list may therefore only ever come from Discord genuinely saying "this
-/// user has no roles" — never from a timeout, a 5xx, or an unconfigured guild id.
+/// Authoritative membership is distinct from verification failure and from an empty role list.
 enum RoleSnapshot {
-    /// Discord answered. These ids are authoritative; empty means a real non-member.
+    /// Discord confirms membership. The role list may be empty.
     Authoritative(Vec<String>),
+    /// Discord confirms the user is not a guild member.
+    Nonmember,
     /// We could not ask Discord at all. The stored snapshot and the user's current
     /// tier must be left exactly as they are.
     Unavailable,
-}
-
-impl RoleSnapshot {
-    /// The role ids to write, or `None` when nothing may be written.
-    ///
-    /// Do not paper over the `None` with a default — `unwrap_or_default()` on a failed
-    /// lookup is precisely the bug this type exists to prevent.
-    fn ids_to_persist(&self) -> Option<&[String]> {
-        match self {
-            RoleSnapshot::Authoritative(ids) => Some(ids),
-            RoleSnapshot::Unavailable => None,
-        }
-    }
 }
 
 /// True when a guild id is actually set.
@@ -374,7 +339,7 @@ fn classify_member_lookup(
 ) -> RoleSnapshot {
     match lookup {
         Ok(Some(m)) => RoleSnapshot::Authoritative(m.roles),
-        Ok(None) => RoleSnapshot::Authoritative(Vec::new()),
+        Ok(None) => RoleSnapshot::Nonmember,
         Err(e) => {
             tracing::error!(
                 discord_id,

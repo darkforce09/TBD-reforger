@@ -31,12 +31,14 @@ fn production(shard: &str) -> String {
     out
 }
 
-/// The HTTP client, as one text: the failure types, the refresh policy and the request verbs.
+/// The HTTP client, as one text: the failure types, the refusal reader, the refresh policy and the
+/// request verbs.
 pub(crate) fn client_source() -> String {
     [
         include_str!("../api/client/mod.rs"),
         include_str!("../api/client/errors.rs"),
         include_str!("../api/client/fetched.rs"),
+        include_str!("../api/client/refusals.rs"),
         include_str!("../api/client/refresh.rs"),
         include_str!("../api/client/requests.rs"),
     ]
@@ -190,7 +192,8 @@ pub(crate) fn event_schedule_source() -> String {
 }
 
 /// The operation dossier, as one text: the route component, the hub body, the mission dossier
-/// card, the faction cards, and the slotting selector with its squad pane and assign picker.
+/// card, the faction cards, the slotting selector with its squad pane, seat rows, footer actions
+/// and assign picker, and the viewer's registration access.
 pub(crate) fn event_hub_source() -> String {
     [
         include_str!("../../pages/operations/event_detail/mod.rs"),
@@ -200,7 +203,18 @@ pub(crate) fn event_hub_source() -> String {
         include_str!("../../pages/operations/event_detail/faction_armory.rs"),
         include_str!("../../pages/operations/event_detail/slotting_selector.rs"),
         include_str!("../../pages/operations/event_detail/squad_pane.rs"),
+        include_str!("../../pages/operations/event_detail/seat_row.rs"),
+        include_str!("../../pages/operations/event_detail/reservation_actions.rs"),
         include_str!("../../pages/operations/event_detail/assign_picker.rs"),
+        include_str!("../../pages/operations/event_detail/registration_access/mod.rs"),
+        include_str!("../../pages/operations/event_detail/registration_access/mission_standing.rs"),
+        include_str!("../../pages/operations/event_detail/registration_access/place_outlook.rs"),
+        include_str!("../../pages/operations/event_detail/registration_access/places_panel.rs"),
+        include_str!("../../pages/operations/event_detail/registration_access/refusal_notices.rs"),
+        include_str!("../../pages/operations/event_detail/registration_access/seat_eligibility.rs"),
+        include_str!(
+            "../../pages/operations/event_detail/registration_access/waitlist_promotion.rs"
+        ),
     ]
     .map(production)
     .concat()
@@ -223,7 +237,7 @@ pub(crate) fn deployments_source() -> String {
 }
 
 /// The operations calendar, as one text: the route component, the state, the calendar body, the
-/// two forms, the mission pickers and the destructive confirmations.
+/// two forms, the mission pickers, the destructive confirmations, and the access panel.
 pub(crate) fn event_manager_source() -> String {
     [
         include_str!("../../pages/administration/event_manager/mod.rs"),
@@ -236,20 +250,65 @@ pub(crate) fn event_manager_source() -> String {
         include_str!("../../pages/administration/event_manager/page.rs"),
         include_str!("../../pages/administration/event_manager/schedule_dialog.rs"),
         include_str!("../../pages/administration/event_manager/state.rs"),
+        include_str!("../../pages/administration/event_manager/access/mod.rs"),
+        include_str!("../../pages/administration/event_manager/access/change_report.rs"),
+        include_str!("../../pages/administration/event_manager/access/groups/mod.rs"),
+        include_str!("../../pages/administration/event_manager/access/groups/group_card.rs"),
+        include_str!("../../pages/administration/event_manager/access/groups/group_fields.rs"),
+        include_str!("../../pages/administration/event_manager/access/groups/group_form.rs"),
+        include_str!("../../pages/administration/event_manager/access/member_search.rs"),
+        include_str!("../../pages/administration/event_manager/access/panel.rs"),
+        include_str!("../../pages/administration/event_manager/access/participants_table.rs"),
+        include_str!("../../pages/administration/event_manager/access/policy_draft.rs"),
+        include_str!("../../pages/administration/event_manager/access/policy_editor.rs"),
+        include_str!("../../pages/administration/event_manager/access/policy_inheritance.rs"),
+        include_str!("../../pages/administration/event_manager/access/policy_lists.rs"),
+        include_str!("../../pages/administration/event_manager/access/quota_editor.rs"),
+        include_str!("../../pages/administration/event_manager/access/state.rs"),
+        include_str!("../../pages/administration/event_manager/access/waitlist_promotion.rs"),
     ]
     .map(production)
     .concat()
 }
 
-/// Server control, as one text: the route component, the picker and card, the console, and the
-/// RCON channel behind them.
+/// Server control, as one text: the route component, the picker and card, the fleet command
+/// console, the deployments panel, the fleet scenario sheet, and the machine-credential sheet.
 pub(crate) fn server_control_source() -> String {
     [
         include_str!("../../pages/administration/server_control/mod.rs"),
         include_str!("../../pages/administration/server_control/page.rs"),
-        include_str!("../../pages/administration/server_control/rcon.rs"),
-        include_str!("../../pages/administration/server_control/rcon_console.rs"),
         include_str!("../../pages/administration/server_control/server_cards.rs"),
+        include_str!("../../pages/administration/server_control/fleet_commands/mod.rs"),
+        include_str!("../../pages/administration/server_control/fleet_commands/command_history.rs"),
+        include_str!(
+            "../../pages/administration/server_control/fleet_commands/command_requests.rs"
+        ),
+        include_str!("../../pages/administration/server_control/fleet_commands/command_wording.rs"),
+        include_str!("../../pages/administration/server_control/mission_deployments/mod.rs"),
+        include_str!(
+            "../../pages/administration/server_control/mission_deployments/deployment_list.rs"
+        ),
+        include_str!(
+            "../../pages/administration/server_control/mission_deployments/deployment_refusal.rs"
+        ),
+        include_str!(
+            "../../pages/administration/server_control/mission_deployments/deployment_request.rs"
+        ),
+        include_str!(
+            "../../pages/administration/server_control/mission_deployments/deployment_wording.rs"
+        ),
+        include_str!("../../pages/administration/server_control/fleet_scenarios/mod.rs"),
+        include_str!("../../pages/administration/server_control/fleet_scenarios/scenario_sheet.rs"),
+        include_str!(
+            "../../pages/administration/server_control/fleet_scenarios/scenario_wording.rs"
+        ),
+        include_str!("../../pages/administration/server_control/machine_credentials/mod.rs"),
+        include_str!(
+            "../../pages/administration/server_control/machine_credentials/credential_sheet.rs"
+        ),
+        include_str!(
+            "../../pages/administration/server_control/machine_credentials/credential_text.rs"
+        ),
     ]
     .map(production)
     .concat()

@@ -11,8 +11,8 @@ use crate::match_telemetry::handlers::ingest_parsing::tests::{
 };
 
 const RESULTS_SRC: &str = include_str!("../match_results.rs");
-const ATTENDANCE_SRC: &str = include_str!("../attendance_attribution.rs");
-const UPSERT_SRC: &str = include_str!("../match_upsert.rs");
+const ATTENDANCE_SRC: &str =
+    include_str!("../../../operations/services/participation_attribution.rs");
 
 /// The `ingest_match_results` body, comments stripped and whitespace collapsed.
 fn results_handler() -> String {
@@ -53,72 +53,20 @@ fn ingest_match_results_invokes_require_role_played_at_both_sites() {
     );
 }
 
-/// a re-point must retract prior event_mission attendance before the SET.
-///
-/// A SET-only path false-greens every "marks EV2" assert while leaving EV1 attended. The full
-/// integration coverage lives in `tests/telemetry_attendance.rs`; this pin fails if the retract
-/// UPDATE, its
-/// NOT EXISTS attribution guard, or the `retract_from` plumbing is deleted.
+/// The live handler reconciles provenance on its open transaction before deriving statistics.
 #[test]
 fn ingest_match_results_retracts_prior_attendance_on_repoint() {
-    let collapsed = results_handler();
-    assert!(
-        collapsed.contains("let (match_id, retract_from) = upsert_match("),
-        "ingest must capture upsert_match's retract_from"
-    );
-    assert!(
-        collapsed.contains("if let Some((old_event, old_mission)) = retract_from"),
-        "ingest must act on retract_from before the attended SET"
-    );
-    let retract_call = collapsed
-        .find("retract_prior_attendance(&mut tx,")
-        .expect("ingest must call retract_prior_attendance on the open transaction");
-    let mark_call = collapsed
-        .find("mark_attended(&mut tx,")
-        .expect("ingest must call mark_attended on the open transaction");
-    assert!(
-        retract_call < mark_call,
-        "the retract must run before the attended SET, on the same transaction"
-    );
-
-    let attendance = collapse_ws(&strip_rust_comments(production_half(ATTENDANCE_SRC)));
-    assert!(
-        attendance.contains("UPDATE event_registrations er SET state = 'registered'"),
-        "re-point must retract prior attendance to registered"
-    );
-    assert!(
-        attendance.contains(
-            "AND NOT EXISTS ( \\ SELECT 1 FROM matches m \\ INNER JOIN match_player_stats mps"
-        ),
-        "retract must keep attendance when another match still attributes the player"
-    );
-    assert!(
-        attendance.contains("WHERE m.id <> $4 \\ AND m.event_id = $2 \\ AND m.mission_id = $3"),
-        "NOT EXISTS must exclude this match and key the prior (event_id, mission_id) pair"
-    );
-
-    let upsert_production = production_half(UPSERT_SRC);
-    let up_start = upsert_production
-        .find("async fn upsert_match")
-        .expect("upsert_match must exist");
-    let up_after = &upsert_production[up_start..];
-    let up_end = up_after[1..]
-        .find("\nasync fn ")
-        .or_else(|| up_after[1..].find("\npub(super) async fn "))
-        .map(|i| i + 1)
-        .unwrap_or(up_after.len());
-    let up_collapsed = collapse_ws(&strip_rust_comments(&up_after[..up_end]));
-    assert!(
-        up_collapsed
-            .contains("SELECT id, event_id, mission_id FROM matches WHERE source_match_id = $1"),
-        "re-ingest must read the prior (event_id, mission_id) before COALESCE UPDATE"
-    );
-    assert!(
-        up_collapsed.contains("RETURNING event_id, mission_id"),
-        "re-ingest must RETURN the merged pair so retract_from can detect a move"
-    );
-    assert!(
-        up_collapsed.contains("Ok((row.0, None))"),
-        "create path must return no retract_from"
-    );
+    let compact: String = results_handler()
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    assert!(compact.contains("reconcile_match(&muttx,match_id,&affected).await?"));
+    let reconcile = compact.find("reconcile_match(").unwrap();
+    let recompute = compact.find("recompute_user_stats_on_connection(").unwrap();
+    assert!(reconcile < recompute);
+    let attendance = strip_rust_comments(ATTENDANCE_SRC);
+    assert!(attendance.contains("DELETE FROM event_registration_participation"));
+    assert!(attendance.contains("m.event_id = em.event_id AND m.mission_id = em.mission_id"));
+    assert!(attendance.contains("m.finalized_at IS NOT NULL"));
+    assert!(!attendance.contains("SET reservation_state"));
 }

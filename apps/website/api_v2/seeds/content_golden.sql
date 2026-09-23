@@ -56,7 +56,9 @@
 --      loading" and takes the whole environment with it.
 --
 -- Idempotent: every INSERT is ON CONFLICT DO UPDATE / DO NOTHING, so re-running
--- converges instead of erroring.
+-- converges instead of erroring. Mission versions and mission artifacts are
+-- immutable (a trigger refuses any UPDATE), so their inserts are DO NOTHING: a
+-- changed value in either reaches only a database that does not hold the row yet.
 --
 -- Apply order: 0001..0007 migrations (the API runs these on boot) → this file.
 -- registry_dev.sql is INDEPENDENT of this file and still owns GET__registry.json.
@@ -138,9 +140,7 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO mission_versions (id, mission_id, semver, json_payload, created_by, created_at)
 VALUES ('563e2aa1-b555-4437-be29-80e9d2550d83', '512d8658-7025-4a70-94e9-a1b44a7aa155',
         '0.1.0', '{}'::jsonb, '000000000000000001', '2026-07-15 13:53:18.945049+00')
-ON CONFLICT (id) DO UPDATE SET
-    semver = EXCLUDED.semver, json_payload = EXCLUDED.json_payload,
-    created_by = EXCLUDED.created_by, created_at = EXCLUDED.created_at;
+ON CONFLICT (id) DO NOTHING;
 
 UPDATE missions SET current_version_id = '563e2aa1-b555-4437-be29-80e9d2550d83'
 WHERE id = '512d8658-7025-4a70-94e9-a1b44a7aa155';
@@ -248,6 +248,28 @@ INSERT INTO servers (id, name, ip, port, required_modpack_id, is_active) VALUES
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name, ip = EXCLUDED.ip, port = EXCLUDED.port,
     required_modpack_id = EXCLUDED.required_modpack_id, is_active = EXCLUDED.is_active;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- §3b Machine credentials. GET /servers/:id/credentials lists provenance, use and
+--     revocation and never a secret; one live runtime credential that has been
+--     used, and one revoked host-agent credential so every optional field is
+--     present on some row. Only digests are stored; the secrets they digest are
+--     not credentials of any real server.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label,
+                                        created_by, created_at, last_used_at, revoked_at,
+                                        revoked_by, revoke_reason)
+VALUES
+  ('00000000-0000-4000-e000-000000000001', '00000000-0000-4000-d000-000000000001', 'mod_runtime',
+   '804c9cdd5f2f2160cdab798c68b82ef0272e145af50753b90e6b3b9c8eec8bdc', 'Primary runtime',
+   '000000000000000001', '2026-07-15 14:10:00+00', '2026-07-20 19:00:00+00', NULL, NULL, NULL),
+  ('00000000-0000-4000-e000-000000000002', '00000000-0000-4000-d000-000000000001', 'host_agent',
+   '17deaff03142fbff3d3853e621b551d61bafb1ee0a1b4eac47f2581d58464c1f', 'Retired host agent',
+   '000000000000000001', '2026-07-15 14:12:00+00', NULL, '2026-07-18 10:00:00+00',
+   '000000000000000001', 'Rotated after the host rebuild')
+ON CONFLICT (id) DO NOTHING;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -428,10 +450,7 @@ VALUES
    '{}'::jsonb, NULL, '000000000000000002', '2026-07-18 09:15:00+00'),
   ('00000000-0000-4000-8000-000000000004', '00000000-0000-4000-c000-000000000004', '0.3.0',
    '{}'::jsonb, 'Submitted for review', '000000000000000003', '2026-07-20 07:05:00+00')
-ON CONFLICT (id) DO UPDATE SET
-    semver = EXCLUDED.semver, json_payload = EXCLUDED.json_payload,
-    editor_notes = EXCLUDED.editor_notes, created_by = EXCLUDED.created_by,
-    created_at = EXCLUDED.created_at;
+ON CONFLICT (id) DO NOTHING;
 
 UPDATE missions SET current_version_id = v.id
 FROM (VALUES
@@ -713,36 +732,99 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Registrations. The caller's own row is what makes GET /me/deployments return
 -- a non-empty `upcoming` list and the dashboard return a `my_assignment`.
-INSERT INTO event_registrations (id, event_mission_id, discord_id, slot_id, state, registered_at)
+-- Every active reservation references its participant's event allocation; one
+-- statement writes both so each commit leaves them consistent.
+WITH allocations AS (
+    INSERT INTO event_participant_allocations (id, event_id, discord_id, quota_kind, acquired_at)
+    VALUES
+      ('00000000-0000-4000-a200-000000000001', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+       '000000000000000001', 'member', '2026-07-16 09:14:22+00'),
+      ('00000000-0000-4000-a200-000000000002', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+       '000000000000000002', 'member', '2026-07-16 09:15:40+00'),
+      ('00000000-0000-4000-a200-000000000003', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+       '000000000000000003', 'member', '2026-07-16 09:16:05+00'),
+      ('00000000-0000-4000-a200-000000000004', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+       '000000000000000004', 'member', '2026-07-17 20:01:11+00'),
+      ('00000000-0000-4000-a200-000000000005', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+       '000000000000000005', 'guest', '2026-07-17 20:03:47+00'),
+      ('00000000-0000-4000-a200-000000000006', '00000000-0000-4000-7000-000000000001',
+       '000000000000000001', 'member', '2026-07-21 18:05:00+00')
+    ON CONFLICT (id) DO NOTHING
+    RETURNING id
+)
+INSERT INTO event_registrations (id, event_mission_id, discord_id, slot_id, reservation_state, registered_at, allocation_id)
 VALUES
   ('00000000-0000-4000-a100-000000000001', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000001', '00000000-0000-4000-5000-000000000001', 'registered',
-   '2026-07-16 09:14:22+00'),
+   '2026-07-16 09:14:22+00', '00000000-0000-4000-a200-000000000001'),
   ('00000000-0000-4000-a100-000000000002', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000002', '00000000-0000-4000-5000-000000000002', 'registered',
-   '2026-07-16 09:15:40+00'),
+   '2026-07-16 09:15:40+00', '00000000-0000-4000-a200-000000000002'),
   ('00000000-0000-4000-a100-000000000003', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000003', '00000000-0000-4000-5000-000000000003', 'registered',
-   '2026-07-16 09:16:05+00'),
+   '2026-07-16 09:16:05+00', '00000000-0000-4000-a200-000000000003'),
   ('00000000-0000-4000-a100-000000000004', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000004', '00000000-0000-4000-5000-000000000004', 'registered',
-   '2026-07-17 20:01:11+00'),
+   '2026-07-17 20:01:11+00', '00000000-0000-4000-a200-000000000004'),
   ('00000000-0000-4000-a100-000000000005', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    '000000000000000005', '00000000-0000-4000-5000-000000000005', 'registered',
-   '2026-07-17 20:03:47+00'),
+   '2026-07-17 20:03:47+00', '00000000-0000-4000-a200-000000000005'),
   -- Registered without claiming a slot (slot_id NULL) — a real state the
   -- registration flow produces and the counters have to handle.
   ('00000000-0000-4000-a100-000000000006', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
-   '000000000000000006', NULL, 'waitlisted', '2026-07-19 07:44:00+00'),
+   '000000000000000006', NULL, 'waitlisted', '2026-07-19 07:44:00+00', NULL),
   -- Withdrawn: excluded from the `registered` count on the list card.
   ('00000000-0000-4000-a100-000000000007', '00000000-0000-4000-6000-000000000001',
-   '000000000000000004', NULL, 'withdrawn', '2026-07-21 18:00:00+00'),
+   '000000000000000004', NULL, 'withdrawn', '2026-07-21 18:00:00+00', NULL),
   ('00000000-0000-4000-a100-000000000008', '00000000-0000-4000-6000-000000000001',
-   '000000000000000001', NULL, 'registered', '2026-07-21 18:05:00+00')
+   '000000000000000001', NULL, 'registered', '2026-07-21 18:05:00+00',
+   '00000000-0000-4000-a200-000000000006')
 ON CONFLICT (id) DO UPDATE SET
     event_mission_id = EXCLUDED.event_mission_id, discord_id = EXCLUDED.discord_id,
-    slot_id = EXCLUDED.slot_id, state = EXCLUDED.state,
-    registered_at = EXCLUDED.registered_at;
+    slot_id = EXCLUDED.slot_id, reservation_state = EXCLUDED.reservation_state,
+    registered_at = EXCLUDED.registered_at, allocation_id = EXCLUDED.allocation_id;
+
+-- The waiting queue orders by the time a participant joined it; pin it to the signup.
+UPDATE event_registrations SET queue_entered_at = registered_at
+WHERE id::text LIKE '00000000-0000-4000-a100-%' AND queue_entered_at IS DISTINCT FROM registered_at;
+
+-- Event access for the golden operation: TBD members or its managed roster, a partner
+-- guild group that alone admits the OPFOR Recon squad, one named seat, and guest places.
+-- Every participant is on the roster, so each seeded reservation stays eligible and a
+-- policy re-evaluation releases nobody.
+INSERT INTO event_groups (id, event_id, name, source, created_by, created_at, updated_at)
+VALUES
+  ('00000000-0000-4000-b100-000000000001', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+   'Byte Parity roster', '{"kind":"managed_roster"}', '000000000000000001',
+   '2026-07-15 14:20:00+00', '2026-07-15 14:20:00+00'),
+  ('00000000-0000-4000-b100-000000000002', 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7',
+   'Allied reconnaissance', '{"kind":"partner_guild","guild_id":"100000000000000777","required_role_ids":["200000000000000888"]}',
+   '000000000000000001', '2026-07-15 14:21:00+00', '2026-07-15 14:21:00+00')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO event_group_roster (group_id, discord_id, added_by, added_at)
+SELECT '00000000-0000-4000-b100-000000000001', member.discord_id, '000000000000000001',
+       '2026-07-15 14:25:00+00'::timestamptz + make_interval(mins => member.position)
+FROM (VALUES ('000000000000000001', 1), ('000000000000000002', 2), ('000000000000000003', 3),
+             ('000000000000000004', 4), ('000000000000000005', 5), ('000000000000000006', 6))
+     AS member(discord_id, position)
+ON CONFLICT (group_id, discord_id) DO NOTHING;
+
+INSERT INTO event_squad_access_policies (event_mission_id, faction, squad, access_policy)
+VALUES ('89b1b731-37a8-4926-901a-3c7ff7de5eb3', 'OPFOR', 'Recon',
+        '{"grants":[{"conditions":[{"kind":"event_group","group_id":"00000000-0000-4000-b100-000000000002"}]}]}')
+ON CONFLICT (event_mission_id, faction, squad) DO UPDATE SET access_policy = EXCLUDED.access_policy;
+
+UPDATE orbat_slots SET access_policy =
+    '{"grants":[{"conditions":[{"kind":"named_account","discord_id":"000000000000000006"}]}]}'
+WHERE id = '00000000-0000-4000-5000-000000000013';
+
+UPDATE events SET access_revision = 4, access_policy =
+    '{"grants":[{"conditions":[{"kind":"tbd_member"}]},{"conditions":[{"kind":"event_group","group_id":"00000000-0000-4000-b100-000000000001"}]}]}'
+WHERE id = 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7';
+
+UPDATE event_reservation_quota_pools SET seat_limit = 2
+WHERE event_id = 'c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7' AND quota_kind = 'guest';
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -841,6 +923,148 @@ ON CONFLICT (id) DO UPDATE SET
 
 REFRESH MATERIALIZED VIEW leaderboard_totals;
 
+-- ═══════════════════════════════════════════════════════════════════════════
+-- §13 Mission artifacts, reviews and deployments, and the fleet ledger behind
+--     them. The two artifacts are exactly what the compiler produced for the two
+--     compilable versions below (bytes and digests copied from a compile against
+--     this seed), pinned under fixed ids and timestamps so the review, artifact,
+--     workspace, deployment and command goldens reproduce byte for byte. Iron Veil
+--     carries a rejected review, a thread comment and a conditional approval, and
+--     is deployed; Cold Anvil sits in the approvals queue with a pending review,
+--     beside Paper Tiger, which predates reviews and has none. The primary server
+--     ran the approved artifact in one runtime session; a later in-game
+--     deployment failed because no host agent claimed its restart.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO mission_versions (id, mission_id, semver, json_payload, editor_notes, created_by, created_at)
+VALUES
+  ('00000000-0000-4000-8000-000000000011', '00000000-0000-4000-c000-000000000001', '1.3.0', '{"editor":{"factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],"squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A 1-1","slotIds":["s1"]}],"slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL","position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],"editorLayers":[]}}'::jsonb,
+   'Placed the assault section', '000000000000000003', '2026-07-24 10:00:00+00'),
+  ('00000000-0000-4000-8000-000000000014', '00000000-0000-4000-c000-000000000004', '0.4.0', '{"editor":{"factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],"squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A 1-1","slotIds":["s1"]}],"slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL","position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],"editorLayers":[]}}'::jsonb,
+   'Resubmitted with placed seats', '000000000000000003', '2026-07-24 11:00:00+00')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO mission_artifacts (id, mission_id, mission_version_id, version_payload_sha256,
+    metadata, metadata_sha256, catalog_sha256, modpack_id, modpack_version, compiler_version,
+    schema_version, terrain, document, document_sha256, document_bytes, diagnostics,
+    artifact_digest, created_by, created_at)
+VALUES
+  ('00000000-0000-4000-f000-000000000001', '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-8000-000000000011', 'bb173e5b5b0e64ac00020ce933fa6cf5a9829548d7d10a8cc85a327653517b3e',
+   '{"author":"000000000000000003","custom_terrain_name":"","game_mode":"pve_coop","id":"00000000-0000-4000-c000-000000000001","max_players":48,"terrain":"arland","time_of_day":"05:30:00","title":"Operation Iron Veil","weather":"overcast"}'::jsonb, 'ded05d09234b16a42ba8824117c75eb57e48b0aac46537d10cd4dc616453ef3b', '26fa7c98e52915f6f2d476d2373e9cbdc5ad09b2e64ce812e9c7b23c88947b07',
+   '00000000-0000-4000-a000-000000000001', '2.1', 'website-map-engine 0.1.0', '1.1', 'arland',
+   decode('7b22736368656d6156657273696f6e223a22312e31222c226d657461223a7b226964223a226d736e5f3030303030303030303030303430303063303030303030303030303030303031222c226e616d65223a224f7065726174696f6e2049726f6e205665696c222c22617574686f72223a22303030303030303030303030303030303033222c227465727261696e223a2261726c616e64222c2274656d706c6174654964223a22656469746f725f7631222c22706c6179657252616e6765223a5b312c34385d7d2c22656e7669726f6e6d656e74223a7b226461746554696d65223a22313938392d30362d31345430353a33303a30305a222c2277656174686572507265736574223a226f76657263617374227d2c2266616374696f6e73223a5b7b226b6579223a22626c75666f72222c22646973706c61794e616d65223a2255532041726d79222c227072657365744964223a227072657365743a75735f61726d795f38326e64222c227469636b657473223a307d5d2c226f72626174223a7b22626c75666f72223a7b2267726f757073223a5b7b2263616c6c7369676e223a22416c706861222c2274797065223a227269666c655f7371756164222c22726f6c6573223a5b7b22736c6f74223a22534c222c226b6974223a226b69743a75735f7269666c656d616e222c22636f756e74223a317d5d7d5d7d7d2c22736c6f7473223a5b7b226964223a22626c75666f723a416c7068613a534c3a30222c22756964223a227331222c2266616374696f6e223a22626c75666f72222c2267726f757043616c6c7369676e223a22416c706861222c22726f6c65223a22534c222c226b6974223a226b69743a75735f7269666c656d616e222c2278223a343833392e322c227a223a363632302e382c2268656164696e67446567223a3237302e307d5d2c22726164696f506c616e223a7b226e657473223a5b7b226964223a226e65743a626c75666f725f636d64222c226c6162656c223a2255532041726d7920436f6d6d616e64222c22667265714d487a223a33302e302c2266616374696f6e223a22626c75666f72222c2272616e6765223a226c6f6e67227d2c7b226964223a226e65743a626c75666f725f616c706861222c226c6162656c223a22416c706861222c22667265714d487a223a33302e352c2266616374696f6e223a22626c75666f72227d5d7d2c227a6f6e6573223a5b7b226964223a227a5f737061776e5f626c75666f72222c2274797065223a22737061776e222c2266616374696f6e223a22626c75666f72222c227368617065223a7b22636972636c65223a7b2278223a343833392e322c227a223a363632302e382c2272223a3135302e307d7d7d2c7b226964223a227a5f626f756e6473222c2274797065223a22626f756e64617279222c227368617065223a7b22706f6c79676f6e223a5b5b302e302c302e305d2c5b343039362e302c302e305d2c5b343039362e302c343039362e305d2c5b302e302c343039362e305d5d7d7d5d2c22666c6f77223a7b226272696566696e675365636f6e6473223a3630302c227361666553746172745365636f6e6473223a3330302c2274696d654c696d69745365636f6e6473223a353430302c226a6970223a22756e74696c5f7361666573746172745f656e64227d2c2277696e436f6e646974696f6e73223a7b226d6f6465223a22617474726974696f6e222c22656e644f6e223a5b2274696d655f6c696d6974225d7d7d', 'hex'),
+   'be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291', 1271, '[]'::jsonb, '2534548d0f87ee73f27c582279483e82883a5f97f2a6576a43ed913b188e2791', '000000000000000003', '2026-07-24 10:05:00+00'),
+  ('00000000-0000-4000-f000-000000000004', '00000000-0000-4000-c000-000000000004', '00000000-0000-4000-8000-000000000014', 'bb173e5b5b0e64ac00020ce933fa6cf5a9829548d7d10a8cc85a327653517b3e',
+   '{"author":"000000000000000003","custom_terrain_name":"","game_mode":"pve_coop","id":"00000000-0000-4000-c000-000000000004","max_players":32,"terrain":"everon","time_of_day":"03:15:00","title":"Operation Cold Anvil","weather":"heavy_rain"}'::jsonb, 'f34053e5497da9c897a19d4ba986f2f86f0661e2c2dda3ab21da5960518e2128', '26fa7c98e52915f6f2d476d2373e9cbdc5ad09b2e64ce812e9c7b23c88947b07',
+   '00000000-0000-4000-a000-000000000001', '2.1', 'website-map-engine 0.1.0', '1.1', 'everon',
+   decode('7b22736368656d6156657273696f6e223a22312e31222c226d657461223a7b226964223a226d736e5f3030303030303030303030303430303063303030303030303030303030303034222c226e616d65223a224f7065726174696f6e20436f6c6420416e76696c222c22617574686f72223a22303030303030303030303030303030303033222c227465727261696e223a22657665726f6e222c2274656d706c6174654964223a22656469746f725f7631222c22706c6179657252616e6765223a5b312c33325d7d2c22656e7669726f6e6d656e74223a7b226461746554696d65223a22313938392d30362d31345430333a31353a30305a222c2277656174686572507265736574223a2268656176795f7261696e227d2c2266616374696f6e73223a5b7b226b6579223a22626c75666f72222c22646973706c61794e616d65223a2255532041726d79222c227072657365744964223a227072657365743a75735f61726d795f38326e64222c227469636b657473223a307d5d2c226f72626174223a7b22626c75666f72223a7b2267726f757073223a5b7b2263616c6c7369676e223a22416c706861222c2274797065223a227269666c655f7371756164222c22726f6c6573223a5b7b22736c6f74223a22534c222c226b6974223a226b69743a75735f7269666c656d616e222c22636f756e74223a317d5d7d5d7d7d2c22736c6f7473223a5b7b226964223a22626c75666f723a416c7068613a534c3a30222c22756964223a227331222c2266616374696f6e223a22626c75666f72222c2267726f757043616c6c7369676e223a22416c706861222c22726f6c65223a22534c222c226b6974223a226b69743a75735f7269666c656d616e222c2278223a343833392e322c227a223a363632302e382c2268656164696e67446567223a3237302e307d5d2c22726164696f506c616e223a7b226e657473223a5b7b226964223a226e65743a626c75666f725f636d64222c226c6162656c223a2255532041726d7920436f6d6d616e64222c22667265714d487a223a33302e302c2266616374696f6e223a22626c75666f72222c2272616e6765223a226c6f6e67227d2c7b226964223a226e65743a626c75666f725f616c706861222c226c6162656c223a22416c706861222c22667265714d487a223a33302e352c2266616374696f6e223a22626c75666f72227d5d7d2c227a6f6e6573223a5b7b226964223a227a5f737061776e5f626c75666f72222c2274797065223a22737061776e222c2266616374696f6e223a22626c75666f72222c227368617065223a7b22636972636c65223a7b2278223a343833392e322c227a223a363632302e382c2272223a3135302e307d7d7d2c7b226964223a227a5f626f756e6473222c2274797065223a22626f756e64617279222c227368617065223a7b22706f6c79676f6e223a5b5b302e302c302e305d2c5b31323830302e302c302e305d2c5b31323830302e302c31323830302e305d2c5b302e302c31323830302e305d5d7d7d5d2c22666c6f77223a7b226272696566696e675365636f6e6473223a3630302c227361666553746172745365636f6e6473223a3330302c2274696d654c696d69745365636f6e6473223a353430302c226a6970223a22756e74696c5f7361666573746172745f656e64227d2c2277696e436f6e646974696f6e73223a7b226d6f6465223a22617474726974696f6e222c22656e644f6e223a5b2274696d655f6c696d6974225d7d7d', 'hex'),
+   '815fa594db434d9a8ffa297dda126ddab4a6493d3fa1db1c62525abe4f409739', 1278, '[]'::jsonb, 'bcfb3b1c4109fe03ac0292372a3fdfb86052d44979c2f2638e7e419e7f234577', '000000000000000003', '2026-07-24 11:05:00+00')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO mission_reviews (id, mission_id, artifact_id, submitted_by, submitted_at, state, decided_by, decided_at)
+VALUES
+  ('00000000-0000-4000-f100-000000000001', '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f000-000000000001', '000000000000000003',
+   '2026-07-24 10:05:00+00', 'rejected', '000000000000000001', '2026-07-24 12:00:00+00'),
+  ('00000000-0000-4000-f100-000000000002', '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f000-000000000001', '000000000000000003',
+   '2026-07-24 13:00:00+00', 'approved_with_conditions', '000000000000000001', '2026-07-24 15:00:00+00'),
+  ('00000000-0000-4000-f100-000000000004', '00000000-0000-4000-c000-000000000004', '00000000-0000-4000-f000-000000000004', '000000000000000003',
+   '2026-07-24 11:05:00+00', 'pending', NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO mission_review_comments (id, mission_id, review_id, mission_version_id, artifact_id,
+    author_id, kind, body, created_at)
+VALUES
+  ('00000000-0000-4000-f500-000000000001', '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f100-000000000001',
+   '00000000-0000-4000-8000-000000000011', '00000000-0000-4000-f000-000000000001', '000000000000000001', 'rejection',
+   'The extraction helicopter spawns inside the minefield.', '2026-07-24 12:00:00+00'),
+  ('00000000-0000-4000-f500-000000000002', '00000000-0000-4000-c000-000000000001', NULL, '00000000-0000-4000-8000-000000000011', '00000000-0000-4000-f000-000000000001', '000000000000000003',
+   'comment', 'Moved the helicopter pad north of the quarry.', '2026-07-24 12:30:00+00'),
+  ('00000000-0000-4000-f500-000000000003', '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f100-000000000002',
+   '00000000-0000-4000-8000-000000000011', '00000000-0000-4000-f000-000000000001', '000000000000000001', 'approval_conditions',
+   'Night rotation only until the BTR patrol is retuned.', '2026-07-24 15:00:00+00')
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE missions SET current_version_id = '00000000-0000-4000-8000-000000000011', approved_artifact_id = '00000000-0000-4000-f000-000000000001', status = 'live',
+    rejection_reason = '', reviewed_by = '000000000000000001', reviewed_at = '2026-07-24 15:00:00+00',
+    updated_at = '2026-07-24 15:00:00+00'
+WHERE id = '00000000-0000-4000-c000-000000000001';
+UPDATE missions SET current_version_id = '00000000-0000-4000-8000-000000000014', updated_at = '2026-07-24 11:05:00+00'
+WHERE id = '00000000-0000-4000-c000-000000000004';
+
+INSERT INTO fleet_scenarios (terrain_key, scenario_id, display_name, updated_by, updated_at)
+VALUES
+  ('arland', '{1111222233334444}Missions/TBD_Arland.conf', 'Arland', '000000000000000001', '2026-07-24 09:00:00+00'),
+  ('everon', '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf', 'Everon', '000000000000000001', '2026-07-24 09:00:00+00')
+ON CONFLICT (terrain_key) DO NOTHING;
+
+INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label,
+                                        created_by, created_at, last_used_at)
+VALUES ('00000000-0000-4000-e000-000000000003', '00000000-0000-4000-d000-000000000001', 'host_agent', 'c04532ac4e9a8208bdc3121386db93202f39c3c56de4d0b78130ff317e5e21d9', 'Primary host agent',
+        '000000000000000001', '2026-07-18 10:05:00+00', '2026-07-24 16:01:00+00')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO server_runtime_sessions (id, server_id, credential_id, generation, started_at,
+    last_heartbeat_at, last_sequence, ended_at, end_reason, loaded_artifact_id, loaded_artifact_sha256)
+VALUES ('00000000-0000-4000-f300-000000000001', '00000000-0000-4000-d000-000000000001', '00000000-0000-4000-e000-000000000001', 1, '2026-07-24 16:04:00+00',
+        '2026-07-24 19:55:00+00', 940, '2026-07-24 20:00:00+00', 'ended_by_runtime', '00000000-0000-4000-f000-000000000001', 'be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO fleet_commands (id, server_id, executor_kind, action, arguments, idempotent,
+    process_changing, requested_by, requested_at, expires_at, state, fencing_token, attempts,
+    claimed_by, claimed_at, executing_at, finished_at, outcome, failure_reason)
+VALUES
+  ('00000000-0000-4000-f200-000000000001', '00000000-0000-4000-d000-000000000001', 'host_agent', 'restart_with_mission', '{"deployment_id": "00000000-0000-4000-f400-000000000001", "artifact_id": "00000000-0000-4000-f000-000000000001", "artifact_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291", "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf"}'::jsonb, false, true,
+   '000000000000000001', '2026-07-24 16:00:00+00', '2026-07-24 16:05:00+00', 'succeeded', 1, 1,
+   NULL, '2026-07-24 16:00:05+00', '2026-07-24 16:00:06+00', '2026-07-24 16:01:00+00',
+   '{"scenario_id": "{1111222233334444}Missions/TBD_Arland.conf", "unit_active_state": "active", "config_path": "/srv/reforger/server-config.json"}'::jsonb, NULL),
+  ('00000000-0000-4000-f200-000000000002', '00000000-0000-4000-d000-000000000001', 'mod_runtime', 'broadcast',
+   '{"message": "Server restarts in 10 minutes for Operation Iron Veil"}'::jsonb, false, false,
+   '000000000000000001', '2026-07-24 15:45:00+00', '2026-07-24 15:50:00+00', 'failed', 1, 1,
+   NULL, '2026-07-24 15:45:03+00', '2026-07-24 15:45:04+00',
+   '2026-07-24 15:45:05+00', NULL, 'the chat channel was unavailable'),
+  -- Queued far into the future so the reconciler never expires it under a capture.
+  ('00000000-0000-4000-f200-000000000003', '00000000-0000-4000-d000-000000000001', 'host_agent', 'list_players', '{}'::jsonb, true, false,
+   '000000000000000001', '2026-07-25 08:00:00+00', '2027-07-25 08:05:00+00', 'queued', 0, 0,
+   NULL, NULL, NULL, NULL, NULL, NULL),
+  ('00000000-0000-4000-f200-000000000004', '00000000-0000-4000-d000-000000000001', 'host_agent', 'restart_with_mission', '{"deployment_id": "00000000-0000-4000-f400-000000000002", "artifact_id": "00000000-0000-4000-f000-000000000001", "artifact_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291", "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf"}'::jsonb, false, true,
+   '000000000000000001', '2026-07-25 09:00:00+00', '2026-07-25 09:05:00+00', 'expired', 0, 0,
+   NULL, NULL, NULL, '2026-07-25 09:05:00+00', NULL, 'no executor completed the command before it expired')
+ON CONFLICT (id) DO NOTHING;
+
+-- Iron Veil's main-effort event runs on the primary server, and its event mission carries the
+-- one seat the approved artifact compiles (BLUFOR / A 1-1 / position 0 / SL, slot uid s1), so
+-- the confirmed deployment binds it; the failed in-game request names no event mission.
+UPDATE events SET server_id = '00000000-0000-4000-d000-000000000001'
+WHERE id = '00000000-0000-4000-7000-000000000001';
+
+INSERT INTO orbat_slots (id, event_mission_id, faction, squad, callsign, role, loadout, tag,
+                         slot_index, assigned_to, assigned_at)
+VALUES ('00000000-0000-4000-5000-000000000020', '00000000-0000-4000-6000-000000000001',
+        'BLUFOR', 'A 1-1', 'Alpha', 'SL', NULL, NULL, 0, NULL, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO mission_deployments (id, server_id, mission_id, artifact_id, event_mission_id,
+    terrain_key, scenario_id, transition, fleet_command_id, requested_by, requested_via,
+    requested_at, deadline_at, state, confirmed_runtime_session_id, finished_at, failure_reason)
+VALUES
+  ('00000000-0000-4000-f400-000000000001', '00000000-0000-4000-d000-000000000001',
+   '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f000-000000000001',
+   '00000000-0000-4000-6000-000000000001', 'arland', '{1111222233334444}Missions/TBD_Arland.conf',
+   'host_restart', '00000000-0000-4000-f200-000000000001', '000000000000000001', 'web',
+   '2026-07-24 16:00:00+00', '2026-07-24 16:20:00+00', 'confirmed',
+   '00000000-0000-4000-f300-000000000001', '2026-07-24 16:04:30+00', NULL),
+  ('00000000-0000-4000-f400-000000000002', '00000000-0000-4000-d000-000000000001',
+   '00000000-0000-4000-c000-000000000001', '00000000-0000-4000-f000-000000000001',
+   NULL, 'arland', '{1111222233334444}Missions/TBD_Arland.conf',
+   'host_restart', '00000000-0000-4000-f200-000000000004', '000000000000000001', 'game_runtime',
+   '2026-07-25 09:00:00+00', '2026-07-25 09:20:00+00', 'failed', NULL, '2026-07-25 09:20:00+00',
+   'the restart_with_mission command ended expired: no executor completed the command before it expired')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO mission_deployment_slots (deployment_id, orbat_slot_id, slot_uid)
+VALUES ('00000000-0000-4000-f400-000000000001', '00000000-0000-4000-5000-000000000020', 's1')
+ON CONFLICT DO NOTHING;
+
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- REPRODUCING THE FIXTURES
@@ -848,7 +1072,10 @@ REFRESH MATERIALIZED VIEW leaderboard_totals;
 --   1. createdb, then boot the API against it (it migrates on boot):
 --        DATABASE_URL=postgres://tbd:tbd@localhost:5434/<db>?sslmode=disable \
 --        JWT_SECRET=<anything> APP_ENV=development PORT=<port> \
+--        DISCORD_GUILD_ID=100000000000000001 \
 --        cargo run -p website-api --bin api
+--      The access-participants golden names the configured guild, so the guild
+--      id is part of the recipe.
 --      Do NOT capture against a long-running :8080 — that process may be a
 --      deleted-inode binary from an unrelated build. Boot your own and know
 --      what you are talking to.
@@ -858,7 +1085,23 @@ REFRESH MATERIALIZED VIEW leaderboard_totals;
 --      THIS ORDER MATTERS: dev-login stamps the operator's last_login_at with
 --      the wall clock, and §1 above pins it back to the committed value.
 --   4. GET each path in tests/fixtures/api/_index.tsv with that bearer token
---      and write the body to its fixture file.
+--      and write the body to its fixture file, in index order: the two writes
+--      at its end run last, because each changes what the reads before it see.
+--      PUT /events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/access-policy restates the
+--      seeded policy with {"expected_access_revision": 4, "policy": <the §9 policy>}.
+--      POST /event-missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/waitlist/promote
+--      (no body) promotes only while the operation accepts registrations and its
+--      waiter is available: the seeded waiter (…006) is banned and the operation
+--      has passed, so that golden is captured after moving the operation and its
+--      mission 30 days ahead and lifting the waiter's ban in the capture database
+--      only. It promotes the waiter into the first free seat (…5000-000000000006).
+--   5. §13's artifact rows are the compiler's output for its two versions. A
+--      change to the compiler, the document schema, the catalog or a modpack
+--      changes their bytes and digests: seed a fresh database up to §12, insert
+--      the two §13 versions as the missions' current versions (Iron Veil as a
+--      draft), POST /missions/:id/submit for both, and copy each resulting
+--      mission_artifacts row — document as hex, digests, metadata, diagnostics
+--      — into §13 under its pinned id and timestamp.
 --
 -- GET__registry.json is NOT reproducible this way and is not captured by this
 -- recipe: registry_dev.sql lets Postgres generate the registry_items ids, so a

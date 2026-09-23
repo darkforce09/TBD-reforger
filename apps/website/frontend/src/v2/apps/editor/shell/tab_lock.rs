@@ -212,10 +212,11 @@ pub fn role() -> TabRole {
     ROLE.with(std::cell::Cell::get)
 }
 
-/// May this tab write the shared record?
+/// May this tab write the shared record? Only the writer may, and never while the tab shows a
+/// review workspace, which writes nothing whatever the election says.
 #[must_use]
 pub fn may_write() -> bool {
-    role() == TabRole::Writer
+    role() == TabRole::Writer && super::review_mode::writes_mission()
 }
 
 /// How many other tabs have this mission open.
@@ -249,7 +250,8 @@ fn publish_peer_count() {
 }
 
 /// The read-only banner. Renders no DOM while this tab is the writer  the same
-/// "`None` renders nothing" discipline the conflict dialog uses, so it is V-capture-safe.
+/// "`None` renders nothing" discipline the conflict dialog uses, so it is V-capture-safe. A review
+/// workspace carries its own banner, so this one stays silent there.
 ///
 /// It creates both signals and parks them for the cells to push to, **seeded from those cells**,
 /// because this component has a reactive owner and the channel callbacks that drive them do not
@@ -262,7 +264,7 @@ pub fn TabLockBanner() -> impl IntoView {
     ROLE_SIG.with(|s| *s.borrow_mut() = Some(role_sig));
     PEERS_SIG.with(|s| *s.borrow_mut() = Some(peers_sig));
     move || {
-        (role_sig.get() == TabRole::ReadOnly).then(|| {
+        (role_sig.get() == TabRole::ReadOnly && super::review_mode::writes_mission()).then(|| {
             view! {
                 <div
                     role="status"

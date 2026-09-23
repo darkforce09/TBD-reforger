@@ -12,7 +12,7 @@
 //!   refuses an over-capacity payload before it reaches `mission_versions.json_payload`, and
 //!   `missions::handlers::mission_export::get_compiled_mission`, which compiles the stored tip for
 //!   a game server.
-//! * roster ingest — `operations::handlers::roster_ingest::ingest_event_roster`, which recompiles
+//! * game-runtime roster — `operations::handlers::game_runtime_roster::event_roster`, which recompiles
 //!   every mission of an event to recover slot uids and must omit a mission Save would have
 //!   refused, rather than seat it from an empty-catalog no-op.
 //!

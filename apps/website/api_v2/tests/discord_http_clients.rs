@@ -180,7 +180,12 @@ async fn discord_fetch_guild_member_roles_and_404() {
     // 404 → None (non-member login still succeeds).
     let base404 = spawn(Router::new().route(
         "/users/@me/guilds/guild-1/member",
-        get(|| async { StatusCode::NOT_FOUND }),
+        get(|| async {
+            (
+                StatusCode::NOT_FOUND,
+                axum::Json(serde_json::json!({"code": 10007})),
+            )
+        }),
     ))
     .await;
     assert!(

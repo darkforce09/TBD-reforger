@@ -100,7 +100,8 @@ async fn get_me_whitespace_arma_id_reports_arma_linked_false() {
         ACTOR,
         "enlisted",
         true,
-    );
+    )
+    .await;
     let resp = app
         .clone()
         .oneshot(
@@ -143,7 +144,8 @@ async fn link_status_whitespace_arma_id_reports_linked_false() {
         ACTOR,
         "enlisted",
         true,
-    );
+    )
+    .await;
     let resp = app
         .clone()
         .oneshot(
@@ -188,7 +190,8 @@ async fn get_me_and_link_status_real_arma_id_reports_linked_true() {
         ACTOR,
         "enlisted",
         false,
-    );
+    )
+    .await;
     for (uri, key) in [
         ("/api/v1/me", "arma_linked"),
         ("/api/v1/me/link/status", "linked"),

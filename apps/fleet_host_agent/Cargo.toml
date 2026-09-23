@@ -1,0 +1,37 @@
+# Fleet host agent: runs on each game host beside the Arma Reforger dedicated server.
+#
+# It polls the platform API outbound over HTTPS for fleet commands addressed to its server,
+# performs fixed process-control actions through `systemctl --user` and BattlEye RCon commands
+# over UDP, and reports each step to the command ledger. README.md documents the configuration,
+# the safety model and the systemd user service.
+[package]
+name = "fleet-host-agent"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+description = "Game-host agent that performs fleet commands from the TBD platform command ledger."
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+chrono = { version = "0.4.45", features = ["serde"] }
+crc32fast = "1.5.0"
+rand = "0.10.2"
+# rustls-no-provider plus the ring provider installed before the client is built: HTTPS without
+# the aws-lc-rs C build, the same arrangement as the API crate.
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls-no-provider"] }
+rustls = { version = "0.23.41", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+thiserror = "2.0.18"
+tokio = { version = "1.52.3", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+toml = "1.1.3"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+uuid = { version = "1.23.4", features = ["serde"] }
+
+[dev-dependencies]
+# The stand-in platform API of the ledger tests.
+axum = "0.8.9"
+tempfile = "3.27.0"
+uuid = { version = "1.23.4", features = ["v4"] }

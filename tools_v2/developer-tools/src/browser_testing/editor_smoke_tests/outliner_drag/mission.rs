@@ -1,4 +1,5 @@
 use super::*;
+use crate::browser_testing::session_tokens::gate_access_token;
 
 pub(super) fn mission(duplicate: bool, large: bool) -> Value {
     let ids: Vec<String> = (0..5).map(|i| format!("roof-{i}")).collect();
@@ -121,7 +122,7 @@ pub(super) async fn intercept(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
             } else if url.contains("/auth/refresh") {
                 (
                     200,
-                    json!({"access_token":"recovery-access","refresh_token":"rt-seed","expires_at":"2030-01-01T00:00:00Z"}),
+                    json!({"access_token":gate_access_token("recovery"),"refresh_token":"rt-seed","expires_at":"2030-01-01T00:00:00Z"}),
                 )
             } else if url.ends_with("/me") {
                 (200, me.clone())

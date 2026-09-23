@@ -91,6 +91,19 @@ async fn provision_golden_database() -> (String, PgPool) {
 /// The handler ignores the bearer beyond requiring one.
 fn bearer() -> AuthUser {
     AuthUser {
+        session_claims: website_api::core::authentication_primitives::Claims {
+            sub: "paging-test".into(),
+            sid: uuid::Uuid::new_v4(),
+            iss: "tbd-reforger".into(),
+            aud: "tbd-website".into(),
+            iat: 0,
+            exp: i64::MAX,
+            role: "enlisted".into(),
+            arma_linked: true,
+        },
+        membership_stale: false,
+        membership_override_active: false,
+        can_manage_membership_override: false,
         discord_id: GOLDEN_PLAYERS[0].into(),
         role: "admin".into(),
         arma_linked: true,

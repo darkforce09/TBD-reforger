@@ -7,7 +7,9 @@ use serde::Deserialize;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
-use crate::identity_and_access::services::session_issuance::{issue_session, session_redirect};
+use crate::identity_and_access::services::session_issuance::{
+    issue_development_session, session_redirect,
+};
 
 /// Stable Discord snowflake for the local **admin** / default-role operator.
 ///
@@ -16,6 +18,7 @@ use crate::identity_and_access::services::session_issuance::{issue_session, sess
 /// refresh families without revoking the prior one.
 const DEV_USER_ID: &str = "000000000000000001";
 
+const DEV_USER_ID_GUEST: &str = "000000000000000005";
 const DEV_USER_ID_ENLISTED: &str = "000000000000000002";
 const DEV_USER_ID_LEADER: &str = "000000000000000003";
 const DEV_USER_ID_MISSION_MAKER: &str = "000000000000000004";
@@ -27,6 +30,7 @@ const DEV_USER_ID_MISSION_MAKER: &str = "000000000000000004";
 /// same unique index when several roles cold-insert in parallel.
 const DEV_ARMA_ID: &str = "dev-arma-76561190000000001";
 
+const DEV_ARMA_ID_GUEST: &str = "dev-arma-76561190000000005";
 const DEV_ARMA_ID_ENLISTED: &str = "dev-arma-76561190000000002";
 const DEV_ARMA_ID_LEADER: &str = "dev-arma-76561190000000003";
 const DEV_ARMA_ID_MISSION_MAKER: &str = "dev-arma-76561190000000004";
@@ -39,6 +43,7 @@ pub struct DevLoginQuery {
 
 fn discord_id_for_role(role: &str) -> &'static str {
     match role {
+        "guest" => DEV_USER_ID_GUEST,
         "enlisted" => DEV_USER_ID_ENLISTED,
         "leader" => DEV_USER_ID_LEADER,
         "mission_maker" => DEV_USER_ID_MISSION_MAKER,
@@ -49,6 +54,7 @@ fn discord_id_for_role(role: &str) -> &'static str {
 
 fn arma_id_for_role(role: &str) -> &'static str {
     match role {
+        "guest" => DEV_ARMA_ID_GUEST,
         "enlisted" => DEV_ARMA_ID_ENLISTED,
         "leader" => DEV_ARMA_ID_LEADER,
         "mission_maker" => DEV_ARMA_ID_MISSION_MAKER,
@@ -69,7 +75,7 @@ pub async fn dev_login(
     }
 
     let role = match q.role.as_str() {
-        r @ ("enlisted" | "leader" | "mission_maker" | "admin") => r,
+        r @ ("guest" | "enlisted" | "leader" | "mission_maker" | "admin") => r,
         _ => "admin",
     };
     let discord_id = discord_id_for_role(role);
@@ -109,7 +115,9 @@ pub async fn dev_login(
     .execute(&state.pool)
     .await?;
 
-    let (access, exp, refresh) = issue_session(&state, discord_id, role, true).await?;
+    let role = serde_json::from_value(serde_json::json!(role))
+        .map_err(|_| ApiError::bad_request("invalid development role"))?;
+    let (access, exp, refresh) = issue_development_session(&state, discord_id, role).await?;
     Ok(session_redirect(
         &state.cfg.frontend_url,
         &access,

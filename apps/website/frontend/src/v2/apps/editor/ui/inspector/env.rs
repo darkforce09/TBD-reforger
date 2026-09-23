@@ -292,8 +292,8 @@ pub const JIP_OPTIONS: [(&str, &str); 3] = [
 /// **Refusing is the point.** `mission.schema.json` types every `flow` duration
 /// `integer, minimum 0`, and a half-typed box passes through `""` and `"-"` on the way to `-1`.
 /// Authoring those would put a non-integer or a negative in the document and turn one keystroke
-/// into a schema-invalid compiled mission at `GET /missions/:id/compiled` — in front of a game
-/// server rather than the author. Same contract as [`normalize_clock`]: commit a real value or
+/// into a compiled document the mission contract refuses — at submission, in front of a reviewer,
+/// rather than in the author's own field. Same contract as [`normalize_clock`]: commit a real value or
 /// commit nothing at all.
 ///
 /// `0` is deliberately accepted. It is a real authored value on every one of these fields, and on

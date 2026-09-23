@@ -52,6 +52,10 @@ pub fn AppRoutes() -> impl IntoView {
                 path=path!("/missions/:id/edit")
                 view=crate::v2::apps::editor::mission_editor::MissionEditorPage
             />
+            <Route
+                path=path!("/missions/:id/artifacts/:artifact_id/workspace")
+                view=crate::v2::pages::mission_hub::review_workspace::ReviewWorkspacePage
+            />
             <Route path=path!("/events") view=EventSchedulePage />
             <Route path=path!("/events/:id") view=crate::v2::pages::operations::event_detail::EventHubPage />
             <Route

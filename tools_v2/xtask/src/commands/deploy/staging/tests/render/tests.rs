@@ -66,19 +66,19 @@ fn validator_catches_the_truncated_scenario_and_the_port_clash() {
     let mut e = base();
     e.scenario = "{69A85365FC09E2CA".into();
     assert!(
-        render_server_config(&e, &d.join("trunc.json")).is_err(),
+        render_server_config(&e, &e.scenario, &d.join("trunc.json")).is_err(),
         "truncated scenario must fail"
     );
 
     let mut e = base();
     e.a2s_port = e.game_port.clone();
     assert!(
-        render_server_config(&e, &d.join("clash.json")).is_err(),
+        render_server_config(&e, &e.scenario, &d.join("clash.json")).is_err(),
         "a2s == bindPort must fail"
     );
 
     // And the honest config must pass, or the two above are vacuous.
-    assert!(render_server_config(&base(), &d.join("ok.json")).is_ok());
+    assert!(render_server_config(&base(), &base().scenario, &d.join("ok.json")).is_ok());
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -91,7 +91,7 @@ fn raw_substitution_can_emit_non_json_and_the_validator_catches_it() {
     let mut e = base();
     e.server_name = "a\" , \"evil\": 1, \"x\": \"b".into();
     let p = d.join("raw.json");
-    let res = render_server_config(&e, &p);
+    let res = render_server_config(&e, &e.scenario, &p);
     let text = fs::read_to_string(&p).unwrap_or_default();
     assert!(
         res.is_err() || text.contains("evil"),
@@ -100,7 +100,7 @@ fn raw_substitution_can_emit_non_json_and_the_validator_catches_it() {
     // A non-numeric port is the cleaner case: it cannot parse at all.
     let mut e = base();
     e.game_port = "not-a-port".into();
-    assert!(render_server_config(&e, &d.join("port.json")).is_err());
+    assert!(render_server_config(&e, &e.scenario, &d.join("port.json")).is_err());
     let _ = fs::remove_dir_all(&d);
 }
 

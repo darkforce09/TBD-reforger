@@ -1,19 +1,23 @@
-//! Refresh of the `leaderboard_totals` materialized view.
+//! Serialized refresh of the materialized leaderboard and its contributing transaction.
+use sqlx::{PgConnection, PgPool};
 
-use sqlx::postgres::PgPool;
+/// Maintenance refreshes use the same publisher lock as business transactions.
+pub async fn refresh_leaderboard(pool: &PgPool) -> sqlx::Result<()> {
+    let mut tx = pool.begin().await?;
+    refresh_leaderboard_on_connection(&mut tx).await?;
+    tx.commit().await
+}
 
-/// Refresh the `leaderboard_totals` materialized view. Call after match telemetry
-/// ingest (debounced). Falls back to a non-concurrent refresh if the concurrent one
-/// fails (e.g. the view has not been populated yet).
-pub async fn refresh_leaderboard(pool: &PgPool) -> Result<(), sqlx::Error> {
-    if sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
-        .execute(pool)
-        .await
-        .is_err()
-    {
-        sqlx::query("REFRESH MATERIALIZED VIEW leaderboard_totals")
-            .execute(pool)
-            .await?;
-    }
+/// Acquire the final lock in a business transaction before taking the aggregate snapshot.
+/// The next refresher cannot capture an older snapshot and publish over this transaction's result.
+pub async fn refresh_leaderboard_on_connection(connection: &mut PgConnection) -> sqlx::Result<()> {
+    sqlx::query(
+        "SELECT pg_advisory_xact_lock(hashtextextended('tbd.leaderboard_totals.refresh', 0))",
+    )
+    .execute(&mut *connection)
+    .await?;
+    sqlx::query("REFRESH MATERIALIZED VIEW leaderboard_totals")
+        .execute(connection)
+        .await?;
     Ok(())
 }

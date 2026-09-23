@@ -1,5 +1,5 @@
-//! Server-status ingest: the heartbeat upsert, its low-FPS audit, the status read-back, and
-//! the whole ingest loop end to end (status → match results → arma→discord resolve →
+//! Server-status heartbeats: the session-fenced upsert, its low-FPS audit, the status read-back,
+//! and the whole ingest loop end to end (heartbeat → match results → arma→discord resolve →
 //! leaderboard refresh → user-stat recompute). Skips without `TEST_DATABASE_URL`.
 //!
 //! # Fixture ownership
@@ -11,8 +11,9 @@
 //! own actors off them.
 
 use axum::http::StatusCode;
+use serde_json::json;
 use sqlx::PgPool;
-use telemetry_support::{SVC, admin_token, boot, call};
+use telemetry_support::{SVC, admin_token, boot, call, heartbeat, remove_server, runtime_session};
 use uuid::Uuid;
 
 mod common;
@@ -60,47 +61,31 @@ async fn telemetry_ingest_closes_the_loop() {
     .await
     .unwrap();
 
-    // Healthy status ingest (service-token).
-    let ok = format!(
-        r#"{{"server_id":"{server_id}","is_online":true,"player_count":10,"max_players":64,"server_fps":60.0}}"#
-    );
-    let (st, r) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/server-status",
-        None,
-        Some(SVC),
-        Some(&ok),
-    )
-    .await;
+    // Healthy heartbeat from the server's runtime session.
+    let session = runtime_session(&app, &pool, server_id).await;
+    let ok = json!({"is_online": true, "player_count": 10, "max_players": 64, "server_fps": 60.0});
+    let (st, r) = heartbeat(&app, &session, 1, ok.clone()).await;
     assert_eq!(st, StatusCode::OK, "ingest: {r}");
     assert_eq!(r["ok"], true);
 
-    // No service token → 401.
+    // No machine credential → 401.
+    let mut anonymous = ok.clone();
+    anonymous["generation"] = json!(session.generation);
+    anonymous["sequence"] = json!(2);
     let (st, _) = call(
         &app,
         "POST",
-        "/api/v1/ingest/server-status",
+        &format!("/api/v1/game-runtime/sessions/{}/heartbeats", session.id),
         None,
         None,
-        Some(&ok),
+        Some(&anonymous.to_string()),
     )
     .await;
     assert_eq!(st, StatusCode::UNAUTHORIZED);
 
-    // Low-FPS ingest → crosses the threshold → WARN audit written.
-    let low = format!(
-        r#"{{"server_id":"{server_id}","is_online":true,"player_count":12,"server_fps":15.0}}"#
-    );
-    let (st, _) = call(
-        &app,
-        "POST",
-        "/api/v1/ingest/server-status",
-        None,
-        Some(SVC),
-        Some(&low),
-    )
-    .await;
+    // Low-FPS heartbeat → crosses the threshold → WARN audit written.
+    let low = json!({"is_online": true, "player_count": 12, "server_fps": 15.0});
+    let (st, _) = heartbeat(&app, &session, 2, low).await;
     assert_eq!(st, StatusCode::OK);
     let warns: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM audit_logs WHERE action = 'server.low_fps' AND target_id = $1",
@@ -217,19 +202,11 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
     .await
     .unwrap();
 
-    let ingest = |body: String| {
-        let app = app.clone();
-        async move {
-            call(
-                &app,
-                "POST",
-                "/api/v1/ingest/server-status",
-                None,
-                Some(SVC),
-                Some(&body),
-            )
-            .await
-        }
+    let session = runtime_session(&app, &pool, server_id).await;
+    let sequence = std::cell::Cell::new(0);
+    let ingest = |reading: serde_json::Value| {
+        sequence.set(sequence.get() + 1);
+        heartbeat(&app, &session, sequence.get(), reading)
     };
     type StatusRow = (bool, i64, i64, f64, i64, String, String);
     let read_status = |pool: PgPool| async move {
@@ -261,9 +238,10 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
     };
 
     // A healthy, fully-populated heartbeat.
-    let (st, r) = ingest(format!(
-        r#"{{"server_id":"{server_id}","is_online":true,"player_count":48,"max_players":64,"server_fps":58.5,"uptime_seconds":7200,"ingame_time":"18:00","ingame_weather":"clear"}}"#
-    ))
+    let (st, r) = ingest(json!({
+        "is_online": true, "player_count": 48, "max_players": 64, "server_fps": 58.5,
+        "uptime_seconds": 7200, "ingame_time": "18:00", "ingame_weather": "clear"
+    }))
     .await;
     assert_eq!(st, StatusCode::OK, "healthy heartbeat: {r}");
     let healthy = (
@@ -281,7 +259,7 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
     // The reported defect: a heartbeat carrying only liveness used to write
     // `player_count=0, server_fps=0, max_players=0, uptime=0`, append a permanent `0/0.0`
     // history sample, and fire a false `server.low_fps` WARN.
-    let (st, r) = ingest(format!(r#"{{"server_id":"{server_id}","is_online":true}}"#)).await;
+    let (st, r) = ingest(json!({"is_online": true})).await;
     assert_eq!(st, StatusCode::OK, "partial heartbeat: {r}");
     assert_eq!(
         read_status(pool.clone()).await,
@@ -296,10 +274,7 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
 
     // A heartbeat that does carry a reading moves only that field, and the history sample
     // it appends uses the merged row rather than the omitted fields' zeros.
-    let (st, _) = ingest(format!(
-        r#"{{"server_id":"{server_id}","player_count":52}}"#
-    ))
-    .await;
+    let (st, _) = ingest(json!({"player_count": 52})).await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(
         read_status(pool.clone()).await,
@@ -316,10 +291,7 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
     assert_eq!(sample, (52, 58.5), "sample carries the merged FPS, not 0.0");
 
     // A real low-FPS reading must still trip the edge-triggered WARN.
-    let (st, _) = ingest(format!(
-        r#"{{"server_id":"{server_id}","server_fps":11.5}}"#
-    ))
-    .await;
+    let (st, _) = ingest(json!({"server_fps": 11.5})).await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(
         counts(pool.clone()).await.1,
@@ -327,25 +299,20 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
         "genuine low FPS still warns"
     );
 
-    // A heartbeat that says nothing at all is a malformed request, not a zero reading.
-    let (st, r) = ingest(format!(r#"{{"server_id":"{server_id}"}}"#)).await;
+    // A heartbeat that says nothing beyond its fence is a malformed request, not a zero
+    // reading; one without a fence is refused before any reading is considered.
+    let (st, r) = ingest(json!({})).await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "bare heartbeat: {r}");
-    let (st, _) = ingest("{}".to_string()).await;
+    let (st, _) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/game-runtime/sessions/{}/heartbeats", session.id),
+        Some(&session.secret),
+        None,
+        Some("{}"),
+    )
+    .await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "empty body");
 
-    sqlx::query("DELETE FROM server_status_histories WHERE server_id = $1")
-        .bind(server_id)
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query("DELETE FROM server_statuses WHERE server_id = $1")
-        .bind(server_id)
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::query("DELETE FROM servers WHERE id = $1")
-        .bind(server_id)
-        .execute(&pool)
-        .await
-        .unwrap();
+    remove_server(&pool, server_id).await;
 }

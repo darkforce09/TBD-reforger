@@ -1,94 +1,131 @@
-use super::*;
+use crate::identity_and_access::services::identity_linking::BACKFILL_ATTENDANCE;
 
-/// The identity-link attendance backfill must scope through `(event_id, mission_id)`,
-/// matching ingest. Playing one mission on a multi-mission event must NOT flip sibling
-/// `event_mission` registrations.
-///
-/// RED (must FAIL):
-///   (a) an `em.event_id IN (SELECT m.event_id …)` nest with no mission join
-///   (b) join pin present + `UNION ALL` event-id-only second arm
-///   (c) dead `(FALSE AND <join_pin> OR TRUE)` with an event-only JOIN
-///   (d) `em.event_id = ANY (...)` + join pin only in a SQL `--` / `/* */` comment
-/// GREEN: single live `FROM event_missions em INNER JOIN matches m ON` carrying both
-/// equalities; no comment-only pins; no event-wide IN/ANY/UNION bypass.
+/// Attendance attribution selects the event mission that matches both recorded keys.
 #[test]
 fn backfill_attendance_joins_event_id_and_mission_id() {
-    // Assembled so a comment naming the value, or this test's own source, cannot satisfy it.
-    let join_pin_ab = format!(
-        "{}{}",
-        "m.event_id = em.event_id AND ", "m.mission_id = em.mission_id"
+    assert_eq!(validate_attendance_scope(BACKFILL_ATTENDANCE), Ok(()));
+    const SOURCE: &str = include_str!("../../services/identity_linking.rs");
+    assert!(
+        invokes_attendance_query(SOURCE),
+        "production must execute the checked BACKFILL_ATTENDANCE constant"
     );
-    let join_pin_ba = format!(
-        "{}{}",
-        "m.mission_id = em.mission_id AND ", "m.event_id = em.event_id"
-    );
+}
 
-    let sql = strip_sql_comments(BACKFILL_ATTENDANCE);
-    let collapsed = collapse_ws(&sql);
+/// Inspect the compiled SQL independently of other queries in the Rust module.
+fn validate_attendance_scope(sql: &str) -> Result<(), &'static str> {
+    let collapsed = collapse_ws(&strip_sql_comments(sql));
+    let join_pin_ab = "m.event_id = em.event_id AND m.mission_id = em.mission_id";
+    let join_pin_ba = "m.mission_id = em.mission_id AND m.event_id = em.event_id";
+    if !collapsed.contains("m.mission_id IS NOT NULL") {
+        return Err("attendance requires a match mission identity");
+    }
+    if !live_event_mission_join_on(&collapsed, join_pin_ab, join_pin_ba) {
+        return Err("attendance requires a live event-and-mission join");
+    }
+    if collapsed.contains("em.event_id IN (") || collapsed.contains("em.event_id = ANY") {
+        return Err("event-only IN/ANY attribution admits sibling missions");
+    }
+    if collapsed.contains(" UNION ") {
+        return Err("attendance cannot append an event-only UNION arm");
+    }
+    Ok(())
+}
 
-    assert!(
-        collapsed.contains("m.mission_id IS NOT NULL"),
-        "BACKFILL_ATTENDANCE must refuse event-only matches (no mission to scope)"
-    );
+fn invokes_attendance_query(source: &str) -> bool {
+    collapse_ws(&strip_rust_line_comments(source)).contains("sqlx::query(BACKFILL_ATTENDANCE)")
+}
 
-    assert!(
-        live_event_mission_join_on(&collapsed, &join_pin_ab, &join_pin_ba),
-        "BACKFILL_ATTENDANCE must have a single live \
-         `FROM event_missions em INNER JOIN matches m ON` carrying both \
-         `m.event_id = em.event_id` and `m.mission_id = em.mission_id` \
-         (order-flexible; not comment-only; not `(FALSE AND … OR TRUE)`)"
-    );
+#[test]
+fn attendance_scope_rejects_removed_mission_join_and_missing_mission_identity() {
+    for invalid in [
+        BACKFILL_ATTENDANCE.replace(" AND m.mission_id = em.mission_id", ""),
+        BACKFILL_ATTENDANCE.replace(" AND m.mission_id IS NOT NULL", ""),
+    ] {
+        assert!(validate_attendance_scope(&invalid).is_err(), "{invalid}");
+    }
+}
 
-    // Event-wide bypass shapes (whitespace-collapsed, comments already stripped).
-    assert!(
-        !collapsed.contains("em.event_id IN ("),
-        "BACKFILL_ATTENDANCE must not use `em.event_id IN (` — \
-         that flips sibling missions on multi-mission events"
-    );
-    assert!(
-        !collapsed.contains("em.event_id = ANY"),
-        "BACKFILL_ATTENDANCE must not use `em.event_id = ANY` — \
-         event-id-only ANY is the same event-wide bypass as IN"
-    );
-    assert!(
-        !collapsed.contains(" UNION ") && !collapsed.contains(" UNION ALL "),
-        "BACKFILL_ATTENDANCE must not UNION an event-id-only arm onto the \
-         mission-scoped SELECT em.id subquery"
-    );
+#[test]
+fn attendance_scope_rejects_union_event_only_arm() {
+    for operator in ["UNION", "UNION ALL"] {
+        let invalid = format!(
+            "{} {operator} SELECT em.id FROM event_missions em INNER JOIN matches m \
+             ON m.event_id = em.event_id WHERE m.event_id IS NOT NULL)",
+            BACKFILL_ATTENDANCE.trim_end_matches(')')
+        );
+        assert!(validate_attendance_scope(&invalid).is_err(), "{invalid}");
+    }
+}
 
-    // Source pin (production only) — the same live join must appear on the const, not only
-    // in docs / SQL comments inside the string. Drop Rust `//` / `///` lines first so a doc
-    // mention of an event-only nest cannot false-red the ban.
-    const SRC: &str = include_str!("../arma_link_confirmation.rs");
-    let production = SRC
-        .split("#[cfg(test)]")
-        .next()
-        .expect("split always yields a first slice");
-    let prod_sql = strip_sql_comments(&strip_rust_line_comments(production));
-    // Rust string continuations leave `\` in the source; treat them as whitespace
-    // so the live FROM/JOIN ON shape still matches the compiled const.
-    let prod = collapse_ws(&prod_sql.replace('\\', " "));
-    assert!(
-        live_event_mission_join_on(&prod, &join_pin_ab, &join_pin_ba),
-        "production BACKFILL_ATTENDANCE source must contain a live \
-         `FROM event_missions em INNER JOIN matches m ON` with both equalities"
+#[test]
+fn attendance_scope_rejects_dead_join_pin_or_true_bypass() {
+    let pin = "m.event_id = em.event_id AND m.mission_id = em.mission_id";
+    for condition in [
+        format!("(FALSE AND {pin} OR TRUE)"),
+        format!("{pin} OR TRUE"),
+    ] {
+        let invalid = BACKFILL_ATTENDANCE.replace(pin, &condition);
+        assert!(validate_attendance_scope(&invalid).is_err(), "{invalid}");
+    }
+}
+
+#[test]
+fn attendance_scope_rejects_join_pin_present_only_in_sql_comments() {
+    let pin = "m.event_id = em.event_id AND m.mission_id = em.mission_id";
+    let event_only = BACKFILL_ATTENDANCE.replace(pin, "m.event_id = em.event_id");
+    for invalid in [
+        format!("-- {pin}\n{event_only}"),
+        format!("/* {pin} */ {event_only}"),
+        BACKFILL_ATTENDANCE.replace(
+            " AND m.mission_id = em.mission_id",
+            " /* AND m.mission_id = em.mission_id */",
+        ),
+    ] {
+        assert!(validate_attendance_scope(&invalid).is_err(), "{invalid}");
+    }
+}
+
+#[test]
+fn attendance_scope_rejects_event_only_in_and_any_bypasses() {
+    let without_mission_join = BACKFILL_ATTENDANCE.replace(" AND m.mission_id = em.mission_id", "");
+    for predicate in [
+        "em.event_id IN (SELECT m.event_id FROM matches m)",
+        "em.event_id = ANY (SELECT m.event_id FROM matches m)",
+    ] {
+        // A remaining valid join cannot legitimize a separate event-wide branch.
+        for sql in [BACKFILL_ATTENDANCE, without_mission_join.as_str()] {
+            let invalid = sql.replace(
+                "WHERE s.arma_id = $2",
+                &format!("WHERE {predicate} OR s.arma_id = $2"),
+            );
+            assert!(validate_attendance_scope(&invalid).is_err(), "{invalid}");
+        }
+    }
+}
+
+#[test]
+fn attendance_scope_accepts_reordered_live_join_and_sql_comments() {
+    let reversed = BACKFILL_ATTENDANCE.replace(
+        "m.event_id = em.event_id AND m.mission_id = em.mission_id",
+        "m.mission_id = em.mission_id AND m.event_id = em.event_id",
     );
-    assert!(
-        !prod.contains("em.event_id IN ("),
-        "production must not keep an `em.event_id IN (` event-wide nest"
+    assert_eq!(validate_attendance_scope(&reversed), Ok(()));
+    let documented = format!(
+        "-- em.event_id IN (SELECT event_id FROM matches)\n\
+         /* UNION ALL SELECT em.id FROM event_missions em */ {BACKFILL_ATTENDANCE}"
     );
-    assert!(
-        !prod.contains("em.event_id = ANY"),
-        "production must not keep an `em.event_id = ANY` event-wide bypass"
-    );
-    assert!(
-        !prod.contains(" UNION ") && !prod.contains(" UNION ALL "),
-        "production must not UNION an event-id-only arm into BACKFILL_ATTENDANCE"
-    );
-    assert!(
-        prod.contains("m.mission_id IS NOT NULL"),
-        "production BACKFILL_ATTENDANCE must keep `m.mission_id IS NOT NULL`"
-    );
+    assert_eq!(validate_attendance_scope(&documented), Ok(()));
+}
+
+#[test]
+fn attendance_query_invocation_ignores_comments_and_unrelated_module_sql() {
+    assert!(!invokes_attendance_query(
+        "// sqlx::query(BACKFILL_ATTENDANCE)\n/// sqlx::query(BACKFILL_ATTENDANCE)"
+    ));
+    assert!(invokes_attendance_query(
+        "let affected = sqlx::query(\"SELECT discord_id FROM match_player_stats UNION SELECT discord_id FROM users\");\n\
+         let attended = sqlx::query(BACKFILL_ATTENDANCE);"
+    ));
 }
 
 /// Drop whole-line Rust `//` / `///` comments from a production source slice.

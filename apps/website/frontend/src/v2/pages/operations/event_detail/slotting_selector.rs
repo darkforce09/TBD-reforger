@@ -2,25 +2,40 @@
 //!
 //! **Role:** fetches a mission's order of battle, resolves which faction and squad are active,
 //! and renders the two-column selector — the faction tabs and squad list on the left, the
-//! selected squad's slots and the footer action bar on the right — with register and withdraw
-//! wired to the backend.
+//! selected squad's slots and the footer action bar on the right — with the viewer's standing on
+//! the mission deciding which seats and which registration actions are offered.
 //! **Position:** the bottom of every mission dossier card, and the whole body of the standalone
 //! slotting route.
 //! **Signals & state:** owns the order-of-battle resource and the four selection signals
-//! (faction, squad, selected slot, the slot whose assign picker is open) plus the per-mutation
-//! busy flags. Reads the session store for the caller's identity and tier, as memos so a tier
-//! that arrives after the first paint still reaches the affordances.
+//! (faction, squad, selected slot, the slot whose assign picker is open), the per-mutation busy
+//! flags, and the refusal notice of the last failed registration. Reads the session store for the
+//! caller's identity and tier, as memos so a tier that arrives after the first paint still reaches
+//! the affordances.
 //! **Invariants:** the tier checks go through the authenticated form, so a browse-mode session
-//! with no user is never treated as a leader or an administrator. Every mutation is a
-//! browser-only path; a native build renders the selector and does nothing on click.
+//! with no user is never treated as a leader or an administrator. A partial viewer's order of
+//! battle carries only the seats open to them, and the selector shows nothing more. Every mutation
+//! is a browser-only path; a native build renders the selector and does nothing on click.
 #![allow(dead_code)]
 
 use super::faction_armory::sort_factions;
-use super::squad_pane::{footer_message, squad_flags, squad_pane};
+use super::registration_access::mission_standing::MissionStanding;
+use super::registration_access::refusal_notices::RegistrationRefusal;
+use super::reservation_actions::{reservation_footer, FooterViewer};
+use super::squad_pane::squad_pane;
 use crate::v2::core::api::dto::{DataEnvelope, OrbatSquad};
 use crate::v2::core::auth::{has_min_role_authed, Role};
 use crate::v2::core::ui::{cn, MaterialIcon};
 use leptos::prelude::*;
+
+/// Only an active reservation or waiting-list entry can be withdrawn.
+pub(super) fn can_withdraw_reservation(state: Option<&str>) -> bool {
+    matches!(state, Some("registered" | "waitlisted"))
+}
+
+/// Retained history permits another registration; unknown states offer no mutation.
+pub(super) fn can_register_reservation(state: Option<&str>) -> bool {
+    matches!(state, None | Some("withdrawn" | "legacy_unknown"))
+}
 
 /// One busy flag per mutation, so a double click cannot post twice.
 #[derive(Clone, Copy)]
@@ -36,14 +51,15 @@ pub(super) struct OrbatBusy {
 }
 
 /// The inline order-of-battle selector: faction tabs, squad list, slot rows, and the register,
-/// withdraw, reserve, release and assign actions on them.
+/// join-the-waiting-list, withdraw, reserve, release and assign actions on them.
 ///
-/// `my_state` is the caller's registration on this mission, if any; `on_change` is run after
-/// every successful mutation so the caller can reload whatever it derived from that state.
+/// `standing` is the viewer's standing on this mission; its reservation state controls allocation
+/// actions independently of attendance history. `on_change` reloads the caller's mission data after
+/// every successful mutation.
 #[component]
 pub fn OrbatSelector(
     emid: String,
-    my_state: Option<String>,
+    standing: MissionStanding,
     #[prop(optional)] on_change: Option<Callback<()>>,
 ) -> impl IntoView {
     let store = expect_context::<crate::v2::core::auth::AuthStore>();
@@ -77,6 +93,7 @@ pub fn OrbatSelector(
         reserve: RwSignal::new(false),
         release: RwSignal::new(false),
     };
+    let refusal = RwSignal::new(None::<RegistrationRefusal>);
     // A mutation reloads the order of battle here, then bubbles to whatever mounted it.
     let changed = Callback::new(move |()| {
         orbat.refetch();
@@ -91,7 +108,7 @@ pub fn OrbatSelector(
         }>
             {move || {
                 let emid = emid.clone();
-                let my_state = my_state.clone();
+                let standing = standing.clone();
                 orbat
                     .get()
                     .map(move |opt| {
@@ -106,13 +123,14 @@ pub fn OrbatSelector(
                         } else {
                             selector_shell(
                                     emid.clone(),
-                                    my_state.clone(),
+                                    standing.clone(),
                                     squads,
                                     faction_sel,
                                     squad_sel,
                                     selected_slot,
                                     assigning,
                                     busy,
+                                    refusal,
                                     changed,
                                 )
                                 .into_any()
@@ -129,13 +147,14 @@ pub fn OrbatSelector(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn selector_shell(
     emid: String,
-    my_state: Option<String>,
+    standing: MissionStanding,
     squads: Vec<OrbatSquad>,
     faction_sel: RwSignal<Option<String>>,
     squad_sel: RwSignal<Option<String>>,
     selected_slot: RwSignal<Option<String>>,
     assigning: RwSignal<Option<String>>,
     busy: OrbatBusy,
+    refusal: RwSignal<Option<RegistrationRefusal>>,
     changed: Callback<()>,
 ) -> impl IntoView {
     let store = expect_context::<crate::v2::core::auth::AuthStore>();
@@ -156,7 +175,7 @@ pub(super) fn selector_shell(
     // Non-`Copy` captures ride stored values so every closure below stays `Copy`; they are used
     // repeatedly inside reactive renders.
     let me = StoredValue::new(store.user.get_untracked().map(|u| u.discord_id));
-    let my_state = StoredValue::new(my_state);
+    let seat_claim_offered = standing.seat_claim_offered();
 
     let factions_for_tabs = factions.clone();
     let squads_sv = StoredValue::new(squads);
@@ -187,75 +206,15 @@ pub(super) fn selector_shell(
         assigning.set(None);
     };
 
-    // Register. The mission id rides a stored value so the handler stays `Copy` — it is used
-    // inside a reactive footer closure.
-    let emid_reg = StoredValue::new(emid.clone());
-    let on_register = move |_| {
-        #[cfg(target_arch = "wasm32")]
-        {
-            let Some(slot) = selected_slot.get_untracked() else {
-                return;
-            };
-            if busy.register.get_untracked() {
-                return;
-            }
-            busy.register.set(true);
-            let toasts = crate::v2::core::ui::toast::use_toasts();
-            let path = format!("/event-missions/{}/register", emid_reg.get_value());
-            leptos::task::spawn_local(async move {
-                match crate::v2::core::api::client::api_post_ok(
-                    store,
-                    &path,
-                    serde_json::json!({ "slot_id": slot }),
-                )
-                .await
-                {
-                    Ok(()) => {
-                        toasts.success("Registered for deployment");
-                        selected_slot.set(None);
-                        changed.run(());
-                    }
-                    Err(e) => toasts.error(crate::v2::core::api::client::api_error_message(
-                        &e,
-                        "Could not claim that slot",
-                    )),
-                }
-                busy.register.set(false);
-            });
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        let _ = emid_reg;
-    };
-
-    // Withdraw.
-    let emid_wd = emid.clone();
-    let on_withdraw = move |_| {
-        #[cfg(target_arch = "wasm32")]
-        {
-            if busy.withdraw.get_untracked() {
-                return;
-            }
-            busy.withdraw.set(true);
-            let toasts = crate::v2::core::ui::toast::use_toasts();
-            let path = format!("/event-missions/{emid_wd}/register");
-            leptos::task::spawn_local(async move {
-                match crate::v2::core::api::client::api_delete(store, &path).await {
-                    Ok(()) => {
-                        toasts.success("Withdrawn from mission");
-                        changed.run(());
-                    }
-                    Err(_) => toasts.error("Could not withdraw"),
-                }
-                busy.withdraw.set(false);
-            });
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        let _ = &emid_wd;
-    };
-
     let emid_rsv = emid.clone();
     let emid_rel = emid.clone();
     let emid_assign = emid.clone();
+    let active_squad = move || active().2;
+    let viewer = FooterViewer {
+        me,
+        is_leader,
+        is_admin,
+    };
 
     view! {
         <div class="grid overflow-hidden rounded-xl border border-border-subtle md:grid-cols-[240px_1fr]">
@@ -374,7 +333,7 @@ pub(super) fn selector_shell(
                                         me.get_value(),
                                         is_leader.get(),
                                         is_admin.get(),
-                                        my_state.get_value(),
+                                        seat_claim_offered,
                                         selected_slot,
                                         assigning,
                                         busy,
@@ -396,61 +355,16 @@ pub(super) fn selector_shell(
                     }}
                 </div>
 
-                // Footer action bar
-                <div class="flex items-center justify-between gap-3 border-t border-border-subtle bg-surface-container p-4">
-                    <div class="text-sm text-on-surface-variant">
-                        {move || {
-                            let (_, _, asq) = active();
-                            footer_message(
-                                my_state.get_value(),
-                                asq,
-                                me.get_value(),
-                                is_leader.get(),
-                                is_admin.get(),
-                            )
-                        }}
-                    </div>
-                    <div class="flex gap-2">
-                        {my_state
-                            .get_value()
-                            .map(|_| {
-                                view! {
-                                    <button
-                                        type="button"
-                                        on:click=on_withdraw
-                                        prop:disabled=move || busy.withdraw.get()
-                                        class="rounded-lg border border-error/50 px-4 py-2 text-sm text-error disabled:opacity-50"
-                                    >
-                                        "Withdraw"
-                                    </button>
-                                }
-                            })}
-                        {move || {
-                            let (_, _, asq) = active();
-                            let (_, _, self_register) = squad_flags(
-                                asq.as_ref(),
-                                me.get_value(),
-                                is_leader.get(),
-                                is_admin.get(),
-                            );
-                            (my_state.get_value().is_none() && self_register)
-                                .then(|| {
-                                    view! {
-                                        <button
-                                            type="button"
-                                            on:click=on_register
-                                            prop:disabled=move || {
-                                                selected_slot.get().is_none() || busy.register.get()
-                                            }
-                                            class="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
-                                        >
-                                            "Register for Deployment"
-                                        </button>
-                                    }
-                                })
-                        }}
-                    </div>
-                </div>
+                {reservation_footer(
+                    emid,
+                    standing,
+                    active_squad,
+                    viewer,
+                    selected_slot,
+                    busy,
+                    refusal,
+                    changed,
+                )}
             </section>
         </div>
     }

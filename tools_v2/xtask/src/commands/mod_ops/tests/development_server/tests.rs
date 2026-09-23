@@ -30,7 +30,7 @@ fn no_args_is_rc2() {
 fn usage_names_the_runnable_playtest_command() {
     let usage = usage();
     assert!(
-        usage.contains("cargo xtask mod playtest --mission-id=<id> [--admin=<identityId>]"),
+        usage.contains("cargo xtask mod playtest --mission=<uuid> [--admin=<identityId>]"),
         "{usage:?}"
     );
     assert!(

@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "display_name": "Arland",
+      "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf",
+      "terrain_key": "arland",
+      "updated_at": "2026-07-24T09:00:00Z",
+      "updated_by": "000000000000000001"
+    },
+    {
+      "display_name": "Everon",
+      "scenario_id": "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf",
+      "terrain_key": "everon",
+      "updated_at": "2026-07-24T09:00:00Z",
+      "updated_by": "000000000000000001"
+    }
+  ]
+}

@@ -137,7 +137,7 @@ class TBD_ObjectiveDocStruct
 //! correct answer for a machine that is not the authority.
 //!
 //! ── Static, and therefore explicitly cleared ────────────────────────────────────────────────
-//! Statics OUTLIVE A WORLD inside one process (recorded landmine — `SelectMissionByNumber` restarts
+//! Statics OUTLIVE A WORLD inside one process (recorded landmine - `TBD_FleetLoadMissionAction` restarts
 //! the scenario in-process). `TBD_ObjectivesComponent.OnDelete` is required to call `Clear()` (via
 //! `TBD_ObjectiveRegistry.Clear()`), or mission B's objectives would run on mission A's rules.
 class TBD_ObjectiveRulesReader

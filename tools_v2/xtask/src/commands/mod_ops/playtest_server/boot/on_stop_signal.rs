@@ -70,8 +70,8 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
     };
 
     println!(
-        "==> booting (addon {}, scenario {}, mission {})",
-        c.addon_guid, c.scenario, o.mission_id
+        "==> booting (addon {}, scenario {}, {})",
+        c.addon_guid, c.scenario, c.running
     );
     println!("    {}", c.cmd_display);
 
@@ -139,6 +139,7 @@ pub fn boot_and_wait(c: &BootCtx<'_>) -> u8 {
     }
 
     print_banner(c);
+    (c.after_ready)();
     let code = tail_until_the_server_stops(c);
     let _ = launcher.wait();
     code

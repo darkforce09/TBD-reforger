@@ -2,8 +2,9 @@
 
 The long-running interval tasks the API binary spawns at boot and never awaits. Each one polls or
 recomputes something on a cadence so a quiet request path cannot leave shared state stale: expired
-credentials, drifted event status, a cold materialized view, an unpublished server status, or a
-Discord role change nobody signed in to trigger.
+credentials, drifted event status, a cold materialized view, an unpublished server status, a silent
+game runtime, a queued reservation re-evaluation, an unpublished audit fact, or a Discord change
+nobody signed in to trigger.
 
 A worker owns the *schedule*, not the work. The query or transaction each tick performs lives in
 the domain that owns the data, and the worker calls it — so the same operation is reachable from a
@@ -29,10 +30,16 @@ handler or a test without going through a timer.
 
 ```text
 mod.rs                                 Module tree, `WorkerHandles`, and `spawn_all`.
+audit_publication_worker.rs            Bounded publication of committed audit facts.
+discord_membership_reconciler.rs       Bounded bot-authenticated Discord membership observations.
 discord_role_synchronizer.rs           Scheduled Discord → web role resync.
 event_lifecycle_sweeper.rs             Scheduled convergence of the stored `events.status` column.
+event_reservation_reevaluator.rs       Drains durable event reservation re-evaluation requests.
+fleet_command_reconciler.rs            Expires, re-queues and marks indeterminate fleet commands by lease.
 leaderboard_refresher.rs               Scheduled refresh of the `leaderboard_totals` materialized view.
+mission_deployment_reconciler.rs       Confirms or fails each server's mission deployment in flight.
 ratelimit_cleanup_worker.rs            Garbage collection for the durable rate limiter's bucket table.
+runtime_session_expiry.rs              Ends silent game-runtime sessions and marks their servers offline.
 server_status_publisher.rs             Scheduled republish of `server_statuses` rows onto their SSE topics.
 token_purge_worker.rs                  Scheduled hard-delete of refresh-token rows long past expiry.
 tests/
@@ -54,3 +61,9 @@ Unit tests live in these sibling files, declared from the production file as
 | `leaderboard_refresher` | `command_center::services::leaderboard_view::refresh_leaderboard` |
 | `server_status_publisher` | `server_infrastructure::services::status_broadcast::publish_all_server_statuses` |
 | `ratelimit_cleanup_worker` | `core::middleware::durable_ratelimit::PgRateLimiter` bucket pruning |
+| `audit_publication_worker` | `administration::services::audit_publication::publish_audit_batch` |
+| `discord_membership_reconciler` | `identity_and_access::services::discord_rest_reconciliation::reconcile_one` |
+| `event_reservation_reevaluator` | `operations::services::event_reservations::eligibility_reevaluation::reevaluate_event_reservations` under a `reevaluation_queue` lease |
+| `runtime_session_expiry` | `server_infrastructure::services::runtime_sessions::expire_silent_runtime_sessions` |
+| `fleet_command_reconciler` | `server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands` |
+| `mission_deployment_reconciler` | `missions::services::mission_deployments::deployment_settlement::reconcile_mission_deployments` |

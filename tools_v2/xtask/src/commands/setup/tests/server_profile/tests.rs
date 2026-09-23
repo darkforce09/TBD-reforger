@@ -28,34 +28,39 @@ fn substitute_preserves_ampersand_and_pipe() {
 }
 
 #[test]
-fn missing_golden_exits_1_with_bash_stderr() {
-    let root = throwaway_root("no-golden", true, false);
-    let prof = root.join("out-profile");
-    let code = run_with_root(&root, Some(&prof)).unwrap();
-    assert_eq!(code, 1);
-}
-
-#[test]
 fn missing_backend_exits_1() {
-    let root = throwaway_root("no-backend", false, true);
+    let root = throwaway_root("no-backend", false);
     let prof = root.join("out-profile");
     let code = run_with_root(&root, Some(&prof)).unwrap();
     assert_eq!(code, 1);
 }
 
 #[test]
-fn clean_tree_writes_modes_and_mission_id_name() {
-    let root = throwaway_root("clean", true, true);
+fn clean_tree_writes_modes_and_no_mission() {
+    let root = throwaway_root("clean", true);
     let prof = root.join("out-profile");
     let code = run_with_root(&root, Some(&prof)).unwrap();
     assert_eq!(code, 0);
     let profile_root = prof.join("profile");
     assert_eq!(mode_of(&profile_root), 0o700);
     assert_eq!(mode_of(&profile_root.join("TBD_BackendConfig.json")), 0o600);
-    assert!(
-        profile_root
-            .join(format!("missions/{MISSION_ID}.json"))
-            .is_file()
+    // The mission comes from the server's deployment, never from the profile.
+    assert!(!profile_root.join("missions").exists());
+}
+
+#[test]
+fn machine_credential_is_written_into_the_backend_config_in_place() {
+    let dir = tempfile_dir("credential");
+    let cfg = dir.join("TBD_BackendConfig.json");
+    fs::write(
+        &cfg,
+        "{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"tok\",\n  \"machineCredential\": \"placeholder\"\n}\n",
+    )
+    .unwrap();
+    set_machine_credential(&cfg, "tbdm_abc").unwrap();
+    assert_eq!(
+        fs::read_to_string(&cfg).unwrap(),
+        "{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"tok\",\n  \"machineCredential\": \"tbdm_abc\"\n}\n"
     );
 }
 
@@ -70,26 +75,18 @@ fn tempfile_dir(tag: &str) -> PathBuf {
     dir
 }
 
-fn throwaway_root(tag: &str, with_backend: bool, with_golden: bool) -> PathBuf {
+fn throwaway_root(tag: &str, with_backend: bool) -> PathBuf {
     let root = tempfile_dir(tag);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
     fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
-    fs::create_dir_all(mission_fixtures_valid_dir(&root)).unwrap();
     fs::create_dir_all(root.join("apps/website/api_v2")).unwrap();
     if with_backend {
         fs::write(
             root.join(BACKEND_EXAMPLE_REL),
             format!(
-                "{{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"{PLACEHOLDER}\",\n  \"missionId\": \"{MISSION_ID}\",\n  \"eventId\": \"b0000000-0000-4000-8000-000000000001\"\n}}\n"
+                "{{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"serverToken\": \"{PLACEHOLDER}\",\n  \"machineCredential\": \"replace-with-a-mod_runtime-credential\"\n}}\n"
             ),
-        )
-        .unwrap();
-    }
-    if with_golden {
-        fs::write(
-            mission_fixtures_valid_dir(&root).join(GOLDEN_MISSION_FILE),
-            format!("{{\"meta\":{{\"id\":\"{MISSION_ID}\"}}}}\n"),
         )
         .unwrap();
     }

@@ -27,10 +27,10 @@
       "slug": "approvals",
       "path": "/admin/approvals",
       "authed": true,
-      "bytes": 103939,
-      "sha256": "4c79bf337ad40603762e7dab9e9ff71060fd5d97104fb806d8862619bc9642dd",
+      "bytes": 133168,
+      "sha256": "a4183ef954372dadc1b70f787d959754a65b11930d9300ce385b4f5d4ed49a6c",
       "goldenSource": "leptos",
-      "acceptedDelta": "The queue selects its first row when nothing is picked, and the review drawer reads that mission's own briefing. The React capture had no mission detail behind it; GET__missions__00000000-0000-4000-c000-000000000004.json supplies the submission the queue is anchored to, so the drawer renders the briefing beside the row."
+      "acceptedDelta": "M: the review queue and drawer read the pending review - version and artifact badges, submission time, review record, decision form and review-workspace link"
     },
     {
       "slug": "audit",
@@ -70,10 +70,10 @@
       "slug": "servercontrol",
       "path": "/admin/server",
       "authed": true,
-      "bytes": 120520,
-      "sha256": "7cf79f897cf55dcee851c6a65bd0806ee4ed0e98691d8c2127be418d97f4263d",
+      "bytes": 176500,
+      "sha256": "ac030282562455e1a7777c6e7cc213ffb6049f9d678d556a84ed92194dd368dd",
       "goldenSource": "leptos",
-      "acceptedDelta": "Server identities come from GET__servers.json — TBD Primary/Secondary/Staging. The React capture rendered its own \"TBD Main Server\" / \"TBD Training Ground\" mock, which no fixture has ever contained."
+      "acceptedDelta": "F: the fleet command console, machine credentials, mission deployments and fleet scenarios replace the RCON console; restart and stop live in the command console"
     },
     {
       "slug": "announcements",
@@ -95,37 +95,37 @@
       "slug": "deployments",
       "path": "/deployments",
       "authed": true,
-      "bytes": 179891,
-      "sha256": "9cf409229a5e51b15d9ac48e2d8f861f5b1476c02b7d323735719c1e8564538e",
+      "bytes": 179921,
+      "sha256": "953d1abbdb46b45a6bc7aa114bc32626cfc98844bc3c3fd64546137a898b5e52",
       "goldenSource": "leptos",
-      "acceptedDelta": "Neither the leave-of-absence panel nor the LOA review queue existed when the React dist was frozen, so the golden contains neither section. The service record is fed by GET__me__deployments.json, committed 2026-07-26 — nine days after the freeze — and the two panels by the new GET__me__leave-requests.json and GET__admin__leave-requests.json."
+      "acceptedDelta": "E: active orders show the reservation standing (Reservation: <state>), with attendance shown separately when recorded"
     },
     {
       "slug": "events",
       "path": "/events",
       "authed": true,
-      "bytes": 205010,
-      "sha256": "93176016c312918ec2decdc50158d01588887dc36e444561a5d54f65eb320394",
+      "bytes": 221318,
+      "sha256": "e01c98aca6efc12457be9f46dcdcf0af69fee6778214135b7d5845074fbae909",
       "goldenSource": "leptos",
-      "acceptedDelta": "The React capture recorded the empty schedule as a paragraph. GET__events.json feeds the operations list and the detail pane beside it."
+      "acceptedDelta": "E: the event hub shows the Places panel (eligibility, viewer access, reservation quotas) before the mission dossiers"
     },
     {
       "slug": "eventhub",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
       "authed": true,
-      "bytes": 176555,
-      "sha256": "fbcd118b3ec82d2fff81ccbad502fba741c2c2f4b8bb9c1f3d13036cf26cd6f6",
+      "bytes": 192863,
+      "sha256": "0c25992c1ef78771d1412708b4c2390f88405588f17a6669a6fa42e6c294de2d",
       "goldenSource": "leptos",
-      "acceptedDelta": "The operation briefing gained a block and its summary line became a prose paragraph rather than a chip row, both after the freeze. The armoury rows below come from GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json, whose armoury was populated after the freeze."
+      "acceptedDelta": "E: the event hub shows the Places panel (eligibility, viewer access, reservation quotas) before the mission dossiers"
     },
     {
       "slug": "orbat",
       "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/orbat",
       "authed": true,
-      "bytes": 128372,
-      "sha256": "40697143e6514b4f0b8ca4bb1d515b1c18c51a69f906626984e680c418426e6c",
+      "bytes": 129004,
+      "sha256": "dd383f6a1c4e2ba9571c2fca1a78954d4bf1871429015c29f3c112053e9c5bed",
       "goldenSource": "leptos",
-      "acceptedDelta": "The order of battle is fed by GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json; the React capture recorded the unfed paragraph in its place."
+      "acceptedDelta": "E: the reservation footer stacks the refusal notice above the standing and actions row"
     },
     {
       "slug": "leaderboards",
@@ -156,10 +156,10 @@
       "slug": "missionview",
       "path": "/missions/512d8658-7025-4a70-94e9-a1b44a7aa155",
       "authed": true,
-      "bytes": 82166,
-      "sha256": "d1084feb37ff6d670ebd0663eef0eb5d36cedfe8f78c7402ba945de13dc15296",
+      "bytes": 86993,
+      "sha256": "ca794ca150480a6a6f4cb12592407b2a3729fe4c5540aeec0aad18cccead8e3b",
       "goldenSource": "leptos",
-      "acceptedDelta": "The mission header became a wrapping flex row after the freeze: the title moved into a block of its own and the trailing paragraph became an action button pushed to the far edge. The status chip is title-cased, \"Draft\" rather than \"draft\". The mission data behind it is unchanged."
+      "acceptedDelta": "M: the mission overview shows the review record card to the author and administrators"
     },
     {
       "slug": "modpacks",

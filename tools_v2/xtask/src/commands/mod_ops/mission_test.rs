@@ -1,33 +1,29 @@
-//! `cargo xtask mod test-mission`: the mission-document arms.
+//! `cargo xtask mod test-mission`: choose what the Workbench client's mod loads.
 //!
-//! Switch the mission the Workbench client loads via profile
-//! `$HOME/.../ArmaReforgerWorkbench/profile/TBD_BackendConfig.json` (+ optional golden stage).
+//! The mod runs the deployment its server credential reads, or — with no answer from the
+//! platform — the last verified artifact cached in its profile
+//! (`$profile:TBD_MissionArtifactCache/`). In the Workbench profile
+//! (`$HOME/.../ArmaReforgerWorkbench/profile`):
 //!
-//! All four `python3` sites from the bash are in-process `serde_json` (show / set missionId /
-//! golden `meta.id` extract). That removes the script from `scripts/python-inventory.txt`.
-//!
-//! Fail-opens closed vs bash:
-//! - none that lied about having run — missing config / missing golden still hard-fail.
-//!
-//! Preserved oddities:
-//! - Registry copy keeps bash's `cp … 2>/dev/null || true` (optional; silent on absence).
-//! - `json.dump(..., indent=2)` shape: pretty JSON, **no** trailing newline after `}`.
-//! - Golden lookup is `find … -name '<arg>.json' | head -1`; we walk + sort and take the first
-//!   match (unique basenames under `contracts_v2` today — sorted first == find first).
+//! * no target — show the configured credential and the cached artifact;
+//! * `<golden>` — stage that mission document from `contracts_v2` as the cached artifact, which
+//!   Workbench then boots offline (a configured credential would make the platform's deployment
+//!   win);
+//! * `backend` — clear the cache, so the next boot reads the platform deployment.
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use serde_json::Value;
 use verification_core::scan;
 
+use super::website_api_client::{
+    ARTIFACT_CACHE_DIRECTORY, StagedArtifact, clear_artifact_cache, sha256_hex,
+    stage_artifact_cache,
+};
 use crate::core::repository_root::find_repo_root;
-
-/// Backend dev mission restored by `backend` (bash pin — not read from a .bak).
-const BACKEND_MISSION: &str = "6d291619-8182-4164-866d-4e165a5516af";
 
 const CFG_REL: &str = ".local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile";
 
@@ -61,8 +57,15 @@ pub fn run_with_root(root: &Path, target: Option<&str>) -> Result<u8> {
             Ok(0)
         }
         Some("backend") => {
-            set_mission_id(&cfg, BACKEND_MISSION)?;
-            println!("switched to the backend mission:");
+            let cleared = clear_artifact_cache(&prof)?;
+            println!(
+                "{}; the next boot reads the platform deployment:",
+                if cleared {
+                    "cleared the cached artifact"
+                } else {
+                    "no cached artifact"
+                }
+            );
             show(&cfg, &prof)?;
             Ok(0)
         }
@@ -73,41 +76,41 @@ pub fn run_with_root(root: &Path, target: Option<&str>) -> Result<u8> {
 fn stage_golden(root: &Path, prof: &Path, cfg: &Path, name: &str) -> Result<u8> {
     let schema = developer_tools::repository_layout::contracts_dir(root);
     let want = format!("{name}.json");
-    let golden = match find_golden(&schema, &want) {
-        Ok(Some(p)) => p,
-        Ok(None) => {
-            eprintln!("no golden named '{name}' under contracts_v2");
-            return Ok(1);
-        }
-        Err(e) => {
-            // Missing schema tree: bash `find` prints to stderr and still yields empty → same
-            // operator-facing message as "not found".
-            eprintln!("no golden named '{name}' under contracts_v2");
-            let _ = e;
-            return Ok(1);
-        }
+    let Ok(Some(golden)) = find_golden(&schema, &want) else {
+        eprintln!("no golden named '{name}' under contracts_v2");
+        return Ok(1);
     };
-
-    let mid = mission_id_from_golden(&golden)?;
-    let missions = prof.join("missions");
-    fs::create_dir_all(&missions).with_context(|| format!("mkdir -p {}", missions.display()))?;
-    let dest = missions.join(format!("{mid}.json"));
-    fs::copy(&golden, &dest)
-        .with_context(|| format!("cp {} -> {}", golden.display(), dest.display()))?;
-
-    // bash: `cp "$ROOT/apps/mod/tbd-framework/Data/registry.json" "$PROF/TBD_Registry.json" 2>/dev/null || true`
+    let document = fs::read(&golden).with_context(|| format!("read {}", golden.display()))?;
+    let parsed: Value =
+        serde_json::from_slice(&document).with_context(|| format!("parse {}", golden.display()))?;
+    let mission_id = parsed
+        .pointer("/meta/id")
+        .and_then(Value::as_str)
+        .with_context(|| format!("meta.id missing in {}", golden.display()))?;
+    let terrain = parsed
+        .pointer("/meta/terrain")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    stage_artifact_cache(
+        prof,
+        &document,
+        &StagedArtifact {
+            artifact_id: &format!("workbench-golden-{name}"),
+            mission_id,
+            terrain_key: terrain,
+        },
+    )?;
+    // The registry override is optional.
     let _ = fs::copy(
         root.join("apps/mod/tbd-framework/Data/registry.json"),
         prof.join("TBD_Registry.json"),
     );
-
-    set_mission_id(cfg, &mid)?;
-    println!("staged {name} and switched:");
+    println!("staged {name} as the cached artifact:");
     show(cfg, prof)?;
     Ok(0)
 }
 
-/// `find "$ROOT/contracts_v2" -name "$1.json" | head -1` — sorted walk, first match.
+/// The first `<name>.json` under `contracts_v2`, in sorted walk order.
 fn find_golden(
     schema: &Path,
     want_name: &str,
@@ -120,83 +123,49 @@ fn find_golden(
     Ok(files.into_iter().next())
 }
 
-fn mission_id_from_golden(path: &Path) -> Result<String> {
-    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
-    let v: Value =
-        serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
-    let mid = v
-        .pointer("/meta/id")
-        .and_then(|x| x.as_str())
-        .with_context(|| format!("meta.id missing in {}", path.display()))?;
-    Ok(mid.to_string())
-}
-
-fn set_mission_id(cfg: &Path, mission_id: &str) -> Result<()> {
-    let text = fs::read_to_string(cfg).with_context(|| format!("read {}", cfg.display()))?;
-    let mut v: Value =
-        serde_json::from_str(&text).with_context(|| format!("parse {}", cfg.display()))?;
-    let obj = v
-        .as_object_mut()
-        .with_context(|| format!("config root is not an object: {}", cfg.display()))?;
-    obj.insert(
-        "missionId".to_string(),
-        Value::String(mission_id.to_string()),
-    );
-    // Python `json.dump(..., indent=2)` — pretty, no trailing newline.
-    let body = serde_json::to_string_pretty(&v).context("serialize config")?;
-    let mut f = fs::File::create(cfg).with_context(|| format!("open {}", cfg.display()))?;
-    f.write_all(body.as_bytes())
-        .with_context(|| format!("write {}", cfg.display()))?;
-    Ok(())
-}
-
 fn show(cfg: &Path, prof: &Path) -> Result<()> {
     let text = fs::read_to_string(cfg).with_context(|| format!("read {}", cfg.display()))?;
-    let v: Value =
+    let config: Value =
         serde_json::from_str(&text).with_context(|| format!("parse {}", cfg.display()))?;
-    let mid = v
-        .get("missionId")
-        .and_then(|x| x.as_str())
-        .with_context(|| format!("missionId missing in {}", cfg.display()))?;
-
-    let local = prof.join("missions").join(format!("{mid}.json"));
-    let looks_golden = mid.starts_with("msn_");
-    println!("  missionId = {mid}");
-    if looks_golden {
-        println!("  loads via: profile fallback (backend answers 400 invalid-id — expected)");
+    let credential = config["machineCredential"].as_str().unwrap_or_default();
+    if credential.starts_with("tbdm_") {
+        println!(
+            "  machineCredential set: boots the deployment it reads from {}",
+            config["backendUrl"].as_str().unwrap_or("?")
+        );
     } else {
-        println!("  loads via: backend /compiled (schema-validated)");
+        println!("  machineCredential unset: boots the cached artifact, if any");
     }
 
-    if local.is_file() {
-        let local_text =
-            fs::read_to_string(&local).with_context(|| format!("read {}", local.display()))?;
-        let d: Value = serde_json::from_str(&local_text)
-            .with_context(|| format!("parse {}", local.display()))?;
-        let slots = d.get("slots").and_then(|s| s.as_array());
-        let mut fac: BTreeMap<String, u32> = BTreeMap::new();
-        if let Some(slots) = slots {
-            for s in slots {
-                let faction = s
-                    .get("faction")
-                    .and_then(|x| x.as_str())
-                    .with_context(|| format!("slot missing faction in {}", local.display()))?;
-                *fac.entry(faction.to_string()).or_insert(0) += 1;
-            }
-        }
-        let n = slots.map(|a| a.len()).unwrap_or(0);
-        let seats: String = fac
-            .iter()
-            .map(|(k, v)| format!("{k} {v}"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        let what = if looks_golden {
-            "staged"
+    let cache = prof.join(ARTIFACT_CACHE_DIRECTORY);
+    let (Ok(identity), Ok(document)) = (
+        fs::read_to_string(cache.join("identity.json")),
+        fs::read(cache.join("document.json")),
+    ) else {
+        println!("  cached artifact: none");
+        return Ok(());
+    };
+    let identity: Value = serde_json::from_str(&identity).unwrap_or(Value::Null);
+    let recorded = identity["artifact_sha256"].as_str().unwrap_or_default();
+    let intact = sha256_hex(&document) == recorded;
+    println!(
+        "  cached artifact: {} (sha256 {recorded}{})",
+        identity["artifact_id"].as_str().unwrap_or("?"),
+        if intact {
+            ""
         } else {
-            "last cached"
-        };
-        println!("  {n} seats — {seats}   ({what})");
+            " — the document does not match it; the mod will refuse it"
+        }
+    );
+    let parsed: Value = serde_json::from_slice(&document).unwrap_or(Value::Null);
+    let slots = parsed["slots"].as_array().cloned().unwrap_or_default();
+    let mut factions: BTreeMap<String, u32> = BTreeMap::new();
+    for slot in &slots {
+        let faction = slot["faction"].as_str().unwrap_or("?");
+        *factions.entry(faction.to_string()).or_insert(0) += 1;
     }
+    let seats: Vec<String> = factions.iter().map(|(k, v)| format!("{k} {v}")).collect();
+    println!("  {} seats — {}", slots.len(), seats.join(", "));
     Ok(())
 }
 

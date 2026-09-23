@@ -1,0 +1,133 @@
+{
+  "selection": "Representative installed source configurations; names identify tests, never exported classifications.",
+  "cases": [
+    {
+      "case": "Backpack_IIFS_FieldPack.et",
+      "resource_name": "{95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et"
+    },
+    {
+      "case": "Vest_ALICE_rifleman.et",
+      "resource_name": "{2835A0EA3B79E63E}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_rifleman.et"
+    },
+    {
+      "case": "Holster_M12.et",
+      "resource_name": "{6B9646EC0757693C}Prefabs/Items/Equipment/Accessories/Holster_M12/Holster_M12.et"
+    },
+    {
+      "case": "SupplyPortableContainers_01_medium_item.et",
+      "resource_name": "{024ADA8FA4FC92E0}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_medium_item.et"
+    },
+    {
+      "case": "Rifle_M16A2.et",
+      "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et"
+    },
+    {
+      "case": "Rifle_M16A2_M203.et",
+      "resource_name": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et"
+    },
+    {
+      "case": "Rifle_M16A2_4x20.et",
+      "resource_name": "{B1482FB64E3D2D45}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_4x20.et"
+    },
+    {
+      "case": "Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+      "resource_name": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et"
+    },
+    {
+      "case": "Magazine_556x45_STANAG_30rnd_M856_Tracer.et",
+      "resource_name": "{A9A385FE1F7BF4BD}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M856_Tracer.et"
+    },
+    {
+      "case": "Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+      "resource_name": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et"
+    },
+    {
+      "case": "Box_762x54_UK59_50rnd_4Ball_1Tracer.et",
+      "resource_name": "{03094E059B554A9C}Prefabs/Weapons/Magazines/UK59/Box_762x54_UK59_50rnd_4Ball_1Tracer.et"
+    },
+    {
+      "case": "Mortar_M252.et",
+      "resource_name": "{8094D99689ABE241}Prefabs/Weapons/Mortars/M252/Mortar_M252.et"
+    },
+    {
+      "case": "Ammo_Shell_81mm_HE_M821.et",
+      "resource_name": "{38BAE094333E31BF}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_HE_M821.et"
+    },
+    {
+      "case": "Ammo_Shell_81mm_Smoke_M819.et",
+      "resource_name": "{F7807293E94D3C88}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Smoke_M819.et"
+    },
+    {
+      "case": "Ammo_Shell_81mm_Illum_M853A1.et",
+      "resource_name": "{DD2065AE34D8DFA9}Prefabs/Weapons/Ammo/Ammo_Shell_81mm_Illum_M853A1.et"
+    },
+    {
+      "case": "Radio_ANPRC68.et",
+      "resource_name": "{73950FBA2D7DB5C5}Prefabs/Items/Equipment/Radios/Radio_ANPRC68.et"
+    },
+    {
+      "case": "Radio_ANPRC77.et",
+      "resource_name": "{9B6B61BB3FE3DFB0}Prefabs/Items/Equipment/Radios/Radio_ANPRC77.et"
+    },
+    {
+      "case": "SalineBag_US_01.et",
+      "resource_name": "{00E36F41CA310E2A}Prefabs/Items/Medicine/SalineBag_01/SalineBag_US_01.et"
+    },
+    {
+      "case": "MorphineInjection_01.et",
+      "resource_name": "{0D9A5DCF89AE7AA9}Prefabs/Items/Medicine/MorphineInjection_01/MorphineInjection_01.et"
+    },
+    {
+      "case": "Binoculars_M22.et",
+      "resource_name": "{0CF54B9A85D8E0D4}Prefabs/Items/Equipment/Binoculars/Binoculars_M22/Binoculars_M22.et"
+    },
+    {
+      "case": "DemoBlock_M112.et",
+      "resource_name": "{33CBDE73AB48172A}Prefabs/Weapons/Explosives/DemoBlock_M112/DemoBlock_M112.et"
+    },
+    {
+      "case": "Grenade_M67.et",
+      "resource_name": "{E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et"
+    },
+    {
+      "case": "BTR70_FIA.et",
+      "resource_name": "{B47110AA1A806556}Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et"
+    },
+    {
+      "case": "M997_maxi_ambulance.et",
+      "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et"
+    },
+    {
+      "case": "UAZ469_PKM.et",
+      "resource_name": "{0B4DEA8078B78A9B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et"
+    },
+    {
+      "case": "Ural4320.et",
+      "resource_name": "{4597626AF36C0858}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320.et"
+    },
+    {
+      "case": "UH1H_armed_sharkNose.et",
+      "resource_name": "{00BC1E407D536A34}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_sharkNose.et"
+    },
+    {
+      "case": "Equip_Accessory_base.et",
+      "resource_name": "{2149560A9BEFBAC2}Prefabs/Items/Core/Equip_Accessory_base.et"
+    },
+    {
+      "case": "ETool_MPL50_carrier.et",
+      "resource_name": "{963F3B153A0A2564}Prefabs/Items/Equipment/Accessories/ETool_MPL50/ETool_MPL50_carrier.et"
+    },
+    {
+      "case": "O832DU_Shell_82mm_HE.conf",
+      "resource_name": "{3B8528B7CD63EE4D}Configs/Weapons/Ammo/O832DU_Shell_82mm_HE.conf"
+    },
+    {
+      "case": "PaperMap_FastTravel_CO.et",
+      "resource_name": "{88B3A9FF09D43C1B}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_FastTravel_CO.et"
+    },
+    {
+      "case": "PaperMap_FastTravel_COK.et",
+      "resource_name": "{C728264121D858ED}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_FastTravel_COK.et"
+    }
+  ]
+}

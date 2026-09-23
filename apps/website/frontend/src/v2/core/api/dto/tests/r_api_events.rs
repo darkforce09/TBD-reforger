@@ -2,14 +2,112 @@
 
 use super::*;
 
+fn reservation_dossier_wire() -> Value {
+    serde_json::json!({
+        "armory_by_faction": [],
+        "event_mission_id": "dca49443-49eb-4ac2-8dc9-4f67a302d813",
+        "factions": ["blue"],
+        "filled": 0,
+        "game_mode": "pve_coop",
+        "mission_id": "26e65c20-305d-4467-af3c-4a643b8ac540",
+        "start_time": "2026-09-22T18:00:00Z",
+        "terrain": "everon",
+        "title": "Reservation and attendance",
+        "total": 1,
+        "viewer_eligible": true,
+        "my_state": "attended"
+    })
+}
+
+#[test]
+fn event_dossier_absent_reservation_and_attendance_fields_round_trip() {
+    let wire = reservation_dossier_wire();
+    let parsed: EventMissionDossier = serde_json::from_value(wire.clone()).unwrap();
+    assert!(parsed.my_reservation_state.is_none());
+    assert!(parsed.my_attendance_state.is_none());
+    assert_eq!(parsed.my_state.as_deref(), Some("attended"));
+    assert_eq!(serde_json::to_value(parsed).unwrap(), wire);
+}
+
+#[test]
+fn event_dossier_null_state_fields_normalize_to_absent_without_affecting_each_other() {
+    for (reservation, attendance) in [
+        (Value::Null, Value::Null),
+        (Value::Null, serde_json::json!("attended")),
+        (serde_json::json!("withdrawn"), Value::Null),
+    ] {
+        let mut wire = reservation_dossier_wire();
+        wire["my_reservation_state"] = reservation.clone();
+        wire["my_attendance_state"] = attendance.clone();
+        let parsed: EventMissionDossier = serde_json::from_value(wire.clone()).unwrap();
+        assert_eq!(parsed.my_reservation_state.as_deref(), reservation.as_str());
+        assert_eq!(parsed.my_attendance_state.as_deref(), attendance.as_str());
+        let canonical = serde_json::to_value(&parsed).unwrap();
+        for name in ["my_reservation_state", "my_attendance_state"] {
+            if wire[name].is_null() {
+                wire.as_object_mut().unwrap().remove(name);
+            }
+        }
+        assert_eq!(canonical, wire);
+        let reparsed: EventMissionDossier = serde_json::from_value(canonical).unwrap();
+        assert!(reparsed == parsed);
+    }
+}
+
+#[test]
+fn event_dossier_reservation_and_attendance_states_round_trip_independently() {
+    for reservation in ["registered", "waitlisted", "withdrawn", "legacy_unknown"] {
+        for attendance in ["attended", "no_show"] {
+            let mut wire = reservation_dossier_wire();
+            wire["my_reservation_state"] = serde_json::json!(reservation);
+            wire["my_attendance_state"] = serde_json::json!(attendance);
+            let parsed: EventMissionDossier = serde_json::from_value(wire.clone()).unwrap();
+            assert_eq!(parsed.my_reservation_state.as_deref(), Some(reservation));
+            assert_eq!(parsed.my_attendance_state.as_deref(), Some(attendance));
+            assert_eq!(parsed.my_state.as_deref(), Some("attended"));
+            assert_eq!(serde_json::to_value(parsed).unwrap(), wire);
+            assert!(unclaimed_keys::<EventMissionDossier>(&wire.to_string()).is_empty());
+        }
+    }
+}
+
+#[test]
+fn event_dossier_unknown_state_strings_preserve_exact_wire_values() {
+    for (reservation, attendance) in [
+        ("future_reservation", "future_attendance"),
+        ("", ""),
+        ("Registered", "NoShow"),
+    ] {
+        let mut wire = reservation_dossier_wire();
+        wire["my_reservation_state"] = serde_json::json!(reservation);
+        wire["my_attendance_state"] = serde_json::json!(attendance);
+        let parsed: EventMissionDossier = serde_json::from_value(wire.clone()).unwrap();
+        assert_eq!(parsed.my_reservation_state.as_deref(), Some(reservation));
+        assert_eq!(parsed.my_attendance_state.as_deref(), Some(attendance));
+        assert_eq!(serde_json::to_value(parsed).unwrap(), wire);
+    }
+}
+
+#[test]
+fn event_dossier_state_fields_reject_non_string_non_null_values() {
+    for field in ["my_reservation_state", "my_attendance_state"] {
+        for invalid in [
+            serde_json::json!(0),
+            serde_json::json!(false),
+            serde_json::json!([]),
+            serde_json::json!({}),
+        ] {
+            let mut wire = reservation_dossier_wire();
+            wire[field] = invalid;
+            assert!(serde_json::from_value::<EventMissionDossier>(wire).is_err());
+        }
+    }
+}
+
 #[test]
 fn deployments() {
-    // Both lists are `Vec<Value>` — the service-record rows and the upcoming ops are not
-    // ported types yet, so nothing below them is asserted.
-    assert_golden::<Deployments>(
-        golden!("GET__me__deployments.json"),
-        &["service_history/*", "upcoming/*"],
-    );
+    // Upcoming reservations are typed; only the separate service-history rows remain opaque.
+    assert_golden::<Deployments>(golden!("GET__me__deployments.json"), &["service_history/*"]);
 }
 
 /// The armoury list used to be empty in the only captured operation, so the armoury types had no
@@ -53,6 +151,95 @@ fn event_hub() {
         item.quantity.is_some(),
         "quantity must be present on a golden row"
     );
+}
+
+/// The viewer half of the captured dossier is typed, populated and in the documented order: the
+/// structural gate above only proves the keys are read, not that the capture exercises them.
+#[test]
+fn event_hub_viewer_access_and_pools_are_populated() {
+    let hub: EventHub = serde_json::from_str(golden!(
+        "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
+    ))
+    .unwrap();
+    assert_eq!(hub.viewer_access.visibility, "full");
+    assert_eq!(hub.viewer_access.quota_class, "guest");
+    assert!(!hub.viewer_access.membership_verification_pending);
+    let kinds: Vec<&str> = hub
+        .reservation_quotas
+        .iter()
+        .map(|pool| pool.quota_kind.as_str())
+        .collect();
+    assert_eq!(
+        kinds,
+        ["member", "guest", "open"],
+        "pools arrive in a fixed order"
+    );
+    // One uncapped pool, one capped with places left, one closed with none: every branch the
+    // availability panel renders is in the capture.
+    let [member, guest, open] = [0, 1, 2].map(|i| &hub.reservation_quotas[i]);
+    assert_eq!((member.seat_limit, member.remaining), (None, None));
+    assert_eq!((guest.seat_limit, guest.remaining), (Some(2), Some(1)));
+    assert_eq!(open.closed_reason.as_deref(), Some("no_places"));
+    assert!(member.open && guest.open && !open.open);
+    assert_eq!(
+        hub.remaining_event_places, None,
+        "the captured operation is uncapped"
+    );
+    assert!(hub.missions[0].viewer_eligible);
+}
+
+/// An uncapped operation's remaining places cross the wire as an explicit null, and a capped one's
+/// as a number; both round-trip exactly, so a skipped key would show up here as drift.
+#[test]
+fn remaining_event_places_keeps_its_explicit_null() {
+    let mut wire: Value = serde_json::from_str(golden!(
+        "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
+    ))
+    .unwrap();
+    for places in [Value::Null, serde_json::json!(0), serde_json::json!(12)] {
+        wire["remaining_event_places"] = places.clone();
+        let hub: EventHub = serde_json::from_value(wire.clone()).unwrap();
+        assert_eq!(hub.remaining_event_places, places.as_i64());
+        assert_eq!(serde_json::to_value(&hub).unwrap(), wire);
+    }
+}
+
+/// The released-signup tombstone and the waiting position are absent from the capture, so they
+/// are exercised on the capture's own mission with each one set: every one is a named field, and
+/// each round-trips exactly.
+#[test]
+fn event_dossier_release_and_waiting_fields_are_named_and_round_trip() {
+    let mut wire = reservation_dossier_wire();
+    wire["my_reservation_state"] = serde_json::json!("withdrawn");
+    wire["my_release_reason"] = serde_json::json!("access_policy_changed");
+    wire["my_withdrawn_at"] = serde_json::json!("2026-07-20T18:30:00Z");
+    let released: EventMissionDossier = serde_json::from_value(wire.clone()).unwrap();
+    assert_eq!(
+        released.my_release_reason.as_deref(),
+        Some("access_policy_changed")
+    );
+    assert_eq!(
+        released.my_withdrawn_at.as_deref(),
+        Some("2026-07-20T18:30:00Z")
+    );
+    assert_eq!(serde_json::to_value(&released).unwrap(), wire);
+    assert!(unclaimed_keys::<EventMissionDossier>(&wire.to_string()).is_empty());
+
+    let mut waiting = reservation_dossier_wire();
+    waiting["my_reservation_state"] = serde_json::json!("waitlisted");
+    waiting["my_waiting_position"] = serde_json::json!(3);
+    let queued: EventMissionDossier = serde_json::from_value(waiting.clone()).unwrap();
+    assert_eq!(queued.my_waiting_position, Some(3));
+    assert_eq!(serde_json::to_value(&queued).unwrap(), waiting);
+    assert!(unclaimed_keys::<EventMissionDossier>(&waiting.to_string()).is_empty());
+}
+
+/// `viewer_eligible` is required: a dossier without it is not this contract's dossier.
+#[test]
+fn event_dossier_requires_viewer_eligibility() {
+    let mut wire = reservation_dossier_wire();
+    wire.as_object_mut().unwrap().remove("viewer_eligible");
+    assert!(serde_json::from_value::<EventMissionDossier>(wire).is_err());
 }
 
 /// Frozen proof that skipping every named field on the armoury types is visible once the golden is
@@ -168,6 +355,39 @@ fn orbat_envelope() {
     );
 }
 
+/// The captured order of battle carries eligible and restricted seats, and seats decided by each of
+/// the three policy sources, so the seat rendering is exercised on every branch it has.
+#[test]
+fn orbat_seats_carry_viewer_eligibility_from_every_policy_source() {
+    let orbat: DataEnvelope<OrbatSquad> = serde_json::from_str(golden!(
+        "GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json"
+    ))
+    .unwrap();
+    let seats: Vec<&OrbatSlot> = orbat.data.iter().flat_map(|squad| &squad.slots).collect();
+    for access in ["eligible", "restricted"] {
+        assert!(
+            seats.iter().any(|seat| seat.viewer_access == access),
+            "the capture must carry a {access} seat"
+        );
+    }
+    for source in ["event", "squad", "slot"] {
+        assert!(
+            seats.iter().any(|seat| seat.policy_source == source),
+            "the capture must carry a seat decided by the {source} policy"
+        );
+    }
+}
+
+/// One promotion answer as the backend served it: the promoted waiter, the seat they were given.
+#[test]
+fn waitlist_promotion() {
+    const G: &str = golden!("POST__event-missions__waitlist__promote.json");
+    assert_golden::<WaitlistPromotion>(G, &[]);
+    let promotion: WaitlistPromotion = serde_json::from_str(G).unwrap();
+    assert_eq!(promotion.promoted.len(), 1);
+    assert!(!promotion.promoted[0].slot_id.is_empty());
+}
+
 // ── paginated `{data,total,limit,offset}` envelopes (item type ported per page) ──
 /// Typed as the event manager reads it. Typing it pinned the filled percentage as the whole number
 /// the backend actually sends, which a float field re-serialised with a decimal point.
@@ -258,4 +478,9 @@ fn leave_dates_are_the_backend_midnight_utc_spelling() {
             );
         }
     }
+}
+
+#[test]
+fn reservation_response() {
+    assert_golden::<ReservationResponse>(golden!("POST__event-missions__register.json"), &[]);
 }

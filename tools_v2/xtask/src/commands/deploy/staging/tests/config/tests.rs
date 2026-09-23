@@ -1,5 +1,8 @@
 use super::*;
 
+/// A well-formed `mod_runtime` machine credential; no server accepts it.
+pub(crate) const RUNTIME_CREDENTIAL: &str = "tbdm_0123456789abcdef0123456789abcdef_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
 /// Shared fixture: a fully-resolved `Env` with the documented defaults. `pub(super)` so
 /// [`super::super::render`]'s tests use the SAME baseline — two drifting fixtures would let a
 /// render test pass against inputs the loader can no longer produce.
@@ -10,8 +13,7 @@ pub(crate) fn base() -> Env {
         profile_dir: "/home/sam/tbd/profile".into(),
         addons_staging: "/home/sam/tbd/addons".into(),
         game_server_token: "tok".into(),
-        mission_id: "msn_8f3a2c".into(),
-        event_id: "b0000000-0000-4000-8000-000000000001".into(),
+        mod_runtime_credential: RUNTIME_CREDENTIAL.into(),
         backend_url: "http://127.0.0.1:8080".into(),
         addon_guid: "B2C3D4E5F6A78901".into(),
         scenario: "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf".into(),
@@ -32,7 +34,7 @@ pub(crate) fn base() -> Env {
         modpack_url: String::new(),
         modpack_token: String::new(),
         workshop_mod_name: "TBD_Framework".into(),
-        run_game_server_rest_smoke: false,
+        host_agent: None,
         ssh_pass: None,
         ssh_identity_file: None,
     }
@@ -129,7 +131,16 @@ fn deploy_env_file_beats_the_process_environment() {
          TBD_A2S_PORT=9999\n",
     )
     .unwrap();
+    // The runtime credential is required; without it the file does not load.
+    assert!(Env::load(&f).is_err());
+    let mut text = fs::read_to_string(&f).unwrap();
+    text.push_str(&format!(
+        "TBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n"
+    ));
+    fs::write(&f, text).unwrap();
     let e = Env::load(&f).expect("loads");
+    assert_eq!(e.mod_runtime_credential, RUNTIME_CREDENTIAL);
+    assert!(e.host_agent.is_none(), "the host agent is opt-in");
     assert_eq!(e.a2s_port, "9999");
     // The `:=` default for a var the file omits.
     assert_eq!(e.game_port, "2001");
@@ -139,6 +150,38 @@ fn deploy_env_file_beats_the_process_environment() {
     assert_eq!(e.scenario, "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf");
     // A missing file is the documented rc-1 message, not a panic.
     assert!(Env::load(&d.join("absent.env")).is_err());
+    let _ = fs::remove_dir_all(&d);
+}
+
+#[test]
+fn host_agent_settings_are_required_once_the_install_is_asked_for() {
+    let d = std::env::temp_dir().join(format!("tbd-host-agent-env-{}", std::process::id()));
+    let _ = fs::create_dir_all(&d);
+    let f = d.join("deploy.env");
+    let head = format!(
+        "TBD_SSH_HOST=h\nTBD_REMOTE_DIR=/r\nTBD_PROFILE_DIR=/p\nTBD_ADDONS_STAGING=/a\n\
+         TBD_GAME_SERVER_TOKEN=t\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\n\
+         TBD_INSTALL_HOST_AGENT=1\n"
+    );
+    fs::write(&f, &head).unwrap();
+    assert!(
+        Env::load(&f).is_err(),
+        "the agent needs its own credential and the RCON password"
+    );
+    fs::write(
+        &f,
+        format!("{head}TBD_HOST_AGENT_CREDENTIAL=tbdm_x\nTBD_RCON_PASSWORD=secret\n"),
+    )
+    .unwrap();
+    let e = Env::load(&f).expect("loads");
+    let agent = e.host_agent.as_ref().expect("the install is asked for");
+    assert_eq!(agent.rcon_port, "19999");
+    assert_eq!(
+        agent.api_base_url, "http://127.0.0.1:8080",
+        "defaults to TBD_BACKEND_URL"
+    );
+    // A malformed agent credential is refused by the validation, before any deploy step.
+    assert!(e.validate(Path::new("/nonexistent")).is_err());
     let _ = fs::remove_dir_all(&d);
 }
 
@@ -153,7 +196,7 @@ fn source_no_longer_executes_the_env_file() {
         &f,
         format!(
             "TBD_SSH_HOST=h\nTBD_REMOTE_DIR=/r\nTBD_PROFILE_DIR=/p\nTBD_ADDONS_STAGING=/a\n\
-             TBD_GAME_SERVER_TOKEN=t\ntouch {}\n",
+             TBD_GAME_SERVER_TOKEN=t\nTBD_MOD_RUNTIME_CREDENTIAL={RUNTIME_CREDENTIAL}\ntouch {}\n",
             canary.display()
         ),
     )

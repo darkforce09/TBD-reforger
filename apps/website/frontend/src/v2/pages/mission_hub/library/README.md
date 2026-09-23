@@ -1,7 +1,5 @@
 # Mission Library Page (`/missions`)
 
-*Replaces the 3,663-line monolithic `editor/library/mission_library.rs` file.*
-
 ## Architecture
 - **`page.rs`**: Main layout file (~200 LOC).
 - **`filter_bar.rs`**: Terrain dropdown (Everon, Arland, Kolgujev), game mode chips, player count range slider.
@@ -16,7 +14,9 @@
 - **`featured_hero.rs`**: the cinematic hero over the grid.
 - **`card_grid.rs`**: the body layout, the mission card, the status chip and the shared formatters.
 - **`dossier_sheet.rs`** → **`dossier_body.rs`**: the slide-over dossier and its content, composed
-  from **`dossier_lifecycle.rs`** (review verdict, manage row, delete confirm),
+  from **`dossier_lifecycle.rs`** (review verdict, manage row with the submission control that names
+  each refusal reason and lists every finding, delete confirm), the review record
+  (`mission_review/review_record.rs`) for the author and administrators,
   **`dossier_collaboration.rs`** (comments, invite), **`dossier_versions.rs`** (the version rail) and
   **`dossier_upload_panel.rs`** (upload a document as the next version).
 - **`dossier_upload.rs`** and **`mission_diff.rs`**: the pure halves — the upload guards, and the

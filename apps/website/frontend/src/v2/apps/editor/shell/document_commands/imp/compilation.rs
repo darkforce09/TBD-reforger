@@ -1,30 +1,35 @@
 //! Compilation browser commands.
 use super::*;
 
-/// ** download the document the game server will actually receive.**
+/// **Download the document the game server will actually receive.**
 ///
-/// Returns the compact compiled mod document (byte-identical to `GET /compiled`'s body when the
-/// local doc matches the saved version), or a message fit to show an author.
+/// Returns the compact compiled mod document, or a message fit to show an author.
 ///
-/// ## Why this exists at all
+/// ## What it is, and what it is not
 ///
-/// `GET /missions/:id/compiled` takes a `ServiceAuth` (`missions::handlers::mission_export::get_compiled_mission`)
-/// it answers game servers, not browsers — so an author has no way to fetch it. Until this,
-/// "Export JSON" downloaded [`compile_export`]'s `MissionExport` envelope: the editor SUPERSET,
+/// "Export JSON" downloads [`compile_export`]'s `MissionExport` envelope: the editor SUPERSET,
 /// `{exportFormatVersion, missionId, title, …, payload}`, whose `payload` is the editor graph. That
 /// is the right file for re-importing into the editor and it is **not** the mod document  it has
-/// no `slots[]`, no `orbat`, no `radioPlan`, no `winConditions`, and the mod cannot load it. So
-/// there was no way to see the compiled document before a game server did.
+/// no `slots[]`, no `orbat`, no `radioPlan`, no `winConditions`, and the mod cannot load it. This
+/// command produces the mod document itself.
+///
+/// The document a game server runs is the artifact a submission compiles: submitting a mission
+/// compiles its current version into an immutable artifact, a reviewer approves exactly that
+/// artifact, and a deployment loads exactly its bytes. Those bytes are served, to the mission's
+/// author and to administrators, by `GET /missions/:id/artifacts/:artifactId/document`, with their
+/// SHA-256 as the entity tag and the compile's findings in the `x-compile-diagnostics-count` and
+/// `x-compile-diagnostics-rules` headers.
 ///
 /// ## Why the answer can be trusted
 ///
-/// This runs `flatten_mod_document_json`  the same `map-engine-core` compile `/compiled` runs,
-/// over the same two inputs:
+/// This runs `flatten_mod_document_json`  the same `website-map-engine` compile the artifact
+/// compile runs, over the same two inputs:
 ///
-///   * the **row**, from `GET /missions/:id` ([`ROW_META`]), which is where the server gets
-///     `author`, `maxPlayers` and the fallback time/weather;
+///   * the **row** ([`ROW_META`]): `GET /missions/:id` in the Mission Creator, which is where the
+///     artifact compile gets `author`, `maxPlayers` and the fallback time/weather; in a review
+///     workspace, the row fields the reviewed artifact itself recorded;
 ///   * the **save-shaped payload** (`include_orbat = false`)  byte-for-byte what
-///     `POST /missions/:id/versions` stores and therefore what `/compiled` later reads. `orbat` is
+///     `POST /missions/:id/versions` stores and therefore what a submission compiles. `orbat` is
 ///     omitted for the same reason the save omits it: the flatten derives its own from `editor`,
 ///     and including it would put a key in the preview's input that the stored version never has.
 ///
@@ -34,16 +39,16 @@ use super::*;
 ///
 /// ## The one honest difference, and it is the point
 ///
-/// `/compiled` serves the last **saved** version; this compiles the document **as it is now**,
-/// unsaved edits included. That is what makes it useful  you can see what a save would ship
-/// before shipping it  but it means a dirty document previews something the server does not yet
-/// have. The caller says so in the toast rather than hiding it.
+/// An artifact is compiled from a **saved** version; this compiles the document **as it is now**,
+/// unsaved edits included. That is what makes it useful  you can see what a submission would ship
+/// before saving and submitting  but it means a dirty document previews something no artifact
+/// holds yet. The caller says so in the toast rather than hiding it.
 ///
 /// # Errors
 /// Returns a display message when the row never arrived (local-only id, 404, offline, **401 /
 /// expired session** see [`ROW_META`] + [`row_meta_missing_message`]), when the editor is not
 /// mounted, or when the compile refuses (no placed slots is the common one, and it is the same
-/// `409` a game server would get).
+/// refusal a submission meets).
 pub fn compiled_document_json() -> Result<String, String> {
     compiled_document_json_with_diagnostics().map(|(text, _)| text)
 }
@@ -95,8 +100,8 @@ pub fn compiled_document_json_with_diagnostics() -> Result<CompiledWithDiagnosti
     let meta_bytes = serde_json::to_vec(&meta).map_err(|e| e.to_string())?;
 
     let (doc, findings) = flatten_mod_document_json_with_diagnostics(&meta_bytes, &payload_bytes)?;
-    // ship the compact wire bytes (byte-identical to `/compiled`). Do not re-parse to
-    // `serde_json::Value` for a "pretty" download  that is not whitespace-only vs the route.
+    // ship the compact wire bytes (byte-identical to the artifact document). Do not re-parse to
+    // `serde_json::Value` for a "pretty" download  that is not whitespace-only vs the artifact.
     compiled_export_text(&doc).map(|text| (text, findings))
 }
 

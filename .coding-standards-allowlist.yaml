@@ -1,6 +1,0 @@
-# File-level exceptions for the Rust file-length gate (CODING_STANDARDS.md §8.1).
-# Production files may have at most 500 raw lines; test files may have at most 1000.
-# A test file has a tests/ path component or an _tests.rs basename.
-# SIZE-3 entries require a reason and a YYYY-MM-DD expiry. MC-perf applies only to SIZE-2.
-# Missing paths fail the gate. Generated API contracts are excluded from the source walk.
-# The frontend carries no SIZE-3 exceptions.

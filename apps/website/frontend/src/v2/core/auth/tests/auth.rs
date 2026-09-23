@@ -7,57 +7,42 @@ use crate::v2::core::auth::Role;
 use futures::executor::block_on;
 use futures::future::join_all;
 use std::cell::Cell;
-use std::pin::Pin;
 use std::rc::Rc;
-use std::task::{Context, Poll};
+use std::task::Context;
 
-/// Pends exactly once so several tasks all register on the shared future before it resolves —
-/// the overlap a real 401 storm creates.
-struct YieldOnce(bool);
-impl Future for YieldOnce {
-    type Output = ();
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
-        if self.0 {
-            Poll::Ready(())
-        } else {
-            self.0 = true;
-            cx.waker().wake_by_ref();
-            Poll::Pending
-        }
-    }
-}
-
-// The load-bearing auth proof: N concurrent callers spend the single-use token exactly once.
+/// All four requests join before the controlled refresh response becomes available.
 #[test]
 fn concurrent_callers_spend_the_token_once() {
     let calls = Rc::new(Cell::new(0));
     let sf = SingleFlight::<i32>::new();
+    let (release, receive) = futures::channel::oneshot::channel();
+    let response = Rc::new(std::cell::RefCell::new(Some(receive)));
     let mk = || {
         let calls = calls.clone();
+        let response = response.clone();
         move || {
-            calls.set(calls.get() + 1); // one increment == one refresh POST
-            async {
-                YieldOnce(false).await;
-                42
-            }
+            calls.set(calls.get() + 1);
+            let response = response
+                .borrow_mut()
+                .take()
+                .expect("only one refresh may start");
+            async move { response.await.unwrap() }
         }
     };
-    let out = block_on(join_all(vec![
-        sf.run(mk()),
-        sf.run(mk()),
-        sf.run(mk()),
-        sf.run(mk()),
-    ]));
+    let mut callers: Vec<_> = (0..4).map(|_| Box::pin(sf.run(mk()))).collect();
+    let waker = futures::task::noop_waker();
+    let mut context = Context::from_waker(&waker);
+    for caller in &mut callers {
+        assert!(caller.as_mut().poll(&mut context).is_pending());
+    }
     assert_eq!(
         calls.get(),
         1,
-        "four concurrent callers must trigger exactly one refresh"
+        "all four requests share the pending refresh"
     );
-    assert_eq!(
-        out,
-        vec![42, 42, 42, 42],
-        "all callers receive the same rotated result"
-    );
+    release.send(42).unwrap();
+    assert_eq!(block_on(join_all(callers)), vec![42, 42, 42, 42]);
+    assert_eq!(calls.get(), 1, "completion cannot start another refresh");
 }
 
 // After a refresh settles the cell clears, so a later (non-overlapping) call refreshes again.
@@ -106,6 +91,7 @@ fn sample_user() -> User {
 #[test]
 fn persist_blob_shape_matches_tbd_auth() {
     let state = PersistState {
+        session_id: None,
         refresh_token: Some("rt-abc".into()),
         user: Some(sample_user()),
         expires_at: Some("2026-01-01T01:00:00Z".into()),
@@ -128,6 +114,7 @@ fn persist_blob_shape_matches_tbd_auth() {
 #[test]
 fn persist_round_trips() {
     let state = PersistState {
+        session_id: None,
         refresh_token: Some("rt".into()),
         user: Some(sample_user()),
         expires_at: Some("2026".into()),

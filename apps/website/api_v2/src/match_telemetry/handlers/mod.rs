@@ -3,7 +3,6 @@
 //! [`super::routes`]; [`ingest_parsing`], [`match_results_contract`], [`match_upsert`] and
 //! [`attendance_attribution`] are the wire contract and the write steps behind them.
 
-pub mod attendance_attribution;
 pub mod ingest_parsing;
 pub mod match_results;
 pub mod match_results_contract;

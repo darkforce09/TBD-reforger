@@ -1,6 +1,6 @@
 //! Modpack admin CRUD + workshop_id / mod_guid / version columns.
 //!
-//! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
+//! Each case owns its actors and requires the isolated PostgreSQL test harness.
 //!
 //! ## What makes this fail (non-vacuity)
 //! Drop the `workshop_id` bind from `replace_mods`' INSERT (or omit the column from
@@ -43,16 +43,22 @@ async fn boot(tag: &str) -> Option<(Router, PgPool, String, String)> {
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "modpacks-secret"));
     let app = http_router::router(state.clone());
-    let admin = state
-        .jwt
-        .issue_access("000000000000000271", "admin", true)
-        .expect("admin token")
-        .0;
-    let enlisted = state
-        .jwt
-        .issue_access("000000000000000272", "enlisted", true)
-        .expect("enlisted token")
-        .0;
+    let admin = common::access_token(
+        &state,
+        "modpacks_crud",
+        &format!("modpack-{tag}-admin"),
+        "admin",
+        true,
+    )
+    .await;
+    let enlisted = common::access_token(
+        &state,
+        "modpacks_crud",
+        &format!("modpack-{tag}-enlisted"),
+        "enlisted",
+        true,
+    )
+    .await;
     Some((app, pool, admin, enlisted))
 }
 

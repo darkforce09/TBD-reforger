@@ -1,5 +1,4 @@
-//! Web-role administration: setting a single member's role, and re-applying the Discord
-//! role-mapping table across the whole roster.
+//! Discord authority administration and explicit rejection of independent website role changes.
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
@@ -37,7 +36,7 @@ pub struct UpdateUserInput {
     role: String,
 }
 
-/// `PATCH /api/v1/admin/users/:discordId` — set a user's web role.
+/// `PATCH /api/v1/admin/users/:discordId` — reject independent website role overrides.
 ///
 /// @route PATCH /api/v1/admin/users/:discordId
 pub async fn update_user(
@@ -62,29 +61,10 @@ pub async fn update_user(
     let Some(role) = valid_role(&input.role) else {
         return Err(ApiError::bad_request("invalid role"));
     };
-    let res = sqlx::query("UPDATE users SET role = $1 WHERE discord_id = $2")
-        .bind(role)
-        .bind(&discord_id)
-        .execute(&state.pool)
-        .await?;
-    if res.rows_affected() == 0 {
-        return Err(ApiError::not_found("user not found"));
-    }
-    let actor = &admin.0.discord_id;
-    let actor_name = actor_display_name(&state.pool, actor).await;
-    let target_name = actor_display_name(&state.pool, &discord_id).await;
-    write_audit(
-        &state.pool,
-        AuditSeverity::Info,
-        Some(actor),
-        &actor_name,
-        "user.role_change",
-        &format!("{actor_name} set {target_name} role to {}", role.as_str()),
-        "user",
-        &discord_id,
-    )
-    .await;
-    Ok(Json(json!({ "discord_id": discord_id, "role": role })))
+    let _ = (state, admin, discord_id, role);
+    Err(ApiError::conflict(
+        "Website roles are derived from Discord; change the Discord role mapping or use a membership grace extension",
+    ))
 }
 
 /// `POST /api/v1/admin/roles/sync` — re-apply discord_roles mappings.
@@ -94,7 +74,7 @@ pub async fn resync_roles(
     State(state): State<AppState>,
     admin: AdminUser,
 ) -> Result<Json<Value>, ApiError> {
-    let updated = resync_all_roles(&state.pool)
+    let updated = resync_all_roles(&state.pool, &state.cfg.discord_guild_id)
         .await
         .map_err(|_| ApiError::internal("resync failed"))?;
     let actor = &admin.0.discord_id;

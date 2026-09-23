@@ -1,18 +1,5 @@
-//! Changing a member's standing: the role editor, and the two reason-bearing confirmations.
-//!
-//! **Role:** the inline role picker and the request behind it, and the ban and warning dialogs
-//! with the reason each of them requires.
-//! **Position:** inside the dossier pane — the picker in its body, the two dialogs at its foot.
-//! **Signals & state:** the picker writes `role` and restores the previous value when the request
-//! is refused. The dialogs read and write their own `*_open`, `*_reason` and `*_busy` signals, bump
-//! `warnings` or set `banned` on success, and refetch the roster so the table agrees with the
-//! dossier.
-//! **Invariants:** a ban and a warning both **require** a reason. The server refuses a missing or
-//! whitespace-only one, and sending a placeholder instead would put an unexplained sanction on a
-//! member's record — so the confirm button stays disabled until something has been typed, and the
-//! answer is trimmed on the way out because the server trims it too. These are real dialogs rather
-//! than the browser's own prompt: a native prompt cannot be driven by the automated gate that
-//! checks this screen. A refusal from the server is shown as the server worded it.
+//! Discord-derived role information and reason-bearing moderation dialogs.
+//! Ban and warning requests preserve their author and require a nonempty reason.
 #![allow(dead_code)]
 
 use crate::v2::core::auth::AuthStore;
@@ -75,10 +62,7 @@ pub(super) fn reason_confirm_enabled(reason: &str) -> bool {
     matches!(classify_ban_reason(Some(reason)), BanReason::Send(_))
 }
 
-/// The inline role picker, shown only while the dossier is in role-editing mode.
-///
-/// Writing the picker updates the shown role at once and sends the change; a refusal puts the
-/// previous role back, so the control never claims a promotion the server did not make.
+/// Explain the membership source without offering independent website privilege overrides.
 pub(super) fn role_editor(
     store: AuthStore,
     uid: StoredValue<String>,
@@ -87,64 +71,15 @@ pub(super) fn role_editor(
     editing_role: RwSignal<bool>,
     refetch: Callback<()>,
 ) -> impl IntoView {
-    #[cfg(not(target_arch = "wasm32"))]
     let _ = (store, uid, prev_role, refetch);
-
-    let on_role_change = move |ev: leptos::ev::Event| {
-        let next = event_target_value(&ev);
-        role.set(next.clone());
-        #[cfg(target_arch = "wasm32")]
-        {
-            let toasts = crate::v2::core::ui::toast::use_toasts();
-            let path = format!("/admin/users/{}", uid.get_value());
-            leptos::task::spawn_local(async move {
-                match crate::v2::core::api::client::api_patch::<serde_json::Value>(
-                    store,
-                    &path,
-                    serde_json::json!({ "role": next }),
-                )
-                .await
-                {
-                    Ok(_) => {
-                        toasts.success("Role updated");
-                        refetch.run(());
-                    }
-                    Err(e) => {
-                        toasts.error(crate::v2::core::api::client::api_error_message(
-                            &e,
-                            "Failed to update role",
-                        ));
-                        role.set(prev_role.get_value());
-                    }
-                }
-            });
-        }
-    };
-
     view! {
-        {move || {
-            editing_role
-                .get()
-                .then(|| {
-                    view! {
-                        <div class="mt-4">
-                            <label class="mb-1 block text-label-sm text-on-surface-variant uppercase">
-                                "Role"
-                            </label>
-                            <select
-                                prop:value=move || role.get()
-                                on:change=on_role_change
-                                class=INPUT_CLASS
-                            >
-                                {ROLE_OPTIONS
-                                    .iter()
-                                    .map(|(v, l)| view! { <option value=*v>{*l}</option> })
-                                    .collect_view()}
-                            </select>
-                        </div>
-                    }
-                })
-        }}
+        <Show when=move || editing_role.get()>
+            <div class="mt-4 rounded border border-outline-variant p-3">
+                <p>"Website access follows verified TBD Discord membership and role mappings."</p>
+                <p>"Current role: "{move || role.get()}</p>
+                <p>"Change the member’s Discord roles to change their access."</p>
+            </div>
+        </Show>
     }
 }
 

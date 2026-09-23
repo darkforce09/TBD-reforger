@@ -64,10 +64,9 @@ async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = database::connect(&url).await.expect("connect");
     database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
-        pool.clone(),
-        Config::for_tests(url, "soft-delete-secret"),
-    ));
+    let config = Config::for_tests(url, "soft-delete-secret");
+    common::fixtures::verify_dev_login_members(&pool, &config.discord_guild_id).await;
+    let app = http_router::router(AppState::new(pool.clone(), config));
     Some((app, pool))
 }
 

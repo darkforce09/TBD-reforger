@@ -61,7 +61,7 @@ async fn setup() -> Option<(Router, String, PgPool)> {
     .await;
     for sql in [
         "DELETE FROM leave_requests WHERE discord_id = $1",
-        "DELETE FROM event_registrations WHERE discord_id = $1",
+        "WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1",
         "DELETE FROM orbat_slots WHERE assigned_to = $1",
         "DELETE FROM event_missions WHERE event_id IN (SELECT id FROM events WHERE created_by = $1)",
         "DELETE FROM events WHERE created_by = $1",
@@ -75,18 +75,12 @@ async fn setup() -> Option<(Router, String, PgPool)> {
             .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
     }
 
-    let raw = format!("dashboard-reads-{}", Uuid::new_v4());
-    sqlx::query(
-        "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) \
-         VALUES ($1, $2, now() + interval '1 hour', now())",
+    common::fixtures::seed_membership(&pool, DASH_UID, "test-tbd-guild", "admin").await;
+    let raw = website_api::identity_and_access::services::session_issuance::issue_refresh(
+        &pool, DASH_UID,
     )
-    .bind(DASH_UID)
-    .bind(website_api::core::authentication_primitives::hash_token(
-        &raw,
-    ))
-    .execute(&pool)
     .await
-    .expect("seed session");
+    .expect("seed persisted session");
 
     let app = http_router::router(AppState::new(
         pool.clone(),
@@ -215,16 +209,20 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
     .expect("seed orbat_slot");
 
     // Deployments upcoming branch: `WHERE event_registrations.discord_id = $me`.
+    let mut fixture = (pool).begin().await.unwrap();
+    let allocation = common::participant_allocation(&mut fixture, em_id, DASH_UID).await;
     sqlx::query(
-        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state, \
-         registered_at) VALUES ($1, $2, $3, 'registered', now())",
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, \
+         registered_at, allocation_id) VALUES ($1, $2, $3, 'registered', now(), $4)",
     )
     .bind(em_id)
     .bind(DASH_UID)
     .bind(slot_id)
-    .execute(pool)
+    .bind(allocation)
+    .execute(&mut *fixture)
     .await
     .expect("seed event_registration");
+    fixture.commit().await.unwrap();
 
     (event_id.to_string(), name, em_id)
 }

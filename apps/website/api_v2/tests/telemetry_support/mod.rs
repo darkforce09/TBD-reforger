@@ -94,3 +94,93 @@ pub async fn call(
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
     )
 }
+
+/// A started runtime session of one registered server and the credential that started it.
+pub struct RuntimeSession {
+    pub secret: String,
+    pub id: uuid::Uuid,
+    pub generation: i64,
+}
+
+/// Issue a `mod_runtime` credential for `server` and start its next runtime session.
+pub async fn runtime_session(app: &Router, pool: &PgPool, server: uuid::Uuid) -> RuntimeSession {
+    let credential = uuid::Uuid::new_v4();
+    let secret = format!(
+        "tbdm_{}_{}",
+        credential.simple(),
+        website_api::core::authentication_primitives::random_token(32)
+    );
+    sqlx::query(
+        "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
+         VALUES ($1, $2, 'mod_runtime', $3, 'Telemetry runtime', $4)",
+    )
+    .bind(credential)
+    .bind(server)
+    .bind(website_api::core::authentication_primitives::hash_token(&secret))
+    .bind(common::DEV_LOGIN_USER)
+    .execute(pool)
+    .await
+    .expect("store runtime credential");
+    let (status, started) = call(
+        app,
+        "POST",
+        "/api/v1/game-runtime/sessions",
+        Some(&secret),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "start runtime session: {started}"
+    );
+    RuntimeSession {
+        id: started["runtime_session_id"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap(),
+        generation: started["generation"].as_i64().unwrap(),
+        secret,
+    }
+}
+
+/// One heartbeat of `session` with `sequence`; `reading` holds the status fields.
+pub async fn heartbeat(
+    app: &Router,
+    session: &RuntimeSession,
+    sequence: i64,
+    reading: Value,
+) -> (StatusCode, Value) {
+    let mut body = serde_json::json!({ "generation": session.generation, "sequence": sequence });
+    for (key, value) in reading.as_object().expect("a reading is a JSON object") {
+        body[key] = value.clone();
+    }
+    call(
+        app,
+        "POST",
+        &format!("/api/v1/game-runtime/sessions/{}/heartbeats", session.id),
+        Some(&session.secret),
+        None,
+        Some(&body.to_string()),
+    )
+    .await
+}
+
+/// Remove a server and everything its runtime left behind.
+pub async fn remove_server(pool: &PgPool, server: uuid::Uuid) {
+    for statement in [
+        "DELETE FROM server_status_histories WHERE server_id = $1",
+        "DELETE FROM server_statuses WHERE server_id = $1",
+        "DELETE FROM server_runtime_sessions WHERE server_id = $1",
+        "DELETE FROM server_machine_credentials WHERE server_id = $1",
+        "DELETE FROM servers WHERE id = $1",
+    ] {
+        sqlx::query(statement)
+            .bind(server)
+            .execute(pool)
+            .await
+            .unwrap_or_else(|error| panic!("`{statement}`: {error}"));
+    }
+}

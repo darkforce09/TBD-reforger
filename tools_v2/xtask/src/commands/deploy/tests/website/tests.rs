@@ -178,7 +178,7 @@ fn the_state_move_targets_the_unit_state_directory_and_is_idempotent() {
         cmd.contains("${XDG_STATE_HOME:-$HOME/.local/state}/tbd-website-api"),
         "{cmd}"
     );
-    assert!(cmd.contains("for tree in uploads missions"), "{cmd}");
+    assert!(cmd.contains("for tree in uploads;"), "{cmd}");
     assert!(
         cmd.contains("'/home/sam/tbd/repo/apps/website/api_v2/'"),
         "{cmd}"
@@ -202,7 +202,4 @@ fn the_unit_template_declares_the_state_directory_the_deploy_moves_into() {
         "{UNIT}"
     );
     assert!(UNIT.contains(&format!("Environment=UPLOAD_DIR=%S/{state}/uploads\n")));
-    assert!(UNIT.contains(&format!(
-        "Environment=MISSION_STAGE_DIR=%S/{state}/missions\n"
-    )));
 }

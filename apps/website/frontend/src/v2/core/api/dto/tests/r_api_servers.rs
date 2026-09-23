@@ -13,6 +13,71 @@ fn servers_envelope() {
     assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"), &[]);
 }
 
+/// The credential list as the backend served it: one live credential that has been used, and one
+/// revoked with its reason.
+#[test]
+fn machine_credential_list() {
+    const G: &str = golden!("GET__servers__00000000-0000-4000-d000-000000000001__credentials.json");
+    assert_golden::<MachineCredentialList>(G, &[]);
+    let list: MachineCredentialList = serde_json::from_str(G).unwrap();
+    let live = list
+        .items
+        .iter()
+        .find(|c| c.revoked_at.is_none())
+        .expect("a live credential");
+    assert!(live.last_used_at.is_some() && live.revoke_reason.is_none());
+    let revoked = list
+        .items
+        .iter()
+        .find(|c| c.revoked_at.is_some())
+        .expect("a revoked credential");
+    assert!(revoked.revoked_by.is_some() && revoked.revoke_reason.is_some());
+    assert!(
+        revoked.last_used_at.is_none(),
+        "never used, so the key is absent"
+    );
+}
+
+/// The issue answer has no captured golden — its secret is shown once and never recorded — so its
+/// shape is held against the contract's own example: the stored row and the `tbdm_` secret.
+#[test]
+fn issued_machine_credential_shape() {
+    let wire = serde_json::json!({
+        "credential": {
+            "created_at": "2026-07-15T14:10:00Z",
+            "created_by": "000000000000000001",
+            "executor_kind": "host_agent",
+            "id": "00000000-0000-4000-e000-000000000003",
+            "label": "Rack 2 host agent",
+            "server_id": "00000000-0000-4000-d000-000000000001"
+        },
+        "secret": format!("tbdm_{}_{}", "0".repeat(32), "f".repeat(64))
+    });
+    let text = wire.to_string();
+    assert_golden::<IssuedMachineCredential>(&text, &[]);
+    let issued: IssuedMachineCredential = serde_json::from_str(&text).unwrap();
+    assert!(issued.secret.starts_with("tbdm_"));
+    assert_eq!(issued.credential.executor_kind, "host_agent");
+}
+
+/// The issue body names the program kind in the backend's snake_case spelling.
+#[test]
+fn machine_credential_issue_body() {
+    for (kind, wire) in [
+        (ExecutorKind::HostAgent, "host_agent"),
+        (ExecutorKind::ModRuntime, "mod_runtime"),
+    ] {
+        assert_eq!(
+            serde_json::to_value(MachineCredentialIssue {
+                executor_kind: kind,
+                label: "Primary".into(),
+            })
+            .unwrap(),
+            serde_json::json!({"executor_kind": wire, "label": "Primary"})
+        );
+    }
+}
+
 /// One **live** `GET /servers/:id/status/stream` frame, captured byte-exact off a running Axum
 /// stack (`curl -sN .../status/stream`) whose `server_statuses` row reproduces the
 /// `GET__servers.json` golden. Includes the `data: ` prefix and the `\n\n` terminator the

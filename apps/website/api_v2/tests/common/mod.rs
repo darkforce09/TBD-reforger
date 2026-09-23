@@ -34,6 +34,9 @@ pub(crate) mod fixtures;
 pub(crate) mod http;
 pub(crate) mod source_text;
 
+#[path = "../../src/tests/property_evidence.rs"]
+pub(crate) mod property_evidence;
+
 // Same reason as the `dead_code` allow above, one level up: a re-export no *single* suite
 // happens to name is still the surface every other suite reaches through, and rustc judges
 // each binary on its own.
@@ -43,6 +46,9 @@ pub use self::{
         assert_no_raw_test_database_url_reads_outside_common, assert_test_database_url,
         require_test_database_url,
     },
-    fixtures::{seed_user, unique_arma},
+    fixtures::{
+        COMPILABLE_EDITOR_PAYLOAD, event_runtime_credential, participant_allocation, seed_user,
+        unique_arma,
+    },
     http::{DEV_LOGIN_USER, access_token, dev_login_token},
 };

@@ -71,6 +71,7 @@
 //! | `playtest_server/host.rs` | re-export of [`crate::core::host_execution`] — container detection, `distrobox-host-exec`/`host-spawn` |
 //! | `playtest_server/lifecycle.rs` | the tri-state liveness probe, `kill_run`, the run lock, `assert_no_live_server`, `--selftest` |
 //! | `playtest_server/render.rs` | the three former `python3` sites — backend config patch, admin list, `server.json` |
+//! | `playtest_server/platform_deployment` | the deployment the server runs: provision, confirm, release; or the offline artifact |
 //! | `playtest_server/logread.rs` | every `grep` against `server.out` — boot phase, the addon hard gate, the error dump |
 //! | `playtest_server/boot.rs` | launching the engine, the wait loop, the join banner, Ctrl-C and shutdown |
 //!
@@ -87,6 +88,7 @@ mod boot;
 mod host;
 mod lifecycle;
 mod logread;
+mod platform_deployment;
 mod render;
 
 use std::path::{Path, PathBuf};
@@ -102,14 +104,15 @@ use host::Host;
 /// the help cannot advertise an option the command does not accept.
 const HELP: &str = "\
 Usage:
-  cargo xtask mod playtest --mission-id=<id> [options]
-  cargo xtask mod playtest --mission-id=<id> --admin=<identityId> --dry-run
+  cargo xtask mod playtest --mission=<uuid> [options]
+  cargo xtask mod playtest --artifact-file=<p> --admin=<identityId> --dry-run
   cargo xtask mod playtest --selftest
 
 Options:
-  --mission-id=<id>     mission the mod loads (TBD_BackendConfig.json missionId)   [required]
-  --mission-file=<p>    stage <p> as the on-disk fallback for that id (no API needed)
-  --event-id=<id>       roster event id
+  --mission=<uuid>      deploy this mission's approved artifact (submits + approves if needed)
+  --event-mission=<id>  deploy it for this event mission (its seats bind to the artifact)
+  --server=<uuid>       platform server to deploy on (default: the TBD Playtest server row)
+  --artifact-file=<p>   boot this compiled mission document offline (no API, no credential)
   --backend-url=<url>   default http://127.0.0.1:8080
   --token=<tok>         SERVICE_TOKEN; default read from apps/website/api_v2/.env
   --admin=<id>          identityId (UUID) or 17-digit SteamID; repeatable
@@ -125,15 +128,15 @@ Options:
 ";
 
 /// The one-line refusal printed when a required flag is missing.
-const USAGE_LINE: &str =
-    "Usage: cargo xtask mod playtest --mission-id=<id> [--admin=<id>] [--dry-run]";
+const USAGE_LINE: &str = "Usage: cargo xtask mod playtest --mission=<uuid> | --artifact-file=<p> [--admin=<id>] [--dry-run]";
 
 /// Everything the flag loop can set.
 #[derive(Debug, Clone)]
 pub struct Opts {
-    pub mission_id: String,
-    pub mission_file: String,
-    pub event_id: String,
+    pub mission: String,
+    pub event_mission: String,
+    pub server: String,
+    pub artifact_file: String,
     pub backend_url: String,
     pub token: String,
     pub server_name: String,
@@ -151,9 +154,10 @@ pub struct Opts {
 impl Opts {
     fn defaults(home: &str) -> Opts {
         Opts {
-            mission_id: String::new(),
-            mission_file: String::new(),
-            event_id: String::new(),
+            mission: String::new(),
+            event_mission: String::new(),
+            server: String::new(),
+            artifact_file: String::new(),
             backend_url: "http://127.0.0.1:8080".into(),
             token: String::new(),
             server_name: String::new(),

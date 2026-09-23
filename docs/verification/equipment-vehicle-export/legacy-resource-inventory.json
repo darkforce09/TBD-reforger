@@ -1,0 +1,22 @@
+{
+  "source": "All native prefab resource references in the audited equipment and vehicle JSON files.",
+  "resource_count": 1336,
+  "resource_files": [
+    {
+      "path": "legacy-resource-inventory/guid-prefix-0-through-3.json",
+      "resource_count": 314
+    },
+    {
+      "path": "legacy-resource-inventory/guid-prefix-4-through-7.json",
+      "resource_count": 341
+    },
+    {
+      "path": "legacy-resource-inventory/guid-prefix-8-through-b.json",
+      "resource_count": 351
+    },
+    {
+      "path": "legacy-resource-inventory/guid-prefix-c-through-f.json",
+      "resource_count": 330
+    }
+  ]
+}

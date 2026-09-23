@@ -1,5 +1,13 @@
 use super::*;
 
+fn role_ids(snapshot: &RoleSnapshot) -> Option<&[String]> {
+    match snapshot {
+        RoleSnapshot::Authoritative(ids) => Some(ids),
+        RoleSnapshot::Nonmember => Some(&[]),
+        RoleSnapshot::Unavailable => None,
+    }
+}
+
 fn member(roles: &[&str]) -> GuildMember {
     GuildMember {
         nick: String::new(),
@@ -15,7 +23,7 @@ fn transport_failure_writes_nothing() {
     // only thing that deletes — is never reached on a failure.
     let snap = classify_member_lookup("42", Err(anyhow::anyhow!("connection reset by peer")));
     assert!(
-        snap.ids_to_persist().is_none(),
+        role_ids(&snap).is_none(),
         "an unreachable Discord must not write roles"
     );
 }
@@ -26,7 +34,7 @@ fn real_non_member_still_demotes() {
     // empty write (and the resulting Enlisted) is correct.
     let snap = classify_member_lookup("42", Ok(None));
     assert!(
-        matches!(snap.ids_to_persist(), Some(ids) if ids.is_empty()),
+        matches!(role_ids(&snap), Some(ids) if ids.is_empty()),
         "a 404 non-member must still sync to no roles"
     );
 }
@@ -34,10 +42,7 @@ fn real_non_member_still_demotes() {
 #[test]
 fn member_roles_are_persisted_verbatim() {
     let snap = classify_member_lookup("42", Ok(Some(member(&["1517", "8899"]))));
-    assert_eq!(
-        snap.ids_to_persist().expect("authoritative"),
-        ["1517", "8899"]
-    );
+    assert_eq!(role_ids(&snap).expect("authoritative"), ["1517", "8899"]);
 }
 
 /// Mirror the production decode seam for a 200: `decode_2xx` is
@@ -61,7 +66,7 @@ fn absent_roles_field_on_a_200_does_not_demote() {
         lookup_from_200_body(r#"{"code":0,"message":"502 Bad Gateway"}"#),
     );
     assert!(
-        snap.ids_to_persist().is_none(),
+        role_ids(&snap).is_none(),
         "a 200 whose body omits `roles` must not be read as an authoritative empty role list"
     );
 }
@@ -74,7 +79,7 @@ fn explicitly_empty_roles_array_still_demotes() {
     // resulting demotion to enlisted is correct, not a regression.
     let snap = classify_member_lookup("42", lookup_from_200_body(r#"{"nick":"B","roles":[]}"#));
     assert!(
-        matches!(snap.ids_to_persist(), Some(ids) if ids.is_empty()),
+        matches!(role_ids(&snap), Some(ids) if ids.is_empty()),
         "an explicit `roles: []` is a real answer and must still sync to no roles"
     );
 }
@@ -88,7 +93,7 @@ fn populated_roles_on_a_200_are_authoritative() {
         lookup_from_200_body(r#"{"nick":null,"roles":["1517285898817896559"]}"#),
     );
     assert_eq!(
-        snap.ids_to_persist().expect("authoritative"),
+        role_ids(&snap).expect("authoritative"),
         ["1517285898817896559"]
     );
 }

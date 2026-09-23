@@ -1,0 +1,24 @@
+{
+  "legacy_snapshot": "/home/Samuel/Games/ArmaReforger-Base/profile/TBD_Export",
+  "files_examined": 160,
+  "field_count": 706,
+  "dispositions": {
+    "replace_with_source_relationship": 533,
+    "correct_source": 67,
+    "remove_synthesized": 77,
+    "retain": 26,
+    "rename": 3
+  },
+  "groups": {
+    "equipment/identity-and-indexes": 118,
+    "equipment/attachments": 59,
+    "equipment/items": 103,
+    "equipment/magazines": 35,
+    "equipment/optics": 86,
+    "equipment/projectiles": 32,
+    "equipment/weapons": 49,
+    "vehicles/vehicles": 224
+  },
+  "note": "Each observed object key has a disposition, including nullable fields, containers, metadata, and stale legacy views. Source relationships resolve through the v2 resource and typed container graph; no old-format adapter is provided.",
+  "archived_snapshot": "/home/Samuel/Games/ArmaReforger-Base/profile/TBD_Export/equipment_vehicle_exports/legacy/6A6E9885CF2F83F9"
+}

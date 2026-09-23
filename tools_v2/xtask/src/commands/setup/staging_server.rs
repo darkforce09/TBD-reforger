@@ -124,11 +124,13 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
         crate::core::repository_layout::documentation::STAGING_SERVER_RUNBOOK
     );
     println!("  1. steamcmd +app_update 1890870 on server");
-    println!(
-        "  2. Create apps/website/api_v2/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)"
-    );
+    println!("  2. Create apps/website/api_v2/.env on server (JWT_SECRET + SERVICE_TOKEN)");
     println!("  3. sudo loginctl enable-linger sam");
-    println!("  4. cargo xtask deploy staging");
+    println!(
+        "  4. Issue this server's mod_runtime (and host_agent) credentials in Server Control and"
+    );
+    println!("     put them in deploy.env (TBD_MOD_RUNTIME_CREDENTIAL, TBD_HOST_AGENT_CREDENTIAL)");
+    println!("  5. cargo xtask deploy staging");
 
     Ok(0)
 }

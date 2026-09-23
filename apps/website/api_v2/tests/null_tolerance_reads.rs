@@ -52,8 +52,8 @@ async fn every_nullable_column_null_and_every_get_route_still_serves() {
     );
 
     let mut failed: Vec<(&'static str, String)> = Vec::new();
-    for (template, uri, service) in route_sweep(&s) {
-        let (st, body) = get(&app, &uri, &tok, service).await;
+    for (template, uri, caller) in route_sweep(&s) {
+        let (st, body) = get(&app, &uri, &tok, &s.machine_secret, caller).await;
         if st.is_server_error() {
             failed.push((
                 template,
@@ -166,7 +166,7 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
     .await
     .expect("seed pending_approval mission with real timestamps");
 
-    let (st, body) = get(&app, "/api/v1/approvals", &tok, false).await;
+    let (st, body) = get(&app, "/api/v1/approvals", &tok, "", SweepCaller::Member).await;
     assert_eq!(st, StatusCode::OK, "approvals: {body}");
     let v: Value = serde_json::from_str(&body).expect("approvals json");
     let row = v["data"]
@@ -223,6 +223,10 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
         event_mission: Uuid::nil(),
         announcement: Uuid::nil(),
         server: Uuid::nil(),
+        machine_secret: String::new(),
+        command: Uuid::nil(),
+        artifact: Uuid::nil(),
+        deployment: Uuid::nil(),
         faction: Uuid::nil(),
         wiki_slug: String::new(),
         rows: Vec::new(),

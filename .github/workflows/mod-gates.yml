@@ -53,9 +53,9 @@ name: mod-gates
 #
 # ── WHAT THIS WORKFLOW DOES NOT RUN, AND WHY ───────────────────────────────────────────────
 #   * `cargo xtask mod world-boot --compiled` — the only gate that feeds real compiler output to
-#     the real Enfusion parser. On top of the engine it needs Postgres up, `cargo xtask mk
-#     rust-api` serving, and the API's SERVICE_TOKEN; a bare runner has none of the three, so
-#     running it here means standing a full stack up inside this job.
+#     the real Enfusion parser. On top of the engine it needs Postgres up and `cargo xtask mk
+#     rust-api` serving in development mode (it submits a mission and reads the artifact); a bare
+#     runner has neither, so running it here means standing a full stack up inside this job.
 #   * `--mission=<golden>` sweeps across every golden. Same runner, ~25 s each, so a sweep costs
 #     more wall clock than a nightly compile gate is meant to.
 on:

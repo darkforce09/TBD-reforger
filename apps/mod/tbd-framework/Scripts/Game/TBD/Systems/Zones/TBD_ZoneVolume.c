@@ -45,7 +45,7 @@
 //!
 //! == What this file CANNOT prove =============================================================
 //! The gate is `cargo xtask mod compile`. Flatten does not emit these keys (T-946.36). A
-//! hand-staged schemaVersion 1.3 document reaches the reader; live `/compiled` volume checks
+//! hand-staged schemaVersion 1.3 document reaches the reader; compiled-artifact volume checks
 //! belong on the human checklist (a zone with maxHeight 30 ignores aircraft above it).
 //! @contract mission.schema.json#/$defs/zoneRules
 

@@ -29,7 +29,7 @@ pub(crate) async fn load_em(pool: &PgPool, emid: &str) -> Result<EventMission, A
     let Ok(id) = Uuid::parse_str(emid) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE id = $1")
+    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE deleted_at IS NULL AND id = $1")
         .bind(id)
         .fetch_optional(pool)
         .await?

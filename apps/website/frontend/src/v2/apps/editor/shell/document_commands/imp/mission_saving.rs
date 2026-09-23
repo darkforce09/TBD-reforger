@@ -3,7 +3,8 @@ use super::*;
 
 /// Save a new immutable version (React `saveVersion`): compile with `orbat` omitted (the server
 /// re-derives), POST `{semver, editor_notes, payload}` to `/missions/:id/versions`, and reflect the
-/// outcome in `status`. 409 = dup semver, 413 = too large, 401 = not signed in.
+/// outcome in `status`. 409 = dup semver, 413 = too large, 401 = not signed in. A review workspace
+/// creates no version: the save is refused before anything is compiled or sent.
 ///
 /// a 400 from `create_version` carries the *list* of things wrong with the payload
 /// (schema violations plus wire-safety findings). `findings` takes per-problem lines so the dialog can name them; the
@@ -15,6 +16,10 @@ pub fn save_now(
     findings: RwSignal<Vec<String>>,
 ) {
     findings.set(Vec::new());
+    if !crate::v2::apps::editor::shell::review_mode::writes_mission() {
+        status.set(crate::v2::apps::editor::shell::review_mode::saves_nothing_message());
+        return;
+    }
     let Some(snap) = snapshot() else {
         status.set("Editor not ready".to_string());
         return;

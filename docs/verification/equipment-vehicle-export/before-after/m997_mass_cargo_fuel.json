@@ -1,0 +1,347 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+  "before": {
+    "file": "vehicles/m998/m998_deep.json",
+    "values": {
+      "physical": {
+        "weightKg": 2791,
+        "lengthM": -1,
+        "widthM": -1,
+        "heightM": -1,
+        "centerOfMass": [
+          0,
+          0.1,
+          0.3
+        ]
+      },
+      "storage": {
+        "volumeLiters": -1,
+        "maxWeightKg": 1100,
+        "supplyCapacity": -1
+      },
+      "fuel": {
+        "capacityLiters": -1,
+        "consumptionRate": -1
+      }
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/00/00C9BBE426F7D459.json",
+    "source_file": "sources/arma_reforger/00/00C9BBE426F7D459.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/10",
+        "class_name": "RigidBody",
+        "facts": {
+          "Mass": {
+            "status": "present",
+            "value": 2791.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/10",
+              "property": "Mass",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/15",
+        "class_name": "SCR_FuelConsumptionComponent",
+        "facts": {
+          "m_fFuelConsumption": {
+            "status": "present",
+            "value": 42.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/15",
+              "property": "m_fFuelConsumption",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "m_fFuelConsumptionIdle": {
+            "status": "present",
+            "value": 1.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/15",
+              "property": "m_fFuelConsumptionIdle",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/16/properties/FuelNodes/0",
+        "class_name": "SCR_FuelNode",
+        "facts": {
+          "MaxFuel": {
+            "status": "present",
+            "value": 94.5999984741211,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/16/properties/FuelNodes/0",
+              "property": "MaxFuel",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "m_fInitialFuelTankState": {
+            "status": "present",
+            "value": 70.94999694824219,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/16/properties/FuelNodes/0",
+              "property": "m_fInitialFuelTankState",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/21",
+        "class_name": "SCR_UniversalInventoryStorageComponent",
+        "facts": {
+          "MaxCumulativeVolume": {
+            "status": "present",
+            "value": 100000.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/21",
+              "property": "MaxCumulativeVolume",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "MaxItemSize": {
+            "status": "present",
+            "value": [
+              50.0,
+              200.0,
+              50.0
+            ],
+            "native_type": "VECTOR3",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/21",
+              "property": "MaxItemSize",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "m_fMaxWeight": {
+            "status": "present",
+            "value": 870.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/21",
+              "property": "m_fMaxWeight",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/22",
+        "class_name": "SCR_VehicleBuoyancyComponent",
+        "facts": {
+          "Buoyancy": {
+            "status": "present",
+            "value": 0.5,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/22",
+              "property": "Buoyancy",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "ThurstForward": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/22",
+              "property": "ThurstForward",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "ThurstReverse": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/22",
+              "property": "ThurstReverse",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "ThurstSteering": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/22",
+              "property": "ThurstSteering",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/28/properties/Simulation/properties/Engine",
+        "class_name": "Engine",
+        "facts": {
+          "MaxPower": {
+            "status": "present",
+            "value": 112.5,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/28/properties/Simulation/properties/Engine",
+              "property": "MaxPower",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "RpmIdle": {
+            "status": "present",
+            "value": 650.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/28/properties/Simulation/properties/Engine",
+              "property": "RpmIdle",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "RpmMax": {
+            "status": "present",
+            "value": 4000.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/28/properties/Simulation/properties/Engine",
+              "property": "RpmMax",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "RpmRedline": {
+            "status": "present",
+            "value": 3600.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et",
+              "node_id": "root/properties/components/28/properties/Simulation/properties/Engine",
+              "property": "RpmRedline",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

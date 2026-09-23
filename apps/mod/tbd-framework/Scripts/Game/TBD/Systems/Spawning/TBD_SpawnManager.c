@@ -399,7 +399,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! The spawn manager on the CURRENTLY loaded world, or null if this world has none.
 	//!
 	//! T-181.30 — this used to be `return s_Instance;` off a constructor-set static. Statics outlive
-	//! a world inside one process (measured landmine), and `TBD_FrameworkManager.SelectMissionByNumber`
+	//! a world inside one process (measured landmine), and `TBD_FleetLoadMissionAction`
 	//! restarts the scenario in-process, so a stale manager from a dead world could answer for a live
 	//! one — carrying a dead roster, dead slot bodies and a dead ONE LIFE ledger with it. The static
 	//! is now gone entirely rather than left unread: a field that does not exist cannot be
@@ -2836,8 +2836,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		AssignSlotForPlayer(playerId);
 
 		TBD_MissionSlotStruct slot = GetAssignedSlot(playerId);
-		if (!slot)
-			return TBD_EDeployResult.RETRY;
+		if (!slot || !TBD_SpawnDeploymentGate.Admits(playerId, slot))
+			return TBD_SpawnDeploymentGate.Refusal(slot);
 
 		// T-181.10 — RE-EQUIP ON EVERY SPAWN (operator-locked). A standing slot body is only
 		// reused when it is alive AND belongs to the identity asking for it. Everything else

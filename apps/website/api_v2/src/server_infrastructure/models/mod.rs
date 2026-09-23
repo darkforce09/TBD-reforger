@@ -4,4 +4,8 @@
 //! expressed as `skip_serializing_if`, and RFC3339Nano timestamps rendered through
 //! [`crate::core::wire_format`].
 
+pub mod fleet_command;
+pub mod fleet_scenario;
+pub mod generated;
+pub mod machine_credential;
 pub mod server;

@@ -24,6 +24,24 @@ pub fn publish_server_status(hub: &Hub, status: &ServerStatus) {
     }
 }
 
+/// Load one server's status row and publish it; `false` when the server has no status row yet.
+pub async fn publish_server_status_by_id(
+    pool: &PgPool,
+    hub: &Hub,
+    server_id: uuid::Uuid,
+) -> Result<bool, sqlx::Error> {
+    let row: Option<ServerStatus> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "{SELECT_SERVER_STATUSES} WHERE server_id = $1"
+    )))
+    .bind(server_id)
+    .fetch_optional(pool)
+    .await?;
+    if let Some(status) = &row {
+        publish_server_status(hub, status);
+    }
+    Ok(row.is_some())
+}
+
 /// Load every `server_statuses` row and publish each to its SSE topic.
 ///
 /// Failures are returned to the caller (the scheduler logs and retries next tick). An empty

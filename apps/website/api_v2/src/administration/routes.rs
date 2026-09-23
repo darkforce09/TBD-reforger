@@ -15,6 +15,10 @@ use super::handlers;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route(
+            "/admin/users/{discordId}/membership-grace",
+            post(handlers::membership_grace_overrides::extend_grace),
+        )
+        .route(
             "/admin/audit-logs",
             get(handlers::audit_logs::list_audit_logs),
         )

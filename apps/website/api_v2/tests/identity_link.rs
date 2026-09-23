@@ -296,7 +296,7 @@ async fn arma_link_flow() {
     };
 
     // Private actor JWT — does not rewrite `DEV_LOGIN_USER`.
-    let access = common::access_token(&state, "identity_link", ACTOR, "admin", false);
+    let access = common::access_token(&state, "identity_link", ACTOR, "admin", false).await;
     let bearer = format!("Bearer {access}");
     let auth = [(header::AUTHORIZATION.as_str(), bearer.as_str())];
     let json_svc = [
@@ -340,7 +340,7 @@ async fn arma_link_flow() {
     assert_eq!(body["arma_id"], ACTOR_ARMA);
     assert_eq!(body["arma_character"], "Test Char");
 
-    // Re-confirm the consumed code → 404.
+    // An identical retry confirms the existing result without consuming the code again.
     let (st, _) = call(
         &app,
         "POST",
@@ -349,7 +349,22 @@ async fn arma_link_flow() {
         Some(&confirm),
     )
     .await;
-    assert_eq!(st, StatusCode::NOT_FOUND);
+    assert_eq!(st, StatusCode::OK);
+
+    let changed_retry = serde_json::json!({"code": code, "arma_id": ACTOR_ARMA, "arma_character": "Uncommitted name"}).to_string();
+    let (st, retry_body) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/link-confirm",
+        &json_svc,
+        Some(&changed_retry),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(
+        retry_body["arma_character"], "Test Char",
+        "retry returns the persisted result"
+    );
 
     // No/invalid service token → 401.
     let (st, _) = call(
@@ -371,6 +386,11 @@ async fn arma_link_flow() {
         "enlisted",
     )
     .await;
+    sqlx::query("UPDATE users SET arma_id = NULL WHERE discord_id = $1")
+        .bind(USER2)
+        .execute(&pool)
+        .await
+        .unwrap();
     sqlx::query(
         "INSERT INTO identity_link_codes (code, discord_id, expires_at, created_at) \
          VALUES ('424242', $1, now() + interval '10 minutes', now()) \

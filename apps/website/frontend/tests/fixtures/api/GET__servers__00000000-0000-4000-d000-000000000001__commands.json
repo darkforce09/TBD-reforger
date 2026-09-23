@@ -1,0 +1,78 @@
+{
+  "items": [
+    {
+      "action": "restart_with_mission",
+      "arguments": {
+        "artifact_id": "00000000-0000-4000-f000-000000000001",
+        "artifact_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291",
+        "deployment_id": "00000000-0000-4000-f400-000000000002",
+        "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf"
+      },
+      "attempts": 0,
+      "executor_kind": "host_agent",
+      "expires_at": "2026-07-25T09:05:00Z",
+      "failure_reason": "no executor completed the command before it expired",
+      "finished_at": "2026-07-25T09:05:00Z",
+      "id": "00000000-0000-4000-f200-000000000004",
+      "requested_at": "2026-07-25T09:00:00Z",
+      "requested_by": "000000000000000001",
+      "server_id": "00000000-0000-4000-d000-000000000001",
+      "state": "expired"
+    },
+    {
+      "action": "list_players",
+      "arguments": {},
+      "attempts": 0,
+      "executor_kind": "host_agent",
+      "expires_at": "2027-07-25T08:05:00Z",
+      "id": "00000000-0000-4000-f200-000000000003",
+      "requested_at": "2026-07-25T08:00:00Z",
+      "requested_by": "000000000000000001",
+      "server_id": "00000000-0000-4000-d000-000000000001",
+      "state": "queued"
+    },
+    {
+      "action": "restart_with_mission",
+      "arguments": {
+        "artifact_id": "00000000-0000-4000-f000-000000000001",
+        "artifact_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291",
+        "deployment_id": "00000000-0000-4000-f400-000000000001",
+        "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf"
+      },
+      "attempts": 1,
+      "claimed_at": "2026-07-24T16:00:05Z",
+      "executing_at": "2026-07-24T16:00:06Z",
+      "executor_kind": "host_agent",
+      "expires_at": "2026-07-24T16:05:00Z",
+      "finished_at": "2026-07-24T16:01:00Z",
+      "id": "00000000-0000-4000-f200-000000000001",
+      "outcome": {
+        "config_path": "/srv/reforger/server-config.json",
+        "scenario_id": "{1111222233334444}Missions/TBD_Arland.conf",
+        "unit_active_state": "active"
+      },
+      "requested_at": "2026-07-24T16:00:00Z",
+      "requested_by": "000000000000000001",
+      "server_id": "00000000-0000-4000-d000-000000000001",
+      "state": "succeeded"
+    },
+    {
+      "action": "broadcast",
+      "arguments": {
+        "message": "Server restarts in 10 minutes for Operation Iron Veil"
+      },
+      "attempts": 1,
+      "claimed_at": "2026-07-24T15:45:03Z",
+      "executing_at": "2026-07-24T15:45:04Z",
+      "executor_kind": "mod_runtime",
+      "expires_at": "2026-07-24T15:50:00Z",
+      "failure_reason": "the chat channel was unavailable",
+      "finished_at": "2026-07-24T15:45:05Z",
+      "id": "00000000-0000-4000-f200-000000000002",
+      "requested_at": "2026-07-24T15:45:00Z",
+      "requested_by": "000000000000000001",
+      "server_id": "00000000-0000-4000-d000-000000000001",
+      "state": "failed"
+    }
+  ]
+}

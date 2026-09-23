@@ -2,7 +2,8 @@
 //!
 //! Paths are written relative to the `/api/v1` nest applied by `core::http_router`. Auth tiers
 //! are enforced per-handler by the extractor each takes (`AuthUser`, `MissionMakerUser`,
-//! `AdminUser`, `ServiceAuth`), so they travel with the handler rather than with the registration.
+//! `AdminUser`, and the machine-credential `MachineCaller` on `/game-runtime/*`), so they travel
+//! with the handler rather than with the registration.
 
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
@@ -46,7 +47,29 @@ pub fn routes(version_limit: usize) -> Router<AppState> {
         )
         .route(
             "/missions/{id}/submit",
-            post(handlers::mission_lifecycle::submit_mission),
+            post(handlers::mission_submission::submit_mission),
+        )
+        // Reviews of immutable artifacts: the thread, one artifact's provenance and bytes, and
+        // the read-only workspace of the version it compiled from.
+        .route(
+            "/missions/{id}/reviews",
+            get(handlers::mission_reviews::list_mission_reviews),
+        )
+        .route(
+            "/missions/{id}/review-comments",
+            post(handlers::mission_reviews::add_mission_review_comment),
+        )
+        .route(
+            "/missions/{id}/artifacts/{artifact_id}",
+            get(handlers::mission_reviews::get_mission_artifact),
+        )
+        .route(
+            "/missions/{id}/artifacts/{artifact_id}/document",
+            get(handlers::mission_reviews::get_mission_artifact_document),
+        )
+        .route(
+            "/missions/{id}/artifacts/{artifact_id}/workspace",
+            get(handlers::mission_reviews::get_review_workspace),
         )
         .route(
             "/missions/{id}/versions",
@@ -77,28 +100,42 @@ pub fn routes(version_limit: usize) -> Router<AppState> {
             "/missions/{id}/export",
             get(handlers::mission_export::export_mission),
         )
-        .route(
-            "/missions/{id}/compiled",
-            get(handlers::mission_export::get_compiled_mission),
-        )
-        // Inject a mission into a live session.
-        .route(
-            "/missions/{id}/inject",
-            post(handlers::game_server_injection::inject_mission),
-        )
-        // Game-server mission read (service-token). Deliberately NOT the member-tier `/missions`
-        // handler: that one is scoped to the CALLING USER (owner/bookmark filters) and a service
-        // token has no "me" — see the handler docs.
-        .route(
-            "/ingest/missions",
-            get(handlers::game_server_injection::ingest_list_missions),
-        )
         // Corpus-wide default-override instrumentation. Lives under `/admin/*` because it is
         // an aggregate only an admin reads (not per-mission content); the handler is in `missions`
         // because it queries `mission_versions`. Tier via the per-handler `AdminUser` extractor.
         .route(
             "/admin/mission-default-overrides",
             get(handlers::mission_default_overrides::mission_default_overrides),
+        )
+        // Deployments of approved artifacts, and what a game runtime reads to run them.
+        .route(
+            "/servers/{id}/deployments",
+            get(handlers::mission_deployments::list_server_deployments)
+                .post(handlers::mission_deployments::request_server_deployment),
+        )
+        .route(
+            "/servers/{id}/deployments/{deploymentId}",
+            get(handlers::mission_deployments::get_server_deployment),
+        )
+        .route(
+            "/servers/{id}/deployments/{deploymentId}/cancel",
+            post(handlers::mission_deployments::cancel_server_deployment),
+        )
+        .route(
+            "/game-runtime/deployment",
+            get(handlers::game_runtime_missions::current_deployment),
+        )
+        .route(
+            "/game-runtime/deployments",
+            post(handlers::game_runtime_missions::relayed_deployment_request),
+        )
+        .route(
+            "/game-runtime/artifacts/{artifactId}",
+            get(handlers::game_runtime_missions::deployed_artifact_document),
+        )
+        .route(
+            "/game-runtime/missions",
+            get(handlers::game_runtime_missions::deployable_missions),
         )
         // Approvals.
         .route("/approvals", get(handlers::approvals_queue::list_approvals))

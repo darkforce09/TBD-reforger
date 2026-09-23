@@ -1,0 +1,9 @@
+{
+  "earlier_generation": "6A6E98843127CC77",
+  "complete_generation": "6A6E9885CF2F83F9",
+  "common_resources_compared": 910,
+  "documents_compared": 1820,
+  "comparison": "Exact file bytes for records and source snapshots; generation/run metadata excluded.",
+  "changed_documents": [],
+  "passed": true
+}

@@ -259,8 +259,17 @@ mod auth;
 #[path = "r_api_content.rs"]
 mod content;
 #[cfg(test)]
+#[path = "r_api_event_access.rs"]
+mod event_access;
+#[cfg(test)]
 #[path = "r_api_events.rs"]
 mod events;
+#[cfg(test)]
+#[path = "r_api_fleet.rs"]
+mod fleet;
+#[cfg(test)]
+#[path = "r_api_mission_reviews.rs"]
+mod mission_reviews;
 #[cfg(test)]
 #[path = "r_api_missions.rs"]
 mod missions;

@@ -23,6 +23,10 @@
       "resourceName": "{C9E4FEAF5AAC8D8C}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et"
     },
     {
+      "alias": "kit:us_unarmed",
+      "resourceName": "{2F912ED6E399FF47}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Unarmed.et"
+    },
+    {
       "alias": "kit:sov_rifleman",
       "resourceName": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"
     },
@@ -35,6 +39,10 @@
       "resourceName": "{23ADBBC31B6A3DC6}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"
     },
     {
+      "alias": "kit:sov_unarmed",
+      "resourceName": "{98EB9CDD85B8C92C}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Unarmed.et"
+    },
+    {
       "alias": "kit:fia_rifleman",
       "resourceName": "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"
     },
@@ -45,6 +53,10 @@
     {
       "alias": "kit:fia_medic",
       "resourceName": "{45A02CA25CBA9443}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et"
+    },
+    {
+      "alias": "kit:fia_unarmed",
+      "resourceName": "{854C04F0EA2129CC}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Unarmed.et"
     },
     {
       "alias": "kit:civ_generic",

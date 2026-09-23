@@ -7,3 +7,4 @@ pub mod token_hashing;
 
 pub use jwt_manager::{Claims, Manager};
 pub use token_hashing::{constant_time_equal, hash_token, numeric_code, random_token};
+pub mod session_authority;

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WaitlistPromotionResponse",
+  "description": "POST /api/v1/event-missions/:emid/waitlist/promote (leader or administrator). Promotes the earliest eligible waiters in queue order into actual seats and quota places; answers 409 with details.code EVENT_FULL when no place can be given, leaving every waiter waiting.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "promoted"
+  ],
+  "properties": {
+    "promoted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "registration_id",
+          "discord_id",
+          "slot_id"
+        ],
+        "properties": {
+          "registration_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discord_id": {
+            "type": "string"
+          },
+          "slot_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      }
+    }
+  }
+}

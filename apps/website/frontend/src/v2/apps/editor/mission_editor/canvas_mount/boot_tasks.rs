@@ -1,6 +1,13 @@
 //! Starts document restoration and the render engine in parallel.
+//!
+//! The Mission Creator restores the local draft, reconciles it with the server and arms the draft
+//! writer; a review workspace restores exactly the reviewed version instead and arms nothing
+//! ([`review_restore`]).
 
 use super::*;
+
+#[path = "review_restore.rs"]
+mod review_restore;
 use leptos::task::spawn_local;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -61,6 +68,85 @@ pub(super) fn start(ctx: BootContext) {
         scale_mpp,
     } = ctx;
     let rect0 = (width, height);
+    let engine_mounted = Rc::new(Cell::new(false));
+    let world_ready = Rc::new(Cell::new(false));
+    let report: boot_progress::ProgressFn = Rc::new(move |ev| progress.update(|p| p.apply(ev)));
+    if let Some(reviewed) = crate::v2::apps::editor::shell::review_mode::reviewed_for(&mission_id) {
+        review_restore::start(review_restore::ReviewRestore {
+            doc: doc.clone(),
+            reviewed,
+            current_semver,
+            boot,
+            report: report.clone(),
+            restore_settled: restore_settled.clone(),
+            engine_mounted: engine_mounted.clone(),
+            world_ready: world_ready.clone(),
+        });
+    } else {
+        restore_authored_document(AuthoredRestore {
+            doc: doc.clone(),
+            mission_id,
+            auth,
+            current_semver,
+            conflict,
+            boot,
+            report: report.clone(),
+            restore_settled: restore_settled.clone(),
+            engine_mounted: engine_mounted.clone(),
+            world_ready: world_ready.clone(),
+        });
+    }
+    start_engine(EngineStart {
+        doc,
+        boot,
+        progress,
+        map_disabled,
+        engine,
+        map_host,
+        dem_grid,
+        disposed,
+        restore_settled,
+        canvas,
+        force_webgl,
+        size: rect0,
+        dpr0,
+        debug_hud,
+        scale_mpp,
+        engine_mounted,
+        world_ready,
+        report,
+    });
+}
+
+/// What the Mission Creator's document restore works with.
+struct AuthoredRestore {
+    doc: mission_doc::DocHandle,
+    mission_id: String,
+    auth: crate::v2::core::auth::AuthStore,
+    current_semver: RwSignal<Option<String>>,
+    conflict: RwSignal<Option<ConflictInfo>>,
+    boot: RwSignal<BootPhase>,
+    report: boot_progress::ProgressFn,
+    restore_settled: Rc<Cell<bool>>,
+    engine_mounted: Rc<Cell<bool>>,
+    world_ready: Rc<Cell<bool>>,
+}
+
+/// Restore the Mission Creator's document: the local draft first, then the server's version, and
+/// arm the draft writer once both have settled.
+fn restore_authored_document(restore: AuthoredRestore) {
+    let AuthoredRestore {
+        doc,
+        mission_id,
+        auth,
+        current_semver,
+        conflict,
+        boot,
+        report,
+        restore_settled,
+        engine_mounted,
+        world_ready,
+    } = restore;
     let persist_ready = Rc::new(Cell::new(false));
     let persist_loaded = Rc::new(Cell::new(false));
     yrs_persist::register_mission_persist(
@@ -69,18 +155,8 @@ pub(super) fn start(ctx: BootContext) {
         persist_ready.clone(),
         persist_loaded.clone(),
     );
-    let engine_mounted = Rc::new(Cell::new(false));
-    let world_ready = Rc::new(Cell::new(false));
-    let report: boot_progress::ProgressFn = Rc::new(move |ev| progress.update(|p| p.apply(ev)));
     spawn_local({
-        let doc = doc.clone();
-        let id = mission_id.clone();
-        let ready = persist_ready.clone();
-        let loaded = persist_loaded.clone();
-        let restore_settled = restore_settled.clone();
-        let engine_mounted = engine_mounted.clone();
-        let world_ready = world_ready.clone();
-        let report = report.clone();
+        let (id, ready, loaded) = (mission_id, persist_ready, persist_loaded);
         async move {
             if let Some(blob) = yrs_persist::load_state(&id).await {
                 if !blob.is_empty() {
@@ -146,19 +222,54 @@ pub(super) fn start(ctx: BootContext) {
             ready.set(true);
         }
     });
+}
 
+/// What the render engine's startup works with.
+struct EngineStart {
+    doc: mission_doc::DocHandle,
+    boot: RwSignal<BootPhase>,
+    progress: RwSignal<boot_progress::BootProgress>,
+    map_disabled: RwSignal<Option<String>>,
+    engine: Rc<RefCell<Option<website_map_engine::frame::engine::RenderEngine>>>,
+    map_host: website_map_engine::streaming::host::HostHandle,
+    dem_grid: website_map_engine::streaming::host::DemGridHandle,
+    disposed: Arc<AtomicBool>,
+    restore_settled: Rc<Cell<bool>>,
+    canvas: web_sys::HtmlCanvasElement,
+    force_webgl: bool,
+    size: (f64, f64),
+    dpr0: f64,
+    debug_hud: RwSignal<String>,
+    scale_mpp: RwSignal<f64>,
+    engine_mounted: Rc<Cell<bool>>,
+    world_ready: Rc<Cell<bool>>,
+    report: boot_progress::ProgressFn,
+}
+
+/// Create the render engine, bind the document's lanes to it, and boot the world assets.
+fn start_engine(start: EngineStart) {
+    let EngineStart {
+        doc,
+        boot,
+        progress,
+        map_disabled,
+        engine,
+        map_host,
+        dem_grid,
+        disposed,
+        restore_settled,
+        canvas,
+        force_webgl,
+        size,
+        dpr0,
+        debug_hud,
+        scale_mpp,
+        engine_mounted,
+        world_ready,
+        report,
+    } = start;
     spawn_local({
-        let engine = engine.clone();
-        let disposed = disposed.clone();
-        let doc = doc.clone();
-        let canvas = canvas.clone();
-        let map_host = map_host.clone();
-        let dem_grid = dem_grid.clone();
-        let restore_settled = restore_settled.clone();
-        let engine_mounted = engine_mounted.clone();
-        let world_ready = world_ready.clone();
-        let report = report.clone();
-        let (cw, ch) = (rect0.0, rect0.1);
+        let (cw, ch) = size;
         async move {
             match website_map_engine::frame::engine::RenderEngine::create(canvas, force_webgl).await
             {

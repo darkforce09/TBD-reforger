@@ -31,9 +31,8 @@ pub static TASKS: &[Task] = &[
         help: "Full CI gate locally — mirrors ci.yml (run `cargo xtask db up` first)",
         group: "CI",
         lane: Lane::Ci,
-        // The last step is NOT `Step::Task("verify-ci-schema-parity")`. That gate pins other
-        // gates' step bodies against being hollowed, so routing it through the dispatch it
-        // polices would let a hollowed dispatcher green it. ci.yml calls it directly too.
+        // Invoke parity verification directly: it checks dispatcher bodies and cannot rely
+        // on the dispatcher it checks to reach its own validation. ci.yml does the same.
         steps: &[
             Step::Task("verify-editorconfig"),
             Step::Task("verify-no-python"),
@@ -60,10 +59,11 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "ci-local-schema",
-        help: "CI gate: schema validate (TEST-3) + @contract citation verify",
+        help: "CI gate: generated-byte freshness + schema validation (TEST-3) + contract citations",
         group: "CI",
         lane: Lane::Ci,
         steps: &[
+            Step::Task("verify-codegen-fresh"),
             Step::Task("schema-validate"),
             Step::Task("verify-citations"),
         ],
@@ -147,7 +147,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-codegen-fresh",
-        help: "Fail if apps/website/api_v2/src/missions/contract/generated is stale after schema-codegen",
+        help: "Compare generated files with expected schema bytes without writing files or using Git",
         group: "schema",
         lane: Lane::Ci,
         steps: &[Step::Native {

@@ -1,31 +1,34 @@
-//! The admin-tier mission approval queue: list what is awaiting review, promote a mission to the
-//! live library, or return it to its author with a reason.
+//! The admin-tier mission approval queue: list what is awaiting review with the artifact under
+//! review, approve it (optionally with conditions) into the live library, or return it to its
+//! author with a reason. Each decision names the exact artifact it decides.
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
 use axum::response::Json;
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
-use crate::administration::models::audit_log::AuditSeverity;
-use crate::administration::services::audit_writer::{actor_display_name, write_audit};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
-use crate::core::middleware::AdminUser;
+use crate::core::middleware::{AdminUser, role_rank};
 use crate::core::wire_format::rfc3339_utc;
+use crate::identity_and_access::services::session_authorization::authorize_on_connection;
 use crate::missions::models::mission::{Mission, MissionStatus, TerrainType};
-use crate::missions::services::mission_lookup::load_mission;
+use crate::missions::models::mission_review::{ApprovalDecision, RejectionDecision};
+use crate::missions::services::mission_lookup::load_mission_on;
+use crate::missions::services::mission_reviews::{ReviewDecision, decide_review};
 
 /// The `list_approvals` projection.
 ///
-/// **Every field is non-optional, so the query must `COALESCE` anything that can arrive NULL —
-/// and two of these six can.** `author_name` because the `LEFT JOIN` yields NULL for a mission
-/// whose author row is gone, and `submitted_at` because both columns it can read
-/// (`missions.updated_at`, `missions.created_at`) are nullable with no default. The other four
-/// are `NOT NULL` base-table columns on the driving table, so they cannot.
+/// **The six mission fields are non-optional, so the query must `COALESCE` any of them that can
+/// arrive NULL — and two can.** `author_name` because the `LEFT JOIN` yields NULL for a mission
+/// whose author row is gone, and `submitted_at` because a mission without a review row falls back
+/// to columns (`missions.updated_at`, `missions.created_at`) that are nullable with no default.
+/// The other four are `NOT NULL` base-table columns on the driving table, so they cannot. The
+/// four review fields are optional because a mission submitted before reviews existed has none.
 ///
 /// `Option` is rejected here for the reason `models/telemetry.rs` records for
 /// `Match::winning_faction`: the safety belongs in the query, not the type. The case against
@@ -40,8 +43,14 @@ struct ApprovalRaw {
     author_id: String,
     author_name: String,
     submitted_at: DateTime<Utc>,
+    review_id: Option<Uuid>,
+    artifact_id: Option<Uuid>,
+    artifact_digest: Option<String>,
+    version_semver: Option<String>,
 }
 
+/// One queue row. The review fields are absent for a mission submitted before artifacts existed:
+/// it must be resubmitted so its current version compiles into an artifact to decide.
 #[derive(Debug, Serialize)]
 struct ApprovalRow {
     mission_id: String,
@@ -51,6 +60,14 @@ struct ApprovalRow {
     author_name: String,
     #[serde(with = "rfc3339_utc")]
     submitted_at: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    review_id: Option<Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    artifact_id: Option<Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    artifact_digest: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version_semver: Option<String>,
 }
 
 /// List-queue SQL for `GET /api/v1/approvals`.
@@ -60,10 +77,14 @@ struct ApprovalRow {
 /// fallback exists.
 const LIST_APPROVALS_SQL: &str = "SELECT m.id, m.title, m.terrain, m.author_id, \
          COALESCE(u.username, '') AS author_name, \
-         COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS submitted_at \
+         COALESCE(r.submitted_at, m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS submitted_at, \
+         r.id AS review_id, r.artifact_id, a.artifact_digest, v.semver AS version_semver \
          FROM missions m LEFT JOIN users u ON u.discord_id = m.author_id \
+         LEFT JOIN mission_reviews r ON r.mission_id = m.id AND r.state = 'pending' \
+         LEFT JOIN mission_artifacts a ON a.id = r.artifact_id \
+         LEFT JOIN mission_versions v ON v.id = a.mission_version_id \
          WHERE m.status = 'pending_approval' AND m.deleted_at IS NULL \
-         ORDER BY COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) ASC, \
+         ORDER BY COALESCE(r.submitted_at, m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) ASC, \
          m.id ASC \
          LIMIT $1 OFFSET $2";
 
@@ -81,12 +102,13 @@ pub async fn list_approvals(
     )
     .fetch_one(&state.pool)
     .await?;
-    // `submitted_at` reads `m.updated_at`, which is `timestamp with time zone` with **no
-    // NOT NULL and no DEFAULT** (`migrations/0001_initial_schema.sql:375`), so any INSERT that
-    // omits the column stores NULL and a bare `m.updated_at` fails to decode into the
-    // non-`Option` field above. The COALESCE is what keeps the queue readable for such a row.
+    // `submitted_at` is the pending review's submission time. A mission submitted before reviews
+    // existed has no review row, so the chain falls back to `m.updated_at`, which is `timestamp
+    // with time zone` with **no NOT NULL and no DEFAULT** (`migrations/0001_initial_schema.sql:375`):
+    // any INSERT that omits the column stores NULL and a bare `m.updated_at` fails to decode into
+    // the non-`Option` field above. The COALESCE is what keeps the queue readable for such a row.
     //
-    // Both links of the fallback chain are load-bearing:
+    // Both fallback links after the review are load-bearing:
     //
     // 1. **`m.created_at`** — this row projects one timestamp onto one field the reviewer reads
     //    as "when did this land in my queue". When the mission's own creation time is on the row
@@ -121,6 +143,10 @@ pub async fn list_approvals(
             author_id: r.author_id,
             author_name: r.author_name,
             submitted_at: r.submitted_at,
+            review_id: r.review_id,
+            artifact_id: r.artifact_id,
+            artifact_digest: r.artifact_digest,
+            version_semver: r.version_semver,
         })
         .collect();
     Ok(Json(
@@ -128,139 +154,99 @@ pub async fn list_approvals(
     ))
 }
 
-/// Parse `:id` and load a mission that must be pending approval.
-async fn load_pending(state: &AppState, id: &str) -> Result<Mission, ApiError> {
+/// Lock a mission that must be pending approval, then confirm the reviewer is still an
+/// administrator after the lock wait.
+async fn lock_pending(
+    connection: &mut sqlx::PgConnection,
+    state: &AppState,
+    admin: &AdminUser,
+    id: &str,
+) -> Result<(Mission, String), ApiError> {
     let Ok(id) = Uuid::parse_str(id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let m = load_mission(&state.pool, id)
+    sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM missions WHERE id = $1 AND deleted_at IS NULL FOR NO KEY UPDATE",
+    )
+    .bind(id)
+    .fetch_optional(&mut *connection)
+    .await?
+    .ok_or_else(|| ApiError::not_found("mission not found"))?;
+    let reviewer = authorize_on_connection(connection, &state.cfg, &admin.0.session_claims).await?;
+    if role_rank(&reviewer.role) < role_rank("admin") {
+        return Err(ApiError::forbidden("insufficient role"));
+    }
+    let mission = load_mission_on(connection, id)
         .await?
         .ok_or_else(|| ApiError::not_found("mission not found"))?;
-    if m.status != MissionStatus::PendingApproval {
+    if mission.status != MissionStatus::PendingApproval {
         return Err(ApiError::conflict("mission is not pending approval"));
     }
-    Ok(m)
+    Ok((mission, reviewer.discord_id))
 }
 
-/// Approve UPDATE — a named const so the `updated_at = now()` pin is unit-testable.
-///
-/// A review action is a status write, and every sibling status write (`submit_mission`,
-/// `create_version`, PATCH) bumps `updated_at`. Approve and reject must too, or the queue's
-/// `ORDER BY` / `submitted_at` projection and any cache keyed on `updated_at` never see the review,
-/// and a NULL `updated_at` survives a real state change.
-const APPROVE_MISSION_SQL: &str = "UPDATE missions SET status = 'live', reviewed_by = $1, \
-         reviewed_at = now(), updated_at = now() WHERE id = $2";
-
-/// `POST /api/v1/approvals/:id/approve` — promote to the live library.
+/// `POST /api/v1/approvals/:id/approve` — approve the artifact under review, optionally with
+/// conditions, and promote the mission to the live library with that artifact. Answers the
+/// decided mission; its review record is in `GET /missions/:id/reviews`.
 ///
 /// @route POST /api/v1/approvals/:id/approve
 pub async fn approve_mission(
     State(state): State<AppState>,
     admin: AdminUser,
     Path(id): Path<String>,
+    body: Result<Json<ApprovalDecision>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
-    let m = load_pending(&state, &id).await?;
-    let reviewer = &admin.0.discord_id;
-    sqlx::query(APPROVE_MISSION_SQL)
-        .bind(reviewer)
-        .bind(m.id)
-        .execute(&state.pool)
-        .await?;
-    let reviewer_name = actor_display_name(&state.pool, reviewer).await;
-    write_audit(
-        &state.pool,
-        AuditSeverity::Info,
-        Some(reviewer),
-        &reviewer_name,
-        "mission.approve",
-        &format!("{reviewer_name} approved mission '{}'", m.title),
-        "mission",
-        &m.id.to_string(),
+    let Json(decision) = body.map_err(|_| ApiError::bad_request("artifact_id is required"))?;
+    let mut transaction = state.pool.begin().await?;
+    let (mission, reviewer) = lock_pending(&mut transaction, &state, &admin, &id).await?;
+    decide_review(
+        &mut transaction,
+        &mission,
+        ReviewDecision::Approve {
+            artifact: decision.artifact_id,
+            conditions: decision.conditions,
+        },
+        &reviewer,
     )
-    .await;
-    Ok(Json(load_mission(&state.pool, m.id).await?.ok_or_else(
-        || ApiError::internal("could not load mission"),
-    )?))
+    .await?;
+    let decided = load_mission_on(&mut transaction, mission.id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("mission not found"))?;
+    transaction.commit().await?;
+    Ok(Json(decided))
 }
 
-/// The rejection body.
-///
-/// **`reason` is deliberately required — do not add `#[serde(default)]` to it.** A default is not
-/// "no data": it decodes as an affirmative empty value and is bound straight into the `UPDATE`.
-///
-/// This column is the only thing the author is ever told about why their mission came back, so
-/// `""` is strictly worse than a 400 — the reviewer believes they explained themselves and the
-/// author sees a blank rejection. Requiring the field turns `{}` into a decode error, which the
-/// handler maps to 400 instead of a silent clobber.
-#[derive(Debug, Deserialize)]
-pub struct RejectInput {
-    reason: String,
-}
-
-/// Reject UPDATE — a named const so the `updated_at = now()` pin is unit-testable.
-///
-/// Same always-bump rule as [`APPROVE_MISSION_SQL`]: review actions are status writes.
-const REJECT_MISSION_SQL: &str = "UPDATE missions SET status = 'rejected', rejection_reason = $1, \
-         reviewed_by = $2, reviewed_at = now(), updated_at = now() WHERE id = $3";
-
-/// `POST /api/v1/approvals/:id/reject` — return to the author.
+/// `POST /api/v1/approvals/:id/reject` — return the mission to its author. The reason is required
+/// (a missing or blank reason answers 400) and becomes the rejection comment of the review.
+/// Answers the decided mission.
 ///
 /// @route POST /api/v1/approvals/:id/reject
 pub async fn reject_mission(
     State(state): State<AppState>,
     admin: AdminUser,
     Path(id): Path<String>,
-    body: Result<Json<RejectInput>, JsonRejection>,
+    body: Result<Json<RejectionDecision>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
-    let m = load_pending(&state, &id).await?;
-    // Every extractor failure — a missing body, a wrong `Content-Type`, malformed JSON — is a 400
-    // here rather than an `.ok()` collapse to `""` that would blank the column. `map_err` is what
-    // the other handlers in this crate do.
-    let Json(input) = body.map_err(|_| ApiError::bad_request("reason is required"))?;
-    // A reason of spaces is the same lie as no reason, and `trim` is what the frontend guard
-    // checks — the two ends have to agree or the client is the only guard.
-    let reason = input.reason.trim();
-    if reason.is_empty() {
-        return Err(ApiError::bad_request("reason is required"));
-    }
-    let reviewer = &admin.0.discord_id;
-    sqlx::query(REJECT_MISSION_SQL)
-        .bind(reason)
-        .bind(reviewer)
-        .bind(m.id)
-        .execute(&state.pool)
-        .await?;
-    let reviewer_name = actor_display_name(&state.pool, reviewer).await;
-    write_audit(
-        &state.pool,
-        AuditSeverity::Warn,
-        Some(reviewer),
-        &reviewer_name,
-        "mission.reject",
-        &format!("{reviewer_name} rejected mission '{}'", m.title),
-        "mission",
-        &m.id.to_string(),
+    let Json(decision) =
+        body.map_err(|_| ApiError::bad_request("artifact_id and reason are required"))?;
+    let mut transaction = state.pool.begin().await?;
+    let (mission, reviewer) = lock_pending(&mut transaction, &state, &admin, &id).await?;
+    decide_review(
+        &mut transaction,
+        &mission,
+        ReviewDecision::Reject {
+            artifact: decision.artifact_id,
+            reason: decision.reason,
+        },
+        &reviewer,
     )
-    .await;
-    Ok(Json(load_mission(&state.pool, m.id).await?.ok_or_else(
-        || ApiError::internal("could not load mission"),
-    )?))
+    .await?;
+    let decided = load_mission_on(&mut transaction, mission.id)
+        .await?
+        .ok_or_else(|| ApiError::not_found("mission not found"))?;
+    transaction.commit().await?;
+    Ok(Json(decided))
 }
-
-// ═══ WHY THERE IS NO REVIEW-COMMENT THREAD HERE ═══════════════════════════════════════════════
-//
-// `reject_mission` above is the only channel a reviewer has to the author: one text field,
-// overwritten on every round. The SPA keeps the reviewer's comment box local to the browser tab
-// (`frontend/src/v2/pages/administration/approvals/review_drawer.rs`) because nothing stores a
-// thread: `grep -i comment` over `migrations/` matches only `COMMENT ON` statements and prose, and
-// `audit_logs` cannot stand in — every reader of it is `AdminUser`-gated
-// (`administration/handlers/audit_logs.rs`), so the author could never read a row written about
-// their own mission. A thread therefore needs its own table (one foreign key to `missions(id)`,
-// named `<table>_<column>_fkey` so the SQLSTATE 23503 predicates in
-// `core/database/postgres_errors.rs` can answer 400 by constraint name, and no key on the actor
-// stamp, which must outlive the person), an endpoint pair under `/missions/{id}/comments`, and
-// the SPA half that sends the box. None of that exists, and this file says so rather than
-// implying a thread that is not there.
 
 #[cfg(test)]
 #[path = "tests/approvals_queue.rs"]

@@ -1,0 +1,361 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+  "before": {
+    "file": "equipment/weapons/rifles.json",
+    "values": {
+      "muzzles": [
+        {
+          "index": 0,
+          "muzzle_class": "MuzzleComponent",
+          "magazine_wells": [
+            "MagazineWellStanag556"
+          ],
+          "default_magazine": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+          "is_disposable": false,
+          "fire_modes": [
+            {
+              "name": "Safe",
+              "fire_mode_type": "Safety",
+              "burst": 1,
+              "rpm": 780,
+              "burst_type": "Uninterruptable"
+            },
+            {
+              "name": "Single",
+              "fire_mode_type": "Safety",
+              "burst": 1,
+              "rpm": 780,
+              "burst_type": "Uninterruptable"
+            },
+            {
+              "name": "Burst",
+              "fire_mode_type": "Safety",
+              "burst": 1,
+              "rpm": 780,
+              "burst_type": "Uninterruptable"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/3E/3E413771E1834D2F.json",
+    "source_file": "sources/arma_reforger/3E/3E413771E1834D2F.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/0",
+        "class_name": "BaseFireMode",
+        "facts": {
+          "BurstType": {
+            "status": "present",
+            "value": 0,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/0",
+              "property": "BurstType",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": [
+              {
+                "name": "Uninterruptable",
+                "value": 0
+              },
+              {
+                "name": "Interruptable",
+                "value": 1
+              },
+              {
+                "name": "InterruptableAndResetting",
+                "value": 2
+              }
+            ]
+          },
+          "MaxBurst": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/0",
+              "property": "MaxBurst",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "MaxSalvo": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/0",
+              "property": "MaxSalvo",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "RoundsPerMinute": {
+            "status": "present",
+            "value": 0.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/0",
+              "property": "RoundsPerMinute",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "UIName": {
+            "status": "present",
+            "value": "Safe",
+            "native_type": "STRING",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/0",
+              "property": "UIName",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/1",
+        "class_name": "BaseFireMode",
+        "facts": {
+          "BurstType": {
+            "status": "present",
+            "value": 0,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/1",
+              "property": "BurstType",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": [
+              {
+                "name": "Uninterruptable",
+                "value": 0
+              },
+              {
+                "name": "Interruptable",
+                "value": 1
+              },
+              {
+                "name": "InterruptableAndResetting",
+                "value": 2
+              }
+            ]
+          },
+          "MaxBurst": {
+            "status": "present",
+            "value": 1.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/1",
+              "property": "MaxBurst",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "MaxSalvo": {
+            "status": "present",
+            "value": 1.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/1",
+              "property": "MaxSalvo",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "RoundsPerMinute": {
+            "status": "present",
+            "value": 800.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/1",
+              "property": "RoundsPerMinute",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "UIName": {
+            "status": "present",
+            "value": "Single",
+            "native_type": "STRING",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/1",
+              "property": "UIName",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/2",
+        "class_name": "BaseFireMode",
+        "facts": {
+          "BurstType": {
+            "status": "present",
+            "value": 1,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/2",
+              "property": "BurstType",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": [
+              {
+                "name": "Uninterruptable",
+                "value": 0
+              },
+              {
+                "name": "Interruptable",
+                "value": 1
+              },
+              {
+                "name": "InterruptableAndResetting",
+                "value": 2
+              }
+            ]
+          },
+          "MaxBurst": {
+            "status": "present",
+            "value": 3.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/2",
+              "property": "MaxBurst",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "MaxSalvo": {
+            "status": "present",
+            "value": 1.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "engine_default",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/2",
+              "property": "MaxSalvo",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "RoundsPerMinute": {
+            "status": "present",
+            "value": 800.0,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/2",
+              "property": "RoundsPerMinute",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "UIName": {
+            "status": "present",
+            "value": "Burst",
+            "native_type": "STRING",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+              "node_id": "root/properties/components/8/properties/components/4/properties/FireModes/2",
+              "property": "UIName",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

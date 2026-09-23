@@ -1,12 +1,14 @@
 //! One mission inside an operation: its heading, briefing, faction cards and slotting.
 //!
 //! **Role:** renders a mission dossier card — the mission number and title, the terrain, mode
-//! and start time line, the meta badges, the registration state and fill counts, the briefing,
-//! the faction dossier grid, and the slotting selector for that mission — and owns the label and
-//! briefing rules the card reads with.
+//! and start time line, the meta badges, the registration state and fill counts, the leader's
+//! waiting-list promotion, the notices about the viewer's standing, the briefing, the faction
+//! dossier grid, and the slotting selector for that mission — and owns the label and briefing
+//! rules the card reads with.
 //! **Position:** repeated down the "Mission Dossiers" column of the hub body, below the hero.
 //! **Signals & state:** none of its own; the slotting mutation callback is handed down from the
-//! route and is what refetches the operation.
+//! route and is what refetches the operation, and the viewer's standing on the mission arrives
+//! already built from the operation dossier.
 //! **Invariants:** every badge on the header comes out of the dossier. A field the wire does not
 //! carry is not rendered at all — neither as a value nor as an empty-state promise that it could
 //! one day be authored. The one exception is the briefing, which *is* authorable and therefore
@@ -14,6 +16,8 @@
 #![allow(dead_code)]
 
 use super::faction_armory::{faction_dossier_card, sort_factions};
+use super::registration_access::mission_standing::{standing_notices, MissionStanding};
+use super::registration_access::waitlist_promotion::waitlist_promotion_control;
 use super::slotting_selector::OrbatSelector;
 use crate::v2::core::api::dto::EventMissionDossier;
 use crate::v2::core::ui::MaterialIcon;
@@ -96,10 +100,12 @@ pub(super) fn meta_badges(m: &EventMissionDossier) -> Vec<(&'static str, String)
     vec![("Terrain", terrain_label(&m.terrain))]
 }
 
-/// One mission dossier card, numbered by its position in the operation.
+/// One mission dossier card, numbered by its position in the operation, with the viewer's
+/// `standing` on it.
 pub(super) fn mission_dossier(
     index: usize,
     m: EventMissionDossier,
+    standing: MissionStanding,
     on_change: Callback<()>,
 ) -> impl IntoView {
     // The class merge helper does not group these two hyphenated background names, so the
@@ -121,7 +127,10 @@ pub(super) fn mission_dossier(
     let terrain = terrain_label(&m.terrain);
     let mode = game_mode_label(&m.game_mode).to_string();
     let when = format_local_datetime(&m.start_time);
-    let my_state = m.my_state.clone();
+    let my_reservation_state = m.my_reservation_state.clone();
+    let my_attendance_state = m.my_attendance_state.clone();
+    let notices = standing_notices(&standing);
+    let promotion = waitlist_promotion_control(m.event_mission_id.clone(), on_change);
     view! {
         <div class=card>
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -141,7 +150,7 @@ pub(super) fn mission_dossier(
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-2">
-                    {my_state
+                    {my_reservation_state
                         .clone()
                         .map(|s| {
                             view! {
@@ -150,9 +159,11 @@ pub(super) fn mission_dossier(
                                 </span>
                             }
                         })}
+                    {my_attendance_state.map(|state| view! { <p class="text-xs text-on-surface-variant">"Attendance: " {state.replace('_', " ")}</p> })}
                     <p class="font-mono text-sm text-on-surface-variant">
                         {m.filled} "/" {m.total} " slots filled"
                     </p>
+                    {promotion}
                     <button
                         type="button"
                         disabled
@@ -164,6 +175,7 @@ pub(super) fn mission_dossier(
                     </button>
                 </div>
             </div>
+            {notices}
 
             <section class="mt-4">
                 <h4 class="mb-2 font-mono text-xs uppercase tracking-widest text-on-surface-variant">
@@ -200,11 +212,7 @@ pub(super) fn mission_dossier(
                 })}
 
             <div class="mt-4">
-                <OrbatSelector
-                    emid=m.event_mission_id.clone()
-                    my_state=my_state
-                    on_change=on_change
-                />
+                <OrbatSelector emid=m.event_mission_id.clone() standing=standing on_change=on_change />
             </div>
         </div>
     }

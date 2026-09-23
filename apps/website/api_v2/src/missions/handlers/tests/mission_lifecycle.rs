@@ -2,6 +2,8 @@
 //! the two field guards (title, weather) whose absence is silent rather than loud.
 
 const LIFECYCLE: &str = include_str!("../mission_lifecycle.rs");
+const SUBMISSION: &str = include_str!("../mission_submission.rs");
+const REVIEWS: &str = include_str!("../mission_reviews.rs");
 const VERSIONS: &str = include_str!("../mission_versions.rs");
 const ARMORY: &str = include_str!("../mission_armory.rs");
 
@@ -45,18 +47,20 @@ fn update_mission_requires_mission_maker_tier() {
     );
 }
 
-/// DELETE / submit / create_version / set_armory / set_current_version must require
-/// `MissionMakerUser`, the same tier as PATCH — demotion revokes every mutator, wherever the
-/// handler now lives.
+/// DELETE / submit / review comments / create_version / set_armory / set_current_version must
+/// require `MissionMakerUser`, the same tier as PATCH — demotion revokes every mutator, wherever
+/// the handler lives.
 ///
 /// RED: change any of the extractors back to `user: AuthUser` — this pin fails.
 #[test]
 fn mission_mutators_require_mission_maker_tier() {
     for (file, source, names) in [
+        ("mission_lifecycle.rs", LIFECYCLE, &["delete_mission"][..]),
+        ("mission_submission.rs", SUBMISSION, &["submit_mission"][..]),
         (
-            "mission_lifecycle.rs",
-            LIFECYCLE,
-            &["delete_mission", "submit_mission"][..],
+            "mission_reviews.rs",
+            REVIEWS,
+            &["add_mission_review_comment"][..],
         ),
         (
             "mission_versions.rs",

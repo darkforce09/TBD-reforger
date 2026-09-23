@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StartedRuntimeSession",
+  "description": "POST /api/v1/game-runtime/sessions (mod_runtime machine credential, Authorization: Bearer tbdm_...). Starting a session ends the server's open one as superseded and takes the next generation. Heartbeats are due every heartbeat_interval_seconds; a session silent for expires_after_seconds ends as expired.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runtime_session_id",
+    "server_id",
+    "generation",
+    "started_at",
+    "heartbeat_interval_seconds",
+    "expires_after_seconds"
+  ],
+  "properties": {
+    "runtime_session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "heartbeat_interval_seconds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expires_after_seconds": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "definitions": {
+    "RuntimeHeartbeat": {
+      "description": "POST /api/v1/game-runtime/sessions/:sessionId/heartbeats body. generation must equal the session's generation and sequence must exceed every sequence the session already admitted; gaps are allowed. At least one reading is required. server_id is refused: the credential identifies the server. current_match_id: absent keeps, empty string clears, a uuid sets.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation",
+        "sequence"
+      ],
+      "properties": {
+        "generation": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "is_online": {
+          "type": "boolean"
+        },
+        "player_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_players": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_fps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "uptime_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_match_id": {
+          "type": "string"
+        },
+        "ingame_time": {
+          "type": "string"
+        },
+        "ingame_weather": {
+          "type": "string"
+        }
+      }
+    },
+    "RuntimeSessionEnd": {
+      "description": "POST /api/v1/game-runtime/sessions/:sessionId/end response. Ending an ended session reports how it ended.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_session_id",
+        "ended",
+        "end_reason"
+      ],
+      "properties": {
+        "runtime_session_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "ended": {
+          "type": "boolean",
+          "const": true
+        },
+        "end_reason": {
+          "type": "string",
+          "enum": [
+            "superseded",
+            "expired",
+            "ended_by_runtime",
+            "credential_revoked"
+          ]
+        }
+      }
+    },
+    "RuntimeFenceRefusal": {
+      "description": "409 details of a refused heartbeat or deployment: code STALE_GENERATION (with generation), STALE_SEQUENCE (with last_sequence) or RUNTIME_SESSION_ENDED (with end_reason).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "STALE_GENERATION",
+            "STALE_SEQUENCE",
+            "RUNTIME_SESSION_ENDED"
+          ]
+        },
+        "generation": {
+          "type": "integer"
+        },
+        "last_sequence": {
+          "type": "integer"
+        },
+        "end_reason": {
+          "type": "string",
+          "enum": [
+            "superseded",
+            "expired",
+            "ended_by_runtime",
+            "credential_revoked"
+          ]
+        }
+      }
+    },
+    "RuntimeSessionStart": {
+      "description": "POST /api/v1/game-runtime/sessions body (mod_runtime credential). A runtime that loaded a mission artifact reports it; both fields come together, and the SHA-256 is of the exact document bytes it loaded. An empty body starts a session that runs no artifact. An unknown artifact answers 422 UNKNOWN_ARTIFACT.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "loaded_artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "loaded_artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "dependencies": {
+        "loaded_artifact_id": [
+          "loaded_artifact_sha256"
+        ],
+        "loaded_artifact_sha256": [
+          "loaded_artifact_id"
+        ]
+      }
+    }
+  }
+}

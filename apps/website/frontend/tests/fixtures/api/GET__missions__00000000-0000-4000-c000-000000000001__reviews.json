@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "artifact_id": "00000000-0000-4000-f000-000000000001",
+      "author_id": "000000000000000001",
+      "author_name": "Dev Operator",
+      "body": "The extraction helicopter spawns inside the minefield.",
+      "created_at": "2026-07-24T12:00:00Z",
+      "id": "00000000-0000-4000-f500-000000000001",
+      "kind": "rejection",
+      "mission_id": "00000000-0000-4000-c000-000000000001",
+      "mission_version_id": "00000000-0000-4000-8000-000000000011",
+      "review_id": "00000000-0000-4000-f100-000000000001"
+    },
+    {
+      "artifact_id": "00000000-0000-4000-f000-000000000001",
+      "author_id": "000000000000000003",
+      "author_name": "Vance",
+      "body": "Moved the helicopter pad north of the quarry.",
+      "created_at": "2026-07-24T12:30:00Z",
+      "id": "00000000-0000-4000-f500-000000000002",
+      "kind": "comment",
+      "mission_id": "00000000-0000-4000-c000-000000000001",
+      "mission_version_id": "00000000-0000-4000-8000-000000000011"
+    },
+    {
+      "artifact_id": "00000000-0000-4000-f000-000000000001",
+      "author_id": "000000000000000001",
+      "author_name": "Dev Operator",
+      "body": "Night rotation only until the BTR patrol is retuned.",
+      "created_at": "2026-07-24T15:00:00Z",
+      "id": "00000000-0000-4000-f500-000000000003",
+      "kind": "approval_conditions",
+      "mission_id": "00000000-0000-4000-c000-000000000001",
+      "mission_version_id": "00000000-0000-4000-8000-000000000011",
+      "review_id": "00000000-0000-4000-f100-000000000002"
+    }
+  ],
+  "reviews": [
+    {
+      "artifact_digest": "2534548d0f87ee73f27c582279483e82883a5f97f2a6576a43ed913b188e2791",
+      "artifact_id": "00000000-0000-4000-f000-000000000001",
+      "decided_at": "2026-07-24T15:00:00Z",
+      "decided_by": "000000000000000001",
+      "id": "00000000-0000-4000-f100-000000000002",
+      "mission_id": "00000000-0000-4000-c000-000000000001",
+      "mission_version_id": "00000000-0000-4000-8000-000000000011",
+      "semver": "1.3.0",
+      "state": "approved_with_conditions",
+      "submitted_at": "2026-07-24T13:00:00Z",
+      "submitted_by": "000000000000000003"
+    },
+    {
+      "artifact_digest": "2534548d0f87ee73f27c582279483e82883a5f97f2a6576a43ed913b188e2791",
+      "artifact_id": "00000000-0000-4000-f000-000000000001",
+      "decided_at": "2026-07-24T12:00:00Z",
+      "decided_by": "000000000000000001",
+      "id": "00000000-0000-4000-f100-000000000001",
+      "mission_id": "00000000-0000-4000-c000-000000000001",
+      "mission_version_id": "00000000-0000-4000-8000-000000000011",
+      "semver": "1.3.0",
+      "state": "rejected",
+      "submitted_at": "2026-07-24T10:05:00Z",
+      "submitted_by": "000000000000000003"
+    }
+  ]
+}

@@ -106,6 +106,10 @@ pub struct Mission {
     pub briefing: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub current_version_id: Option<Uuid>,
+    /// The artifact the latest approval decided; deployments load exactly these bytes. Absent on
+    /// a mission never approved from an artifact.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub approved_artifact_id: Option<Uuid>,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub rejection_reason: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]

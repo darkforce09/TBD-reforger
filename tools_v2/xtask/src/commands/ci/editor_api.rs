@@ -105,42 +105,18 @@ fn healthz(port: u16) -> bool {
     resp.contains("200")
 }
 
-/// `git diff --exit-code` over the generated contract types — the contracts.yml stale-output pin.
+/// Regenerate in memory and compare every contract output, including untracked files.
 pub fn verify_codegen_fresh() -> i32 {
-    let root = match crate::core::repository_root::find_repo_root() {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("xtask: {e:#}");
-            return 1;
+    let result = crate::core::repository_root::find_repo_root()
+        .and_then(|root| crate::commands::generate::schema_types::verify_fresh(&root));
+    match result {
+        Ok(()) => {
+            println!("verify-codegen-fresh: PASS");
+            0
         }
-    };
-    match verification_core::proc::Run::new("git")
-        .args([
-            "diff",
-            "--exit-code",
-            "--",
-            "apps/website/api_v2/src/missions/contract/generated",
-        ])
-        .cwd(&root)
-        .output()
-    {
-        Ok(out) if out.code == 0 => 0,
-        Ok(out) => {
-            print!("{}", out.stdout);
-            eprint!("{}", out.stderr);
-            eprintln!("verify-codegen-fresh: generated contract output is stale");
+        Err(error) => {
+            eprintln!("verify-codegen-fresh: {error:#}");
             1
-        }
-        Err(nr) => {
-            eprintln!(
-                "{}",
-                verification_core::Verdict::did_not_run(
-                    "verify-codegen-fresh",
-                    verification_core::verdict::Kind::Pin,
-                    nr,
-                )
-            );
-            2
         }
     }
 }

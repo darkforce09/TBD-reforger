@@ -99,6 +99,7 @@ use identity::SLOT_STANCES;
 use identity::VEHICLE_SEAT_ROLES;
 use identity::parse_seat_id;
 mod diagnostics;
+mod unsupported_authored_data;
 use crate::data::scenario::ast::authoring as input;
 use diagnostics::DiagnosticAcc;
 use diagnostics::emit_enum_identity;
@@ -116,6 +117,8 @@ use input::SlotIn;
 use input::SquadIn;
 use input::VehicleIn;
 use input::ZoneIn;
+/// Expose the authored gameplay data a compiled document cannot carry.
+pub use unsupported_authored_data::unsupported_authored_data;
 mod type_safety;
 /// Expose type safety :: scan editor payload types at this domain boundary.
 pub use type_safety::scan_editor_payload_types;

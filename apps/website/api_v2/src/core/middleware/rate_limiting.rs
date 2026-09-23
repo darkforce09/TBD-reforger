@@ -10,7 +10,10 @@
 //! * **Which routes.** Only `/api/v1/auth/` and `/api/v1/ingest/`. `/auth/*` is the only
 //!   unauthenticated family in the tree, where a restart-reset bucket buys free retries against
 //!   single-use refresh-token rotation and the Discord OAuth round trip; `/ingest/*` writes
-//!   `matches` / `match_player_stats` on a shared service token. L2 costs **one database write
+//!   `matches` / `match_player_stats` on a shared service token. `/api/v1/game-runtime/*` is
+//!   authenticated per server by machine credentials and stays on the global tier: a mission
+//!   start spawns every player of a server within seconds, which a 1/s bucket would serialize
+//!   behind one another. L2 costs **one database write
 //!   per request**, and the SPA's traffic is overwhelmingly the *other* routes — the dashboard's
 //!   parallel GET fan-out, `/missions`, and the Mission Creator's thousands of map-asset tiles.
 //!   Widening this list puts a write on the editor's hot path to protect nothing.

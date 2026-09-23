@@ -21,9 +21,10 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    - `website-map-engine`: Map graphics, spatial computation, terrain formats, asset streaming, camera math, and the mission domain (compilation, validation, Yjs CRDT document model). Speaks graphics engine frame vocabulary; zero UI/Leptos dependencies.
    - `website-frontend`: Presentation, navigation, and CAD workspaces (`src/v2/`); consumes engine crates.
    - `website-api`: Axum REST API and SSE realtime hub.
-7. **File Size Limits & Test Placement**:
+7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **under 500 lines of code**.
    - Test files must stay **under 1000 lines of code**.
+   - **Zero Exemptions / No Allowlist**: There is NO allowlist file and NO exemption mechanism (`.coding-standards-allowlist.yaml` is permanently retired and deleted). Never attempt to create an allowlist, use allowlist comments, or bypass these limits. If a file approaches or exceeds 500 lines, you MUST decompose it by responsibility into cohesive submodules.
    - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 8. **Present-Tense, Context-Free Code Documentation**:
    Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, hardware/engine constraints). Never document historical transitions (no "rewritten from X", "fixed in Y"). Commit history owns history.

@@ -2,6 +2,16 @@ use clap::Subcommand;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum VerifyCmd {
+    /// Verify every API requirement against current Rust tests and staging evidence
+    #[command(name = "api-readiness")]
+    ApiReadiness {
+        /// Evidence directory containing receipts and their complete check output
+        #[arg(long, default_value = "target/api-readiness")]
+        evidence: std::path::PathBuf,
+        /// Execute registered local checks before evaluating all required evidence
+        #[arg(long)]
+        execute: bool,
+    },
     /// SIZE-1/3 file-length gate: production files stay under 500 lines, test files under 1000
     #[command(name = "file-length")]
     FileLength,

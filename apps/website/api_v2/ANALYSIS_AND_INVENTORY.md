@@ -130,7 +130,7 @@ instance, is `schema_validators.rs` plus `zone_quantisation.rs` rather than a si
 - **Decomposition Target (<350 LOC per module under `match_telemetry/handlers/`)**:
   - `server_heartbeat.rs` (~250 LOC): Ingests ticks, merges via `COALESCE`, logs low-FPS warnings.
   - `match_results.rs` (~320 LOC): Match results, player stat counters, session tokens.
-  - `attendance_attribution.rs` (~200 LOC): Attended status marking and retraction.
+  - `operations/services/participation_attribution.rs`: Finalized exact-match participation and correction provenance, independent of reservation state.
   - `replay_streamer.rs` (~180 LOC): AAR replay URL validation and tick streaming.
   - Sibling test file: `match_telemetry/tests/telemetry.rs` (absorbing 570 LOC of inlined tests).
 

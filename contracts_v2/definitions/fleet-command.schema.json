@@ -1,0 +1,233 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FleetCommandContract",
+  "description": "One fleet command as operators observe it. POST /api/v1/servers/:id/commands (administrator) answers 202 with the receipt of an accepted command; GET /api/v1/servers/:id/commands (FleetCommandList, newest first, ?limit=1..100&offset=) and GET /api/v1/servers/:id/commands/:commandId read receipts; POST .../:commandId/cancel cancels a queued command (409 COMMAND_NOT_CANCELLABLE otherwise). queued -> claimed -> executing -> succeeded|failed; queued -> cancelled|expired; a lapsed claim returns to queued; a lapse during the effect makes a non-idempotent command indeterminate, which nothing repeats.",
+  "$ref": "#/definitions/FleetCommandReceipt",
+  "definitions": {
+    "FleetCommandReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "server_id",
+        "executor_kind",
+        "action",
+        "arguments",
+        "requested_by",
+        "requested_at",
+        "expires_at",
+        "state",
+        "attempts"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "server_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "executor_kind": {
+          "$ref": "#/definitions/ExecutorKind"
+        },
+        "action": {
+          "$ref": "#/definitions/FleetAction"
+        },
+        "arguments": {
+          "type": "object"
+        },
+        "requested_by": {
+          "type": "string"
+        },
+        "requested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "claimed",
+            "executing",
+            "succeeded",
+            "failed",
+            "expired",
+            "cancelled",
+            "indeterminate"
+          ]
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "claimed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "executing_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "outcome": {
+          "type": "object"
+        },
+        "failure_reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "One fleet command as operators observe it."
+    },
+    "ExecutorKind": {
+      "type": "string",
+      "enum": [
+        "host_agent",
+        "mod_runtime"
+      ],
+      "description": "broadcast, kick and load_mission run on the mod runtime; every other action on the host agent. Reforger's RCON has no broadcast command."
+    },
+    "FleetAction": {
+      "type": "string",
+      "enum": [
+        "start",
+        "stop",
+        "restart",
+        "list_players",
+        "broadcast",
+        "kick",
+        "load_mission",
+        "restart_with_mission"
+      ],
+      "description": "load_mission and restart_with_mission are issued only by mission deployments (POST /servers/:id/deployments); the operator command route refuses them."
+    },
+    "FleetCommandRequest": {
+      "description": "POST /api/v1/servers/:id/commands body. start, stop, restart and list_players take no arguments; broadcast takes {message} (1 to 256 bytes, no control characters); kick takes {arma_id, runtime_session_id, reason?}, where the session must be the server's open runtime session. load_mission and restart_with_mission answer 400: mission deployments issue them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/FleetAction"
+        },
+        "arguments": {
+          "type": "object"
+        }
+      }
+    },
+    "FleetCommandList": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FleetCommandReceipt"
+          }
+        }
+      }
+    },
+    "ClaimRequest": {
+      "description": "POST /api/v1/fleet-executor/commands/claim body (machine credential). A game runtime names its open runtime session; a host agent sends {}. Answers ClaimedFleetCommand, or 204 when nothing is claimable now.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "runtime_session_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ClaimedFleetCommand": {
+      "description": "A claimed command. The executor reports executing (ExecutionStart) before acting and the outcome (ExecutionResult) after; both carry fencing_token. A claim not reported executing before lease_expires_at returns to the queue.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command_id",
+        "server_id",
+        "action",
+        "arguments",
+        "fencing_token",
+        "lease_expires_at"
+      ],
+      "properties": {
+        "command_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "server_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "action": {
+          "$ref": "#/definitions/FleetAction"
+        },
+        "arguments": {
+          "type": "object"
+        },
+        "fencing_token": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lease_expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ExecutionStart": {
+      "description": "POST /api/v1/fleet-executor/commands/:commandId/executing body. Answers the receipt; 409 details.code STALE_FENCING_TOKEN when the claim is no longer the caller's, COMMAND_NOT_CLAIMED when the command left the claimed state.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fencing_token"
+      ],
+      "properties": {
+        "fencing_token": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ExecutionResult": {
+      "description": "POST /api/v1/fleet-executor/commands/:commandId/result body. succeeded requires a prior executing report; a failure names failure_reason (1 to 512 bytes). list_players reports outcome {players:[{arma_id, name, ...}]}.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fencing_token",
+        "succeeded"
+      ],
+      "properties": {
+        "fencing_token": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "succeeded": {
+          "type": "boolean"
+        },
+        "outcome": {
+          "type": "object"
+        },
+        "failure_reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      }
+    }
+  }
+}

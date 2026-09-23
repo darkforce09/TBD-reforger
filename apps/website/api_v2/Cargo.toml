@@ -63,3 +63,6 @@ uuid = { version = "1.23.4", features = ["v4", "serde"] }
 # the only tier with no graphics crate, no png, no rkyv and no flate2 — the server compiles the
 # mission domain and nothing else.
 website-map-engine = { path = "../map-engine" }
+
+[dev-dependencies]
+proptest = "1"

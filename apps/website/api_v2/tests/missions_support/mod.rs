@@ -170,6 +170,36 @@ pub async fn find_in_approvals(app: &Router, admin: &str, mission_id: &str) -> O
     }
 }
 
+/// Save [`common::COMPILABLE_EDITOR_PAYLOAD`] as version `semver` of the mission, which makes it the
+/// current version a submission compiles. Returns the version id.
+pub async fn save_compilable_version(
+    app: &Router,
+    bearer: &str,
+    mission_id: &str,
+    semver: &str,
+) -> String {
+    let body = format!(
+        r#"{{"semver":"{semver}","payload":{}}}"#,
+        common::COMPILABLE_EDITOR_PAYLOAD
+    );
+    let (st, b) = call(
+        app,
+        "POST",
+        &format!("/api/v1/missions/{mission_id}/versions"),
+        Some(bearer),
+        None,
+        Some(&body),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "save version: {}",
+        String::from_utf8_lossy(&b)
+    );
+    json(&b)["id"].as_str().unwrap().to_string()
+}
+
 /// `call` with the `Content-Type` under the caller's control, and a body that can be sent
 /// without one at all (`ct: None`). `call` always pairs a body with `application/json`, which
 /// is exactly the header a fat-fingered client gets wrong, so the malformed-body cases in the

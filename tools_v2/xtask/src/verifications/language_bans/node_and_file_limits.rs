@@ -24,14 +24,9 @@ const FILE_LENGTH_PINS: &[&str] = &[
     "apps/ticketboard/src",
     "apps/website/api_v2/src",
     "apps/website/frontend/src",
+    "apps/fleet_host_agent/src",
+    "apps/fleet_host_agent/tests",
 ];
-
-struct AllowEntry {
-    rule: String,
-    path: String,
-    reason: String,
-    expires: String,
-}
 
 /* ─────────────────────────── gen font-table ─────────────────────────── */
 
@@ -61,4 +56,4 @@ mod verify_no_node;
 pub use verify_no_node::verify_no_node;
 
 #[cfg(test)]
-use repository_access::{civil_ymd, is_test_file, verify_file_length_in, walk_rust_sources};
+use repository_access::{is_test_file, verify_file_length_in, walk_rust_sources};

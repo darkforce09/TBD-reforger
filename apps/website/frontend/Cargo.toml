@@ -14,6 +14,7 @@ console_error_panic_hook = "0.1"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+base64 = "0.22"
 # T-180.7 — `format_slot_line` on native + wasm. T-243 — the mission compiler is on the NATIVE
 # build too, not just wasm32: `MissionDetail::compiled_meta` is the row half of the editor's
 # server-truth Export, and a projection that only exists in the wasm build is a projection
@@ -112,6 +113,7 @@ web-sys = { version = "0.3", features = [
 
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-timers = { version = "0.3", features = ["futures"] }
 # `default-features = false` is explicit since T-0xx Phase 2A flipped the crate default to
 # `scenario`. This line was the only one riding the old default; `render` reaches
 # streaming -> io -> world -> bvh transitively, so the resulting feature set is unchanged.

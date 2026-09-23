@@ -14,7 +14,7 @@ The platform deploys to a dedicated Linux staging server (`dooley` on LAN, e.g. 
   - Enforces `Cross-Origin-Opener-Policy: same-origin` (COOP) and `Cross-Origin-Embedder-Policy: credentialless` (COEP) to permit `SharedArrayBuffer` in WebAssembly threads.
   - Reverse-proxies `/api/*`, `/uploads/*`, `/map-assets/*`, and `/healthz` to `:8081`.
   - Provides client-side single-page application fallback (`try_files {path} /index.html`).
-- **Web API Service**: Axum REST API binary running on `:8081`, supervised by systemd user unit `tbd-website-api.service`. What it writes (CMS uploads, staged `mission.json` files) lives in the unit's state directory (`~/.local/state/tbd-website-api/`), named absolutely through `UPLOAD_DIR` and `MISSION_STAGE_DIR`; the deploy creates it and moves any files an older layout left inside the checkout.
+- **Web API Service**: Axum REST API binary running on `:8081`, supervised by systemd user unit `tbd-website-api.service`. What it writes (CMS uploads) lives in the unit's state directory (`~/.local/state/tbd-website-api/`), named absolutely through `UPLOAD_DIR`; the deploy creates it and moves any uploads an older layout left inside the checkout.
 - **Database**: Staging PostgreSQL container running on port `:5433` (`apps/website/docker-compose.staging.yml`), isolated from default port `:5432`.
 - **Dedicated Game Server**: Linux Arma Reforger dedicated server running via SteamCMD, configured with custom modpacks and direct-join capabilities.
 

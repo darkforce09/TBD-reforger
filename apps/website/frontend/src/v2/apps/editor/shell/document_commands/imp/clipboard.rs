@@ -1,5 +1,6 @@
 //! Clipboard browser commands.
 use super::*;
+use crate::v2::core::utils::clipboard::write_clipboard;
 /* ───────────────  the browser half of the clipboard exporters ─────────────── */
 
 /// The author-facing refusal when a clipboard exporter runs with nothing selected. A copy that
@@ -57,75 +58,6 @@ pub(super) fn selection_entities() -> Vec<SelectedEntity> {
         };
         resolve_selected_entities(&core.slots_json(), &core.small_maps_json(), &ids)
     })
-}
-
-/// Resolve `navigator.clipboard`, REFUSING rather than throwing when the browser does not expose
-/// it. The property is absent on an insecure origin (plain http on a non-localhost host), and
-/// calling `writeText` on `undefined` would raise a JS exception straight through the wasm
-/// boundary instead of producing a message an author can act on.
-pub(super) fn clipboard_api() -> Result<web_sys::Clipboard, String> {
-    let win = web_sys::window().ok_or_else(|| "there is no browser window".to_string())?;
-    let nav: JsValue = win.navigator().into();
-    let raw = js_sys::Reflect::get(&nav, &JsValue::from_str("clipboard"))
-        .map_err(|_| "this browser exposes no navigator.clipboard".to_string())?;
-    if raw.is_undefined() || raw.is_null() {
-        return Err(
-            "the Clipboard API is unavailable here — it needs a secure context (https, or \
-                 localhost)"
-                .to_string(),
-        );
-    }
-    Ok(raw.unchecked_into::<web_sys::Clipboard>())
-}
-
-/// Best-effort human text for a rejected clipboard promise (a `DOMException` carries `message`).
-pub(super) fn js_error_text(e: &JsValue) -> String {
-    if let Some(s) = e.as_string() {
-        return s;
-    }
-    if let Ok(m) = js_sys::Reflect::get(e, &JsValue::from_str("message")) {
-        if let Some(s) = m.as_string() {
-            return s;
-        }
-    }
-    format!("{e:?}")
-}
-
-/// ** write to the clipboard and REPORT the outcome. Never fire-and-forget.**
-///
-/// `navigator.clipboard.writeText` returns a promise that rejects on an insecure context, on an
-/// unfocused document, and on a denied permission. Dropping that promise and toasting success
-/// anyway is the "reported success over something it never did" defect: the author walks away
-/// believing a grid reference is on their clipboard and pastes whatever was there before. So the
-/// promise is AWAITED, and the success toast is on the resolve arm only  the failure arm names
-/// the browser's own reason.
-///
-/// ** promoted this to the crate's ONE clipboard path.** `server_intel::server_panel`'s
-/// Copy button carried the very defect this function was written against  a dropped
-/// `write_text` promise followed by an unconditional "copied" toast  and it was the live
-/// in-repo precedent any new exporter would have copied. It now calls through here (reachable
-/// as `crate::v2::apps::editor::shell::document_commands::write_clipboard` via the `pub use imp::*` re-export below).
-/// A second clipboard path is a defect in itself: two vocabularies for "did the copy land"
-/// means one of them is eventually wrong and nobody notices. If another surface needs to copy,
-/// call this  do not re-derive it.
-pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: Toasts) {
-    let clipboard = match clipboard_api() {
-        Ok(c) => c,
-        Err(why) => {
-            toasts.error(format!("Could not copy — {why}."));
-            return;
-        }
-    };
-    let promise = clipboard.write_text(&text);
-    spawn_local(async move {
-        match wasm_bindgen_futures::JsFuture::from(promise).await {
-            Ok(_) => toasts.success(ok_message),
-            Err(e) => toasts.error(format!(
-                "Could not copy to the clipboard — {}. Click the map and try again.",
-                js_error_text(&e)
-            )),
-        }
-    });
 }
 
 /// ** exporter 1  copy the selection's grid position.**
@@ -210,8 +142,8 @@ pub fn copy_selection_summary_now(toasts: crate::v2::core::ui::toast::Toasts) {
 /// distinguishable by shape, the `compiled_diagnostics_json` precedent. This deliberately does
 /// NOT touch the clipboard: a headless gate has no clipboard permission, and a reader that had
 /// to grant one would test the browser rather than the exporter. The clipboard write itself is
-/// [`write_clipboard`], and its contract (await, then report) is prose the author can check
-/// against the toast.
+/// `crate::v2::core::utils::clipboard::write_clipboard`, and its contract (await, then report) is
+/// prose the author can check against the toast.
 pub(super) fn export_preview_json(kind: &str) -> String {
     let entities = selection_entities();
     if entities.is_empty() {

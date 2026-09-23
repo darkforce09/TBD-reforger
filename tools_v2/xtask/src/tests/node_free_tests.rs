@@ -20,11 +20,6 @@ impl TmpRepo {
             std::fs::create_dir_all(p.join(rel)).unwrap();
             std::fs::write(p.join(rel).join("lib.rs"), "fn placeholder() {}\n").unwrap();
         }
-        std::fs::write(
-            p.join(".coding-standards-allowlist.yaml"),
-            "# file-length test fixture\n",
-        )
-        .unwrap();
         TmpRepo(p)
     }
 }
@@ -94,12 +89,12 @@ fn unreadable_file_is_did_not_run() {
 }
 
 #[test]
-fn size3_unallowlisted_fails() {
+fn size3_exceeding_fails() {
     let d = TmpRepo::new("bite");
     let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
     std::fs::write(d.0.join("tools_v2/xtask/plant.rs"), body).unwrap();
     let code = verify_file_length_in(&d.0);
-    assert_eq!(code, 1, "a 1200-line unallowlisted .rs must fail SIZE-3");
+    assert_eq!(code, 1, "a 1200-line .rs must fail SIZE-3");
 }
 
 fn write_lines(path: &Path, count: usize) {
@@ -135,126 +130,60 @@ fn test_boundary_is_1000_lines_for_directory_and_basename() {
 }
 
 #[test]
-fn website_test_roots_are_walked_and_generated_contracts_are_excluded() {
+fn website_test_roots_and_generated_contracts_are_walked_without_exemption() {
     let d = TmpRepo::new("walk-coverage");
     let test = d.0.join("apps/website/api_v2/tests/integration.rs");
-    let generated =
-        d.0.join("apps/website/api_v2/src/missions/contract/generated/registry_items.rs");
+    let generated = [
+        "apps/website/api_v2/src/missions/contract/generated/registry_items/mod.rs",
+        "apps/website/api_v2/src/missions/models/generated/mission_review/mission_row.rs",
+        "apps/website/api_v2/src/operations/models/generated/event_hub/mod.rs",
+        "apps/website/api_v2/src/server_infrastructure/models/generated/fleet_command/error.rs",
+    ]
+    .map(|path| d.0.join(path));
     write_lines(&test, SIZE_3_TEST_MAX_LINES + 1);
-    write_lines(&generated, SIZE_3_TEST_MAX_LINES + 1);
+    for path in &generated {
+        write_lines(path, SIZE_3_PRODUCTION_MAX_LINES + 1);
+    }
     let files = walk_rust_sources(&d.0).unwrap();
     assert!(files.contains(&test));
-    assert!(!files.contains(&generated));
+    for path in &generated {
+        assert!(files.contains(path), "{}", path.display());
+    }
     assert_eq!(verify_file_length_in(&d.0), 1);
     std::fs::remove_file(test).unwrap();
+    for path in &generated {
+        assert_eq!(
+            verify_file_length_in(&d.0),
+            1,
+            "generated code is held to the limit too: {}",
+            path.display()
+        );
+        std::fs::remove_file(path).unwrap();
+    }
     assert_eq!(verify_file_length_in(&d.0), 0);
 }
 
 #[test]
-fn mc_perf_only_exempts_size_2() {
-    let d = TmpRepo::new("mc-perf");
-    write_lines(
-        &d.0.join("tools_v2/xtask/plant.rs"),
-        SIZE_3_PRODUCTION_MAX_LINES + 1,
+fn allowlist_file_must_not_exist() {
+    let root = this_repo();
+    assert!(
+        !root.join(".coding-standards-allowlist.yaml").exists(),
+        ".coding-standards-allowlist.yaml must remain permanently deleted"
     );
-    let allowlist = d.0.join(".coding-standards-allowlist.yaml");
-    std::fs::write(
-        &allowlist,
-        "- rule: SIZE-3\n  path: tools_v2/xtask/plant.rs\n  reason: hot path\n  expires: MC-perf\n",
-    )
-    .unwrap();
-    assert_ne!(verify_file_length_in(&d.0), 0);
-    std::fs::write(
-        &allowlist,
-        "- rule: SIZE-2\n  path: tools_v2/xtask/plant.rs\n  reason: hot path\n  expires: MC-perf\n",
-    )
-    .unwrap();
-    assert_eq!(verify_file_length_in(&d.0), 0);
 }
 
 #[test]
-fn orphan_allowlist_rows_fail_even_when_the_walk_is_otherwise_clean() {
-    let d = TmpRepo::new("orphan");
-    std::fs::write(
-        d.0.join(".coding-standards-allowlist.yaml"),
-        "- rule: SIZE-3\n  path: tools_v2/xtask/missing.rs\n  reason: old debt\n  expires: 2027-06-30\n",
-    )
-    .unwrap();
-    assert_eq!(verify_file_length_in(&d.0), 1);
-}
-
-#[test]
-fn size3_allowlisted_with_reason_and_expires_holds() {
-    let d = TmpRepo::new("exempt");
+fn size3_has_zero_exemptions_even_if_allowlist_is_attempted() {
+    let d = TmpRepo::new("no-exemptions");
     let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
     std::fs::write(d.0.join("tools_v2/xtask/plant.rs"), body).unwrap();
     std::fs::write(
         d.0.join(".coding-standards-allowlist.yaml"),
-        "\
-- rule: SIZE-3
-  path: tools_v2/xtask/plant.rs
-  reason: T-899 unit-test exemption
-  expires: 2026-11-13
-",
+        "- rule: SIZE-3\n  path: tools_v2/xtask/plant.rs\n  reason: attempt\n  expires: 2030-01-01\n",
     )
     .unwrap();
     let code = verify_file_length_in(&d.0);
-    assert_eq!(code, 0);
-}
-
-#[test]
-fn size3_allowlist_without_reason_does_not_exempt() {
-    let d = TmpRepo::new("noreason");
-    let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
-    std::fs::write(d.0.join("tools_v2/xtask/plant.rs"), body).unwrap();
-    std::fs::write(
-        d.0.join(".coding-standards-allowlist.yaml"),
-        "\
-- rule: SIZE-3
-  path: tools_v2/xtask/plant.rs
-  reason:
-  expires: 2026-11-13
-",
-    )
-    .unwrap();
-    let code = verify_file_length_in(&d.0);
-    assert_eq!(code, 1);
-}
-
-#[test]
-fn size3_allowlist_quoted_empty_reason_does_not_exempt() {
-    let d = TmpRepo::new("quotedempty");
-    let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
-    std::fs::write(d.0.join("tools_v2/xtask/plant.rs"), body).unwrap();
-    std::fs::write(
-        d.0.join(".coding-standards-allowlist.yaml"),
-        concat!(
-            "- rule: SIZE-3\n",
-            "  path: tools_v2/xtask/plant.rs\n",
-            "  reason: \"\"\n",
-            "  expires: 2026-11-13\n",
-        ),
-    )
-    .unwrap();
-    let code = verify_file_length_in(&d.0);
-    assert_eq!(code, 1, "reason: \"\" must not exempt SIZE-3");
-}
-
-#[test]
-fn size2_without_reason_does_not_skip_size3() {
-    let d = TmpRepo::new("size2noreason");
-    let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
-    std::fs::write(d.0.join("tools_v2/xtask/plant.rs"), body).unwrap();
-    std::fs::write(
-        d.0.join(".coding-standards-allowlist.yaml"),
-        "\
-- rule: SIZE-2
-  path: tools_v2/xtask/plant.rs
-",
-    )
-    .unwrap();
-    let code = verify_file_length_in(&d.0);
-    assert_eq!(code, 1, "a reason-less SIZE-2 row must not skip SIZE-3");
+    assert_eq!(code, 1, "SIZE-3 must reject any attempts to exempt files");
 }
 
 #[test]
@@ -265,25 +194,4 @@ fn empty_walk_is_not_ok() {
     }
     let code = verify_file_length_in(&d.0);
     assert_ne!(code, 0, "zero .rs files must not print 0/0 OK");
-}
-
-#[test]
-fn civil_ymd_pins_epoch_and_ticket_day() {
-    assert_eq!(civil_ymd(0), "1970-01-01");
-    let days = (datetime_days(2026, 8, 13) - datetime_days(1970, 1, 1)) as u64;
-    assert_eq!(civil_ymd(days), "2026-08-13");
-}
-
-fn datetime_days(y: i32, m: u32, d: u32) -> i64 {
-    // Inverse of civil_ymd enough to pin one date: use the same algorithm backwards
-    // via brute force on the known unix day for 2026-08-13 computed independently.
-    let _ = (y, m, d);
-    // 2026-08-13 = 20678 days after 1970-01-01 (verified below by civil_ymd round-trip).
-    if (y, m, d) == (1970, 1, 1) {
-        0
-    } else if (y, m, d) == (2026, 8, 13) {
-        20678
-    } else {
-        panic!("test helper only knows two dates");
-    }
 }

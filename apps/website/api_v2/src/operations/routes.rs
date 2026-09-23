@@ -2,10 +2,11 @@
 //!
 //! Paths are written relative to the `/api/v1` nest applied by `core::http_router`. Auth tiers
 //! are enforced per-handler by the extractor each takes (`AuthUser`, `LeaderUser`, `AdminUser`,
-//! `ServiceAuth`), so they travel with the handler rather than with the registration.
+//! the machine-credential `MachineCaller`), so they travel with the handler rather than with the
+//! registration.
 
 use axum::Router;
-use axum::routing::{get, post};
+use axum::routing::{get, patch, post, put};
 
 use super::handlers;
 use crate::core::application_state::AppState;
@@ -39,13 +40,58 @@ pub fn routes() -> Router<AppState> {
         )
         .route(
             "/events/{id}",
-            get(handlers::event_listing::get_event)
+            get(handlers::event_hub::get_event)
                 .patch(handlers::event_create_update::update_event)
                 .delete(handlers::event_create_update::delete_event),
         )
         .route(
             "/events/{id}/missions",
             post(handlers::event_mission_attachment::add_event_mission),
+        )
+        // Administrator access control: policies, groups, quotas and eligibility evidence.
+        .route(
+            "/events/{id}/access",
+            get(handlers::event_access_administration::get_event_access),
+        )
+        .route(
+            "/events/{id}/access/participants",
+            get(handlers::event_access_administration::get_event_access_participants),
+        )
+        .route(
+            "/events/{id}/access-policy",
+            put(handlers::event_access_administration::put_event_access_policy),
+        )
+        .route(
+            "/events/{id}/reservation-quotas",
+            put(handlers::event_access_administration::put_reservation_quotas),
+        )
+        .route(
+            "/events/{id}/groups",
+            post(handlers::event_group_administration::create_event_group),
+        )
+        .route(
+            "/events/{id}/groups/{groupId}",
+            patch(handlers::event_group_administration::update_event_group)
+                .delete(handlers::event_group_administration::delete_event_group),
+        )
+        .route(
+            "/events/{id}/groups/{groupId}/members/{discordId}",
+            put(handlers::event_group_administration::add_event_group_member)
+                .delete(handlers::event_group_administration::remove_event_group_member),
+        )
+        .route(
+            "/event-missions/{emid}/squads/{faction}/{squad}/access-policy",
+            put(handlers::event_access_administration::put_squad_access_policy)
+                .delete(handlers::event_access_administration::delete_squad_access_policy),
+        )
+        .route(
+            "/event-missions/{emid}/slots/{slotId}/access-policy",
+            put(handlers::event_access_administration::put_slot_access_policy)
+                .delete(handlers::event_access_administration::delete_slot_access_policy),
+        )
+        .route(
+            "/event-missions/{emid}/waitlist/promote",
+            post(handlers::waitlist_promotion::promote_waitlisted_participants),
         )
         .route(
             "/events/{id}/missions/{emid}",
@@ -74,12 +120,20 @@ pub fn routes() -> Router<AppState> {
             post(handlers::slot_assignment::release_squad),
         )
         .route("/members", get(handlers::orbat_view::search_members))
-        // Game-server roster read (service-token). Deliberately NOT the member-tier
-        // `/event-missions/{emid}/orbat` handler: that one is scoped to the CALLING USER (the
-        // caller's own registration state) and a service token has no "me" — see the handler docs.
+        // Game-runtime roster read (machine credential of the event's server). Deliberately NOT
+        // the member-tier `/event-missions/{emid}/orbat` handler: that one is scoped to the
+        // CALLING USER (the caller's own registration state) and a machine has no "me".
         .route(
-            "/ingest/events/{id}/roster",
-            get(handlers::roster_ingest::ingest_event_roster),
+            "/game-runtime/events/{id}/roster",
+            get(handlers::game_runtime_roster::event_roster),
+        )
+        .route(
+            "/game-runtime/sessions/{sessionId}/deployments",
+            post(handlers::game_runtime_deployments::authorize_player_deployment),
+        )
+        .route(
+            "/game-runtime/sessions/{sessionId}/deployments/{occupancyId}/end",
+            post(handlers::game_runtime_deployments::end_player_life),
         )
         // Field tools — mortar ballistics and saved fire missions.
         .route(

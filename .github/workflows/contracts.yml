@@ -37,7 +37,6 @@ jobs:
         with:
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
-      - run: cargo xtask ci schema-codegen
       - name: Fail if generated contract output is stale
         run: cargo xtask ci verify-codegen-fresh
 

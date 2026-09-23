@@ -168,7 +168,7 @@ pub fn router(state: AppState) -> Router {
 ### 4.6 `match_telemetry/` (Game-Server Ingestion & Replays)
 - **`server_heartbeat.rs` (<250 LOC)**: Ingests ticks, merges measurements via SQL `COALESCE`, logs low-FPS warnings.
 - **`match_results.rs` (<320 LOC)**: Combat event ingestion, player kills/deaths/TK counters, and session token resolution.
-- **`attendance_attribution.rs` (<200 LOC)**: Attended status marking strictly for played `(event_id, mission_id)` with retraction support.
+- **`operations/services/participation_attribution.rs`**: Finalized exact-match attendance provenance and correction support, independent of reservation allocation.
 - **`replay_streamer.rs` (<180 LOC)**: AAR replay link validation (`is_http_url`) and telemetry tick streaming.
 
 ### 4.7 `command_center/` (Public Community Dashboard)

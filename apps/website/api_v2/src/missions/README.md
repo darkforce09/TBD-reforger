@@ -2,8 +2,9 @@
 
 The scenario domain: the community mission library, the CAD editor's version snapshots, the mission
 armory, the operator-authored faction library, the Virtual Arsenal item registry and its
-compatibility graph, the approval queue, the export envelope an author downloads, and the two
-surfaces a running game server uses to pick a mission up.
+compatibility graph, immutable compiled artifacts, the reviews that decide them, the export
+envelope an author downloads, and the deployments that run an approved artifact on a server
+together with the game-runtime reads a server uses to run it.
 
 It is the only domain with a `contract/` and a `validation/` directory, because a mission document
 crosses three boundaries — the editor, this API, and the Enfusion mod — and each crossing is
@@ -13,15 +14,20 @@ schema-checked rather than trusted.
 
 - **`routes::routes(version_limit)`** — the domain's `/api/v1` table, merged by
   `core::http_router::api_v1_routes` and nested under `/api/v1`. The literals in `routes.rs` are the
-  public URLs: `/missions`, `/missions/{id}` and its `armory`, `bookmark`, `compiled`, `export`,
-  `inject`, `submit` and `versions[/{vid}[/set-current]]` children, `/approvals`,
-  `/approvals/{id}/approve`, `/approvals/{id}/reject`, `/factions`, `/factions/{id}`, `/registry`,
-  `/registry/compat`, `/ingest/missions`, `/admin/mission-default-overrides`.
+  public URLs: `/missions`, `/missions/{id}` and its `armory`, `bookmark`, `export`, `submit`,
+  `reviews`, `review-comments`, `artifacts/{artifactId}[/document|/workspace]` and
+  `versions[/{vid}[/set-current]]` children, `/approvals`, `/approvals/{id}/approve`,
+  `/approvals/{id}/reject`, `/servers/{id}/deployments[/{deploymentId}[/cancel]]`,
+  `/game-runtime/deployment`, `/game-runtime/deployments`, `/game-runtime/artifacts/{artifactId}`,
+  `/game-runtime/missions`, `/factions`, `/factions/{id}`, `/registry`, `/registry/compat`,
+  `/admin/mission-default-overrides`.
 - **`services::mission_lookup`** — `load_mission`, `load_mission_or_404`, `mission_title_terrain`:
   the canonical mission-row reads. `operations` and the dashboard call them instead of writing their
   own `SELECT`.
 - **`services::cargo_catalog::load_cargo_phys_catalog`** — the registry phys table the cargo-capacity
-  walk is measured against; the mission-versions handler and the operations roster ingest share it.
+  walk is measured against at save time.
+- **`services::mission_deployments`** — `deployment_in_effect` and `lock_and_settle`: the
+  deployment a server runs, which the operations roster and deployment authorization read.
 - **`services::mission_compile`** — the backend adapter for the shared flatten; the compile logic
   itself lives in `website-map-engine`.
 - **`models::mission`** (`Mission`, `MissionVersion`, `MissionArmory`, `TerrainType`, `GameMode`,
@@ -72,20 +78,24 @@ validation/
     version_payload.rs                 Sibling unit tests for `version_payload.rs`.
 handlers/
   mod.rs                               One module per mission surface.
-  approvals_queue.rs                   The admin review queue, promotion, and structured rejection.
+  approvals_queue.rs                   The admin review queue and artifact-bound decisions.
+  artifact_document_response.rs        An artifact's exact bytes with their tag and diagnostics headers.
   faction_library.rs                   Faction library CRUD for operator-authored reusable factions.
-  game_server_injection.rs             The two surfaces a game server uses to pick up a mission.
+  game_runtime_missions.rs             What a runtime runs, deployed artifact bytes, in-game deployments.
   mission_armory.rs                    The mission armory read and its wholesale replacement write.
   mission_default_overrides.rs         Corpus-wide instrumentation: which mission defaults authors change.
-  mission_export.rs                    The strict export envelope and the compiled-document read.
+  mission_deployments.rs               Administrator deployments: request, observe, cancel.
+  mission_export.rs                    The strict export envelope an author downloads.
   mission_library.rs                   Library reads: the filtered browse list and the single-mission overview.
-  mission_lifecycle.rs                 Create, metadata patch, soft delete, and submission to review.
+  mission_lifecycle.rs                 Create, metadata patch and soft delete.
+  mission_reviews.rs                   Review history, thread comments, artifact provenance and workspace.
+  mission_submission.rs                Submission: compile an artifact and open its review.
   mission_versions.rs                  Version history: save a snapshot, read one back, re-point current.
   registry_compat_graph.rs             The Virtual Arsenal compatibility edge graph, per modpack.
   registry_items.rs                    The Virtual Arsenal flat item catalog for one modpack.
   tests/
     approvals_queue.rs                 Sibling unit tests for `approvals_queue.rs`.
-    mission_export.rs                  Sibling unit tests for `mission_export.rs`.
+    artifact_document_response.rs      Sibling unit tests for `artifact_document_response.rs`.
     mission_lifecycle.rs               Sibling unit tests for `mission_lifecycle.rs`.
     mission_versions.rs                Sibling unit tests for `mission_versions.rs`.
     registry_compat_graph.rs           Sibling unit tests for `registry_compat_graph.rs`.
@@ -93,9 +103,13 @@ handlers/
 services/
   mod.rs                               Mission logic shared by handlers across domains.
   cargo_catalog.rs                     The registry phys table the cargo-capacity walk is measured against.
+  mission_artifacts/                   Compiling a version into an immutable artifact, and reading it back.
   mission_compile.rs                   Backend adapter for the shared mod-document flatten.
+  mission_deployments/                 Selection, slot bindings, requests, settlement and reads of deployments.
   mission_document.rs                  The strict mission export envelope.
   mission_lookup.rs                    Mission row reads shared by every surface that resolves a mission id.
+  mission_reviews.rs                   Opening and deciding reviews of artifacts, and the review thread.
+  mission_write_lock.rs                The author-or-admin mission write lock.
   registry_import.rs                   Idempotent, modpack-scoped upsert of the Workbench registry envelope.
   tests/
     mission_compile_diagnostics.rs     Sibling unit tests for the compile diagnostics.
@@ -103,7 +117,10 @@ services/
 models/
   mod.rs                               Mission-domain database and wire models.
   faction.rs                           The operator-authored reusable faction model.
+  generated/                           Contract types generated from `mission-review.schema.json`.
   mission.rs                           The library row, its version snapshots, and the armory.
+  mission_deployment.rs                Deployments, their requests, and what a runtime reads.
+  mission_review.rs                    Reviews of artifacts, the review thread, and decision bodies.
   registry.rs                          The flat per-modpack item catalog and the compatibility graph.
 ```
 

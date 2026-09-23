@@ -2,8 +2,75 @@
 //! badges, the modpack chip's fetch choice, the tier checks behind the slotting affordances, and
 //! the avatar sink in the member picker.
 
+use super::slotting_selector::{can_register_reservation, can_withdraw_reservation};
 use super::*;
 use crate::v2::core::test_support::fixtures::golden;
+
+#[test]
+fn reservation_action_truth_table_distinguishes_active_allocations_from_retained_history() {
+    for (state, register, withdraw) in [
+        (None, true, false),
+        (Some("registered"), false, true),
+        (Some("waitlisted"), false, true),
+        (Some("withdrawn"), true, false),
+        (Some("legacy_unknown"), true, false),
+        (Some("attended"), false, false),
+        (Some("no_show"), false, false),
+        (Some("future_reservation"), false, false),
+        (Some(""), false, false),
+        (Some(" registered"), false, false),
+        (Some("Registered"), false, false),
+    ] {
+        let actual_register = can_register_reservation(state);
+        let actual_withdraw = can_withdraw_reservation(state);
+        assert_eq!(actual_register, register, "{state:?}");
+        assert_eq!(actual_withdraw, withdraw, "{state:?}");
+        assert!(
+            !(actual_register && actual_withdraw),
+            "reservation actions must be mutually exclusive"
+        );
+    }
+}
+
+#[test]
+fn attendance_and_compatibility_state_do_not_control_reservation_actions() {
+    for (reservation, register, withdraw) in [
+        ("registered", false, true),
+        ("waitlisted", false, true),
+        ("withdrawn", true, false),
+        ("legacy_unknown", true, false),
+    ] {
+        for attendance in [
+            None,
+            Some("attended"),
+            Some("no_show"),
+            Some("future_attendance"),
+        ] {
+            for compatibility in [
+                None,
+                Some("registered"),
+                Some("attended"),
+                Some("no_show"),
+                Some("withdrawn"),
+            ] {
+                let mut dossier = golden_dossier();
+                dossier.my_reservation_state = Some(reservation.to_owned());
+                dossier.my_attendance_state = attendance.map(str::to_owned);
+                dossier.my_state = compatibility.map(str::to_owned);
+                assert_eq!(
+                    can_register_reservation(dossier.my_reservation_state.as_deref()),
+                    register
+                );
+                assert_eq!(
+                    can_withdraw_reservation(dossier.my_reservation_state.as_deref()),
+                    withdraw
+                );
+                assert_eq!(dossier.my_attendance_state.as_deref(), attendance);
+                assert_eq!(dossier.my_state.as_deref(), compatibility);
+            }
+        }
+    }
+}
 
 /// The event hub as the dev stack actually served it (the same capture the DTO golden
 /// round-trips). **Its one mission carries no `briefing` key at all** — the backend omits the

@@ -480,32 +480,17 @@ class TBD_MissionDocumentStruct
 	ref array<ref TBD_MissionVariantStruct> variants;
 }
 
-//! Loads Mission JSON from backend REST or $profile fallback.
-//! @route GET /api/v1/missions/{id}/compiled (service-token tier; body = this canonical document, T-092.2).
+//! The mission document this world runs, parsed and validated, and the queries every system asks
+//! of it. The document is the verified artifact TBD_DeployedMission hands to `LoadDocument`;
+//! nothing here fetches, caches or reads files.
 class TBD_MissionLoader
 {
-	//! Hard cap on a mission body (profile file or REST `/compiled` payload). A profile file
-	//! over this would silently truncate in Read() and then fail JSON parse with a misleading
-	//! error — reject it up front (T-130.4 F1-16). T-456 applies the same ceiling to
-	//! `OnBackendFetchSuccess` so a compromised/stale API path cannot hand the mod an oversized
-	//! JSON that skips the profile gate.
-	//! T-450: the SAME ceiling is pinned on mission.schema.json as `x-tbd-missionFileMaxBytes`
-	//! (8388608) and enforced by `validate_mission_document` before `/compiled` serves a body.
-	//! Do not change this constant without updating the schema keyword and the API/xtask checks.
-	protected static const int MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024;
-
-	//! Cap on a backend error body echoed into the log (T-181.44). Print() discards a line over
-	//! 1024 bytes rather than truncating it, so the body must be cut here or it is never seen.
-	//! Sized so the cut body plus the `[TBD][Mission] … http=… body=` prefix and the truncation
-	//! marker still clear 1024 — the whole point is that this line SURVIVES.
-	protected static const int ERROR_BODY_LOG_MAX_BYTES = 900;
-
-	//! T-181.54 — the one status that means "this id was never a backend mission". The API validates
-	//! the id's SHAPE before looking anything up, so a non-uuid (a golden's `msn_*`) comes back 400
-	//! `{"error":"invalid id"}` rather than 404. That distinguishes a mission deliberately staged on
-	//! disk from a stale cache, which is the difference between a normal run and a real fault.
-	//! MEASURED against the live API 2026-07-25, not assumed: 400 for `msn_8f3a2c`.
-	protected static const int HTTP_BAD_REQUEST = 400;
+	//! Hard cap on a mission document, whichever way it arrives: an artifact fetched from the
+	//! platform, or the cached copy in the profile. The SAME ceiling is pinned on
+	//! mission.schema.json as `x-tbd-missionFileMaxBytes` (8388608), is the `artifact_bytes`
+	//! maximum of the RuntimeDeployment contract, and is enforced by `validate_mission_document`
+	//! before a compile stores an artifact. Changing it means changing all of them.
+	static const int MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024;
 
 	//! T-654 -- server-side variant selection override. Separate file from TBD_BackendConfig
 	//! so Save() cannot clobber the selection (design block above TBD_MissionVariantStruct).
@@ -515,13 +500,10 @@ class TBD_MissionLoader
 	protected static string s_RawJson;
 	protected static bool s_Loaded;
 	protected static bool s_Valid;
-	protected static bool s_LoadInFlight;
 
 	//! T-654 -- the ACTIVE VARIANT SET the current document was filtered with. null when the
 	//! document declares no variants[] key (machinery inert) or nothing is loaded.
 	protected static ref array<string> s_ActiveVariantIds;
-
-	protected static ref RestCallback s_RestCallback;
 
 	//------------------------------------------------------------------------------------------------
 	static bool IsLoaded()
@@ -956,234 +938,43 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Entry point: tries REST when backend config exists, else file only.
+	//! Entry point, once per world on the authority: forget the previous world's document, then run
+	//! this world's boot sequence (TBD_DeployedMission), which ends in `LoadDocument`.
 	static void BeginLoad()
 	{
-		if (s_Loaded || s_LoadInFlight)
-			return;
+		// Statics outlive a world inside one process: a new world starts with no document.
+		s_Mission = null;
+		s_RawJson = string.Empty;
+		s_Loaded = false;
+		s_Valid = false;
+		s_ActiveVariantIds = null;
 
-		TBD_BackendConfig.Load();
-		string missionId = TBD_BackendConfig.GetMissionId();
-		if (missionId.IsEmpty())
-		{
-			Print("[TBD] missionId not configured — cannot load mission.", LogLevel.ERROR);
-			return;
-		}
-
-		if (!TBD_BackendConfig.GetBackendUrl().IsEmpty() && !TBD_BackendConfig.GetServerToken().IsEmpty())
-		{
-			s_LoadInFlight = true;
-			FetchFromBackend(missionId);
-			return;
-		}
-
-		if (LoadFromProfileFile(missionId))
-		{
-			s_Loaded = true;
-			LogLoaded("profile");
-		}
+		TBD_DeployedMission.Begin();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected static void FetchFromBackend(string missionId)
+	//! Parse and validate `data`, the verified bytes of the artifact this world runs. True when the
+	//! mission loaded; `source` names where the bytes came from in the loaded line.
+	static bool LoadDocument(string data, string source)
 	{
-		RestApi rest = GetGame().GetRestApi();
-		if (!rest)
-		{
-			Print("[TBD] RestApi unavailable — trying profile fallback.", LogLevel.WARNING);
-			s_LoadInFlight = false;
-			if (LoadFromProfileFile(missionId))
-				s_Loaded = true;
-			return;
-		}
-
-		string baseUrl = TBD_BackendConfig.GetBackendUrl();
-		if (baseUrl.EndsWith("/"))
-			baseUrl = baseUrl.Substring(0, baseUrl.Length() - 1);
-
-		RestContext ctx = rest.GetContext(baseUrl);
-		if (!ctx)
-		{
-			Print("[TBD] RestContext failed for " + baseUrl, LogLevel.ERROR);
-			s_LoadInFlight = false;
-			if (LoadFromProfileFile(missionId))
-				s_Loaded = true;
-			return;
-		}
-
-		s_RestCallback = new RestCallback();
-		s_RestCallback.SetOnSuccess(OnBackendFetchSuccess);
-		s_RestCallback.SetOnError(OnBackendFetchError);
-
-		// Backend guards the game-server tier with X-Service-Token (middleware.RequireServiceToken),
-		// not an Authorization bearer — same header the /ingest telemetry endpoints use.
-		string token = TBD_BackendConfig.GetServerToken();
-		ctx.SetHeaders(string.Format("X-Service-Token,%1,Accept,application/json", token));
-
-		string path = string.Format("/api/v1/missions/%1/compiled", missionId);
-		Print("[TBD] Fetching mission " + missionId + " from " + baseUrl + path);
-		ctx.GET(s_RestCallback, path);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected static void OnBackendFetchSuccess(RestCallback cb)
-	{
-		s_LoadInFlight = false;
-		string data = cb.GetData();
-		if (data.IsEmpty())
-		{
-			Print("[TBD] Backend returned empty mission body.", LogLevel.ERROR);
-			// 0 = the backend ANSWERED, so this is not a shape rejection; a cache here may be stale.
-			TryProfileFallbackAfterRestFailure(0);
-			return;
-		}
-
-		// REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load.
-		// A compromised/stale API could otherwise hand the mod an oversized body that skips the
-		// profile FileHandle.GetLength() gate and still reaches ParseMissionJson.
 		if (!IsMissionBodyWithinCap(data))
 		{
-			Print(string.Format("[TBD] Backend mission body too large (%1 B > %2 B cap) — refusing to parse.",
-				data.Length(), MISSION_FILE_MAX_BYTES), LogLevel.ERROR);
-			TryProfileFallbackAfterRestFailure(0);
-			return;
+			TBD_Log.Error(TBD_Log.CH_MISSION, string.Format("mission document too large (%1 B > %2 B cap) - refusing to parse.",
+				data.Length(), MISSION_FILE_MAX_BYTES));
+			return false;
 		}
 
 		if (!ParseMissionJson(data))
-		{
-			TryProfileFallbackAfterRestFailure(0);
-			return;
-		}
+			return false;
 
-		string missionId = TBD_BackendConfig.GetMissionId();
-		CacheToProfile(missionId, data);
 		s_Loaded = true;
-		LogLoaded("backend");
+		LogLoaded(source);
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-181.44 — the response body is the ONLY place the reason lives, and this used to bin it.
-	//!
-	//! `/compiled` validates the document before serving it (T-181.31) and answers 500 with the
-	//! deduped, capped findings when it does not hold — `/slots/3/groupCallsign does not match
-	//! wireSafeString` for a callsign somebody typed a TAB into, `winConditions.endOn declares
-	//! faction_eliminated but only 1 faction has slots`, a dangling kit alias. That is EVERY schema
-	//! rejection, not one class of them. Discarding it left the operator with the symptom alone —
-	//! "the server is still running the previous mission" — and the cause in an API log on another
-	//! host, which is the definition of undiagnosable.
-	//!
-	//! `RestCallback.GetData()` is documented as readable from the error callback ("you can access
-	//! data if any were provided by the RestApi"). On a transport failure it is empty; that is still
-	//! information, and the message says which case it is rather than printing a bare blank.
-	//! `TBD_ResultsReporter.OnSendError` already logs its body for the same reason.
-	protected static void OnBackendFetchError(RestCallback cb)
-	{
-		s_LoadInFlight = false;
-
-		int httpCode = cb.GetHttpCode();
-		TBD_Log.Error(TBD_Log.CH_MISSION, string.Format(
-			"backend refused the mission fetch — http=%1 body=%2", httpCode, FetchFailureBody(cb.GetData())));
-
-		TryProfileFallbackAfterRestFailure(httpCode);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! The error body, made safe to log. `Print()` drops a line over 1024 bytes ENTIRELY rather
-	//! than truncating it, so an uncapped body would log nothing at all — the exact failure mode
-	//! this is here to fix. The cap leaves room for the `[TBD][Mission] … http=… body=` prefix.
-	protected static string FetchFailureBody(string body)
-	{
-		if (body.IsEmpty())
-			return "<none — the request did not reach the API, or it answered with nothing>";
-
-		if (body.Length() > ERROR_BODY_LOG_MAX_BYTES)
-			return body.Substring(0, ERROR_BODY_LOG_MAX_BYTES) + "…<truncated>";
-
-		return body;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! @param httpCode the status the backend answered with, or 0 when there was no HTTP failure
-	//!        (unreachable API, empty body, unparseable document). It selects the message below,
-	//!        so pass the real code — a wrong one mislabels a deliberate stage as a stale cache.
-	protected static void TryProfileFallbackAfterRestFailure(int httpCode)
-	{
-		string missionId = TBD_BackendConfig.GetMissionId();
-		if (LoadFromProfileFile(missionId))
-		{
-			s_Loaded = true;
-
-			// T-181.44 — name what the operator is actually looking at, instead of an
-			// indistinguishable `source=profile`. T-181.54 CORRECTS what that message claimed.
-			//
-			// The old text said the document is "not the one configured". That is NEVER true:
-			// `LoadFromProfileFile` reads `$profile:missions/<missionId>.json`, so the file is
-			// KEYED BY the configured id and the mission identity always matches. What can differ
-			// is the document's VERSION — a cache holds whatever the backend last served for that
-			// id, which may be older than what it would serve now.
-			//
-			// And there is a second, entirely legitimate way to arrive here that the old text
-			// mislabelled as a fault: a mission STAGED on disk on purpose (a golden via
-			// `cargo xtask mod world-boot --mission=`). A golden's `msn_*` id
-			// is not a uuid, so the backend rejects its SHAPE with 400 before ever looking for it.
-			// That is the discriminator — a 400 means this id was never a backend mission, so the
-			// profile file is the intended source, not a stale leftover.
-			if (httpCode == HTTP_BAD_REQUEST)
-			{
-				TBD_Log.Event(TBD_Log.CH_MISSION,
-					"loaded a mission STAGED ON DISK — the backend rejected this id's shape (400), so it was never a backend mission and this file is the intended source. NOTE: this path applies NO json-schema validation, only the more permissive TBD_MissionValidator.");
-			}
-			else
-			{
-				TBD_Log.Warn(TBD_Log.CH_MISSION,
-					"RUNNING A CACHED MISSION — same mission id as configured, but this document is whatever the backend last served for it and may be an OLDER VERSION. Fix the failure logged above and restart the server.");
-			}
-
-			LogLoaded("profile-fallback");
-		}
-		else
-		{
-			TBD_Log.Error(TBD_Log.CH_MISSION, "load failed (REST + profile) — server stays in LOADING");
-		}
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected static bool LoadFromProfileFile(string missionId)
-	{
-		string path = string.Format("$profile:missions/%1.json", missionId);
-		if (!FileIO.FileExists(path))
-		{
-			Print("[TBD] Profile mission file missing: " + path, LogLevel.ERROR);
-			return false;
-		}
-
-		FileHandle handle = FileIO.OpenFile(path, FileMode.READ);
-		if (!handle)
-		{
-			Print("[TBD] Could not open profile mission file: " + path, LogLevel.ERROR);
-			return false;
-		}
-
-		int fileSize = handle.GetLength();
-		if (fileSize > MISSION_FILE_MAX_BYTES)
-		{
-			Print(string.Format("[TBD] Profile mission file too large (%1 B > %2 B cap): %3 — refusing to parse a truncated read.",
-				fileSize, MISSION_FILE_MAX_BYTES, path), LogLevel.ERROR);
-			handle.Close();
-			return false;
-		}
-
-		string data;
-		handle.Read(data, MISSION_FILE_MAX_BYTES);
-		handle.Close();
-
-		return ParseMissionJson(data);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! T-456 — shared body ceiling against `MISSION_FILE_MAX_BYTES` (REST path; profile uses the
-	//! same constant via `FileHandle.GetLength()` before Read so a truncated read never lands).
-	//! `string.Length()` is byte-counted in Enforce (same unit as the file-size gate).
+	//! The document ceiling, checked before any parse. `string.Length()` counts bytes in Enforce, the
+	//! unit of `MISSION_FILE_MAX_BYTES`.
 	protected static bool IsMissionBodyWithinCap(string data)
 	{
 		return data.Length() <= MISSION_FILE_MAX_BYTES;
@@ -2026,7 +1817,7 @@ class TBD_MissionLoader
 		// T-181.13.1 — a valid mission document is the earliest moment an end-of-round results
 		// report could mean anything, and this is a server-only path (BeginLoad is reached only
 		// after TBD_FrameworkManager.OnPostInit returns early for RplMode.Client). Arm() is
-		// idempotent, so the REST-then-profile fallback calling this twice is harmless.
+		// idempotent, so every later world of the process arming it again is harmless.
 		TBD_ResultsReporter.Arm();
 
 		// T-181.35 — the OTHER half of the same contract. The results POST can only join on
@@ -2049,27 +1840,5 @@ class TBD_MissionLoader
 			slotCount = s_Mission.slots.Count();
 
 		TBD_Log.MissionLoaded(s_Mission.meta.id, s_Mission.meta.name, slotCount, source);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected static void CacheToProfile(string missionId, string data)
-	{
-		string dir = "$profile:missions";
-		if (!FileIO.MakeDirectory(dir))
-		{
-			// May already exist — not fatal.
-		}
-
-		string path = string.Format("%1/%2.json", dir, missionId);
-		FileHandle handle = FileIO.OpenFile(path, FileMode.WRITE);
-		if (!handle)
-		{
-			Print("[TBD] Could not cache mission to " + path, LogLevel.WARNING);
-			return;
-		}
-
-		handle.Write(data);
-		handle.Close();
-		Print("[TBD] Cached mission to " + path);
 	}
 }

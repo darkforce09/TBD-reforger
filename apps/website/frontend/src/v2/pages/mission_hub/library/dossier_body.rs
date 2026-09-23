@@ -1,11 +1,12 @@
 //! The mission dossier itself: everything the slide-over shows once the mission has loaded.
 //!
 //! **Role:** holds the dossier's own state, renders the cinematic header and the sticky footer,
-//! and composes the review, shared-body, version, upload, collaboration and management sections
-//! in the order an author reads them.
+//! and composes the review verdict, shared-body, review record, version, upload, collaboration and
+//! management sections in the order an author reads them.
 //! **Position:** the content of the library's slide-over sheet, below the sheet chrome.
-//! **Signals & state:** the bookmark latch and the three lifecycle busy latches are created here
-//! and handed to the sections that share them; the overlay open flags come from the sheet above.
+//! **Signals & state:** the bookmark latch and the archive and delete busy latches are created
+//! here and handed to the sections that share them; the overlay open flags come from the sheet
+//! above.
 //! Reads the session store and the toast queue from context.
 //! **Invariants:** everything that needs the whole mission detail runs before the stored payload
 //! is moved out of it, so that payload is never cloned — it is the one value here that reaches
@@ -23,6 +24,7 @@ use super::dossier_upload_panel::upload_panel;
 use super::dossier_versions::version_history_section;
 use crate::v2::core::api::dto::MissionDetail;
 use crate::v2::core::ui::MaterialIcon;
+use crate::v2::pages::mission_hub::mission_review::review_record::MissionReviewRecord;
 use leptos::prelude::*;
 
 /// The loaded dossier.
@@ -52,7 +54,6 @@ pub(super) fn dossier_sheet_body(
     let is_archived = m.status == "archived";
     let status_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
-    let submit_busy = RwSignal::new(false);
 
     // Everything that needs the whole mission detail runs first, so the stored payload can then
     // be moved out of it rather than cloned.
@@ -87,6 +88,19 @@ pub(super) fn dossier_sheet_body(
         .flatten();
     let reviewed_at = m.reviewed_at.clone();
     let show_returned = m.status == "rejected" && can_manage;
+    // The review record belongs to the author and to administrators — the two the backend serves
+    // the history to — which is exactly `can_manage`.
+    let review_record = can_manage.then(|| {
+        view! {
+            <MissionReviewRecord
+                mission_id=id_sv.get_value()
+                status=m.status.clone()
+                reviewed_at=m.reviewed_at.clone()
+                approved_artifact_id=m.approved_artifact_id.clone()
+                on_resubmitted=changed
+            />
+        }
+    });
 
     // Post when off, delete when on; an optimistic latch, then a list refetch.
     let toggle_bookmark = move |_| {
@@ -201,6 +215,8 @@ pub(super) fn dossier_sheet_body(
 
                 {overview_body}
 
+                {review_record}
+
                 // The version rail sits above collaboration because what is in the saved version
                 // is dossier fact, not a collaboration action.
                 {version_rail}
@@ -219,7 +235,6 @@ pub(super) fn dossier_sheet_body(
                     id_sv,
                     changed,
                     status_busy,
-                    submit_busy,
                     delete_busy,
                     confirm_delete_open,
                 )}

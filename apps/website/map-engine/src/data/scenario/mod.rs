@@ -21,6 +21,11 @@ pub mod slot_line;
 /// Mortar ballistics: charge tables and firing solutions.
 pub mod ballistics;
 
+/// The version of the package that compiles mission documents, recorded with every compiled
+/// artifact as part of its provenance.
+pub const COMPILER_PACKAGE_VERSION: &str =
+    concat!("website-map-engine ", env!("CARGO_PKG_VERSION"));
+
 /// Expose ast :: factions as orbat at this domain boundary.
 pub use ast::factions as orbat;
 /// Expose compiler :: { compiler as compile , flatten , kit } at this domain boundary.

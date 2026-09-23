@@ -30,4 +30,6 @@ libc = "0.2"
 typify = "0.7"
 schemars = "0.8"
 prettyplease = "0.2"
-syn = "2"
+syn = { version = "2", features = ["full", "visit"] }
+heck = "0.5"
+sha2 = "0.10"

@@ -80,13 +80,18 @@ pub fn AppLayout() -> impl IntoView {
     provide_context(AuthStore::new());
     crate::v2::core::ui::toast::provide_toasts();
     // Restore a stored session on a cold load; a no-op for a guest with nothing saved.
+    let pathname = use_location().pathname;
     #[cfg(target_arch = "wasm32")]
-    leptos::task::spawn_local(crate::v2::core::api::client::bootstrap(expect_context::<
-        AuthStore,
-    >()));
+    if pathname.get_untracked() != "/auth/callback" {
+        leptos::task::spawn_local(crate::v2::core::api::client::bootstrap(expect_context::<
+            AuthStore,
+        >()));
+    } else {
+        // The callback installs the session it was handed; there is no stored one to restore.
+        expect_context::<AuthStore>().settle_session_restore();
+    }
     // The memo dedups by frame kind, so moving between two chromed routes never remounts the
     // sidebar or the top bar; only crossing a sign-in or editor boundary swaps the frame.
-    let pathname = use_location().pathname;
     let frame_kind = Memo::new(move |_| classify_frame(&pathname.get()));
     let frame = move || match frame_kind.get() {
         // Bare: no chrome, and no wrapper element of any kind.
@@ -149,6 +154,7 @@ pub fn AppLayout() -> impl IntoView {
     // it. It renders no DOM while the queue is empty.
     view! {
         {frame}
+        <super::membership_status::MembershipStatus />
         <crate::v2::core::ui::toast::ToastViewport />
     }
 }

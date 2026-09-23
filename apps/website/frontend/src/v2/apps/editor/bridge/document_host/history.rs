@@ -122,11 +122,12 @@ pub fn register_unload_guard() {
     let Some(win) = web_sys::window() else {
         return;
     };
+    // A review workspace saves nothing, so leaving it has nothing to warn about.
     let armed = HISTORY_CTX.with(|c| {
         c.borrow()
             .as_ref()
             .is_some_and(|ctx| saves_to_server(&ctx.mission_id))
-    });
+    }) && crate::v2::apps::editor::shell::review_mode::writes_mission();
     if !armed {
         return;
     }
@@ -306,7 +307,8 @@ fn after_doc_change(ctx: &HistoryCtx) {
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
     ctx.dirty.set(true); // A committed edit is unsaved work.
 
-    if ctx.restore_settled.get() {
+    // A review workspace keeps its edits in memory only: no draft record is ever armed for it.
+    if ctx.restore_settled.get() && crate::v2::apps::editor::shell::review_mode::writes_mission() {
         crate::v2::apps::editor::shell::persist::schedule_edit_persist(
             ctx.doc.clone(),
             &ctx.mission_id,

@@ -13,7 +13,7 @@ use serde::Deserialize;
 use super::discord_user_profile::DiscordUser;
 
 /// Production Discord API base (overridable for tests).
-pub const DEFAULT_DISCORD_API: &str = "https://discord.com/api";
+pub const DEFAULT_DISCORD_API: &str = "https://discord.com/api/v10";
 const OAUTH_SCOPES: &str = "identify guilds.members.read";
 const MAX_429_ATTEMPTS: u32 = 3;
 const DEFAULT_429_BACKOFF: Duration = Duration::from_secs(1);
@@ -62,24 +62,8 @@ pub struct TokenResponse {
     pub scope: String,
 }
 
-/// The subset of the guild-member object the role sync uses (role snowflakes + nick).
-///
-/// **`roles` is deliberately required — do not add `#[serde(default)]` to it.** Every other
-/// field on these payloads defaults because a missing one is cosmetic. This one is not: it
-/// is the authorization snapshot. A default here is not "no data", it decodes as
-/// *"Discord affirmatively told us this user holds no roles"*, and
-/// [`crate::identity_and_access::handlers::discord_oauth`] acts on that by DELETEing every
-/// stored `user_discord_roles` row and dropping the user to enlisted. Because
-/// `resync_all_roles` rebuilds from that same table, the demotion is unrecoverable.
-///
-/// The status code alone does not protect us. A gateway, proxy, or CDN that answers **200**
-/// with a JSON error envelope produces a body that parses fine and simply lacks `roles`.
-/// Requiring the field turns that body into a decode error, so it travels the `Err` →
-/// `RoleSnapshot::Unavailable` path and writes nothing.
-///
-/// This deliberately does **not** get `null_default` either: `"roles": null` is malformed for
-/// a member object, so failing closed is right. An empty list still round-trips as `[]`,
-/// which is a genuine answer and must keep demoting.
+/// Required roles distinguish a complete membership response from a malformed error envelope.
+/// An empty array is valid membership with no roles; absent or null roles are rejected.
 #[derive(Debug, Deserialize)]
 pub struct GuildMember {
     #[serde(default, deserialize_with = "null_default")]
@@ -172,9 +156,78 @@ impl DiscordService {
             .retry_429(|| self.http.get(&url).bearer_auth(access_token))
             .await?;
         if resp.status() == StatusCode::NOT_FOUND {
-            return Ok(None);
+            let error: serde_json::Value = resp.json().await?;
+            if error.get("code").and_then(|value| value.as_i64()) == Some(10007) {
+                return Ok(None);
+            }
+            anyhow::bail!("discord: membership verification unavailable");
         }
         Ok(Some(decode_2xx(resp).await?))
+    }
+
+    /// A 404 is a departure only when Discord identifies the missing object as a member.
+    pub async fn fetch_member_with_bot(
+        &self,
+        token: &str,
+        guild_id: &str,
+        discord_id: &str,
+    ) -> Result<Option<GuildMember>, super::discord_rest_reconciliation::MembershipLookupFailure>
+    {
+        use super::discord_rest_reconciliation::MembershipLookupFailure as Failure;
+        if token.is_empty() || guild_id.is_empty() || discord_id.is_empty() {
+            return Err(Failure::unavailable("Discord bot or guild unconfigured"));
+        }
+        let url = format!(
+            "{}/guilds/{}/members/{}",
+            self.api_base, guild_id, discord_id
+        );
+        let response = self
+            .http
+            .get(url)
+            .header("Authorization", format!("Bot {token}"))
+            .header(
+                "User-Agent",
+                "TBD-Reforger/2 (Discord membership reconciliation)",
+            )
+            .send()
+            .await
+            .map_err(|_| Failure::unavailable("Discord transport unavailable"))?;
+        let status = response.status();
+        let retry_header = response
+            .headers()
+            .get("retry-after")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| v.parse::<f64>().ok());
+        let value: serde_json::Value = response.json().await.unwrap_or(serde_json::Value::Null);
+        if status == StatusCode::TOO_MANY_REQUESTS {
+            let valid = |n: &f64| n.is_finite() && *n >= 0.0 && *n <= 604800.0;
+            let seconds = value
+                .get("retry_after")
+                .and_then(|v| v.as_f64())
+                .filter(valid)
+                .or(retry_header.filter(valid))
+                .unwrap_or(60.0);
+            return Err(Failure {
+                reason: "Discord rate limited",
+                rate_limited: true,
+                retry_after: chrono::Duration::milliseconds(
+                    (seconds * 1000.0).ceil().max(1000.0) as i64
+                ),
+            });
+        }
+        if status == StatusCode::NOT_FOUND
+            && value.get("code").and_then(|v| v.as_i64()) == Some(10007)
+        {
+            return Ok(None);
+        }
+        if !status.is_success() {
+            return Err(Failure::unavailable(
+                "Discord membership verification unavailable",
+            ));
+        }
+        serde_json::from_value(value)
+            .map(Some)
+            .map_err(|_| Failure::unavailable("Discord returned malformed membership data"))
     }
 
     /// Send `build()`'s request, retrying bounded on 429 (rebuilding each attempt).
@@ -186,6 +239,16 @@ impl DiscordService {
         loop {
             let resp = build().send().await?;
             if resp.status() != StatusCode::TOO_MANY_REQUESTS || attempt == MAX_429_ATTEMPTS {
+                return Ok(resp);
+            }
+            let requested = resp
+                .headers()
+                .get("retry-after")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.parse::<f64>().ok());
+            if requested.is_none_or(|seconds| {
+                !seconds.is_finite() || seconds > MAX_429_BACKOFF.as_secs_f64()
+            }) {
                 return Ok(resp);
             }
             let wait = parse_retry_after(
@@ -219,8 +282,8 @@ async fn decode_2xx<T: serde::de::DeserializeOwned>(resp: Response) -> anyhow::R
 /// Convert a `Retry-After` value (seconds, possibly fractional) into a bounded wait.
 fn parse_retry_after(v: Option<&str>) -> Duration {
     match v.and_then(|s| s.parse::<f64>().ok()) {
-        Some(secs) if secs >= 0.0 => {
-            let d = Duration::from_secs_f64(secs);
+        Some(secs) if secs.is_finite() && secs >= 0.0 => {
+            let d = Duration::from_secs_f64(secs.min(MAX_429_BACKOFF.as_secs_f64()));
             if d > MAX_429_BACKOFF {
                 MAX_429_BACKOFF
             } else {

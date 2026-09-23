@@ -178,6 +178,7 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
     // page that rendered without its data.
     let missing: Arc<Mutex<Vec<MissingFixture>>> = Arc::new(Mutex::new(Vec::new()));
     let router_missing = Arc::clone(&missing);
+    let authed = route.authed;
     let router = tokio::spawn(async move {
         while let Some(p) = paused.recv().await {
             let Some(request_id) = p["requestId"].as_str() else {
@@ -185,6 +186,13 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
             };
             let url = p["request"]["url"].as_str().unwrap_or_default();
             let method = p["request"]["method"].as_str().unwrap_or("GET");
+            if authed && fixture_router::refuses_without_bearer(url, &p["request"]["headers"]) {
+                let unauthorized = json!({ "error": "authentication required" });
+                let _ = router_page
+                    .fulfill_json(request_id, 401, &unauthorized)
+                    .await;
+                continue;
+            }
             let res = match fixture_router::route(method, url) {
                 Reply::Canned(body) => router_page.fulfill_json(request_id, 200, &body).await,
                 Reply::Fixture { path, content_type } => {

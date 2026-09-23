@@ -24,12 +24,11 @@
 ;
 ; ── WHY THE RUNTIME DIRECTORIES ARE SET EXPLICITLY ──────────────────────────────────────────
 ;
-; The API writes two things: CMS uploads (served back at /uploads) and the mission.json files an
-; admin stages for the game server. Outside development it refuses to boot unless both
-; directories are named absolutely, so that what it writes never lands inside the checkout the
+; The API writes CMS uploads (served back at /uploads). Outside development it refuses to boot
+; unless UPLOAD_DIR is named absolutely, so that what it writes never lands inside the checkout the
 ; deploy rsyncs with --delete. systemd creates %S/tbd-website-api (StateDirectory=), and
-; `cargo xtask deploy website` moves anything an older layout left under
-; apps/website/api_v2/{uploads,missions} into it before restarting this unit.
+; `cargo xtask deploy website` moves any uploads found under apps/website/api_v2/uploads into it
+; before restarting this unit.
 
 [Unit]
 Description=TBD Reforger website API
@@ -52,7 +51,6 @@ Environment=GLYPH_ASSETS_DIR=/TBD_REPO_DIR_PLACEHOLDER/assets_v2/glyphs
 ; note above; `%S` is $XDG_STATE_HOME (~/.local/state) for a user unit.
 StateDirectory=tbd-website-api
 Environment=UPLOAD_DIR=%S/tbd-website-api/uploads
-Environment=MISSION_STAGE_DIR=%S/tbd-website-api/missions
 
 ExecStart=/TBD_REPO_DIR_PLACEHOLDER/target/release/api
 

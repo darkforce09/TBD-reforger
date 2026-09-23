@@ -68,15 +68,7 @@ pub fn peer_rotation_supersedes(peer: &RefreshResponse, about_to_spend: Option<&
 /// pair the winner just minted. The price is not one failed request in one tab, it is every tab
 /// logged out.
 ///
-/// A narrow window remains. The winner broadcasts before releasing the lock but persists to shared
-/// storage only after, and broadcast delivery is not ordered against lock grant by any
-/// specification, so a waiter can be handed the lock, find no peer pair parked yet, read storage
-/// the winner has not written yet, and spend a revoked token. That is a rare two-lost-races event
-/// rather than the guaranteed double-spend it replaced.
-///
-/// The native tests below cannot reach that window: the harness is single-threaded and
-/// deterministic, so the winner's persist always completes before the waiter resumes. Read a green
-/// run as "the policy is right", not as "the residual window is closed".
+/// The browser writer persists the successor while holding the cross-tab lock.
 ///
 /// Generic over the lock so that the policy — which is all of the correctness — can be tested
 /// natively against a real fair mutex. `with_lock` must run its body with the lock held and release
@@ -121,13 +113,28 @@ pub async fn send_with_refresh<T>(
     refresh: impl FnOnce() -> LocalBoxFuture<'static, Option<RefreshResponse>>,
     on_refreshed: impl FnOnce(&RefreshResponse),
 ) -> Result<T, ApiErr> {
+    send_with_refresh_for_generation(sf, 0, || true, send, token, refresh, on_refreshed).await
+}
+
+/// Share refresh only among requests from the same authenticated session generation.
+#[allow(dead_code)]
+pub async fn send_with_refresh_for_generation<T>(
+    sf: &SingleFlight<Option<RefreshResponse>>,
+    generation: u64,
+    is_current: impl Fn() -> bool,
+    send: impl Fn(Option<String>) -> Req<T>,
+    token: impl Fn() -> Option<String>,
+    refresh: impl FnOnce() -> LocalBoxFuture<'static, Option<RefreshResponse>>,
+    on_refreshed: impl FnOnce(&RefreshResponse),
+) -> Result<T, ApiErr> {
     match send(token()).await {
-        Err((401, _)) => match sf.run(refresh).await {
-            Some(r) => {
+        Err((401, _)) if !is_current() => Err((401, None)),
+        Err((401, _)) => match sf.run_keyed(generation, refresh).await {
+            Some(r) if is_current() => {
                 on_refreshed(&r);
                 send(Some(r.access_token)).await // the single retry
             }
-            None => Err((401, None)),
+            _ => Err((401, None)),
         },
         other => other,
     }
@@ -148,22 +155,58 @@ thread_local! {
 /// critical section by [`refresh_cross_tab`] and handed in, so the value spent is the value that
 /// was current at the moment of spending.
 async fn refresh_via_gloo(store: AuthStore, token: Option<String>) -> Option<RefreshResponse> {
-    let _ = store;
+    use crate::v2::core::auth::session::{clear_persisted, persist};
+    use crate::v2::core::auth::session_identity::access_token_session_id;
+    let generation = store.current_generation();
+    let expected_session = store.current_session_id();
+    let current = load_persisted()?;
+    if current.refresh_token != token || token.as_deref().is_none_or(str::is_empty) {
+        store.clear_session();
+        return None;
+    }
     let body = serde_json::json!({ "refresh_token": token });
+    let abort = web_sys::AbortController::new().ok()?;
     let req = gloo_net::http::Request::post(&format!("{API_BASE}/auth/refresh"))
+        .abort_signal(Some(&abort.signal()))
         .credentials(web_sys::RequestCredentials::Include)
         .json(&body)
         .ok()?;
-    match req.send().await {
-        Ok(resp) if (200..300).contains(&resp.status()) => {
-            let rotated = resp.json::<RefreshResponse>().await.ok()?;
-            // Tell the other tabs before releasing the lock, so a waiter finds the pair
-            // already parked and adopts it instead of spending a second rotation.
-            broadcast_rotation(&rotated);
-            Some(rotated)
-        }
-        _ => None,
+    let rotated = crate::v2::core::auth::refresh_transaction::rotate_with_storage(
+        clear_persisted,
+        crate::v2::core::auth::refresh_transaction::with_deadline(
+            async move {
+                let response = req.send().await.ok()?;
+                if !(200..300).contains(&response.status()) {
+                    return None;
+                }
+                response.json::<RefreshResponse>().await.ok()
+            },
+            gloo_timers::future::TimeoutFuture::new(30_000),
+            move || abort.abort(),
+        ),
+        |rotated| {
+            let Some(session_id) = access_token_session_id(&rotated.access_token) else {
+                return false;
+            };
+            if !store.is_current_generation(generation)
+                || expected_session
+                    .as_ref()
+                    .is_some_and(|expected| *expected != session_id)
+                || load_persisted().is_some()
+            {
+                return false;
+            }
+            store.set_tokens(rotated.clone());
+            persist(&store.persist_state())
+        },
+    )
+    .await;
+    if let Some(rotated) = &rotated {
+        broadcast_rotation(rotated);
+    } else if store.is_current_generation(generation) {
+        store.clear_session();
     }
+    rotated
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -208,61 +251,46 @@ fn lock_manager() -> Option<js_sys::Object> {
 /// The body's value comes back through a cell rather than through the promise because it is a Rust
 /// value, not a JavaScript one; the promise resolves with `undefined` purely as the release signal.
 ///
-/// With no lock manager the body simply runs unlocked. Refusing to refresh would log every user of
-/// an insecure context out on schedule, which is worse than the race this closes, and the per-tab
-/// single flight still holds. The re-read step still runs too, so even unlocked a tab spends the
-/// freshest token it can see.
-async fn with_refresh_lock(
-    body: LocalBoxFuture<'static, Option<RefreshResponse>>,
-) -> Option<RefreshResponse> {
+/// A missing or rejected lock leaves credentials unchanged and returns the default result.
+/// Credential mutation never falls back to an unlocked read-modify-write.
+pub(crate) async fn with_refresh_lock<T: Default + 'static>(body: LocalBoxFuture<'static, T>) -> T {
     let Some(locks) = lock_manager() else {
-        return body.await;
+        return T::default();
     };
     let Ok(request) = js_sys::Reflect::get(&locks, &"request".into()) else {
-        return body.await;
+        return T::default();
     };
     let Ok(request) = request.dyn_into::<js_sys::Function>() else {
-        return body.await;
+        return T::default();
     };
-
-    let out = std::rc::Rc::new(std::cell::RefCell::new(None::<RefreshResponse>));
+    let out = std::rc::Rc::new(std::cell::RefCell::new(None::<T>));
     let sink = out.clone();
-    // The body is parked in a cell rather than moved straight into the callback so that, if the
-    // callback never runs, it is still here to run **unlocked**. `request` can reject rather
-    // than invoke — a document that is not fully active, an opaque origin — and a refresh that
-    // silently never happens is a 401, which the user experiences as being logged out. Losing
-    // the mutex is a race; losing the refresh is the bug this whole path exists to stop.
     let pending = std::rc::Rc::new(std::cell::RefCell::new(Some(body)));
     let deferred = pending.clone();
-    // `once_into_js`: Web Locks invokes the callback exactly once, and this hands ownership to
-    // JS so there is no `Closure` to keep alive across the await.
-    let cb = wasm_bindgen::closure::Closure::once_into_js(
+    // The closure remains alive until the browser releases the lock or rejects the request.
+    let cb = wasm_bindgen::closure::Closure::once(
         move |_lock: wasm_bindgen::JsValue| -> wasm_bindgen::JsValue {
             let body = deferred.borrow_mut().take();
             wasm_bindgen_futures::future_to_promise(async move {
                 if let Some(body) = body {
-                    *sink.borrow_mut() = body.await;
+                    *sink.borrow_mut() = Some(body.await);
                 }
                 Ok(wasm_bindgen::JsValue::UNDEFINED)
             })
             .into()
         },
     );
-
-    if let Ok(p) = request.call2(&locks, &REFRESH_LOCK_NAME.into(), &cb) {
-        // Await the OUTER promise: it settles after the lock is released. Its own value is
-        // `undefined` — the result travels through `out`.
-        let promise: js_sys::Promise = p.unchecked_into();
-        let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+    let Ok(p) = request.call2(&locks, &REFRESH_LOCK_NAME.into(), cb.as_ref()) else {
+        return T::default();
+    };
+    let Ok(promise) = p.dyn_into::<js_sys::Promise>() else {
+        return T::default();
+    };
+    if wasm_bindgen_futures::JsFuture::from(promise).await.is_err() {
+        return T::default();
     }
-    // Borrow, then drop the guard, then await: holding a `RefCell` borrow across an await point
-    // is how a re-entrant refresh would panic on an already-borrowed cell.
-    let never_ran = pending.borrow_mut().take();
-    if let Some(body) = never_ran {
-        return body.await;
-    }
-    let v = out.borrow_mut().take();
-    v
+    let value = out.borrow_mut().take().unwrap_or_default();
+    value
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -341,7 +369,7 @@ fn broadcast_rotation(pair: &RefreshResponse) {
 }
 
 #[cfg(target_arch = "wasm32")]
-/// Bind [`refresh_cross_tab`] to the browser: the lock for the critical section, the broadcast
+/// Bind session ownership to the browser: the lock for the critical section, the broadcast
 /// channel for the adopt step, and persisted storage for the re-read.
 ///
 /// The re-read goes to persisted storage rather than to the store's signal. The signal is this
@@ -349,17 +377,41 @@ fn broadcast_rotation(pair: &RefreshResponse) {
 /// copy every tab writes on every rotation, so it is the only honest answer to "what is the current
 /// refresh token".
 pub(super) async fn refresh_locked(store: AuthStore) -> Option<RefreshResponse> {
+    use crate::v2::core::auth::session::persisted_belongs_to_session;
+    use crate::v2::core::auth::session_identity::access_token_session_id;
     subscribe_peer_rotations();
-    refresh_cross_tab(
-        store.refresh_token.get_untracked(),
-        with_refresh_lock,
-        |about_to_spend| {
-            PEER_ROTATION
-                .with(|p| p.borrow().clone())
-                .filter(|pair| peer_rotation_supersedes(pair, about_to_spend))
-        },
-        || load_persisted().and_then(|p| p.refresh_token),
-        move |token| refresh_via_gloo(store, token).boxed_local(),
+    let generation = store.current_generation();
+    let expected = store.persist_state();
+    with_refresh_lock(
+        async move {
+            if !store.is_current_generation(generation) {
+                return None;
+            }
+            let Some(persisted) = load_persisted() else {
+                store.clear_session();
+                return None;
+            };
+            if !persisted_belongs_to_session(&persisted, &expected)
+                || persisted.refresh_token.as_deref().is_none_or(str::is_empty)
+            {
+                store.clear_session();
+                return None;
+            }
+            let peer = PEER_ROTATION.with(|p| p.borrow().clone()).filter(|pair| {
+                Some(&pair.refresh_token) == persisted.refresh_token.as_ref()
+                    && access_token_session_id(&pair.access_token) == persisted.session_id
+                    && peer_rotation_supersedes(pair, expected.refresh_token.as_deref())
+            });
+            if let Some(peer) = peer {
+                return Some(peer);
+            }
+            refresh_via_gloo(store, persisted.refresh_token).await
+        }
+        .boxed_local(),
     )
     .await
 }
+
+#[cfg(test)]
+#[path = "tests/refresh_generation.rs"]
+mod tests;

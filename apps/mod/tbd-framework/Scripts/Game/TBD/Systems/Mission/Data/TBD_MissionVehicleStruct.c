@@ -369,8 +369,8 @@ class TBD_MissionVehicleRoster
 	//------------------------------------------------------------------------------------------------
 	//! Spawn one roster vehicle at its authored transform.
 	//!
-	//! This CAN fire and is not a dead path: `TBD_MissionLoader.LoadFromProfileFile` parses a
-	//! hand-editable `$profile` mission, which may carry a `vehicles[]` row with no `entities[]`
+	//! This CAN fire and is not a dead path: the profile artifact cache (TBD_MissionArtifactCache)
+	//! can hold a hand-staged mission, which may carry a `vehicles[]` row with no `entities[]`
 	//! twin, and `SpawnMissionEntities` skips rows whose prefab fails to load -- in both cases
 	//! nothing exists to claim and the roster row is the only thing that can put the vehicle there.
 	//! Proven at runtime: see the slice report's world-boot census.

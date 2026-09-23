@@ -77,15 +77,17 @@ pub(crate) fn SidebarNav(
     #[prop(optional)]
     on_nav: Option<Callback<()>>,
 ) -> impl IntoView {
-    // The session and the live pathname are read inside one reactive closure, so the active
+    // The role and the live pathname are read inside one reactive closure, so the active
     // highlight follows navigation and the privileged section appears or disappears with the
-    // session without a reload.
+    // session without a reload. The role is memoized from the profile, so a profile poll that
+    // leaves it alone does not rebuild the list.
     let auth = expect_context::<AuthStore>();
+    let role = Memo::new(move |_| auth.user.with(|user| user.as_ref().map(|u| u.role)));
     let pathname = use_location().pathname;
     view! {
         <nav class="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
             {move || {
-                let user_role = auth.user.get().map(|u| u.role);
+                let user_role = role.get();
                 let current = pathname.get();
                 NAVIGATION
                 .iter()

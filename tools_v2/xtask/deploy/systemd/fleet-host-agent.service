@@ -1,0 +1,22 @@
+# fleet-host-agent — the host agent of one game server (apps/fleet_host_agent).
+#
+# A user unit of the account that runs tbd-reforger.service: the agent restarts that unit and
+# rewrites its server config's scenarioId for mission restarts, so it runs with the same rights.
+# `cargo xtask deploy staging` installs it with TBD_INSTALL_HOST_AGENT=1, writing the files it
+# reads under ~/.config/fleet-host-agent/ (agent.toml, machine-credential, rcon-password, mode 600).
+# Exit status 78 is an invalid configuration, which a restart cannot fix.
+[Unit]
+Description=TBD fleet host agent (claims and runs fleet commands for this game server)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/fleet-host-agent %h/.config/fleet-host-agent/agent.toml
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=78
+TimeoutStopSec=200
+
+[Install]
+WantedBy=default.target

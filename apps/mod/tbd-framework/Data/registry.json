@@ -39,6 +39,11 @@
       "displayName": "US Medic"
     },
     {
+      "alias": "kit:us_unarmed",
+      "guid": "{2F912ED6E399FF47}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Unarmed.et",
+      "displayName": "US Unarmed (base for a fully authored loadout)"
+    },
+    {
       "alias": "preset:sov_vdv",
       "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
       "displayName": "Soviet VDV (POC \u2014 preset resolves to rifleman until TBD-Content)"
@@ -59,6 +64,11 @@
       "displayName": "USSR Automatic Rifleman"
     },
     {
+      "alias": "kit:sov_unarmed",
+      "guid": "{98EB9CDD85B8C92C}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Unarmed.et",
+      "displayName": "Soviet Unarmed (base for a fully authored loadout)"
+    },
+    {
       "alias": "preset:fia",
       "guid": "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et",
       "displayName": "FIA (POC \u2014 faction preset resolves to rifleman until TBD-Content)"
@@ -77,6 +87,11 @@
       "alias": "kit:fia_medic",
       "guid": "{45A02CA25CBA9443}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et",
       "displayName": "FIA Medic"
+    },
+    {
+      "alias": "kit:fia_unarmed",
+      "guid": "{854C04F0EA2129CC}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Unarmed.et",
+      "displayName": "FIA Unarmed (base for a fully authored loadout)"
     },
     {
       "alias": "preset:civ",

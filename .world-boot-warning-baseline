@@ -1,4 +1,4 @@
-# Validator warning ratchet for `world-boot.sh --mission=<name>`.
+# Validator warning ratchet for `cargo xtask mod world-boot --mission=<name>` and `--compiled`.
 #
 # Format: <missionId> <max-warnings>
 #
@@ -89,7 +89,8 @@
 #   msn_4c7e1b089a354d62b1f7e30d5a86c941 0
 #
 # ZERO IS THE HONEST NUMBER, and it is a choice worth stating because the neighbouring lane is not
-# zero. `compiled 1` below is the T-186 `--compiled` boot, whose fixture holds ONE faction: flatten
+# zero. `compiled 1` below is the T-186 `--compiled` boot — the artifact the platform compiles when
+# the lane submits its seeded mission — whose fixture holds ONE faction: flatten
 # pads a slot-less stub opponent to satisfy the schema's >= 2 rule, and the validator correctly
 # reports "faction:opfor — declared but has no slots — nobody can play this side". That is **T-299**,
 # it is a real product defect, and it is deliberately left standing on that lane rather than

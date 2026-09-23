@@ -4,6 +4,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "apps/fleet_host_agent",
     "apps/ticketboard",
     "apps/website/api_v2",
     "apps/website/frontend",

@@ -8,8 +8,8 @@ This directory contains the runtime codebase for the TBD Framework in Arma Refor
 
 ```text
 Scripts/Game/TBD/
-├── Core/                      <-- Base zero-dependency utilities, logging, registry alias resolution
-├── API/                       <-- REST communication with website-api & identity link
+├── Core/                      <-- Base utilities: logging, registry alias resolution, player chat, SHA-256
+├── API/                       <-- REST communication with website-api, runtime session, fleet commands
 │
 ├── Gamemode/                  <-- MATCH RULES, STAGES, & ORCHESTRATION
 │   ├── Orchestrator/          <-- Round clock, stage state machine, match conductor (TBD_FrameworkManager.c)
@@ -28,7 +28,7 @@ Scripts/Game/TBD/
 │
 ├── Session/                   <-- PLAYER & REFEREE INTERACTION SYSTEMS
 │   ├── Lobby/                 <-- ORBAT slotting, PreSlotCamera, Controller, UI Screen
-│   ├── MissionSelector/       <-- Scenario browser, MissionBrowser RPCs, ScenarioRouter
+│   ├── MissionSelector/       <-- Scenario browser, MissionBrowser RPCs, deployable list, deployment relay
 │   ├── Briefing/              <-- Tactical briefing Service, Client, Controller, UI Screen
 │   ├── Spectator/             <-- Camera, Host targets, Controller, Forensics UI Screen
 │   ├── Admin/                 <-- Mission Control Service, Audit, Commands, UI Screen

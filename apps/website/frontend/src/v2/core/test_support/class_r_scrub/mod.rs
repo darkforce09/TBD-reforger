@@ -19,7 +19,7 @@ mod lexer;
 mod scrub;
 
 #[allow(unused_imports)]
-pub(crate) use cfg::{cfg_eval, cfg_eval_wasm, mentions_cfg_family, resolve_wasm_cfg};
+pub(crate) use cfg::cfg_eval;
 #[allow(unused_imports)]
 pub(crate) use consts::Consts;
 #[allow(unused_imports)]

@@ -127,18 +127,16 @@ callback. You should land logged in as an admin.
 
 ### 2.3 The mission (15 min, alone) — this is the T-068 half
 
-You need a mission whose slots carry **gear and cargo**. The mission the server seeds by default
-now has them: `cargo xtask setup server-profile` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
-(`tools_v2/xtask/src/commands/setup/server_profile.rs`), and **T-605** gave
-that golden real loadouts on 4 of its 18 slots — full gear + cargo (`blufor:Alpha:SL:0`), gear only
+You need a mission whose slots carry **gear and cargo**. The compiled golden
+`contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json` has them — **T-605** gave it real
+loadouts on 4 of its 18 slots: full gear + cargo (`blufor:Alpha:SL:0`), gear only
 (`blufor:Alpha:AR:0`), cargo only aimed at a container the kit does **not** wear
 (`blufor:Alpha:RFL:0` — the degrade path), the other faction (`opfor:Grom:SL:0`), and 14 left
-kit-only. It really was **18 slots, 0 gear, 0 cargo** until then, which is exactly why the loadout
-half of the spawn path had never been booted by any gate.
+kit-only. `mod playtest --artifact-file=` boots it offline.
 
 That covers T-181.16. It does **not** close T-068.14 on its own: that slice gates the **authoring**
-path — SPA → Save Version → `/compiled` — and a hand-written golden says nothing about the
-compiler. Author your own as well.
+path — SPA → Save Version → Submit (the platform compiles the version into an immutable artifact)
+— and a hand-written golden says nothing about the compiler. Author your own as well.
 
 **Author it in the SPA (the path T-068.14 actually gates):**
 
@@ -146,8 +144,7 @@ compiler. Author your own as well.
 2. In `/missions/:id/edit`, place at least **four** character slots across **two factions**
    (side discipline is only visible with two sides), in **two squads**.
 3. Open the Arsenal on a slot — double-click the slot → **Attributes → Arsenal**, or select the
-   squad in the ORBAT Manager and press **OPEN ARSENAL**
-   ([`orbat_manager.rs:1576`](../../apps/website/frontend/src/orbat_manager.rs)).
+   squad in the ORBAT Manager and press **OPEN ARSENAL**.
    Author, on **different slots**, deliberately different shapes:
    - **slot A** — full gear: primary + optic + magazine + uniform + vest + helmet + pants + boots
      + backpack, **and** cargo rows into `vest` and `backpack`;
@@ -156,61 +153,106 @@ compiler. Author your own as well.
    - **slot D** — nothing (bare kit).
    This is exactly the coverage `contracts_v2/fixtures/missions/valid/slot-loadout-coverage.json`
    encodes; open it if you want a worked example of every field's shape.
-4. **Save Version** (top strip). You need a saved version — `/compiled` 409s
-   `no saved version to compile` without one
-   ([`get_compiled_mission`, `mission_export.rs`](../../apps/website/api_v2/src/missions/handlers/mission_export.rs)).
-5. Copy the mission **UUID** out of the URL. **It must be a UUID.** `GET /missions/:id/compiled`
-   calls `Uuid::parse_str` and 400s `invalid id` on anything else
-   ([`load_mission_or_404`, `mission_lookup.rs`](../../apps/website/api_v2/src/missions/services/mission_lookup.rs)) — so the
-   content-hash ids like `msn_8f3a2c` only work through the on-disk fallback, never through the API.
+4. **Save Version** (top strip), then **Submit** it for review in the mission hub. Submission
+   compiles the current version; a refusal names its code — `NO_PLACED_SLOTS`,
+   `UNCOMPILABLE_VERSION`, `DOCUMENT_CONTRACT_VIOLATION`, or `UNSUPPORTED_AUTHORED_DATA` with every
+   authored path it cannot carry (a kit prefab missing from `contracts_v2/rules/kit-aliases.json`,
+   an editor trigger, a dropped warning).
+5. Copy the mission **UUID** out of the URL. An administrator approves the review in
+   **Admin → Approvals**; `mod playtest --mission=<uuid>` submits and approves for you in
+   development.
 
-**Prove the API will serve it, before the game server ever asks:**
+**Prove the artifact carries the loadouts, before the game server ever asks:**
 
 ```bash
 MID=<paste-the-uuid>
-TOK=$(grep '^SERVICE_TOKEN=' apps/website/api_v2/.env | cut -d= -f2- | tr -d '"'"'"'\r')
-curl -s -o /tmp/compiled.json -w '%{http_code}\n' \
-  -H "X-Service-Token: $TOK" \
-  "http://127.0.0.1:8080/api/v1/missions/$MID/compiled"
+TOKEN=<access token from the dev-login callback fragment>
+ART=$(curl -s -H "Authorization: Bearer $TOKEN" "http://127.0.0.1:8080/api/v1/missions/$MID/reviews" \
+  | python3 -c "import json,sys;print(json.load(sys.stdin)['reviews'][0]['artifact_id'])")
+curl -s -o /tmp/artifact.json -w '%{http_code}\n' -H "Authorization: Bearer $TOKEN" \
+  "http://127.0.0.1:8080/api/v1/missions/$MID/artifacts/$ART/document"
 ```
 
 - **`200`** — good. Check it carries the loadouts:
   ```bash
-  python3 -c "import json;d=json.load(open('/tmp/compiled.json'));s=d['slots'];print(len(s),'slots;',sum(1 for x in s if (x.get('loadout') or {}).get('gear')),'gear;',sum(1 for x in s if (x.get('loadout') or {}).get('cargo')),'cargo')"
+  python3 -c "import json;d=json.load(open('/tmp/artifact.json'));s=d['slots'];print(len(s),'slots;',sum(1 for x in s if (x.get('loadout') or {}).get('gear')),'gear;',sum(1 for x in s if (x.get('loadout') or {}).get('cargo')),'cargo')"
   ```
-  You want non-zero on both. Zero gear = the Arsenal edits never reached the saved version; go back
-  to step 3 and Save Version again.
-- **`400`** — the id is not a UUID.
-- **`409 no placed slots`** — you saved a version with no character slots.
-- **`409 no saved version to compile`** — you never pressed Save Version.
+  You want non-zero on both. Zero gear = the Arsenal edits never reached the saved version you
+  submitted; go back to step 3, Save Version and Submit again.
+- **`403` / `404`** — the token is not the author's or an administrator's, or the id is wrong.
 - **`500`** — the stored payload is unreadable or violates `mission.schema.json`
   ([`validated_compiled_body`, `mission_export.rs`](../../apps/website/api_v2/src/missions/handlers/mission_export.rs)).
   The body names the reason. A `mission_versions` row is immutable, so **save a new version**; you
   cannot repair the old one.
 
-**Attach it to an event** (needed only for roster-driven seating — see S6):
+**Attach it to an event** (needed only for roster-driven seating and deployment authorization - see
+S6). Skip this for a playtest without an event: deploy the mission without an event mission
+(section 2.4.2), and nothing is asked of the platform at spawn time. The mod reads no event id from its
+profile: the event comes with the deployment.
 
 `http://127.0.0.1:3000/admin/events` → create an event → attach the mission. The auto-ORBAT
-materialises slots from the mission's `orbat`. Copy the **event UUID**. Then confirm the game-server
-view of it:
+materialises slots from the mission's `orbat`. Copy the **event UUID**.
+
+A game server talks to the platform on the **game-runtime routes** (`/api/v1/game-runtime/...`)
+and the fleet command routes with **its own `mod_runtime` machine credential**
+(`Authorization: Bearer tbdm_...`), not the service token:
+
+| Route | Used for |
+|---|---|
+| `GET /game-runtime/deployment`, `GET /game-runtime/artifacts/{artifactId}` | at every boot: the mission deployed to this server and the exact bytes of its artifact, loaded only when their SHA-256 equals the published one |
+| `POST /fleet-executor/commands/claim`, `.../{commandId}/executing`, `.../{commandId}/result` | every 5 s while a session is open: `broadcast`, `kick`, `load_mission` (a deployment on the terrain this server runs: verified artifact, then an in-process scenario restart) |
+| `GET /game-runtime/missions`, `POST /game-runtime/deployments` | the in-game admin list (`#tbd missions`) and an in-game admin's deployment request (`#tbd mission <n>`) |
+| `POST /game-runtime/sessions`, `.../sessions/{id}/heartbeats`, `.../sessions/{id}/end` | the runtime session: started once the mission artifact has loaded, reporting it (`loaded_artifact_id`, `loaded_artifact_sha256`, which confirms the deployment), a heartbeat every 15 s, ended with the world |
+| `GET /game-runtime/events/{eventId}/roster` | wire version 2 - seating (`assignments`) and the slot table deployments are named from (`slots`) |
+| `POST /game-runtime/sessions/{id}/deployments` | asked before every spawn into an event seat - `allowed` or `denied` |
+| `POST /game-runtime/sessions/{id}/deployments/{occupancyId}/end` | when that life ends |
+
+So, once per game server:
+
+1. **Bind the event to the server.** The dev seed's active server is
+   `00000000-0000-4000-d000-000000000001` (TBD Primary). As an administrator (dev login:
+   `http://127.0.0.1:8080/api/v1/auth/dev-login?role=admin`, `access_token` from the redirect):
+   ```bash
+   EID=<paste-the-event-uuid>
+   SID=00000000-0000-4000-d000-000000000001
+   JWT=<access_token>
+   curl -s -X PATCH -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' \
+     -d "{\"server_id\":\"$SID\"}" "http://127.0.0.1:8080/api/v1/events/$EID"
+   ```
+2. **Issue the credential.** `http://127.0.0.1:3000/admin/server` -> select the server -> credentials ->
+   issue one for the **game runtime** (or `POST /api/v1/servers/$SID/credentials` with
+   `{"executor_kind":"mod_runtime","label":"playtest runtime"}`). The secret starts `tbdm_` and is
+   shown **once**; keep it as `CRED`.
+
+Then confirm the game-server view of the event, exactly as the mod reads it:
 
 ```bash
-EID=<paste-the-event-uuid>
-curl -s -H "X-Service-Token: $TOK" \
-  "http://127.0.0.1:8080/api/v1/ingest/events/$EID/roster" | head -c 400; echo
+CRED=<the tbdm_ secret>
+curl -s -w '\n%{http_code}\n' -H "Authorization: Bearer $CRED" \
+  "http://127.0.0.1:8080/api/v1/game-runtime/events/$EID/roster" | head -c 600
 ```
 
-Expect `{"eventId":"…","missionId":"…","assignments":{…}}`
-([`roster_ingest.rs`](../../apps/website/api_v2/src/operations/handlers/roster_ingest.rs)). `assignments` is keyed on
-`users.arma_id` — **it will be empty until someone links their game identity** (S6). An empty map is
-legal: everybody falls to round-robin seating, and the lobby picker still works.
+Expect `200` and `{"version":2,"eventId":"...","missionId":"...","assignments":[...],"slots":[...]}`
+([`game_runtime_roster.rs`](../../apps/website/api_v2/src/operations/handlers/game_runtime_roster.rs)).
+`403` = the event is not bound to this server; `401` = the credential is wrong or revoked.
+`slots` lists every compiled slot with the `orbatSlotId` / `eventMissionId` a deployment names.
+`assignments` is keyed on `users.arma_id` - **it will be empty until someone links their game
+identity** (S6). An empty list is legal: everybody falls to round-robin seating, and the lobby
+picker still works.
+
+**With a deployment for an event the mod fails closed:** until this roster has loaded on the server,
+every deployment into an event seat is refused ("the event roster has not loaded on this server
+yet, so event seats cannot be authorized - try again shortly"). The mod keeps fetching it - with
+backoff when there is no answer, every 60 s after a 401 / 403 / 404 - and re-reads
+`TBD_BackendConfig.json` each time, so fixing the credential or the binding takes effect without a
+restart.
 
 ### 2.4 The dedicated server (2 min, alone)
 
 > **UPDATED 2026-07-31 (T-604). There is now one command; do not hand-assemble this any more.**
 >
 > ```bash
-> cargo xtask mod playtest --mission-id=$MID
+> cargo xtask mod playtest --mission=$MID
 > ```
 >
 > **Start it WITHOUT `--admin`. You do not have your identityId yet and cannot get it here**
@@ -236,7 +278,17 @@ legal: everybody falls to round-robin seating, and the lobby picker still works.
 > passes both flags, and then **waits for the room registration and asserts the local addon won**
 > before printing anything. It prints the join address and Direct Join Code from that boot's own
 > log. `--dry-run` shows the rendered config and the exact command; `--help` lists the options.
-> `--mission-file=<path>` stages a golden on disk so you can run with no API up.
+> `--artifact-file=<path>` stages a compiled document as the mod's last verified artifact, so you
+> can run with no API up.
+>
+> With `--mission=<uuid>` it deploys the mission the way the platform does: it logs in as a
+> development administrator, takes the mission's approved artifact (submitting and approving the
+> current version when there is none), makes sure Everon has its fleet scenario, uses the
+> "TBD Playtest" server row (or `--server=<uuid>`), issues this run a `mod_runtime` credential
+> into the backend config and requests the deployment, whose scenario `server.json` runs. After
+> the boot it waits for the runtime session to confirm the deployment with the exact artifact
+> (`CONFIRMED: runtime session … loaded artifact …`), and it revokes the credential when the
+> server stops. `--event-mission=<uuid>` binds the deployment to an event's mission.
 >
 > Three things it knows that the hand-assembly below did not:
 >
@@ -288,20 +340,35 @@ Expect `Profile ready at: /home/…/tbd-playtest/profile (game data under …/pr
 loads nothing, silently (`cargo xtask mod world-boot` (formerly `world-boot.sh:383-384`)).
 
 ```bash
-# 2.4.2 — point the mod at the API and at YOUR mission
+# 2.4.2 - point the mod at the API with this server's credential
 CFG="$HOME/tbd-playtest/profile/profile/TBD_BackendConfig.json"
-python3 - "$CFG" "$MID" "$EID" "$TOK" <<'PY'
+python3 - "$CFG" "$TOK" "$CRED" <<'PY'
 import json,sys
-p,mid,eid,tok=sys.argv[1:5]
+p,tok,cred=sys.argv[1:4]
 d=json.load(open(p))
-d["backendUrl"]="http://127.0.0.1:8080"; d["serverToken"]=tok
-d["missionId"]=mid; d["eventId"]=eid
+d["backendUrl"]="http://127.0.0.1:8080"; d["serverToken"]=tok; d["machineCredential"]=cred
 json.dump(d,open(p,"w"),indent=2)
 PY
 cat "$CFG"
 ```
-Expect all four keys populated, `serverToken` matching `SERVICE_TOKEN`, `missionId` the UUID.
+Expect `backendUrl`, `serverToken` (matching `SERVICE_TOKEN`) and `machineCredential` (the `tbdm_`
+secret, section 2.3) populated. The mod reads only these three keys; the mission is not configured here.
 Shape reference: [`Data/backend.example.json`](../../apps/mod/tbd-framework/Data/backend.example.json).
+
+**The mission comes from a deployment.** At every boot the mod reads the deployment of this server
+(`GET /api/v1/game-runtime/deployment`), fetches its artifact and loads it only when the SHA-256 of
+the bytes equals the published one; the verified bytes are cached in
+`$profile:TBD_MissionArtifactCache/`. With no deployment the server runs **no mission** and stays in
+LOADING (`[TBD][Mission] NO MISSION - ...`, ERROR); there is no default mission. Deploy yours once
+the mission is live with an approved artifact - as an administrator,
+`POST /api/v1/servers/$SID/deployments` with `{"mission_id":"$MID","artifact_id":"<approved artifact id>"}`
+(add `"event_mission_id"` for an event), or in game with `#tbd missions` then `#tbd mission <n>`.
+If the platform cannot be reached at boot, the last verified cached artifact runs with a WARNING.
+
+> **`cargo xtask mod playtest` rewrites this file from `backend.example.json` on every start**
+> and writes the `mod_runtime` credential it issued for the run; `--event-mission=<uuid>` binds the
+> deployment to an event's mission, whose roster the runtime session loads. Hand-edits to this file
+> do not survive the next start.
 
 > `backendUrl` is `127.0.0.1:8080` **only if the API and the game server are on the same box.** If
 > the server is elsewhere, put the API host's LAN IP here and make sure the API is reachable from it.
@@ -521,90 +588,65 @@ the same question as whether the client loads the right mod**, and only the firs
 ```bash
 grep -E '\[TBD\]\[Mission\] loaded|\[TBD\]\[Validate\] mission result=' "$LOG"
 ```
-Want `[TBD][Mission] loaded id=<uuid> name='…' slots=N source=backend` and
+Want `[TBD][Mission] loaded id=<uuid> name='...' slots=N source=platform` (or `source=cache`: the
+deployment's own artifact from the profile cache) and
 `[TBD][Validate] mission result=PASS errors=0 warnings=…`
-([`TBD_Log.c:75-99`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c)).
-`source=profile` means the backend fetch failed and it fell back to disk — your token or URL is
-wrong. `result=FAIL` keeps the server in LOADING forever; `#tbd validate` replays the findings.
+([`TBD_Log.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c)).
+`source=last-verified-cache` means the deployment could not be read - no credential, or the
+platform unreachable - and the last verified artifact runs instead. `[TBD][Mission] NO MISSION` or
+`NO MISSION YET` means nothing is deployed to this server, or it could not be loaded (the line says
+why). `result=FAIL` keeps the server in LOADING forever; `#tbd validate` replays the findings.
 
-### 2.6 The two operator-only RCON steps (10 min) — **OPTIONAL for this session**
+### 2.6 The host agent and Server Control commands (10 min) — **OPTIONAL for this session**
 
-> **Everything in §3 works without these.** They enable exactly one thing: the SPA's
-> **Server Control** page (`/admin/server`) being able to start/stop/restart the game server unit
-> over `POST /api/v1/admin/servers/{id}/rcon`
-> ([`send_rcon`, `rcon_console.rs`](../../apps/website/api_v2/src/server_infrastructure/handlers/rcon_console.rs)).
-> Until both are done, that endpoint answers
-> **503** — correctly — and the session is unaffected. **No agent has ever run either of these; they
-> mutate a live host.** Do them if you want the last unexercised platform surface exercised too.
+> **Everything in §3 works without this.** It enables one thing: the SPA's **Server Control** page
+> (`/admin/server`) starting, stopping and restarting the game server and listing its players
+> through fleet commands (`POST /api/v1/servers/{id}/commands`). Without a host agent those
+> commands stay `queued` until they expire; the game runtime still executes `broadcast`, `kick`
+> and `load_mission` itself. **Installing the agent mutates a live host.**
 
-They only work when the API and the game server are **sibling `systemctl --user` units under one
-uid on one box**. The transport is a UNIX socket in `$XDG_RUNTIME_DIR` with `SocketMode=0600`, so
-the OS is the credential and there is no secret
-([`.env.example:123-127`](../../apps/website/api_v2/.env.example),
-`cargo xtask deploy staging` (formerly `deploy-staging.sh:92-137`)). **If your API runs under
-`cargo xtask mk rust-api` on one machine and the game server on another, this cannot work at all** — the socket
-would be on the wrong box.
+The API never connects to the game host. The **fleet host agent** (`apps/fleet_host_agent`) runs
+on the host as a `systemctl --user` unit, polls `POST /api/v1/fleet-executor/commands/claim` over
+outbound HTTPS with its own **`host_agent`** machine credential, runs each claimed command
+through `systemctl --user` on `tbd-reforger.service` or the server's RCON on the loopback port,
+and reports every step to the command ledger
+([`fleet_command_ledger.md`](../verification/api_v2/fleet_command_ledger.md)). It needs the game
+server to run as that systemd user unit — the staging and home-server shape. A server started by
+`cargo xtask mod playtest` is not a unit, so on a desk box only `list_players` would work.
 
-**Step A — tell the API where the socket is.**
+**Step A — issue the agent's credential.** `/admin/server` → select the server → credentials →
+issue one for the **host agent** (or `POST /api/v1/servers/$SID/credentials` with
+`{"executor_kind":"host_agent","label":"Host agent"}`). The `tbdm_` secret is shown **once**; it goes
+into `deploy.env` as `TBD_HOST_AGENT_CREDENTIAL`. It is a different credential from the game
+runtime's `TBD_MOD_RUNTIME_CREDENTIAL`: each executor claims only the actions it performs.
 
-*If the API runs from a systemd user unit* (the staging/home-server shape,
-[`HOME_SERVER.md:282-306`](../website/HOME_SERVER.md)):
-
-```bash
-systemctl --user edit --full tbd-website-api.service
-#   add under [Service]:
-#   Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock
-systemctl --user daemon-reload
-systemctl --user restart tbd-website-api.service
-systemctl --user show -p Environment --value tbd-website-api.service | tr ' ' '\n' | grep GAME_AGENT_SOCKET
-```
-Expect `GAME_AGENT_SOCKET=/run/user/<uid>/tbd-reforger-agent.sock`. systemd expands `%t` for you;
-the literal string to paste is documented verbatim at
-[`.env.example:135`](../../apps/website/api_v2/.env.example).
-
-*If you are running the API with `cargo xtask mk rust-api`* there is no unit — put it in the env file the API
-loads, then restart `cargo xtask mk rust-api`:
-```bash
-printf 'GAME_AGENT_SOCKET=/run/user/%s/tbd-reforger-agent.sock\n' "$(id -u)" >> apps/website/api_v2/.env
-grep GAME_AGENT_SOCKET apps/website/api_v2/.env
-```
-The path must be **absolute and free of leading/trailing whitespace**, or the API refuses at boot
-with `ConfigError::Malformed` ([`configuration`](../../apps/website/api_v2/src/core/configuration/mod.rs)) — which is
-deliberate: the alternative is an ENOENT at 03:00 that reads as "the game host is down".
-
-**Step B — install the host control agent, once.**
-
-Prove it locally first (no ssh, no deploy, no `deploy.env` needed — the script exits at
-`cargo xtask deploy staging` (formerly `deploy-staging.sh:657-660`) before it requires any of that):
-
-```bash
-cargo xtask deploy staging --agent-selftest /tmp/tbd-agent-selftest
-```
-Expect the rendered agent to be driven against a stub `systemctl` and report the unit's **real**
-state. It must be able to report a *dead* unit as dead even when the verb exited 0 — that is the
-entire reason the agent exists.
-
-Then install for real. **This runs a full deploy** — rsync, compose rebuild, game-server restart —
-and needs `tools_v2/xtask/deploy/deploy.env`, which **does not exist in this checkout**:
+**Step B — install it with the staging deploy.** This runs a full deploy — rsync, compose rebuild,
+game-server restart — and needs `tools_v2/xtask/deploy/deploy.env`, which **does not exist in this
+checkout**:
 
 ```bash
 cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env
-$EDITOR tools_v2/xtask/deploy/deploy.env    # TBD_SSH_HOST, token, paths
-TBD_INSTALL_AGENT=1 cargo xtask deploy staging --dry-run   # look first
-TBD_INSTALL_AGENT=1 cargo xtask deploy staging
+$EDITOR tools_v2/xtask/deploy/deploy.env    # TBD_SSH_HOST, TBD_MOD_RUNTIME_CREDENTIAL, TBD_INSTALL_HOST_AGENT=1, TBD_HOST_AGENT_CREDENTIAL, TBD_RCON_PASSWORD
+cargo xtask deploy staging --dry-run   # look first
+cargo xtask deploy staging
 ```
 Expect, near the end:
 ```
-==> host control agent (T-289)
-  agent VALID: unit=tbd-reforger.service socket=%t/tbd-reforger-agent.sock dwell=8s
-  agent socket listening at ${XDG_RUNTIME_DIR}/tbd-reforger-agent.sock
+==> host agent (fleet-host-agent)
+  fleet-host-agent.service active, polling https://…
 ```
-Without `TBD_INSTALL_AGENT=1` you get `[SKIP] agent install — TBD_INSTALL_AGENT=1 to enable.`
-(`cargo xtask deploy staging` (formerly `deploy-staging.sh:1229-1231`)). The step deliberately fails
-the deploy if the socket did not come up, rather than reporting it installed.
+The deploy builds `fleet-host-agent` on the host, writes `~/.config/fleet-host-agent/agent.toml`
+and the credential and RCON password files (mode 600), adds the `rcon` block to the server
+config, installs and starts the unit, and **fails** when the unit is not `active` afterwards.
+Without `TBD_INSTALL_HOST_AGENT=1` it prints `[SKIP] host agent — TBD_INSTALL_HOST_AGENT=1 to
+install it.` The agent restarts missions by switching `game.scenarioId` in the server config, so
+it requires `TBD_SERVER_MODE=config`.
 
-Verify end to end from the SPA: `/admin/server` → a status/restart action should return **202** with
-`delivered` / `state` / `detail` in the body, not 503.
+**Verify end to end** from `/admin/server`: issue **restart**. The command follows
+`queued` → `claimed` → `executing` → `succeeded`, and its receipt shows the unit's `active_state`
+after the dwell. `failed` carries the observed state (for example `restart left
+tbd-reforger.service failed instead of active`). A command whose outcome went unreported ends
+`indeterminate`; no executor retries it — inspect the host and issue a new command.
 
 ---
 
@@ -624,7 +666,7 @@ Run the §2.4 command. Watch for, in order:
 
 ```
 [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok
-[TBD][Mission] loaded id=<uuid> name='…' slots=N source=backend
+[TBD][Mission] loaded id=<uuid> name='...' slots=N source=platform
 [TBD][Validate] mission result=PASS errors=0 warnings=…
 [TBD][Slots] Slot-1 <slot-id> (<faction>) kit <kit> at <pos>          (× N)
 [TBD][Spawn] slot=<id> Y=… jsonY=… surfaceY=… delta=… heading=…       (× N)
@@ -640,8 +682,11 @@ Run the §2.4 command. Watch for, in order:
 - any `=MISSING` in the roll-call → that component's class did not resolve; the feature will never
   run and no other error will say so
   ([`TBD_FrameworkManager.c:409-459`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c)).
-- `source=profile` → the backend fetch failed; you are testing a stale on-disk mission, not the one
-  you authored. Fix the token/URL and restart.
+- `source=last-verified-cache` -> the deployment could not be read; you are testing the last
+  verified artifact, not necessarily the one deployed now. Fix the credential/URL and restart.
+- `[TBD][Mission] NO MISSION` -> nothing is deployed to this server (deploy one, section 2.4.2);
+  `NO MISSION YET` -> the deployment or its artifact could not be loaded - the line names the cause
+  (no credential, no answer, a refusal, a SHA-256 mismatch) and the mod keeps trying.
 - `mission result=FAIL` → the server stays in LOADING on purpose. `#tbd validate` in chat replays the
   findings ([`TBD_MissionValidator.c:1353`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c)).
 - `loadout delivery REFUSED at spawn boundary … UNPLAYABLE` → **stop**. LOBBY will not open for
@@ -692,7 +737,7 @@ Then restart the server with it — the flag is repeatable. **STOP THE RUNNING S
 #    holds 2001/17777 and the next boot dies on `Unable to start replication`.
 #
 # 2. Only then:
-cargo xtask mod playtest --mission-id=$MID --admin=<your-identityId>
+cargo xtask mod playtest --mission=$MID --admin=<your-identityId>
 ```
 
 > **Running it before stopping the first one used to break both servers**, and silently: the
@@ -787,8 +832,10 @@ passes, capture a screenshot and the client log (§5) and file it.
 
 ---
 
-**S6 — squad reservation and roster seating (website → game).** *Optional but it is the only test of
-the website↔game seat contract.*
+**S6 - squad reservation, roster seating and deployment authorization (website -> game).** *Optional
+but it is the only test of the website<->game seat contract. Needs the event bound to the server and
+the machine credential in the profile (section 2.3, section 2.4.2), and the event's mission deployed to the
+server with its event mission.*
 
 In the SPA: `/events/:id` → the mission dossier → reserve a squad / register for a slot as one of the
 two accounts. Then, in game, that player links their identity so the roster can match them:
@@ -796,14 +843,34 @@ two accounts. Then, in game, that player links their identity so the roster can 
 ```
 #tbd link <code>
 ```
-([`TBD_IdentityLink.c:147-210`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c)).
-`assignments` in `/ingest/events/:id/roster` is keyed on `users.arma_id`, which **only** that command
-writes ([`TBD_RosterLoader.c:1-17`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_RosterLoader.c)).
+([`TBD_IdentityLink.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_IdentityLink.c)).
+`assignments` in `GET /api/v1/game-runtime/events/:id/roster` is keyed on `users.arma_id`, which
+**only** that command writes
+([`TBD_RosterLoader.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c)).
 
-**Should see:** on the next mission load, `[TBD] Roster loaded (N assignments).` and the linked
-player is seated into their reserved slot rather than round-robin.
+**Should see** on the next mission load:
 
-**If `assignments` is `{}`:** nobody is linked. Everyone falls to round-robin. That is a legal state
+- `[TBD][Runtime] session-started session=... generation=...` - the runtime session, heartbeating every
+  15 s from then on;
+- `[TBD][Roster] loaded event=... version=2 assignments=N slots=M` - and the linked player is seated
+  into their reserved slot rather than round-robin;
+- when a player deploys into an event seat (BRIEFING onwards):
+  `[TBD][Deployment] authorization-requested player=... slot=... orbatSlot=... eventMission=... life=...`,
+  then either `[TBD][Deployment] deployment-allowed player=... slot=... occupancy=... authorizedBy=...`
+  (the spawn continues) or `[TBD][Deployment] deployment-denied player=... slot=... reason=...` (the
+  player reads the reason in private chat and is back in slot selection - try a seat reserved for
+  someone else, or an unlinked player, to see one);
+- when that life ends (death, disconnect, seat change, round end):
+  `[TBD][Deployment] life-ended player=...` then `[TBD][Deployment] life-end-reported occupancy=...`.
+
+**If `[TBD][Roster] roster of event ... not loaded (...)` (ERROR) appears instead:** the roster is
+refused - read the status in it (401 credential, 403 event not bound to this server, 404 event
+unknown). Every deployment into an event seat is refused meanwhile, with `[TBD][Deployment]
+deployment-refused player=... slot=... - the event roster has not loaded on this server yet, ...` in the
+log, the same sentence in the player's chat, and one `DEPLOYMENT: ...` entry in `#tbd audit`. Fix the
+cause; the mod fetches again every minute and needs no restart.
+
+**If `assignments` is `[]`:** nobody is linked. Everyone falls to round-robin. That is a legal state
 — note it and move on; it does not block either ticket.
 
 > The code in `#tbd link <code>` **is visible in chat before the mod can suppress it** — `super`
@@ -1082,8 +1149,8 @@ Both tickets close **only if every line below passes.** One FAIL closes neither.
 | # | Item | Evidence |
 |---|---|---|
 | P1 | Loadout assigned to a character slot in the Mission Creator, version saved | SPA screenshot + version semver |
-| P2 | `GET /api/v1/missions/<uuid>/compiled` → **200**, body carries `slot.loadout.gear` **and** `slot.loadout.cargo` | the `curl` + the python count from §2.3 |
-| P3 | The dedicated server loaded that document from the **backend**, not disk | `[TBD][Mission] loaded … source=backend` |
+| P2 | `GET /api/v1/missions/<uuid>/artifacts/<artifact>/document` → **200**, body carries `slot.loadout.gear` **and** `slot.loadout.cargo` | the `curl` + the python count from §2.3 |
+| P3 | The dedicated server loaded the **deployed** artifact, verified | `[TBD][Mission] loaded ... source=platform` (or `source=cache`) |
 | P4 | Slot claimed through the production LOBBY picker (not the auto-deploy wave) | `LOBBY: auto-deploy wave OFF` + `claim player=…` |
 | P5 | Spawned at the slot with the correct kit alias | `bound player … to slot … body (kit …)` |
 | **P6** | **Screenshot of the human player wearing the authored loadout** — primary, uniform, vest, helmet, and the cargo in the authored containers | **the screenshot. Nothing else counts.** |
@@ -1127,7 +1194,8 @@ cp "$CLOG" ~/tbd-playtest/evidence/$(date +%F-%H%M)/client-1.log
 Get your friend to send you theirs from the same path on their machine.
 
 **Also capture:**
-- the compiled document you were running: `cp /tmp/compiled.json ~/tbd-playtest/evidence/…/`
+- the artifact document you were running: `cp /tmp/artifact.json ~/tbd-playtest/evidence/…/` (the
+  server's own copy is `$HOME/tbd-playtest/profile/profile/TBD_MissionArtifactCache/document.json`)
 - the server config: `cp "$HOME/tbd-playtest/server.json" ~/tbd-playtest/evidence/…/`
 - `#tbd audit` output (screenshot — it is chat, not a file)
 - **screenshots of every screen that was wrong**, plus one of a screen that was right, for contrast
@@ -1327,7 +1395,7 @@ tail -f "$LOG" | grep --line-buffered -E \
 | Line | Source | Means |
 |---|---|---|
 | `[TBD] roll-call: …=ok` ×9 | `TBD_FrameworkManager.PrintComponentRollCall` | every component on `TBD_GameMode.et` instantiated |
-| `[TBD][Mission] loaded id=… source=backend` | `TBD_Log.MissionLoaded` | the API served the document (not the disk fallback) |
+| `[TBD][Mission] loaded id=... source=platform` | `TBD_Log.MissionLoaded` | the deployed artifact, fetched and SHA-256 verified (`cache`: the same artifact from the profile cache; `last-verified-cache`: the deployment could not be read) |
 | `[TBD][Validate] mission result=PASS` | `TBD_Log.ValidationResult` | the mission is loadable |
 | `[TBD][Slots] loadout settle complete … 0 unplayable, M with a shortfall — spawn open` | `TBD_SpawnManager.TickLoadoutSettle` | the lineup is playable; `M`>0 means some of it is not what was authored |
 | `[TBD][Slots] loadout SHORTFALL on M of N slot(s)` | `TBD_SpawnManager.TickLoadoutSettle` | **not** a stop — names the slots carrying less/elsewhere than authored (§6.1) |

@@ -16,12 +16,20 @@ use sqlx::PgPool;
 use uuid::Uuid;
 use website_map_engine::data::scenario::orbat::validate_faction_join_key;
 
+use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::application_state::AppState;
 use crate::core::database::postgres_errors::is_unique_violation;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AdminUser;
 use crate::operations::models::EventMission;
 use crate::operations::services::event_lookup::load_event;
+use crate::operations::services::event_reservations::event_administration::{
+    lock_event_scope, normalize_schedule_time,
+};
+use crate::operations::services::event_reservations::reservation_release::{
+    release_mission_registrations, release_reasons, release_unused_allocations,
+};
+use crate::operations::services::event_reservations::waitlist_promotion::promote_waiting_participants;
 use crate::operations::services::{OrbatSquadTemplate, parse_orbat_template};
 
 /// Materialize parsed squads into OrbatSlot rows for one event mission.
@@ -119,12 +127,12 @@ async fn orbat_template_for_mission(
 ///
 /// ══ WHY THIS WRAPS RATHER THAN REPLACES ════════════════════════════════════════════════
 /// `parse_orbat_template` lives in the shared map-engine crate and returns a bare `Vec`, so
-/// it has nowhere to put an error and does this:
+/// it falls back to editor-derived squads when the explicit list is absent or empty:
 ///
-/// ```ignore
-/// let top: Top = serde_json::from_slice(payload).unwrap_or_default();
-/// if !top.orbat.is_empty() { return top.orbat; }
-/// derive_orbat_from_editor(payload)
+/// ```rust
+/// use website_api::operations::services::parse_orbat_template;
+/// let squads = parse_orbat_template(br#"{"orbat":[]}"#);
+/// assert!(squads.is_empty());
 /// ```
 ///
 /// An explicit top-level `orbat[]` that fails to deserialize therefore does not merely
@@ -200,6 +208,7 @@ pub async fn add_event_mission(
             "mission_id and start_time are required",
         ));
     };
+    let start_time = normalize_schedule_time(start_time)?;
     let Ok(mission_id) = Uuid::parse_str(&input.mission_id) else {
         return Err(ApiError::bad_request("invalid mission_id"));
     };
@@ -274,6 +283,48 @@ pub async fn add_event_mission(
     }
 
     let mut tx = state.pool.begin().await?;
+    sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM events WHERE id = $1 AND deleted_at IS NULL FOR NO KEY UPDATE",
+    )
+    .bind(ev.id)
+    .fetch_optional(&mut *tx)
+    .await?
+    .ok_or_else(|| ApiError::not_found("event not found"))?;
+    // The catalog lifecycle guard holds this same lock before checking active attachments.
+    let current_mission: Option<(bool, String)> = sqlx::query_as(
+        "SELECT deleted_at IS NOT NULL, status::text FROM missions WHERE id = $1 FOR NO KEY UPDATE",
+    )
+    .bind(mission_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    match current_mission {
+        None | Some((true, _)) => return Err(ApiError::not_found("mission not found")),
+        Some((false, status)) if status == "archived" => {
+            return Err(ApiError::conflict(
+                "an archived mission cannot be attached; restore its lifecycle state first",
+            ));
+        }
+        _ => {}
+    }
+    lock_event_scope(&mut tx, ev.id, &_a.0, &state.cfg).await?;
+    if let Some(restored) =
+        crate::operations::services::event_reservations::mission_restoration::restore_if_removed(
+            &mut tx, ev.id, mission_id, start_time, &template,
+        )
+        .await?
+    {
+        append_actor_audit(
+            &mut tx,
+            &_a.0.discord_id,
+            "event.mission_restored",
+            "event",
+            &ev.id.to_string(),
+            "Removed mission restored with retained ORBAT and signup history",
+        )
+        .await?;
+        tx.commit().await?;
+        return Ok((StatusCode::CREATED, Json(restored)));
+    }
     let em: EventMission = match sqlx::query_as(
         "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
          VALUES ($1, $2, $3, now(), now()) RETURNING id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
@@ -293,6 +344,15 @@ pub async fn add_event_mission(
         Err(e) => return Err(e.into()),
     };
     materialize_slots(&mut tx, em.id, &template).await?;
+    append_actor_audit(
+        &mut tx,
+        &_a.0.discord_id,
+        "event.mission_attached",
+        "event",
+        &ev.id.to_string(),
+        "Mission and ORBAT attached",
+    )
+    .await?;
     tx.commit().await?;
 
     Ok((StatusCode::CREATED, Json(em)))
@@ -303,7 +363,7 @@ pub async fn add_event_mission(
 /// @route DELETE /api/v1/events/:id/missions/:emid
 pub async fn remove_event_mission(
     State(state): State<AppState>,
-    _a: AdminUser,
+    administrator: AdminUser,
     Path((id, emid)): Path<(String, String)>,
 ) -> Result<StatusCode, ApiError> {
     let ev = load_event(&state.pool, &id).await?;
@@ -311,27 +371,25 @@ pub async fn remove_event_mission(
         return Err(ApiError::bad_request("invalid mission id"));
     };
     let mut tx = state.pool.begin().await?;
-    let found: Option<Uuid> =
-        sqlx::query_scalar("SELECT id FROM event_missions WHERE id = $1 AND event_id = $2")
-            .bind(em_id)
-            .bind(ev.id)
-            .fetch_optional(&mut *tx)
-            .await?;
-    if found.is_none() {
+    let mut scope = lock_event_scope(&mut tx, ev.id, &administrator.0, &state.cfg).await?;
+    if !scope.active_missions.contains(&em_id) {
         return Err(ApiError::not_found("mission not found in event"));
     }
-    sqlx::query("DELETE FROM event_registrations WHERE event_mission_id = $1")
+    let released = release_mission_registrations(
+        &mut tx,
+        std::slice::from_ref(&em_id),
+        release_reasons::MISSION_REMOVED,
+    )
+    .await?;
+    release_unused_allocations(&mut tx, ev.id, &released, release_reasons::MISSION_REMOVED).await?;
+    sqlx::query("UPDATE event_missions SET deleted_at = clock_timestamp() WHERE id = $1")
         .bind(em_id)
         .execute(&mut *tx)
         .await?;
-    sqlx::query("DELETE FROM orbat_slots WHERE event_mission_id = $1")
-        .bind(em_id)
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("DELETE FROM event_missions WHERE id = $1")
-        .bind(em_id)
-        .execute(&mut *tx)
-        .await?;
+    // Places released by the removal may admit participants waiting for the remaining missions.
+    scope.active_missions.retain(|mission| *mission != em_id);
+    promote_waiting_participants(&mut tx, &scope, &state.cfg.discord_guild_id).await?;
+    append_actor_audit(&mut tx, &administrator.0.discord_id, "event.mission_removed", "event_mission", &em_id.to_string(), "Removed mission from operational views and released reservations; signup and attendance history remain available").await?;
     tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }

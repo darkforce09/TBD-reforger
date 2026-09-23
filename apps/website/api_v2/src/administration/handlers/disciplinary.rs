@@ -11,9 +11,12 @@ use serde_json::{Value, json};
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::models::warning::Warning;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
+use crate::administration::services::required_audit::append_actor_audit_with_severity;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AdminUser;
+use crate::identity_and_access::services::identity_ownership::lock_accounts;
+use crate::operations::services::event_reservations::reevaluation_queue::request_reevaluation_for_account;
 
 /// The ban body.
 ///
@@ -58,6 +61,10 @@ pub async fn ban_user(
     }
     let actor = &admin.0.discord_id;
     let now = Utc::now();
+    // The ban, its credential revocation, the reservation re-evaluation request and the required
+    // audit commit together; the event-first re-evaluation runs later.
+    let mut tx = state.pool.begin().await?;
+    lock_accounts(&mut tx, &[actor.clone(), discord_id.clone()]).await?;
     let res = sqlx::query(
         "UPDATE users SET is_banned = true, ban_reason = $1, banned_by = $2, banned_at = $3 WHERE discord_id = $4",
     )
@@ -65,7 +72,7 @@ pub async fn ban_user(
     .bind(actor)
     .bind(now)
     .bind(&discord_id)
-    .execute(&state.pool)
+    .execute(&mut *tx)
     .await?;
     if res.rows_affected() == 0 {
         return Err(ApiError::not_found("user not found"));
@@ -76,21 +83,22 @@ pub async fn ban_user(
     )
     .bind(now)
     .bind(&discord_id)
-    .execute(&state.pool)
+    .execute(&mut *tx)
     .await?;
-    let actor_name = actor_display_name(&state.pool, actor).await;
-    let target_name = actor_display_name(&state.pool, &discord_id).await;
-    write_audit(
-        &state.pool,
+    request_reevaluation_for_account(&mut tx, &discord_id).await?;
+    let actor_name = transactional_display_name(&mut tx, actor).await?;
+    let target_name = transactional_display_name(&mut tx, &discord_id).await?;
+    append_actor_audit_with_severity(
+        &mut tx,
         AuditSeverity::Warn,
-        Some(actor),
-        &actor_name,
+        actor,
         "user.ban",
-        &format!("{actor_name} permanently banned user '{target_name}'. Reason: '{reason}'"),
         "user",
         &discord_id,
+        &format!("{actor_name} permanently banned user '{target_name}'. Reason: '{reason}'"),
     )
-    .await;
+    .await?;
+    tx.commit().await?;
     Ok(Json(json!({ "banned": true })))
 }
 
@@ -102,30 +110,50 @@ pub async fn unban_user(
     admin: AdminUser,
     Path(discord_id): Path<String>,
 ) -> Result<Json<Value>, ApiError> {
+    let actor = &admin.0.discord_id;
+    let mut tx = state.pool.begin().await?;
+    lock_accounts(&mut tx, &[actor.clone(), discord_id.clone()]).await?;
     let res = sqlx::query(
         "UPDATE users SET is_banned = false, ban_reason = '', banned_by = NULL, banned_at = NULL WHERE discord_id = $1",
     )
     .bind(&discord_id)
-    .execute(&state.pool)
+    .execute(&mut *tx)
     .await?;
     if res.rows_affected() == 0 {
         return Err(ApiError::not_found("user not found"));
     }
-    let actor = &admin.0.discord_id;
-    let actor_name = actor_display_name(&state.pool, actor).await;
-    let target_name = actor_display_name(&state.pool, &discord_id).await;
-    write_audit(
-        &state.pool,
+    // Waiting entries of the restored account may become promotable again.
+    request_reevaluation_for_account(&mut tx, &discord_id).await?;
+    let actor_name = transactional_display_name(&mut tx, actor).await?;
+    let target_name = transactional_display_name(&mut tx, &discord_id).await?;
+    append_actor_audit_with_severity(
+        &mut tx,
         AuditSeverity::Info,
-        Some(actor),
-        &actor_name,
+        actor,
         "user.unban",
-        &format!("{actor_name} unbanned user '{target_name}'"),
         "user",
         &discord_id,
+        &format!("{actor_name} unbanned user '{target_name}'"),
     )
-    .await;
+    .await?;
+    tx.commit().await?;
     Ok(Json(json!({ "banned": false })))
+}
+
+/// The display name audit messages use, read inside the business transaction.
+async fn transactional_display_name(
+    connection: &mut sqlx::PgConnection,
+    discord_id: &str,
+) -> Result<String, ApiError> {
+    let name: Option<String> =
+        sqlx::query_scalar("SELECT COALESCE(username, '') FROM users WHERE discord_id = $1")
+            .bind(discord_id)
+            .fetch_optional(connection)
+            .await?;
+    Ok(match name {
+        Some(name) if !name.trim().is_empty() => name,
+        _ => discord_id.to_owned(),
+    })
 }
 
 /// The warning body.

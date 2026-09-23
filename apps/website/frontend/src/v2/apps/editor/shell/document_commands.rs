@@ -18,7 +18,6 @@ pub use website_map_engine::editing::commands::selection_digest::{
 mod imp {
     use std::cell::RefCell;
 
-    use crate::v2::core::ui::toast::Toasts;
     use leptos::prelude::{GetUntracked, RwSignal, Set};
     use leptos::task::spawn_local;
     use wasm_bindgen::prelude::*;
@@ -59,7 +58,8 @@ mod imp {
     thread_local! {
         static EDITOR_CTX: RefCell<Option<EditorCtx>> = const { RefCell::new(None) };
 
-        /// ** the mission ROW, as `GET /missions/:id` last served it.**
+        /// ** the mission ROW, as `GET /missions/:id` last served it** — or, in a review
+        /// workspace, the row fields the reviewed artifact compiled from.
         ///
         /// Deliberately NOT part of [`EditorCtx`]: `set_ctx` runs synchronously at mount, and this
         /// arrives later from `mission_hydrate::hydrate_from_server`'s `await`. Folding it in would
@@ -116,6 +116,22 @@ mod imp {
                 max_players: detail.max_players,
                 briefing: detail.briefing.clone().unwrap_or_default(),
                 thumbnail_url: detail.thumbnail_url.clone().unwrap_or_default(),
+            });
+        });
+    }
+
+    /// Record the row fields a review workspace's artifact compiled from, in place of the mission
+    /// row: Export Compiled then builds the reviewed version over exactly the inputs the artifact's
+    /// own compile read, and the settings dialog shows that shape rather than today's row. The
+    /// library blurb and thumbnail are not compile inputs, so they are recorded blank.
+    pub fn set_reviewed_row_meta(metadata: &crate::v2::core::api::dto::ArtifactMetadata) {
+        ROW_META.with(|r| *r.borrow_mut() = Some(metadata.compiled_meta()));
+        ROW_HYDRATE.with(|h| {
+            *h.borrow_mut() = Some(HydratedRow {
+                game_mode: metadata.game_mode.clone(),
+                max_players: metadata.max_players,
+                briefing: String::new(),
+                thumbnail_url: String::new(),
             });
         });
     }
@@ -241,20 +257,20 @@ mod imp {
     pub use mission_merge::*;
     mod clipboard;
     use clipboard::*;
-    pub use clipboard::*;
 
     /// Install `window.__editorCommands`  the read-only compile smoke bridge (peer of `__missionDoc`,
     /// same leaked-closure `js_sys::Object` idiom as `register_mission_doc`). `compile_save_json()` and
     /// `compile_export_json()` return the compiled JSON strings; the export path pins `exportedAt` +
     /// `missionId`/`version` to fixed values so the gate output is byte-deterministic.
     ///
-    /// ** adds `compiled_document_json()`** the same bytes the "Export Compiled" button
-    /// downloads. It is on the bridge for the reason the other two are: a compile whose only entry
-    /// point is a `<button>` and a `Blob` download is a compile no harness can read back, and this one
-    /// makes a claim worth checking against a live `GET /missions/:id/compiled`. Unlike its two peers
-    /// it pins nothing: its whole value is being the real output. On a failure it returns the same
-    /// author-facing message the toast shows (a plain string either way  the caller can tell them
-    /// apart by parsing).
+    /// `compiled_document_json()` returns the same bytes the "Export Compiled" button downloads.
+    /// It is on the bridge for the reason the other two are: a compile whose only entry point is a
+    /// `<button>` and a `Blob` download is a compile no harness can read back, and this one makes a
+    /// claim worth checking against the artifact document a submission produces
+    /// (`GET /missions/:id/artifacts/:artifactId/document`). Unlike its two peers it pins nothing:
+    /// its whole value is being the real output. On a failure it returns the same author-facing
+    /// message the toast shows (a plain string either way  the caller can tell them apart by
+    /// parsing).
     pub fn register_editor_commands(doc: DocHandle) {
         let obj = js_sys::Object::new();
 

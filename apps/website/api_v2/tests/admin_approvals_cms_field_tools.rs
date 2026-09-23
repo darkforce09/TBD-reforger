@@ -12,13 +12,8 @@
 //! Suite-scoped snapshot → call → restore keeps the endpoint covered without leaving
 //! demotions behind.
 //!
-//! # empty-snapshot admin must survive sync
-//!
-//! The sibling unit tests prove `resync_ids_from_snapshot([]) → None`, and an HTTP 200 assertion on
-//! roles/sync says nothing past the status line. A cold IT promotes an admin who holds
-//! **zero** `user_discord_roles`, POSTs sync, and asserts the web role stays
-//! `admin` — the lockout path that unit tests alone cannot catch at the
-//! route. Still wrapped in the snapshot → restore isolation so sibling suites stay intact.
+//! An account without verified membership cannot gain website privileges through PATCH or sync.
+//! Snapshot → restore isolation preserves other tests' stored roles while exercising global sync.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -35,22 +30,8 @@ mod common;
 
 const TARGET: &str = "000000000000000009";
 
-/// Serialises the two tests that snapshot / mutate the **whole** `users` table.
-///
-/// `POST /admin/roles/sync` walks every row, so the isolation around it is a
-/// whole-table `snapshot → sync → restore`. Two of those running at once is a race no
-/// amount of per-row care fixes: `empty_snapshot_admin_survives_roles_sync` snapshots
-/// [`TARGET`] as `enlisted`, `admin_approvals_cms_field` PATCHes the same row to `leader`,
-/// and whichever restores last is wrong about the other.
-///
-/// MEASURED before this lock, with per-binary databases already in place: 1 of 8 full-suite
-/// runs died on `discord_id=000000000000000009 role after restore is leader, want
-/// enlisted`. Database isolation cannot reach this one — both tests are in the SAME binary
-/// and therefore the same database by construction.
-///
-/// Held for each test's whole body, not just the snapshot window: `admin_approvals_cms_field`
-/// mutates [`TARGET`]'s role well before it snapshots, and that write is what the sibling's
-/// snapshot must not straddle. The other 7 tests in this binary stay parallel.
+/// Serializes tests that snapshot and restore the whole `users` table around global role sync.
+/// Hold it through fixture creation so a sibling snapshot cannot capture partially prepared rows.
 static ROLES_TABLE_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
@@ -429,8 +410,17 @@ async fn admin_approvals_cms_field() {
         Some(r#"{"role":"leader"}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::OK);
-    assert_eq!(r["role"], "leader");
+    assert_eq!(st, StatusCode::CONFLICT, "manual promotion must fail: {r}");
+    let unchanged_role: String =
+        sqlx::query_scalar("SELECT role::text FROM users WHERE discord_id = $1")
+            .bind(TARGET)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        unchanged_role, "enlisted",
+        "rejected PATCH must not change the stored role"
+    );
     let (st, r) = call(
         &app,
         "PATCH",
@@ -469,85 +459,67 @@ async fn admin_approvals_cms_field() {
     assert_eq!(st, StatusCode::OK, "roles/sync: {sync_body}");
     restore_user_roles(&pool, &role_snap).await;
     assert_roles_match_snapshot(&pool, &role_snap).await;
-    // The RCON endpoint must not report success over a command it cannot deliver. With no
-    // channel to the game-server host configured here there is no transport, so a
-    // syntactically valid request is audited and refused with 503, never 202 `accepted:true`.
-    let (st, r) = call(
+    // A server command is accepted into the fleet ledger with a receipt and nothing else: no
+    // executor has acted, so the receipt says queued, and the request is audited with the
+    // administrator who made it. Free text and unknown actions never enter the ledger.
+    let (st, receipt) = call(
         &app,
         "POST",
-        &format!("/api/v1/admin/servers/{server_id}/rcon"),
+        &format!("/api/v1/servers/{server_id}/commands"),
         &t,
         Some(r#"{"action":"restart"}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE, "rcon restart: {r}");
-    assert_eq!(r["details"]["action"], "restart");
-    assert_eq!(r["details"]["delivered"], false);
-    let (st, _) = call(
+    assert_eq!(st, StatusCode::ACCEPTED, "restart command: {receipt}");
+    assert_eq!(receipt["state"], "queued");
+    assert_eq!(receipt["executor_kind"], "host_agent");
+    let command = receipt["id"].as_str().unwrap().to_owned();
+    for (body, why) in [
+        (r#"{"action":"nuke"}"#, "unknown action"),
+        (
+            r##"{"action":"restart","arguments":{"command":"#shutdown"}}"##,
+            "free text",
+        ),
+        (
+            r#"{"action":"broadcast","arguments":{"message":"   "}}"#,
+            "blank message",
+        ),
+    ] {
+        let (st, r) = call(
+            &app,
+            "POST",
+            &format!("/api/v1/servers/{server_id}/commands"),
+            &t,
+            Some(body),
+        )
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "{why} must 400: {r}");
+    }
+    let (st, read_back) = call(
         &app,
-        "POST",
-        &format!("/api/v1/admin/servers/{server_id}/rcon"),
+        "GET",
+        &format!("/api/v1/servers/{server_id}/commands/{command}"),
         &t,
-        Some(r#"{"action":"nuke"}"#),
+        None,
     )
     .await;
-    assert_eq!(st, StatusCode::BAD_REQUEST);
-
-    // `custom` with no command is a 400. A handler that discarded `command` entirely
-    // (`let _ = &input.command;`) would make this body indistinguishable from a real one
-    // and answer 202.
-    let (st, r) = call(
-        &app,
-        "POST",
-        &format!("/api/v1/admin/servers/{server_id}/rcon"),
-        &t,
-        Some(r#"{"action":"custom","command":"   "}"#),
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(read_back["id"], command.as_str());
+    let audited: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit_logs WHERE action = 'server.command_requested' AND target_id = $1",
     )
-    .await;
-    assert_eq!(
-        st,
-        StatusCode::BAD_REQUEST,
-        "blank custom command must 400: {r}"
-    );
-
-    // And a real command must reach the audit row, which is the ONLY place an RCON
-    // request lands at all. A handler that persisted the bare string `issued RCON 'custom'`
-    // leaves a trail that cannot tell a shutdown from anything else, and this is the
-    // assertion that fails against it.
-    let marker = format!("#tbd-rcon-probe-{server_id}");
-    let (st, r) = call(
-        &app,
-        "POST",
-        &format!("/api/v1/admin/servers/{server_id}/rcon"),
-        &t,
-        Some(&format!(r#"{{"action":"custom","command":"{marker}"}}"#)),
-    )
-    .await;
-    assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE, "rcon custom: {r}");
-    let audited: Option<String> = sqlx::query_scalar(
-        "SELECT message FROM audit_logs WHERE action = 'server.rcon' AND target_id = $1 \
-         ORDER BY created_at DESC LIMIT 1",
-    )
-    .bind(server_id.to_string())
-    .fetch_optional(&pool)
+    .bind(&command)
+    .fetch_one(&pool)
     .await
     .unwrap();
-    let audited = audited.expect("an RCON attempt must still be audited");
-    assert!(
-        audited.contains(&marker),
-        "the audit row must record the command that was requested, got {audited:?}"
-    );
-    assert!(
-        !audited.contains("issued RCON"),
-        "the audit row must not claim the command was issued, got {audited:?}"
-    );
-    sqlx::query("DELETE FROM audit_logs WHERE action = 'server.rcon' AND target_id = $1")
-        .bind(server_id.to_string())
+    assert_eq!(audited, 1, "the accepted command is audited once");
+    sqlx::query("DELETE FROM fleet_commands WHERE server_id = $1")
+        .bind(server_id)
         .execute(&pool)
         .await
         .unwrap();
 
-    // --- approvals + inject ---
+    // --- approvals + deployment ---
     let (_, m) = call(
         &app,
         "POST",
@@ -559,7 +531,19 @@ async fn admin_approvals_cms_field() {
     )
     .await;
     let mid = m["id"].as_str().unwrap().to_string();
-    let (st, _) = call(
+    let (st, version) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{mid}/versions"),
+        &t,
+        Some(&format!(
+            r#"{{"semver":"0.2.0","payload":{}}}"#,
+            common::COMPILABLE_EDITOR_PAYLOAD
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "compilable version: {version}");
+    let (st, submitted) = call(
         &app,
         "POST",
         &format!("/api/v1/missions/{mid}/submit"),
@@ -567,7 +551,7 @@ async fn admin_approvals_cms_field() {
         None,
     )
     .await;
-    assert_eq!(st, StatusCode::OK);
+    assert_eq!(st, StatusCode::OK, "submit: {submitted}");
     // The queue is oldest-first and never pruned, so the row just submitted is on the LAST page,
     // never necessarily the first — see `find_in_approvals`.
     let appr = find_in_approvals(&app, &t, &mid)
@@ -581,31 +565,54 @@ async fn admin_approvals_cms_field() {
         "approval row: {appr}"
     );
     assert_eq!(appr["author_name"], "Dev Operator", "approval row: {appr}");
+    let artifact = appr["artifact_id"].as_str().unwrap().to_string();
     let (st, r) = call(
         &app,
         "POST",
         &format!("/api/v1/approvals/{mid}/approve"),
         &t,
-        None,
+        Some(&format!(r#"{{"artifact_id":"{artifact}"}}"#)),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "approve: {r}");
     assert_eq!(r["status"], "live");
-    // Now live → injectable.
-    let (st, inj) = call(
+    assert_eq!(r["approved_artifact_id"], artifact.as_str());
+    // Now live → deployable: a server with no runtime session gets a host restart onto the
+    // terrain's registered scenario.
+    let (st, scenario) = call(
         &app,
-        "POST",
-        &format!("/api/v1/missions/{mid}/inject"),
+        "PUT",
+        "/api/v1/fleet/scenarios/everon",
         &t,
-        None,
+        Some(r#"{"scenario_id":"{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf","display_name":"Everon"}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::ACCEPTED, "inject: {inj}");
-    assert!(
-        inj["staged_path"]
-            .as_str()
-            .unwrap()
-            .ends_with(".mission.json")
+    assert_eq!(st, StatusCode::OK, "scenario: {scenario}");
+    let deploy_host: String = sqlx::query_scalar(
+        "INSERT INTO servers (name, ip, port, is_active, required_modpack_id)
+         SELECT 'Deployment host', '127.0.0.1'::inet, 2305, true, modpack_id
+         FROM mission_artifacts WHERE id = $1::uuid RETURNING id::text",
+    )
+    .bind(&artifact)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let (st, deployment) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/servers/{deploy_host}/deployments"),
+        &t,
+        Some(&format!(
+            r#"{{"mission_id":"{mid}","artifact_id":"{artifact}"}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::ACCEPTED, "deployment: {deployment}");
+    assert_eq!(deployment["state"], "requested");
+    assert_eq!(deployment["transition"], "host_restart");
+    assert_eq!(
+        deployment["scenario_id"],
+        "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf"
     );
 
     // --- CMS ---
@@ -697,18 +704,10 @@ async fn admin_approvals_cms_field() {
     assert_eq!(saved["fire_mission"]["distance_m"], 1000);
 }
 
-/// Cold IT: an admin with zero `user_discord_roles` must survive
-/// `POST /admin/roles/sync`.
-///
-/// A `resync_all_roles` that treated an empty stored snowflake list as
-/// `Authoritative([])` → `resolve_role` → enlisted would demote every hand-promoted
-/// or seed admin who never OAuth'd. The sibling unit tests pin `resync_ids_from_snapshot`
-/// empty→None; this IT proves the HTTP path leaves the web role alone.
-///
-/// Isolation: the snapshot → sync → restore wrapper still surrounds the call so users with
-/// real snowflakes are not left remapped for sibling binaries on the shared gate DB.
+/// Manual promotion and global sync cannot invent authority for an unverified account.
+/// The global sync call remains isolated with a stored-role snapshot and restore.
 #[tokio::test]
-async fn empty_snapshot_admin_survives_roles_sync() {
+async fn unverified_account_cannot_gain_roles_through_patch_or_sync() {
     // Whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
     let _roles_table = ROLES_TABLE_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
@@ -717,47 +716,85 @@ async fn empty_snapshot_admin_survives_roles_sync() {
     };
     let t = admin_token(&app).await;
     // Private fixture — suite-scoped snowflake, never the shared dev-login admin.
-    const COLD_ADMIN: &str = "000000000000000502";
+    const UNVERIFIED_USER: &str = "000000000000000502";
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
          arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'Sync Cold Admin', 'synccold', '', NULL, '', 'enlisted', false, '', now(), now()) \
+          VALUES ($1, 'Unverified User', 'unverified', '', NULL, '', 'enlisted', false, '', now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET role = 'enlisted', is_banned = false, ban_reason = ''",
     )
-    .bind(COLD_ADMIN)
+    .bind(UNVERIFIED_USER)
     .execute(&pool)
     .await
-    .expect("insert cold admin fixture");
+    .expect("insert unverified account fixture");
 
     // Guarantee the empty-snapshot precondition — no leftover OAuth rows.
     sqlx::query("DELETE FROM user_discord_roles WHERE discord_id = $1")
-        .bind(COLD_ADMIN)
+        .bind(UNVERIFIED_USER)
         .execute(&pool)
         .await
-        .expect("clear user_discord_roles for cold admin");
+        .expect("clear user_discord_roles for unverified account");
+    sqlx::query("DELETE FROM discord_membership_snapshots WHERE discord_id = $1")
+        .bind(UNVERIFIED_USER)
+        .execute(&pool)
+        .await
+        .expect("clear membership snapshot");
 
-    // Promote via PATCH (writes `users.role` only — never touches user_discord_roles).
-    let (st, promoted) = call(
+    // Valid role spelling does not authorize an independent website promotion.
+    let (st, rejected) = call(
         &app,
         "PATCH",
-        &format!("/api/v1/admin/users/{COLD_ADMIN}"),
+        &format!("/api/v1/admin/users/{UNVERIFIED_USER}"),
         &t,
         Some(r#"{"role":"admin"}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::OK, "promote cold admin: {promoted}");
-    assert_eq!(promoted["role"], "admin", "PATCH must yield admin");
+    assert_eq!(
+        st,
+        StatusCode::CONFLICT,
+        "reject manual promotion: {rejected}"
+    );
+    let role_before: String =
+        sqlx::query_scalar("SELECT role::text FROM users WHERE discord_id = $1")
+            .bind(UNVERIFIED_USER)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        role_before, "enlisted",
+        "rejected PATCH must not mutate the account role"
+    );
+    for malformed in ["{}", r#"{"role":null}"#, r#"{"role":"wizard"}"#] {
+        let (status, body) = call(
+            &app,
+            "PATCH",
+            &format!("/api/v1/admin/users/{UNVERIFIED_USER}"),
+            &t,
+            Some(malformed),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "malformed role: {body}");
+        let role: String = sqlx::query_scalar("SELECT role::text FROM users WHERE discord_id = $1")
+            .bind(UNVERIFIED_USER)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(
+            role, "enlisted",
+            "malformed PATCH must preserve the stored role"
+        );
+    }
 
     let snowflake_count: i64 =
         sqlx::query_scalar("SELECT COUNT(*)::bigint FROM user_discord_roles WHERE discord_id = $1")
-            .bind(COLD_ADMIN)
+            .bind(UNVERIFIED_USER)
             .fetch_one(&pool)
             .await
             .expect("count user_discord_roles before sync");
     assert_eq!(
         snowflake_count, 0,
-        "cold admin must hold zero user_discord_roles before sync (empty snapshot)"
+        "unverified account must hold zero user_discord_roles before sync"
     );
 
     // Isolation: sync walks every user, so restore sibling tiers afterward.
@@ -768,18 +805,18 @@ async fn empty_snapshot_admin_survives_roles_sync() {
     let role_after: String = sqlx::query_scalar(
         "SELECT role::text FROM users WHERE discord_id = $1 AND deleted_at IS NULL",
     )
-    .bind(COLD_ADMIN)
+    .bind(UNVERIFIED_USER)
     .fetch_one(&pool)
     .await
-    .expect("read cold admin role after sync");
+    .expect("read unverified account role after sync");
     assert_eq!(
-        role_after, "admin",
-        "empty-snapshot admin must survive roles/sync (got {role_after})"
+        role_after, "guest",
+        "unverified account must resolve to Guest through sync (got {role_after})"
     );
 
     let snowflake_after: i64 =
         sqlx::query_scalar("SELECT COUNT(*)::bigint FROM user_discord_roles WHERE discord_id = $1")
-            .bind(COLD_ADMIN)
+            .bind(UNVERIFIED_USER)
             .fetch_one(&pool)
             .await
             .expect("count user_discord_roles after sync");
@@ -787,21 +824,57 @@ async fn empty_snapshot_admin_survives_roles_sync() {
         snowflake_after, 0,
         "sync must not invent snowflakes for an empty-snapshot user"
     );
+    let verified_snapshots: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM discord_membership_snapshots WHERE discord_id = $1 \
+         AND (verified_at IS NOT NULL OR membership_status <> 'unknown')",
+    )
+    .bind(UNVERIFIED_USER)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        verified_snapshots, 0,
+        "PATCH and sync must not fabricate verified membership"
+    );
+
+    let state = AppState::new(
+        pool.clone(),
+        Config::for_tests("postgres://unused/unused", "af-secret"),
+    );
+    let (guest_token, _, _) =
+        website_api::identity_and_access::services::session_issuance::issue_session(
+            &state,
+            UNVERIFIED_USER,
+        )
+        .await
+        .expect("issue unverified account session");
+    let (status, me) = call(&app, "GET", "/api/v1/me", &guest_token, None).await;
+    assert_eq!(status, StatusCode::OK, "guest account retains access: {me}");
+    assert_eq!(
+        me["user"]["role"], "guest",
+        "stored role cannot establish authority"
+    );
+    let (status, _) = call(&app, "GET", "/api/v1/admin/users", &guest_token, None).await;
+    assert_eq!(
+        status,
+        StatusCode::FORBIDDEN,
+        "unverified account has no administrative authority"
+    );
 
     restore_user_roles(&pool, &role_snap).await;
     assert_roles_match_snapshot(&pool, &role_snap).await;
 
     // Leave nothing behind for the shared gate DB.
     sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
-        .bind(COLD_ADMIN)
+        .bind(UNVERIFIED_USER)
         .execute(&pool)
         .await
         .expect("cleanup audit_logs");
     sqlx::query("DELETE FROM users WHERE discord_id = $1")
-        .bind(COLD_ADMIN)
+        .bind(UNVERIFIED_USER)
         .execute(&pool)
         .await
-        .expect("cleanup cold admin fixture");
+        .expect("cleanup unverified account fixture");
 }
 
 /// `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
@@ -847,20 +920,16 @@ fn roles_sync_is_suite_scoped_snapshot_restore() {
     );
 }
 
-/// The cold empty-snapshot admin test must remain in this binary.
-///
-/// The sibling unit tests already pin `resync_ids_from_snapshot([]) → None`. Dropping this
-/// IT would leave the HTTP path covered only by a 200 assert, and the lockout
-/// regresses silently at the route.
+/// The integration scenario must retain its unverified-account and global-sync isolation checks.
 #[test]
-fn empty_snapshot_admin_survival_it_is_present() {
+fn unverified_account_role_rejection_it_is_present() {
     let src = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/admin_approvals_cms_field_tools.rs"
     ));
     assert!(
-        src.contains("fn empty_snapshot_admin_survives_roles_sync"),
-        "cold IT empty_snapshot_admin_survives_roles_sync missing"
+        src.contains("fn unverified_account_cannot_gain_roles_through_patch_or_sync"),
+        "unverified-account integration scenario missing"
     );
     assert!(
         src.contains("common::require_test_database_url"),
@@ -871,13 +940,12 @@ fn empty_snapshot_admin_survival_it_is_present() {
         "cold IT must force zero user_discord_roles before sync"
     );
     assert!(
-        src.contains(r#""empty-snapshot admin must survive roles/sync"#)
-            || src.contains("empty-snapshot admin must survive roles/sync"),
-        "post-sync admin role assert missing"
+        src.contains("unverified account must resolve to Guest through sync"),
+        "post-sync stored-role assertion missing"
     );
     // Cold IT must keep the isolation — snapshot before its sync, restore after.
     let cold_fn = src
-        .find("fn empty_snapshot_admin_survives_roles_sync")
+        .find("fn unverified_account_cannot_gain_roles_through_patch_or_sync")
         .expect("cold IT fn missing");
     let cold_snap = src[cold_fn..]
         .find("let role_snap = snapshot_user_roles")

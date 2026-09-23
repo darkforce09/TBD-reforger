@@ -34,12 +34,11 @@ cargo xtask mk leptos
 
 Config: `apps/website/api_v2/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
 
-Runtime storage: what the API writes — CMS uploads (served back at `/uploads`) and the
-`mission.json` files an admin injects for the game server — goes to `UPLOAD_DIR` and
-`MISSION_STAGE_DIR`. In development both default to `assets_v2/scratch/website-api/{uploads,missions}`
-(gitignored, outside the crate); outside development both are required and must be absolute, and the
-production unit points them at its systemd state directory. Nothing the API writes lands in
-`apps/website/api_v2/`.
+Runtime storage: what the API writes — CMS uploads, served back at `/uploads` — goes to
+`UPLOAD_DIR`. In development it defaults to `assets_v2/scratch/website-api/uploads` (gitignored,
+outside the crate); outside development it is required and must be absolute, and the production
+unit points it at its systemd state directory. Nothing the API writes lands in
+`apps/website/api_v2/`. Game runtimes read deployed mission artifacts from `/api/v1/game-runtime/`.
 
 ## Confirm it's up
 
@@ -333,12 +332,19 @@ Restart `cargo xtask mk rust-api` after handler changes — `cargo run` does not
 | `GET /api/v1/registry` | mission_maker+ JWT | Items; weak ETag / 304 |
 | `GET /api/v1/registry/compat` | mission_maker+ JWT | Edges; `?edge_type=` filter; ETag |
 
-**Mod compiled mission (T-092.2):**
+**Mission artifacts (the compiled document the mod runs):** submitting a mission compiles its
+current version into an immutable artifact; the author or an administrator reads the exact bytes,
+and a game server reads the artifact deployed to it with its `mod_runtime` machine credential.
 
 ```bash
-# Requires SERVICE_TOKEN in apps/website/api_v2/.env
-curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
-  http://localhost:8080/api/v1/missions/{mission_id}/compiled | jq .schemaVersion
+# The artifact under review (or approved) and its exact document bytes, as the author:
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/missions/{mission_id}/reviews | jq '.reviews[0].artifact_id'
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/v1/missions/{mission_id}/artifacts/{artifact_id}/document | jq .schemaVersion
+# What a game server runs, with its machine credential:
+curl -sS -H "Authorization: Bearer $MACHINE_CREDENTIAL" \
+  http://localhost:8080/api/v1/game-runtime/deployment | jq '{artifact_id, artifact_sha256, state}'
 ```
 
 ## Map assets (T-090 / T-091 / T-171)

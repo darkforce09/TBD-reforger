@@ -6,17 +6,16 @@
 
 use std::sync::Arc;
 
-use axum::Json;
+use crate::core::authentication_primitives::session_authority::SessionAuthority;
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::StatusCode;
 use axum::http::header;
 use axum::http::request::Parts;
+use axum::response::{IntoResponse, Response};
 
-use crate::core::authentication_primitives::{Manager, constant_time_equal};
+use crate::core::authentication_primitives::{Claims, Manager, constant_time_equal};
 use crate::core::configuration::Config;
 use crate::core::middleware::{json_error, role_rank};
-
-type Rejection = (StatusCode, Json<serde_json::Value>);
 
 /// A validated bearer identity: the Discord id, the role it carries, and whether the account has
 /// a linked Arma identity.
@@ -25,14 +24,20 @@ pub struct AuthUser {
     pub discord_id: String,
     pub role: String,
     pub arma_linked: bool,
+    pub session_claims: Claims,
+    pub membership_stale: bool,
+    pub membership_override_active: bool,
+    pub can_manage_membership_override: bool,
 }
 
 impl<S> FromRequestParts<S> for AuthUser
 where
     Arc<Manager>: FromRef<S>,
+    Arc<Config>: FromRef<S>,
+    Arc<dyn SessionAuthority>: FromRef<S>,
     S: Send + Sync,
 {
-    type Rejection = Rejection;
+    type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let header = parts
@@ -41,20 +46,18 @@ where
             .and_then(|v| v.to_str().ok())
             .unwrap_or("");
         let Some(token) = header.strip_prefix("Bearer ").map(str::trim) else {
-            return Err(json_error(StatusCode::UNAUTHORIZED, "missing bearer token"));
+            return Err(
+                json_error(StatusCode::UNAUTHORIZED, "missing bearer token").into_response()
+            );
         };
         let jm = Arc::<Manager>::from_ref(state);
-        match jm.parse(token) {
-            Ok(claims) => Ok(AuthUser {
-                discord_id: claims.sub,
-                role: claims.role,
-                arma_linked: claims.arma_linked,
-            }),
-            Err(_) => Err(json_error(
-                StatusCode::UNAUTHORIZED,
-                "invalid or expired token",
-            )),
-        }
+        let claims = jm.parse(token).map_err(|_| {
+            json_error(StatusCode::UNAUTHORIZED, "invalid or expired token").into_response()
+        })?;
+        Arc::<dyn SessionAuthority>::from_ref(state)
+            .authorize(claims)
+            .await
+            .map_err(IntoResponse::into_response)
     }
 }
 
@@ -68,9 +71,11 @@ macro_rules! role_gate {
         impl<S> FromRequestParts<S> for $name
         where
             Arc<Manager>: FromRef<S>,
+            Arc<Config>: FromRef<S>,
+            Arc<dyn SessionAuthority>: FromRef<S>,
             S: Send + Sync,
         {
-            type Rejection = Rejection;
+            type Rejection = Response;
 
             async fn from_request_parts(
                 parts: &mut Parts,
@@ -80,7 +85,7 @@ macro_rules! role_gate {
                 if role_rank(&user.role) >= role_rank($min) {
                     Ok($name(user))
                 } else {
-                    Err(json_error(StatusCode::FORBIDDEN, "insufficient role"))
+                    Err(json_error(StatusCode::FORBIDDEN, "insufficient role").into_response())
                 }
             }
         }
@@ -101,7 +106,7 @@ where
     Arc<Config>: FromRef<S>,
     S: Send + Sync,
 {
-    type Rejection = Rejection;
+    type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let cfg = Arc::<Config>::from_ref(state);
@@ -111,10 +116,9 @@ where
             .and_then(|v| v.to_str().ok())
             .unwrap_or("");
         if cfg.service_token.is_empty() || !constant_time_equal(got, &cfg.service_token) {
-            return Err(json_error(
-                StatusCode::UNAUTHORIZED,
-                "invalid service token",
-            ));
+            return Err(
+                json_error(StatusCode::UNAUTHORIZED, "invalid service token").into_response(),
+            );
         }
         Ok(ServiceAuth)
     }

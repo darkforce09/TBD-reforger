@@ -739,9 +739,9 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
         StatusCode::CREATED,
         "re-attach after detach must succeed: {em2}"
     );
-    assert_ne!(
+    assert_eq!(
         em2["id"].as_str().unwrap_or(""),
         emid.as_str(),
-        "re-attach must mint a new event_mission id"
+        "restoration must preserve the historical event_mission identity"
     );
 }

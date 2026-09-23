@@ -7,7 +7,10 @@
 //! columns are absent from these structs — the filter is enforced in the query layer.
 
 pub mod faction;
+pub mod generated;
 pub mod mission;
+pub mod mission_deployment;
+pub mod mission_review;
 pub mod registry;
 
 pub use faction::UserFaction;

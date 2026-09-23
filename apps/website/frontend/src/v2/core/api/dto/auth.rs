@@ -17,6 +17,12 @@ use serde::{Deserialize, Serialize};
 pub struct MeResponse {
     pub user: User,
     pub arma_linked: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub membership_stale: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub membership_override_active: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub can_manage_membership_override: Option<bool>,
 }
 
 /// Whether the viewer has linked a game account, and what is known about it.

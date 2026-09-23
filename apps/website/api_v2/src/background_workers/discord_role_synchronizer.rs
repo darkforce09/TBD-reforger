@@ -41,12 +41,11 @@ fn role_resync_interval_from(raw: Option<&str>) -> Duration {
 /// Spawn the resyncer: one immediate pass (so a remap that landed while the API was down is
 /// applied on boot), then every `interval` until the runtime stops. Failures are logged; the
 /// next tick retries.
-pub fn start_role_resync(pool: PgPool, interval: Duration) -> JoinHandle<()> {
-    start_role_resync_with(
-        pool,
-        interval,
-        |p| async move { resync_all_roles(&p).await },
-    )
+pub fn start_role_resync(pool: PgPool, guild_id: String, interval: Duration) -> JoinHandle<()> {
+    start_role_resync_with(pool, interval, move |p| {
+        let guild_id = guild_id.clone();
+        async move { resync_all_roles(&p, &guild_id).await }
+    })
 }
 
 /// Testable core of [`start_role_resync`]: runs `resync` immediately, then on each

@@ -17,6 +17,9 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::pagination::PageParams;
 use crate::core::middleware::{AuthUser, LeaderUser};
 use crate::operations::models::event::{OrbatReservation, OrbatSlot};
+use crate::operations::models::event_viewer_access::{SlotViewerAccess, SlotViewerEligibility};
+use crate::operations::services::event_access::slot_eligibility::PolicySlot;
+use crate::operations::services::event_access::visibility::{EventVisibility, viewer_event_access};
 use crate::operations::services::event_lookup::load_em;
 
 #[derive(Debug, Serialize)]
@@ -32,6 +35,9 @@ struct OrbatSlotDto {
     assigned_to: Option<String>,
     #[serde(skip_serializing_if = "String::is_empty")]
     assigned_name: String,
+    /// Whether the effective policy of this seat admits the viewer under current authority.
+    #[serde(flatten)]
+    viewer: SlotViewerEligibility,
 }
 
 #[derive(Debug, Serialize)]
@@ -51,13 +57,29 @@ struct OrbatSquadDto {
 
 /// `GET /api/v1/event-missions/:emid/orbat` — ORBAT grouped by squad.
 ///
+/// A viewer admitted only by squad or slot policies receives only the seats those policies
+/// admit; a mission of an event the viewer may not see is indistinguishable from a missing one.
+///
 /// @route GET /api/v1/event-missions/:emid/orbat
 pub async fn get_orbat(
     State(state): State<AppState>,
-    _u: AuthUser,
+    user: AuthUser,
     Path(emid): Path<String>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
+    let mut connection = state.pool.acquire().await?;
+    let access = viewer_event_access(
+        &mut connection,
+        &user.discord_id,
+        user.role == "admin",
+        &[em.event_id],
+        &state.cfg.discord_guild_id,
+    )
+    .await?
+    .remove(&em.event_id)
+    .filter(|access| access.visibility.is_visible())
+    .ok_or_else(|| ApiError::not_found("mission not found"))?;
+    drop(connection);
     let slots: Vec<OrbatSlot> = sqlx::query_as(
         "SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE event_mission_id = $1 \
          ORDER BY faction ASC, squad ASC, slot_index ASC",
@@ -65,6 +87,14 @@ pub async fn get_orbat(
     .bind(em.id)
     .fetch_all(&state.pool)
     .await?;
+    let slots: Vec<OrbatSlot> = slots
+        .into_iter()
+        .filter(|slot| access.visibility.shows_slot(slot.id))
+        .collect();
+    // A partial viewer cannot see a mission none of whose seats admit it.
+    if slots.is_empty() && access.visibility != EventVisibility::Full {
+        return Err(ApiError::not_found("mission not found"));
+    }
 
     let reservations: Vec<OrbatReservation> =
         sqlx::query_as("SELECT * FROM orbat_reservations WHERE event_mission_id = $1")
@@ -139,6 +169,15 @@ pub async fn get_orbat(
             g.filled += 1;
         }
         g.total += 1;
+        let policy_slot = PolicySlot {
+            id: s.id,
+            event_mission_id: s.event_mission_id,
+            faction: s.faction.clone(),
+            squad: s.squad.clone(),
+            slot_index: s.slot_index,
+            assigned_to: s.assigned_to.clone(),
+        };
+        let (_, policy_source) = access.context.effective_slot_policy(&policy_slot);
         g.slots.push(OrbatSlotDto {
             id: s.id.to_string(),
             number: s.slot_index + 1,
@@ -148,6 +187,17 @@ pub async fn get_orbat(
             slot_index: s.slot_index,
             assigned_to: s.assigned_to.clone(),
             assigned_name,
+            viewer: SlotViewerEligibility {
+                viewer_access: if access
+                    .context
+                    .slot_admits(&policy_slot, &access.facts.current)
+                {
+                    SlotViewerAccess::Eligible
+                } else {
+                    SlotViewerAccess::Restricted
+                },
+                policy_source,
+            },
         });
     }
     let out: Vec<OrbatSquadDto> = order

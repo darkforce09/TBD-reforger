@@ -309,28 +309,12 @@ fn tooling_test_modules_live_in_separate_files() {
 }
 
 #[test]
-fn tooling_crates_have_no_file_size_exemptions() {
+fn file_size_allowlist_is_permanently_retired() {
     let root = crate::core::repository_root::test_repo_root();
-    let source = fs::read_to_string(root.join(".coding-standards-allowlist.yaml")).unwrap();
-    let entries: Vec<serde_norway::Value> = serde_norway::from_str(&source).unwrap();
-    for entry in entries {
-        let rule = entry["rule"]
-            .as_str()
-            .expect("allowlist rule must be a string");
-        let path = entry["path"]
-            .as_str()
-            .expect("allowlist path must be a string");
-        if rule.starts_with("SIZE-") {
-            let prefix = path.trim_start_matches("./").split('*').next().unwrap();
-            for name in TOOLING_CRATES {
-                let directory = format!("tools_v2/{name}/");
-                assert!(
-                    !prefix.starts_with(&directory) && !directory.starts_with(prefix),
-                    "{name} must have no size exemptions: {rule} {path}"
-                );
-            }
-        }
-    }
+    assert!(
+        !root.join(".coding-standards-allowlist.yaml").exists(),
+        ".coding-standards-allowlist.yaml must not exist — file-length allowlisting is permanently retired"
+    );
 }
 
 #[test]

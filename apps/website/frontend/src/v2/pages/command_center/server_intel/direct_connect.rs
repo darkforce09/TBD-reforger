@@ -32,7 +32,7 @@ pub(super) fn panel_header(
     // never happened.
     let copy_address = move |_| {
         #[cfg(target_arch = "wasm32")]
-        crate::v2::apps::editor::shell::document_commands::write_clipboard(
+        crate::v2::core::utils::clipboard::write_clipboard(
             copy_text.get_value(),
             "Server address copied".to_string(),
             crate::v2::core::ui::toast::use_toasts(),

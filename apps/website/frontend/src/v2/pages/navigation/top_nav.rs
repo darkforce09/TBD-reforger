@@ -4,17 +4,43 @@
 //! the identity-link status pill, and the account menu with its sign-out action.
 //! **Position:** the first child of the content column, beside the sidebar; the outlet sits
 //! directly below it.
-//! **Signals & state:** reads the session store from context and the live pathname; owns the
-//! account menu's open/closed signal, which a click outside, a menu item, or the escape key all
-//! close.
+//! **Signals & state:** reads the session store from context through a memo of what the account
+//! area shows, and the live pathname; owns the account menu's open/closed signal, which a click
+//! outside, a menu item, or the escape key all close.
 //! **Invariants:** the escape-key listener exists only in the browser build and is removed on
-//! cleanup. Signing out revokes the refresh token before the local session is cleared, and the
-//! cleared session is persisted immediately so a reload cannot restore it.
+//! cleanup. Signing out clears the local view immediately, removes this session's shared
+//! credential under the refresh lock, and reports any failure to revoke the server session.
 
-use crate::v2::core::auth::AuthStore;
-use crate::v2::core::ui::{MaterialIcon, DEFAULT_AVATAR};
+use crate::v2::core::auth::{AuthStore, User};
+use crate::v2::core::ui::MaterialIcon;
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
+
+/// What the account area shows for a signed-in viewer.
+#[derive(Clone, PartialEq)]
+struct AccountBadge {
+    username: String,
+    /// The account's avatar when it is safe to load, the default avatar otherwise.
+    avatar: String,
+    /// The first eight characters of the linked Arma identity; absent when none is linked.
+    linked_identity_prefix: Option<String>,
+}
+
+impl AccountBadge {
+    /// The badge for `user`, built from the profile fields the account area displays and no other.
+    fn of(user: &User) -> Self {
+        Self {
+            username: user.username.clone(),
+            avatar: crate::v2::core::utils::safe_avatar_url(&user.avatar_url),
+            // Counts as linked only when the identity id is present and non-empty.
+            linked_identity_prefix: user
+                .arma_id
+                .as_deref()
+                .filter(|id| !id.is_empty())
+                .map(|id| id.chars().take(8).collect()),
+        }
+    }
+}
 
 /// The bar above `<main>`: a breadcrumb on the left, session state on the right.
 ///
@@ -26,6 +52,14 @@ use leptos_router::hooks::use_location;
 pub(crate) fn TopNav() -> impl IntoView {
     let pathname = use_location().pathname;
     let auth = expect_context::<AuthStore>();
+    // Memoized, so a token rotation or a profile poll that leaves the name, the avatar and the
+    // identity link alone does not rebuild the account area and replay an open menu's entrance.
+    let badge = Memo::new(move |_| {
+        if !auth.is_authenticated() {
+            return None;
+        }
+        auth.user.with(|user| user.as_ref().map(AccountBadge::of))
+    });
     // Renders no DOM while closed.
     let menu_open = RwSignal::new(false);
     #[cfg(target_arch = "wasm32")]
@@ -37,23 +71,50 @@ pub(crate) fn TopNav() -> impl IntoView {
         });
         on_cleanup(move || esc.remove());
     }
-    // Revoke the presented refresh token server-side without waiting on the reply, then clear
-    // and persist the empty session so a reload cannot resurrect it.
+    // Clear this view immediately and serialize shared credential removal with token rotation.
     let sign_out = move |_| {
         menu_open.set(false);
         #[cfg(target_arch = "wasm32")]
         {
             let rt = auth.refresh_token.get_untracked();
+            let departing = auth.persist_state();
+            let toasts = crate::v2::core::ui::toast::use_toasts();
             auth.clear_session();
-            crate::v2::core::auth::persist(&auth.persist_state());
             leptos::task::spawn_local(async move {
+                use futures::future::FutureExt;
+                let cleared = crate::v2::core::api::client::refresh::with_refresh_lock(
+                    async move {
+                        use crate::v2::core::auth::session::{
+                            clear_persisted, persisted_belongs_to_session,
+                        };
+                        if crate::v2::core::auth::load_persisted()
+                            .is_none_or(|saved| persisted_belongs_to_session(&saved, &departing))
+                        {
+                            return clear_persisted();
+                        }
+                        true
+                    }
+                    .boxed_local(),
+                )
+                .await;
+                if !cleared {
+                    toasts.error(
+                        "Signed out locally, but this browser could not clear the stored session",
+                    );
+                }
                 if let Some(rt) = rt {
-                    let _ = crate::v2::core::api::client::api_post_ok(
+                    if let Err(error) = crate::v2::core::api::client::api_post_ok(
                         auth,
                         "/auth/logout",
                         serde_json::json!({ "refresh_token": rt }),
                     )
-                    .await;
+                    .await
+                    {
+                        toasts.error(crate::v2::core::api::client::api_error_message(
+                            &error,
+                            "Signed out locally, but server session revocation failed",
+                        ));
+                    }
                 }
             });
         }
@@ -80,7 +141,7 @@ pub(crate) fn TopNav() -> impl IntoView {
             // the avatar button that opens the account menu.
             <div class="relative flex h-full items-center gap-4">
                 {move || {
-                    if !auth.is_authenticated() {
+                    let Some(badge) = badge.get() else {
                         return view! {
                             <a
                                 href="/login"
@@ -90,19 +151,10 @@ pub(crate) fn TopNav() -> impl IntoView {
                             </a>
                         }
                             .into_any();
-                    }
-                    let user = auth.user.get();
-                    let username = user.as_ref().map(|u| u.username.clone()).unwrap_or_default();
-                    let avatar = user
-                        .as_ref()
-                        .map(|u| u.avatar_url.clone())
-                        .map(|u| crate::v2::core::utils::safe_avatar_url(&u))
-                        .unwrap_or_else(|| DEFAULT_AVATAR.to_string());
-                    // Counts as linked only when the identity id is present and non-empty.
-                    let arma_id = user.as_ref().and_then(|u| u.arma_id.clone()).filter(|s| !s.is_empty());
-                    let pill = match arma_id {
-                        Some(id) => {
-                            let short: String = id.chars().take(8).collect();
+                    };
+                    let AccountBadge { username, avatar, linked_identity_prefix } = badge;
+                    let pill = match linked_identity_prefix {
+                        Some(short) => {
                             view! {
                                 <div class="rounded-full bg-success-muted px-3 py-1 font-mono text-xs text-success">
                                     "Linked: "
@@ -174,3 +226,7 @@ pub(crate) fn TopNav() -> impl IntoView {
         </header>
     }
 }
+
+#[cfg(test)]
+#[path = "tests/top_nav.rs"]
+mod tests;

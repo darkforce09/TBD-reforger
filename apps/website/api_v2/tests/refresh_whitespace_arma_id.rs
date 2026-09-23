@@ -176,7 +176,8 @@ async fn submit_leave_rejects_blank_and_whitespace_reason() {
         ACTOR,
         "enlisted",
         false,
-    );
+    )
+    .await;
 
     let rejected = [
         (

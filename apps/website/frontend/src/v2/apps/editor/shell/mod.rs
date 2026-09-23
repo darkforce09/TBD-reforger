@@ -2,9 +2,10 @@
 //!
 //! **Role:** owns everything whose lifetime is the browser tab rather than the document — the
 //! IndexedDB draft writer and its status surface, the server hydrate and the way back from it, the
-//! cross-tab writer role, the warm-session marker, the title preference the wire carries, the
-//! chrome layout preferences and world-layer preferences a person keeps, the payload-size readout,
-//! and the browser transport behind the Save, Export and clipboard commands.
+//! cross-tab writer role, the read-only review workspace mode, the warm-session marker, the title
+//! preference the wire carries, the chrome layout preferences and world-layer preferences a person
+//! keeps, the payload-size readout, and the browser transport behind the Save, Export and clipboard
+//! commands.
 //! **Position:** a layer under the editor workspace. It reads the hosted document through the
 //! bridge and writes storage, the network and the clipboard; nothing here draws a frame and
 //! nothing here decides what a command means.
@@ -40,6 +41,9 @@ pub mod mission_size;
 /// mission save that never clobbers a good record.
 #[cfg(target_arch = "wasm32")]
 pub mod persist;
+/// The read-only review workspace: the reviewed version an editor mount shows, and the one
+/// predicate every write path consults before writing the mission.
+pub mod review_mode;
 /// The observable autosave status the writer reports into: the status value, the chip that renders
 /// it and the one toast per failed episode.
 pub mod save_status;

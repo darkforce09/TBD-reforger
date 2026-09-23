@@ -1,27 +1,35 @@
-//! One in-flight future per key, shared by every concurrent caller.
+//! A session-keyed in-flight future shared by concurrent callers in the current generation.
 //!
 //! **Role:** guarantees that a value which must be produced at most once at a time — a rotated
 //! refresh token — is produced once however many callers ask for it together.
 //! **Position:** used by the HTTP client's refresh path, one cell per browsing context.
 //! **Signals & state:** holds the shared future in a reference-counted cell. Not a Leptos signal.
-//! **Invariants:** the owner clears the cell once the future settles, so a later caller starts a
-//! fresh attempt rather than replaying a spent result. Reference-counted rather than borrowed so
-//! it can live in a thread-local and be cloned out across an await, which a thread-local borrow
-//! cannot survive.
+//! **Invariants:** callers share only the current generation's future. Any completing waiter
+//! clears that specific flight, so cancellation cannot leave a completed result cached and an
+//! older completion cannot clear a newer flight. Reference counting allows clones to outlive
+//! a thread-local borrow across an await.
 
 use futures::future::{FutureExt, LocalBoxFuture, Shared};
 use std::cell::RefCell;
 use std::future::Future;
 use std::rc::Rc;
 
-/// At most one in-flight future for `T` at a time.
+/// The flight currently available for callers to join.
+#[derive(Clone)]
+struct InFlight<T: Clone> {
+    generation: u64,
+    identity: Rc<()>,
+    future: Shared<LocalBoxFuture<'static, T>>,
+}
+
+/// One joinable in-flight future for the current generation.
 ///
-/// Concurrent callers of [`SingleFlight::run`] await a clone of the same shared future; the caller
-/// that started it clears the cell once it settles.
+/// A generation change starts a separate flight. Existing waiters retain their own shared
+/// future, and their completion cannot remove its replacement from the cell.
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct SingleFlight<T: Clone> {
-    inflight: Rc<RefCell<Option<Shared<LocalBoxFuture<'static, T>>>>>,
+    inflight: Rc<RefCell<Option<InFlight<T>>>>,
 }
 
 #[allow(dead_code)]
@@ -33,30 +41,46 @@ impl<T: Clone + 'static> SingleFlight<T> {
         }
     }
 
-    /// Await the in-flight future, starting one with `make` when there is none.
-    ///
-    /// Every concurrent caller gets a clone of the same shared future, so `make` runs once. The
-    /// caller that started it clears the cell once the future settles, which is what lets a later
-    /// call start a fresh attempt rather than replay a spent result.
+    /// Share a flight using generation zero when session isolation is unnecessary.
     pub async fn run<F, Fut>(&self, make: F) -> T
     where
         F: FnOnce() -> Fut,
         Fut: Future<Output = T> + 'static,
     {
-        let (shared, owner) = {
+        self.run_keyed(0, make).await
+    }
+
+    /// Share the current flight only when it belongs to `generation`.
+    ///
+    /// Every completing waiter clears its own flight if that flight still occupies the cell.
+    /// This remains true when the initiating waiter is cancelled or another generation starts.
+    pub async fn run_keyed<F, Fut>(&self, generation: u64, make: F) -> T
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = T> + 'static,
+    {
+        let flight = {
             let mut slot = self.inflight.borrow_mut();
             match slot.as_ref() {
-                Some(s) => (s.clone(), false),
-                None => {
-                    let s = make().boxed_local().shared();
-                    *slot = Some(s.clone());
-                    (s, true)
+                Some(flight) if flight.generation == generation => flight.clone(),
+                _ => {
+                    let flight = InFlight {
+                        generation,
+                        identity: Rc::new(()),
+                        future: make().boxed_local().shared(),
+                    };
+                    *slot = Some(flight.clone());
+                    flight
                 }
             }
         };
-        let out = shared.await;
-        if owner {
-            *self.inflight.borrow_mut() = None;
+        let out = flight.future.await;
+        let mut slot = self.inflight.borrow_mut();
+        if slot
+            .as_ref()
+            .is_some_and(|current| Rc::ptr_eq(&current.identity, &flight.identity))
+        {
+            *slot = None;
         }
         out
     }
@@ -69,3 +93,7 @@ impl<T: Clone + 'static> Default for SingleFlight<T> {
         Self::new()
     }
 }
+
+#[cfg(test)]
+#[path = "tests/single_flight.rs"]
+mod tests;

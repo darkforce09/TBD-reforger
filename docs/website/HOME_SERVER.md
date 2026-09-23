@@ -223,7 +223,7 @@ Notes:
 
 - `APP_ENV=production` **disables** `GET /api/v1/auth/dev-login`. Use Discord OAuth for real users.
 - For a first LAN-only smoke you may temporarily use `APP_ENV=development` + `FRONTEND_URL=http://192.168.0.140:3000` — do **not** leave that on a public tunnel.
-- Game token must match `TBD_GAME_SERVER_TOKEN` in `tools_v2/xtask/deploy/deploy.env` when the Reforger server calls the API (see staging doc).
+- Game token must match `TBD_GAME_SERVER_TOKEN` in `tools_v2/xtask/deploy/deploy.env` when the Reforger server calls the API (see staging doc). The token covers only identity-link confirmation and match results; everything else a game server calls uses its own machine credentials (below).
 
 Generate secrets:
 
@@ -326,11 +326,11 @@ to absolute paths. Both matter: the API resolves its asset defaults against the 
 and `ServeDir` never checks that the root exists, so a wrong CWD serves 404 for every map asset
 without logging anything.
 
-It also declares `StateDirectory=tbd-website-api` and points `UPLOAD_DIR` / `MISSION_STAGE_DIR` at
-`~/.local/state/tbd-website-api/{uploads,missions}`: everything the API writes lives there, never in
-the checkout the deploy rsyncs with `--delete`. Outside development the API refuses to boot unless
-both are set to absolute paths. `cargo xtask deploy website` creates the directory and moves any
-files an older layout left under `apps/website/api_v2/{uploads,missions}` into it before restarting
+It also declares `StateDirectory=tbd-website-api` and points `UPLOAD_DIR` at
+`~/.local/state/tbd-website-api/uploads`: everything the API writes lives there, never in the
+checkout the deploy rsyncs with `--delete`. Outside development the API refuses to boot unless it is
+set to an absolute path. `cargo xtask deploy website` creates the directory and moves any uploads
+an older layout left under `apps/website/api_v2/uploads` into it before restarting
 the unit; Caddy's `/uploads/*` proxy is unchanged because the API serves that path from wherever
 `UPLOAD_DIR` points.
 
@@ -429,6 +429,31 @@ Match `DISCORD_REDIRECT_URL` and `FRONTEND_URL` / `ALLOWED_ORIGINS`.
 | W9 | Game (optional) | Staging game token hits same API if intended — see STAGING-SERVER |
 
 ---
+
+## Game server credentials and the host agent
+
+Each game server authenticates with its own machine credentials, issued by an administrator in
+**Server Control → credentials** (`POST /api/v1/servers/{id}/credentials`). The secret
+(`tbdm_…`) is shown once.
+
+| Executor | Credential kind | Where it goes | What it does |
+|---|---|---|---|
+| Game runtime (the mod) | `mod_runtime` | `machineCredential` in the server profile's `TBD_BackendConfig.json` — `deploy.env` `TBD_MOD_RUNTIME_CREDENTIAL` | reads its deployment and artifact, runs sessions and heartbeats, `broadcast` / `kick` / `load_mission` |
+| Host agent (`apps/fleet_host_agent`) | `host_agent` | `~/.config/fleet-host-agent/machine-credential` — `deploy.env` `TBD_HOST_AGENT_CREDENTIAL` | `start` / `stop` / `restart` / `list_players`, `restart_with_mission` |
+
+`cargo xtask deploy staging` with `TBD_INSTALL_HOST_AGENT=1` builds the agent on the host,
+writes its configuration and secret files (mode 600), adds a loopback `rcon` block (monitor
+permission, `TBD_RCON_PASSWORD`) to the server config, and runs it as the user service
+`fleet-host-agent.service` next to `tbd-reforger.service` (template:
+`tools_v2/xtask/deploy/systemd/fleet-host-agent.service`). The agent polls the API outbound, so
+nothing on the host listens for it. A revoked credential stops its executor at the next request;
+revoke and reissue in Server Control, then redeploy.
+
+Which mission a server runs is a **deployment** (Server Control → deployments, or `#tbd` in game
+for a linked administrator): the approved mission's artifact, its terrain's fleet scenario, and
+the transition the platform chooses — a scenario restart in the running game for the same
+terrain, a host restart through the agent otherwise. The deployment is confirmed only when the
+server's next runtime session reports the exact artifact and SHA-256.
 
 ## Ongoing deploy (manual)
 

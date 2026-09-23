@@ -1,183 +1,63 @@
 use super::*;
 
+/// Seed (or use) a mission through the platform and fetch the artifact its submission compiled:
+/// the exact document a deployment of it would run. A live mission's approved artifact is used
+/// as it is; a mission under review answers its pending artifact; any other is submitted.
 pub(super) fn compiled_lane(
     state: &mut RunState,
-    root: &Path,
     api_base: &str,
     compiled_uuid: &mut Option<String>,
+    compiled_artifact: &mut Option<String>,
     mission_path: &mut Option<String>,
     warn_key: &mut String,
 ) -> std::result::Result<(), GateExit> {
-    let svc = resolve_service_token(root).ok_or_else(|| {
+    let transport = CurlTransport::new(state.run_dir.join("api"), 60);
+    let token = development_login(&transport, api_base, "mission_maker")
+        .map_err(|error| api_env_fail(api_base, &format!("{error:#}"), None))?;
+    state.api_token = Some(token.clone());
+    let client = ApiClient::new(&transport, api_base, &token);
+
+    let mission_id = match compiled_uuid.as_deref().filter(|id| !id.is_empty()) {
+        Some(id) => {
+            println!("    using existing mission {id}");
+            id.to_string()
+        }
+        None => {
+            let id = create_mission(&client, &seed_fixture_body())
+                .map_err(|error| api_doc_fail(&format!("{error:#}")))?;
+            println!("    seeded mission {id}");
+            *compiled_uuid = Some(id.clone());
+            id
+        }
+    };
+    let current = mission(&client, &mission_id).map_err(|error| {
         api_env_fail(
             api_base,
-            "no SERVICE_TOKEN — set TBD_SERVICE_TOKEN, or add it to apps/website/api_v2/.env",
-            None,
+            &format!("{error:#}"),
+            Some("Check the mission id you passed."),
         )
     })?;
-    state.svc_token = Some(svc.clone());
-    let err_path = state.run_dir.join("curl.err");
-
-    let (probe_rc, probe_code) = curl_http(
-        &[
-            "-sS",
-            "-o",
-            "/dev/null",
-            "-w",
-            "%{http_code}",
-            "-m",
-            "10",
-            "-H",
-            &format!("X-Service-Token: {svc}"),
-            &format!("{api_base}/api/v1/ingest/missions"),
-        ],
-        &err_path,
-    );
-    if probe_rc != 0 {
-        let err = fs::read_to_string(&err_path)
-            .unwrap_or_default()
-            .replace('\n', " ");
-        return Err(api_env_fail(
-            api_base,
-            &format!("API unreachable at {api_base} (curl exit {probe_rc}: {err})"),
-            None,
-        ));
-    }
-    if probe_code == 401 {
-        return Err(api_env_fail(
-            api_base,
-            "service token rejected (GET /api/v1/ingest/missions -> 401) — SERVICE_TOKEN does not match the running API",
-            None,
-        ));
-    }
-    if probe_code != 200 {
-        return Err(api_env_fail(
-            api_base,
-            &format!(
-                "service-token probe GET /api/v1/ingest/missions -> HTTP {probe_code} (expected 200)"
-            ),
-            None,
-        ));
-    }
-
-    if compiled_uuid.as_ref().is_some_and(|s| !s.is_empty()) {
-        println!(
-            "    using existing mission {}",
-            compiled_uuid.as_deref().unwrap_or("")
-        );
-    } else {
-        let token = dev_login_token(api_base).ok_or_else(|| {
-            api_env_fail(
-                api_base,
-                "dev-login returned no access_token — is the API running with APP_ENV=development?",
-                None,
-            )
-        })?;
-        state.dev_access_token = Some(token.clone());
-        let seed_path = state.run_dir.join("seed.json");
-        fs::write(&seed_path, seed_fixture_body())
-            .map_err(|_| api_env_fail(api_base, "could not write seed.json", None))?;
-        let resp_path = state.run_dir.join("seed-resp.json");
-        let resp_s = resp_path.to_string_lossy().into_owned();
-        let seed_s = format!("@{}", seed_path.display());
-        let (seed_rc, seed_code) = curl_http(
-            &[
-                "-sS",
-                "-o",
-                &resp_s,
-                "-w",
-                "%{http_code}",
-                "-m",
-                "30",
-                "-X",
-                "POST",
-                &format!("{api_base}/api/v1/missions"),
-                "-H",
-                &format!("Authorization: Bearer {token}"),
-                "-H",
-                "Content-Type: application/json",
-                "--data-binary",
-                &seed_s,
-            ],
-            &err_path,
-        );
-        if seed_rc != 0 {
-            let err = fs::read_to_string(&err_path)
-                .unwrap_or_default()
-                .replace('\n', " ");
-            return Err(api_env_fail(
-                api_base,
-                &format!("POST /api/v1/missions transport failure (curl exit {seed_rc}: {err})"),
-                None,
-            ));
-        }
-        if seed_code != 201 {
-            println!("  POST /api/v1/missions -> HTTP {seed_code}");
-            let body = fs::read_to_string(&resp_path).unwrap_or_default();
-            println!("{}", body.chars().take(600).collect::<String>());
-            return Err(api_http_fail(
-                api_base,
-                seed_code,
-                "POST /api/v1/missions",
-                &format!(
-                    "the API rejected the editor payload this harness seeds (HTTP {seed_code})"
-                ),
-            ));
-        }
-        let id = serde_json::from_str::<Value>(&fs::read_to_string(&resp_path).unwrap_or_default())
-            .ok()
-            .and_then(|v| v.get("id")?.as_str().map(str::to_string))
-            .unwrap_or_default();
-        if id.is_empty() {
-            return Err(api_doc_fail(
-                "POST /api/v1/missions 201 but returned no mission id",
-            ));
-        }
-        println!("    seeded mission {id}");
-        *compiled_uuid = Some(id);
-    }
-
-    let uuid = compiled_uuid.clone().unwrap_or_default();
+    let artifact = match (
+        current["status"].as_str().unwrap_or_default(),
+        current["approved_artifact_id"].as_str(),
+    ) {
+        ("live", Some(approved)) => approved.to_string(),
+        ("pending_approval", _) => pending_review_artifact(&client, &mission_id)
+            .map_err(|error| api_doc_fail(&format!("{error:#}")))?,
+        _ => submit_mission(&client, &mission_id)
+            .map_err(|error| api_doc_fail(&format!("{error:#}")))?,
+    };
+    let document = artifact_document(&client, &mission_id, &artifact)
+        .map_err(|error| api_doc_fail(&format!("{error:#}")))?;
     let compiled_path = state.run_dir.join("compiled.json");
-    let out_s = compiled_path.to_string_lossy().into_owned();
-    let (comp_rc, comp_code) = curl_http(
-        &[
-            "-sS",
-            "-o",
-            &out_s,
-            "-w",
-            "%{http_code}",
-            "-m",
-            "60",
-            "-H",
-            &format!("X-Service-Token: {svc}"),
-            &format!("{api_base}/api/v1/missions/{uuid}/compiled"),
-        ],
-        &err_path,
+    fs::write(&compiled_path, &document.bytes)
+        .map_err(|_| api_env_fail(api_base, "could not write compiled.json", None))?;
+    println!(
+        "    fetched artifact {artifact}: {} bytes, sha256 {}",
+        document.bytes.len(),
+        document.sha256
     );
-    if comp_rc != 0 {
-        let err = fs::read_to_string(&err_path)
-            .unwrap_or_default()
-            .replace('\n', " ");
-        return Err(api_env_fail(
-            api_base,
-            &format!("GET /compiled transport failure (curl exit {comp_rc}: {err})"),
-            None,
-        ));
-    }
-    if comp_code != 200 {
-        println!("  GET /api/v1/missions/{uuid}/compiled -> HTTP {comp_code}");
-        let body = fs::read_to_string(&compiled_path).unwrap_or_default();
-        println!("{}", body.chars().take(1200).collect::<String>());
-        return Err(api_http_fail(
-            api_base,
-            comp_code,
-            &format!("GET /api/v1/missions/{uuid}/compiled"),
-            &format!("GET /compiled -> HTTP {comp_code} (expected 200)"),
-        ));
-    }
-    let bytes = fs::metadata(&compiled_path).map(|m| m.len()).unwrap_or(0);
-    println!("    fetched {bytes} bytes of compiled document");
+    *compiled_artifact = Some(artifact);
     *mission_path = Some(compiled_path.to_string_lossy().into_owned());
     *warn_key = "compiled".into();
     Ok(())
@@ -217,8 +97,9 @@ pub(super) fn four_weapon_equip_selftest() -> u8 {
 }
 
 #[rustfmt::skip]
-pub(super) fn seed_fixture_body() -> String {
-    // The four-weapon proof lives on sl_ar (Unarmed so each row inserts, result=ok).
+pub(super) fn seed_fixture_body() -> Value {
+    // The four-weapon proof lives on sl_ar: the unarmed base kit, so each weapon row inserts
+    // (result=ok) instead of replacing a kit weapon.
     let v = json!({
         "title": FIXTURE_TITLE, "terrain": "everon", "game_mode": "pvp", "weather": "clear",
         "time_of_day": "05:30", "max_players": 8,
@@ -261,7 +142,7 @@ pub(super) fn seed_fixture_body() -> String {
             ]
         } }
     });
-    serde_json::to_string_pretty(&v).unwrap_or_else(|_| "{}".into())
+    v
 }
 
 pub(super) fn write_server_json(
@@ -383,62 +264,15 @@ pub(super) fn kill_run(pidfile: &Path) {
         .status();
 }
 
-pub(super) fn sweep_fixture_missions(
-    run_dir: &Path,
-    api_base: &str,
-    svc: Option<&str>,
-    dev: Option<&str>,
-) {
-    let (Some(svc), Some(dev)) = (svc, dev) else {
+/// Delete the fixture missions the compiled lane created: the caller's own missions with the
+/// fixture's title.
+pub(super) fn sweep_fixture_missions(run_dir: &Path, api_base: &str, token: Option<&str>) {
+    let Some(token) = token else {
         return;
     };
-    let listing = run_dir.join("sweep.json");
-    let out = listing.to_string_lossy().into_owned();
-    let _ = Command::new("curl")
-        .args([
-            "-sS",
-            "-o",
-            &out,
-            "-m",
-            "10",
-            "-H",
-            &format!("X-Service-Token: {svc}"),
-            &format!("{api_base}/api/v1/ingest/missions"),
-        ])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
-    let Ok(v) = serde_json::from_str::<Value>(&fs::read_to_string(&listing).unwrap_or_default())
-    else {
-        return;
-    };
-    for m in v
-        .get("missions")
-        .and_then(|m| m.as_array())
-        .into_iter()
-        .flatten()
-    {
-        if m.get("name").and_then(|n| n.as_str()) != Some(FIXTURE_TITLE) {
-            continue;
-        }
-        let Some(id) = m.get("id").and_then(|i| i.as_str()) else {
-            continue;
-        };
-        let _ = Command::new("curl")
-            .args([
-                "-sS",
-                "-o",
-                "/dev/null",
-                "-m",
-                "10",
-                "-X",
-                "DELETE",
-                &format!("{api_base}/api/v1/missions/{id}"),
-                "-H",
-                &format!("Authorization: Bearer {dev}"),
-            ])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
+    let transport = CurlTransport::new(run_dir.join("api"), 10);
+    let client = ApiClient::new(&transport, api_base, token);
+    for id in own_missions_titled(&client, FIXTURE_TITLE).unwrap_or_default() {
+        let _ = delete_mission(&client, &id);
     }
 }

@@ -36,7 +36,7 @@ fn heartbeat_status_write_maps_foreign_key_violations() {
     assert!(
         collapsed.contains("foreign_key_error(&e)"),
         "the server_statuses write must route its error through foreign_key_error \
-         (fails with: bare `.await?` → 500 on an unregistered server_id)"
+         (fails with: bare `.await?` → 500 on a current_match_id naming no match)"
     );
     assert!(
         collapsed.contains("e.into()"),

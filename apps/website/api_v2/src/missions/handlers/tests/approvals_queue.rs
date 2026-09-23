@@ -1,8 +1,8 @@
-//! Source pins for the two approval-queue SQL contracts that cannot be checked without a
-//! database otherwise: the queue's unique paging order, and the `updated_at` bump both review
-//! writes owe every other status write.
+//! Source pins for the approval-queue SQL contracts that cannot be checked without a database
+//! otherwise: the queue's unique paging order, and the `updated_at` bump every review decision
+//! owes every other status write.
 
-use super::{APPROVE_MISSION_SQL, LIST_APPROVALS_SQL, REJECT_MISSION_SQL};
+use super::LIST_APPROVALS_SQL;
 
 /// LIMIT/OFFSET over tied COALESCE keys needs a unique trailing key.
 #[test]
@@ -23,17 +23,20 @@ fn list_approvals_sql_orders_by_id_after_submitted_at() {
     );
 }
 
-/// Approve/reject must bump `missions.updated_at`, matching sibling status writes.
+/// Review decisions must bump `missions.updated_at`, matching sibling status writes.
 ///
-/// Perturbation RED: strip `updated_at = now()` from either const → this test fails.
+/// Perturbation RED: strip `updated_at = now()` from the decision's mission UPDATE → this test
+/// fails.
 #[test]
-fn approve_and_reject_sql_bump_updated_at() {
+fn review_decisions_bump_updated_at() {
+    const DECISIONS: &str = include_str!("../../services/mission_reviews.rs");
+    let update = DECISIONS
+        .split("UPDATE missions SET status")
+        .nth(1)
+        .expect("the decision updates the mission status");
+    let statement = update.split("WHERE id = $1").next().unwrap();
     assert!(
-        APPROVE_MISSION_SQL.contains("updated_at = now()"),
-        "approve UPDATE must set updated_at = now(); got: {APPROVE_MISSION_SQL}"
-    );
-    assert!(
-        REJECT_MISSION_SQL.contains("updated_at = now()"),
-        "reject UPDATE must set updated_at = now(); got: {REJECT_MISSION_SQL}"
+        statement.contains("updated_at = now()"),
+        "the decision's mission UPDATE must set updated_at = now(); got: {statement}"
     );
 }

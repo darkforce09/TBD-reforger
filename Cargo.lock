@@ -2226,6 +2226,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "fleet-host-agent"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "chrono",
+ "crc32fast",
+ "rand 0.10.2",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "toml 1.1.3+spec-1.1.0",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "float-cmp"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2566,6 +2587,18 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+]
+
+[[package]]
+name = "gloo-timers"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -8167,6 +8200,7 @@ dependencies = [
  "hex",
  "jsonschema",
  "jsonwebtoken",
+ "proptest",
  "rand 0.10.2",
  "regress 0.10.5",
  "reqwest",
@@ -8193,9 +8227,11 @@ dependencies = [
 name = "website-frontend"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "console_error_panic_hook",
  "futures",
  "gloo-net",
+ "gloo-timers",
  "idb",
  "js-sys",
  "leptos",
@@ -9045,6 +9081,7 @@ dependencies = [
  "clap",
  "developer-tools",
  "flate2",
+ "heck",
  "jsonschema",
  "libc",
  "png 0.17.16",
@@ -9054,6 +9091,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
+ "sha2 0.10.9",
  "syn 2.0.118",
  "ticket-engine",
  "toml 0.8.23",

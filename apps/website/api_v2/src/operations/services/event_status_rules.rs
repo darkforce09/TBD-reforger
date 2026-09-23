@@ -5,7 +5,7 @@
 //! halves, deliberately different mechanisms:
 //!
 //!   1. DERIVED TRUTH — [`EFFECTIVE_STATUS_SQL`] computes an event's status right now as a
-//!      pure function of (stored status, start_time, its missions' start times, `now()`).
+//!      pure function of (stored status, start_time, its missions' start times, `statement_timestamp()`).
 //!      Every read and the registration guard go through it, so correctness NEVER depends on
 //!      a background task having run. The stored column is a cache, not the authority.
 //!
@@ -47,12 +47,12 @@ use crate::operations::models::EventStatus;
 /// advertising a finished operation the same day. When a real end-of-op signal lands it
 /// should complete events early and leave this as the backstop for when it never arrives.
 pub(crate) const EVENT_END_HORIZON_SQL: &str = "(GREATEST(e.start_time, COALESCE(\
-     (SELECT max(em.start_time) FROM event_missions em WHERE em.event_id = e.id), \
+     (SELECT max(em.start_time) FROM event_missions em WHERE em.event_id = e.id AND em.deleted_at IS NULL), \
      e.start_time)) + interval '6 hours')";
 
 /// SQL scalar — an event's **effective** status. Requires the `events` row aliased `e`.
 ///
-/// Every time comparison happens inside Postgres against `now()`, never against the API
+/// Every time comparison happens inside Postgres against `statement_timestamp()`, never against the API
 /// process clock. That is the whole answer to clock skew: however many API instances run,
 /// there is exactly one clock in this system and it is the database's.
 ///
@@ -62,8 +62,8 @@ pub(crate) static EFFECTIVE_STATUS_SQL: LazyLock<String> = LazyLock::new(|| {
     format!(
         "CASE \
            WHEN e.status IN ('completed', 'cancelled') THEN e.status \
-           WHEN now() >= {EVENT_END_HORIZON_SQL} THEN 'completed'::event_status \
-           WHEN now() >= e.start_time THEN 'live'::event_status \
+           WHEN statement_timestamp() >= {EVENT_END_HORIZON_SQL} THEN 'completed'::event_status \
+           WHEN statement_timestamp() >= e.start_time THEN 'live'::event_status \
            ELSE e.status \
          END"
     )

@@ -211,100 +211,6 @@ fn whitespace_bot_token_is_rejected_in_development_too() {
     }
 }
 
-// ---- GAME_AGENT_SOCKET ----------------------------------------------
-
-/// Unset is legal — there is no agent on a developer's box — but it must not read as a usable
-/// path. `Path::new("")` connects to nothing and reports ENOENT, which at the call site is
-/// indistinguishable from a dead agent.
-#[test]
-fn unset_agent_socket_loads_but_is_not_readable() {
-    let cfg = production_base();
-    assert!(cfg.game_agent_socket.is_empty());
-    let cfg = cfg
-        .validate()
-        .expect("unset GAME_AGENT_SOCKET must not block boot");
-    assert!(!cfg.game_agent_configured());
-    match cfg.require_game_agent_socket() {
-        Err(ConfigError::Missing("GAME_AGENT_SOCKET")) => {}
-        other => panic!("expected Missing(GAME_AGENT_SOCKET), got {other:?}"),
-    }
-}
-
-/// The real deployment value round-trips (`%t/tbd-reforger-agent.sock` expanded by systemd).
-#[test]
-fn configured_agent_socket_is_readable() {
-    let mut cfg = production_base();
-    cfg.game_agent_socket = "/run/user/1000/tbd-reforger-agent.sock".into();
-    let cfg = cfg.validate().expect("an absolute socket path must load");
-    assert!(cfg.game_agent_configured());
-    assert_eq!(
-        cfg.require_game_agent_socket().expect("readable"),
-        Path::new("/run/user/1000/tbd-reforger-agent.sock")
-    );
-}
-
-/// A trailing newline from a copy-paste or a secrets-manager read. Both `is_empty()` and
-/// `is_absolute()` pass it, so only the trim rule catches it — and uncaught it becomes ENOENT,
-/// reported to the operator as an unreachable game host rather than as a typo in their `.env`.
-#[test]
-fn agent_socket_with_surrounding_whitespace_is_rejected() {
-    for bad in [
-        "/run/user/1000/tbd-reforger-agent.sock\n",
-        " /run/user/1000/tbd-reforger-agent.sock",
-        "/run/user/1000/tbd-reforger-agent.sock\r\n",
-        "\t/run/user/1000/tbd-reforger-agent.sock ",
-    ] {
-        let mut cfg = production_base();
-        cfg.game_agent_socket = bad.into();
-        match cfg.validate() {
-            Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
-            other => panic!("expected Malformed(GAME_AGENT_SOCKET) for {bad:?}, got {other:?}"),
-        }
-    }
-}
-
-/// A relative path resolves against the API process's CWD — a systemd detail nobody chose.
-/// Reject it at boot rather than connect somewhere unintended.
-#[test]
-fn relative_agent_socket_is_rejected() {
-    for bad in [
-        "tbd-reforger-agent.sock",
-        "run/user/1000/tbd-reforger-agent.sock",
-        "./agent.sock",
-    ] {
-        let mut cfg = production_base();
-        cfg.game_agent_socket = bad.into();
-        match cfg.validate() {
-            Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
-            other => panic!("expected Malformed(GAME_AGENT_SOCKET) for {bad:?}, got {other:?}"),
-        }
-    }
-}
-
-/// Inner spaces are legal in a filesystem path and must NOT be swept up by the trim rule — that
-/// would be a guard rejecting valid configuration, which is its own kind of lie.
-#[test]
-fn agent_socket_may_contain_inner_spaces() {
-    let mut cfg = production_base();
-    cfg.game_agent_socket = "/run/user/1000/tbd agent.sock".into();
-    let cfg = cfg
-        .validate()
-        .expect("a path with an inner space is a legal path");
-    assert!(cfg.game_agent_configured());
-}
-
-/// Development is not a hole: an unusable path is unusable everywhere.
-#[test]
-fn bad_agent_socket_is_rejected_in_development_too() {
-    let mut cfg = Config::for_tests("postgres://x/x", "jwt-secret");
-    cfg.game_agent_socket = "relative.sock".into();
-    assert!(cfg.is_development());
-    match cfg.validate() {
-        Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
-        other => panic!("expected Malformed(GAME_AGENT_SOCKET) in dev, got {other:?}"),
-    }
-}
-
 // ---- TRUSTED_PROXIES at the Config boundary -------------------------
 
 /// A bad entry is a **boot failure**, and the message names the entry. Silently dropping it
@@ -393,18 +299,6 @@ fn production_rejects_a_missing_upload_dir() {
     }
 }
 
-#[test]
-fn production_rejects_a_relative_mission_stage_dir() {
-    let mut cfg = production_base();
-    cfg.mission_stage_dir = "missions".into();
-    match cfg.validate() {
-        Err(ConfigError::Malformed("MISSION_STAGE_DIR", why)) => {
-            assert!(why.contains("absolute"), "{why}");
-        }
-        other => panic!("expected Malformed(MISSION_STAGE_DIR), got {other:?}"),
-    }
-}
-
 /// A trailing newline from a secrets manager would create a directory named with it, and every
 /// upload would land somewhere the unit never points `/uploads` at.
 #[test]
@@ -438,7 +332,6 @@ fn development_accepts_a_relative_runtime_dir_and_production_an_absolute_one() {
 
     let mut prod = production_base();
     prod.upload_dir = "/var/lib/tbd-website-api/uploads".into();
-    prod.mission_stage_dir = "/var/lib/tbd-website-api/missions".into();
     assert!(prod.validate().is_ok());
 }
 
@@ -453,10 +346,4 @@ fn test_configs_keep_runtime_storage_out_of_the_checkout() {
         "{}",
         cfg.upload_dir
     );
-    assert!(
-        Path::new(&cfg.mission_stage_dir).starts_with(&temp),
-        "{}",
-        cfg.mission_stage_dir
-    );
-    assert_ne!(cfg.upload_dir, cfg.mission_stage_dir);
 }

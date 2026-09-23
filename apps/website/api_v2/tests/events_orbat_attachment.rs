@@ -391,17 +391,24 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
     // occupants are seeded and only the caller under test goes through the handler — the same
     // idiom the seat-race tests use. `arma_id` has its own unique index.
     for id in [OTHER, THIRD] {
-        common::seed_user(&pool, id, "Seeded", &arma(id), "enlisted").await;
+        events_support::seed_member(&pool, id, "Seeded", &arma(id), "enlisted").await;
+        let mut fixture = pool.begin().await.unwrap();
+        let allocation =
+            common::participant_allocation(&mut fixture, uuid::Uuid::parse_str(&emid).unwrap(), id)
+                .await;
         sqlx::query(
-            "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) \
-             VALUES ($1::uuid, $2, NULL, 'registered') \
-             ON CONFLICT (event_mission_id, discord_id) DO UPDATE SET state = 'registered'",
+            "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, allocation_id) \
+             VALUES ($1::uuid, $2, NULL, 'registered', $3) \
+             ON CONFLICT (event_mission_id, discord_id) DO UPDATE SET reservation_state = 'registered', \
+             allocation_id = EXCLUDED.allocation_id",
         )
         .bind(&emid)
         .bind(id)
-        .execute(&pool)
+        .bind(allocation)
+        .execute(&mut *fixture)
         .await
         .unwrap();
+        fixture.commit().await.unwrap();
     }
 
     // A free seat exists, so this refusal is the EVENT cap talking and not the ORBAT's.
@@ -524,7 +531,7 @@ async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
     let admin = token(&app, "admin").await;
     let leader = token(&app, "leader").await;
     let enl = token(&app, "enlisted").await;
-    common::seed_user(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
+    events_support::seed_member(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
 
     let (st, m) = call(
         &app,

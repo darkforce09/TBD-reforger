@@ -7,24 +7,45 @@
 //! refresh, persisting it. Shares the refresh module's single-flight cell.
 //! **Invariants:** browser-only — every function here needs `fetch`. A non-2xx answer is turned
 //! into `(status, message)` with the backend's own error body parsed out; a request that never
-//! reached the backend is reported as status `0`. The retry closure may run twice, so whatever it
-//! sends must be cloneable per attempt.
+//! reached the backend is reported as status `0`. The refusal-keeping verbs differ only in that
+//! failure: they hand a refused answer back as an [`ApiRefusal`] carrying the structured reason its
+//! body names, while a `401` still goes through the one refresh-and-retry contract. The retry
+//! closure may run twice, so whatever it sends must be cloneable per attempt.
 
-use super::refresh::{refresh_locked, REFRESH_SF};
-use super::{error_body_message, send_with_refresh, ApiErr, Req, API_BASE};
+use super::refresh::{refresh_locked, send_with_refresh_for_generation, REFRESH_SF};
+use super::refusals::{decode_answer, ApiRefusal};
+use super::{error_body_message, ApiErr, Req, API_BASE};
 use crate::v2::core::api::dto::MeResponse;
-use crate::v2::core::auth::{load_persisted, persist, AuthStore, RefreshResponse, Session};
+use crate::v2::core::auth::{load_persisted, AuthStore, RefreshResponse};
 use futures::future::FutureExt;
 use leptos::prelude::*;
 use serde::de::DeserializeOwned;
 
-/// How a 2xx response body is consumed.
+/// A backend answer kept whole: its status, and its body when that parsed as JSON.
+type KeptAnswer = (u16, Option<serde_json::Value>);
+
+/// How a response body is consumed.
+#[derive(Clone)]
 enum Consume<T> {
-    /// Deserialise the JSON body.
+    /// Deserialise the JSON body of a 2xx answer.
     Json(std::marker::PhantomData<T>),
     /// Ignore the body — for `204`s and for mutations whose response the caller discards, carrying
     /// the value to return instead.
     Ignore(T),
+    /// Keep every answer but a `401` whole, refusals included, for a caller that branches on the
+    /// reason a refusal names. The function builds the value from the status and the parsed body.
+    Answer(fn(u16, Option<serde_json::Value>) -> T),
+}
+
+impl<T> Consume<T> {
+    /// The answer builder, when this request reads a refused answer as its answer. A `401` never
+    /// is one: it goes through the refresh contract like any other request's.
+    fn refusal_reader(&self, status: u16) -> Option<fn(u16, Option<serde_json::Value>) -> T> {
+        match self {
+            Consume::Answer(keep) if status != 401 => Some(*keep),
+            _ => None,
+        }
+    }
 }
 
 /// What a request sends, and what one attempt of it costs.
@@ -58,20 +79,23 @@ async fn request<T: DeserializeOwned + Clone + 'static>(
     body: Body,
     consume: Consume<T>,
 ) -> Result<T, ApiErr> {
+    // A request issued during the cold start is sent under the restored session, never under
+    // the generation the restore is about to end.
+    store.session_restored().await;
+    let generation = store.current_generation();
     let sf = REFRESH_SF.with(|s| s.clone());
     // Build the URL once (so `path` need only live for this call, not `'static`) — the retry
     // closure clones the owned URL per attempt. Param routes (/missions/:id) pass a dynamic path.
     let url = format!("{API_BASE}{path}");
-    let ignore = match &consume {
-        Consume::Json(_) => None,
-        Consume::Ignore(v) => Some(v.clone()),
-    };
     let send = move |tok: Option<String>| -> Req<T> {
         let url = url.clone();
         let method = method.clone();
         let body = body.clone();
-        let ignore = ignore.clone();
+        let consume = consume.clone();
         async move {
+            if !store.is_current_generation(generation) {
+                return Err((401, None));
+            }
             let mut req = gloo_net::http::RequestBuilder::new(&url)
                 .method(method)
                 .credentials(web_sys::RequestCredentials::Include);
@@ -94,10 +118,18 @@ async fn request<T: DeserializeOwned + Clone + 'static>(
                 Ok(resp) => {
                     let status = resp.status();
                     if (200..300).contains(&status) {
-                        match ignore {
-                            Some(v) => Ok(v),
-                            None => resp.json::<T>().await.map_err(|_| (0u16, None)),
+                        match consume {
+                            Consume::Json(_) => resp.json::<T>().await.map_err(|_| (0u16, None)),
+                            Consume::Ignore(v) => Ok(v),
+                            Consume::Answer(keep) => resp
+                                .json::<serde_json::Value>()
+                                .await
+                                .map(|v| keep(status, Some(v)))
+                                .map_err(|_| (0u16, None)),
                         }
+                    } else if let Some(keep) = consume.refusal_reader(status) {
+                        // The refusal is the answer this caller reads; its body names the reason.
+                        Ok(keep(status, resp.json::<serde_json::Value>().await.ok()))
                     } else {
                         // Surface the backend's own error string, and the findings behind it.
                         let msg = resp
@@ -113,17 +145,33 @@ async fn request<T: DeserializeOwned + Clone + 'static>(
         }
         .boxed_local()
     };
-    send_with_refresh(
+    let result = send_with_refresh_for_generation(
         &sf,
+        generation,
+        move || store.is_current_generation(generation),
         send,
         move || store.access_token.get_untracked(),
-        move || refresh_locked(store).boxed_local(),
+        move || {
+            async move {
+                if !store.is_current_generation(generation) {
+                    return None;
+                }
+                refresh_locked(store).await
+            }
+            .boxed_local()
+        },
         move |r: &RefreshResponse| {
-            store.set_tokens(r.clone());
-            persist(&store.persist_state());
+            if store.is_current_generation(generation) {
+                store.set_tokens(r.clone());
+            }
         },
     )
-    .await
+    .await;
+    if store.is_current_generation(generation) {
+        result
+    } else {
+        Err((401, None))
+    }
 }
 
 /// `GET` `path`, relative to the API root. Returns the deserialised body, or the status.
@@ -242,6 +290,62 @@ pub async fn api_post_raw(store: AuthStore, path: &str, body: String) -> Result<
     .await
 }
 
+/// One request whose refusal the caller reads: the shared request path, so the same bearer
+/// injection, single flight and single retry, with a refused answer decoded into the reason its
+/// body names instead of being flattened to a sentence.
+async fn request_keeping_refusal<T: DeserializeOwned>(
+    store: AuthStore,
+    method: gloo_net::http::Method,
+    path: &str,
+    body: Body,
+) -> Result<T, ApiRefusal> {
+    let keep: fn(u16, Option<serde_json::Value>) -> KeptAnswer = |status, body| (status, body);
+    let (status, body) = request(store, method, path, body, Consume::Answer(keep))
+        .await
+        .map_err(ApiRefusal::from)?;
+    decode_answer(status, body)
+}
+
+/// `POST` `path` with a JSON body. Returns the deserialised 2xx body, or the refusal with the
+/// structured reason its body names.
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
+pub async fn api_post_keeping_refusal<T: DeserializeOwned>(
+    store: AuthStore,
+    path: &str,
+    body: serde_json::Value,
+) -> Result<T, ApiRefusal> {
+    request_keeping_refusal(store, gloo_net::http::Method::POST, path, Body::Json(body)).await
+}
+
+/// `PUT` `path` with a JSON body, keeping a refusal's structured reason.
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
+pub async fn api_put_keeping_refusal<T: DeserializeOwned>(
+    store: AuthStore,
+    path: &str,
+    body: serde_json::Value,
+) -> Result<T, ApiRefusal> {
+    request_keeping_refusal(store, gloo_net::http::Method::PUT, path, Body::Json(body)).await
+}
+
+/// `PATCH` `path` with a JSON body, keeping a refusal's structured reason.
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
+pub async fn api_patch_keeping_refusal<T: DeserializeOwned>(
+    store: AuthStore,
+    path: &str,
+    body: serde_json::Value,
+) -> Result<T, ApiRefusal> {
+    request_keeping_refusal(store, gloo_net::http::Method::PATCH, path, Body::Json(body)).await
+}
+
+/// `DELETE` `path`, reading the answer's body and keeping a refusal's structured reason.
+#[allow(dead_code)] // Called only from browser-side pages; the native build has no caller.
+pub async fn api_delete_keeping_refusal<T: DeserializeOwned>(
+    store: AuthStore,
+    path: &str,
+) -> Result<T, ApiRefusal> {
+    request_keeping_refusal(store, gloo_net::http::Method::DELETE, path, Body::None).await
+}
+
 /// `POST` a multipart upload under the form field `file`.
 ///
 /// Same authentication contract as the JSON verbs. The content type is deliberately not set: the
@@ -251,12 +355,17 @@ pub async fn api_upload_file<T: DeserializeOwned + Clone + 'static>(
     path: &str,
     file: web_sys::File,
 ) -> Result<T, ApiErr> {
+    store.session_restored().await;
+    let generation = store.current_generation();
     let sf = REFRESH_SF.with(|s| s.clone());
     let url = format!("{API_BASE}{path}");
     let send = move |tok: Option<String>| -> Req<T> {
         let url = url.clone();
         let file = file.clone();
         async move {
+            if !store.is_current_generation(generation) {
+                return Err((401, None));
+            }
             let Ok(form) = web_sys::FormData::new() else {
                 return Err((0u16, None));
             };
@@ -293,45 +402,60 @@ pub async fn api_upload_file<T: DeserializeOwned + Clone + 'static>(
         }
         .boxed_local()
     };
-    send_with_refresh(
+    let result = send_with_refresh_for_generation(
         &sf,
+        generation,
+        move || store.is_current_generation(generation),
         send,
         move || store.access_token.get_untracked(),
-        move || refresh_locked(store).boxed_local(),
+        move || {
+            async move {
+                if !store.is_current_generation(generation) {
+                    return None;
+                }
+                refresh_locked(store).await
+            }
+            .boxed_local()
+        },
         move |r: &RefreshResponse| {
-            store.set_tokens(r.clone());
-            persist(&store.persist_state());
+            if store.is_current_generation(generation) {
+                store.set_tokens(r.clone());
+            }
         },
     )
-    .await
+    .await;
+    if store.is_current_generation(generation) {
+        result
+    } else {
+        Err((401, None))
+    }
 }
 
 /// Cold-start bootstrap: hydrate the tokens from persisted storage, then fetch the current user.
 ///
 /// A stale or absent access token handles itself through the usual `401` refresh-and-retry path.
-/// Stays a guest and does nothing when nothing is persisted.
+/// When nothing is persisted it settles the restore and stays a guest.
 pub async fn bootstrap(store: AuthStore) {
-    let Some(p) = load_persisted() else {
+    // A peer may temporarily remove its single-use credential while rotating it. Read only after
+    // that peer releases the lock, so a new tab observes the settled result.
+    let persisted =
+        super::refresh::with_refresh_lock(async { load_persisted() }.boxed_local()).await;
+    let Some(persisted) = persisted.filter(|p| p.refresh_token.is_some()) else {
+        store.settle_session_restore();
+        store.bootstrapping.set(false);
         return;
     };
-    let Some(rt) = p.refresh_token else {
-        return;
-    };
-    store.refresh_token.set(Some(rt));
-    store.expires_at.set(p.expires_at);
-    if let Some(u) = p.user {
-        store.user.set(Some(u));
-    }
+    store.restore_persisted(persisted);
     store.bootstrapping.set(true);
+    let generation = store.current_generation();
+    let profile_request = store.begin_profile_request();
     if let Ok(me) = api_get::<MeResponse>(store, "/me").await {
-        store.set_session(Session {
-            access_token: store.access_token.get_untracked().unwrap_or_default(),
-            refresh_token: store.refresh_token.get_untracked().unwrap_or_default(),
-            expires_at: store.expires_at.get_untracked().unwrap_or_default(),
-            user: me.user,
-            arma_linked: me.arma_linked,
-        });
-        persist(&store.persist_state());
+        if store.adopt_profile(profile_request, &me) {
+            crate::v2::core::auth::session::persist_profile_if_current(&store.persist_state())
+                .await;
+        }
     }
-    store.bootstrapping.set(false);
+    if store.is_current_generation(generation) {
+        store.bootstrapping.set(false);
+    }
 }

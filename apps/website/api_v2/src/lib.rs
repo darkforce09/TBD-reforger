@@ -26,3 +26,11 @@ mod architecture_rules;
 #[cfg(test)]
 #[path = "tests/prose_rules.rs"]
 mod prose_rules;
+
+#[cfg(test)]
+#[path = "tests/property_evidence.rs"]
+mod property_evidence;
+
+#[cfg(test)]
+#[path = "tests/property_evidence_checks.rs"]
+mod property_evidence_checks;

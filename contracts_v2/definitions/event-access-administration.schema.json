@@ -1,0 +1,796 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventAccessAdministrationContract",
+  "description": "GET /api/v1/events/:id/access (administrator). Every change names expected_access_revision; a stale revision answers 409 ACCESS_REVISION_CONFLICT. Changes answer AccessChangeOutcome: PUT /events/:id/access-policy, PUT and DELETE (?expected_access_revision=) /event-missions/:emid/squads/:faction/:squad/access-policy and /event-missions/:emid/slots/:slotId/access-policy, PUT /events/:id/reservation-quotas, POST /events/:id/groups (201), PATCH and DELETE (?expected_access_revision=) /events/:id/groups/:groupId, PUT and DELETE (?expected_access_revision=) /events/:id/groups/:groupId/members/:discordId.",
+  "$ref": "#/definitions/EventAccessAdministration",
+  "definitions": {
+    "EventAccessAdministration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "access_revision",
+        "max_slots",
+        "event_policy",
+        "squad_policies",
+        "slot_policies",
+        "groups",
+        "reservation_quotas",
+        "quota_usage"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "access_revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_slots": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0 leaves the event uncapped."
+        },
+        "event_policy": {
+          "$ref": "#/definitions/EventAccessPolicy"
+        },
+        "squad_policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SquadAccessPolicy"
+          }
+        },
+        "slot_policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SlotAccessPolicy"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EventGroupView"
+          }
+        },
+        "reservation_quotas": {
+          "$ref": "#/definitions/ReservationQuotas"
+        },
+        "quota_usage": {
+          "$ref": "#/definitions/QuotaUsageView"
+        }
+      },
+      "description": "The manager's view of one event's access configuration and usage."
+    },
+    "EventAccessPolicy": {
+      "description": "Grants are alternatives (any one admits); the conditions of one grant must all hold. An empty grant list admits nobody. A missing squad or slot policy inherits: slot, then squad, then event.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grants"
+      ],
+      "properties": {
+        "grants": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/definitions/EventAccessGrant"
+          }
+        }
+      }
+    },
+    "EventAccessGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conditions"
+      ],
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/definitions/EventAccessCondition"
+          }
+        }
+      }
+    },
+    "EventAccessCondition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "authenticated"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "tbd_member"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "guild_id",
+            "role_id"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "discord_role"
+            },
+            "guild_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "role_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "group_id"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "event_group"
+            },
+            "group_id": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "discord_id"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "named_account"
+            },
+            "discord_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        }
+      ]
+    },
+    "EventGroupSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "managed_roster"
+            }
+          },
+          "description": "A roster administrators maintain; every entry records who added it."
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "guild_id",
+            "required_role_ids"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "partner_guild"
+            },
+            "guild_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "required_role_ids": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            }
+          },
+          "description": "Membership comes only from bot-verified Discord observations of the partner guild."
+        }
+      ]
+    },
+    "ReservationQuotaPool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seats",
+        "opens_at"
+      ],
+      "properties": {
+        "seats": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 4294967295,
+          "description": "null leaves the pool uncapped; 0 closes it."
+        },
+        "opens_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ReservationQuotas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "member",
+        "guest",
+        "open"
+      ],
+      "properties": {
+        "member": {
+          "$ref": "#/definitions/ReservationQuotaPool"
+        },
+        "guest": {
+          "$ref": "#/definitions/ReservationQuotaPool"
+        },
+        "open": {
+          "$ref": "#/definitions/ReservationQuotaPool"
+        }
+      },
+      "description": "Members draw from member, others from guest; either overflows to open once open opens."
+    },
+    "SquadAccessPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_mission_id",
+        "faction",
+        "squad",
+        "policy"
+      ],
+      "properties": {
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "squad": {
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/definitions/EventAccessPolicy"
+        }
+      }
+    },
+    "SlotAccessPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slot_id",
+        "event_mission_id",
+        "faction",
+        "squad",
+        "slot_index",
+        "policy"
+      ],
+      "properties": {
+        "slot_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "faction": {
+          "type": "string"
+        },
+        "squad": {
+          "type": "string"
+        },
+        "slot_index": {
+          "type": "integer"
+        },
+        "policy": {
+          "$ref": "#/definitions/EventAccessPolicy"
+        }
+      }
+    },
+    "AuthorshipProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "created_by",
+        "system_origin",
+        "created_at"
+      ],
+      "properties": {
+        "created_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "system_origin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Exactly one of created_by and system_origin is present."
+    },
+    "RosterEntryView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "username",
+        "added_by",
+        "system_origin",
+        "added_at"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "added_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "system_origin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "added_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "EventGroupView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "source",
+        "provenance",
+        "roster"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "source": {
+          "$ref": "#/definitions/EventGroupSource"
+        },
+        "provenance": {
+          "$ref": "#/definitions/AuthorshipProvenance"
+        },
+        "roster": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RosterEntryView"
+          }
+        }
+      }
+    },
+    "QuotaUsageView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "member",
+        "guest",
+        "open",
+        "legacy_unclassified",
+        "total"
+      ],
+      "properties": {
+        "member": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "guest": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "open": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "legacy_unclassified": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "AccessChangeOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "access",
+        "released_registrations",
+        "promoted_registrations"
+      ],
+      "properties": {
+        "access": {
+          "$ref": "#/definitions/EventAccessAdministration"
+        },
+        "released_registrations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "promoted_registrations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "description": "The access view after a change and the reservations the change released or promoted."
+    },
+    "AccessPolicyChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_access_revision",
+        "policy"
+      ],
+      "properties": {
+        "expected_access_revision": {
+          "type": "integer"
+        },
+        "policy": {
+          "$ref": "#/definitions/EventAccessPolicy"
+        }
+      }
+    },
+    "EventGroupCreation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_access_revision",
+        "name",
+        "source"
+      ],
+      "properties": {
+        "expected_access_revision": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "source": {
+          "$ref": "#/definitions/EventGroupSource"
+        }
+      }
+    },
+    "EventGroupChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_access_revision"
+      ],
+      "properties": {
+        "expected_access_revision": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "source": {
+          "$ref": "#/definitions/EventGroupSource"
+        }
+      }
+    },
+    "ReservationQuotaChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_access_revision",
+        "reservation_quotas"
+      ],
+      "properties": {
+        "expected_access_revision": {
+          "type": "integer"
+        },
+        "reservation_quotas": {
+          "$ref": "#/definitions/ReservationQuotas"
+        }
+      }
+    },
+    "RosterMemberChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_access_revision"
+      ],
+      "properties": {
+        "expected_access_revision": {
+          "type": "integer"
+        }
+      },
+      "description": "PUT /events/:id/groups/:groupId/members/:discordId body; managed rosters only."
+    },
+    "ParticipantAccessExplanation": {
+      "description": "One element of GET /api/v1/events/:id/access/participants (an array): why each participant is or is not eligible.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discord_id",
+        "username",
+        "available",
+        "tbd_member",
+        "guilds",
+        "roster_groups",
+        "allocation",
+        "registrations"
+      ],
+      "properties": {
+        "discord_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "tbd_member": {
+          "type": "boolean"
+        },
+        "guilds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "guild_id",
+              "membership_status",
+              "verified_at",
+              "override_until",
+              "current"
+            ],
+            "properties": {
+              "guild_id": {
+                "type": "string"
+              },
+              "membership_status": {
+                "type": "string",
+                "enum": [
+                  "member",
+                  "nonmember",
+                  "unknown"
+                ]
+              },
+              "verified_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "override_until": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "current": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "roster_groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "group_id",
+              "added_by",
+              "system_origin",
+              "added_at"
+            ],
+            "properties": {
+              "group_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "added_by": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "system_origin": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "added_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "allocation": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quota_kind",
+                "acquired_at"
+              ],
+              "properties": {
+                "quota_kind": {
+                  "type": "string",
+                  "enum": [
+                    "member",
+                    "guest",
+                    "open",
+                    "legacy_unclassified"
+                  ]
+                },
+                "acquired_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          ]
+        },
+        "registrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "registration_id",
+              "event_mission_id",
+              "reservation_state",
+              "slot_id",
+              "queue_entered_at",
+              "policy_source",
+              "admitting_grants",
+              "current_authority_admits",
+              "last_verified_admits"
+            ],
+            "properties": {
+              "registration_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "event_mission_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reservation_state": {
+                "type": "string",
+                "enum": [
+                  "registered",
+                  "waitlisted",
+                  "withdrawn",
+                  "legacy_unknown"
+                ]
+              },
+              "slot_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "queue_entered_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "policy_source": {
+                "type": "string",
+                "enum": [
+                  "event",
+                  "squad",
+                  "slot"
+                ]
+              },
+              "admitting_grants": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "current_authority_admits": {
+                "type": "boolean"
+              },
+              "last_verified_admits": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

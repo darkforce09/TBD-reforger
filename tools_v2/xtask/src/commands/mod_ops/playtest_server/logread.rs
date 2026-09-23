@@ -145,24 +145,30 @@ pub(super) fn dump_engine_errors(paths: &RunPaths) {
             "     passing boot of this config carries ~79 of them; they are the floor, not a clue)"
         );
     }
-    // This one is (E) and looks alarming and is not the problem. Say so where it will be read.
-    // Matched on tag + the first structural words (`\[TBD\]\[Mission\].*backend refused`), not the
-    // whole sentence: the tail carries `— http=%1 body=%2` and is prose that will be reworded
-    // (TBD_MissionLoader.c:775). Missing this note only costs a diagnostic hint, but a hint that
-    // silently stops appearing is how operators end up chasing a benign (E) line for an hour.
-    if has_re(&t, r"\[TBD\]\[Mission\].*backend refused") {
+    // Two mission lines explain a boot that ran no platform mission. Matched on tag and the
+    // first structural words, not whole sentences: the tails are prose that gets reworded.
+    if has_re(&t, r"\[TBD\]\[Mission\].*NO MISSION YET") {
         eprintln!(
-            "    NOTE: '[TBD][Mission] backend refused the mission fetch — http=400' is BENIGN."
+            "    NOTE: '[TBD][Mission] NO MISSION YET' means the mod read no deployment and has no"
         );
         eprintln!(
-            "          It means the mod could not fetch that id from the API and used the mission"
+            "          cached artifact: the profile's machineCredential is unset or refused, or the"
         );
         eprintln!(
-            "          staged on disk instead — the --mission-file path working as designed. It is"
+            "          server has no deployment. It has nothing to do with room registration."
+        );
+    }
+    if has_re(
+        &t,
+        r"\[TBD\]\[Mission\].*RUNNING THE LAST VERIFIED ARTIFACT",
+    ) {
+        eprintln!(
+            "    NOTE: '[TBD][Mission] RUNNING THE LAST VERIFIED ARTIFACT' is the offline path: the"
         );
         eprintln!(
-            "          present on PASSING boots too. It has nothing to do with room registration."
+            "          platform gave no deployment answer and the cached artifact booted instead —"
         );
+        eprintln!("          --artifact-file working as designed.");
     }
 }
 

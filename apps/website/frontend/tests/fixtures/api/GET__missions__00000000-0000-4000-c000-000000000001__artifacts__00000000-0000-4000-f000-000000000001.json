@@ -1,0 +1,30 @@
+{
+  "artifact_digest": "2534548d0f87ee73f27c582279483e82883a5f97f2a6576a43ed913b188e2791",
+  "catalog_sha256": "26fa7c98e52915f6f2d476d2373e9cbdc5ad09b2e64ce812e9c7b23c88947b07",
+  "compiler_version": "website-map-engine 0.1.0",
+  "created_at": "2026-07-24T10:05:00Z",
+  "created_by": "000000000000000003",
+  "diagnostics": [],
+  "document_bytes": 1271,
+  "document_sha256": "be02eddd923ceab2751a2634cd78bec2c49b919c07300742fcfa7b78eef76291",
+  "id": "00000000-0000-4000-f000-000000000001",
+  "metadata": {
+    "author": "000000000000000003",
+    "custom_terrain_name": "",
+    "game_mode": "pve_coop",
+    "id": "00000000-0000-4000-c000-000000000001",
+    "max_players": 48,
+    "terrain": "arland",
+    "time_of_day": "05:30:00",
+    "title": "Operation Iron Veil",
+    "weather": "overcast"
+  },
+  "metadata_sha256": "ded05d09234b16a42ba8824117c75eb57e48b0aac46537d10cd4dc616453ef3b",
+  "mission_id": "00000000-0000-4000-c000-000000000001",
+  "mission_version_id": "00000000-0000-4000-8000-000000000011",
+  "modpack_id": "00000000-0000-4000-a000-000000000001",
+  "modpack_version": "2.1",
+  "schema_version": "1.1",
+  "terrain": "arland",
+  "version_payload_sha256": "bb173e5b5b0e64ac00020ce933fa6cf5a9829548d7d10a8cc85a327653517b3e"
+}

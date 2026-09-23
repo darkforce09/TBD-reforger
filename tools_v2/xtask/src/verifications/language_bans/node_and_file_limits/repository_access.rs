@@ -26,22 +26,6 @@ pub(super) fn refuse_file_length(cause: NotRun) -> u8 {
 }
 
 pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, NotRun> {
-    let al_path = root.join(".coding-standards-allowlist.yaml");
-    let al = match std::fs::read_to_string(&al_path) {
-        Ok(s) => s,
-        Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
-            return Err(NotRun::TargetMissing(al_path));
-        }
-        Err(source) => {
-            return Err(NotRun::Unreadable {
-                path: al_path,
-                source,
-            });
-        }
-    };
-    let entries = parse_allowlist(&al);
-    let today = today_ymd()?;
-
     let files = walk_rust_sources(root)?;
     if files.is_empty() {
         println!("FAIL: file-length walked 0 .rs files — refusing a vacuous pass.");
@@ -49,24 +33,6 @@ pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, N
     }
 
     let mut fails = 0u64;
-    let scanned: std::collections::HashSet<String> =
-        files.iter().map(|f| rel_posix(root, f)).collect();
-    for entry in &entries {
-        if !allowlist_path_is_scanned(entry, &scanned) {
-            eprintln!(
-                "SIZE-3: orphan allowlist row for {} ({})",
-                entry.path, entry.rule
-            );
-            fails += 1;
-        }
-        if entry.rule == "SIZE-3" && entry.expires == "MC-perf" {
-            eprintln!(
-                "SIZE-3: {} uses MC-perf instead of a dated expiry",
-                entry.path
-            );
-            fails += 1;
-        }
-    }
     for f in &files {
         let rel = rel_posix(root, f);
         let n = match std::fs::read_to_string(f) {
@@ -78,16 +44,15 @@ pub(super) fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, N
                 });
             }
         };
-        if is_size2(&rel, &entries, &today) {
-            continue;
-        }
         let max_lines = if is_test_file(&rel) {
             SIZE_3_TEST_MAX_LINES
         } else {
             SIZE_3_PRODUCTION_MAX_LINES
         };
-        if n > max_lines && !is_size3_exempt(&rel, &entries, &today) {
-            eprintln!("SIZE-3: {rel} is {n} lines (>{max_lines}, not allowlisted)");
+        if n > max_lines {
+            eprintln!(
+                "SIZE-3: {rel} is {n} lines (>{max_lines}). Hard limit exceeded; decompose by responsibility. No exemptions permitted."
+            );
             fails += 1;
         }
     }
@@ -103,8 +68,6 @@ pub(super) fn walk_rust_sources(root: &Path) -> std::result::Result<Vec<PathBuf>
     let refs: Vec<&Path> = roots.iter().map(PathBuf::as_path).collect();
     scan::walk_files(&refs, |path| {
         path.extension().and_then(|ext| ext.to_str()) == Some("rs")
-            // The contract generator owns this tree; source splits cannot maintain it.
-            && !path.starts_with(root.join("apps/website/api_v2/src/missions/contract/generated"))
     })
 }
 
@@ -148,149 +111,6 @@ pub(super) fn is_test_file(rel: &str) -> bool {
             && path
                 .file_stem()
                 .is_some_and(|stem| stem.to_string_lossy().ends_with("_tests")))
-}
-
-pub(super) fn allowlist_path_is_scanned(
-    entry: &AllowEntry,
-    scanned: &std::collections::HashSet<String>,
-) -> bool {
-    if entry.rule == "SIZE-2" {
-        let prefix = entry.path.split("/**").next().unwrap_or(&entry.path);
-        scanned
-            .iter()
-            .any(|rel| rel == &entry.path || rel.starts_with(prefix))
-    } else {
-        scanned.contains(&entry.path)
-    }
-}
-
-pub(super) fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
-    let mut out = Vec::new();
-    let mut cur: Option<AllowEntry> = None;
-    for line in text.lines() {
-        let t = line.trim();
-        if t.starts_with('#') || t.is_empty() {
-            continue;
-        }
-        if let Some(r) = t.strip_prefix("- rule:") {
-            if let Some(e) = cur.take()
-                && !e.path.is_empty()
-            {
-                out.push(e);
-            }
-            cur = Some(AllowEntry {
-                rule: yaml_scalar(r),
-                path: String::new(),
-                reason: String::new(),
-                expires: String::new(),
-            });
-            continue;
-        }
-        let Some(e) = cur.as_mut() else {
-            continue;
-        };
-        if let Some(v) = t.strip_prefix("path:") {
-            e.path = yaml_scalar(v);
-        } else if let Some(v) = t.strip_prefix("reason:") {
-            e.reason = yaml_scalar(v);
-        } else if let Some(v) = t.strip_prefix("expires:") {
-            e.expires = yaml_scalar(v);
-        }
-    }
-    if let Some(e) = cur.take()
-        && !e.path.is_empty()
-    {
-        out.push(e);
-    }
-    out
-}
-
-/// Strip one layer of surrounding YAML quotes and treat whitespace / `""` as empty.
-pub(super) fn yaml_scalar(raw: &str) -> String {
-    let t = raw.trim();
-    let inner = if t.len() >= 2 {
-        let b = t.as_bytes();
-        let dq = b[0] == b'"' && *b.last().unwrap() == b'"';
-        let sq = b[0] == b'\'' && *b.last().unwrap() == b'\'';
-        if dq || sq {
-            t[1..t.len() - 1].trim()
-        } else {
-            t
-        }
-    } else {
-        t
-    };
-    inner.to_string()
-}
-
-pub(super) fn exemption_fields_ok(e: &AllowEntry, today: &str) -> bool {
-    !e.reason.is_empty() && expires_ok(&e.expires, today)
-}
-
-pub(super) fn is_size2(rel: &str, entries: &[AllowEntry], today: &str) -> bool {
-    entries.iter().any(|e| {
-        if e.rule != "SIZE-2" || !exemption_fields_ok(e, today) {
-            return false;
-        }
-        let prefix = e.path.split("/**").next().unwrap_or(&e.path);
-        rel == e.path || rel.starts_with(prefix)
-    })
-}
-
-pub(super) fn is_size3_exempt(rel: &str, entries: &[AllowEntry], today: &str) -> bool {
-    entries.iter().any(|e| {
-        e.rule == "SIZE-3"
-            && e.path == rel
-            && e.expires != "MC-perf"
-            && exemption_fields_ok(e, today)
-    })
-}
-
-pub(super) fn expires_ok(expires: &str, today: &str) -> bool {
-    if expires == "MC-perf" {
-        return true;
-    }
-    let b = expires.as_bytes();
-    b.len() == 10
-        && b[4] == b'-'
-        && b[7] == b'-'
-        && b.iter().enumerate().all(|(i, c)| {
-            if i == 4 || i == 7 {
-                true
-            } else {
-                c.is_ascii_digit()
-            }
-        })
-        && expires >= today
-}
-
-pub(super) fn today_ymd() -> std::result::Result<String, NotRun> {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let days = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|source| NotRun::ToolError {
-            tool: "clock".into(),
-            status: -1,
-            stderr: source.to_string(),
-        })?
-        .as_secs()
-        / 86400;
-    Ok(civil_ymd(days))
-}
-
-/// UTC YYYY-MM-DD from days since 1970-01-01 (Howard Hinnant `civil_from_days`).
-pub(super) fn civil_ymd(unix_days: u64) -> String {
-    let z = unix_days as i64 + 719468;
-    let era = if z >= 0 { z } else { z - 146096 } / 146097;
-    let doe = (z - era * 146097) as u64;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe as i64 + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    format!("{y:04}-{m:02}-{d:02}")
 }
 
 pub fn gen_font_table(bdf_path: &Path) -> Result<u8> {

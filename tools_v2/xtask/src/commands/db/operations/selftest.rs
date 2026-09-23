@@ -84,7 +84,7 @@ const BASELINE: &[(&str, &[&str])] = &[
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS rust_it WITH (FORCE);\"",
             "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"CREATE DATABASE rust_it;\"",
             "cd apps/website/api_v2 && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test",
-            "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc \"SELECT datname FROM pg_database WHERE datname = 'rust_it' OR datname LIKE 'rust_it\\_%\\_it' ESCAPE '\\'\"",
+            "podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc \"SELECT datname FROM pg_database WHERE datname = 'rust_it' OR (left(datname, 8) = 'rust_it_' AND right(datname, 3) = '_it' AND length(datname) > 11)\"",
         ],
     ),
 ];
@@ -102,7 +102,7 @@ const BASELINE: &[(&str, &[&str])] = &[
 const ALLOWED_TAIL: &str = " | while read -r db; do \\\n\t[ -n \"$db\" ] || continue; \\\n\tpodman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc \"DROP DATABASE IF EXISTS $db WITH (FORCE);\" >/dev/null; \\\ndone";
 
 /// Scratch base for arm 4. `tbd_gate*` is on the test-database allow-list and is matched by no
-/// other lane's reap pattern (`rust-test-it` reaps `rust_it\_%\_it`).
+/// other lane's reap pattern (`rust-test-it` reaps the names that start `rust_it_` and end `_it`).
 const ARM4_BASE: &str = "tbd_gate_selftest_arm4";
 
 pub fn run() -> Result<u8> {

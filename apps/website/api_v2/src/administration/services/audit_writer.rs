@@ -66,7 +66,7 @@ pub async fn write_audit(
 ///   separately from the caller's real `discord_id`, so audit-row identity never comes from this
 ///   string. It is used in no `WHERE`, comparison, join or `ORDER BY`. Changing the guard
 ///   therefore cannot change which row anything matches — the failure mode that makes a one-sided
-///   trim catastrophic for a value that *is* a key (as `faction` is in `operations/handlers/roster_ingest.rs`) does
+///   trim catastrophic for a value that *is* a key (as `faction` is in `operations/handlers/game_runtime_roster.rs`) does
 ///   not exist here.
 ///
 /// **Fall-through, not display-trimming — deliberately only the former.** The guard treats

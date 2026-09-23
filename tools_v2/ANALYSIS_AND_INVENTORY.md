@@ -90,7 +90,7 @@ The heavy services, behind six executables: `enf`, `gate`, `mcpd`, `world`, `map
 | `ci` | The task index every CI job runs, and the composite local replay. |
 | `db` | The development Postgres lifecycle and the integration-test database lane. |
 | `debug` | Operator probes: direct join, remote logs. |
-| `deploy` | The website and staging deployments, the host control agent, and the guarded database backup, restore and drill. |
+| `deploy` | The website and staging deployments, the host agent install, and the guarded database backup, restore and drill. |
 | `fetch` | Vanilla Enfusion API and source retrieval. |
 | `generate` | Generated source: the bitmap font table. |
 | `map` | The map lane, delegated to `developer-tools`. |

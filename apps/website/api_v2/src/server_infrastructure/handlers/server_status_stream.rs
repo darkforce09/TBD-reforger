@@ -54,7 +54,11 @@ pub async fn stream_server_status(
 
     (
         [(HeaderName::from_static("x-accel-buffering"), "no")],
-        Sse::new(body),
+        Sse::new(
+            crate::core::middleware::authorized_event_stream::authorize_event_stream(
+                body, state, _u, "guest",
+            ),
+        ),
     )
         .into_response()
 }

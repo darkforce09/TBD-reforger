@@ -1,4 +1,5 @@
 use super::*;
+use crate::browser_testing::session_tokens::gate_access_token;
 
 /// Editor route requires `mission_maker`: a guest is bounced to
 /// `?role_notice=mission_maker` before `__editorCam` appears.
@@ -70,7 +71,7 @@ pub(super) async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMut
                     request_id,
                     200,
                     &json!({
-                        "access_token": "outliner-access",
+                        "access_token": gate_access_token("outliner"),
                         "refresh_token": "rt-seed",
                         "expires_at": "2030-01-01T00:00:00Z"
                     }),
@@ -194,7 +195,7 @@ pub(super) async fn serve_arsenal_golden(
                     request_id,
                     200,
                     &json!({
-                        "access_token": "arsenal-access",
+                        "access_token": gate_access_token("arsenal"),
                         "refresh_token": "rt-seed",
                         "expires_at": "2030-01-01T00:00:00Z"
                     }),

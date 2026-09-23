@@ -109,7 +109,7 @@ class TBD_PreSlotComponent : SCR_BaseGameModeComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Statics outlive a world inside one process (measured landmine in this codebase, and
-	//! `TBD_FrameworkManager.SelectMissionByNumber` restarts the scenario in-process), so the arm
+	//! `TBD_FleetLoadMissionAction` restarts the scenario in-process), so the arm
 	//! MUST be torn down here or the next round starts holding a camera that belongs to a world that
 	//! is gone.
 	override void OnDelete(IEntity owner)

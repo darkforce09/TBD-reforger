@@ -1,0 +1,187 @@
+{
+  "generation_id": "6A6E9885CF2F83F9",
+  "resource_name": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+  "before": {
+    "file": "equipment/ammunition/magazines/magazines_all.json",
+    "values": {
+      "capacity": {
+        "round_capacity": 30,
+        "ammo_style": "box",
+        "weight_per_round_kg": 0.012
+      },
+      "tracers": {
+        "has_tracers": true,
+        "tracer_ratio": "5:1",
+        "tracer_count": 5,
+        "standard_count": 25,
+        "interval": 1,
+        "terminal_tracer_cluster": 5,
+        "ammo_mapping": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "physical": {
+        "weight_empty_kg": 0.12,
+        "weight_full_kg": 0.48,
+        "volume_cm3": 200,
+        "dimensions": [
+          10,
+          10,
+          10
+        ],
+        "inventory_size": "1"
+      },
+      "caliber": {
+        "caliber_name": "556x45mm",
+        "ammo_type": "STANAG M855 M856 FMJ Tracer",
+        "ammo_type_flags": 3
+      }
+    }
+  },
+  "after": {
+    "record_file": "records/arma_reforger/D8/D8F2CA92583B23D3.json",
+    "source_file": "sources/arma_reforger/D8/D8F2CA92583B23D3.json",
+    "effective_sources": [
+      {
+        "node_id": "root/properties/components/2",
+        "class_name": "InventoryMagazineComponent",
+        "facts": {
+          "WeightPerAmmo": {
+            "status": "present",
+            "value": 0.012000000104308128,
+            "native_type": "SCALAR",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+              "node_id": "root/properties/components/2",
+              "property": "WeightPerAmmo",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      },
+      {
+        "node_id": "root/properties/components/3",
+        "class_name": "MagazineComponent",
+        "facts": {
+          "AmmoConfig": {
+            "status": "present",
+            "value": "{2689915ED0E00994}Configs/Weapons/Ammo/Ammo_556x45.conf",
+            "native_type": "RESOURCE_NAME",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+              "node_id": "root/properties/components/3",
+              "property": "AmmoConfig",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "AmmoMapping": {
+            "status": "present",
+            "value": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "native_type": "INTEGER_ARRAY",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "declared",
+            "source": {
+              "resource_name": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+              "node_id": "root/properties/components/3",
+              "property": "AmmoMapping",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          },
+          "MaxAmmo": {
+            "status": "present",
+            "value": 30,
+            "native_type": "INTEGER",
+            "native_unit": null,
+            "unit_evidence": null,
+            "object_base_class": null,
+            "origin": "inherited",
+            "source": {
+              "resource_name": "{D8F2CA92583B23D3}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_M856_Last_5Tracer.et",
+              "node_id": "root/properties/components/3",
+              "property": "MaxAmmo",
+              "method": "BaseContainer.Get"
+            },
+            "reason": null,
+            "enum_values": []
+          }
+        }
+      }
+    ]
+  }
+}

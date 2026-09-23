@@ -60,6 +60,7 @@ pub(super) fn fixture_mission() -> Mission {
         thumbnail_url: String::new(),
         briefing: String::new(),
         current_version_id: None,
+        approved_artifact_id: None,
         rejection_reason: String::new(),
         reviewed_by: None,
         reviewed_at: None,

@@ -36,11 +36,12 @@ fn mission_detail_rejected_carries_the_review_stamp() {
 
 /// The row half of the editor's export, checked against a real captured row.
 ///
-/// `MissionDetail::compiled_meta` feeds `flatten_mod_document_json`, whose output is pinned
-/// byte-identical to `GET /missions/:id/compiled` by
-/// `website-api`'s `client_twin_is_byte_identical_to_the_compiled_route`. That test supplies its
-/// own meta, so it proves the *compiler* agrees; this one proves the *editor* hands it the same
-/// row the server would have read. Both halves or the preview is only half-checked.
+/// `MissionDetail::compiled_meta` feeds `flatten_mod_document_json`, whose output `website-api`'s
+/// `client_twin_is_byte_identical_to_the_compiled_route` pins byte-identical to the backend's own
+/// compile — the compile that produces a submitted version's artifact document, served by
+/// `GET /missions/:id/artifacts/:artifactId/document`. That test supplies its own meta, so it
+/// proves the *compiler* agrees; this one proves the *editor* hands it the same row the server
+/// would have read. Both halves or the preview is only half-checked.
 ///
 /// The golden is used rather than a hand-built struct on purpose: a literal fixture would be
 /// written from the same misreading as the code it checks.
@@ -113,7 +114,27 @@ const MISSION_CARD_EXTRA: &[&str] = &[
 /// Typed as the library reads it. An untyped page body round-trips anything and proves nothing.
 #[test]
 fn missions_envelope() {
-    assert_golden::<Paginated<MissionCard>>(golden!("GET__missions.json"), MISSION_CARD_EXTRA);
+    const G: &str = golden!("GET__missions.json");
+    assert_golden::<Paginated<MissionCard>>(G, MISSION_CARD_EXTRA);
+    // The approved row names the artifact its latest approval decided — what the deployment form
+    // offers — and the rows never approved from an artifact carry no key at all.
+    let page: Paginated<MissionCard> = serde_json::from_str(G).unwrap();
+    let approved: Vec<(&str, &str)> = page
+        .data
+        .iter()
+        .filter_map(|m| Some((m.id.as_str(), m.approved_artifact_id.as_deref()?)))
+        .collect();
+    assert_eq!(
+        approved,
+        vec![(
+            "00000000-0000-4000-c000-000000000001",
+            "00000000-0000-4000-f000-000000000001"
+        )]
+    );
+    assert!(page
+        .data
+        .iter()
+        .all(|m| !m.extra.contains_key("approved_artifact_id")));
 }
 
 /// The listing golden above has three approved rows and one draft, so it pins the reviewer and
@@ -151,10 +172,62 @@ fn missions_envelope_rejected_card_carries_its_reason() {
     }
 }
 
-/// Typed as the approvals queue reads it, rather than as an untyped page body.
+/// Typed as the approvals queue reads it, rather than as an untyped page body. The capture holds
+/// one mission under review and one submitted before reviews existed, so both shapes of the row are
+/// on the wire: the review fields present together, and absent together.
 #[test]
 fn approvals_envelope() {
-    assert_golden::<Paginated<ApprovalRow>>(golden!("GET__approvals.json"), &[]);
+    const G: &str = golden!("GET__approvals.json");
+    assert_golden::<Paginated<ApprovalRow>>(G, &[]);
+    let queue: Paginated<ApprovalRow> = serde_json::from_str(G).unwrap();
+    let reviewed = &queue.data[0];
+    assert_eq!(
+        reviewed.review_id.as_deref(),
+        Some("00000000-0000-4000-f100-000000000004")
+    );
+    assert_eq!(
+        reviewed.artifact_id.as_deref(),
+        Some("00000000-0000-4000-f000-000000000004")
+    );
+    assert_eq!(
+        reviewed.artifact_digest.as_deref(),
+        Some("bcfb3b1c4109fe03ac0292372a3fdfb86052d44979c2f2638e7e419e7f234577")
+    );
+    assert_eq!(reviewed.version_semver.as_deref(), Some("0.4.0"));
+    assert_eq!(
+        reviewed.submitted_at, "2026-07-24T11:05:00Z",
+        "the review's submission"
+    );
+    let legacy = &queue.data[1];
+    assert_eq!(legacy.mission_id, "00000000-0000-4000-c000-000000000005");
+    assert!(
+        legacy.review_id.is_none()
+            && legacy.artifact_id.is_none()
+            && legacy.artifact_digest.is_none()
+            && legacy.version_semver.is_none(),
+        "a mission that predates reviews carries none of the four review fields"
+    );
+}
+
+/// A live mission approved from an artifact: the approval names that artifact, and the current
+/// version carries the note its author saved it with.
+#[test]
+fn mission_detail_of_an_approved_mission() {
+    const G: &str = golden!("GET__missions__00000000-0000-4000-c000-000000000001.json");
+    assert_golden::<MissionDetail>(G, &["current_version/json_payload"]);
+    let d: MissionDetail = serde_json::from_str(G).unwrap();
+    assert_eq!(d.status, "live");
+    assert_eq!(
+        d.approved_artifact_id.as_deref(),
+        Some("00000000-0000-4000-f000-000000000001")
+    );
+    let version = d.current_version.expect("the current version");
+    assert_eq!(version.semver, "1.3.0");
+    assert_eq!(
+        version.editor_notes.as_deref(),
+        Some("Placed the assault section")
+    );
+    assert!(d.reviewed_by.is_some() && d.reviewed_at.is_some());
 }
 
 /// The submission the approvals drawer opens on: `/admin/approvals` selects the first queue row
@@ -177,4 +250,23 @@ fn mission_detail_of_the_first_pending_submission() {
         detail.status, "pending_approval",
         "a mission in the approvals queue is awaiting approval"
     );
+}
+
+/// The row a submission or a decision answers with has no captured golden of its own — a decision
+/// is a write — so its shape is held against the captured listing's row with the card-only
+/// decoration removed, which is exactly how the backend composes the card from the row.
+#[test]
+fn mission_row_is_the_card_without_its_decoration() {
+    let page: Paginated<Value> = serde_json::from_str(golden!("GET__missions.json")).unwrap();
+    for card in page.data {
+        let mut row = card.as_object().cloned().expect("a card is an object");
+        for decoration in ["author_name", "author_avatar", "bookmarked"] {
+            assert!(
+                row.remove(decoration).is_some(),
+                "the card carries {decoration}"
+            );
+        }
+        let text = Value::Object(row).to_string();
+        assert_golden::<MissionRow>(&text, &[]);
+    }
 }

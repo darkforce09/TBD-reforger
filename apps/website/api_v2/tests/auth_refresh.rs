@@ -165,13 +165,17 @@ async fn purge_removes_only_long_expired_tokens() {
     .execute(&pool)
     .await
     .unwrap();
+    let session = Uuid::new_v4();
+    sqlx::query("INSERT INTO authentication_sessions(id, discord_id, expires_at) VALUES ($1, '000000000000000007', now() + interval '1 day')")
+        .bind(session).execute(&pool).await.unwrap();
     // Fresh (future expiry) + stale (expired > 7 days ago).
     for (h, days) in [(&fresh, 1i64), (&stale, -8i64)] {
         sqlx::query(
-            "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at) VALUES ('000000000000000007', $1, now() + ($2 || ' days')::interval, now())",
+            "INSERT INTO refresh_tokens (discord_id, token_hash, expires_at, created_at, session_id) VALUES ('000000000000000007', $1, now() + ($2 || ' days')::interval, now(), $3)",
         )
         .bind(h)
         .bind(days.to_string())
+        .bind(session)
         .execute(&pool)
         .await
         .unwrap();

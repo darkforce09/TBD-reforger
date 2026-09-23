@@ -74,6 +74,9 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
     let mid = json(&b)["id"].as_str().unwrap().to_string();
     let submit = format!("/api/v1/missions/{mid}/submit");
+    // A submission compiles the current version into the artifact under review, so the mission
+    // needs a version with a placed slot.
+    save_compilable_version(&app, &maker, &mid, "0.2.0").await;
 
     // PATCH is not a second door: the only status values it accepts are `archived` and `draft`
     // (`apply_status_patch`). If this ever starts returning 200, the queue has a writer that skips
@@ -115,6 +118,11 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
             .is_some_and(|s| s.ends_with('Z')),
         "the queue row must carry a submitted_at: {row}"
     );
+    let artifact = row["artifact_id"]
+        .as_str()
+        .unwrap_or_else(|| panic!("the queue row names the artifact under review: {row}"))
+        .to_string();
+    assert_eq!(row["version_semver"], "0.2.0", "{row}");
 
     // A second submit is a 409, not a duplicate enqueue.
     let (st, _) = call(&app, "POST", &submit, Some(&maker), None, None).await;
@@ -127,7 +135,9 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
         &format!("/api/v1/approvals/{mid}/reject"),
         Some(&admin),
         None,
-        Some(r#"{"reason":"objective markers overlap the spawn"}"#),
+        Some(&format!(
+            r#"{{"artifact_id":"{artifact}","reason":"objective markers overlap the spawn"}}"#
+        )),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
@@ -182,18 +192,22 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     assert_eq!(submits[0]["target_type"], "mission");
     assert_eq!(submits[0]["severity"], "info");
 
-    // --- approve, and then no further submit is possible ---
+    // --- approve the resubmitted artifact, and then no further submit is possible ---
+    // Identical inputs compile to the identical artifact, so the resubmission reviews it again.
+    let row = find_in_approvals(&app, &admin, &mid).await.unwrap();
+    assert_eq!(row["artifact_id"], artifact.as_str(), "{row}");
     let (st, b) = call(
         &app,
         "POST",
         &format!("/api/v1/approvals/{mid}/approve"),
         Some(&admin),
         None,
-        None,
+        Some(&format!(r#"{{"artifact_id":"{artifact}"}}"#)),
     )
     .await;
     assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
     assert_eq!(json(&b)["status"], "live");
+    assert_eq!(json(&b)["approved_artifact_id"], artifact.as_str());
     let (st, _) = call(&app, "POST", &submit, Some(&maker), None, None).await;
     assert_eq!(
         st,
@@ -254,6 +268,7 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     // The admin override is the same one PATCH and DELETE already grant, and it is deliberate:
     // an admin acting for an author must be able to queue the mission. Pinned so that removing
     // `can_edit`'s admin arm here becomes a visible decision, not a silent one.
+    save_compilable_version(&app, &admin, &foreign, "0.1.0").await;
     let (st, b) = call(
         &app,
         "POST",

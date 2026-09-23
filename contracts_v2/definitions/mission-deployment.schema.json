@@ -1,0 +1,412 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MissionDeploymentContract",
+  "description": "Mission deployments, what a game runtime reads to run one, and the fleet scenario registry. The root is one deployment.",
+  "$ref": "#/definitions/MissionDeployment",
+  "definitions": {
+    "MissionDeployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "server_id",
+        "mission_id",
+        "mission_title",
+        "artifact_id",
+        "artifact_digest",
+        "artifact_sha256",
+        "terrain_key",
+        "scenario_id",
+        "transition",
+        "fleet_command_id",
+        "fleet_command_state",
+        "requested_by",
+        "requested_via",
+        "requested_at",
+        "deadline_at",
+        "state",
+        "bound_slots"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "server_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mission_title": {
+          "type": "string"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "terrain_key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "scenario_id": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9_./-]+\\.conf$"
+        },
+        "transition": {
+          "$ref": "#/definitions/DeploymentTransition"
+        },
+        "fleet_command_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "fleet_command_state": {
+          "type": "string",
+          "enum": [
+            "queued",
+            "claimed",
+            "executing",
+            "succeeded",
+            "failed",
+            "expired",
+            "cancelled",
+            "indeterminate"
+          ]
+        },
+        "requested_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requested_via": {
+          "type": "string",
+          "enum": [
+            "web",
+            "game_runtime"
+          ]
+        },
+        "requested_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "deadline_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "$ref": "#/definitions/DeploymentState"
+        },
+        "confirmed_runtime_session_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bound_slots": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "description": "POST /api/v1/servers/:id/deployments (administrator, answered 202) and GET /api/v1/servers/:id/deployments/:deploymentId: an approved artifact selected for a server, the transition that runs it, and its outcome. A deployment is confirmed only by a runtime session of the server, started after the request, that reports its artifact with the exact document SHA-256."
+    },
+    "DeploymentTransition": {
+      "description": "scenario_restart: the runtime already runs the artifact's terrain and restarts its scenario in-process (fleet action load_mission). host_restart: the host agent restarts the server on the terrain's registered scenario (fleet action restart_with_mission).",
+      "type": "string",
+      "enum": [
+        "scenario_restart",
+        "host_restart"
+      ]
+    },
+    "DeploymentState": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "confirmed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "DeploymentRequest": {
+      "description": "POST /api/v1/servers/:id/deployments body. Refusals persist nothing: 409 SERVER_INACTIVE, DEPLOYMENT_IN_PROGRESS, ARTIFACT_NOT_APPROVED or EVENT_MISSION_NOT_ON_SERVER; 422 MODPACK_MISMATCH, TERRAIN_NOT_RUNNABLE or ORBAT_ARTIFACT_MISMATCH (details name every unbound seat and unseated slot).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mission_id",
+        "artifact_id"
+      ],
+      "properties": {
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "RelayedDeploymentRequest": {
+      "description": "POST /api/v1/game-runtime/deployments body (mod_runtime credential): an in-game administrator's selection. The Arma identity must be linked to an unbanned platform administrator (403 IDENTITY_NOT_LINKED or NOT_AN_ADMINISTRATOR), who becomes the requester; the selection is validated as DeploymentRequest is. Answered 202 with the MissionDeployment.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mission_id",
+        "artifact_id",
+        "requested_by_arma_id"
+      ],
+      "properties": {
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "requested_by_arma_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "MissionDeploymentPage": {
+      "description": "GET /api/v1/servers/:id/deployments (administrator): the server's deployments, newest first. POST .../deployments/:deploymentId/cancel answers the cancelled MissionDeployment while its command is queued, else 409.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "total",
+        "limit",
+        "offset"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MissionDeployment"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "RuntimeDeployment": {
+      "description": "GET /api/v1/game-runtime/deployment (mod_runtime credential): what the server runs \u2014 the deployment in flight, else the latest confirmed one; 404 NO_DEPLOYMENT when there is none. The artifact's exact bytes are GET /api/v1/game-runtime/artifacts/:artifactId, with their SHA-256 as the strong entity tag and the compile's findings in x-compile-diagnostics-count and x-compile-diagnostics-rules.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "deployment_id",
+        "state",
+        "mission_id",
+        "artifact_id",
+        "artifact_sha256",
+        "artifact_bytes",
+        "terrain_key",
+        "scenario_id"
+      ],
+      "properties": {
+        "deployment_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "requested",
+            "confirmed"
+          ]
+        },
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "artifact_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8388608
+        },
+        "terrain_key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "scenario_id": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9_./-]+\\.conf$"
+        },
+        "event_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "event_mission_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "DeployableMissionList": {
+      "description": "GET /api/v1/game-runtime/missions (mod_runtime credential): every live mission whose approved artifact the server can run.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "missions"
+      ],
+      "properties": {
+        "missions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DeployableMission"
+          }
+        }
+      }
+    },
+    "DeployableMission": {
+      "description": "One mission an in-game administrator may deploy to this server.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mission_id",
+        "title",
+        "terrain_key",
+        "artifact_id",
+        "artifact_sha256"
+      ],
+      "properties": {
+        "mission_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "terrain_key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "artifact_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "FleetScenario": {
+      "description": "The scenario header the fleet runs for one terrain.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "terrain_key",
+        "scenario_id",
+        "display_name",
+        "updated_by",
+        "updated_at"
+      ],
+      "properties": {
+        "terrain_key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "scenario_id": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9_./-]+\\.conf$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "updated_by": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "FleetScenarioUpdate": {
+      "description": "PUT /api/v1/fleet/scenarios/:terrainKey body (administrator); answers the FleetScenario. DELETE removes it from new deployments.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario_id",
+        "display_name"
+      ],
+      "properties": {
+        "scenario_id": {
+          "type": "string",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9_./-]+\\.conf$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "FleetScenarioList": {
+      "description": "GET /api/v1/fleet/scenarios (administrator).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FleetScenario"
+          }
+        }
+      }
+    }
+  }
+}

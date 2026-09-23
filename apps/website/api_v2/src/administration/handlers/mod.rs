@@ -2,5 +2,6 @@
 
 pub mod audit_logs;
 pub mod disciplinary;
+pub mod membership_grace_overrides;
 pub mod personnel_roster;
 pub mod role_management;

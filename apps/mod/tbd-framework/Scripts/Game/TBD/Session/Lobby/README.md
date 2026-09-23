@@ -5,6 +5,7 @@ Pre-game ORBAT slotting, faction selection, player reservations, pre-slot camera
 ### Roles & Responsibilities
 - `TBD_LobbyData.c`: Serializable wire models representing slot occupancy, locks, and squad groupings.
 - `TBD_LobbyService.c`: Server authority validating slot claim/unclaim requests and enforcing roster limits.
+- `TBD_LobbyServiceDeploymentAuthorization.c`: `modded class TBD_LobbyService` - the deploy button's words while the TBD platform decides a seat (`AUTHORIZING`) or cannot authorize it now (`UNAUTHORIZED`).
 - `TBD_LobbyController.c`: Player controller RPC interface routing slotting commands to the server.
 - `TBD_LobbyClient.c`: Client-side static cache tracking ORBAT state; raises `ScriptInvoker`s for UI components.
 - `TBD_LobbyComponent.c` & `TBD_LobbyStage.c`: Lifecycle managers handling lobby session states and automatic screen display. Since 2026-09-12 the stage watcher raises the **Mission Selector** first on LOBBY; the lobby is its `Lobby` tab, and the soft-modal re-raise stands down while any pre-game screen is open.

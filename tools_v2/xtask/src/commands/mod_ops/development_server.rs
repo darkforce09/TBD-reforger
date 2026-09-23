@@ -29,10 +29,10 @@ const USAGE_HEAD: &str = "\
 cargo xtask mod dev-server starts nothing on its own — it hands its arguments to
 cargo xtask mod playtest, which has to be told WHICH mission to serve.
 
-  cargo xtask mod playtest --mission-id=<id> [--admin=<identityId>]
+  cargo xtask mod playtest --mission=<uuid> [--admin=<identityId>]
 
-  --mission-id   the mission the mod loads. Without it the stage machine never leaves
-                 LOADING and the server looks healthy while being unplayable.
+  --mission      the mission the platform deploys to this server. Without a deployment
+                 the mod runs no mission and the server looks healthy while unplayable.
   --admin        your identityId (UUID) or 17-digit SteamID. Without it every '#tbd'
                  command answers \"TBD: admin only.\" and no admin command can be tested.
 
@@ -41,8 +41,8 @@ cargo xtask mod playtest, which has to be told WHICH mission to serve.
 
 /// Everything the usage prints after the runbook pointer.
 const USAGE_TAIL: &str = "
-Offline? Add --mission-file=contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json
-to serve a golden from disk with no API running.\n";
+Offline? Use --artifact-file=contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json
+instead of --mission to boot a compiled golden with no API running.\n";
 
 /// Entry for `xtask mod dev-server [args…]`.
 pub fn run(args: &[String]) -> Result<u8> {

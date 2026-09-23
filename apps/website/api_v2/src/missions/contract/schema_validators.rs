@@ -126,7 +126,7 @@ pub fn validate_mission_editor_payload_with_catalog(
 /// byte size on an object, so this code-side check is the enforceable pin that keeps a
 /// schema-valid (but oversized) document from reaching the mod and dying at
 /// `LoadFromProfileFile`.
-pub(super) const MISSION_FILE_MAX_BYTES: usize = 8 * 1024 * 1024;
+pub(crate) const MISSION_FILE_MAX_BYTES: usize = 8 * 1024 * 1024;
 
 /// Validate a compiled mod mission document against `mission.schema.json` (the
 /// game-server contract served at `/missions/:id/compiled`).

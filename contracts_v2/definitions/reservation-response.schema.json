@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReservationResponse",
+  "description": "POST /api/v1/event-missions/:id/register. state is the compatibility attendance-or-reservation projection; consumers use reservation_state for actions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "state",
+    "reservation_state",
+    "attendance_state",
+    "slot_id"
+  ],
+  "properties": {
+    "state": {
+      "type": "string",
+      "enum": [
+        "registered",
+        "waitlisted",
+        "withdrawn",
+        "legacy_unknown",
+        "attended",
+        "no_show"
+      ]
+    },
+    "reservation_state": {
+      "type": "string",
+      "enum": [
+        "registered",
+        "waitlisted",
+        "withdrawn",
+        "legacy_unknown"
+      ]
+    },
+    "attendance_state": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "attended",
+        "no_show",
+        null
+      ]
+    },
+    "slot_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid"
+    }
+  }
+}

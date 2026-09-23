@@ -380,23 +380,15 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
   The SIZE-2 file-size allowlist (empty in the Leptos era) does **not** extend to complexity.
   A dense fps hot-path function takes the inline opt-out so the exception is named and auditable.
 
-### 8.1 Allowlist contract — `.coding-standards-allowlist.yaml`
+### 8.1 Allowlist contract — RETIRED (Zero Exemptions)
 
-Created in **T-125.2** at the repo root. Each entry is normative:
+Historically (T-125.2 through T-165), file-level exceptions were tracked in `.coding-standards-allowlist.yaml`.
+Following the complete modularization of `apps/ticketboard` and all legacy monoliths, all exemptions reached zero and the allowlist file and parsing logic were **permanently deleted**.
 
-```yaml
-- rule: SIZE-3
-  path: path/to/oversized_module.rs
-  reason: Split this production module by responsibility before expiry
-  expires: 2027-01-31     # YYYY-MM-DD; MC-perf is invalid for SIZE-3
-```
-
-**Opt-out policy (one policy, no ambiguity):**
-- **Function-level** opt-outs (**COMP-1**, **GO-3**) live **inline** (`//nolint` / `eslint-disable`
-  with a reason) — never in the allowlist file.
-- **File-level** opt-outs (**SIZE-2**, **SIZE-3** named-debt + MC paths) live **only** in
-  `.coding-standards-allowlist.yaml` with a `reason` and `expires`. SIZE-3 requires a dated expiry;
-  `MC-perf` is accepted only for SIZE-2. Missing paths and expired rows do not exempt.
+**Policy (Zero Exemptions):**
+- **Production files** must strictly remain `<= 500` raw lines of code.
+- **Test files** must strictly remain `<= 1000` raw lines of code.
+- There are **no file-level exemptions or allowlists**. Any file crossing the threshold fails CI unconditionally and must be decomposed by responsibility.
 
 ---
 
@@ -457,8 +449,8 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `cargo xtask ci verify-editorconfig` | T-125.5 | live |
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | live |
 | **SIZE-1** | Sc | 600-line warning superseded by SIZE-3 | — | — | — | T-125.4 / T-165.10 | retired |
-| **SIZE-2** | Sc | SIZE-2 list empty (Leptos); exemptions only in allowlist | ALLOWLIST | `.coding-standards-allowlist.yaml` (no SIZE-2 rows) | `cargo xtask verify file-length` | T-125.2 | live |
-| **SIZE-3** | Sc | Production >500 L or test >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
+| **SIZE-2** | Sc | File-size allowlist retired; 0 exemptions | — | — | — | T-125.2 / T-165.11 | retired |
+| **SIZE-3** | Sc | Production >500 L or test >1000 L ⇒ exit 1 (hard ceiling, zero exemptions) | CI-SCRIPT | `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.11 | live |
 | **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
 | **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `cargo xtask ci verify-coding-standards` | `cargo xtask ci verify-coding-standards` | T-125.4 | live |
