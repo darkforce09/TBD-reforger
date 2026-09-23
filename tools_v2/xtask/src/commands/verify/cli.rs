@@ -84,4 +84,22 @@ pub(crate) enum VerifyCmd {
     /// every sibling here is `verify <name>`, and the `verify-engine-layers` task row aliases both.)
     #[command(name = "engine-layers")]
     EngineLayers,
+    /// Every tracked folder of the code trees and the documentation root carries a README.md,
+    /// and every README.md there has a Contents block that lists exactly the folder's tracked
+    /// children
+    #[command(name = "readme-coverage")]
+    ReadmeCoverage {
+        /// Judge only the folders at or under this repository-relative folder (repeatable)
+        #[arg(long = "path", value_name = "DIR")]
+        paths: Vec<String>,
+    },
+    /// The code trees hold no Markdown but README.md, the retired documentation root holds no
+    /// tracked file, and every live document under the documentation root stays at or under 500
+    /// lines
+    #[command(name = "markdown-placement")]
+    MarkdownPlacement {
+        /// Judge only the files at or under this repository-relative folder (repeatable)
+        #[arg(long = "path", value_name = "DIR")]
+        paths: Vec<String>,
+    },
 }

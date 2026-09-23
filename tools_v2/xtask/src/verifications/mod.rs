@@ -18,6 +18,7 @@ pub(crate) mod database;
 pub(crate) mod ci;
 
 pub(crate) mod api_readiness;
+pub(crate) mod documentation;
 pub(crate) mod schemas;
 
 pub(crate) mod property_test_configuration;

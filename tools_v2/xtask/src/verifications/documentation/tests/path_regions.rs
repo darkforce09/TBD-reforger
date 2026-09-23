@@ -1,0 +1,87 @@
+use super::*;
+use crate::core::repository_layout::documentation::{
+    ARCHIVE_DIR, CODE_TREES, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR,
+    PROGRAM_RECORDS_PREFIX, ROADMAP, TICKET_DOCUMENTS_DIR,
+};
+
+#[test]
+fn a_path_is_within_a_folder_only_at_a_component_boundary() {
+    assert!(is_within("apps", "apps"));
+    assert!(is_within("apps/a/b.rs", "apps"));
+    assert!(is_within("apps/a/b.rs", "apps/a"));
+    assert!(!is_within("apps_extra/x", "apps"));
+    assert!(!is_within("app", "apps"));
+    assert!(
+        is_within("anything", ""),
+        "the repository root holds every path"
+    );
+}
+
+#[test]
+fn paths_split_into_folder_and_name() {
+    assert_eq!(parent_folder("apps/a/b.rs"), "apps/a");
+    assert_eq!(parent_folder("top.md"), "");
+    assert_eq!(file_name("apps/a/b.rs"), "b.rs");
+    assert_eq!(file_name("top.md"), "top.md");
+    assert_eq!(join("apps/a", README), "apps/a/README.md");
+    assert_eq!(join("", README), "README.md");
+}
+
+#[test]
+fn the_readme_span_is_the_code_trees_and_the_documentation_root() {
+    for tree in CODE_TREES {
+        assert!(in_code_tree(tree));
+        assert!(in_readme_span(tree));
+        assert!(in_readme_span(&format!("{tree}/deep/folder")));
+    }
+    assert!(in_readme_span(DOCUMENTATION_ROOT));
+    assert!(in_readme_span(ARCHIVE_DIR));
+    assert!(!in_code_tree(DOCUMENTATION_ROOT));
+    assert!(!in_readme_span(PENDING_MERGE_DIR));
+    assert!(!in_readme_span(&format!("{PENDING_MERGE_DIR}/writer")));
+    assert!(!in_readme_span(".ai/tickets"));
+    assert!(!in_readme_span(""));
+}
+
+#[test]
+fn test_generated_and_hidden_folders_are_skipped_with_their_subtrees() {
+    assert!(below_skipped_folder("apps/x/tests"));
+    assert!(below_skipped_folder("apps/x/tests/fixtures"));
+    assert!(below_skipped_folder("apps/x/generated/models"));
+    assert!(below_skipped_folder("apps/mod/.cursor/rules"));
+    assert!(!below_skipped_folder("apps/x/test_fixtures"));
+    assert!(!below_skipped_folder("apps/x/latests"));
+    assert!(!below_skipped_folder("apps/x/src"));
+}
+
+#[test]
+fn markdown_is_any_letter_case_of_the_md_extension() {
+    assert!(is_markdown("apps/a/NOTES.md"));
+    assert!(is_markdown("apps/a/NOTES.MD"));
+    assert!(is_markdown("README.md"));
+    assert!(!is_markdown("apps/a/rules.mdc"));
+    assert!(!is_markdown("apps/a/md"));
+    assert!(!is_markdown("apps/a/.md"));
+}
+
+#[test]
+fn the_size_limit_skips_frozen_pending_record_and_sync_managed_documents() {
+    for exempt in [
+        format!("{TICKET_DOCUMENTS_DIR}/specs/t1_x.md"),
+        format!("{ARCHIVE_DIR}/topic/old.md"),
+        format!("{PENDING_MERGE_DIR}/writer/source.md"),
+        format!("{PROGRAM_RECORDS_PREFIX}program_plan.md"),
+        format!("{PROGRAM_RECORDS_PREFIX}move_manifest/README.md"),
+        ROADMAP.to_string(),
+        GAP_ANALYSIS.to_string(),
+    ] {
+        assert!(is_size_exempt(&exempt), "{exempt} should be exempt");
+    }
+    for live in [
+        format!("{DOCUMENTATION_ROOT}/README.md"),
+        format!("{DOCUMENTATION_ROOT}/runbooks/deploy.md"),
+        format!("{DOCUMENTATION_ROOT}/website/refactor_notes.md"),
+    ] {
+        assert!(!is_size_exempt(&live), "{live} is a live document");
+    }
+}

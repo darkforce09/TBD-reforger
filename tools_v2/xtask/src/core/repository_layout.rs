@@ -47,7 +47,7 @@ pub const MCP_TRANSCRIPT_FIXTURES_DIR: &str = "tools_v2/xtask/fixtures/mcp";
 // resolves through this one module, without a second spelling of any of them existing.
 #[allow(unused_imports)] // each is the one spelling of its path for the whole crate
 pub use ticket_engine::repository::{
-    LAST_VERIFIED_MARKER, ROOT_MARKER, VERDICTS_DIR, WAVE_LOCK, WORKTREES_DIR,
+    LAST_VERIFIED_MARKER, ROOT_MARKER, TICKETS_DIR, VERDICTS_DIR, WAVE_LOCK, WORKTREES_DIR,
 };
 
 /// Documents xtask reads, walks or names in what it prints.
@@ -93,6 +93,56 @@ pub mod documentation {
     /// it judges any evidence. It sits under [`API_READINESS_EVIDENCE_PREFIX`], so the source
     /// fingerprint covers it.
     pub const API_READINESS_REGISTER: &str = "docs/verification/api_v2/requirements.json";
+
+    /// The top-level folders that hold code. Every tracked folder in them carries a README.md,
+    /// and README.md is the only Markdown they hold; `cargo xtask verify readme-coverage` and
+    /// `cargo xtask verify markdown-placement` enforce both.
+    pub const CODE_TREES: &[&str] = &["apps", "tools_v2", "contracts_v2", "assets_v2"];
+
+    /// Root of the documentation tree: the deeper documents that code READMEs link to. Every
+    /// tracked folder in it carries a README.md, and every live document in it stays at or under
+    /// the size limit.
+    pub const DOCUMENTATION_ROOT: &str = "documentation_v2";
+
+    /// Archived documents, one folder per topic. Frozen: never reworded, and exempt from the size
+    /// limit.
+    pub const ARCHIVE_DIR: &str = "documentation_v2/archive";
+
+    /// Ticket specifications and plans, the records the ticket registry cites. Frozen, and exempt
+    /// from the size limit.
+    pub const TICKET_DOCUMENTS_DIR: &str = "documentation_v2/tickets";
+
+    /// Source documents waiting to be merged into live documents, one folder per writer. The
+    /// documentation gates skip it, and it is absent whenever no merge is pending.
+    pub const PENDING_MERGE_DIR: &str = "documentation_v2/pending_merge";
+
+    /// The shared name prefix of the documentation program's own records at the documentation
+    /// root: the `refactor_` files and the manifest folder beside them. They are working records
+    /// rather than live documents, so the size limit skips them while they sit at the root.
+    pub const PROGRAM_RECORDS_PREFIX: &str = "documentation_v2/refactor_";
+
+    /// The Cursor rule folders: agent instructions that name documents and commands.
+    #[allow(dead_code)] // the one spelling of these locations for the whole crate
+    pub const CURSOR_RULE_DIRS: &[&str] = &[".cursor/rules", "apps/mod/.cursor/rules"];
+
+    /// A documentation root that must not exist: every document lives under
+    /// [`DOCUMENTATION_ROOT`], and `cargo xtask verify markdown-placement` fails while this folder
+    /// holds a tracked file.
+    pub const RETIRED_DOCS_ROOT: &str = "docs";
+
+    /// The prefix of a GitHub permalink into this repository: the commit and the repository-
+    /// relative path follow it, as `<prefix><commit>/<path>`.
+    #[allow(dead_code)] // the one spelling of this prefix for the whole crate
+    pub const PERMALINK_BASE: &str = "https://github.com/darkforce09/TBD-reforger/blob/";
+
+    // The ticket domain's documentation locations, spelled once in
+    // `ticket_engine::repository::documentation`: the tree root, the specification and plan
+    // folders, and the two documents `cargo xtask ticket sync` rewrites between markers, whose
+    // sync-managed tables stay in one file whatever their length.
+    #[allow(unused_imports)] // each is the one spelling of its path for the whole crate
+    pub use ticket_engine::repository::documentation::{
+        GAP_ANALYSIS, PLANS_DIR, ROADMAP, SPECS_DIR, TREE_DIR,
+    };
 }
 
 #[cfg(test)]

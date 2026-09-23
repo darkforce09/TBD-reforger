@@ -2,40 +2,72 @@ use super::*;
 use crate::core::repository_root::test_repo_root;
 use std::{collections::BTreeSet, path::Path};
 
-/// Every [`documentation`] constant that names a location a checkout must hold, by name.
-const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &str); 10] = [
-    ("FACTORY_PACK_WAVE", documentation::FACTORY_PACK_WAVE),
-    ("LAYOUT_TARGET_DIR", documentation::LAYOUT_TARGET_DIR),
-    ("HOME_SERVER_RUNBOOK", documentation::HOME_SERVER_RUNBOOK),
+/// Every [`documentation`] item that names locations a checkout must hold, by name, with every
+/// location it names: one for a path constant or a re-export, each element for a list.
+const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 20] = [
+    ("FACTORY_PACK_WAVE", &[documentation::FACTORY_PACK_WAVE]),
+    ("LAYOUT_TARGET_DIR", &[documentation::LAYOUT_TARGET_DIR]),
+    ("HOME_SERVER_RUNBOOK", &[documentation::HOME_SERVER_RUNBOOK]),
     (
         "STAGING_SERVER_RUNBOOK",
-        documentation::STAGING_SERVER_RUNBOOK,
+        &[documentation::STAGING_SERVER_RUNBOOK],
     ),
     (
         "SLICE_WORKFLOW_RUNBOOK",
-        documentation::SLICE_WORKFLOW_RUNBOOK,
+        &[documentation::SLICE_WORKFLOW_RUNBOOK],
     ),
     (
         "PLATFORM_FACTORY_RUNBOOK",
-        documentation::PLATFORM_FACTORY_RUNBOOK,
+        &[documentation::PLATFORM_FACTORY_RUNBOOK],
     ),
-    ("MOD_DESIGN", documentation::MOD_DESIGN),
+    ("MOD_DESIGN", &[documentation::MOD_DESIGN]),
     (
         "SPAWN_DETERMINISM_RUNBOOK",
-        documentation::SPAWN_DETERMINISM_RUNBOOK,
+        &[documentation::SPAWN_DETERMINISM_RUNBOOK],
     ),
     (
         "API_READINESS_EVIDENCE_PREFIX",
-        documentation::API_READINESS_EVIDENCE_PREFIX,
+        &[documentation::API_READINESS_EVIDENCE_PREFIX],
     ),
     (
         "API_READINESS_REGISTER",
-        documentation::API_READINESS_REGISTER,
+        &[documentation::API_READINESS_REGISTER],
     ),
+    ("CODE_TREES", documentation::CODE_TREES),
+    ("DOCUMENTATION_ROOT", &[documentation::DOCUMENTATION_ROOT]),
+    ("ARCHIVE_DIR", &[documentation::ARCHIVE_DIR]),
+    (
+        "TICKET_DOCUMENTS_DIR",
+        &[documentation::TICKET_DOCUMENTS_DIR],
+    ),
+    ("CURSOR_RULE_DIRS", documentation::CURSOR_RULE_DIRS),
+    ("TREE_DIR", &[documentation::TREE_DIR]),
+    ("SPECS_DIR", &[documentation::SPECS_DIR]),
+    ("PLANS_DIR", &[documentation::PLANS_DIR]),
+    ("ROADMAP", &[documentation::ROADMAP]),
+    ("GAP_ANALYSIS", &[documentation::GAP_ANALYSIS]),
 ];
 
 /// [`documentation`] items that name no location a checkout must hold, each with the reason.
-const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 0] = [];
+const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 4] = [
+    (
+        "PENDING_MERGE_DIR",
+        "holds merge sources only while a merge is pending, and is absent otherwise",
+    ),
+    (
+        "PROGRAM_RECORDS_PREFIX",
+        "a file-name prefix that matches the program records at the documentation root, not a \
+         location",
+    ),
+    (
+        "RETIRED_DOCS_ROOT",
+        "names a folder that must hold no tracked file; markdown-placement fails while it does",
+    ),
+    (
+        "PERMALINK_BASE",
+        "a GitHub URL prefix, not a location in the checkout",
+    ),
+];
 
 /// Every committed location must exist in a real checkout.
 ///
@@ -122,6 +154,7 @@ fn every_required_documentation_location_exists_in_the_checkout() {
     let root = test_repo_root();
     let missing: Vec<String> = REQUIRED_DOCUMENTATION_LOCATIONS
         .iter()
+        .flat_map(|(name, paths)| paths.iter().map(move |path| (*name, *path)))
         .filter(|(_, path)| !present(&root, path))
         .map(|(name, path)| format!("{name} = {path}"))
         .collect();
@@ -176,7 +209,8 @@ fn present(root: &Path, path: &str) -> bool {
 }
 
 /// The names a layout module's `documentation` module declares, read from the layout module's
-/// source: every `pub const`, `pub static` and `pub fn` at the module's own indentation.
+/// source: every `pub const`, `pub static` and `pub fn` at the module's own indentation, and every
+/// name a `pub use` at that indentation re-exports.
 fn declared_documentation_items(source: &str) -> BTreeSet<&str> {
     let (_, module) = source
         .split_once("\npub mod documentation {\n")
@@ -184,7 +218,7 @@ fn declared_documentation_items(source: &str) -> BTreeSet<&str> {
     let (module, _) = module
         .split_once("\n}\n")
         .expect("the documentation module closes at column zero");
-    module
+    let mut declared: BTreeSet<&str> = module
         .lines()
         .filter_map(|line| {
             ["    pub const ", "    pub static ", "    pub fn "]
@@ -196,5 +230,98 @@ fn declared_documentation_items(source: &str) -> BTreeSet<&str> {
                 .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
                 .next()
         })
-        .collect()
+        .collect();
+    declared.extend(reexported_names(module));
+    declared
+}
+
+/// The names every `pub use` at a module's own indentation brings in, whether the statement names
+/// one item or a braced list, on one line or across several; `X as Y` contributes `Y`.
+fn reexported_names(module: &str) -> Vec<&str> {
+    let mut names = Vec::new();
+    let mut lines = module.lines();
+    while let Some(line) = lines.next() {
+        let Some(head) = line.strip_prefix("    pub use ") else {
+            continue;
+        };
+        let mut statement = vec![head];
+        while !statement.last().is_some_and(|piece| piece.contains(';')) {
+            statement.push(lines.next().expect("a `pub use` statement ends in `;`"));
+        }
+        let braced = statement.iter().any(|piece| piece.contains('{'));
+        for piece in statement {
+            let piece = if braced {
+                piece.split_once('{').map_or(piece, |(_, list)| list)
+            } else {
+                piece.rsplit("::").next().unwrap_or(piece)
+            };
+            let piece = piece.split(['}', ';']).next().unwrap_or(piece);
+            names.extend(
+                piece
+                    .split(',')
+                    .map(|item| item.rsplit(" as ").next().unwrap_or(item).trim())
+                    .filter(|name| !name.is_empty()),
+            );
+        }
+    }
+    names
+}
+
+/// The re-export reader sees every shape rustfmt writes a `pub use` in, so a re-exported name
+/// cannot slip past the classification check by being wrapped differently.
+#[test]
+fn the_reexport_reader_sees_every_statement_shape() {
+    let module = "    /// docs\n    pub use a::b::ONE;\n    pub use a::{TWO, THREE as FOUR};\n    \
+                  #[allow(unused_imports)]\n    pub use a::b::{\n        FIVE, SIX,\n    };\n    \
+                  pub const SEVEN: &str = \"x\";\n";
+    assert_eq!(
+        reexported_names(module),
+        ["ONE", "TWO", "FOUR", "FIVE", "SIX"]
+    );
+}
+
+/// The areas the documentation gates freeze, skip or read as records sit inside the
+/// documentation root, so relocating the root cannot leave one of them behind.
+#[test]
+fn the_documentation_areas_sit_inside_the_documentation_root() {
+    use documentation::{
+        ARCHIVE_DIR, DOCUMENTATION_ROOT, PENDING_MERGE_DIR, PROGRAM_RECORDS_PREFIX,
+        TICKET_DOCUMENTS_DIR,
+    };
+    for area in [
+        ARCHIVE_DIR,
+        TICKET_DOCUMENTS_DIR,
+        PENDING_MERGE_DIR,
+        PROGRAM_RECORDS_PREFIX,
+    ] {
+        assert!(
+            area.starts_with(&format!("{DOCUMENTATION_ROOT}/")),
+            "{area} is not inside {DOCUMENTATION_ROOT}"
+        );
+    }
+}
+
+/// The code trees, the documentation root and the retired documentation root are distinct
+/// top-level folders: the documentation gates match them against the first path component.
+#[test]
+fn the_documentation_gate_roots_are_distinct_top_level_folders() {
+    let mut roots: Vec<&str> = documentation::CODE_TREES.to_vec();
+    roots.push(documentation::DOCUMENTATION_ROOT);
+    roots.push(documentation::RETIRED_DOCS_ROOT);
+    for root in &roots {
+        assert!(
+            !root.is_empty() && !root.contains('/'),
+            "{root} is not a top-level folder name"
+        );
+    }
+    let unique: BTreeSet<&str> = roots.iter().copied().collect();
+    assert_eq!(unique.len(), roots.len(), "a gate root is listed twice");
+}
+
+/// A permalink is the prefix, a commit and a path, so the prefix is this repository's blob view
+/// and ends in `/`.
+#[test]
+fn the_permalink_base_is_a_blob_url_prefix() {
+    assert!(documentation::PERMALINK_BASE.starts_with("https://github.com/"));
+    assert!(documentation::PERMALINK_BASE.ends_with("/blob/"));
 }

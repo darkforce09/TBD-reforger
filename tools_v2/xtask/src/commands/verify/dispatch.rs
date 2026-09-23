@@ -92,6 +92,18 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                     &find_repo_root()?,
                 )?
             }
+            VerifyCmd::ReadmeCoverage { paths } => {
+                crate::verifications::documentation::readme_coverage::verify_readme_coverage(
+                    &find_repo_root()?,
+                    &paths,
+                )
+            }
+            VerifyCmd::MarkdownPlacement { paths } => {
+                crate::verifications::documentation::markdown_placement::verify_markdown_placement(
+                    &find_repo_root()?,
+                    &paths,
+                )
+            }
         };
         Ok(code)
     }
