@@ -81,7 +81,7 @@ the base brief names, outside the repository.
 
 | id | phase | role | status | commit | open questions |
 |---|---|---|---|---|---|
-| P0-1 | 0 | Program files and baseline | done — awaiting commit | — | The two program files carry personal absolute paths, copied verbatim from the plan; `ticket check --strict` never checks child-ticket `spec` paths (see the baseline findings) |
+| P0-1 | 0 | Program files and baseline | done | f8511271c | Personal paths in the program files replaced with `<repo>`, `<scratchpad>` and `$HOME` placeholders before the commit; `ticket check --strict` never checks child-ticket `spec` paths (see the baseline findings) — operator question pending |
 | P0-2 | 0 | Manifest, mechanical rows | pending | — | — |
 | P0-3 | 0 | Manifest, judgment rows | pending | — | — |
 | P0-4 | 0 | Ticket plan and follow-up tickets | pending | — | — |
@@ -158,6 +158,14 @@ the base brief names, outside the repository.
 | G3 | 6 | Verifier over G1 and G2 | pending | — | — |
 | H1 | 7 | Documentation gates into `ci-local` and `ci.yml` | pending | — | — |
 | H2 | 7 | Full verification matrix, program files archived, close-out | pending | — | — |
+
+## Plan amendments
+
+| date | amendment | source |
+|---|---|---|
+| 2026-09-23 | P1-2 also extends ticket validation so every ticket file (parent and child) gets the spec/plan existence check, and first repoints T-068.10.5 and T-159.15.0 at their real `.ai/artifacts/` files so the check stays green until the cutover moves them | operator decision |
+| 2026-09-23 | Personal absolute paths in the program files were replaced by `<repo>`, `<scratchpad>` and `$HOME` placeholders; launch prompts carry the concrete values | orchestrator |
+| 2026-09-23 | Mod UI screenshots and Stitch sets are mapped to per-screen folders by P0-3 (judgment rows), not by P0-2 | orchestrator |
 
 ## Checkpoints
 
