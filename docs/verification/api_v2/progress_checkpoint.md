@@ -36,6 +36,7 @@ Migrations 0042–0053 are pinned; the next migration is 0054. Versions 0022–0
 | `mod world-boot --mission=bridgehead-at-levie` | validated 0 errors; warning ratchet red (environment, layers, orbat radio — the documented baseline row) |
 | `mod playtest --mission=<uuid>` | deployment CONFIRMED by the runtime session with the exact artifact; transition command cancelled; credential revoked on stop |
 | `ci ci-local` | PASS after committing the working tree (`ba275f244`) and making one source pin layout-insensitive (`mission_artifacts` artifact-store test: rustfmt had wrapped the pinned call): every step through `verify-mission-rest-size-limits`, 3,855 test cases ok, 0 failed |
+| Live browser check against the running API | profile-poll fix holds across two 30 s polls: the Server Control credential sheet stays open with its typed input, and the review workspace editor keeps its DOM and canvas without re-booting |
 
 ## Defects fixed during verification
 
@@ -53,8 +54,6 @@ Migrations 0042–0053 are pinned; the next migration is 0054. Versions 0022–0
 
 ## Open items
 
-- Re-check the profile-poll fix live in a browser (Credentials sheet stays open past 30 s; the
-  review workspace editor does not re-boot).
 - Decompose the six pre-existing oversized EnfScript files (`TBD_SpawnManager`,
   `TBD_MissionLoader`, `TBD_FrameworkManager`, `TBD_LobbyService`, `TBD_ResultsReporter`,
   `TBD_AdminService`) in a separate pass verified by in-game playtest.
