@@ -86,7 +86,7 @@ the base brief names, outside the repository.
 | P0-3 | 0 | Manifest, judgment rows | done | — (scratchpad outputs; committed by P0-5) | CP1: 11 questions in judgment_notes.md (vanilla_carve_coverage, SHIPPED_HISTORY topic, macos_ux_architecture, frontend _template, CLAUDE-CODE-START, eden wiki_manifest, KB-002, admin_tickets panel, feature doc file naming, frontend README primary, pending_merge naming) |
 | P0-4 | 0 | Ticket plan and follow-up tickets | done (step 3 blocked) | — (scratchpad outputs; committed by P0-5) | CP1: top-level ticket ids exhausted at T-999 (schema.json:18 and sync/gap_analysis.rs:12 allow 3 digits) — widen or file as children; citation value format; rename ticket status deferred vs queued; rewrite bare-name mentions only where the basename changes |
 | P0-5 | 0 | Manifest assembly and pin catalogue | done (≈645k tokens — over the 500k cap) | this commit | 21 CP1 questions in refactor_move_manifest/cp1_questions.md |
-| P0-5f | 0 | Apply the checkpoint-1 answers to the manifest (fix run) | done (≈256k tokens) | phase-0 closing commit | — |
+| P0-5f | 0 | Apply the checkpoint-1 answers to the manifest (fix run) | done (≈256k tokens) | f79a84a42 | — |
 | P1-1 | 1 | Archive the tools_v2 program records | pending | — | — |
 | P1-2 | 1 | Retire the generated ticket views | pending | — | — |
 | P1-2b | 1 | Widen the ticket id pattern to 3+ digits; file the three follow-up tickets | pending | — | — |
@@ -187,7 +187,7 @@ Written by the orchestrator at each phase (and Phase 4–5 wave) boundary, befor
 
 ### Phase 0 handoff (2026-09-23) — Phase 0 closed, CP1 answered
 
-**Commits:** f8511271c (program plan, writing brief, this file) · 10f15eb5f (P0-1 row, first amendments) · d2ce2160b (phase handoff protocol) · 660b70833 (move manifest, ticket rewrites, orphan-spec links, pin catalogue, CP1 questions) · the Phase 0 closing commit (CP1 answers 1–3 applied by P0-5f, `refactor_followup_tickets.md`, plan evidence-folder wording).
+**Commits:** f8511271c (program plan, writing brief, this file) · 10f15eb5f (P0-1 row, first amendments) · d2ce2160b (phase handoff protocol) · 660b70833 (move manifest, ticket rewrites, orphan-spec links, pin catalogue, CP1 questions) · f79a84a42 (CP1 answers 1–3 applied by P0-5f, `refactor_followup_tickets.md`, plan evidence-folder wording).
 
 **Decisions:** CP1 answered — the operator accepted all 21 recommendations (`refactor_move_manifest/cp1_questions.md`; rules in the writing brief's "Checkpoint 1 decisions"). Every amendment above applies from Phase 1 on.
 
