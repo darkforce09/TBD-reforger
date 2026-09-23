@@ -57,4 +57,5 @@ Migrations 0042–0053 are pinned; the next migration is 0054. Versions 0022–0
 - Decompose the six pre-existing oversized EnfScript files (`TBD_SpawnManager`,
   `TBD_MissionLoader`, `TBD_FrameworkManager`, `TBD_LobbyService`, `TBD_ResultsReporter`,
   `TBD_AdminService`) in a separate pass verified by in-game playtest.
-- Then milestones T, C, B, V and S, with a quiet working tree for `verify api-readiness --execute`.
+- Then milestones T, C, V and S, with a quiet working tree for `verify api-readiness --execute`;
+  game ballistics (B) follows in its own later phase by operator decision.

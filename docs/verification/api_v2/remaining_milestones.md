@@ -9,6 +9,11 @@ TLA+, TLAPS, TLC or formal-proof toolchain is part of this work.
 The scope is set by `completion_plan.md` and `requirements.json`; the current resume point is
 `progress_checkpoint.md`.
 
+Game ballistics (B) is out of the T, C, V, S sequence by operator decision (2026-09-23): it is
+done later, in a separate phase whose approach is redesigned there. Its requirement
+`verification_game_ballistics` stays registered, so readiness stays fail-closed until that
+phase delivers it.
+
 ## Status of the remaining checks
 
 The status comes from the last full `cargo xtask db test-it` (784 cases, 2026-09-23).
@@ -32,7 +37,7 @@ The status comes from the last full `cargo xtask db test-it` (784 cases, 2026-09
 | C | content_vehicle_mutations | content_vehicle_mutations | db test-it | 1 | `vehicle_mutations*` | missing |
 | C | content_wiki_features | content_wiki_features (+ frontend_quality, browser_acceptance) | db test-it | 1 | `wiki_features*` | missing |
 | C | content_content_storage | content_content_storage | db test-it | 1 | `content_storage*` | missing |
-| B | verification_game_ballistics | verification_game_ballistics (+ frontend_quality, browser_acceptance) | db test-it | 1 | `game_ballistics*` | missing |
+| B | verification_game_ballistics | verification_game_ballistics (+ frontend_quality, browser_acceptance) | db test-it | 1 | `game_ballistics*` | missing — separate later phase |
 | V | verification_route_acceptance | verification_route_acceptance | db test-it | 1 | `route_acceptance*` | missing |
 | V | verification_contract_parity | verification_contract_parity (+ schema_quality) | db test-it | 1 | `contract_parity*` | missing |
 | V | verification_property_invariants | verification_property_invariants | db test-it | 25 | the named property cases | 19 of 25 |
@@ -104,6 +109,10 @@ their cases in full, and the register is the source of truth.
   error contracts are tested at the real consumer boundaries.
 
 ## B — Game ballistics
+
+**Phase:** moved out of the T, C, V, S sequence by operator decision (2026-09-23); done later in
+its own phase, whose approach is redesigned there. The behavior below records the current
+register scope.
 
 **Covers:** verification_game_ballistics and T-940.10.
 
