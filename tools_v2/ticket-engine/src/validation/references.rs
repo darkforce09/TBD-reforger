@@ -2,6 +2,7 @@
 
 use super::*;
 
+use crate::repository::TICKETS_DIR;
 use crate::repository::documentation::{
     ARCHIVED_WAVE_PLAN_READERS, SCAN_EXEMPT_PREFIXES, STALE_TICKET_ID_SCAN_ROOTS,
 };
@@ -37,7 +38,7 @@ pub(super) fn check_children_integrity(root: &Path) -> Vec<String> {
                 for child in &p.children {
                     if !corpus.tickets.contains_key(child) {
                         errors.push(format!(
-                            "{id}: children[] names {child}, which has no .ai/tickets/{child}.toml on disk"
+                            "{id}: children[] names {child}, which has no {TICKETS_DIR}/{child}.toml on disk"
                         ));
                     }
                 }
@@ -47,7 +48,7 @@ pub(super) fn check_children_integrity(root: &Path) -> Vec<String> {
                     && !corpus.tickets.contains_key(parent)
                 {
                     errors.push(format!(
-                        "{id}: parent {parent} has no .ai/tickets/{parent}.toml on disk"
+                        "{id}: parent {parent} has no {TICKETS_DIR}/{parent}.toml on disk"
                     ));
                 }
             }

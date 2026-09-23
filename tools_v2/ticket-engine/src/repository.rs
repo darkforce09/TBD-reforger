@@ -192,9 +192,12 @@ pub mod documentation {
         "README.md",
     ];
 
-    /// Path prefixes the token estimator drops from a commit's changed-line count: the registry
-    /// itself, the retired queue views ([`RETIRED_QUEUE_VIEW_PREFIX`]), and the lockfile.
-    /// Counting them would charge a ticket for the bookkeeping its own landing performs.
+    /// Path prefixes the token estimator drops from a commit's changed-line count: the `.ai/`
+    /// tree (the ticket registry and the agent artifact tree) and the retired queue views
+    /// ([`RETIRED_QUEUE_VIEW_PREFIX`], matched on `.md` files only). `Cargo.lock` files are not
+    /// prefixes: [`is_excluded_path`](crate::metrics::estimates::is_excluded_path) drops them by
+    /// file name. Counting any of them would charge a ticket for the bookkeeping its own landing
+    /// performs.
     pub const NUMSTAT_EXCLUDED_PREFIXES: &[&str] = &[".ai/", RETIRED_QUEUE_VIEW_PREFIX];
 
     /// The two hand-kept wave plans the wave lock replaced.

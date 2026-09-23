@@ -110,7 +110,7 @@ pub(super) fn status_for_transition(
 /// `ship`/`done` own the shipped stamp). Deliberately does
 /// NOT clear `active` (that is `ship`'s job). The ticket keeps its order; the one order this
 /// verb mints is the append order an order-less parent takes into `shipped`, `deferred` or
-/// `cancelled` ([`status_for_transition`]), so no set-status leaves `ticket check` red for lack
+/// `cancelled` (`status_for_transition`), so no set-status leaves `ticket check` red for lack
 /// of an order.
 pub fn set_status(
     c: &mut Corpus,
@@ -149,14 +149,14 @@ pub fn set_status(
 }
 
 /// `cmd_ship` semantics: status→shipped preserving the existing `shipped_at` value and
-/// order (an order-less parent takes the append order through [`order_for_non_live_status`];
-/// ship never invents the SHA — that stays hand-edited), stamp `completed_at`,
-/// clear the ticket's own `active`. `id` may be a dotted child id as well as a parent id:
-/// the lookup runs against `c.tickets`, which holds every ticket on disk. And — the
+/// order (an order-less parent takes the append order through `order_for_non_live_status`;
+/// ship never invents the SHA — `ticket stamp-sha` writes it once the commit exists), stamp
+/// `completed_at`, clear the ticket's own `active`. `id` may be a dotted child id as well as a
+/// parent id: the lookup runs against `c.tickets`, which holds every ticket on disk. And — the
 /// invariant — ship clears any program whose `active` still names the shipped ticket; that
 /// program counts as changed.
 ///
-/// **The ship-gate lifecycle** (spec §The gate, §stamp-sha closes the loop).
+/// **The ship-gate lifecycle.**
 /// A shipped ticket must end with `created_at` + `completed_at` + a SHA-shaped
 /// `shipped_at` + token accounting, but those arrive at DIFFERENT moments:
 ///
@@ -184,14 +184,13 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
              ticket needs a deliberate hand-stamp: its file's first-commit author date in UTC"
         ));
     }
-    // (t920 spec Decisions log #2, shipped row): a FUTURE ship carries the
-    // full ready-tier body — main_goal plus the six fields — refused pre-write
-    // naming each empty one. Work-only (the tier table is work-shaped; a program
-    // aggregates its children's bodies) and quarantine-exempt like every body-tier
-    // rule. `main_goal` is checked HERE and not in `empty_ready_tier_fields` because
-    // ship can jump from queued/idea, where the ready-class parse guarantee does not
-    // exist yet. Shipped HISTORY stays untouched: check never reds old ships until
-    // the debt drain finishes — this arm binds only the ship verb.
+    // A ship carries the full ready-tier body — main_goal plus the six fields — refused
+    // pre-write naming each empty one. Work-only (the tier table is work-shaped; a program
+    // aggregates its children's bodies) and quarantine-exempt like every body-tier rule.
+    // `main_goal` is checked HERE and not in `empty_ready_tier_fields` because ship can jump
+    // from queued/idea, where the ready-class parse guarantee does not hold. `ticket check`
+    // holds a shipped work ticket to the same six fields, so this refusal keeps the ship verb
+    // from writing a ticket the check then reds.
     if let Ticket::Work(w) = t
         && w.migration_legacy.is_empty()
     {

@@ -154,14 +154,10 @@ pub mod documentation {
     // judges none of its files, its README.md included.
     pub use ticket_engine::repository::ARTIFACTS_DIR;
 
-    // The ticket domain's documentation locations, spelled once in
-    // `ticket_engine::repository::documentation`: the tree root, the specification and plan
-    // folders, and the two documents `cargo xtask ticket sync` rewrites between markers, whose
-    // sync-managed tables stay in one file whatever their length.
-    #[allow(unused_imports)] // each is the one spelling of its path for the whole crate
-    pub use ticket_engine::repository::documentation::{
-        GAP_ANALYSIS, PLANS_DIR, ROADMAP, SPECS_DIR, TREE_DIR,
-    };
+    // The two ticket-domain documents `cargo xtask ticket sync` rewrites between markers,
+    // spelled once in `ticket_engine::repository::documentation`: their sync-managed tables stay
+    // in one file whatever their length.
+    pub use ticket_engine::repository::documentation::{GAP_ANALYSIS, ROADMAP};
 }
 
 #[cfg(test)]

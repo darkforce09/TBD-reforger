@@ -93,7 +93,7 @@ pub(super) fn append_order(tickets: &BTreeMap<String, Ticket>) -> i64 {
 }
 
 /// `cmd_reorder` semantics: the anchor must exist AND carry an order (both failure
-/// modes print the same string), the new order is [`order_after`] the anchor's, and an `idea`
+/// modes print the same string), the new order is `order_after` the anchor's, and an `idea`
 /// ticket flips to `queued` — every other status keeps its variant and only moves its order.
 /// The one sanctioned divergence: a resulting duplicate LIVE order refuses at the
 /// post-image gate instead of landing red state on disk (the wedge that motivated

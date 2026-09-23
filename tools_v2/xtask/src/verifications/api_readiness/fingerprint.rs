@@ -40,7 +40,7 @@ const CONFIGURATION_FILES: &[&str] = &[
     ".env",
     "apps/website/.env",
     "apps/website/api_v2/.env",
-    "tools_v2/xtask/deploy/deploy.env",
+    crate::core::repository_layout::DEPLOY_ENV,
 ];
 const CONFIGURATION_ENVIRONMENT: &[&str] = &[
     "APP_ENV",

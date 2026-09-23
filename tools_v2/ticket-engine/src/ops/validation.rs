@@ -205,8 +205,9 @@ pub(super) fn validate_post_image(
                 && !w.estimated.iter().any(|e| e == "scope")
             {
                 return Err(format!(
-                    "{id}: surface required for {} work ticket — scope names component {component} but surface is empty; set [scope] surface (vocabulary: .ai/tickets/scope-vocab.toml) or record \"scope\" in estimated[]",
-                    w.status.name().as_str()
+                    "{id}: surface required for {} work ticket — scope names component {component} but surface is empty; set [scope] surface (vocabulary: {vocabulary}) or record \"scope\" in estimated[]",
+                    w.status.name().as_str(),
+                    vocabulary = crate::repository::SCOPE_VOCAB,
                 ));
             }
         }
