@@ -26,11 +26,20 @@ pub(super) fn snapshots(views: &[TicketView]) -> Snapshots {
             last.push(v.id.clone());
         }
     }
-    last.sort();
+    sort_ids(&mut last);
     (owns, deps, last)
 }
 
-/// Wave 0 = baseline ∪ parked − dispatchable, sorted by id (wave 0 ignores `order`).
+/// Sorts ticket ids in [`crate::store::ticket_id_order_key`] order.
+fn sort_ids(ids: &mut [String]) {
+    ids.sort_by(|a, b| {
+        crate::store::ticket_id_order_key(a.as_str())
+            .cmp(&crate::store::ticket_id_order_key(b.as_str()))
+    });
+}
+
+/// Wave 0 = baseline ∪ parked − dispatchable, in [`crate::store::ticket_id_order_key`] order
+/// (wave 0 ignores `order`).
 ///
 /// The baseline union is what keeps wave 0 a LEDGER: an id whose ticket file later disappears
 /// stays parked instead of silently vanishing from the plan. The dispatchable subtraction is
@@ -48,7 +57,9 @@ pub(super) fn wave_zero(views: &[TicketView], baseline: &BTreeSet<String>) -> Ve
             set.remove(&v.id);
         }
     }
-    set.into_iter().collect()
+    let mut ids: Vec<String> = set.into_iter().collect();
+    sort_ids(&mut ids);
+    ids
 }
 
 /// The `[[emptied]]` carry: which pending close targets does the new lock hold?

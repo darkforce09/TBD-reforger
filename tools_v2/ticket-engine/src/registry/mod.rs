@@ -219,10 +219,11 @@ pub fn is_truthy(v: Option<&Value>) -> bool {
     }
 }
 
-pub fn ticket_sort_key(t: &Value) -> (i64, String) {
+/// Sort key for registry rows: `order` ascending, with an absent order sorting as 99999, then
+/// the id in [`crate::store::ticket_id_order_key`] order.
+pub fn ticket_sort_key(t: &Value) -> (i64, (u64, String)) {
     let order = t.get("order").and_then(|o| o.as_i64()).unwrap_or(99999);
-    let id = str_field(t, "id");
-    (order, id)
+    (order, crate::store::ticket_id_order_key(str_field(t, "id")))
 }
 
 pub fn slice_spec(t: &Value) -> String {

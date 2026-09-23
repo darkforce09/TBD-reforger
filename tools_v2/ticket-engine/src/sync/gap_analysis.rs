@@ -9,7 +9,10 @@ use crate::corpus_pins::{self, CorpusPins};
 use crate::registry::{str_field, tickets};
 use crate::repository::documentation::GAP_ANALYSIS;
 
-static CHECKMARK_TICKET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"✅\s*(T-\d{3})").unwrap());
+/// A checkmark followed by a ticket id captures the id's parent: `T-` and three or more digits,
+/// without any dotted child suffix or trailing text.
+static CHECKMARK_TICKET: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"✅\s*(T-[0-9]{3,})").unwrap());
 static SEP_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\|\s*-+\s*\|").unwrap());
 
 struct GapTable {
@@ -188,3 +191,7 @@ pub fn sync_gap_analysis_ticket_column(root: &Path, registry: &Value) -> Result<
     fs::write(&path, updated)?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "tests/gap_analysis_tests.rs"]
+mod tests;

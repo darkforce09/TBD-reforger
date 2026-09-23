@@ -90,3 +90,4 @@ const HAND_EDITED_NOT_CANONICAL: &[&str] = &[];
 const MIGRATION_LEGACY_PIN: usize = 0;
 
 mod corpus_storage_tests;
+mod ticket_id_order_tests;

@@ -67,7 +67,8 @@ pub(super) fn reserved_entry(
     }))
 }
 
-/// The live greedy over dispatchable candidates sorted by (`order`, id).
+/// The live greedy over dispatchable candidates sorted by `order`, then by
+/// [`crate::store::ticket_id_order_key`].
 ///
 /// Returns the packed waves (1..N by position). Dependency edges whose target cannot ever pack
 /// (not dispatchable, not shipped/cancelled) are collected into `warnings` and do not gate —
@@ -83,7 +84,10 @@ pub(super) fn greedy_waves(
         a.order
             .unwrap_or(i64::MAX)
             .cmp(&b.order.unwrap_or(i64::MAX))
-            .then_with(|| a.id.cmp(&b.id))
+            .then_with(|| {
+                crate::store::ticket_id_order_key(a.id.as_str())
+                    .cmp(&crate::store::ticket_id_order_key(b.id.as_str()))
+            })
     });
     let disp_ids: HashSet<&str> = cands.iter().map(|v| v.id.as_str()).collect();
 

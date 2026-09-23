@@ -1,0 +1,11 @@
+id = "T-1003"
+kind = "work"
+title = "Retire the untyped ticket-tree load path"
+summary = "Every ticket file is typed, so load_registry's untyped branch (registry/mod.rs) never runs on the live tree. Delete it with ticket_file_storage::load_toml_tree, FROZEN_27, union_ticket_keys and frozen_27_matches_live_corpus, which returns early on typed trees; move or drop the two other load_toml_tree tests."
+class = "chore"
+status = "idea"
+created_at = "2026-09-23T18:34:02Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -186,7 +186,10 @@ fn warn_unplanned(views: &HashMap<String, wave_lock::TicketView>, lock: &wave_lo
     if miss.is_empty() {
         return;
     }
-    miss.sort_by(|a, b| a.id.cmp(&b.id));
+    miss.sort_by(|a, b| {
+        crate::store::ticket_id_order_key(a.id.as_str())
+            .cmp(&crate::store::ticket_id_order_key(b.id.as_str()))
+    });
     eprintln!(
         "\n\x1b[33m! {} DISPATCHABLE TICKET(S) ARE NOT IN THE LOCK'S OPEN WAVES and cannot be dispatched:\x1b[0m",
         miss.len()

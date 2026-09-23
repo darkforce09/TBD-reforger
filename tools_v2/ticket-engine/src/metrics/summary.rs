@@ -26,8 +26,18 @@ pub(super) fn load_all_runs(root: &Path) -> Result<Vec<(String, RunRecord)>> {
         validate_record(&rec).with_context(|| format!("{rel}: invalid run file"))?;
         runs.push((rel, rec));
     }
-    runs.sort_by(|a, b| (&a.1.id, &a.1.started, &a.0).cmp(&(&b.1.id, &b.1.started, &b.0)));
+    runs.sort_by(|a, b| run_order_key(a).cmp(&run_order_key(b)));
     Ok(runs)
+}
+
+/// Report order of the run files: ticket id in [`crate::store::ticket_id_order_key`] order, then
+/// start time, then the run file's repository-relative path.
+fn run_order_key((path, run): &(String, RunRecord)) -> ((u64, &str), &str, &str) {
+    (
+        crate::store::ticket_id_order_key(run.id.as_str()),
+        run.started.as_str(),
+        path.as_str(),
+    )
 }
 
 /// `agent → (runs, elapsed_sec sum, tokens_consumed.total sum)` over the real files.

@@ -1,0 +1,11 @@
+id = "T-1001"
+kind = "work"
+title = "Mod wave gate calls make targets with no Makefile"
+summary = "cargo xtask mod wave gate runs four make targets through distrobox-host-exec (mod_ops/wave_execution/execution.rs), but no Makefile is tracked, so those steps always fail. Call cargo xtask ci schema-validate, enf citations, enf capability and cargo xtask verify no-crf-leak directly."
+class = "chore"
+status = "idea"
+created_at = "2026-09-23T18:32:58Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

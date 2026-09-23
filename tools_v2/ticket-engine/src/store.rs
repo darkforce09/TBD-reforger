@@ -44,6 +44,22 @@ pub fn parent_numeric_id(id: &str) -> Option<u64> {
     id.strip_prefix("T-")?.parse().ok()
 }
 
+/// The one ordering key for ticket ids: the numeral of the id's top-level parent, then the
+/// whole id string.
+///
+/// The numeral comes first, so parent 999 sorts before parent 1000 and every dotted child sorts
+/// inside its own parent's run, ahead of the next parent. Within one parent the whole-string order
+/// decides, so children keep plain string order (suffix `.10.5` before suffix `.2`). An id without
+/// a parent numeral sorts after every id that has one. When every parent numeral has the same
+/// digit count, this order equals plain string order.
+///
+/// Pass `&str` to compare borrowed ids, or an owned `String` where the key must outlive the
+/// element it came from (a `sort_by_key` closure).
+pub fn ticket_id_order_key<S: AsRef<str>>(id: S) -> (u64, S) {
+    let parent = id.as_ref().split('.').next().unwrap_or_default();
+    (parent_numeric_id(parent).unwrap_or(u64::MAX), id)
+}
+
 /// The whole on-disk registry, typed. `tickets` is public on purpose: the store is the
 /// shared read substrate for the walks that today each re-glob the directory
 /// (`wave_lock::load_views`, `check_open_work_owns`, `slice_collisions::ticket_facts`) —

@@ -1,0 +1,12 @@
+id = "T-1002"
+kind = "work"
+title = "Clean up stale local branches, worktrees and ticket statuses"
+summary = "Review slice/T-939.4 (6 commits ahead) and scratch/track-b-draft (1 ahead) before deleting, delete the other 42 merged local branches, remove the five .ai/artifacts/worktrees slices and the detached $HOME/.cache/tbd-engine-reorg/baseline worktree, and reconcile T-212, T-939.2, T-946.55, T-946.86 (ready, branches merged)."
+class = "chore"
+status = "idea"
+executor = "human"
+created_at = "2026-09-23T18:33:13Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

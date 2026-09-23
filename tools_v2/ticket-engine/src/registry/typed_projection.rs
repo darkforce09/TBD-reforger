@@ -181,7 +181,12 @@ pub fn load_phase2_tree(root: &Path) -> Result<Value> {
     if rows.is_empty() {
         bail!("no phase-2 parent tickets in {}", dir.display());
     }
-    rows.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+    rows.sort_by(|a, b| {
+        a.0.cmp(&b.0).then_with(|| {
+            crate::store::ticket_id_order_key(a.1.as_str())
+                .cmp(&crate::store::ticket_id_order_key(b.1.as_str()))
+        })
+    });
     for (_, _, v) in rows {
         tickets.push(v);
     }

@@ -15,8 +15,8 @@
   "$defs": {
     "ticketId": {
       "type": "string",
-      "pattern": "^T-[0-9]{3}(\\.[0-9]+)*$",
-      "description": "Parent ids (T-0xx) and dotted slice ids (T-0xx.15, T-0xx.3.1)."
+      "pattern": "^T-[0-9]{3,}(\\.[0-9]+)*$",
+      "description": "Parent ids of three or more digits (T-0xx, T-1xxx) and dotted slice ids (T-0xx.15, T-0xx.3.1)."
     },
     "ticketIdList": {
       "type": "array",

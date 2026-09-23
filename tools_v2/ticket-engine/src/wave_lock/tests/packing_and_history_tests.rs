@@ -60,11 +60,11 @@ fn candidates_sort_by_order_then_id_never_glob_order() {
         ],
     );
     let lock = compile(&dir, &BTreeSet::new(), None).unwrap();
-    // One wave (disjoint, under cap) — candidates sort by (order, id), so the tie
-    // on order 20 breaks lexicographically on the id.
+    // One wave (disjoint, under cap) — candidates sort by order, then by the numeric id key,
+    // so the tie on order 20 puts the single-digit id first.
     assert_eq!(
         lock.tickets_in_wave(1),
-        vec!["T-9".to_string(), "T-10".to_string(), "T-8".to_string()]
+        vec!["T-9".to_string(), "T-8".to_string(), "T-10".to_string()]
     );
     let _ = fs::remove_dir_all(&dir);
 }
@@ -112,6 +112,31 @@ fn wave_zero_is_baseline_union_parked_minus_reopened() {
     assert_eq!(
         wave_zero(&views, &baseline),
         vec!["T-2".to_string(), "T-777".to_string()]
+    );
+    let _ = fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn wave_zero_orders_a_four_digit_id_after_every_three_digit_id() {
+    let dir = scratch(
+        "zero-order",
+        &[
+            (
+                "T-1000.toml",
+                &work("T-1000", 10, &["a.rs"], &[], "shipped"),
+            ),
+            ("T-101.toml", &work("T-101", 20, &["b.rs"], &[], "shipped")),
+            ("T-100.toml", &work("T-100", 30, &["c.rs"], &[], "shipped")),
+        ],
+    );
+    let views = load_views(&dir).unwrap();
+    assert_eq!(
+        wave_zero(&views, &BTreeSet::new()),
+        vec![
+            "T-100".to_string(),
+            "T-101".to_string(),
+            "T-1000".to_string()
+        ]
     );
     let _ = fs::remove_dir_all(&dir);
 }

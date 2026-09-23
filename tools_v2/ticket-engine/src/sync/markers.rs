@@ -50,7 +50,12 @@ pub(super) fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
             ) && order_truthy(t)
         })
         .collect();
-    open_t.sort_by_key(|t| (order_or(t, 9999), str_field(t, "id")));
+    open_t.sort_by_key(|t| {
+        (
+            order_or(t, 9999),
+            crate::store::ticket_id_order_key(str_field(t, "id")),
+        )
+    });
     // Bare "### Recommended next work" with zero bullets is a vacuous overwrite.
     refuse_empty_write(
         "ROADMAP next block",

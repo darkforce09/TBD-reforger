@@ -131,7 +131,8 @@ pub fn load_toml_tree(root: &Path) -> Result<Value> {
     Ok(Value::Object(root_obj))
 }
 
-/// All on-disk ticket ids (parents + children). Used by the no-ticket-lost proof.
+/// All on-disk ticket ids (parents + children), in [`crate::store::ticket_id_order_key`]
+/// order. Used by the no-ticket-lost proof.
 #[allow(dead_code)]
 pub fn on_disk_ids(root: &Path) -> Result<Vec<String>> {
     let dir = tickets_dir(root);
@@ -144,7 +145,10 @@ pub fn on_disk_ids(root: &Path) -> Result<Vec<String>> {
             ids.push(name.trim_end_matches(".toml").to_string());
         }
     }
-    ids.sort();
+    ids.sort_by(|a, b| {
+        crate::store::ticket_id_order_key(a.as_str())
+            .cmp(&crate::store::ticket_id_order_key(b.as_str()))
+    });
     Ok(ids)
 }
 
