@@ -1,13 +1,12 @@
 //! The acceptance register binds requirements to independently executable checks.
 
+use crate::core::repository_layout::documentation::API_READINESS_REGISTER;
 use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeSet,
     path::{Component, Path},
 };
-
-pub(super) const REGISTER: &str = "docs/verification/api_v2/requirements.json";
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -59,8 +58,10 @@ pub(super) struct PropertyRequirement {
 }
 
 pub(super) fn read(root: &Path) -> Result<Register> {
-    let register: Register = serde_json::from_slice(&std::fs::read(root.join(REGISTER))?)
-        .context("parse API requirement register")?;
+    let bytes = std::fs::read(root.join(API_READINESS_REGISTER))
+        .with_context(|| format!("read API requirement register {API_READINESS_REGISTER}"))?;
+    let register: Register =
+        serde_json::from_slice(&bytes).context("parse API requirement register")?;
     validate(root, &register)?;
     Ok(register)
 }

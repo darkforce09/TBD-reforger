@@ -1,5 +1,16 @@
 use super::*;
 use crate::repository_paths::find_repo_root;
+use std::collections::BTreeSet;
+
+/// Every [`documentation`] constant that names a location a checkout must hold, by name.
+const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &str); 3] = [
+    ("MOD_DOCS_DIR", documentation::MOD_DOCS_DIR),
+    ("CAPABILITY_VERDICTS", documentation::CAPABILITY_VERDICTS),
+    ("EDITOR_GATE_RUNBOOK", documentation::EDITOR_GATE_RUNBOOK),
+];
+
+/// [`documentation`] items that name no location a checkout must hold, each with the reason.
+const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 0] = [];
 
 /// Every declared location must exist in a real checkout.
 ///
@@ -97,4 +108,91 @@ fn locations_resolve_against_the_given_root() {
             path.display()
         );
     }
+}
+
+/// Every required documentation location exists in the checkout.
+///
+/// A relocation of the documentation tree rewrites these values, and a value left behind fails
+/// quietly: `enf citations` walks a missing documentation root, checks nothing and passes, and the
+/// font-cache diagnostic points at a dead runbook.
+#[test]
+fn every_required_documentation_location_exists_in_the_checkout() {
+    let root = find_repo_root().expect("active checkout");
+    let missing: Vec<String> = REQUIRED_DOCUMENTATION_LOCATIONS
+        .iter()
+        .filter(|(_, path)| !present(&root, path))
+        .map(|(name, path)| format!("{name} = {path}"))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "documentation locations missing from the checkout: {missing:#?}"
+    );
+}
+
+/// Every item the [`documentation`] module declares is classified above, as a required location
+/// or as an exemption with its reason.
+///
+/// The names are read from the module's own source, so an item added without a row here fails
+/// this test instead of slipping past the existence check.
+#[test]
+fn every_documentation_item_is_classified() {
+    let classified: Vec<&str> = REQUIRED_DOCUMENTATION_LOCATIONS
+        .iter()
+        .map(|(name, _)| *name)
+        .chain(EXEMPT_DOCUMENTATION_ITEMS.iter().map(|(name, _)| *name))
+        .collect();
+    let unique: BTreeSet<&str> = classified.iter().copied().collect();
+    assert_eq!(
+        unique.len(),
+        classified.len(),
+        "an item is classified twice"
+    );
+    assert!(
+        EXEMPT_DOCUMENTATION_ITEMS
+            .iter()
+            .all(|(_, reason)| !reason.trim().is_empty()),
+        "every exemption carries its reason"
+    );
+    let declared = declared_documentation_items(include_str!("../repository_layout.rs"));
+    let unclassified: Vec<&str> = declared.difference(&unique).copied().collect();
+    let undeclared: Vec<&str> = unique.difference(&declared).copied().collect();
+    assert!(
+        unclassified.is_empty() && undeclared.is_empty(),
+        "classify every `documentation` item as required or exempt; unclassified: \
+         {unclassified:?}; classified but not declared: {undeclared:?}"
+    );
+}
+
+/// Whether `path` names something inside `root`. A path ending in `/` is a prefix, so it must
+/// name a directory; any other path may name a file or a directory.
+fn present(root: &Path, path: &str) -> bool {
+    if path.ends_with('/') {
+        root.join(path).is_dir()
+    } else {
+        root.join(path).exists()
+    }
+}
+
+/// The names a layout module's `documentation` module declares, read from the layout module's
+/// source: every `pub const`, `pub static` and `pub fn` at the module's own indentation.
+fn declared_documentation_items(source: &str) -> BTreeSet<&str> {
+    let (_, module) = source
+        .split_once("\npub mod documentation {\n")
+        .expect("the layout module declares `pub mod documentation`");
+    let (module, _) = module
+        .split_once("\n}\n")
+        .expect("the documentation module closes at column zero");
+    module
+        .lines()
+        .filter_map(|line| {
+            ["    pub const ", "    pub static ", "    pub fn "]
+                .into_iter()
+                .find_map(|keyword| line.strip_prefix(keyword))
+        })
+        .filter_map(|declaration| {
+            declaration
+                .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+                .next()
+        })
+        .collect()
 }

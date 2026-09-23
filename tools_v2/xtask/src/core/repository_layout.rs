@@ -80,6 +80,19 @@ pub mod documentation {
 
     /// How to run the spawn-determinism gate, which needs a live Workbench.
     pub const SPAWN_DETERMINISM_RUNBOOK: &str = "docs/mod/SPAWN_DETERMINISM.md";
+
+    /// The API readiness tree: the acceptance register and the design notes beside it.
+    /// `cargo xtask verify api-readiness` fingerprints every source file under it, so an edit
+    /// here invalidates recorded evidence. The fingerprint matches this prefix with
+    /// `starts_with`; the trailing slash keeps a sibling whose name merely begins the same way
+    /// out of the inputs.
+    pub const API_READINESS_EVIDENCE_PREFIX: &str = "docs/verification/api_v2/";
+
+    /// The API acceptance register: every requirement, the implementation paths it rests on and
+    /// the checks that prove it. `cargo xtask verify api-readiness` reads and validates it before
+    /// it judges any evidence. It sits under [`API_READINESS_EVIDENCE_PREFIX`], so the source
+    /// fingerprint covers it.
+    pub const API_READINESS_REGISTER: &str = "docs/verification/api_v2/requirements.json";
 }
 
 #[cfg(test)]

@@ -14,7 +14,7 @@ const INPUT_ROOTS: &[&str] = &[
     "apps/",
     "tools_v2/",
     "contracts_v2/",
-    "docs/verification/api_v2/",
+    crate::core::repository_layout::documentation::API_READINESS_EVIDENCE_PREFIX,
     ".cargo/",
     ".github/",
 ];
