@@ -166,6 +166,13 @@ the base brief names, outside the repository.
 | 2026-09-23 | P1-2 also extends ticket validation so every ticket file (parent and child) gets the spec/plan existence check, and first repoints T-068.10.5 and T-159.15.0 at their real `.ai/artifacts/` files so the check stays green until the cutover moves them | operator decision |
 | 2026-09-23 | Personal absolute paths in the program files were replaced by `<repo>`, `<scratchpad>` and `$HOME` placeholders; launch prompts carry the concrete values | orchestrator |
 | 2026-09-23 | Mod UI screenshots and Stitch sets are mapped to per-screen folders by P0-3 (judgment rows), not by P0-2 | orchestrator |
+| 2026-09-23 | The operator compacts the main session at every phase boundary (and at wave boundaries in Phases 4–5). Before each boundary the orchestrator writes a "Phase handoff" block below, then signals "safe to compact"; compaction happens only when no agent is running | operator decision |
+
+## Phase handoffs
+
+Written by the orchestrator at each phase (and Phase 4–5 wave) boundary, before the main session is compacted. Each block names: commits landed, decisions and amendments, environment state (other sessions, xtask build status, dirty files), open questions, and the exact next agents to launch with any prompt adjustments. A fresh session resumes from the newest block.
+
+(none yet — Phase 0 in progress)
 
 ## Checkpoints
 
