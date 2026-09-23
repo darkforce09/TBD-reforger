@@ -85,10 +85,8 @@ pub(super) struct ScannedDocument {
     /// Every `id` or `name` an `<a>` tag declares.
     pub(super) explicit_anchors: Vec<String>,
     /// Every inline code span, in document order, for the rules that judge commands and paths.
-    #[allow(dead_code)] // the scan's record of inline code; the link rules judge links alone
     pub(super) code_spans: Vec<CodeSpan>,
-    /// Every fenced code block, in document order, for the rules that judge commands and paths.
-    #[allow(dead_code)] // the scan's record of fenced code; the link rules judge links alone
+    /// Every fenced code block, in document order, for the rule that judges commands.
     pub(super) code_blocks: Vec<CodeBlock>,
 }
 

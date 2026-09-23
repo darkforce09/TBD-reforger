@@ -132,8 +132,16 @@ pub mod documentation {
 
     /// A documentation root that must not exist: every document lives under
     /// [`DOCUMENTATION_ROOT`], and `cargo xtask verify markdown-placement` fails while this folder
-    /// holds a tracked file.
+    /// holds a tracked file. `cargo xtask verify link-check` reads a backticked path under it as a
+    /// repository path whether or not the folder still holds files, so a live document that names
+    /// the retired tree breaks.
     pub const RETIRED_DOCS_ROOT: &str = "docs";
+
+    /// Repository paths a live document names on purpose although nothing is tracked or ignored
+    /// there, each with the reason it is named. `cargo xtask verify link-check` passes a
+    /// backticked path listed here; every other backticked repository path in a live document
+    /// must name a tracked file, a folder that holds one, or a path git ignores.
+    pub const HISTORICAL_PATH_SPELLINGS: &[(&str, &str)] = &[];
 
     /// The prefix of a GitHub permalink into this repository: the commit and the repository-
     /// relative path follow it, as `<prefix><commit>/<path>`. `cargo xtask verify link-check`

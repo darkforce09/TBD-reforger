@@ -3,14 +3,15 @@
 The repository checks that keep documentation where it belongs, shaped the same way everywhere and
 linked correctly: `readme-coverage` (every folder carries a README.md whose Contents block matches
 the folder), `markdown-placement` (Markdown lives in the documentation tree, and live documents stay
-short) and `link-check` (every link in the documentation reaches what it names).
+short) and `link-check` (every link in the documentation reaches what it names, and every path and
+xtask command a live document writes as code exists).
 
 ## Contents
 
 ```text
 tools_v2/xtask/src/verifications/documentation/
 ├── gate_scope.rs          the --path scope: normalises each value, refuses one naming no tracked folder
-├── link_check/            the link check's scan, anchors, target resolution, permalinks and link rule
+├── link_check/            the link check's scan, anchors, and link, backticked-path and command rules
 ├── link_check.rs          the link-check gate: the rule pipeline, one verdict per document, the totals
 ├── markdown_fences.rs     recognises the lines that open and close a fenced code block
 ├── markdown_placement.rs  the markdown-placement gate: code-tree Markdown, the retired root, the size limit
@@ -98,7 +99,8 @@ included), the project instructions (`PROJECT_INSTRUCTIONS`), the Markdown files
 ticket folder (`TICKETS_DIR`), and the Markdown and `.mdc` files under the Cursor rule folders
 (`CURSOR_RULE_DIRS`). Nothing in the agent artifact tree (`ARTIFACTS_DIR`: `.ai/artifacts`) is
 judged, its README.md included. The ticket records and the archive are frozen: only the link rules
-judge them.
+(1 to 7 below) judge them. Every other judged document is live, and rules 8 and 9 judge the live
+documents alone.
 
 Each document is scanned the way a renderer reads it. Inline links and images, angle destinations,
 autolinks, and reference definitions with their full, collapsed and shortcut uses count as links;
@@ -129,15 +131,45 @@ break names its rule:
    on a folder, which GitHub opens as its tree view. All permalinks of a run, of both views, are
    looked up in one `git cat-file --batch-check`, and the blobs a fragment needs are read in one
    `git cat-file --batch`, so a shallow clone reports older commits as unknown.
+8. backticked path names nothing: an inline code span (fenced blocks are not read for paths) whose
+   first `/`-separated segment is a tracked top-level folder of the checkout, or the retired
+   documentation root (`RETIRED_DOCS_ROOT`) whether or not it still holds files, is a repository
+   path. A span that holds whitespace (a command), `://` (a URL), `*`, `?` or `[` (a glob), `<` or
+   `>` (a placeholder), `{` or `}` (a set), `$` (a variable), or `...` or `…` (an elision) is a
+   pattern, counted and skipped. Any other such span loses a `#` fragment and a trailing `:N`,
+   `:N-M` or `:N:M` line suffix, has its `.`, `..` and empty segments resolved, and must then name a
+   tracked file or a folder that holds one; a trailing `/` asks for a folder. A path the tracked
+   tree does not hold passes when git ignores it (runtime output such as a build tree, export
+   scratch or a local secrets file) or when the layout module lists it as a historical spelling a
+   live document names on purpose (`HISTORICAL_PATH_SPELLINGS`, each entry with its reason). Every
+   path of a run the tracked tree does not hold is asked in one `git check-ignore --stdin -z`, a
+   span without a trailing `/` both as written and as a folder, so a folder-only ignore pattern
+   answers the same whether or not the folder exists on disk. A `..` that climbs above the
+   repository root names nothing.
+9. cited command does not exist: every `cargo xtask` in an inline code span, and in each line of a
+   fenced code block whatever its info string, is a citation; `cargo` must stand as a word of its
+   own, so `hcargo xtask` is none, and a fenced line ending in `\` continues on the next. The words
+   after `cargo xtask` run up to a `#` comment, a pipe, `&&`, `;`, `&`, a redirection, the `)` of a
+   command substitution, the closing quote of a string the citation sits in, or a word ending in
+   `,`, `:` or `.` (the word counts without it), since a citation inside a sentence carries the
+   sentence's punctuation and no subcommand name ends in one; quotes around a word are removed.
+   The words are walked down xtask's own clap command tree (`crate::cli::Cli`, built as clap builds
+   it before parsing): while the command reached has subcommands, a flag (`-x`, `--name`,
+   `--name=value`) is skipped together with the value an option of that command takes, a
+   placeholder (`<…>`, `[…]`, `{…}`, `…`, `...`) ends the walk without a break, and any other word
+   must name a subcommand or one of its aliases. The words after a leaf command are its arguments
+   and are never judged, so `cargo xtask`, `cargo xtask --help` and every target of `mk` and `ci`
+   pass. The break names the path up to and including the first word that names no subcommand.
 
 External destinations are counted and never fetched: any other scheme or host, and every page of
 this repository other than a blob or tree view, such as its home page (with or without a trailing
 `/`), issues, pull requests, actions, releases, wiki, commits and comparisons. Every break prints
 as `path:line: rule: message`. Without `--report` the gate prints every failing document with its
 break count, the first 20 breaks in full, and the totals; with `--report` it prints every break.
-The totals count documents, links by kind, breaks by rule, and breaks by area: the documentation
-root's live documents and frozen records, the ticket folder, the Cursor rules, the project
-instructions, and the other READMEs.
+The totals count documents, links by kind, backticked paths by outcome, command citations by
+outcome, breaks by rule, and breaks by area: the documentation root's live documents and frozen
+records, the ticket folder, the Cursor rules, the project instructions, and the other READMEs. A
+failed ignore batch is one "did not run" verdict for the paths it held, never a pass or a break.
 
 A rule is a `DocumentRule` in `link_check.rs`: it says which areas it judges, judges one scanned
 document at a time, settles any batched work when the run ends, and adds its own totals lines. A
@@ -156,8 +188,9 @@ checkout, names a file or names no tracked folder is refused with exit 2.
 
 ## Boundaries
 
-- Depends on: `verification_core` (verdicts, the shared report, the process runner), `git ls-files`
-  and `git cat-file`, the `regex` crate for globs, and the layout constants in
+- Depends on: `verification_core` (verdicts, the shared report, the process runner), `git ls-files`,
+  `git cat-file` and `git check-ignore`, the `regex` crate for globs, xtask's own clap command tree
+  (`crate::cli::Cli`, read through `clap::CommandFactory`), and the layout constants in
   `repository_layout.rs`.
 - Used by: the verify command group, through `dispatch.rs`.
 - Rules: every path comes from the layout module; a check that could not examine its input reports

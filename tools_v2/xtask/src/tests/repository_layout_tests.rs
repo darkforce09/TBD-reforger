@@ -54,7 +54,7 @@ const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 22] = [
 ];
 
 /// [`documentation`] items that name no location a checkout must hold, each with the reason.
-const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 4] = [
+const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 5] = [
     (
         "PENDING_MERGE_DIR",
         "holds merge sources only while a merge is pending, and is absent otherwise",
@@ -71,6 +71,10 @@ const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 4] = [
     (
         "PERMALINK_BASE",
         "a GitHub URL prefix, not a location in the checkout",
+    ),
+    (
+        "HISTORICAL_PATH_SPELLINGS",
+        "paths a live document names on purpose although the checkout holds nothing there",
     ),
 ];
 
@@ -329,4 +333,23 @@ fn the_documentation_gate_roots_are_distinct_top_level_folders() {
 fn the_permalink_base_is_a_blob_url_prefix() {
     assert!(documentation::PERMALINK_BASE.starts_with("https://github.com/"));
     assert!(documentation::PERMALINK_BASE.ends_with("/blob/"));
+}
+
+/// Each historical spelling is a repository-relative path that names nothing in the checkout and
+/// carries the reason a live document names it: an entry for a path that exists exempts nothing
+/// and would hide the day the path moves again.
+#[test]
+fn every_historical_path_spelling_names_nothing_and_carries_its_reason() {
+    let root = test_repo_root();
+    for (path, reason) in documentation::HISTORICAL_PATH_SPELLINGS {
+        assert!(!reason.trim().is_empty(), "{path} carries no reason");
+        assert!(
+            !path.starts_with('/') && path.contains('/'),
+            "{path} is not the repository-relative path with a `/` that the rule reads"
+        );
+        assert!(
+            !root.join(path).exists(),
+            "{path} exists in the checkout, so it needs no exemption"
+        );
+    }
 }

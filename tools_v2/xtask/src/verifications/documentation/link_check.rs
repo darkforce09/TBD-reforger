@@ -1,4 +1,5 @@
-//! The link check: every link in the judged Markdown reaches what it names.
+//! The link check: every link in the judged Markdown reaches what it names, and every path and
+//! command a live document writes as code exists.
 //!
 //! **Role:** the `link-check` gate and the rule pipeline it runs. Each judged document is read
 //! and scanned once ([`markdown_scan`]); every registered [`DocumentRule`] that judges the
@@ -7,9 +8,12 @@
 //! prints totals by rule and by area.
 //!
 //! **Position:** `cargo xtask verify link-check [--report] [--path <dir>]...` calls
-//! [`verify_link_check`]. The judged files and their areas come from [`judged_documents`], the
-//! link rule is [`link_targets::LinkTargets`] with its permalink half in [`permalink_targets`],
-//! and the tracked tree, the scope and the report come from the parent module.
+//! [`verify_link_check`]. The judged files and their areas come from [`judged_documents`]. The
+//! rules are the link rule, [`link_targets::LinkTargets`] with its permalink half in
+//! [`permalink_targets`]; the backticked-path rule, [`backticked_paths::BacktickedPaths`], which
+//! asks git's ignore rules through [`git_ignore_rules`]; and the command-citation rule,
+//! [`command_citations::CommandCitations`], which walks xtask's own clap command tree. The
+//! tracked tree, the scope and the report come from the parent module.
 //!
 //! **Signals & state:** none held between runs; a run owns its rules, whose caches and batched
 //! checks last until the run prints.
@@ -20,6 +24,9 @@
 //! cannot read, and a batch that fails are each "did not run" (exit 2), never a pass; every break
 //! prints as `path:line: rule: message`.
 
+mod backticked_paths;
+mod command_citations;
+mod git_ignore_rules;
 mod heading_anchors;
 mod inline_html;
 mod judged_documents;
@@ -39,6 +46,10 @@ use verification_core::{Finding, Kind, NotRun, Verdict};
 
 use super::tracked_tree::TrackedTree;
 use super::{GateRun, judged_nothing, prepare, read_tracked, scope_line};
+use crate::core::repository_layout::documentation::HISTORICAL_PATH_SPELLINGS;
+use backticked_paths::BacktickedPaths;
+use command_citations::{CommandCitations, xtask_command_tree};
+use git_ignore_rules::GitIgnoreRules;
 use judged_documents::{DocumentArea, judged_area};
 use link_targets::LinkTargets;
 use markdown_scan::{ScannedDocument, scan};
@@ -69,11 +80,13 @@ enum BreakRule {
     LineAnchorOutOfRange,
     NonPermalinkRepositoryUrl,
     UnknownPermalinkObject,
+    BacktickedPathNamesNothing,
+    CitedCommandDoesNotExist,
 }
 
 impl BreakRule {
     /// Every rule, in the order the totals list them.
-    const ALL: [BreakRule; 7] = [
+    const ALL: [BreakRule; 9] = [
         BreakRule::MissingTarget,
         BreakRule::EscapesRepository,
         BreakRule::UndefinedReference,
@@ -81,6 +94,8 @@ impl BreakRule {
         BreakRule::LineAnchorOutOfRange,
         BreakRule::NonPermalinkRepositoryUrl,
         BreakRule::UnknownPermalinkObject,
+        BreakRule::BacktickedPathNamesNothing,
+        BreakRule::CitedCommandDoesNotExist,
     ];
 
     /// The rule's name on break lines and in the totals.
@@ -93,6 +108,8 @@ impl BreakRule {
             BreakRule::LineAnchorOutOfRange => "line anchor out of range",
             BreakRule::NonPermalinkRepositoryUrl => "non-permalink repository URL",
             BreakRule::UnknownPermalinkObject => "unknown permalink object",
+            BreakRule::BacktickedPathNamesNothing => "backticked path names nothing",
+            BreakRule::CitedCommandDoesNotExist => "cited command does not exist",
         }
     }
 }
@@ -182,7 +199,16 @@ trait DocumentRule {
 /// scope, print the verdicts, and return the exit status (0 held, 1 break, 2 did not run).
 pub(crate) fn verify_link_check(repo_root: &Path, scope: &[String], listing: BreakListing) -> u8 {
     let objects = GitObjects::new(repo_root);
-    let mut rules: Vec<Box<dyn DocumentRule + '_>> = vec![Box::new(LinkTargets::new(&objects))];
+    let ignore_rules = GitIgnoreRules::new(repo_root);
+    let commands = xtask_command_tree();
+    let mut rules: Vec<Box<dyn DocumentRule + '_>> = vec![
+        Box::new(LinkTargets::new(&objects)),
+        Box::new(BacktickedPaths::new(
+            &ignore_rules,
+            HISTORICAL_PATH_SPELLINGS,
+        )),
+        Box::new(CommandCitations::new(&commands)),
+    ];
     judge(
         repo_root,
         TrackedTree::load(repo_root),
@@ -211,7 +237,9 @@ fn judge(
         vec![
             format!(
                 "==> {GATE}: every link in the judged Markdown reaches a tracked file or folder, \
-                 a heading or line anchor, or a sha permalink of this repository"
+                 a heading or line anchor, or a sha permalink of this repository; in the live \
+                 documents every backticked repository path names something and every cited \
+                 `cargo xtask` command exists"
             ),
             scope_line(&scope, &tree),
         ],
