@@ -343,8 +343,8 @@ refactor_ticket_rewrites.tsv, refactor_pin_catalogue.md.
 1 Merge mechanical.tsv + judgment.tsv. Assert: every tracked file under docs/ and documentation_v2/
   (refactor_* excepted), every non-README .md in code trees, and the 3 artifact specs appear exactly
   once; no duplicate targets except merge-into; snake_case targets (listed exceptions); no target under
-  docs/; no trailing whitespace; the file never spells wave_plan.tsv / TBD_WAVE_PLAN /
-  TBD_WAVE_GENERATION_FLOOR. Add rows moving documentation_v2/{ARCHITECTURE_PLAN,
+  docs/; no trailing whitespace; the file never spells the retired wave-plan fossil strings (the
+  needles ticket-engine's fossil guard greps for; see ARCHIVED_WAVE_PLANS). Add rows moving documentation_v2/{ARCHITECTURE_PLAN,
   ANALYSIS_AND_INVENTORY}.md → archive/documentation_v2_refactor/.
 2 Fill ticket_rewrites targets from the manifest → refactor_ticket_rewrites.tsv.
 3 Pin catalogue: `git grep -n` every old path of the manifest across tools_v2/, apps/, .github/,

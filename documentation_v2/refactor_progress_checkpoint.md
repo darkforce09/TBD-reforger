@@ -82,10 +82,10 @@ the base brief names, outside the repository.
 | id | phase | role | status | commit | open questions |
 |---|---|---|---|---|---|
 | P0-1 | 0 | Program files and baseline | done | f8511271c | Personal paths in the program files replaced with `<repo>`, `<scratchpad>` and `$HOME` placeholders before the commit; `ticket check --strict` never checks child-ticket `spec` paths (see the baseline findings) — operator question pending |
-| P0-2 | 0 | Manifest, mechanical rows | pending | — | — |
-| P0-3 | 0 | Manifest, judgment rows | pending | — | — |
-| P0-4 | 0 | Ticket plan and follow-up tickets | pending | — | — |
-| P0-5 | 0 | Manifest assembly and pin catalogue | pending | — | — |
+| P0-2 | 0 | Manifest, mechanical rows | done | — (scratchpad outputs; committed by P0-5) | CP1: set names, dashboard/server_intel set placement, tbd-export evidence folder case clash with code `Verification/`, near-duplicate collapses (4 DESIGN.md trailing newline, Arsenal header) |
+| P0-3 | 0 | Manifest, judgment rows | done | — (scratchpad outputs; committed by P0-5) | CP1: 11 questions in judgment_notes.md (vanilla_carve_coverage, SHIPPED_HISTORY topic, macos_ux_architecture, frontend _template, CLAUDE-CODE-START, eden wiki_manifest, KB-002, admin_tickets panel, feature doc file naming, frontend README primary, pending_merge naming) |
+| P0-4 | 0 | Ticket plan and follow-up tickets | done (step 3 blocked) | — (scratchpad outputs; committed by P0-5) | CP1: top-level ticket ids exhausted at T-999 (schema.json:18 and sync/gap_analysis.rs:12 allow 3 digits) — widen or file as children; citation value format; rename ticket status deferred vs queued; rewrite bare-name mentions only where the basename changes |
+| P0-5 | 0 | Manifest assembly and pin catalogue | done (≈645k tokens — over the 500k cap) | this commit | 21 CP1 questions in refactor_move_manifest/cp1_questions.md |
 | P1-1 | 1 | Archive the tools_v2 program records | pending | — | — |
 | P1-2 | 1 | Retire the generated ticket views | pending | — | — |
 | P1-3 | 1 | Retire the prose gates | pending | — | — |
@@ -167,6 +167,15 @@ the base brief names, outside the repository.
 | 2026-09-23 | Personal absolute paths in the program files were replaced by `<repo>`, `<scratchpad>` and `$HOME` placeholders; launch prompts carry the concrete values | orchestrator |
 | 2026-09-23 | Mod UI screenshots and Stitch sets are mapped to per-screen folders by P0-3 (judgment rows), not by P0-2 | orchestrator |
 | 2026-09-23 | The operator compacts the main session at every phase boundary (and at wave boundaries in Phases 4–5). Before each boundary the orchestrator writes a "Phase handoff" block below, then signals "safe to compact"; compaction happens only when no agent is running | operator decision |
+| 2026-09-23 | The orphan-spec decisions are applied by P2-3 (tickets), not P2-2; the P0-4 section of the plan names P2-2 by mistake | P0-4 finding |
+| 2026-09-23 | P2-4's `docs/` grep also excludes `.ai/tickets/` (14 retired wave-plan mentions and other kept strings stay by design) | P0-4 finding |
+| 2026-09-23 | P2-1 accepts 5 near-duplicate collapses (4 DESIGN.md copies differing by a trailing newline, Arsenal/DESIGN.md differing by a 2-line header); the manifest note records each difference | P0-2 finding |
+| 2026-09-23 | Follow-up tickets are filed after xtask compiles again and after the operator rules on the three-digit id limit (CP1) | P0-4 finding |
+| 2026-09-23 | P1-1 also owns tools_v2/README.md (lines 13-18 link the records it moves) | P0-5 finding |
+| 2026-09-23 | P1-5's link and backticked-path checks treat `documentation_v2/refactor_*` program files as records (they spell old and future paths by design); once archived, the archive rules apply | P0-5 finding |
+| 2026-09-23 | P2-2 moves the `.editorconfig-checker.json` excludes from the two docs/specs mockup folders to the new `visual_references/` and `design_system/token_exports/` locations (generated exports, byte-pinned) | P0-5 finding |
+| 2026-09-23 | The committed plan copy spelled the retired wave-plan fossil strings; reworded (the fossil guard in `ticket check` would fail on them) | P0-5 finding |
+| 2026-09-23 | Size agents tighter: P0-5 finished at ≈645k tokens. Scripted agents get narrower scopes; the orchestrator stops any agent nearing 450k | orchestrator |
 
 ## Phase handoffs
 
