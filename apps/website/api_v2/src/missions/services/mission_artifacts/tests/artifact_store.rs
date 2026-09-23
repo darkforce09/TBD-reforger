@@ -8,6 +8,15 @@ fn production() -> &'static str {
     SRC.split("#[cfg(test)]").next().unwrap()
 }
 
+/// The production source with all whitespace removed and a trailing argument comma dropped, so a
+/// pin names the call rather than the layout rustfmt chose for it.
+fn compact(source: &str) -> String {
+    source
+        .split_whitespace()
+        .collect::<String>()
+        .replace(",)", ")")
+}
+
 /// An artifact compiles through the catalogued gate against the current modpack's catalog, so an
 /// over-capacity version never becomes an artifact. The empty-catalog flatten would let one ship.
 ///
@@ -16,8 +25,8 @@ fn production() -> &'static str {
 fn artifacts_compile_through_the_catalogued_gate() {
     let production = production();
     assert!(production.contains("load_catalog_snapshot(connection)"));
-    assert!(production.contains(
-        "flatten_to_mod_document_with_catalog(mission, payload.as_bytes(), &snapshot.catalog)"
+    assert!(compact(production).contains(
+        "flatten_to_mod_document_with_catalog(mission,payload.as_bytes(),&snapshot.catalog)"
     ));
     let stripped = production.replace("flatten_to_mod_document_with_catalog", "");
     assert!(!stripped.contains("flatten_to_mod_document("));

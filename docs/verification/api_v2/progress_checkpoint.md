@@ -35,7 +35,7 @@ Migrations 0042–0053 are pinned; the next migration is 0054. Versions 0022–0
 | `mod world-boot` bare / `--compiled` | PASS / PASS (platform-compiled artifact, four-weapon equip) |
 | `mod world-boot --mission=bridgehead-at-levie` | validated 0 errors; warning ratchet red (environment, layers, orbat radio — the documented baseline row) |
 | `mod playtest --mission=<uuid>` | deployment CONFIRMED by the runtime session with the exact artifact; transition command cancelled; credential revoked on stop |
-| `ci ci-local` | editorconfig passes after re-indenting the register (content identical); the replay then stops at `verify-no-python`, which fails closed on 138 tracked paths deleted in the working tree but not yet committed (108 tbd-export files from the equipment-export restructure, 15 superseded single-file generated API modules, 9 retired xtask files, 2 RCON frontend files, 2 retired mod loaders, the retired allowlist). It passes once those deletions are committed; the remaining ci-local steps have not run. |
+| `ci ci-local` | PASS after committing the working tree (`ba275f244`) and making one source pin layout-insensitive (`mission_artifacts` artifact-store test: rustfmt had wrapped the pinned call): every step through `verify-mission-rest-size-limits`, 3,855 test cases ok, 0 failed |
 
 ## Defects fixed during verification
 
@@ -55,7 +55,6 @@ Migrations 0042–0053 are pinned; the next migration is 0054. Versions 0022–0
 
 - Re-check the profile-poll fix live in a browser (Credentials sheet stays open past 30 s; the
   review workspace editor does not re-boot).
-- Read the `ci ci-local` result.
 - Decompose the six pre-existing oversized EnfScript files (`TBD_SpawnManager`,
   `TBD_MissionLoader`, `TBD_FrameworkManager`, `TBD_LobbyService`, `TBD_ResultsReporter`,
   `TBD_AdminService`) in a separate pass verified by in-game playtest.
