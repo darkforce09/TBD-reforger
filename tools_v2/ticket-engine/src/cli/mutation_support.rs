@@ -30,8 +30,8 @@ pub(super) fn refuse_verbatim(msg: &str) -> ! {
     std::process::exit(1);
 }
 
-/// The reload-before-sync invariant (t915_ticketboard_design.md §Write path,
-/// "Rewiring sequence invariant"). By the time any post-write step runs, the typed op has
+/// Re-reads the registry `Value` from disk after a typed op writes: the reload-before-sync
+/// invariant. By the time any post-write step runs, the typed op has
 /// ALREADY landed its files; the `Value` those steps consume MUST be re-read from disk.
 /// Passing the pre-mutation Value to `cmd_sync` / `generate_queue_json` regenerates queue.json,
 /// the roadmap next-work block and the gap-analysis ticket column from the OLD state — pinned

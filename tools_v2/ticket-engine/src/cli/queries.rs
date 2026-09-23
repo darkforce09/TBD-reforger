@@ -180,33 +180,6 @@ pub fn cmd_list(root: &Path, registry: &Value) -> Result<()> {
     Ok(())
 }
 
-pub fn cmd_milestone(registry: &Value, milestone: &str) -> Result<()> {
-    let milestone = milestone.to_uppercase();
-    let mut rows: Vec<&Value> = tickets(registry)
-        .iter()
-        .filter(|t| opt_str(t, "milestone") == Some(milestone.as_str()))
-        .collect();
-    rows.sort_by_key(|t| ticket_sort_key(t));
-    if rows.is_empty() {
-        println!("No tickets tagged milestone={milestone}");
-        return Ok(());
-    }
-    let shipped = rows
-        .iter()
-        .filter(|t| opt_str(t, "status") == Some("shipped"))
-        .count();
-    println!("## Milestone {milestone}: {shipped}/{} shipped", rows.len());
-    for t in rows {
-        println!(
-            "  [{:<8}] {} — {}",
-            opt_str(t, "status").unwrap_or(""),
-            str_field(t, "id"),
-            opt_str(t, "title").unwrap_or("")
-        );
-    }
-    Ok(())
-}
-
 pub fn cmd_plan_batch(registry: &Value) -> Result<()> {
     let mut queued: Vec<&Value> = tickets(registry)
         .iter()

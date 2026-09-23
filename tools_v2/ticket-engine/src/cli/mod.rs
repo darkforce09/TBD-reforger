@@ -24,8 +24,8 @@ use brief::VALID_TICKET_STATUSES;
 mod queries;
 
 pub use queries::{
-    cmd_gap_round_trip, cmd_list, cmd_milestone, cmd_next, cmd_plan_batch, cmd_prompt,
-    cmd_scope_histogram, cmd_show, cmd_sparse_paths, require_ticket, unknown_ticket,
+    cmd_gap_round_trip, cmd_list, cmd_next, cmd_plan_batch, cmd_prompt, cmd_scope_histogram,
+    cmd_show, cmd_sparse_paths, require_ticket, unknown_ticket,
 };
 
 mod mutation_support;

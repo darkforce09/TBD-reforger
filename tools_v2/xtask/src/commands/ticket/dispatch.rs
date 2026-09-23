@@ -40,10 +40,6 @@ pub(crate) fn run(cmd: TicketCmd) -> Result<u8> {
                 let reg = load_registry(&root)?;
                 cmd_list(&root, &reg)?;
             }
-            TicketCmd::Milestone { milestone } => {
-                let reg = load_registry(&root)?;
-                cmd_milestone(&reg, &milestone)?;
-            }
             TicketCmd::PlanBatch => {
                 let reg = load_registry(&root)?;
                 cmd_plan_batch(&reg)?;

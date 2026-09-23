@@ -22,9 +22,6 @@ pub(crate) enum TicketCmd {
     },
     Next,
     List,
-    Milestone {
-        milestone: String,
-    },
     #[command(name = "plan-batch")]
     PlanBatch,
     #[command(name = "sparse-paths")]
