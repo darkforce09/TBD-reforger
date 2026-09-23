@@ -26,3 +26,5 @@ fn scratch_tickets_dir(tag: &str) -> (PathBuf, PathBuf) {
 mod schema_and_integrity_tests;
 
 mod readiness_and_accounting_tests;
+
+mod spec_and_plan_files_tests;

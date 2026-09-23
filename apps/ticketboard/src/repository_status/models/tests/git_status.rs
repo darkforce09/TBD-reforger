@@ -1,37 +1,45 @@
 use super::*;
 
-/// Fixture mirroring a real dirty registry: modified, staged, untracked, a
-/// rename — plus merged-stream pollution that must not count.
-const FIXTURE: &str = "\
+use ticket_engine::repository::documentation::{GAP_ANALYSIS, ROADMAP};
+
+/// Fixture mirroring a real dirty registry under [`GIT_ARGS`]: modified, staged,
+/// untracked, a rename — plus merged-stream pollution that must not count.
+fn fixture() -> String {
+    format!(
+        "\
 warning: unable to access '/home/x/.gitconfig': Permission denied
  M .ai/tickets/T-915.3.toml
-M  docs/TICKET_LEAD.md
+M  {ROADMAP}
 ?? .ai/tickets/T-999.toml
-R  docs/old.md -> docs/TICKET_NEW.md
+R  gap_analysis.md -> {GAP_ANALYSIS}
 A  CLAUDE.md
 
 hint: use git add to stage
-";
+"
+    )
+}
 
 #[test]
 fn porcelain_parse_counts_and_lists_entries_only() {
-    let entries = parse_porcelain(FIXTURE.lines());
+    let porcelain = fixture();
+    let entries = parse_porcelain(porcelain.lines());
     assert_eq!(entries.len(), 5);
     assert_eq!(
         entries,
         vec![
-            " M .ai/tickets/T-915.3.toml",
-            "M  docs/TICKET_LEAD.md",
-            "?? .ai/tickets/T-999.toml",
-            "R  docs/old.md -> docs/TICKET_NEW.md",
-            "A  CLAUDE.md",
+            " M .ai/tickets/T-915.3.toml".to_owned(),
+            format!("M  {ROADMAP}"),
+            "?? .ai/tickets/T-999.toml".to_owned(),
+            format!("R  gap_analysis.md -> {GAP_ANALYSIS}"),
+            "A  CLAUDE.md".to_owned(),
         ]
     );
 }
 
 #[test]
 fn chip_states_from_exit() {
-    let dirty = chip_from_exit(Some(0), FIXTURE.lines());
+    let porcelain = fixture();
+    let dirty = chip_from_exit(Some(0), porcelain.lines());
     match &dirty {
         GitChip::Dirty(files) => assert_eq!(files.len(), 5),
         other => panic!("expected Dirty, got {other:?}"),

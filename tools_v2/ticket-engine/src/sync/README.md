@@ -1,3 +1,3 @@
-# Generated ticket views
+# Ticket sync
 
-Renders the registry, lead, development queue, mod queue, brainstorm, and milestones Markdown files; queue JSON; roadmap markers; and gap-analysis ticket columns. `cmd_sync` preserves rendering order, optional-marker handling, and empty-write refusals. CLAUDE.md is not a generated ticket view.
+Regenerates three outputs from the ticket files: the dispatch queue `.ai/tickets/queue.json`, the recommended-next-work block between the roadmap's `ticket-sync:next` markers, and the ticket column of the gap-analysis tables. `cmd_sync` writes them in that order and writes no other file. It skips a roadmap or gap-analysis file that is absent, and a roadmap without its start marker; it refuses a write that would leave the marker block structurally empty, and it rewrites the gap-analysis column only after the tables round-trip byte for byte.

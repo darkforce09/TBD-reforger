@@ -9,12 +9,9 @@ use anyhow::Context;
 /// numstat path text — rename syntax `old => new` is matched as-is, and a rename inside an
 /// excluded tree keeps that tree's prefix, so the rule still holds.
 pub fn is_excluded_path(path: &str) -> bool {
-    use crate::repository::documentation::{
-        GENERATED_QUEUE_VIEW_PREFIX, NUMSTAT_EXCLUDED_PREFIXES,
-    };
+    use crate::repository::documentation::{NUMSTAT_EXCLUDED_PREFIXES, RETIRED_QUEUE_VIEW_PREFIX};
     NUMSTAT_EXCLUDED_PREFIXES.iter().any(|prefix| {
-        path.starts_with(prefix)
-            && (*prefix != GENERATED_QUEUE_VIEW_PREFIX || path.ends_with(".md"))
+        path.starts_with(prefix) && (*prefix != RETIRED_QUEUE_VIEW_PREFIX || path.ends_with(".md"))
     }) || path == "Cargo.lock"
         || path.ends_with("/Cargo.lock")
 }

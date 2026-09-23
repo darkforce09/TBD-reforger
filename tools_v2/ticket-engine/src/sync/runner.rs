@@ -11,35 +11,16 @@ pub fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()
     Ok(())
 }
 
+/// Regenerate the three sync outputs from `registry`, in this order: the dispatch queue
+/// ([`crate::repository::QUEUE_JSON`]), the roadmap's recommended-next-work block between its
+/// markers, and the gap-analysis ticket column.
+///
+/// The two document targets are optional: a checkout without the roadmap or the gap-analysis
+/// file, or a roadmap without the start marker, is skipped and never created. The roadmap block
+/// refuses a structurally empty write through [`refuse_empty_write`], and the gap-analysis column
+/// refuses a table it cannot round-trip byte for byte.
 pub fn cmd_sync(root: &Path, registry: &Value) -> Result<()> {
     use crate::repository::documentation as docs;
-
-    fs::create_dir_all(root.join(docs::TREE_DIR))?;
-
-    fs::write(
-        root.join(docs::TICKET_REGISTRY_VIEW),
-        generate_ticket_registry_md(registry),
-    )?;
-    fs::write(
-        root.join(docs::TICKET_LEAD_VIEW),
-        generate_ticket_lead_md(registry),
-    )?;
-    fs::write(
-        root.join(docs::TICKET_DEV_QUEUE_VIEW),
-        generate_ticket_dev_queue_md(registry),
-    )?;
-    fs::write(
-        root.join(docs::TICKET_BRAINSTORM_VIEW),
-        generate_ticket_brainstorm_md(registry),
-    )?;
-    fs::write(
-        root.join(docs::TICKET_MOD_QUEUE_VIEW),
-        generate_ticket_mod_queue_md(registry),
-    )?;
-    fs::write(
-        root.join(docs::MILESTONES),
-        generate_milestones_md(registry),
-    )?;
 
     let queue = generate_queue_json(registry);
     write_json_ascii(&root.join(crate::repository::QUEUE_JSON), &queue)?;

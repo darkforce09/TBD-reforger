@@ -4,12 +4,13 @@ use super::*;
 
 /// The plan ready-gate (spec §Plan documents; Decisions log #9: "no plan =
 /// can't go ready"). Every READY-class (ready/running/review) WORK ticket must carry
-/// `plan` and the file must exist on disk. Work-only on purpose: a program's `spec`
-/// is the shared program authority and programs are never dispatched as slices —
-/// the plan is the per-ticket execution document. `ops::mark_ready` enforces the
-/// same gate at promotion time (with the id-derived default path); this corpus-wide
-/// rule additionally catches `set-status` promotions and hand-edits. Fail-closed on
-/// an unloadable corpus.
+/// `plan`; whether the named file exists is [`check_spec_and_plan_files_exist`], the
+/// existence rule every ticket file shares, so a missing plan file is reported once.
+/// Work-only on purpose: a program's `spec` is the shared program authority and
+/// programs are never dispatched as slices — the plan is the per-ticket execution
+/// document. `ops::mark_ready` enforces the same gate at promotion time (with the
+/// id-derived default path); this corpus-wide rule additionally catches `set-status`
+/// promotions and hand-edits. Fail-closed on an unloadable corpus.
 pub(super) fn check_plan_ready_gate(root: &Path) -> Vec<String> {
     let corpus = match crate::Corpus::load(root) {
         Ok(c) => c,
@@ -26,21 +27,13 @@ pub(super) fn check_plan_ready_gate(root: &Path) -> Vec<String> {
         ) {
             continue;
         }
-        let status = w.status.name().as_str();
-        match w.plan.as_deref().map(str::trim) {
-            None | Some("") => errors.push(format!(
-                "{id}: {status} work ticket without a plan — ready-class requires plan ({}; \
+        if w.plan.as_deref().is_none_or(|p| p.trim().is_empty()) {
+            errors.push(format!(
+                "{id}: {} work ticket without a plan — ready-class requires plan ({}; \
                  `ticket mark-ready {id} <spec> [plan]` defaults it)",
+                w.status.name().as_str(),
                 crate::repository::documentation::PLAN_TEMPLATE
-            )),
-            Some(p) => {
-                if !root.join(p).is_file() {
-                    errors.push(format!(
-                        "{id}: plan missing on disk: {p} — a ready-class work ticket's plan \
-                         document must exist"
-                    ));
-                }
-            }
+            ));
         }
     }
     errors

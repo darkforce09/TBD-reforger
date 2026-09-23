@@ -2,13 +2,15 @@
 //!
 //! The chip retains the changed paths and distinguishes a failed query from a clean tree.
 
-/// argv after `git`: `status --porcelain -- <registry surface>`.
-pub const GIT_ARGS: [&str; 6] = [
+/// argv after `git`: `status --porcelain -- <registry surface>` — the ticket registry, the two
+/// documents `ticket sync` writes into (the roadmap and the gap analysis), and `CLAUDE.md`.
+pub const GIT_ARGS: [&str; 7] = [
     "status",
     "--porcelain",
     "--",
     ticket_engine::repository::TICKETS_DIR,
-    ticket_engine::repository::documentation::TREE_DIR,
+    ticket_engine::repository::documentation::ROADMAP,
+    ticket_engine::repository::documentation::GAP_ANALYSIS,
     "CLAUDE.md",
 ];
 

@@ -33,9 +33,9 @@ pub(super) fn refuse_verbatim(msg: &str) -> ! {
 /// The reload-before-sync invariant (t915_ticketboard_design.md §Write path,
 /// "Rewiring sequence invariant"). By the time any post-write step runs, the typed op has
 /// ALREADY landed its files; the `Value` those steps consume MUST be re-read from disk.
-/// Passing the pre-mutation Value to `cmd_sync` / `generate_queue_json` regenerates queue.json
-/// and every generated doc from the OLD state — pinned by
-/// `ship_regenerates_docs_from_post_state_reload_pin` below. The reload is also what surfaces
+/// Passing the pre-mutation Value to `cmd_sync` / `generate_queue_json` regenerates queue.json,
+/// the roadmap next-work block and the gap-analysis ticket column from the OLD state — pinned
+/// by `ship_regenerates_queue_from_post_state_reload_pin`. The reload is also what surfaces
 /// a typed CHILD write into the parents-only Value view: `attach_slice_plan` re-synthesizes
 /// `slice_plan` from the child files.
 pub(super) fn reload_registry(root: &Path, registry: &mut Value) -> Result<()> {

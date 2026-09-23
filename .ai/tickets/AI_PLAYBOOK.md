@@ -6,7 +6,7 @@
 
 Edit the ticket's **`T-*.toml`** → run **`cargo xtask ticket sync`** → run **`cargo xtask ticket check`** → commit the ticket file and every generated file together.
 
-Never hand-edit: `queue.json`, `docs/TICKET_*.md`, the `<!-- ticket-sync:next -->` block in [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md), the gap_analysis ticket column.
+Never hand-edit: `queue.json`, the `<!-- ticket-sync:next -->` block in [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md), the gap_analysis ticket column.
 
 ## HARD — No deferrals without operator word
 
@@ -54,7 +54,7 @@ cargo xtask ticket run
 ### Brainstorm (speech-to-text friendly)
 
 1. `cargo xtask ticket add "Outliner search" --program eden --surfaces LEFT --impact ui`
-2. Review `docs/TICKET_BRAINSTORM.md`
+2. Review the `idea` and `deferred` columns in [ticketboard](/apps/ticketboard/README.md)
 3. When promoted: assign `order`, write spec, `mark-ready`
 
 ### Developer brief
@@ -71,7 +71,7 @@ cargo xtask ticket brief T-0xx
 |----------|-------|-------|
 | `claude-code` | Claude Code | `apps/website/{api,frontend}/` code on **`main`** |
 | `cursor-docs` | Cursor | specs, ticket files, `cargo xtask ticket sync` |
-| `workbench` / `human` | Human | `apps/mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) |
+| `workbench` / `human` | Human | `apps/mod/tbd-framework` — filter [ticketboard](/apps/ticketboard/README.md) by executor |
 
 Handoff: mark slice ready → correct executor implements → `cargo xtask ticket advance-slice` or `cargo xtask ticket done`.
 
@@ -91,16 +91,9 @@ If unclear: one question — *review only, or write ticket + handoff?*
 
 **Cursor must NOT:** edit app source when exploring plans or writing audit/ticket docs. **One ticket at a time** unless user asks for more.
 
-## Generated views
+## Viewing tickets
 
-| File | Shows |
-|------|-------|
-| [`docs/TICKET_REGISTRY.md`](../../docs/TICKET_REGISTRY.md) | All tickets |
-| [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) | Lead dashboard |
-| [`docs/TICKET_DEV_QUEUE.md`](../../docs/TICKET_DEV_QUEUE.md) | Claude Code ready queue |
-| [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) | Mod / Workbench queue |
-| [`docs/MILESTONES.md`](../../docs/MILESTONES.md) | M1/M2 gate from the ticket files |
-| [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md) | Ideas + deprioritized |
+[ticketboard](/apps/ticketboard/README.md) shows every parent and child ticket from the ticket files, by status column and program tree; `cargo xtask ticket list` prints the dispatch queue.
 
 ## Validation
 

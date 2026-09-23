@@ -237,7 +237,8 @@ fn scratch_registry(tag: &str) -> PathBuf {
     git_in_dir(&dir, &["add", "-A"]);
     git_in_dir(&dir, &["commit", "-q", "-m", "seed scratch registry"]);
     crate::wave_lock::repack_quiet(&dir).expect("seed wave.lock");
-    // Seed queue.json + generated docs so the fixture starts from a synced state.
+    // Seed queue.json, the only sync output this tree carries (no roadmap or gap-analysis
+    // file), so the fixture starts from a synced state.
     let reg = load_registry(&dir).expect("load scratch registry");
     crate::sync::cmd_sync(&dir, &reg).expect("seed sync");
     git_in_dir(&dir, &["add", "-A"]);

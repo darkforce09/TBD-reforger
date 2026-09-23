@@ -31,5 +31,5 @@ Dev login (no Discord): `GET http://localhost:8080/api/v1/auth/dev-login?role=ad
 ## Documentation
 
 - **Agent context:** [`CLAUDE.md`](CLAUDE.md)
-- **Ticket lead:** [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md)
+- **Tickets:** [ticketboard](/apps/ticketboard/README.md), the desktop viewer of the ticket registry in `.ai/tickets/`
 - **Migration runbook:** [`docs/platform/MONOREPO_MIGRATION.md`](docs/platform/MONOREPO_MIGRATION.md)

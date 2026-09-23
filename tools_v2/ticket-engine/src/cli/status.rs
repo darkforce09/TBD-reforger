@@ -89,10 +89,10 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
         .write_back(&outcome.changed)
         .map_err(anyhow::Error::msg)?;
 
-    // Preserved asymmetry (t915 design §Write path): set-status regenerates queue.json +
-    // repacks ONLY — no full cmd_sync (generated docs go stale by current design;
-    // rationalizing that is its own ticket). Reload first: queue.json must come from the
-    // post-state, not the pre-mutation Value.
+    // set-status regenerates queue.json and repacks wave.lock ONLY — no full cmd_sync: the
+    // roadmap next-work block and the gap-analysis ticket column refresh on the next full sync
+    // (`ticket sync` or a mutator that runs cmd_sync). Reload first: queue.json must come from
+    // the post-state, not the pre-mutation Value.
     reload_registry(root, registry)?;
     let queue = generate_queue_json(registry);
     write_json_ascii(&root.join(crate::repository::QUEUE_JSON), &queue)?;

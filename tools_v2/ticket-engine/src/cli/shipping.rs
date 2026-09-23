@@ -81,7 +81,7 @@ pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &str, refresh: bool) 
 /// and `stamp-sha` the tree is transiently gate-red BY DESIGN (the SHA cannot exist
 /// before the commit), and this is the verb that moves it back to green — a full-
 /// check preflight would deadlock the lifecycle it exists to close. Stamps, markers
-/// and estimate files feed no generated view and are not wave.lock inputs (the byte
+/// and estimate files feed no `ticket sync` output and are not wave.lock inputs (the byte
 /// tripwire at the end proves the latter every run).
 pub fn cmd_stamp_sha(root: &Path, id: &str, sha: &str) -> Result<()> {
     let subjects = mine_subjects(root)?;

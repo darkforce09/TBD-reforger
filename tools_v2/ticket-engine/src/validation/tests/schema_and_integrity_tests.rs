@@ -591,8 +591,9 @@ fn ship_gate_red_green_per_arm() {
 }
 
 /// The plan ready-gate: a ready/running/review WORK ticket without a
-/// plan key reds naming the fix; a plan key whose file is missing reds naming the
-/// path; plan + file is green; programs and non-ready work are exempt.
+/// plan key reds naming the fix; a plan key satisfies the gate whether or not its file
+/// exists, because a missing file is the spec-and-plan file rule's one finding;
+/// programs and non-ready work are exempt.
 #[test]
 fn plan_ready_gate_red_green() {
     let root = worktree_root();
@@ -621,21 +622,22 @@ fn plan_ready_gate_red_green() {
             errs[0]
         );
     }
-    // Plan key present but the file is missing → red naming the path.
+    // Plan key present but the file is missing → the gate is satisfied, and the missing
+    // file is reported once, by the spec-and-plan file rule.
     fs::write(
         dir.join("T-001.toml"),
         ready("ready", "plan = \"docs/plans/t-001_plan.md\"\n"),
     )
     .unwrap();
-    let errs = check_plan_ready_gate(&tmp);
     assert!(
-        errs.len() == 1 && errs[0].contains("plan missing on disk: docs/plans/t-001_plan.md"),
+        check_plan_ready_gate(&tmp).is_empty(),
+        "the gate checks the plan key, not the file"
+    );
+    let errs = check_spec_and_plan_files_exist(&tmp);
+    assert!(
+        errs.contains(&"T-001: plan missing on disk: docs/plans/t-001_plan.md".to_string()),
         "{errs:?}"
     );
-    // File lands → green.
-    fs::create_dir_all(tmp.join(crate::repository::documentation::PLANS_DIR)).unwrap();
-    fs::write(tmp.join("docs/plans/t-001_plan.md"), "# plan\n").unwrap();
-    assert!(check_plan_ready_gate(&tmp).is_empty(), "plan + file green");
     // Queued work is exempt (the gate binds on ready-class only).
     fs::write(
             dir.join("T-001.toml"),

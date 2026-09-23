@@ -12,7 +12,6 @@ alwaysApply: true
 - Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`) · `apps/website/map-engine/` (pkg `website-map-engine`) · `apps/website/graphics-engine/` (pkg `website-graphics-engine`). Conventions pin: [`docs/platform/WHERE_DOES_X_GO.md`](../../docs/platform/WHERE_DOES_X_GO.md).
 - Frontend surface specs: `docs/website/frontend/` only — never under `apps/**/docs` (verify-doc-layout enforces).
 - Ticket source of truth: one `.ai/tickets/T-*.toml` file per ticket, beside the `.ai/tickets/ROOT` marker. After edits run `cargo xtask ticket sync` and `cargo xtask ticket check`. Work on **`main` only** — no `ticket/T-0xx` branches.
-- Do not hand-edit generated `docs/TICKET_*.md`.
 - **Cursor:** docs, brainstorm, ticket files, spec markdown (`executor: cursor-docs` slices).
 - **Claude Code:** application code only for slices with `executor: claude-code` (via `cargo xtask ticket run`).
 - **Executor gate:** stop if active slice is `workbench`, `human`, or `ci` — wait for human completion.

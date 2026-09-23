@@ -71,7 +71,7 @@ Implement **T-0xx.Y** — {one-line title}.
   N. Tag **T-0xx.Y** · commit prefix **T-0xx.Y:**
 
 ═══ DO NOT ═══
-  - Edit docs/**, the `.ai/tickets/T-*.toml` files, `docs/TICKET_*.md`
+  - Edit docs/**, the `.ai/tickets/T-*.toml` files
   - Grow engine policy inside a frontend bridge or controller module
   - Defer / "fold forward" / invent Out-of-scope for in-scope work unless the operator
     explicitly said "defer X" / "skip X" (see .cursor/rules/no-silent-deferrals.mdc)

@@ -96,16 +96,6 @@ fn resuppression_cancels_the_trailing_window() {
 }
 
 #[test]
-fn ticket_doc_names() {
-    assert!(ticket_doc_name("TICKET_LEAD.md"));
-    assert!(ticket_doc_name("TICKET_REGISTRY.md"));
-    assert!(ticket_doc_name("MILESTONES.md"));
-    assert!(!ticket_doc_name("TICKET_LEAD.txt"));
-    assert!(!ticket_doc_name("ROADMAP.md"));
-    assert!(!ticket_doc_name("README.md"));
-}
-
-#[test]
 fn relevance_filter_matches_the_watched_surfaces_only() {
     let root = Path::new("/repo");
     // Everything under .ai/tickets/, recursively.
@@ -119,16 +109,7 @@ fn relevance_filter_matches_the_watched_surfaces_only() {
     assert!(relevant(root, Path::new("/repo/CLAUDE.md")));
     assert!(!relevant(root, Path::new("/repo/Cargo.lock")));
     assert!(!relevant(root, Path::new("/repo/target")));
-    // docs/ level: the sync targets only.
-    assert!(relevant(root, Path::new("/repo/docs/TICKET_LEAD.md")));
-    assert!(relevant(root, Path::new("/repo/docs/MILESTONES.md")));
-    assert!(!relevant(root, Path::new("/repo/docs/README.md")));
-    // Nested docs files never match through the docs/ rule…
-    assert!(!relevant(
-        root,
-        Path::new("/repo/docs/platform/TICKET_X.md")
-    ));
-    // …except the one ROADMAP marker file.
+    // Elsewhere: the one ROADMAP marker file, and nothing beside it.
     assert!(relevant(
         root,
         Path::new("/repo/docs/specs/Mission_Creator_Architecture/ROADMAP.md")

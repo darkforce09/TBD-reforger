@@ -129,8 +129,9 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
 /// Paths under the documentation tree.
 ///
 /// Everything here is a document: a specification a ticket cites, a plan it must carry, a
-/// generated queue view, or a tree a scan walks or skips. Relocating the documentation tree
-/// rewrites exactly this module and nothing else in the crate.
+/// document `ticket sync` writes into, a tree a scan walks or skips, or a path prefix that only
+/// historical commits carry. Relocating the documentation tree rewrites exactly this module and
+/// nothing else in the crate.
 pub mod documentation {
     /// Root of the committed documentation tree.
     pub const TREE_DIR: &str = "docs";
@@ -164,40 +165,12 @@ pub mod documentation {
     /// quotes the compiled constant verbatim, so the two can never drift.
     pub const TOKEN_ESTIMATE_FACTOR_DOC: &str = "docs/platform/token_estimate_factor.md";
 
-    /// Full registry view: every ticket, grouped and sorted.
-    pub const TICKET_REGISTRY_VIEW: &str = "docs/TICKET_REGISTRY.md";
-
-    /// Lead view: what to pick up next, with the blocking relationships spelled out.
-    pub const TICKET_LEAD_VIEW: &str = "docs/TICKET_LEAD.md";
-
-    /// The website development queue.
-    pub const TICKET_DEV_QUEUE_VIEW: &str = "docs/TICKET_DEV_QUEUE.md";
-
-    /// Ideas that carry no order yet.
-    pub const TICKET_BRAINSTORM_VIEW: &str = "docs/TICKET_BRAINSTORM.md";
-
-    /// The game-mod queue.
-    pub const TICKET_MOD_QUEUE_VIEW: &str = "docs/TICKET_MOD_QUEUE.md";
-
-    /// Milestone progress across the whole registry.
-    pub const MILESTONES: &str = "docs/MILESTONES.md";
-
-    /// The mod programme's own milestone schedule, which the generated mod queue links to.
-    pub const MOD_MILESTONES: &str = "docs/mod/MILESTONES.md";
-
-    /// Every document `ticket sync` writes. They are generated output: an edit to one is
-    /// overwritten by the next sync, and a reader wanting the truth reads the ticket files.
-    pub const GENERATED_QUEUE_VIEWS: &[&str] = &[
-        TICKET_REGISTRY_VIEW,
-        TICKET_LEAD_VIEW,
-        TICKET_DEV_QUEUE_VIEW,
-        TICKET_BRAINSTORM_VIEW,
-        TICKET_MOD_QUEUE_VIEW,
-        MILESTONES,
-    ];
-
-    /// Shared prefix of the generated queue views, for the scans that recognise them by path.
-    pub const GENERATED_QUEUE_VIEW_PREFIX: &str = "docs/TICKET_";
+    /// Path prefix of the Markdown queue views that historical commits carry. No command writes
+    /// a file under it; the token estimator's `git log --numstat` walk still meets these paths in
+    /// old commits, so [`NUMSTAT_EXCLUDED_PREFIXES`] keeps their churn out of a ticket's
+    /// changed-line count. Relocating the documentation tree does not move it: a historical
+    /// commit keeps the spelling it was made with.
+    pub const RETIRED_QUEUE_VIEW_PREFIX: &str = "docs/TICKET_";
 
     /// Trees the stale-identifier scan walks past. Each is either generated output, an imported
     /// design corpus, or a frozen pipeline record: none of them is prose an author maintains, so
@@ -220,9 +193,9 @@ pub mod documentation {
     ];
 
     /// Path prefixes the token estimator drops from a commit's changed-line count: the registry
-    /// itself, its generated views, and the lockfile. Counting them would charge a ticket for the
-    /// bookkeeping its own landing performs.
-    pub const NUMSTAT_EXCLUDED_PREFIXES: &[&str] = &[".ai/", GENERATED_QUEUE_VIEW_PREFIX];
+    /// itself, the retired queue views ([`RETIRED_QUEUE_VIEW_PREFIX`]), and the lockfile.
+    /// Counting them would charge a ticket for the bookkeeping its own landing performs.
+    pub const NUMSTAT_EXCLUDED_PREFIXES: &[&str] = &[".ai/", RETIRED_QUEUE_VIEW_PREFIX];
 
     /// The two hand-kept wave plans the wave lock replaced.
     ///
@@ -244,10 +217,6 @@ pub mod documentation {
         (
             ".ai/tickets/",
             "ticket notes and summaries narrate the plan era; owns cells may name deleted paths",
-        ),
-        (
-            GENERATED_QUEUE_VIEW_PREFIX,
-            "generated views quote ticket prose verbatim",
         ),
         (
             "docs/platform/SHIPPED_HISTORY.md",

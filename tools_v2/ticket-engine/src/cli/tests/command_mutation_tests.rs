@@ -386,7 +386,7 @@ fn ship_no_repack_leaves_the_lock_untouched_until_the_next_repack() {
 }
 
 #[test]
-fn ship_regenerates_docs_from_post_state_reload_pin() {
+fn ship_regenerates_queue_from_post_state_reload_pin() {
     let root = scratch_registry("reload-pin");
     let mut registry = load_registry(&root).expect("scratch registry loads");
     assert!(
@@ -404,15 +404,6 @@ fn ship_regenerates_docs_from_post_state_reload_pin() {
     assert!(
         !queue_rows(&root).iter().any(|(id, _)| id == "T-002"),
         "queue.json regenerated from the POST-state must drop the shipped ticket"
-    );
-    let reg_md =
-        fs::read_to_string(root.join(crate::repository::documentation::TICKET_REGISTRY_VIEW))
-            .unwrap();
-    assert!(
-        reg_md
-            .lines()
-            .any(|l| l.starts_with("| T-002 |") && l.contains("| shipped |")),
-        "generated docs must show the post-state row:\n{reg_md}"
     );
     // The ship hook repacked: the shipped parent is parked at wave 0, out of the open waves.
     let lock = crate::wave_lock::load(&root).expect("lock");

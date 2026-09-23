@@ -34,7 +34,7 @@ Full commands: [`DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md) · conventi
 
 | Role | Start here |
 |------|------------|
-| **Ticket backlog** | [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · [`docs/TICKET_REGISTRY.md`](../../docs/TICKET_REGISTRY.md) |
+| **Ticket backlog** | [ticketboard](/apps/ticketboard/README.md), the desktop viewer of the ticket registry |
 | Frontend | [`docs/website/frontend/ROADMAP.md`](../../docs/website/frontend/ROADMAP.md) |
 | Backend | [`docs/website/backend/ROADMAP.md`](../../docs/website/backend/ROADMAP.md) · crate atlas [`api_v2/README.md`](api_v2/README.md) |
 | Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) |

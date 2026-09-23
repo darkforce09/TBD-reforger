@@ -10,7 +10,7 @@ use std::sync::mpsc::Sender;
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
 use ticket_engine::repository::TICKETS_DIR;
-use ticket_engine::repository::documentation::{ROADMAP, TREE_DIR};
+use ticket_engine::repository::documentation::ROADMAP;
 
 /// Debounce window: fire after this much event quiet. The design bound is
 /// ≥500 ms; 600 gives editor write-bursts comfortable room.
@@ -106,12 +106,6 @@ impl Debouncer {
 
 // ---- path relevance (pure) ----
 
-/// Sync targets that sit directly in the documentation tree: the generated ticket queues and
-/// the generated milestone view.
-pub fn ticket_doc_name(name: &str) -> bool {
-    (name.starts_with("TICKET_") && name.ends_with(".md")) || name == "MILESTONES.md"
-}
-
 /// The directory holding the roadmap, watched non-recursively so a rename-over is still seen.
 fn roadmap_dir(root: &Path) -> PathBuf {
     root.join(ROADMAP)
@@ -121,9 +115,9 @@ fn roadmap_dir(root: &Path) -> PathBuf {
 }
 
 /// Is `path` one of the watched surfaces under `root`? Everything under the ticket registry
-/// counts — ticket files, the wave lock, receipts — while elsewhere only the named sync targets
-/// do: the non-recursive directory watches deliver sibling noise (Cargo.lock, build output,
-/// unrelated documents) that must not trigger reload storms.
+/// counts — ticket files, the wave lock, receipts — while elsewhere only the two named files do,
+/// `CLAUDE.md` and the roadmap: the non-recursive directory watches deliver sibling noise
+/// (Cargo.lock, build output, unrelated documents) that must not trigger reload storms.
 pub fn relevant(root: &Path, path: &Path) -> bool {
     if path.starts_with(root.join(TICKETS_DIR)) {
         return true;
@@ -133,9 +127,6 @@ pub fn relevant(root: &Path, path: &Path) -> bool {
     };
     if path.parent() == Some(root) {
         return name == "CLAUDE.md";
-    }
-    if path.parent() == Some(root.join(TREE_DIR).as_path()) {
-        return ticket_doc_name(name);
     }
     path == root.join(ROADMAP)
 }
@@ -174,10 +165,9 @@ pub fn spawn(
         .watch(&root.join(TICKETS_DIR), RecursiveMode::Recursive)
         .map_err(|e| format!("{}: {e}", root.join(TICKETS_DIR).display()))?;
     let mut degraded = Vec::new();
-    let best_effort: [PathBuf; 3] = [
+    let best_effort: [PathBuf; 2] = [
         // Non-recursive parent-dir watches for the file targets (rename-over safe).
-        root.to_path_buf(),  // CLAUDE.md
-        root.join(TREE_DIR), // the generated ticket queues and milestone view
+        root.to_path_buf(), // CLAUDE.md
         roadmap_dir(root),
     ];
     for dir in best_effort {

@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
-description = "Ticket storage, validation, operations, generated views, scheduling, and metrics"
+description = "Ticket storage, validation, operations, queue and document sync, scheduling, and metrics"
 
 [dependencies]
 anyhow = "1"

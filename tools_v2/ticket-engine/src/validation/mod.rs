@@ -48,7 +48,9 @@ use debt::{check_debt_pins, debt_counter_lines};
 
 mod references;
 
-use references::{check_children_integrity, fossil_paths_check, scan_legacy_ids};
+use references::{
+    check_children_integrity, check_spec_and_plan_files_exist, fossil_paths_check, scan_legacy_ids,
+};
 
 mod runner;
 

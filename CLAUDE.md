@@ -153,7 +153,7 @@ apps/
 
 tools_v2/                               <-- Every developer tool in the repository; four crates plus one npm package
 ├── verification-core/                  <-- Fail-closed verdicts, pattern scans, process isolation, repository verification lock
-├── ticket-engine/                      <-- Ticket corpus storage, validation, generated views, wave lock, metrics, repository paths
+├── ticket-engine/                      <-- Ticket corpus storage, validation, queue and document sync, wave lock, metrics, repository paths
 ├── developer-tools/                    <-- Heavy async CLI suite, blueprint compiler, map verification
 │   ├── src/bin/                        <-- Executables: enf, gate, mcpd, world, map, capture
 │   │   ├── enf                         <-- Enfusion pak unpacker and script source extractor
@@ -213,7 +213,7 @@ cargo xtask mod compile        # Compile check Enfusion mod scripts
 
 # Ticket Registry
 cargo xtask ticket check       # Validate ticket registry structure
-cargo xtask ticket sync        # Regenerate ticket views and roadmaps
+cargo xtask ticket sync        # Regenerate queue.json, the roadmap next-work block, and the gap-analysis ticket column
 
 # Deployment (tools_v2/xtask/deploy/deploy.env)
 cargo xtask deploy website --dry-run  # Print the plan: asset preflight, rsync excludes, remote steps

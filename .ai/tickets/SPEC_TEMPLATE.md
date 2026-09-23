@@ -3,7 +3,7 @@
 **Ticket:** T-0xx  
 **Status:** Spec ready — code pending  
 **Git tag on ship:** **T-0xx**  
-**Authority:** [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · the ticket's own `T-0xx.toml` in this directory
+**Authority:** [ticketboard](/apps/ticketboard/README.md) · the ticket's own `T-0xx.toml` in this directory
 
 **Agent roles (locked):** **Cursor Composer 2.5** authors and syncs all documentation. **Claude Code reads this spec and implements code only** — return verify output to Cursor; do **not** edit docs.
 
@@ -110,7 +110,7 @@ Implement **T-0xx** — {one-line title}.
   1. …
 
 ═══ DO NOT ═══
-  - Edit docs/**, the .ai/tickets/T-*.toml files, docs/TICKET_*.md
+  - Edit docs/**, the .ai/tickets/T-*.toml files
 
 ═══ VERIFY (all exit 0) ═══
   cargo xtask mk ci-local-leptos

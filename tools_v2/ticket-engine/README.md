@@ -1,6 +1,6 @@
 # Ticket engine
 
-Self-contained ticket storage, validation, command services, generated views, scheduling, and accounting. This crate has no internal workspace dependencies.
+Self-contained ticket storage, validation, command services, sync outputs (queue JSON, roadmap markers, gap-analysis ticket columns), scheduling, and accounting. This crate has no internal workspace dependencies.
 
 ## Ownership
 
@@ -9,7 +9,7 @@ Self-contained ticket storage, validation, command services, generated views, sc
 - `registry`: ticket files on disk, read-only value projections, and ticket statuses at a past revision. The whole-tree writer refuses a typed tree, so the typed operations are the only writer.
 - `validation`: schema, vocabulary, ownership, body, readiness, shipping, hierarchy, accounting, debt, and repository-reference checks.
 - `cli`: briefs, queries, mutations, shipping, batch selection, and configuration.
-- `sync`: six Markdown views, queue JSON, roadmap markers, and gap-analysis ticket columns.
+- `sync`: queue JSON, roadmap markers, and gap-analysis ticket columns.
 - `wave_lock`: dependency packing, collision selection, deterministic lock files, drift checks, reservations, and decoding of the archived wave plans at the revisions that still carry them.
 - `metrics`: measured receipts, elapsed time, token accounting, and derived estimates.
 - `repository`: every repository path the crate reads or writes, spelled once, with a `documentation` submodule for the ones under the documentation tree; plus checkout-root discovery. `xtask` and `ticketboard` resolve those paths from here.

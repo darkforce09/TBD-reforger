@@ -1,4 +1,4 @@
-//! Ticket storage, validation, operations, views, scheduling, and metrics.
+//! Ticket storage, validation, operations, queue and document sync, scheduling, and metrics.
 #![deny(clippy::wildcard_enum_match_arm)]
 
 pub mod cli;

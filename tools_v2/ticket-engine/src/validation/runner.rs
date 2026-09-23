@@ -4,7 +4,8 @@ use super::*;
 
 pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<String> {
     // Schema first: structural/enum contract from .ai/tickets/schema.json.
-    // Hand-rolled checks below add business rules (order, phantoms, on-disk specs, markers).
+    // Hand-rolled checks below add business rules (order, phantoms, on-disk specs and plans,
+    // markers).
     let mut errors = validate_registry_schema(root, registry);
     errors.extend(validate_registry(registry));
     errors.extend(check_open_work_owns(root));
@@ -39,7 +40,7 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // THE hard ship gate — shipped requires created_at + completed_at +
     // SHA-shaped shipped_at (or the marked-absent asymmetry) + token accounting
     // (receipt XOR estimate; the NEITHER arm) — and the plan ready-gate: ready-class
-    // work carries a plan document that exists on disk.
+    // work names a plan document, whose existence the spec-and-plan file rule below checks.
     errors.extend(check_ship_gate(root));
     errors.extend(check_plan_ready_gate(root));
     // Tiered body obligations (t920 spec Decisions log #2), composed without
@@ -113,18 +114,9 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
         Err(error) => errors.push(format!("{error:#}")),
     }
 
-    for row in tickets(registry) {
-        let tid = str_field(row, "id");
-        let spec = opt_str(row, "spec").unwrap_or("").trim().to_string();
-        let status = opt_str(row, "status").unwrap_or("");
-        if !spec.is_empty()
-            && status != "idea"
-            && status != "cancelled"
-            && !root.join(&spec).is_file()
-        {
-            errors.push(format!("{tid}: spec missing on disk: {spec}"));
-        }
-    }
+    // Every spec and plan a ticket file names must exist on disk — every file, parents and
+    // children alike; idea and cancelled tickets are exempt.
+    errors.extend(check_spec_and_plan_files_exist(root));
 
     let roadmap = root.join(crate::repository::documentation::ROADMAP);
     if roadmap.is_file() {

@@ -1,6 +1,6 @@
 # Ticket pipeline
 
-**Source of truth:** one `T-*.toml` file per parent and per child, plus the [`ROOT`](ROOT) marker. Files are encoding C (flat `status` + sibling `order`, `[scope.*]` tables, `kind = "program"|"work"`). Never hand-edit generated `docs/TICKET_*.md`.
+**Source of truth:** one `T-*.toml` file per parent and per child, plus the [`ROOT`](ROOT) marker. Files are encoding C (flat `status` + sibling `order`, `[scope.*]` tables, `kind = "program"|"work"`). Never hand-edit what `cargo xtask ticket sync` writes: `queue.json`, the roadmap's recommended-next-work block, and the gap-analysis ticket column.
 
 **Implementation:** the `ticket` subcommand of `xtask`, backed by the `ticket-engine` crate at
 `tools_v2/ticket-engine/`. Every verb below is a `cargo xtask ticket …` call.
@@ -54,4 +54,4 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
 ## Authority
 
-[`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · Hub [`docs/platform/t161_ticket_xtask_program.md`](../../docs/platform/t161_ticket_xtask_program.md)
+[ticketboard](/apps/ticketboard/README.md) · Hub [`docs/platform/t161_ticket_xtask_program.md`](../../docs/platform/t161_ticket_xtask_program.md)

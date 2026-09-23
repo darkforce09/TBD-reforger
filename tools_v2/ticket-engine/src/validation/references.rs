@@ -56,6 +56,44 @@ pub(super) fn check_children_integrity(root: &Path) -> Vec<String> {
     errors
 }
 
+/// Every `spec` and `plan` a ticket file names exists on disk, over EVERY
+/// `.ai/tickets/T-*.toml`: parents and dotted children alike, because the typed corpus holds
+/// both, while the parents-only registry projection never carries a child's own fields.
+///
+/// The exemptions are by status. An `idea` may name a document it has yet to write, and a
+/// `cancelled` ticket's document may be gone for good; every other status binds, shipped history
+/// included. Only existence is this rule's business: whether a ticket must name a plan at all is
+/// [`check_plan_ready_gate`], and whether it must name a spec is the ready-class parse refusal,
+/// so a missing document is reported once.
+///
+/// Fail-closed: a corpus that cannot load reports the load error.
+pub(super) fn check_spec_and_plan_files_exist(root: &Path) -> Vec<String> {
+    let corpus = match crate::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        if matches!(
+            ticket.status().name(),
+            crate::StatusName::Idea | crate::StatusName::Cancelled
+        ) {
+            continue;
+        }
+        let (spec, plan) = match ticket {
+            crate::Ticket::Program(p) => (p.spec.as_deref(), p.plan.as_deref()),
+            crate::Ticket::Work(w) => (w.spec.as_deref(), w.plan.as_deref()),
+        };
+        for (field, named) in [("spec", spec), ("plan", plan)] {
+            let path = named.unwrap_or("").trim();
+            if !path.is_empty() && !root.join(path).is_file() {
+                errors.push(format!("{id}: {field} missing on disk: {path}"));
+            }
+        }
+    }
+    errors
+}
+
 /// Fossil-path guard: the wave-plan TSVs and their env knobs are dead, and any LIVE
 /// mention of them is a regression vector — a reader quietly retargeted at a file that no longer
 /// exists is exactly the false-green class this program killed. Greps the tracked tree (working
