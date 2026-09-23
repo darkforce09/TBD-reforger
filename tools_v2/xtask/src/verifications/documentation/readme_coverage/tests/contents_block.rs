@@ -36,6 +36,10 @@ fn tokens(block: &ContentsBlock) -> Vec<(&str, ChildKind)> {
         .collect()
 }
 
+fn entry_lines(block: &ContentsBlock) -> Vec<usize> {
+    block.entries.iter().map(|entry| entry.line).collect()
+}
+
 #[test]
 fn tree_prefixes_plain_lines_and_short_indents_are_direct_children() {
     let block = read(&contents(
@@ -54,8 +58,7 @@ fn tree_prefixes_plain_lines_and_short_indents_are_direct_children() {
             ("four.rs", ChildKind::File),
         ]
     );
-    let lines: Vec<usize> = block.entries.iter().map(|entry| entry.line).collect();
-    assert_eq!(lines, [9, 10, 11, 12, 13]);
+    assert_eq!(entry_lines(&block), [9, 10, 11, 12, 13]);
 }
 
 #[test]
@@ -147,21 +150,54 @@ fn an_entry_needs_two_spaces_before_a_non_empty_role() {
 }
 
 #[test]
-fn a_line_of_tree_drawing_alone_is_not_an_entry() {
-    let block = read(&contents("├── a.rs  first\n│\n└── b.rs  last"));
+fn spacer_lines_between_entries_are_skipped_and_keep_line_numbers() {
+    let block = read(&contents(
+        "├── a.rs  first\n│\n├── b.rs  second\n│   │   \n├──\n└── c.rs  last",
+    ));
+    assert_clean(&block);
+    assert_eq!(
+        tokens(&block),
+        [
+            ("a.rs", ChildKind::File),
+            ("b.rs", ChildKind::File),
+            ("c.rs", ChildKind::File),
+        ]
+    );
+    assert_eq!(entry_lines(&block), [9, 11, 14]);
+}
+
+#[test]
+fn trailing_spacer_lines_are_skipped() {
+    let block = read(&contents("├── a.rs  first\n└── b.rs  last\n│\n    │ \t"));
+    assert_clean(&block);
+    assert_eq!(entry_lines(&block), [9, 10]);
+}
+
+#[test]
+fn a_block_of_spacer_lines_alone_lists_nothing() {
+    let block = read(&contents("│\n│   │\n└── "));
+    assert_clean(&block);
+    assert!(block.entries.is_empty());
+}
+
+#[test]
+fn a_line_with_a_token_after_its_tree_drawing_is_never_a_spacer() {
+    let block = read(&contents("├── a.rs  first\n│   b.rs  nested"));
+    assert_eq!(entry_lines(&block), [9]);
     assert_eq!(
         messages(&block),
-        [(10, "the line holds tree drawing but no entry")]
+        [(
+            10,
+            "entry `b.rs` sits deeper than a direct child; Contents lists direct children only"
+        )]
     );
-    assert_eq!(block.entries.len(), 2);
 }
 
 #[test]
 fn blank_lines_are_skipped_and_keep_line_numbers() {
     let block = read(&contents("\n├── a.rs  first\n\n└── b.rs  last"));
     assert_clean(&block);
-    let lines: Vec<usize> = block.entries.iter().map(|entry| entry.line).collect();
-    assert_eq!(lines, [10, 12]);
+    assert_eq!(entry_lines(&block), [10, 12]);
 }
 
 #[test]

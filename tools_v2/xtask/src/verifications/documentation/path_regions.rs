@@ -1,8 +1,8 @@
 //! Where a tracked path sits, for the documentation gates.
 //!
 //! **Role:** answers the region questions the gates ask of a repository-relative path: is it
-//! inside a folder, inside a code tree, inside the README span, below a folder the README rule
-//! skips, a Markdown file, or inside an area the size limit leaves alone.
+//! inside a folder, inside a code tree, inside the README span, below a folder exempt by its name,
+//! a Markdown file, or inside an area the size limit leaves alone.
 //!
 //! **Position:** reads [`crate::core::repository_layout::documentation`]; called by
 //! [`super::readme_coverage`], [`super::markdown_placement`] and [`super::gate_scope`].
@@ -22,10 +22,10 @@ use crate::core::repository_layout::documentation::{
 /// may hold.
 pub(super) const README: &str = "README.md";
 
-/// Folder names whose subtrees the README rule and the code-tree Markdown rule skip: test sources
-/// and generated output. A folder whose name starts with `.` (hidden tool configuration) is
-/// skipped the same way.
-const SKIPPED_FOLDER_NAMES: [&str; 2] = ["tests", "generated"];
+/// Folder names that exempt a folder, with everything below it, from the README rules and the
+/// code-tree Markdown rule: test sources and generated output. A folder whose name starts with `.`
+/// (hidden tool configuration) is exempt the same way.
+const EXEMPT_FOLDER_NAMES: [&str; 2] = ["tests", "generated"];
 
 /// Documents `cargo xtask ticket sync` rewrites between markers. Their sync-managed tables stay
 /// in one file whatever their length, so the size limit skips them.
@@ -68,18 +68,23 @@ pub(super) fn in_documentation_root(path: &str) -> bool {
     is_within(path, DOCUMENTATION_ROOT)
 }
 
-/// Whether `folder` belongs to the README span: a code tree or the documentation root, the roots
-/// themselves included, outside the pending-merge area.
+/// Whether `folder` belongs to the README span, the one set of folders both README rules judge: a
+/// code tree or the documentation root, the roots themselves included, minus the exempt folders
+/// with everything below them — a folder exempt by its name ([`below_exempt_folder`]) and the
+/// pending-merge area. A README.md inside an exempt folder is neither required nor checked.
 pub(super) fn in_readme_span(folder: &str) -> bool {
-    (in_code_tree(folder) || in_documentation_root(folder)) && !is_within(folder, PENDING_MERGE_DIR)
+    (in_code_tree(folder) || in_documentation_root(folder))
+        && !below_exempt_folder(folder)
+        && !is_within(folder, PENDING_MERGE_DIR)
 }
 
 /// Whether any component of `folder` is a test folder, a generated-output folder or a hidden
-/// folder, which the README rule and the code-tree Markdown rule skip with everything below.
-pub(super) fn below_skipped_folder(folder: &str) -> bool {
+/// folder, which exempts it with everything below from the README rules and the code-tree
+/// Markdown rule.
+pub(super) fn below_exempt_folder(folder: &str) -> bool {
     folder
         .split('/')
-        .any(|name| SKIPPED_FOLDER_NAMES.contains(&name) || name.starts_with('.'))
+        .any(|name| EXEMPT_FOLDER_NAMES.contains(&name) || name.starts_with('.'))
 }
 
 /// Whether `path` names a Markdown file: its extension is `md` in any letter case.

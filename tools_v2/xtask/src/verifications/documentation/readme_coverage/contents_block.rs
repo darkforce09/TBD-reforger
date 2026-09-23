@@ -1,8 +1,8 @@
 //! The Contents block of a README: where it sits and what its lines say.
 //!
 //! **Role:** finds the first `text` code block after the `## Contents` heading and before the
-//! next `## ` heading, checks its root line against the folder, and reads every other non-blank
-//! line into a [`ContentsEntry`] or a [`Violation`].
+//! next `## ` heading, checks its root line against the folder, skips every blank or spacer line,
+//! and reads every other line into a [`ContentsEntry`] or a [`Violation`].
 //!
 //! **Position:** called by [`super`] with a README's text and its folder; the entries it returns
 //! go on to [`super::folder_matching`].
@@ -148,7 +148,7 @@ fn read_block(
         });
     }
     for (offset, text) in entry_lines.iter().enumerate() {
-        if text.trim().is_empty() {
+        if lists_nothing(text) {
             continue;
         }
         if let Some(entry) = read_entry(block.root_line + 1 + offset, text, &mut block.violations) {
@@ -158,16 +158,12 @@ fn read_block(
     Ok(block)
 }
 
-/// Read one non-blank entry line, pushing every violation it carries. The entry comes back
-/// whenever its token can name a direct child, so a missing role is reported without also
-/// reporting the child it lists as unlisted.
+/// Read one entry line, one that is neither blank nor a spacer, pushing every violation it
+/// carries. The entry comes back whenever its token can name a direct child, so a missing role is
+/// reported without also reporting the child it lists as unlisted.
 fn read_entry(line: usize, text: &str, violations: &mut Vec<Violation>) -> Option<ContentsEntry> {
     let mut fault = |message: String| violations.push(Violation { line, message });
     let (prefix, rest) = split_prefix(text);
-    if rest.chars().all(is_tree_drawing) {
-        fault("the line holds tree drawing but no entry".to_string());
-        return None;
-    }
     let (token, role) = match rest.split_once(ROLE_SEPARATOR) {
         Some((token, role)) => (token, role.trim()),
         None => (rest.split(' ').next().unwrap_or(rest), ""),
@@ -233,9 +229,18 @@ fn is_direct_prefix(prefix: &str) -> bool {
         || (prefix.len() <= DEEPEST_PLAIN_INDENT && prefix.bytes().all(|byte| byte == b' '))
 }
 
-/// Whether `character` belongs to the tree drawing rather than to an entry.
+/// Whether a Contents line lists nothing: it holds only whitespace and tree-drawing characters, so
+/// it is blank or a spacer such as `│` or `│   │`. A line that holds anything else keeps it past
+/// [`split_prefix`], which strips only tree drawing and spaces, so [`read_entry`] always has a
+/// token to read.
+fn lists_nothing(text: &str) -> bool {
+    text.chars()
+        .all(|character| character.is_whitespace() || is_tree_drawing(character))
+}
+
+/// Whether `character` is one of the box-drawing characters the tree drawing is made of.
 fn is_tree_drawing(character: char) -> bool {
-    matches!(character, '├' | '└' | '│' | '─' | ' ')
+    matches!(character, '├' | '└' | '│' | '─')
 }
 
 #[cfg(test)]

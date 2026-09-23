@@ -44,14 +44,31 @@ fn the_readme_span_is_the_code_trees_and_the_documentation_root() {
 }
 
 #[test]
-fn test_generated_and_hidden_folders_are_skipped_with_their_subtrees() {
-    assert!(below_skipped_folder("apps/x/tests"));
-    assert!(below_skipped_folder("apps/x/tests/fixtures"));
-    assert!(below_skipped_folder("apps/x/generated/models"));
-    assert!(below_skipped_folder("apps/mod/.cursor/rules"));
-    assert!(!below_skipped_folder("apps/x/test_fixtures"));
-    assert!(!below_skipped_folder("apps/x/latests"));
-    assert!(!below_skipped_folder("apps/x/src"));
+fn test_generated_and_hidden_folders_are_exempt_with_their_subtrees() {
+    assert!(below_exempt_folder("apps/x/tests"));
+    assert!(below_exempt_folder("apps/x/tests/fixtures"));
+    assert!(below_exempt_folder("apps/x/generated/models"));
+    assert!(below_exempt_folder("apps/mod/.cursor/rules"));
+    assert!(!below_exempt_folder("apps/x/test_fixtures"));
+    assert!(!below_exempt_folder("apps/x/latests"));
+    assert!(!below_exempt_folder("apps/x/src"));
+}
+
+#[test]
+fn exempt_folders_lie_outside_the_readme_span() {
+    for exempt in [
+        "apps/x/tests",
+        "apps/x/tests/fixtures",
+        "tools_v2/x/generated",
+        "apps/x/.cfg",
+        "apps/x/.cfg/nested",
+    ] {
+        assert!(!in_readme_span(exempt), "{exempt} is exempt");
+    }
+    let tests_below_documentation = format!("{DOCUMENTATION_ROOT}/topic/tests");
+    assert!(!in_readme_span(&tests_below_documentation));
+    assert!(in_readme_span("apps/x/test_fixtures"));
+    assert!(in_readme_span(&format!("{DOCUMENTATION_ROOT}/topic")));
 }
 
 #[test]

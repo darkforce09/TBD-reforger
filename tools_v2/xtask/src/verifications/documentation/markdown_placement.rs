@@ -21,7 +21,7 @@ use verification_core::{Finding, Kind, NotRun, Verdict};
 
 use super::gate_scope::GateScope;
 use super::path_regions::{
-    README, below_skipped_folder, file_name, in_code_tree, in_documentation_root, is_markdown,
+    README, below_exempt_folder, file_name, in_code_tree, in_documentation_root, is_markdown,
     is_size_exempt, is_within, parent_folder,
 };
 use super::tracked_tree::TrackedTree;
@@ -89,14 +89,14 @@ fn judge(
     run
 }
 
-/// Rule 1: every Markdown file in a code tree, outside skipped folders, is a README.md.
+/// Rule 1: every Markdown file in a code tree, outside exempt folders, is a README.md.
 fn judge_code_trees(tree: &TrackedTree, scope: &GateScope, verdicts: &mut Vec<Verdict>) -> Tally {
     let mut tally = Tally::default();
     for path in tree.files().filter(|path| {
         scope.contains(path)
             && in_code_tree(path)
             && is_markdown(path)
-            && !below_skipped_folder(parent_folder(path))
+            && !below_exempt_folder(parent_folder(path))
     }) {
         let verdict = if file_name(path) == README {
             Verdict::Held

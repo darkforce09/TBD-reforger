@@ -12,7 +12,7 @@ tools_v2/xtask/src/verifications/documentation/
 ├── markdown_fences.rs     recognises the lines that open and close a fenced code block
 ├── markdown_placement.rs  the markdown-placement gate: code-tree Markdown, the retired root, the size limit
 ├── mod.rs                 registers the gates and holds what they share: preparation, reading, printing
-├── path_regions.rs        where a path sits: code trees, the README span, skipped folders, exempt areas
+├── path_regions.rs        where a path sits: code trees, the README span, exempt folders, size-exempt areas
 ├── readme_coverage/       the Contents block parser, entry names and globs, and child matching
 ├── readme_coverage.rs     the readme-coverage gate: README coverage and the Contents check
 ├── tests/                 unit tests, and the fixture checkout they share
@@ -35,13 +35,13 @@ scope selected nothing to judge.
 
 The README span is every tracked folder at or under the code trees (`CODE_TREES`: `apps`,
 `tools_v2`, `contracts_v2`, `assets_v2`) and the documentation root (`DOCUMENTATION_ROOT`:
-`documentation_v2`), the roots included, minus the pending-merge area (`PENDING_MERGE_DIR`) and
-everything below it. The repository root's README.md lies outside the span.
+`documentation_v2`), the roots included, minus the exempt folders and everything below them: a
+folder named `tests` or `generated`, a folder whose name begins with `.`, and the pending-merge area
+(`PENDING_MERGE_DIR`). The repository root's README.md lies outside the span. Both rules judge the
+span alone, so a README.md inside an exempt folder is neither required nor checked.
 
-1. Coverage: each folder in the span carries a tracked README.md, unless a component of its path is
-   `tests`, `generated`, or begins with `.`.
-2. Contents: every tracked README.md in the span, including one inside a skipped folder, passes the
-   Contents grammar below.
+1. Coverage: each folder in the span carries a tracked README.md.
+2. Contents: every tracked README.md in the span passes the Contents grammar below.
 
 ### The Contents grammar
 
@@ -52,12 +52,14 @@ that never closes each fail.
 
 - Root line: line 1 of the block is exactly the folder's repository-relative path followed by `/`;
   trailing whitespace is ignored.
-- Entry lines: every other non-blank line is one direct-child entry, made of an optional tree-drawing
-  prefix, the entry token, two or more spaces, and a non-empty role.
+- Spacer lines: a line after the root line made only of whitespace and the tree-drawing characters
+  `├`, `└`, `│` and `─` lists nothing and is ignored, whether it is blank or a spacer such as `│` or
+  `│   │`.
+- Entry lines: every other line is one direct-child entry, made of an optional tree-drawing prefix,
+  the entry token, two or more spaces, and a non-empty role.
   - The prefix is the leading run of `├── `, `└── `, `│   ` and single spaces. A direct child's
     prefix is empty, one `├── ` or `└── `, or at most four spaces. A prefix that holds `│   `, a second
-    branch or deeper indentation marks a nested line, which fails; so does a line that holds only
-    tree-drawing characters.
+    branch or deeper indentation marks a nested line, which fails.
   - The token is a name or a glob, and it runs up to the first two consecutive spaces. A folder entry
     ends in `/` and a file entry does not; any other `/` in the token fails, and `/` alone names
     nothing and fails. On a line without two consecutive spaces the token is the first

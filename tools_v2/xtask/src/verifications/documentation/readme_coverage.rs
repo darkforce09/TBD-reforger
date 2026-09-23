@@ -1,10 +1,10 @@
 //! README coverage: every folder in the README span carries a README.md whose Contents block
 //! matches the folder.
 //!
-//! **Role:** the `readme-coverage` gate. Over every tracked folder of the code trees and the
-//! documentation root that the scope selects, it judges two rules: the folder carries a tracked
-//! README.md (test, generated-output and hidden folders excepted), and every tracked README.md
-//! there has a Contents block that lists exactly the folder's tracked direct children.
+//! **Role:** the `readme-coverage` gate. Over every tracked folder of the README span (the code
+//! trees and the documentation root, minus the exempt folders) that the scope selects, it judges
+//! two rules: the folder carries a tracked README.md, and that README.md has a Contents block that
+//! lists exactly the folder's tracked direct children.
 //!
 //! **Position:** `cargo xtask verify readme-coverage [--path <dir>]...` calls
 //! [`verify_readme_coverage`]. [`contents_block`] reads a README's Contents block,
@@ -13,9 +13,10 @@
 //!
 //! **Signals & state:** none; one pass over the tracked tree per run.
 //!
-//! **Invariants:** only tracked files count, as children and as READMEs; the pending-merge area
-//! lies outside the span; every Contents violation prints as `path:line: message`; a README that
-//! cannot be read is "did not run", never a pass.
+//! **Invariants:** only tracked files count, as children and as READMEs; both rules judge the same
+//! folders, so an exempt folder (test, generated-output, hidden, pending-merge) and the README.md
+//! it holds are judged by neither; every Contents violation prints as `path:line: message`; a
+//! README that cannot be read is "did not run", never a pass.
 
 mod contents_block;
 mod entry_pattern;
@@ -25,7 +26,7 @@ use std::path::Path;
 
 use verification_core::{Finding, Kind, NotRun, Verdict};
 
-use super::path_regions::{README, below_skipped_folder, in_readme_span, join};
+use super::path_regions::{README, in_readme_span, join};
 use super::tracked_tree::{FolderChildren, TrackedTree};
 use super::{GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
 use crate::core::repository_layout::documentation::{CODE_TREES, DOCUMENTATION_ROOT};
@@ -84,15 +85,13 @@ fn judge(
     {
         let readme = join(folder, README);
         let carries_readme = tree.is_file(&readme);
-        if !below_skipped_folder(folder) {
-            let verdict = if carries_readme {
-                Verdict::Held
-            } else {
-                Verdict::failed(format!("{folder}/: no tracked {README}"))
-            };
-            coverage.count(&verdict);
-            run.verdicts.push(verdict);
-        }
+        let verdict = if carries_readme {
+            Verdict::Held
+        } else {
+            Verdict::failed(format!("{folder}/: no tracked {README}"))
+        };
+        coverage.count(&verdict);
+        run.verdicts.push(verdict);
         if carries_readme {
             let (verdict, found) = judge_readme(repo_root, &tree, folder, &readme);
             contents.count(&verdict);

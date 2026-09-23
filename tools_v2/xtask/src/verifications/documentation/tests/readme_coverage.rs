@@ -1,8 +1,9 @@
 use super::super::fixture_checkout::{
     FixtureCheckout, failures, outcome_counts, readme_with_contents,
 };
+use super::super::path_regions::file_name;
 use super::*;
-use crate::core::repository_layout::documentation::PENDING_MERGE_DIR;
+use crate::core::repository_layout::documentation::{DOCUMENTATION_ROOT, PENDING_MERGE_DIR};
 
 fn run(fixture: &FixtureCheckout, scope: &[&str]) -> GateRun {
     let scope: Vec<String> = scope.iter().map(ToString::to_string).collect();
@@ -97,22 +98,52 @@ fn test_generated_hidden_and_pending_merge_folders_need_no_readme() {
 }
 
 #[test]
-fn a_readme_inside_a_skipped_folder_is_still_held_to_its_contents() {
-    let mut fixture = FixtureCheckout::new("coverage-skipped-readme");
+fn a_readme_inside_an_exempt_folder_is_not_held_to_its_contents() {
+    const NO_CONTENTS: &str = "# Exempt\n\nNo Contents here.\n";
+    let pending_merge = file_name(PENDING_MERGE_DIR);
+    let mut fixture = FixtureCheckout::new("coverage-exempt-readme");
     fixture
         .tracked(
             "apps/README.md",
-            &readme_with_contents("apps/", &["└── tests/  unit tests"]),
+            &readme_with_contents(
+                "apps/",
+                &[
+                    "├── .cfg/       tool configuration",
+                    "├── generated/  generated models",
+                    "├── tests/      unit tests",
+                    "└── tool/       the tool",
+                ],
+            ),
         )
-        .tracked("apps/tests/README.md", "# Tests\n\nNo Contents here.\n")
-        .tracked("apps/tests/case.rs", "");
-    let run = run(&fixture, &[]);
+        .tracked("apps/.cfg/README.md", NO_CONTENTS)
+        .tracked("apps/generated/README.md", NO_CONTENTS)
+        .tracked("apps/tests/README.md", NO_CONTENTS)
+        .tracked("apps/tests/case.rs", "")
+        .tracked("apps/tool/README.md", NO_CONTENTS)
+        .tracked("apps/tool/main.rs", "")
+        .tracked(
+            &format!("{DOCUMENTATION_ROOT}/README.md"),
+            &readme_with_contents(
+                &format!("{DOCUMENTATION_ROOT}/"),
+                &[format!("└── {pending_merge}/  sources waiting to merge").as_str()],
+            ),
+        )
+        .tracked(&format!("{PENDING_MERGE_DIR}/README.md"), NO_CONTENTS);
+    let whole = run(&fixture, &[]);
     assert_eq!(
-        failures(&run),
+        failures(&whole),
         [
-            "FAIL: apps/tests/README.md: Contents does not match the folder (1 violation(s))\n      \
-          apps/tests/README.md:1: no `## Contents` heading"
-        ]
+            "FAIL: apps/tool/README.md: Contents does not match the folder (1 violation(s))\n      \
+          apps/tool/README.md:1: no `## Contents` heading"
+        ],
+        "only the README of a folder in the span is judged"
+    );
+    assert_eq!(outcome_counts(&whole), (5, 1, 0));
+    let inside_exempt = run(&fixture, &["apps/tests"]);
+    assert_eq!(outcome_counts(&inside_exempt), (0, 0, 1));
+    assert!(
+        failures(&inside_exempt)[0]
+            .starts_with("FAIL: readme-coverage judged nothing in apps/tests")
     );
 }
 
