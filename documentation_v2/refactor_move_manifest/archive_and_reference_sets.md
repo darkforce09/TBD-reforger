@@ -185,7 +185,7 @@ feature folder adds each set's README (design-phase reference or live design tar
 | `mod/tbd-framework/UI/end_screen/visual_references/` | `ultra_clear_2_second_end_screen_banner_mockup` |
 | `mod/tbd-framework/UI/in_game_menu/visual_references/` | `admin_chat_panel_mockup`, `admin_environment_panel_mockup`, `admin_heal_repair_panel_mockup`, `admin_home_panel_mockup`, `admin_kick_ban_panel_mockup`, `admin_panel_sidebar_mockup`, `admin_radio_panel_mockup`, `admin_server_panel_mockup`, `admin_spawn_panel_mockup`, `admin_teleport_panel_mockup`, `pause_menu_left_sidebar_mockup`, `player_options_mockup`, `reference_screenshots`, `staging_phase_panel_mockup` |
 | `mod/tbd-framework/UI/lobby/visual_references/` | `lobby_bottom_bar_mockup`, `lobby_sidebar_mockup`, `orbat_panel_blufor_mockup`, `reference_screenshots`, `slot_kit_inspector_mockup` |
-| `mod/tbd-framework/UI/mission_selection/visual_references/` | `mission_inspector_mockup`, `mission_selector_top_bar_mockup`, `reference_screenshots`, `scenario_browser_mockup`, `terrain_selector_mockup` |
+| `mod/tbd-framework/UI/mission_selection/visual_references/` | `mission_header_browser_mockup`, `mission_inspector_mockup`, `mission_selector_top_bar_mockup`, `reference_screenshots`, `terrain_selector_mockup` |
 | `mod/tbd-framework/UI/spectator/visual_references/` | `combat_details_panel_tactical_wireframe_forensics_mockup`, `reference_screenshots`, `spectator_bottom_bar_split_faction_top_bar_mockup`, `spectator_tactical_roster_panel_sidebar_mockup`, `spectator_top_bar_broadcast_glass_pod_mockup` |
 | `website/frontend/apps/editor/visual_references/` | `mission_creator_canvas_blueprint`, `mission_creator_prototype_mockup`, `mission_creator_shell_blueprint`, `mission_visual_diff_blueprint`, `satellite_backdrop_render` |
 | `website/frontend/apps/editor/arsenal/visual_references/` | `arsenal_mockup`, `loadout_forge_blueprint` |
@@ -194,7 +194,8 @@ feature folder adds each set's README (design-phase reference or live design tar
 | `website/frontend/pages/administration/content_manager/visual_references/` | `announcements_manager_blueprint`, `broadcast_editor_blueprint` |
 | `website/frontend/pages/administration/event_manager/visual_references/` | `event_manager_blueprint` |
 | `website/frontend/pages/administration/personnel/visual_references/` | `personnel_roster_blueprint` |
-| `website/frontend/pages/command_center/visual_references/` | `command_dashboard_blueprint`, `server_intel_blueprint` |
+| `website/frontend/pages/command_center/dashboard/visual_references/` | `command_dashboard_blueprint` |
+| `website/frontend/pages/command_center/server_intel/visual_references/` | `server_intel_blueprint` |
 | `website/frontend/pages/doctrine_and_info/modpacks/visual_references/` | `modpacks_blueprint` |
 | `website/frontend/pages/doctrine_and_info/vehicles/visual_references/` | `btr_70_render`, `vehicle_dossier_blueprint` |
 | `website/frontend/pages/field_tools/mortar/visual_references/` | `mortar_calculator_blueprint` |
@@ -214,8 +215,8 @@ feature folder adds each set's README (design-phase reference or live design tar
 
 ## Verification evidence
 
-- `documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification/`: 36 files
-- `documentation_v2/website/api_v2/verification/`: 15 files
+- `documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/`: 36 files
+- `documentation_v2/website/api_v2/verification_evidence/`: 15 files
 
 ## Other data
 

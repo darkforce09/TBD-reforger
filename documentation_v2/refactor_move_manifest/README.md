@@ -4,13 +4,13 @@
 
 The operator's reading copy of [refactor_move_manifest.tsv](/documentation_v2/refactor_move_manifest.tsv),
 the row-by-row plan of the documentation move: its counts, its conventions, the ordering P2-1
-follows, and the questions checkpoint CP1 answers.
+follows, and the checkpoint CP1 questions with the operator's answers.
 
 ## Contents
 
 ```text
 documentation_v2/refactor_move_manifest/
-├── cp1_questions.md                   numbered questions for checkpoint CP1, with options and recommendations
+├── cp1_questions.md                   numbered questions for checkpoint CP1, with options, recommendations and answers
 ├── live_targets.md                    every live target with its writer, primary source and pending_merge sources
 └── archive_and_reference_sets.md      archive topics with their files, reference sets, frozen corpus, evidence
 ```
@@ -21,7 +21,8 @@ The TSV holds 1071 rows, one per source file: every tracked file under `docs/` a
 `documentation_v2/` (the `refactor_*` program files excepted), every non-README markdown file under
 `apps/`, `tools_v2/`, `contracts_v2/` and `assets_v2/`, and the three `.ai/artifacts/` spec files
 tickets cite. Columns: `source`, `target`, `action`, `class`, `writer`, `note`; `-` marks an empty
-cell. P0-2 wrote the mechanical rows and P0-3 the judgment rows; P0-5 merged them and checked:
+cell. P0-2 wrote the mechanical rows and P0-3 the judgment rows; P0-5 merged them, applied the
+operator's checkpoint CP1 answers and checked:
 
 - **Coverage.** Every file of that set appears exactly once as a source.
 - **Targets.** No two rows share a target, except a `collapse-duplicate` row (its target is the
@@ -32,7 +33,7 @@ cell. P0-2 wrote the mechanical rows and P0-3 the judgment rows; P0-5 merged the
 - **Names.** Targets are snake_case, except `README.md`, `t-<id>_plan.md`, code-spelled mirror
   folders (`map-engine`, `graphics-engine`, `tbd-framework`, `tbd-export`, `tbd-emcp`, `api_v2`,
   the tools_v2 crate names, `Scripts/WorkbenchGame/EquipmentVehicleExport`, `UI`), hyphenated
-  evidence folders and JSON under a `verification/` folder, and everything under
+  evidence folders and JSON under a `verification_evidence/` folder, and everything under
   `pending_merge/`, which keeps original names (a `README.md` source becomes its whole path in
   lower case with `/` spelled `__`; a `page.md` becomes `<area>__<page>__page.md`). Archived
   redirect stubs are named the same way; their note names the real target and its final path.

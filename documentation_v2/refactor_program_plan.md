@@ -77,7 +77,7 @@ documentation_v2/
 ├── README.md              entry: map, authority ladder, where to find what
 ├── glossary.md            project terms and abbreviations
 ├── product_roadmap.md     operator-curated plan (checkpoint 4)
-├── website/               mirrors apps/website/: api_v2/ (incl. verification/), frontend/ (pages/<area>/…,
+├── website/               mirrors apps/website/: api_v2/ (incl. verification_evidence/), frontend/ (pages/<area>/…,
 │                          apps/editor/ = Mission Creator, apps/planner, apps/aar), map-engine/, graphics-engine/
 ├── mod/                   mirrors apps/mod/: tbd-framework/ (mod design, UI/<screen>/), tbd-export/ (+ evidence), tbd-emcp/
 ├── ticketboard/  fleet_host_agent/  tools_v2/<crate>/  contracts_v2/  assets_v2/
@@ -276,9 +276,9 @@ Rules:
   09_eden_wiki_manifest.yaml stub → archive/redirect_stubs/ (note = real target, used to retarget links);
   docs/website/.doc-manifest.{before,after}, docs/website/REORG_CHANGELOG.md → archive/monorepo_migration/;
   eden/wiki_manifest.yaml → archive/redirect_stubs/.
-- docs/verification/api_v2/** → documentation_v2/website/api_v2/verification/ (evidence);
+- docs/verification/api_v2/** → documentation_v2/website/api_v2/verification_evidence/ (evidence);
   docs/verification/equipment-vehicle-export/** → documentation_v2/mod/tbd-export/<mirror of the
-  exporter's code folder>/verification/ (evidence).
+  exporter's code folder>/verification_evidence/ (evidence).
 - docs/platform/factory_pack_wave → .ai/factory_pack_wave (data); docs/mod/capability_verdicts.tsv →
   documentation_v2/mod/tbd-framework/capability_verdicts.tsv (data).
 - docs/TICKET_*.md, docs/MILESTONES.md → "done-by-P1-2".
@@ -510,7 +510,7 @@ paths; ARCHIVED_WAVE_PLANS and RETIRED_QUEUE_VIEW_PREFIX unchanged; ARCHIVED_WAV
 re-pointed; stale-id scan roots and exemptions gain archive/ and tickets/ and the new visual_references
 locations; the REORG_CHANGELOG exemption becomes its archived path; PLAN_TEMPLATE →
 .ai/tickets/plan_template.md; SPARSE_CHECKOUT_SETS website/mod sets gain their documentation_v2
-mirror folders; API_READINESS_* → documentation_v2/website/api_v2/verification/; FACTORY_PACK_WAVE →
+mirror folders; API_READINESS_* → documentation_v2/website/api_v2/verification_evidence/; FACTORY_PACK_WAVE →
 .ai/factory_pack_wave; enf MOD_DOCS_DIR/capability verdicts/editor-gate runbook → new paths);
 apps/website/frontend/src/v2/apps/editor/arsenal/tests/shell_wiring.rs:542 include_str!; ticketboard
 file_watch ROADMAP path + tests (:134,:138); ticket-engine/xtask/developer-tools/ticketboard fixtures
@@ -731,7 +731,7 @@ Checks: readme-coverage + link-check + markdown-placement on your targets; EXTRA
 | F06 | `feature_inventory/` part 2 (areas N–Z) | second half |
 | F07 | `apps/editor/{mission_creator_roadmap.md, ux_spec.md, decisions.md}`, `eden_editor_reference/eden_gap_analysis.md` | ROADMAP, `agent_execution` (the execution half goes to archive), `ux_spec`, `pages/mission-editor.md`. **Pins:** ROADMAP sync markers. Every `\| eden_id \| … priority \|` table stays in one file and passes the round trip, with no priority column. Keep "a multi-selection now OPENS multi-edit" and "T-649 ✅". Run `ticket check --strict` and `mk ci-local-leptos`. |
 | F08 | `eden_editor_reference/{interactions/ (split), attributes, ui_anatomy}`, `apps/editor/arsenal/`, editor `visual_references/`, `apps/{planner, aar}/` (planned, not built), the editor folder README | Eden catalogs, arsenal docs, mockup sets, draft planner and aar hubs |
-| F09 | `website/README.md`, `website/api_v2/**` (overview, env reference, domain docs, `verification/README.md` index), `website/map-engine/**`, `website/graphics-engine/**`, `standards/engine_boundary_rules.md` | `backend/ROADMAP`, `backend/README`, the rule sections of `ENGINE_SPLIT_PROGRAM`, `.env.example`, draft engine hubs |
+| F09 | `website/README.md`, `website/api_v2/**` (overview, env reference, domain docs, `verification_evidence/README.md` index), `website/map-engine/**`, `website/graphics-engine/**`, `standards/engine_boundary_rules.md` | `backend/ROADMAP`, `backend/README`, the rule sections of `ENGINE_SPLIT_PROGRAM`, `.env.example`, draft engine hubs |
 | F10 | `mod/tbd-framework/**`: `mod_design.md`, the capability verdicts index, `UI/**` (index plus one folder per screen: spec, screenshots, Stitch sets; briefing spec split) | TBD_MOD_DESIGN, UI_STRUCTURE, UI_REFERENCES, the 13 screen specs, `vanilla_carve_coverage`. **Pins:** the 12 `@idx` citations and the section names `verify_crf_leak.rs:38-42` cites. Run `hcargo run -p developer-tools --bin enf -- citations` and `enf capability`. |
 | F11 | `mod/README.md`, `mod/tbd-export/**` (exporter docs and evidence index), `mod/tbd-emcp/**` | `docs/mod/README`, the MCP parts of `CLAUDE-CODE-START`, export and evidence READMEs |
 | F12 | `tools_v2/**` docs, `ticketboard/**`, `fleet_host_agent/**`, `contracts_v2/**` (including `definitions/bridge_messages.md`), `assets_v2/**` | `token_estimate_factor` (**pins:** quotes `.ai/`, `docs/TICKET_`, `Cargo.lock`; run `hcargo test -p ticket-engine estimate_provenance`), draft tools hubs |

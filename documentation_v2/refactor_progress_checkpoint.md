@@ -86,8 +86,10 @@ the base brief names, outside the repository.
 | P0-3 | 0 | Manifest, judgment rows | done | — (scratchpad outputs; committed by P0-5) | CP1: 11 questions in judgment_notes.md (vanilla_carve_coverage, SHIPPED_HISTORY topic, macos_ux_architecture, frontend _template, CLAUDE-CODE-START, eden wiki_manifest, KB-002, admin_tickets panel, feature doc file naming, frontend README primary, pending_merge naming) |
 | P0-4 | 0 | Ticket plan and follow-up tickets | done (step 3 blocked) | — (scratchpad outputs; committed by P0-5) | CP1: top-level ticket ids exhausted at T-999 (schema.json:18 and sync/gap_analysis.rs:12 allow 3 digits) — widen or file as children; citation value format; rename ticket status deferred vs queued; rewrite bare-name mentions only where the basename changes |
 | P0-5 | 0 | Manifest assembly and pin catalogue | done (≈645k tokens — over the 500k cap) | this commit | 21 CP1 questions in refactor_move_manifest/cp1_questions.md |
+| P0-5f | 0 | Apply the checkpoint-1 answers to the manifest (fix run) | done (≈256k tokens) | phase-0 closing commit | — |
 | P1-1 | 1 | Archive the tools_v2 program records | pending | — | — |
 | P1-2 | 1 | Retire the generated ticket views | pending | — | — |
+| P1-2b | 1 | Widen the ticket id pattern to 3+ digits; file the three follow-up tickets | pending | — | — |
 | P1-3 | 1 | Retire the prose gates | pending | — | — |
 | P1-4 | 1 | Api-readiness constants and layout existence tests | pending | — | — |
 | P1-5 | 1 | Documentation gate modules and verbs | pending | — | — |
@@ -176,18 +178,41 @@ the base brief names, outside the repository.
 | 2026-09-23 | P2-2 moves the `.editorconfig-checker.json` excludes from the two docs/specs mockup folders to the new `visual_references/` and `design_system/token_exports/` locations (generated exports, byte-pinned) | P0-5 finding |
 | 2026-09-23 | The committed plan copy spelled the retired wave-plan fossil strings; reworded (the fossil guard in `ticket check` would fail on them) | P0-5 finding |
 | 2026-09-23 | Size agents tighter: P0-5 finished at ≈645k tokens. Scripted agents get narrower scopes; the orchestrator stops any agent nearing 450k | orchestrator |
+| 2026-09-23 | CP1 answered: the operator accepted the recommended answer to all 21 questions; P0-5f applies 1–3 (set rename, per-page dashboard and server-intel sets, `verification_evidence/` folders) and records the decisions in the writing brief | operator decision |
+| 2026-09-23 | New agent P1-2b (78 agents in total): after P1-2, widen the ticket id pattern in `.ai/tickets/schema.json:18` and `tools_v2/ticket-engine/src/sync/gap_analysis.rs:12` to three or more digits (tests included), then file the three follow-up tickets from `documentation_v2/refactor_followup_tickets.md` top-level: the scenario-to-mission rename (status deferred), the mod wave gate's missing Makefile, and one human cleanup ticket for the 44 stale branches, 6 worktrees and the 4 merged-but-ready tickets | operator decision (CP1 question 17) |
 
 ## Phase handoffs
 
 Written by the orchestrator at each phase (and Phase 4–5 wave) boundary, before the main session is compacted. Each block names: commits landed, decisions and amendments, environment state (other sessions, xtask build status, dirty files), open questions, and the exact next agents to launch with any prompt adjustments. A fresh session resumes from the newest block.
 
-(none yet — Phase 0 in progress)
+### Phase 0 handoff (2026-09-23) — Phase 0 closed, CP1 answered
+
+**Commits:** f8511271c (program plan, writing brief, this file) · 10f15eb5f (P0-1 row, first amendments) · d2ce2160b (phase handoff protocol) · 660b70833 (move manifest, ticket rewrites, orphan-spec links, pin catalogue, CP1 questions) · the Phase 0 closing commit (CP1 answers 1–3 applied by P0-5f, `refactor_followup_tickets.md`, plan evidence-folder wording).
+
+**Decisions:** CP1 answered — the operator accepted all 21 recommendations (`refactor_move_manifest/cp1_questions.md`; rules in the writing brief's "Checkpoint 1 decisions"). Every amendment above applies from Phase 1 on.
+
+**Environment at close:**
+- Another session holds ~161 uncommitted entries (equipment data viewer, equipment export, equipment gameplay) across api_v2, frontend, tools_v2, apps/mod and contracts_v2. Shared dirty files: `CLAUDE.md`, `.gitignore`, `apps/website/api_v2/.env.example`, `apps/mod/tbd-export/resourceDatabase.rdb` (never stage the last one). Stage any shared file hunk-wise.
+- `hcargo build -p xtask` exits 0 (log `<scratchpad>/logs/orchestrator/xtask_build_phase0_end.log`); it was broken earlier the same day by the other session's in-flight `equipment_gameplay` module, so re-check before each Phase 1 agent.
+- Red, not ours: `verify-coding-standards` route-tag check (the other session's `equipment_data_viewer` routes); `tooling_prose_rules::nothing_narrates_its_own_history` (`equipment_vehicle_export/legacy_archive.rs`).
+- Red, fixed by Phase 1: `only_a_layout_module_spells_a_repository_path` (P1-4), `every_rust_file_named_in_prose_exists` (P1-1).
+- `docs/` has no uncommitted changes; the API v2 completion session writes `docs/verification/api_v2/` — pause it before Phase 2.
+- Everything Phase 1+ needs is committed under `documentation_v2/refactor_*`; the scratchpad intermediates are not needed.
+
+**Next — Phase 1, sequential, one green commit per agent:** P1-1 → P1-2 → P1-2b → P1-3 → P1-4 → P1-5 → P1-6. Prompts are in the plan's Phase 1 section, adjusted by the amendments:
+- Before each agent: `hcargo build -p xtask` exits 0; if the other session breaks it again, stop and ask the operator.
+- P1-1 also owns `tools_v2/README.md` (lines 13-18).
+- P1-2 also extends spec/plan existence validation to every ticket file (parents and children) and first repoints T-068.10.5 → `.ai/artifacts/t068_10_5_weapon_families.md` and T-159.15.0 → `.ai/artifacts/t159_15_render_loop_handoff.md`.
+- P1-2b (new): widen `.ai/tickets/schema.json:18` and `tools_v2/ticket-engine/src/sync/gap_analysis.rs:12` to `[0-9]{3,}` with tests; then file the three tickets in `documentation_v2/refactor_followup_tickets.md` top-level (rename program → deferred; mod wave gate Makefile → idea; human cleanup of 44 branches, 6 worktrees and the 4 merged-but-ready tickets → idea).
+- P1-4: `API_READINESS_EVIDENCE_PREFIX` keeps the value `docs/verification/api_v2/` until P2-2 sets `documentation_v2/website/api_v2/verification_evidence/`.
+- P1-5: treat `documentation_v2/refactor_*` as records; evidence folders are named `verification_evidence/`.
+- Budget: stop agents near 450k tokens (P0-5 overran at ≈645k); keep scopes narrow.
 
 ## Checkpoints
 
 | Checkpoint | Follows | The operator reviews | Status |
 |---|---|---|---|
-| CP1 manifest | P0-5 | `refactor_move_manifest.md` and its questions; P0-5 applies the answers in a fix-agent run | pending |
+| CP1 manifest | P0-5 | `refactor_move_manifest.md` and its questions; P0-5 applies the answers in a fix-agent run | answered 2026-09-23 — all 21 recommendations accepted; P0-5f applies 1–3 |
 | CP2 cutover | P2-7 | commits 2a and 2b; ticketboard's spec reader; the server address, identified by its SSH host key | pending |
 | CP3a standard | P3-1 | the README standard and its samples; changes go through a P3-1 fix run | pending |
 | CP3b pilot slices | P3-3 | the R01 and F01 pilot output; the style locks | pending |

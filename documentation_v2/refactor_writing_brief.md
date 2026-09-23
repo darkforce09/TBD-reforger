@@ -267,3 +267,43 @@ another word.
 - **operations** — the domain covering events, the ORBAT and slotting, and member service records:
   `apps/website/api_v2/src/operations/` (which also serves fire missions, leave requests and
   game-runtime deployments) and the pages under `apps/website/frontend/src/v2/pages/operations/`.
+
+## Checkpoint 1 decisions (2026-09-23)
+
+The operator accepted the recommended answer to all 21 questions in
+[cp1_questions.md](/documentation_v2/refactor_move_manifest/cp1_questions.md); the manifest, the
+rewrite TSVs and the pin catalogue follow them. Writers follow these rules. Paths are relative to
+`documentation_v2/`.
+
+- **Visual reference sets.** A set is named `<subject>_<kind>`, kind `blueprint`, `mockup` or
+  `render` (`mortar_calculator_blueprint`, `mission_header_browser_mockup`,
+  `satellite_backdrop_render`); a mod Stitch set keeps its panel folder name without
+  `tbd_reforger_` and `_standalone`. Its files are `<set_name>.html` (the Stitch export),
+  `<set_name>.png` (its screenshot; a render has only this) and `design_tokens.md` when the export
+  carries tokens. A mod screen's in-game captures sit beside its sets in `reference_screenshots/`.
+- **Set placement.** A set sits in the `visual_references/` folder of the feature it depicts, per
+  page wherever the code has per-page folders:
+  `website/frontend/pages/command_center/dashboard/visual_references/command_dashboard_blueprint/`.
+- **Evidence folders.** Named `verification_evidence/` (`website/api_v2/verification_evidence/`,
+  `mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/`), never
+  `verification/`, which collides with the mirror of the code folder `Verification/` on a
+  case-insensitive filesystem. Hyphenated evidence names inside keep their spelling.
+- **Feature docs.** Each feature doc is its own file beside the folder's README index:
+  `<page component>_page.md` in a page folder (`personnel_roster_page.md`), `account_pages.md`
+  (login, auth callback, settings), `app_layout_and_navigation.md` (layout, sidebar, top nav,
+  not-found page) and `<screen>_specification.md` for a mod screen (`lobby_specification.md`).
+- **pending_merge/.** Secondary sources keep their original names under `pending_merge/<writer>/`
+  (exempt from snake_case); the folder is empty by the end of Phase 5.
+- **Known bugs.** A resolved entry stays in `known_bugs/` with status resolved.
+- **Ticket citations.** A citation this program adds reads `Design: <path>.`.
+- **Redirect stubs.** A ticket mention of a redirect stub points at the stub's real target, not at
+  the archived stub.
+- **macOS UX methodology.** F17 writes it into `design_system/` (context retention, progressive
+  disclosure, frictionless action; split pane, create-over-list dialog, inline toggles, slide-over
+  dossier); the React-era audit is archived at
+  `archive/go_and_react_era_design/macos_ux_architecture.md`.
+- **Placements.** The shipped-history log `SHIPPED_HISTORY.md` goes to `archive/shipped_history/`;
+  the Eden wiki scrape manifest stays as data beside the Eden catalogs
+  (`website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml`); vanilla
+  source coverage stays live at `mod/tbd-framework/vanilla_source_coverage.md`; the mod agent start
+  file `CLAUDE-CODE-START.md` merges into `runbooks/mod_slice_workflow.md`.
