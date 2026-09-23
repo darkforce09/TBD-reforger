@@ -14,16 +14,15 @@ name = "ticketboard"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
-description = "Native egui viewer for the .ai/tickets registry (T-915)."
+description = "Native egui viewer for the .ai/tickets registry."
 license = "UNLICENSED"
 publish = false
 
 [dependencies]
-# wgpu is eframe 0.36's default backend (design §Framework). "persistence" enables
+# wgpu is eframe 0.36's default backend. "persistence" enables
 # eframe Storage (ron + serde + directories) — the picked-repo-path memory.
 eframe = { version = "0.36.1", features = ["persistence"] }
-# T-918.4 in-app markdown viewer — a NAMED new dependency family (supply-chain
-# event, reported like eframe at T-915.1). Version 0.25 is the egui 0.36 match, so
+# In-app Markdown rendering. Version 0.25 matches egui 0.36, so
 # it resolves onto the one egui already in the lock — never a second egui.
 # default-features = false drops `load-images` (egui_extras image/file loaders —
 # the mime_guess2/image tree this manifest already refuses below); the viewer is
@@ -35,14 +34,14 @@ egui_commonmark = { version = "0.25.0", default-features = false, features = [
 # Detail-panel field table. default-features = false drops mime_guess2 (image-loader
 # support the app does not use).
 egui_extras = { version = "0.36.1", default-features = false }
-# File watch on .ai/tickets + the sync targets (T-915.3 §Read architecture). The
+# File watch on .ai/tickets + the sync targets. The
 # default feature set only selects the macOS backend flavor (fsevent) — on Linux this
 # is inotify with no extra runtime: no crossbeam, no mio, no tokio.
 notify = "8"
 # Native folder picker for the no-repo refusal screen (xdg-portal + pollster on Linux;
 # no async runtime).
 rfd = "0.17.2"
-# wave.lock mirror parse (T-915.2) — the same serde derive + toml 0.8 lines xtask and
+# wave.lock mirror parse — the same serde derive + toml 0.8 lines xtask and
 # ticket-engine already use, so the verbatim lock render can never disagree with the
 # writer on TOML dialect. Both crates were already in the workspace graph.
 serde = { version = "1", features = ["derive"] }
@@ -57,6 +56,6 @@ time = { version = "0.3", features = ["parsing"] }
 toml = "0.8"
 
 [features]
-# Driver-quirk fallback (design §Framework): `--features glow` builds the glow backend
+# Driver-quirk fallback: `--features glow` builds the glow backend
 # in and the app then selects it; the default build stays pure wgpu.
 glow = ["eframe/glow"]

@@ -386,7 +386,7 @@ Created in **T-125.2** at the repo root. Each entry is normative:
 
 ```yaml
 - rule: SIZE-3
-  path: apps/ticketboard/src/board.rs
+  path: path/to/oversized_module.rs
   reason: Split this production module by responsibility before expiry
   expires: 2027-01-31     # YYYY-MM-DD; MC-perf is invalid for SIZE-3
 ```

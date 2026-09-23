@@ -28,27 +28,18 @@
 //! drag-resizable and persisted in eframe Storage, and narrow windows degrade to the viewer alone.
 //! Cards carry a `main_goal` hover tooltip.
 
-mod app;
-mod board;
-mod corpus;
-mod detail;
-mod discovery;
-mod estimates;
-mod facets;
-mod filters;
-mod gitstatus;
-mod metrics;
-mod mutate;
-mod subproc;
+mod application;
+mod core;
+mod document_viewer;
+mod execution_metrics;
+mod repository_status;
 #[cfg(test)]
-mod testutil;
-mod tree;
-mod trust;
-mod verbs;
-mod viewer;
-mod watch;
-mod wavelock;
-mod waves;
+#[path = "tests/support/mod.rs"]
+mod test_support;
+mod ticket_actions;
+mod ticket_browser;
+mod ticket_registry;
+mod wave_plan;
 
 use eframe::egui;
 
@@ -67,7 +58,7 @@ fn main() -> eframe::Result {
         print!("{USAGE}");
         return Ok(());
     }
-    let arg_root = discovery::positional_arg(args);
+    let arg_root = ticket_registry::services::discovery::positional_arg(args);
     let cwd = std::env::current_dir().ok();
 
     let options = eframe::NativeOptions {
@@ -82,12 +73,16 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "ticketboard",
         options,
-        Box::new(move |cc| Ok(Box::new(app::TicketboardApp::new(cc, arg_root, cwd)))),
+        Box::new(move |cc| {
+            Ok(Box::new(application::TicketboardApp::new(
+                cc, arg_root, cwd,
+            )))
+        }),
     )
 }
 
 /// wgpu is the default backend; a `--features glow` build selects the glow
-/// fallback instead (driver quirks — design §Framework).
+/// fallback instead (driver quirks — ).
 #[cfg(feature = "glow")]
 fn renderer() -> eframe::Renderer {
     eframe::Renderer::Glow
@@ -97,3 +92,7 @@ fn renderer() -> eframe::Renderer {
 fn renderer() -> eframe::Renderer {
     eframe::Renderer::Wgpu
 }
+
+#[cfg(test)]
+#[path = "tests/architecture_rules.rs"]
+mod architecture_rules;
