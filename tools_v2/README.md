@@ -10,9 +10,14 @@ All four crates are live. xtask separates command domains, shared core helpers, 
 
 Ticketboard consumes ticket-engine’s existing public model and operation interfaces. Agent invocation, worktree cleanup, and platform-wave orchestration remain in xtask.
 
-[ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md) states the invariants and the dependency direction;
-[ANALYSIS_AND_INVENTORY.md](ANALYSIS_AND_INVENTORY.md) maps every module to what it is responsible
-for. The five landing records carry the measurements taken as this tree was built:
-[the relocation](PHASE_ONE_HANDOFF.md), [the heavy services](PHASE_TWO_HANDOFF.md),
-[the ticket subsystem](PHASE_THREE_HANDOFF.md), [the decomposition](PHASE_FOUR_HANDOFF.md) and
-[the closure](PHASE_FIVE_HANDOFF.md).
+The `tools_v2` refactor program's records are archived and frozen; the code is the live authority.
+[The architecture plan](/documentation_v2/archive/tools_v2_refactor/architecture_plan.md) is the
+program's statement of the invariants and the dependency direction;
+[the analysis and inventory](/documentation_v2/archive/tools_v2_refactor/analysis_and_inventory.md)
+is its map of every module to what it is responsible for. The five landing records carry the
+program's measurements:
+[the relocation](/documentation_v2/archive/tools_v2_refactor/phase_one_handoff.md),
+[the heavy services](/documentation_v2/archive/tools_v2_refactor/phase_two_handoff.md),
+[the ticket subsystem](/documentation_v2/archive/tools_v2_refactor/phase_three_handoff.md),
+[the decomposition](/documentation_v2/archive/tools_v2_refactor/phase_four_handoff.md) and
+[the closure](/documentation_v2/archive/tools_v2_refactor/phase_five_handoff.md).

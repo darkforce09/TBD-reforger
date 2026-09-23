@@ -20,4 +20,4 @@ Filesystem services receive the active repository root. `cli::cmd_run` receives 
 
 Unit tests live in sibling `tests/` files. Production files remain below 500 lines, tests below 1,000. Execution receipt fixtures are shared with xtask and live in `tests/fixtures/execution_receipts`.
 
-See [phase-three verification](../PHASE_THREE_HANDOFF.md).
+See the archived, frozen [phase-three verification](/documentation_v2/archive/tools_v2_refactor/phase_three_handoff.md) record of the `tools_v2` refactor program.
