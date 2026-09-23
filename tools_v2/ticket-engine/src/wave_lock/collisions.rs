@@ -12,10 +12,12 @@
 //! editing the same file and colliding at merge. That is a mechanical property of each ticket's
 //! `owns` field, so it is computed here rather than eyeballed.
 //!
-//!   cargo xtask slice-collisions                 # max concurrent set from the open waves
-//!   cargo xtask slice-collisions <id> <id>       # what may JOIN those already in flight
-//!   cargo xtask slice-collisions --repack        # alias for `cargo xtask wave repack`
-//!   cargo xtask slice-collisions --check <id>    # is that id safe against everything running?
+//! ```text
+//! cargo xtask slice-collisions                 # max concurrent set from the open waves
+//! cargo xtask slice-collisions <id> <id>       # what may JOIN those already in flight
+//! cargo xtask slice-collisions --repack        # alias for `cargo xtask wave repack`
+//! cargo xtask slice-collisions --check <id>    # is that id safe against everything running?
+//! ```
 //!
 //! `--repack` is an ALIAS, not a second writer: the lock has exactly one compiler
 //! ([`crate::wave_lock::cmd_repack`]), and this spelling survives only because a generation of

@@ -57,7 +57,7 @@ pub(super) fn check_work_title_nonempty(root: &Path) -> Vec<String> {
             && w.title.trim().is_empty()
         {
             errors.push(format!(
-                "{}: title required on every work ticket (idea tier, t920 spec Decisions log #2)",
+                "{}: title required on every work ticket (idea tier)",
                 w.id
             ));
         }
@@ -65,19 +65,17 @@ pub(super) fn check_work_title_nonempty(root: &Path) -> Vec<String> {
     errors
 }
 
-/// The ready-tier body rule (t920 spec Decisions log #2): every
-/// ready/running/review WORK ticket carries the six body fields nonempty
-/// ([`crate::empty_ready_tier_fields`] — context, requirement, current_state,
-/// approach, verify, acceptance), corpus-wide NOW (the live ready set was filled in
-/// the same land, honestly, from each ticket's spec + plan). Quarantine
-/// exemption: nonempty `migration_legacy` exempts (content exists, unprocessed —
-/// the drain fills the fields). Work-only: the tier table is work-shaped; a
-/// program aggregates its children. Composes without double-reporting:
-/// `main_goal`/`spec` empties are the ready-class PARSE refusal (`Status::live_ready`
-/// — the load itself fails), and `validate_row` covers the registry Value view;
-/// the `acceptance` entry here is reachable only through that same parse guarantee,
-/// so it can never fire twice. Shipped history is untouched until the drain
-/// finishes (spec §Non-goals). Fail-closed on an unloadable corpus.
+/// The ready-tier body rule: every ready, running, review or shipped WORK ticket
+/// carries the six body fields nonempty ([`crate::empty_ready_tier_fields`] —
+/// context, requirement, current_state, approach, verify, acceptance), corpus-wide.
+/// Quarantine exemption: a nonempty `migration_legacy` exempts the ticket (content
+/// exists, unprocessed — the drain fills the fields). Work-only: a program
+/// aggregates its children's bodies. Composes without double-reporting: on
+/// ready-class tickets an empty `main_goal`, `spec` or `acceptance` is the PARSE
+/// refusal ([`crate::Status::live_ready`] — the load itself fails) and `validate_row`
+/// covers the registry Value view, so the `acceptance` entry here fires only on
+/// shipped tickets, which neither of those covers. Fail-closed on an unloadable
+/// corpus.
 pub(super) fn check_ready_tier_body(root: &Path) -> Vec<String> {
     let corpus = match crate::Corpus::load(root) {
         Ok(c) => c,
@@ -101,7 +99,7 @@ pub(super) fn check_ready_tier_body(root: &Path) -> Vec<String> {
         let missing = crate::empty_ready_tier_fields(w);
         if !missing.is_empty() {
             errors.push(format!(
-                "{}: {} work ticket with empty ready-tier body fields: {} — ready-tier requires them nonempty (t920 spec Decisions log #2); fill from the spec/plan or demote",
+                "{}: {} work ticket with empty ready-tier body fields: {} — ready-tier requires them nonempty; fill from the spec/plan or demote",
                 w.id,
                 w.status.name().as_str(),
                 missing.join(", ")

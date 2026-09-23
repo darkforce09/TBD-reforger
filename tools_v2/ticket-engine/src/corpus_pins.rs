@@ -1,4 +1,5 @@
-//! The corpus facts no ticket file states, read from [`repository::CORPUS_PINS`].
+//! The corpus facts no ticket file states, read from
+//! [`repository::CORPUS_PINS`](crate::repository::CORPUS_PINS).
 //!
 //! Two rules need a list the ticket files cannot supply: the ids that must never be minted, and
 //! which ticket implements an editor gap row when the ticket itself does not claim it. Both are

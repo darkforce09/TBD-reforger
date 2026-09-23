@@ -201,7 +201,7 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
         missing.extend(crate::empty_ready_tier_fields(w));
         if !missing.is_empty() {
             return Err(format!(
-                "refusing ship {id}: ready-tier body fields empty: {} — a ship needs the full body (t920 spec Decisions log #2); fill them first (thin evidence yields thin honest lines, never padding)",
+                "refusing ship {id}: ready-tier body fields empty: {} — a ship needs the full body; fill them first (thin evidence yields thin honest lines, never padding)",
                 missing.join(", ")
             ));
         }

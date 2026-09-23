@@ -53,7 +53,8 @@ pub fn parse_numstat(text: &str) -> BTreeMap<String, u64> {
 }
 
 /// One batched `git log --numstat` pass over main history (HEAD) — the same
-/// history walk [`mine_subjects`] reads, so every subject SHA has an entry.
+/// history walk [`mine_subjects`](crate::cli::commit_subjects::mine_subjects) reads,
+/// so every subject SHA has an entry.
 pub fn collect_numstat(root: &Path) -> Result<BTreeMap<String, u64>> {
     let out = Command::new("git")
         .arg("-C")
