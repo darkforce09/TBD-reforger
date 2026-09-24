@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.0.1 — Registry JSON schemas + golden fixtures
 
 **Ticket:** T-068 · **Slice:** T-068.0.1  
@@ -17,7 +19,7 @@ Define and validate `registry-items` and `loadout-export` JSON Schema files plus
 
 ## Problem
 
-No shared contract for Workbench flat export, API seed/import, dumb loadout download, or mod equip test — alias POC [`registry.schema.json`](../../../packages/tbd-schema/schema/registry.schema.json) is a separate mod-spawn layer.
+No shared contract for Workbench flat export, API seed/import, dumb loadout download, or mod equip test — alias POC [`registry.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/registry.schema.json) is a separate mod-spawn layer.
 
 ---
 

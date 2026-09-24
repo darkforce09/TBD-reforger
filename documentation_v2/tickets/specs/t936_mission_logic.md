@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-936 — Mission logic the audit found missing
 
 Owner: command center. Source: master audit S1 (2026-09-04), every claim verified against main

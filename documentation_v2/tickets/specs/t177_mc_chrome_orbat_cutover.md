@@ -1,10 +1,12 @@
+**Status:** frozen record
+
 # T-177 — MC chrome UX + ORBAT dock cutover (T-071.0)
 
 **Status:** SHIPPED @ tag **T-177** / `e97a01c6` · **Branch:** `main`  
 **Depends on:** T-176 (shipped) · **Implements:** T-071.0 (modal shell + left → Editor Layers only)  
-**Verify:** [`.ai/artifacts/t177_verify_log.md`](../../.ai/artifacts/t177_verify_log.md) · inventory [`.ai/artifacts/t177_inventory.md`](../../.ai/artifacts/t177_inventory.md)  
-**Program hub (ORBAT):** [`t071_orbat_manager_program.md`](../specs/Mission_Creator_Architecture/t071_orbat_manager_program.md)  
-**Evidence:** [`.ai/artifacts/t177_operator_screens/`](../../.ai/artifacts/t177_operator_screens/)  
+**Verify:** [`.ai/artifacts/t177_verify_log.md`](/.ai/artifacts/t177_verify_log.md) · inventory `.ai/artifacts/t177_inventory.md`  
+**Program hub (ORBAT):** [`t071_orbat_manager_program.md`](/documentation_v2/tickets/specs/t071_orbat_manager_program.md)  
+**Evidence:** [`.ai/artifacts/t177_operator_screens/`](/.ai/artifacts/t177_operator_screens/)  
 **Scope shipped:** `apps/website/frontend/**`, gate harness (`cdp.rs`, `gate doctor`), CI/toolchain pins. **Not** `apps/mod/`. **Not** T-071.1–.4.
 
 ## Shipped outcome
@@ -21,7 +23,7 @@
 
 ### Gate harness (same commit)
 
-`cargo xtask mk leptos-gates` was wedging ~130 s on `chrome-headless-shell` (SkFontMgr FATAL). Fixed: full Chrome + `--headless=new`. **`gate doctor`** fail-fast preflight (pins, RAM/orphans, ~15 s liveness). Also: `gate-env.json`, root `rust-toolchain.toml`, CI `@stable`→**1.95.0**, `editor-gates.yml`, [`EDITOR_GATE_RUNBOOK.md`](../website/EDITOR_GATE_RUNBOOK.md), KB-002. Caveat: `editor-gates.yml` needs a first `workflow_dispatch` on GitHub.
+`cargo xtask mk leptos-gates` was wedging ~130 s on `chrome-headless-shell` (SkFontMgr FATAL). Fixed: full Chrome + `--headless=new`. **`gate doctor`** fail-fast preflight (pins, RAM/orphans, ~15 s liveness). Also: `gate-env.json`, root `rust-toolchain.toml`, CI `@stable`→**1.95.0**, `editor-gates.yml`, [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md), KB-002. Caveat: `editor-gates.yml` needs a first `workflow_dispatch` on GitHub.
 
 **Gates:** `cargo xtask mk leptos-gates` 20/20 · `cargo xtask ci ci-local` · 74 frontend tests · fmt/clippy clean.
 

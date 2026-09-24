@@ -174,7 +174,7 @@ When operator runs **Stream A + Stream B** (e.g. `main` + worktree), Cursor deli
 
 ## Reference implementation
 
-**T-090.1.2.2** — [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md) §Claude Code prompt.
+**T-090.1.2.2** — [`documentation_v2/tickets/specs/t090_1_2_2_sap_cell_seam_repair.md`](/documentation_v2/tickets/specs/t090_1_2_2_sap_cell_seam_repair.md) §Claude Code prompt.
 
 ---
 

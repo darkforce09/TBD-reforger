@@ -1,3 +1,5 @@
+**Status:** live
+
 # Mission artifacts, reviews and deployment
 
 Design for the mission requirements (`missions_immutable_artifacts`, `missions_approval_binding`,

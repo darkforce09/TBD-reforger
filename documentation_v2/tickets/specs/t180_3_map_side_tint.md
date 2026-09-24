@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.3 — Map side tint
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.1 · **Executor:** claude-code  
@@ -6,7 +8,7 @@
 
 ## Problem (measured)
 
-[`slots_gpu.rs:22-24`](../../../crates/map-engine-core/src/slots_gpu.rs):
+[`slots_gpu.rs:22-24`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/slots_gpu.rs):
 
 ```text
 SLOT_PRIMARY_RGBA  = [173, 198, 255, 255]  // used for ALL unselected rings today

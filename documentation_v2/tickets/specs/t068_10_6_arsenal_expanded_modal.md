@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10.6 — Arsenal expanded modal (ACE panes)
 
 **Ticket:** T-068 · **Slice:** T-068.10.6 · **Status:** shipped ·

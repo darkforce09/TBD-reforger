@@ -1,3 +1,5 @@
+**Status:** live
+
 # Vanilla source coverage — four lanes (T-181.3 / .3.1 / .3.2 / .3.3)
 
 ## LANE 4 IS THE ANSWER — full source WITH BODIES (T-181.3.3)

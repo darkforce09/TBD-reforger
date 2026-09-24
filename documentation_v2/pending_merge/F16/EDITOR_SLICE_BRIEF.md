@@ -55,7 +55,7 @@ re-reads of a path the same agent had already read.
 ## FINAL REPORT — required schema
 
 Return **exactly these fields**. The seven reject conditions in
-[`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) §Reject are presence checks against this schema,
+[`FACTORY_FOR_CURSOR.md`](/documentation_v2/runbooks/factory_waves/README.md) §Reject are presence checks against this schema,
 so a missing field is a structural failure rather than a judgement call. Prose padding around the
 fields is what the orchestrator pays for on every subsequent turn — omit it.
 

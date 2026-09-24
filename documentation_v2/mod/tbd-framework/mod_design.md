@@ -1,7 +1,9 @@
+**Status:** live
+
 # TBD_MOD_DESIGN — what we are building, and why
 
 **The north star.** One doc that states what the TBD Framework mod *is*. If a slice ever
-conflicts with this, this wins. Program hub: [`t181_event_mod_program.md`](t181_event_mod_program.md).
+conflicts with this, this wins. Program hub: [`t181_event_mod_program.md`](/documentation_v2/tickets/specs/t181_event_mod_program.md).
 
 Every factual claim about CRF or vanilla carries an `@idx <lane>#<Symbol>` marker. `cargo run -q -p developer-tools --bin enf -- citations`
 resolves each one against a generated index and fails the build if it does not exist. **Line
@@ -58,7 +60,7 @@ hands you nothing. **That gap is the program.**
   adapt or redistribute any of it**. Read it to learn how a lobby / slot picker is *shaped*, then
   write ours. Never a line. Linked into each slice worktree as `apps/mod/playable_selector` (it
   lives outside the repo, so absence warns rather than refuses) and enforced by the `PS_` lane of
-  `cargo xtask verify no-crf-leak`. Full rules: [`SLICE_WORKFLOW.md`](SLICE_WORKFLOW.md) §Oracle lanes.
+  `cargo xtask verify no-crf-leak`. Full rules: [`SLICE_WORKFLOW.md`](/documentation_v2/runbooks/mod_slice_workflow.md) §Oracle lanes.
 
 ## 3. The event loop
 

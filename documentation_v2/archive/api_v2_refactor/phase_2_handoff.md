@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase Two Handoff
 
 Status: `core/`, `background_workers/`, and the eight domain route tables are live on `main` (commits `8fc8dca30`, `67c016ccf`, `da0c23bbb`, `d076fba1a`, `ece65ae6e`). Handlers, services, models, and the contract module still sit in their legacy directories; Phases Three to Five move them domain by domain.

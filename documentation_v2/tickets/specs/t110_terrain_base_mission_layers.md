@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-110 — Terrain base + mission layers (future architecture)
 
 **Status:** **future / not started** — do **not** implement before **T-090/T-091** hosted assets unless product explicitly reprioritizes.
 **Git tag on ship:** *(none — not started)*
-**Authority:** [ROADMAP.md](ROADMAP.md) §Map performance · [engineering_plan.md](engineering_plan.md)
+**Authority:** [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [engineering_plan.md](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md)
 **Relates to:** External “Base + Delta / event sourcing” proposal (2026-06) — **adopt the good parts here**, not as a rewrite of the current Y.Doc mission model.
 
 ---
@@ -72,7 +74,7 @@ flowchart TB
 
 ### Mission layer (T-061..T-062 — current program)
 
-- Keep **Y.Doc** normalized model ([`schema.ts`](../../../apps/website/frontend/src/features/tactical-map/state/schema.ts)).
+- Keep **Y.Doc** normalized model ([`schema.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/schema.ts)).
 - **T-061.0.1 ✅ shipped:** Slot-position fast path in `bindings.ts` + `slotIconCache` (drag @ 360k — good enough).
 - **T-066** ✅ worker compile. **T-067** ✅ — [`t067_spatial_chunks.md`](t067_spatial_chunks.md). **Eden T-068+**
 - **T-066:** Worker `compileMission` for export/save assembly.
@@ -97,7 +99,7 @@ flowchart TB
 
 | Tag | Focus | Depends on |
 |-----|-------|------------|
-| **T-068+** | Eden parity (locked before this) | [`eden/gap_analysis.md`](eden/gap_analysis.md) ticket column |
+| **T-068+** | Eden parity (locked before this) | [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) ticket column |
 | **T-110** | Terrain base asset pipeline + read-only render | **T-090**/**T-091**, hosted binaries |
 | **T-071** | Terrain delta CRUD + sparse save | T-070 |
 | **T-072** | Server compile worker (Enfusion export) | T-066, export schema |
@@ -130,4 +132,4 @@ If the 360k test mission is **authored units**, stay on mission-layer fixes. If 
 
 ## Documentation sync
 
-When T-070 work starts, update: [ROADMAP.md](ROADMAP.md), [CLAUDE.md](../../../CLAUDE.md) §Status, [TAGS.md](../../website/TAGS.md), [engineering_plan.md](engineering_plan.md).
+When T-070 work starts, update: [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md), [CLAUDE.md](../../../CLAUDE.md) §Status, [TAGS.md](/documentation_v2/standards/ticket_identifiers.md), [engineering_plan.md](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md).

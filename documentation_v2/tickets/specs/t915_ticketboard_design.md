@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-915 — Ticketboard: a native GUI projection of the ticket registry
 
 Design contract, agreed with the operator 2026-08-14. Two programs come out of this

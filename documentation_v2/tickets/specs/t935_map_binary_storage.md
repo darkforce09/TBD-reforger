@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-935 — Map binary storage: hybrid rkyv + raw POD
 
 Owner: command center. Source: operator spec 2026-09-04 (hybrid rkyv for complex metadata, raw

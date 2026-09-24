@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.0 — Program hub lock (docs)
 
 **Ticket:** T-152 · **Slice:** T-152.0  

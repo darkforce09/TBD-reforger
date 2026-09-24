@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.4.1 — building wipe race + road joins (W4 corrective)
 
 **Status:** **shipped** @ `552e68aa` (tag **T-151.4.1**, 2026-07-09) · verify log

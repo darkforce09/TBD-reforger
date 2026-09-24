@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10 — Smart Loadout Forge UI
 
 **Ticket:** T-068 · **Slice:** T-068.10  

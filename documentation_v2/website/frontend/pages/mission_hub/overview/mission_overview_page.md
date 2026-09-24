@@ -1,3 +1,5 @@
+**Status:** live
+
 # Mission Overview
 
 ## Status
@@ -57,4 +59,4 @@
 
 ## Open Questions / Blockers
 
-- None. Editor surface documented in [mission-editor.md](mission-editor.md).
+- None. Editor surface documented in [mission-editor.md](/documentation_v2/website/frontend/apps/editor/ux_spec.md).

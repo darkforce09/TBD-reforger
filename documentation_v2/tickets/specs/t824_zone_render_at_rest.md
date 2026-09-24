@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-824 — placed zones render visibly at rest
 
 Ticket: .ai/tickets/T-824.toml · Plan: docs/plans/t-824_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

@@ -1,9 +1,11 @@
+**Status:** frozen record
+
 # T-174 — MC sat fidelity + heatmap removal + dock guide-line fix
 
 **Status:** SHIPPED @ tag **T-174** / `bbb99526` · **Branch:** `main`  
 **Depends on:** T-173 (shipped)  
-**Verify:** [`.ai/artifacts/t174_verify_log.md`](../../.ai/artifacts/t174_verify_log.md) · inventory [`.ai/artifacts/t174_inventory.md`](../../.ai/artifacts/t174_inventory.md)  
-**Evidence:** [`.ai/artifacts/t174_operator_screens/`](../../.ai/artifacts/t174_operator_screens/)  
+**Verify:** [`.ai/artifacts/t174_verify_log.md`](/.ai/artifacts/t174_verify_log.md) · inventory [`.ai/artifacts/t174_inventory.md`](/.ai/artifacts/t174_inventory.md)  
+**Evidence:** [`.ai/artifacts/t174_operator_screens/`](/.ai/artifacts/t174_operator_screens/)  
 **Scope shipped:** `apps/website/frontend/**`, `crates/map-engine-*`. **Not** `apps/mod/`.
 
 **No silent deferrals.** Soft “later / optional / fold forward” forbidden unless the operator explicitly says `defer X` / `skip X`.

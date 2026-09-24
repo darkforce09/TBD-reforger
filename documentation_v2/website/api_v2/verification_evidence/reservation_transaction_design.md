@@ -1,3 +1,5 @@
+**Status:** live
+
 # Reservation transaction design
 
 This is the implementation design for the event requirements in requirements.json. It records

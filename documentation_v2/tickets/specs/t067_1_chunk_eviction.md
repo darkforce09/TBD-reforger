@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-067.1 — Byte-budget chunk eviction at 1M objects
 
 Owner: command center. Program T-111 (spec docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md §Deferred),

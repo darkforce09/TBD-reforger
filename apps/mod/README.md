@@ -16,9 +16,9 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 | Workbench slot spawn | ✓ Per-slot `slots[]` deploy verified (2026-06-14) |
 | Dedicated server POC | Mission from API verified 2026-06-14 **against the Phase-0 REST spike backend, since removed** — the REST loader chain is **BLOCKED on T-092**; the `$profile:` file fallback is the working path |
 | Web backend (Phase 1 API) | ✓ Missions, link codes, roster, ORBAT slot assignment (web `/api/v1`; game-server routes = **T-092**) |
-| **Staging server** | `192.168.0.140` — **LAN Direct Join WORKS** (Workshop mod + `-config`; client joined + spawned 2026-06-14) — see [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md) |
+| **Staging server** | `192.168.0.140` — **LAN Direct Join WORKS** (Workshop mod + `-config`; client joined + spawned 2026-06-14) — see [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md) |
 | **Phase 1 in progress** | In-game admin **mission browser** (last 5%: input actions — CLAUDE-CONTINUATION.md §16), capture objective, ORBAT enforcement, admin UI |
-| Milestone #1 target | **Sat 2026-08-22** — see [`MILESTONES.md`](../../docs/mod/MILESTONES.md) |
+| Milestone #1 target | **Sat 2026-08-22** — see [`MILESTONES.md`](/documentation_v2/archive/product_plans/mod_milestones.md) |
 
 ---
 
@@ -26,7 +26,7 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 
 ### Claude Code (Enfusion work)
 
-1. Read [`docs/mod/CLAUDE-CODE-START.md`](../../docs/mod/CLAUDE-CODE-START.md)
+1. Read [`documentation_v2/runbooks/mod_slice_workflow.md`](/documentation_v2/runbooks/mod_slice_workflow.md)
 2. Run **`cargo xtask mod dev-bootstrap`** (from monorepo root) — launches Workbench on `tbd-export/addon.gproj` (`-gproj`, skips the project picker) and pre-warms the MCP daemon; the `EnfusionMCP` handlers are committed in [`tbd-emcp/`](tbd-emcp/) and nothing is copied any more
 3. Enable **enfusion-mcp** before editing any `.c` file
 4. Open `tbd-export/addon.gproj` in Workbench for export tooling sessions (pulls in `tbd-emcp`), or `tbd-framework/addon.gproj` for framework development. Never open the gitignored `Tbd_framework/` or `crf_framework/` reference copies
@@ -53,7 +53,7 @@ cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env   #
 cargo xtask deploy staging
 ```
 
-See [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md). **Staging is Direct-Joinable** (Workshop mod + `-config`): set `TBD_SERVER_MODE=config` + `TBD_WORKSHOP_MOD_ID` in `deploy.env`, deploy, then Direct Join `192.168.0.140:2001` — the client auto-downloads the Workshop mod. (Legacy local-`-addons` join via `cargo xtask setup client-addons` is **not** Direct-Joinable — see STAGING-SERVER.md.) The V2–V4 API smoke gates are **skipped until T-092** (game-server REST routes not in the current backend).
+See [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md). **Staging is Direct-Joinable** (Workshop mod + `-config`): set `TBD_SERVER_MODE=config` + `TBD_WORKSHOP_MOD_ID` in `deploy.env`, deploy, then Direct Join `192.168.0.140:2001` — the client auto-downloads the Workshop mod. (Legacy local-`-addons` join via `cargo xtask setup client-addons` is **not** Direct-Joinable — see STAGING-SERVER.md.) The V2–V4 API smoke gates are **skipped until T-092** (game-server REST routes not in the current backend).
 
 ### Website (local dev)
 
@@ -78,9 +78,9 @@ cargo xtask mod test-phase1-api
 | [`apps/website/`](../website/) | Rust API + Leptos SPA |
 | `Tbd_framework/` | CRF reference only, **gitignored** — do not open in Workbench |
 | [`tools_v2/xtask/`](../../tools_v2/xtask/) | Every `cargo xtask mod` command: Workbench setup, server profile, dev server, staging deploy, MCP bridge, API smokes |
-| [`docs/mod/`](../../docs/mod/) | Ops docs, [`STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md) |
+| [`documentation_v2/mod/`](/documentation_v2/mod/) | Ops docs, [`STAGING-SERVER.md`](/documentation_v2/runbooks/game_server_staging/README.md) |
 
-**Handoff docs:** [`CLAUDE-CONTINUATION.md`](../../docs/mod/CLAUDE-CONTINUATION.md) · [`MILESTONES.md`](../../docs/mod/MILESTONES.md) · [`tbd-reforger-platform-build-plan.md`](../../docs/mod/tbd-reforger-platform-build-plan.md)
+**Handoff docs:** [`CLAUDE-CONTINUATION.md`](/documentation_v2/archive/handoffs_and_kickoffs/mod_claude_continuation.md) · [`MILESTONES.md`](/documentation_v2/archive/product_plans/mod_milestones.md) · [`tbd-reforger-platform-build-plan.md`](/documentation_v2/archive/product_plans/tbd_reforger_platform_build_plan.md)
 
 ---
 

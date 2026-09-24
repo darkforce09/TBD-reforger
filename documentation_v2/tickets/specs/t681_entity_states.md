@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-681 — entity states: health, allow-damage, show-model, size, stamina
 
 Ticket: .ai/tickets/T-681.toml · Plan: docs/plans/t-681_plan.md · Schema half shipped in T-706.

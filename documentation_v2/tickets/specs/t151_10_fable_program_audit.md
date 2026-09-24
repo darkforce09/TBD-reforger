@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.10 — Fable 5 full-program audit (W10)
 
 **Status:** **shipped** @ `6adbd4bf` (tag **T-151.10**) · round-2 **T-151.10.1** @ `40def01a` ·

@@ -48,4 +48,4 @@ The native type hierarchy uses script declarations as ancestor candidates and ve
 
 An optional `$TBD_Export:exporter_revision.txt` build stamp is recorded verbatim. Without it, the revision is unavailable. Game build comes from `Game.GetBuildVersion`; addon identity/order comes from `GameProject.GetLoadedAddons`. Unexposed addon versions remain unavailable. No version numbers are guessed.
 
-The authoritative contract is `contracts_v2/definitions/equipment-vehicle-export.schema.json`. Implementation acceptance evidence and the field inventory live under `docs/verification/equipment-vehicle-export/`.
+The authoritative contract is `contracts_v2/definitions/equipment-vehicle-export.schema.json`. Implementation acceptance evidence and the field inventory live under `documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/`.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-092.0 — Spawn + compile contract (docs)
 
 **Ticket:** T-092 · **Slice:** T-092.0  

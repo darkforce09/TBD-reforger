@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.2 — Reforger map icon art + atlas rebuild
 
 **Ticket:** T-152 · **Slice:** T-152.2  
@@ -17,17 +19,17 @@ Run a **Workbench/MCP icon discovery spike**, replace **placeholder** `LANDMARK_
 
 ## Problem
 
-- **P4:** [`packages/map-assets/glyphs/svg/`](../../../packages/map-assets/glyphs/svg/) contains hand-drawn **placeholder** icons (generic building shapes), not Arma Reforger map iconography.
-- Operators cannot distinguish lighthouse vs castle vs hangar at zoom ≥ `BUILDING_BADGE_MIN_ZOOM` — only fill tint differs ([`residency.rs`](../../../crates/map-engine-core/src/world/residency.rs) `fill_color`).
-- [`manifest.json`](../../../packages/map-assets/glyphs/manifest.json) lists 28 keys but art quality is pre-T-152 scaffold (T-090.5 / T-151.5).
+- **P4:** [`packages/map-assets/glyphs/svg/`](https://github.com/darkforce09/TBD-reforger/tree/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/glyphs/svg) contains hand-drawn **placeholder** icons (generic building shapes), not Arma Reforger map iconography.
+- Operators cannot distinguish lighthouse vs castle vs hangar at zoom ≥ `BUILDING_BADGE_MIN_ZOOM` — only fill tint differs ([`residency.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/world/residency.rs) `fill_color`).
+- [`manifest.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/glyphs/manifest.json) lists 28 keys but art quality is pre-T-152 scaffold (T-090.5 / T-151.5).
 
 ---
 
 ## Goal
 
-1. **Discovery artifact** [`.ai/artifacts/t152_2_icon_discovery_spike.json`](../../../.ai/artifacts/t152_2_icon_discovery_spike.json): Reforger pak/UI paths, reference PNG dimensions, mapped `iconKey` rows, gaps list.
+1. **Discovery artifact** `.ai/artifacts/t152_2_icon_discovery_spike.json`: Reforger pak/UI paths, reference PNG dimensions, mapped `iconKey` rows, gaps list.
 2. **Redraw** every `LANDMARK_SET` SVG (hub list) to match Reforger-familiar silhouette + palette (document deviations).
-3. **`cargo run -q -p developer-tools --bin map -- build-glyph-atlas`** → updated [`atlas/world-glyphs.webp`](../../../packages/map-assets/glyphs/atlas/world-glyphs.webp) + [`world-glyphs.json`](../../../packages/map-assets/glyphs/atlas/world-glyphs.json).
+3. **`cargo run -q -p developer-tools --bin map -- build-glyph-atlas`** → updated [`atlas/world-glyphs.webp`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/glyphs/atlas/world-glyphs.webp) + [`world-glyphs.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/glyphs/atlas/world-glyphs.json).
 4. **`cargo xtask schema map-glyphs`** + golden prefab `render.iconKey` scan PASS.
 5. **No placeholder SVG** remains for `LANDMARK_SET`: predicate `∀ k ∈ LANDMARK_SET: svg[k]` has `source:reforger` or `source:redraw` in discovery JSON (not `placeholder`).
 
@@ -49,7 +51,7 @@ Run a **Workbench/MCP icon discovery spike**, replace **placeholder** `LANDMARK_
 | L1 | Discovery via **Workbench MCP** (`scripts/mod/mcp-call.sh`, `api_search` for map icon / UI atlas) | Operator toolchain |
 | L2 | `LANDMARK_SET` = hub §LANDMARK_SET (21 keys) | Locked program |
 | L3 | SVG rules per [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md): north-up, simple fills, 24×24 viewBox | Atlas builder |
-| L4 | Atlas build = existing [`scripts/map-assets/build-glyph-atlas.mjs`](../../../scripts/map-assets/build-glyph-atlas.mjs) — **no** new bake pipeline | T-090.5.2 |
+| L4 | Atlas build = existing [`scripts/map-assets/build-glyph-atlas.mjs`](https://github.com/darkforce09/TBD-reforger/blob/a1a1b1463cb01f32a37d8b47281ddc7a33c260df/scripts/map-assets/build-glyph-atlas.mjs) — **no** new bake pipeline | T-090.5.2 |
 | L5 | Placeholder detection: SHA256 of each pre-slice SVG recorded in verify log; post-slice hash **must differ** for every `LANDMARK_SET` key | Objective gate |
 | L6 | Commit art + atlas + discovery JSON; tag **`T-152.2`** | LFS for webp if needed |
 | L7 | Operator sign-off on 3 pinned landmarks (lighthouse, military, church/civic) advisory Mn only | Not blocking G gates |

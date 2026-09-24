@@ -1,3 +1,5 @@
+**Status:** live
+
 # Wiki (SOPs & Manuals)
 
 ## Status
@@ -8,11 +10,11 @@
 
 - **What:** Two-column wiki with category nav and markdown content.
 - **Why:** Community doctrine, SOPs, IFF, medical flowcharts.
-- **Scope note:** Vehicle reference moved to [/vehicles](vehicle-database.md) (`VehicleDatabasePage` in `doctrine.tsx`). This page covers wiki SOPs only — no vehicle table.
+- **Scope note:** Vehicle reference moved to [/vehicles](/documentation_v2/website/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md) (`VehicleDatabasePage` in `doctrine.tsx`). This page covers wiki SOPs only — no vehicle table.
 - **Route:** `/wiki` and `/wiki/:slug`
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/sop_wiki_vehicle_database_iff/code.html`
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.6 Wiki
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.6 Wiki
 
 ## Element Inventory
 

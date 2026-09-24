@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Contract Census (`contracts_v2`)
 
 Every file in this tree, what it governs, and what reads it.

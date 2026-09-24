@@ -1,3 +1,5 @@
+**Status:** live
+
 # Reservation mutation authority and capacity
 
 The six reservation mutation routes reauthorize their actor inside the business transaction:

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151 — wgpu Mission Creator engine program (W0–W11 remediations complete)
 
 **Status:** program hub · **W0–W9 shipped** (Deck retired @ `c4831451` tag **T-151.9**) ·

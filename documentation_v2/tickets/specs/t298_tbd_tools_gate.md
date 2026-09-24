@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-298 — Gate tbd-tools density tests in CI
 
 Owner: command center. `cargo test -p tbd-tools --lib density::` passes on main (2026-09-05) but no CI lane runs it;

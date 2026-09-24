@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.4 — Map squad leader lines (absorbs T-147)
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.2, T-180.3 · **Executor:** claude-code  

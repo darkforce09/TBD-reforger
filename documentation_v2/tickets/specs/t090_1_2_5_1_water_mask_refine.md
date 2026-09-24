@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.5.1 — Inland water mask refine (road exclusion + hill rivers)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.5.1  
@@ -23,7 +25,7 @@ First ship (**T-090.1.2.5** @ `6396960f`) is strong overall: ocean depth ramp, c
 | **Road false positives (FP)** | Grey asphalt / paved yards composited as inland water | Road corridors through farmland; rectangular pads near settlements (~world 4776, 9268) |
 | **Hill river false negatives (FN)** | Stream beds in mountainous terrain stay dry | Narrow channels in SE massif / ridge valleys visible as dark terrain lines without blue tint |
 
-Spike + verify log: [`.ai/artifacts/t090_1_2_5_water_source_spike.json`](../../../.ai/artifacts/t090_1_2_5_water_source_spike.json) · [`.ai/artifacts/t090_1_2_5_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_verify_log.md)
+Spike + verify log: [`.ai/artifacts/t090_1_2_5_water_source_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_2_5_water_source_spike.json) · [`.ai/artifacts/t090_1_2_5_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_verify_log.md)
 
 ---
 
@@ -112,7 +114,7 @@ Automated gates and **original regression coords** (town pads ~4776/9268, lake 4
 
 **Next levers (superseded @ `.2.5.2`):** `.2.5.2` @ `1c07d97a` shipped G1-B road guard + `cargo xtask ci map-water-everon`; operator **good enough**. Far-future perfection → **T-143** (`idea`). Entity hydrology → **T-090.3** / **T-090.8**.
 
-Artifacts: [`.ai/artifacts/t090_1_2_5_1_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_1_verify_log.md) · [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](../../../.ai/artifacts/t090_1_2_5_1_refine_spike.json)
+Artifacts: [`.ai/artifacts/t090_1_2_5_1_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_1_verify_log.md) · [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_2_5_1_refine_spike.json)
 
 ---
 

@@ -1,3 +1,5 @@
+**Status:** live
+
 # Audit Logs (Admin)
 
 ## Status
@@ -12,7 +14,7 @@
 - **Live source:** `apps/website/frontend/src/audit.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/system_audit_logs_admin_console/code.html`
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.12
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.12
 
 ## Element Inventory
 

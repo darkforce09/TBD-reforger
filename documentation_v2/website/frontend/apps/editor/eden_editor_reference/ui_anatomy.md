@@ -1,9 +1,11 @@
+**Status:** live
+
 # Eden Editor — UI Anatomy (What You See)
 
 **Document:** `eden/ui_anatomy.md`  
-**Schema:** [reference/feds_schema.md](../reference/feds_schema.md)  
+**Schema:** [reference/feds_schema.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md)  
 **Purpose:** Panel-by-panel description of the Arma 3 Eden workspace — cited from Bohemia wiki scrapes (`artifacts/eden-wiki/`).  
-**Interactions:** See [interactions.md](./interactions.md).  
+**Interactions:** See [interactions.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md).  
 **Attribute fields:** See [attributes.md](./attributes.md).
 
 ---

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-677 — waypoints: group movement orders
 
 Ticket: .ai/tickets/T-677.toml · Plan: docs/plans/t-677_plan.md · Schema half shipped in T-706.

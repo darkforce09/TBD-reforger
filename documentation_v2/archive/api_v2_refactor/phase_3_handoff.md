@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase Three Handoff
 
 Status: four domains are live on `main` — `identity_and_access` (`b4e6fa075`), `administration` (`0bedc1035`), `community_content` (`b327f7f02`), `server_infrastructure` (`1fb7d759d`), plus the gate fix-up `73893b269`. Their handlers, services, and models left the legacy `src/{handlers,services,models}` directories; every consumer imports the domain paths. Missions, operations, match telemetry, and command center still sit in the legacy directories; Phases Four and Five move them.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-684 — mission parameters as first-class document objects
 
 Ticket: .ai/tickets/T-684.toml · Plan: docs/plans/t-684_plan.md · Schema half shipped in T-706.

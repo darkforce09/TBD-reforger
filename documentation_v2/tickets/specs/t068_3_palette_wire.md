@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.3 — Wire Factions palette to live registry
 
 **Ticket:** T-068 · **Slice:** T-068.3  
@@ -15,7 +17,7 @@ Replace mock Factions catalog with `GET /registry` → tree builder → existing
 
 ## Problem (historical)
 
-Previously [`AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx) imported static `assetCatalogMock.ts` (deleted by this ticket) (fake ids). **Fixed @ T-068.3** — live `GET /registry` feed.
+Previously [`AssetBrowser.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx) imported static `assetCatalogMock.ts` (deleted by this ticket) (fake ids). **Fixed @ T-068.3** — live `GET /registry` feed.
 
 ---
 
@@ -118,7 +120,7 @@ Automated output + M1–M7 table with PASS + pasted `assetId` value.
 | Row fields | `resource_name`, `display_name`, `category` (slash path e.g. `NATO/US_Army/Rifleman`), `kind`, optional `icon_url` |
 | Caching | Weak `etag`; send `If-None-Match` → **304** (optional in `useRegistry`; not required for PASS) |
 | Dev data | `cargo xtask db seed` → 21 rows (8 `character`, 4 gear kinds for later T-068.4) |
-| Types | [`frontend/src/types/models/registry.ts`](../../../apps/website/frontend/src/types/models/registry.ts) |
+| Types | [`frontend/src/types/models/registry.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/types/models/registry.ts) |
 
 **Tree builder input:** filter `data` where `kind === 'character'` only. Split each row's `category` on `/` to nest folders; leaf `id` = **`resource_name`** (full `{GUID}Prefabs/.../File.et`), leaf `label` = **`display_name`**.
 

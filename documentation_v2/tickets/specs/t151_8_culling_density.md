@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.8 — culling + density ladder (W8)
 
 **Status:** **shipped** @ `f4ffbfff` (tag **T-151.8**) + compute cull @ `ec59d10e` (tag

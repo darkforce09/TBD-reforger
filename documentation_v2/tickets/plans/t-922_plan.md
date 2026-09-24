@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-922 — Full-body reconstruction: plan
 
 ## Context

@@ -1,3 +1,5 @@
+**Status:** live
+
 # API v2 verification checkpoint — 2026-09-23
 
 Milestones E, F and M are implemented and verified; overall readiness is **not passing**, because

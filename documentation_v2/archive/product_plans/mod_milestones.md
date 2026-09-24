@@ -1,9 +1,11 @@
+**Status:** archived
+
 # TBD Reforger Platform — Milestones
 
 Every phase ends with a real event on real infrastructure (design pillar 5).
 Dates below are **proposed targets** anchored to the plan's phase estimates from a
 2026-06-13 start. Milestone #1 is **announced on the website**; post in Discord
-from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
+from [`discord-milestone-1-post.md`](/documentation_v2/archive/product_plans/discord_milestone_1_post.md) when ready.
 
 | Milestone | Proposed date | Phase | Gate |
 |---|---|---|---|
@@ -17,7 +19,7 @@ from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
 - **Date:** Saturday 2026-08-22 — announced on the event website.
 - **Scale:** 20-40 players, internal test.
 - **Mission:** hand-written Mission JSON (e.g.
-  [`contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json`](../../contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json)),
+  [`contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json`](/contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json)),
   served via `GET /api/missions/{id}/compiled` — **BLOCKED on T-092**: that route existed
   only in the Phase-0 REST spike backend (since removed); the current backend serves
   `/api/v1` only. Until T-092, the file fallback (`$profile:missions/{id}.json`) is the
@@ -55,9 +57,9 @@ from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
 - **Proposed date:** Saturday 2026-11-21 (after partner Phase 0.2 + Phase 3 integration).
 - **Scale:** 20+ players.
 - **Depends on:** partner VOIP capability matrix
-  ([`contracts_v2/spikes/voip-capability-matrix.md`](../../contracts_v2/spikes/voip-capability-matrix.md))
+  ([`contracts_v2/spikes/voip-capability-matrix.md`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/spikes/voip-capability-matrix.md))
   and the locked bridge contract
-  ([`contracts_v2/definitions/bridge-messages.md`](../../contracts_v2/definitions/bridge-messages.md)).
+  ([`contracts_v2/definitions/bridge-messages.md`](/documentation_v2/contracts_v2/definitions/bridge_messages.md)).
 
 ### Success criteria
 

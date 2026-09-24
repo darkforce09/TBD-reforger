@@ -1,7 +1,9 @@
+**Status:** archived
+
 # `src/v2` migration log
 
 The frontend is being reorganised, folder by folder, into the domain-driven tree described in
-[`README.md`](README.md). Each phase moves a slice of the legacy tree into `src/v2`, decomposes the
+[`README.md`](/apps/website/frontend/src/v2/README.md). Each phase moves a slice of the legacy tree into `src/v2`, decomposes the
 files it touches to the size limits, evacuates inline tests into sibling `tests/` folders, and
 rewrites the documentation from the code as it stands. **No behaviour changes.**
 

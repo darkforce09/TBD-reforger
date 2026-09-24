@@ -1,3 +1,5 @@
+**Status:** live
+
 # API v2 completion and executable verification
 
 ## Acceptance contract

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.3 — chunk residency + world spatial index + first world instances (W3)
 
 **Status:** **shipped** @ `32bf5ac5` (tag **T-151.3**, 2026-07-09) · verify log

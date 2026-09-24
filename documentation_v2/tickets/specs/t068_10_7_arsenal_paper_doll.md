@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10.7 — Arsenal paper-doll (ACE layout, 2D SVG soldier, clickable parts)
 
 **Ticket:** T-068 · **Slice:** T-068.10.7 · **Status:** shipped ·

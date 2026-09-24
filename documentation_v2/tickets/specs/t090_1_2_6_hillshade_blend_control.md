@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.6 — Satellite + hillshade blend control
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.6  

@@ -28,7 +28,7 @@ no single agent can deliver its acceptance from its eight owns:
     not owned, never reads window.__t9382 (the only non-doc references to t9382 anywhere are the seven
     lines in world_host.rs), and whose fetch counter at :3777 matches the literal '/objects/chunks/' and
     therefore reads VACUOUSLY ZERO the moment chunk URLs disappear.
-The ticket's own approach line and documentation_v2/tickets/plans/t-935_15_plan.md:31 both already said to split it before
+The ticket's own approach line and documentation_v2/tickets/plans/t-935_15_plan.md:34 both already said to split it before
 dispatch. T-935.16 owns tools/tbd-tools/src/world/build.rs and world_assets/world_host.rs too and cannot
 share a wave with the children that own them.
 """

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.4 — Dumb loadout picker + JSON download
 
 **Ticket:** T-068 · **Slice:** T-068.4  
@@ -15,7 +17,7 @@
 
 ## Shipped @ T-068.4
 
-**Arsenal tab is live** in [`AttributesModal.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/AttributesModal.tsx) + [`loadoutExport.ts`](../../../apps/website/frontend/src/features/mission-creator/loadout/loadoutExport.ts):
+**Arsenal tab is live** in [`AttributesModal.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/AttributesModal.tsx) + [`loadoutExport.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/loadout/loadoutExport.ts):
 
 - Character slots only — four registry gear dropdowns + **Download loadout JSON**
 - Non-character selection → empty state (“Loadout applies to placed characters.”)

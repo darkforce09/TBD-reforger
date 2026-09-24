@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-124 — Dependency & toolchain upgrade (latest everything)
 
 **Ticket:** T-124 · **Program:** platform · **Status:** **shipped @ `cd11db0`**
-**Handoff:** [`.ai/artifacts/t124_claude_code_handoff.md`](../../.ai/artifacts/t124_claude_code_handoff.md) (historical)
+**Handoff:** [`.ai/artifacts/t124_claude_code_handoff.md`](/.ai/artifacts/t124_claude_code_handoff.md) (historical)
 
 ## In one sentence
 
@@ -29,7 +31,7 @@ Upgraded the monorepo to the newest supported versions: frontend npm (including 
 | **vitest** | 4.1.9 |
 | **gin / gorm / pgx** | 1.12 / 1.31.2 / 5.10 |
 
-CI: [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) + [`schema.yml`](../../.github/workflows/schema.yml) — Node **26**, Go **1.26**.
+CI: [`.github/workflows/contracts.yml`](/.github/workflows/contracts.yml) + [`schema.yml`](/.github/workflows/schema.yml) — Node **26**, Go **1.26**.
 
 ## Verification (replay @ ship)
 

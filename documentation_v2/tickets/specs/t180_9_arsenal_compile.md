@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.9 — Arsenal wire + ORBAT compile truth
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.7 (inspector button), T-180.1+ (graph) · **Executor:** claude-code  
@@ -10,19 +12,19 @@
 ## Problem (measured)
 
 1. **Event ORBAT loadout is always empty.**  
-   [`orbat.rs:50-51,112-115`](../../../crates/map-engine-core/src/mission/orbat.rs): comment says `` `loadout` is always `""` ``; `derive_orbat_from_editor` hardcodes `loadout: String::new()`.  
+   [`orbat.rs:50-51,112-115`](https://github.com/darkforce09/TBD-reforger/blob/4f742e48bf5606115c174f530107d5202f70a63a/crates/map-engine-core/src/mission/orbat.rs): comment says `` `loadout` is always `""` ``; `derive_orbat_from_editor` hardcodes `loadout: String::new()`.  
    The local `Sl` deserializer (**lines 79–85**) has **no `loadout` field at all** — even if the editor payload carries `slot.loadout`, derive cannot see it.
 
 2. **Slots do store real loadouts.**  
-   [`store.rs` `update_slot_loadout`](../../../crates/map-engine-core/src/doc/store.rs) writes embedded JSON; golden shape includes `"summary":"M16A2 · ACOG"` ([`store.rs` ~1501–1508](../../../crates/map-engine-core/src/doc/store.rs)).  
-   FE [`arsenal.rs` `picks_to_loadout`](../../../apps/website/frontend/src/arsenal.rs) builds `summary` from `primary` / `optic` / `magazine` / `launcher` joined with ` · `.
+   [`store.rs` `update_slot_loadout`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs) writes embedded JSON; golden shape includes `"summary":"M16A2 · ACOG"` ([`store.rs` ~1501–1508](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs)).  
+   FE [`arsenal.rs` `picks_to_loadout`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/arsenal.rs) builds `summary` from `primary` / `optic` / `magazine` / `launcher` joined with ` · `.
 
 3. **Compile paths.**  
-   - Save Version: [`compile.rs:7-8,103-109`](../../../crates/map-engine-core/src/mission/compile.rs) — `include_orbat=false`; server re-derives via `parse_orbat_template` → `derive_orbat_from_editor`.  
+   - Save Version: [`compile.rs:7-8,103-109`](https://github.com/darkforce09/TBD-reforger/blob/4f742e48bf5606115c174f530107d5202f70a63a/crates/map-engine-core/src/mission/compile.rs) — `include_orbat=false`; server re-derives via `parse_orbat_template` → `derive_orbat_from_editor`.  
    - Export: `include_orbat=true` injects derived `orbat[]`.  
-   - Events: [`apps/website/api_v2/src/handlers/events.rs`](../../../apps/website/api_v2/src/handlers/events.rs) `orbat_template_for_mission` → `parse_orbat_template` → materializes lobby slots from `OrbatSlotTemplate.{role,loadout,tag}`.
+   - Events: [`apps/website/api_v2/src/handlers/events.rs`](https://github.com/darkforce09/TBD-reforger/blob/b218739e4da140b2a53e61909160aaef655f67ad/apps/website/api/src/handlers/events.rs) `orbat_template_for_mission` → `parse_orbat_template` → materializes lobby slots from `OrbatSlotTemplate.{role,loadout,tag}`.
 
-4. **Open Arsenal.** Stitch inspector has **OPEN ARSENAL**. Live Arsenal is [`ArsenalTab`](../../../apps/website/frontend/src/arsenal.rs) inside Attributes. ORBAT Manager must open that same loadout editor for the selected slot id (not a second Arsenal).
+4. **Open Arsenal.** Stitch inspector has **OPEN ARSENAL**. Live Arsenal is [`ArsenalTab`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/arsenal.rs) inside Attributes. ORBAT Manager must open that same loadout editor for the selected slot id (not a second Arsenal).
 
 5. **Slot line vs `orbat[].loadout`.**  
    - UI slot line (T-180.7): `N: Role (Primary + Launcher?) | TAG?` + SL badge.  
@@ -37,8 +39,8 @@
 | I-L1 | `OrbatSlotTemplate.loadout` = **non-empty summary string** when slot has embedded loadout with weapons; `""` only when no loadout / no primary |
 | I-L2 | Prefer `loadout.summary` if present; else build `Primary + Launcher` from `primary`/`launcher` resource display names or resource basename |
 | I-L3 | Extend `Sl` to deserialize `loadout` (`Value` or struct with `summary`/`primary`/`launcher`) |
-| I-L4 | Flip [`orbat.rs:174`](../../../crates/map-engine-core/src/mission/orbat.rs) `assert!(…loadout.is_empty())` — that assertion becomes **illegal** |
-| I-L5 | **`open_arsenal(id)`** = `attrs_open=Some(id)` **and** Attributes tab index **3** (`TABS[3]=="Arsenal"` at [`attributes.rs:16,43`](../../../apps/website/frontend/src/attributes.rs)). Today `open_attributes` alone leaves `tab` default **1** (Identity) — that is **not** enough |
+| I-L4 | Flip [`orbat.rs:174`](https://github.com/darkforce09/TBD-reforger/blob/4f742e48bf5606115c174f530107d5202f70a63a/crates/map-engine-core/src/mission/orbat.rs) `assert!(…loadout.is_empty())` — that assertion becomes **illegal** |
+| I-L5 | **`open_arsenal(id)`** = `attrs_open=Some(id)` **and** Attributes tab index **3** (`TABS[3]=="Arsenal"` at [`attributes.rs:16,43`](https://github.com/darkforce09/TBD-reforger/blob/d9683c9f332cd209699b1b10ec6747e8284933bb/apps/website/frontend/src/attributes.rs)). Today `open_attributes` alone leaves `tab` default **1** (Identity) — that is **not** enough |
 | I-L6 | **No Standardization UI** (operator deferred L8) — Stitch shows it; we omit |
 | I-L7 | Do **not** implement T-068.11 mod compiled gear block here unless already shipped — this slice is Event/`orbat[]` derive + Open Arsenal |
 | I-L8 | Slot `callsign`/`rank` (T-180.1): surface in inspector already in .7; if Event DTO has no fields, keep on editor graph only — do not invent backend migration without measuring `OrbatSlot` |

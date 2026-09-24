@@ -14,8 +14,10 @@
 //! **Invariants:** CommonMark's precedence: a backslash escape, a code span, an autolink, an HTML
 //! comment or an HTML tag binds before brackets do, so nothing inside them opens a link; a link
 //! may not contain another link, though it may contain an image; a shortcut reference whose label
-//! is undefined is plain text, while a full or collapsed one is reported as undefined; footnote
-//! labels (`^…`) are never references.
+//! is undefined is plain text, and so is a link with empty text before an undefined label
+//! (`[][label]`), which shows nothing to follow; every other full or collapsed reference whose
+//! label is undefined is reported, an image with empty alt text (`![][label]`) included, since the
+//! image still shows; footnote labels (`^…`) are never references.
 
 use std::collections::BTreeSet;
 
@@ -246,11 +248,16 @@ impl Cursor<'_> {
         }
         if self.chars.get(index + 1) == Some(&'[') {
             if let Some((label, end)) = reference_label(&self.chars, index + 1) {
-                self.reference(&label, index + 2);
-                self.matched(&opener);
-                return end + 1;
-            }
-            if self.chars.get(index + 2) == Some(&']') {
+                // A link with empty text shows nothing to follow, so `[][label]` with an
+                // undefined label is literal text, as CommonMark renders it (`points[][2]`): the
+                // `]` falls through as a literal and the label's brackets are scanned afresh.
+                let plain_text = !opener.image && text_start == index && !self.is_defined(&label);
+                if !plain_text {
+                    self.reference(&label, index + 2);
+                    self.matched(&opener);
+                    return end + 1;
+                }
+            } else if self.chars.get(index + 2) == Some(&']') {
                 let label: String = self.chars[text_start..index].iter().collect();
                 self.reference(&label, text_start);
                 self.matched(&opener);
@@ -258,7 +265,7 @@ impl Cursor<'_> {
             }
         }
         let label: String = self.chars[text_start..index].iter().collect();
-        if self.labels.contains(&normalise_label(&label)) {
+        if self.is_defined(&label) {
             self.matched(&opener);
         } else {
             self.found.rendered.push(']');
@@ -266,9 +273,14 @@ impl Cursor<'_> {
         index + 1
     }
 
+    /// Whether a definition in the document carries `label`.
+    fn is_defined(&self, label: &str) -> bool {
+        self.labels.contains(&normalise_label(label))
+    }
+
     /// Record a full or collapsed reference whose label no definition carries.
     fn reference(&mut self, label: &str, at: usize) {
-        if !label.starts_with('^') && !self.labels.contains(&normalise_label(label)) {
+        if !label.starts_with('^') && !self.is_defined(label) {
             self.found.undefined_references.push(UndefinedReference {
                 line: self.line_of[at.min(self.line_of.len() - 1)],
                 label: label.to_string(),

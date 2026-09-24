@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-310 — Arsenal attachments never reach the compiled document
 
 Owner: command center. Operator authorization 2026-09-04 covers the equip helper edit (gate = `cargo xtask mod compile`).

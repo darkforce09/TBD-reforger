@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-930 — vehicle paints its glyph on first paint
 
 Ticket: .ai/tickets/T-930.toml · Plan: docs/plans/t-930_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

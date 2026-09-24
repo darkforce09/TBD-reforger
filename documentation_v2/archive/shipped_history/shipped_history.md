@@ -1,8 +1,10 @@
+**Status:** archived
+
 # Shipped history — TBD Reforger
 
 Relocated verbatim from `CLAUDE.md` §Status on 2026-08-07. **This file is the archive; it is not
 loaded as working context.** Operational rules an agent must obey stayed in
-[`CLAUDE.md`](../../CLAUDE.md).
+[`CLAUDE.md`](/CLAUDE.md).
 
 Why it moved: §Status was 76,846 bytes — 86% of CLAUDE.md — and roughly 98% of it was historical
 record rather than current state. Measured on the editor factory's own transcripts, whole-file
@@ -21,25 +23,25 @@ sha, so `git show <sha>` is the authority.
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
-**T-171 — website nest + hygiene** @ `2421b335` (tag **T-171**): `apps/website/{api,frontend}` layout; pkgs `website-api` / `website-frontend`; seeds at `api/seeds/`; fixture convention crate-local; map-assets via API `/map-assets` + `make lfs-dem`/`lfs-sat`. CI job ids `rust-backend`→`website-api`, `website-leptos`→`website-frontend`. Conventions pin: [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md). Docs pass: T-171.docs.
+**T-171 — website nest + hygiene** @ `2421b335` (tag **T-171**): `apps/website/{api,frontend}` layout; pkgs `website-api` / `website-frontend`; seeds at `api/seeds/`; fixture convention crate-local; map-assets via API `/map-assets` + `make lfs-dem`/`lfs-sat`. CI job ids `rust-backend`→`website-api`, `website-leptos`→`website-frontend`. Conventions pin: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md). Docs pass: T-171.docs.
 
-**T-172 — Leptos SPA + MC bug bash** @ `e08884f4` (tag **T-172**): shell dead-clicks + reactive nav/drawer; library/wiki/vehicles/modpacks selection; CUR Z; translucent forest; visible slots; 3D Arsenal; chrome parity. Verify: [`.ai/artifacts/t172_verify_log.md`](.ai/artifacts/t172_verify_log.md).
+**T-172 — Leptos SPA + MC bug bash** @ `e08884f4` (tag **T-172**): shell dead-clicks + reactive nav/drawer; library/wiki/vehicles/modpacks selection; CUR Z; translucent forest; visible slots; 3D Arsenal; chrome parity. Verify: [`.ai/artifacts/t172_verify_log.md`](/.ai/artifacts/t172_verify_log.md).
 
-**T-173 — Leptos MC performance + fidelity** @ `dddf3158` (tag **T-173**): `make leptos` = `trunk serve --release` (`leptos-debug` for fast iter); pan streaming settle + zoom compose memo; thrash-free residency; library/sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; clusters/labels/airfield on Leptos host. Verify: [`.ai/artifacts/t173_verify_log.md`](.ai/artifacts/t173_verify_log.md). Operator G-A: HUD `rf` + `window.__editorBench(500)`.
+**T-173 — Leptos MC performance + fidelity** @ `dddf3158` (tag **T-173**): `make leptos` = `trunk serve --release` (`leptos-debug` for fast iter); pan streaming settle + zoom compose memo; thrash-free residency; library/sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; clusters/labels/airfield on Leptos host. Verify: [`.ai/artifacts/t173_verify_log.md`](/.ai/artifacts/t173_verify_log.md). Operator G-A: HUD `rf` + `window.__editorBench(500)`.
 
-**T-174 — MC sat sharpness + heatmap removal + dock guides** @ `bbb99526` (tag **T-174**): localhost sat preview→full progressive (dropped `sat_dev_preview_default`; `?sat=preview` = gate/fast; `?sat=full` no-op); density-heatmap glow excised (LOD rung kept); guide stems clip to rows (no dock rails). Verify: [`.ai/artifacts/t174_verify_log.md`](.ai/artifacts/t174_verify_log.md).
+**T-174 — MC sat sharpness + heatmap removal + dock guides** @ `bbb99526` (tag **T-174**): localhost sat preview→full progressive (dropped `sat_dev_preview_default`; `?sat=preview` = gate/fast; `?sat=full` no-op); density-heatmap glow excised (LOD rung kept); guide stems clip to rows (no dock rails). Verify: [`.ai/artifacts/t174_verify_log.md`](/.ai/artifacts/t174_verify_log.md).
 
-**T-175 — MC interaction + LOD + pan/zoom perf** @ `b90deac8` (tag **T-175**): sticky tree GPU clear; concurrent forest fetch; readable contours; floor-aware zoom memo; cold-slot rebind; place ghost + live drag preview; O(delta) selection tint; `BootPhase` loading overlay; hunt H1–H6. Verify: [`.ai/artifacts/t175_verify_log.md`](.ai/artifacts/t175_verify_log.md).
+**T-175 — MC interaction + LOD + pan/zoom perf** @ `b90deac8` (tag **T-175**): sticky tree GPU clear; concurrent forest fetch; readable contours; floor-aware zoom memo; cold-slot rebind; place ghost + live drag preview; O(delta) selection tint; `BootPhase` loading overlay; hunt H1–H6. Verify: [`.ai/artifacts/t175_verify_log.md`](/.ai/artifacts/t175_verify_log.md).
 
-**T-176 — Forest canopy mass + place ghost + zoom+pan** @ `a5940fad` (tag **T-176**): forest highlight = **8 m TBDD canopy mass** (box blur + `CANOPY_MASS_ISO`); **32 m landcover forest wash removed**; `push_landcover` after `set_viewport`; `SlotPlacePreview` bound to slot atlas; `CAMERA_GESTURE` defers DEM/forest recompute during pan. Retune: `tbd-tools world redensify --terrain everon`. Verify: [`.ai/artifacts/t176_verify_log.md`](.ai/artifacts/t176_verify_log.md).
+**T-176 — Forest canopy mass + place ghost + zoom+pan** @ `a5940fad` (tag **T-176**): forest highlight = **8 m TBDD canopy mass** (box blur + `CANOPY_MASS_ISO`); **32 m landcover forest wash removed**; `push_landcover` after `set_viewport`; `SlotPlacePreview` bound to slot atlas; `CAMERA_GESTURE` defers DEM/forest recompute during pan. Retune: `tbd-tools world redensify --terrain everon`. Verify: [`.ai/artifacts/t176_verify_log.md`](/.ai/artifacts/t176_verify_log.md).
 
-**T-177 — MC chrome + ORBAT dock cutover (T-071.0)** @ `e97a01c6` (tag **T-177**): YouTube elbow tree guides; grab cursor on palette leaves; menus above docks (`z-30`/`z-20`); left ORBAT removed; top-strip **ORBAT Manager** → `OrbatManagerDialog`. Gate harness: full Chrome headless + **`gate doctor`** — [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md). Verify: [`.ai/artifacts/t177_verify_log.md`](.ai/artifacts/t177_verify_log.md). **ORBAT authoring:** completed by **T-180** (not T-071.1+).
+**T-177 — MC chrome + ORBAT dock cutover (T-071.0)** @ `e97a01c6` (tag **T-177**): YouTube elbow tree guides; grab cursor on palette leaves; menus above docks (`z-30`/`z-20`); left ORBAT removed; top-strip **ORBAT Manager** → `OrbatManagerDialog`. Gate harness: full Chrome headless + **`gate doctor`** — [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md). Verify: [`.ai/artifacts/t177_verify_log.md`](/.ai/artifacts/t177_verify_log.md). **ORBAT authoring:** completed by **T-180** (not T-071.1+).
 
-**T-178 — Density-shader forest + YouTube guides** @ `58d839c7` (tag **T-178**): island TBDD density texture + `fs_forest_density` (Nearest/`textureLoad`, iso 2.0, `fwidth` rim); progressive mesh fill retired; Class-R pins `1601`/`625`/`"density"`; Outliner label removed; continuous clickable guide stems. Verify: [`.ai/artifacts/t178_verify_log.md`](.ai/artifacts/t178_verify_log.md).
+**T-178 — Density-shader forest + YouTube guides** @ `58d839c7` (tag **T-178**): island TBDD density texture + `fs_forest_density` (Nearest/`textureLoad`, iso 2.0, `fwidth` rim); progressive mesh fill retired; Class-R pins `1601`/`625`/`"density"`; Outliner label removed; continuous clickable guide stems. Verify: [`.ai/artifacts/t178_verify_log.md`](/.ai/artifacts/t178_verify_log.md).
 
-**T-180 — ORBAT + Eden placement program COMPLETE** @ `cba837b3` (tag **T-180.9**): sides/leader/place→squad · map tint+leader lines · Eden chips · Stitch ORBAT Manager · templates/vehicles · Open Arsenal + `derive_orbat` loadout summary. Coherency **T-180.10** · `make verify-t180`. Hub: [`t180_orbat_eden_program.md`](docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md). Verify: [`.ai/artifacts/t180_9_verify_log.md`](.ai/artifacts/t180_9_verify_log.md) · [`.ai/artifacts/t180_10_coherency_report.md`](.ai/artifacts/t180_10_coherency_report.md).
+**T-180 — ORBAT + Eden placement program COMPLETE** @ `cba837b3` (tag **T-180.9**): sides/leader/place→squad · map tint+leader lines · Eden chips · Stitch ORBAT Manager · templates/vehicles · Open Arsenal + `derive_orbat` loadout summary. Coherency **T-180.10** · `make verify-t180`. Hub: [`t180_orbat_eden_program.md`](/documentation_v2/tickets/specs/t180_orbat_eden_program.md). Verify: [`.ai/artifacts/t180_9_verify_log.md`](/.ai/artifacts/t180_9_verify_log.md) · [`.ai/artifacts/t180_10_coherency_report.md`](/.ai/artifacts/t180_10_coherency_report.md).
 
-**T-179 — Soft density canopy + MS outlines** @ `8f45ee83` (tag **T-179**): Linear soft `fs_forest_density` (corner UV + fwidth AA iso); `forest_bins_ok===625` arm gate + retries; one-shot MS hairlines role 6 (measured **99374** @ z=−1; smoke floor ≥50000). Verify: [`.ai/artifacts/t179_verify_log.md`](.ai/artifacts/t179_verify_log.md). Hub: [`t179_forest_canopy_fix.md`](docs/platform/t179_forest_canopy_fix.md).
+**T-179 — Soft density canopy + MS outlines** @ `8f45ee83` (tag **T-179**): Linear soft `fs_forest_density` (corner UV + fwidth AA iso); `forest_bins_ok===625` arm gate + retries; one-shot MS hairlines role 6 (measured **99374** @ z=−1; smoke floor ≥50000). Verify: [`.ai/artifacts/t179_verify_log.md`](/.ai/artifacts/t179_verify_log.md). Hub: [`t179_forest_canopy_fix.md`](/documentation_v2/tickets/specs/t179_forest_canopy_fix.md).
 
 **Workspace restructure (2026-06-26, `2a51d66`):** monorepo reorganized into the
 `apps/` + `packages/` + unified `docs/` + `scripts/` + hidden `.ai/` layout (see
@@ -52,136 +54,136 @@ frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
 ### COMPLETE — Fable 5 audit program (T-126 → T-127 → T-128)
 
-Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · living tracker [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md)
+Hub: [`FABLE_5_AUDIT_PROGRAM.md`](/documentation_v2/archive/audits/fable_5_audit_program.md) · living tracker [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md)
 
-**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-068** loadout · map residual). **T-180 ORBAT COMPLETE.**
+**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (**T-068** loadout · map residual). **T-180 ORBAT COMPLETE.**
 
 ### Map Engine v2 — T-090 (implementation)
 
-Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
+Plan @ `a222a146` · [implementation plan](/.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](/documentation_v2/tickets/specs/t090_render_lod_contract.md)
 
 **Active:** **T-090.6** (geometry placement audit).
 
 **Done (Map Engine v2 render lane — latest):**
-- T-090.5.5 **Map Engine v2 tree/veg/prop glyphs** @ `2b1a0dda` (tag **T-090.5.5**). `IconLayer` for individual tree/veg/prop glyphs; `FpsCounter.tsx` HUD + `Ctrl+Alt+D` toggle; `getTreeStreamDebug()` surface; `loadManifest` deduplication. Verify: [`.ai/artifacts/t090_5_5_verify_log.md`](.ai/artifacts/t090_5_5_verify_log.md).
-- T-090.5.4 **Map Engine v2 sea-band + DEM contours** @ `bd481cf1` (tag **T-090.5.4**). `world-sea` (slot 2) + `world-contours` (slot 5) from 6400² DEM via worker (`demGrid`/`seaBand`/`contours` pure modules + `demVectorStore`); vitest **223/223**; whole-island static geometry per interval band. Contour ladder implements §N3 (`20 m @ 0…+1`, `10 m @ +1…+3` — ticket prose reconciled). Manual M-shore/R5 = operator GPU pass. Verify: [`.ai/artifacts/t090_5_4_verify_log.md`](.ai/artifacts/t090_5_4_verify_log.md).
+- T-090.5.5 **Map Engine v2 tree/veg/prop glyphs** @ `2b1a0dda` (tag **T-090.5.5**). `IconLayer` for individual tree/veg/prop glyphs; `FpsCounter.tsx` HUD + `Ctrl+Alt+D` toggle; `getTreeStreamDebug()` surface; `loadManifest` deduplication. Verify: [`.ai/artifacts/t090_5_5_verify_log.md`](/.ai/artifacts/t090_5_5_verify_log.md).
+- T-090.5.4 **Map Engine v2 sea-band + DEM contours** @ `bd481cf1` (tag **T-090.5.4**). `world-sea` (slot 2) + `world-contours` (slot 5) from 6400² DEM via worker (`demGrid`/`seaBand`/`contours` pure modules + `demVectorStore`); vitest **223/223**; whole-island static geometry per interval band. Contour ladder implements §N3 (`20 m @ 0…+1`, `10 m @ +1…+3` — ticket prose reconciled). Manual M-shore/R5 = operator GPU pass. Verify: [`.ai/artifacts/t090_5_4_verify_log.md`](/.ai/artifacts/t090_5_4_verify_log.md).
 
-**Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
+**Audit:** [`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
-**T-091.2 shipped @ `dde589e` (tag T-091.2):** `terrainZ` in `ydoc`; CUR/SEL X/Y/Z @ 3 dp; Mission Settings hillshade + grid; `useDemLayer` + grid-over-hillshade; `useDemVersion` async CUR refresh. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md).
+**T-091.2 shipped @ `dde589e` (tag T-091.2):** `terrainZ` in `ydoc`; CUR/SEL X/Y/Z @ 3 dp; Mission Settings hillshade + grid; `useDemLayer` + grid-over-hillshade; `useDemVersion` async CUR refresh. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](/documentation_v2/tickets/specs/t091_2_z_axis_editor.md).
 
-**T-091.1 shipped @ `2c56c2e` (tag T-091.1):** `tactical-map/dem/*` — loader + `sampleElevation` API. Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
+**T-091.1 shipped @ `2c56c2e` (tag T-091.1):** `tactical-map/dem/*` — loader + `sampleElevation` API. Spec: [`t091_1_dem_loader.md`](/documentation_v2/tickets/specs/t091_1_dem_loader.md).
 
-**T-091.0 shipped @ `6d96339` (tag T-091.0):** Everon 6400² DEM export + anchor verify. Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
+**T-091.0 shipped @ `6d96339` (tag T-091.0):** Everon 6400² DEM export + anchor verify. Spec: [`t091_0_dem_tile_export.md`](/documentation_v2/tickets/specs/t091_0_dem_tile_export.md).
 
 ### T-151 — wgpu Mission Creator engine program
 
-Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
+Hub: [`t151_wgpu_engine_program.md`](/documentation_v2/tickets/specs/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
 **Language gate (D5):** Rust owns engine policy (geometry, GPU sync, LOD, camera math, pack).
 TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x / W10 prompt must include
-`═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
+`═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/CLAUDE_CODE_PROMPT.md).
 Do **not** grow fat `wgpu*Controller` logic in TS.
 
 **Program (W0–W11):** Deck runtime retired; Mission Creator is wgpu-only. **W10 audit + W11
 remediations shipped** (tip `8237cda6`). **Residual:** operator sign-off
-([`.ai/artifacts/t151_operator_signoff.md`](.ai/artifacts/t151_operator_signoff.md)) · polish
+([`.ai/artifacts/t151_operator_signoff.md`](/.ai/artifacts/t151_operator_signoff.md)) · polish
 list (next slice when filed).
 
 **Next after sign-off/polish:** **T-069** markers (`queued`) · spec
-[`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
+[`t069_markers_on_map.md`](/documentation_v2/tickets/specs/t069_markers_on_map.md)
 
 **Done (program slices):**
 - T-151.11.1–.6 **audit remediations (W11)** — tags **T-151.11.1**…**T-151.11.6**; tip
   `8237cda6`. Draw order, marquee, bounds, D5 collapse, GPU harness, Range preview,
   wheel-zoom mid-pan. Verify:
-  [`.ai/artifacts/t151_11_verify_log.md`](.ai/artifacts/t151_11_verify_log.md). Tracker:
-  [`.ai/artifacts/t151_10_fable_audit_report.md`](.ai/artifacts/t151_10_fable_audit_report.md).
+  [`.ai/artifacts/t151_11_verify_log.md`](/.ai/artifacts/t151_11_verify_log.md). Tracker:
+  [`.ai/artifacts/t151_10_fable_audit_report.md`](/.ai/artifacts/t151_10_fable_audit_report.md).
 - T-151.10 / T-151.10.1 **Fable 5 program audit (W10)** @ `6adbd4bf` / `40def01a`. Spec:
-  [`t151_10_fable_program_audit.md`](docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md).
+  [`t151_10_fable_program_audit.md`](/documentation_v2/tickets/specs/t151_10_fable_program_audit.md).
 - T-151.9 **Deck flip + retirement (W9)** @ `c4831451` (tag **T-151.9**; tip `58c8fcc3`).
   Always `WgpuTacticalMap`; Deck runtime deleted; deck.gl+luma → devDependencies; vitest
   **281**; dist Deck-free; bundle ~7.15→6.27 MB. Verify:
-  [`.ai/artifacts/t151_9_verify_log.md`](.ai/artifacts/t151_9_verify_log.md). Spec:
-  [`t151_9_deck_retirement.md`](docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md).
+  [`.ai/artifacts/t151_9_verify_log.md`](/.ai/artifacts/t151_9_verify_log.md). Spec:
+  [`t151_9_deck_retirement.md`](/documentation_v2/tickets/specs/t151_9_deck_retirement.md).
 - T-151.8.1 **WebGPU compute cull** @ `ec59d10e` (tag **T-151.8.1**). `VERTEX|STORAGE` +
   `draw_indirect` tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 chunk draw-set.
-  Verify: [`.ai/artifacts/t151_8_verify_log.md`](.ai/artifacts/t151_8_verify_log.md) §Compute cull.
+  Verify: [`.ai/artifacts/t151_8_verify_log.md`](/.ai/artifacts/t151_8_verify_log.md) §Compute cull.
 - T-151.8 **culling + density ladder (W8)** @ `f4ffbfff` (tag **T-151.8**). Strict draw-set;
   exact-count heatmap ladder; damage-driven render. vitest **393**. Spec:
-  [`t151_8_culling_density.md`](docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md).
+  [`t151_8_culling_density.md`](/documentation_v2/tickets/specs/t151_8_culling_density.md).
 - T-151.7.3 **Rust collapse** @ `804f779a` (tag **T-151.7.3**). SlotGpuBridge; `wgpuSlots.ts`
   **56** LOC; vitest **393**; wasm **4,071,877 B**. Verify:
-  [`.ai/artifacts/t151_7_3_verify_log.md`](.ai/artifacts/t151_7_3_verify_log.md). Spec:
-  [`t151_7_3_rust_collapse.md`](docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md).
+  [`.ai/artifacts/t151_7_3_verify_log.md`](/.ai/artifacts/t151_7_3_verify_log.md). Spec:
+  [`t151_7_3_rust_collapse.md`](/documentation_v2/tickets/specs/t151_7_3_rust_collapse.md).
 - T-151.7.2 **residual tint + zoom SoT** @ `64c64d98` (tag **T-151.7.2**; wheel @ `69ca1c08`).
-  Verify: [`.ai/artifacts/t151_7_2_verify_log.md`](.ai/artifacts/t151_7_2_verify_log.md).
+  Verify: [`.ai/artifacts/t151_7_2_verify_log.md`](/.ai/artifacts/t151_7_2_verify_log.md).
 - T-151.7.1 **interaction hotfix** @ `fa6ad959` (tag **T-151.7.1**). Tint / drag FPS / zoom origin.
-  Verify: [`.ai/artifacts/t151_7_1_verify_log.md`](.ai/artifacts/t151_7_1_verify_log.md). Spec:
-  [`t151_7_1_interaction_hotfix.md`](docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md).
+  Verify: [`.ai/artifacts/t151_7_1_verify_log.md`](/.ai/artifacts/t151_7_1_verify_log.md). Spec:
+  [`t151_7_1_interaction_hotfix.md`](/documentation_v2/tickets/specs/t151_7_1_interaction_hotfix.md).
 - T-151.7 **interaction rewire (W7)** @ `ab6bcb11` (tag **T-151.7**). ULP-0 camera +
   `useSelectTool` on wgpu; vitest **391**; wasm **4,063,911 B**. Verify:
-  [`.ai/artifacts/t151_7_verify_log.md`](.ai/artifacts/t151_7_verify_log.md). Spec:
-  [`t151_7_interaction_rewire.md`](docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md).
+  [`.ai/artifacts/t151_7_verify_log.md`](/.ai/artifacts/t151_7_verify_log.md). Spec:
+  [`t151_7_interaction_rewire.md`](/documentation_v2/tickets/specs/t151_7_interaction_rewire.md).
 - T-151.6 **mission entities (W6)** @ `033ff715` (tag **T-151.6**). Ring+disc atlas; SoA→GPU;
   selection tint; T-061 drag delta uniform; T-065 clusters; vitest **379**; wasm **4,063,618 B**.
-  Verify: [`.ai/artifacts/t151_6_verify_log.md`](.ai/artifacts/t151_6_verify_log.md). Spec:
-  [`t151_6_mission_entities.md`](docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md).
+  Verify: [`.ai/artifacts/t151_6_verify_log.md`](/.ai/artifacts/t151_6_verify_log.md). Spec:
+  [`t151_6_mission_entities.md`](/documentation_v2/tickets/specs/t151_6_mission_entities.md).
 - T-151.5.1 **forest mass fidelity** @ `a98fb421` (tag **T-151.5.1**). Rust `DENSITY_ISO=2` SoT;
   `density_iso()` wasm export; fill/outline/landcover off at zoom ≥ 0; sticky landcover LOD fixed;
   vitest **374**; wasm **4,055,075 B**. Path B / 32 m → **T-149** (Fable 5). Verify:
-  [`.ai/artifacts/t151_5_1_verify_log.md`](.ai/artifacts/t151_5_1_verify_log.md). Spec:
-  [`t151_5_1_forest_fidelity.md`](docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md).
+  [`.ai/artifacts/t151_5_1_verify_log.md`](/.ai/artifacts/t151_5_1_verify_log.md). Spec:
+  [`t151_5_1_forest_fidelity.md`](/documentation_v2/tickets/specs/t151_5_1_forest_fidelity.md).
 - T-151.5 **glyph atlas (W5)** @ `0b7621ed` (tag **T-151.5**). Atlas once + IconInstanced **20 B**;
   trees/props/badges on wgpu; vitest **372**; wasm **4,054,850 B**. Forest mass not retuned.
-  Verify: [`.ai/artifacts/t151_5_verify_log.md`](.ai/artifacts/t151_5_verify_log.md). Spec:
-  [`t151_5_glyph_atlas.md`](docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md).
+  Verify: [`.ai/artifacts/t151_5_verify_log.md`](/.ai/artifacts/t151_5_verify_log.md). Spec:
+  [`t151_5_glyph_atlas.md`](/documentation_v2/tickets/specs/t151_5_glyph_atlas.md).
 - T-151.4.1 **building wipe + road joins** @ `552e68aa` (tag **T-151.4.1**). Empty mid-flight
   upload no longer clears building lane; inflight abort fixed; polyline miter joins + round caps.
   Forest overdraw deferred to post-glyph analysis. Verify:
-  [`.ai/artifacts/t151_4_1_verify_log.md`](.ai/artifacts/t151_4_1_verify_log.md). Spec:
-  [`t151_4_1_building_road_hotfix.md`](docs/specs/Mission_Creator_Architecture/t151_4_1_building_road_hotfix.md).
+  [`.ai/artifacts/t151_4_1_verify_log.md`](/.ai/artifacts/t151_4_1_verify_log.md). Spec:
+  [`t151_4_1_building_road_hotfix.md`](/documentation_v2/tickets/specs/t151_4_1_building_road_hotfix.md).
 - T-151.4 **vector layers (W4)** @ `723490a0` (tag **T-151.4**). PolygonFill + sea/landcover/
   contours/roads/forest mass on wgpu; vitest **371**; wasm **4,005,415 B**. Verify:
-  [`.ai/artifacts/t151_4_verify_log.md`](.ai/artifacts/t151_4_verify_log.md). Spec:
-  [`t151_4_vector_layers.md`](docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md).
+  [`.ai/artifacts/t151_4_verify_log.md`](/.ai/artifacts/t151_4_verify_log.md). Spec:
+  [`t151_4_vector_layers.md`](/documentation_v2/tickets/specs/t151_4_vector_layers.md).
 - T-151.3 **chunk residency + first world GPU instances (W3)** @ `32bf5ac5` (tag **T-151.3**).
   `WorldResidency` + chunk-keyed pick index; building OBB fill/outline on `WgpuTacticalMap`; vitest
   **371** (+28); merged wasm **3,946,734 B** (+88,143). P1–P14 proof ledger PASS; GPU-R building
   readback byte-exact; 10k pick + 22-step residency Class **S** parity. Deck worker untouched.
-  Verify: [`.ai/artifacts/t151_3_verify_log.md`](.ai/artifacts/t151_3_verify_log.md). Spec:
-  [`t151_3_world_residency.md`](docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md).
+  Verify: [`.ai/artifacts/t151_3_verify_log.md`](/.ai/artifacts/t151_3_verify_log.md). Spec:
+  [`t151_3_world_residency.md`](/documentation_v2/tickets/specs/t151_3_world_residency.md).
 - T-151.2 **world parser in Rust (W2 Piece 1)** @ `a51e9dcb` (tag **T-151.2**). `world/` module +
   wasm `WorldStore`; Class **R**/**S** on all **275** Everon chunks; census **391 / 508,291 / 888 /
   36 / 625** exact; vitest **343** (+9); merged wasm **3,858,591 B** (+135,399). Parse-only — no
   worker flip or GPU world draws. Verify:
-  [`.ai/artifacts/t151_2_verify_log.md`](.ai/artifacts/t151_2_verify_log.md). Spec:
-  [`t151_2_world_parser.md`](docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md).
+  [`.ai/artifacts/t151_2_verify_log.md`](/.ai/artifacts/t151_2_verify_log.md). Spec:
+  [`t151_2_world_parser.md`](/documentation_v2/tickets/specs/t151_2_world_parser.md).
 - T-151.1 **basemap lane (TBDS + hillshade + grid)** @ `3ab81587` (tag **T-151.1**).
   `TexturedQuad` + `Polyline` pipelines; `basemapResolve.ts` extracted (Deck-oracle); unified
   TBDS + pyramid/single/none fallback on wgpu; hillshade + procedural grid; vitest **334**
   (+17); merged wasm **3,723,192 B**. GPU gates byte-exact via headless CDP (`texture_self_check`,
   T-151.0 self_check regression, real-DEM hillshade). Verify:
-  [`.ai/artifacts/t151_1_verify_log.md`](.ai/artifacts/t151_1_verify_log.md). Spec:
-  [`t151_1_basemap_lane.md`](docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md).
+  [`.ai/artifacts/t151_1_verify_log.md`](/.ai/artifacts/t151_1_verify_log.md). Spec:
+  [`t151_1_basemap_lane.md`](/documentation_v2/tickets/specs/t151_1_basemap_lane.md).
 - T-151.0 **wasm merge + batch list + editor dual mount** @ `f019512d` (tag **T-151.0**). One wasm
   module (D1): `RenderEngine` + `MissionDoc` + `OrthoCameraJs` share one linear memory; merged
   `map_engine_wasm_bg.wasm` = **3,658,383 B**; batch list seam; `WgpuTacticalMap` lazy-loaded
   behind `?engine=wgpu`; L10 shared-memory HUD proof. Automated gates exit 0; browser S1–S3
-  operator-pending. Verify: [`.ai/artifacts/t151_0_verify_log.md`](.ai/artifacts/t151_0_verify_log.md).
-  Spec: [`t151_0_wasm_merge_dual_mount.md`](docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md).
+  operator-pending. Verify: [`.ai/artifacts/t151_0_verify_log.md`](/.ai/artifacts/t151_0_verify_log.md).
+  Spec: [`t151_0_wasm_merge_dual_mount.md`](/documentation_v2/tickets/specs/t151_0_wasm_merge_dual_mount.md).
 
 ### T-068 — Virtual Arsenal (ACTIVE T-068.13)
 
-See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
-· cargo hub [`t068_15_cargo_program.md`](docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md).
+See [`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md)
+· cargo hub [`t068_15_cargo_program.md`](/documentation_v2/tickets/specs/t068_15_cargo_program.md).
 
 **Cargo ladder shipped (Fable 5, 2026-07-24):**
-- **T-068.15.1** @ `85acbb13` — grids + `character_default_cargo` + qty ingest · [verify](.ai/artifacts/t068_15_1_verify_log.md)
-- **T-068.15.2** @ `4fb156b7` — Arsenal capacity + cargo UI + seed · [verify](.ai/artifacts/t068_15_2_verify_log.md)
-- **T-068.11** @ `c66494c6` — compiled `slot.loadout {gear,cargo[]}` · [verify](.ai/artifacts/t068_11_verify_log.md)
-- **T-068.12** @ `0be53e16` — player equip + InsertItem · [verify](.ai/artifacts/t068_12_verify_log.md)
+- **T-068.15.1** @ `85acbb13` — grids + `character_default_cargo` + qty ingest · [verify](/.ai/artifacts/t068_15_1_verify_log.md)
+- **T-068.15.2** @ `4fb156b7` — Arsenal capacity + cargo UI + seed · [verify](/.ai/artifacts/t068_15_2_verify_log.md)
+- **T-068.11** @ `c66494c6` — compiled `slot.loadout {gear,cargo[]}` · [verify](/.ai/artifacts/t068_11_verify_log.md)
+- **T-068.12** @ `0be53e16` — player equip + InsertItem · [verify](/.ai/artifacts/t068_12_verify_log.md)
 
 **ACTIVE:** **T-068.13** LOBBY / production slot picker · then **T-068.14** Phase-2 E2E.
 Operator residual from .12: M2 dressed-player screenshot; optional M4 NPC toggle.
@@ -190,83 +192,83 @@ Markers (**T-069**) deferred.
 **Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). Player loadout path now live through **T-068.12**.
 
 **T-068 program (Phase 1 — shipped slices):**
-- **T-068.0.1** JSON schemas + golden fixtures @ `2487d59` — `registry-items` + `loadout-export` in `packages/tbd-schema/`. Spec: [`t068_0_1_registry_schemas.md`](docs/specs/Mission_Creator_Architecture/t068_0_1_registry_schemas.md).
-- **T-068.1** Workbench/MCP flat export @ `ca4f2cd` — 21 vanilla rows @ `packages/tbd-schema/registry/registry-items.workbench.json`; plugin `TBD_RegistryItemsExportPlugin.c`. Spec: [`t068_1_workbench_flat_export.md`](docs/specs/Mission_Creator_Architecture/t068_1_workbench_flat_export.md).
-- **T-068.2** Registry API @ `4c609fe` (tag **T-068.2**) — `GET /api/v1/registry` (weak ETag/304), `registry_items` model + migration `05_registry_items.sql`, `registry_dev.sql` seed (21 rows, all 5 kinds), `cmd/import-registry-items`, FE types only. Spec: [`t068_2_registry_api.md`](docs/specs/Mission_Creator_Architecture/t068_2_registry_api.md). Ops: [`DEV_RUNBOOK.md`](docs/website/DEV_RUNBOOK.md) §Registry catalog.
-- **T-068.3** Factions palette wire @ `da78452` (tag **T-068.3**) — `useRegistry()` + `buildCatalogTree`; `assetCatalogMock.ts` deleted; DnD `assetId` = full `resource_name`; spinner-first loading. Closes **RIGHT-CAT-001**. Spec: [`t068_3_palette_wire.md`](docs/specs/Mission_Creator_Architecture/t068_3_palette_wire.md).
-- **T-068.4** Arsenal dumb loadout UI @ `a85f16b` (tag **T-068.4**) — replace Attributes Arsenal stub; 4 gear dropdowns + `loadout-export.json` download; character slots only. Closes **ATTR-TAB-004**. Spec: [`t068_4_dumb_loadout_ui.md`](docs/specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md).
-- **T-068.5** Mod equip scaffold @ `21ec91e` (tag **T-068.5**) — `TBD_LoadoutEquipComponent`; profile JSON → test NPC @ 6400 (log-only equip; superseded by .5.1). Spec: [`t068_5_mod_equip_loadout.md`](docs/specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md).
-- **T-068.5.1** Visual wear on test NPC @ `b233b11` (tag **T-068.5.1**) — `EquipCloth`/`EquipWeapon` + worn-verify; kit visible on **NPC**, not player. Spec: [`t068_5_1_visual_equip_fix.md`](docs/specs/Mission_Creator_Architecture/t068_5_1_visual_equip_fix.md).
-- **T-068.6** Phase 1 E2E gate **PASS** @ 2026-06-27 — E1–E12; Phase 2 approved. Spec: [`t068_6_phase1_e2e_gate.md`](docs/specs/Mission_Creator_Architecture/t068_6_phase1_e2e_gate.md).
+- **T-068.0.1** JSON schemas + golden fixtures @ `2487d59` — `registry-items` + `loadout-export` in `packages/tbd-schema/`. Spec: [`t068_0_1_registry_schemas.md`](/documentation_v2/tickets/specs/t068_0_1_registry_schemas.md).
+- **T-068.1** Workbench/MCP flat export @ `ca4f2cd` — 21 vanilla rows @ `packages/tbd-schema/registry/registry-items.workbench.json`; plugin `TBD_RegistryItemsExportPlugin.c`. Spec: [`t068_1_workbench_flat_export.md`](/documentation_v2/tickets/specs/t068_1_workbench_flat_export.md).
+- **T-068.2** Registry API @ `4c609fe` (tag **T-068.2**) — `GET /api/v1/registry` (weak ETag/304), `registry_items` model + migration `05_registry_items.sql`, `registry_dev.sql` seed (21 rows, all 5 kinds), `cmd/import-registry-items`, FE types only. Spec: [`t068_2_registry_api.md`](/documentation_v2/tickets/specs/t068_2_registry_api.md). Ops: [`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md) §Registry catalog.
+- **T-068.3** Factions palette wire @ `da78452` (tag **T-068.3**) — `useRegistry()` + `buildCatalogTree`; `assetCatalogMock.ts` deleted; DnD `assetId` = full `resource_name`; spinner-first loading. Closes **RIGHT-CAT-001**. Spec: [`t068_3_palette_wire.md`](/documentation_v2/tickets/specs/t068_3_palette_wire.md).
+- **T-068.4** Arsenal dumb loadout UI @ `a85f16b` (tag **T-068.4**) — replace Attributes Arsenal stub; 4 gear dropdowns + `loadout-export.json` download; character slots only. Closes **ATTR-TAB-004**. Spec: [`t068_4_dumb_loadout_ui.md`](/documentation_v2/tickets/specs/t068_4_dumb_loadout_ui.md).
+- **T-068.5** Mod equip scaffold @ `21ec91e` (tag **T-068.5**) — `TBD_LoadoutEquipComponent`; profile JSON → test NPC @ 6400 (log-only equip; superseded by .5.1). Spec: [`t068_5_mod_equip_loadout.md`](/documentation_v2/tickets/specs/t068_5_mod_equip_loadout.md).
+- **T-068.5.1** Visual wear on test NPC @ `b233b11` (tag **T-068.5.1**) — `EquipCloth`/`EquipWeapon` + worn-verify; kit visible on **NPC**, not player. Spec: [`t068_5_1_visual_equip_fix.md`](/documentation_v2/tickets/specs/t068_5_1_visual_equip_fix.md).
+- **T-068.6** Phase 1 E2E gate **PASS** @ 2026-06-27 — E1–E12; Phase 2 approved. Spec: [`t068_6_phase1_e2e_gate.md`](/documentation_v2/tickets/specs/t068_6_phase1_e2e_gate.md).
 
 **Phase 2 next:** **T-068.13** production LOBBY slot picker → **T-068.14** E2E. **ORBAT authoring done via T-180**. Do **not** `./scripts/ticket done T-068` until **T-068.14**.
 
 **Done (shipped):**
 - T-145 **Rust/Wasm doc core (Yjs replacement)** — backend Go→Rust (Axum + sqlx) + the mission document core moved into a Rust/wasm `yrs` doc. **Flip F1→F4 complete:** the `yrs` wasm doc behind `WasmMissionDoc` is the sole document core; **yjs + y-indexeddb removed** from the app. Commits F3 `a335cc23` · F3.1 `06fab65c` · F4 `a228ed98`. **Pivot:** the world-object zero-copy port (kickoff `.ai/artifacts/t145_world_zerocopy_kickoff.md`) is **superseded by the wgpu render-engine spike (T-151)** — Deck.gl `IconLayer` can't take binary buffers, so world objects can't reach zero-copy render through Deck; a pure wgpu/wasm engine replaces it.
-- T-090.8.1 **Map Engine v2 forest mass render** @ `e28d073a` (tag **T-090.8.1**). `world-landcover` (36 region hulls) + `world-forest` / `world-forest-outline` (TBDD marching squares, worker-streamed); vitest **192/192**; P2b headroom (2.2 MB / 29 ms full island). No tree glyphs. Verify: [`.ai/artifacts/t090_8_1_verify_log.md`](.ai/artifacts/t090_8_1_verify_log.md).
-- T-090.5.3 **Map Engine v2 worker chunk streaming** @ `155651b9` (tag **T-090.5.3**). `worldObjectsCore.ts` + thin Comlink worker; `chunkStore` LRU (≤4 ms/frame apply, worst chunk 0.65 ms); roads main-thread one-shot; trees indexed in worker, not rendered. Vitest **150/150**; build/lint clean. Verify: [`.ai/artifacts/t090_5_3_verify_log.md`](.ai/artifacts/t090_5_3_verify_log.md).
+- T-090.8.1 **Map Engine v2 forest mass render** @ `e28d073a` (tag **T-090.8.1**). `world-landcover` (36 region hulls) + `world-forest` / `world-forest-outline` (TBDD marching squares, worker-streamed); vitest **192/192**; P2b headroom (2.2 MB / 29 ms full island). No tree glyphs. Verify: [`.ai/artifacts/t090_8_1_verify_log.md`](/.ai/artifacts/t090_8_1_verify_log.md).
+- T-090.5.3 **Map Engine v2 worker chunk streaming** @ `155651b9` (tag **T-090.5.3**). `worldObjectsCore.ts` + thin Comlink worker; `chunkStore` LRU (≤4 ms/frame apply, worst chunk 0.65 ms); roads main-thread one-shot; trees indexed in worker, not rendered. Vitest **150/150**; build/lint clean. Verify: [`.ai/artifacts/t090_5_3_verify_log.md`](/.ai/artifacts/t090_5_3_verify_log.md).
 - T-090.5.2.2 **Map Engine v2 taxonomy render pass** @ `346a31c9` (tag **T-090.5.2.2**).
 - T-090.5.2.1 **Road centerline + casing + solid buildings** @ `04b60857` (tag **T-090.5.2.1**). `extractRoadCenterline` from quad-soup; `world-roads-casing`; dark building fills. Operator visual pass.
-- T-090.5.2 **Map Engine v2 roads + buildings live** @ `e410545e` (tag **T-090.5.2**). First world-object Deck layers: `world-roads`, `world-buildings`, `world-building-badges`; glyph atlas 19→28 glyphs; `worldData.ts` chunk loader. Vitest 102/102. Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](.ai/artifacts/t090_5_2_verify_log.md).
-- T-090.3.3 **Map Engine v2 taxonomy + highway network** @ `887a6ed1` (tag **T-090.3.3**). Full `.topo` road mapping (RIVER/STREAM → asphalt); **888** road segments; data-driven classify rebuild; measured prefab OBBs; **391** prefabs / **508,291** instances / **275** chunks (4,131 buildings + 2,299 piers + 501,861 trees). Enums + 28-glyph atlas; all export gates PASS. Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](.ai/artifacts/t090_5_2_verify_log.md) §T-090.3.3.
+- T-090.5.2 **Map Engine v2 roads + buildings live** @ `e410545e` (tag **T-090.5.2**). First world-object Deck layers: `world-roads`, `world-buildings`, `world-building-badges`; glyph atlas 19→28 glyphs; `worldData.ts` chunk loader. Vitest 102/102. Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](/.ai/artifacts/t090_5_2_verify_log.md).
+- T-090.3.3 **Map Engine v2 taxonomy + highway network** @ `887a6ed1` (tag **T-090.3.3**). Full `.topo` road mapping (RIVER/STREAM → asphalt); **888** road segments; data-driven classify rebuild; measured prefab OBBs; **391** prefabs / **508,291** instances / **275** chunks (4,131 buildings + 2,299 piers + 501,861 trees). Enums + 28-glyph atlas; all export gates PASS. Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](/.ai/artifacts/t090_5_2_verify_log.md) §T-090.3.3.
 - T-090.5.1 **Map Engine v2 render spine scaffold** @ `589ded9e` (tag **T-090.5.1**).
-- T-090.3.2 **Map Engine v2 export P2 (density + trees + forest regions)** @ `a055df95` (tag **T-090.3.2**). Built from T-090.3.1 staged raw — **no Workbench re-export**. Cumulative **361** prefabs / **507,467** instances / **270** chunks (6.25 MB gz, plain commit); **501,861** trees (51 types) + unchanged **5,606** P1 buildings. **625** `objects/density/{cx}_{cy}.bin` TBDD grids (732.5 KB); **forest-regions.json.gz** 36 Path B regions (F2 exact: 496,693 + 5,168 = 501,861). Gates: P2 24/24, P1 re-verify 19/19, schema-validate (S13/S14), map-export-validate, map-census, verify-spike-all — ALL PASS. Decisions: Latin species classify rules; debris→prop; verify-phase phase-scope split; prefabId renumber on cumulative rebuild; mega-region `forest-everon-001` (479k trees — tunable in `lib/forest-regions.mjs` @ T-090.8). Verify: [`.ai/artifacts/t090_3_2_verify_log.md`](.ai/artifacts/t090_3_2_verify_log.md).
-- T-090.3.1 **Map Engine v2 export core (P1 buildings + roads)** @ `e47f25fc` (tag **T-090.3.1**). Full-world export 1.41M entities / 8.9 s; **310** building prefabs, **5,606** instances, **219** chunks (84 KB gz); **roads.json.gz** 766 segments (decode-topo). Gates 19/19 PASS. Verify: [`.ai/artifacts/t090_3_1_verify_log.md`](.ai/artifacts/t090_3_1_verify_log.md). **Note:** Workbench new plugin classes need Script Editor compile (`wb_reload` insufficient).
+- T-090.3.2 **Map Engine v2 export P2 (density + trees + forest regions)** @ `a055df95` (tag **T-090.3.2**). Built from T-090.3.1 staged raw — **no Workbench re-export**. Cumulative **361** prefabs / **507,467** instances / **270** chunks (6.25 MB gz, plain commit); **501,861** trees (51 types) + unchanged **5,606** P1 buildings. **625** `objects/density/{cx}_{cy}.bin` TBDD grids (732.5 KB); **forest-regions.json.gz** 36 Path B regions (F2 exact: 496,693 + 5,168 = 501,861). Gates: P2 24/24, P1 re-verify 19/19, schema-validate (S13/S14), map-export-validate, map-census, verify-spike-all — ALL PASS. Decisions: Latin species classify rules; debris→prop; verify-phase phase-scope split; prefabId renumber on cumulative rebuild; mega-region `forest-everon-001` (479k trees — tunable in `lib/forest-regions.mjs` @ T-090.8). Verify: [`.ai/artifacts/t090_3_2_verify_log.md`](/.ai/artifacts/t090_3_2_verify_log.md).
+- T-090.3.1 **Map Engine v2 export core (P1 buildings + roads)** @ `e47f25fc` (tag **T-090.3.1**). Full-world export 1.41M entities / 8.9 s; **310** building prefabs, **5,606** instances, **219** chunks (84 KB gz); **roads.json.gz** 766 segments (decode-topo). Gates 19/19 PASS. Verify: [`.ai/artifacts/t090_3_1_verify_log.md`](/.ai/artifacts/t090_3_1_verify_log.md). **Note:** Workbench new plugin classes need Script Editor compile (`wb_reload` insufficient).
 - T-090.10.1 **Map Engine v2 implementation plan** @ `a222a146` (tag **T-090.10.1**).
-- T-144.1 **Arma 3 map architecture study** @ `b1949182` (tag **T-144.1**). A3 Arcade editor 2D map — no basemap tiles; live `GLandscape`; vectors on top. Artifacts: [report](.ai/artifacts/t144_arma3_map_architecture_report.md). Spec: [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md).
-- T-090.1.1.1 **Map program — cartographic land-cover compose** @ `018ea70d` (tag **T-090.1.1.1**). **L1** SAP-read-only forest/open masks (`build-landcover-mask.mjs` @ 3200² → soft masks; water excluded; ~25 m morphology) + pre-upscale tint pass in `build-map-cartographic.mjs` (open `#CDC6A3` @ 0.70, forest `#37502D` @ 0.80; TGA olive relief preserved). Spike: TGA provably monochrome — zero px on plugin `forestArea` ramp. **`make map-cartographic-everon`** ~2 min (tints @ 4096² before Lanczos — avoids 12800² magick OOM). M3 operator PASS @ (4870, 7760); M4 alignment ≪50 m. Satellite frozen. Verify: [`.ai/artifacts/t090_1_1_1_source_spike.json`](.ai/artifacts/t090_1_1_1_source_spike.json), [verify log](.ai/artifacts/t090_1_1_1_verify_log.md). Spec: [`t090_1_1_1_map_landcover_compose.md`](docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md).
-- T-092 **Spawn transform parity + mod mission compile** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`; verify log commit **`452ce501`**). **T-092.1:** `mission.schema.json` optional slot `y` + **schemaVersion "1.2"**; `TBD_MissionSlotStruct`/`TBD_SpawnManager` jsonY→GetSurfaceY policy, `CAPSULE_GROUND_OFFSET_M=0.0` (measured ≈0), `headingDeg`, `[TBD][Spawn]` logs. **T-092.2:** `flattenEditorToModDocument` (TS) + `services.FlattenToModDocument` (Go), `kit-aliases.json` + codegen mirror, **`GET /api/v1/missions/:id/compiled`** (`X-Service-Token`, 409 no-slots), mod loader `/api/v1/...` + token header fix. wb_play + live REST E2E **PASS** 2026-07-04 (M4 roster caveat OBS-1 → T-068.13; OBS-2 `TBD_MissionList` legacy path). Unblocked **T-180** ORBAT (now complete). Verify: [`.ai/artifacts/t092_1_verify_log.md`](.ai/artifacts/t092_1_verify_log.md), [`.ai/artifacts/t092_2_verify_log.md`](.ai/artifacts/t092_2_verify_log.md). Hub: [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md).
-- T-090.1.1 **Map program — Map cartographic view (pyramid + UI switch)** @ `6e06e679` (tag **T-090.1.1**). G1-A MapDataExporter TGA (4096² north-up) upscaled → composed ortho (inland-water tint from `.2.5.2` mask + `.topo` road strokes; **`despike()`** on geometry-baked width excursions). **`make map-cartographic-everon`** / **`map-cartographic-verify`** (`VIEW=map` z0–6, ~5461 WebP tiles local/gitignored). Manifest `tiles.map` → `workbench-cartographic` + `webp-lossy`. Frontend: T-127 `'map'` coercion removed; Map radio live; per-view `useTerrainBasemapLayer` (`basemap-map-*` ids; satellite unified texture survives switches); `basemapView.test.ts`. M1/M2/M3/M4/M5/M7/M8 PASS; M6/M9 operator browser. Ops: magick spill → `/var/tmp`. Artifacts: [`.ai/artifacts/t090_1_1_source_spike.json`](.ai/artifacts/t090_1_1_source_spike.json), [verify log](.ai/artifacts/t090_1_1_verify_log.md). Spec: [`t090_1_1_map_cartographic_view.md`](docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md).
-- T-090.1.2.5.2 **Map program — .topo road guard + one-button water** @ `1c07d97a` (tag **T-090.1.2.5.2**). `decode-topo.mjs` (G1-B: roads only, no hydro in `.topo`); `roadFrac ≤ 0.45` guard; relaxed wet-channel; **`make map-water-everon`**. Operator **good enough** 2026-07-03; perfect water → **T-143** (`idea`). Artifacts: [`.ai/artifacts/t090_1_2_5_2_source_spike.json`](.ai/artifacts/t090_1_2_5_2_source_spike.json), [verify log](.ai/artifacts/t090_1_2_5_2_verify_log.md). Spec: [`t090_1_2_5_2_water_topo_refine.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_2_water_topo_refine.md).
-- T-090.2 **Map program — map object taxonomy ship** @ `691d9b26` (tag **T-090.2**). +29 golden prefabs (S9 full enum coverage), +4 road segments, +1 `waterBody` region, instances/resolved samples; **`verify-map-object-golden.mjs`** S2–S9 wired into `make schema-validate`; +12 append-only `prefab-classify.json` rules; Everon manifest `objects` stub. Census stays `pending_export` until **T-090.3**. Verify: [`.ai/artifacts/t090_2_verify_log.md`](.ai/artifacts/t090_2_verify_log.md). Spec: [`t090_2_map_object_taxonomy.md`](docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md).
-- T-090.1.2.5.1 **Map program — inland water mask refine** @ `82488c6f` (tag **T-090.1.2.5.1**). Two-tier inland mask: compact `FLAT_FRAC_MAX` 0.5→**0.12** (road FP rejection); linear grey-river + wet-channel classes with DEM valley carve (48 m boxBlur) — 114 accepted bodies, 85 new stream segments; original operator FP sites PASS; **operator post-ship: residual FP/FN** at full-map pan (~4617, 8711 viewport). R3: Eden.topo BE-float32 polylines confirmed, framing undecoded → **T-090.8** lead. Artifacts: [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](.ai/artifacts/t090_1_2_5_1_refine_spike.json), [verify log](.ai/artifacts/t090_1_2_5_1_verify_log.md). Spec: [`t090_1_2_5_1_water_mask_refine.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md).
-- T-090.1.2.6 **Map program — hillshade blend strength slider** @ `b958e3b4` (tag **T-090.1.2.6**). Mission Settings slider `hillshadeOpacity` 0–100% @ **0.1%** steps; split memo in `useDemLayer.ts`. Spec: [`t090_1_2_6_hillshade_blend_control.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md).
-- T-090.1.2.5 **Map program — satellite water composite** @ `6396960f` (tag **T-090.1.2.5**). Ocean mask A (DEM≤0) + inland mask E (SAP grey appearance ∩ DEM filters); composited ortho → unified bundle + lossless pyramid. Spec: [`t090_1_2_5_satellite_water_composite.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md).
-- T-127 **Fable audit — Mission Creator UX fixes** @ `0515aabb` (tag **T-127**). U1–U5: conflict IDB + warm marker, export toasts, basemap `'map'` coerce, folder delete confirm, ORBAT 409 messages. Vitest 26/26; FE build/lint clean. **Partial:** F4-03 new-tab conflict deferred. Verify: [`.ai/artifacts/t127_verify_log.md`](.ai/artifacts/t127_verify_log.md). Spec: [`t127_mc_ux_audit_fixes.md`](docs/platform/t127_mc_ux_audit_fixes.md).
+- T-144.1 **Arma 3 map architecture study** @ `b1949182` (tag **T-144.1**). A3 Arcade editor 2D map — no basemap tiles; live `GLandscape`; vectors on top. Artifacts: [report](/.ai/artifacts/t144_arma3_map_architecture_report.md). Spec: [`t144_arma3_map_architecture_study.md`](/documentation_v2/tickets/specs/t144_arma3_map_architecture_study.md).
+- T-090.1.1.1 **Map program — cartographic land-cover compose** @ `018ea70d` (tag **T-090.1.1.1**). **L1** SAP-read-only forest/open masks (`build-landcover-mask.mjs` @ 3200² → soft masks; water excluded; ~25 m morphology) + pre-upscale tint pass in `build-map-cartographic.mjs` (open `#CDC6A3` @ 0.70, forest `#37502D` @ 0.80; TGA olive relief preserved). Spike: TGA provably monochrome — zero px on plugin `forestArea` ramp. **`make map-cartographic-everon`** ~2 min (tints @ 4096² before Lanczos — avoids 12800² magick OOM). M3 operator PASS @ (4870, 7760); M4 alignment ≪50 m. Satellite frozen. Verify: [`.ai/artifacts/t090_1_1_1_source_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_1_1_source_spike.json), [verify log](/.ai/artifacts/t090_1_1_1_verify_log.md). Spec: [`t090_1_1_1_map_landcover_compose.md`](/documentation_v2/tickets/specs/t090_1_1_1_map_landcover_compose.md).
+- T-092 **Spawn transform parity + mod mission compile** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`; verify log commit **`452ce501`**). **T-092.1:** `mission.schema.json` optional slot `y` + **schemaVersion "1.2"**; `TBD_MissionSlotStruct`/`TBD_SpawnManager` jsonY→GetSurfaceY policy, `CAPSULE_GROUND_OFFSET_M=0.0` (measured ≈0), `headingDeg`, `[TBD][Spawn]` logs. **T-092.2:** `flattenEditorToModDocument` (TS) + `services.FlattenToModDocument` (Go), `kit-aliases.json` + codegen mirror, **`GET /api/v1/missions/:id/compiled`** (`X-Service-Token`, 409 no-slots), mod loader `/api/v1/...` + token header fix. wb_play + live REST E2E **PASS** 2026-07-04 (M4 roster caveat OBS-1 → T-068.13; OBS-2 `TBD_MissionList` legacy path). Unblocked **T-180** ORBAT (now complete). Verify: [`.ai/artifacts/t092_1_verify_log.md`](/.ai/artifacts/t092_1_verify_log.md), [`.ai/artifacts/t092_2_verify_log.md`](/.ai/artifacts/t092_2_verify_log.md). Hub: [`t092_spawn_transform_program.md`](/documentation_v2/tickets/specs/t092_spawn_transform_program.md).
+- T-090.1.1 **Map program — Map cartographic view (pyramid + UI switch)** @ `6e06e679` (tag **T-090.1.1**). G1-A MapDataExporter TGA (4096² north-up) upscaled → composed ortho (inland-water tint from `.2.5.2` mask + `.topo` road strokes; **`despike()`** on geometry-baked width excursions). **`make map-cartographic-everon`** / **`map-cartographic-verify`** (`VIEW=map` z0–6, ~5461 WebP tiles local/gitignored). Manifest `tiles.map` → `workbench-cartographic` + `webp-lossy`. Frontend: T-127 `'map'` coercion removed; Map radio live; per-view `useTerrainBasemapLayer` (`basemap-map-*` ids; satellite unified texture survives switches); `basemapView.test.ts`. M1/M2/M3/M4/M5/M7/M8 PASS; M6/M9 operator browser. Ops: magick spill → `/var/tmp`. Artifacts: [`.ai/artifacts/t090_1_1_source_spike.json`](/.ai/artifacts/t090_1_1_source_spike.json), [verify log](/.ai/artifacts/t090_1_1_verify_log.md). Spec: [`t090_1_1_map_cartographic_view.md`](/documentation_v2/tickets/specs/t090_1_1_map_cartographic_view.md).
+- T-090.1.2.5.2 **Map program — .topo road guard + one-button water** @ `1c07d97a` (tag **T-090.1.2.5.2**). `decode-topo.mjs` (G1-B: roads only, no hydro in `.topo`); `roadFrac ≤ 0.45` guard; relaxed wet-channel; **`make map-water-everon`**. Operator **good enough** 2026-07-03; perfect water → **T-143** (`idea`). Artifacts: [`.ai/artifacts/t090_1_2_5_2_source_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_2_5_2_source_spike.json), [verify log](/.ai/artifacts/t090_1_2_5_2_verify_log.md). Spec: [`t090_1_2_5_2_water_topo_refine.md`](/documentation_v2/tickets/specs/t090_1_2_5_2_water_topo_refine.md).
+- T-090.2 **Map program — map object taxonomy ship** @ `691d9b26` (tag **T-090.2**). +29 golden prefabs (S9 full enum coverage), +4 road segments, +1 `waterBody` region, instances/resolved samples; **`verify-map-object-golden.mjs`** S2–S9 wired into `make schema-validate`; +12 append-only `prefab-classify.json` rules; Everon manifest `objects` stub. Census stays `pending_export` until **T-090.3**. Verify: [`.ai/artifacts/t090_2_verify_log.md`](/.ai/artifacts/t090_2_verify_log.md). Spec: [`t090_2_map_object_taxonomy.md`](/documentation_v2/tickets/specs/t090_2_map_object_taxonomy.md).
+- T-090.1.2.5.1 **Map program — inland water mask refine** @ `82488c6f` (tag **T-090.1.2.5.1**). Two-tier inland mask: compact `FLAT_FRAC_MAX` 0.5→**0.12** (road FP rejection); linear grey-river + wet-channel classes with DEM valley carve (48 m boxBlur) — 114 accepted bodies, 85 new stream segments; original operator FP sites PASS; **operator post-ship: residual FP/FN** at full-map pan (~4617, 8711 viewport). R3: Eden.topo BE-float32 polylines confirmed, framing undecoded → **T-090.8** lead. Artifacts: [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_2_5_1_refine_spike.json), [verify log](/.ai/artifacts/t090_1_2_5_1_verify_log.md). Spec: [`t090_1_2_5_1_water_mask_refine.md`](/documentation_v2/tickets/specs/t090_1_2_5_1_water_mask_refine.md).
+- T-090.1.2.6 **Map program — hillshade blend strength slider** @ `b958e3b4` (tag **T-090.1.2.6**). Mission Settings slider `hillshadeOpacity` 0–100% @ **0.1%** steps; split memo in `useDemLayer.ts`. Spec: [`t090_1_2_6_hillshade_blend_control.md`](/documentation_v2/tickets/specs/t090_1_2_6_hillshade_blend_control.md).
+- T-090.1.2.5 **Map program — satellite water composite** @ `6396960f` (tag **T-090.1.2.5**). Ocean mask A (DEM≤0) + inland mask E (SAP grey appearance ∩ DEM filters); composited ortho → unified bundle + lossless pyramid. Spec: [`t090_1_2_5_satellite_water_composite.md`](/documentation_v2/tickets/specs/t090_1_2_5_satellite_water_composite.md).
+- T-127 **Fable audit — Mission Creator UX fixes** @ `0515aabb` (tag **T-127**). U1–U5: conflict IDB + warm marker, export toasts, basemap `'map'` coerce, folder delete confirm, ORBAT 409 messages. Vitest 26/26; FE build/lint clean. **Partial:** F4-03 new-tab conflict deferred. Verify: [`.ai/artifacts/t127_verify_log.md`](/.ai/artifacts/t127_verify_log.md). Spec: [`t127_mc_ux_audit_fixes.md`](/documentation_v2/tickets/specs/t127_mc_ux_audit_fixes.md).
 - T-126 **Fable audit — security + auth follow-up** @ `4a47688e` (tag **T-126**).
-- T-125 **Coding standards + 11/10 enforcement** @ `e21dac3` (tag **T-125.5**). [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) (38 rules, all gates live): golangci, strict TS, GO-7 `@route` route-match, verify-* scripts, ENF-4 ×10, `.editorconfig` + Prettier (FMT-2/3). `make ci-local` @ ~22.7s mirrors **`ci.yml`** (backend + frontend + schema + editorconfig). Spec: [`t125_coding_standards_enforcement.md`](docs/platform/t125_coding_standards_enforcement.md).
-- T-124 **Dependency & toolchain upgrade** @ `cd11db0`. FE npm to latest (vitest **4.1.9**, deck.gl 9.3.5, vite 8); Go modules gin **1.12**, gorm **1.31.2**, pgx **5.10**; **Go 1.26**, **Node 26** (`.nvmrc` + CI), **Postgres 18** dev image; dropped unused `@tailwindcss/container-queries`. Verify: FE build/lint/**21/21** tests, `make build`, `make test-it`, `make schema-codegen` clean. Spec: [`t124_dependency_upgrade.md`](docs/platform/t124_dependency_upgrade.md).
-- T-123 **Documentation standards rollout** @ `169e47d` (tag **T-123**). In-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); schema codegen → `apps/website/internal/contract/` + `apps/website/frontend/src/types/contract/` via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json` (400 on invalid; `internal/contract/validate.go`); `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift). Resolves audit T1/T8. Spec: [`t123_documentation_standards_rollout.md`](docs/platform/t123_documentation_standards_rollout.md).
-- T-122 **Codebase audit hotfix (single bundle)** @ `f131770` (tag **T-122**). 37/41 findings (C/R/T/M/D); deferred T1/T3/T8/T15 with rationale (T1/T8 since resolved by T-123). `make test-it` + FE build/lint clean. Spec: [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md).
+- T-125 **Coding standards + 11/10 enforcement** @ `e21dac3` (tag **T-125.5**). [`CODING_STANDARDS.md`](/documentation_v2/standards/coding_standards/README.md) (38 rules, all gates live): golangci, strict TS, GO-7 `@route` route-match, verify-* scripts, ENF-4 ×10, `.editorconfig` + Prettier (FMT-2/3). `make ci-local` @ ~22.7s mirrors **`ci.yml`** (backend + frontend + schema + editorconfig). Spec: [`t125_coding_standards_enforcement.md`](/documentation_v2/tickets/specs/t125_coding_standards_enforcement.md).
+- T-124 **Dependency & toolchain upgrade** @ `cd11db0`. FE npm to latest (vitest **4.1.9**, deck.gl 9.3.5, vite 8); Go modules gin **1.12**, gorm **1.31.2**, pgx **5.10**; **Go 1.26**, **Node 26** (`.nvmrc` + CI), **Postgres 18** dev image; dropped unused `@tailwindcss/container-queries`. Verify: FE build/lint/**21/21** tests, `make build`, `make test-it`, `make schema-codegen` clean. Spec: [`t124_dependency_upgrade.md`](/documentation_v2/tickets/specs/t124_dependency_upgrade.md).
+- T-123 **Documentation standards rollout** @ `169e47d` (tag **T-123**). In-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); schema codegen → `apps/website/internal/contract/` + `apps/website/frontend/src/types/contract/` via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json` (400 on invalid; `internal/contract/validate.go`); `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift). Resolves audit T1/T8. Spec: [`t123_documentation_standards_rollout.md`](/documentation_v2/tickets/specs/t123_documentation_standards_rollout.md).
+- T-122 **Codebase audit hotfix (single bundle)** @ `f131770` (tag **T-122**). 37/41 findings (C/R/T/M/D); deferred T1/T3/T8/T15 with rationale (T1/T8 since resolved by T-123). `make test-it` + FE build/lint clean. Spec: [`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md).
 - T-091.2 **Mission Creator — Z-axis editor UX** @ `dde589e` (tag **T-091.2**).
-- T-091.1 **Mission Creator — DEM loader + sampleElevation** @ `2c56c2e` (tag **T-091.1**). Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
-- T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](.ai/artifacts/t091_0_ops_log.txt).
-- T-090.1.2.8 **Map program — unified satellite texture (tbd-sat v1)** @ `db9057ef` (tag **T-090.1.2.8**). One `everon-sat.tbd-sat` bundle (205.9 MB LFS, 14-level mip chain); `satelliteUnified.ts` → single trilinear GPU texture on one BitmapLayer — zero tile HTTP/layer churn on pan/zoom; pyramid fallback via manifest `delivery: "pyramid"`. **Operator U1–U4 PASS** (2026-07-02). Format spike: [`.ai/artifacts/t090_1_2_8_format_spike.json`](.ai/artifacts/t090_1_2_8_format_spike.json). Verify: [`.ai/artifacts/t090_1_2_8_verify_log.md`](.ai/artifacts/t090_1_2_8_verify_log.md). Spec: [`t090_1_2_8_unified_satellite_texture.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md).
-- T-090.1.2.4 **Map program — engine render ortho spike (honest P0 FAIL)** @ `0d6fe485` (tag **T-090.1.2.4**). Exhaustive Workbench MCP api_search: no orthographic projection, no per-point terrain colour, no RenderTarget readback — **no grid-free sat-class 12800² source**. SAP + T-090.1.2.2 apron-bridge **locked as production source**. Pivot 110% to **T-090.1.2.8** (unified GPU texture + mips). Artifacts: [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](.ai/artifacts/t090_1_2_4_engine_render_spike.json), [verify log](.ai/artifacts/t090_1_2_4_verify_log.md). Spec: [`t090_1_2_4_engine_render_ortho_spike.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md).
-- T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md) @ `d2128cf`.
-- T-066 **Mission Creator — worker compile offload (T-066.1 `pickMapSnapshot`)**. Save Version + Export compile in `compiler.worker.ts` via Comlink; `pickMapSnapshot(useMapStore.getState())` strips Zustand actions before postMessage (fixes DataCloneError 25 on raw `getState()`). `terminateCompiler()` on mission unmount. Manual @ ~367k: Save **201**. Spec: [`t066_worker_compile.md`](docs/specs/Mission_Creator_Architecture/t066_worker_compile.md).
-- T-065 **Mission Creator — cluster/LOD @ extreme zoom**. `supercluster` index (`slotClusterIndex.ts`); pan-stable `getClusterMarkers` full-terrain cache (T-065.2); `ZOOM_CLUSTER_MAX = -4` — default zoom `-2` stays detail @ ~160 fps @ 367k; cluster discs + drill-in only when zoomed out past -4 on missions >500 slots. Spec: [`t065_cluster_lod.md`](docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md).
-- T-064 **Mission Creator — virtualized outliner @ ~367k**. `@tanstack/react-virtual` + segment-index flatten (`flattenOutliner.ts`, `VirtualOutliner.tsx`, `TreeRow.tsx`); `virtualSlotIds` + `VIRTUAL_SLOT_THRESHOLD=50`; replaces T-059 `OUTLINER_LEAF_CAP`. **T-064.1:** callback-ref `scrollEl` fixes blank outliner until first map selection. Manual @ ~367k: outliner on first paint; scrollable 367k virtual rows; no tab freeze. Spec: [`t064_virtualized_outliner.md`](docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md).
-- T-063 **Mission Creator — spatial index for click/marquee pick @ ~367k**. rbush R-tree (`slotSpatialIndex.ts`) kept in sync via `slotIconCache` mutators; `pickNearest` / `pickRect` replace Deck GPU pick; `slot-icons` `pickable: false`; click-select moved to `useSelectTool` pending-left pointerUp. FE build/lint clean; manual @ ~367k: significantly faster click/marquee. Spec: [`t063_spatial_index.md`](docs/specs/Mission_Creator_Architecture/t063_spatial_index.md).
+- T-091.1 **Mission Creator — DEM loader + sampleElevation** @ `2c56c2e` (tag **T-091.1**). Spec: [`t091_1_dem_loader.md`](/documentation_v2/tickets/specs/t091_1_dem_loader.md).
+- T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](/documentation_v2/tickets/specs/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](/.ai/artifacts/t091_0_ops_log.txt).
+- T-090.1.2.8 **Map program — unified satellite texture (tbd-sat v1)** @ `db9057ef` (tag **T-090.1.2.8**). One `everon-sat.tbd-sat` bundle (205.9 MB LFS, 14-level mip chain); `satelliteUnified.ts` → single trilinear GPU texture on one BitmapLayer — zero tile HTTP/layer churn on pan/zoom; pyramid fallback via manifest `delivery: "pyramid"`. **Operator U1–U4 PASS** (2026-07-02). Format spike: [`.ai/artifacts/t090_1_2_8_format_spike.json`](/.ai/artifacts/t090_1_2_8_format_spike.json). Verify: [`.ai/artifacts/t090_1_2_8_verify_log.md`](/.ai/artifacts/t090_1_2_8_verify_log.md). Spec: [`t090_1_2_8_unified_satellite_texture.md`](/documentation_v2/tickets/specs/t090_1_2_8_unified_satellite_texture.md).
+- T-090.1.2.4 **Map program — engine render ortho spike (honest P0 FAIL)** @ `0d6fe485` (tag **T-090.1.2.4**). Exhaustive Workbench MCP api_search: no orthographic projection, no per-point terrain colour, no RenderTarget readback — **no grid-free sat-class 12800² source**. SAP + T-090.1.2.2 apron-bridge **locked as production source**. Pivot 110% to **T-090.1.2.8** (unified GPU texture + mips). Artifacts: [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](/.ai/artifacts/t090_1_2_4_engine_render_spike.json), [verify log](/.ai/artifacts/t090_1_2_4_verify_log.md). Spec: [`t090_1_2_4_engine_render_ortho_spike.md`](/documentation_v2/tickets/specs/t090_1_2_4_engine_render_ortho_spike.md).
+- T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md) @ `d2128cf`.
+- T-066 **Mission Creator — worker compile offload (T-066.1 `pickMapSnapshot`)**. Save Version + Export compile in `compiler.worker.ts` via Comlink; `pickMapSnapshot(useMapStore.getState())` strips Zustand actions before postMessage (fixes DataCloneError 25 on raw `getState()`). `terminateCompiler()` on mission unmount. Manual @ ~367k: Save **201**. Spec: [`t066_worker_compile.md`](/documentation_v2/tickets/specs/t066_worker_compile.md).
+- T-065 **Mission Creator — cluster/LOD @ extreme zoom**. `supercluster` index (`slotClusterIndex.ts`); pan-stable `getClusterMarkers` full-terrain cache (T-065.2); `ZOOM_CLUSTER_MAX = -4` — default zoom `-2` stays detail @ ~160 fps @ 367k; cluster discs + drill-in only when zoomed out past -4 on missions >500 slots. Spec: [`t065_cluster_lod.md`](/documentation_v2/tickets/specs/t065_cluster_lod.md).
+- T-064 **Mission Creator — virtualized outliner @ ~367k**. `@tanstack/react-virtual` + segment-index flatten (`flattenOutliner.ts`, `VirtualOutliner.tsx`, `TreeRow.tsx`); `virtualSlotIds` + `VIRTUAL_SLOT_THRESHOLD=50`; replaces T-059 `OUTLINER_LEAF_CAP`. **T-064.1:** callback-ref `scrollEl` fixes blank outliner until first map selection. Manual @ ~367k: outliner on first paint; scrollable 367k virtual rows; no tab freeze. Spec: [`t064_virtualized_outliner.md`](/documentation_v2/tickets/specs/t064_virtualized_outliner.md).
+- T-063 **Mission Creator — spatial index for click/marquee pick @ ~367k**. rbush R-tree (`slotSpatialIndex.ts`) kept in sync via `slotIconCache` mutators; `pickNearest` / `pickRect` replace Deck GPU pick; `slot-icons` `pickable: false`; click-select moved to `useSelectTool` pending-left pointerUp. FE build/lint clean; manual @ ~367k: significantly faster click/marquee. Spec: [`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md).
 - T-062.1.1 **Mission Creator — Save orbat payload dedup**. Save Version omits duplicate `orbat[]`
   (editor-only POST); Go `services.ParseOrbatTemplate` derives ORBAT from `editor` for Event attach.
   Export keeps full superset. `make test-it` + FE build/lint clean. Spec:
-  [`t062_1_1_batch_save.md`](docs/specs/Mission_Creator_Architecture/t062_1_1_batch_save.md).
+  [`t062_1_1_batch_save.md`](/documentation_v2/tickets/specs/t062_1_1_batch_save.md).
 - T-062.1 **Mission Creator — chunked IDB slot restore @ 360k**. v2 persistence (`tbd-mission-persist`):
   meta JSON + 5k slot chunks via `idb`; v2 boot skips y-indexeddb; one-time v1→v2 migration deletes
   legacy `tbd-mission-${id}`. Determinate restoring progress (no 0→300k jump on 2nd+ load). Debounced
   persist on `LOCAL_ORIGIN`; flush on tab hide/pagehide. Manual verify @ ~360k: good enough.
-  Spec: [`t062_1_idb_streaming_load.md`](docs/specs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md).
+  Spec: [`t062_1_idb_streaming_load.md`](/documentation_v2/tickets/specs/t062_1_idb_streaming_load.md).
 - T-062.2 **Mission Creator — editor session / background-tab resilience**. Dev: `viteReloadGuard`
   blocks Vite HMR full reload on `/missions/:id/edit` (alt-tab WS reconnect). Warm session:
   `editorSession.ts` + `sessionStorage` marker → skip multi-MB `GET /missions/:id` on same-tab
   return when IndexedDB has content. Background-safe `yieldToUi` + visibility-aware restore poll.
   Manual verify @ ~360k (Firefox dev): alt-tab extended period → no automatic load overlay.
-  Spec: [`t062_2_editor_session_persistence.md`](docs/specs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md).
+  Spec: [`t062_2_editor_session_persistence.md`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md).
 - T-062 **Mission Creator — incremental bindings @ 360k**. T-062.0: `incPatchPlan.classifyTransaction`
   → O(k) Zustand patches (`slot-fields`, `slot-add`, `slot-remove`, `meta`, `editor-layers`) instead of full
   `docToSnapshot(n)` on everyday edits. T-062.0.1: batched `removeEntities('slots')` (pasteSlots-style detach),
   `slotCount`/`slotsRevision` (no O(n) `slotsById` spread on add/remove), `REMOVE_PATCH_CAP` 10_000. Manual verify
   @ ~360k: delete 4k, undo 6k, asset drop, drag OK. Spec:
-  [`t062_incremental_bindings.md`](docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md).
+  [`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md).
 - T-061 **Mission Creator — drag-move performance @ 360k (good enough)**. T-061.0: dual
   IconLayer + split `dragPreviewIds`/`dragPreviewDelta` + rAF-coalesced delta — sustained
   ~60 fps while dragging @ ~360k (was 5–10 fps). T-061.0.1: `slotIconCache` O(k) exclude/restore
   + bindings `fastSlotPatchIds` slot-position fast path — pickup/release materially improved
   (no ~10 fps release collapse). Build + lint clean. **Product call:** good enough for Eden-blocking
   work; mega optimizations (**T-094** typed-array, release repack collapse, T-066 worker, **T-110**
-  terrain) deferred — see MC [`ROADMAP.md`](docs/specs/Mission_Creator_Architecture/ROADMAP.md)
-  §Deferred mega optimizations. Spec: [`t061_drag_move_hotfix.md`](docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md).
+  terrain) deferred — see MC [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
+  §Deferred mega optimizations. Spec: [`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md).
 - T-060 **Mission Creator — fast load + save at scale (API body limit + progress UX)**. Unblocks
   large-mission save/load in the T-059..T-067 scale program (spec:
   `docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md`). Three blockers fixed:
@@ -460,10 +462,10 @@ Markers (**T-069**) deferred.
   away. `POST /missions` unchanged. Verified: frontend build + lint clean.
 - T-047 **Doc authority alignment** — `agent_execution.md` Decisions log + agent rules now point agents at **`ROADMAP.md`** for open work and state the shell phases (PRE-3.5–9) are complete (T-033–T-040), replacing the old strict-phase-order / `00`–`09` numbered shorthand; `eden/wiki_manifest.yaml` deduped (`Eden_Editor:_Scenario_Attributes` was listed twice → 28 unique pages). (T-046 was the link-integrity pass: stale numbered cross-refs + relative link depths.)
 - T-045 **Roadmap-centric naming** — each domain gets **`ROADMAP.md`** (FE, BE, Mission Creator); MC docs renamed to descriptive names (`engineering_plan.md`, `agent_execution.md`, …); stubs at old numbered paths.
-- T-043 **Platform documentation reorg** — [`docs/website/README.md`](docs/website/README.md) hub with
+- T-043 **Platform documentation reorg** — [`docs/website/README.md`](/documentation_v2/README.md) hub with
   frontend/backend/archive master indexes; platform docs moved to `docs/platform/` and
   `docs/backend/architecture.md`; Mission Creator corpus reorg (`eden/`, `reference/`);
-  FD vs T split retired in **T-043**; T-0xx-only contract in [`docs/website/TAGS.md`](docs/website/TAGS.md); frontend
+  FD vs T split retired in **T-043**; T-0xx-only contract in [`docs/website/TAGS.md`](/documentation_v2/standards/ticket_identifiers.md); frontend
   surface specs refreshed (SplitPane events, mission editor route, §Documentation rule here).
 - T-001 initial backend (full schema + all handlers) + frontend scaffold.
 - T-002 Discord OAuth2 callback end-to-end.
@@ -629,16 +631,16 @@ Markers (**T-069**) deferred.
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
 **Next (arsenal / editor data):**
-- **T-068.11** — compiled mod loadout block (`ready`) — [`t068_11_compiler_loadout_export.md`](docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md)
+- **T-068.11** — compiled mod loadout block (`ready`) — [`t068_11_compiler_loadout_export.md`](/documentation_v2/tickets/specs/t068_11_compiler_loadout_export.md)
 - **T-068.12** — mod player equip on spawn
 - **T-146** — Asset Browser wiring (queued)
 - **T-070** — vehicles placeable
 - **T-069** — markers (`deferred`)
-- **T-110** — terrain base + sparse deltas ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
+- **T-110** — terrain base + sparse deltas ([`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md))
 
 **Map / ORBAT lane (parallel):**
-- **T-151** — wgpu engine · W0–W11 remediations complete · residual operator sign-off — hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
-- **T-090** — Map Engine v2 (ACTIVE T-090.6) — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`.
+- **T-151** — wgpu engine · W0–W11 remediations complete · residual operator sign-off — hub [`t151_wgpu_engine_program.md`](/documentation_v2/tickets/specs/t151_wgpu_engine_program.md)
+- **T-090** — Map Engine v2 (ACTIVE T-090.6) — hub [`t090_091_map_terrain_program.md`](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`.
 - **T-092** — mod compile + spawn Y/yaw — **shipped** @ `a73224f2`
 - **T-180** — ORBAT + Eden placement (**COMPLETE** @ `cba837b3`; coherency `make verify-t180`)
 - Ruler/LoS/viewshed — after T-069/T-070 as needed.

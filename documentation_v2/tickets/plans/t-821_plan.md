@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-821 — Plan
 
 ## Context

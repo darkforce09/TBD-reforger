@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Tactical Marker Palette UI Functional Specification
 
 **System Domain:** In-Game 2D Tactical Map Overlay, Leadership Command & Control (C2), Operational Drawing & Symbology  

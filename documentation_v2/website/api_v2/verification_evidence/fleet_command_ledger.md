@@ -1,3 +1,5 @@
+**Status:** live
+
 # Fleet command ledger
 
 Design for the fleet requirements (`fleet_fleet_commands`, `fleet_process_control`,

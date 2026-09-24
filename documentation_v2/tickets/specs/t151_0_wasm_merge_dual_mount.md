@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.0 — wasm packaging merge + engine batch list + editor dual mount
 
 **Status:** **shipped** @ `f019512d` (tag **T-151.0**, 2026-07-08) · verify log

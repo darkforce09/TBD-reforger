@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Debrief / AAR Scoreboard UI Functional Reference Specification
 
 **System Domain:** Post-Match Debriefing, Combat Statistics, Server Telemetry Snapshot, AAR Review  

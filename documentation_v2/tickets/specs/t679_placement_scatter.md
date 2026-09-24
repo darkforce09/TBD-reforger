@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-679 — placement scatter: radius and area shape
 
 Ticket: .ai/tickets/T-679.toml · Plan: docs/plans/t-679_plan.md · Schema half shipped in T-706.

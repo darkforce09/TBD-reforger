@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Master Modular Architectural Blueprint: Graphics Engine, Mission Core & Frontend Editor
 
 ## 1. Modular Architectural Philosophy

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-305 — pak.rs seeks the wrong offset
 
 Owner: command center. T-206 measured 300/300 compressed entries inflating at `entry.offset` and 3/300 at

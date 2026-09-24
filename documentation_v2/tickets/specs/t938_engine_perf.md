@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-938 — Engine and wasm performance
 
 Owner: command center. Source: master audit S3 (2026-09-04), verified against main @ 072988d57

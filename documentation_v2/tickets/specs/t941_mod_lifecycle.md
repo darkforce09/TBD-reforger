@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-941 — Enfusion mod lifecycle: safestart, lobby, screens, HUD, spectator, link, radio, vehicles
 
 Owner: command center. Source: master audit S6 (2026-09-04), verified against main @ 072988d57 (README.md in this

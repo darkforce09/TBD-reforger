@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  

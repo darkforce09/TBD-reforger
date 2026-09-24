@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.2 — world parser in Rust (`world/` module; W2 Piece 1)
 
 **Status:** **shipped** @ `a51e9dcb` (tag **T-151.2**, 2026-07-08) · verify log

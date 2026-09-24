@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-704 — Command palette over every editor command
 
 Owner: command center. 3den E2 (3DEN-TOOL-013/014); promoted from idea 2026-09-04.

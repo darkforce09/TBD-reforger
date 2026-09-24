@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Forensic Audit & Complete Documentation Inventory
 
 This document provides an exhaustive, forensic census of all 821 files in `docs/` and details their target disposition under `documentation_v2/`.

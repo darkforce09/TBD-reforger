@@ -1,3 +1,5 @@
+**Status:** live
+
 # Live slot occupancy and deployment authorization
 
 This note records the implemented design of live occupancy. It describes the code; acceptance

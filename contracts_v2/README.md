@@ -70,6 +70,6 @@ Keeping live catalogs out of `fixtures/` matters most: an ingest that silently f
 
 ## 4. Documentation Index
 
-- **[`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md)**: The typify codegen pipeline, the schema evolution policy, and the CI gates that enforce both.
-- **[`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md)**: Every file here, what reads it, and what breaks without it.
-- **[`MIGRATION_HANDOFF.md`](./MIGRATION_HANDOFF.md)**: Where each legacy file went, and the validation record.
+- **[`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/contracts_v2_relocation/architecture_plan.md)**: The typify codegen pipeline, the schema evolution policy, and the CI gates that enforce both.
+- **[`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/contracts_v2_relocation/analysis_and_inventory.md)**: Every file here, what reads it, and what breaks without it.
+- **[`MIGRATION_HANDOFF.md`](/documentation_v2/archive/contracts_v2_relocation/migration_handoff.md)**: Where each legacy file went, and the validation record.

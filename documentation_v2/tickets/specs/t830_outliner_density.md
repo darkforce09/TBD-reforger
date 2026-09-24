@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-830 — outliner density pass: taller rows, hover tools
 
 Ticket: .ai/tickets/T-830.toml · Plan: docs/plans/t-830_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

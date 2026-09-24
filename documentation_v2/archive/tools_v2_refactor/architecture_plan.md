@@ -1,8 +1,10 @@
+**Status:** archived
+
 # Tooling architecture
 
 The four crates under `tools_v2/`, the invariants that keep them apart, and the structural tests
 that enforce both. The module-by-module map is in
-[ANALYSIS_AND_INVENTORY.md](ANALYSIS_AND_INVENTORY.md).
+[ANALYSIS_AND_INVENTORY.md](/documentation_v2/archive/tools_v2_refactor/analysis_and_inventory.md).
 
 ---
 

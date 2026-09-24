@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-162 — Eradicate all remaining Python (→ Rust)
 
 **Status:** **SHIPPED** (T-162.0–.4) · **Worktree:** `.ai/artifacts/worktrees/TBD-T-161/` @
@@ -51,7 +53,7 @@ bash scripts/mod/mcp-call-selftest.sh
 cargo clippy -p xtask -- -D warnings
 ```
 
-Verify: [`.ai/artifacts/t162_verify_log.md`](../../.ai/artifacts/t162_verify_log.md)
+Verify: [`.ai/artifacts/t162_verify_log.md`](/.ai/artifacts/t162_verify_log.md)
 
 ## Out of scope
 

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.1 — wgpu text lane (SDF / canvas-to-texture)
 
 **Ticket:** T-152 · **Slice:** T-152.1  

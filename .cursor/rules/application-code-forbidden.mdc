@@ -35,4 +35,4 @@ Application code is shipped by **Claude Code** on `executor: claude-code` slices
 
 ## Exception
 
-`executor: cursor-docs` slices that only touch docs under `docs/` or registry — still **no** app source edits.
+`executor: cursor-docs` slices that only touch docs under `documentation_v2/` or registry — still **no** app source edits.

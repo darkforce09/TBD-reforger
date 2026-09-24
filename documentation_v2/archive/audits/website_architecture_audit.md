@@ -1,3 +1,5 @@
+**Status:** archived
+
 # TBD Reforger Platform: Master Architecture, Performance & Disjointedness Audit
 
 **Date:** 2026-08-25  

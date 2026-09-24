@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Consolidation record: the heavy services land in `developer-tools`
 
 What landed, and the measurements taken at the landing.

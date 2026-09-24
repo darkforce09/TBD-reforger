@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.15.1 — Export cargo capacity + default contents
 
 **Ticket:** T-068 · **Slice:** T-068.15.1 · **Status:** **SHIPPED** @ `85acbb13` (tag **T-068.15.1**) ·

@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Monorepo Migration Runbook
 
 Migration program **M0–M3** merges `TBD_Website` + `Arma reforger` into this repo without rewriting individual commit SHAs from the source repos (read-tree merge).
@@ -6,14 +8,14 @@ Migration program **M0–M3** merges `TBD_Website` + `Arma reforger` into this r
 
 | Gate | When | Checks |
 |------|------|--------|
-| **G0.5** | Before M1 | Both originals committed; SHAs in [`artifacts/migration-baseline/G0-SHAs.md`](../../.ai/artifacts/migration-baseline/G0-SHAs.md); push to GitHub |
+| **G0.5** | Before M1 | Both originals committed; SHAs in [`artifacts/migration-baseline/G0-SHAs.md`](/.ai/artifacts/migration-baseline/G0-SHAs.md); push to GitHub |
 | **G1** | After read-tree merge | V1–V3 content parity |
 | **G2** | After M1b lift | V4–V5, V17, V25 |
 | **G3** | After M1c path fixes | V11–V22; executor gate in CLAUDE + AI_PLAYBOOK |
 | **G4** | After M2 ticket rewrite | V6–V10, V23–V27; `./scripts/ticket check --strict` |
 | **G5** | Before workspace switch | Full `./scripts/verify-monorepo-migration.sh` exit 0 |
 
-G5 used `make verify-migration` / `./scripts/verify-monorepo-migration.sh` (both deleted with the Makefile / T-853 ports). The migration is complete. Current commands: root [`CLAUDE.md`](../../CLAUDE.md) §Run it locally (`cargo xtask help`).
+G5 used `make verify-migration` / `./scripts/verify-monorepo-migration.sh` (both deleted with the Makefile / T-853 ports). The migration is complete. Current commands: root [`CLAUDE.md`](/CLAUDE.md) §Run it locally (`cargo xtask help`).
 
 ## Layout after migration
 

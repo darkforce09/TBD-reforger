@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-061 — Drag-move performance @ 360k (motion + boundary hotfix)
 
 **Status:** **shipped (good enough)** — T-061.0 + T-061.0.1 implemented; build + lint clean; manual verify @ ~360k acceptable for Eden-blocking work  
 **Git tag on ship:** **T-061** (single commit: T-061.0 + T-061.0.1)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [t057_map_performance_hotfix.md](t057_map_performance_hotfix.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t057_map_performance_hotfix.md](t057_map_performance_hotfix.md)
 
 **Prerequisites:** T-057–T-060 shipped (`b1fd25a`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~360k slots).
 
@@ -30,7 +32,7 @@ Restore acceptable FPS during **left-drag move** of selected slot icons at **~36
 | **Drag release** (pointer-up) | no ~10 fps collapse; may be one dropped frame | **Good enough** |
 | Pan | **100+** | unchanged |
 
-**Product call:** current drag perf is **good enough** for Eden-blocking scale work. **Mega optimizations** (typed-array buffers, collapsing release repacks, worker compile, terrain base) are **deferred** — see [ROADMAP.md](ROADMAP.md) §Deferred mega optimizations.
+**Product call:** current drag perf is **good enough** for Eden-blocking scale work. **Mega optimizations** (typed-array buffers, collapsing release repacks, worker compile, terrain base) are **deferred** — see [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Deferred mega optimizations.
 
 ---
 
@@ -91,7 +93,7 @@ Dual IconLayer + split drag state + rAF-coalesced delta. Fixed sustained 5–10 
 - ~~**T-062.2** editor session~~ ✅ — spec [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md)
 - **T-065** ✅ cluster/LOD. **T-066** ✅ worker compile — [`t066_worker_compile.md`](t066_worker_compile.md). **T-067** ✅ — [`t067_spatial_chunks.md`](t067_spatial_chunks.md). **Eden T-068+**
 - **Stretch:** ~~**T-062.1** IDB streaming~~ ✅
-- **Deferred mega optimizations** — [ROADMAP.md](ROADMAP.md) §Deferred mega optimizations (T-061.1 typed-array, release repack collapse, T-066 worker, T-110 terrain, 1M–10M stretch)
+- **Deferred mega optimizations** — [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Deferred mega optimizations (T-061.1 typed-array, release repack collapse, T-066 worker, T-110 terrain, 1M–10M stretch)
 
 ---
 

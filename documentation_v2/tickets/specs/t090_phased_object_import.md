@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Phased object import + mathematical verification
 
 **Status:** Spec ready — **gates T-090.3 export and T-090.5 render**  

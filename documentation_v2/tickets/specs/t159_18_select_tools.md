@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-159.18 — Select / LMB tools (pick foundation)
 
 **Parent:** [`t159_leptos_ui_program.md`](t159_leptos_ui_program.md) · **Executor:** claude-code ·

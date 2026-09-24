@@ -1,3 +1,5 @@
+**Status:** live
+
 # Mission Creator — Eden Editor UX Spec
 **Document:** `ux_spec.md`
 **Status:** Human-readable UX contract. **Execution authority is `agent_execution.md`** —

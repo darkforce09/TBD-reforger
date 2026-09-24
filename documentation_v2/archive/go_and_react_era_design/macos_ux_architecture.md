@@ -1,3 +1,5 @@
+**Status:** archived — see [documentation_v2/design_system/](/documentation_v2/design_system/)
+
 # macOS UX Methodology & Interaction Plan
 
 This document focuses entirely on the underlying **User Experience (UX) Architecture**. The goal is to make the website *feel* and *behave* like a native Apple operating system through Context Retention, Progressive Disclosure, and Frictionless Action.
@@ -46,9 +48,9 @@ These pages already follow the methodology — use as implementation references:
 
 | Pattern | Example | Spec |
 |---------|---------|------|
-| Split-pane master/detail | Event Schedule, Announcements, Wiki | [`event-schedule.md`](../frontend/pages/event-schedule.md) |
-| Create-over-list Dialog | Event Manager "Schedule Operation" | [`event-manager.md`](../frontend/pages/event-manager.md), `admin.tsx` |
-| Slide-over dossier (no route replace) | Mission Library card → Sheet | [`mission-library.md`](../frontend/pages/mission-library.md) |
-| **Create-over-list Dialog (T-048)** | Mission Library **+ New Mission** → `CreateMissionDialog` | [`t048_library_create_dialog.md`](../../specs/Mission_Creator_Architecture/t048_library_create_dialog.md) |
+| Split-pane master/detail | Event Schedule, Announcements, Wiki | [`event-schedule.md`](/documentation_v2/website/frontend/pages/operations/schedule/event_schedule_page.md) |
+| Create-over-list Dialog | Event Manager "Schedule Operation" | [`event-manager.md`](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md), `admin.tsx` |
+| Slide-over dossier (no route replace) | Mission Library card → Sheet | [`mission-library.md`](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md) |
+| **Create-over-list Dialog (T-048)** | Mission Library **+ New Mission** → `CreateMissionDialog` | [`t048_library_create_dialog.md`](/documentation_v2/tickets/specs/t048_library_create_dialog.md) |
 
 **Anti-pattern removed by T-048:** standalone `/missions/create` full-page wizard + sidebar "Mission Creator" tab — creation is a transient action on the library surface, not a nav destination.

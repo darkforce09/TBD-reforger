@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.1.1 — Map cartographic land-cover compose
 
 **Ticket:** T-090 · **Slice:** T-090.1.1.1  

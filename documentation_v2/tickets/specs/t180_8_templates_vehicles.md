@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.8 — Faction Library templates + squad vehicles
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.7 · **Executor:** claude-code  

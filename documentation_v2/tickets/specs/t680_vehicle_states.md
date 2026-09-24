@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-680 — vehicle states: lock, fuel, ammo
 
 Ticket: .ai/tickets/T-680.toml · Plan: docs/plans/t-680_plan.md · Schema half shipped in T-706.

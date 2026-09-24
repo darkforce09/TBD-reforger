@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-838 — markers select on the map, list in the outliner, dblclick opens Attributes
 
 Ticket: .ai/tickets/T-838.toml · Plan: docs/plans/t-838_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

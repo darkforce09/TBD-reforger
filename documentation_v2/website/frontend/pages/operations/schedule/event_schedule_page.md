@@ -1,3 +1,5 @@
+**Status:** live
+
 # Event Schedule
 
 ## Status
@@ -31,7 +33,7 @@
 ### Primary flow
 1. `EventSchedulePage` loads upcoming events via `useEvents('upcoming')`.
 2. `SplitPane` master (`masterWidth="24rem"`) lists op cards; first item auto-selected.
-3. Clicking a card sets `selectedId`; detail column fetches `useEvent(id)` and renders `EventHubView` (same body as [/events/:id](event-hub.md)).
+3. Clicking a card sets `selectedId`; detail column fetches `useEvent(id)` and renders `EventHubView` (same body as [/events/:id](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)).
 4. User registers inline via mission dossier ORBAT — no separate "Open ORBAT" step.
 5. Full-page hub still available at `/events/:id` for deep links and back-navigation UX.
 
@@ -64,7 +66,7 @@
 
 ## Open Questions / Blockers
 
-- Calendar view deferred; master list is the only view. See [event-hub.md](event-hub.md) for standalone hub and ORBAT deep-link.
+- Calendar view deferred; master list is the only view. See [event-hub.md](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md) for standalone hub and ORBAT deep-link.
 
 ## Wave 256 layout correction
 

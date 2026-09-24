@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.10 — Map Engine v2 (A3-aligned render spine)
 
 **Ticket:** T-090 · **Slice:** T-090.10 (architecture) · **T-090.10.1** (detailed plan — Claude Code)  

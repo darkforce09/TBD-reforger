@@ -1,9 +1,11 @@
+**Status:** live
+
 # Home-server website setup — LAN (`dooley`)
 
 Deploy the **TBD Reforger website** (Rust API + Leptos SPA) on the same home server used for PrairieLearn and the Reforger game staging stack.
 
 **Scope of this doc:** LAN website (Postgres + API + SPA). Cloudflare Tunnel is optional later — not required for LAN.  
-**Out of scope:** Arma dedicated server — see [`docs/mod/STAGING-SERVER.md`](../mod/STAGING-SERVER.md).
+**Out of scope:** Arma dedicated server — see [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md).
 
 **Do not touch PrairieLearn.** TBD lives under `/home/sam/tbd/` only. Never write into `/home/sam/prairielearn/`.
 
@@ -475,8 +477,8 @@ Website one-button path: `cargo xtask deploy website` (compose file exists; see 
 | Doc | Role |
 |-----|------|
 | This file | **Website** on home server + Cloudflare |
-| [`docs/mod/STAGING-SERVER.md`](../mod/STAGING-SERVER.md) | Game server + LAN API smoke |
-| [`docs/website/DEV_RUNBOOK.md`](DEV_RUNBOOK.md) | Local laptop stack (`cargo xtask db up/api/web`) |
+| [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md) | Game server + LAN API smoke |
+| [`documentation_v2/runbooks/local_development.md`](/documentation_v2/runbooks/local_development.md) | Local laptop stack (`cargo xtask db up/api/web`) |
 | [`tools_v2/xtask/deploy/deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example) | Shared SSH + paths (`TBD_REMOTE_DIR=/home/sam/tbd/repo`) |
 | PL `PrairieLearn.md` / `HandoverContext.md` | SSH + Cloudflare precedent (do not copy PL ports/paths) |
 

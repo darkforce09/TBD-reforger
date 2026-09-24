@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-060 — Fast load + save at scale (hydrate gate + progress UX + API body limit)
 
 **Status:** **T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + T-060.1.4 shipped** (`b1fd25a`, 2026-06-23). Load partial pass @ ~360k. Save @ ~367k / ~142 MB → **201** (browser semver 0.1.3/0.1.4 + curl 140 MB). Mid-upload reset fixed (T-060.1.4). See [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md).
@@ -8,7 +10,7 @@ progress was **indeterminate** in T-060 code; **T-060.1** added determinate down
 **T-060.1.1** added **`restoring`** phase (rAF slot-count poll + `yieldToUi`). `compileMissionWithProgress`
 is added alongside the sync `compileMission` (export still uses the sync one).
 **Git tag on ship:** T-060 (single commit: T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + **T-060.1.4**)
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE
 
 **Prerequisites:** **T-057–T-059** shipped. **Validated (2026-06):** **360k objects @ 100+ fps** pan; repeat **6k paste** smooth.
 
@@ -88,9 +90,9 @@ flowchart TD
 ```
 
 Evidence:
-- [`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts): E3b `versionUploadBaseURL`, Blob POST
-- [`compiler/compile.ts`](../../../apps/website/frontend/src/features/mission-creator/compiler/compile.ts): `buildVersionBlob`
-- [`internal/middleware/bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go): 256 MB route cap
+- [`useMissionEditor.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts): E3b `versionUploadBaseURL`, Blob POST
+- [`compiler/compile.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/compiler/compile.ts): `buildVersionBlob`
+- [`internal/middleware/bodylimit.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/middleware/bodylimit.go): 256 MB route cap
 
 ---
 

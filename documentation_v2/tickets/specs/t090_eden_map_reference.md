@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Eden / Arma 3 editor map UX reference
 
 **Status:** living reference (not a slice)  

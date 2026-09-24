@@ -1,8 +1,10 @@
+**Status:** archived
+
 # Tooling inventory
 
 What lives under `tools_v2/`, module by module, and what each part is responsible for. The
 architecture, its invariants and the dependency direction are in
-[ARCHITECTURE_PLAN.md](ARCHITECTURE_PLAN.md); this document is the map.
+[ARCHITECTURE_PLAN.md](/documentation_v2/archive/tools_v2_refactor/architecture_plan.md); this document is the map.
 
 ---
 

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-674.1 — Plan
 
 ## Context

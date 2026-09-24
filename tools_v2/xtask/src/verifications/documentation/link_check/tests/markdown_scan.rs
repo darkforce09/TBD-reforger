@@ -62,6 +62,20 @@ fn references_resolve_against_definitions_anywhere_in_the_document() {
 }
 
 #[test]
+fn a_link_with_empty_text_is_judged_through_its_definition_alone() {
+    let undefined = scan("1. Schema {id, points[][2] minItems 2, label?}; golden updated.\n");
+    assert!(undefined.undefined_references.is_empty());
+    assert!(undefined.links.is_empty());
+    let defined = scan("See [][2].\n\n[2]: /documentation_v2/two.md\n");
+    assert!(defined.undefined_references.is_empty());
+    assert_eq!(
+        destinations(&defined),
+        [(3, "/documentation_v2/two.md")],
+        "a defined label's destination is judged at its definition, as for any reference"
+    );
+}
+
+#[test]
 fn footnotes_are_not_references_but_their_text_is_scanned() {
     let document = scan("Claim[^1].\n\n[^1]: See [the source](source.md).\n");
     assert_eq!(destinations(&document), [(3, "source.md")]);

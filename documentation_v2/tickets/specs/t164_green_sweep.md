@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-164 — Post-merge green sweep: CI green + registry hygiene + doc truth
 
 **Status:** shipped · **Executor:** claude-code (operator-approved plan) ·
-**Verify:** [`.ai/artifacts/t164_verify_log.md`](../../.ai/artifacts/t164_verify_log.md)
+**Verify:** [`.ai/artifacts/t164_verify_log.md`](/.ai/artifacts/t164_verify_log.md)
 
 ## Why
 

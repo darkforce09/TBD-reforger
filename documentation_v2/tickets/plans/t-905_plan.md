@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-905 — Plan
 ## Context
 T-899 allowlisted the frontend SIZE-3 files (>1000 lines) in `.coding-standards-allowlist.yaml` with reason + expiry so the gate could go live; the rows are debt. Since then `editor/state/operations.rs` became a 45-line root whose mass is `operations/entity.rs` (4779 lines); `gestures.rs`, `loadout.rs` and `pages/debug/building_viewer.rs` are on the list too — all owned here. This ticket collides with every live editor slice, so it packs alone.

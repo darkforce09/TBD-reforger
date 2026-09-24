@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-919 — Wall triage drain: plan
 
 ## Context

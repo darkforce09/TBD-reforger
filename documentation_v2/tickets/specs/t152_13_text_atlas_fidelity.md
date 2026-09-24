@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.13 — Readable text atlas (font fidelity)
 
 **Ticket:** T-152 · **Slice:** T-152.13 (remediation ladder #2)

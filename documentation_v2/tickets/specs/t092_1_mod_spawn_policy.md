@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-092.1 — Mod spawn height + yaw policy
 
 **Ticket:** T-092 · **Slice:** T-092.1  
@@ -25,13 +27,13 @@ Add optional slot `y` to schema + mod struct, implement spawn height policy (`js
 
 ## Problem
 
-[`TBD_SpawnManager.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c) uses `GetSurfaceY(x,z)` only; ignores JSON height; no yaw from mission slot; no optional `y` in [`TBD_MissionSlotStruct.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c).
+[`TBD_SpawnManager.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c) uses `GetSurfaceY(x,z)` only; ignores JSON height; no yaw from mission slot; no optional `y` in [`TBD_MissionSlotStruct.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c).
 
 ---
 
 ## Goal
 
-1. Schema: optional `y` on `$defs/slot` in [`mission.schema.json`](../../../packages/tbd-schema/schema/mission.schema.json); bump **schemaVersion "1.2"** when present.
+1. Schema: optional `y` on `$defs/slot` in [`mission.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/mission.schema.json); bump **schemaVersion "1.2"** when present.
 2. Mod struct: optional `float y`; parse from JSON.
 3. Spawn policy:
 

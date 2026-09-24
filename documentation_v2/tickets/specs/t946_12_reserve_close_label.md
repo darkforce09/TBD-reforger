@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-946.12 — reserve a close label for a wave that dissolved id by id
 
 ## The defect

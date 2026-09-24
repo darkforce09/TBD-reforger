@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-937 — Editor data layer: id arrays, undo, persist, payload
 
 Owner: command center. Source: master audit S2 (2026-09-04), verified against main @ 072988d57

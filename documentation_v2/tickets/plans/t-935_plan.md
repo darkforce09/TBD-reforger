@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-935 — Plan (program)
 
 ## Context

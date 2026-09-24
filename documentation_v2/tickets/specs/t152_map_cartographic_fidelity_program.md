@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-152 — Map cartographic fidelity program
 
 **Status:** **COMPLETE** (merged to `main` @ e2929ee6) · Remediation **.12–.21 shipped**; **.18/.19 deferred**; **T-152.22** operator **GO** 2026-07-14  
-**Ticket:** T-152 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
+**Ticket:** T-152 · **Registry:** [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)  
 **Worktree:** `.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152` (merged @ e2929ee6)  
 **Merge readiness:** [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md) · verify [`.ai/artifacts/t152_22_verify_log.md`](../../../.ai/artifacts/t152_22_verify_log.md)
 
@@ -64,13 +66,13 @@ Sibling pattern: same as [`t092_spawn_transform_program.md`](t092_spawn_transfor
 
 | # | Symptom | Evidence | Slice |
 |---|---------|----------|-------|
-| P1 | Landmarks = tinted OBB squares (lighthouse white) | `fill_color` lighthouse `[235,235,235,220]` — [`residency.rs`](../../../crates/map-engine-core/src/world/residency.rs) | .3 |
+| P1 | Landmarks = tinted OBB squares (lighthouse white) | `fill_color` lighthouse `[235,235,235,220]` — [`residency.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/world/residency.rs) | .3 |
 | P2 | Building glyphs skipped in lookup | `else { continue }` in `rebuild_glyph_lookup_from_prefabs` — same file | .3 |
-| P3 | Badges only military/tower/bunker | [`glyph_math.rs`](../../../crates/map-engine-core/src/world/glyph_math.rs) `badge_icon_key` | .3 |
-| P4 | Glyph SVGs are **placeholders** | [`packages/map-assets/glyphs/svg/`](../../../packages/map-assets/glyphs/svg/) | .2 |
+| P3 | Badges only military/tower/bunker | [`glyph_math.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/world/glyph_math.rs) `badge_icon_key` | .3 |
+| P4 | Glyph SVGs are **placeholders** | [`packages/map-assets/glyphs/svg/`](https://github.com/darkforce09/TBD-reforger/tree/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/glyphs/svg) | .2 |
 | P5 | No wgpu text/font lane | No SDF/text pipeline in `crates/map-engine-render/` | .1 |
 | P6 | Pier/bridge fat rects; fences missing | pier→building OBB; P2 `importPhaseMax` (no P5 props) | .4 |
-| P7 | Airfield = white runway only | [`polyline_strip.rs`](../../../crates/map-engine-core/src/geometry/polyline_strip.rs) `runway` | .5 |
+| P7 | Airfield = white runway only | [`polyline_strip.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/geometry/polyline_strip.rs) `runway` | .5 |
 | P8 | No town / road / height labels on map | No `locations` artifact; toolbelt Z only | .6–.9 |
 
 ---
@@ -202,7 +204,7 @@ Operator 2026-07-14: defer indefinitely; merge when **T-152.22** O1–O12 green.
 | [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md) | `iconKey` contract |
 | [`t090_render_lod_contract.md`](t090_render_lod_contract.md) | Zoom bands |
 | [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) | G8 declutter |
-| [`ROADMAP.md`](ROADMAP.md) | MC planning view |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | MC planning view |
 | [`.ai/artifacts/t152_10_verify_log.md`](../../../.ai/artifacts/t152_10_verify_log.md) | E2E gate (T-152.10) |
 | [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md) | Merge promotion |
 

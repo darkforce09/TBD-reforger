@@ -1,9 +1,11 @@
+**Status:** frozen record
+
 # T-176 — Forest fidelity + place ghost + zoom+pan stutter
 
 **Status:** SHIPPED @ tag **T-176** / `a5940fad` · **Branch:** `main`  
 **Depends on:** T-175 (shipped)  
-**Verify:** [`.ai/artifacts/t176_verify_log.md`](../../.ai/artifacts/t176_verify_log.md) · inventory [`.ai/artifacts/t176_inventory.md`](../../.ai/artifacts/t176_inventory.md)  
-**Evidence:** [`.ai/artifacts/t176_operator_screens/`](../../.ai/artifacts/t176_operator_screens/)  
+**Verify:** [`.ai/artifacts/t176_verify_log.md`](/.ai/artifacts/t176_verify_log.md) · inventory [`.ai/artifacts/t176_inventory.md`](/.ai/artifacts/t176_inventory.md)  
+**Evidence:** [`.ai/artifacts/t176_operator_screens/`](/.ai/artifacts/t176_operator_screens/)  
 **Scope shipped:** `apps/website/frontend/**`, `crates/map-engine-*`, density re-bake via `tools_v2/developer-tools` (`world redensify` / gen-density-fixture). **Not** `apps/mod/`.
 
 **No silent deferrals.** Soft “later / optional / fold forward” forbidden unless the operator explicitly says `defer X` / `skip X`.

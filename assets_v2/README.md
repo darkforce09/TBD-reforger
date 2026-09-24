@@ -67,9 +67,9 @@ Each terrain ships every bulk asset in both its JSON and its binary encoding. Th
 
 ## 4. Documentation Index
 
-- **[`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md)**: Streaming residency budgets, the 512 m partition, the rate-limit seam, and the Git LFS policy.
-- **[`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md)**: Every committed asset, its size, its format, and what reads it.
+- **[`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/assets_v2_relocation/architecture_plan.md)**: Streaming residency budgets, the 512 m partition, the rate-limit seam, and the Git LFS policy.
+- **[`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/assets_v2_relocation/analysis_and_inventory.md)**: Every committed asset, its size, its format, and what reads it.
 - **[`terrains/README.md`](./terrains/README.md)**: The terrain registry and the built-in dataset contract.
 - **[`glyphs/README.md`](./glyphs/README.md)**: The world-object glyph atlas.
 - **[`storage_spec/README.md`](./storage_spec/README.md)**: The production persistent volume and its upload ingest gates.
-- **[`MIGRATION_HANDOFF.md`](./MIGRATION_HANDOFF.md)**: Where each legacy asset went, the Git LFS proof, and the outstanding host step.
+- **[`MIGRATION_HANDOFF.md`](/documentation_v2/archive/assets_v2_relocation/migration_handoff.md)**: Where each legacy asset went, the Git LFS proof, and the outstanding host step.

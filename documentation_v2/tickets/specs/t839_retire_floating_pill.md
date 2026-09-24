@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-839 — retire the floating Select/Ruler/LoS pill
 
 Ticket: .ai/tickets/T-839.toml · Plan: docs/plans/t-839_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

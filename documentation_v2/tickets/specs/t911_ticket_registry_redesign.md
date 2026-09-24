@@ -1,6 +1,8 @@
+**Status:** frozen record
+
 # T-911 — Ticket registry redesign: per-file split + typed schema
 
-Program hub for splitting [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) into one TOML file per parent and per existing `slice_plan` / `slices[]` key, then typing Scope/Status.
+Program hub for splitting [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json) into one TOML file per parent and per existing `slice_plan` / `slices[]` key, then typing Scope/Status.
 
 **Do not write the `STRICT_LEGACY` `Track [ABC]\b` phrase in this spec, the ticket title/summary/notes, README, or any commit subject/body that `ticket sync` copies into `docs/TICKET_*.md`.** The scanner in `xtask/src/constants.rs` walks `docs/`.
 

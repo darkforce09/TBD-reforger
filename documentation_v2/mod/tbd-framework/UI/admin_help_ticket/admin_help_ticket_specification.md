@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Admin Help Ticket UI Specification & Functional Reference
 
 **System Domain:** In-Game Player Support, Terrain Recovery, Bug Remediation & Referee Dispatch  

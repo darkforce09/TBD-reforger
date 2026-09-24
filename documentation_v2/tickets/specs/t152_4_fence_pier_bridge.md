@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.4 — Fence / pier / bridge cartographic vectors
 
 **Ticket:** T-152 · **Slice:** T-152.4  

@@ -1,7 +1,9 @@
+**Status:** archived
+
 # Context Handoff — moved
 
 > **This file moved.** The canonical product blueprint / context handoff now lives at
-> [`docs/website/platform/context_handoff.md`](../website/platform/context_handoff.md).
+> [`docs/website/platform/context_handoff.md`](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md).
 >
 > This stub exists so the many `docs/platform/context_handoff.md` references across the repo
 > (CLAUDE.md, page docs, backend architecture/ROADMAP) resolve instead of 404-ing (T-122 D2).

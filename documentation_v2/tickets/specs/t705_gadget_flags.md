@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-705 — player gadget flags: map, compass, watch, GPS, radio
 
 Ticket: .ai/tickets/T-705.toml · Plan: docs/plans/t-705_plan.md · Schema half shipped in T-706.

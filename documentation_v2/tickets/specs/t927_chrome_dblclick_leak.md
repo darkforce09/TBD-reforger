@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-927 — Editor chrome dblclick leaks to the map
 
 ## Claude Code prompt — T-927

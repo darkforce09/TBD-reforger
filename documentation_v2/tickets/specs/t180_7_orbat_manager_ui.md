@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.7 — Stitch ORBAT Manager UI (visual + live graph)
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.2, T-180.6 · **Executor:** claude-code  
@@ -40,7 +42,7 @@
 
 ## Problem
 
-[`OrbatManagerDialog`](../../../apps/website/frontend/src/eden_chrome.rs) (~1200) is `max-w-xl` browse/select + T-071.1 stub footer. Not Stitch. No Make SL, no inspector, no Add Squad/Role on live mutators.
+[`OrbatManagerDialog`](https://github.com/darkforce09/TBD-reforger/blob/d9683c9f332cd209699b1b10ec6747e8284933bb/apps/website/frontend/src/eden_chrome.rs) (~1200) is `max-w-xl` browse/select + T-071.1 stub footer. Not Stitch. No Make SL, no inspector, no Add Squad/Role on live mutators.
 
 ---
 

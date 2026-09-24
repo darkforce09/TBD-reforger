@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-127 — Fable audit Mission Creator UX fixes
 
 **Ticket:** T-127 · **Executor:** claude-code · **Status:** **SHIPPED** @ `0515aabb` (tag **T-127**)  
-**Verify:** [`.ai/artifacts/t127_verify_log.md`](../../.ai/artifacts/t127_verify_log.md)  
-**Authority:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §2 Frontend · §4 UX · [`FABLE_5_AUDIT_PROGRAM.md`](FABLE_5_AUDIT_PROGRAM.md)
+**Verify:** [`.ai/artifacts/t127_verify_log.md`](/.ai/artifacts/t127_verify_log.md)  
+**Authority:** [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md) §2 Frontend · §4 UX · [`FABLE_5_AUDIT_PROGRAM.md`](/documentation_v2/archive/audits/fable_5_audit_program.md)
 
 ---
 

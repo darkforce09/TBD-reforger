@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-154.1 — Doll polish (contrast, rotation direction, hover + callout)
 
 **Ticket:** T-154 · **Slice:** T-154.1 · **Status:** shipped ·

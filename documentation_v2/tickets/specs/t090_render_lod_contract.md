@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Render LOD contract (canonical zoom + LOD authority)
 
 **Status:** **v2** — locked @ T-090.10.1 plan [`t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) @ `a222a146`  

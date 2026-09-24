@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.13 — Mod LOBBY slot picker (production UI)
 
 **Ticket:** T-068 · **Slice:** T-068.13  

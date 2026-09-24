@@ -1,11 +1,13 @@
+**Status:** frozen record
+
 > **T-891/T-892/T-890 (2026-08):** `compile.sh` / `world-boot.sh` / `mod/wave.sh` are deleted — use `cargo run -q -p xtask -- mod compile|world-boot|wave`. Historical bash paths below are archive.
 
 # T-181 — TBD Framework: the Arma-3-parity event mod
 
 **Hub doc.** Open this to know what the program is and what to run next.
-Registry: [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) · North star:
-[`TBD_MOD_DESIGN.md`](TBD_MOD_DESIGN.md) (T-181.4) · Capability verdicts:
-[`capability_verdicts.tsv`](capability_verdicts.tsv)
+Registry: [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json) · North star:
+[`TBD_MOD_DESIGN.md`](/documentation_v2/mod/tbd-framework/mod_design.md) (T-181.4) · Capability verdicts:
+[`capability_verdicts.tsv`](/documentation_v2/mod/tbd-framework/capability_verdicts.tsv)
 
 ## What this program is
 
@@ -68,7 +70,7 @@ Default to the fast lane. Measured: compile **780 ms**, whole gate **1.3 s** —
 | T-181.3.3 | **full vanilla source WITH BODIES** via AR Explorer | `SCR_BaseGameMode.c` resolves |
 | T-181.4 | `TBD_MOD_DESIGN.md` + `@idx` citation gate + CRF-leak gate | hallucinated symbol exits 1 |
 
-**The vanilla oracle has four lanes** — see [`vanilla_carve_coverage.md`](vanilla_carve_coverage.md).
+**The vanilla oracle has four lanes** — see [`vanilla_carve_coverage.md`](/documentation_v2/mod/tbd-framework/vanilla_source_coverage.md).
 Lane 4 (AR Explorer Doxygen source, same game version, method bodies included) supersedes the
 others; the pak-compression codec was never cracked and no longer needs to be.
 

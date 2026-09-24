@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.19 — One-button Workbench label export (Path A E2E)
 
 **Ticket:** T-152 · **Slice:** T-152.19 (remediation ladder #8)

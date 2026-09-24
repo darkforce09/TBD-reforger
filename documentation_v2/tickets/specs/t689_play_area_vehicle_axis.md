@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-689 — play-area vehicle-class axis: the aircraft exemption
 
 Ticket: .ai/tickets/T-689.toml · Plan: docs/plans/t-689_plan.md · Schema half shipped in T-706.

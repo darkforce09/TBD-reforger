@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-290 — Nine dead flatten fields the mod never reads
 
 Owner: command center. Frozen-scope audit ticket; proposed scope engine/core; pack_last on flatten.rs.

@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Technical Specification & Phased Migration Architecture Plan: `docs/` -> `documentation_v2/`
 
 > **Status (2026-09-21):** blueprint, not yet executed. `documentation_v2/` is in the repository beside `docs/`; `docs/` remains authoritative and is what every code pin and ticket citation points at. Section 0 records the starting state this plan now has to execute from.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-242 — Emit the T-216 slot deltas through flatten
 
 Owner: command center. Frozen-scope ticket re-scoped 2026-09-05; proposed scope schema/mission.

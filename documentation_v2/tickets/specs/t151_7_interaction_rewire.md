@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.7 — interaction rewire + parity suite (W7)
 
 **Status:** **shipped** @ `ab6bcb11` (tag **T-151.7**, 2026-07-09) · verify log

@@ -1,3 +1,5 @@
+**Status:** live
+
 # Equipment and vehicle exporter implementation acceptance
 
 **Complete:** all 24 findings have a recorded disposition and passing evidence. The fresh generation validates and is published as current. The 160 original files are archived and match their audit hashes.

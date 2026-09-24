@@ -1,3 +1,5 @@
+**Status:** live
+
 # API v2 — remaining milestones after M
 
 This document lists the milestones of the API v2 completion program that follow E, F and M:
@@ -58,7 +60,7 @@ their cases in full, and the register is the source of truth.
 - telemetry_match_identity, telemetry_telemetry_revisions, telemetry_telemetry_corrections,
   telemetry_telemetry_atomicity, telemetry_detailed_events and telemetry_telemetry_queue.
   telemetry_heartbeat_fencing is already done in E7.
-- T-940.13 (see `docs/plans/t-940_13_plan.md`).
+- T-940.13 (see `documentation_v2/tickets/plans/t-940_13_plan.md`).
 - dashboard_fleet_dashboard and dashboard_statistics_recomputation.
 
 **Required behavior:**

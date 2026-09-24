@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Contracts Relocation Handoff
 
 `packages/tbd-schema` is gone. Its contents live in `contracts_v2/`, sorted into four kinds of data that a single flat directory had been mixing.

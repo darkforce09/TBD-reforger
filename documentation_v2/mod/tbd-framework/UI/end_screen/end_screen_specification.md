@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — End Screen Banner UI Functional Reference Specification
 
 **System Domain:** Match Conclusion, Decisive Win/Defeat Presentation, Game Lifecycle Transition (`LIVE` → `END` → `DEBRIEF`)  

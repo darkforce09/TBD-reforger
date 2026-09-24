@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.10 — E2E cartographic gate (operator + merge readiness)
 
 **Ticket:** T-152 · **Slice:** T-152.10  

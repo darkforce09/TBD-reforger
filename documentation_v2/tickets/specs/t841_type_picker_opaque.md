@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-841 — Type picker popover on an opaque panel
 
 Ticket: .ai/tickets/T-841.toml · Plan: docs/plans/t-841_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

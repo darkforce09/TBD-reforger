@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-827 — validation chip clears 4.5:1 live-effective
 
 Ticket: .ai/tickets/T-827.toml · Plan: docs/plans/t-827_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-150 — Universal Enfusion registry + compat export (mod-agnostic)
 
 **Status:** **shipped** @ `9107bf4e` (tag **T-150**; schema commit `e358777a`) · **Program:**

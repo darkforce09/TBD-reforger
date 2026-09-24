@@ -1,3 +1,5 @@
+**Status:** live
+
 # Machine credentials and runtime sessions
 
 This note records the implemented design of server-scoped machine authentication and the runtime

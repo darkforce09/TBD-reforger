@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-926 — Vehicle Attributes Transform/Position tab
 
 ## Claude Code prompt — T-926

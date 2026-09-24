@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-159.17 — yrsPersist (IDB) + warm editor session
 
 **Parent:** [`t159_leptos_ui_program.md`](t159_leptos_ui_program.md) · **Executor:** claude-code ·

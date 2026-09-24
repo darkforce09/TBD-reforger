@@ -1,3 +1,5 @@
+**Status:** archived
+
 # TBD Reforger Platform - Master Architecture & Context Document
 
 **Purpose:** This document contains the complete context, UI blueprints, and system architecture for the "TBD Reforger Event Platform." It is designed to be fed into an LLM (like Claude) to provide 100% project context for generating backend code, data models, and integration scripts.

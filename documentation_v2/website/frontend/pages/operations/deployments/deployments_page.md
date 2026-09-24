@@ -1,3 +1,5 @@
+**Status:** live
+
 # My Deployments
 
 ## Status
@@ -12,7 +14,7 @@
 - **Live source:** `apps/website/frontend/src/deployments.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/my_deployments_service_record/code.html`
 - **Min role:** `public-nav` (personal data requires auth)
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.3 Deployments
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.3 Deployments
 
 ## Element Inventory
 

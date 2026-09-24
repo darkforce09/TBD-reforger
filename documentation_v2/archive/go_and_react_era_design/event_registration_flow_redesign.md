@@ -1,6 +1,8 @@
+**Status:** archived
+
 # Event Registration Flow Redesign
 
-> **Status: implemented** (T-008–T-010). Live code: Event Hub in [`frontend/src/pages/operations.tsx`](../../../apps/website/frontend/src/pages/operations.tsx) + [`events.go`](../../../apps/website/internal/handlers/events.go). This doc is historical design context.
+> **Status: implemented** (T-008–T-010). Live code: Event Hub in [`frontend/src/pages/operations.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/operations.tsx) + [`events.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/events.go). This doc is historical design context.
 
 ## Goal
 The current registration flow is too simple ("Click register for deployment"). We need to overhaul both the User Experience (UX) and the Backend Architecture to support complex, multi-mission events (like the "Twin Theaters" Star Wars event) where players can browse available missions, view the briefing/assets, choose a faction (side), select a specific squad, and claim a slot.

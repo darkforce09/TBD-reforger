@@ -32,9 +32,11 @@ todos:
 isProject: false
 ---
 
+**Status:** live
+
 # AGENT EXECUTION CONTRACT
 
-> **Live stack (T-145 / T-151 / T-159 / T-171):** Leptos + yrs + wgpu at `apps/website/frontend/` — not Deck.gl / React / Vite / Go middleware. Verify commands: `cargo xtask mk ci-local-leptos` (not `npm run build && npm run lint`). Homes: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Body below retains React-era paths as ship history.
+> **Live stack (T-145 / T-151 / T-159 / T-171):** Leptos + yrs + wgpu at `apps/website/frontend/` — not Deck.gl / React / Vite / Go middleware. Verify commands: `cargo xtask mk ci-local-leptos` (not `npm run build && npm run lint`). Homes: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md). Body below retains React-era paths as ship history.
 
 > **Phase completion log (T-033–T-040):** PRE-3.5 ✅ DOC-0 ✅ 3.5 ✅ 7b ✅ 7a ✅ 9 ✅.
 > **North star:** **1M–10M editable entities** via **T-059..T-067**. **T-067 shipped.** Next: **T-068+** — [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md).
@@ -119,7 +121,7 @@ Visual target: **Arma 3 Eden Editor** layout + interactions, **modernized with A
 | `frontend/src/pages/missions.tsx` | Mission library (entry to editor) + **CreateMissionDialog** launch (T-048) |
 | `frontend/src/features/mission-creator/CreateMissionDialog.tsx` | Create-mission dialog on `/missions` (T-048; replaced the `/missions/create` wizard) |
 
-**STEP 0:** Done — this file is in the repo. Shell phases PRE-3.5–9 are DONE (T-033–T-040); new sessions start at **[`ROADMAP.md`](ROADMAP.md)** and execute only OPEN items.
+**STEP 0:** Done — this file is in the repo. Shell phases PRE-3.5–9 are DONE (T-033–T-040); new sessions start at **[`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)** and execute only OPEN items.
 
 ---
 
@@ -127,7 +129,7 @@ Visual target: **Arma 3 Eden Editor** layout + interactions, **modernized with A
 
 Every Mission Creator-related folder and its role. **Execution authority remains this file**; other docs provide engineering depth or historical context.
 
-### `docs/specs/Mission_Creator_Architecture/` — engineering
+### `documentation_v2/website/frontend/apps/editor/` — engineering
 
 | File | Role |
 |------|------|
@@ -176,7 +178,7 @@ Key shell files: `MissionCreatorPage.tsx`, `layout/{TopCommandStrip,BottomToolbe
 | Path | Role |
 |------|------|
 | `CLAUDE.md` (T-029–T-032) | Shipped status snapshot — update in DOC-0 |
-| `docs/website/frontend/pages/mission-library.md` | Create-mission dialog spec (T-048; superseded the `/missions/create` wizard) |
+| `documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md` | Create-mission dialog spec (T-048; superseded the `/missions/create` wizard) |
 | `frontend/src/stitch-exports/mission_creator_setup_wizard/` | Wizard HTML mock (archived) |
 
 ---
@@ -299,11 +301,11 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 Owner locked **N1–N12** and closed every gap in `.ai/artifacts/t090_program_audit_2026-06-30.md`. Locks:
 LOD in **Deck orthographic zoom −6…+6** (never tile zoom 0–5; canonical
-[`t090_render_lod_contract.md`](t090_render_lod_contract.md)); **forests first-class** (regions —
-[`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md)); world objects are
+[`t090_render_lod_contract.md`](/documentation_v2/tickets/specs/t090_render_lod_contract.md)); **forests first-class** (regions —
+[`t090_8_forest_vegetation_regions.md`](/documentation_v2/tickets/specs/t090_8_forest_vegetation_regions.md)); world objects are
 **read-only context** — hover/inspect/filter/legend ship in
-[`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md), **no Deck GPU pick**, a
-**separate** worker rbush ([`t090_world_objects_worker.md`](t090_world_objects_worker.md)); **OBB**
+[`t090_9_world_object_interaction.md`](/documentation_v2/tickets/specs/t090_9_world_object_interaction.md), **no Deck GPU pick**, a
+**separate** worker rbush ([`t090_world_objects_worker.md`](/documentation_v2/tickets/specs/t090_world_objects_worker.md)); **OBB**
 building geometry (footprint rings only if the T-090.3.0 spike proves export); basemap view + world-layer
 toggles in `localStorage`, grid/hillshade in `meta.environment`; **synthesized Map** fallback (N9);
 per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** (shipped), **T-090.3.0**
@@ -314,7 +316,7 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 | **Visual target** | **Arma 3 Eden Editor** layout + interactions, **modernized with Aegis glass** (macOS). Not HTML mockups. |
 | **Platform chrome** | **Hide** platform `Sidebar` + `TopNav` on `/missions/:id/edit` — true fullscreen Eden-style editor (dedicated layout escape in `AppLayout` or editor wrapper). |
 | **Left sidebar** | **Editor Layers only** (T-177 / T-071.0). No duplicate ORBAT tree. Stub sections for Waypoints/Zones/Logic until **T-079+**. |
-| **ORBAT Manager** (T-180) | Stitch near-fullscreen modal from **Top Command Strip** — live side/squad/slot authoring, templates (T-153 Apply/Save), vehicles, Open Arsenal. **No Standardization UI** (L8 deferred). Hub: [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md). |
+| **ORBAT Manager** (T-180) | Stitch near-fullscreen modal from **Top Command Strip** — live side/squad/slot authoring, templates (T-153 Apply/Save), vehicles, Open Arsenal. **No Standardization UI** (L8 deferred). Hub: [`t180_orbat_eden_program.md`](/documentation_v2/tickets/specs/t180_orbat_eden_program.md). |
 | **Right palette** | **Docked flush right** — mirror left sidebar (~`w-80` / 320px), full height below top bar, no floating gap. Map sits between two glass panels. |
 | **Inspector** | Asset Palette always visible. **Attributes modal on double-click only** (no right-panel inspector swap). |
 | **Map pan** | **Middle-mouse or right-drag** = pan/zoom. **Left-drag on empty map** = marquee box-select. |
@@ -332,34 +334,34 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 | **Copy/paste at cursor** (T-056) | **Ctrl/Cmd+C** snapshots the slot selection to an in-editor clipboard (`ClipboardSlot[]` ref on `MissionCreatorPage`); **Ctrl/Cmd+V** pastes via new batched `pasteSlots(md, clip, { anchorAt, layerId })` in `state/ydoc.ts` — one transact (one undo step) that translates the clip so its **centroid lands at the map cursor** (mouse off-map → fixed **+20m/+20m** nudge), re-attaches each copy to its **source squad** (or `ensureDefaultSquad`), files into the **active layer** (or `ensureDefaultLayer`), clamps x/y to terrain bounds, and returns the new ids → selection. Two keydown branches behind the existing INPUT/SELECT/TEXTAREA/contentEditable guard (native text copy/paste preserved); cursor read via `cursorRef` (no keydown re-bind on mouse move). **Scope locked:** copy+paste, slots only — Cut (Ctrl+X) and paste-at-original (Ctrl+Shift+V) deferred. Four files; no backend/`useSelectTool`/compiler change. Closes gap_analysis **T-056** / ACTION-COPY-001 / ACTION-PASTE-001. |
 | **Asset browser search** (T-055) | The **Asset Browser** (Factions tab in the right palette) gets a search field over a recursive `filterCatalog(ASSET_CATALOG, q)` — **case-insensitive label substring**; a folder is kept on a self-match (→ full subtree, so "nato" shows all NATO) or on any descendant match (→ filtered children); retained folders force-`defaultExpanded`. The `TreeView` is **keyed on the query** so its mount-time `collectExpanded` re-runs and reveals matches; empty result → "No assets match"; X/Esc clears; filtered leaves still drag-to-place. Search is **scoped to AssetBrowser** (only live catalog) — stub tabs unchanged; no `class:` prefix (**T-084** deferred). One real file; no `TreeView`/`ASSET_CATALOG`/store change. Closes gap_analysis **T-055** / RIGHT-SEARCH-001. |
 | **Attributes entry points** (T-054, pick path **T-063**) | **Map:** native `onDoubleClick` + `slotSpatialIndex.pickNearest` → `onEntityActivate`. **Editor Layers:** slot row dbl-click via `TreeView.onActivate`. **ORBAT tree (left):** same until **T-071.0** removes it; then ORBAT slot edit via **ORBAT Manager modal**. Multi-select suppression unchanged. |
-| **Map performance** (T-057) | The toolbelt cursor read-out is **transient `useMapStore.cursor`** (set rAF-throttled), not page state — so a pointer move re-renders only `BottomToolbelt`, never the Outliner trees. Cursor coords come from **unprojecting the mouse ourselves** (`view.makeViewport(...).unproject` on the container `onPointerMove`), **not** Deck's `onHover` — `onHover` is removed and `getCursor` is constant `'crosshair'`, so Deck does **no per-move hover pick**. Picking is kept only for click / dbl-click / marquee / drag-start. Pan is **rAF-coalesced** in `useSelectTool` (one `setViewState`/frame, flushed on pointer-up). `React.memo` on `TacticalMap`, `LeftSidebar`, `AssetPalette`, `TopCommandStrip`, `BottomToolbelt`, `AttributesModal`. **Accepted UX trade:** the pointer no longer changes to a "pointer" glyph over an icon (no hover pick). No schema/compiler/backend change; all interactions unchanged. Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md). |
+| **Map performance** (T-057) | The toolbelt cursor read-out is **transient `useMapStore.cursor`** (set rAF-throttled), not page state — so a pointer move re-renders only `BottomToolbelt`, never the Outliner trees. Cursor coords come from **unprojecting the mouse ourselves** (`view.makeViewport(...).unproject` on the container `onPointerMove`), **not** Deck's `onHover` — `onHover` is removed and `getCursor` is constant `'crosshair'`, so Deck does **no per-move hover pick**. Picking is kept only for click / dbl-click / marquee / drag-start. Pan is **rAF-coalesced** in `useSelectTool` (one `setViewState`/frame, flushed on pointer-up). `React.memo` on `TacticalMap`, `LeftSidebar`, `AssetPalette`, `TopCommandStrip`, `BottomToolbelt`, `AttributesModal`. **Accepted UX trade:** the pointer no longer changes to a "pointer" glyph over an icon (no hover pick). No schema/compiler/backend change; all interactions unchanged. Spec: [`t057_map_performance_hotfix.md`](/documentation_v2/tickets/specs/t057_map_performance_hotfix.md). |
 | **Entity count readout** (T-058) | Bottom toolbelt shows **OBJ** = `slotCount` from store (T-062; was memoized `selectSlotCount`) + **SEL** = `selection.ids.length` when `kind==='slot'` else 0, in a mono `tabular-nums` block right of the X/Y/Z coords. Both subscribe **inside the already-memoized `BottomToolbelt`** so they track add/remove/paste/delete/selection but **never** a cursor move (T-057 channel untouched). Slots only — vehicles/markers join in **T-069**/**T-070**; plain integers (no commas) so 100000+ doesn't break layout. Closes `BOTTOM-OBJCOUNT-001`. |
 | **Mission version API body limit** (T-060 — **code shipped**) | **Was:** global 1 MB rejected 360k payloads. **Fix (T-060 code):** `internal/middleware/bodylimit.go` — `GlobalBodyLimit` skips versions POST; route `BodyLimit(256 MB)`; **413** in `CreateVersion`. **Upload @ scale (T-060.1):** version POST `timeout: 600_000` + `maxBody/maxContentLength: Infinity`; Vite `/api` proxy `timeout`/`proxyTimeout: 600_000`; chunked `editor.slots` assembly; `!resp` catch surfaces axios `code`/`message`. |
-| **Load gate + save progress** (T-060 **shipped** `b1fd25a`) | **Load:** four-phase overlay; partial pass @ 360k. **Save:** @ ~367k / ~142 MB → **201** (browser + curl 140 MB). Mid-upload reset fixed — 1 MB global cap on stale API; `isMissionVersionPOST` + production-like IT. Spec: [`t060_1_scale_load_save_completion.md`](t060_1_scale_load_save_completion.md). |
+| **Load gate + save progress** (T-060 **shipped** `b1fd25a`) | **Load:** four-phase overlay; partial pass @ 360k. **Save:** @ ~367k / ~142 MB → **201** (browser + curl 140 MB). Mid-upload reset fixed — 1 MB global cap on stale API; `isMissionVersionPOST` + production-like IT. Spec: [`t060_1_scale_load_save_completion.md`](/documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md). |
 | **Save mid-upload @ 135 MB** (T-060.1.4) | **Proven root cause:** stale `go run` API let 1 MB `GlobalBodyLimit` wrap the version POST. **Fix shipped:** `isMissionVersionPOST`, `setupITProd`, `bodylimit_test.go`, `phaseAtFailure`, `cargo xtask repro mission-upload`. **Ops:** restart `cargo xtask mk rust-api` after middleware changes. |
-| **Dual-layer scale model** (2026-06) | **Mission layer** (ORBAT slots, markers — Y.Doc, **T-061..T-062**) = authored entities. **Terrain layer** (millions of map props) → **T-110** binary base + sparse deltas; **not** a Y.Doc rewrite. External Base+Delta adopted for terrain only. Spec: [`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md). |
-| **Bulk paste at scale** (T-059) | `pasteSlots` batch O(n) append; post-paste selection cap (`BULK_SELECT_CAP = 500` → `none`). T-059 outliner leaf cap **superseded by T-064** virtualization. **Validated:** 6k paste loops smooth; **360k @ 100+ fps** pan. Spec: [`t059_bulk_paste_operations.md`](t059_bulk_paste_operations.md). |
-| **Drag-move @ 360k** (T-061 — **shipped, good enough**) | **T-061.0:** dual IconLayer + split drag state + rAF delta → ~60 fps sustained. **T-061.0.1:** `slotIconCache` O(k) + bindings slot fast path → pickup/release materially improved (minor release frame possible — deferred). Mega opts → [ROADMAP.md](ROADMAP.md) §Deferred mega optimizations. Spec: [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md). |
-| **Incremental bindings @ 360k** (T-062 — **shipped**) | **T-062.0:** `classifyTransaction` → O(k) Zustand patches (drop, delete, meta, editor-layers). **T-062.0.1:** batched `removeEntities`, `slotCount`/`slotsRevision`, `REMOVE_PATCH_CAP` 10k. Verified delete 4k + undo 6k @ ~360k. Spec: [`t062_incremental_bindings.md`](t062_incremental_bindings.md). |
-| **Chunked IDB slot restore** (T-062.1 — **shipped**) | v2 `idb` persistence; determinate restoring @ ~360k. Spec: [`t062_1_idb_streaming_load.md`](t062_1_idb_streaming_load.md). |
-| **Save orbat dedup** (T-062.1.1 — **shipped**) | Save omits duplicate `orbat[]`; `services.ParseOrbatTemplate` derives from `editor` for Event attach. Export keeps full orbat. Spec: [`t062_1_1_batch_save.md`](t062_1_1_batch_save.md). |
-| **Spatial index** (T-063 — **shipped**) | rbush R-tree for click/marquee pick @ ~367k; `slot-icons` `pickable: false`. Spec: [`t063_spatial_index.md`](t063_spatial_index.md). |
-| **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). |
-| **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
-| **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
-| **T-091.0 Everon DEM** (2026-06-29, **shipped** @ `6d96339`) | **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → 16-bit PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** **dead** on packed Eden. Tiles **deferred** (T-090.1 / T-121). Verify: `cargo xtask ci verify-terrain-strict` PASS — 11 anchors, maxDeltaM 0.204 m. Spec: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md). |
-| **T-091.1 handoff** (2026-06-29) | Claude Code **frontend-only** slice. Copy prompt: [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../../.ai/artifacts/t091_1_claude_code_handoff.md). **Do not** reopen T-091.0 (plugin, DEM re-export, anchors). Port [`dem-sample.mjs`](../../../contracts_v2/scripts/lib/dem-sample.mjs). |
-| **T-091.2 shipped** (2026-06-29) | **`dde589e`** (tag **T-091.2**). `terrainZ` in `ydoc` (add/paste/move + Attributes X/Y re-sample); `useDemLayer` hillshade (BitmapLayer ≤1024 px); `useDemVersion` async CUR refresh; Mission Settings `showGrid`/`showHillshade`; toolbelt X/Y/Z @ 3 dp; grid over hillshade with boosted line alpha. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md). |
-| **T-091.2 handoff** (2026-06-29) | Historical — [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../../.ai/artifacts/t091_2_claude_code_handoff.md). |
-| **T-091.1 shipped** (2026-06-29) | **`2c56c2e`** (tag **T-091.1**). `tactical-map/dem/*` — manifest fetch, pngjs decode → Float32 meters cache, `loadDemForTerrain` / `sampleElevation` / `isDemReady` / `isDemDegraded`; vitest 15/15 (11 anchors ±0.01 m). Vite: `pngjs→browser` alias + `buffer` polyfill. Wired from `TacticalMap`; **consumed by T-091.2** @ `dde589e`. Spec: [`t091_1_dem_loader.md`](t091_1_dem_loader.md). |
-| **Map-verify program order** (2026-07-04) | **Single lane:** finish **T-090** on `main`. **T-144.1 shipped** @ `b1949182` — pivot export+vectors. **Active:** **T-090.3** export → **T-090.5** vectors. **Parked:** T-090.1.2.9, T-090.1.2.3. **T-071/T-068 deferred** until T-090 done. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
-| **T-144.1 A3 map study** (2026-07-04, **shipped** @ `b1949182`) | Read-only Arma3_2012 Arcade editor map architecture. **No basemap tiles** — live GLandscape; Sat↔Map crossfade; vectors on top. Pivot: **T-090.3** export promoted; **T-090.1.2.9** deferred (roads → **T-090.5**); **T-090.5** density-gate LOD; **T-143** down-ranked. Report: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md). |
-| **T-090.1.1.1 land-cover** (2026-07-04, **shipped** @ `018ea70d`) | L1 SAP masks + pre-upscale tint (`build-landcover-mask.mjs`); TGA monochrome finding logged. **`cargo xtask ci map-cartographic-everon`** ~2 min. Spec: [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md). |
+| **Dual-layer scale model** (2026-06) | **Mission layer** (ORBAT slots, markers — Y.Doc, **T-061..T-062**) = authored entities. **Terrain layer** (millions of map props) → **T-110** binary base + sparse deltas; **not** a Y.Doc rewrite. External Base+Delta adopted for terrain only. Spec: [`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md). |
+| **Bulk paste at scale** (T-059) | `pasteSlots` batch O(n) append; post-paste selection cap (`BULK_SELECT_CAP = 500` → `none`). T-059 outliner leaf cap **superseded by T-064** virtualization. **Validated:** 6k paste loops smooth; **360k @ 100+ fps** pan. Spec: [`t059_bulk_paste_operations.md`](/documentation_v2/tickets/specs/t059_bulk_paste_operations.md). |
+| **Drag-move @ 360k** (T-061 — **shipped, good enough**) | **T-061.0:** dual IconLayer + split drag state + rAF delta → ~60 fps sustained. **T-061.0.1:** `slotIconCache` O(k) + bindings slot fast path → pickup/release materially improved (minor release frame possible — deferred). Mega opts → [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Deferred mega optimizations. Spec: [`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md). |
+| **Incremental bindings @ 360k** (T-062 — **shipped**) | **T-062.0:** `classifyTransaction` → O(k) Zustand patches (drop, delete, meta, editor-layers). **T-062.0.1:** batched `removeEntities`, `slotCount`/`slotsRevision`, `REMOVE_PATCH_CAP` 10k. Verified delete 4k + undo 6k @ ~360k. Spec: [`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md). |
+| **Chunked IDB slot restore** (T-062.1 — **shipped**) | v2 `idb` persistence; determinate restoring @ ~360k. Spec: [`t062_1_idb_streaming_load.md`](/documentation_v2/tickets/specs/t062_1_idb_streaming_load.md). |
+| **Save orbat dedup** (T-062.1.1 — **shipped**) | Save omits duplicate `orbat[]`; `services.ParseOrbatTemplate` derives from `editor` for Event attach. Export keeps full orbat. Spec: [`t062_1_1_batch_save.md`](/documentation_v2/tickets/specs/t062_1_1_batch_save.md). |
+| **Spatial index** (T-063 — **shipped**) | rbush R-tree for click/marquee pick @ ~367k; `slot-icons` `pickable: false`. Spec: [`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md). |
+| **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](/documentation_v2/tickets/specs/t064_virtualized_outliner.md). |
+| **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md). |
+| **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md). |
+| **T-091.0 Everon DEM** (2026-06-29, **shipped** @ `6d96339`) | **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → 16-bit PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** **dead** on packed Eden. Tiles **deferred** (T-090.1 / T-121). Verify: `cargo xtask ci verify-terrain-strict` PASS — 11 anchors, maxDeltaM 0.204 m. Spec: [`t091_0_dem_tile_export.md`](/documentation_v2/tickets/specs/t091_0_dem_tile_export.md). |
+| **T-091.1 handoff** (2026-06-29) | Claude Code **frontend-only** slice. Copy prompt: [`.ai/artifacts/t091_1_claude_code_handoff.md`](/.ai/artifacts/t091_1_claude_code_handoff.md). **Do not** reopen T-091.0 (plugin, DEM re-export, anchors). Port [`dem-sample.mjs`](../../../contracts_v2/scripts/lib/dem-sample.mjs). |
+| **T-091.2 shipped** (2026-06-29) | **`dde589e`** (tag **T-091.2**). `terrainZ` in `ydoc` (add/paste/move + Attributes X/Y re-sample); `useDemLayer` hillshade (BitmapLayer ≤1024 px); `useDemVersion` async CUR refresh; Mission Settings `showGrid`/`showHillshade`; toolbelt X/Y/Z @ 3 dp; grid over hillshade with boosted line alpha. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](/documentation_v2/tickets/specs/t091_2_z_axis_editor.md). |
+| **T-091.2 handoff** (2026-06-29) | Historical — [`.ai/artifacts/t091_2_claude_code_handoff.md`](/.ai/artifacts/t091_2_claude_code_handoff.md). |
+| **T-091.1 shipped** (2026-06-29) | **`2c56c2e`** (tag **T-091.1**). `tactical-map/dem/*` — manifest fetch, pngjs decode → Float32 meters cache, `loadDemForTerrain` / `sampleElevation` / `isDemReady` / `isDemDegraded`; vitest 15/15 (11 anchors ±0.01 m). Vite: `pngjs→browser` alias + `buffer` polyfill. Wired from `TacticalMap`; **consumed by T-091.2** @ `dde589e`. Spec: [`t091_1_dem_loader.md`](/documentation_v2/tickets/specs/t091_1_dem_loader.md). |
+| **Map-verify program order** (2026-07-04) | **Single lane:** finish **T-090** on `main`. **T-144.1 shipped** @ `b1949182` — pivot export+vectors. **Active:** **T-090.3** export → **T-090.5** vectors. **Parked:** T-090.1.2.9, T-090.1.2.3. **T-071/T-068 deferred** until T-090 done. Hub: [`t090_091_map_terrain_program.md`](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md). |
+| **T-144.1 A3 map study** (2026-07-04, **shipped** @ `b1949182`) | Read-only Arma3_2012 Arcade editor map architecture. **No basemap tiles** — live GLandscape; Sat↔Map crossfade; vectors on top. Pivot: **T-090.3** export promoted; **T-090.1.2.9** deferred (roads → **T-090.5**); **T-090.5** density-gate LOD; **T-143** down-ranked. Report: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](/.ai/artifacts/t144_arma3_map_architecture_report.md). |
+| **T-090.1.1.1 land-cover** (2026-07-04, **shipped** @ `018ea70d`) | L1 SAP masks + pre-upscale tint (`build-landcover-mask.mjs`); TGA monochrome finding logged. **`cargo xtask ci map-cartographic-everon`** ~2 min. Spec: [`t090_1_1_1_map_landcover_compose.md`](/documentation_v2/tickets/specs/t090_1_1_1_map_landcover_compose.md). |
 | **T-092 spawn + compile** (2026-07-04, **shipped** @ `a73224f2`) | **T-092.1** @ `4eefc169`: schema 1.2 optional `y`, spawn policy + logs. **T-092.2**: flatten TS/Go, `GET /api/v1/missions/:id/compiled`, mod loader v1 + `X-Service-Token`. wb_play + REST E2E **PASS** @ `452ce501`. **Unblocks T-071.** OBS-1 roster deploy → T-068.13/T-071; OBS-2 `TBD_MissionList` legacy path. Verify logs in `.ai/artifacts/t092_*`. |
-| **T-090.1.1 Map cartographic view** (2026-07-03, **shipped** @ `6e06e679`) | G1-A base + water + `.topo` roads; **`cargo xtask ci map-cartographic-everon`**. Spec: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md). |
+| **T-090.1.1 Map cartographic view** (2026-07-03, **shipped** @ `6e06e679`) | G1-A base + water + `.topo` roads; **`cargo xtask ci map-cartographic-everon`**. Spec: [`t090_1_1_map_cartographic_view.md`](/documentation_v2/tickets/specs/t090_1_1_map_cartographic_view.md). |
 | **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2:** **T-068.11+** (ORBAT authoring no longer blocking — **T-180** complete). |
 | **Web ORBAT status** (2026-06) | Historical: Partial only / T-071 deferred. **Superseded 2026-07-19 by T-180 row below.** |
-| **T-180 ORBAT + Eden** (2026-07-19, **COMPLETE** @ `cba837b3`) | Foundation → tint/lines → Eden chips → Stitch ORBAT Manager → templates/vehicles → Open Arsenal + `derive_orbat` loadout. Absorbs T-071.1+ / T-074 / T-147. Coherency **T-180.10** · `cargo xtask verify t180`. Hub: [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md). Residual: manuals M-* · L8 Standardization deferred · Event polish **T-118**. |
+| **T-180 ORBAT + Eden** (2026-07-19, **COMPLETE** @ `cba837b3`) | Foundation → tint/lines → Eden chips → Stitch ORBAT Manager → templates/vehicles → Open Arsenal + `derive_orbat` loadout. Absorbs T-071.1+ / T-074 / T-147. Coherency **T-180.10** · `cargo xtask verify t180`. Hub: [`t180_orbat_eden_program.md`](/documentation_v2/tickets/specs/t180_orbat_eden_program.md). Residual: manuals M-* · L8 Standardization deferred · Event polish **T-118**. |
 | **Phase order** | … Map gate cleared (T-091/T-092). **ORBAT authoring done (T-180).** Next: **T-068.11+** loadout Phase 2 → **T-068.13** LOBBY picker. … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049 (**T-089** deferred); Save Version still compiles payload only. |
@@ -369,7 +371,7 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-180 ORBAT COMPLETE**; active loadout lane **T-068**. Then this file, then `engineering_plan.md` §0–§2.
+1. **Read first:** [`CLAUDE.md`](/CLAUDE.md) §Status — **T-180 ORBAT COMPLETE**; active loadout lane **T-068**. Then this file, then `engineering_plan.md` §0–§2.
 2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). Do **not** reopen T-071.1+ / T-074 / T-147 — use T-180.
 3. **Verify gate** after every phase:
    ```bash
@@ -389,7 +391,7 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ### ACTIVE SLICE — Map Engine v2 implementation (2026-07-05)
 
-Plan shipped @ `a222a146` · [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md)
+Plan shipped @ `a222a146` · [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](/.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md)
 
 | Slice | Status | Notes |
 |-------|--------|-------|
@@ -402,13 +404,13 @@ Plan shipped @ `a222a146` · [`.ai/artifacts/t090_10_map_engine_v2_implementatio
 | **T-090.5.5** | **active** | Tree/veg/prop IconLayer glyphs |
 | **T-090.10.1** | shipped @ `a222a146` | Plan artifact only |
 
-LOD v2 locked in [`t090_render_lod_contract.md`](t090_render_lod_contract.md) — world cluster purged.
+LOD v2 locked in [`t090_render_lod_contract.md`](/documentation_v2/tickets/specs/t090_render_lod_contract.md) — world cluster purged.
 
 ---
 
 ### COMPLETE — T-090.10.1 Map Engine v2 plan (2026-07-05)
 
-Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
+Hub: [`t144_arma3_map_architecture_study.md`](/documentation_v2/tickets/specs/t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](/.ai/artifacts/t144_arma3_map_architecture_report.md)
 
 | Slice | Status | Shipped |
 |-------|--------|---------|
@@ -427,7 +429,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.
 
 ### ACTIVE SLICE — T-091 Map & terrain program (2026-06-29) — **complete**
 
-**T-091 program complete** @ `dde589e`. Map basemap work continues under **T-090** — see §ACTIVE SLICE — T-090 / T-092 above. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
+**T-091 program complete** @ `dde589e`. Map basemap work continues under **T-090** — see §ACTIVE SLICE — T-090 / T-092 above. Hub: [`t090_091_map_terrain_program.md`](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md).
 
 | Slice | Status | Shipped |
 |-------|--------|---------|
@@ -437,7 +439,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.
 
 **Locked out of scope (Phase 1):** `registry.worker.ts`, smart Forge, compat matrix, compiler loadout export — see Phase 2 slices. Vehicles/Markers tabs (**T-069**/**T-070**).
 
-**T-067 shipped** — [`t067_spatial_chunks.md`](t067_spatial_chunks.md): `slot-add-bulk` paste patch; dormant chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()`).
+**T-067 shipped** — [`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md): `slot-add-bulk` paste patch; dormant chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()`).
 
 **Deferred (idea):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension` viewport cull — [`docs/TICKET_BRAINSTORM.md`](../../TICKET_BRAINSTORM.md#scale).
 
@@ -446,7 +448,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.
 ## Execution checklist (historical — shell phases complete)
 
 ### STEP 0 — Publish plan ✓
-- [x] `docs/specs/Mission_Creator_Architecture/agent_execution.md` is in the repo
+- [x] `documentation_v2/website/frontend/apps/editor/decisions.md` is in the repo
 
 ### PHASE PRE-3.5 — Land tree wiring (**historical — done T-033**)
 
@@ -558,7 +560,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.
 ### PHASE 9 — Compiler + persistence
 **Goal:** Export `json_payload` and autosave to backend.
 
-**JSON contract (Ultra Plan §8 — non-negotiable):** Output must be a **superset** containing existing `orbat[]` shape for `parseOrbatTemplate` in `internal/handlers/events.go`, plus `map`, `environment`, `loadouts`, `objectives`, `vehicles`, `markers`, `schemaVersion` (int). This version-POST payload is validated server-side against [`mission-editor-payload.schema.json`](../../../contracts_v2/definitions/mission-editor-payload.schema.json) (T-123.5). Separate camelCase export via `exportSchema.ts` for the Arma mod — its version field is `exportFormatVersion`, **not** `schemaVersion` (T-123.1).
+**JSON contract (Ultra Plan §8 — non-negotiable):** Output must be a **superset** containing existing `orbat[]` shape for `parseOrbatTemplate` in `internal/handlers/events.go`, plus `map`, `environment`, `loadouts`, `objectives`, `vehicles`, `markers`, `schemaVersion` (int). This version-POST payload is validated server-side against [`mission-editor-payload.schema.json`](/contracts_v2/definitions/mission-editor-payload.schema.json) (T-123.5). Separate camelCase export via `exportSchema.ts` for the Arma mod — its version field is `exportFormatVersion`, **not** `schemaVersion` (T-123.1).
 
 **API (already exists):** `POST /api/v1/missions/:id/versions` (draft autosave / Save Version), `GET .../versions/:vid` (hydrate). On IndexedDB vs API conflict → **user prompt**.
 
@@ -628,7 +630,7 @@ Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.
 
 1. Start a new Agent session in this repo.
 2. Paste the [one-line prompt](#one-line-prompt-copy-this) from the top of this file.
-3. Shell phases PRE-3.5–9 are DONE (T-033–T-040) — open [`ROADMAP.md`](ROADMAP.md) and execute only OPEN items.
+3. Shell phases PRE-3.5–9 are DONE (T-033–T-040) — open [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) and execute only OPEN items.
 4. To resume a specific shell phase for reference: `Continue agent_execution.md from PHASE 7b`.
 5. To commit after a phase passes verification: `commit with tag T-033`.
 

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Eden AI world object schema (exact field contract)
 
 **Status:** Spec ready — **authority for AI-in-Editor integration**  

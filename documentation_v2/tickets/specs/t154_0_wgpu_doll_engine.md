@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-154.0 — Rust/wgpu 3D arsenal doll (DollEngine)
 
 **Ticket:** T-154 · **Slice:** T-154.0 · **Status:** shipped ·

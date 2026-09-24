@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-828 — marker captions recompute per frame like icons
 
 Ticket: .ai/tickets/T-828.toml · Plan: docs/plans/t-828_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

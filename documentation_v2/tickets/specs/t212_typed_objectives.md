@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-212 — typed per-side objectives with attributes
 
 Ticket: .ai/tickets/T-212.toml · Plan: docs/plans/t-212_plan.md · Schema half shipped in T-706.

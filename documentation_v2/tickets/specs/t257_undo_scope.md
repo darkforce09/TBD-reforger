@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-257 — Undo scope misses loadouts, items, objectives, markers
 
 Owner: command center. store.rs expand_scope (:372-375) covers four roots + vehicles; hydrate clears four more that

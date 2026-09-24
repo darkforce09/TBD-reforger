@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-917 — Ticket schema v2: provenance, scope, decomposition
 
 Design contract, agreed with the operator 2026-08-14 after a live session on the

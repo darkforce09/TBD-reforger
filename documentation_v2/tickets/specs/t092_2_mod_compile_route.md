@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-092.2 — Mod compile flatten + /compiled API
 
 **Ticket:** T-092 · **Slice:** T-092.2  
@@ -27,7 +29,7 @@ Emit mod-native mission document 1.1/1.2 (`slots[]` with deterministic ids, kit 
 
 | Gap | Today |
 |-----|-------|
-| Compile | [`compile.ts`](../../../apps/website/frontend/src/features/mission-creator/compiler/compile.ts) → `editor.slots` only |
+| Compile | [`compile.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/compiler/compile.ts) → `editor.slots` only |
 | API | Go **`/api/v1/missions/:id/export`** wrapper only |
 | Mod fetch | `{url}/api/missions/{id}/compiled` — **wrong path** |
 | Slot id | UUID vs `blufor:Alpha:SL:0` |
@@ -37,12 +39,12 @@ Emit mod-native mission document 1.1/1.2 (`slots[]` with deterministic ids, kit 
 
 ## Goal
 
-1. **`flattenEditorToModDocument(snapshot)`** → full document matching [`bridgehead-at-levie.json`](../../../packages/tbd-schema/golden-missions/bridgehead-at-levie.json).
-2. Deterministic slot id: `{faction}:{groupCallsign}:{role}:{index}` (align [`flatten-orbat-slots.mjs`](../../../packages/tbd-schema/scripts/flatten-orbat-slots.mjs)).
+1. **`flattenEditorToModDocument(snapshot)`** → full document matching [`bridgehead-at-levie.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/golden-missions/bridgehead-at-levie.json).
+2. Deterministic slot id: `{faction}:{groupCallsign}:{role}:{index}` (align [`flatten-orbat-slots.mjs`](https://github.com/darkforce09/TBD-reforger/blob/c39f8baccee19ebc690b008524711f41aa54fd00/packages/tbd-schema/scripts/flatten-orbat-slots.mjs)).
 3. `assetId` → `kit:` alias via registry mapping table.
 4. `orbat` **map** builder from editor factions/squads.
 5. Go: `GET /api/v1/missions/:id/compiled` — `RequireServiceToken` — body = mod document (**not** `buildMissionDoc` wrapper).
-6. Mod: fix [`TBD_MissionLoader.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c) → `/api/v1/missions/{id}/compiled`.
+6. Mod: fix [`TBD_MissionLoader.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c) → `/api/v1/missions/{id}/compiled`.
 7. DEV_RUNBOOK curl example.
 
 ---

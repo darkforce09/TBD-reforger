@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-302 — Prove T-182 weapon equip on a live body
 
 Owner: command center. Operator authorization 2026-09-04: "agents may edit the Enfusion mod scripts; gate =

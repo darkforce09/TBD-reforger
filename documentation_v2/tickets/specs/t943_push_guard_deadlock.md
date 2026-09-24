@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-943 — `platform wave push` deadlocks on large LFS ranges
 
 Owner: command center. Measured 2026-09-04: `git check-attr --cached -z --stdin filter` (child of

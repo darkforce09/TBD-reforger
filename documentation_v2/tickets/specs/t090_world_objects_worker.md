@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — World objects worker (chunk parse + spatial index off the main thread)
 
 **Status:** **shipped** @ `155651b9` (T-090.5.3) — pick hover UI ships **T-090.9**

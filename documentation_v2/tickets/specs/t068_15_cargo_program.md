@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-068.15 — Arsenal cargo capacity + default contents program
 
 **Status:** **COMPLETE** (through T-068.12) · Fable 5 @ 2026-07-24  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) ·
-[`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
+[`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)  
 **Spike:** [`.ai/artifacts/t068_cargo_capacity_spike.md`](../../../.ai/artifacts/t068_cargo_capacity_spike.md)
 
 ---

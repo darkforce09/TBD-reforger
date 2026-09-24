@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-653 — Preserve the three headless editor-screenshot findings
 
 Owner: command center. Docs ticket (executor cursor-docs). Source: migration_legacy note on the ticket.

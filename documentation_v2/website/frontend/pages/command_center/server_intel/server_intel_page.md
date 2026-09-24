@@ -1,3 +1,5 @@
+**Status:** live
+
 # Server Intel
 
 ## Status

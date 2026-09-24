@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-066 — Worker offload: compile + version blob assembly
 
 **Status:** **Shipped** — T-066 + **T-066.1** hotfix; FE build/lint clean; manual @ ~367k: Save Version **201** (user verified 2026-06-25).  
 **Git tag:** **T-066** (this commit)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [engineering_plan.md](engineering_plan.md) §Phase 9 · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) · [t065_cluster_lod.md](t065_cluster_lod.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [engineering_plan.md](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §Phase 9 · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) · [t065_cluster_lod.md](t065_cluster_lod.md)
 
 **Prerequisites:** T-065 shipped (`845bfb2`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 
@@ -16,7 +18,7 @@
 
 ## Problem (pre-T-066)
 
-T-060/T-060.1 ran compile + blob assembly on the **main thread** with chunked yields ([`compile.ts`](../../../apps/website/frontend/src/features/mission-creator/compiler/compile.ts)). Save @ ~367k worked (~142 MB → 201) but compile/prepare competed with Deck/React. Stretch: ≤10 s @ **1M** needs worker offload ([`engineering_plan.md`](engineering_plan.md) Phase 9).
+T-060/T-060.1 ran compile + blob assembly on the **main thread** with chunked yields ([`compile.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/compiler/compile.ts)). Save @ ~367k worked (~142 MB → 201) but compile/prepare competed with Deck/React. Stretch: ≤10 s @ **1M** needs worker offload ([`engineering_plan.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md) Phase 9).
 
 ---
 

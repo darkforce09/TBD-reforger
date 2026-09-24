@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10.4 — Loadout document v2 (Reforger-shaped)
 
 **Ticket:** T-068 · **Slice:** T-068.10.4 · **Status:** queued (starts after the T-068.10.3

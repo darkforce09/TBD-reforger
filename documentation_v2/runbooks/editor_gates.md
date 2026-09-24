@@ -1,3 +1,5 @@
+**Status:** live
+
 # Editor gate runbook (`cargo xtask mk leptos-gates`)
 
 How to run the editor CDP smokes + frozen V-suite, the environment they need, and how to debug the

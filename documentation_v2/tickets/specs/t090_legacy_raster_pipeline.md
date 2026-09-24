@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Legacy raster pipeline (frozen / cancelled)
 
 **Status:** **retired** — do not schedule new work here  

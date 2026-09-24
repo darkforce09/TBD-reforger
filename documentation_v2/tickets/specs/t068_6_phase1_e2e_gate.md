@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.6 — Phase 1 E2E human gate
 
 **Ticket:** T-068 · **Slice:** T-068.6  
@@ -69,7 +71,7 @@ Dev-login: `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 | E8 | Arsenal tab | **Stub gone** — 4 **enabled** dropdowns + **enabled** download (not “Loadout Forge soon”) | Screenshot showing dropdowns + no stub copy |
 | E9 | Download | `loadout-export.json` passes jq gate from T-068.4 spec | jq command outputs |
 | E10 | Profile copy | `TBD_LoadoutTest.json` at documented profile path | `ls -la` + `sha256sum` |
-| E11 | Mod NPC equip | Workbench `wb_play`: **non-player test spawn** @ ~6400 receives kit from profile JSON — **T-068.5.1** worn-verify logs + **screenshot** (M60, BDU jacket, PASGT vest, helmet). **Not** the human player body. See [`TBD_LoadoutEquipComponent.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) | Log excerpt + entity id + **screenshot** |
+| E11 | Mod NPC equip | Workbench `wb_play`: **non-player test spawn** @ ~6400 receives kit from profile JSON — **T-068.5.1** worn-verify logs + **screenshot** (M60, BDU jacket, PASGT vest, helmet). **Not** the human player body. See [`TBD_LoadoutEquipComponent.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) | Log excerpt + entity id + **screenshot** |
 | E12 | Perf smoke | Pan/zoom 10s on mission with ≥200 slots (or largest available) — no freeze | FPS counter ≥55 or subjective "no stall" with slot count noted |
 
 **E11 note:** T-068.5 @ `21ec91e` log-only `equip OK` was a **false pass** (naked mesh). **T-068.5.1** @ `b233b11` fixed wear (`EquipCloth` / `EquipWeapon` + deferred worn-verify). E11 requires **visual** proof on the **test NPC**, not log lines alone.
@@ -159,4 +161,4 @@ Dev-login: `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 
 **Done @ 2026-06-27:** Phase 1 acceptance in program hub; CLAUDE §Status; MC ROADMAP; mod README NPC vs player boundary; `active_slice` → **T-068.7**.
 
-**Mod script (E11):** [`TBD_LoadoutEquipComponent.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) · [`TBD_GameMode.et`](../../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et) · wear fix **T-068.5.1** @ `b233b11` · scaffold **T-068.5** @ `21ec91e`.
+**Mod script (E11):** [`TBD_LoadoutEquipComponent.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) · [`TBD_GameMode.et`](../../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et) · wear fix **T-068.5.1** @ `b233b11` · scaffold **T-068.5** @ `21ec91e`.

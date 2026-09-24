@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-837 — vehicles can be deleted like slots
 
 Ticket: .ai/tickets/T-837.toml · Plan: docs/plans/t-837_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.2 — SAP supertexture cell seam repair
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.2  

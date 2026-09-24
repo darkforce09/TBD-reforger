@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-146 — Plan
 ## Context
 T-150 (universal registry export) is shipped and `dock_right.rs` already holds `registry_items` (the raw `/registry` rows, `RegistryItem` in `core/dto.rs`); `asset_catalog.rs:146` `build_catalog_tree(items, side)` consumes them for the per-faction tree (T-809). Vehicles and crates from those rows still do not reach the Asset Browser as drag-placeable leaves — the Eden F1 parity gap.

@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Relocation record: the tooling crates arrive under `tools_v2/`
 
 What landed, and the measurements taken at the landing.
@@ -9,7 +11,7 @@ What landed, and the measurements taken at the landing.
 - `tools_v2/ticket-engine`: the typed ticket models, canonical TOML, vocabulary, timestamps and
   transactional store; package `ticket-engine`, Rust import `ticket_engine`.
 - `tools_v2/xtask`: the `xtask` package and binary, with its fixtures.
-- Capture instructions live in [editor_capture.md](../docs/tools/editor_capture.md).
+- Capture instructions live in [editor_capture.md](/documentation_v2/runbooks/editor_capture.md).
 
 The Cargo alias, public domain types, serialized ticket data, dependency versions, dependency
 checksums, binary names and the shared repository verification lock are all preserved. The lockfile

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.9 — Deck flip + retirement (W9)
 
 **Status:** **shipped** @ `c4831451` (tag **T-151.9**; tip `58c8fcc3`) · **Program:**

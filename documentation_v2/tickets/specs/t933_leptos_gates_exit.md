@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-933 — leptos-gates pre-close exits 0 when the editor suite is green
 
 Ticket: .ai/tickets/T-933.toml · Plan: docs/plans/t-933_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

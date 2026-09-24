@@ -1,8 +1,10 @@
+**Status:** live
+
 # Cursor workspace setup — TBD Reforger
 
 **Purpose:** Fresh-start checklist for opening this monorepo in Cursor — local stack, persistent agent artifacts, scoped chats, and health checks. No application code changes.
 
-**Authority:** [`CLAUDE.md`](../../CLAUDE.md) · [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) · [DEV_RUNBOOK.md](DEV_RUNBOOK.md)
+**Authority:** [`CLAUDE.md`](../../CLAUDE.md) · [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) · [DEV_RUNBOOK.md](/documentation_v2/runbooks/local_development.md)
 
 ---
 
@@ -35,7 +37,7 @@ Cursor will **not** auto-load rules from `.ai/`. Do not move project rules into 
 | Agent bible | [`CLAUDE.md`](../../CLAUDE.md) — §Status synced from registry |
 | Ticket registry | [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) — `active_slice` + executor gate |
 | Root `.cursor/` | [`.cursor/rules/tbd-platform.mdc`](../../.cursor/rules/tbd-platform.mdc) (always-on platform rule) |
-| Stack docs | [DEV_RUNBOOK.md](DEV_RUNBOOK.md) — Go PATH gotcha |
+| Stack docs | [DEV_RUNBOOK.md](/documentation_v2/runbooks/local_development.md) — Go PATH gotcha |
 | Health targets | `cargo xtask ci ci-local-schema`, `cargo xtask ticket check --strict`, frontend build/lint |
 
 Ignore sibling archived folders outside the workspace (`TBD_Website`, `Arma reforger`).
@@ -50,7 +52,7 @@ Confirm key paths exist:
 
 - [`CLAUDE.md`](../../CLAUDE.md) — `cargo xtask help` is the task surface (no Makefile)
 - [`apps/website/`](../../apps/website/)
-- [`docs/specs/Mission_Creator_Architecture/`](../specs/Mission_Creator_Architecture/)
+- [`documentation_v2/website/frontend/apps/editor/`](/documentation_v2/website/frontend/apps/editor/)
 - [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)
 
 ---
@@ -69,9 +71,9 @@ curl -sf http://localhost:8080/api/v1/health
 
 - **Dev login:** `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 - **Mission Creator:** `http://127.0.0.1:3000/missions/:id/edit` (after creating/opening a mission)
-- **Full details:** [DEV_RUNBOOK.md](DEV_RUNBOOK.md)
+- **Full details:** [DEV_RUNBOOK.md](/documentation_v2/runbooks/local_development.md)
 
-**Mod Workbench (T-068.1 / T-068.5 / T-068.8):** Claude Code runs **`cargo xtask mod dev-bootstrap`** (auto-launches Workbench) + MCP — see [`docs/mod/CLAUDE-CODE-START.md`](../mod/CLAUDE-CODE-START.md).
+**Mod Workbench (T-068.1 / T-068.5 / T-068.8):** Claude Code runs **`cargo xtask mod dev-bootstrap`** (auto-launches Workbench) + MCP — see [`documentation_v2/runbooks/mod_slice_workflow.md`](/documentation_v2/runbooks/mod_slice_workflow.md).
 
 ---
 
@@ -88,7 +90,7 @@ Already in repo. Condensed contract:
 
 ### This doc
 
-Linked from [docs hub README](README.md).
+Linked from [docs hub README](/documentation_v2/README.md).
 
 ---
 
@@ -178,11 +180,11 @@ Idea (Brainstorm) → registry row (Docs & Tickets) → ./scripts/ticket sync
 ### MC doc read order (when doing MC work)
 
 1. [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md)
-2. [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md)
-3. [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md)
-4. [`t068_virtual_arsenal_program.md`](../specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
-5. [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md)
-6. [`feature_inventory.md`](../specs/Mission_Creator_Architecture/feature_inventory.md)
+2. [`documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
+3. [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md)
+4. [`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md)
+5. [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+6. [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
 
 ---
 

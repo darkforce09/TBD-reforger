@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Engine Split Program — graphics-engine / map-engine / editor app
 
 **Status:** proposed, not yet ticketed.
@@ -350,7 +352,7 @@ apps/website/graphics-engine/**  may not import  website_map_engine
 - `cargo xtask ci ci-local` green.
 - `cargo xtask mk ci-local-leptos` green.
 - `cargo xtask mk leptos-gates` green (run `gate doctor` first — see
-  [`EDITOR_GATE_RUNBOOK.md`](../website/EDITOR_GATE_RUNBOOK.md); needs full Chrome `--headless=new`).
+  [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md); needs full Chrome `--headless=new`).
 - Editor renders identically. HUD `rf <ms>` within noise of pre-split; capture
   `window.__editorBench(500)` before and after and put both in the verify log.
 
@@ -795,7 +797,7 @@ Note it; do not fix it here.
 - `cargo xtask verify-file-length` green with the new 500 tier active on the scoped paths.
 - `cargo xtask mk leptos-gates` green **except `gate v-suite verify`** — see §3C.1.
 - `cargo xtask mk leptos` serves; dev-login → editor opens, place/select/move/undo/redo/save all work.
-- Headless probe sweep per [`render-check`](../mod/MCP_TOOLING.md) editor probes: `--seed-auth`,
+- Headless probe sweep per [`render-check`](/documentation_v2/runbooks/enfusion_mcp_tooling.md) editor probes: `--seed-auth`,
   `--map-assets`, LoS button via `pointerdown`, `camSet` + centre click.
 - `rg 'web_sys|leptos|wasm_bindgen' apps/website/map-engine/src/editing` → empty.
 - Zero production files over 500 LOC under `v2/apps/editor/` (CLAUDE.md Law 7); no inline
@@ -805,7 +807,7 @@ Note it; do not fix it here.
 ### 3C.1 — `gate v-suite verify` is red at baseline; do not fix it here
 
 > **Added 2026-09-16.** Pre-existing and unrelated to the engine split. Filed as
-> [`T-986`](../../.ai/tickets/T-986.toml), status `idea`.
+> [`T-986`](/.ai/tickets/T-986.toml), status `idea`.
 
 The frozen route oracles at `tools/tbd-tools/fixtures/t159/oracle-freeze` were last refreshed by
 `dddf31581` (2026-07-18, T-173). The pages have moved repeatedly since, so `gate v-suite verify`
@@ -862,14 +864,14 @@ Rule 5 is the one that stops `editing/` drifting back into the browser. Wire
 
 ## 6. Execution rules
 
-- **Read [`CLAUDE.md`](../../CLAUDE.md) first.** The HARD GATE applies: do the whole ask. No
+- **Read [`CLAUDE.md`](/CLAUDE.md) first.** The HARD GATE applies: do the whole ask. No
   "folded forward", no agent-authored Out-of-scope, no verify-log DEFERRED section in place of code.
   Only an explicit operator "defer X" defers anything.
 - **Commit directly to `main`. Never create a branch.** Tag each phase `T-0xx`. End commit messages
   with the `Co-Authored-By` trailer.
 - **One phase per commit series.** A phase does not land until its acceptance list is green.
   Do not start Phase 2 on a red Phase 1.
-- Add a registry row per phase in [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json),
+- Add a registry row per phase in [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json),
   then `cargo run -q -p xtask -- ticket sync`. Do not hand-edit generated `docs/TICKET_*.md`.
 - Docs sync in the same commit as the code — per CLAUDE.md §Documentation. The doc-owner split
   applies: if Cursor owns the doc pass for this program, return verify output rather than writing

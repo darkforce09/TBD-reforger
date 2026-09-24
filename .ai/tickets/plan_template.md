@@ -1,4 +1,4 @@
-<!-- Copy per ticket: docs/plans/<id-lowercased-dots-to-underscores>_plan.md
+<!-- Copy per ticket: documentation_v2/tickets/plans/<id-lowercased-dots-to-underscores>_plan.md
      (T-917.6 ready-gate: `ticket mark-ready` refuses while this file is missing).
      Four short sections, honest and specific — the plan is THIS ticket's own
      execution document; the shared program authority stays in `spec`. -->

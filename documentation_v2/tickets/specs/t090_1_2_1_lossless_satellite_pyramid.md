@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.1 — Lossless satellite pyramid (picture-perfect zoom)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.1  

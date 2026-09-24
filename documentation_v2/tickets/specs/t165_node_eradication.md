@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-165 — Node/JS eradication: every .mjs tool → Rust
 
 **Status:** **COMPLETE** — T-165.0–.10 all shipped. Node exists solely as the `enfusion-mcp` runtime; `cargo xtask verify no-node` is the standing hard gate (mirrors T-162's verify-no-python). · **Executor:** claude-code (operator-approved

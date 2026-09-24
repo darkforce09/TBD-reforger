@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-048 — Mission create from Library (macOS Dialog)
 
 **Status:** shipped (T-048)  
 **Git tag on ship:** T-048  
-**Authority:** UX decision locked in [`agent_execution.md`](agent_execution.md) Decisions log · macOS methodology in [`docs/platform/macos_ux_architecture.md`](../../website/platform/macos_ux_architecture.md) §2
+**Authority:** UX decision locked in [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) Decisions log · macOS methodology in [`docs/platform/macos_ux_architecture.md`](/documentation_v2/archive/go_and_react_era_design/macos_ux_architecture.md) §2
 
 ---
 
@@ -58,14 +60,14 @@ Do **not** split T-048a docs / T-048b code unless you accept a window where main
 
 | Area | Current state | Action |
 |------|---------------|--------|
-| [`frontend/src/pages/missions.tsx`](../../../apps/website/frontend/src/pages/missions.tsx) | `MissionLibraryPage` — no create CTA; `MissionCreatorPage` export (lines 521–647) = full-page wizard | Extract wizard → dialog; wire button in library header |
-| [`frontend/src/router.tsx`](../../../apps/website/frontend/src/router.tsx) | `missions/create` under `ProtectedRoute minRole="mission_maker"` (lines 129–133) | **Remove route** |
-| [`frontend/src/config/navigation.ts`](../../../apps/website/frontend/src/config/navigation.ts) | `{ label: 'Mission Creator', path: '/missions/create', … }` | **Remove nav item** |
-| [`frontend/src/components/ui/dialog.tsx`](../../../apps/website/frontend/src/components/ui/dialog.tsx) | Frosted macOS Dialog (Base UI) — `max-w-lg`, scroll body | **Reuse** — reference [`admin.tsx`](../../../apps/website/frontend/src/pages/admin.tsx) Event Manager create (~347+) |
-| [`frontend/src/hooks/mutations.ts`](../../../apps/website/frontend/src/hooks/mutations.ts) | `useCreateMission()` → `POST /missions` | **Unchanged** |
-| [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](../../../apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx) | 2D **editor** shell (Deck.gl) — **not** the wizard | **Do not rename/confuse** — editor stays at `/missions/:id/edit` |
+| [`frontend/src/pages/missions.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/missions.tsx) | `MissionLibraryPage` — no create CTA; `MissionCreatorPage` export (lines 521–647) = full-page wizard | Extract wizard → dialog; wire button in library header |
+| [`frontend/src/router.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/router.tsx) | `missions/create` under `ProtectedRoute minRole="mission_maker"` (lines 129–133) | **Remove route** |
+| [`frontend/src/config/navigation.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/config/navigation.ts) | `{ label: 'Mission Creator', path: '/missions/create', … }` | **Remove nav item** |
+| [`frontend/src/components/ui/dialog.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/components/ui/dialog.tsx) | Frosted macOS Dialog (Base UI) — `max-w-lg`, scroll body | **Reuse** — reference [`admin.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/admin.tsx) Event Manager create (~347+) |
+| [`frontend/src/hooks/mutations.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/hooks/mutations.ts) | `useCreateMission()` → `POST /missions` | **Unchanged** |
+| [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx) | 2D **editor** shell (Deck.gl) — **not** the wizard | **Do not rename/confuse** — editor stays at `/missions/:id/edit` |
 | Dossier edit path | `[ OPEN IN MISSION CREATOR ]` → `/missions/:id/edit` | **Unchanged** |
-| [`frontend/src/lib/stitch-map.ts`](../../../apps/website/frontend/src/lib/stitch-map.ts) | Maps `/missions/create` → stitch key | Remove entry |
+| [`frontend/src/lib/stitch-map.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/lib/stitch-map.ts) | Maps `/missions/create` → stitch key | Remove entry |
 
 **Naming collision (known):** `MissionCreatorPage` in `pages/missions.tsx` (wizard) vs `features/mission-creator/MissionCreatorPage.tsx` (editor). T-048 removes the pages export; optional follow-up: rename editor file only if needed — **out of scope**.
 
@@ -75,10 +77,10 @@ Do **not** split T-048a docs / T-048b code unless you accept a window where main
 
 ### Entry point — Mission Library header
 
-- **Location:** [`MissionLibraryPage`](../../../apps/website/frontend/src/pages/missions.tsx) header row — right-aligned opposite title or inline with segmented scope tabs.
+- **Location:** [`MissionLibraryPage`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/missions.tsx) header row — right-aligned opposite title or inline with segmented scope tabs.
 - **Label:** `New Mission` with `MaterialIcon name="add"` — match Event Manager button (not "+ New Mission" text prefix unless design prefers both icon + label)
 - **Visibility:** `hasMinRole('mission_maker')` only — **hidden** for enlisted (no disabled tease).
-- **Style:** `rounded-full bg-action px-6 py-3` — same classes as Event Manager [`admin.tsx`](../../../apps/website/frontend/src/pages/admin.tsx) L192–199.
+- **Style:** `rounded-full bg-action px-6 py-3` — same classes as Event Manager [`admin.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/admin.tsx) L192–199.
 
 ### Empty state — My Missions tab
 
@@ -113,7 +115,7 @@ One overlay at a time (user confirmed).
 
 ### CreateMissionDialog
 
-**New file:** [`frontend/src/features/mission-creator/CreateMissionDialog.tsx`](../../../apps/website/frontend/src/features/mission-creator/CreateMissionDialog.tsx)
+**New file:** [`frontend/src/features/mission-creator/CreateMissionDialog.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/CreateMissionDialog.tsx)
 
 ```tsx
 interface CreateMissionDialogProps {
@@ -161,13 +163,13 @@ interface CreateMissionDialogProps {
 
 ### Route removal
 
-- Delete `missions/create` from [`router.tsx`](../../../apps/website/frontend/src/router.tsx).
+- Delete `missions/create` from [`router.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/router.tsx).
 - Remove `MissionCreatorPage` import from router (pages export).
-- Direct navigation to `/missions/create` → app catch-all / 404 (verify [`not-found`](../../../apps/website/frontend/src/pages/utility.tsx) behavior).
+- Direct navigation to `/missions/create` → app catch-all / 404 (verify [`not-found`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/utility.tsx) behavior).
 
 ### Sidebar
 
-- Remove Mission Creator from [`navigation.ts`](../../../apps/website/frontend/src/config/navigation.ts) Mission Hub section.
+- Remove Mission Creator from [`navigation.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/config/navigation.ts) Mission Hub section.
 - Mission Hub = **Mission Library only** for all roles.
 
 ---
@@ -205,7 +207,7 @@ Response includes `id` → navigate to editor.
 
 ### Header layout (match Event Manager)
 
-Use the same flex pattern as [`admin.tsx`](../../../apps/website/frontend/src/pages/admin.tsx) lines 185–199:
+Use the same flex pattern as [`admin.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/pages/admin.tsx) lines 185–199:
 
 ```tsx
 <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -233,7 +235,7 @@ Import `MaterialIcon` and `useAuthStore` → `hasMinRole('mission_maker')` in `M
 | `useCreateMission` | Moves to `CreateMissionDialog.tsx` |
 | `MissionCreatorPage` export | Delete entirely |
 
-Router: remove `MissionCreatorPage` from [`router.tsx`](../../../apps/website/frontend/src/router.tsx) import line 16 — keep `MissionLibraryPage`, `MissionOverviewPage`.
+Router: remove `MissionCreatorPage` from [`router.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/router.tsx) import line 16 — keep `MissionLibraryPage`, `MissionOverviewPage`.
 
 ### Optional polish (same commit if trivial)
 
@@ -245,7 +247,7 @@ Router: remove `MissionCreatorPage` from [`router.tsx`](../../../apps/website/fr
 
 ### Already correct (no change)
 
-- Editor invalid-id banner: *"create one from Mission Library first"* — [`MissionCreatorPage.tsx`](../../../apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx) L129
+- Editor invalid-id banner: *"create one from Mission Library first"* — [`MissionCreatorPage.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx) L129
 - `useCreateMission` invalidates `['missions']` — library grid refreshes on return
 - No E2E tests reference `/missions/create`
 - `POST /missions` API unchanged — no backend work
@@ -275,7 +277,7 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit as code — T-048)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 ### Pre-staged (already in repo — do not revert)
 
@@ -287,16 +289,16 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
-| [`docs/website/frontend/pages/mission-library.md`](../../website/frontend/pages/mission-library.md) | Status → `doc-complete`; M3/M4 milestones checked |
-| [`docs/website/frontend/shell/sidebar.md`](../../website/frontend/shell/sidebar.md) | Check off T-048 milestone |
-| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Move T-048 from IN PROGRESS → DONE shipped table |
-| [`docs/specs/.../ROADMAP.md`](ROADMAP.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
+| [`docs/website/frontend/pages/mission-library.md`](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md) | Status → `doc-complete`; M3/M4 milestones checked |
+| [`docs/website/frontend/shell/sidebar.md`](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md) | Check off T-048 milestone |
+| [`docs/website/frontend/ROADMAP.md`](/documentation_v2/website/frontend/README.md) | Move T-048 from IN PROGRESS → DONE shipped table |
+| [`docs/specs/.../ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
 | [`t048_library_create_dialog.md`](t048_library_create_dialog.md) | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-048 Done bullet; bump latest-feature line |
-| [`agent_execution.md`](agent_execution.md) | **Update stale `/missions/create` refs** in repository map (lines ~92, ~151), phase table (~207), DEFERRED table (~448) — Decisions log already correct |
-| [`docs/website/frontend/TRACKING.md`](../../website/frontend/TRACKING.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | **Update stale `/missions/create` refs** in repository map (lines ~92, ~151), phase table (~207), DEFERRED table (~448) — Decisions log already correct |
+| [`docs/website/frontend/TRACKING.md`](/documentation_v2/website/frontend/README.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
 | `.cursor/rules/tbd-documentation.mdc` (gitignored — local only) | Create Cursor rule (optional but recommended) |
-| [`docs/backend/architecture.md`](../../website/backend/architecture.md) | Optional: "Mission Creator wizard" → "Library create dialog" (line ~547) |
+| [`docs/backend/architecture.md`](/documentation_v2/archive/go_and_react_era_design/go_backend_architecture_plan.md) | Optional: "Mission Creator wizard" → "Library create dialog" (line ~547) |
 
 **Do not update:** archive stitch HTML, Eden wiki artifacts, historical T-034/T-039 bullets in CLAUDE.
 
@@ -323,6 +325,6 @@ Docs are PRE-STAGED — do not revert target-state docs; FINALIZE per spec §Doc
 
 ## Related
 
-- Surface spec (target): [`docs/website/frontend/pages/mission-library.md`](../../website/frontend/pages/mission-library.md)
-- Frontend ROADMAP: [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md)
-- MC ROADMAP: [`ROADMAP.md`](ROADMAP.md)
+- Surface spec (target): [`docs/website/frontend/pages/mission-library.md`](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md)
+- Frontend ROADMAP: [`docs/website/frontend/ROADMAP.md`](/documentation_v2/website/frontend/README.md)
+- MC ROADMAP: [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)

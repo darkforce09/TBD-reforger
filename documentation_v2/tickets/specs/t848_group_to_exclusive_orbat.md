@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-848 — Connect ▸ Group to means exclusive ORBAT membership
 
 Ticket: .ai/tickets/T-848.toml · Plan: docs/plans/t-848_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

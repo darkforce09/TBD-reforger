@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-277 — 27.4% of the map catalogue is unclassified
 
 Owner: command center. 444/1,623 prefabs fall to `fallback` (prefab-classify.json:3629); rules are first-match by

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-171 — Monorepo / website hygiene program
 
 **Status:** SHIPPED @ tag **T-171** / `2421b335` (code + layout) · docs pass **T-171.docs**  
@@ -104,4 +106,4 @@ test ! -e apps/website-leptos
 
 ## Claude Code prompt
 
-See [`.ai/artifacts/t171_claude_code_handoff.md`](../../.ai/artifacts/t171_claude_code_handoff.md).
+See [`.ai/artifacts/t171_claude_code_handoff.md`](/.ai/artifacts/t171_claude_code_handoff.md).

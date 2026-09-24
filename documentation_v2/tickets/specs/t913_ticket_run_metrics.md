@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-913 — Ticket run metrics
 
 Program hub: lifecycle stamps on the ticket (`created_at` / `completed_at`); per-run observations in `.ai/tickets/metrics/<id>/<ts>-<sha>.json` including **required** `tokens_consumed`; `cargo xtask platform slice-run` is the producer.

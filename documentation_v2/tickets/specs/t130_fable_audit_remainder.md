@@ -1,10 +1,12 @@
+**Status:** frozen record
+
 # T-130 — Fable audit remainder (OPEN + PARTIAL)
 
 **Status:** **shipped** @ `90c9f261` (tag **T-130**) · merged to **main** 2026-07-03  
-**Verify:** [`.ai/artifacts/t130_verify_log.md`](../../.ai/artifacts/t130_verify_log.md)  
-**Ticket:** T-130 · **Registry:** [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)  
-**Living tracker:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — OPEN/PARTIAL rows flipped on doc sync  
-**Handoff:** [`.ai/artifacts/t130_claude_code_handoff.md`](../../.ai/artifacts/t130_claude_code_handoff.md)
+**Verify:** [`.ai/artifacts/t130_verify_log.md`](/.ai/artifacts/t130_verify_log.md)  
+**Ticket:** T-130 · **Registry:** [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)  
+**Living tracker:** [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md) — OPEN/PARTIAL rows flipped on doc sync  
+**Handoff:** [`.ai/artifacts/t130_claude_code_handoff.md`](/.ai/artifacts/t130_claude_code_handoff.md)
 
 ---
 
@@ -62,13 +64,13 @@ Fable program **T-126 → T-128** closed docs/security/MC UX. The living tracker
 
 ## T-130.1 — Backend hygiene
 
-**Files:** [`missions.go`](../../apps/website/internal/handlers/missions.go), [`auth.go`](../../apps/website/internal/handlers/auth.go), [`middleware/ratelimit.go`](../../apps/website/internal/middleware/ratelimit.go)
+**Files:** [`missions.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/missions.go), [`auth.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/auth.go), [`middleware/ratelimit.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/middleware/ratelimit.go)
 
 | ID | Fix |
 |----|-----|
 | F2B-07 | Return 500 if `Count` fails |
 | F2B-08 | Propagate `buildMissionDoc` load failure |
-| F2B-09 | Purge old revoked refresh rows ([`token_purge.go`](../../apps/website/internal/services/token_purge.go)) |
+| F2B-09 | Purge old revoked refresh rows ([`token_purge.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/services/token_purge.go)) |
 | F2B-11 | Strict rate-limit path prefix match |
 
 ---
@@ -77,7 +79,7 @@ Fable program **T-126 → T-128** closed docs/security/MC UX. The living tracker
 
 | ID | Fix |
 |----|-----|
-| F3-01 | Honor `Retry-After` on 429 ([`httpretry.go`](../../apps/website/internal/services/httpretry.go)) |
+| F3-01 | Honor `Retry-After` on 429 ([`httpretry.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/services/httpretry.go)) |
 | F3-02 | Truncate embed title/footer before POST |
 | F3-03 | OAuth blank `client_id` → SPA `#error=oauth_unconfigured` |
 
@@ -123,7 +125,7 @@ Fable program **T-126 → T-128** closed docs/security/MC UX. The living tracker
 
 ## Verify
 
-See [`.ai/artifacts/t130_verify_log.md`](../../.ai/artifacts/t130_verify_log.md).
+See [`.ai/artifacts/t130_verify_log.md`](/.ai/artifacts/t130_verify_log.md).
 
 **Operator follow-up:** Workbench compile + one export re-run recommended after T-130.4 (mechanical guards; Workbench was down during Batch 2 verify).
 

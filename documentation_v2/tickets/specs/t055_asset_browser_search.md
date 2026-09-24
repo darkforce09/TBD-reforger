@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-055 — Asset browser search
 
 **Status:** shipped (T-055)  
 **Git tag on ship:** T-055  
-**Authority:** [MC ROADMAP](ROADMAP.md) · [eden/gap_analysis.md](eden/gap_analysis.md) (`RIGHT-SEARCH-001`) · [feature_inventory.md](feature_inventory.md) RIGHT-SEARCH-001
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`RIGHT-SEARCH-001`) · [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) RIGHT-SEARCH-001
 
 ---
 
@@ -50,7 +52,7 @@ yet); registry feed; backend changes.
 
 ## Implementation specification
 
-**File:** [`frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx)
 
 1. `const [query, setQuery] = useState('')`.
 2. Module-scope recursive filter:
@@ -112,16 +114,16 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-055)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-055 bullet + bump `latest feature work` line + Next-slices line |
-| [`feature_inventory.md`](feature_inventory.md) | **New `RIGHT-SEARCH-001` FEDS entry** (Status working; Evidence `AssetBrowser.tsx`) |
-| [`agent_execution.md`](agent_execution.md) | Decisions log row **Asset browser search (T-055)**; refresh one-line prompt Next-slices |
-| [`ROADMAP.md`](ROADMAP.md) | DONE T-055 section + spec index row; Eden execution-order line; refresh Next |
-| [`eden/gap_analysis.md`](eden/gap_analysis.md) | T-055 → ✅ shipped T-055; RIGHT-SEARCH-001 table row → built |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | **New `RIGHT-SEARCH-001` FEDS entry** (Status working; Evidence `AssetBrowser.tsx`) |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | Decisions log row **Asset browser search (T-055)**; refresh one-line prompt Next-slices |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | DONE T-055 section + spec index row; Eden execution-order line; refresh Next |
+| [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | T-055 → ✅ shipped T-055; RIGHT-SEARCH-001 table row → built |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 
@@ -137,4 +139,4 @@ using AI. **Do not commit until the user asks.**
 ## Related
 
 - Prior: [t054_attributes_entry_points.md](t054_attributes_entry_points.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (T-068+).

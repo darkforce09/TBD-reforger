@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase Four Handoff
 
 Status: the `missions` and `operations` domains are live on `main`, and the mortar ballistics solver lives in `website-map-engine`. Commits: `07fdc868b` (4.1 mortar to map-engine and 4.2 missions contract, validation, models), `334c07e7e` (4.3), `4b809b55f` (4.4), `de321e10e` (4.5), `cb444b9bd` (4.6), `ca4dd5e4a` (4.7). Match telemetry and command center remain under the legacy `handlers/telemetry`, `services/user_stats.rs`, and `models/telemetry.rs`; Phase Five moves them and retires the legacy directories.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-920 — Body obligations, main_goal, title repair, side-by-side viewer
 
 Design contract, agreed with the operator 2026-08-15 after a live board session on the

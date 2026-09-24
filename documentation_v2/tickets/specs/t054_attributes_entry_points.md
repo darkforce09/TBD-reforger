@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-054 — Attributes modal entry points (map + ORBAT)
 
 **Status:** shipped (T-054)  
 **Git tag on ship:** T-054  
-**Authority:** [MC ROADMAP](ROADMAP.md) · [eden/gap_analysis.md](eden/gap_analysis.md) (`SEL-ORBAT-DBL-001 / SEL-MAP-004`) · [feature_inventory.md](feature_inventory.md) SEL-ORBAT-DBL-001 / SEL-MAP-004
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`SEL-ORBAT-DBL-001 / SEL-MAP-004`) · [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) SEL-ORBAT-DBL-001 / SEL-MAP-004
 
 ---
 
@@ -120,16 +122,16 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-054)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-054 bullet + bump `latest feature work` line |
-| [`feature_inventory.md`](feature_inventory.md) | SEL-ORBAT-DBL-001 → **working**; SEL-MAP-004 Procedure/Evidence → native `dblclick` + `pickObject` |
-| [`agent_execution.md`](agent_execution.md) | Decisions log row **Attributes entry points (T-054)** |
-| [`ROADMAP.md`](ROADMAP.md) | T-054 → shipped; refresh "Next" |
-| [`eden/gap_analysis.md`](eden/gap_analysis.md) | T-054 → ✅ shipped T-054 |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | SEL-ORBAT-DBL-001 → **working**; SEL-MAP-004 Procedure/Evidence → native `dblclick` + `pickObject` |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | Decisions log row **Attributes entry points (T-054)** |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | T-054 → shipped; refresh "Next" |
+| [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | T-054 → ✅ shipped T-054 |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 
@@ -145,4 +147,4 @@ using AI. **Do not commit until the user asks.**
 ## Related
 
 - Prior: [t053_additive_select.md](t053_additive_select.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (T-068+).

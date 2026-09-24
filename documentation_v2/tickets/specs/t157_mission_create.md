@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-157 — Mission Create visual overhaul
 
 Owner: command center. UI code ticket (executor claude-code). Dialog lives in editor/library/.

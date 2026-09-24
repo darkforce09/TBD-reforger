@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — World object type inventory (counts + taxonomy census)
 
 **Status:** Spec ready — runs on **first raw export** and after **every phased import**  

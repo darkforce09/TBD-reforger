@@ -6,7 +6,7 @@ each one through fixed process-control actions, BattlEye RCon commands or a scen
 the server's JSON config, and reports every step back to the API's command ledger. The API never connects to the host; a host behind NAT
 or a firewall needs only outbound HTTPS.
 
-The API side of the ledger is described in `docs/verification/api_v2/fleet_command_ledger.md`;
+The API side of the ledger is described in `documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md`;
 the wire contract is `contracts_v2/definitions/fleet-command.schema.json` and the credential
 format `contracts_v2/definitions/machine-credential.schema.json`.
 

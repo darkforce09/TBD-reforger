@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-159.15.2 — Mission Creator camera pan + pointer foundation
 
 **Parent:** [`t159_leptos_ui_program.md`](t159_leptos_ui_program.md) · **Executor:** claude-code ·

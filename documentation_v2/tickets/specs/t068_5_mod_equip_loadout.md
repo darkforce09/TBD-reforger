@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.5 — Mod equip from loadout-export JSON
 
 **Ticket:** T-068 · **Slice:** T-068.5  
@@ -25,7 +27,7 @@ Visual wear on the test NPC is proven @ **T-068.5.1** (`b233b11`). Player/slot l
 
 ## Shipped @ T-068.5
 
-**Mod path:** [`TBD_LoadoutEquipComponent.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) wired on [`TBD_GameMode.et`](../../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et).
+**Mod path:** [`TBD_LoadoutEquipComponent.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) wired on [`TBD_GameMode.et`](../../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et).
 
 | Piece | Detail |
 |-------|--------|

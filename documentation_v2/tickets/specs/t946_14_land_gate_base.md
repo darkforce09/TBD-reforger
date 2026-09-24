@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-946.14 — `wave land`'s post-merge gate anchors at the wrong commit
 
 ## The defect

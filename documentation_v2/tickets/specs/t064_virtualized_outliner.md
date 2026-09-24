@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-064 — Virtualized outliner @ 100k–360k+ leaves
 
 **Status:** **shipped + verified** — FE build/lint clean; manual @ ~367k: outliner visible on first paint, scrollable virtual slot list, no tab freeze (2026-06-24).  
 **Git tag on ship:** **T-064** (`8838e58`, 2026-06-24)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [t059_bulk_paste_operations.md](t059_bulk_paste_operations.md) (outliner cap origin) · [t063_spatial_index.md](t063_spatial_index.md) (prior slice)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t059_bulk_paste_operations.md](t059_bulk_paste_operations.md) (outliner cap origin) · [t063_spatial_index.md](t063_spatial_index.md) (prior slice)
 
 **Prerequisites:** T-063 shipped (`078960e`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 
@@ -18,11 +20,11 @@
 
 Pan/zoom (T-057), drag-move (T-061), pick/marquee (T-063), and bulk paste (T-059 batch append) are fast @ 367k. **The outliner sidebar was not.**
 
-[`TreeView.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/tree/TreeView.tsx) recursively mounted **every** visible tree node as real DOM `<li>` elements. At 360k slot leaves that hard-froze the tab.
+[`TreeView.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/tree/TreeView.tsx) recursively mounted **every** visible tree node as real DOM `<li>` elements. At 360k slot leaves that hard-froze the tab.
 
 T-059 added a band-aid — `OUTLINER_LEAF_CAP = 500`: folders/squads over the cap showed a count label with **no scrollable rows**. T-064 removes that cap via virtualization.
 
-**Scroll container:** [`LeftSidebar.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/LeftSidebar.tsx) uses **one** `overflow-y-auto` div for ORBAT + Editor Layers.
+**Scroll container:** [`LeftSidebar.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/LeftSidebar.tsx) uses **one** `overflow-y-auto` div for ORBAT + Editor Layers.
 
 ---
 

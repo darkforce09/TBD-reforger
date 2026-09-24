@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-934 — Website Reorganization Program (website_architecture_audit.md §3 + §4)
 
 **Source:** `docs/specs/website_reorg/website_architecture_audit.md` §3 (folder restructure + monolith decomposition + backend nesting) and §4 (operator-added `MissionEditorPage` 2-phase resolution).

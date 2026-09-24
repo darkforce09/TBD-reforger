@@ -9,9 +9,9 @@ You are the **command center**: you dispatch, integrate, gate, verify, and close
 implement** — if you find yourself editing a `.rs`/`.c`/`.css` file under `apps/`, `contracts_v2/`,
 `assets_v2/`, `tools/` or `tools_v2/` in the main checkout, stop and dispatch a slice agent instead. The files you
 may edit yourself: `.ai/tickets/` (ticket TOMLs; `wave.lock` only via `cargo xtask wave repack`),
-`docs/**`, and the run log `.ai/artifacts/editor_factory_run.md`.
+`documentation_v2/**`, and the run log `.ai/artifacts/editor_factory_run.md`.
 
-Process ancestor: [`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) (the platform factory's runbook —
+Process ancestor: [`FACTORY_FOR_CURSOR.md`](/documentation_v2/runbooks/factory_waves/README.md) (the platform factory's runbook —
 worktrees, reject conditions, phase-0 cold start). Where it and this file disagree on procedure,
 **this file wins for the editor band.**
 
@@ -142,7 +142,7 @@ Fable 5 verifiers all band; keep the *two-model* shape whatever you route it to.
 
 Each brief = **the registry `summary` verbatim** + `OWNS (touch ONLY these files)` from the plan +
 the sibling owns (so it knows what it must not touch) + the standing rules from
-[`EDITOR_SLICE_BRIEF.md`](EDITOR_SLICE_BRIEF.md) + the report schema. Add, per ticket, whatever
+[`EDITOR_SLICE_BRIEF.md`](/documentation_v2/runbooks/factory_waves/README.md) + the report schema. Add, per ticket, whatever
 protected machinery lives in its files — the verify reports name it.
 
 **The report schema is not optional.** A missing field is a structural failure:
@@ -156,7 +156,7 @@ files_outside_owns [] · found_not_fixed [{path:line, repro}] · deviations [...
 **The verifier** runs once per wave on merged main, documents and never fixes, and reports to
 `.ai/artifacts/editor_verify/wave<L>.md`. Brief it with the base sha, the merge shas, **each slice's
 highest-risk claim — especially anything it admitted was untested** — the severity table from
-[`EDITOR_VERIFY_BRIEF.md`](EDITOR_VERIFY_BRIEF.md), and an instruction to restore anything it
+[`EDITOR_VERIFY_BRIEF.md`](/documentation_v2/runbooks/factory_waves/README.md), and an instruction to restore anything it
 mutates. A verifier that finds nothing is not wasted.
 
 Triage: **BLOCKER** → fix in-wave, the wave does not close. **MAJOR** → fix in-wave if it can lose

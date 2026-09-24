@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-125 — Coding standards + 11/10 enforcement
 
 **Ticket:** T-125 · **Program:** platform · **Status:** **shipped** (T-125.6 doc sync) · **Tag:** **T-125.5** @ `e21dac3` (code); program **T-125.0–.6 complete**  
-**Depends on:** T-124 (met) · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
+**Depends on:** T-124 (met) · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](/.ai/artifacts/t125_claude_code_handoff.md)
 
 ## In one sentence
 
@@ -11,10 +13,10 @@ Author **`CODING_STANDARDS.md`** (code style/structure/errors/tests — distinct
 
 | Doc | Owns |
 |-----|------|
-| [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) | `@contract` / `@route` / Godoc / TSDoc / Enfusion authority tags |
+| [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) | `@contract` / `@route` / Godoc / TSDoc / Enfusion authority tags |
 | **`CODING_STANDARDS.md`** (new) | Style, structure, errors, tests, file size, TS strict, Go linter policy, formatting |
 
-Cross-link both from [`docs/platform/README.md`](README.md) and [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md).
+Cross-link both from [`docs/platform/README.md`](/documentation_v2/archive/monorepo_migration/docs_platform_readme.md) and [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 ---
 
@@ -41,7 +43,7 @@ Advance after each slice verifies: `./scripts/ticket advance-slice T-125`
 Minimum sections:
 
 - **Go:** no silent `_ =` on DB/audit without explicit rationale; handler vs `services/` boundaries; when integration tests are required
-- **TS:** `"strict": true` in [`tsconfig.app.json`](../../apps/website/frontend/tsconfig.app.json); pages vs `features/`; god-file limits (admin/doctrine split guidance)
+- **TS:** `"strict": true` in [`tsconfig.app.json`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/tsconfig.app.json); pages vs `features/`; god-file limits (admin/doctrine split guidance)
 - **Errors:** `{ error }` contract, status code table, validation `details[]`
 - **Formatting:** `.editorconfig`, optional Prettier for TS/CSS (Go: `gofmt`/`goimports`)
 - **Testing:** minimum bar per layer (Go IT for handlers; FE tests for `features/` hooks/utils)
@@ -53,7 +55,7 @@ Minimum sections:
 
 ## T-125.1 — Primary CI workflow
 
-New [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — **required on every PR/push to `main`:**
+New [`.github/workflows/ci.yml`](/.github/workflows/ci.yml) — **required on every PR/push to `main`:**
 
 | Job | Steps |
 |-----|-------|
@@ -63,7 +65,7 @@ New [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — **required 
 
 Add **`cargo xtask ci ci-local`** (or `make check`) mirroring CI.
 
-**Shipped (T-125.1):** [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — three jobs
+**Shipped (T-125.1):** [`.github/workflows/ci.yml`](/.github/workflows/ci.yml) — three jobs
 (**backend** `postgres:18-alpine` + Go **1.26** → gofmt (FMT-1) + `go build` + `cargo xtask db test-it`;
 **frontend** Node **26** → `npm ci` + lint + build + test; **schema** → `npm run validate` +
 verify-citations), required on every push/PR to `main` (no path filter). Local mirror:
@@ -76,26 +78,26 @@ verify-citations), required on every push/PR to `main` (no path filter). Local m
 
 ## T-125.2 — golangci full gate
 
-Harden [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml):
+Harden [`apps/website/.golangci.yml`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/.golangci.yml):
 
 - Add **errcheck**, **govet**, **staticcheck** (in addition to revive `exported`)
-- **Remove `only-new-issues: true`** from [`contracts.yml`](../../.github/workflows/contracts.yml) (or merge golangci into `ci.yml` and dedupe)
+- **Remove `only-new-issues: true`** from [`contracts.yml`](/.github/workflows/contracts.yml) (or merge golangci into `ci.yml` and dedupe)
 - Fix **all** linter findings repo-wide
 
 **Verify:** `golangci-lint run ./...` clean; `cargo xtask db test-it`.
 
-**Shipped (T-125.2):** [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) enables
+**Shipped (T-125.2):** [`apps/website/.golangci.yml`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/.golangci.yml) enables
 **revive** (`exported`), **errcheck** (`check-blank: true`), **errorlint**, **staticcheck**, **govet**,
 and **cyclop** (`max-complexity: 15`). Exclusions: `node_modules` (vendored Go) + generated
 `internal/contract/`, and `_test.go` exempt from errcheck/cyclop (fixtures discard known-good errors;
 integration tests are linear — §2 GO-2/3 + COMP-1 target production logic). **`only-new-issues`
-removed** from [`contracts.yml`](../../.github/workflows/contracts.yml) (now a path-filtered
-supplement); golangci wired into [`ci.yml`](../../.github/workflows/ci.yml) backend (after gofmt,
+removed** from [`contracts.yml`](/.github/workflows/contracts.yml) (now a path-filtered
+supplement); golangci wired into [`ci.yml`](/.github/workflows/ci.yml) backend (after gofmt,
 before build) and `make ci-local-backend`, with the **CI-1** grep guard. **57 findings fixed**
 repo-wide: errcheck 34 → best-effort `//nolint:errcheck`; revive 12 → const-block Godoc; errorlint 7
 → `errors.Is`; cyclop 3 → `//nolint:cyclop` (events/cms/missions handlers — splits are SIZE-3/T-125.4);
 staticcheck 1 → `fmt.Fprintf`. Result: `golangci-lint run ./...` **0 issues**, `cargo xtask db test-it` green,
-`cargo xtask ci build` clean. New [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml)
+`cargo xtask ci build` clean. New [`.coding-standards-allowlist.yaml`](https://github.com/darkforce09/TBD-reforger/blob/c7c6afffe54a2c58dbfb4d11fdb5b7afc0ecd6d9/.coding-standards-allowlist.yaml)
 (SIZE-2 MC-perf stub). Note: the M6 `_ = db.First(...).Error` reads are a struct **field** access (not
 a func call) so errcheck does not flag them — they stay **T-125.4** (which owns `_ = db.First` fixes).
 
@@ -105,16 +107,16 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
 
 ## T-125.3 — TypeScript strict + eslint tags
 
-- Enable **`strict: true`** in [`tsconfig.app.json`](../../apps/website/frontend/tsconfig.app.json); fix all errors (expect MC + pages touch)
-- Harden [`eslint.config.js`](../../apps/website/frontend/eslint.config.js): enforce **`@contract` / `@model`** on cross-boundary exports (custom rule or extend [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs))
+- Enable **`strict: true`** in [`tsconfig.app.json`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/tsconfig.app.json); fix all errors (expect MC + pages touch)
+- Harden [`eslint.config.js`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/eslint.config.js): enforce **`@contract` / `@model`** on cross-boundary exports (custom rule or extend [`verify-contract-citations.mjs`](https://github.com/darkforce09/TBD-reforger/blob/c39f8baccee19ebc690b008524711f41aa54fd00/packages/tbd-schema/scripts/verify-contract-citations.mjs))
 
 **Verify:** `npm run build && npm run lint && npm test`.
 
 **Shipped (T-125.3):**
-- **TS-1** — `strict: true` in both [`tsconfig.app.json`](../../apps/website/frontend/tsconfig.app.json)
-  and [`tsconfig.node.json`](../../apps/website/frontend/tsconfig.node.json) (`npm run build` = `tsc -b`
+- **TS-1** — `strict: true` in both [`tsconfig.app.json`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/tsconfig.app.json)
+  and [`tsconfig.node.json`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/tsconfig.node.json) (`npm run build` = `tsc -b`
   builds both). **0 tsc errors** — the codebase was already strict-clean.
-- **eslint** ([`eslint.config.js`](../../apps/website/frontend/eslint.config.js)) — added
+- **eslint** ([`eslint.config.js`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/eslint.config.js)) — added
   `@typescript-eslint/no-explicit-any` + `no-non-null-assertion` (**TS-3**), `no-empty
   {allowEmptyCatch:false}` + `no-empty-function` (**TS-4/TS-7**), `no-console {allow:[warn,error]}`
   (**LOG-2**), `complexity {max:15}` (**COMP-1** TS half), and **TS-2** layer boundaries via
@@ -126,7 +128,7 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
   `import.meta.env.DEV` guard + an inline `no-console` opt-out), 21 `complexity` opt-outs (inline
   `// eslint-disable-next-line complexity` with a per-function reason on MC hot paths + page render
   functions — no refactor, mirroring the Go `//nolint:cyclop` approach).
-- **TS-6** — [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs)
+- **TS-6** — [`verify-contract-citations.mjs`](https://github.com/darkforce09/TBD-reforger/blob/c39f8baccee19ebc690b008524711f41aa54fd00/packages/tbd-schema/scripts/verify-contract-citations.mjs)
   extended: every exported `interface`/`type` in `types/`, `api/`, `hooks/` (excl. generated
   `types/contract/**`) MUST carry `@model` or `@contract`; generic envelopes (`Paginated<T>`) are
   exempt. **23 tags added** (36 exports checked); the existing 24 `@contract` citations still resolve.
@@ -174,8 +176,8 @@ documented or locally runnable. No “follow-up” deferrals for items listed be
 3. **CI** — wire **`cargo xtask ci verify-coding-standards`** into **`ci.yml` backend job** AND **`cargo xtask ci ci-local`**
    (GitHub and local must match — no “local-only” acceptance).
 
-**Authority:** [`handlers.go` `Register()`](../../apps/website/internal/handlers/handlers.go) (all paths
-under `/api/v1/…`). `@route` grammar: [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §3.1.
+**Authority:** [`handlers.go` `Register()`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/handlers.go) (all paths
+under `/api/v1/…`). `@route` grammar: [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §3.1.
 
 ### Task 1 — GO-7: `@route` on every HTTP handler
 
@@ -183,10 +185,10 @@ under `/api/v1/…`). `@route` grammar: [`DOCUMENTATION_STANDARDS.md`](DOCUMENTA
   **Exclude:** `JWT()` / `Discord()` / `Webhook()`; lowercase helpers returning values
   (`loadPending`, `auditQuery`, `loadEvent`, `loadEventMission`, `loadMission`).
 - **Today:** **5 tagged** → **~77 to add** (`registry.go`, `missions.go` ×3, `field_tools.go` ×1).
-- **Verifier** ([`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs)):
+- **Verifier** ([`verify-contract-citations.mjs`](https://github.com/darkforce09/TBD-reforger/blob/c39f8baccee19ebc690b008524711f41aa54fd00/packages/tbd-schema/scripts/verify-contract-citations.mjs)):
   match `^func \(h \*Handler\) ([A-Z]\w*)\(c \*gin.Context\) \{$`; preceding Godoc MUST contain
   `@route (GET|POST|PUT|PATCH|DELETE) /api/v1/…`.
-  **110% route-match (not presence-only):** parse [`Register()`](../../apps/website/internal/handlers/handlers.go)
+  **110% route-match (not presence-only):** parse [`Register()`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/handlers.go)
   — walk nested `Group()` prefixes + each `METHOD("path", …, h.HandlerName)` — build
   `HandlerName → (METHOD, pathTemplate)` including `/api/v1` prefix. Fail on:
   - **missing** `@route` on a wired handler;
@@ -204,7 +206,7 @@ under `/api/v1/…`). `@route` grammar: [`DOCUMENTATION_STANDARDS.md`](DOCUMENTA
 `deployments.go` 66 — use `errors.Is(NotFound)` continue; **`log.Printf` on non-NotFound errors** even
 when the handler still returns 200.
 
-Reference: [`registry.go` `ListRegistry`](../../apps/website/internal/handlers/registry.go). Pair bucket-A
+Reference: [`registry.go` `ListRegistry`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/registry.go). Pair bucket-A
 500s with `logHandlerErr` (Task 6). **No blanket `//nolint`.**
 
 ### Task 3 — GO-3: bare `_ = services.WriteAudit(…)` 
@@ -216,15 +218,15 @@ and annotate or handle (~15 sites across `admin.go`, `auth.go`, `cms.go`, `appro
 
 ### Task 4 — GO-9: `services.RefreshLeaderboard` + `verify-handler-imports.sh`
 
-- **Extract:** new [`services/leaderboard.go`](../../apps/website/internal/services/leaderboard.go)
+- **Extract:** new [`services/leaderboard.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/services/leaderboard.go)
   wrapping `internal/db.RefreshLeaderboard`; `telemetry.go` drops `internal/db` import.
-- **Script:** [`verify-handler-imports.sh`](../../scripts/website/verify-handler-imports.sh) — allowed
+- **Script:** [`verify-handler-imports.sh`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/scripts/website/verify-handler-imports.sh) — allowed
   internal: `services|models|middleware|contract|config`; read GO-9 rows from allowlist YAML.
 - **Allowlist (structural):** `handlers.go` (auth, realtime), `auth.go`, `me.go`.
 
 ### Task 5 — ERR-4: `verify-error-envelope.sh`
 
-New script ([`verify-error-envelope.sh`](../../scripts/website/verify-error-envelope.sh)): scan
+New script ([`verify-error-envelope.sh`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/scripts/website/verify-error-envelope.sh)): scan
 `handlers/` for `c.JSON(http.Status4xx|5xx, gin.H{…})` (and named constants like `StatusBadRequest`).
 Use **awk with brace-balanced** `gin.H{…}` parsing (portable; no Node dep). Assert top-level keys ⊆
 **`{error, details}`** only (`message`, `err`, `errors`, `status` as body keys fail). Document rare
@@ -248,7 +250,7 @@ log.Printf("%s: path=%s status=%d %s dur=%s", name, c.FullPath(), status, detail
   simple enum/body **400** on read-only GETs.
 - **Operational (200 but failed side-effect):** `telemetry.go` `RefreshLeaderboard` failure — add
   `log.Printf` with `path=` + `dur=` even though the handler returns 200 (today only WriteAudit).
-- **Script** [`verify-handler-logging.sh`](../../scripts/website/verify-handler-logging.sh): portable
+- **Script** [`verify-handler-logging.sh`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/scripts/website/verify-handler-logging.sh): portable
   **awk + grep-derived mutator set** (from `@route` tags or Register table). Exit 1 if:
   - any **5xx** `c.JSON` lacks `logHandlerErr(` / `log.Printf` with `status=` in preceding 3 lines;
   - any band-2 **400/409/413** on a mutating handler lacks the same.
@@ -256,11 +258,11 @@ log.Printf("%s: path=%s status=%d %s dur=%s", name, c.FullPath(), status, detail
 
 ### Task 7 — SIZE-1 / SIZE-3: `verify-file-length.mjs`
 
-New [`scripts/website/verify-file-length.mjs`](../../scripts/website/verify-file-length.mjs) —
+New [`scripts/website/verify-file-length.mjs`](https://github.com/darkforce09/TBD-reforger/blob/ec1f5389cafd428c829497c08407f819cec41e72/scripts/website/verify-file-length.mjs) —
 **dep-free Node** (read allowlist YAML via `fs`, no npm deps):
 
 - **>600 lines** → WARN to stderr (SIZE-1, exit 0).
-- **>1000 lines** → exit 1 (SIZE-3) unless path matches [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml).
+- **>1000 lines** → exit 1 (SIZE-3) unless path matches [`.coding-standards-allowlist.yaml`](https://github.com/darkforce09/TBD-reforger/blob/c7c6afffe54a2c58dbfb4d11fdb5b7afc0ecd6d9/.coding-standards-allowlist.yaml).
 - **Standing debt** (add SIZE-3 allowlist rows if not present):
 
   | File | Lines | Split plan |
@@ -302,15 +304,15 @@ New [`scripts/website/verify-file-length.mjs`](../../scripts/website/verify-file
   | `role.sample.json` | `#/$defs/role` | minimal valid instance |
   | `group.sample.json` | `#/$defs/group` | minimal valid instance |
   | `orbatFaction.sample.json` | `#/$defs/orbatFaction` | minimal valid instance |
-  | `root.sample.json` | `#/` (root document) | **copy smallest** [`golden-missions/`](../../packages/tbd-schema/golden-missions/) mission |
+  | `root.sample.json` | `#/` (root document) | **copy smallest** [`golden-missions/`](https://github.com/darkforce09/TBD-reforger/tree/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/golden-missions) mission |
 
-- Extend [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs): scan
+- Extend [`validate.mjs`](https://github.com/darkforce09/TBD-reforger/blob/9d97f05b10cf931ff64febc2b9dbf66b5c8dde9c/packages/tbd-schema/scripts/validate.mjs): scan
   `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/*.c` for `@contract`; require matching fixture +
   Ajv subschema compile. **No `.c` edits** if tags exist.
 
 ### Task 9 — Makefile + `ci-local` + **`ci.yml`**
 
-In root [`Makefile`](../../Makefile):
+In root [`Makefile`](https://github.com/darkforce09/TBD-reforger/blob/fc7dca1458396b99945b2ae298e10d383c0d4a34/Makefile):
 
 ```makefile
 verify-coding-standards: ## GO-1/9, ERR-4, LOG-3, SIZE-1/3 script bundle
@@ -322,7 +324,7 @@ verify-coding-standards: ## GO-1/9, ERR-4, LOG-3, SIZE-1/3 script bundle
 
 Wire into **`ci-local`** after **`ci-local-backend`**, before **`ci-local-schema`**.
 
-**Also edit [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):**
+**Also edit [`.github/workflows/ci.yml`](/.github/workflows/ci.yml):**
 - **backend** job: add step `cargo xtask ci verify-coding-standards` after integration tests (mirrors `ci-local`).
 - GO-7 + ENF-4 already ride **schema** job (`verify-citations`, `npm run validate`).
 
@@ -369,10 +371,10 @@ ENF-4 10/10 fixtures; `ci.yml` backend step; `cargo xtask ci ci-local` wall-cloc
 **`.editorconfig`** (FMT-2) and **Prettier** for TS/TSX/CSS (FMT-3) — wired into **`cargo xtask ci ci-local`**
 and **`ci.yml`**. This closes the last CI-BLOCK rules that were **planned** after T-125.4.
 
-**Authority:** [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §7 FMT-2/FMT-3, §10 matrix, §11 verify replay.
+**Authority:** [`CODING_STANDARDS.md`](/documentation_v2/standards/coding_standards/README.md) §7 FMT-2/FMT-3, §10 matrix, §11 verify replay.
 
 **Baseline today:** No root `.editorconfig`, no Prettier config/scripts in
-[`apps/website/frontend/package.json`](../../apps/website/frontend/package.json). Existing FE style
+[`apps/website/frontend/package.json`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/package.json). Existing FE style
 is **2-space**, **single quotes**, **no semicolons** (match Prettier to current code, not a style
 revolution). Go stays **gofmt/tabs** (FMT-1 already live — do not add Prettier for `.go`).
 
@@ -380,13 +382,13 @@ revolution). Go stays **gofmt/tabs** (FMT-1 already live — do not add Prettier
 
 | # | Task | Deliverable |
 |---|------|-------------|
-| T1 | FMT-2 `.editorconfig` | Root [`.editorconfig`](../../.editorconfig): UTF-8, LF, final newline, trim trailing WS; **tabs** for Go; **2-space** for TS/JS/JSON/YAML/MD/CSS |
+| T1 | FMT-2 `.editorconfig` | Root [`.editorconfig`](/.editorconfig): UTF-8, LF, final newline, trim trailing WS; **tabs** for Go; **2-space** for TS/JS/JSON/YAML/MD/CSS |
 | T2 | FMT-2 checker | `editorconfig-checker` from repo root in **`ci-local`** + **`ci.yml`** (exclude `node_modules`, `dist`, generated contract, mod binaries/LFS) |
-| T3 | FMT-3 Prettier | `prettier` + `eslint-config-prettier` devDeps; [`.prettierrc`](../../apps/website/frontend/.prettierrc) + [`.prettierignore`](../../apps/website/frontend/.prettierignore) |
+| T3 | FMT-3 Prettier | `prettier` + `eslint-config-prettier` devDeps; [`.prettierrc`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/.prettierrc) + [`.prettierignore`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/.prettierignore) |
 | T4 | FMT-3 scripts | `npm run format` + `npm run format:check` in frontend `package.json` |
-| T5 | ESLint compat | Extend [`eslint.config.js`](../../apps/website/frontend/eslint.config.js): **`eslint-config-prettier`** last (disable formatting rules; **no** `eslint-plugin-prettier`) |
+| T5 | ESLint compat | Extend [`eslint.config.js`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/eslint.config.js): **`eslint-config-prettier`** last (disable formatting rules; **no** `eslint-plugin-prettier`) |
 | T6 | One-time format | Run `npm run format` on `src/**/*.{ts,tsx,css}` (+ `*.css` at frontend root); commit as formatting-only diff |
-| T7 | CI wiring | [`Makefile`](../../Makefile) `ci-local-frontend`: add `format:check` after `npm ci`, before `lint`; add editorconfig step (repo root). [`ci.yml`](../../.github/workflows/ci.yml) frontend job: mirror |
+| T7 | CI wiring | [`Makefile`](https://github.com/darkforce09/TBD-reforger/blob/fc7dca1458396b99945b2ae298e10d383c0d4a34/Makefile) `ci-local-frontend`: add `format:check` after `npm ci`, before `lint`; add editorconfig step (repo root). [`ci.yml`](/.github/workflows/ci.yml) frontend job: mirror |
 | T8 | Shipped note | Append **Shipped (T-125.5):** under this section (only doc edit Claude may append) |
 
 ### Task 1 — `.editorconfig` (normative)
@@ -483,28 +485,28 @@ cargo xtask ci ci-local                                 # full gate; report wall
 **style-only** (no logic changes).
 
 **Shipped (T-125.5)** — `cargo xtask ci ci-local` green @ **22.7s** (Node 26; editorconfig 0 errors, FE 21/21):
-- **FMT-2 `.editorconfig`:** root [`.editorconfig`](../../.editorconfig) — `[*]` utf-8/lf/final-newline/trim;
+- **FMT-2 `.editorconfig`:** root [`.editorconfig`](/.editorconfig) — `[*]` utf-8/lf/final-newline/trim;
   `[*.go]` tab; `[*.{ts,tsx,js,mjs,cjs}]` + `[*.{json,yml,yaml}]` 2-space; `[{Makefile,*.mk}]` tab.
   **Carve-outs (engineering-correct, beyond the spec's literal example):** `[*.md]` keeps `trim_trailing_whitespace = false`
   (Markdown hard breaks) and is **not** indent-pinned (prose/nested-list/fenced-snippet indents vary); **CSS indent is
   owned by Prettier (FMT-3)** so editorconfig governs only its charset/EOL/final-newline (the two tools disagreed on
   multi-line comment bodies Prettier leaves untouched).
 - **FMT-2 checker:** **editorconfig-checker v3.8.0** via `go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest`
-  (→ `~/go/bin`; the [`Makefile`](../../Makefile) PATH export now adds `~/go/bin`). Excludes in
-  [`.editorconfig-checker.json`](../../.editorconfig-checker.json): `node_modules`, `dist`, generated `types/contract`,
+  (→ `~/go/bin`; the [`Makefile`](https://github.com/darkforce09/TBD-reforger/blob/fc7dca1458396b99945b2ae298e10d383c0d4a34/Makefile) PATH export now adds `~/go/bin`). Excludes in
+  [`.editorconfig-checker.json`](/.editorconfig-checker.json): `node_modules`, `dist`, generated `types/contract`,
   `apps/mod/`, `public/map-assets`, `.ai/artifacts/`, archive/mockup tiers (`docs/specs/macOS_Blueprints/`,
   `docs/specs/Mission_Creator_Mock_Up/`, `stitch-exports/`, `*.html`), mod binaries (`*.rdb/.ent/.meta`), lockfile.
   Repo-root run **clean (0 errors)**.
 - **FMT-3 Prettier:** **prettier 3.9.4** + **eslint-config-prettier 10.1.8** devDeps;
-  [`.prettierrc`](../../apps/website/frontend/.prettierrc) (`semi:false, singleQuote:true, tabWidth:2, trailingComma:all, printWidth:100`)
-  + [`.prettierignore`](../../apps/website/frontend/.prettierignore) (`dist, node_modules, src/types/contract, package-lock.json`).
+  [`.prettierrc`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/.prettierrc) (`semi:false, singleQuote:true, tabWidth:2, trailingComma:all, printWidth:100`)
+  + [`.prettierignore`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/.prettierignore) (`dist, node_modules, src/types/contract, package-lock.json`).
   Scripts: `format`/`format:check` over `src/**/*.{ts,tsx,css}` **and** root `*.{ts,tsx}` (covers `vite.config.ts`/`vitest.config.ts`;
   the empty `*.css` glob was dropped to avoid a zero-match check failure).
-- **ESLint compat:** `eslint-config-prettier` extended **last** in [`eslint.config.js`](../../apps/website/frontend/eslint.config.js)
+- **ESLint compat:** `eslint-config-prettier` extended **last** in [`eslint.config.js`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/eslint.config.js)
   (flat config); **no** `eslint-plugin-prettier`. `npm run lint` stays green — TS-2..7 / LOG-2 / COMP-1 untouched.
 - **One-time reformat:** `npm run format` → **58 files** reformatted (style-only), incl. `src/index.css` normalized.
 - **Wiring:** `cargo xtask ci verify-editorconfig` (new target) runs first in **`ci-local`**; `npm run format:check` added to
-  **`ci-local-frontend`** (after `npm ci`, before `lint`). [`ci.yml`](../../.github/workflows/ci.yml): `format:check` step in the
+  **`ci-local-frontend`** (after `npm ci`, before `lint`). [`ci.yml`](/.github/workflows/ci.yml): `format:check` step in the
   **frontend** job + a dedicated **`editorconfig`** job (`setup-go` + `go install …@latest` + checker from repo root).
 - **Verify:** `editorconfig-checker` / `npm run format:check` / `npm run lint` / `npm run build` / `npm test` (**21/21**) all exit 0;
   `cargo xtask ci ci-local` green @ **22.7s**.
@@ -514,10 +516,10 @@ cargo xtask ci ci-local                                 # full gate; report wall
 ## T-125.6 — Doc sync (Cursor) — **shipped**
 
 - Mark T-125 **shipped** in registry; `./scripts/ticket sync`
-- [`CLAUDE.md`](../../CLAUDE.md) §Done bullet + collapse ACTIVE SLICE block
-- [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §10 FMT-2/FMT-3 → **live**; §11 replay updated
-- [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §0 codegen drift + §10 gate table
-- [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) — `verify-editorconfig` + `format:check` in CI replay
+- [`CLAUDE.md`](/CLAUDE.md) §Done bullet + collapse ACTIVE SLICE block
+- [`CODING_STANDARDS.md`](/documentation_v2/standards/coding_standards/README.md) §10 FMT-2/FMT-3 → **live**; §11 replay updated
+- [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §0 codegen drift + §10 gate table
+- [`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md) — `verify-editorconfig` + `format:check` in CI replay
 
 ---
 

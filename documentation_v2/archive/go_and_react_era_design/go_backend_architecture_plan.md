@@ -1,3 +1,5 @@
+**Status:** archived
+
 # TBD Reforger Platform — Backend Architecture Plan
 
 > **ARCHIVE.** This document is the original Go-era design plan. It is **not** the live backend.
@@ -13,7 +15,7 @@
 > and shared logic goes in that domain's `services/`. The live atlas is
 > [`apps/website/api_v2/README.md`](../../../apps/website/api_v2/README.md).
 >
-> **Run / status:** root [`CLAUDE.md`](../../../CLAUDE.md) · [`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md) · conventions [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+> **Run / status:** root [`CLAUDE.md`](../../../CLAUDE.md) · [`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md) · conventions [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 >
 > Body below kept for schema archaeology only — do not implement against Go/`internal/`/`cmd/api` paths.
 
@@ -22,7 +24,7 @@
 **Author:** Lead Backend Engineer (handoff design)
 **Date:** 2026-06-17
 **Scope (historical):** PostgreSQL schema + Go REST API for the TBD Arma Reforger Event Platform.
-**Sources:** [`docs/website/platform/context_handoff.md`](../platform/context_handoff.md).
+**Sources:** [`docs/website/platform/context_handoff.md`](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md).
 
 ---
 
@@ -523,7 +525,7 @@ Authorization helpers: `RequireAuth`, `RequireRole(mission_maker)`, `RequireRole
 
 ### Request body limits
 
-The limiter lives in [`internal/middleware/bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go):
+The limiter lives in [`internal/middleware/bodylimit.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/middleware/bodylimit.go):
 
 - **`GlobalBodyLimit(MaxJSONBody)`** (in the `cmd/api/main.go` `r.Use` chain) caps **all** JSON bodies at **1 MB** (`MaxJSONBody = 1 << 20`); multipart bumped to **6 MB** (`MaxMultipartBody`, per-file 5 MB enforced in-handler). It **skips** the mission-version POST via **`isMissionVersionPOST(c)`** — a `c.FullPath()` suffix match on `MissionVersionRoute` **plus** a concrete-URL-path fallback (`/…/missions/<id>/versions`) added in **T-060.1.4**. The skip is mandatory because a global `http.MaxBytesReader(1 MB)` wrapped first cannot be loosened by a later route-level limiter (the innermost limit wins) — if the 1 MB cap reaches this route, a 100MB+ save trips `MaxBytesReader` at 1 MB and the socket is **reset mid-upload**, which the browser surfaces as `ERR_NETWORK` (see Dev note below).
 - **`POST /missions/:id/versions`** is registered with its own **`BodyLimit(cfg.MissionVersionBodyLimit())`** — **256 MB** default. Compiled `json_payload` for large missions (100k–360k+ slot entities) is tens–hundreds of MB; PostgreSQL `jsonb` on `mission_versions` handles it. Override with env **`MISSION_VERSION_MAX_BODY_BYTES`** (`Config.MissionVersionBodyLimit()` falls back to 256 MB when unset, e.g. a config built without `Load()`).

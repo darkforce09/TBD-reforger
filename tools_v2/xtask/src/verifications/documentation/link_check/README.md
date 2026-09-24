@@ -32,10 +32,12 @@ Front matter, fenced code blocks (found at a list item's content column too), in
 and HTML comments are set aside; every other paragraph, heading and table row becomes a run, and
 reference definition lines are collected. `markdown_inlines.rs` then reads each run with the
 defined labels: code spans, autolinks, HTML comments and tags (`inline_html.rs`) bind first, then
-brackets pair into inline links, images and references. The
-scan yields every destination with its line, the full and collapsed references whose label is
-undefined, the headings' rendered text, the `<a id|name>` anchors, and the code spans and fenced
-blocks.
+brackets pair into inline links, images and references. A shortcut reference whose label is
+undefined is plain text, and so is a link with empty text before an undefined label (`[][label]`,
+as in `points[][2]`), which shows nothing to follow; an image with empty alt text still shows, so
+`![][label]` stays a reference. The scan yields every destination with its line, the full and
+collapsed references whose label is undefined, the headings' rendered text, the `<a id|name>`
+anchors, and the code spans and fenced blocks.
 
 `link_targets.rs` classifies each destination through `target_resolution.rs` and judges it: a
 checkout path must resolve to a tracked file or a folder holding one, and a fragment must match a

@@ -1,3 +1,5 @@
+**Status:** live
+
 # Property-test acceptance evidence
 
 The API readiness command treats generated cases and Rust test functions as separate counts.

@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase Six Handoff
 
 Status: the refactor is complete. `apps/website/api_v2/` is the backend crate (`website-api`, lib `website_api`); `apps/website/api/` does not exist. Commits: `939db54e9` (6.1 test support split), `2cec5c57e` (6.2 telemetry and events suites), `948da1cdf` (6.3 missions, misc, null-tolerance suites), `4374fa8b2` (6.4 suite renames), `dd139dbdf` (6.5 schema descriptions and regenerated projections), `9fa3f4d35` (6.6 present-tense sweep of the suites and the crate description), `16598a095` and `e700fa80d` (6.7 docs), `d5a77ffe5` (6.8 gate fix-up: the prefab schema keeps the sentence the n6 gate pins across the spec documents).

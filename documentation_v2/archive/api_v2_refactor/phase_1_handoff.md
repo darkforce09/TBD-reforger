@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase One Handoff
 
 Status: relocation complete and committed on `main` as `6f562b02a`. Crate layout inside `src/` is still the legacy one; domain decomposition begins in Phase Two.

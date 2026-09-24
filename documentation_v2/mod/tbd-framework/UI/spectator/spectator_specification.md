@@ -1,9 +1,11 @@
+**Status:** live
+
 # TBD Reforger — Spectator UI Specification & Visual Breakdown
 
-**Source Reference Directory:** [`spectator_ui/`](./spectator_ui/)  
+**Source Reference Directory:** [`spectator_ui/`](/documentation_v2/mod/tbd-framework/UI/spectator/visual_references/reference_screenshots/)  
 **Captured References:**
-- [`spectator_ui/spectator_death_and_kill_info.png`](./spectator_ui/spectator_death_and_kill_info.png)
-- [`spectator_ui/spectator_mines_playercount.png`](./spectator_ui/spectator_mines_playercount.png)  
+- [`spectator_ui/spectator_death_and_kill_info.png`](/documentation_v2/mod/tbd-framework/UI/spectator/visual_references/reference_screenshots/spectator_death_and_kill_info.png)
+- [`spectator_ui/spectator_mines_playercount.png`](/documentation_v2/mod/tbd-framework/UI/spectator/visual_references/reference_screenshots/spectator_mines_playercount.png)  
 **System Domain:** One-Life Elimination Camera, Combat Forensics, Faction Attrition Telemetry & Hazard Tracking  
 **Framework Alignment:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`), Spectator Component (`CRF_SpectatorCamera.c`), and Mission Schema Settings (`contracts_v2/`)
 
@@ -52,7 +54,7 @@ The interface is built on a **minimalist, high-clarity 3-tier layering model** d
 
 # Section 1: Elimination Forensics & Killer Diagnostics
 
-**Source Image:** `docs/mod/ui/ui_referances/spectator_ui/spectator_death_and_kill_info.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/spectator/visual_references/reference_screenshots/spectator_death_and_kill_info.png`  
 **Spectated Player:** `[LG]Yuki_Hattori` (Green / BLUFOR / INDFOR)  
 **Killer:** `[XOF]Ales` (Red / OPFOR)  
 **Camera View:** High-angle tactical free camera overlooking rolling fields, farmsteads, and crossroads.
@@ -113,7 +115,7 @@ Killer: [XOF]Ales - [FatalInjury:Death]
 
 # Section 2: Faction Attrition Telemetry & Explosive Hazard Tracking
 
-**Source Image:** `docs/mod/ui/ui_referances/spectator_ui/spectator_mines_playercount.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/spectator/visual_references/reference_screenshots/spectator_mines_playercount.png`  
 **Spectated Player:** `[L - 13] Vikhr` (Red / OPFOR)  
 **Camera View:** Elevated chase view over a rural road corridor with approaching vehicular traffic.
 

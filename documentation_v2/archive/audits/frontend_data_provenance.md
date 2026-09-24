@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Frontend data provenance — which render sites are API-fed, which are still mock
 
 Derived 2026-07-26 by an exhaustive sweep of every `view!` render site in

@@ -1,3 +1,5 @@
+**Status:** live
+
 # KB-001 — Mission Creator: selection & copy/paste break at extreme slot counts
 
 | | |

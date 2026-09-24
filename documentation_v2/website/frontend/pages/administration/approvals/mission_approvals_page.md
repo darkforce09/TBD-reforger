@@ -1,3 +1,5 @@
+**Status:** live
+
 # Mission Approvals
 
 ## Status
@@ -11,7 +13,7 @@
 - **Route:** `/admin/approvals`
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/mission_approvals_queue_admin_dashboard/code.html`
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.9 Mission Approvals
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.9 Mission Approvals
 
 ## Element Inventory
 

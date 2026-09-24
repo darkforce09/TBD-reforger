@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-057 — Map performance hotfix (≥55 fps pan/zoom @ 200+ slots)
 
 **Status:** shipped (T-057)
 **Git tag on ship:** T-057
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance (contract + scale program) · [engineering_plan.md](engineering_plan.md) §4.4 · [agent_execution.md](agent_execution.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance (contract + scale program) · [engineering_plan.md](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §4.4 · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md)
 
 ---
 
@@ -142,11 +144,11 @@ hovering an icon (no per-move hover pick). Click/dbl-click/marquee/drag picking 
 
 ## Docs synced (same commit)
 
-`CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](ROADMAP.md)
-§Map performance (T-057 row → done), [docs/TAGS.md](../../website/TAGS.md),
-[docs/website/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md),
-[docs/website/frontend/pages/mission-editor.md](../../website/frontend/pages/mission-editor.md),
-[agent_execution.md](agent_execution.md) Decisions log + todo status.
+`CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
+§Map performance (T-057 row → done), [docs/TAGS.md](/documentation_v2/standards/ticket_identifiers.md),
+[docs/website/frontend/ROADMAP.md](/documentation_v2/website/frontend/README.md),
+[docs/website/frontend/pages/mission-editor.md](/documentation_v2/website/frontend/apps/editor/ux_spec.md),
+[agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) Decisions log + todo status.
 
 ## After T-057
 

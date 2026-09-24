@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-820 — catalog failure names the no-modpack cause and hides chips
 
 Ticket: .ai/tickets/T-820.toml · Plan: docs/plans/t-820_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

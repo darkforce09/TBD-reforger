@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase Seven Handoff
 
 Status: the completion audit of 2026-09-21 found leftovers the Phase 6 gates could not see, and this

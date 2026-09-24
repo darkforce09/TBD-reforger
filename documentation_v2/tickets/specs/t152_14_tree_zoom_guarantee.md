@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.14 — Tree glyph zoom-in guarantee (budget + handoff fix)
 
 **Ticket:** T-152 · **Slice:** T-152.14 (remediation ladder #3)

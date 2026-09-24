@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # Missed-items handoff — post-T-159/T-165 residuals (setup 2026-07-18)
 
 Operator's list of folded/incomplete work, verified against the tree @ `476f1ddf` and

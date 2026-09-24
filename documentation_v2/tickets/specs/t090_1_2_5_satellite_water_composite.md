@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.5 — Satellite basemap water (ocean + inland)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.5  
@@ -100,7 +102,7 @@ Handoff: [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifa
 
 Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
 
-**Shipped:** @ `6396960f` · verify [`.ai/artifacts/t090_1_2_5_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_verify_log.md) · spike [`.ai/artifacts/t090_1_2_5_water_source_spike.json`](../../../.ai/artifacts/t090_1_2_5_water_source_spike.json)
+**Shipped:** @ `6396960f` · verify [`.ai/artifacts/t090_1_2_5_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_verify_log.md) · spike [`.ai/artifacts/t090_1_2_5_water_source_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_2_5_water_source_spike.json)
 
 ### Known gaps (operator feedback 2026-07-03)
 

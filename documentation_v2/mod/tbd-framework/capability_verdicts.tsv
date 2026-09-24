@@ -7,7 +7,7 @@
 #
 # LONGEST PREFIX WINS, so a broad directory rule can be overridden by a specific file.
 # Verdicts: BUILD | HAVE | PARTIAL | REPLACE | LATER | SKIP | DEFERRED
-#   DEFERRED means out of scope BY OPERATOR WORD — see docs/mod/TBD_MOD_DESIGN.md §Deferrals.
+#   DEFERRED means out of scope BY OPERATOR WORD — see documentation_v2/mod/tbd-framework/mod_design.md §Deferrals.
 #
 prefix	capability	verdict	note
 # ── spine: the event loop ────────────────────────────────────────────────────────────────

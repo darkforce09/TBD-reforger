@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.7 — Compat matrix spec (Phase 2 docs)
 
 **Ticket:** T-068 · **Slice:** T-068.7  

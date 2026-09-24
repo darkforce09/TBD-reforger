@@ -1,11 +1,13 @@
+**Status:** live
+
 # Arma 3 Eden Editor — Feature Reference (Interactions)
 
 **Document:** `eden/interactions.md`  
-**Schema:** [reference/feds_schema.md](../reference/feds_schema.md) (FEDS v2)  
-**UI layout:** [ui_anatomy.md](./ui_anatomy.md)  
-**Attribute fields:** [attributes.md](./attributes.md)  
+**Schema:** [reference/feds_schema.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md) (FEDS v2)  
+**UI layout:** [ui_anatomy.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)  
+**Attribute fields:** [attributes.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)  
 **Scrape cache:** `artifacts/eden-wiki/` (28 pages, 2026-06-20)  
-**Gap analysis:** [gap_analysis.md](./gap_analysis.md)
+**Gap analysis:** [gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
 
 Scope: **Arma 3 Eden Editor** (3D). TBD is 2D flat — 3D-only items marked `N/A (3D)`.
 
@@ -13,7 +15,7 @@ Scope: **Arma 3 Eden Editor** (3D). TBD is 2D flat — 3D-only items marked `N/A
 
 ## Glossary
 
-See [ui_anatomy.md](../eden/ui_anatomy.md) and [Terminology](https://community.bistudio.com/wiki/Eden_Editor:_Terminology).
+See [ui_anatomy.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) and [Terminology](https://community.bistudio.com/wiki/Eden_Editor:_Terminology).
 
 ---
 
@@ -368,7 +370,7 @@ See [ui_anatomy.md](../eden/ui_anatomy.md) and [Terminology](https://community.b
 
 ## TOOLBAR — Index
 
-See [ui_anatomy § Toolbar](../eden/ui_anatomy.md). IDs: `TOOLBAR-NEW-001` … `TOOLBAR-TUTORIAL-001` (New, Open, Save, Workshop, Undo, Redo, widgets, snap, grids, intel, map, flashlight, vision, phase, tutorials).
+See [ui_anatomy § Toolbar](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md). IDs: `TOOLBAR-NEW-001` … `TOOLBAR-TUTORIAL-001` (New, Open, Save, Workshop, Undo, Redo, widgets, snap, grids, intel, map, flashlight, vision, phase, tutorials).
 
 Wiki: https://community.bistudio.com/wiki/Eden_Editor:_Toolbar
 

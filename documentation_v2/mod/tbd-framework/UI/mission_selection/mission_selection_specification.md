@@ -1,6 +1,8 @@
+**Status:** live
+
 # TBD Reforger — Mission Selection UI Specification & Visual Breakdown
 
-**Source File:** [`mission_selection.png`](./mission_selection.png)  
+**Source File:** [`mission_selection.png`](/documentation_v2/mod/tbd-framework/UI/mission_selection/visual_references/reference_screenshots/mission_selection.png)  
 **Panel Title:** `CREATE GAME`  
 **Host Identity Context:** `Mission Maker`  
 **Scope:** Complete textual representation, visual layout, interactive controls, information architecture, and operational mechanics of the multiplayer mission selection and hosting interface.

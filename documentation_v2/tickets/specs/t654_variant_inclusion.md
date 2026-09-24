@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-654 — conditional inclusion: variant-gated document subtrees
 
 Ticket: .ai/tickets/T-654.toml · Plan: docs/plans/t-654_plan.md · Schema half shipped in T-706.

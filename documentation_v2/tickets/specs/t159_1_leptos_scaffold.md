@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-159.1 — Leptos app scaffold (workspace member)
 
 **Parent:** [`t159_leptos_ui_program.md`](t159_leptos_ui_program.md) · **Executor:** claude-code ·

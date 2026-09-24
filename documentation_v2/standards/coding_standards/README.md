@@ -1,10 +1,12 @@
+**Status:** live
+
 # TBD Reforger — Coding Standards
 
 **Status:** living
 **Audience:** every engineer and AI agent that writes Rust, Enfusion, or tooling code in this monorepo
-**Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/platform/README.md`](README.md) → **this doc** (supporting tier)
+**Authority:** Running code → [`CLAUDE.md`](/CLAUDE.md) → [`documentation_v2/archive/monorepo_migration/docs_platform_readme.md`](/documentation_v2/archive/monorepo_migration/docs_platform_readme.md) → **this doc** (supporting tier)
 **Updated:** 2026-06-30
-**Ticket:** [T-125](t125_coding_standards_enforcement.md) — **shipped** @ `e21dac3` (tag **T-125.5**); program **T-125.0–.6 complete** (38 rules, all CI gates live *in the Go/React era*).
+**Ticket:** [T-125](/documentation_v2/tickets/specs/t125_coding_standards_enforcement.md) — **shipped** @ `e21dac3` (tag **T-125.5**); program **T-125.0–.6 complete** (38 rules, all CI gates live *in the Go/React era*).
 
 > **SUPERSEDED (T-145 / T-159 / T-165 / T-171):** Go + React/TS eras are gone. **§2 Go and
 > §3 TypeScript/React below — and every GO-\*/TS-\*/FMT-1/FMT-3 / golangci / `npm run` gate row
@@ -17,7 +19,7 @@
 > a blanket "that's all retired" reading was easier than checking — see the §2 note (T-590).
 >
 > **Live layout:** `apps/website/api_v2/` (`website-api`) · `apps/website/frontend/` (`website-frontend`).
-> CI jobs: `website-api` / `website-frontend`. Conventions: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+> CI jobs: `website-api` / `website-frontend`. Conventions: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 >
 > **Live enforcement:** `cargo fmt --check` + `cargo clippy -D warnings` + `cargo xtask mk wasm-ci` +
 > `cargo xtask mk ci-local-leptos` + `cargo xtask mk leptos-gates` + `cargo xtask verify no-python` + schema/citations +
@@ -28,12 +30,12 @@
 > V-suite: `verify|accept` only (freeze mode retired); oracles at `tools_v2/developer-tools/fixtures/t159/oracle-freeze`.
 
 > This document is the source of truth for **how code is written** across the three boundaries of
-> `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
+> `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md), owns **how
 > code is documented** (the cross-boundary tag vocabulary and per-language doc-comment rules) and
 > **where markdown files live** (§8.2). The two do not overlap — see the boundary matrix in §0.1. This doc is **prescriptive**: **MUST**/**SHALL**
 > are mandatory, **FORBIDDEN** patterns must not be introduced, and every rule names exactly one
 > enforcement **gate** (§0.2). It defers to running code and never overrides a rule in
-> [`CLAUDE.md`](../../CLAUDE.md) or the [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md).
+> [`CLAUDE.md`](/CLAUDE.md) or the [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 ---
 
@@ -43,12 +45,12 @@ The repo documents its *contracts* well (DOCUMENTATION_STANDARDS.md, the `@contr
 gates). What it lacked was a written, **enforced** standard for the **code itself** — when a handler
 is too fat, whether a swallowed `_ = db.First(...)` is acceptable, what HTTP status a duplicate key
 returns, how big a file may grow, and — critically — **which tool checks each rule**. The 2026 audit
-([`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md)) surfaced the symptoms: **M6** (31 swallowed
+([`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md)) surfaced the symptoms: **M6** (31 swallowed
 DB/audit errors), god-files (`admin.tsx` 1628 L, `doctrine.tsx` 1289 L, `events.go` 1041 L), and
 inconsistent error envelopes. This document fixes that. Go lint is **gated by the full
 [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) set** (revive, errcheck, errorlint,
 staticcheck, govet, cyclop) on every **`ci.yml`** push/PR to `main` and via **`cargo xtask ci ci-local`**.
-[`contracts.yml`](../../.github/workflows/contracts.yml) is a path-filtered supplement (no
+[`contracts.yml`](/.github/workflows/contracts.yml) is a path-filtered supplement (no
 `only-new-issues` since **T-125.2**). §10 maps **every rule to the exact tool, config, verify command,
 and T-125 slice** that enforces it.
 
@@ -77,7 +79,7 @@ other and does not duplicate the text.
 
 | Gate | Meaning | CI behavior |
 |------|---------|-------------|
-| **CI-BLOCK** | A tool exits non-zero on violation. | Required job in [`ci.yml`](../../.github/workflows) / [`contracts.yml`](../../.github/workflows/contracts.yml). |
+| **CI-BLOCK** | A tool exits non-zero on violation. | Required job in [`ci.yml`](/.github/workflows) / [`contracts.yml`](/.github/workflows/contracts.yml). |
 | **CI-SCRIPT** | An xtask verify/ci subcommand exits non-zero on violation. | `cargo xtask verify …` / `cargo xtask ci …`, run by `cargo xtask ci ci-local`. |
 | **ALLOWLIST** | A CI-SCRIPT plus a checked-in allowlist file. | Reads `.coding-standards-allowlist.yaml` (§8.1); an unlisted violation exits non-zero. |
 | **MANUAL** | No static automation is possible (Enfusion runtime / Workbench only). | MUST cite why; **maximum 3** MANUAL rules repo-wide; **FORBIDDEN** for any Go/TS/API rule once T-125.5 ships. |
@@ -89,7 +91,7 @@ precisely is not ready to ship.
 ### 0.3 Meta-gates — rules about the CI configuration itself
 
 - **CI-1 (Debuggability) — `only-new-issues` SHALL NOT survive.** After **T-125.2** (shipped),
-  [`contracts.yml`](../../.github/workflows/contracts.yml) MUST NOT set `only-new-issues: true` on the
+  [`contracts.yml`](/.github/workflows/contracts.yml) MUST NOT set `only-new-issues: true` on the
   golangci job. **RETIRED** — the golangci job died with the Go backend at T-145;
   `scripts/website/verify-ci1.sh` and the `ci-local-backend` target that ran it are both gone
   (the latter with the Makefile at T-897). Row kept for the numbering, not as a live gate.
@@ -197,11 +199,11 @@ the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` sti
   match.** Detect `*pgconn.PgError` code `23505` (not `strings.Contains(err.Error(), "duplicate")`,
   audit T6/M6). Gate: **CI-BLOCK** (integration test `TestDuplicateSemver_409` + `staticcheck`).
 - **GO-6 (Readability) — Every exported identifier MUST carry a Godoc comment starting with its name.**
-  Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §4. Gate: **CI-BLOCK** (golangci
+  Owned by [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §4. Gate: **CI-BLOCK** (golangci
   `revive` `exported`); **T-125.2** removes `only-new-issues`, making it a full-repo gate.
 - **GO-7 (Readability) — Every exported handler fn SHALL carry `@route` in its doc comment, and the
   tag MUST match the wired route in the eight `apps/website/api_v2/src/<domain>/routes.rs` tables
-  that [`core/http_router.rs`](../../apps/website/api_v2/src/core/http_router.rs) merges under
+  that [`core/http_router.rs`](/apps/website/api_v2/src/core/http_router.rs) merges under
   `/api/v1` (method + path).** The three-way triangulation of DOCUMENTATION_STANDARDS.md §3. Gate:
   **CI-SCRIPT** — `cargo xtask verify route-tags`, checked in
   **both** directions (every `@route` tag resolves to a registered route, **and** every registered
@@ -249,7 +251,7 @@ the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` sti
   `useMissionEditor.saveVersion` (413 → "too large", 409 → semver, else backend `error`). The
   enforceable invariant is TS-7 (no swallowing catch). Gate: **CI-BLOCK** (eslint `no-empty`).
 - **TS-5 (Readability) — Contract-layer exports (`types/`, `api/`, `hooks/`) MUST carry a TSDoc block
-  (presence).** Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §5. Gate:
+  (presence).** Owned by [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §5. Gate:
   **CI-BLOCK** (eslint-plugin-jsdoc `require-jsdoc`, live in [`eslint.config.js`](../../apps/website/frontend/eslint.config.js)).
 - **TS-6 (Readability) — Cross-boundary exports MUST include `@contract` or `@model` content (not just
   a block).** Gate: **CI-SCRIPT** — `cargo run -p xtask -- schema citations` requires the tag on exported
@@ -274,7 +276,7 @@ The API speaks **one** error shape. This section is normative for every JSON han
   string[]` for validation). Reference: `CreateVersion` →
   `{ "error": "invalid mission payload", "details": [...] }`. Gate: **CI-BLOCK** (integration tests
   assert the body shape on 400/404/409/413 fixtures). *Success* lists stay `{ data, total, limit,
-  offset }` ([`CLAUDE.md`](../../CLAUDE.md) §Conventions); audit logs use `next_cursor`.
+  offset }` ([`CLAUDE.md`](/CLAUDE.md) §Conventions); audit logs use `next_cursor`.
 - **ERR-2 (Usability) — Status codes MUST follow the table:**
 
   | Status | Meaning | Used when |
@@ -306,7 +308,7 @@ The API speaks **one** error shape. This section is normative for every JSON han
 
 This section covers Enfusion **code** behaviour. The networked-code **tags**
 (`@authority`/`@rpc`/`@replicated`/`@contract`) and doc-comment rules are **owned by**
-[`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §6–§7 — not restated here.
+[`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §6–§7 — not restated here.
 
 - **ENF-1 (Debuggability) — Disciplined logging; dev toggles ship OFF.** Use `Print(..., LogLevel.X)`
   with a level; no per-frame / per-replication-tick logging on hot paths. Any developer test switch
@@ -322,7 +324,7 @@ This section covers Enfusion **code** behaviour. The networked-code **tags**
   **CI-SCRIPT** — the Enfusion DTO branch of `cargo xtask ci schema-validate`
   (10 Backend `@contract` DTOs → `contracts_v2/fixtures/enfusion_samples/*.sample.json`; live @ **T-125.4**).
 
-**Process (from [`CLAUDE.md`](../../CLAUDE.md)):** do **not** edit `apps/mod` `.c` files unless a ticket
+**Process (from [`CLAUDE.md`](/CLAUDE.md)):** do **not** edit `apps/mod` `.c` files unless a ticket
 slice explicitly assigns `claude-code` to that path, and **use `enfusion-mcp` before editing any `.c`
 file**. `cargo xtask db test-it` / the FE build do **not** cover Enfusion; mod changes need a Workbench pass —
 this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
@@ -466,7 +468,7 @@ Re=Readability, Us=Usability, De=Debuggability.
 ### 10.1 CI scripts inventory
 
 Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml); local mirror **`cargo xtask ci ci-local`**
+[`.github/workflows/ci.yml`](/.github/workflows/ci.yml); local mirror **`cargo xtask ci ci-local`**
 (CODING_STANDARDS §11).
 
 | Script / artefact | Rules it satisfies | Slice | Status |
@@ -527,7 +529,7 @@ cargo xtask ci verify-citations                  # @contract citations + @route 
 
 ## 12. Quick-reference cheat sheet
 
-Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md) (T-125.6).
+Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md) (T-125.6).
 
 | Language | Before you commit |
 |----------|-------------------|
@@ -540,5 +542,5 @@ Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECK
 ---
 
 *Defects against this standard are fixed on next edit of the affected file. Disputes resolve up the
-authority ladder: running code wins, then [`CLAUDE.md`](../../CLAUDE.md), then this doc. Documentation
-and tag rules live in its sibling [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md).*
+authority ladder: running code wins, then [`CLAUDE.md`](/CLAUDE.md), then this doc. Documentation
+and tag rules live in its sibling [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md).*

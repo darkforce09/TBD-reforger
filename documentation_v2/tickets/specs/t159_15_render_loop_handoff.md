@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-159.15.1 — Mission Creator render loop: handoff + blocker
 
 **Status:** attempted, reverted to keep the branch green at **15.0** (`3066f14c`). The camera + rAF

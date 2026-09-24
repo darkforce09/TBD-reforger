@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.2 — Graph mutators + empty-squad GC
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.1 · **Executor:** claude-code  
@@ -6,7 +8,7 @@
 
 ## Problem
 
-UI surfaces (ORBAT Manager, refile, Make SL, vehicles) must share one mutator layer. Today [`store.rs`](../../../crates/map-engine-core/src/doc/store.rs) has `add_faction` / `add_squad` / `add_slot` / `remove_slot` / `update_slot_loadout` — **no** `set_leader`, **no** `move_slot_to_squad`, **no** empty-squad delete, **no** `vehicleIds` attach.
+UI surfaces (ORBAT Manager, refile, Make SL, vehicles) must share one mutator layer. Today [`store.rs`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs) has `add_faction` / `add_squad` / `add_slot` / `remove_slot` / `update_slot_loadout` — **no** `set_leader`, **no** `move_slot_to_squad`, **no** empty-squad delete, **no** `vehicleIds` attach.
 
 Without this, T-180.4 lines and T-180.6/7 sync invent parallel membership rules (forbidden).
 
@@ -22,7 +24,7 @@ Without this, T-180.4 lines and T-180.6/7 sync invent parallel membership rules 
 | B-L6 | `vehicleIds: string[]` on squad; `attach_vehicle` / `detach_vehicle` |
 | B-L7 | All mutators undoable via existing txn / LOCAL_ORIGIN patterns |
 | B-L8 | **`add_vehicle` ABSENT today** ([`t180_class_r_pins.md`](t180_class_r_pins.md)) — add `add_vehicle` mutator writing `vehiclesById` row `{id, …}` so .8 is not blocked; can be minimal (id + resourceName + optional position) |
-| B-L9 | `move_slot_to_layer` ([`store.rs:853`](../../../crates/map-engine-core/src/doc/store.rs)) is **not** squad refile — do not reuse it for ORBAT |
+| B-L9 | `move_slot_to_layer` ([`store.rs:853`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs)) is **not** squad refile — do not reuse it for ORBAT |
 
 ## File map
 

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.12 — Mod player loadout equip on spawn
 
 **Ticket:** T-068 · **Slice:** T-068.12  

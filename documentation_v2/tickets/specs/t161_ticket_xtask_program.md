@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-161 — Ticket CLI: Python → Rust xtask
 
 **Status:** **SHIPPED** (T-161.0–.5) · **Worktree:** `.ai/artifacts/worktrees/TBD-T-161/` @
@@ -27,10 +29,10 @@ same derived docs, no Python runtime for everyday ticket ops.
 | Slice | Status | Verify |
 |-------|--------|--------|
 | **T-161.0** | shipped | hub + registry + worktree |
-| **T-161.1** | shipped | [`.ai/artifacts/t161_1_verify_log.md`](../../.ai/artifacts/t161_1_verify_log.md) |
-| **T-161.2** | shipped | [`.ai/artifacts/t161_2_verify_log.md`](../../.ai/artifacts/t161_2_verify_log.md) |
-| **T-161.3** | shipped | [`.ai/artifacts/t161_3_verify_log.md`](../../.ai/artifacts/t161_3_verify_log.md) |
-| **T-161.4** | shipped | [`.ai/artifacts/t161_4_verify_log.md`](../../.ai/artifacts/t161_4_verify_log.md) |
+| **T-161.1** | shipped | [`.ai/artifacts/t161_1_verify_log.md`](/.ai/artifacts/t161_1_verify_log.md) |
+| **T-161.2** | shipped | [`.ai/artifacts/t161_2_verify_log.md`](/.ai/artifacts/t161_2_verify_log.md) |
+| **T-161.3** | shipped | [`.ai/artifacts/t161_3_verify_log.md`](/.ai/artifacts/t161_3_verify_log.md) |
+| **T-161.4** | shipped | [`.ai/artifacts/t161_4_verify_log.md`](/.ai/artifacts/t161_4_verify_log.md) |
 | **T-161.5** | shipped | this hub + README + registry |
 
 ## How to run

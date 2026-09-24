@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068 — Virtual Arsenal (registry + loadout export)
 
 **Status:** **Phase 1 shipped**. **T-150** @ `9107bf4e` · **T-068.9** @ `d41418e5` ·
@@ -6,7 +8,7 @@ shipped:** **T-068.15.1** @ `85acbb13` → **T-068.15.2** @ `4fb156b7` → **T-0
 `c66494c6` → **T-068.12** @ `0be53e16`. **ACTIVE:** **T-068.13** LOBBY slot picker →
 **T-068.14** Phase-2 E2E.  
 **Git tags:** **T-068.12** @ `0be53e16` (latest cargo). Full ticket ships @ **T-068.14**.  
-**Authority:** [MC ROADMAP](ROADMAP.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
 
@@ -49,7 +51,7 @@ T-068.10 Forge + editor loadout ✓ @ 3bc0bd24
 | Mod slot picker | **T-068.13** ← | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
 | Phase-2 E2E | **T-068.14** | (human gate) |
 
-**Ops:** `cargo xtask db registry-import` · see [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Registry.
+**Ops:** `cargo xtask db registry-import` · see [`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md) §Registry.
 
 **T-068.10 note:** Primary dropdown uses per-kind degrade when `character_default_loadout`
 has no weapon edges (T-150 data reality); optic/mag feeds stay strict.
@@ -66,7 +68,7 @@ has no weapon edges (T-150 data reality); optic/mag feeds stay strict.
 | **Claude Code** | All code — schemas, API, UI, worker, compiler, **mod + Workbench via enfusion-mcp** — including **`cargo xtask mod dev-bootstrap`** (launch Tools, MCP root, `wb_connect`) |
 | **Human** | Phase 1 E2E sign-off only (`executor: human` @ **T-068.6**); escalate if bootstrap exits 1 after automated launch (Net API off, addon not loaded) |
 
-**enfusion-mcp is mandatory for real registry data.** Flat `resource_name` rows cannot be invented — Claude Code must discover prefab paths via MCP (`asset_search` / `game_read` / `game_browse`) or Workbench-validated export, then commit JSON. Shell fallback: [`scripts/mod/mcp-call.sh`](../../../scripts/mod/mcp-call.sh) + `cargo xtask mod dev-bootstrap`. See [`docs/mod/CLAUDE-CODE-START.md`](../../mod/CLAUDE-CODE-START.md).
+**enfusion-mcp is mandatory for real registry data.** Flat `resource_name` rows cannot be invented — Claude Code must discover prefab paths via MCP (`asset_search` / `game_read` / `game_browse`) or Workbench-validated export, then commit JSON. Shell fallback: [`scripts/mod/mcp-call.sh`](https://github.com/darkforce09/TBD-reforger/blob/46166bf824f00ab2fd50c7d41beaeb3604975607/scripts/mod/mcp-call.sh) + `cargo xtask mod dev-bootstrap`. See [`docs/mod/CLAUDE-CODE-START.md`](/documentation_v2/runbooks/mod_slice_workflow.md).
 
 ---
 
@@ -86,7 +88,7 @@ Phases are labels; **`slices[]` + `active_slice`** in registry are the execution
 | # | Rule |
 |---|------|
 | 1 | **Identity:** full Enfusion `ResourceName` (`{GUID}Prefabs/.../File.et`) in API, export, and `Slot.assetId`. API field name: **`resource_name`** (snake_case). |
-| 2 | **Alias registry POC** ([`registry.schema.json`](../../../packages/tbd-schema/schema/registry.schema.json) + mod `Data/registry.json`) **coexists** — spawn aliases (`kit:us_rifleman`) stay mod-only; web feed uses flat `registry-items` (no aliases in Phase 1 API). |
+| 2 | **Alias registry POC** ([`registry.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/registry.schema.json) + mod `Data/registry.json`) **coexists** — spawn aliases (`kit:us_rifleman`) stay mod-only; web feed uses flat `registry-items` (no aliases in Phase 1 API). |
 | 3 | **Phase 1:** no `canEquip`, no attachments/mags/ammo in UI or `loadout-export` schema. |
 | 4 | **Phase 1 loadout-export:** `{ loadoutVersion, modpackId, gear: { primary, uniform, vest, helmet } }` — each value is a `resource_name` string or `null`. |
 | 5 | **Palette `kind`:** `character` for Eden Factions drag-place; gear rows use `gear_primary`, `gear_uniform`, `gear_vest`, `gear_helmet` for loadout UI filters. |
@@ -253,7 +255,7 @@ flowchart TD
 | T-068.7 | `cargo xtask ticket check --strict` | Phase 2 approval statement |
 | T-068.8+ | Per child spec gate | Per child spec gate |
 
-Detail: each [`t068_*`](.) child spec **§Verification gate** section.
+Detail: each [`t068_*`](https://github.com/darkforce09/TBD-reforger/tree/e23d2c2d33183eb912901d4b1cdc3a96b4acb954/docs/specs/Mission_Creator_Architecture) child spec **§Verification gate** section.
 
 ---
 
@@ -274,7 +276,7 @@ Detail: each [`t068_*`](.) child spec **§Verification gate** section.
 | T-068.3 shipped | `feature_inventory` **RIGHT-CAT-001** → working; `eden/gap_analysis` Factions feed |
 | T-068.4 shipped | Loadout Forge FEDS row (dumb export) |
 | T-068.6 passed | Phase 1 acceptance in this hub + CLAUDE §Status + NPC vs player boundary (**rule #15**) |
-| T-068.11 shipped | Full [`AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md); registry `shipped`; MC ROADMAP Done bullet |
+| T-068.11 shipped | Full [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md); registry `shipped`; MC ROADMAP Done bullet |
 
 ---
 

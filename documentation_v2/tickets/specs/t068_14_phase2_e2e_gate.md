@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.14 — Phase 2 E2E gate (editor → player)
 
 **Ticket:** T-068 · **Slice:** T-068.14  

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.3 — Map asset export (Workbench → repo)
 
 **Ticket:** T-090 · **Slice:** T-090.3  

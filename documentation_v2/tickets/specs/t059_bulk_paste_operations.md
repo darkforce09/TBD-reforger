@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-059 — Bulk paste/delete operations at scale
 
 **Status:** shipped (T-059) — batch append + selection/outliner caps
 **Git tag on ship:** T-059
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE
 
 **Prerequisites:** **T-057** shipped (pan/zoom ≥55 fps @ 200+; validated **100+ fps @ 10k**). **T-058** shipped (OBJ/SEL toolbelt telemetry).
 
@@ -27,14 +29,14 @@ Make **bulk copy/paste and delete** usable at **10k+** objects without freezing 
 
 ## Root cause (confirmed in code)
 
-[`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `pasteSlots` — per slot in one `transact`:
+[`ydoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `pasteSlots` — per slot in one `transact`:
 
 ```ts
 squad.set('slotIds', [...(squad.get('slotIds') as ID[]), id])   // O(n²) over 10k
 layer.set('entityIds', [...(layer.get('entityIds') as ID[]), id]) // O(n²) over 10k
 ```
 
-Then [`bindings.ts`](../../../apps/website/frontend/src/features/tactical-map/state/bindings.ts): `observeDeep` → `docToSnapshot()` → full `slots.toJSON()` of **all** slots → `_applySnapshot` → [`selectSlotIcons`](../../../apps/website/frontend/src/features/tactical-map/state/selectors.ts) maps every slot → [`EditorLayersSection`](../../../apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/EditorLayersSection.tsx) `buildTree` renders **every** `entityId` as a tree leaf → `MissionCreatorPage` sets `selection.ids` to **all 10k new ids**.
+Then [`bindings.ts`](https://github.com/darkforce09/TBD-reforger/blob/fbd590e64c4b522f30f8e2390df5257916282193/apps/website/frontend/src/features/tactical-map/state/bindings.ts): `observeDeep` → `docToSnapshot()` → full `slots.toJSON()` of **all** slots → `_applySnapshot` → [`selectSlotIcons`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/selectors.ts) maps every slot → [`EditorLayersSection`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/EditorLayersSection.tsx) `buildTree` renders **every** `entityId` as a tree leaf → `MissionCreatorPage` sets `selection.ids` to **all 10k new ids**.
 
 ---
 
@@ -121,12 +123,12 @@ export function runBulk(md, fn) { bulkDepth++; try { fn() } finally { bulkDepth-
 | Doc | Update |
 |-----|--------|
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-059 bullet; validation notes; Next → **T-060.1.1** |
-| [`ROADMAP.md`](ROADMAP.md) | Scale table T-059 ✅; Next → **T-060.1.1** |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | Scale table T-059 ✅; Next → **T-060.1.1** |
 | [`t056_copy_paste.md`](t056_copy_paste.md) | Note: bulk scale limits addressed T-059 |
-| [`feature_inventory.md`](feature_inventory.md) | ACTION-PASTE bulk row or amend KEY-COPY-001 |
-| [`agent_execution.md`](agent_execution.md) | Decisions log; ACTIVE SLICE → **T-060.1.1** |
-| [`docs/TAGS.md`](../../website/TAGS.md) | T-059 shipped row |
-| [`mission-editor.md`](../../website/frontend/pages/mission-editor.md) | M3.14 milestone; PERF-002 bulk paste |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | ACTION-PASTE bulk row or amend KEY-COPY-001 |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | Decisions log; ACTIVE SLICE → **T-060.1.1** |
+| [`docs/TAGS.md`](/documentation_v2/standards/ticket_identifiers.md) | T-059 shipped row |
+| [`mission-editor.md`](/documentation_v2/website/frontend/apps/editor/ux_spec.md) | M3.14 milestone; PERF-002 bulk paste |
 
 ---
 

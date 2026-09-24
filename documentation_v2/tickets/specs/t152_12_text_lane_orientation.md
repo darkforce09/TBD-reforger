@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.12 — Text lane resurrection (16 B uniform) + upright orientation
 
 **Ticket:** T-152 · **Slice:** T-152.12 (remediation ladder #1)

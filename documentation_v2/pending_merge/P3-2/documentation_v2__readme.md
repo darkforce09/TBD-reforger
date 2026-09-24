@@ -2,7 +2,7 @@
 
 The canonical documentation architecture for the TBD Reforger Platform monorepo. This hierarchy mirrors the codebase directly, providing an unambiguous 1:1 mapping between production code and architectural specifications.
 
-> **Status:** a blueprint. `docs/` is still the authoritative tree, and every code pin and ticket citation points there, until [`ARCHITECTURE_PLAN.md`](ARCHITECTURE_PLAN.md) Phase 3 executes. The hub documents here were derived from `docs/` on 2026-09-16; [`ANALYSIS_AND_INVENTORY.md`](ANALYSIS_AND_INVENTORY.md) §6 lists what changed underneath them since.
+> **Status:** a blueprint. `documentation_v2/` is still the authoritative tree, and every code pin and ticket citation points there, until [`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/documentation_v2_refactor/architecture_plan.md) Phase 3 executes. The hub documents here were derived from `documentation_v2/` on 2026-09-16; [`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/documentation_v2_refactor/analysis_and_inventory.md) §6 lists what changed underneath them since.
 
 ## 1. Monorepo Architectural Atlas
 

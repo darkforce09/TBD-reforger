@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-674.2 — Plan
 ## Context
 T-674.1 puts callsign, rank, stance, unitName, tag and `leaderSlotId` on the wire at schemaVersion 1.3. The mod has no fields for them, no `stance` call (word-boundary hits in `apps/mod` are zero), and `TBD_MissionValidator.c:42` lists only the versions it understands — a 1.3 mission is refused outright.

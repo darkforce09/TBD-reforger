@@ -1,3 +1,5 @@
+**Status:** live
+
 # Building Viewer (debug bench)
 
 **Route:** `/debug/building-viewer` (public, URL-only — no sidebar/nav entry; chromeless + full-bleed)

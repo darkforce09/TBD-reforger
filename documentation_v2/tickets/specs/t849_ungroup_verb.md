@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-849 — Ungroup / leave squad without deleting the slot
 
 Ticket: .ai/tickets/T-849.toml · Plan: docs/plans/t-849_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

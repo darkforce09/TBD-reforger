@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-676 — trigger activation and effects runtime
 
 Ticket: .ai/tickets/T-676.toml · Plan: docs/plans/t-676_plan.md · Schema half shipped in T-706.

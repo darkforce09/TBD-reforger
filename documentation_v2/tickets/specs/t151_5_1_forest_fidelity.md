@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.5.1 — forest mass / landcover fidelity (W5 corrective)
 
 **Status:** **shipped** @ `a98fb421` (tag **T-151.5.1**, 2026-07-09) · verify log

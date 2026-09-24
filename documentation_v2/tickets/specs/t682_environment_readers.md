@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-682 — environment readers: fog, wind, view distance
 
 Ticket: .ai/tickets/T-682.toml · Plan: docs/plans/t-682_plan.md · Schema half shipped in T-706.

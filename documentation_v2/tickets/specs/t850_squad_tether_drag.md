@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-850 — squad tether follows drag on auto-grouped units
 
 Ticket: .ai/tickets/T-850.toml · Plan: docs/plans/t-850_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

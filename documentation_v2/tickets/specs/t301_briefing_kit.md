@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-301 — Briefing kit lists 7 of 13 gear fields
 
 Owner: command center. Operator authorization 2026-09-04: "agents may edit the Enfusion mod scripts; gate =

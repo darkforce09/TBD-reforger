@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.4 — vector layers: sea, contours, roads, forest, landcover, marquee (W4)
 
 **Status:** **shipped** @ `723490a0` (tag **T-151.4**, 2026-07-09) · verify log

@@ -54,4 +54,4 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
 ## Authority
 
-[ticketboard](/apps/ticketboard/README.md) · Hub [`docs/platform/t161_ticket_xtask_program.md`](../../docs/platform/t161_ticket_xtask_program.md)
+[ticketboard](/apps/ticketboard/README.md) · Hub [`documentation_v2/tickets/specs/t161_ticket_xtask_program.md`](/documentation_v2/tickets/specs/t161_ticket_xtask_program.md)

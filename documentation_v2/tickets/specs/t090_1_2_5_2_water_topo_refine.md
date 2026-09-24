@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.5.2 — Exact road geometry water refine + one-button pipeline
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.5.2  
@@ -25,7 +27,7 @@ Decode **`Eden.topo` offline**, use the engine road network as a **deterministic
 | **No hydro in `.topo`** | Water vectors not in this file → road subtraction + relaxed classifier, not vector water mask |
 | **Honesty** | Several long `.2.5/.2.5.1` "rivers" were **roads** (uniform width, junctions, asphalt) — now correctly grey |
 
-Artifacts: [`.ai/artifacts/t090_1_2_5_2_source_spike.json`](../../../.ai/artifacts/t090_1_2_5_2_source_spike.json) · [verify log](../../../.ai/artifacts/t090_1_2_5_2_verify_log.md)
+Artifacts: [`.ai/artifacts/t090_1_2_5_2_source_spike.json`](https://github.com/darkforce09/TBD-reforger/blob/7690f0f1b9fd9fe63c76c203effdbf4512c112d8/.ai/artifacts/t090_1_2_5_2_source_spike.json) · [verify log](../../../.ai/artifacts/t090_1_2_5_2_verify_log.md)
 
 ---
 

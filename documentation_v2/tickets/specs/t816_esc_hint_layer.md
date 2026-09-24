@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-816 — one Esc per layer with an armed composition and the Controls Hint open
 
 Ticket: .ai/tickets/T-816.toml · Plan: docs/plans/t-816_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

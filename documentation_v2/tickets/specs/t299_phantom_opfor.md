@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-299 — Single-faction compile ships a phantom opfor
 
 Owner: command center. Found by T-186's compiled→mod boot lane. Operator authorization 2026-09-04 covers the .c edit.

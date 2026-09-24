@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Asset Census (`assets_v2`)
 
 Every committed asset, its size, its encoding, and what reads it.

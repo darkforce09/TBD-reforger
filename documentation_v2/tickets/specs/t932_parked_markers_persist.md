@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-932 — parked briefing markers survive server save/reload
 
 Ticket: .ai/tickets/T-932.toml · Plan: docs/plans/t-932_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

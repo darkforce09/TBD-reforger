@@ -1,3 +1,5 @@
+**Status:** live
+
 # Known bugs
 
 Recorded, triaged defects that are **not currently being actioned** — usually because they sit outside
@@ -10,4 +12,4 @@ Each entry is its own `KB-00x-*.md` file. Add a row here when you file one; flip
 
 | ID | Title | Area | Severity | Status | Discovered |
 |----|-------|------|----------|--------|------------|
-| [KB-001](KB-001-mission-creator-selection-at-scale.md) | Selection & copy/paste break at extreme slot counts (≫ realistic scale) | Mission Creator — selection/render | Low | Deferred (out of realistic scale) | 2026-07-07 |
+| [KB-001](/documentation_v2/known_bugs/kb_001_mission_creator_selection_at_scale.md) | Selection & copy/paste break at extreme slot counts (≫ realistic scale) | Mission Creator — selection/render | Low | Deferred (out of realistic scale) | 2026-07-07 |

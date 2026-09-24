@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-921 — History reconstruction stream: plan
 
 ## Context

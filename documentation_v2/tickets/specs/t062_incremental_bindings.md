@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-062 — Incremental bindings @ 360k (interactive edits + bulk delete)
 
 **Status:** **shipped** — T-062.0 + T-062.0.1 implemented; build + lint clean; manual verify @ ~360k (delete 4k, undo 6k, asset drop, drag)  
 **Git tag on ship:** **T-062** (single commit: T-062.0 classifier + T-062.0.1 bulk delete)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [t061_drag_move_hotfix.md](t061_drag_move_hotfix.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t061_drag_move_hotfix.md](t061_drag_move_hotfix.md)
 
 **Prerequisites:** T-061 shipped (`35d6336`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~360k slots).
 

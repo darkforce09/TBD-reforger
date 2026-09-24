@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Automated terrain export pipeline (all maps, one command)
 
 **Ticket:** T-090 · **Slice:** T-090.3 (automation contract)  

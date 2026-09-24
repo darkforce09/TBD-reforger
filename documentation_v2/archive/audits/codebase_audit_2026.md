@@ -1,3 +1,5 @@
+**Status:** archived
+
 # CODEBASE_AUDIT_2026 — TBD Reforger monorepo
 
 **Date:** 2026-06-29 · **Ticket:** T-122 (single bundle — all fixes)  
@@ -120,13 +122,13 @@ Manual: C1 leader PATCH; C2 match ingest; C3 corrupt IDB; C4 gamemode boot; R1 d
 
 **Doc pass @ merge:** Frontend surface docs + `CLAUDE.md` context_handoff path; registry `shipped`; see commit after `efe14b2`.
 
-**Shipped (T-123 @ `169e47d`):** documentation-standards program (range `f0af31a..169e47d`; CI green @ `7a08a8f`) — resolves audit **T1** (editor-payload validation) and **T8** (`exportFormatVersion` rename) above; adds in-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion), schema codegen (`cargo xtask ci schema-codegen` → `internal/contract/`), and the `contracts.yml` CI gates. See [`t123_documentation_standards_rollout.md`](t123_documentation_standards_rollout.md).
+**Shipped (T-123 @ `169e47d`):** documentation-standards program (range `f0af31a..169e47d`; CI green @ `7a08a8f`) — resolves audit **T1** (editor-payload validation) and **T8** (`exportFormatVersion` rename) above; adds in-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion), schema codegen (`cargo xtask ci schema-codegen` → `internal/contract/`), and the `contracts.yml` CI gates. See [`t123_documentation_standards_rollout.md`](/documentation_v2/tickets/specs/t123_documentation_standards_rollout.md).
 
 ---
 
 ## Fable 5 audit follow-up — T-127 (shipped @ `0515aabb`, tag **T-127**)
 
-Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) · verify [`.ai/artifacts/t127_verify_log.md`](../../.ai/artifacts/t127_verify_log.md)
+Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md) · verify [`.ai/artifacts/t127_verify_log.md`](/.ai/artifacts/t127_verify_log.md)
 
 | ID | Fix | Proof |
 |----|-----|-------|
@@ -144,7 +146,7 @@ Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable
 
 ## Fable 5 audit follow-up — T-126 (shipped @ `4a47688e`, tag **T-126**)
 
-Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §2 Backend · verify [`.ai/artifacts/t126_verify_log.md`](../../.ai/artifacts/t126_verify_log.md)
+Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md) §2 Backend · verify [`.ai/artifacts/t126_verify_log.md`](/.ai/artifacts/t126_verify_log.md)
 
 | ID | Audit finding | Fix | Proof |
 |----|---------------|-----|-------|
@@ -157,4 +159,4 @@ Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable
 
 **Still open (Fable program):** **T-128** (doc links + staging honesty). Mod REST `/compiled` chain (**T-092**) unchanged.
 
-**Living tracker (all findings):** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — full index + inline status on every finding. Update that file when tickets ship.
+**Living tracker (all findings):** [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md) — full index + inline status on every finding. Update that file when tickets ship.

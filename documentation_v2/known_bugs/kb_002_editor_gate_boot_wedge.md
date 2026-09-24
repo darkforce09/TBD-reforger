@@ -1,3 +1,5 @@
+**Status:** live
+
 # KB-002 — Editor CDP gate wedges at boot (chrome-headless-shell font-fallback crash)
 
 | | |
@@ -49,7 +51,7 @@ processes. Basic CDP + WebGL2 both worked. The decisive evidence was chromium's 
   ignores it).
 - **Fail-fast:** `gate doctor` (a prerequisite of `cargo xtask mk leptos-gates`) validates the resolved chromium
   and runs a ~15 s liveness probe, so a future recurrence fails in seconds with a diagnosis instead of
-  the 130 s hang. Pins live in [`tools_v2/developer-tools/gate-env.json`](../../../tools_v2/developer-tools/gate-env.json).
+  the 130 s hang. Pins live in [`tools_v2/developer-tools/gate-env.json`](/tools_v2/developer-tools/gate-env.json).
 
 Two stale/behavioral smoke assertions were exposed once the suite could finally run past `selfcheck`,
 both fixed in the same pass (neither was the wedge):
@@ -60,5 +62,5 @@ both fixed in the same pass (neither was the wedge):
 
 ## If it recurs
 
-See [`docs/website/EDITOR_GATE_RUNBOOK.md`](../../website/EDITOR_GATE_RUNBOOK.md) §Known wedge modes +
+See [`documentation_v2/runbooks/editor_gates.md`](/documentation_v2/runbooks/editor_gates.md) §Known wedge modes +
 the P0–P6 debug recipe (chrome stderr, `/proc` thread state, `gdb -p <renderer>`, flag levers).

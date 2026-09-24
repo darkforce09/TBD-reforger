@@ -6,8 +6,8 @@ the uploaded media under `/uploads` and the terrain assets under `/map-assets`, 
 Postgres schema through the SQL migrations in `migrations/`.
 
 This document is the live atlas of the crate. The blueprint that the layout implements is
-[`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md); the pre-refactor catalog is
-[`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md).
+[`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/api_v2_refactor/architecture_plan.md); the pre-refactor catalog is
+[`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/api_v2_refactor/analysis_and_inventory.md).
 
 ---
 
@@ -151,9 +151,9 @@ an edit fails CI before it stops a database. A comments-only edit to an applied 
 
 ## 7. Further reading
 
-- [`ARCHITECTURE_PLAN.md`](./ARCHITECTURE_PLAN.md) — the domain-decomposition blueprint, the
+- [`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/api_v2_refactor/architecture_plan.md) — the domain-decomposition blueprint, the
   middleware hierarchy, and the rate-limit seam.
-- [`ANALYSIS_AND_INVENTORY.md`](./ANALYSIS_AND_INVENTORY.md) — the pre-refactor inventory, kept for
+- [`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/api_v2_refactor/analysis_and_inventory.md) — the pre-refactor inventory, kept for
   reference.
 - `PHASE_1_HANDOFF.md` … `PHASE_7_HANDOFF.md` — the record of how the layout was reached, why
   each piece sits where it does, and the completion audit that closed the last leftovers.

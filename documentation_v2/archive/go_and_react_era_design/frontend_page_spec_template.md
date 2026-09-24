@@ -1,3 +1,5 @@
+**Status:** archived
+
 # [Surface Name]
 
 ## Status
@@ -12,9 +14,9 @@
 - **Live source:** `apps/website/frontend/src/<module>.rs`
 - **Stitch reference:** `[git history] src/stitch-exports/<name>/code.html` — archive tier
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../platform/context_handoff.md) §4.x (if applicable)
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.x (if applicable)
 
-**Doc hub:** [docs/website/frontend/README.md](README.md)
+**Doc hub:** [docs/website/frontend/README.md](/documentation_v2/website/frontend/README.md)
 
 ## Element Inventory
 
@@ -73,4 +75,4 @@
 
 ## Open Questions / Blockers
 
-- None, or link to [TICKET_LEAD.md](../../TICKET_LEAD.md) / [TICKET_REGISTRY.md](../../TICKET_REGISTRY.md) (T-0xx only)
+- None, or link to [TICKET_LEAD.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) / [TICKET_REGISTRY.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md) (T-0xx only)

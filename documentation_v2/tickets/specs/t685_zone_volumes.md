@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-685 — zone volumes: height bounds, capture counts, owner
 
 Ticket: .ai/tickets/T-685.toml · Plan: docs/plans/t-685_plan.md · Schema half shipped in T-706.

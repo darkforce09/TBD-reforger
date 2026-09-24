@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-294 — Arland has a manifest and no object data
 
 Owner: command center. MANUAL step = the operator's Workbench export, runbook copied from

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.16 — Height markers visible + credible
 
 **Ticket:** T-152 · **Slice:** T-152.16 (remediation ladder #5)

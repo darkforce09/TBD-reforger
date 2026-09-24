@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Map Assets Relocation Handoff
 
 `packages/map-assets` is gone. Its contents live in `assets_v2/`, split into what is served, what is shared, and what is local scratch.

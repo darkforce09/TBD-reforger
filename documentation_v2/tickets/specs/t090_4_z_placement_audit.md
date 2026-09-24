@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.4 — Z placement audit (buried / floating objects)
 
 **Ticket:** T-090 · **Slice:** T-090.4  

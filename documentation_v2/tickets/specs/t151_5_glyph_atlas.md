@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.5 — glyph atlas + LOD gates: trees, props, badges (W5)
 
 **Status:** **shipped** @ `0b7621ed` (tag **T-151.5**, 2026-07-09) · verify log

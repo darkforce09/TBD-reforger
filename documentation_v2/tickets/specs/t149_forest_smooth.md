@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-149 — Forest mass polygon smoothing
 
 Owner: command center. Frozen-scope ticket; proposed scope repo/tools.

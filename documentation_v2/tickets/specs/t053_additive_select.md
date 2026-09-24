@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-053 — Ctrl/Cmd+LMB additive (toggle) select
 
 **Status:** shipped (T-053)  
 **Git tag on ship:** T-053  
-**Authority:** [MC ROADMAP](ROADMAP.md) · [eden/gap_analysis.md](eden/gap_analysis.md) (`SEL-MOD-001`) · [feature_inventory.md](feature_inventory.md) SEL-MOD-001
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`SEL-MOD-001`) · [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) SEL-MOD-001
 
 ---
 
@@ -47,7 +49,7 @@ fresh marquee each time. Eden lets you **Ctrl-click** units to add/remove them o
 
 ## Implementation specification
 
-**File:** [`frontend/src/features/tactical-map/TacticalMap.tsx`](../../../apps/website/frontend/src/features/tactical-map/TacticalMap.tsx)
+**File:** [`frontend/src/features/tactical-map/TacticalMap.tsx`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/TacticalMap.tsx)
 
 Augment the existing `onClick` (`useCallback`, ~line 56):
 
@@ -121,16 +123,16 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-053)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-053 bullet + bump `latest feature work` line |
-| [`feature_inventory.md`](feature_inventory.md) | SEL-MOD-001 → **working** (Trigger, Procedure, Evidence, acceptance); SEL-SYNC-001 stays partial |
-| [`agent_execution.md`](agent_execution.md) | Decisions log row **Additive select (T-053)** |
-| [`ROADMAP.md`](ROADMAP.md) | Move T-053 → shipped; §Status "Next" leads with T-055 asset search |
-| [`eden/gap_analysis.md`](eden/gap_analysis.md) | SEL-MOD-001 + T-053 → ✅ shipped T-053 |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | SEL-MOD-001 → **working** (Trigger, Procedure, Evidence, acceptance); SEL-SYNC-001 stays partial |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | Decisions log row **Additive select (T-053)** |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | Move T-053 → shipped; §Status "Next" leads with T-055 asset search |
+| [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | SEL-MOD-001 + T-053 → ✅ shipped T-053 |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 
@@ -146,4 +148,4 @@ using AI. **Do not commit until the user asks.**
 ## Related
 
 - Prior: [t052_undo_shortcuts.md](t052_undo_shortcuts.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (T-068+).

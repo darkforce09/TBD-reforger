@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-924 — Gate verdict receipt required at land
 
 Owner: command center. Shape: T-913.2 token receipt. Forward-only, no backfill.

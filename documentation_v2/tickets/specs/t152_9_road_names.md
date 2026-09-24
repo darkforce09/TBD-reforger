@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.9 — Road names (polyline-following labels)
 
 **Ticket:** T-152 · **Slice:** T-152.9  

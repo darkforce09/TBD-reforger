@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.6 — mission entities zero-copy: slots, selection, drag, clusters (W6)
 
 **Status:** **shipped** @ `033ff715` (tag **T-151.6**, 2026-07-09) · verify log

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.15 — Fence / pier / bridge visibility + orientation remediation
 
 **Ticket:** T-152 · **Slice:** T-152.15 (remediation ladder #4)

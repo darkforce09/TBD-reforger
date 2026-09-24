@@ -1,8 +1,10 @@
+**Status:** archived
+
 # Editor wave 209 — kickoff for Grok (Cursor factory command center)
 
 **Written 2026-08-09 by the wave-200 orchestrator, on operator instruction.** You are running ONE
 wave that fixes the nine adversarial-verifier findings from editor wave 200. Process authority:
-[`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) (phase 0 cold start, worktree lifecycle, reject
+[`FACTORY_FOR_CURSOR.md`](/documentation_v2/runbooks/factory_waves/README.md) (phase 0 cold start, worktree lifecycle, reject
 conditions) — this file only adds the wave-209 specifics. **You never implement; slice agents in
 worktrees do.**
 
@@ -10,7 +12,7 @@ worktrees do.**
 
 Wave 200 shipped T-785/786/787 (gate PASS 30/30) and its Fable adversarial verifier then re-ran
 the acceptance measurements with real per-char CDP input and found 4 MAJOR / 3 MINOR / 2 NIT.
-**Read the report first: [`.ai/artifacts/editor_verify/wave200.md`](../../.ai/artifacts/editor_verify/wave200.md).**
+**Read the report first: [`.ai/artifacts/editor_verify/wave200.md`](/.ai/artifacts/editor_verify/wave200.md).**
 Its "verified-clean register" is your MUST-NOT-BREAK list; its findings F1–F8 are these tickets:
 
 | Ticket | Findings | Owns (touch ONLY) |
@@ -30,7 +32,7 @@ Plan rows are filed at wave 209 in `wave_plan.tsv`.
 - Dispatch ≤3 slices at once (your runbook's cap); **one wave**: all five report → merge ALL five
   (`git merge --no-ff slice/T-8xx -m "T-8xx: <title>"`) → ONE gate → stop.
 - Slice rules: paste the HARD RULES block from
-  [`EDITOR_SLICE_BRIEF.md`](EDITOR_SLICE_BRIEF.md) verbatim (rule 9's tool names are
+  [`EDITOR_SLICE_BRIEF.md`](/documentation_v2/runbooks/factory_waves/README.md) verbatim (rule 9's tool names are
   Claude-harness-specific — your agents follow your runbook's discipline instead; everything else
   binds, especially the per-slice private test dir and `SLICE GATE: PASS`). The FINAL REPORT
   schema there is mandatory per slice.

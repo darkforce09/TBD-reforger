@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)
 
 **Status:** **shipped** @ `fa6ad959` (tag **T-151.7.1**); follow-ups **T-151.7.2** @ `64c64d98` / `69ca1c08` · was ready · **Program:**

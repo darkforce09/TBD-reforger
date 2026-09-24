@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.0 — Map program hub + manifest schema
 
 **Ticket:** T-090 · **Slice:** T-090.0  
@@ -24,12 +26,12 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 
 1. Program hub [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) — order, coordinates, asset layout, links to **every slice spec**.
 2. Per-slice specs: **T-090.1**, **T-091.0–.2**, **T-092.0–.2** (this slice creates the doc set).
-3. [`terrain-manifest.schema.json`](../../../packages/tbd-schema/schema/terrain-manifest.schema.json) + stub [`manifest.json`](../../../packages/map-assets/everon/manifest.json).
-4. [`terrain-anchors.schema.json`](../../../packages/tbd-schema/schema/terrain-anchors.schema.json) + example [`verification.example.json`](../../../packages/map-assets/everon/anchors/verification.example.json).
+3. [`terrain-manifest.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/terrain-manifest.schema.json) + stub [`manifest.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/everon/manifest.json).
+4. [`terrain-anchors.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/terrain-anchors.schema.json) + example [`verification.example.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/everon/anchors/verification.example.json).
 5. Root [`.gitattributes`](../../../.gitattributes) — LFS for `packages/map-assets/**/*.png` and `*.webp`.
-6. Verify scripts: [`verify-terrain-manifest.ts`](../../../packages/tbd-schema/scripts/verify-terrain-manifest.mjs), [`verify-terrain-alignment.ts`](../../../packages/tbd-schema/scripts/verify-terrain-alignment.mjs).
+6. Verify scripts: [`verify-terrain-manifest.ts`](https://github.com/darkforce09/TBD-reforger/blob/c39f8baccee19ebc690b008524711f41aa54fd00/packages/tbd-schema/scripts/verify-terrain-manifest.mjs), [`verify-terrain-alignment.ts`](https://github.com/darkforce09/TBD-reforger/blob/4b695ffeacd7b9e9444c8ee95cefa0234e5ee144/packages/tbd-schema/scripts/verify-terrain-alignment.mjs).
 7. DEV_RUNBOOK §Map assets + `packages/map-assets/README.md`.
-8. Fix [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts) — Biki bounds/heights, `manifestUrl`, `heightRangeMinM`/`heightRangeMaxM`.
+8. Fix [`terrains.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/coords/terrains.ts) — Biki bounds/heights, `manifestUrl`, `heightRangeMinM`/`heightRangeMaxM`.
 
 ---
 

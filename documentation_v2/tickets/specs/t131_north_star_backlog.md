@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # TBD North Star backlog — unplanned gaps
 
 **Purpose:** Capture product ideas that are **real requirements** but were only prose, brain dumps, or build-plan bullets — not yet sliced into executable specs.  
-**Registry:** `idea` rows **T-131…T-142** · **Brainstorm:** [`docs/TICKET_BRAINSTORM.md`](../TICKET_BRAINSTORM.md)  
-**Authority for near-term work:** [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) — this doc does **not** change execution order.
+**Registry:** `idea` rows **T-131…T-142** · **Brainstorm:** [`docs/TICKET_BRAINSTORM.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_BRAINSTORM.md)  
+**Authority for near-term work:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) — this doc does **not** change execution order.
 
 ---
 
@@ -13,7 +15,7 @@
 | **Active queue** | Registry `ready` / `queued` with specs | T-090, T-068, T-092, T-130 |
 | **Deferred Eden / scale** | Registry `deferred` + MC ROADMAP | T-078–T-084, T-110, T-094 |
 | **North Star gaps (this doc)** | Registry `idea` T-131+ | Route planner, 3D AAR, mod sets |
-| **Platform endgame** | [`tbd-reforger-platform-build-plan.md`](../mod/tbd-reforger-platform-build-plan.md) | M1 event, telemetry, license matrix |
+| **Platform endgame** | [`tbd-reforger-platform-build-plan.md`](/documentation_v2/archive/product_plans/tbd_reforger_platform_build_plan.md) | M1 event, telemetry, license matrix |
 
 **Do not** start `idea` tickets without promoting to `queued` + a slice spec (`./scripts/ticket mark-ready`).
 
@@ -27,7 +29,7 @@ B  Editor + ORBAT         T-068 → T-071 → T-069+ markers/vehicles
 C  Play the mission       T-092 → T-068.13 lobby → T-114–T-120 staging event
 ```
 
-Most “map understanding” (forests, roads, object glyphs, cartographic Map view) is **program A**, not a gap — see [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+Most “map understanding” (forests, roads, object glyphs, cartographic Map view) is **program A**, not a gap — see [`t090_091_map_terrain_program.md`](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md).
 
 ---
 
@@ -90,7 +92,7 @@ Most “map understanding” (forests, roads, object glyphs, cartographic Map vi
 
 **Problem:** Objectives that **fire or evaluate at mission time T+N** (e.g. “Objective 1 completes check at T+40m”) — OFCR-style pacing, not just capture/destroy/hold.
 
-**Partial coverage:** [`tbd-reforger-platform-build-plan.md`](../mod/tbd-reforger-platform-build-plan.md) §objectives lists `objective_capture`, `objective_destroy`, `objective_hold_until` — no timed trigger graph in editor.
+**Partial coverage:** [`tbd-reforger-platform-build-plan.md`](/documentation_v2/archive/product_plans/tbd_reforger_platform_build_plan.md) §objectives lists `objective_capture`, `objective_destroy`, `objective_hold_until` — no timed trigger graph in editor.
 
 **Depends on:** **T-115** capture/win condition + mission runtime clock in mod.
 

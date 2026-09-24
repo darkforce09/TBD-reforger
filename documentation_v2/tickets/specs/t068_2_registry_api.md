@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.2 — Registry API + dev seed + import
 
 **Ticket:** T-068 · **Slice:** T-068.2  
@@ -23,7 +25,7 @@ No backend registry route; Factions palette was mock-only until **T-068.3** (`us
 
 1. GORM model `RegistryItem` — `modpack_id`, `resource_name`, `display_name`, `category`, `icon_url`, `kind`, `sort_order`; unique `(modpack_id, resource_name)`.
 2. Migration `internal/db/migrations/03_registry_items.sql` (idempotent).
-3. Dev seed `internal/db/seeds/registry_dev.sql` — **≥20 rows**, all five **`kind`** values (`character` + four `gear_*`); **`resource_name`** = real `{GUID}Prefabs/...` strings (seed from [`registry.json`](../../../apps/mod/tbd-framework/Data/registry.json) POC + gear from **T-068.1** or MCP — **never** mock catalog ids like `a-nato-rifleman`); FK **`modpack_id`** = current modpack (`00000000-0000-4000-a000-000000000001` in [`mock_data.sql`](../../../apps/website/internal/db/seeds/mock_data.sql) when mock modpack loaded); wire into `cargo xtask db seed` or document apply in DEV_RUNBOOK.
+3. Dev seed `internal/db/seeds/registry_dev.sql` — **≥20 rows**, all five **`kind`** values (`character` + four `gear_*`); **`resource_name`** = real `{GUID}Prefabs/...` strings (seed from [`registry.json`](../../../apps/mod/tbd-framework/Data/registry.json) POC + gear from **T-068.1** or MCP — **never** mock catalog ids like `a-nato-rifleman`); FK **`modpack_id`** = current modpack (`00000000-0000-4000-a000-000000000001` in [`mock_data.sql`](https://github.com/darkforce09/TBD-reforger/blob/dd91f322f4b0215ee0ac5de25b87c6630fa613a0/apps/website/internal/db/seeds/mock_data.sql) when mock modpack loaded); wire into `cargo xtask db seed` or document apply in DEV_RUNBOOK.
 4. `GET /api/v1/registry?modpack=<uuid>` — mission_maker+ JWT; resolve current modpack when omitted; response `{ data, etag, modpack_id, modpack_version }`; weak ETag + **304** on `If-None-Match`.
 5. `cmd/import-registry-items` — read `registry-items` JSON file; upsert rows for modpack (admin/dev use for T-068.1 export landing).
 6. Integration test: 200 + etag; 304 repeat; 404 bad modpack.

@@ -1,3 +1,5 @@
+**Status:** live
+
 # editor-capture — screenshot the Mission Creator headless
 
 Drives the live editor over CDP and captures both the DOM chrome and the wgpu map. It serves the
@@ -39,7 +41,7 @@ ERROR:ui/gfx/platform_font_skia.cc:258] Could not find any font: , sans
 [end of stack trace]   ← renderer core-dumped
 ```
 
-This is KB-002 in [`EDITOR_GATE_RUNBOOK.md`](../website/EDITOR_GATE_RUNBOOK.md); the gate
+This is KB-002 in [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md); the gate
 harness solves it the same way in `developer-tools`
 `browser_testing::diagnostics::gate_font_cache_dir()`.
 

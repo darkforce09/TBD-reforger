@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-675 — Vehicle roster reaches the game (T-076 compile half)
 
 Program T-675 · slices T-675.1 (engine emit, after T-674.1) → T-675.2 (mod reader, after T-674.2) → T-675 (closure). Schema widened in T-706.

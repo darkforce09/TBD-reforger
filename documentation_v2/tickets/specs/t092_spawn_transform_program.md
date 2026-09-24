@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-092 — Spawn transform parity + mod mission compile
 
 **Status:** **shipped** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`) — wb_play + REST E2E **PASS** 2026-07-04 (verify @ `452ce501`). **Unblocks T-071 + T-068.13.**  
-**Ticket:** T-092 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
+**Ticket:** T-092 · **Registry:** [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)  
 **Map program:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
 ---
@@ -12,12 +14,12 @@ The editor **does not** produce what the mod loads today:
 
 | Gap | Evidence |
 |-----|----------|
-| No mod `slots[]` in compile | [`compile.ts`](../../../apps/website/frontend/src/features/mission-creator/compiler/compile.ts) → `editor.slots` only, `schemaVersion: 1` |
-| Slot ids are UUIDs | [`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `crypto.randomUUID()` |
-| Mod expects `blufor:Alpha:SL:0` + `kit:us_sl` | [`bridgehead-at-levie.json`](../../../packages/tbd-schema/golden-missions/bridgehead-at-levie.json), [`TBD_Registry.Resolve`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Registry/TBD_Registry.c) |
+| No mod `slots[]` in compile | [`compile.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/compiler/compile.ts) → `editor.slots` only, `schemaVersion: 1` |
+| Slot ids are UUIDs | [`ydoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `crypto.randomUUID()` |
+| Mod expects `blufor:Alpha:SL:0` + `kit:us_sl` | [`bridgehead-at-levie.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/golden-missions/bridgehead-at-levie.json), [`TBD_Registry.Resolve`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Registry/TBD_Registry.c) |
 | Mod API path wrong / missing | Mod: `{backendUrl}/api/missions/{id}/compiled` — Go: **`/api/v1/missions/:id/export`** only |
-| No optional `y` on slot | [`TBD_MissionSlotStruct.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c) |
-| Spawn Y | `GetSurfaceY(x,z)` only [`TBD_SpawnManager.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c) L149 |
+| No optional `y` on slot | [`TBD_MissionSlotStruct.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c) |
+| Spawn Y | `GetSurfaceY(x,z)` only [`TBD_SpawnManager.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c) L149 |
 
 ---
 
@@ -40,13 +42,13 @@ flowchart LR
 
 | Artifact | Consumer | Shape |
 |----------|----------|-------|
-| **Version POST `json_payload`** | Website save/load, event ORBAT derive | `{ schemaVersion: 1, map, orbat[], editor: { slots, … } }` — [`mission-editor-payload.schema.json`](../../../packages/tbd-schema/schema/mission-editor-payload.schema.json) (int `schemaVersion`; validated in `CreateVersion`, T-123.5) |
-| **Mod compiled document** | `TBD_MissionLoader`, profile `$profile:missions/{id}.json` | Golden [`mission.schema.json`](../../../packages/tbd-schema/schema/mission.schema.json) **1.1** |
-| **Export / inject wrapper** | Download, admin inject | [`buildMissionDoc`](../../../apps/website/internal/handlers/missions.go) camelCase envelope (version field `exportFormatVersion`, **not** `schemaVersion` — T-123.1) |
+| **Version POST `json_payload`** | Website save/load, event ORBAT derive | `{ schemaVersion: 1, map, orbat[], editor: { slots, … } }` — [`mission-editor-payload.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/mission-editor-payload.schema.json) (int `schemaVersion`; validated in `CreateVersion`, T-123.5) |
+| **Mod compiled document** | `TBD_MissionLoader`, profile `$profile:missions/{id}.json` | Golden [`mission.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/mission.schema.json) **1.1** |
+| **Export / inject wrapper** | Download, admin inject | [`buildMissionDoc`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/missions.go) camelCase envelope (version field `exportFormatVersion`, **not** `schemaVersion` — T-123.1) |
 
 T-092.2 builds **mod compiled document**; T-092 adds **`GET /api/v1/missions/:id/compiled`** (service token) returning that document.
 
-**Mod config fix:** Update [`TBD_MissionLoader.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c) path to **`/api/v1/missions/{id}/compiled`** (and [`backend.example.json`](../../../apps/mod/tbd-framework/Data/backend.example.json) docs).
+**Mod config fix:** Update [`TBD_MissionLoader.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c) path to **`/api/v1/missions/{id}/compiled`** (and [`backend.example.json`](../../../apps/mod/tbd-framework/Data/backend.example.json) docs).
 
 ---
 
@@ -88,7 +90,7 @@ Warn if `|jsonY - GetSurfaceY| > MAX_Y_DELTA_M` when both present.
 **T-092.2 must implement:**
 
 1. **`flattenEditorToModDocument(snapshot)`** → full 1.1 document matching golden missions.
-2. **Deterministic slot id** from faction + squad callsign + role + slot index (align with [`flatten-orbat-slots.mjs`](../../../packages/tbd-schema/scripts/flatten-orbat-slots.mjs) naming).
+2. **Deterministic slot id** from faction + squad callsign + role + slot index (align with [`flatten-orbat-slots.mjs`](https://github.com/darkforce09/TBD-reforger/blob/c39f8baccee19ebc690b008524711f41aa54fd00/packages/tbd-schema/scripts/flatten-orbat-slots.mjs) naming).
 3. **`assetId` → `kit:` alias** — registry lookup table or T-068 mapping (document in slice).
 4. **`orbat` map builder** from editor factions/squads/slots for `CountOrbatInstances()`.
 
@@ -96,9 +98,9 @@ Warn if `|jsonY - GetSurfaceY| > MAX_Y_DELTA_M` when both present.
 
 ## Schema (T-092.1)
 
-- Add optional `y` (number, meters ASL) to `$defs/slot` in [`mission.schema.json`](../../../packages/tbd-schema/schema/mission.schema.json).
+- Add optional `y` (number, meters ASL) to `$defs/slot` in [`mission.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/mission.schema.json).
 - Bump to **`schemaVersion` "1.2"** when `y` ships (conditional in schema).
-- Update [`TBD_MissionSlotStruct.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c) with optional `float y`.
+- Update [`TBD_MissionSlotStruct.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c) with optional `float y`.
 
 ---
 
@@ -112,9 +114,9 @@ Response: mod-native mission JSON (1.1/1.2 document body — NOT buildMissionDoc
 
 Derive from current mission version `json_payload` + mission row meta via new Go helper (mirror golden shape).
 
-Register in [`handlers.go`](../../../apps/website/internal/handlers/handlers.go) on service-token or dedicated game-server group.
+Register in [`handlers.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/handlers.go) on service-token or dedicated game-server group.
 
-Document in [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md).
+Document in [`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md).
 
 ---
 

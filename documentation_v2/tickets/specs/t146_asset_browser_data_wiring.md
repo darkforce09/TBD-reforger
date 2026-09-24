@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-146 — Asset Browser data wiring (registry vehicles/crates → drag-place)
 
 Ticket: `.ai/tickets/T-146.toml` · Plan: `docs/plans/t-146_plan.md` · Parent spec: `docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md`

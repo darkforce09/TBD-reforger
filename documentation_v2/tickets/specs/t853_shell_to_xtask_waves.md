@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-853 — shell → xtask, the wave-dispatched slices (T-854…T-880)
 
 Slice spec for waves **218–226**. One ticket = one shell script = one slice. Three run per wave.

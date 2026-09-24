@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Objective & Capture HUD Specification
 
 **System Domain:** In-Game Mission Objectives, Real-Time Capture Progression, Ownership & Contest Telemetry  

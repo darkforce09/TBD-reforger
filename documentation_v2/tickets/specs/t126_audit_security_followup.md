@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-126 — Fable audit security + auth follow-up
 
 **Ticket:** T-126 · **Executor:** claude-code · **Status:** **SHIPPED** @ `4a47688e` (tag **T-126**)  
-**Verify:** [`.ai/artifacts/t126_verify_log.md`](../../.ai/artifacts/t126_verify_log.md)  
-**Authority:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §2 Backend · [`FABLE_5_AUDIT_PROGRAM.md`](FABLE_5_AUDIT_PROGRAM.md)  
+**Verify:** [`.ai/artifacts/t126_verify_log.md`](/.ai/artifacts/t126_verify_log.md)  
+**Authority:** [`.ai/artifacts/fable_5_omni_audit_report.md`](/.ai/artifacts/fable_5_omni_audit_report.md) §2 Backend · [`FABLE_5_AUDIT_PROGRAM.md`](/documentation_v2/archive/audits/fable_5_audit_program.md)  
 **Parent:** T-122 @ `f131770` (Export visibility missed T-122 T2 scope)
 
 ---
@@ -95,7 +97,7 @@ Registry `shipped_at` · `docs/platform/CODEBASE_AUDIT_2026.md` add Fable S1–S
 ## Claude Code prompt — T-126 (copy-paste)
 
 Authority: this spec + handoff. **Do not edit docs/registry.**  
-Extract: `./scripts/ticket prompt T-126` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../.ai/tickets/CLAUDE_CODE_PROMPT.md)
+Extract: `./scripts/ticket prompt T-126` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](/.ai/tickets/CLAUDE_CODE_PROMPT.md)
 
 ```
 Read CLAUDE.md first.

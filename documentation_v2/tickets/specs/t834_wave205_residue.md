@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-834 — wave-205 residue cleanup (absorbs T-835, T-840)
 
 Ticket: .ai/tickets/T-834.toml · Plan: docs/plans/t-834_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

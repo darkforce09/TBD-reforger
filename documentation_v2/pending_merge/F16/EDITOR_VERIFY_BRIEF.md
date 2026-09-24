@@ -1,9 +1,9 @@
 # Editor factory — adversarial verifier brief
 
 The editor program had no verifier template of its own; the only stored one
-(`docs/mod/VERIFY_AGENT_PROMPT.md`) is for the mod program and is never cited from the editor
+(`documentation_v2/runbooks/mod_slice_workflow.md`) is for the mod program and is never cited from the editor
 recipe, so each wave's verifier brief was reconstructed from
-[`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) §7. Recorded here 2026-08-07.
+[`FACTORY_FOR_CURSOR.md`](/documentation_v2/runbooks/factory_waves/README.md) §7. Recorded here 2026-08-07.
 
 **Model: Fable 5, every wave, no exceptions.** Operator decision 2026-08-07, after costing the
 alternative: the 13 full-wave verifiers averaged 26.8M tokens each (14.8% of the program) and the

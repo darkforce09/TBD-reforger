@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-056 — Ctrl+C / Ctrl+V copy-paste (slots)
 
 **Status:** shipped (T-056)
 **Git tag on ship:** T-056
-**Authority:** [MC ROADMAP](ROADMAP.md) · [eden/gap_analysis.md](eden/gap_analysis.md) (`ACTION-COPY-001 / ACTION-PASTE-001`) · [eden/interactions.md](eden/interactions.md) ACTION-COPY-001 / ACTION-PASTE-001 · [feature_inventory.md](feature_inventory.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`ACTION-COPY-001 / ACTION-PASTE-001`) · [eden/interactions.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md) ACTION-COPY-001 / ACTION-PASTE-001 · [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
 
 ---
 
@@ -234,18 +236,18 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-056)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-056 bullet + bump `latest feature work` line |
-| [`ROADMAP.md`](ROADMAP.md) | Move T-056 → shipped (table + execution order line); add this doc to the hub; §Status "Next" leads with T-074 |
-| [`eden/gap_analysis.md`](eden/gap_analysis.md) | T-056 → ✅ shipped T-056 |
-| [`feature_inventory.md`](feature_inventory.md) | copy/paste (CopyUnit/PasteUnit) row → working (Trigger, Procedure, Evidence, acceptance) |
-| [`agent_execution.md`](agent_execution.md) | Decisions log row **Copy/paste at cursor (T-056)** |
-| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) + [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Shipped/milestone row for copy-paste |
-| [`docs/TAGS.md`](../../website/TAGS.md) | T-056 row |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | Move T-056 → shipped (table + execution order line); add this doc to the hub; §Status "Next" leads with T-074 |
+| [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | T-056 → ✅ shipped T-056 |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | copy/paste (CopyUnit/PasteUnit) row → working (Trigger, Procedure, Evidence, acceptance) |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | Decisions log row **Copy/paste at cursor (T-056)** |
+| [`docs/website/frontend/ROADMAP.md`](/documentation_v2/website/frontend/README.md) + [`docs/website/frontend/pages/mission-editor.md`](/documentation_v2/website/frontend/apps/editor/ux_spec.md) | Shipped/milestone row for copy-paste |
+| [`docs/TAGS.md`](/documentation_v2/standards/ticket_identifiers.md) | T-056 row |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 

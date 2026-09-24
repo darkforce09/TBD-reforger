@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-062.1 — Chunked IDB slot restore (fix 0→300k load jump)
 
 **Status:** **shipped** — build + lint + tsc clean; manual verify @ ~360k: migration once, then determinate restoring progress with smooth done/total (no 0→300k jump on 2nd+ load)  
 **Git tag on ship:** **T-062.1** (`4ad27fe`)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) §Load interpretation · [t062_2_editor_session_persistence.md](t062_2_editor_session_persistence.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) §Load interpretation · [t062_2_editor_session_persistence.md](t062_2_editor_session_persistence.md)
 
 **Prerequisites:** T-062.2 shipped (`693e227`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~360k slots).
 

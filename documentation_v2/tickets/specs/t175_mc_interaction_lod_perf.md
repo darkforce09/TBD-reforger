@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-175 — MC interaction + LOD + pan/zoom perf (post T-174 eye-pass)
 
 **Status:** SHIPPED @ tag **T-175** / `b90deac8` · **Branch:** `main`  
 **Depends on:** T-174 (shipped)  
-**Verify:** [`.ai/artifacts/t175_verify_log.md`](../../.ai/artifacts/t175_verify_log.md) · inventory [`.ai/artifacts/t175_inventory.md`](../../.ai/artifacts/t175_inventory.md)  
+**Verify:** [`.ai/artifacts/t175_verify_log.md`](/.ai/artifacts/t175_verify_log.md) · inventory [`.ai/artifacts/t175_inventory.md`](/.ai/artifacts/t175_inventory.md)  
 **Scope shipped:** `apps/website/frontend/**`, `crates/map-engine-*`, gates tooling as needed. **Not** `apps/mod/`.
 
 **No silent deferrals.** Soft “later / optional / fold forward / separate ticket” is forbidden unless the operator explicitly says `defer X` / `skip X`.

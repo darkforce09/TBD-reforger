@@ -1,3 +1,5 @@
+**Status:** archived
+
 # TBD Event — Reforger Event Platform: Master Build Plan
 
 **Version:** 1.0 draft · **Scope:** Mission framework (Enfusion), web platform (mission wizard + slotting + payments), VON enhancement mod, admin tooling, infrastructure
@@ -7,7 +9,7 @@
 > surface (`GET /api/missions/{id}/compiled`, `GET /api/events/{id}/roster`, and the rest of
 > §B7) is **not implemented in the current backend** — it existed only in the Phase-0 REST
 > spike, since removed. Building it for real is **T-092**
-> ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)).
+> ([`t092_spawn_transform_program.md`](/documentation_v2/tickets/specs/t092_spawn_transform_program.md)).
 > The live backend serves `/api/v1` (web platform + `X-Service-Token` ingest only).
 
 ---
@@ -451,7 +453,7 @@ The mission library tags each mission with its tier; event pages for Tier 3 miss
 
 ## Appendix B — Implementation status (2026-06-14)
 
-Living snapshot of what exists in the monorepo vs this plan. Update when phases complete. Full handoff: [`CLAUDE-CONTINUATION.md`](CLAUDE-CONTINUATION.md).
+Living snapshot of what exists in the monorepo vs this plan. Update when phases complete. Full handoff: [`CLAUDE-CONTINUATION.md`](/documentation_v2/archive/handoffs_and_kickoffs/mod_claude_continuation.md).
 
 | Plan item | Status |
 |---|---|
@@ -474,6 +476,6 @@ Living snapshot of what exists in the monorepo vs this plan. Update when phases 
 
 **Local dev server:** `cargo xtask mod playtest --mission=<uuid>` (deploys the mission's approved artifact to a local server through the platform) or `--artifact-file=<compiled document>` offline.
 
-**Staging:** `bash scripts/deploy-staging.sh` → [`STAGING-SERVER.md`](STAGING-SERVER.md)
+**Staging:** `bash scripts/deploy-staging.sh` → [`STAGING-SERVER.md`](/documentation_v2/runbooks/game_server_staging/README.md)
 
-**Handoff docs:** [`README.md`](README.md) · [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · [`MILESTONES.md`](MILESTONES.md)
+**Handoff docs:** [`README.md`](/documentation_v2/mod/README.md) · [`CLAUDE-CODE-START.md`](/documentation_v2/runbooks/mod_slice_workflow.md) · [`MILESTONES.md`](/documentation_v2/archive/product_plans/mod_milestones.md)

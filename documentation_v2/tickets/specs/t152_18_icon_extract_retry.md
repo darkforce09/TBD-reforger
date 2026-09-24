@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.18 — Reforger icon EXTRACT retry (warm Workbench, operator-in-loop)
 
 **Ticket:** T-152 · **Slice:** T-152.18 (remediation ladder #7)

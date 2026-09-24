@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-291 — Resolve five schema fields implemented on no surface
 
 Owner: command center. Frozen-scope ticket; proposed scope engine/core. Operator authorization 2026-09-04 covers the .c readers.

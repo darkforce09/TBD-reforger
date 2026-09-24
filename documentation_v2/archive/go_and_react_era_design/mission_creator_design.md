@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Mission Creator & Planner Design Blueprint
 
 ## Core Philosophy

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-940 — Website platform: events, telemetry, admin, content
 
 Owner: command center. Source: master audit S5 (2026-09-04), verified against main @ 072988d57 (README.md in this

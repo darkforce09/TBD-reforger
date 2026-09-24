@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.9 — World-object interaction (hover, inspect, filter, legend)
 
 ## Context

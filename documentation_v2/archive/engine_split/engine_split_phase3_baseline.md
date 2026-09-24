@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Pre-Phase-3 baseline — engine split
 
 Phase 3 of the engine split moves editing logic into `website-map-engine`, reshapes the editor
@@ -37,7 +39,7 @@ Compares each route's rendered DOM against a frozen oracle under
 The oracles are the only instrument checking route DOM output. Re-freezing them inside Phase 3
 would bake any regression Phase 3 introduces into the new oracle, where it becomes permanently
 invisible — so they are left alone and acceptance is a diff against this capture.
-Refreshing them is [`T-986`](../../.ai/tickets/T-986.toml), deferred out of Phase 3 by operator
+Refreshing them is [`T-986`](/.ai/tickets/T-986.toml), deferred out of Phase 3 by operator
 decision.
 
 ### Acceptance rule

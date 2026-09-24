@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.8 — Town labels (locations + importance declutter)
 
 **Ticket:** T-152 · **Slice:** T-152.8  

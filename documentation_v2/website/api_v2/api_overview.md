@@ -1,10 +1,12 @@
+**Status:** live
+
 # Backend — ROADMAP
 
 Live code: [`apps/website/api_v2/`](../../../apps/website/api_v2/) (package `website-api`, Axum +
 sqlx). The crate's [`README.md`](../../../apps/website/api_v2/README.md) is the atlas;
-[`architecture.md`](architecture.md) keeps the archived design plan; conventions:
-[`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md); runbook:
-[`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md).
+[`architecture.md`](/documentation_v2/archive/go_and_react_era_design/go_backend_architecture_plan.md) keeps the archived design plan; conventions:
+[`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md); runbook:
+[`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md).
 
 ## Shipped surface, by domain
 

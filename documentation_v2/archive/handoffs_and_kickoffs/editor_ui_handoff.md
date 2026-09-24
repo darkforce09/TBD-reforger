@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Mission Creator — editor UI/UX work, handoff
 
 **Written 2026-08-01, at the end of the platform-factory run.** This is the kickoff for a fresh
@@ -27,11 +29,11 @@ rocks, that's fine").
 
 | File | Lines | What it is |
 |---|---|---|
-| [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) | 639 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`), a `build_class` column on attribute rows, and a ticket column. **191 rows, 113 `missing`** — a census as of 2026-08-01. Read the correction below for what it was before that, and why it matters. |
-| [`eden/ui_anatomy.md`](../specs/Mission_Creator_Architecture/eden/ui_anatomy.md) | 273 | What Eden's screen is actually made of |
-| [`eden/interactions.md`](../specs/Mission_Creator_Architecture/eden/interactions.md) | 560 | Eden's input model — clicks, modifiers, drags |
-| [`eden/attributes.md`](../specs/Mission_Creator_Architecture/eden/attributes.md) | 250 | Eden's per-entity attribute catalogue |
-| [`feature_inventory.md`](../specs/Mission_Creator_Architecture/feature_inventory.md) | 1797 | TBD's own inventory, with the `RIGHT-*` / `PLACE-*` / `SEL-*` ids the gap table joins on |
+| [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | 639 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`), a `build_class` column on attribute rows, and a ticket column. **191 rows, 113 `missing`** — a census as of 2026-08-01. Read the correction below for what it was before that, and why it matters. |
+| [`eden/ui_anatomy.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) | 273 | What Eden's screen is actually made of |
+| [`eden/interactions.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md) | 560 | Eden's input model — clicks, modifiers, drags |
+| [`eden/attributes.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md) | 250 | Eden's per-entity attribute catalogue |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | 1797 | TBD's own inventory, with the `RIGHT-*` / `PLACE-*` / `SEL-*` ids the gap table joins on |
 
 The numbered files (`07_…`, `08_…`) at the parent level are **stubs** that redirect into `eden/`.
 Do not edit those.
@@ -52,10 +54,10 @@ opened the file being described. Measured:
 The more important correction was what the table *is*. It read as a census of Eden parity. It was
 not:
 
-- [`eden/attributes.md`](../specs/Mission_Creator_Architecture/eden/attributes.md) defines
+- [`eden/attributes.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md) defines
   **93 ids** (not 96 — the higher figure came from a looser grep that also caught the bare
   `ATTR-FIELD` template, the `ATTR-TAB-*` glob and a cross-ref); the table covered **3**.
-- [`eden/interactions.md`](../specs/Mission_Creator_Architecture/eden/interactions.md) defines
+- [`eden/interactions.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md) defines
   **83 ids**; **42 had no parity row at all**.
 
 So "work the parity table" was **not** the same as the operator's ask, *"add all the things to the
@@ -72,12 +74,12 @@ in the same pass, including two rows that had been scored `match`/`partial` for 
 were removed or never reachable.
 
 Sources and the full change log:
-[`.ai/artifacts/parity/`](../../.ai/artifacts/parity/) —
-[`attributes_sweep.md`](../../.ai/artifacts/parity/attributes_sweep.md),
-[`interactions_sweep.md`](../../.ai/artifacts/parity/interactions_sweep.md),
-[`gap_analysis_rewrite_log.md`](../../.ai/artifacts/parity/gap_analysis_rewrite_log.md).
+[`.ai/artifacts/parity/`](/.ai/artifacts/parity/) —
+[`attributes_sweep.md`](/.ai/artifacts/parity/attributes_sweep.md),
+[`interactions_sweep.md`](/.ai/artifacts/parity/interactions_sweep.md),
+[`gap_analysis_rewrite_log.md`](/.ai/artifacts/parity/gap_analysis_rewrite_log.md).
 Original evidence for the undercount:
-[`.ai/artifacts/adversarial/verify_coverage.md`](../../.ai/artifacts/adversarial/verify_coverage.md).
+[`.ai/artifacts/adversarial/verify_coverage.md`](/.ai/artifacts/adversarial/verify_coverage.md).
 
 **What still needs stating when planning against it:** the table now covers every id, but ~49
 attribute ids are `executor: workbench` (a second program), the ~13 unnamed Eden toolbar buttons
@@ -169,7 +171,7 @@ something.
 ## What NOT to do
 
 **Do not restart the platform factory.** It stopped after wave 82 with no agent-actionable backlog
-left — see [`PLATFORM_FACTORY.md`](PLATFORM_FACTORY.md). The 13 open platform tickets are features
+left — see [`PLATFORM_FACTORY.md`](/documentation_v2/runbooks/factory_waves/README.md). The 13 open platform tickets are features
 nobody started, two Workbench-only items, and the playtest. Editor UI work is a different program;
 run it as ordinary interactive development, not as waves.
 

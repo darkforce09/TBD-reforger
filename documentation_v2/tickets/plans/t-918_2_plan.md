@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-918.2 — Provenance rendering: measured vs estimated, never summed
 
 ## Context

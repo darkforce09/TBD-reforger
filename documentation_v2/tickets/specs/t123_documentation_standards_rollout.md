@@ -1,6 +1,8 @@
+**Status:** frozen record
+
 # T-123 — Documentation standards rollout (full program)
 
-**Ticket:** T-123 · **Authority:** [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) (normative — verified 2026-06-29)  
+**Ticket:** T-123 · **Authority:** [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) (normative — verified 2026-06-29)  
 **Program:** platform · **One ticket** — seven slices, ship in order  
 **Status:** **shipped @ `169e47d`** — .0 `f0af31a` · .1 `04a73a1` · .2 `030cece` · .3 `169e47d` · .4 `dd4e4d0` · .5 `b5211f2` · .6 `102a835` (CI green @ `7a08a8f`)
 
@@ -10,7 +12,7 @@ Implement the **entire** documentation standards program: cross-boundary tags + 
 
 ## Authority
 
-[`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) (§0–§11). The standard doc is **already written**; T-123 **implements** it (including §9 codegen, §9.2 validation, §10 CI — no longer deferred).
+[`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) (§0–§11). The standard doc is **already written**; T-123 **implements** it (including §9 codegen, §9.2 validation, §10 CI — no longer deferred).
 
 **Out of scope:** markdownlint (not installed; add only if a future ticket approves the dep).
 
@@ -38,10 +40,10 @@ Advance after each slice verifies: `./scripts/ticket advance-slice T-123`
 
 **Edit (docs only):**
 
-- [`docs/website/AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md) — link [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §11 cheat sheet; sync row for in-code comment changes
-- [`CLAUDE.md`](../../CLAUDE.md) §Conventions — pointer to documentation standards
-- [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §9/§10 — note implementation owner = T-123 (not “follow-up”)
-- [`.ai/artifacts/t123_claude_code_handoff.md`](../../.ai/artifacts/t123_claude_code_handoff.md) — full slice order + verify matrix
+- [`docs/website/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md) — link [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §11 cheat sheet; sync row for in-code comment changes
+- [`CLAUDE.md`](/CLAUDE.md) §Conventions — pointer to documentation standards
+- [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) §9/§10 — note implementation owner = T-123 (not “follow-up”)
+- [`.ai/artifacts/t123_claude_code_handoff.md`](/.ai/artifacts/t123_claude_code_handoff.md) — full slice order + verify matrix
 
 **Verify:** `./scripts/ticket sync && ./scripts/ticket check --strict`
 
@@ -118,7 +120,7 @@ Per §9.1. **Generate** projections from `packages/tbd-schema/schema/*.json`; st
 Per §9.2.
 
 - Validate incoming mission version payload against `mission-editor-payload.schema.json` (the editor superset, **not** canonical `mission.schema.json`) **before persist** in `CreateVersion`, via `internal/contract/validate.go` (**deleted at T-145**; the
-  live carrier is [`apps/website/api_v2/src/contract/validate.rs`](../../apps/website/api_v2/src/contract/validate.rs))
+  live carrier is [`apps/website/api_v2/src/contract/validate.rs`](https://github.com/darkforce09/TBD-reforger/blob/51d556d7fe7ba0001d120f4e0ce23c2beb1a9aad/apps/website/api_v2/src/contract/validate.rs))
 - Library: `santhosh-tekuri/jsonschema/v6`; schema `go:embed`-ed + compiled once (`sync.Once`)
 - **400** with structured `{ error, details[] }` on validation failure; golden missions + invalid fixtures in integration tests
 - Align with existing `packages/tbd-schema/scripts/validate-file.mjs` semantics
@@ -135,7 +137,7 @@ Per §10. Wire all four gates:
 |------|---------|
 | Go exported-doc | `golangci-lint` + `revive` exported rules in CI (website job or new job) |
 | TS contract docs | `eslint-plugin-jsdoc` + `@microsoft/tsdoc`; rules on `src/types/`, `src/api/`, `src/hooks/` — require TSDoc + `@contract`/`@model` on cross-boundary exports |
-| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `cargo xtask ci verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
+| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](/.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `cargo xtask ci verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
 | Enfusion DTO conformance | Extend `validate.mjs` or sibling check: DTO scripts with `@contract` header have matching golden fixture |
 
 **Verify:** CI green locally where possible (`npm run validate`, `golangci-lint run`, FE lint); citation script exits 0 on main after .1–.3 tags land

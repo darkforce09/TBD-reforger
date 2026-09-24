@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-935.14 — the prefab archive needs a residency reader
 
 ## Why this exists

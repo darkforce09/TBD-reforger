@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-309 — FactionDoc squad level for Apply Template
 
 Owner: command center. The fix T-217 could not make: a squad level in the faction library contract and both editor ops.

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180 — ORBAT + Eden placement program (Class-R)
 
 **Status:** SHIPPED (program complete + coherency) · **Last slice:** **T-180.10** · **Code tip:** **T-180.9** @ `cba837b3` · **Gate:** `cargo xtask verify t180`  
@@ -87,13 +89,13 @@ Vehicle { id, squadId?, resource/assetId, label?, position? }
 | Faction | `faction-{SIDE}` rows; `FactionRow.key` preserved | **closed** (.1) |
 | Squad | `leaderSlotId` + `vehicleIds` + mutators/GC | **closed** (.1/.2) |
 | Slot | `callsign` / `rank` + embedded `loadout` | **closed** (.1/.9) |
-| Place | [`doc/place_orbat.rs`](../../../crates/map-engine-core/src/doc/place_orbat.rs) → mint squad under `active_side`; `ensure_default_squad` **gone** | **closed** (.1/.5) |
-| Ring tint | [`slots_gpu.rs`](../../../crates/map-engine-core/src/slots_gpu.rs) SIDE_* RGBA | **closed** (.3) |
-| Map lines | [`squad_links.rs`](../../../crates/map-engine-core/src/squad_links.rs) + `mission_history` upload role 9 | **closed** (.4) |
-| ORBAT UI | [`orbat_manager.rs`](../../../apps/website/frontend/src/orbat_manager.rs) Stitch shell + live mutators | **closed** (.7) |
+| Place | [`doc/place_orbat.rs`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/place_orbat.rs) → mint squad under `active_side`; `ensure_default_squad` **gone** | **closed** (.1/.5) |
+| Ring tint | [`slots_gpu.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/slots_gpu.rs) SIDE_* RGBA | **closed** (.3) |
+| Map lines | [`squad_links.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/squad_links.rs) + `mission_history` upload role 9 | **closed** (.4) |
+| ORBAT UI | [`orbat_manager.rs`](https://github.com/darkforce09/TBD-reforger/blob/de8568e7e2d963a3ef48354b1f69d49728814bbf/apps/website/frontend/src/orbat_manager.rs) Stitch shell + live mutators | **closed** (.7) |
 | Dock | Eden chips BLUFOR/OPFOR/INDFOR/Objects | **closed** (.5) |
-| Templates / vehicles | [`doc/apply_faction.rs`](../../../crates/map-engine-core/src/doc/apply_faction.rs) REPLACE + MissionVehicles lane | **closed** (.8) |
-| Compile | [`orbat.rs`](../../../crates/map-engine-core/src/mission/orbat.rs) `loadout_summary_from_value` | **closed** (.9) |
+| Templates / vehicles | [`doc/apply_faction.rs`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/apply_faction.rs) REPLACE + MissionVehicles lane | **closed** (.8) |
+| Compile | [`orbat.rs`](https://github.com/darkforce09/TBD-reforger/blob/4f742e48bf5606115c174f530107d5202f70a63a/crates/map-engine-core/src/mission/orbat.rs) `loadout_summary_from_value` | **closed** (.9) |
 
 **Residual (not code gaps):** operator manuals M-C1…M-I3 · L8 Standardization (operator deferred) · Event lobby polish **T-118** · faction logos (not in T-180).
 
@@ -142,29 +144,29 @@ Full pin ledger: [`t180_class_r_pins.md`](t180_class_r_pins.md). Per-slice specs
 
 | Path | Owns |
 |------|------|
-| [`crates/map-engine-core/src/doc/store.rs`](../../../crates/map-engine-core/src/doc/store.rs) | `leaderSlotId`, callsign/rank on slots, vehicleIds, set_leader, move_slot, GC, rename/reorder |
-| [`crates/map-engine-core/src/doc/soa.rs`](../../../crates/map-engine-core/src/doc/soa.rs) | SoA fields if needed for tint/lines |
-| [`crates/map-engine-core/src/slots_gpu.rs`](../../../crates/map-engine-core/src/slots_gpu.rs) | Per-side RGBA pack |
+| [`crates/map-engine-core/src/doc/store.rs`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs) | `leaderSlotId`, callsign/rank on slots, vehicleIds, set_leader, move_slot, GC, rename/reorder |
+| [`crates/map-engine-core/src/doc/soa.rs`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/soa.rs) | SoA fields if needed for tint/lines |
+| [`crates/map-engine-core/src/slots_gpu.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/slots_gpu.rs) | Per-side RGBA pack |
 | **NEW** `crates/map-engine-core/src/mission/squad_links.rs` (or equiv) | Pure: segments from (leader, members, xy) → `Vec<(x0,y0,x1,y1,rgba)>` |
-| [`crates/map-engine-core/src/mission/orbat.rs`](../../../crates/map-engine-core/src/mission/orbat.rs) | Compile loadout/callsign fill |
+| [`crates/map-engine-core/src/mission/orbat.rs`](https://github.com/darkforce09/TBD-reforger/blob/4f742e48bf5606115c174f530107d5202f70a63a/crates/map-engine-core/src/mission/orbat.rs) | Compile loadout/callsign fill |
 
 ### Rust — `map-engine-render` (GPU draw)
 
 | Path | Owns |
 |------|------|
-| [`crates/map-engine-render/src/engine.rs`](../../../crates/map-engine-render/src/engine.rs) (~4399 hairline upload) | Upload squad-link LineList lane each frame / on dirty |
+| [`crates/map-engine-render/src/engine.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-render/src/engine.rs) (~4399 hairline upload) | Upload squad-link LineList lane each frame / on dirty |
 
 ### Leptos — website frontend
 
 | Path | Owns |
 |------|------|
-| [`apps/website/frontend/src/editor_ops.rs`](../../../apps/website/frontend/src/editor_ops.rs) | `place_at` / active side / mint squad; delete `ensure_default_squad` path |
-| [`apps/website/frontend/src/eden_chrome.rs`](../../../apps/website/frontend/src/eden_chrome.rs) | `DockRight` chips; `OrbatManagerDialog` Stitch UI |
-| [`apps/website/frontend/src/mission_editor.rs`](../../../apps/website/frontend/src/mission_editor.rs) | Wire active_side signal; mount dialog |
-| [`apps/website/frontend/src/asset_catalog.rs`](../../../apps/website/frontend/src/asset_catalog.rs) | Filter catalog by side |
-| [`apps/website/frontend/src/arsenal.rs`](../../../apps/website/frontend/src/arsenal.rs) | Open from ORBAT inspector; slot-line weapon text |
-| [`apps/website/frontend/src/faction_manager.rs`](../../../apps/website/frontend/src/faction_manager.rs) / client | Apply/Save templates (T-153 API) |
-| [`apps/website/frontend/src/outliner.rs`](../../../apps/website/frontend/src/outliner.rs) | `build_orbat` if needed for SL badge |
+| [`apps/website/frontend/src/editor_ops.rs`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/editor_ops.rs) | `place_at` / active side / mint squad; delete `ensure_default_squad` path |
+| [`apps/website/frontend/src/eden_chrome.rs`](https://github.com/darkforce09/TBD-reforger/blob/d9683c9f332cd209699b1b10ec6747e8284933bb/apps/website/frontend/src/eden_chrome.rs) | `DockRight` chips; `OrbatManagerDialog` Stitch UI |
+| [`apps/website/frontend/src/mission_editor.rs`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/mission_editor.rs) | Wire active_side signal; mount dialog |
+| [`apps/website/frontend/src/asset_catalog.rs`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/asset_catalog.rs) | Filter catalog by side |
+| [`apps/website/frontend/src/arsenal.rs`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/arsenal.rs) | Open from ORBAT inspector; slot-line weapon text |
+| [`apps/website/frontend/src/faction_manager.rs`](https://github.com/darkforce09/TBD-reforger/blob/de8568e7e2d963a3ef48354b1f69d49728814bbf/apps/website/frontend/src/faction_manager.rs) / client | Apply/Save templates (T-153 API) |
+| [`apps/website/frontend/src/outliner.rs`](https://github.com/darkforce09/TBD-reforger/blob/d9683c9f332cd209699b1b10ec6747e8284933bb/apps/website/frontend/src/outliner.rs) | `build_orbat` if needed for SL badge |
 
 ### Explicitly do not touch (unless slice says)
 

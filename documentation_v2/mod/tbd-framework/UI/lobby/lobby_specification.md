@@ -1,6 +1,8 @@
+**Status:** live
+
 # TBD Reforger — Lobby & Role Assignment UI Specification & Visual Breakdown
 
-**Source File:** [`lobby_screen.png`](./lobby_screen.png)  
+**Source File:** [`lobby_screen.png`](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/reference_screenshots/lobby_screen.png)  
 **Panel Title:** `ROLE ASSIGNMENT`  
 **Host Context Indicator:** `Mission Maker`  
 **Scenario Name:** `wog_187_chollima_on_the_wing_10`  

@@ -1,17 +1,19 @@
+**Status:** live
+
 # TBD Reforger — Documentation Standards
 
 **Status:** living
 **Audience:** every engineer and AI agent that writes Rust, Enfusion, or tooling code in this monorepo
-**Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/website/README.md`](../website/README.md) → **this doc** (supporting tier)
+**Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`documentation_v2/README.md`](/documentation_v2/README.md) → **this doc** (supporting tier)
 **Updated:** 2026-07-18 (T-171 path refresh)
 
-> **Live stack (T-145 / T-159 / T-171):** `apps/website/api_v2/` (Axum + sqlx) + `apps/website/frontend/` (Leptos). Go/TS examples below are **historical patterns** for `@contract` / `@route` vocabulary — prefer Rust rustdoc + clippy today. Homes: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+> **Live stack (T-145 / T-159 / T-171):** `apps/website/api_v2/` (Axum + sqlx) + `apps/website/frontend/` (Leptos). Go/TS examples below are **historical patterns** for `@contract` / `@route` vocabulary — prefer Rust rustdoc + clippy today. Homes: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 > This document is the source of truth for **how code is documented** across the three
 > boundaries of `TBD-Reforger`. It is **ruthless and prescriptive**: where it says REQUIRED,
 > non-conforming code is a defect to fix on next edit; where it says FORBIDDEN, the pattern must
 > not be introduced. It defers to running code (the authority ladder above) and never overrides a
-> rule in [`CLAUDE.md`](../../CLAUDE.md) or the [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md).
+> rule in [`CLAUDE.md`](../../CLAUDE.md) or the [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 ---
 
@@ -45,9 +47,9 @@ thing — **in-code comments** — which this section resolves:
 
 - **In-code doc comments are CODE.** Godoc comments, TSDoc blocks, and Enforce `//!`/`/** */`
   banners are authored and edited by **Claude Code**, in the **same commit** as the code they
-  describe (the same-commit rule in [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md)).
+  describe (the same-commit rule in [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md)).
 - **Standards & decision markdown are DOCS.** This file, the per-spec Decisions logs (§8), and
-  anything under `docs/` are owned by **Cursor**.
+  anything under `documentation_v2/` are owned by **Cursor**.
 - Authoring *this* file is a one-time, user-directed exception to "Cursor owns docs"; future
   edits to it follow the split (Cursor).
 
@@ -320,44 +322,44 @@ Three tiers. Pick by **scope of the decision**, not by length.
 |------|------|---------|
 | In-code comment | the code | A local choice / non-obvious line. Explains *this* code only. |
 | **Decisions log** | the relevant `docs/specs/<area>/*.md` | A reversible-but-load-bearing architecture decision tied to a feature area. **The formal ADR home.** |
-| Platform doc | `docs/platform/` | A cross-cutting standard or audit (this file; [`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md)). |
+| Platform doc | `docs/platform/` | A cross-cutting standard or audit (this file; [`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md)). |
 
 **We do NOT add a `docs/adr/` tree.** Decisions live next to their feature spec, extending the
 existing Decisions-log pattern (e.g. the UX Decisions log in
-[`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md)).
+[`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md)).
 
 ### 8.2 Documentation filesystem layout
 
 **Rule 8.2.1 — Single docs root.** All markdown documentation MUST live under repo-root
-[`docs/`](../../docs/). Exceptions:
+[`documentation_v2/`](/documentation_v2/). Exceptions:
 
 - Root [`README.md`](../../README.md) and [`CLAUDE.md`](../../CLAUDE.md) (agent runtime)
-- Per-package **`README.md` only** (one file, no `docs/` subtree) under `apps/*`, `contracts_v2/*` and `assets_v2/*`
+- Per-package **`README.md` only** (one file, no `documentation_v2/` subtree) under `apps/*`, `contracts_v2/*` and `assets_v2/*`
 - Generated pipeline output under [`.ai/artifacts/`](../../.ai/artifacts/) (not hand-authored specs)
-- Archive tiers named in [`docs/website/archive/README.md`](../website/archive/README.md)
+- Archive tiers named in [`documentation_v2/archive/monorepo_migration/docs_website_archive_readme.md`](/documentation_v2/archive/monorepo_migration/docs_website_archive_readme.md)
 
 **Rule 8.2.2 — FORBIDDEN paths.**
 
 - `apps/**/docs/**` (e.g. `apps/website/frontend/docs/`) — **never create**
 - `contracts_v2/**/docs/**` and `assets_v2/**/docs/**` — a README adjacent to the data is the only markdown those trees carry (not surface specs)
-- Duplicate hub trees mirroring `docs/website/` inside application folders
+- Duplicate hub trees mirroring `documentation_v2/website/` inside application folders
 
 **Rule 8.2.3 — Frontend surface spec contract.** When adding or changing a frontend route
 ([`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs)):
 
 1. Create or update [`docs/website/frontend/pages/<name>.md`](../website/frontend/pages/) from
-   [`_template.md`](../website/frontend/_template.md)
-2. Add a row to [`docs/website/frontend/INDEX.md`](../website/frontend/INDEX.md)
-3. Update [`docs/website/frontend/ROADMAP.md`](../website/frontend/ROADMAP.md)
-4. Sync per [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md)
+   [`_template.md`](/documentation_v2/archive/go_and_react_era_design/frontend_page_spec_template.md)
+2. Add a row to [`documentation_v2/website/frontend/README.md`](/documentation_v2/website/frontend/README.md)
+3. Update [`documentation_v2/website/frontend/README.md`](/documentation_v2/website/frontend/README.md)
+4. Sync per [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md)
 
 **Rule 8.2.4 — Link style.**
 
 - **Within the same hub:** relative paths (`pages/foo.md`, `../platform/...`)
 - **From MC specs to page docs:** `../../website/frontend/pages/...` (from
-  `docs/specs/Mission_Creator_Architecture/`)
-- **In authority docs:** prose uses canonical `docs/website/frontend/...`; markdown hrefs may be
-  relative within `docs/website/`
+  `documentation_v2/website/frontend/apps/editor/`)
+- **In authority docs:** prose uses canonical `documentation_v2/website/frontend/...`; markdown hrefs may be
+  relative within `documentation_v2/website/`
 - **Never** use `docs/frontend/` (directory does not exist) or `frontend/docs/` (retired)
 
 **Rule 8.2.5 — Doc tree map.**
@@ -365,15 +367,15 @@ existing Decisions-log pattern (e.g. the UX Decisions log in
 | Doc type | Location |
 |----------|----------|
 | Platform standards | `docs/platform/` |
-| Website hub | `docs/website/README.md` |
-| Frontend surfaces | `docs/website/frontend/pages/` |
-| Backend API | `docs/website/backend/` |
-| Mission Creator engineering | `docs/specs/Mission_Creator_Architecture/` |
+| Website hub | `documentation_v2/README.md` |
+| Frontend surfaces | `documentation_v2/website/frontend/pages/` |
+| Backend API | `documentation_v2/website/api_v2/` |
+| Mission Creator engineering | `documentation_v2/website/frontend/apps/editor/` |
 | Tickets (generated views) | `docs/TICKET_*.md` (`.ai/tickets/*.toml` + `cargo xtask ticket sync`) |
 | Live code | `apps/website/`, `apps/mod/`, `tools_v2/` |
 | Wire contracts and map data | `contracts_v2/`, `assets_v2/` |
 
-**Rule 8.2.6 — Agent routing.** Cursor owns all paths under `docs/`. Claude Code MUST NOT create
+**Rule 8.2.6 — Agent routing.** Cursor owns all paths under `documentation_v2/`. Claude Code MUST NOT create
 markdown under `apps/` except in-code comments per §1.
 
 Enforced by `cargo xtask ci verify-doc-layout`.
@@ -416,7 +418,7 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
    `mission.schema.json` — those are different artifacts (see §2.2).
 3. **Hand-written types remain debt** where not generated. API wire models = `apps/website/api_v2/src/<domain>/models/` (serde snake_case).
 
-> **Implementation:** [**T-123**](t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
+> **Implementation:** [**T-123**](/documentation_v2/tickets/specs/t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
 
 ---
 
@@ -428,7 +430,7 @@ Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../.
 | Gate | Tool | Scope |
 |------|------|-------|
 | Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
-| Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in source under `apps/` and `tools_v2/` (the gate's scan roots) — **code only, never `docs/`** |
+| Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in source under `apps/` and `tools_v2/` (the gate's scan roots) — **code only, never `documentation_v2/`** |
 | Route tags | `cargo xtask ci verify-coding-standards` (route-tag check) | `@route` against the routes registered in the eight `apps/website/api_v2/src/<domain>/routes.rs` tables |
 | Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
 
@@ -439,7 +441,7 @@ so a renamed schema definition fails CI instead of silently parsing to empty.
 
 ### 10.1 Prose citations are a convention, not a gate
 
-`verify-citations` reads **code**. It does not read `docs/`, and that is deliberate (T-611).
+`verify-citations` reads **code**. It does not read `documentation_v2/`, and that is deliberate (T-611).
 Scanning markdown was measured: 9 prose citations, 5 reported dangling, **all 5 false** — an
 inline `` `@contract registry-items.schema.json#/$defs/item`. `` loses to the closing backtick
 and the trailing punctuation. A markdown-aware matcher would still be unable to distinguish
@@ -454,7 +456,7 @@ Prose is therefore held by convention:
 3. `@contract` written in prose is **illustrative**, not a checked link. Checked links live in
    code; a doc that needs one should point at the code that carries it.
 4. A prose citation that genuinely must be machine-checked belongs either in code as a comment
-   tag, or in an index gate of its own (cf. `cargo run -q -p developer-tools --bin enf -- citations` for `@idx` in `docs/mod`).
+   tag, or in an index gate of its own (cf. `cargo run -q -p developer-tools --bin enf -- citations` for `@idx` in `documentation_v2/mod`).
 
 The gate prints its own scope on every run. Trust that line over this section if they disagree.
 
@@ -462,7 +464,7 @@ The gate prints its own scope on every run. Trust that line over this section if
 
 ## 11. Fixture homes (T-171)
 
-Pin: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+Pin: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 1. **Fixtures live crate-local** in `tests/fixtures/` beside their primary consumer.
 2. **Cross-crate contract data** lives in `contracts_v2` (schema / golden / golden-missions / registry).
@@ -473,8 +475,8 @@ SPA R-api goldens: `apps/website/frontend/tests/fixtures/api/`. Gate oracles/man
 
 ## 12. Quick-reference cheat sheet
 
-Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md). Doc
-**placement** (where markdown files live): §8.2. Homes: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md). Doc
+**placement** (where markdown files live): §8.2. Homes: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 **Every exported symbol needs:**
 

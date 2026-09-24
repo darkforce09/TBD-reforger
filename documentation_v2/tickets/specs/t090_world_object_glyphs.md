@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — World object glyphs (SVG / atlas, rotatable + scalable)
 
 **Status:** Spec ready — ships with **T-090.5** render (per phased import)  

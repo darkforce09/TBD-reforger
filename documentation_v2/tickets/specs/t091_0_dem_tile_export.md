@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-091.0 — Everon DEM export + anchor verify
 
 **Ticket:** T-091 · **Slice:** T-091.0  
@@ -95,7 +97,7 @@ Mandatory bridgehead coords — see **Anchor set** below.
 | `bridgehead-tl1` | 4831.2 | 6628.8 |
 | + `coast-sw`, `valley-inland`, `hill-north`, `coast-w`, `peak-central`, `seabed-e`, `shelf-ne`, `mid-s` | | |
 
-Schema: [`terrain-anchors.schema.json`](../../../packages/tbd-schema/schema/terrain-anchors.schema.json). Do **not** hand-fill `demYM` / `deltaM`.
+Schema: [`terrain-anchors.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/terrain-anchors.schema.json). Do **not** hand-fill `demYM` / `deltaM`.
 
 ---
 

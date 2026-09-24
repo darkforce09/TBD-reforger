@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.6 — Geometry-aware placement audit (simplified 3D bounds)
 
 **Ticket:** T-090 · **Slice:** T-090.6  

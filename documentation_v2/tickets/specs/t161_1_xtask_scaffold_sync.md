@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-161.1 — xtask scaffold + sync/check parity
 
 **Ticket:** T-161.1 · **Program:** [T-161 hub](t161_ticket_xtask_program.md) · **Status:** ready  
 **Executor:** claude-code · **Worktree:** `.ai/artifacts/worktrees/TBD-T-161` (`t-161-ticket-xtask`)  
-**Handoff:** [`.ai/artifacts/t161_1_claude_code_handoff.md`](../../.ai/artifacts/t161_1_claude_code_handoff.md)
+**Handoff:** [`.ai/artifacts/t161_1_claude_code_handoff.md`](/.ai/artifacts/t161_1_claude_code_handoff.md)
 
 ## Goal
 

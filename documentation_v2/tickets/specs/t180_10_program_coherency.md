@@ -1,10 +1,12 @@
+**Status:** frozen record
+
 # T-180.10 — Program coherency checker
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.1–.9 shipped · **Executor:** cursor-docs  
 **Pins:** [`t180_class_r_pins.md`](t180_class_r_pins.md)  
 **Report:** [`.ai/artifacts/t180_10_coherency_report.md`](../../../.ai/artifacts/t180_10_coherency_report.md)  
 **Verify log:** [`.ai/artifacts/t180_10_verify_log.md`](../../../.ai/artifacts/t180_10_verify_log.md)  
-**Gate:** `cargo xtask verify t180` → [`scripts/verify-t180-coherency.sh`](../../../scripts/verify-t180-coherency.sh)
+**Gate:** `cargo xtask verify t180` → [`scripts/verify-t180-coherency.sh`](https://github.com/darkforce09/TBD-reforger/blob/e802d4aeae20fb6d9d822cc648672c653f64da56/scripts/verify-t180-coherency.sh)
 
 ---
 

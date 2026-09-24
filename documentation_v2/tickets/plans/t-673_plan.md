@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-673 — Plan
 ## Context
 T-069 shipped the four schema-carried marker fields and T-706 shipped the `$defs/marker` widening (size, rotation, shape, brush, color, alpha). Nothing in `apps/mod` reads the six MRK keys, so Area markers authored in the editor never reach the game. The 2026-08-02 attempt sits unreviewed at `salvage/t853-dropped/T-673` (commit 113108a1, shared with T-674/T-675).

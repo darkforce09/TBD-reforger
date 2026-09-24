@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Voice — Game Bridge Contract (draft v1)
 
 > **Status:** Draft. Main team owns this document; partner (VOIP) reviews and
@@ -15,7 +17,7 @@ message format below is the wire between game and voice.
 The transport is **decided in Phase 0.2** (local REST, WebSocket, or named pipe).
 The message envelope is transport-agnostic — the same JSON objects apply whether
 they are sent as WebSocket frames or HTTP bodies. All messages validate against
-[`bridge-messages.schema.json`](bridge-messages.schema.json); see
+[`bridge-messages.schema.json`](/contracts_v2/definitions/bridge-messages.schema.json); see
 [`samples/`](samples/) for canonical examples.
 
 ## Message envelope

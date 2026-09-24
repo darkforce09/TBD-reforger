@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10.2 — Registry exporter reclassify + kind taxonomy v3
 
 **Ticket:** T-068 · **Slice:** T-068.10.2 · **Status:** ready (ACTIVE) · **Executor:** claude-code

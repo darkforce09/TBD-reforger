@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-821 — save version prefill auto-bumps
 
 Ticket: .ai/tickets/T-821.toml · Plan: docs/plans/t-821_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

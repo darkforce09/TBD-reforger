@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1 — Aligned Cartesian basemap
 
 **Ticket:** T-090 · **Slice:** T-090.1 **(Satellite basemap + tile pyramid export)**  
@@ -31,16 +33,16 @@ Render aligned Everon **dual basemap views** (Satellite + Map) under the procedu
 
 ## Problem
 
-[`useBaseMapLayer.ts`](../../../apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts) draws only a procedural grid. Mission makers cannot visually align slots with in-game geography.
+[`useBaseMapLayer.ts`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts) draws only a procedural grid. Mission makers cannot visually align slots with in-game geography.
 
 ---
 
 ## Goal
 
-1. Load terrain manifest via `manifestUrl` from [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts).
+1. Load terrain manifest via `manifestUrl` from [`terrains.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/coords/terrains.ts).
 2. Add **Satellite** basemap (`tiles.satellite`) — **T-090.1 ship target**.
 3. Stub **Map** basemap (`tiles.map`) + UI radio — full tiles @ **T-090.1.1** ([`t090_basemap_dual_view.md`](t090_basemap_dual_view.md)).
-4. **Cartesian** TileLayer/BitmapLayer — **never Web Mercator** ([`engineering_plan.md`](engineering_plan.md) §4.1).
+4. **Cartesian** TileLayer/BitmapLayer — **never Web Mercator** ([`engineering_plan.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §4.1).
 5. Grid overlay on top (semi-transparent); clip to `worldBounds`.
 6. Degraded: 404 → grid-only + toast.
 

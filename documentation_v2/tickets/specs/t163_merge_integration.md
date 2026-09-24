@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-163 — Merge integration: t-159-leptos-ui + t-161-ticket-xtask → main
 
 **Status:** shipped · **Executor:** claude-code (solo session, operator-approved plan) ·
-**Verify:** [`.ai/artifacts/t163_merge_verify_log.md`](../../.ai/artifacts/t163_merge_verify_log.md)
+**Verify:** [`.ai/artifacts/t163_merge_verify_log.md`](/.ai/artifacts/t163_merge_verify_log.md)
 
 ## What
 

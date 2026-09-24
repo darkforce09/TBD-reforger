@@ -1,9 +1,11 @@
+**Status:** live
+
 # Token estimate factor
 
 The declared constant the `diff_loc` token estimator multiplies by. The estimator runs
 inside `cargo xtask ticket stamp-sha <id> <sha>`, which writes
 `.ai/tickets/estimates/<id>.json` for a shipped ticket that has no measured run receipt
-(spec: [`t917_ticket_schema_v2.md`](t917_ticket_schema_v2.md) §Estimation ladder):
+(spec: [`t917_ticket_schema_v2.md`](/documentation_v2/tickets/specs/t917_ticket_schema_v2.md) §Estimation ladder):
 
 ```
 TOKENS_PER_LOC = 150

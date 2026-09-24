@@ -1,7 +1,9 @@
+**Status:** live
+
 # Workbench MCP shell tooling
 
 **Shipped:** `e7e7232` (2026-06-30) · **Pinned package:** `enfusion-mcp@0.6.1` in `tools_v2/enfusion_mcp_node_package/package.json`  
-**Entry for agents:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap` (launches Workbench on `apps/mod/tbd-export/addon.gproj`; the bridge handlers are committed in [`apps/mod/tbd-emcp/`](../../apps/mod/tbd-emcp/))
+**Entry for agents:** [`CLAUDE-CODE-START.md`](/documentation_v2/runbooks/mod_slice_workflow.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap` (launches Workbench on `apps/mod/tbd-export/addon.gproj`; the bridge handlers are committed in [`apps/mod/tbd-emcp/`](../../apps/mod/tbd-emcp/))
 
 Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Replaces the old flaky one-shot `timeout 90 npx …` path that hung to the full timeout or returned empty mid-stream.
 

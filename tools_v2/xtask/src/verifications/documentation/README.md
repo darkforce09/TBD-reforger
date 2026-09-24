@@ -112,7 +112,9 @@ break names its rule:
    tracked file or a folder that holds one. An untracked file is missing.
 2. escapes repository: the path climbs above the repository root.
 3. undefined reference: a full (`[text][label]`) or collapsed (`[text][]`) reference names a label
-   the document never defines; a shortcut (`[text]`) without a definition is plain text.
+   the document never defines; a shortcut (`[text]`) without a definition is plain text, and so is
+   a link with empty text before an undefined label (`[][label]`, as in `points[][2]`), which shows
+   nothing to follow. An image with empty alt text (`![][label]`) still shows, so it keeps the rule.
 4. missing anchor: a fragment on a rendered Markdown target (or `#fragment` alone, on the document
    itself) matches none of its anchors. A heading's anchor is its rendered text lowercased, with
    every character other than a letter, digit, space, hyphen or underscore dropped and each space

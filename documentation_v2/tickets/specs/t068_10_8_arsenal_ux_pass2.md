@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10.8 — Arsenal UX pass 2 (no-scroll modal, A3 slot rail, clean doll)
 
 **Ticket:** T-068 · **Slice:** T-068.10.8 · **Status:** shipped ·

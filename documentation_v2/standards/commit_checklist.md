@@ -1,3 +1,5 @@
+**Status:** live
+
 # Agent commit checklist
 
 **Use on every feature commit.** Sync docs **in the same commit** as code — never merge stale docs.
@@ -6,7 +8,7 @@
 
 **Doc ownership (locked 2026-06):** **Cursor (Composer 2.5)** writes and syncs all documentation. **Claude Code** reads docs and implements code only — return verify output to Cursor for the §Same-commit sync pass before the human commits.
 
-**Where does X go?** [`docs/platform/WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md) (T-171 pin).
+**Where does X go?** [`documentation_v2/standards/where_does_x_go.md`](/documentation_v2/standards/where_does_x_go.md) (T-171 pin).
 
 ---
 
@@ -27,13 +29,13 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 | Domain | Start here |
 |--------|------------|
 | **Any work** | [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) → registry row → spec path |
-| **Frontend surfaces** | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) → [`INDEX.md`](frontend/INDEX.md) |
-| **Mission Creator** | MC [`ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) |
-| **Backend / API** | [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md) · live code `apps/website/api_v2/` |
-| **Conventions pin** | [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md) |
-| **Cross-boundary comments** | [`DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) |
-| **Coding standards** | [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) — before commit: `cargo xtask db up` then `cargo xtask ci ci-local` |
-| **Tag contract** | [`docs/TAGS.md`](TAGS.md) |
+| **Frontend surfaces** | [`documentation_v2/website/frontend/README.md`](/documentation_v2/website/frontend/README.md) → [`INDEX.md`](/documentation_v2/website/frontend/README.md) |
+| **Mission Creator** | MC [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) → [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) |
+| **Backend / API** | [`documentation_v2/website/api_v2/api_overview.md`](/documentation_v2/website/api_v2/api_overview.md) · live code `apps/website/api_v2/` |
+| **Conventions pin** | [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md) |
+| **Cross-boundary comments** | [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) |
+| **Coding standards** | [`CODING_STANDARDS.md`](/documentation_v2/standards/coding_standards/README.md) — before commit: `cargo xtask db up` then `cargo xtask ci ci-local` |
+| **Tag contract** | [`docs/TAGS.md`](/documentation_v2/standards/ticket_identifiers.md) |
 
 ---
 
@@ -43,9 +45,9 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 |--------------|--------------|
 | **Shipped milestone** | Ticket → `shipped`; `cargo xtask ticket sync`; [`CLAUDE.md`](../../CLAUDE.md) §Status Done bullet |
 | **Active slice** | Ticket `active_slice`; MC `agent_execution.md` if applicable |
-| **New or removed route** | [`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs) + [`pages/*.md`](frontend/pages) + [`INDEX.md`](frontend/INDEX.md) + [`ROADMAP.md`](frontend/ROADMAP.md) |
+| **New or removed route** | [`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs) + [`pages/*.md`](/documentation_v2/website/frontend/pages) + [`INDEX.md`](/documentation_v2/website/frontend/README.md) + [`ROADMAP.md`](/documentation_v2/website/frontend/README.md) |
 | **UI surface (no route)** | Page spec **Element Inventory** + **`Live source:`** → `apps/website/frontend/src/<page>.rs` |
-| **Nav / sidebar** | [`apps/website/frontend/src/nav.rs`](../../apps/website/frontend/src/nav.rs) + [`shell/sidebar.md`](frontend/shell/sidebar.md) |
+| **Nav / sidebar** | [`apps/website/frontend/src/nav.rs`](../../apps/website/frontend/src/nav.rs) + [`shell/sidebar.md`](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md) |
 | **API / model** | `apps/website/api_v2/src/<domain>/models/` + matching `apps/website/frontend/src/v2/core/api/dto/` (R-api golden) |
 | **Cross-boundary type/handler** | `@contract` / `@route` / `@model` per DOCUMENTATION_STANDARDS — same commit as code |
 | **Mission Creator** | Decisions log / feature_inventory / gap_analysis as applicable |
@@ -67,7 +69,7 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 - `docs/specs/**/code.html`, `screen.png` mockups (archive)
 - Generated `docs/TICKET_*.md` (edit registry + sync)
 - Historical T-0xx bullets in CLAUDE (commit archaeology)
-- **Do not create** markdown under `apps/**/docs/`, `contracts_v2/**/docs/` or `assets_v2/**/docs/` — specs live in [`docs/website/frontend/`](frontend/)
+- **Do not create** markdown under `apps/**/docs/`, `contracts_v2/**/docs/` or `assets_v2/**/docs/` — specs live in [`documentation_v2/website/frontend/`](/documentation_v2/website/frontend/)
 
 Live UI authority: `apps/website/frontend/src/` (Leptos page modules).
 

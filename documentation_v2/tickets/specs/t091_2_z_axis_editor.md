@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-091.2 — Z-axis editor UX
 
 **Ticket:** T-091 · **Slice:** T-091.2  
@@ -41,12 +43,12 @@ Wire T-091.1 `sampleElevation` into slot placement/move/paste, live CUR/SEL Z re
 
 | Location | Today |
 |----------|--------|
-| [`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `addSlot` | `z: 0` hard-coded (line ~145) |
+| [`ydoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `addSlot` | `z: 0` hard-coded (line ~145) |
 | `pasteSlots` | Copies `c.position.z` from clipboard — does **not** re-sample at pasted x/y |
 | `moveEntities` | Updates x/y only — **no** z re-sample on drag release |
-| [`TacticalMap.tsx`](../../../apps/website/frontend/src/features/tactical-map/TacticalMap.tsx) `emitCursor` | `onCursorMove({ x, y, z: 0 })` (line ~150) |
-| [`BottomToolbelt.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx) | Reads `cursorWorld?.z` / `selectedSlot.position.z` but values stay 0; `fmt()` uses **`Math.round`** (integer) — wrong for 0.001 m contract |
-| [`useDemLayer.ts`](../../../apps/website/frontend/src/features/tactical-map/layers/useDemLayer.ts) | **Does not exist** |
+| [`TacticalMap.tsx`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/TacticalMap.tsx) `emitCursor` | `onCursorMove({ x, y, z: 0 })` (line ~150) |
+| [`BottomToolbelt.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx) | Reads `cursorWorld?.z` / `selectedSlot.position.z` but values stay 0; `fmt()` uses **`Math.round`** (integer) — wrong for 0.001 m contract |
+| [`useDemLayer.ts`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/layers/useDemLayer.ts) | **Does not exist** |
 | `MissionSettingsDialog` | No hillshade/grid toggles |
 | `compile.ts` | `editor.slots` = full `Object.values(slotsById)` — **already includes** `position.z` when store has it (S2 is a ydoc wiring check, not a compiler rewrite) |
 
@@ -90,7 +92,7 @@ Wire T-091.1 `sampleElevation` into slot placement/move/paste, live CUR/SEL Z re
 | **ydoc import path** | Import from leaf **`../dem/DemController`** (or `../dem`) — **not** `@/features/tactical-map` barrel | Barrel re-exports `<TacticalMap>` / Deck.gl — unsafe if import graph changes |
 | **Display precision** | **3** decimal places (0.001 m) — match `manifest.precision.storageDecimals` | Program + T-091.1 rounding |
 | **Degraded DEM** | `sampleElevation` → **0**; existing T-091.1 **sonner toast + Retry** — no new banner | T-091.1 DemController; M7 = break URL → toast + z=0 |
-| **Grid toggle (M6)** | Toggle **`showGrid`** procedural grid ([`useBaseMapLayer`](../../../apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts)) — **not** T-090.1 tiles | `TacticalMap` already has `showGrid` prop; today hard-coded `showGrid` in `MissionCreatorPage` |
+| **Grid toggle (M6)** | Toggle **`showGrid`** procedural grid ([`useBaseMapLayer`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts)) — **not** T-090.1 tiles | `TacticalMap` already has `showGrid` prop; today hard-coded `showGrid` in `MissionCreatorPage` |
 | **Hillshade default** | **Off** until user enables (avoid 6400² overlay cost on first paint) — persist in `meta.environment.showHillshade` | Performance @ scale missions |
 | **Grid default** | **On** (`showGrid: true`) — matches current `MissionCreatorPage` | Verified line 175 |
 | **Hillshade render** | Deck **`BitmapLayer`** from CPU meters cache — **not** luma.gl GLSL this slice | engineering_plan §4.2 GPU path is aspirational; T-091.1 ships CPU cache only |
@@ -99,13 +101,13 @@ Wire T-091.1 `sampleElevation` into slot placement/move/paste, live CUR/SEL Z re
 | **Hillshade cache** | Build hillshade RGBA **once** per terrain when DEM ready; invalidate on `terrainId` change | Module ref in `useDemLayer` or helper |
 | **Hillshade accessor** | `getDemRasterForOverlay()` on DemController — **internal**, not public barrel | Spec §Hillshade |
 | **Async CUR caveat** | If DEM finishes loading while pointer is stationary, CUR Z stays **0** until next `pointermove` | Acceptable v1 — optional follow-up: re-emit on DEM ready |
-| **incPatchPlan** | Position z changes via existing **`slot-fields`** path — no new patch kind unless profiling proves otherwise | [`incPatchPlan.ts`](../../../apps/website/frontend/src/features/tactical-map/state/incPatchPlan.ts) line ~182 |
+| **incPatchPlan** | Position z changes via existing **`slot-fields`** path — no new patch kind unless profiling proves otherwise | [`incPatchPlan.ts`](https://github.com/darkforce09/TBD-reforger/blob/fbd590e64c4b522f30f8e2390df5257916282193/apps/website/frontend/src/features/tactical-map/state/incPatchPlan.ts) line ~182 |
 
 ---
 
 ## Public API (consume — do not rename)
 
-From [`dem/index.ts`](../../../apps/website/frontend/src/features/tactical-map/dem/index.ts):
+From [`dem/index.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/dem/index.ts):
 
 ```typescript
 sampleElevation(x: number, y: number): number  // 0 when not ready / degraded
@@ -125,7 +127,7 @@ function terrainZ(x: number, y: number): number {
 
 ## Hillshade (minimum bar — locked)
 
-- New [`useDemLayer.ts`](../../../apps/website/frontend/src/features/tactical-map/layers/useDemLayer.ts).
+- New [`useDemLayer.ts`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/layers/useDemLayer.ts).
 - Visible when: `meta.environment.showHillshade === true` **and** `isDemReady()`.
 - Data: `getDemRasterForOverlay()` on DemController → `{ metersCache, width, height, terrainId, manifest } | null` (**internal**, not barrel).
 - Pipeline: downsample meters cache to **≤1024 px** edge → Horn/slope hillshade RGBA (NW light, ~40% opacity) → Deck **`BitmapLayer`** bounds `[0,0]`–`[terrain.width, terrain.height]` (CARTESIAN, same as grid).
@@ -137,14 +139,14 @@ function terrainZ(x: number, y: number): number {
 
 ## Meta / settings persistence
 
-Extend [`MissionMeta.environment`](../../../apps/website/frontend/src/features/tactical-map/state/schema.ts):
+Extend [`MissionMeta.environment`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/schema.ts):
 
 ```typescript
 showGrid?: boolean      // default true when undefined
 showHillshade?: boolean // default false when undefined
 ```
 
-Wire [`MissionSettingsDialog.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx) toggles → `updateEnvironment(md, { showGrid, showHillshade })`.
+Wire [`MissionSettingsDialog.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx) toggles → `updateEnvironment(md, { showGrid, showHillshade })`.
 
 `MissionCreatorPage` passes `showGrid={meta.environment.showGrid !== false}` to `TacticalMap` (replace hard-coded `showGrid`).
 

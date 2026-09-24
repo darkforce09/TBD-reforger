@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-920.1 — main_goal rename + tiered gates: plan
 
 ## Context

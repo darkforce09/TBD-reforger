@@ -1,3 +1,5 @@
+**Status:** live
+
 # Where does X go?
 
 The canonical home for each artifact class.
@@ -17,7 +19,7 @@ The canonical home for each artifact class.
 | Cross-crate contract golden | `contracts_v2/fixtures/{missions,map,registry}/` |
 | Map asset | `assets_v2/terrains/<terrain>/` (LFS: dem png + sat .tbd-sat only; `tiles/` rebuildable local) · export scratch `assets_v2/scratch/<terrain>/` (gitignored, never served) |
 | Ticket | `.ai/tickets/<id>.toml` + `cargo xtask ticket sync` (generated TICKET_*.md never hand-edited) |
-| Spec / doc | `docs/**` only — never `apps/**/docs`, `contracts_v2/**/docs` or `assets_v2/**/docs` (verify-doc-layout enforces) |
+| Spec / doc | `documentation_v2/**` only — never `apps/**/docs`, `contracts_v2/**/docs` or `assets_v2/**/docs` (verify-doc-layout enforces) |
 | Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `apps/mod/`) |
 | Shared engine code | `apps/website/map-engine/` (world, spatial, mission domain) · `apps/website/graphics-engine/` (GPU primitives) |
 | Repo tooling | `xtask` (gates/codegen/ticket lib) · `tools_v2/developer-tools` (gate harness + asset pipelines) |

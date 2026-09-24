@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-946.86 — the wave 255 dead-code repair
 
 Filed 2026-09-08 at wave 256 pre-dispatch. Supersedes **T-946.82, T-946.83, T-946.84, T-946.85**

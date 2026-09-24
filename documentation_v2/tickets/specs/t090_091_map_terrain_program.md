@@ -1,16 +1,18 @@
+**Status:** frozen record
+
 # T-090 / T-091 — Map & terrain program (hub)
 
 **Status:** **T-090.5.5 shipped** @ `2b1a0dda` · **Active:** **T-090.4** (Z placement audit — buried / floating objects; T-090.11 and T-090.12 shipped; registry pointer still reads T-090.1.2.5 until T-945 adds `active_slice` to the on-disk encoding). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
-**Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
+**Registry:** [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
 **UX reference:** [`t090_eden_map_reference.md`](t090_eden_map_reference.md)  
 **Export (data-only v2):** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — `cargo xtask map export-terrain <id>`
 
 **Hard gate:** **T-091.0** anchor verify **PASS** (`cargo xtask ci verify-terrain-strict` @ `6d96339`). T-071 ORBAT / T-068 Phase 2 loadout still blocked on **T-092.2** mod compile + spawn verify. **Building floor selector** explicitly **out of scope** → **T-129** (`idea`; id renumbered — **T-126** is Fable audit security).
 
-**Workbench MCP:** shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../../mod/MCP_TOOLING.md). Offline: `cargo xtask mcp selftest`. Live: `cargo xtask mod dev-bootstrap` then `cargo xtask mcp smoke`.
+**Workbench MCP:** shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](/documentation_v2/runbooks/enfusion_mcp_tooling.md). Offline: `cargo xtask mcp selftest`. Live: `cargo xtask mod dev-bootstrap` then `cargo xtask mcp smoke`.
 
 ---
 
@@ -210,11 +212,11 @@ cargo xtask ci schema-validate              # includes verify-type-inventory
 ```
 | Z burial audit | N/A | T-090.4 pivot + **T-090.6** OBB visibility @ 1M |
 | DEM loader | **`dem/*` + `sampleElevation()`** @ `2c56c2e` — Everon loads in editor; API not wired to toolbelt/slots yet | T-091.1 **shipped** |
-| Slot Z | `sampleElevation` in [`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) | **Done (T-091.2)** @ `dde589e` |
+| Slot Z | `sampleElevation` in [`ydoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/ydoc.ts) | **Done (T-091.2)** @ `dde589e` |
 | Toolbelt CUR/SEL Z | Sampled elevation @ 3 dp; X/Y @ 3 dp | **Done (T-091.2)** |
 | DEM assets | **6400² PNG** @ `packages/map-assets/everon/dem/` | T-091.0 **shipped** |
 | Everon bounds | 12800×12800 m | Biki confirmed |
-| Everon altitude | [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts): −204.78…375.53 m | Manifest must match |
+| Everon altitude | [`terrains.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/coords/terrains.ts): −204.78…375.53 m | Manifest must match |
 | Arland bounds | **4096×4096** m (fixed from wrong 10240) | Defer assets until Everon gate |
 
 **Do not hard-code DEM pixel size** — record `widthPx`/`heightPx` from World Editor **Info & Diags** at export.
@@ -256,7 +258,7 @@ packages/map-assets/
 
 Dev serve: `apps/website/frontend/public/map-assets/` → symlink or copy (DEV_RUNBOOK §Map assets).
 
-Schemas: [`terrain-manifest.schema.json`](../../../packages/tbd-schema/schema/terrain-manifest.schema.json) · [`terrain-anchors.schema.json`](../../../packages/tbd-schema/schema/terrain-anchors.schema.json)
+Schemas: [`terrain-manifest.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/terrain-manifest.schema.json) · [`terrain-anchors.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/terrain-anchors.schema.json)
 
 ---
 
@@ -289,5 +291,5 @@ Automated sign-off @ T-091.0: Claude Code completes **A1–A11** in [`t091_0_dem
 - [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md) — **T-152** cartographic fidelity (icons, labels, airfield, fence/pier/bridge) on worktree `TBD-T-152`
 - [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
 - [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md)
-- [`engineering_plan.md`](engineering_plan.md) §4.2–§4.3
-- [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Map assets
+- [`engineering_plan.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §4.2–§4.3
+- [`DEV_RUNBOOK.md`](/documentation_v2/runbooks/local_development.md) §Map assets

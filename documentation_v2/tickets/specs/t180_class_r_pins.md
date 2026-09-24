@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180 — Class-R pin ledger
 
 **Authority companion to** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md).  

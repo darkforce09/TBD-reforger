@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.9 — Registry worker + compat ingest
 
 **Ticket:** T-068 · **Slice:** T-068.9  

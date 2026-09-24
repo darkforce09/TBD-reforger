@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-920.2 — main_goal on top, viewer beside detail: plan
 
 ## Context

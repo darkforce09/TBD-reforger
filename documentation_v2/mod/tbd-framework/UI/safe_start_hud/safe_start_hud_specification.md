@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Safestart HUD Functional Reference Specification
 
 **Module:** TBD Reforger Enfusion Framework (`apps/mod/tbd-framework`)  

@@ -62,7 +62,7 @@ cargo xtask mk ci-local-leptos
 
 ## Documentation sync (Cursor Composer 2.5 — after human merge)
 
-On ship: run `cargo xtask ticket ship T-0xx`; update narrative docs per [`docs/website/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md).
+On ship: run `cargo xtask ticket ship T-0xx`; update narrative docs per [`documentation_v2/standards/commit_checklist.md`](/documentation_v2/standards/commit_checklist.md).
 
 ---
 

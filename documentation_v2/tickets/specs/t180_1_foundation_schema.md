@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.1 — Foundation schema + place→new squad
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Pins:** [`t180_class_r_pins.md`](t180_class_r_pins.md) · **Executor:** claude-code  
@@ -7,11 +9,11 @@
 
 | Fact | Evidence |
 |------|----------|
-| Place dumps into one squad | [`editor_ops.rs:903-960`](../../../apps/website/frontend/src/editor_ops.rs) `ensure_default_squad` → `squad-1` |
-| No leader | [`store.rs:324-336`](../../../crates/map-engine-core/src/doc/store.rs) — no `leaderSlotId` |
-| No slot callsign/rank | [`store.rs:275-307`](../../../crates/map-engine-core/src/doc/store.rs) |
-| FE drops faction `key` | [`editor_ops.rs:668-676`](../../../apps/website/frontend/src/editor_ops.rs) / [`outliner.rs:169-174`](../../../apps/website/frontend/src/outliner.rs) |
-| No `active_side` | `OpsCtx` [`editor_ops.rs:50-71`](../../../apps/website/frontend/src/editor_ops.rs) |
+| Place dumps into one squad | [`editor_ops.rs:903-960`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/editor_ops.rs) `ensure_default_squad` → `squad-1` |
+| No leader | [`store.rs:324-336`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs) — no `leaderSlotId` |
+| No slot callsign/rank | [`store.rs:275-307`](https://github.com/darkforce09/TBD-reforger/blob/ea3672340d7bbbd736353b099417be6c130c5259/crates/map-engine-core/src/doc/store.rs) |
+| FE drops faction `key` | [`editor_ops.rs:668-676`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/editor_ops.rs) / [`outliner.rs:169-174`](https://github.com/darkforce09/TBD-reforger/blob/d9683c9f332cd209699b1b10ec6747e8284933bb/apps/website/frontend/src/outliner.rs) |
+| No `active_side` | `OpsCtx` [`editor_ops.rs:50-71`](https://github.com/darkforce09/TBD-reforger/blob/328142cc78334732ad7dea7cd03ed1ed8a189fd1/apps/website/frontend/src/editor_ops.rs) |
 
 ## Locked
 

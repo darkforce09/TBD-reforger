@@ -1,8 +1,10 @@
+**Status:** archived
+
 # Legacy API Forensic Analysis & Inventory Catalog
 
 > **This is the pre-refactor inventory, kept for reference.** Its census, line counts and proposed
 > destinations describe the source tree the refactor started from, not the one that shipped — for
-> the file names, route table and boundaries that exist today, read [`README.md`](./README.md) and
+> the file names, route table and boundaries that exist today, read [`README.md`](/apps/website/api_v2/README.md) and
 > the module `README.md` files under `src/`.
 
 Exhaustive forensic analysis of the pre-refactor backend layout, capturing exact line counts, functional responsibilities, architectural violations, and target refactoring destinations under `apps/website/api_v2/`.

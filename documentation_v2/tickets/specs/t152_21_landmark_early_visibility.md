@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.21 — Landmark early visibility (`importanceZoom` wired)
 
 **Ticket:** T-152 · **Slice:** T-152.21 (remediation ladder #10)

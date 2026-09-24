@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.2 — Map object taxonomy + schema
 
 **Ticket:** T-090 · **Slice:** T-090.2  
@@ -75,7 +77,7 @@ T-090.1 adds pretty tiles. Mission makers still cannot see **individual world pr
 
 `forest`, `field`, `waterBody` are **region** kinds: polygons, not prefab instances. They live in
 `objects/forest-regions.json.gz` against
-[`map-object-region.schema.json`](../../../packages/tbd-schema/schema/map-object-region.schema.json) and
+[`map-object-region.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/map-object-region.schema.json) and
 render as fills at low/mid deckZoom (see [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md),
 [`t090_render_lod_contract.md`](t090_render_lod_contract.md) §N3). Forests carry `treeCount`,
 `dominantSpeciesClass` (`forestClass`), `densityPerHa`, `areaHa`, `coverType`, `source`. This is the
@@ -83,7 +85,7 @@ answer to "900k trees must read as forest at the default view" (GAP-001).
 
 ### Enums are single-source (N8/GAP-M5)
 
-Every `kind`/`class` value is a member of [`map-object-enums.schema.json`](../../../packages/tbd-schema/schema/map-object-enums.schema.json);
+Every `kind`/`class` value is a member of [`map-object-enums.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/map-object-enums.schema.json);
 prefab rows, the glyph manifest and `prefab-classify.json` are checked against it by
 `cargo xtask schema map-object-enums`. Do not redeclare enum values in this doc.
 
@@ -227,7 +229,7 @@ Optional: `buildingSubClass` (string) — finer label e.g. `"apartment_block"`; 
 | `confidence` | number | yes | 0–1; rule match strength |
 | `needsReview` | boolean | yes | `true` if unmatched or confidence < 0.7 |
 
-Populated by [`prefab-classify.json`](../../../packages/tbd-schema/rules/prefab-classify.json) + overrides — see [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md). **New maps reuse the same rules file**; only new prefab patterns get new rule rows.
+Populated by [`prefab-classify.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/rules/prefab-classify.json) + overrides — see [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md). **New maps reuse the same rules file**; only new prefab patterns get new rule rows.
 
 ### Example prefab row (normative shape)
 

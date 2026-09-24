@@ -1,3 +1,5 @@
+**Status:** archived
+
 # API V2 Phase Five Handoff
 
 Status: all eight domains are live on `main` and the legacy `handlers/`, `services/`, `models/`, and `contract/` directories no longer exist. Commits: `bec09956e` (5.1 match_telemetry), `1e98eb1fe` (5.2 command_center and legacy retirement), `5d67a1fa7` (5.3 architecture rules and cargo-catalog dedup). `src/` is now `lib.rs`, `bin/`, `core/`, `background_workers/`, the eight domains, and `tests/architecture_rules.rs`.

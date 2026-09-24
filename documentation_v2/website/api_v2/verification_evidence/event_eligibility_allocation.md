@@ -1,3 +1,5 @@
+**Status:** live
+
 # Event eligibility and allocation
 
 This note records the implemented semantics of event access, reservation allocation, waitlist

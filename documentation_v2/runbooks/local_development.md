@@ -1,8 +1,10 @@
+**Status:** live
+
 # Dev Runbook — spin up the stack
 
 Quick steps to bring up DB + Axum API + Leptos (Trunk) locally. Canonical context: root [`CLAUDE.md`](../../CLAUDE.md).
-Backend planning (partially archive): [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md).
-Conventions: [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md).
+Backend planning (partially archive): [`documentation_v2/website/api_v2/api_overview.md`](/documentation_v2/website/api_v2/api_overview.md).
+Conventions: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 ## Start everything
 
@@ -404,7 +406,7 @@ cargo xtask ci verify-terrain-strict
 ## Notes
 
 - A fresh DB only has Discord role mappings + registry smoke rows (`cargo xtask db seed` → `apps/website/api_v2/seeds/`).
-- Frontend: `cargo xtask mk ci-local-leptos`; full editor gates: `cargo xtask mk leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](EDITOR_GATE_RUNBOOK.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
+- Frontend: `cargo xtask mk ci-local-leptos`; full editor gates: `cargo xtask mk leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
 - Integration tests: `cargo xtask db test-it` (needs `cargo xtask db up`).
 
 ## Mock data (optional, not run by `cargo xtask db seed`)

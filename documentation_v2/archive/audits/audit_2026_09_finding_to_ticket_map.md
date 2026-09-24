@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Audit 2026-09 — finding → ticket map
 
 Source: master architectural audit (user-supplied 2026-09-04), every claim verified against main @ 072988d57.

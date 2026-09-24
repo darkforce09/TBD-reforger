@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-939 — Editor usability: selection, gizmo, arrange, templates, diagnostics, search
 
 Owner: command center. Source: master audit S4 (2026-09-04), verified against main @ 072988d57 (README.md in this

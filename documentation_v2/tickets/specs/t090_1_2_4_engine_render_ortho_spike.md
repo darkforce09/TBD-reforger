@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.4 — Engine render ortho (110% satellite source)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.4  

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090 — Dual basemap views (Map + Satellite)
 
 **Status:** **SUPERSEDED** by Map Engine v2 — [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md). End state: **sat opacity crossfade + toggle**, not two raster pipelines. Legacy dual-pyramid shipped @ `6e06e679` — **frozen** per [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md).  

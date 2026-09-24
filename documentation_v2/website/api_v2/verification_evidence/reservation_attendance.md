@@ -1,3 +1,5 @@
+**Status:** live
+
 # Reservation and attendance separation
 
 ## Persisted meaning

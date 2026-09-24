@@ -1,3 +1,5 @@
+**Status:** live
+
 # Event administration transactions
 
 Event changes lock the event, every attachment in UUID order, and the complete sorted account

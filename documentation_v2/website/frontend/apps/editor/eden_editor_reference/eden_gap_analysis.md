@@ -1,16 +1,18 @@
+**Status:** live
+
 # Eden Gap Analysis — TBD vs Arma 3 Eden (Phase 2)
 
 **Document:** `eden/gap_analysis.md`  
-**Inputs:** [feature_inventory.md](../feature_inventory.md) + [interactions](./interactions.md) + [ui_anatomy](./ui_anatomy.md) + [attributes](./attributes.md)  
-**Schema:** [reference/feds_schema.md](../reference/feds_schema.md)
+**Inputs:** [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) + [interactions](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md) + [ui_anatomy](./ui_anatomy.md) + [attributes](./attributes.md)  
+**Schema:** [reference/feds_schema.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md)
 
 **Coverage: 191 ids — a census, not a sample.** 191 = 93 `attributes.md` ids + 83 `interactions.md` ids + 15 legacy/TBD-only rows. Verified by set-diff in both directions (empty), zero duplicate ids. Stated as an *id* count deliberately: a table-*row* count is parser-dependent here (legend, corrections and summary tables also carry parity words) and three careful parsers read it three ways.
 
 | Source catalogue | Ids defined | Rows here |
 |---|---:|---:|
-| [`interactions.md`](./interactions.md) | 83 | **83** |
+| [`interactions.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md) | 83 | **83** |
 | [`attributes.md`](./attributes.md) | 93 | **93** |
-| [`feature_inventory.md`](../feature_inventory.md) + TBD-only | — | **15** |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) + TBD-only | — | **15** |
 | | | **191** |
 
 Both catalogues are covered **exactly** — no id in either file is missing a row, and no row cites an
@@ -24,7 +26,7 @@ grep -oE '\b[A-Z][A-Z0-9]*(-[A-Z0-9]+)*-[0-9]{3}\b' interactions.md | sort -u | 
 
 **Execution order (recorded 2026-06, historical):** … → **T-061..T-067** → **T-090 → T-091 → T-092**
 (map hard gate) → **T-071** → **T-068 Phase 2** → Eden **T-069+** → **T-110** terrain base
-([`t110_terrain_base_mission_layers.md`](../t110_terrain_base_mission_layers.md)). T-071, T-091,
+([`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md)). T-071, T-091,
 T-092 and T-180 have since shipped; T-090 is active. This line is kept for provenance and is not the
 current queue — see [`docs/TICKET_LEAD.md`](../../../TICKET_LEAD.md).
 
@@ -36,7 +38,7 @@ current queue — see [`docs/TICKET_LEAD.md`](../../../TICKET_LEAD.md).
 individual tickets shipped. It covered **41 of 83** interaction ids and **3 of 93** attribute ids.
 
 **What it had been read as.** A census of Eden parity. Every planning document written against it
-inherited that reading. [`docs/platform/EDITOR_UI_HANDOFF.md`](../../../platform/EDITOR_UI_HANDOFF.md)
+inherited that reading. [`documentation_v2/archive/handoffs_and_kickoffs/editor_ui_handoff.md`](/documentation_v2/archive/handoffs_and_kickoffs/editor_ui_handoff.md)
 originally described it as *"87 rows, 32 missing"* — both numbers wrong, and the error propagated
 into the program plan and the ticket drafts before anyone opened the file it described. That
 document now carries a correction; this one is the fix it points at. Keep the two consistent.
@@ -51,10 +53,10 @@ walked every id against live source with `file:line` evidence:
 
 | Sweep | Scope |
 |---|---|
-| [`attributes_sweep.md`](../../../../.ai/artifacts/parity/attributes_sweep.md) | all 93 `ATTR-FIELD-*` ids — parity, build class, ticket mapping |
-| [`interactions_sweep.md`](../../../../.ai/artifacts/parity/interactions_sweep.md) | all 83 `interactions.md` ids + the full Eden/TBD keyboard map and five collisions |
-| [`owns_parity.md`](../../../../.ai/artifacts/parity/owns_parity.md) · [`owns_and_waves.md`](../../../../.ai/artifacts/parity/owns_and_waves.md) | per-ticket file ownership and wave packing |
-| [`README.md`](../../../../.ai/artifacts/parity/README.md) | what in that directory is verified and what is a recovered chat report |
+| [`attributes_sweep.md`](/.ai/artifacts/parity/attributes_sweep.md) | all 93 `ATTR-FIELD-*` ids — parity, build class, ticket mapping |
+| [`interactions_sweep.md`](/.ai/artifacts/parity/interactions_sweep.md) | all 83 `interactions.md` ids + the full Eden/TBD keyboard map and five collisions |
+| [`owns_parity.md`](/.ai/artifacts/parity/owns_parity.md) · [`owns_and_waves.md`](/.ai/artifacts/parity/owns_and_waves.md) | per-ticket file ownership and wave packing |
+| [`README.md`](/.ai/artifacts/parity/README.md) | what in that directory is verified and what is a recovered chat report |
 
 **Corrections applied in this rewrite**
 
@@ -81,7 +83,7 @@ grown the vocabulary instead of reconciling it.
 *reachability* of the same family of mutators. Both greps are correct; they answer different
 questions. The main thread verified reachability directly (one mention, its own definition) and this
 table follows the reachability reading — see correction 3 and
-[`gap_analysis_rewrite_log.md`](../../../../.ai/artifacts/parity/gap_analysis_rewrite_log.md).
+[`gap_analysis_rewrite_log.md`](/.ai/artifacts/parity/gap_analysis_rewrite_log.md).
 
 ---
 
@@ -136,7 +138,7 @@ table was written. `wb` marks a row whose ticket is `executor: workbench` — a 
 | RIGHT-MODE-002 | — | missing | T-078 | No composition mode. The 3 `composition` hits (`asset_catalog.rs:345,362,782`) are the `comp:` **alias slug** for a Bohemia prefab, not an author-saved composition |
 | RIGHT-MODE-003 | RIGHT-STUB-003 | missing | T-079 (a) | No trigger entity. `grep -rnwE 'trigger' --include=*.rs` → 6 hits, all prose/comments |
 | RIGHT-MODE-004 | — | missing | T-079 (b) · wb | `grep -rliwE 'waypoint' --include=*.rs apps/website/frontend/src` → **0 files**. Gated on AI units existing |
-| RIGHT-MODE-005 | — | missing | T-079 (c) | No systems/modules family. **Un-enumerable today** — the `SYS` family declares no ids (`attributes.md:223-225`) |
+| RIGHT-MODE-005 | — | missing | T-079 (c) | No systems/modules family. **Un-enumerable today** — the `SYS` family declares no ids (`attributes.md:225-227`) |
 | RIGHT-MODE-006 | RIGHT-STUB-002 | missing | T-069 / T-213 | Markers tab is a stub (`eden_chrome.rs:3000-3005`, body at `:3337`, pinned by a test at `:4499-4502`) |
 | RIGHT-SUBMODE-001 | EDEN-SIDE-CHIPS | partial | — (shipped T-180.5) | **Was `missing \| T-074`; T-074 is `cancelled`.** BLUFOR/OPFOR/INDFOR/Objects chips filter the tree (`eden_chrome.rs:2871` `EDEN_SIDE_CHIPS`, `:2919` `apply_eden_chip`). Eden's `Tab`-cycled per-mode sub-tab row does not exist |
 | RIGHT-SEARCH-001 | — | match | T-055 ✅ | **Was `working`** (not a legend value). `asset_catalog.rs:396-414` `filter_catalog`; per-tab query state (`eden_chrome.rs:2989-3011`) |
@@ -186,9 +188,9 @@ table was written. `wb` marks a row whose ticket is `executor: workbench` — a 
 | TOOLBAR-NEW-001 | LIB-NEWMISSION-001 | partial | — (T-048 ✅) | The capability exists on a **different surface**: `CreateMissionDialog` from the Mission Library incl. `Cmd/Ctrl+N` (`missions.rs:212-231`). Missions are DB rows minted before the editor opens, so the editor strip has Save Version / Export only. Eden's in-editor `Ctrl+N` has no equivalent |
 | TOOLBAR-TUTORIAL-001 | — | deferred | — | No in-editor tutorial surface. Low value before the feature set settles |
 
-> **The ~13 other toolbar buttons have no ids and cannot be triaged.** `interactions.md:371` writes
+> **The ~13 other toolbar buttons have no ids and cannot be triaged.** `interactions.md:373` writes
 > the strip as a prose range and literalises only the two endpoints. Verbatim tooltips and pixel
-> bounds exist in [`.ai/artifacts/eden_screenshots/`](../../../../.ai/artifacts/eden_screenshots/) (`batch01_context_menu.md:343-365`,
+> bounds exist in [`.ai/artifacts/eden_screenshots/`](/.ai/artifacts/eden_screenshots/) (`batch01_context_menu.md:343-365`,
 > `batch05_asset_browser_2.md:275-295`); **minting ids from them is a docs task, not this table's to
 > invent.** Four were minted ad hoc by the old sample and are preserved in Part 3.
 
@@ -252,7 +254,7 @@ table was written. `wb` marks a row whose ticket is `executor: workbench` — a 
 |---------|--------|--------|----------|-----------|
 | KEY-WP-001 | — | missing | T-079 (b) · wb + P-3 | Shift+RMB quick waypoint. RMB is the pan button (`mission_editor.rs:1402`) and no `shift_key` is read in `onpointerdown`. **Collision 4** |
 | KEY-WIDGET-001 | KEY-SPACE-CENTER-001 | missing | **T-075** | **Collision 1** — `Space` = centre on selection (`mission_editor.rs:1026`). Eden's own `1`–`5` direct widget keys are all free in TBD, which dissolves the clash |
-| KEY-GRID-001 | — | missing | new — P-8 | No snapping grid at all — `\bsnap\b` is 33 hits, **every one** a `snapshot`/`snap` local. `interactions.md:522` records the key as `` ` ; ` `` while the screenshots show `odiaeresis`: the **same binding on two layouts**, neither portable. Pick a TBD key, copy neither |
+| KEY-GRID-001 | — | missing | new — P-8 | No snapping grid at all — `\bsnap\b` is 33 hits, **every one** a `snapshot`/`snap` local. `interactions.md:524` records the key as `` ` ; ` `` while the screenshots show `odiaeresis`: the **same binding on two layouts**, neither portable. Pick a TBD key, copy neither |
 | KEY-HIDE-UI-001 | — | missing | new — P-9 | **Collision 3, and dangerous** — `Backspace` = delete selection (`mission_editor.rs:1027`), so an Eden author reaching to hide chrome for a screenshot deletes their selection. Dropping the alias is one line (`Delete` already covers it) |
 
 ## Keyboard, actions & status — ACTION (10)
@@ -332,7 +334,7 @@ Attribute rows carry **`build_class`**. `wb` in the ticket column = `executor: w
 
 | eden_id | tbd_id | parity | build_class | ticket | gap_notes |
 |---------|--------|--------|:---:|----------|-----------|
-| ATTR-FIELD-CMT-TITLE | — | missing | a | new — N2 | Editor-only annotation, **never compiled** (`attributes.md:79`) → the editor payload carries it with no contract change. No entity, no tool, no registry ticket. The mission-detail "Comments" Sheet (`missions.rs:2501-2513`) is a social thread, not a canvas annotation |
+| ATTR-FIELD-CMT-TITLE | — | missing | a | new — N2 | Editor-only annotation, **never compiled** (`attributes.md:81`) → the editor payload carries it with no contract change. No entity, no tool, no registry ticket. The mission-detail "Comments" Sheet (`missions.rs:2501-2513`) is a social thread, not a canvas annotation |
 | ATTR-FIELD-CMT-TOOLTIP | — | missing | a | new — N2 | Same |
 | ATTR-FIELD-CMT-POSITION | — | missing | a | new — N2 | Same. `grep -in comment mission.schema.json` → 0 hits, as expected for editor-only state |
 
@@ -467,7 +469,7 @@ path contains `"Composition"` — it **consumes** Bohemia's shipped prefabs; it 
 
 # Part 3 — Shell & data (rows outside the two catalogues, 15)
 
-These come from [`feature_inventory.md`](../feature_inventory.md) or are TBD-only surfaces. They
+These come from [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) or are TBD-only surfaces. They
 have **no `eden/` catalogue id** and are preserved from the previous version of this table so
 nothing is lost. The four `TOOLBAR-*` ids below were **minted by that version**, not by
 `interactions.md` — which literalises only `TOOLBAR-NEW-001` and `TOOLBAR-TUTORIAL-001`. Treat them
@@ -482,7 +484,7 @@ as local ids until the toolbar gets a real catalogue pass.
 | Eden:ATTR-ARSENAL-001 | ATTR-TAB-004 | partial | T-068.4 ✅ | Dumb loadout export (4 dropdowns + JSON download); smart Forge is T-068.10 |
 | SEL-ORBAT-DBL-001 | SEL-ORBAT-DBL-001 | match | T-054 ✅ | ORBAT slot row dbl-click → Attributes (`orbat_manager.rs:1190`). Inherits `ATTR-OPEN-001`'s residual (non-slot kinds do not open); multi-select opens multi-edit (T-649), not suppression |
 | MAP-TERRAIN-001 | MAP-TERRAIN-001 | match | T-049 ✅ | `meta.terrain` → viewport (key-remount, Everon/Arland bounds) |
-| ENV-SETTINGS-002 | TOP-SETTINGS-001 | **missing** | new — N8 · wb (+ N9) | **Correction 2 — was `partial`, "Thermals + view dist in dialog". Neither is in the dialog.** T-193 (`b30f5490`) removed both; `eden_chrome.rs:4622-4629` now asserts they are *not* authorable. Same subject as `ATTR-FIELD-SCN-VIEW-DIST`. `feature_inventory.md:1732` still records Status `working` and is stale for the same reason |
+| ENV-SETTINGS-002 | TOP-SETTINGS-001 | **missing** | new — N8 · wb (+ N9) | **Correction 2 — was `partial`, "Thermals + view dist in dialog". Neither is in the dialog.** T-193 (`b30f5490`) removed both; `eden_chrome.rs:4622-4629` now asserts they are *not* authorable. Same subject as `ATTR-FIELD-SCN-VIEW-DIST`. `feature_inventory.md:1734` still records Status `working` and is stale for the same reason |
 | DATA-HYD-TITLE-001 | TOP-TITLE-001 | match | T-049 ✅ | `applyMissionRowMeta` hydrates title/terrain/env on load (no PATCH-back) |
 | SEL-MAP-003 | SEL-MAP-003 | match | — | Marquee |
 | XFORM-DEL-001 | XFORM-DEL-001 | match | — | Delete. **Known lead, not a finding:** `delete_selection` calls `core.remove_slots(ids)` only, while the selection can legitimately hold vehicle ids — `INFERRED:` `Delete` with a vehicle selected removes nothing for that vehicle. Not verified in-browser (`interactions_sweep.md` §6.5) |
@@ -623,17 +625,17 @@ the first two; `Ctrl+F` is worth `preventDefault`-ing on the editor route (P-12)
 
 | Item | State |
 |---|---|
-| The ~13 unnamed toolbar buttons | **`UNKNOWN` as ids.** Named in prose at `interactions.md:371`, never assigned ids. Four were minted locally (Part 3); the rest cannot be triaged until a docs pass mints them from the screenshot corpus |
+| The ~13 unnamed toolbar buttons | **`UNKNOWN` as ids.** Named in prose at `interactions.md:373`, never assigned ids. Four were minted locally (Part 3); the rest cannot be triaged until a docs pass mints them from the screenshot corpus |
 | `ATTR-FIELD-OBJ-STAMINA` | **`UNKNOWN:`** whether Reforger exposes a per-character stamina toggle — a Workbench API question, not answerable by code search |
-| The `SYS` family | Declares **no ids** (`attributes.md:223-225`). T-079's "systems" third is un-enumerated and cannot be sized until it gets its own catalogue pass |
+| The `SYS` family | Declares **no ids** (`attributes.md:225-227`). T-079's "systems" third is un-enumerated and cannot be sized until it gets its own catalogue pass |
 | `$defs/zoneRules`' 16 keys | No `ATTR-FIELD-*` id, so outside both sweeps — but they are the closest thing TBD has to trigger semantics and belong in whatever scopes T-079a |
 | Zones as trigger areas | **`INFERRED:`** zones give a typed area with declarative rules but no activation/condition/timer/effects model. Do not close the `TRG-*` ids on zone evidence |
 | `Delete` with a vehicle selected | **`INFERRED:`** removes nothing for that vehicle while clearing the selection. Recorded as a lead, not verified in-browser |
 | T-069 / T-213 spec premises | Both cite a `state/schema.ts` deleted at T-159.29.3. **Rewrite the specs before promoting**, and fix T-213's line cite (`eden_chrome.rs:1528` → `:3337`) |
 
-**Phase 2 doc coverage:** all 83 interaction ids in [`interactions.md`](./interactions.md); all 93
+**Phase 2 doc coverage:** all 83 interaction ids in [`interactions.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md); all 93
 attribute ids in [`attributes.md`](./attributes.md); full UI anatomy in
 [`ui_anatomy.md`](./ui_anatomy.md); wiki scrape 28/28 pages; 75 real Eden frames in
-[`.ai/artifacts/eden_screenshots/`](../../../../.ai/artifacts/eden_screenshots/) across 8 batches. **Second pass (2026-06-20):**
+[`.ai/artifacts/eden_screenshots/`](/.ai/artifacts/eden_screenshots/) across 8 batches. **Second pass (2026-06-20):**
 comments, crew, clipboard actions, WP attach, multi-edit attrs, TRG/WP field tables.
 **Third pass (2026-08-01):** this rewrite — sample → census.

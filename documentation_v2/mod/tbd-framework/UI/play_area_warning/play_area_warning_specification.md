@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Play Area Warning UI Functional Reference Specification
 
 **Target Component:** `TBD_PlayAreaWarning` (In-Game HUD Overlay)  

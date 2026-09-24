@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.15.2 — Arsenal capacity + cargo UI
 
 **Ticket:** T-068 · **Slice:** T-068.15.2 · **Status:** **SHIPPED** @ `4fb156b7` (tag **T-068.15.2**) ·

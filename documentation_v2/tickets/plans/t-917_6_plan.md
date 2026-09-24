@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-917.6 — Ship gate ON + stamp-sha verb + plan ready-gate
 
 ## Context

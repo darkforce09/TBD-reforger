@@ -5,4 +5,4 @@ Open work and ticket status live in the platform ticket registry — do not main
 - **Lead view:** [docs/TICKET_LEAD.md](../../TICKET_LEAD.md)
 - **Full registry:** [docs/TICKET_REGISTRY.md](../../TICKET_REGISTRY.md)
 
-Mission Creator editor queue: [docs/specs/Mission_Creator_Architecture/ROADMAP.md](../../specs/Mission_Creator_Architecture/ROADMAP.md).
+Mission Creator editor queue: [docs/specs/Mission_Creator_Architecture/ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md).

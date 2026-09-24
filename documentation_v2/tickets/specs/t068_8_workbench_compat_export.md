@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.8 — Workbench compat matrix export
 
 **Ticket:** T-068 · **Slice:** T-068.8  

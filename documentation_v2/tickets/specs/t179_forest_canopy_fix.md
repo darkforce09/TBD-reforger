@@ -1,9 +1,11 @@
+**Status:** frozen record
+
 # T-179 — Fix blocky / holed density canopy
 
 **Status:** `done` · **Tag:** **T-179** · **Executor:** Cursor/Grok (operator override) · **Branch:** `main`  
 **Depends on:** T-178 (shipped)  
 **Scope:** `apps/website/frontend/src/world_assets/**`, `crates/map-engine-{core,render}/**`, `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests.rs`. **Not** `apps/mod/`. **Not** T-071.1.
-**Verify:** [`.ai/artifacts/t179_verify_log.md`](../../.ai/artifacts/t179_verify_log.md)
+**Verify:** [`.ai/artifacts/t179_verify_log.md`](/.ai/artifacts/t179_verify_log.md)
 
 ## Why
 

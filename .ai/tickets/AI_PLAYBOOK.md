@@ -6,7 +6,7 @@
 
 Edit the ticket's **`T-*.toml`** → run **`cargo xtask ticket sync`** → run **`cargo xtask ticket check`** → commit the ticket file and every generated file together.
 
-Never hand-edit: `queue.json`, the `<!-- ticket-sync:next -->` block in [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md), the gap_analysis ticket column.
+Never hand-edit: `queue.json`, the `<!-- ticket-sync:next -->` block in [`documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md), the gap_analysis ticket column.
 
 ## HARD — No deferrals without operator word
 
@@ -35,7 +35,7 @@ Rule: [`.cursor/rules/no-silent-deferrals.mdc`](../../.cursor/rules/no-silent-de
 1. Human verified merge + build/lint pass
 2. Set the ticket file's `status = "shipped"`, remove `active_slice`
 3. `cargo xtask ticket sync`
-4. Update narrative docs per [`docs/website/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md)
+4. Update narrative docs per [`documentation_v2/standards/commit_checklist.md`](/documentation_v2/standards/commit_checklist.md)
 
 ### Mark ready for Claude Code
 

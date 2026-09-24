@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-159.22.1 — Undo granularity (shipped) — gate driver, not core
 
 **Parent:** [`t159_leptos_ui_program.md`](t159_leptos_ui_program.md) · **Executor:** claude-code ·
@@ -13,8 +15,8 @@ was a **measurement bug**: `smoke_undo_editor.mjs` `keyChord()` sent CDP `rawKey
 `keyDown`, so Chrome delivered **two** `keydown`s per chord. A real operator keypress never
 double-fired. No product re-check needed.
 
-Authoritative write-up: [`.ai/artifacts/t159_22_1_verify_log.md`](../../.ai/artifacts/t159_22_1_verify_log.md).  
-Supersedes: [`.ai/artifacts/t159_22_verify_log.md`](../../.ai/artifacts/t159_22_verify_log.md) §Pre-existing defect
+Authoritative write-up: [`.ai/artifacts/t159_22_1_verify_log.md`](/.ai/artifacts/t159_22_1_verify_log.md).  
+Supersedes: [`.ai/artifacts/t159_22_verify_log.md`](/.ai/artifacts/t159_22_verify_log.md) §Pre-existing defect
 (conclusion only — observations explained).
 
 ## What actually shipped

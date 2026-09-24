@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.5 — Airfield symbology (runway / apron / structures)
 
 **Ticket:** T-152 · **Slice:** T-152.5  

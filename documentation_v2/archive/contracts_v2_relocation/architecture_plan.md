@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Contract Pipeline & Evolution Policy (`contracts_v2`)
 
 How Rust types are generated from the schemas, how a schema is allowed to change, and what CI checks.

@@ -1,3 +1,5 @@
+**Status:** live
+
 # Mission Library
 
 ## Status
@@ -12,8 +14,8 @@
 - **Live source:** `apps/website/frontend/src/editor/library/mission_library.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/mission_library_tactical_browser/code.html`
 - **Min role:** `enlisted` (browse); `mission_maker` (+ New Mission button)
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.5 Mission Library
-- **Implementation spec:** [t048_library_create_dialog.md](../../../specs/Mission_Creator_Architecture/t048_library_create_dialog.md)
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.5 Mission Library
+- **Implementation spec:** [t048_library_create_dialog.md](/documentation_v2/tickets/specs/t048_library_create_dialog.md)
 
 ## Element Inventory
 
@@ -96,4 +98,4 @@
 
 ## Open Questions / Blockers
 
-- None for T-048. Mission Creator queue: [MC ROADMAP](../../../specs/Mission_Creator_Architecture/ROADMAP.md) · [TICKET_LEAD.md](../../../TICKET_LEAD.md).
+- None for T-048. Mission Creator queue: [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [TICKET_LEAD.md](../../../TICKET_LEAD.md).

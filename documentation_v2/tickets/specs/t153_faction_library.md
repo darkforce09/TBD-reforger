@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-153 — Faction Library (reusable factions + palette swap)
 
 **Status:** **shipped** (backend + frontend; tags **T-153.0**/**T-153.1** on the two
 commits) · **Executor:** claude-code (operator-approved Mode C session, docs lane
-included) · **Verify:** [`.ai/artifacts/t153_verify_log.md`](../../../.ai/artifacts/t152_verify_log.md) ·
+included) · **Verify:** [`.ai/artifacts/t153_verify_log.md`](https://github.com/darkforce09/TBD-reforger/blob/c4ccb9c3a8cccdcb162a11054bc753c944e7bb1a/.ai/artifacts/t152_verify_log.md) ·
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) (Mode C)
 
 ## In one sentence

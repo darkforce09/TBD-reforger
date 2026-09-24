@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.7.3 — Rust collapse: slot GPU bridge out of TypeScript
 
 **Status:** **shipped** @ `804f779a` (tag **T-151.7.3**, 2026-07-09) · verify log

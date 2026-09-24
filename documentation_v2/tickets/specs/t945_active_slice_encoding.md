@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-945 — Ticket encoding: `active_slice` on disk
 
 ## Claude Code prompt — T-945

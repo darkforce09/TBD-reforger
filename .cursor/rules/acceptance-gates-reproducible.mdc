@@ -28,6 +28,6 @@ Cursor, Fable) and every human.
    — infra regressions must be caught by machines, not discovered mid-ticket. See
    [`editor-gates.yml`](../../.github/workflows/editor-gates.yml).
 5. **When a gate breaks the environment, write it down.** Add/append a
-   [`docs/platform/known-bugs/`](../../docs/platform/known-bugs/) entry and, for the editor gate, the
-   [`EDITOR_GATE_RUNBOOK.md`](../../docs/website/EDITOR_GATE_RUNBOOK.md) so the next person doesn't
+   [`documentation_v2/known_bugs/`](/documentation_v2/known_bugs/) entry and, for the editor gate, the
+   [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md) so the next person doesn't
    re-derive it.

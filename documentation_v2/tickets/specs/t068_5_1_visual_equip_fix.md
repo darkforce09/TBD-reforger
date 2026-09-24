@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.5.1 — Visual loadout equip fix (make-or-break)
 
 **Ticket:** T-068 · **Slice:** T-068.5.1  

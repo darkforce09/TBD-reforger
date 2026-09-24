@@ -1,9 +1,11 @@
+**Status:** live
+
 # Spawn / equip determinism program
 
 **Ticket:** T-274 (record / xtask / docs — this hub)  
 **Gate:** `cargo xtask mod spawn-determinism`  
 **Verify log (on disk):** [`.ai/artifacts/spawn_determinism_verify_log.md`](../../.ai/artifacts/spawn_determinism_verify_log.md)  
-**Related MCP tooling:** [`MCP_TOOLING.md`](MCP_TOOLING.md)
+**Related MCP tooling:** [`MCP_TOOLING.md`](/documentation_v2/runbooks/enfusion_mcp_tooling.md)
 
 This program asserts that Workbench play → spawn → equip produces the **same
 player-visible outcome** across N fresh Workbench processes. It was implemented

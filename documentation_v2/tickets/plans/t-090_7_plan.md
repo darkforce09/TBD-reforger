@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.7 — Eden AI world object schema (exact field contract)
 
 ## Context

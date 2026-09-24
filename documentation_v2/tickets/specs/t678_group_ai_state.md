@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-678 — group AI state: combat mode, behaviour, formation, speed
 
 Ticket: .ai/tickets/T-678.toml · Plan: docs/plans/t-678_plan.md · Schema half shipped in T-706.

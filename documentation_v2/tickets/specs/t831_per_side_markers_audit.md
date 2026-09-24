@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-831 — per-side marker authoring: audit then explicit UI
 
 Ticket: .ai/tickets/T-831.toml · Plan: docs/plans/t-831_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

@@ -1,3 +1,5 @@
+**Status:** live
+
 # Modpacks
 
 ## Status
@@ -11,7 +13,7 @@
 - **Route:** `/modpacks`
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/server_modpacks_deployment_dependencies/code.html`
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.7 Modpacks
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.7 Modpacks
 
 ## Element Inventory
 

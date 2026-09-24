@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-052 — Undo/redo keyboard shortcuts
 
 **Status:** shipped (T-052)  
 **Git tag on ship:** T-052  
-**Authority:** [MC ROADMAP](ROADMAP.md) · [eden/gap_analysis.md](eden/gap_analysis.md) (`TOP-UNDO-001 / KEY-UNDO-001`) · [feature_inventory.md](feature_inventory.md) TOP-UNDO-001 / TOP-REDO-001 / KEY-UNDO-001
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`TOP-UNDO-001 / KEY-UNDO-001`) · [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) TOP-UNDO-001 / TOP-REDO-001 / KEY-UNDO-001
 
 ---
 
@@ -49,7 +51,7 @@ Wire **keyboard undo/redo** in the Mission Creator. Toolbar Undo/Redo buttons al
 | `useMissionDoc.ts` | `useMemo` doc + undo; StrictMode cleanup calls `undo.destroy()` without remounting `useMemo` | **`instanceKey` + one-shot bump** → fresh `UndoController` after StrictMode teardown |
 | `feature_inventory.md` KEY-UNDO-001 | `partial` — buttons only | **working** — keyboard + lifecycle fix |
 
-**Evidence:** [`undo.ts`](../../../apps/website/frontend/src/features/tactical-map/state/undo.ts) — `trackedOrigins: LOCAL_ORIGIN`; `addSlot` / `moveEntities` use `transact()`. Dev app runs `<StrictMode>` in [`main.tsx`](../../../apps/website/frontend/src/main.tsx).
+**Evidence:** [`undo.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/undo.ts) — `trackedOrigins: LOCAL_ORIGIN`; `addSlot` / `moveEntities` use `transact()`. Dev app runs `<StrictMode>` in [`main.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/main.tsx).
 
 **UX note:** Undo only covers **session edits** after load (`LOCAL_ORIGIN`). Units already in IndexedDB / hydrated from the server are not undoable — expected.
 
@@ -59,7 +61,7 @@ Wire **keyboard undo/redo** in the Mission Creator. Toolbar Undo/Redo buttons al
 
 ### 1. Extend page keydown handler
 
-**File:** [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](../../../apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx)
+**File:** [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx)
 
 Inside the existing `useEffect` keydown listener (after the focus guard):
 
@@ -94,7 +96,7 @@ Add `undo` to the `useEffect` dependency array.
 
 ### 2. StrictMode-safe Y.Doc lifecycle
 
-**File:** [`frontend/src/features/mission-creator/hooks/useMissionDoc.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts)
+**File:** [`frontend/src/features/mission-creator/hooks/useMissionDoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts)
 
 - `missionKey` + `instanceKey` state; `useMemo` deps `[missionKey, instanceKey]`.
 - Effect cleanup: destroy bindings/persistence/doc/undo, then bump `instanceKey` once per mount (one-shot `recreatedRef`) so StrictMode's setup→cleanup→setup gets a **live** `UndoController`.
@@ -102,7 +104,7 @@ Add `undo` to the `useEffect` dependency array.
 
 ### 3. Optional — toolbar tooltips
 
-**File:** [`frontend/src/features/mission-creator/layout/TopCommandStrip.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/TopCommandStrip.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/TopCommandStrip.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/TopCommandStrip.tsx)
 
 If trivial: append ` (⌘Z)` / ` (Ctrl+Z)` to Undo button `title` via `navigator.platform` or a small `isMac` helper. **Optional — skip if it adds noise.**
 
@@ -139,19 +141,19 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-052)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-052 bullet + bump `latest feature work` line |
-| [`docs/TAGS.md`](../../website/TAGS.md) | T-052 row (planned → shipped) |
-| [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Element #2 note keyboard undo/redo; **Behavior → Keyboard** subsection; M3.7 milestone `[x]` |
-| [`feature_inventory.md`](feature_inventory.md) | TOP-UNDO-001 / TOP-REDO-001 edge cases + acceptance; KEY-UNDO-001 → **working** |
-| [`agent_execution.md`](agent_execution.md) | Decisions log row **Undo keyboard (T-052)** |
-| [`ROADMAP.md`](ROADMAP.md) | Move **PLANNED T-052** → **DONE T-052**; line ~80 note keyboard undo |
-| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Recently shipped T-052 |
-| [`eden/gap_analysis.md`](eden/gap_analysis.md) | TOP-UNDO-001 → ✅ shipped T-052; TOOLBAR-UNDO-001 parity → match or partial→match |
+| [`docs/TAGS.md`](/documentation_v2/standards/ticket_identifiers.md) | T-052 row (planned → shipped) |
+| [`docs/website/frontend/pages/mission-editor.md`](/documentation_v2/website/frontend/apps/editor/ux_spec.md) | Element #2 note keyboard undo/redo; **Behavior → Keyboard** subsection; M3.7 milestone `[x]` |
+| [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | TOP-UNDO-001 / TOP-REDO-001 edge cases + acceptance; KEY-UNDO-001 → **working** |
+| [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) | Decisions log row **Undo keyboard (T-052)** |
+| [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) | Move **PLANNED T-052** → **DONE T-052**; line ~80 note keyboard undo |
+| [`docs/website/frontend/ROADMAP.md`](/documentation_v2/website/frontend/README.md) | Recently shipped T-052 |
+| [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | TOP-UNDO-001 → ✅ shipped T-052; TOOLBAR-UNDO-001 parity → match or partial→match |
 | [`t050_cursor_z_readout.md`](t050_cursor_z_readout.md) | Related: prior shipped slice (T-050) |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical T-049 CLAUDE bullet.
@@ -201,5 +203,5 @@ Commit on main as T-052 with Co-Authored-By when I ask. Do not commit until I sa
 ## Related
 
 - Prior: [t050_cursor_z_readout.md](t050_cursor_z_readout.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) (T-068+).
 - Deferred: **T-051** — optional `PATCH` title sync ([t049 amendment](t049_terrain_title_position.md))

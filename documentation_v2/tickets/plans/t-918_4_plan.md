@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-918.4 — In-app markdown viewer: plan
 
 ## Context

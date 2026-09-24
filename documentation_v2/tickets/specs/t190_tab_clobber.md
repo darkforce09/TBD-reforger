@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-190 — Two tabs on one mission clobber each other
 
 Owner: command center. F-32 verified repro (editor_hostile_ux_review.md). Packs after T-937.4 (persist.rs) and

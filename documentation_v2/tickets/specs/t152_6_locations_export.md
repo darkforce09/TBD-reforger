@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.6 — Locations export (`locations.json`)
 
 **Ticket:** T-152 · **Slice:** T-152.6  

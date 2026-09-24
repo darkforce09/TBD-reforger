@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Asset Storage & Streaming Architecture (`assets_v2`)
 
 How terrain data is partitioned, delivered, held in client memory, and tracked in version control.
@@ -19,7 +21,7 @@ How terrain data is partitioned, delivered, held in client memory, and tracked i
 
 **Tier 1** is committed to the repository. It exists so a developer, a headless editor gate, or a CI job can boot the full Scenario Creator with no external storage and no network beyond the checkout.
 
-**Tier 2** is a Docker named volume on the self-hosted servers, written by the terrain upload endpoints and read by the same static mount. Its layout and its ingest gates are specified in [`storage_spec/README.md`](./storage_spec/README.md).
+**Tier 2** is a Docker named volume on the self-hosted servers, written by the terrain upload endpoints and read by the same static mount. Its layout and its ingest gates are specified in [`storage_spec/README.md`](/assets_v2/storage_spec/README.md).
 
 The API resolves a directory per tier and serves both under one URL prefix. Neither tier is aware of the other, and a terrain moving from one to the other changes no consumer.
 

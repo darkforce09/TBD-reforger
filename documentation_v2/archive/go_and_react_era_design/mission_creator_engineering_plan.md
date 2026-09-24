@@ -1,3 +1,5 @@
+**Status:** archived
+
 # TBD Reforger — Mission Creator: The Engineering Ultra Plan
 **Document:** `engineering_plan.md`
 **Status:** Authoritative engineering blueprint (supersedes the renderer/stack choices in `problem_statement.md`)
@@ -8,7 +10,7 @@
 > - **ADR-2** Vite + React 19 → **T-159** Leptos CSR + Trunk (`apps/website/frontend/`)
 > - **ADR-3** Yjs → **T-145** yrs wasm doc core
 >
-> Body / React module tree below is **history**. Live homes: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+> Body / React module tree below is **history**. Live homes: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 > **UX/layout authority is `agent_execution.md` + `ux_spec.md`.**
 > The locked UX is the **Arma 3 Eden Editor docked shell** (fullscreen, panels flush to the
@@ -106,7 +108,7 @@ features/tactical-map/
 ### 1.2 The Creator wrapper — `features/mission-creator/`
 
 > **Superseded (T-035):** Actual layout uses docked `LeftSidebar`/`AssetPalette`/`AttributesModal`.
-> File tree below is historical — see live tree in [`agent_execution.md`](agent_execution.md).
+> File tree below is historical — see live tree in [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md).
 
 ```
 features/mission-creator/
@@ -381,7 +383,7 @@ blocks**, and a banner tells the user gear data is unavailable.
 |---|-------|--------------|-------------|
 | 1 | Base map | `TileLayer` (tiled) / `BitmapLayer` (single image) | terrain imagery |
 | 2 | DEM hillshade / contours | **custom** DataTexture layer (toggleable) | `DemTexture` GPU texture |
-| 2b | **World objects** (forest regions, roads, buildings, trees, props) | `PolygonLayer` / `PathLayer` / `IconLayer` — Deck-orthographic-zoom LOD per [`t090_render_lod_contract.md`](t090_render_lod_contract.md) §N3 | catalog v1 chunks via worker ([`t090_world_objects_worker.md`](t090_world_objects_worker.md)) |
+| 2b | **World objects** (forest regions, roads, buildings, trees, props) | `PolygonLayer` / `PathLayer` / `IconLayer` — Deck-orthographic-zoom LOD per [`t090_render_lod_contract.md`](/documentation_v2/tickets/specs/t090_render_lod_contract.md) §N3 | catalog v1 chunks via worker ([`t090_world_objects_worker.md`](/documentation_v2/tickets/specs/t090_world_objects_worker.md)) |
 | 3 | Areas & radii | `PolygonLayer` | safe-start areas, `objectivesById` radii (with Visual-Git red=deleted / green=added tinting) |
 | 4 | Lines | `PathLayer` | `markersById` (phase lines, arrows), ruler segments |
 | 5 | Icons | `IconLayer` (atlas, pixel-sized, pickable) | `slotsById`, `vehiclesById`, waypoint markers |
@@ -392,7 +394,7 @@ blocks**, and a banner tells the user gear data is unavailable.
 - Each layer is produced by a `use*Layer` hook reading a **memoized selector** (`state/selectors.ts`).
 - `TacticalMap.tsx` assembles the `layers` array; `updateTriggers` are keyed to the specific
   store slices a layer depends on, so editing one slot doesn't rebuild unrelated layers.
-- **Picking (T-057/T-063):** Deck GPU pick is **removed** (`getCursor` constant, layers `pickable:false`); slot click/marquee resolve through the `slotSpatialIndex` rbush, and the live X/Y/Z readout is unprojected on the container `pointermove`. **World objects** add a **separate** `worldSpatialIndex` rbush in a worker for read-only hover/inspect ([`t090_world_objects_worker.md`](t090_world_objects_worker.md) + [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md)); **never** re-enable Deck pick.
+- **Picking (T-057/T-063):** Deck GPU pick is **removed** (`getCursor` constant, layers `pickable:false`); slot click/marquee resolve through the `slotSpatialIndex` rbush, and the live X/Y/Z readout is unprojected on the container `pointermove`. **World objects** add a **separate** `worldSpatialIndex` rbush in a worker for read-only hover/inspect ([`t090_world_objects_worker.md`](/documentation_v2/tickets/specs/t090_world_objects_worker.md) + [`t090_9_world_object_interaction.md`](/documentation_v2/tickets/specs/t090_9_world_object_interaction.md)); **never** re-enable Deck pick.
 - The frame budget holds because **Deck owns rendering** (React never renders per-entity DOM —
   this is the answer to the "200 Slot Problem") and **Y.Doc edits are batched in transactions**.
 - **Viewshed** recomputes only when the observer moves (not per frame). GLSL sketch: for each
@@ -428,7 +430,7 @@ OutlinerPanel
 
 > **Superseded (T-035):** The right panel is **always-on `AssetPalette`** — it does NOT swap to
 > `InspectorPanel` on selection. Attributes edit via **double-click → AttributesModal**. See
-> [`agent_execution.md`](agent_execution.md) Decisions log.
+> [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) Decisions log.
 
 The right panel defaults to the **Asset Browser**. This MUST be a nested, collapsible tree view (e.g., Faction → Category → Class) mimicking the Eden Editor, NOT a flat list of pill buttons. Users drag items from this tree directly onto the map.
 When an entity is selected, it switches to the `InspectorPanel` based on `selection.kind`:
@@ -480,8 +482,8 @@ JetBrains-Mono readout). Tools: Select, Ruler, Line-of-Sight. (Unit placement is
 > drag + marquee) → 7a (outliner reparent/rename/delete) → 9 (compiler + autosave)**. Phases 2
 > (**T-090**/**T-091**), 5 (**T-068** registry), 6, 8 stay blocked on external assets/backend or Eden
 > queue. **T-110** terrain base (millions of map props) is separate from mission-layer scale — see
-> [`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md). Use
-> [`agent_execution.md`](agent_execution.md) for live status of each sub-phase.
+> [`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md). Use
+> [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) for live status of each sub-phase.
 
 **Phase 0 — Dependencies & scaffold**
 `npm i deck.gl @deck.gl/core @deck.gl/layers @deck.gl/react @luma.gl/core yjs y-indexeddb comlink idb`.
@@ -492,7 +494,7 @@ Create both feature trees (§1) as stubs. Register the `React.lazy` route `/miss
 `view/useOrthographicView.ts`, `TacticalMap.tsx`, `layers/useBaseMapLayer.ts`, `context/MapContext.tsx`.
 **Deliverable:** a blank base map with 60 fps pan/zoom.
 
-**Phase 2 — DEM / Z-axis** — **T-091 shipped** @ `dde589e` (`.0`/`.1`/`.2`). **T-090.3.0 active** (Workbench export spike); **T-090.1** aligned tile basemap **queued**. Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md).
+**Phase 2 — DEM / Z-axis** — **T-091 shipped** @ `dde589e` (`.0`/`.1`/`.2`). **T-090.3.0 active** (Workbench export spike); **T-090.1** aligned tile basemap **queued**. Spec: [`t091_2_z_axis_editor.md`](/documentation_v2/tickets/specs/t091_2_z_axis_editor.md).
 
 **Phase 3 — Shell / layout** → `MissionCreatorPage.tsx`, `layout/TopCommandStrip.tsx`,
 `LeftOutliner/*`, `RightInspector/InspectorPanel.tsx` + `GlobalSettingsInspector.tsx`.

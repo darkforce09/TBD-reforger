@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-845 — selected vehicles get the ringed-twin treatment
 
 Ticket: .ai/tickets/T-845.toml · Plan: docs/plans/t-845_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

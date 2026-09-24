@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.22 — E2E re-gate (de-vacuoused) + operator O1–O12 sign-off
 
 **Ticket:** T-152 · **Slice:** T-152.22 (remediation ladder #11 — program close-out)

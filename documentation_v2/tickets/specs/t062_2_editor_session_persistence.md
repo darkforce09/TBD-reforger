@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-062.2 — Editor session / background-tab resilience
 
 **Status:** **shipped** — manual verify @ ~360k (Firefox dev): alt-tab extended period → no automatic load overlay; edits preserved  
 **Git tag on ship:** **T-062.2** (`693e227`)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [t062_incremental_bindings.md](t062_incremental_bindings.md)
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [t062_incremental_bindings.md](t062_incremental_bindings.md)
 
 **Prerequisites:** T-062 shipped (`a5a651d`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~360k slots).
 
@@ -26,8 +28,8 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 
 | File | Change |
 |------|--------|
-| **NEW** [`frontend/src/dev/viteReloadGuard.ts`](../../../apps/website/frontend/src/dev/viteReloadGuard.ts) | `vite:beforeFullReload` → reassign `payload.path` to block reload on `/missions/:id/edit` (Vite #5763 — throw does not work). Dev `pageshow` + navigation-type diagnostics. |
-| [`frontend/src/main.tsx`](../../../apps/website/frontend/src/main.tsx) | `if (import.meta.env.DEV) import('@/dev/viteReloadGuard')` |
+| **NEW** [`frontend/src/dev/viteReloadGuard.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/dev/viteReloadGuard.ts) | `vite:beforeFullReload` → reassign `payload.path` to block reload on `/missions/:id/edit` (Vite #5763 — throw does not work). Dev `pageshow` + navigation-type diagnostics. |
+| [`frontend/src/main.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/main.tsx) | `if (import.meta.env.DEV) import('@/dev/viteReloadGuard')` |
 
 **Note:** WS reconnect may call `location.reload()` directly (bypassing `beforeFullReload`). No vite.config plugin was needed after manual verify on Firefox dev — primary mechanism sufficient.
 
@@ -35,9 +37,9 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 
 | File | Change |
 |------|--------|
-| **NEW** [`frontend/src/features/mission-creator/hooks/editorSession.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/editorSession.ts) | `sessionStorage` key `tbd-editor-session` → `{ missionId, readyAt, slotCount, currentSemver }`; 24h TTL; per-tab scope |
-| [`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts) | On `docStatus === 'ready'` → `markEditorSessionReady`. In `onSynced`: if warm + `hasLocalContent(md)` → skip GET, restore semver. Clear on cold load (`!hasLocalContent`), `resolveConflict('server')`. Refresh marker on `saveVersion` success. |
-| [`useMissionDoc.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Dev mount/unmount debug logs |
+| **NEW** [`frontend/src/features/mission-creator/hooks/editorSession.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/editorSession.ts) | `sessionStorage` key `tbd-editor-session` → `{ missionId, readyAt, slotCount, currentSemver }`; 24h TTL; per-tab scope |
+| [`useMissionEditor.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts) | On `docStatus === 'ready'` → `markEditorSessionReady`. In `onSynced`: if warm + `hasLocalContent(md)` → skip GET, restore semver. Clear on cold load (`!hasLocalContent`), `resolveConflict('server')`. Refresh marker on `saveVersion` success. |
+| [`useMissionDoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Dev mount/unmount debug logs |
 
 **Tradeoff:** Warm path trusts local IndexedDB. Remote server changes since last ready are **not** detected until a cold load (new tab, expired TTL, cleared session, or `resolveConflict('server')`).
 
@@ -45,8 +47,8 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 
 | File | Change |
 |------|--------|
-| [`yieldToUi.ts`](../../../apps/website/frontend/src/features/tactical-map/state/yieldToUi.ts) | When `document.hidden`: `setTimeout(0)` only (skip rAF) |
-| [`useMissionDoc.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Restore poll: rAF when visible, `setInterval(500ms)` when hidden; switch on `visibilitychange` |
+| [`yieldToUi.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/state/yieldToUi.ts) | When `document.hidden`: `setTimeout(0)` only (skip rAF) |
+| [`useMissionDoc.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Restore poll: rAF when visible, `setInterval(500ms)` when hidden; switch on `visibilitychange` |
 
 ---
 

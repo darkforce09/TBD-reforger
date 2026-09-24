@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.17 — Town label correctness (settlement-only lane + kind hygiene)
 
 **Ticket:** T-152 · **Slice:** T-152.17 (remediation ladder #6)

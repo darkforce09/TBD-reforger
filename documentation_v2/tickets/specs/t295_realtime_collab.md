@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-295 — Realtime collaborative editing
 
 Owner: command center. Builds on T-190 (local CRDT merge). ADR-3 deferred multiplayer v1; this is that v1.

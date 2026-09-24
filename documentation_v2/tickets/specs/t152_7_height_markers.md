@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.7 — Height markers (DEM peaks + ASL labels)
 
 **Ticket:** T-152 · **Slice:** T-152.7  

@@ -1,6 +1,8 @@
+**Status:** live
+
 # TBD Reforger — In-Game Menu UI Specification & Visual Breakdown
 
-**Source Reference Directory:** [`ingame_menu/`](./ingame_menu/)  
+**Source Reference Directory:** [`ingame_menu/`](/documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/)  
 **Scope:** Complete textual representation, control inventory, and operational logic for all 15 reference captures of the in-game menu and administrative toolset.
 
 ---
@@ -46,7 +48,7 @@ The in-game menu suite consists of two distinct tiers:
 
 ## 1.1 Root Home Menu (`home_menu.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/home_menu.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/home_menu.png`  
 **Panel Title:** `Main menu`  
 **Context:** Top-level pause overlay during live gameplay. Displays active selection state on the `OPTIONS` row.
 
@@ -69,7 +71,7 @@ The in-game menu suite consists of two distinct tiers:
 
 ## 1.2 Home Menu — Pre-Start / Warmup Phase (`home_menu_before_start.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/home_menu_before_start.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/home_menu_before_start.png`  
 **Panel Title:** `Main menu`  
 **Context:** In-game pause menu during the pre-match preparation / briefing / hard-freeze phase.
 
@@ -87,7 +89,7 @@ The in-game menu suite consists of two distinct tiers:
 
 ## 1.3 Home Menu — Post-Start Phase (`home_menu_after_start.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/home_menu_after_start.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/home_menu_after_start.png`  
 **Panel Title:** `Main menu`  
 **Context:** In-game pause menu immediately following match start (freeze time dropped, live combat started).
 
@@ -99,7 +101,7 @@ The in-game menu suite consists of two distinct tiers:
 
 ## 1.4 Player Options Modal (`player_options.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/player_options.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/player_options.png`  
 **Panel Title:** `Options`  
 **Context:** Client-side graphics, sound, and interface preferences dialog.
 
@@ -152,7 +154,7 @@ An 8-icon sidebar providing one-click switching across admin modules:
 
 # Section 3: WOG Admin Menu — Mission & Match Control (`admin_home.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_home.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_home.png`  
 **Panel Title:** `WOG Admin Menu: Mission`  
 **Active Tab:** Flag icon (highlighted in bright green).  
 **Context:** Central event management dashboard for mission timers, safe-start rules, faction status, and round termination.
@@ -191,7 +193,7 @@ An 8-icon sidebar providing one-click switching across admin modules:
 
 # Section 4: WOG Admin Menu — Radio & Comms Control (`admin_radio.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_radio.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_radio.png`  
 **Panel Title:** `WOG Admin Menu: Radio`  
 **Active Tab:** Radio icon (highlighted in green with tooltip `"Radio"`).  
 **Context:** Administrator radio frequency override and directional voice broadcast panel.
@@ -215,7 +217,7 @@ An 8-icon sidebar providing one-click switching across admin modules:
 
 # Section 5: WOG Admin Menu — Teleportation & Positioning (`admin_teleport.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_teleport.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_teleport.png`  
 **Panel Title:** `WOG Admin Menu: Teleport`  
 **Active Tab:** Person with rings icon (highlighted with tooltip `"Teleport"`).  
 **Context:** Player and vehicle relocation, administrative summoning, coordinate teleportation, and invulnerability toggle.
@@ -243,7 +245,7 @@ An 8-icon sidebar providing one-click switching across admin modules:
 
 # Section 6: WOG Admin Menu — Admin Chat & Messaging (`admin_chat.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_chat.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_chat.png`  
 **Panel Title:** `WOG Admin Menu: Chat`  
 **Active Tab:** Speech bubbles icon (highlighted with tooltip `"Chat"`).  
 **Context:** Two-way administrative text communication and direct player messaging.
@@ -302,7 +304,7 @@ An 8-icon sidebar providing one-click switching across admin modules:
 
 # Section 8: WOG Admin Menu — Medical, Heal & Vehicle Repair (`admin_heal_repair.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_heal_repair.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_heal_repair.png`  
 **Panel Title:** `WOG Admin Menu: Repair`  
 **Active Tab:** Person with plus signs icon (highlighted with tooltip `"Heal and repair"`).  
 **Context:** Comprehensive medical healing, revives, vehicle maintenance, fueling, and physical recovery.
@@ -335,7 +337,7 @@ This screen introduces an administrative pattern: rectangular action buttons exe
 
 # Section 9: WOG Admin Menu — Moderation, Kick & Ban (`admin_kick_ban.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_kick_ban.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_kick_ban.png`  
 **Panel Title:** `WOG Admin Menu: Kick & Ban`  
 **Active Tab:** Circle with diagonal slash icon (highlighted with tooltip `"Kick and Ban"`).  
 **Context:** Player discipline, administrative warnings, server disconnection, and permanent ban enforcement.
@@ -358,7 +360,7 @@ This screen introduces an administrative pattern: rectangular action buttons exe
 
 # Section 10: WOG Admin Menu — Server Lifecycle & Weather/Environment (`admin_server_and_other.png`)
 
-**Image:** `docs/mod/ui/ui_referances/ingame_menu/admin_server_and_other.png`  
+**Image:** `documentation_v2/mod/tbd-framework/UI/in_game_menu/visual_references/reference_screenshots/admin_server_and_other.png`  
 **Panel Title:** `WOG Admin Menu: Server`  
 **Active Tab:** Gear and wrench icon (highlighted with tooltip `"Server and Other"`).  
 **Context:** Dedicated server process management, session authentication, and live environmental simulation controls.

@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Editor factory remediation — Grok handoff, waves 130–141
 
 **Paste the block below into a fresh Grok session.** Everything it needs is in the repo; this file

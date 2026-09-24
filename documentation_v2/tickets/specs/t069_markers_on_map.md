@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-069 — Markers on map (post–T-151.11)
 
 **Status:** **queued** · **Program:** Eden (unlocked after **T-151** W11 remediations;

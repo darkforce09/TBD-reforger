@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-673 — Marker style and Area markers: the Enfusion reader
 
 Ticket: .ai/tickets/T-673.toml · Schema half shipped in T-706 · Base fields shipped in T-069.

@@ -1,9 +1,11 @@
+**Status:** frozen record
+
 # T-144 — Arma 3 map architecture study (reference analysis)
 
 **Ticket:** T-144 · **Program:** map reference · **Route:** `/missions/:id/edit` (informs **T-090**)  
 **Status:** **shipped** @ `b1949182` (tag **T-144.1**)  
 **Executor:** T-144.0 cursor-docs · **T-144.1** claude-code ✓  
-**Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
+**Registry:** [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)
 
 ---
 
@@ -104,8 +106,8 @@ Required sections (headings mandatory):
 
 Optional deliverables (use when complexity warrants — encouraged for this slice):
 
-- [`.ai/artifacts/t144_arma3_map_callgraph.md`](../../../.ai/artifacts/t144_arma3_map_callgraph.md) — deep call graph  
-- [`.ai/artifacts/t144_arma3_map_data_flow.md`](../../../.ai/artifacts/t144_arma3_map_data_flow.md) — raster + object + config pipeline detail  
+- `.ai/artifacts/t144_arma3_map_callgraph.md` — deep call graph  
+- `.ai/artifacts/t144_arma3_map_data_flow.md` — raster + object + config pipeline detail  
 - [`.ai/artifacts/t144_arma3_search_log.md`](../../../.ai/artifacts/t144_arma3_search_log.md) — full discovery journal (queries, hit counts, rejects)
 
 ---

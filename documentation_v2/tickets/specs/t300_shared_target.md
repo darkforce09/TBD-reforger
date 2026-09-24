@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-300 — Shared CARGO_TARGET_DIR serves unmerged slice binaries
 
 Owner: command center. Wave-1 incident (T-192): `make api` on :8080 served unmerged slice code because the

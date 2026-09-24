@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Tools V2 Phase Five Handoff
 
 Phase five closes the tooling tree. Across the phases recorded below the repository root stops carrying a `scripts/` directory, `tools_v2/` stops carrying empty and pointer-only directories, every command spelling, task name, gate step, fixture directory, artifact file and printed label takes the name of the domain it serves, all four tooling crates hold production files under 500 lines with their unit tests in sibling files, each crate owns exactly one module that spells the repository paths it reads outside its own tree, every comment and document in the tree states what the code does now and why, and the root and agent documents name only files and commands that exist. Each phase lands as one commit on `main` and appends its own section here with the commands it ran and what they returned.

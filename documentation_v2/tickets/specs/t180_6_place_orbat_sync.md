@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.6 — Place / refile ↔ ORBAT live sync
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.2, T-180.4, T-180.5 · **Executor:** claude-code  

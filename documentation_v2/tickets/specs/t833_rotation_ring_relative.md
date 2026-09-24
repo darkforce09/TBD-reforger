@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-833 — rotation ring: relative delta plus live preview
 
 Ticket: .ai/tickets/T-833.toml · Plan: docs/plans/t-833_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

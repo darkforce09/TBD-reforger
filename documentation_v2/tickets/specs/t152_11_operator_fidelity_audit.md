@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.11 — Operator fidelity audit (analysis only)
 
 **Ticket:** T-152 · **Slice:** T-152.11  

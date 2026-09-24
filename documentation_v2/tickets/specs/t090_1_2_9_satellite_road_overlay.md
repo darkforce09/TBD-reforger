@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.9 — Satellite road stroke overlay (readability)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.9  

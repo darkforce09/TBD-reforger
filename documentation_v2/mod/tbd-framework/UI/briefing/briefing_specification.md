@@ -1,6 +1,8 @@
+**Status:** live
+
 # TBD Reforger — Briefing UI Specification & Visual Breakdown
 
-**Source Reference Directory:** [`briefing_ui/`](./briefing_ui/)  
+**Source Reference Directory:** [`briefing_ui/`](/documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/)  
 **Scope:** Complete textual representation, visual hierarchy, control inventory, data tables, and operational mechanics for all 16 reference captures of the pre-match Briefing and Tactical Planning interface.
 
 ---
@@ -47,7 +49,7 @@ The Briefing interface serves as the primary tactical orientation, coordination,
 
 ## 1.1 Briefing Menu Shell (`briefing_menu.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_menu.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_menu.png`  
 **Panel Title:** Root Shell View  
 **Active Tab:** `Briefing` (Default State)  
 **Mission Identifier:** `wog_180_new_dawn_14`  
@@ -74,7 +76,7 @@ The Briefing interface serves as the primary tactical orientation, coordination,
 
 ## 1.2 Connected Players Roster & Network Diagnostics (`briefing_player_list.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_player_list.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_player_list.png`  
 **Active Primary Tab:** `Players`  
 **Active Selected Item:** `Mission Maker`  
 
@@ -100,7 +102,7 @@ The Briefing interface serves as the primary tactical orientation, coordination,
 
 ## 1.3 Tactical Markers Audit Log (`briefing_marker_log.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_marker_log.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_marker_log.png`  
 **Active Primary Tab:** `SWT Markers`  
 **Screen Title:** `Markers log`  
 
@@ -132,7 +134,7 @@ The Briefing interface serves as the primary tactical orientation, coordination,
 
 ## 2.1 Mission Tasks & Objective Coordinates (`briefing_tasks.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_tasks.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_tasks.png`  
 **Active Sub-Navigation:** `Задачи` (Tasks)  
 **Main Panel Header:** `Задачи`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -164,7 +166,7 @@ The Briefing interface serves as the primary tactical orientation, coordination,
 
 ## 2.2 Operational Conditions & Rules of Engagement (`briefing_conditions_rules.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_conditions_rules.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_conditions_rules.png`  
 **Active Sub-Navigation:** `Условия` (Conditions / Rules)  
 **Main Panel Header:** `Условия`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -189,7 +191,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 2.3 Scenario Lore & Operational Situation (`briefing_lore.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_lore.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_lore.png`  
 **Active Sub-Navigation:** `Вводная` (Situation / Lore)  
 **Main Panel Header:** `Вводная`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -207,7 +209,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 3.1 Attacker Uniform & Camouflage PID (`briefing_uniforms.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_uniforms.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_uniforms.png`  
 **Active Sub-Navigation:** `Атака` (Attack — Uniform Guide)  
 **Main Panel Header:** `Форма Атаки` (Attacker Uniforms)  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -242,7 +244,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 3.2 Defender Uniform & Camouflage PID (`briefing_uniforms_2.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_uniforms_2.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_uniforms_2.png`  
 **Active Sub-Navigation:** `Оборона` (Defense — Uniform Guide)  
 **Main Panel Header:** `Форма Обороны` (Defender Uniforms)  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -262,7 +264,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 4.1 Radio Communications Plan & Squad Frequencies (`briefing_squad_frequencies.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_squad_frequencies.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_squad_frequencies.png`  
 **Active Sub-Navigation:** `Frequencies` (Green antenna icon)  
 **Main Panel Header:** `Frequencies`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -316,7 +318,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 4.2 Friendly Vehicle Manifest (`briefing_friendly_assets.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_friendly_assets.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_friendly_assets.png`  
 **Active Sub-Navigation:** `Vehicles` (Blue vehicle icon)  
 **Main Panel Header:** `Vehicles`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -340,7 +342,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 4.3 Vehicle Cargo Inventory & Equipment Packs (`briefiing_vehicle_inventory.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefiing_vehicle_inventory.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_vehicle_inventory.png`  
 **Active Sub-Navigation:** `Vehicle Inventory`  
 **Main Panel Header:** `Vehicle Inventory`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -376,7 +378,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 4.4 Enemy Assets & Heavy Weapons Intelligence (`briefing_enemy_assets.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_enemy_assets.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_enemy_assets.png`  
 **Active Sub-Navigation:** `Enemy vehicles` (Red vehicle icon)  
 **Main Panel Header:** `Enemy vehicles`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -411,7 +413,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 5.1 Friendly Faction Squad Roster & Hierarchy (`briefing_friendly_squad_list.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_friendly_squad_list.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_friendly_squad_list.png`  
 **Active Sub-Navigation:** `Squads`  
 **Main Panel Header:** `Squads`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -450,7 +452,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 5.2 Personal Squad Roster & Visual Inventory (`briefing_personal_squad_roster_and_inventory.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_personal_squad_roster_and_inventory.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_personal_squad_roster_and_inventory.png`  
 **Active Sub-Navigation:** `My Squad (Alpha 1-1)` (White 3-man squad icon)  
 **Main Panel Header:** `My Squad (Alpha 1-1)`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -491,7 +493,7 @@ The screen provides mission-specific constraints, vehicle operation restrictions
 
 ## 6.1 Task & Capture Zone Parameters (`briefing_task_parameters.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_task_parameters.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_task_parameters.png`  
 **Active Sub-Navigation:** `Tasks parameters`  
 **Main Panel Header:** `Tasks parameters`  
 **Timestamp:** `Thu, Apr 10, 7:00`  
@@ -523,7 +525,7 @@ Displays the mathematical and logistical rules governing objective capture:
 
 ## 6.2 Global Mission Parameters (`briefing_mission_parameters.png`)
 
-**Source Image:** `docs/mod/ui/ui_referances/briefing_ui/briefing_mission_parameters.png`  
+**Source Image:** `documentation_v2/mod/tbd-framework/UI/briefing/visual_references/reference_screenshots/briefing_mission_parameters.png`  
 **Active Sub-Navigation:** `Mission parameters`  
 **Main Panel Header:** `Mission parameters`  
 **Timestamp:** `Thu, Apr 10, 7:00`  

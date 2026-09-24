@@ -1,9 +1,11 @@
+**Status:** frozen record
+
 # T-068.10.5 weapon family census — variant_of verdicts (operator review table)
 
 **Date:** 2026-07-13 · offline census cache · rule: VARIANT iff prefix-parent in family dir
 (Variants/ folds up) AND magwell equal AND attachment-slot-type set equal AND base mesh equal
 — i.e. the prefab differs only by pre-mounted attachments / camo materials. Fail-safe: any
-unresolvable or differing evidence → KEEP. Data: [`t068_10_5_weapon_families.json`](t068_10_5_weapon_families.json).
+unresolvable or differing evidence → KEEP. Data: [`t068_10_5_weapon_families.json`](/.ai/artifacts/t068_10_5_weapon_families.json).
 
 **Totals:** 71 concrete weapons = **33 keep** (picker list) + **38 variants** (hidden, `variant_of` set). Conservation asserted.
 

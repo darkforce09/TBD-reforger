@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-180.5 — Right dock Eden side chips (absorbs T-074)
 
 **Parent:** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) · **Depends:** T-180.1 · **Executor:** claude-code  
@@ -7,7 +9,7 @@
 
 ## Problem (measured)
 
-[`DockRight`](../../../apps/website/frontend/src/eden_chrome.rs): tabs Factions / Vehicles / Markers + search. **No** BLUFOR/OPFOR/INDFOR/Objects chips. `active_side` from T-180.1 cannot be set from UI.
+[`DockRight`](https://github.com/darkforce09/TBD-reforger/blob/d9683c9f332cd209699b1b10ec6747e8284933bb/apps/website/frontend/src/eden_chrome.rs): tabs Factions / Vehicles / Markers + search. **No** BLUFOR/OPFOR/INDFOR/Objects chips. `active_side` from T-180.1 cannot be set from UI.
 
 ## Locked
 

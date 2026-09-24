@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.8 — Forest & vegetation regions (first-class areas)
 
 **Ticket:** T-090 · **Slice:** T-090.8 / **T-090.8.1** (render)
@@ -27,7 +29,7 @@ gated above) or ~900k stacked icons (perf death + visual mud). A vegetation mass
 
 `kind` gains **`forest`**, **`field`**, **`waterBody`** (`map-object-enums.schema.json`). Regions are not
 prefab instances; they live in their own artifact and schema
-([`map-object-region.schema.json`](../../../packages/tbd-schema/schema/map-object-region.schema.json)).
+([`map-object-region.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/map-object-region.schema.json)).
 
 | Field | Required | Notes |
 |-------|----------|-------|
@@ -41,7 +43,7 @@ prefab instances; they live in their own artifact and schema
 | `coverType` | yes | `none` \| `soft` \| `hard` |
 | `source` | yes | `engine-mask` \| `derived-hull` |
 
-Golden: [`packages/tbd-schema/golden/map-objects/map-object-regions-everon-sample.json`](../../../packages/tbd-schema/golden/map-objects/map-object-regions-everon-sample.json).
+Golden: [`packages/tbd-schema/golden/map-objects/map-object-regions-everon-sample.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/golden/map-objects/map-object-regions-everon-sample.json).
 
 ---
 

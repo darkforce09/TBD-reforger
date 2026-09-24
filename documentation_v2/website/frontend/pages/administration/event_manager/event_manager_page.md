@@ -1,3 +1,5 @@
+**Status:** live
+
 # Event Manager (Admin)
 
 ## Status
@@ -11,7 +13,7 @@
 - **Route:** `/admin/events`
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/event_manager_admin_scheduling/code.html`
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.8 Event Manager
+- **Blueprint ref:** [docs/platform/context_handoff.md](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md) §4.8 Event Manager
 
 ## Element Inventory
 

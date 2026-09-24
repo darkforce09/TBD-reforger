@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Audit 2026-09 — claims verified FALSE (no ticket minted)
 
 Verified against main @ 072988d57 on 2026-09-04. Each row: what the audit said, what the code does, anchor.

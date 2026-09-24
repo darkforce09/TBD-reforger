@@ -1,8 +1,10 @@
+**Status:** live
+
 # Mod UI structure (`apps/mod/tbd-framework`)
 
 Set 2026-09-12, before the Stitch-mockup rebuild; updated the same day when the first rebuilt
 screen (Mission Selector) shipped. Source of truth for **where a UI file goes**.
-Mockups: [`ui_stitch_mockup/`](ui_stitch_mockup/) (4 groups, 43 panels). Layout path registry:
+Mockups: [`ui_stitch_mockup/`](/documentation_v2/mod/tbd-framework/UI/) (4 groups, 43 panels). Layout path registry:
 `Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`. Component contracts:
 `apps/mod/tbd-framework/UI/layouts/Common/README.md`.
 

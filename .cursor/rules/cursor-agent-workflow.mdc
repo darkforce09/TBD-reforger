@@ -72,7 +72,7 @@ ticket id, you are in **factory mode**. Factory mode has no Claude Code to hand 
 slice agents into git worktrees, integrate, gate, run an adversarial verifier, triage, and push.
 
 Read [`platform-factory-mode.mdc`](platform-factory-mode.mdc), then the runbook
-[`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md). Do **not** infer
+[`documentation_v2/runbooks/factory_waves/README.md`](/documentation_v2/runbooks/factory_waves/README.md). Do **not** infer
 factory mode from a vague "implement this" — ask one line if it is not explicit.
 
 ## Danger patterns — still over-interpret carefully
@@ -111,7 +111,7 @@ and Mode is not explicit user-authorized code → **STOP**.
 ## Codebase audit / tech-debt
 
 - **Default: ONE ticket, ALL fixes in one Claude pass** — do not split into several sibling tickets unless user asks.
-- Cursor: [`docs/platform/CODEBASE_AUDIT_2026.md`](../../docs/platform/CODEBASE_AUDIT_2026.md) + ticket files + handoff. Claude: all code fixes (+ may append verify/shipped notes to audit doc).
+- Cursor: [`documentation_v2/archive/audits/codebase_audit_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md) + ticket files + handoff. Claude: all code fixes (+ may append verify/shipped notes to audit doc).
 - Running in parallel with another ticket is OK when the file sets do not overlap.
 
 ## Commits

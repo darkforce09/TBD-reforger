@@ -1,8 +1,10 @@
+**Status:** live
+
 # Slice workflow — command center, worktrees, waves
 
 **Operator-defined, binding. Read this before dispatching any slice agent.**
-This is the process; [`t181_event_mod_program.md`](t181_event_mod_program.md) is the program;
-[`TBD_MOD_DESIGN.md`](TBD_MOD_DESIGN.md) is the north star.
+This is the process; [`t181_event_mod_program.md`](/documentation_v2/tickets/specs/t181_event_mod_program.md) is the program;
+[`TBD_MOD_DESIGN.md`](/documentation_v2/mod/tbd-framework/mod_design.md) is the north star.
 
 ## The shape
 
@@ -101,7 +103,7 @@ only reaps the trees once the gate is green.
 Wave membership lives in the compiled [`wave.lock`](../../.ai/tickets/wave.lock) (`cargo xtask
 wave repack`; the mod TSV it replaced was deleted at T-912.2) — waves are batched by
 file-disjointness from each ticket's `owns`, so write-conflicts are visible before dispatch.
-The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_PROMPT.md).
+The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](/documentation_v2/runbooks/mod_slice_workflow.md).
 
 **The loop, end to end:**
 `cargo xtask mod wave prep N` → dispatch 3 slice agents → `cargo xtask mod wave status` until all READY → `cargo xtask mod wave land`

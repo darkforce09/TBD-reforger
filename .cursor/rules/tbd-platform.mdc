@@ -8,9 +8,9 @@ alwaysApply: true
 - Read [`CLAUDE.md`](../../CLAUDE.md) first — status, run commands, conventions, agent roles.
 - **HARD GATE:** Read [`.cursor/rules/cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) — step phrases, three modes, forbidden code edits.
 - **HARD GATE:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — never defer/fold in-scope work unless the operator **explicitly** says to defer that piece.
-- Every path in this file is relative to the repository root. Mission Creator specs: [`docs/specs/Mission_Creator_Architecture/`](../../docs/specs/Mission_Creator_Architecture/).
-- Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`) · `apps/website/map-engine/` (pkg `website-map-engine`) · `apps/website/graphics-engine/` (pkg `website-graphics-engine`). Conventions pin: [`docs/platform/WHERE_DOES_X_GO.md`](../../docs/platform/WHERE_DOES_X_GO.md).
-- Frontend surface specs: `docs/website/frontend/` only — never under `apps/**/docs` (verify-doc-layout enforces).
+- Every path in this file is relative to the repository root. Mission Creator specs: [`documentation_v2/website/frontend/apps/editor/`](/documentation_v2/website/frontend/apps/editor/).
+- Layout: `apps/website/api_v2/` (Axum, pkg `website-api`) · `apps/website/frontend/` (Leptos Trunk, pkg `website-frontend`) · `apps/website/map-engine/` (pkg `website-map-engine`) · `apps/website/graphics-engine/` (pkg `website-graphics-engine`). Conventions pin: [`documentation_v2/standards/where_does_x_go.md`](/documentation_v2/standards/where_does_x_go.md).
+- Frontend surface specs: `documentation_v2/website/frontend/` only — never under `apps/**/docs` (verify-doc-layout enforces).
 - Ticket source of truth: one `.ai/tickets/T-*.toml` file per ticket, beside the `.ai/tickets/ROOT` marker. After edits run `cargo xtask ticket sync` and `cargo xtask ticket check`. Work on **`main` only** — no `ticket/T-0xx` branches.
 - **Cursor:** docs, brainstorm, ticket files, spec markdown (`executor: cursor-docs` slices).
 - **Claude Code:** application code only for slices with `executor: claude-code` (via `cargo xtask ticket run`).
@@ -21,4 +21,4 @@ alwaysApply: true
   `slice/T-XXX` branches in worktrees (the "`main` only, no branches" line above does **not** apply to
   the factory), and `executor: claude-code` means "any AI coding agent may take this". See
   [`platform-factory-mode.mdc`](platform-factory-mode.mdc) and
-  [`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md).
+  [`documentation_v2/runbooks/factory_waves/README.md`](/documentation_v2/runbooks/factory_waves/README.md).

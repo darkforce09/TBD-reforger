@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-151.1 — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback
 
 **Status:** **shipped** @ `3ab81587` (tag **T-151.1**, 2026-07-08) · verify log

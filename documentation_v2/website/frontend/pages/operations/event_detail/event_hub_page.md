@@ -1,3 +1,5 @@
+**Status:** live
+
 # Event Hub
 
 ## Status
@@ -46,7 +48,7 @@ Standalone split-pane ORBAT selector for bookmarking a single mission:
 ### States
 - **No missions:** "No missions have been added" under dossiers heading.
 - **Registration locked:** Badges and actions reflect `registration_locked` / event status.
-- **Embedded:** `EventHubView` also renders inside [event-schedule.md](event-schedule.md) split-pane detail (no back link in embed).
+- **Embedded:** `EventHubView` also renders inside [event-schedule.md](/documentation_v2/website/frontend/pages/operations/schedule/event_schedule_page.md) split-pane detail (no back link in embed).
 
 ## API Dependencies
 

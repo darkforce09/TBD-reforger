@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.9 — World-object interaction (hover, inspect, filter, legend)
 
 **Ticket:** T-090 · **Slice:** T-090.9
@@ -58,7 +60,7 @@ Throttled to one pick per animation frame; off-map → cleared.
 
 ## Inspect panel (read-only)
 
-Renders [`ResolvedWorldObject`](../../../packages/tbd-schema/schema/map-object-resolved.schema.json):
+Renders [`ResolvedWorldObject`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/map-object-resolved.schema.json):
 identity (`label`, `class`, `taxonomyPath`, `summary`), placement (x/y/z, rotation), spatial (size,
 footprint), gameplay (cover/LOS/movement/flags), and a **Z-trust badge** from `placement.severity`
 (GAP-M3): `ok` (green) · `warn` (amber) · `fail` "buried/floating — verify in Workbench" (red). A

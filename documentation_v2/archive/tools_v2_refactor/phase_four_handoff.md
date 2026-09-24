@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Decomposition record: the two large crates split by responsibility
 
 What landed, and the measurements taken at the landing.

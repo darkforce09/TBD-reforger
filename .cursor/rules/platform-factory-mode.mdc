@@ -9,9 +9,9 @@ The operator authorizes this mode explicitly. In it, Grok 4.5 in Cursor runs the
 it dispatches slice agents, integrates their work, gates it, and pushes.
 
 **Runbook — read it before doing anything factory-related:**
-[`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md).
+[`documentation_v2/runbooks/factory_waves/README.md`](/documentation_v2/runbooks/factory_waves/README.md).
 Program record and wave handoffs:
-[`docs/platform/PLATFORM_FACTORY.md`](../../docs/platform/PLATFORM_FACTORY.md).
+[`documentation_v2/runbooks/factory_waves/README.md`](/documentation_v2/runbooks/factory_waves/README.md).
 
 ## Are you in factory mode?
 

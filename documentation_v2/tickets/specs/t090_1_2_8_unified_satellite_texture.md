@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.8 — Unified satellite texture (binary + GPU mips, no tile flicker)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.8  

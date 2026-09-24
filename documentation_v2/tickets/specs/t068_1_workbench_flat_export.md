@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.1 — Workbench flat ResourceName export (MCP-driven)
 
 **Ticket:** T-068 · **Slice:** T-068.1  
@@ -75,7 +77,7 @@ API and palette need real Enfusion ResourceNames; mock catalog uses fake ids.
 | Export | Run export (MCP tool or Workbench action documented in paste) | Produce committed JSON |
 | Schema | `cd packages/tbd-schema && npm run validate` | Gate A2 |
 
-Never guess Enfusion APIs or GUIDs — [`docs/mod/CLAUDE-CODE-START.md`](../../mod/CLAUDE-CODE-START.md).
+Never guess Enfusion APIs or GUIDs — [`docs/mod/CLAUDE-CODE-START.md`](/documentation_v2/runbooks/mod_slice_workflow.md).
 
 ---
 

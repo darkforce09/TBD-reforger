@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-311 — Leaderboard ORDER BY lacks a tie-breaker
 
 Owner: command center. Frozen-scope ticket; proposed scope website/backend/http_api.

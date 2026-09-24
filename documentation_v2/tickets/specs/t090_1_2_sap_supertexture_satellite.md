@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2 — SAP supertexture satellite ortho (high detail)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2  

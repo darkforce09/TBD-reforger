@@ -49,6 +49,42 @@ fn a_reference_label_matches_without_regard_to_case_or_spacing() {
 }
 
 #[test]
+fn a_link_with_empty_text_before_an_undefined_label_is_plain_text() {
+    let found = inline("Schema {points[][2] minItems 2} and [outer [][2]](outer.md)");
+    assert!(found.undefined_references.is_empty());
+    assert_eq!(
+        destinations(&found),
+        ["outer.md"],
+        "literal brackets inside a link text leave the link standing"
+    );
+    assert_eq!(
+        found.rendered,
+        "Schema {points[][2] minItems 2} and [outer [][2]]"
+    );
+}
+
+#[test]
+fn a_link_with_empty_text_before_a_defined_label_is_a_reference_link() {
+    let found = inline_with("[outer [][2]](outer.md)", &["2"]);
+    assert!(found.undefined_references.is_empty());
+    assert!(
+        found.links.is_empty(),
+        "the empty-text link closes first, and a link may not contain another link"
+    );
+}
+
+#[test]
+fn an_image_or_a_link_with_text_reports_its_undefined_label() {
+    let found = inline("![][logo] [text][gone] [text][] ![alt][]");
+    let labels: Vec<&str> = found
+        .undefined_references
+        .iter()
+        .map(|reference| reference.label.as_str())
+        .collect();
+    assert_eq!(labels, ["logo", "gone", "text", "alt"]);
+}
+
+#[test]
 fn a_code_span_binds_before_brackets_and_autolinks() {
     let found = inline("`[a](x.md)` then `` `<https://x>` `` then [b](y.md)");
     assert_eq!(destinations(&found), ["y.md"]);

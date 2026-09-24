@@ -1,6 +1,8 @@
+**Status:** frozen record
+
 # T-912 — Wave Lockfile Architecture
 
-Program hub: tickets are the only source of `owns` and `depends_on`; `cargo xtask wave repack` compiles a committed [`.ai/tickets/wave.lock`](../../.ai/tickets/wave.lock); both `wave_plan.tsv` files are deleted in the same commit as the first lock.
+Program hub: tickets are the only source of `owns` and `depends_on`; `cargo xtask wave repack` compiles a committed [`.ai/tickets/wave.lock`](/.ai/tickets/wave.lock); both `wave_plan.tsv` files are deleted in the same commit as the first lock.
 
 **Do not write the `STRICT_LEGACY` phrase matching `Track [ABC]\b` in this spec, the ticket title/summary/notes, README, or any commit subject/body that `ticket sync` copies into `docs/TICKET_*.md`.** Scanner: `xtask/src/constants.rs`.
 

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-158 — Editor shell UX consolidation
 
 Owner: command center. UI code ticket (executor claude-code), packs after T-142 and T-939.x.

@@ -55,4 +55,4 @@ src/v2/
    frontend owns state that dies with the tab — hover, the in-flight drag, the pointer machine,
    the keybind map.
 
-See `docs/platform/ENGINE_SPLIT_PROGRAM.md` for the crate layout these principles come from.
+See `documentation_v2/archive/engine_split/engine_split_program.md` for the crate layout these principles come from.

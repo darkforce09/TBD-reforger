@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.11 — Compiled mod document loadout block
 
 **Ticket:** T-068 · **Slice:** T-068.11  

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-304 — RegistryScan never reads weapon weight; 32 wrong rows
 
 Owner: command center. Operator authorization 2026-09-04: "agents may edit the Enfusion mod scripts; gate =

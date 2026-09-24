@@ -1,11 +1,13 @@
+**Status:** live
+
 # TBD Mission Creator — Feature Inventory
 
 **Document:** `feature_inventory.md`  
-**Schema:** [reference/feds_schema.md](reference/feds_schema.md) (FEDS)  
+**Schema:** [reference/feds_schema.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md) (FEDS)  
 **Audited:** 2026-06-20 (initial) · **Second pass:** 2026-06-20 (code + scrape cross-check)  
-**UX cross-check:** [ux_spec.md](ux_spec.md)
+**UX cross-check:** [ux_spec.md](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
 
-> **SUPERSEDED tech nouns (T-145 / T-151 / T-159):** Yjs / y-indexeddb / Deck.gl rows below are ship history. Live = yrs + wgpu + Leptos (`apps/website/frontend/`). See [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+> **SUPERSEDED tech nouns (T-145 / T-151 / T-159):** Yjs / y-indexeddb / Deck.gl rows below are ship history. Live = yrs + wgpu + Leptos (`apps/website/frontend/`). See [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 ---
 
@@ -1250,7 +1252,7 @@
 | **Eden parity** | n/a (infra) |
 | **Status** | shipped |
 | **Ticket** | T-066 |
-| **Evidence** | `compiler.worker.ts`, `compilerClient.ts`, `compile.ts`, `useMissionEditor.ts`, `pickMapSnapshot` in `useMapStore.ts`; spec [`t066_worker_compile.md`](t066_worker_compile.md) |
+| **Evidence** | `compiler.worker.ts`, `compilerClient.ts`, `compile.ts`, `useMissionEditor.ts`, `pickMapSnapshot` in `useMapStore.ts`; spec [`t066_worker_compile.md`](/documentation_v2/tickets/specs/t066_worker_compile.md) |
 
 ---
 
@@ -1271,7 +1273,7 @@
 | **Eden parity** | n/a (infra) |
 | **Status** | **shipped** (bulk paste + scaffolding; CPU cull deferred) |
 | **Ticket** | T-067 |
-| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](t067_spatial_chunks.md); follow-ons [`T-111`/`T-112`](../../TICKET_BRAINSTORM.md#scale) |
+| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md); follow-ons [`T-111`/`T-112`](../../TICKET_BRAINSTORM.md#scale) |
 
 ---
 
@@ -1331,7 +1333,7 @@
 | **Edge cases** | 1 vs N selected; asset palette drop lag → **resolved T-062** (slot-add path). Release: possible single dropped frame (two cache bumps) — **deferred** |
 | **Acceptance** | `- [x] Drag motion 1 slot @ 360k ≥55 fps` `- [x] Drag motion ~10 selected @ 360k ≥55 fps` `- [x] Pickup/release good enough (not perfect)` `- [x] build + lint clean` `- [x] Full regression sweep documented` |
 | **Eden parity** | Eden:XFORM-MOVE-001 |
-| **Status** | **shipped (good enough)** — spec [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md) |
+| **Status** | **shipped (good enough)** — spec [`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md) |
 | **Ticket** | T-061 |
 | **Evidence** | `slotIconCache.ts`, `useMapStore.ts`, `bindings.ts`, `useIconLayer.ts`, `useSelectTool.ts`, `selectors.ts`, `TacticalMap.tsx` |
 
@@ -1351,7 +1353,7 @@
 | **Outputs** | `selection.ids[]`; Attributes via dbl-click |
 | **Edge cases** | Overlapping icons → nearest to click; Ctrl/Cmd toggle (T-053); drag exclude no tree change |
 | **Acceptance** | `- [x] Click @ 367k instant` `- [x] Marquee no multi-s freeze` `- [x] Dbl-click Attributes` `- [x] Pan/drag unchanged` `- [x] build + lint clean` |
-| **Status** | **shipped** — spec [`t063_spatial_index.md`](t063_spatial_index.md) |
+| **Status** | **shipped** — spec [`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md) |
 | **Ticket** | T-063 |
 | **Evidence** | `slotSpatialIndex.ts`, `slotIconCache.ts`, `useSelectTool.ts`, `TacticalMap.tsx`, `useIconLayer.ts` |
 
@@ -1372,7 +1374,7 @@
 | **Edge cases** | Bulk paste / `addEditorLayer` / empty-doc bootstrap / `removeEditorLayer` → full snapshot fallback. Undo large multi-delete → full snapshot (verified OK @ 6k undo). IDB 0→300k jump → **fixed T-062.1** (v2 chunked restore). `_patchSlots` drag release still O(n) spread — deferred mega opt |
 | **Acceptance** | `- [x] Asset drop instant @ 360k` `- [x] Delete 150/4000 no crash` `- [x] Drag not regressed` `- [x] Undo 6000 delete OK` `- [x] build + lint clean` |
 | **Eden parity** | Eden:XFORM-PLACE-001 (drop), Eden:DELETE-001 |
-| **Status** | **shipped** — spec [`t062_incremental_bindings.md`](t062_incremental_bindings.md) |
+| **Status** | **shipped** — spec [`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md) |
 | **Ticket** | T-062 |
 | **Evidence** | `incPatchPlan.ts`, `bindings.ts`, `useMapStore.ts`, `slotIconCache.ts`, `ydoc.ts`, `BottomToolbelt.tsx`, `EditorLayersSection.tsx`, `OrbatSection.tsx` |
 
@@ -1386,7 +1388,7 @@
 | **Procedure** | Dev: `viteReloadGuard` blocks `vite:beforeFullReload` on `/missions/:id/edit`. `editorSession.ts` marks ready → on reboot, `onSynced` skips GET when warm + `hasLocalContent(md)`. `yieldToUi` + restore poll visibility-aware |
 | **Edge cases** | Warm path trusts local v2 store — remote server changes undetected until cold load. New tab = cold. `dirty` UI flag resets on reload (data in IDB). Undo stack session-only |
 | **Acceptance** | `- [x] Alt-tab 30+ min → no overlay (Firefox dev @ ~360k)` `- [x] Edits preserved` `- [x] Cold load unchanged` |
-| **Status** | **shipped** — spec [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md) |
+| **Status** | **shipped** — spec [`t062_2_editor_session_persistence.md`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md) |
 | **Ticket** | T-062.2 |
 | **Evidence** | `viteReloadGuard.ts`, `editorSession.ts`, `useMissionEditor.ts`, `useMissionDoc.ts`, `yieldToUi.ts` |
 
@@ -1402,7 +1404,7 @@
 | **Postconditions** | Y.Doc populated; overlay shows smooth `done/total` during v2 restoring |
 | **Edge cases** | Server-adopted mission not v2-cached until first edit. SPA navigate-away within ~2s debounce may drop last edits. `docAlive` / `isCancelled` guards prevent corrupt writes on teardown |
 | **Acceptance** | `- [x] Migration once` `- [x] 2nd+ load smooth progress @ ~360k` `- [x] Legacy DB deleted` `- [x] build/lint/tsc clean` |
-| **Status** | **shipped** — spec [`t062_1_idb_streaming_load.md`](t062_1_idb_streaming_load.md) |
+| **Status** | **shipped** — spec [`t062_1_idb_streaming_load.md`](/documentation_v2/tickets/specs/t062_1_idb_streaming_load.md) |
 | **Ticket** | T-062.1 |
 | **Evidence** | `persistence/*`, `useMissionDoc.ts`, `useMissionEditor.ts`, `ydoc.ts` (`entityToYMap`) |
 
@@ -1500,7 +1502,7 @@
 | **Acceptance** | `- [x] Stub only (pre-T-068.4)` · `- [x] T-068.4: stub removed; dropdowns + download work` |
 | **Eden parity** | Eden:ATTR-ARSENAL-001 (dumb export Phase 1; smart Forge Phase 2) |
 | **Status** | working (dumb export) |
-| **Evidence** | `AttributesModal.tsx` (`ArsenalTab`) · `loadout/loadoutExport.ts` · ship spec [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) @ `a85f16b` |
+| **Evidence** | `AttributesModal.tsx` (`ArsenalTab`) · `loadout/loadoutExport.ts` · ship spec [`t068_4_dumb_loadout_ui.md`](/documentation_v2/tickets/specs/t068_4_dumb_loadout_ui.md) @ `a85f16b` |
 
 ---
 

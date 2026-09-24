@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-822 — outliner dblclick does not open the asset picker
 
 Ticket: .ai/tickets/T-822.toml · Plan: docs/plans/t-822_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

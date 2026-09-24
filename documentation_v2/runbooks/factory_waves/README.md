@@ -1,8 +1,10 @@
+**Status:** live
+
 # Platform factory — command center, worktrees, waves
 
 **Operator-defined, binding. Read this before dispatching any platform slice agent.**
 This is the process for the **T-182…T-295 backlog** (website, Mission Creator, contract, data,
-infra). The mod program has its own: [`../mod/SLICE_WORKFLOW.md`](../mod/SLICE_WORKFLOW.md).
+infra). The mod program has its own: [`../mod/SLICE_WORKFLOW.md`](/documentation_v2/runbooks/mod_slice_workflow.md).
 
 Do not start this program until **T-181 is finished**. Operator instruction.
 
@@ -50,7 +52,7 @@ That is not waste. It is the only reason the numbers above can be trusted.
 
 ### What to do next, in order
 
-1. **Run [`PLAYTEST_RUNBOOK.md`](PLAYTEST_RUNBOOK.md).** Nothing blocks it any more. One session closes
+1. **Run [`PLAYTEST_RUNBOOK.md`](/documentation_v2/runbooks/two_client_playtest/README.md).** Nothing blocks it any more. One session closes
    **T-181.16 and T-068.14** — the last slices of the last two open programs. Start with
    `cargo xtask mod playtest`. The remaining unknown is the friend's first Direct Join,
    which nobody has ever exercised; §6.2's `#tbd` chat probe tells you in one line which mod the
@@ -144,10 +146,10 @@ cargo xtask slice-collisions                # the dispatch set, + any UNPLANNED 
 > found this and refused to run it; W80's verifier confirmed it (T-604 76→0, T-620 80→1, T-315 81→0).
 > `--repack` is for a plan that has genuinely rotted, on a copy, with the oracle checked afterwards.
 
-State lives in: [`wave.lock`](../../.ai/tickets/wave.lock) (what runs together — compiled by
+State lives in: [`wave.lock`](/.ai/tickets/wave.lock) (what runs together — compiled by
 `cargo xtask wave repack`, checked by `cargo xtask wave check`) · the `.ai/tickets/T-*.toml` files
 (every ticket's full record — **the summaries are the handoff**, read the ones you are dispatching)
-· this file (process) · [`frontend_data_provenance.md`](frontend_data_provenance.md) (which render
+· this file (process) · [`frontend_data_provenance.md`](/documentation_v2/archive/audits/frontend_data_provenance.md) (which render
 sites are real vs mock — saves a 150k-token re-derivation).
 
 **Do not** try to reconstruct a previous session's reasoning. If a decision mattered, it is in a
@@ -158,13 +160,13 @@ it rather than trust a recollection.
 
 Claude Code's token budget ran out after wave 5. **The command center is now Grok 4.5 in Cursor.**
 
-> **If you are Grok/Cursor, read [`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) instead of this
+> **If you are Grok/Cursor, read [`FACTORY_FOR_CURSOR.md`](/documentation_v2/runbooks/factory_waves/README.md) instead of this
 > file.** It is the same process written as a literal procedure — exact commands, checklists, and
 > decision tables rather than the judgement calls this document assumes. This file remains the
 > *why*, and the handoff below is still authoritative on what happened; that file is the *how*.
 
 The Cursor rule that switches modes and suspends the normal "Cursor may not write app code" gate is
-[`.cursor/rules/platform-factory-mode.mdc`](../../.cursor/rules/platform-factory-mode.mdc).
+[`.cursor/rules/platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc).
 
 ## WHERE THE RUN LEFT OFF — 2026-07-26, waves 3-5, PAUSED
 
@@ -437,7 +439,7 @@ to the slice's own diff against `main`.
    cargo xtask slice-collisions --check T-195
    ```
    Worktrees make concurrent edits *safe* but do not prevent **merge conflicts**. Each ticket's
-   `owns` field (snapshotted into [`wave.lock`](../../.ai/tickets/wave.lock)) is the only thing
+   `owns` field (snapshotted into [`wave.lock`](/.ai/tickets/wave.lock)) is the only thing
    standing between eight agents and a merge pile-up. The cap is `TBD_MAX_CONCURRENT` (default 8) and the binding constraint is
    **integration attention** — how many dense agent reports the command center can actually read
    and act on — not disk and not CPU.
@@ -533,7 +535,7 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 | Data pipeline | 7 | `contracts_v2/`, `tools/` |
 | End-to-end test lane | 6 | `tools_v2/xtask/`, CI |
 | Discord | 6 | `apps/website/api_v2/src/` |
-| Infra / deploy | 6 | root, `docs/` |
+| Infra / deploy | 6 | root, `documentation_v2/` |
 | Registry hygiene | 6 | `tools_v2/xtask/`, `.ai/tickets/` |
 | Mission Creator — collab | 5 | `apps/website/frontend/src/` |
 | Mission Creator — settings | 4 | frontend + schema |

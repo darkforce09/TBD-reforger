@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.20 — Mission Settings world-layer toggle completeness
 
 **Ticket:** T-152 · **Slice:** T-152.20 (remediation ladder #9)

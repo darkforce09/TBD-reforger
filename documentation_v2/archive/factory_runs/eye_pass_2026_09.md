@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Operator eye-pass checklist — September 2026 factory run
 
 One line per shipped job, appended at each wave close. Run on `cargo xtask mk leptos` (release) at

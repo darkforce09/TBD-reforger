@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-060.1 — Scale load/save completion (determinate progress + 360k acceptance)
 
 **Status:** **T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + T-060.1.4 shipped** — load partial pass @ ~360k; **Save @ ~367k / ~142 MB → 201** (browser + curl 140 MB verified).
 **Git tag on ship:** **T-060** (commit `b1fd25a`, 2026-06-23 — T-060 + T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + T-060.1.4)
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE
+**Authority:** [MC ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE
 **Builds on:** [t060_fast_initial_load.md](t060_fast_initial_load.md) (T-060 code landed; acceptance slices T-060.1 → **T-060.1.3**)
 
 **Prerequisites:** T-057–T-059 shipped; T-060 **shipped** in `b1fd25a` (256 MB route, bulk sync, chunked compile, overlay + T-060.1..T-060.1.4 acceptance).
@@ -232,13 +234,13 @@ proxy: {
 |-----|--------|
 | [t060_fast_initial_load.md](t060_fast_initial_load.md) | Status + §Shipped timings; blockers table |
 | [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) | §Manual verify; §T-060.1.3 + §T-060.1.4 |
-| [agent_execution.md](agent_execution.md) | ACTIVE SLICE → **T-066** worker compile |
+| [agent_execution.md](/documentation_v2/website/frontend/apps/editor/decisions.md) | ACTIVE SLICE → **T-066** worker compile |
 | [CLAUDE.md](../../../CLAUDE.md) §Status | T-060 bullet + 360k acceptance |
-| [docs/TAGS.md](../../website/TAGS.md) | T-060.1 note |
-| [feature_inventory.md](feature_inventory.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
-| [mission-editor.md](../../website/frontend/pages/mission-editor.md) | PERF-003/004 determinate + 360k gate |
-| [docs/website/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md) | T-060 acceptance |
-| [docs/AGENT_COMMIT_CHECKLIST.md](../../website/AGENT_COMMIT_CHECKLIST.md) | T-060.1.4 gate before tag |
+| [docs/TAGS.md](/documentation_v2/standards/ticket_identifiers.md) | T-060.1 note |
+| [feature_inventory.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
+| [mission-editor.md](/documentation_v2/website/frontend/apps/editor/ux_spec.md) | PERF-003/004 determinate + 360k gate |
+| [docs/website/frontend/ROADMAP.md](/documentation_v2/website/frontend/README.md) | T-060 acceptance |
+| [docs/AGENT_COMMIT_CHECKLIST.md](/documentation_v2/standards/commit_checklist.md) | T-060.1.4 gate before tag |
 
 ---
 
@@ -387,7 +389,7 @@ Requires root `.env` `ALLOWED_ORIGINS=http://localhost:5173` (already set). **Ve
 |-------|------|
 | **E3b code (required)** | `versionUploadBaseURL()` in `useMissionEditor.ts`: when `import.meta.env.DEV` and body >1 MB and `VITE_API_URL` is still `/api/v1`, POST directly to `:8080` — **never rely on Vite proxy for large uploads**. |
 | **Dev startup hint** | One-time `console.info` in dev when axios base is proxy-relative: "Large Mission Creator saves bypass the Vite proxy automatically." |
-| **Docs in one place** | [`t060_1_scale_load_save_completion.md`](t060_1_scale_load_save_completion.md) §Root cause + this §Prevention; [`docs/backend/architecture.md`](../../website/backend/architecture.md) §Dev note; [`frontend/.env.example`](../../../apps/website/frontend/.env.example). |
+| **Docs in one place** | [`t060_1_scale_load_save_completion.md`](t060_1_scale_load_save_completion.md) §Root cause + this §Prevention; [`docs/backend/architecture.md`](/documentation_v2/archive/go_and_react_era_design/go_backend_architecture_plan.md) §Dev note; [`frontend/.env.example`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/.env.example). |
 | **Symptom cheat sheet** | `ERR_NETWORK` @ **0%** in dev → proxy (E3b fixes). `ERR_NETWORK` @ **1%+** → mid-upload (size/logs — T-060.1.3). `413` → body limit. `409` → semver clash. |
 | **Optional `.env.local`** | `VITE_API_URL=http://localhost:8080/api/v1` sends **all** API traffic direct (fine for mission makers; not required after E3b). |
 | **Do NOT** | Raise proxy timeouts further and call it fixed — probe proved ECONNRESET @ ~2 MB regardless of 600s timeout. |
@@ -492,7 +494,7 @@ macOS-style, frictionless:
 
 #### O5 — Bottom toolbelt size readout (macOS frictionless)
 
-Next to existing `OBJ` / `SEL` in [`BottomToolbelt.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx):
+Next to existing `OBJ` / `SEL` in [`BottomToolbelt.tsx`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx):
 
 ```
 SZ 187 MB ~   // estimated compiled size; memoized; refresh when slot count changes (debounced 500ms)
@@ -549,16 +551,16 @@ again and catch it in CI.
 
 ### Implemented
 
-- **`isMissionVersionPOST(c)`** in [`bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go): keeps the
+- **`isMissionVersionPOST(c)`** in [`bodylimit.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/middleware/bodylimit.go): keeps the
   `FullPath()` suffix match **and** adds a concrete-URL-path fallback (`/…/missions/<id>/versions`),
   so the 1 MB global wrap can never silently apply even if `FullPath()` is empty/unexpected.
-- **Production-like integration test** [`missions_bodylimit_integration_test.go`](../../../apps/website/internal/handlers/missions_bodylimit_integration_test.go):
+- **Production-like integration test** [`missions_bodylimit_integration_test.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/handlers/missions_bodylimit_integration_test.go):
   `setupITProd` mounts `GlobalBodyLimit(MaxJSONBody)` like `cmd/api/main.go` (the blind spot —
   `setupIT` used a bare router). Asserts 2 MB & 3.5 MB version POST → **201** (global cap skipped) and
   a 5 MB body over a pinned 4 MB route cap → **413 JSON** (`status=413 over_limit`). Plus a
-  [`bodylimit_test.go`](../../../apps/website/internal/middleware/bodylimit_test.go) unit test for the route-pattern
+  [`bodylimit_test.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/middleware/bodylimit_test.go) unit test for the route-pattern
   match and the URL-path fallback.
-- **`phaseAtFailure` fix** ([`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts)):
+- **`phaseAtFailure` fix** ([`useMissionEditor.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts)):
   `report.phaseAtFailure = 'uploading'` on the first `onUploadProgress` tick, so a mid-upload failure
   no longer mislabels as `'preparing'`.
 - **Repro** `cargo xtask repro mission-upload`:
@@ -610,11 +612,11 @@ CreateVersion: mission=70a36667-... content_length=141574630
 
 #### F2 — Harden `GlobalBodyLimit` skip
 
-[`internal/middleware/bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go): keep `FullPath()` suffix match; add **URL path fallback** — e.g. `POST` and path matches `/missions/*/versions` — so the 1 MB global wrap cannot accidentally apply when `FullPath()` is empty.
+[`internal/middleware/bodylimit.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/internal/middleware/bodylimit.go): keep `FullPath()` suffix match; add **URL path fallback** — e.g. `POST` and path matches `/missions/*/versions` — so the 1 MB global wrap cannot accidentally apply when `FullPath()` is empty.
 
 #### F3 — Production-like integration test
 
-Extend test router (new helper or `setupITWithMiddleware`) to mount `GlobalBodyLimit(MaxJSONBody)` like [`cmd/api/main.go`](../../../apps/website/cmd/api/main.go). POST a **2–10 MB** version body → assert **201**, not connection reset. Optionally assert **413** on a body > 256 MB.
+Extend test router (new helper or `setupITWithMiddleware`) to mount `GlobalBodyLimit(MaxJSONBody)` like [`cmd/api/main.go`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/cmd/api/main.go). POST a **2–10 MB** version body → assert **201**, not connection reset. Optionally assert **413** on a body > 256 MB.
 
 #### F4 — Backend body handling for 100MB+ payloads
 
@@ -626,7 +628,7 @@ If logs show mid-read RST or OOM after full read:
 
 #### F5 — Frontend observability fix (minor)
 
-[`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts): call `logPhase('uploading')` on first `onUploadProgress` so `phaseAtFailure` is accurate.
+[`useMissionEditor.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts): call `logPhase('uploading')` on first `onUploadProgress` so `phaseAtFailure` is accurate.
 
 #### F6 — curl isolation test
 
@@ -674,7 +676,7 @@ curl dies mid-upload → server/middleware. curl **201** → browser/axios/memor
 
 ## Claude Code prompt (copy-paste — T-060.1.4)
 
-Use a **fresh** Claude Code chat. Read §T-060.1.4 + [`agent_execution.md`](agent_execution.md) §ACTIVE SLICE + §Manual verify Save (debug JSON).
+Use a **fresh** Claude Code chat. Read §T-060.1.4 + [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE + §Manual verify Save (debug JSON).
 
 ```
 T-060.1.4 — Fix mid-upload ERR_NETWORK @ ~367k / ~135 MB
@@ -746,7 +748,7 @@ VERIFY
 
 ## Claude Code prompt (copy-paste — T-060.1.3 — historical)
 
-Use the **same Claude Code chat** (uncommitted stack) or fresh. Read §T-060.1.3 + [`agent_execution.md`](agent_execution.md) §ACTIVE SLICE.
+Use the **same Claude Code chat** (uncommitted stack) or fresh. Read §T-060.1.3 + [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE.
 
 ```
 T-060.1.3 — Save observability + measured size @ ~360k
@@ -809,7 +811,7 @@ VERIFY
 
 ## Claude Code prompt (copy-paste — T-060.1.1 — shipped in code)
 
-Use a **fresh** Claude Code chat (see §Chat guidance below). Read this file §T-060.1.1 and [`agent_execution.md`](agent_execution.md) §ACTIVE SLICE first.
+Use a **fresh** Claude Code chat (see §Chat guidance below). Read this file §T-060.1.1 and [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) §ACTIVE SLICE first.
 
 ```
 T-060.1.1 — Fix stuck-at-0% load bar @ ~300k (IDB restoring phase + paint-friendly progress)

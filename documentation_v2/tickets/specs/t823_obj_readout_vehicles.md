@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-823 — OBJ readout counts vehicles or is renamed honestly
 
 Ticket: .ai/tickets/T-823.toml · Plan: docs/plans/t-823_plan.md · Filed from the wave verifier / operator eye-pass named in the ticket.

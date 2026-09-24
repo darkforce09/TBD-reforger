@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-702 — whole-terrain zone: one zone sized to the map
 
 Ticket: .ai/tickets/T-702.toml · Plan: docs/plans/t-702_plan.md · Schema half shipped in T-706.

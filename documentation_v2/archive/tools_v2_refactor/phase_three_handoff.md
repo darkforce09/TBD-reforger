@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Consolidation record: the ticket subsystem lands in `ticket-engine`
 
 What landed, and the measurements taken at the landing.

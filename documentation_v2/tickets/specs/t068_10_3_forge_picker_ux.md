@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-068.10.3 — Forge picker UX on clean kinds
 
 **Ticket:** T-068 · **Slice:** T-068.10.3 · **Status:** queued (starts after the T-068.10.2

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-090.1.2.x — Satellite basemap backlog (resume guide)
 
 **Program hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
@@ -40,7 +42,7 @@
 
 **Shipped dead end:** T-090.1.2.4 @ `0d6fe485` — do not re-open engine ortho without new engine API evidence.
 
-**Parallel (platform):** **T-090.2** map object taxonomy — [`t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md) · Fable audit remainder **T-130** — [`t130_fable_audit_remainder.md`](../../platform/t130_fable_audit_remainder.md)
+**Parallel (platform):** **T-090.2** map object taxonomy — [`t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md) · Fable audit remainder **T-130** — [`t130_fable_audit_remainder.md`](/documentation_v2/tickets/specs/t130_fable_audit_remainder.md)
 
 ---
 

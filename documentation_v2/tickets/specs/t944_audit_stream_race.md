@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-944 — Audit stream: id-order race and half-open socket
 
 Follow-on to T-940.6 (wave 248). Both defects were found and disclosed by the slice, with repros.

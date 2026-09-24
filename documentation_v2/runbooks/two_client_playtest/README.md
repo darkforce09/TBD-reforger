@@ -1,11 +1,13 @@
+**Status:** live
+
 # PLAYTEST RUNBOOK — the live two-client E2E
 
 **Closes `T-181.16` and `T-068.14` — the last two open programs.**
 Both are `executor: human`; one session closes both.
-Tickets: [`.ai/tickets/`](../../.ai/tickets) ·
-T-181 hub: [`docs/mod/t181_event_mod_program.md`](../mod/t181_event_mod_program.md) ·
-T-068 hub: [`t068_virtual_arsenal_program.md`](../specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) ·
-T-068.14 checklist: [`t068_14_phase2_e2e_gate.md`](../specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md)
+Tickets: [`.ai/tickets/`](/.ai/tickets) ·
+T-181 hub: [`documentation_v2/tickets/specs/t181_event_mod_program.md`](/documentation_v2/tickets/specs/t181_event_mod_program.md) ·
+T-068 hub: [`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md) ·
+T-068.14 checklist: [`t068_14_phase2_e2e_gate.md`](/documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md)
 
 You need: **you + one other person**, two Arma Reforger clients, one dedicated server.
 Budget **90 minutes**: ~45 of pre-flight you can do alone the day before, ~45 with your friend.
@@ -24,7 +26,7 @@ mission document parses. Neither has ever had a **player** in it: a `--mission=`
 clients, so `BuildForPlayer`, `Serialise`, `Parse`, every RPC, every screen and every stage past
 LOBBY have never executed — that limit is written down at
 `cargo xtask mod world-boot` (formerly `world-boot.sh:36-47`) and again at
-[`t181_event_mod_program.md:396-409`](../mod/t181_event_mod_program.md). One live session with two
+[`t181_event_mod_program.md:400-413`](/documentation_v2/tickets/specs/t181_event_mod_program.md). One live session with two
 real clients is the only instrument that can see any of it. It is not a formality; it is the first
 observation.
 
@@ -45,7 +47,7 @@ factory's 339+ tickets have nothing left blocking them.
 **Everything in this runbook runs on the HOST** — your Bazzite/Fedora machine, not an agent
 container. Agent shells are `debian:12` with glibc 2.36 and no C toolchain; `cargo` dies with
 `linker cc not found` and host binaries die with `GLIBC_2.39 not found`
-([`tools_v2/xtask/src/core/host_execution.rs`](../../tools_v2/xtask/src/core/host_execution.rs)). Neither means anything is broken.
+([`tools_v2/xtask/src/core/host_execution.rs`](/tools_v2/xtask/src/core/host_execution.rs)). Neither means anything is broken.
 You are the host, so just run them.
 
 Repo root is `/run/media/system/Disk_2/Projects/TBD-Reforger`. Every command below assumes you are there:
@@ -92,8 +94,8 @@ curl -s http://127.0.0.1:8080/healthz
 ```
 
 Expect a JSON body reporting database + migration state, HTTP 200
-([`health_probe.rs`](../../apps/website/api_v2/src/core/observability/health_probe.rs), mounted in
-[`core/http_router.rs`](../../apps/website/api_v2/src/core/http_router.rs)).
+([`health_probe.rs`](/apps/website/api_v2/src/core/observability/health_probe.rs), mounted in
+[`core/http_router.rs`](/apps/website/api_v2/src/core/http_router.rs)).
 A non-200, or `Connection refused`, means `cargo xtask mk rust-api` is not up — re-read T2's output; the API
 hard-fails at boot on a bad `DATABASE_URL` / `JWT_SECRET`.
 
@@ -104,7 +106,7 @@ cargo xtask db seed
 ```
 
 Grab the service token the game server will use — it is one value, not a list
-([`configuration`](../../apps/website/api_v2/src/core/configuration/mod.rs) reads `SERVICE_TOKEN`;
+([`configuration`](/apps/website/api_v2/src/core/configuration/mod.rs) reads `SERVICE_TOKEN`;
 `cargo xtask setup server-profile` / `tools_v2/xtask/src/commands/setup/server_profile.rs` explains the
 `GAME_SERVER_TOKENS` rename that used to break this):
 
@@ -121,7 +123,7 @@ Log in to the SPA without Discord:
 http://127.0.0.1:3000
 ```
 then open `http://127.0.0.1:8080/api/v1/auth/dev-login?role=admin` in the same browser
-([`developer_login.rs`](../../apps/website/api_v2/src/identity_and_access/handlers/developer_login.rs)).
+([`developer_login.rs`](/apps/website/api_v2/src/identity_and_access/handlers/developer_login.rs)).
 It mints a real session and 302s to the SPA
 callback. You should land logged in as an admin.
 
@@ -181,7 +183,7 @@ curl -s -o /tmp/artifact.json -w '%{http_code}\n' -H "Authorization: Bearer $TOK
   submitted; go back to step 3, Save Version and Submit again.
 - **`403` / `404`** — the token is not the author's or an administrator's, or the id is wrong.
 - **`500`** — the stored payload is unreadable or violates `mission.schema.json`
-  ([`validated_compiled_body`, `mission_export.rs`](../../apps/website/api_v2/src/missions/handlers/mission_export.rs)).
+  ([`validated_compiled_body`, `mission_export.rs`](/apps/website/api_v2/src/missions/handlers/mission_export.rs)).
   The body names the reason. A `mission_versions` row is immutable, so **save a new version**; you
   cannot repair the old one.
 
@@ -233,7 +235,7 @@ curl -s -w '\n%{http_code}\n' -H "Authorization: Bearer $CRED" \
 ```
 
 Expect `200` and `{"version":2,"eventId":"...","missionId":"...","assignments":[...],"slots":[...]}`
-([`game_runtime_roster.rs`](../../apps/website/api_v2/src/operations/handlers/game_runtime_roster.rs)).
+([`game_runtime_roster.rs`](/apps/website/api_v2/src/operations/handlers/game_runtime_roster.rs)).
 `403` = the event is not bound to this server; `401` = the credential is wrong or revoked.
 `slots` lists every compiled slot with the `orbatSlotId` / `eventMissionId` a deployment names.
 `assignments` is keyed on `users.arma_id` - **it will be empty until someone links their game
@@ -353,7 +355,7 @@ cat "$CFG"
 ```
 Expect `backendUrl`, `serverToken` (matching `SERVICE_TOKEN`) and `machineCredential` (the `tbdm_`
 secret, section 2.3) populated. The mod reads only these three keys; the mission is not configured here.
-Shape reference: [`Data/backend.example.json`](../../apps/mod/tbd-framework/Data/backend.example.json).
+Shape reference: [`Data/backend.example.json`](/apps/mod/tbd-framework/Data/backend.example.json).
 
 **The mission comes from a deployment.** At every boot the mod reads the deployment of this server
 (`GET /api/v1/game-runtime/deployment`), fetches its artifact and loads it only when the SHA-256 of
@@ -397,10 +399,10 @@ PY
 cat "$HOME/tbd-playtest/server.json"
 ```
 `B2C3D4E5F6A78901` is the GUID from
-[`apps/mod/tbd-framework/addon.gproj`](../../apps/mod/tbd-framework/addon.gproj) — the same one
+[`apps/mod/tbd-framework/addon.gproj`](/apps/mod/tbd-framework/addon.gproj) — the same one
 `world-boot.sh` reads out of that file at `:376`. Ports stay **2001 game / 17777 A2S**; they must
 differ or the engine logs `NETWORK (E): Unable to start replication` and exits **status 0**
-([`STAGING-SERVER.md` § Game server CLI](../mod/STAGING-SERVER.md)).
+([`STAGING-SERVER.md` § Game server CLI](/documentation_v2/runbooks/game_server_staging/README.md)).
 
 Open the ports:
 
@@ -429,7 +431,7 @@ echo "$LOG"
 ```
 
 **The server binary exits 0 even when compilation fails. Read the log, never `$?`**
-([`t181_event_mod_program.md:245`](../mod/t181_event_mod_program.md)).
+([`t181_event_mod_program.md:249`](/documentation_v2/tickets/specs/t181_event_mod_program.md)).
 
 ### 2.5 Do this ALONE, before you book the friend (10 min)
 
@@ -478,7 +480,7 @@ none needs a client.
 >    all five. **A warning naming anything else is not this, and is worth stopping for.**
 >
 > **Why it is not fixed here.** Both the validator and
-> [`.world-boot-warning-baseline`](../../.world-boot-warning-baseline) predate this wave; the
+> [`.world-boot-warning-baseline`](/.world-boot-warning-baseline) predate this wave; the
 > warnings are pre-existing and cosmetic to the session. Widening the baseline to `4`/`5` would
 > silence a real ratchet to make a doc read nicer, so T-605 refused and so does T-608. The ratchet
 > is doing its job; the runbook was the thing that was wrong, by not warning you.
@@ -591,7 +593,7 @@ grep -E '\[TBD\]\[Mission\] loaded|\[TBD\]\[Validate\] mission result=' "$LOG"
 Want `[TBD][Mission] loaded id=<uuid> name='...' slots=N source=platform` (or `source=cache`: the
 deployment's own artifact from the profile cache) and
 `[TBD][Validate] mission result=PASS errors=0 warnings=…`
-([`TBD_Log.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c)).
+([`TBD_Log.c`](/apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c)).
 `source=last-verified-cache` means the deployment could not be read - no credential, or the
 platform unreachable - and the last verified artifact runs instead. `[TBD][Mission] NO MISSION` or
 `NO MISSION YET` means nothing is deployed to this server, or it could not be loaded (the line says
@@ -610,7 +612,7 @@ on the host as a `systemctl --user` unit, polls `POST /api/v1/fleet-executor/com
 outbound HTTPS with its own **`host_agent`** machine credential, runs each claimed command
 through `systemctl --user` on `tbd-reforger.service` or the server's RCON on the loopback port,
 and reports every step to the command ledger
-([`fleet_command_ledger.md`](../verification/api_v2/fleet_command_ledger.md)). It needs the game
+([`fleet_command_ledger.md`](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)). It needs the game
 server to run as that systemd user unit — the staging and home-server shape. A server started by
 `cargo xtask mod playtest` is not a unit, so on a desk box only `list_players` would work.
 
@@ -695,7 +697,7 @@ Run the §2.4 command. Watch for, in order:
   starts; they are carrying an item elsewhere, or fewer of it, than the mission authored. §6.1.
 - `LOBBY: auto-deploy wave ON` → the picker will open and close itself ~500 ms later and you will
   see no UI and no error. `m_bAutoDeploy` must be `0`; it is set to `0` on the prefab at
-  [`TBD_GameMode.et:7`](../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et), so seeing
+  [`TBD_GameMode.et:7`](/apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et), so seeing
   `ON` means you are running a different prefab than the one in this tree.
 
 ---
@@ -718,7 +720,7 @@ version problem if `ping` works and the A2S port answers.
 
 Find your identityId in the server log — the engine prints it on authentication, and the
 comma-separated list of them is what `game.admins[]` takes
-([`deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example)):
+([`deploy.env.example`](/tools_v2/xtask/deploy/deploy.env.example)):
 
 ```bash
 grep -iE 'identityId' "$LOG" | tail -5
@@ -787,7 +789,7 @@ which is populated from `game.admins[]` — and **`game.admins[]` only exists in
 Without an admin you cannot do S13 (admin respawn) and T-181.16 cannot pass.
 
 **Nothing at all** means the chat intercept did not fire. `F8` also opens the admin screen
-([`Configs/System/Actions/TBD_AdminMenu.conf`](../../apps/mod/tbd-framework/Configs/System/Actions/TBD_AdminMenu.conf));
+([`Configs/System/Actions/TBD_AdminMenu.conf`](/apps/mod/tbd-framework/Configs/System/Actions/TBD_AdminMenu.conf));
 try that before concluding chat is dead.
 
 ---
@@ -843,10 +845,10 @@ two accounts. Then, in game, that player links their identity so the roster can 
 ```
 #tbd link <code>
 ```
-([`TBD_IdentityLink.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_IdentityLink.c)).
+([`TBD_IdentityLink.c`](/apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_IdentityLink.c)).
 `assignments` in `GET /api/v1/game-runtime/events/:id/roster` is keyed on `users.arma_id`, which
 **only** that command writes
-([`TBD_RosterLoader.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c)).
+([`TBD_RosterLoader.c`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c)).
 
 **Should see** on the next mission load:
 
@@ -895,7 +897,7 @@ section listing sides; **one** side expanded and **one** group within it, never 
 **If no screen opens at all:** check the server log for `GUI (E): Menu preset 'TBD_UILobby' not
 found!`. That was a five-screen blocker; the cause was empty `GameProjectConfig` blocks, fixed by
 listing **both** vanilla's and ours in `MenuConfigs`
-([`addon.gproj:9-22`](../../apps/mod/tbd-framework/addon.gproj)). If the error is back, that file
+([`addon.gproj:9-22`](/apps/mod/tbd-framework/addon.gproj)). If the error is back, that file
 regressed.
 
 **Client-side log line to confirm the picker armed:** `[TBD][Lobby] Tick ARMED after N attempt(s)`
@@ -1058,7 +1060,7 @@ Now have your friend die — once, terminally.
 ```
 ([`TBD_SpawnManager.OnPlayerKilled`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 Their client should go to **SPECTATOR** (`F` free cam, `←`/`→` next/prev, `TAB` roster, `V` view —
-[`Configs/System/Actions/`](../../apps/mod/tbd-framework/Configs/System/Actions)).
+[`Configs/System/Actions/`](/apps/mod/tbd-framework/Configs/System/Actions)).
 
 **Then prove one life is real:** have them try to take another seat. **Should see**
 `[TBD][Spawn] claim rejected player=<n> slot=<key> (one life spent)`
@@ -1158,7 +1160,7 @@ Both tickets close **only if every line below passes.** One FAIL closes neither.
 | P8 | No `[TBD][Loadout][TestNPC]` lines anywhere — P6 is a player entity | `grep -c TestNPC "$LOG"` → `0` |
 | P9 | The no-garment degrade path was provoked and behaved as documented (§S10) | the three log lines |
 
-Sign-off template: [`t068_14_phase2_e2e_gate.md:50-62`](../specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md).
+Sign-off template: [`t068_14_phase2_e2e_gate.md:66-78`](/documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md).
 On PASS:
 
 ```bash
@@ -1222,10 +1224,10 @@ grep -E '\[TBD\]\[Stage\]|\[TBD\] Stage' "$LOG"
 **Do not classify error ownership by message text and let the remainder pass.** Plenty of
 TBD-relevant errors carry neither a `[TBD]` tag nor a path — e.g. `Instance of class TBD_SpawnManager
 is null`, or a `Virtual Machine Exception` with no `(E)` marker. That heuristic let six genuine TBD
-failures through once ([`t181_event_mod_program.md:226-234`](../mod/t181_event_mod_program.md)).
+failures through once ([`t181_event_mod_program.md:230-238`](/documentation_v2/tickets/specs/t181_event_mod_program.md)).
 When in doubt, keep the whole log.
 
-**Filing it:** add a `queued` ticket under [`.ai/tickets/`](../../.ai/tickets) with
+**Filing it:** add a `queued` ticket under [`.ai/tickets/`](/.ai/tickets) with
 `cargo xtask ticket add`, put the evidence paths in its `summary`, then `cargo xtask ticket sync`. Put the log files under
 `.ai/artifacts/` (pipeline output only) and reference them by path.
 
@@ -1234,7 +1236,7 @@ literals `Mission loaded` and `built slot spawn`
 (`cargo xtask mod remote-logs` (formerly `remote-log-grep.sh:48`)), and **neither is emitted by the
 current code** — `"Mission loaded"` survives only inside an error string
 (`TBD_FrameworkManager.c:488` "Mission loaded but invalid"), and `built slot spawn` exists nowhere.
-The pass-criteria list in [`STAGING-SERVER.md` § Game log pass criteria](../mod/STAGING-SERVER.md) is stale for the
+The pass-criteria list in [`STAGING-SERVER.md` § Game log pass criteria](/documentation_v2/runbooks/game_server_staging/README.md) is stale for the
 same reason. Use the greps above.
 
 ---
@@ -1288,7 +1290,7 @@ T-604 did not touch that file.
 used to rest on was wrong: **`tbd-framework` IS published to the Workshop.** Unlisted, under the
 *same* id as the local gproj GUID `B2C3D4E5F6A78901`, pinned at **version 1.0.1** (2026-06-14).
 `TBD_WORKSHOP_MOD_ID` being commented out at
-[`deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example) meant only that nobody wrote the
+[`deploy.env.example`](/tools_v2/xtask/deploy/deploy.env.example) meant only that nobody wrote the
 id down — not that no publish exists. Measured 2026-07-31 on a clean profile with no `-addonsDir`:
 the engine printed `BACKEND: Addon Download started B2C3D4E5F6A78901 - TBD Framework` /
 `Downloading B2C3D4E5F6A78901 version 1.0.1` and pulled it over the network.
@@ -1306,7 +1308,7 @@ So the failure mode is **not** "the mod does not load". It is:
 
   The stale build has no subsystem tag at all, so this holds no matter how the individual
   `Print`s are worded. Pinning the check to one quoted sentence is what broke
-  [`STAGING-SERVER.md`'s stale-build check](../mod/STAGING-SERVER.md): T-604 quoted the settle line, T-605 rewrote
+  [`STAGING-SERVER.md`'s stale-build check](/documentation_v2/runbooks/game_server_staging/README.md): T-604 quoted the settle line, T-605 rewrote
   that `Print` in the same wave, and for a week the stale-build detector told operators on the
   *correct* build that their expected string was missing. Match prefixes, not sentences.
 - **On the friend's client, always:** it resolves `game.mods[]` from the Workshop and gets 1.0.1
@@ -1316,7 +1318,7 @@ So the failure mode is **not** "the mod does not load". It is:
 **First thing to check when the friend connects:** have them type `#tbd` in chat. The current
 build answers with the full command list; 1.0.1 does not have that command. If they get nothing
 and you get the list, you have the skew — **re-publish `tbd-framework` from Workbench**
-([`STAGING-SERVER.md` §Dev loop](../mod/STAGING-SERVER.md)) so the Workshop copy matches the
+([`STAGING-SERVER.md` §Dev loop](/documentation_v2/runbooks/game_server_staging/README.md)) so the Workshop copy matches the
 checkout, and restart. Same test doubles as §6.4's first probe.
 
 ### 6.3 Radio automatic tuning cannot work on this world
@@ -1328,7 +1330,7 @@ Net **assignment and display still work**; automatic **tuning** does not, and th
 honestly rather than pretending
 ([`TBD_RadioComponent.c:135`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioComponent.c)).
 The fix is a Workbench world edit, not a code change
-([`t181_event_mod_program.md:177-188`](../mod/t181_event_mod_program.md)). **Dial frequencies in by
+([`t181_event_mod_program.md:181-192`](/documentation_v2/tickets/specs/t181_event_mod_program.md)). **Dial frequencies in by
 hand.** Do not file this.
 
 ### 6.4 `modded class SCR_PlayerController` runtime coexistence has never been observed
@@ -1337,7 +1339,7 @@ Six blocks now exist (`TBD_MissionBrowser`, `TBD_BriefingController`, `TBD_Lobby
 `TBD_SpectatorHost`, `TBD_MarkerController`, `TBD_RadioController`). They compile and cross-call
 fine at N=6, but **no gate can see runtime coexistence** — `world-boot.sh` boots with zero players
 and every one of these only does anything with a client connected
-([`t181_event_mod_program.md:508-525`](../mod/t181_event_mod_program.md)). **This session is the
+([`t181_event_mod_program.md:512-529`](/documentation_v2/tickets/specs/t181_event_mod_program.md)). **This session is the
 first observation.** If one screen works and another silently does nothing, this is the first thing
 to suspect — say so in the finding.
 
@@ -1364,7 +1366,7 @@ not be alarmed. `executor: workbench`; the real fix is an in-game UI field.
 - **`SCR_BaseGameMode.OnPlayerDisconnected` deletes the disconnecting player's controlled entity** —
   i.e. our materialised slot body. `SCR_ReconnectComponent` would reserve it, but the re-apply hangs
   off a join path TBD swallows. If S14's reconnect leaves a hole in the world where a body was, this
-  is why ([`t181_event_mod_program.md:309-312`](../mod/t181_event_mod_program.md)).
+  is why ([`t181_event_mod_program.md:313-316`](/documentation_v2/tickets/specs/t181_event_mod_program.md)).
 - **`ScriptCallQueue.Remove` cancels by FUNCTION, not by arguments**, and dedicated-server player ids
   are recycled. Deferred per-player callbacks carry a connection epoch to stop a fresh joiner being
   deployed into a dead player's slot. If a joiner lands in someone else's seat, that epoch stamp is

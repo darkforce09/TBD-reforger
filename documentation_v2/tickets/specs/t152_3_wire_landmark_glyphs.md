@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-152.3 — Wire landmark building glyphs (residency + badges)
 
 **Ticket:** T-152 · **Slice:** T-152.3  
@@ -19,8 +21,8 @@ Expand **`badge_icon_key`** and **`rebuild_glyph_lookup_from_prefabs`** so **lan
 
 | Issue | Evidence |
 |-------|----------|
-| Glyph lookup **skips buildings** | [`residency.rs`](../../../crates/map-engine-core/src/world/residency.rs) L276–316: only `tree`/`vegetation`/`prop`/`rockLarge` enter `glyph_by_u16`; `building` → `continue` |
-| Badges only for **3 classes** | [`glyph_math.rs`](../../../crates/map-engine-core/src/world/glyph_math.rs) L127–135: `military`, `tower`, `bunker` |
+| Glyph lookup **skips buildings** | [`residency.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/world/residency.rs) L276–316: only `tree`/`vegetation`/`prop`/`rockLarge` enter `glyph_by_u16`; `building` → `continue` |
+| Badges only for **3 classes** | [`glyph_math.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/world/glyph_math.rs) L127–135: `military`, `tower`, `bunker` |
 | Lighthouse reads as **white fill** only | `fill_color("lighthouse")` → `[235,235,235,220]` L81; no center icon at badge zoom |
 | `building-*` icons exist in atlas after T-152.2 but **never instanced** | Manifest keys unused by residency compose |
 
@@ -51,7 +53,7 @@ Expand **`badge_icon_key`** and **`rebuild_glyph_lookup_from_prefabs`** so **lan
 
 | # | Decision | Rationale |
 |---|----------|-----------|
-| L1 | `BUILDING_BADGE_MIN_ZOOM = 1.0` from [`lod_gates.rs`](../../../crates/map-engine-core/src/world/lod_gates.rs) — unchanged | N2 |
+| L1 | `BUILDING_BADGE_MIN_ZOOM = 1.0` from [`lod_gates.rs`](https://github.com/darkforce09/TBD-reforger/blob/3f7adae994f70e7a879c600e443563320b34d23f/crates/map-engine-core/src/world/lod_gates.rs) — unchanged | N2 |
 | L2 | Landmark glyph size = `badge_size_meters()` + `BADGE_SIZE_MIN_PX` clamp (same as military badge) | Visual parity |
 | L3 | Tint = white `[255,255,255,255]` for non-tintable building icons; tree tint path unchanged | manifest `tintable:false` |
 | L4 | Draw order: footprints → outlines → trees → props → **landmark/badges** → grid | T-151.5 L8 |

@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-091.1 — DEM loader + sampleElevation
 
 **Ticket:** T-091 · **Slice:** T-091.1  
@@ -38,7 +40,7 @@ Load the committed Everon 16-bit DEM PNG into a CPU elevation cache and expose `
 
 ## Problem
 
-No `dem/` module exists. Editor cannot sample terrain height. [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts) points at `/map-assets/everon/manifest.json` but nothing fetches or decodes the PNG.
+No `dem/` module exists. Editor cannot sample terrain height. [`terrains.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/coords/terrains.ts) points at `/map-assets/everon/manifest.json` but nothing fetches or decodes the PNG.
 
 ---
 
@@ -52,7 +54,7 @@ No `dem/` module exists. Editor cannot sample terrain height. [`terrains.ts`](..
 | `DemController.ts` | Async load lifecycle; degraded flat mode + sonner toast; module API for T-091.2 |
 | `index.ts` | Barrel: `loadDemForTerrain`, `sampleElevation`, `isDemReady`, `isDemDegraded` |
 
-Wire **`DemController`** from [`TacticalMap.tsx`](../../../apps/website/frontend/src/features/tactical-map/TacticalMap.tsx) when `terrain` prop is set (re-load on terrain change — parent already uses `key={terrainId}` on remount).
+Wire **`DemController`** from [`TacticalMap.tsx`](https://github.com/darkforce09/TBD-reforger/blob/c52d1fc874651c9f0266db9b7a3f04f986c0e09e/apps/website/frontend/src/features/tactical-map/TacticalMap.tsx) when `terrain` prop is set (re-load on terrain change — parent already uses `key={terrainId}` on remount).
 
 ---
 
@@ -110,7 +112,7 @@ World bounds from manifest `worldBounds` `[0, 0, 12800, 12800]`. Pixel `(0,0)` =
 
 ## URL resolution
 
-From [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts):
+From [`terrains.ts`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/src/features/tactical-map/coords/terrains.ts):
 
 ```text
 manifestUrl: /map-assets/everon/manifest.json
@@ -146,7 +148,7 @@ export function sampleElevation(x: number, y: number): number
 
 ## Reference implementation (must match)
 
-Canonical logic: [`packages/tbd-schema/scripts/lib/dem-sample.mjs`](../../../packages/tbd-schema/scripts/lib/dem-sample.mjs)
+Canonical logic: [`packages/tbd-schema/scripts/lib/dem-sample.mjs`](https://github.com/darkforce09/TBD-reforger/blob/4b695ffeacd7b9e9444c8ee95cefa0234e5ee144/packages/tbd-schema/scripts/lib/dem-sample.mjs)
 
 | Function | Port to |
 |----------|---------|
@@ -200,7 +202,7 @@ Requires `git lfs pull` if PNG missing locally.
 
 ### Vitest setup
 
-[`package.json`](../../../apps/website/frontend/package.json) — add devDependencies + scripts:
+[`package.json`](https://github.com/darkforce09/TBD-reforger/blob/9cc4364fdef89ecd5802e3529621ae1cc12956e3/apps/website/frontend/package.json) — add devDependencies + scripts:
 
 ```json
 "scripts": {
@@ -308,7 +310,7 @@ for (const row of a.anchors) console.log(row.id, sampleElevationMeters(row.x, ro
 
 ### S8 Arland stub unit test (required)
 
-`loadDemForTerrain('arland')` with committed [`arland/manifest.json`](../../../packages/map-assets/arland/manifest.json) → `isDemDegraded() === true`, `isDemReady() === false`, no PNG fetch, no throw, **toast with Retry** shown.
+`loadDemForTerrain('arland')` with committed [`arland/manifest.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/map-assets/arland/manifest.json) → `isDemDegraded() === true`, `isDemReady() === false`, no PNG fetch, no throw, **toast with Retry** shown.
 
 ### Acceptance criteria
 
@@ -337,7 +339,7 @@ for (const row of a.anchors) console.log(row.id, sampleElevationMeters(row.x, ro
 
 ## TypeScript types (`terrainManifest.ts`)
 
-Mirror [`terrain-manifest.schema.json`](../../../packages/tbd-schema/schema/terrain-manifest.schema.json) minimally:
+Mirror [`terrain-manifest.schema.json`](https://github.com/darkforce09/TBD-reforger/blob/a0c9b9eba3915e0aa0dc54e745372ebb59c8f191/packages/tbd-schema/schema/terrain-manifest.schema.json) minimally:
 
 ```typescript
 export interface TerrainManifest {

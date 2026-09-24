@@ -1,3 +1,5 @@
+**Status:** live
+
 # Staging server — 192.168.0.140
 
 Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Reforger dedicated server** on `sam@192.168.0.140`.
@@ -445,7 +447,7 @@ Flow: rsync → profile + addon symlink → Docker rebuild → game-runtime smok
 Server Control's start, stop, restart and player-list commands (`POST /api/v1/servers/{id}/commands`)
 are executed on the host by `fleet-host-agent` (`apps/fleet_host_agent`), a `systemctl --user` unit
 that polls the API outbound with its own **`host_agent`** machine credential and reports each step
-to the command ledger (`docs/verification/api_v2/fleet_command_ledger.md`). The game runtime
+to the command ledger (`documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md`). The game runtime
 executes `broadcast`, `kick` and `load_mission` with its `mod_runtime` credential; each executor
 claims only its own actions, so the two credentials are separate.
 
@@ -515,7 +517,7 @@ Match the **prefix**, not the sentence. Everything after each prefix is expected
 - **No** `Can't compile`, `Unknown class`, `RequestSpawn failed`.
 - The loadout tag is **`[TBD][Loadout][Slot]`**. It is **not** `[TBD][Loadout][Player]` — that
   string appears in **no `Print` anywhere in the codebase**, although the T-068.14 spec
-  (`docs/specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md:43`) and
+  (`documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md:45`) and
   `TBD_LoadoutEquipComponent.c:17` both still name it. Grepping for `[Player]` returns **zero
   lines on a fully working loadout pass** — measured 0 vs **93** `[Slot]` lines on the boot above.
 - Slot-count expectations (`18×`) are mission-specific; the golden that produced 18 is
@@ -572,7 +574,7 @@ cargo xtask mod playtest \
 ```
 
 It stages the profile, deploys your mission's approved artifact to a playtest server row with a
-fresh `mod_runtime` credential (see `docs/platform/PLAYTEST_RUNBOOK.md` §2.4), symlinks the addon dir,
+fresh `mod_runtime` credential (see `documentation_v2/runbooks/two_client_playtest/README.md` §2.4), symlinks the addon dir,
 renders `server.json`, launches with **both** flags, then **waits for and asserts** the room
 registration and that the *local* addon won before printing anything. On success it prints the
 join address and the Direct Join Code parsed out of that boot's own log. Add `--dry-run` to see
@@ -808,4 +810,4 @@ all fine.
 | `cargo xtask setup server-profile` | Profile + backend config (`machineCredential` from `TBD_MACHINE_CREDENTIAL`) |
 | `cargo xtask setup client-addons` | Client mod symlink + Steam launch options |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
-| [`tools_v2/xtask/deploy/systemd/tbd-reforger.service`](../../tools_v2/xtask/deploy/systemd/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |
+| [`tools_v2/xtask/deploy/systemd/tbd-reforger.service`](/tools_v2/xtask/deploy/systemd/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |

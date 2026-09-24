@@ -1,3 +1,5 @@
+**Status:** live
+
 # TBD Reforger — Discord Identity Link Modal UI Functional Specification
 
 **Target Platform:** Bohemia Interactive Enfusion Engine (Arma Reforger) / TBD Mod Framework  

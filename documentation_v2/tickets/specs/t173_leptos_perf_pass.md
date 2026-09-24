@@ -1,8 +1,10 @@
+**Status:** frozen record
+
 # T-173 — Leptos SPA + Mission Creator performance pass
 
 **Status:** SHIPPED @ tag **T-173** / `dddf3158` · **Branch:** `main`  
 **Depends on:** T-172 (shipped)  
-**Verify:** [`.ai/artifacts/t173_verify_log.md`](../../.ai/artifacts/t173_verify_log.md) · inventory [`.ai/artifacts/t173_inventory.md`](../../.ai/artifacts/t173_inventory.md)  
+**Verify:** [`.ai/artifacts/t173_verify_log.md`](/.ai/artifacts/t173_verify_log.md) · inventory [`.ai/artifacts/t173_inventory.md`](/.ai/artifacts/t173_inventory.md)  
 **Scope shipped:** `apps/website/frontend/**`, `crates/map-engine-*`, Makefile serve path. **Not** `apps/mod/`. **Not** T-170.
 
 **No silent deferrals.** Soft “later / optional / fold forward” forbidden unless the operator explicitly says `defer X` / `skip X`.
@@ -17,7 +19,7 @@ Also: local `cargo xtask mk leptos` is `trunk serve` **without** `--release` (de
 
 **Operator 2026-07-18 (after `trunk serve --release`):** release “definitely made a big improvement” but is **“nowhere near good enough”** / **“not as good as it was before”** (pre-rewrite React MC). Later same session: acceptance is **better than pre-rewrite**, not “near” / “as good as”. → **P8 is necessary, not sufficient.** Phases 2–5 must beat the React baseline on the **release** serve path; do not mark P1–P5 done because debug→release alone felt better.
 
-**Evidence:** [`.ai/artifacts/t173_operator_screens/01_mc_stutter_tree_lines.png`](../../.ai/artifacts/t173_operator_screens/01_mc_stutter_tree_lines.png) (post-T-172 MC: CUR Z live, glyphs on map, dashed hard-to-see tree lines).
+**Evidence:** [`.ai/artifacts/t173_operator_screens/01_mc_stutter_tree_lines.png`](/.ai/artifacts/t173_operator_screens/01_mc_stutter_tree_lines.png) (post-T-172 MC: CUR Z live, glyphs on map, dashed hard-to-see tree lines).
 
 ## Goal
 

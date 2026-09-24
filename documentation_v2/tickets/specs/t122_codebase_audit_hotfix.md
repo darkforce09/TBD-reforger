@@ -1,7 +1,9 @@
+**Status:** frozen record
+
 # T-122 — Codebase audit hotfix (single bundle)
 
 **Ticket:** T-122 · **Executor:** claude-code · **Status:** **shipped** @ `f131770` (tag **T-122**)  
-**Authority:** [`CODEBASE_AUDIT_2026.md`](../CODEBASE_AUDIT_2026.md)
+**Authority:** [`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md)
 
 ## In one sentence
 
@@ -24,4 +26,4 @@ cargo xtask db test-it
 cd apps/website/frontend && npm run build && npm run lint
 ```
 
-See [`CODEBASE_AUDIT_2026.md`](../CODEBASE_AUDIT_2026.md) §Verification for deferred rationale and mod Workbench note.
+See [`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md) §Verification for deferred rationale and mod Workbench note.

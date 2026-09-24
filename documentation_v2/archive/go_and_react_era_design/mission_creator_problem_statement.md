@@ -1,3 +1,5 @@
+**Status:** archived
+
 # Mission Creator: Technical Architecture & Problem Statement
 
 ## 1. Executive Summary
@@ -60,4 +62,4 @@ Before a single line of React or WebGL is written, the following assets must be 
 2. **The Map Assets:** High-resolution top-down imagery of Everon/Arland to serve as the map tiles.
 3. **The DEM Data:** The raw 16-bit heightmap data extracted from the Enfusion engine for elevation tracking.
 
-Open work: [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · full table [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
+Open work: [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · full table [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md)

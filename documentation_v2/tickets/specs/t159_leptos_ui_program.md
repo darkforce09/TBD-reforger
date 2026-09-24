@@ -1,6 +1,8 @@
+**Status:** frozen record
+
 # T-159 — Leptos UI rewrite program
 
-> **T-171 note:** paths in this hub that say `apps/website-leptos/` or treat `apps/website/frontend/` as the deleted React tree **pre-date the T-171 nest**. Live SPA = `apps/website/frontend/` (pkg `website-frontend`). See [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+> **T-171 note:** paths in this hub that say `apps/website-leptos/` or treat `apps/website/frontend/` as the deleted React tree **pre-date the T-171 nest**. Live SPA = `apps/website/frontend/` (pkg `website-frontend`). See [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
 
 **Status:** program hub · **MODE (2026-07-17): single-session solo finish** — the Fable 5 audit +
 finish plan was operator-approved; Claude Code executes code + verify logs + docs + commits directly
@@ -10,7 +12,7 @@ finish plan was operator-approved; Claude Code executes code + verify logs + doc
 React `apps/website/frontend/` was deleted at T-159.29.3; Leptos was then at `apps/website-leptos/`
 and nested to `apps/website/frontend/` at **T-171**. Deletion phase
 `.29.1` (V oracle freeze, 25/25) → `.29.2` (census pin → cargo test) → `.29.3` (delete + CI/Make/
-codegen purge) — [`t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_delete_verify_log.md).
+codegen purge) — [`t159_29_delete_verify_log.md`](/.ai/artifacts/t159_29_delete_verify_log.md).
 **Residual (operator):** the prod default flip only (`SPA_DIST_DIR` + OAuth origin + soak). ·
 **Latest:** **T-159.29.3** · **Worktree (historical):** `.ai/artifacts/worktrees/TBD-T-159/`
 
@@ -44,20 +46,20 @@ codegen purge) — [`t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_
 
 ### Verify logs (recent)
 
-- [`.ai/artifacts/t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_delete_verify_log.md) —
+- [`.ai/artifacts/t159_29_delete_verify_log.md`](/.ai/artifacts/t159_29_delete_verify_log.md) —
   the React deletion phase (.29.1 freeze 25/25 · .29.2 census 234 tests · .29.3 delete + purge)
-- [`.ai/artifacts/t159_27_verify_log.md`](../../.ai/artifacts/t159_27_verify_log.md) — Arsenal:
+- [`.ai/artifacts/t159_27_verify_log.md`](/.ai/artifacts/t159_27_verify_log.md) — Arsenal:
   15/15 editor smokes, 46 native tests, clippy 12 = baseline, wasm 7,153,883 B; native `cargo test`
   red → green (MissionEnv relocation)
-- [`.ai/artifacts/t159_29_verify_log.md`](../../.ai/artifacts/t159_29_verify_log.md) — cutover
+- [`.ai/artifacts/t159_29_verify_log.md`](/.ai/artifacts/t159_29_verify_log.md) — cutover
   build-out (SPA serve live table, CI job, oracle freeze; flip/delete HELD)
-- [`.ai/artifacts/t159_28_verify_log.md`](../../.ai/artifacts/t159_28_verify_log.md) — map-asset
+- [`.ai/artifacts/t159_28_verify_log.md`](/.ai/artifacts/t159_28_verify_log.md) — map-asset
   host hillshade MVP
-- [`.ai/artifacts/t159_24_verify_log.md`](../../.ai/artifacts/t159_24_verify_log.md) — prep gates
+- [`.ai/artifacts/t159_24_verify_log.md`](/.ai/artifacts/t159_24_verify_log.md) — prep gates
   11/11 smokes ×2 (baseline + post-change), stash-diff zero new warnings, spike table
-- [`.ai/artifacts/t159_22_1_verify_log.md`](../../.ai/artifacts/t159_22_1_verify_log.md) — CDP
+- [`.ai/artifacts/t159_22_1_verify_log.md`](/.ai/artifacts/t159_22_1_verify_log.md) — CDP
   double-fire; core invariant held
-- [`.ai/artifacts/t159_22_verify_log.md`](../../.ai/artifacts/t159_22_verify_log.md) — docks;
+- [`.ai/artifacts/t159_22_verify_log.md`](/.ai/artifacts/t159_22_verify_log.md) — docks;
   **§defect conclusion superseded** by .22.1
 
 ### Process (supersedes the per-slice Mode B pace note)

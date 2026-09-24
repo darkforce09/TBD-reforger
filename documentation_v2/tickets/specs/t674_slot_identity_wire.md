@@ -1,3 +1,5 @@
+**Status:** frozen record
+
 # T-674 — Slot identity reaches the wire (T-216 follow-on)
 
 Program T-674 · slices T-674.1 (engine emit) → T-674.2 (mod reader + validator 1.3) → T-674 (closure). Schema widened in T-706.
