@@ -133,11 +133,11 @@ the base brief names, outside the repository.
 | P3-4 | 3 | Tooling fix: the documentation gates accept `--with-untracked` | done (≈341k tokens) | this commit | One `DocumentationGateArgs` (`--path`, `--with-untracked`) and one `GateRequest`; the tree reader adds `git ls-files --others --exclude-standard`; summaries say `--with-untracked (untracked files included)`. Caveat for writers: the flag also sees another session's untracked files (4,558 today) — scope `--path` to your slice and ignore failures in foreign untracked paths |
 | P3-3 | 3 · pilot | Pilot verifier over R01a, R01b, F01/F01b | done (≈325k tokens) | this commit | FIX-LIST 11 + a 12-rule STYLE-LOCK. Claims: R01a 38/0 wrong, R01b ~60/0, F01b ~60/1; all 66 pilot files conform on structure; scope clean. Item 11 (R05 at its wave): replace F01b's route facts, state texts and "lists no calls" lines with links to the page READMEs' Routes, Data and States |
 | P3-3f | 3 · pilot | Fix run: P3-3 FIX-LIST items 1–10; write `documentation_v2/refactor_style_lock.md` | done (≈486k tokens) | this commit | All 11 applied; style lock rules 1–13 + don't-copy list, 20 models script-checked; also corrected 4 pilot contradictions (low-FPS warning timing, audit-row rule, glossary link placement, "event" wording) |
-| P3-3g | 3 | Fix run: `documentation_v2/README.md` Contents covers the new program records | pending | — | — |
-| R02 | 4 · W4.1 | README writer: 15 folders — `apps/website/api_v2/src/missions` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
-| R03 | 4 · W4.1 | README writer: 14 folders — `apps/website/frontend` (see `refactor_phase4_slices.tsv`) | pending | — | — |
-| R04 | 4 · W4.1 | README writer: 18 folders — `apps/website/frontend/src/v2/pages (folder only)` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
-| R05.1 | 4 · W4.1 | README writer: 11 folders — `apps/website/frontend/src/v2/pages/account` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| P3-3g | 3 | Fix run: `documentation_v2/README.md` Contents covers the new program records | done (≈85k tokens) | this commit | The ten `refactor_*` file lines collapsed into one `refactor_*` glob (future records need no edit); the root README passes readme-coverage |
+| R02 | 4 · W4.1 | README writer: 15 folders — `apps/website/api_v2/src/missions` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
+| R03 | 4 · W4.1 | README writer: 14 folders — `apps/website/frontend` (see `refactor_phase4_slices.tsv`) | running | — | — |
+| R04 | 4 · W4.1 | README writer: 18 folders — `apps/website/frontend/src/v2/pages (folder only)` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
+| R05.1 | 4 · W4.1 | README writer: 11 folders — `apps/website/frontend/src/v2/pages/account` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
 | V4.1 | 4 · W4.1 | Wave verifier over W4.1's writers | pending | — | — |
 | R05.2 | 4 · W4.2 | README writer: 13 folders — `apps/website/frontend/src/v2/pages/administration` (see `refactor_phase4_slices.tsv`) | pending | — | — |
 | R06.1 | 4 · W4.2 | README writer: 16 folders — `apps/website/frontend/src/v2/apps/editor/ui (folder only)` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |

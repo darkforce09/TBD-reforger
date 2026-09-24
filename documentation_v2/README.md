@@ -11,27 +11,20 @@ disagree.
 
 ```text
 documentation_v2/
-├── archive/                         frozen history, one folder per topic
-├── contracts_v2/                    documents on the contracts in contracts_v2/
-├── design_system/                   design tokens, typography, colour and symbology
-├── glossary.md                      the project's terms and abbreviations
-├── known_bugs/                      the live registry of known bugs
-├── mod/                             documents on the Enfusion mod suite in apps/mod/
-├── pending_merge/                   sources a writer is merging into live documents
-├── refactor_followup_tickets.md     program record: tickets the documentation program filed
-├── refactor_move_manifest/          program record: the manifest's summary and checkpoint answers
-├── refactor_move_manifest.tsv       program record: target, action and writer of each moved file
-├── refactor_orphan_spec_links.tsv   program record: the ticket each orphan spec links to
-├── refactor_pin_catalogue.md        program record: code and tool pins on documentation paths
-├── refactor_program_plan.md         program record: the documentation program's plan
-├── refactor_progress_checkpoint.md  program record: the program's resume file and roster
-├── refactor_ticket_rewrites.tsv     program record: ticket fields rewritten to the new paths
-├── refactor_writing_brief.md        program record: the brief every program writer reads
-├── runbooks/                        operator procedures: development, deployment, gates, playtests
-├── standards/                       documentation and code standards, and the templates
-├── tickets/                         ticket specs and plans, flat, frozen once the ticket closes
-├── tools_v2/                        documents on the developer tools in tools_v2/
-└── website/                         documents on the website in apps/website/
+├── archive/                 frozen history, one folder per topic
+├── contracts_v2/            documents on the contracts in contracts_v2/
+├── design_system/           design tokens, typography, colour and symbology
+├── glossary.md              the project's terms and abbreviations
+├── known_bugs/              the live registry of known bugs
+├── mod/                     documents on the Enfusion mod suite in apps/mod/
+├── pending_merge/           sources a writer is merging into live documents
+├── refactor_*               program records: plan, brief, style lock, progress and working lists
+├── refactor_move_manifest/  program record: the manifest's summary and checkpoint answers
+├── runbooks/                operator procedures: development, deployment, gates, playtests
+├── standards/               documentation and code standards, and the templates
+├── tickets/                 ticket specs and plans, flat, frozen once the ticket closes
+├── tools_v2/                documents on the developer tools in tools_v2/
+└── website/                 documents on the website in apps/website/
 ```
 
 ## How it works
