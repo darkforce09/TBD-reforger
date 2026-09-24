@@ -1,13 +1,30 @@
-# After-Action Report (`v2/apps/aar`)
+# After-action review workspace
 
-An empty scaffold. The post-match forensics workspace will live here: replaying a completed match
-from server telemetry — player positions, vehicle routes, engagements and objective captures — on
-a playback clock, with the map read-only underneath it.
+The folder reserved for the after-action review workspace, a replay of a finished match from
+server telemetry over a read-only map. It holds no code: only this README.
 
-**Depended on by:** nothing yet. `v2/apps/mod.rs` declares only `debug` and `editor`, so no code
-in this directory is compiled, and `app_routes.rs` carries no replay route.
+## Contents
 
-**Boundary, and the reason it is written down before there is code:** a replay authors nothing. It
-needs the map engine's camera, world streaming, symbology and picking with no mission document
-open, no undo stack and no armed placement — so `website-map-engine`'s `editing/` must not acquire
-editor-only assumptions that would make its tools unusable without an authoring session.
+```text
+apps/website/frontend/src/v2/apps/aar/
+```
+
+## Routes
+
+None: the folder serves no route, and `apps/website/frontend/src/app_routes.rs` has no replay
+route.
+
+## Public surface
+
+None: `apps/website/frontend/src/v2/apps/mod.rs` declares no `aar` module, so nothing here
+compiles.
+
+## Boundaries
+
+- Depends on: nothing.
+- Used by: nothing.
+- Rules: a workspace added here follows the rules of
+  `apps/website/frontend/src/v2/apps/`: it declares its module in that folder's `mod.rs`, imports
+  from `crate::v2::core` and `website_map_engine`, and never from a page or a sibling workspace;
+  its route needs a row in both `apps/website/frontend/src/app_routes.rs` and
+  `apps/website/frontend/src/router.rs`.
