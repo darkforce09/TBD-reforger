@@ -1,0 +1,11 @@
+id = "T-1032"
+kind = "work"
+title = "Fix multi-folder drop onto the dock header moving one folder"
+summary = "The left dock header's root drop (dock_left/view/full_dock.rs:17) completes the map engine's single-id latch (layer_drag.rs:76-85), armed with only the anchor at outliner/tree/single_row.rs:344, so a multi-folder drag moves one folder, against outliner/mod.rs:10-12. T-946.86 covers folder drops only."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:25:40Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

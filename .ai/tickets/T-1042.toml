@@ -1,0 +1,11 @@
+id = "T-1042"
+kind = "work"
+title = "Rename ticket ids out of code names and UI strings"
+summary = "54 test paths carry ticket ids (CLAUDE.md law 4): 38 frontend, e.g. apps/editor/tests/t090_12_world_los_wiring.rs, and 16 map-engine, e.g. streaming/memory/budget/t938_6/; so do 167 fn/mod/const names (core/ui/mod.rs:45-46) and UI or log text: factions_panel.rs:96 (cancelled T-078), toolbar_and_status.rs:205, debug/world_los.rs:60, and 7 more."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T10:28:21Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

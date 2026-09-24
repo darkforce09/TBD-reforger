@@ -1,0 +1,11 @@
+id = "T-1035"
+kind = "work"
+title = "Fix arsenal paper-doll hotspots ignoring Enter and Space"
+summary = 'editor/ui/arsenal/panels.rs:287-289 calls the paper-doll hotspots keyboard-accessible, but each <g role="button" tabindex="0"> (:381-389) has only an on:click (:387), so Enter and Space do nothing on a focused hotspot. Handle both keys like the click.'
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:26:25Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-1038"
+kind = "work"
+title = "Fix modpack editor drag handles that cannot reorder addons"
+summary = "doctrine_and_info/modpacks/pack_editor.rs:140-143 draws a drag_indicator handle on every addon row and :3 calls the rows reorderable, but no handler moves a row; pack_edit.rs:86 saves each row's index as sort_order, so order changes only by remove and re-add."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:27:11Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

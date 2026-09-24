@@ -1,0 +1,11 @@
+id = "T-1033"
+kind = "work"
+title = "Fix the editor status bar OPEN button that does nothing"
+summary = "The status bar's OPEN button (ui/docks/toolbelt/toolbar_and_status.rs:223-231) has no click handler; tests/toolbelt/status_bar.rs:275-277 calls its action undecided and toolbelt/README.md:31 says it has none. Decide its action and wire it, or remove it. T-721 covers its z-order."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:25:55Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

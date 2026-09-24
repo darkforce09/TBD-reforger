@@ -1,0 +1,11 @@
+id = "T-1041"
+kind = "work"
+title = "Remove the doc-audit grandfather allowlist (law 7)"
+summary = "apps/website/frontend/src/v2/tests/doc_audit/allowlist.rs:13 keeps a dated grandfather table (empty) that mod.rs:363-437 applies to exempt files from the 500-line, inline-test and ticket-comment rules (:332,349,356); CLAUDE.md law 7 forbids any allowlist. Delete the mechanism and its tests (mod.rs:463-626)."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T10:27:58Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

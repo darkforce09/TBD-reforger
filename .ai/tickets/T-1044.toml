@@ -1,0 +1,11 @@
+id = "T-1044"
+kind = "work"
+title = "Rewrite api_v2 missions doc comments citing the unrouted /compiled route"
+summary = "Doc comments cite GET /missions/:id/compiled, which no route serves: services/mission_compile.rs:29-30,92 (links nonexistent get_compiled_mission), contract/zone_quantisation.rs:161,173,176, handlers/mission_versions.rs:86,280 and 15 more, with a test pinning it (mission_compile_diagnostics.rs:162-165); plus cargo_catalog.rs:8-17, validation/mod.rs:3-4, models/mod.rs:5-6, seeds/content_golden.sql:5-6."
+class = "docs"
+status = "idea"
+created_at = "2026-09-24T10:28:52Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-1031"
+kind = "work"
+title = "Add kills, deaths and K/D to the deployments page"
+summary = 'pages/operations/deployments/page.rs:149 always renders the "No telemetry recorded" placeholder. The API (member_service_record.rs:255-263) and DTO (dto/events.rs:197-205) already carry kills, deaths and K/D; render them once telemetry flows. page.rs:12-13 and tests/deployments.rs:126 ("Until T-397") still say only the count is served.'
+class = "feature"
+status = "idea"
+created_at = "2026-09-24T10:25:25Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

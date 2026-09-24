@@ -1,0 +1,11 @@
+id = "T-1037"
+kind = "work"
+title = "Fix content manager fetching posts before the admin gate"
+summary = "administration/content_manager/page.rs:47-64 creates the GET /cms/announcements?limit=100 resource in ContentManagerPage, outside the AdminGate at :118, so it fires for every visitor, even before the session loads; the other admin pages fetch inside an Inner component under the gate."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:26:56Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

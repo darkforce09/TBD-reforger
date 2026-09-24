@@ -1,0 +1,11 @@
+id = "T-1043"
+kind = "work"
+title = "Remove dead frontend code: toolbelt shim, refile branch, unused helpers"
+summary = "Delete dead code: BottomToolbelt (ui/docks/toolbelt/bottom_toolbelt.rs:7, re-exported at shell/eden_chrome.rs:18), orbat_refile branches full_dock.rs:149 always disables (single_row.rs:59-84,438-451), Fetched/ApiFailure (core/api/client/), personnel/role_dialog.rs:13-18,66-75, test-only cargo_defaults_by_character, and page_effects.rs:43-61's copy of arrange.rs's chord table. T-851 covers placed_vehicles_panel."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T10:28:37Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

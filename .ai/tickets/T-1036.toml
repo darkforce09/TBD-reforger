@@ -1,0 +1,11 @@
+id = "T-1036"
+kind = "work"
+title = "Fix sign-in callback return path, status text and error copy"
+summary = """account/auth_callback/page.rs:107-110 says it returns to where sign-in started, but :174-176 always loads / and nothing records a start path; it quotes "Completing sign in…" while :212 shows "Completing sign-in…"; auth_error_copy (:22-34) lacks the API's server_error and oauth_host_mismatch (discord_oauth.rs:159-227, oauth_host_guard.rs:126-129)."""
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:26:41Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

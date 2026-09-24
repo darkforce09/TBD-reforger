@@ -1,0 +1,11 @@
+id = "T-1045"
+kind = "work"
+title = "Rewrite stale frontend doc comments naming missing code and behaviour"
+summary = "Frontend doc comments contradict code: navigation/layout.rs:14 (four chromeless routes, not one), apps/mod.rs:3-5 and v2/mod.rs:4-6 (four apps; two exist), docks/mod.rs:17-18 (seven right-dock tabs), inspector headers naming map_engine_core and operations::update_environment, 23 dock_left doc blocks missing first lines, and 17 more."
+class = "docs"
+status = "idea"
+created_at = "2026-09-24T10:29:07Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

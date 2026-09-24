@@ -1,0 +1,11 @@
+id = "T-1040"
+kind = "work"
+title = "Fix hand-copied cargo container table and diverged capacity caveat"
+summary = "map-engine data/scenario/validation/wire_safety/scan.rs:241-242 hand-copies CARGO_CONTAINERS, claiming it byte-identical to editor/arsenal/rules/cargo_capacity_and_delivery.rs:10 with no test holding them equal, and its CARGO_CAPACITY_CAVEAT (:244-245) differs from the frontend's (:136), so Save and Arsenal export explain one fault differently. The frontend already links the map engine."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:27:42Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

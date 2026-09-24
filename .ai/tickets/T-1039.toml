@@ -1,0 +1,11 @@
+id = "T-1039"
+kind = "work"
+title = "Fix world line-of-sight bench frame pump running after unmount"
+summary = "apps/debug/world_los/live/mount.rs:19 creates the disposed flag and :79 starts RafPump, but nothing sets the flag on unmount, so the rAF loop (graphics-engine/src/loop/pump.rs:109) keeps running after leaving the bench; building_viewer/live/wiring.rs:453 sets it in on_cleanup. mount.rs:240-241,275-276 also leak window listeners."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:27:27Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

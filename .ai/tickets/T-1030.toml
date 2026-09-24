@@ -1,0 +1,11 @@
+id = "T-1030"
+kind = "work"
+title = "Fix mission version save, set-current and armory skipping write lock"
+summary = "create_version (missions/handlers/mission_versions.rs:52-62), set_current_version (:207-216) and set_armory (mission_armory.rs:101-111) write without lock_editable_mission, racing a concurrent delete, demotion or author change; patch, delete, submit and review comments take it, and mission_write_lock.rs:1 and services/README.md:21 say every write does."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:25:05Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

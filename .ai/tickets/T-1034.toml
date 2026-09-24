@@ -1,0 +1,11 @@
+id = "T-1034"
+kind = "work"
+title = "Fix top strip slot census and summary line never showing"
+summary = "ui/docks/top_strip/view/menu_row.rs:242 wraps the per-side slot census (:243-280) and summary line (:282-288) in a static hidden div, so neither shows, though view.rs:135-161 recomputes both per document change and mission_summary.rs:89-93 says other tools parse the summary; none does."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T10:26:10Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
