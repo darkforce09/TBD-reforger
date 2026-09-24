@@ -69,7 +69,7 @@ never an undo step, and a batch write (a mixed move, a paste, a merge, a batch a
 exactly one; the window, clock and cap come from
 `apps/website/map-engine/src/data/store/crdt/undo_groups/`. `apply_update` applies a peer's update
 under `init`, so undo takes back only local edits, and it refuses an update that carries more edits
-under the document's own client id than the document has made.
+under the document's own client id than the document has made, once it has made one.
 
 `small_maps_json` returns every map but `slots` as `…ById` JSON, with `meta`, `entityOrder` and
 `payloadExtras`, where zones, compositions, triggers, comments and connections are repeated in
@@ -106,9 +106,9 @@ is added.
     and the store-gated tests in `apps/website/map-engine/src/data/scenario/compiler/` and
     `apps/website/map-engine/tests/`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`: the document host, editor
-    context and overlays in `bridge/`, the canvas mount in `mission_editor/`, the hydrate,
-    persistence and document commands in `shell/`, and the inspector, the settings dialog and the
-    outliner in `ui/`.
+    context, overlays and tactical-graphics lane in `bridge/`, the canvas mount and the document
+    helpers in `mission_editor/`, the hydrate, persistence and document commands in `shell/`, and
+    the inspector, the settings dialog and the outliner in `ui/`.
 - Rules:
   - a local write is one undo step and an init-mode write is none
     (`two_local_places_are_two_undo_steps`, `init_mode_transactions_are_not_undoable` in

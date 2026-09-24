@@ -78,8 +78,9 @@ part. Match ingest share-locks the attachments before any identity or account lo
     `apps/website/api_v2/tests/attendance_no_show_derivation.rs`,
     `apps/website/api_v2/tests/event_access_context.rs`,
     `apps/website/api_v2/tests/event_administration_transactions.rs`,
-    `apps/website/api_v2/tests/event_lifecycle_transactions.rs` and
-    `apps/website/api_v2/tests/reservation_quota_allocations.rs`.
+    `apps/website/api_v2/tests/event_lifecycle_transactions.rs`,
+    `apps/website/api_v2/tests/reservation_quota_allocations.rs` and
+    `apps/website/api_v2/tests/user_stats_service.rs`.
 - Rules: reads and guards use the derived status, never the stored column, and every time
   comparison uses the database's clock; one lock order holds for every writer of reservations and
   live occupancy; producers outside the domain only queue re-evaluation requests and never take

@@ -31,7 +31,8 @@ same wherever it is reported.
   `Primitive` types, which the Mission Creator's validation panel and compiled export use and the
   API re-exports for the compile's findings.
 - `wire_safety` (`wire_safety/`): `scan_editor_payload`, `scan_cargo_capacity`, `CargoPhys`,
-  `CargoPhysCatalog` and `MAX_REPORTED`, used by the missions domain of the API;
+  `CargoPhysCatalog` and `MAX_REPORTED`, used by the
+  [missions](/documentation_v2/glossary.md#missions) domain of the API;
   `is_wire_unsafe`, used by `crate::data::scenario::flatten`.
 
 ## Boundaries

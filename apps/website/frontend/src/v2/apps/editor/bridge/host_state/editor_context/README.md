@@ -14,7 +14,7 @@ apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/
 ├── dock_mirrors.rs      pushes the document into the dock signals; the Connections panel signals
 ├── document_fields.rs   the environment block, the title and the slot roster, read and written
 ├── installation.rs      `install`, the context and armed-value types, picker and comment signals
-└── mod.rs               the module tree and the `EDITOR_CONTEXT` thread-local; re-exports the items
+└── mod.rs               the module tree; re-exports; `EDITOR_CONTEXT` and the other thread-locals
 ```
 
 ## How it works

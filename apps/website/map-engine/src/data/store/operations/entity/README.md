@@ -78,9 +78,11 @@ ring below three vertices.
     authoring commands), and the sibling modules `attrs.rs`, `cargo.rs`, `document_index.rs` and
     `transform.rs`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`: the armed placement and
-    zone draw in `bridge/host_state/armed_placement/`, the editor context and selection in
-    `bridge/host_state/`, the debug seed in `bridge/document_host/doc_host.rs`, the pointer release
-    in `input/pointer_gestures/`, the zones panel and the outliner under `ui/`;
+    zone draw in `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/`, the
+    editor context and selection in `apps/website/frontend/src/v2/apps/editor/bridge/host_state/`,
+    the debug seed in `apps/website/frontend/src/v2/apps/editor/bridge/document_host/doc_host.rs`,
+    the pointer release in `apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/`, the
+    zones panel and the outliner under `ui/`;
   - `apps/website/map-engine/tests/operation_boundaries.rs` and the re-export pins in
     `apps/website/map-engine/src/data/store/tests/reexports.rs`.
 - Rules:

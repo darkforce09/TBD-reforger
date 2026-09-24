@@ -55,7 +55,8 @@ The three modules are reached through the aliases of `data::scenario`:
   `crate::data::scenario::validate` (`Finding`) and `crate::data::scenario::wire_safety`;
   `contracts_v2/rules/kit-aliases.json`; `serde`, `serde_json` and `thiserror`.
 - Used by: the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` and the mission
-  library in `apps/website/frontend/src/v2/pages/mission_hub/library/`; the missions domain in
+  library in `apps/website/frontend/src/v2/pages/mission_hub/library/`; the
+  [missions](/documentation_v2/glossary.md#missions) domain in
   `apps/website/api_v2/src/missions/`; inside the crate, `crate::data::store::operations`,
   `crate::editing::persist` and `crate::data::scenario::validate` (`terrain_bounds`,
   `compile_payload`).

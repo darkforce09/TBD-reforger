@@ -10,7 +10,7 @@ draw that rides the same arm, and the map release that commits it to the
 ```text
 apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/
 ├── map_release.rs     the canvas release that commits the arm, selects it, runs the post-edit tail
-├── mod.rs             the module tree and the arm itself: `arm`, `has_pending`, `cancel_pending`
+├── mod.rs             the module tree; re-exports; the arm: `arm`, `has_pending`, `cancel_pending`
 ├── palette_arming.rs  the palette arms: character, vehicle, object, saved composition, marker
 └── zone_draw.rs       the multi-click zone and trigger draw: a circle or a ring, then one row
 ```

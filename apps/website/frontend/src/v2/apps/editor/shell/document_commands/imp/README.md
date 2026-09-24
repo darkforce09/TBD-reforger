@@ -13,9 +13,9 @@ its wasm-only `imp` module and re-exports them.
 apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/
 ├── clipboard.rs       the clipboard exporters of the selection, and the previews the harness reads
 ├── compilation.rs     the compiled mod document of the live mission, with its findings
-├── exports.rs         Export JSON and Export Compiled downloads, and the double-activation guard
+├── exports.rs         the "Export JSON" and "Export Compiled" downloads, the double-activation guard
 ├── mission_merge.rs   the list of the author's other missions, and the merge of one into this one
-└── mission_saving.rs  Save Version: refusals, the POST and its outcome; the JSON download helper
+└── mission_saving.rs  the "Save Version" POST, its refusals and outcome; the JSON download helper
 ```
 
 ## How it works

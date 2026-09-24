@@ -48,13 +48,19 @@ The document store re-exports what leaves this folder:
   - `crate::data::store::rows`, which builds `MissionDocCore` from all three;
   - `crate::data::store::operations` and `crate::data::store::selection`, which read `SlotSoa`
     columns, `NONE_IDX` and the stance codes;
-  - `crate::editing` through `SlotSoa`: `picking.rs`, `selection_universe.rs`, the selection tools
-    in `tools/selection/`, the slot fingerprint in `persist/` and the slot attributes command in
-    `hosted_commands/`;
+  - `crate::editing` through `SlotSoa`: `apps/website/map-engine/src/editing/picking.rs`,
+    `apps/website/map-engine/src/editing/selection_universe.rs`, the selection tools in
+    `apps/website/map-engine/src/editing/tools/selection/`, the slot fingerprint in
+    `apps/website/map-engine/src/editing/persist/` and the slot attributes command in
+    `apps/website/map-engine/src/editing/hosted_commands/`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` through `SlotSoa`: the
-    document handle, the undo driver and its render lanes in `bridge/document_host/`, the
-    select-in-view of `bridge/host_state/`, `input/tools/select_tool.rs`, and the canvas mount in
-    `mission_editor/`; and `bridge/host_state/undo_grouped_gestures.rs` through `install_wasm_now`.
+    document handle, the undo driver and its render lanes in
+    `apps/website/frontend/src/v2/apps/editor/bridge/document_host/`, the select-in-view of
+    `apps/website/frontend/src/v2/apps/editor/bridge/host_state/`,
+    `apps/website/frontend/src/v2/apps/editor/input/tools/select_tool.rs`, and the canvas mount and
+    the document helpers in `apps/website/frontend/src/v2/apps/editor/mission_editor/`; and
+    `apps/website/frontend/src/v2/apps/editor/bridge/host_state/undo_grouped_gestures.rs` through
+    `install_wasm_now`.
 - Rules:
   - `SlotSoa` columns stay row-aligned by id (`add_slot_materializes_soa` in
     `apps/website/map-engine/src/data/store/rows/tests/cases_2.rs`), and a hidden slot has no row

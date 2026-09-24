@@ -90,7 +90,9 @@ abandoned drag costs no undo step and a finished one costs one.
   `NONE_IDX`, the stance codes, `EntityTransformPatch`); `crate::data::scenario` for the terrain
   bounds and the tactical graphic point limits; `serde` and `serde_json`.
 - Used by:
-  - `crate::editing`: `hosted_commands/`, `commands/merge_report.rs` and `tools/placement.rs`;
+  - `crate::editing`: `apps/website/map-engine/src/editing/hosted_commands/`,
+    `apps/website/map-engine/src/editing/commands/merge_report.rs` and
+    `apps/website/map-engine/src/editing/tools/placement.rs`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/` (`arsenal/`, `bridge/`,
     `input/`, `mission_editor/`, `shell/` and `ui/`) and the DTOs of
     `apps/website/frontend/src/v2/core/api/dto/`;

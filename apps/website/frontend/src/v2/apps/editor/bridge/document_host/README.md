@@ -12,7 +12,7 @@ apps/website/frontend/src/v2/apps/editor/bridge/document_host/
 ├── doc_host.rs  `DocHandle`, the seeded document of a mount, the `__missionDoc` smoke bridge
 ├── history/     the render-lane packers the undo driver runs after each change
 ├── history.rs   the undo driver: history context, post-change tail, dirty flag, unload guard
-└── mod.rs       the module tree; both modules are wasm-only
+└── mod.rs       the module tree
 ```
 
 ## How it works
@@ -71,16 +71,19 @@ the harness.
     `editing::history`, `editing::tools::selection`, `frame` (`RenderEngine`, `EngineHandle`) and
     `overlay::symbology`;
   - in `apps/website/frontend/src/v2/apps/editor/`: the editor context in
-    `bridge/host_state/editor_context/`, `bridge/tactical_graphics.rs` and
-    `bridge/tactical_graphics_authoring.rs`, `shell::review_mode` and `shell::persist`, the
-    outliner's `ensure_active_layer`, and the lane readers `mission_editor.rs` re-exports;
+    `apps/website/frontend/src/v2/apps/editor/bridge/host_state/editor_context/`,
+    `apps/website/frontend/src/v2/apps/editor/bridge/tactical_graphics.rs` and
+    `apps/website/frontend/src/v2/apps/editor/bridge/tactical_graphics_authoring.rs`,
+    `shell::review_mode` and `shell::persist`, the outliner's `ensure_active_layer`, and the lane
+    readers `mission_editor.rs` re-exports;
   - `web_sys`, `js_sys` and `wasm_bindgen` for the window bridges and the unload prompt.
 - Used by:
   - in `apps/website/frontend/src/v2/apps/editor/`: the canvas mount in `mission_editor/`, the host
-    state in `bridge/host_state/`, the gestures, tools and window keydown in `input/`, the hydrate,
-    draft writer and document commands in `shell/`, the top strip's undo and redo in
-    `ui/docks/top_strip/`, the Mission Settings dialog in `ui/modals/settings_modal/`, and
-    `arsenal/`;
+    state in `apps/website/frontend/src/v2/apps/editor/bridge/host_state/`, the gestures, tools and
+    window keydown in `input/`, the hydrate, draft writer and document commands in `shell/`, the top
+    strip's undo and redo in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, the
+    Mission Settings dialog in `apps/website/frontend/src/v2/apps/editor/ui/modals/settings_modal/`,
+    and `arsenal/`;
   - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`,
     through `window.__missionDoc` and `window.__editorHistory`;
   - the source pins in `apps/website/frontend/src/v2/apps/editor/tests/t808_symbology_feed.rs` and

@@ -9,7 +9,7 @@ canvas, the two window-level keydown dispatches, and the browser half of the int
 
 ```text
 apps/website/frontend/src/v2/apps/editor/input/
-├── mod.rs               the module tree and the layer's contract
+├── mod.rs               the module tree
 ├── pointer_gestures/    the six DOM event closures of the canvas and the special drag release
 ├── pointer_gestures.rs  `EditorGestureContext` and `attach_canvas_gestures`; drag cancellation
 ├── tools/               ruler and line-of-sight overlays, object wash, viewshed pump, select tool
@@ -55,8 +55,9 @@ listener reads `code()`, so the bindings do not depend on the keyboard layout, c
 
 A gesture's own state (the frozen camera, the pending press, the previews) lives only as long as the
 gesture. A committed change reaches the document through the map engine: the hosted commands, the
-undo-grouped gestures of `bridge/host_state/`, or, for a drag-move and an elevation drag, one
-`MissionDocCore` write inside an undo group followed by `after_local_edit`.
+undo-grouped gestures of `apps/website/frontend/src/v2/apps/editor/bridge/host_state/`, or, for a
+drag-move and an elevation drag, one `MissionDocCore` write inside an undo group followed by
+`after_local_edit`.
 
 ## Public surface
 
@@ -72,7 +73,8 @@ undo-grouped gestures of `bridge/host_state/`, or, for a drag-move and an elevat
 
 - Depends on: in `apps/website/frontend/src/v2/apps/editor/`, the undo driver, host state, overlays
   and tactical graphics of `bridge/`, the pick and lane helpers `mission_editor.rs` re-exports,
-  `mission_editor::transform`, the insets of `shell::layout`, the context menu of `ui/docks/`;
+  `mission_editor::transform`, the insets of `shell::layout`, the context menu of
+  `apps/website/frontend/src/v2/apps/editor/ui/docks/`;
   `website_map_engine` (`editing::hosted_commands`, `editing::tools`, `data::store`,
   `streaming::host`, `spatial::los`, `overlay::symbology`, `frame`);
   `crate::v2::core::ui::modal_stack`; `web_sys`, `js_sys` and `wasm_bindgen`.

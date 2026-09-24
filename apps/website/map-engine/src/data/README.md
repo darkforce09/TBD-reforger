@@ -9,7 +9,7 @@ map, the GPU or the page it runs in.
 
 ```text
 apps/website/map-engine/src/data/
-├── mod.rs     the module tree; gates `scenario` and `store` on the features of the same names
+├── mod.rs     the module tree
 ├── scenario/  the mission domain: its shapes, compiler, checks, authored blocks and mortar solver
 └── store/     the mission's Yjs document: CRDT arrays, undo groups, row projections, operations
 ```
@@ -30,10 +30,10 @@ Each half sits behind a crate feature. `scenario`, the crate's default, brings `
 `serde_json` and `thiserror`, and is all the [API](/documentation_v2/glossary.md#api) links;
 `store` adds the `yrs` CRDT crate on top of `scenario`, and the single-page app reaches it through
 the `editing` feature. The store reads the mission domain (terrain bounds, the tactical-graphics
-kinds and point limits) and the mission domain never reads the store. Everything here
-takes its inputs explicitly: the document operations take values and callbacks from the host, and
-the host installs the clock the undo groups read (`install_wasm_now`), so no browser binding enters
-this tree.
+kinds and point limits), and the mission domain reads the store only in two store-gated tests.
+Everything here takes its inputs explicitly: the document operations take values and callbacks from
+the host, and the host installs the clock the undo groups read (`install_wasm_now`), so no browser
+binding enters this tree.
 
 ## Public surface
 
@@ -49,7 +49,7 @@ this tree.
 
 - Depends on: `serde`, `serde_json` and `thiserror`; `yrs` for `store`;
   `contracts_v2/rules/kit-aliases.json`, embedded at build time; nothing else of the crate.
-- Used by: `crate::editing`; the API's missions and
+- Used by: `crate::editing`; the API's [missions](/documentation_v2/glossary.md#missions) and
   [operations](/documentation_v2/glossary.md#operations) domains under
   `apps/website/api_v2/src/`; the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`,
   the mission library in `apps/website/frontend/src/v2/pages/mission_hub/library/` and the DTOs of
@@ -59,5 +59,5 @@ this tree.
   - the tree imports none of the crate's `camera`, `diagnostics`, `doll`, `frame`, `io`,
     `overlay`, `spatial`, `streaming` and `world` modules nor the graphics engine, and the static
     world never imports it back (rule 7 of `cargo xtask verify engine-layers`);
-  - `scenario` never imports `store` (rule 4 of the same gate), so the API's build stays free of
-    `yrs`.
+  - `scenario`'s code never imports `store` (rule 4 of the same gate; two store-gated tests are
+    pinned exceptions), so the API's build stays free of `yrs`.

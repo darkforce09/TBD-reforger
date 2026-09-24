@@ -15,7 +15,7 @@ apps/website/map-engine/src/data/scenario/
 ├── ballistics/   mortar firing solutions from per-weapon charge tables
 ├── compiler/     the editor payload, the compiled mission document, the kit-alias table
 ├── extensions/   the optional authored blocks: their typing, validation and compiled form
-├── mod.rs        the module tree; the domain aliases and `COMPILER_PACKAGE_VERSION`
+├── mod.rs        the module tree; re-exports the domain aliases; `COMPILER_PACKAGE_VERSION`
 ├── slot_line/    the plain-text line the ORBAT manager shows for a slot
 └── validation/   the Mission Creator's validation rules and the API's wire-safety scans
 ```
@@ -76,7 +76,8 @@ boundary, so moving one is a change for its callers:
 - Depends on: `serde`, `serde_json` and `thiserror`, the `scenario` feature's dependencies;
   `contracts_v2/rules/kit-aliases.json` at build time; no other module of the crate.
 - Used by:
-  - the API's missions and [operations](/documentation_v2/glossary.md#operations) domains in
+  - the API's [missions](/documentation_v2/glossary.md#missions) and
+    [operations](/documentation_v2/glossary.md#operations) domains in
     `apps/website/api_v2/src/missions/` and `apps/website/api_v2/src/operations/`;
   - the Mission Creator in `apps/website/frontend/src/v2/apps/editor/`, the mission library in
     `apps/website/frontend/src/v2/pages/mission_hub/library/` and the DTOs of

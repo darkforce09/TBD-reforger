@@ -61,8 +61,9 @@ store at the current device-pixel ratio.
   `editing::hosted_commands`, `data::store`, `overlay::symbology`).
 - Used by: the parent's `install_canvas_mount`, which the editor page
   `apps/website/frontend/src/v2/apps/editor/mission_editor.rs` calls; the source pins that read
-  these files in `apps/website/frontend/src/v2/apps/editor/tests/` (`mission_editor/source.rs` and
-  the boot-progress, placement and hover-cursor pins) and in
+  these files in `apps/website/frontend/src/v2/apps/editor/tests/`
+  (`apps/website/frontend/src/v2/apps/editor/tests/mission_editor/source.rs` and the boot-progress,
+  placement and hover-cursor pins) and in
   `apps/website/frontend/src/v2/apps/editor/shell/tests/review_mode/read_only_review.rs`.
 - Rules: the review restore reads nothing from the draft store and arms no draft writer, flush,
   marker or writer election (`the_review_boot_restores_the_reviewed_version_and_arms_nothing` in

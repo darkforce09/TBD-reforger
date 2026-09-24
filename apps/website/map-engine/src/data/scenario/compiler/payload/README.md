@@ -18,9 +18,9 @@ apps/website/map-engine/src/data/scenario/compiler/payload/
 
 ## How it works
 
-`compile_payload(small_maps_json, slots_json, include_orbat)` reads the by-id maps and the slots
-that the document store projects to JSON (`MissionDocCore::small_maps_json` and `slots_json` in
-`crate::data::store`) and builds the payload:
+`compile_payload(small_maps_json, slots_json, include_orbat)` reads the by-id maps and the
+[slots](/documentation_v2/glossary.md#slot) that the document store projects to JSON
+(`MissionDocCore::small_maps_json` and `slots_json` in `crate::data::store`) and builds the payload:
 
 - `schemaVersion` (the document's, else 1), `map` with `terrain` (`everon` when unset) and
   `bounds` (`terrain_bounds` of that terrain when unset), `environment` and `loadouts`;

@@ -12,7 +12,7 @@ apps/website/frontend/src/v2/apps/editor/bridge/host_state/
 ├── armed_placement/          the in-flight placement and zone draw, and the release that commits it
 ├── editor_context/           the context installed at load: handles, dock mirrors and side signals
 ├── entity_selection.rs       the selected entities: replace, folder select, select in view, frame
-├── mod.rs                    the module tree; every module is wasm-only
+├── mod.rs                    the module tree
 └── undo_grouped_gestures.rs  the gestures that undo as one step, and the bulk confirmation
 ```
 
@@ -78,8 +78,9 @@ rather than an error.
   - the source pins in `apps/website/frontend/src/v2/core/test_support/editor_operations.rs`.
 - Rules: every module is `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line; a
   confirmation is the host's, handed to the engine as a closure, so no browser dialog lives inside
-  the engine; every file here is on the place path that `cargo xtask verify editor-orbat-coherency`
-  scans (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which bans
+  the engine; every file here but `mod.rs` is on the place path that
+  `cargo xtask verify editor-orbat-coherency` scans
+  (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which bans
   `ensure_default_squad` there and fails when a listed file is missing.
 
 ## Related documentation

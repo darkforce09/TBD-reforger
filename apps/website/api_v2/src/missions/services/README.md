@@ -18,7 +18,7 @@ apps/website/api_v2/src/missions/services/
 ├── mission_document.rs    the camelCase export document of a mission and its current version
 ├── mission_lookup.rs      the mission row reads every surface uses to resolve a mission id
 ├── mission_reviews.rs     open a review on submission, decide exactly its artifact, the review thread
-├── mission_write_lock.rs  the lock every author-or-admin mission write takes before it writes
+├── mission_write_lock.rs  the row and account lock the patch, delete, submit and review comment take
 ├── mod.rs                 the module tree
 ├── registry_import.rs     idempotent upsert of one modpack's registry items and compatibility edges
 └── tests/                 unit tests for the compile adapter: flatten, environment and diagnostics
@@ -39,9 +39,11 @@ deploy      mission_deployments: validate, bind seats, issue the fleet command, 
 `mission_compile.rs` builds the map engine's `MissionMeta` from the mission row and takes the
 time of day and weather the payload authors before the row's. It re-exports the compile's output
 and finding types, so callers name one path, and names the two headers that carry an artifact's
-findings beside its bytes. `mission_write_lock.rs` locks the live mission row, then the actor's
-account, then rereads the actor's authority, so a demotion or a change of author during the wait
-answers 403; it is taken by the metadata patch, the delete, submission and review comments.
+findings beside its bytes. `mission_write_lock.rs` serialises a mission write with changes to the
+mission and to the actor's authority: it locks the live mission row, then the actor's account, then
+rereads the actor's authority, so a demotion or a change of author during the wait answers 403. The
+metadata patch, the delete, submission and review comments take it; saving a version and setting
+the current version check authorship without it.
 `mission_reviews.rs` supersedes an earlier pending review when it opens one, and a decision that
 names another artifact than the one under review answers 409 `REVIEWED_ARTIFACT_CHANGED`.
 `registry_import.rs` validates an envelope against its schema before any SQL runs, then upserts

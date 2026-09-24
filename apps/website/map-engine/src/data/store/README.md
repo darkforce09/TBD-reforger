@@ -33,13 +33,15 @@ rows/         MissionDocCore: one yrs Doc, local and init origins, undo, JSON vi
 crdt/         native slotIds and entityIds arrays, the slot columns, the undo window and cap
 ```
 
-The Mission Creator reaches the document through `crate::editing`, which holds the hosted
-`MissionDocCore` and runs the operations against it. The compiler in `crate::data::scenario`
-reads the document back through `small_maps_json` and `slots_json`; the map lanes and the pickers
-read `materialize`'s `SlotSoa`. `crate::editing::picking` finds candidate rows in the `SlotSoa`
-with the pick radius (`MissionDocCore::PICK_RADIUS_PX`) and grid cell (`GRID_CELL_M`), and
-`selection.rs` maps them to ids: a [slot](/documentation_v2/glossary.md#slot) and a vehicle at
-the same distance resolve to the slot, and a marquee lists slots before vehicles.
+The Mission Creator creates the document and shares its handle with `crate::editing`
+(`editing::host::install`), whose hosted commands, undo history and tools edit it; the Mission
+Creator also calls `operations` and the document's mutators directly. The compiler in
+`crate::data::scenario` reads the document back through `small_maps_json` and `slots_json`; the
+map lanes and the pickers read `materialize`'s `SlotSoa`. `crate::editing::picking` finds
+candidate rows in the `SlotSoa` with the pick radius (`MissionDocCore::PICK_RADIUS_PX`) and grid
+cell (`GRID_CELL_M`), and `selection.rs` maps them to ids: a
+[slot](/documentation_v2/glossary.md#slot) and a vehicle at the same distance resolve to the slot,
+and a marquee lists slots before vehicles.
 
 `rows` and `selection` are private; they add their methods to `MissionDocCore` and leave the
 module only through `mod.rs`. The host installs the one browser-side input the store needs, the
@@ -74,8 +76,9 @@ undo clock (`install_wasm_now`), so no browser binding enters this tree.
     test this tree.
 - Rules:
   - the tree names no crate module outside `crate::data` nor the graphics engine (rule 7 of
-    `cargo xtask verify engine-layers`), and `crate::data::scenario` never imports it (rule 4), so
-    the [API](/documentation_v2/glossary.md#api), which links only `scenario`, carries no `yrs`;
+    `cargo xtask verify engine-layers`), and `crate::data::scenario`'s code never imports it
+    (rule 4; two store-gated tests are pinned exceptions), so the
+    [API](/documentation_v2/glossary.md#api), which links only `scenario`, carries no `yrs`;
   - the re-exported surface stays reachable through `data::store`
     (`connection_and_formation_api_is_crate_public_via_doc`,
     `entity_authoring_api_is_crate_public_via_doc` and

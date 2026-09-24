@@ -18,7 +18,7 @@ apps/website/frontend/src/v2/apps/editor/shell/document_commands/
 `document_commands.rs` re-exports the map engine's pure command helpers
 (`website_map_engine::editing::commands`: the export text, the merge report, the selection digest)
 in every build, and declares `mod imp` for the `wasm32` build only; Rust reads the children of that
-inline module from `document_commands/imp/`, so this folder holds nothing else. The parent's `imp`
+inline module from `imp/`, so this folder holds nothing else. The parent's `imp`
 keeps the command context (`EDITOR_CTX`), the [mission](/documentation_v2/glossary.md#mission) row
 the compiled export needs (`ROW_META`, `ROW_HYDRATE`) with the setters the hydrate and the review
 restore call, and `register_editor_commands`, which publishes `window.__editorCommands`

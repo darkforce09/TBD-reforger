@@ -10,7 +10,7 @@ lists arrive as plain JSON arrays.
 ```text
 apps/website/map-engine/src/data/store/crdt/id_arrays/mission_doc_tests/
 ├── cases_1.rs  the three cases: concurrent appends, local-only undo, hydrate promotion
-└── mod.rs      the module tree and the fixtures: two seeded peers, id readers, a native probe
+└── mod.rs      the module tree; the fixtures: two seeded peers, id readers, a native probe
 ```
 
 ## Boundaries
@@ -31,4 +31,4 @@ apps/website/map-engine/src/data/store/crdt/id_arrays/mission_doc_tests/
     (`hydrate_legacy_payload_migrates_slot_ids_to_yarray`);
   - each peer is built with its own fixed client id (`seed_peers`), because `apply_update`
     refuses an update that carries more edits under the receiving document's own client id than
-    that document has made.
+    that document has made, once it has made one.

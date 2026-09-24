@@ -14,13 +14,13 @@ apps/website/frontend/src/v2/apps/editor/bridge/
 ├── document_host/                  the hosted document, its smoke bridge and the undo driver
 ├── gizmo_z.rs                      the transform gizmo's Z arm: hit test, elevation arithmetic
 ├── host_state/                     the editor context, armed placement, selection, grouped gestures
-├── mod.rs                          the module tree and the seam's contract
+├── mod.rs                          the module tree
 ├── overlays/                       the map overlays: transform widget, picker, comments, conflict
 ├── overlays.rs                     the overlays' module root; re-exports their items
 ├── pointer_hover.rs                the hover-cursor state machine, throttled and transition-driven
 ├── tactical_graphics.rs            the tactical-graphic rows: parse, curve, pack for the lane, pick
 ├── tactical_graphics_authoring.rs  the tactical-graphic draw, vertex drag and delete
-├── tests/                          unit tests: the Z arm, the elevation drag, the graphic geometry
+├── tests/                          unit tests for the Z arm, elevation drag and graphic geometry
 ├── viewport.rs                     device-pixel sizing, frame pump, harness gates, registry cache
 └── world_assets.rs                 preferences and registration for the engine's streaming host
 ```

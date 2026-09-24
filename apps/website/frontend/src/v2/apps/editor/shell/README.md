@@ -18,7 +18,7 @@ apps/website/frontend/src/v2/apps/editor/shell/
 ├── hydrate.rs            the hydrate's module root and the `__missionBackup` bridge; wasm-only
 ├── layout.rs             chrome dimensions, live insets, collapse state, pane centre, class recipes
 ├── mission_size.rs       the compiled payload-size estimate and the byte formatter
-├── mod.rs                the module tree and the session's contract
+├── mod.rs                the module tree
 ├── persist/              the account-scoped IndexedDB records and the debounced write
 ├── persist.rs            the draft writer's root: database coordinates, merge, cross-tab sync
 ├── review_mode.rs        the reviewed version of the review workspace and the write predicate
@@ -26,7 +26,7 @@ apps/website/frontend/src/v2/apps/editor/shell/
 ├── session.rs            the account-scoped warm-editor marker in `sessionStorage`
 ├── tab_lock/             the browser transport of the writer role: Web Lock, channel, stamps
 ├── tab_lock.rs           the writer role, the save decision, the election and the read-only banner
-├── tests/                unit and source tests, one folder per module
+├── tests/                unit tests for the session's modules, source pins included
 ├── title_prefer.rs       mounts the tests of the title preference and the mission-row metadata wire
 └── world_layer_prefs.rs  the world-layer and basemap preferences in `localStorage`, with migration
 ```
@@ -88,8 +88,10 @@ preferences and marker it stores outlive it.
 
 - Depends on: `website_map_engine::editing::persist` (record keys, stored blobs, merge policy,
   local-versus-server verdict, server adoption, snapshot slots) and `editing::commands`,
-  `data::scenario` for the compile, `streaming::bridge` for the boot progress and the preference
-  types; the `DocHandle` and undo driver of `bridge/document_host/`; `crate::v2::core` (the
+  `data::scenario` for the compile, `data::store` (`MissionDocCore`,
+  `operations::slot_ids::duplicate_slot_ids`), `streaming::bridge` for the boot progress and the
+  preference types; the `DocHandle` and undo driver of
+  `apps/website/frontend/src/v2/apps/editor/bridge/document_host/`; `crate::v2::core` (the
   [API](/documentation_v2/glossary.md#api) client and DTOs, the auth store, the toasts, the
   clipboard helper); `idb`, `gloo_net`, `web_sys` and `js_sys`; over HTTP,
   `GET /api/v1/missions/{id}`, `POST /api/v1/missions/{id}/versions` and

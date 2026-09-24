@@ -12,7 +12,7 @@ tool's drag preview and smoke bridge. Each tool's state machine, geometry and ve
 apps/website/frontend/src/v2/apps/editor/input/tools/
 ├── los_tool.rs            `LosOverlay`: the sight line, its profile panel, the tool's seam installs
 ├── los_world_wasm.rs      the object wash over the live world occluder: start, step, upload, HUD
-├── mod.rs                 the module tree; `select_tool` and `los_world_wasm` are wasm-only
+├── mod.rs                 the module tree
 ├── ruler_tool.rs          `RulerOverlay`: the ruler polyline and readouts; `install_seam`
 ├── select_tool.rs         drag preview lanes, the deselect probe, the `__editorSelection` bridge
 ├── tests/                 unit tests for the seam installs and their owner cleanup
@@ -69,7 +69,8 @@ headless gates; the pick and the marquee themselves belong to
   up, and an older owner's cleanup never clobbers a newer registration
   (`a_seam_is_unregistered_when_its_owner_is_cleaned_up` and
   `an_older_owners_cleanup_does_not_clobber_a_newer_registration` in
-  `tests/ruler_tool/seam_lifecycle_and_render_context.rs`).
+  `tests/ruler_tool/seam_lifecycle_and_render_context.rs`); `select_tool.rs` and `los_world_wasm.rs`
+  compile only for `wasm32`, through the `#[cfg(target_arch = "wasm32")]` on their `pub mod` lines.
 
 ## Related documentation
 

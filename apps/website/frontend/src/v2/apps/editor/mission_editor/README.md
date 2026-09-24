@@ -90,9 +90,11 @@ Everything reaches the rest of the editor through the page module's declarations
     (`no_two_listeners_claim_the_same_chord` in
     `apps/website/frontend/src/v2/apps/editor/ui/modals/tests/help_modal/keymap_census/tests.rs`);
   - a changed Arrange chord changes both `page_effects.rs` and the `ARRANGE` list in
-    `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/arrange.rs`: the help rows are
-    checked against the list (`arrange_help_rows_match_the_shared_list`), but no test compares
-    `page_effects.rs` with it.
+    `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/arrange.rs`: the help rows and the
+    six keydown arms in `page_effects.rs` are both checked against the list
+    (`arrange_help_rows_match_the_shared_list`; `the_editor_keydown_binds_the_arrange_chords` and
+    `the_bound_codes_are_exactly_the_shared_lists_chorded_rows` in
+    `apps/website/frontend/src/v2/apps/editor/tests/mission_editor/arrange_chords.rs`).
 
 ## Related documentation
 
