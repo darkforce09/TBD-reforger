@@ -1,0 +1,11 @@
+id = "T-1025"
+kind = "work"
+title = "Fix missing MISSION_VERSION_MAX_BODY_BYTES, SKIP_MIGRATE, RUST_LOG in api_v2 .env.example"
+summary = "`apps/website/api_v2/.env.example` omits three variables the API reads: `MISSION_VERSION_MAX_BODY_BYTES` (`src/core/configuration/mod.rs:146-148`, default 256 MiB at :29), `SKIP_MIGRATE` (`src/bin/api.rs:25`, presence skips boot migrations) and `RUST_LOG` (`src/bin/api.rs:18`, default `info`). T-1007 covers `TRUSTED_PROXIES`."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T04:32:45Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

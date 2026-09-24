@@ -1,0 +1,11 @@
+id = "T-1026"
+kind = "work"
+title = "Add @contract tags to three untagged api_v2 schema-projecting models"
+summary = "`apps/website/api_v2/src/identity_and_access/models/current_profile.rs`, `src/server_infrastructure/models/fleet_command.rs` and `machine_credential.rs` project `contracts_v2/definitions/` `current-profile.schema.json`, `fleet-command.schema.json` and `machine-credential.schema.json` yet carry no `//! @contract` tag (CLAUDE.md law 8); `cargo xtask schema citations` resolves the pointers once added."
+class = "feature"
+status = "idea"
+created_at = "2026-09-24T04:32:58Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-1027"
+kind = "work"
+title = "Rewrite stale comments in api_v2 core, workers, seeds and tests"
+summary = "Doc and config comments contradict code: `apps/website/api_v2/src/core/database/mod.rs:4-5` claims one frozen migration (50 exist); `src/core/configuration/mod.rs:61` and `.env.example:40-41` tie `/map-assets` to SPA serving, yet `src/core/http_router.rs:102-104,163-171` always mounts it; and 10 more (see the ticket's notes)."
+class = "docs"
+status = "idea"
+created_at = "2026-09-24T04:34:54Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
