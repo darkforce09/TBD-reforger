@@ -7,8 +7,8 @@
 //! checks it batched across the run; the gate turns the breaks into one verdict per document and
 //! prints totals by rule and by area.
 //!
-//! **Position:** `cargo xtask verify link-check [--report] [--path <dir>]...` calls
-//! [`verify_link_check`]. The judged files and their areas come from [`judged_documents`]. The
+//! **Position:** `cargo xtask verify link-check [--report] [--path <dir>]... [--with-untracked]`
+//! calls [`verify_link_check`]. The judged files and their areas come from [`judged_documents`]. The
 //! rules are the link rule, [`link_targets::LinkTargets`] with its permalink half in
 //! [`permalink_targets`]; the backticked-path rule, [`backticked_paths::BacktickedPaths`], which
 //! asks git's ignore rules through [`git_ignore_rules`]; and the command-citation rule,
@@ -45,7 +45,7 @@ use std::path::Path;
 use verification_core::{Finding, Kind, NotRun, Verdict};
 
 use super::tracked_tree::TrackedTree;
-use super::{GateRun, judged_nothing, prepare, read_tracked, scope_line};
+use super::{GateRequest, GateRun, judged_nothing, prepare, read_tracked, scope_line};
 use crate::core::repository_layout::documentation::HISTORICAL_PATH_SPELLINGS;
 use backticked_paths::BacktickedPaths;
 use command_citations::{CommandCitations, xtask_command_tree};
@@ -195,9 +195,14 @@ trait DocumentRule {
     }
 }
 
-/// `cargo xtask verify link-check`: judge the tracked tree at `repo_root` over the `--path`
-/// scope, print the verdicts, and return the exit status (0 held, 1 break, 2 did not run).
-pub(crate) fn verify_link_check(repo_root: &Path, scope: &[String], listing: BreakListing) -> u8 {
+/// `cargo xtask verify link-check`: judge the files `request` lists at `repo_root` over its
+/// `--path` scope, print the verdicts, and return the exit status (0 held, 1 break, 2 did not
+/// run).
+pub(crate) fn verify_link_check(
+    repo_root: &Path,
+    request: &GateRequest,
+    listing: BreakListing,
+) -> u8 {
     let objects = GitObjects::new(repo_root);
     let ignore_rules = GitIgnoreRules::new(repo_root);
     let commands = xtask_command_tree();
@@ -211,8 +216,8 @@ pub(crate) fn verify_link_check(repo_root: &Path, scope: &[String], listing: Bre
     ];
     judge(
         repo_root,
-        TrackedTree::load(repo_root),
-        scope,
+        TrackedTree::load(repo_root, request.untracked),
+        request,
         listing,
         &mut rules,
     )
@@ -224,16 +229,17 @@ pub(crate) fn verify_link_check(repo_root: &Path, scope: &[String], listing: Bre
 fn judge(
     repo_root: &Path,
     listing: Result<TrackedTree, NotRun>,
-    scope_values: &[String],
+    request: &GateRequest,
     break_listing: BreakListing,
     rules: &mut [Box<dyn DocumentRule + '_>],
 ) -> GateRun {
-    let (tree, scope) = match prepare(GATE, Kind::Ban, repo_root, listing, scope_values) {
+    let (tree, scope) = match prepare(GATE, Kind::Ban, repo_root, listing, request) {
         Ok(prepared) => prepared,
         Err(stopped) => return stopped,
     };
     let mut run = GateRun::new(
         GATE,
+        request.untracked,
         vec![
             format!(
                 "==> {GATE}: every link in the judged Markdown reaches a tracked file or folder, \

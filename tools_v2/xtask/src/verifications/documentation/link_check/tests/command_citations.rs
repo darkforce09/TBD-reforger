@@ -2,6 +2,7 @@ use std::path::Path;
 
 use clap::{Arg, ArgAction, ValueEnum, value_parser};
 
+use super::super::super::GateRequest;
 use super::super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts};
 use super::super::super::tracked_tree::TrackedTree;
 use super::super::markdown_scan::scan;
@@ -471,7 +472,7 @@ fn frozen_records_are_never_judged_by_the_rule() {
     let run = judge_gate(
         fixture.root(),
         Ok(fixture.tree()),
-        &[],
+        &GateRequest::default(),
         BreakListing::Every,
         &mut rules,
     );

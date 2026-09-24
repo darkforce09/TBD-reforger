@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 
-use super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts};
+use super::super::UntrackedFiles;
+use super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts, request};
 use super::repository_permalinks::{BlobObject, ObjectLookup, PermalinkObjects};
 use super::*;
 use crate::cli::{Cli, TopCmd};
-use crate::commands::verify::cli::VerifyCmd;
+use crate::commands::verify::cli::{DocumentationGateArgs, VerifyCmd};
 use crate::core::repository_layout::TICKETS_DIR;
 use crate::core::repository_layout::documentation::{
     ARCHIVE_DIR, ARTIFACTS_DIR, CURSOR_RULE_DIRS, PROGRAM_RECORDS_PREFIX, PROJECT_INSTRUCTIONS,
@@ -51,14 +52,30 @@ impl DocumentRule for LiveDocumentsOnly<'_> {
 }
 
 fn run(fixture: &FixtureCheckout, scope: &[&str], listing: BreakListing) -> GateRun {
-    let scope: Vec<String> = scope.iter().map(ToString::to_string).collect();
     let mut rules: Vec<Box<dyn DocumentRule + '_>> =
         vec![Box::new(LinkTargets::new(&EmptyHistory))];
     judge(
         fixture.root(),
         Ok(fixture.tree()),
-        &scope,
+        &request(scope, UntrackedFiles::Invisible),
         listing,
+        &mut rules,
+    )
+}
+
+/// The link rule and the backticked-path rule over the whole checkout as the real listing and
+/// git's own ignore rules see it.
+fn run_listed_by_git(fixture: &FixtureCheckout, untracked: UntrackedFiles) -> GateRun {
+    let ignore_rules = GitIgnoreRules::new(fixture.root());
+    let mut rules: Vec<Box<dyn DocumentRule + '_>> = vec![
+        Box::new(LinkTargets::new(&EmptyHistory)),
+        Box::new(BacktickedPaths::new(&ignore_rules, &[])),
+    ];
+    judge(
+        fixture.root(),
+        fixture.listed_by_git(untracked),
+        &request(&[], untracked),
+        BreakListing::Every,
         &mut rules,
     )
 }
@@ -200,6 +217,69 @@ fn a_clean_tree_holds() {
 }
 
 #[test]
+fn a_link_to_an_untracked_file_resolves_only_with_untracked_files_included() {
+    let mut fixture = FixtureCheckout::new("links-untracked");
+    fixture
+        .tracked(".gitignore", "*.log\n")
+        .tracked(
+            "documentation_v2/guide.md",
+            "# Guide\n\n[new](new_page.md#setup) [log](run.log)\n\n\
+             See `documentation_v2/new_page.md` and `documentation_v2/run.log`.\n",
+        )
+        .untracked("documentation_v2/new_page.md", "# New page\n\n## Setup\n")
+        .untracked("documentation_v2/run.log", "");
+    let missing = |written: &str, target: &str| {
+        format!(
+            "documentation_v2/guide.md:3: missing target: `{written}` resolves to \
+             `documentation_v2/{target}`, which is no tracked file or folder"
+        )
+    };
+    let backticked = |tracked: usize, naming_nothing: usize| {
+        format!(
+            "  backticked paths: 2 judged in live documents — {tracked} tracked, 1 ignored by \
+             git, 0 exempt historical spelling(s), {naming_nothing} naming nothing, 0 unchecked; \
+             0 pattern(s) skipped"
+        )
+    };
+    let committed = run_listed_by_git(&fixture, UntrackedFiles::Invisible);
+    assert_eq!(
+        failures(&committed),
+        [format!(
+            "FAIL: documentation_v2/guide.md: 3 break(s)\n      {}\n      {}\n      \
+             documentation_v2/guide.md:5: backticked path names nothing: \
+             `documentation_v2/new_page.md`",
+            missing("new_page.md#setup", "new_page.md"),
+            missing("run.log", "run.log")
+        )]
+    );
+    assert!(committed.totals.contains(&backticked(0, 1)));
+    assert_eq!(committed.summary_label(), "link-check");
+    assert_eq!(committed.print(), 1);
+
+    let with_untracked = run_listed_by_git(&fixture, UntrackedFiles::Included);
+    assert_eq!(
+        failures(&with_untracked),
+        [format!(
+            "FAIL: documentation_v2/guide.md: 1 break(s)\n      {}",
+            missing("run.log", "run.log")
+        )],
+        "the untracked page, its heading and its backticked path resolve; the ignored log stays \
+         missing as a link and passes as a backticked path"
+    );
+    assert!(with_untracked.totals.contains(&backticked(1, 0)));
+    assert_eq!(
+        outcome_counts(&with_untracked),
+        (1, 1, 0),
+        "the untracked page is judged too"
+    );
+    assert_eq!(
+        with_untracked.summary_label(),
+        "link-check --with-untracked (untracked files included)"
+    );
+    assert_eq!(with_untracked.print(), 1);
+}
+
+#[test]
 fn the_scope_narrows_the_judged_documents_and_an_empty_one_did_not_run() {
     let fixture = every_area("links-scope");
     let scoped = run(
@@ -239,7 +319,7 @@ fn an_unreadable_document_or_a_failed_listing_did_not_run() {
             status: 128,
             stderr: "fatal: not a git repository".to_string(),
         }),
-        &[],
+        &GateRequest::default(),
         BreakListing::First,
         &mut [],
     );
@@ -261,7 +341,7 @@ fn a_rule_that_skips_frozen_records_plugs_in_beside_the_link_rule() {
     let run = judge(
         fixture.root(),
         Ok(fixture.tree()),
-        &[],
+        &GateRequest::default(),
         BreakListing::Every,
         &mut rules,
     );
@@ -283,7 +363,7 @@ fn a_rule_that_skips_frozen_records_plugs_in_beside_the_link_rule() {
 }
 
 #[test]
-fn the_verb_takes_the_report_flag_and_a_repeatable_path() {
+fn the_verb_takes_the_report_flag_beside_the_documentation_gate_arguments() {
     let parsed = Cli::try_parse_from([
         "xtask",
         "verify",
@@ -291,22 +371,29 @@ fn the_verb_takes_the_report_flag_and_a_repeatable_path() {
         "--report",
         "--path",
         "apps",
+        "--with-untracked",
         "--path",
         "tools_v2",
     ])
     .expect("the verb parses");
     match parsed.cmd {
         TopCmd::Verify {
-            cmd: VerifyCmd::LinkCheck { report, paths },
+            cmd: VerifyCmd::LinkCheck { report, arguments },
         } => {
             assert!(report);
-            assert_eq!(paths, ["apps", "tools_v2"]);
+            assert_eq!(arguments.paths, ["apps", "tools_v2"]);
+            assert!(arguments.with_untracked);
         }
         other => panic!("link-check parsed as {other:?}"),
     }
     let bare = Cli::try_parse_from(["xtask", "verify", "link-check"]).expect("no flags");
     assert!(matches!(
         bare.cmd,
-        TopCmd::Verify { cmd: VerifyCmd::LinkCheck { report: false, paths } } if paths.is_empty()
+        TopCmd::Verify {
+            cmd: VerifyCmd::LinkCheck {
+                report: false,
+                arguments: DocumentationGateArgs { paths, with_untracked: false },
+            },
+        } if paths.is_empty()
     ));
 }

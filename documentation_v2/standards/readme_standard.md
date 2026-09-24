@@ -313,3 +313,6 @@ cargo xtask verify readme-coverage --path <folder>
 cargo xtask verify link-check --path <folder>
 cargo xtask verify markdown-placement
 ```
+
+Writers check new, uncommitted files with `--with-untracked` before handing over; the committed
+view, without the flag, is what CI judges.

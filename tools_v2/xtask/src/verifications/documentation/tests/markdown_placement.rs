@@ -1,12 +1,16 @@
-use super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts};
+use super::super::UntrackedFiles;
+use super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts, request};
 use super::*;
 use crate::core::repository_layout::documentation::{
     ARCHIVE_DIR, PENDING_MERGE_DIR, PROGRAM_RECORDS_PREFIX, TICKET_DOCUMENTS_DIR,
 };
 
 fn run(fixture: &FixtureCheckout, scope: &[&str]) -> GateRun {
-    let scope: Vec<String> = scope.iter().map(ToString::to_string).collect();
-    judge(fixture.root(), Ok(fixture.tree()), &scope)
+    judge(
+        fixture.root(),
+        Ok(fixture.tree()),
+        &request(scope, UntrackedFiles::Invisible),
+    )
 }
 
 fn lines(count: usize) -> String {
@@ -145,6 +149,44 @@ fn the_scope_narrows_every_rule() {
 }
 
 #[test]
+fn untracked_markdown_is_placed_only_with_untracked_files_included() {
+    let mut fixture = FixtureCheckout::new("placement-untracked");
+    fixture
+        .tracked(".gitignore", "build/\n")
+        .tracked("apps/README.md", "# Apps\n")
+        .untracked("apps/tool/NOTES.md", "# Notes\n")
+        .untracked("apps/tool/build/report.md", "# Report\n")
+        .untracked("documentation_v2/runbooks/long.md", &lines(501));
+    let run_listed_by_git = |untracked| {
+        judge(
+            fixture.root(),
+            fixture.listed_by_git(untracked),
+            &request(&[], untracked),
+        )
+    };
+    let committed = run_listed_by_git(UntrackedFiles::Invisible);
+    assert_eq!(failures(&committed), Vec::<String>::new());
+    assert_eq!(committed.summary_label(), "markdown-placement");
+
+    let with_untracked = run_listed_by_git(UntrackedFiles::Included);
+    assert_eq!(
+        failures(&with_untracked),
+        [
+            "FAIL: apps/tool/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
+             and documents live under documentation_v2/",
+            "FAIL: documentation_v2/runbooks/long.md: 501 lines; a live document stays at or \
+             under 500, so split it by topic into a folder with a README.md index",
+        ],
+        "the ignored build/ report is never judged"
+    );
+    assert_eq!(
+        with_untracked.summary_label(),
+        "markdown-placement --with-untracked (untracked files included)"
+    );
+    assert_eq!(with_untracked.print(), 1);
+}
+
+#[test]
 fn a_failed_listing_or_an_empty_scope_did_not_run() {
     let failed = judge(
         Path::new("/nonexistent/documentation-gates"),
@@ -153,7 +195,7 @@ fn a_failed_listing_or_an_empty_scope_did_not_run() {
             status: 128,
             stderr: "fatal: not a git repository".to_string(),
         }),
-        &[],
+        &GateRequest::default(),
     );
     assert_eq!(
         failures(&failed)[0].lines().next(),

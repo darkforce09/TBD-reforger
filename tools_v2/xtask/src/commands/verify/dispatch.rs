@@ -1,5 +1,6 @@
-use super::cli::VerifyCmd;
+use super::cli::{DocumentationGateArgs, VerifyCmd};
 use crate::core::repository_root::find_repo_root;
+use crate::verifications::documentation::{GateRequest, UntrackedFiles};
 use crate::*;
 use anyhow::Result;
 
@@ -92,19 +93,19 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                     &find_repo_root()?,
                 )?
             }
-            VerifyCmd::ReadmeCoverage { paths } => {
+            VerifyCmd::ReadmeCoverage { arguments } => {
                 crate::verifications::documentation::readme_coverage::verify_readme_coverage(
                     &find_repo_root()?,
-                    &paths,
+                    &documentation_gate_request(arguments),
                 )
             }
-            VerifyCmd::MarkdownPlacement { paths } => {
+            VerifyCmd::MarkdownPlacement { arguments } => {
                 crate::verifications::documentation::markdown_placement::verify_markdown_placement(
                     &find_repo_root()?,
-                    &paths,
+                    &documentation_gate_request(arguments),
                 )
             }
-            VerifyCmd::LinkCheck { report, paths } => {
+            VerifyCmd::LinkCheck { report, arguments } => {
                 use crate::verifications::documentation::link_check::{
                     BreakListing, verify_link_check,
                 };
@@ -113,9 +114,26 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                 } else {
                     BreakListing::First
                 };
-                verify_link_check(&find_repo_root()?, &paths, listing)
+                verify_link_check(
+                    &find_repo_root()?,
+                    &documentation_gate_request(arguments),
+                    listing,
+                )
             }
         };
         Ok(code)
+    }
+}
+
+/// The request every documentation gate judges, from the arguments every documentation verb
+/// takes.
+fn documentation_gate_request(arguments: DocumentationGateArgs) -> GateRequest {
+    GateRequest {
+        paths: arguments.paths,
+        untracked: if arguments.with_untracked {
+            UntrackedFiles::Included
+        } else {
+            UntrackedFiles::Invisible
+        },
     }
 }

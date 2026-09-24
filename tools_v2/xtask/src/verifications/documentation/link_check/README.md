@@ -58,8 +58,10 @@ finds each `cargo xtask` in the inline code spans and the fenced block lines, re
 to where shell syntax or prose ends the command, and walks them down xtask's clap command tree,
 in which `mk` and `ci` declare the build recipes and the CI task names as the possible values of
 their first argument; a word that names no subcommand where one belongs breaks, and so does a
-first argument that is none of the values its command declares. The rules are written out in the
-[Documentation Gates README](/tools_v2/xtask/src/verifications/documentation/README.md).
+first argument that is none of the values its command declares. The link rule and the
+backticked-path rule look every path up in the tree the gate listed, so under `--with-untracked` an
+untracked file git does not ignore resolves exactly like a tracked one. The rules are written out in
+the [Documentation Gates README](/tools_v2/xtask/src/verifications/documentation/README.md).
 
 ## Boundaries
 

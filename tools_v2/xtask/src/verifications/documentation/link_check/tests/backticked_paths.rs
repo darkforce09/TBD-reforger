@@ -2,6 +2,7 @@ use std::cell::RefCell;
 
 use verification_core::NotRun;
 
+use super::super::super::GateRequest;
 use super::super::super::fixture_checkout::{FixtureCheckout, failures, outcome_counts};
 use super::super::markdown_scan::scan;
 use super::super::{Break, BreakListing, judge as judge_gate};
@@ -390,7 +391,7 @@ fn frozen_records_are_never_judged_by_the_rule() {
     let run = judge_gate(
         fixture.root(),
         Ok(fixture.tree()),
-        &[],
+        &GateRequest::default(),
         BreakListing::Every,
         &mut rules,
     );

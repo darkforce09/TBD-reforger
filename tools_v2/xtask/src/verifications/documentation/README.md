@@ -10,26 +10,39 @@ xtask command a live document writes as code exists).
 
 ```text
 tools_v2/xtask/src/verifications/documentation/
-├── gate_scope.rs          the --path scope: normalises each value, refuses one naming no tracked folder
+├── gate_scope.rs          the --path scope: normalises each value, refuses one naming no listed folder
 ├── link_check/            the link check's scan, anchors, and link, backticked-path and command rules
 ├── link_check.rs          the link-check gate: the rule pipeline, one verdict per document, the totals
 ├── markdown_fences.rs     recognises the lines that open and close a fenced code block
 ├── markdown_placement.rs  the markdown-placement gate: code-tree Markdown, the retired root, the size limit
-├── mod.rs                 registers the gates and holds what they share: preparation, reading, printing
+├── mod.rs                 registers the gates and holds what they share: the request, preparation, printing
 ├── path_regions.rs        where a path sits: code trees, the README span, exempt folders, size-exempt areas
 ├── readme_coverage/       the Contents block parser, entry names and globs, and child matching
 ├── readme_coverage.rs     the readme-coverage gate: README coverage and the Contents check
 ├── tests/                 unit tests, and the fixture checkout they share
-└── tracked_tree.rs        the tracked files and folders that git ls-files lists
+└── tracked_tree.rs        the files git ls-files lists, untracked ones under --with-untracked, and their folders
 ```
 
 ## How it works
 
 Each run lists the index once with `git ls-files -z` (`tracked_tree.rs`) and judges only what that
 listing holds: a file on disk that git does not track is invisible, and a folder exists when it holds
-a tracked file. `mod.rs` refuses to judge anything when git is missing, fails, is killed or lists no
-file, and when a `--path` value names no tracked folder (`gate_scope.rs`); each gate then turns every
-judged item into one `verification_core` verdict and prints them through the shared report.
+a tracked file. This committed view is the one CI judges.
+
+With `--with-untracked`, the run also lists the untracked files git does not ignore, with
+`git ls-files --others --exclude-standard -z`, and judges each exactly like a tracked file: the
+folders it creates count, Contents entries match it, links and backticked paths to it resolve, and
+the placement rules apply to it. A file git ignores stays invisible, and a nested repository, which
+that listing names as a folder without its files, is skipped. Wherever a rule below names a tracked
+file, it then means a tracked or a listed untracked file. The header's scope line counts the
+untracked files apart, and the summary line names the flag, as in
+`readme-coverage --with-untracked (untracked files included): OK`, so such a result is never
+mistaken for a check of the committed files.
+
+`mod.rs` refuses to judge anything when either listing cannot run, fails or is killed, when the
+index lists no file, and when a `--path` value names no folder the listing holds (`gate_scope.rs`);
+each gate then turns every judged item into one `verification_core` verdict and prints them through
+the shared report.
 
 Exit status: 0 when every judged item held, 1 when at least one broke a rule, 2 when a check did not
 run: the listing failed or was empty, a judged file could not be read, the scope was refused, or the
@@ -75,7 +88,8 @@ that never closes each fail.
     hold globs. A glob matches whole names only; an unclosed `[` or `{`, or a reversed range, fails.
 - Matching: every tracked direct child except `README.md` matches exactly one entry of its own kind,
   a file against file entries and a folder against folder entries, and every entry matches at least one
-  tracked child. Untracked and ignored files are invisible.
+  tracked child. Ignored files are invisible, and so are untracked files unless `--with-untracked`
+  lists them.
 
 Every violation prints as `path:line: message`: a child that no entry matches is reported at the root
 line, a missing heading at line 1, and every other violation at the line it concerns.
@@ -109,7 +123,8 @@ break names its rule:
 
 1. missing target: a destination starting with `/` resolves from the repository root, any other
    from the document's folder, after percent-decoding and `.`/`..` normalisation; it must name a
-   tracked file or a folder that holds one. An untracked file is missing.
+   tracked file or a folder that holds one. An untracked file is missing unless `--with-untracked`
+   lists it.
 2. escapes repository: the path climbs above the repository root.
 3. undefined reference: a full (`[text][label]`) or collapsed (`[text][]`) reference names a label
    the document never defines; a shortcut (`[text]`) without a definition is plain text, and so is
@@ -186,14 +201,20 @@ new rule joins the list in `verify_link_check` and reads the scan it is given.
 
 ## Public surface
 
-- `cargo xtask verify readme-coverage [--path <dir>]...`
-- `cargo xtask verify markdown-placement [--path <dir>]...`
-- `cargo xtask verify link-check [--report] [--path <dir>]...`
+- `cargo xtask verify readme-coverage [--path <dir>]... [--with-untracked]`
+- `cargo xtask verify markdown-placement [--path <dir>]... [--with-untracked]`
+- `cargo xtask verify link-check [--report] [--path <dir>]... [--with-untracked]`
 
 `--path` is repeatable and repository-relative: a gate judges only the folders (readme-coverage) or
 files (markdown-placement, link-check) at or under the named folders. `.` or the checkout root means
 the whole repository, which is also the default. A value that climbs out with `..`, lies outside the
-checkout, names a file or names no tracked folder is refused with exit 2.
+checkout, names a file or names no folder the listing holds is refused with exit 2.
+
+`--with-untracked` adds the untracked files git does not ignore to what a gate judges, so new files
+can be checked before they are committed. Without it a gate judges the committed view, which is what
+CI runs. Both arguments come from one argument set that the three verbs share
+(`DocumentationGateArgs` in `tools_v2/xtask/src/commands/verify/cli.rs`), which the dispatcher
+turns into the `GateRequest` every gate takes.
 
 ## Boundaries
 

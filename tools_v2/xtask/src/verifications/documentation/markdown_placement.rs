@@ -5,15 +5,16 @@
 //! hidden folders excepted); the retired documentation root holds no tracked file; and every live
 //! Markdown document under the documentation root is at most [`LIVE_DOCUMENT_LINE_LIMIT`] lines.
 //!
-//! **Position:** `cargo xtask verify markdown-placement [--path <dir>]...` calls
-//! [`verify_markdown_placement`]; every region comes from [`super::path_regions`].
+//! **Position:** `cargo xtask verify markdown-placement [--path <dir>]... [--with-untracked]`
+//! calls [`verify_markdown_placement`]; every region comes from [`super::path_regions`].
 //!
 //! **Signals & state:** none; one pass over the tracked tree per run.
 //!
-//! **Invariants:** only tracked files are judged; the frozen ticket records and archives, the
-//! pending merge sources, the program records at the documentation root and the sync-managed
-//! documents are outside the size limit; a document that cannot be read is "did not run", never a
-//! pass.
+//! **Invariants:** only the listed files are judged: the tracked ones, and under
+//! `--with-untracked` the untracked ones git does not ignore; the frozen ticket records and
+//! archives, the pending merge sources, the program records at the documentation root and the
+//! sync-managed documents are outside the size limit; a document that cannot be read is "did not
+//! run", never a pass.
 
 use std::path::Path;
 
@@ -25,7 +26,7 @@ use super::path_regions::{
     is_size_exempt, is_within, parent_folder,
 };
 use super::tracked_tree::TrackedTree;
-use super::{GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
+use super::{GateRequest, GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
 use crate::core::repository_layout::documentation::{DOCUMENTATION_ROOT, RETIRED_DOCS_ROOT};
 
 /// The gate's name on its header and summary lines.
@@ -35,26 +36,28 @@ const GATE: &str = "markdown-placement";
 /// README index.
 const LIVE_DOCUMENT_LINE_LIMIT: usize = 500;
 
-/// `cargo xtask verify markdown-placement`: judge the tracked tree at `repo_root` over the
-/// `--path` scope, print every verdict, and return the exit status (0 held, 1 violation, 2 did
-/// not run).
-pub(crate) fn verify_markdown_placement(repo_root: &Path, scope: &[String]) -> u8 {
-    judge(repo_root, TrackedTree::load(repo_root), scope).print()
+/// `cargo xtask verify markdown-placement`: judge the files `request` lists at `repo_root` over
+/// its `--path` scope, print every verdict, and return the exit status (0 held, 1 violation, 2
+/// did not run).
+pub(crate) fn verify_markdown_placement(repo_root: &Path, request: &GateRequest) -> u8 {
+    judge(
+        repo_root,
+        TrackedTree::load(repo_root, request.untracked),
+        request,
+    )
+    .print()
 }
 
 /// The gate over an already-attempted listing, so a failed listing and a fixture tree take the
 /// same path as a real run.
-fn judge(
-    repo_root: &Path,
-    listing: Result<TrackedTree, NotRun>,
-    scope_values: &[String],
-) -> GateRun {
-    let (tree, scope) = match prepare(GATE, Kind::Ban, repo_root, listing, scope_values) {
+fn judge(repo_root: &Path, listing: Result<TrackedTree, NotRun>, request: &GateRequest) -> GateRun {
+    let (tree, scope) = match prepare(GATE, Kind::Ban, repo_root, listing, request) {
         Ok(prepared) => prepared,
         Err(stopped) => return stopped,
     };
     let mut run = GateRun::new(
         GATE,
+        request.untracked,
         vec![
             format!(
                 "==> {GATE}: code trees hold only {README}, {RETIRED_DOCS_ROOT}/ holds nothing, \

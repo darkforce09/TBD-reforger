@@ -1,13 +1,26 @@
+use super::super::UntrackedFiles;
 use super::super::fixture_checkout::{
-    FixtureCheckout, failures, outcome_counts, readme_with_contents,
+    FixtureCheckout, failures, outcome_counts, readme_with_contents, request,
 };
 use super::super::path_regions::file_name;
 use super::*;
 use crate::core::repository_layout::documentation::{DOCUMENTATION_ROOT, PENDING_MERGE_DIR};
 
 fn run(fixture: &FixtureCheckout, scope: &[&str]) -> GateRun {
-    let scope: Vec<String> = scope.iter().map(ToString::to_string).collect();
-    judge(fixture.root(), Ok(fixture.tree()), &scope)
+    judge(
+        fixture.root(),
+        Ok(fixture.tree()),
+        &request(scope, UntrackedFiles::Invisible),
+    )
+}
+
+/// The gate over the whole checkout as the real listing sees it.
+fn run_listed_by_git(fixture: &FixtureCheckout, untracked: UntrackedFiles) -> GateRun {
+    judge(
+        fixture.root(),
+        fixture.listed_by_git(untracked),
+        &request(&[], untracked),
+    )
 }
 
 fn no_failures() -> Vec<String> {
@@ -191,6 +204,80 @@ fn untracked_files_are_neither_children_nor_readmes() {
 }
 
 #[test]
+fn an_untracked_readme_makes_its_folder_pass_only_with_untracked_files_included() {
+    let mut fixture = FixtureCheckout::new("coverage-untracked-readme");
+    fixture
+        .tracked(
+            "apps/README.md",
+            &readme_with_contents("apps/", &["└── tool/  the tool"]),
+        )
+        .tracked("apps/tool/main.rs", "fn main() {}\n")
+        .untracked(
+            "apps/tool/README.md",
+            &readme_with_contents("apps/tool/", &["└── main.rs  entry point"]),
+        );
+    let committed = run_listed_by_git(&fixture, UntrackedFiles::Invisible);
+    assert_eq!(
+        failures(&committed),
+        ["FAIL: apps/tool/: no tracked README.md"]
+    );
+    assert_eq!(committed.summary_label(), "readme-coverage");
+    assert_eq!(committed.print(), 1);
+
+    let with_untracked = run_listed_by_git(&fixture, UntrackedFiles::Included);
+    assert_eq!(failures(&with_untracked), no_failures());
+    assert_eq!(outcome_counts(&with_untracked), (4, 0, 0));
+    assert_eq!(
+        with_untracked.header[1],
+        "    scope: the whole repository; git listed 2 tracked file(s) and 1 untracked file(s) it \
+         does not ignore"
+    );
+    assert_eq!(
+        with_untracked.summary_label(),
+        "readme-coverage --with-untracked (untracked files included)"
+    );
+    assert_eq!(with_untracked.print(), 0);
+}
+
+#[test]
+fn an_untracked_folder_is_a_child_only_with_untracked_files_included_and_an_ignored_one_never_is() {
+    let mut fixture = FixtureCheckout::new("coverage-untracked-folder");
+    fixture
+        .tracked(".gitignore", "build/\n")
+        .tracked(
+            "apps/README.md",
+            &readme_with_contents(
+                "apps/",
+                &["├── fresh/   the new tool", "└── main.rs  entry"],
+            ),
+        )
+        .tracked("apps/main.rs", "")
+        .untracked(
+            "apps/fresh/README.md",
+            &readme_with_contents("apps/fresh/", &["└── lib.rs  the library"]),
+        )
+        .untracked("apps/fresh/lib.rs", "")
+        .untracked("apps/build/output.txt", "");
+    let committed = run_listed_by_git(&fixture, UntrackedFiles::Invisible);
+    assert_eq!(
+        failures(&committed),
+        [
+            "FAIL: apps/README.md: Contents does not match the folder (1 violation(s))\n      \
+          apps/README.md:9: entry `fresh/` matches no tracked child"
+        ]
+    );
+    assert_eq!(outcome_counts(&committed), (1, 1, 0));
+
+    let with_untracked = run_listed_by_git(&fixture, UntrackedFiles::Included);
+    assert_eq!(
+        failures(&with_untracked),
+        no_failures(),
+        "the ignored build/ folder is neither a child nor a folder without a README"
+    );
+    assert_eq!(outcome_counts(&with_untracked), (4, 0, 0));
+}
+
+#[test]
 fn the_scope_narrows_the_judged_folders() {
     let mut fixture = FixtureCheckout::new("coverage-scope");
     fixture
@@ -233,15 +320,44 @@ fn a_tracked_readme_missing_from_the_disk_did_not_run() {
 #[test]
 fn a_failed_or_empty_listing_did_not_run() {
     let root = Path::new("/nonexistent/documentation-gates");
-    let absent = judge(root, Err(NotRun::ToolAbsent("git".to_string())), &[]);
+    let absent = judge(
+        root,
+        Err(NotRun::ToolAbsent("git".to_string())),
+        &GateRequest::default(),
+    );
     assert_eq!(
         failures(&absent)[0].lines().next(),
         Some("FAIL: readme-coverage could not list the tracked files — git not found")
     );
     assert_eq!(absent.print(), 2);
-    let empty = judge(root, Ok(TrackedTree::from_listing("")), &[]);
+    let empty = judge(
+        root,
+        Ok(TrackedTree::from_listing("")),
+        &GateRequest::default(),
+    );
     assert_eq!(outcome_counts(&empty), (0, 0, 1));
     assert_eq!(empty.print(), 2);
+}
+
+#[test]
+fn a_run_that_stopped_still_marks_untracked_files_on_its_summary() {
+    let untracked = request(&[], UntrackedFiles::Included);
+    let absent = judge(
+        Path::new("/nonexistent/documentation-gates"),
+        Err(NotRun::ToolAbsent("git".to_string())),
+        &untracked,
+    );
+    assert_eq!(
+        failures(&absent)[0].lines().next(),
+        Some(
+            "FAIL: readme-coverage could not list the tracked and untracked files — git not found"
+        )
+    );
+    assert_eq!(
+        absent.summary_label(),
+        "readme-coverage --with-untracked (untracked files included)"
+    );
+    assert_eq!(absent.print(), 2);
 }
 
 #[test]

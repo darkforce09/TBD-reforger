@@ -6,14 +6,15 @@
 //! two rules: the folder carries a tracked README.md, and that README.md has a Contents block that
 //! lists exactly the folder's tracked direct children.
 //!
-//! **Position:** `cargo xtask verify readme-coverage [--path <dir>]...` calls
+//! **Position:** `cargo xtask verify readme-coverage [--path <dir>]... [--with-untracked]` calls
 //! [`verify_readme_coverage`]. [`contents_block`] reads a README's Contents block,
 //! [`entry_pattern`] matches an entry's name or glob, and [`folder_matching`] pairs the entries
 //! with the children the [`TrackedTree`] lists.
 //!
 //! **Signals & state:** none; one pass over the tracked tree per run.
 //!
-//! **Invariants:** only tracked files count, as children and as READMEs; both rules judge the same
+//! **Invariants:** only the listed files count, as children and as READMEs: the tracked ones,
+//! and under `--with-untracked` the untracked ones git does not ignore; both rules judge the same
 //! folders, so an exempt folder (test, generated-output, hidden, pending-merge) and the README.md
 //! it holds are judged by neither; every Contents violation prints as `path:line: message`; a
 //! README that cannot be read is "did not run", never a pass.
@@ -28,7 +29,7 @@ use verification_core::{Finding, Kind, NotRun, Verdict};
 
 use super::path_regions::{README, in_readme_span, join};
 use super::tracked_tree::{FolderChildren, TrackedTree};
-use super::{GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
+use super::{GateRequest, GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
 use crate::core::repository_layout::documentation::{CODE_TREES, DOCUMENTATION_ROOT};
 
 /// The gate's name on its header and summary lines.
@@ -49,25 +50,28 @@ struct Violation {
     message: String,
 }
 
-/// `cargo xtask verify readme-coverage`: judge the tracked tree at `repo_root` over the `--path`
-/// scope, print every verdict, and return the exit status (0 held, 1 violation, 2 did not run).
-pub(crate) fn verify_readme_coverage(repo_root: &Path, scope: &[String]) -> u8 {
-    judge(repo_root, TrackedTree::load(repo_root), scope).print()
+/// `cargo xtask verify readme-coverage`: judge the files `request` lists at `repo_root` over its
+/// `--path` scope, print every verdict, and return the exit status (0 held, 1 violation, 2 did
+/// not run).
+pub(crate) fn verify_readme_coverage(repo_root: &Path, request: &GateRequest) -> u8 {
+    judge(
+        repo_root,
+        TrackedTree::load(repo_root, request.untracked),
+        request,
+    )
+    .print()
 }
 
 /// The gate over an already-attempted listing, so a failed listing and a fixture tree take the
 /// same path as a real run.
-fn judge(
-    repo_root: &Path,
-    listing: Result<TrackedTree, NotRun>,
-    scope_values: &[String],
-) -> GateRun {
-    let (tree, scope) = match prepare(GATE, Kind::Pin, repo_root, listing, scope_values) {
+fn judge(repo_root: &Path, listing: Result<TrackedTree, NotRun>, request: &GateRequest) -> GateRun {
+    let (tree, scope) = match prepare(GATE, Kind::Pin, repo_root, listing, request) {
         Ok(prepared) => prepared,
         Err(stopped) => return stopped,
     };
     let mut run = GateRun::new(
         GATE,
+        request.untracked,
         vec![
             format!(
                 "==> {GATE}: every folder of {} carries a {README} whose Contents block matches it",

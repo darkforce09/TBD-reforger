@@ -2,14 +2,20 @@
 //!
 //! Tracked files are written and listed; untracked files are only written; a listed-only path is
 //! in the listing but absent from the disk. The gates judge the listing, never the disk walk, so
-//! the three kinds cover every way the two can disagree.
+//! the three kinds cover every way the two can disagree. [`FixtureCheckout::tree`] builds the
+//! listing directly; [`FixtureCheckout::listed_by_git`] makes the checkout a git repository and
+//! runs the real listing, so git's own ignore rules decide which untracked files it sees.
 
 use std::path::{Path, PathBuf};
 
-use verification_core::Verdict;
+use verification_core::proc::Run;
+use verification_core::{NotRun, Verdict};
 
-use super::GateRun;
 use super::tracked_tree::TrackedTree;
+use super::{GateRequest, GateRun, UntrackedFiles};
+
+/// Variables that would point git at another repository or index than the fixture's own.
+const GIT_LOCATION_VARIABLES: [&str; 3] = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"];
 
 /// A temporary checkout root plus the listing a `git ls-files` there would print.
 pub(super) struct FixtureCheckout {
@@ -54,6 +60,17 @@ impl FixtureCheckout {
         TrackedTree::from_listing(&self.listing.join("\0"))
     }
 
+    /// The tree a gate run lists: the checkout becomes a git repository whose index holds the
+    /// tracked paths, then the real listing runs. Every tracked path must exist on disk, since
+    /// `git add` records what the disk holds.
+    pub(super) fn listed_by_git(&self, untracked: UntrackedFiles) -> Result<TrackedTree, NotRun> {
+        self.git(&["init", "--quiet"]);
+        let mut add = vec!["add", "--"];
+        add.extend(self.listing.iter().map(String::as_str));
+        self.git(&add);
+        TrackedTree::load(&self.root, untracked)
+    }
+
     /// The checkout root.
     pub(super) fn root(&self) -> &Path {
         &self.root
@@ -66,11 +83,33 @@ impl FixtureCheckout {
         }
         std::fs::write(&full, text).expect("write a fixture file");
     }
+
+    /// Run git in the checkout, never in the repository or index the environment names.
+    fn git(&self, arguments: &[&str]) {
+        let command = GIT_LOCATION_VARIABLES.iter().fold(
+            Run::new("git").args(arguments).cwd(&self.root),
+            |run, variable| run.env_remove(*variable),
+        );
+        let output = command.output().expect("git runs in the fixture checkout");
+        assert_eq!(
+            output.code, 0,
+            "git {arguments:?} failed: {}",
+            output.stderr
+        );
+    }
 }
 
 impl Drop for FixtureCheckout {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.root);
+    }
+}
+
+/// A request over the `--path` values `scope` that sees untracked files as `untracked` says.
+pub(super) fn request(scope: &[&str], untracked: UntrackedFiles) -> GateRequest {
+    GateRequest {
+        paths: scope.iter().map(ToString::to_string).collect(),
+        untracked,
     }
 }
 

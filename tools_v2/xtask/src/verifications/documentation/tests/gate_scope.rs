@@ -1,6 +1,6 @@
 use super::*;
 use crate::cli::{Cli, TopCmd};
-use crate::commands::verify::cli::VerifyCmd;
+use crate::commands::verify::cli::{DocumentationGateArgs, VerifyCmd};
 use clap::Parser;
 
 fn tree() -> TrackedTree {
@@ -87,29 +87,35 @@ fn a_bad_value_is_refused_even_beside_a_whole_repository_value() {
     assert_eq!(refusal.value, "apps/missing");
 }
 
+/// The documentation gate arguments `verb` parses from `extra`.
+fn gate_arguments(verb: &str, extra: &[&str]) -> DocumentationGateArgs {
+    let mut line = vec!["xtask", "verify", verb];
+    line.extend_from_slice(extra);
+    match Cli::try_parse_from(line).expect("the verb parses").cmd {
+        TopCmd::Verify {
+            cmd:
+                VerifyCmd::ReadmeCoverage { arguments }
+                | VerifyCmd::MarkdownPlacement { arguments }
+                | VerifyCmd::LinkCheck { arguments, .. },
+        } => arguments,
+        other => panic!("{verb} parsed as {other:?}"),
+    }
+}
+
 #[test]
-fn both_verbs_take_a_repeatable_path() {
-    let parse = |verb: &str| {
-        Cli::try_parse_from([
-            "xtask", "verify", verb, "--path", "apps", "--path", "tools_v2",
-        ])
-        .expect("the verb parses")
-    };
-    match parse("readme-coverage").cmd {
-        TopCmd::Verify {
-            cmd: VerifyCmd::ReadmeCoverage { paths },
-        } => assert_eq!(paths, ["apps", "tools_v2"]),
-        other => panic!("readme-coverage parsed as {other:?}"),
+fn every_documentation_verb_takes_a_repeatable_path_and_the_untracked_flag() {
+    for verb in ["readme-coverage", "markdown-placement", "link-check"] {
+        let arguments = gate_arguments(
+            verb,
+            &["--path", "apps", "--with-untracked", "--path", "tools_v2"],
+        );
+        assert_eq!(arguments.paths, ["apps", "tools_v2"], "{verb}");
+        assert!(arguments.with_untracked, "{verb}");
+        let bare = gate_arguments(verb, &[]);
+        assert!(bare.paths.is_empty(), "{verb}");
+        assert!(
+            !bare.with_untracked,
+            "{verb}: CI's committed view is the default"
+        );
     }
-    match parse("markdown-placement").cmd {
-        TopCmd::Verify {
-            cmd: VerifyCmd::MarkdownPlacement { paths },
-        } => assert_eq!(paths, ["apps", "tools_v2"]),
-        other => panic!("markdown-placement parsed as {other:?}"),
-    }
-    let bare = Cli::try_parse_from(["xtask", "verify", "readme-coverage"]).expect("no --path");
-    assert!(matches!(
-        bare.cmd,
-        TopCmd::Verify { cmd: VerifyCmd::ReadmeCoverage { paths } } if paths.is_empty()
-    ));
 }

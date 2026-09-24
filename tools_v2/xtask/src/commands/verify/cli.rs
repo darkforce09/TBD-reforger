@@ -1,4 +1,17 @@
-use clap::Subcommand;
+use clap::{Args, Subcommand};
+
+/// The arguments every documentation gate takes: which folders it judges, and whether the
+/// untracked files git does not ignore count.
+#[derive(Args, Debug)]
+pub(crate) struct DocumentationGateArgs {
+    /// Judge only what lies at or under this repository-relative folder (repeatable)
+    #[arg(long = "path", value_name = "DIR")]
+    pub(crate) paths: Vec<String>,
+    /// Also judge the untracked files git does not ignore, exactly like tracked ones: a check of
+    /// new files before they are committed; CI judges the tracked files alone
+    #[arg(long = "with-untracked")]
+    pub(crate) with_untracked: bool,
+}
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum VerifyCmd {
@@ -90,18 +103,16 @@ pub(crate) enum VerifyCmd {
     /// children
     #[command(name = "readme-coverage")]
     ReadmeCoverage {
-        /// Judge only the folders at or under this repository-relative folder (repeatable)
-        #[arg(long = "path", value_name = "DIR")]
-        paths: Vec<String>,
+        #[command(flatten)]
+        arguments: DocumentationGateArgs,
     },
     /// The code trees hold no Markdown but README.md, the retired documentation root holds no
     /// tracked file, and every live document under the documentation root stays at or under 500
     /// lines
     #[command(name = "markdown-placement")]
     MarkdownPlacement {
-        /// Judge only the files at or under this repository-relative folder (repeatable)
-        #[arg(long = "path", value_name = "DIR")]
-        paths: Vec<String>,
+        #[command(flatten)]
+        arguments: DocumentationGateArgs,
     },
     /// Every link in the documentation root, the READMEs, the project instructions, the ticket
     /// folder's documents and the Cursor rules reaches a tracked file or folder, a heading or
@@ -114,8 +125,7 @@ pub(crate) enum VerifyCmd {
         /// Print every break as `path:line: rule: message` instead of the first ones
         #[arg(long)]
         report: bool,
-        /// Judge only the documents at or under this repository-relative folder (repeatable)
-        #[arg(long = "path", value_name = "DIR")]
-        paths: Vec<String>,
+        #[command(flatten)]
+        arguments: DocumentationGateArgs,
     },
 }

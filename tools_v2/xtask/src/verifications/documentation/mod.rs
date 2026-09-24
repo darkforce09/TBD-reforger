@@ -1,25 +1,29 @@
 //! The documentation gates: README coverage with its Contents check, Markdown placement with its
 //! size limit, and the link check.
 //!
-//! **Role:** holds one module per gate and the machinery every gate shares: the tracked-file tree
-//! ([`tracked_tree`]), the `--path` scope ([`gate_scope`]), the repository regions
-//! ([`path_regions`]), fenced-block recognition ([`markdown_fences`]), and [`GateRun`], which
-//! carries a gate's verdicts to [`verification_core::Report`].
+//! **Role:** holds one module per gate and the machinery every gate shares: the operator's
+//! [`GateRequest`], the tree of files a gate treats as tracked ([`tracked_tree`]), the `--path`
+//! scope ([`gate_scope`]), the repository regions ([`path_regions`]), fenced-block recognition
+//! ([`markdown_fences`]), and [`GateRun`], which carries a gate's verdicts to
+//! [`verification_core::Report`].
 //!
 //! **Position:** `cargo xtask verify readme-coverage`, `cargo xtask verify markdown-placement`
 //! and `cargo xtask verify link-check` reach [`readme_coverage::verify_readme_coverage`],
 //! [`markdown_placement::verify_markdown_placement`] and [`link_check::verify_link_check`]
-//! through the verify dispatcher. Every path a gate judges comes from `git ls-files`, and every
-//! region it applies comes from [`crate::core::repository_layout::documentation`].
+//! through the verify dispatcher, each with a [`GateRequest`]. Every path a gate judges comes
+//! from `git ls-files` (the index, joined under `--with-untracked` by the untracked files git
+//! does not ignore), and every region it applies comes from
+//! [`crate::core::repository_layout::documentation`].
 //!
-//! **Signals & state:** none held; a run lists the tracked files once, judges them, prints its
-//! verdicts and returns its exit status.
+//! **Signals & state:** none held; a run lists the files once, judges them, prints its verdicts
+//! and returns its exit status.
 //!
-//! **Invariants:** a gate that could not list the tracked files, could not read a file it judges,
-//! or whose scope selects nothing reports "did not run" (exit 2), never a pass; exit 1 means at
-//! least one judged item broke a rule; exit 0 means every judged item held. A gate is one module
-//! that builds a [`GateRun`] from [`prepare`]'s tree and scope, so another gate registers here the
-//! same way.
+//! **Invariants:** a gate that could not list the files, could not read a file it judges, or
+//! whose scope selects nothing reports "did not run" (exit 2), never a pass; exit 1 means at
+//! least one judged item broke a rule; exit 0 means every judged item held. A run that included
+//! untracked files says so on its header and its summary line, so its result never passes for a
+//! check of the committed files. A gate is one module that builds a [`GateRun`] from [`prepare`]'s
+//! tree and scope, so another gate registers here the same way.
 
 pub(crate) mod link_check;
 pub(crate) mod markdown_placement;
@@ -40,11 +44,24 @@ use verification_core::{Kind, NotRun, Report, Verdict};
 
 use gate_scope::GateScope;
 use tracked_tree::TrackedTree;
+pub(crate) use tracked_tree::UntrackedFiles;
+
+/// What the operator asked one documentation gate to judge.
+#[derive(Debug, Default)]
+pub(crate) struct GateRequest {
+    /// The `--path` values as written; none means the whole repository.
+    pub(crate) paths: Vec<String>,
+    /// Whether the untracked files git does not ignore are judged like tracked ones
+    /// (`--with-untracked`).
+    pub(crate) untracked: UntrackedFiles,
+}
 
 /// What one run of a documentation gate concluded, in print order.
 struct GateRun {
-    /// The name the report's summary line carries.
+    /// The gate's name, on the header and, marked by [`GateRun::summary_label`], on the summary.
     label: &'static str,
+    /// Whether the run's listing included untracked files.
+    untracked: UntrackedFiles,
     /// Lines printed before the verdicts: what the gate judges and over which scope.
     header: Vec<String>,
     /// One verdict per judged item, in the order the gate judged them.
@@ -55,9 +72,10 @@ struct GateRun {
 
 impl GateRun {
     /// A run with a header and nothing judged yet.
-    fn new(label: &'static str, header: Vec<String>) -> GateRun {
+    fn new(label: &'static str, untracked: UntrackedFiles, header: Vec<String>) -> GateRun {
         GateRun {
             label,
+            untracked,
             header,
             verdicts: Vec::new(),
             totals: Vec::new(),
@@ -65,10 +83,27 @@ impl GateRun {
     }
 
     /// A run that judged nothing, carrying the one verdict that says why.
-    fn stopped(label: &'static str, header: Vec<String>, verdict: Verdict) -> GateRun {
+    fn stopped(
+        label: &'static str,
+        untracked: UntrackedFiles,
+        header: Vec<String>,
+        verdict: Verdict,
+    ) -> GateRun {
         GateRun {
             verdicts: vec![verdict],
-            ..GateRun::new(label, header)
+            ..GateRun::new(label, untracked, header)
+        }
+    }
+
+    /// The name the summary line carries: the gate's own, followed by the flag when the run
+    /// included untracked files, so a pasted summary never passes for a check of the committed
+    /// files.
+    fn summary_label(&self) -> String {
+        match self.untracked {
+            UntrackedFiles::Invisible => self.label.to_string(),
+            UntrackedFiles::Included => {
+                format!("{} --with-untracked (untracked files included)", self.label)
+            }
         }
     }
 
@@ -79,7 +114,7 @@ impl GateRun {
         for line in &self.header {
             println!("{line}");
         }
-        let mut report = Report::new(self.label);
+        let mut report = Report::new(self.summary_label());
         for verdict in self.verdicts {
             report.check(verdict);
         }
@@ -119,46 +154,58 @@ impl Tally {
 
 /// The header line that names a run's scope and how many files the listing held.
 fn scope_line(scope: &GateScope, tree: &TrackedTree) -> String {
-    format!(
-        "    scope: {}; git listed {} tracked file(s)",
-        scope.describe(),
-        tree.file_count()
-    )
+    let scope = scope.describe();
+    let tracked = tree.tracked_file_count();
+    match tree.untracked_file_count() {
+        None => format!("    scope: {scope}; git listed {tracked} tracked file(s)"),
+        Some(untracked) => format!(
+            "    scope: {scope}; git listed {tracked} tracked file(s) and {untracked} untracked \
+             file(s) it does not ignore"
+        ),
+    }
 }
 
-/// The tracked tree and the resolved scope a gate judges, or the stopped run that says why the
-/// gate cannot judge anything.
+/// The tree and the resolved scope a gate judges, or the stopped run that says why the gate
+/// cannot judge anything.
 ///
-/// A listing that failed, a listing that holds no file, and a `--path` value the tree refuses
-/// are all "did not run": the gate never examined the files the operator asked about.
+/// A listing that failed, a listing that holds no tracked file, and a `--path` value the tree
+/// refuses are all "did not run": the gate never examined the files the operator asked about.
 fn prepare(
     label: &'static str,
     kind: Kind,
     repo_root: &Path,
     listing: Result<TrackedTree, NotRun>,
-    scope_values: &[String],
+    request: &GateRequest,
 ) -> Result<(TrackedTree, GateScope), GateRun> {
-    let header = || vec![format!("==> {label}")];
+    let stopped = |verdict| {
+        GateRun::stopped(
+            label,
+            request.untracked,
+            vec![format!("==> {label}")],
+            verdict,
+        )
+    };
     let tree = match listing {
-        Ok(tree) if tree.file_count() == 0 => {
+        Ok(tree) if tree.tracked_file_count() == 0 => {
             let verdict = Verdict::did_not_run(
                 format!("{label}: git listed no tracked file"),
                 kind,
                 NotRun::TargetMissing(repo_root.to_path_buf()),
             );
-            return Err(GateRun::stopped(label, header(), verdict));
+            return Err(stopped(verdict));
         }
         Ok(tree) => tree,
         Err(cause) => {
-            let verdict = Verdict::did_not_run(
-                format!("{label} could not list the tracked files"),
-                kind,
-                cause,
-            );
-            return Err(GateRun::stopped(label, header(), verdict));
+            let listed = match request.untracked {
+                UntrackedFiles::Invisible => "the tracked files",
+                UntrackedFiles::Included => "the tracked and untracked files",
+            };
+            let verdict =
+                Verdict::did_not_run(format!("{label} could not list {listed}"), kind, cause);
+            return Err(stopped(verdict));
         }
     };
-    match GateScope::resolve(scope_values, repo_root, &tree) {
+    match GateScope::resolve(&request.paths, repo_root, &tree) {
         Ok(scope) => Ok((tree, scope)),
         Err(refusal) => {
             let verdict = Verdict::did_not_run(
@@ -166,7 +213,7 @@ fn prepare(
                 kind,
                 NotRun::TargetMissing(repo_root.join(&refusal.value)),
             );
-            Err(GateRun::stopped(label, header(), verdict))
+            Err(stopped(verdict))
         }
     }
 }
