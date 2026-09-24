@@ -17,7 +17,7 @@ mislead the next reader, and two of them are the sentences that let real defects
    (wired into both gates). **That sentence is the one that let GO-7 stay dead for the whole Go->Rust
    rewrite** — three handlers carried `@route` tags to routes that did not exist, and one live route
    carried no tag at all, because the Makefile said something was watching.
-2. **`docs/platform/CODING_STANDARDS.md:138-141 / 369 / 415`** point GO-7 at deleted Go artefacts
+2. **`documentation_v2/standards/coding_standards/README.md:138-141 / 369 / 415`** point GO-7 at deleted Go artefacts
    (`handlers.go Register()`, `verify-contract-citations.mjs`, "82 handlers"). Should read
    `scripts/verify-route-tags.sh` and 102 handlers.
 3. **Three drifted `content_golden.sql` line citations** after T-585's reorder:
@@ -85,7 +85,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 owns = [
     "Makefile",
-    "docs/platform/CODING_STANDARDS.md",
+    "documentation_v2/standards/coding_standards/README.md",
 ]
 
 [scope]

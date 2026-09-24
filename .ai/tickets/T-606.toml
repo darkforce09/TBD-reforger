@@ -9,7 +9,7 @@ executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
 
-FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Individually trivial, together
+FOUND while writing `documentation_v2/runbooks/two_client_playtest/README.md` (2026-07-31). Individually trivial, together
 they guarantee a confusing playtest: the operator greps for what the docs say, gets nothing, and
 concludes the feature is broken when it worked.
 
@@ -22,9 +22,9 @@ concludes the feature is broken when it worked.
    inside `TBD_FrameworkManager.c:488`'s **error** string -- so the health check passes only when
    something failed.
 
-3. **`docs/mod/STAGING-SERVER.md:192-203`** requires `built slot spawn`, which has been **deleted**.
+3. **`documentation_v2/runbooks/game_server_staging/README.md:192-203`** requires `built slot spawn`, which has been **deleted**.
 
-`docs/platform/PLAYTEST_RUNBOOK.md` §5 already carries corrected greps for all three; this ticket is
+`documentation_v2/runbooks/two_client_playtest/README.md` §5 already carries corrected greps for all three; this ticket is
 to fix them at the source so the runbook is not the only correct copy.
 
 ALSO, same family, documented in the runbook §6 rather than filed separately:
@@ -63,7 +63,7 @@ verify = [
 ]
 acceptance = [
     "remote-log-grep.sh matched stable tag prefixes instead of deleted sentences and could exit zero on a healthy boot log.",
-    "STAGING-SERVER.md and run-playtest-server.sh greps were reconciled to current [TBD][Loadout][Slot] and LOBBY stage output.",
+    "documentation_v2/runbooks/game_server_staging/README.md and run-playtest-server.sh greps were reconciled to current [TBD][Loadout][Slot] and LOBBY stage output.",
     "remote-log-grep gained --file and --selftest modes that proved the verdict could fail on inverted Mission loaded checks.",
 ]
 citations = [
@@ -83,7 +83,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
     "scripts/mod/remote-log-grep.sh",
-    "docs/mod/STAGING-SERVER.md",
+    "documentation_v2/runbooks/game_server_staging/README.md",
     "scripts/mod/run-playtest-server.sh",
 ]
 

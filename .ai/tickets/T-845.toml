@@ -5,8 +5,8 @@ summary = "A selected vehicle looks identical to an unselected one"
 class = "bug"
 status = "ready"
 order = 8500
-spec = "docs/specs/existing/t845_selected_vehicle_treatment.md"
-plan = "docs/plans/t-845_plan.md"
+spec = "documentation_v2/tickets/specs/t845_selected_vehicle_treatment.md"
+plan = "documentation_v2/tickets/plans/t-845_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set

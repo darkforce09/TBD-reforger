@@ -541,10 +541,12 @@ fn ship_leaves_unrelated_parent_active() {
 #[test]
 fn mark_ready_backfills_and_gates() {
     let root = scratch_root("mark-ready");
-    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
+    let plans = root.join(crate::repository::documentation::PLANS_DIR);
+    fs::create_dir_all(&plans).unwrap();
+    fs::create_dir_all(root.join("docs")).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
-    fs::write(root.join("docs/plans/t-1_plan.md"), "# plan\n").unwrap();
-    fs::write(root.join("docs/plans/t-2_plan.md"), "# plan\n").unwrap();
+    fs::write(plans.join("t-1_plan.md"), "# plan\n").unwrap();
+    fs::write(plans.join("t-2_plan.md"), "# plan\n").unwrap();
     let mut c = Corpus::new(&root);
     let mut t1 = work("T-1", Status::Queued { order: 10 });
     t1.owns = vec![];
@@ -581,7 +583,7 @@ fn mark_ready_backfills_and_gates() {
             assert_eq!(w.spec.as_deref(), Some("docs/spec.md"));
             assert_eq!(
                 w.plan.as_deref(),
-                Some("docs/plans/t-1_plan.md"),
+                Some("documentation_v2/tickets/plans/t-1_plan.md"),
                 "unset plan defaults to the id-derived path and is WRITTEN"
             );
             assert_eq!(w.main_goal.as_deref(), Some("T-1 summary"));
@@ -603,9 +605,11 @@ fn mark_ready_backfills_and_gates() {
 #[test]
 fn mark_ready_refuses_empty_ready_tier_fields() {
     let root = scratch_root("mark-ready-tier");
-    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
+    let plans = root.join(crate::repository::documentation::PLANS_DIR);
+    fs::create_dir_all(&plans).unwrap();
+    fs::create_dir_all(root.join("docs")).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
-    fs::write(root.join("docs/plans/t-3_plan.md"), "# plan\n").unwrap();
+    fs::write(plans.join("t-3_plan.md"), "# plan\n").unwrap();
     let mut c = Corpus::new(&root);
     let mut t3 = work("T-3", Status::Queued { order: 10 });
     t3.context = vec![];
@@ -787,7 +791,9 @@ fn post_image_main_goal_gate_on_changed_live_work() {
 #[test]
 fn mark_ready_plan_gate_refuses_and_resolves() {
     let root = scratch_root("mark-ready-plan");
-    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
+    let plans = root.join(crate::repository::documentation::PLANS_DIR);
+    fs::create_dir_all(&plans).unwrap();
+    fs::create_dir_all(root.join("docs")).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
     let mut c = Corpus::new(&root);
     c.tickets.insert(
@@ -798,43 +804,39 @@ fn mark_ready_plan_gate_refuses_and_resolves() {
     // No plan file anywhere → refuse naming the DEFAULT path (dots → underscores).
     let err = mark_ready(&mut c, "T-9.1", Some("docs/spec.md"), None, CLOCK).expect_err("no plan");
     assert!(
-        err.starts_with("Plan file not found: ") && err.contains("docs/plans/t-9_1_plan.md"),
+        err.starts_with("Plan file not found: ")
+            && err.contains("documentation_v2/tickets/plans/t-9_1_plan.md"),
         "{err}"
     );
     assert_eq!(before, c, "refusal must not mutate");
     // Explicit PLAN argument that is missing → refuse naming THAT path.
-    let err = mark_ready(
-        &mut c,
-        "T-9.1",
-        Some("docs/spec.md"),
-        Some("docs/plans/custom.md"),
-        CLOCK,
-    )
-    .expect_err("explicit plan missing");
-    assert!(err.contains("docs/plans/custom.md"), "{err}");
+    let custom = "documentation_v2/tickets/plans/custom.md";
+    let err = mark_ready(&mut c, "T-9.1", Some("docs/spec.md"), Some(custom), CLOCK)
+        .expect_err("explicit plan missing");
+    assert!(err.contains(custom), "{err}");
     // Present explicit plan lands and is written to the field.
-    fs::write(root.join("docs/plans/custom.md"), "# plan\n").unwrap();
-    mark_ready(
-        &mut c,
-        "T-9.1",
-        Some("docs/spec.md"),
-        Some("docs/plans/custom.md"),
-        CLOCK,
-    )
-    .expect("explicit plan present");
+    fs::write(plans.join("custom.md"), "# plan\n").unwrap();
+    mark_ready(&mut c, "T-9.1", Some("docs/spec.md"), Some(custom), CLOCK)
+        .expect("explicit plan present");
     match c.get("T-9.1").unwrap() {
-        Ticket::Work(w) => assert_eq!(w.plan.as_deref(), Some("docs/plans/custom.md")),
+        Ticket::Work(w) => assert_eq!(w.plan.as_deref(), Some(custom)),
         Ticket::Program(_) => panic!("work"),
     }
     // An already-set plan field is honored when no argument is passed.
     set_status(&mut c, "T-9.1", "queued", CLOCK).expect("back to queued");
     mark_ready(&mut c, "T-9.1", None, None, CLOCK).expect("field plan honored");
     match c.get("T-9.1").unwrap() {
-        Ticket::Work(w) => assert_eq!(w.plan.as_deref(), Some("docs/plans/custom.md")),
+        Ticket::Work(w) => assert_eq!(w.plan.as_deref(), Some(custom)),
         Ticket::Program(_) => panic!("work"),
     }
-    assert_eq!(default_plan_path("T-917.6"), "docs/plans/t-917_6_plan.md");
-    assert_eq!(default_plan_path("T-090.4"), "docs/plans/t-090_4_plan.md");
+    assert_eq!(
+        default_plan_path("T-917.6"),
+        "documentation_v2/tickets/plans/t-917_6_plan.md"
+    );
+    assert_eq!(
+        default_plan_path("T-090.4"),
+        "documentation_v2/tickets/plans/t-090_4_plan.md"
+    );
 }
 
 #[test]
@@ -856,9 +858,11 @@ fn mark_ready_refuses_missing_spec_and_missing_file() {
 #[test]
 fn mark_ready_without_order_refuses() {
     let root = scratch_root("mark-ready-order");
-    fs::create_dir_all(root.join(crate::repository::documentation::PLANS_DIR)).unwrap();
+    let plans = root.join(crate::repository::documentation::PLANS_DIR);
+    fs::create_dir_all(&plans).unwrap();
+    fs::create_dir_all(root.join("docs")).unwrap();
     fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
-    fs::write(root.join("docs/plans/t-1_plan.md"), "# plan\n").unwrap();
+    fs::write(plans.join("t-1_plan.md"), "# plan\n").unwrap();
     let mut c = Corpus::new(&root);
     c.tickets
         .insert("T-1".into(), Ticket::Work(work("T-1", Status::Idea)));

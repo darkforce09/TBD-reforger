@@ -5,8 +5,8 @@ summary = "world_host and the occluder host resolve a camera rect to byte ranges
 class = "feature"
 status = "queued"
 order = 7993
-spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
-plan = "docs/plans/t-935_19_plan.md"
+spec = "documentation_v2/tickets/specs/t938_engine_perf.md"
+plan = "documentation_v2/tickets/plans/t-935_19_plan.md"
 executor = "claude-code"
 notes = """
 Step 2 of the T-935.15 program, filed 2026-09-08. Sequenced strictly after T-935.18 — the container has

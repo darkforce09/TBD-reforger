@@ -4,7 +4,7 @@ title = "TBD Framework — Arma-3-parity event mod (factory + spine)"
 summary = "Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13. BLOCKED: the only remaining slice is T-181.16 (executor: human) — a live two-client E2E on a dedicated server. Not agent-actionable; moved off `ready` on 2026-07-26 so the fleet does not pick it up."
 status = "deferred"
 order = 1810
-spec = "docs/mod/t181_event_mod_program.md"
+spec = "documentation_v2/tickets/specs/t181_event_mod_program.md"
 executor = "claude-code"
 depends_on = ["T-068"]
 children = [

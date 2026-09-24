@@ -47,7 +47,7 @@ untouched and waves 76-81 intact.
 STILL OPEN, filed rather than fixed (verifier F2/F4, both LOW): the `.py` ban excludes nested
 `target/`, `node_modules/`, `.ai/artifacts/worktrees/`, so a tracked importable `.py` under
 `scripts/target/` evades it -- **pre-existing**, byte-identical to the pre-T-620 exclusions. And the
-pattern misses a bareword `python run.py`. Also cosmetic: `CODING_STANDARDS.md:126`, `Makefile:472`
+pattern misses a bareword `python run.py`. Also cosmetic: `documentation_v2/standards/coding_standards/README.md:126`, `Makefile:472`
 and `ci.yml:209` still say "58 .sh"; the gate reports the true count at runtime.
 
 missing=0'''

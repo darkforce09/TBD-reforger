@@ -32,7 +32,8 @@ pub struct ModInput {
     /// Reforger `game.mods[].modId` (Workshop id).
     #[serde(default)]
     pub workshop_id: String,
-    /// Local addon GUID (distinct from Workshop id — see STAGING-SERVER.md).
+    /// Local addon GUID (distinct from Workshop id — see
+    /// `documentation_v2/runbooks/game_server_staging/README.md`).
     #[serde(default)]
     pub mod_guid: String,
     /// Optional version pin for `game.mods[].version`.

@@ -1,8 +1,8 @@
 //! Typed corpus store: every `.ai/tickets/T-*.toml`, parents AND children,
 //! in one typed map, plus surgical per-file writes.
 //!
-//! Design authority: `docs/platform/t915_ticketboard_design.md` §Write path. This module
-//! replaces the xtask Value round-trip (`load_phase2_tree` → Value mutators →
+//! Design authority: `documentation_v2/tickets/specs/t915_ticketboard_design.md` §Write path.
+//! This module replaces the xtask Value round-trip (`load_phase2_tree` → Value mutators →
 //! `save_tree`) as the mutation substrate. Three properties are load-bearing:
 //!
 //! - **Fail-closed load.** Any file that does not parse (or whose id disagrees with its

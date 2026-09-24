@@ -5,8 +5,8 @@ summary = "Outliner dblclick bubbles into the map container — asset picker ope
 class = "bug"
 status = "ready"
 order = 8370
-spec = "docs/specs/existing/t822_outliner_dblclick_bubble.md"
-plan = "docs/plans/t-822_plan.md"
+spec = "documentation_v2/tickets/specs/t822_outliner_dblclick_bubble.md"
+plan = "documentation_v2/tickets/plans/t-822_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; pre-existing, widened by the placed-vehicle rows

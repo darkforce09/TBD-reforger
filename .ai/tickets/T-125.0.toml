@@ -5,16 +5,16 @@ summary = "T-125 — Coding standards + 11/10 enforcement"
 class = "feature"
 status = "shipped"
 order = 1250
-spec = "docs/platform/t125_coding_standards_enforcement.md"
+spec = "documentation_v2/tickets/specs/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
-main_goal = "Author CODING_STANDARDS.md; gate taxonomy, 38 rules."
+main_goal = "Author documentation_v2/standards/coding_standards/README.md; gate taxonomy, 38 rules."
 context = ["Doc-only; scripts land in T-125.1-.5."]
 requirement = ["Each rule: gate, tool, verify command."]
 current_state = ["No coding standards doc or CI matrix."]
-approach = ["CODING_STANDARDS.md §0.2–§11."]
-verify = ["Doc-only slice; CODING_STANDARDS.md §0.2–§11 authored."]
-acceptance = ["CODING_STANDARDS.md shipped with gate taxonomy and 38 enforceable rules documented."]
+approach = ["documentation_v2/standards/coding_standards/README.md §0.2–§11."]
+verify = ["Doc-only slice; documentation_v2/standards/coding_standards/README.md §0.2–§11 authored."]
+acceptance = ["documentation_v2/standards/coding_standards/README.md shipped with gate taxonomy and 38 enforceable rules documented."]
 citations = [
     "commit a54f491 gate taxonomy",
     "t125_coding_standards_enforcement.md",

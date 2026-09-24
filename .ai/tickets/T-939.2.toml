@@ -5,8 +5,8 @@ summary = "The Attributes modal gains a faction selector and an editable squad p
 class = "feature"
 status = "ready"
 order = 7870
-spec = "docs/specs/audit_2026_09/t939_editor_usability.md"
-plan = "docs/plans/t-939_2_plan.md"
+spec = "documentation_v2/tickets/specs/t939_editor_usability.md"
+plan = "documentation_v2/tickets/plans/t-939_2_plan.md"
 executor = "claude-code"
 notes = """
 WAVE 256 PRE-DISPATCH, 2026-09-08 — command-centre corrections, all measured against main at f71d2d0b2.

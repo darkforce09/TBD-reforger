@@ -5,7 +5,7 @@ summary = "Wire derive_orbat loadout summaries and ORBAT Manager Open Arsenal to
 class = "feature"
 status = "shipped"
 order = 1760
-spec = "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md"
+spec = "documentation_v2/tickets/specs/t180_9_arsenal_compile.md"
 executor = "claude-code"
 notes = "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal→attrs_tab=3; I1–I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
 parent = "T-180"
@@ -31,7 +31,7 @@ acceptance = [
 ]
 citations = [
     "Source: commit cba837b3 — Open Arsenal.",
-    "Source: SHIPPED_HISTORY.md §T-180.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-180.",
     "Source: t180_9_arsenal_compile.md — I-L locks.",
 ]
 shipped_at = "cba837b3"

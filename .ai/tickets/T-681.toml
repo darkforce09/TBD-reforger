@@ -5,8 +5,8 @@ summary = "Entity states: health, allow-damage, show-model, size, stamina"
 class = "chore"
 status = "shipped"
 order = 7340
-spec = "docs/specs/existing/t681_entity_states.md"
-plan = "docs/plans/t-681_plan.md"
+spec = "documentation_v2/tickets/specs/t681_entity_states.md"
+plan = "documentation_v2/tickets/plans/t-681_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row

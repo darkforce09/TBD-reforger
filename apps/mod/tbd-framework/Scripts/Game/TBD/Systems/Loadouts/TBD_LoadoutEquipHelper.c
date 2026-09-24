@@ -1639,8 +1639,9 @@ class TBD_LoadoutApplication : Managed
 		}
 
 		// The detail lines are unconditional and keep their old wording, so an operator (and every
-		// grep in docs/platform/PLAYTEST_RUNBOOK.md) still finds `loadout INCOMPLETE` / `loadout
-		// DEGRADED` where they always were. Only the SEVERITY of the non-blocking half moved.
+		// grep in documentation_v2/runbooks/two_client_playtest/README.md) still finds
+		// `loadout INCOMPLETE` / `loadout DEGRADED` where they always were. Only the SEVERITY of
+		// the non-blocking half moved.
 		if (!m_aFailures.IsEmpty())
 		{
 			if (HasBlockingFailure())

@@ -5,7 +5,7 @@ summary = "state/operations.rs becomes pub use façade over state/ops/{context,e
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 entity.rs landed at 4.8k LOC: the spec's six-name partition does not name the domain CRUD

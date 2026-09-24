@@ -1,10 +1,10 @@
 id = "T-161"
 kind = "program"
 title = "Ticket CLI: Python → Rust xtask"
-summary = "SHIPPED: Python ticket CLI → Rust xtask (Grok 4.5). scripts/ticket → cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md."
+summary = "SHIPPED: Python ticket CLI → Rust xtask (Grok 4.5). scripts/ticket → cargo xtask; verify t161_1..4_verify_log.md. Hub: documentation_v2/tickets/specs/t161_ticket_xtask_program.md."
 status = "shipped"
 order = 1580
-spec = "docs/platform/t161_ticket_xtask_program.md"
+spec = "documentation_v2/tickets/specs/t161_ticket_xtask_program.md"
 executor = "cursor-docs"
 notes = "needs-operator: frozen unmappable Scope. "
 children = [

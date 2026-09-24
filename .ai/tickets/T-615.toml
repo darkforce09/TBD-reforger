@@ -1,7 +1,7 @@
 id = "T-615"
 kind = "work"
 title = "Fix seven dead links in DOCUMENTATION_STANDARDS"
-summary = "DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it"
+summary = "documentation_v2/standards/documentation_standards.md is the most rotted example of the convention it defines — 7 dead links inside it"
 class = "bug"
 status = "shipped"
 order = 3622
@@ -13,7 +13,7 @@ FOUND by T-611 (wave 78) while deciding whether `verify-citations` should read `
 so T-611 reported rather than fixed.
 
 === THE IRONY, AND THE POINT ===
-`docs/platform/DOCUMENTATION_STANDARDS.md` defines the "turn a comment into a checked link"
+`documentation_v2/standards/documentation_standards.md` defines the "turn a comment into a checked link"
 convention. **Seven of the eight dead relative links in the repo are inside that document**, and every
 one is a prose citation *with a line number* pointing at a file deleted during the big cutovers:
 
@@ -107,7 +107,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "docs/platform/DOCUMENTATION_STANDARDS.md",
+    "documentation_v2/standards/documentation_standards.md",
     "docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md",
     "apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf",
 ]

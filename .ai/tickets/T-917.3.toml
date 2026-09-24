@@ -5,7 +5,7 @@ summary = "Wall quarantine + word caps + shrink-only ratchet"
 class = "chore"
 status = "shipped"
 order = 5973
-spec = "docs/platform/t917_ticket_schema_v2.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim).
@@ -50,7 +50,7 @@ acceptance = [
     "M/M reversible: newline-join byte-compare vs git show HEAD^ per moved file",
     "Ratchet pin equals measured count; test red on drift in either direction",
     "Planted 41-word summary in a scratch tree reds naming ticket, field, count and cap; live tree prints check OK",
-    "docs/TICKET_*.md regenerated in the same commit",
+    "The generated ticket views (retired) regenerated in the same commit",
 ]
 citations = [
     "40-word summary cap",

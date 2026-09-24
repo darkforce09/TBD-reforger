@@ -16,7 +16,7 @@ Repro:
   bash -c 'source scripts/platform/wave.sh; gate_wave_number'  # or invoke ensure_gate_db path
   # observes 3 forever while wave-3 deferreds exist
 
-Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides.
+Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter .ai/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides.
 
 missing=0"""
 priority = 1
@@ -58,7 +58,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
     "scripts/platform/wave.sh",
-    "docs/platform/factory_pack_wave",
+    ".ai/factory_pack_wave",
 ]
 
 [scope]

@@ -5,8 +5,8 @@ summary = "meta.author/templateId/playerRange, the environment block, factions[]
 class = "audit"
 status = "ready"
 order = 7540
-spec = "docs/specs/ideas/t290_dead_flatten_fields.md"
-plan = "docs/plans/t-290_plan.md"
+spec = "documentation_v2/tickets/specs/t290_dead_flatten_fields.md"
+plan = "documentation_v2/tickets/plans/t-290_plan.md"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/core written into the body; note kept verbatim for the operator. flatten.rs is shared with T-674.1/T-675.1/T-936.1 and T-291/T-242/T-299/T-310 → packs after them (pack_last kept). Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
 priority = 3

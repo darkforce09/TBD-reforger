@@ -9,7 +9,7 @@ executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-209"]
 context = [
-    "deploy.env.example and HOME_SERVER.md referenced Dockerfile and staging compose that did not exist.",
+    "deploy.env.example and documentation_v2/runbooks/website_deployment.md referenced Dockerfile and staging compose that did not exist.",
     "No deploy-website.sh, CI deploy job, TLS reverse-proxy config, or backup script in-repo.",
 ]
 requirement = [

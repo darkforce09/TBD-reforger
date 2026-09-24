@@ -5,8 +5,8 @@ summary = "build.rs still writes chunks/{key}.json.gz and prefabs.json.gz, the S
 class = "bug"
 status = "ready"
 order = 7995
-spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
-plan = "docs/plans/t-935_16_plan.md"
+spec = "documentation_v2/tickets/specs/t938_engine_perf.md"
+plan = "documentation_v2/tickets/plans/t-935_16_plan.md"
 executor = "claude-code"
 notes = """
 ORDER 7536 -> 7995 ON 2026-09-08, wave 256 pre-dispatch. This row must sequence WITH the T-935.15 program,

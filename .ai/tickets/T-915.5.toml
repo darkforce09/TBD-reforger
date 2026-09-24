@@ -5,7 +5,7 @@ summary = "Per-ticket and per-agent token + elapsed aggregations over the .ai/ti
 class = "feature"
 status = "shipped"
 order = 5965
-spec = "docs/platform/t915_ticketboard_design.md"
+spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = "Aggregation client-side over real files only; printing tokens=0 for a missing usage object is forbidden (T-913 rule carried into the UI)."
 depends_on = ["T-915.1"]

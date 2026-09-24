@@ -5,8 +5,8 @@ summary = "The T-216 schema deltas (slot tag/callsign/rank/stance, group leaderS
 class = "feature"
 status = "shipped"
 order = 7560
-spec = "docs/specs/ideas/t242_t216_deltas.md"
-plan = "docs/plans/t-242_plan.md"
+spec = "documentation_v2/tickets/specs/t242_t216_deltas.md"
+plan = "documentation_v2/tickets/plans/t-242_plan.md"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05 re-scope: schema side verified landed (slot callsign :411, rank :416, stance :429, tag :439; group leaderSlotId :312; vehicles :105); the residual is the flatten emit (flatten.rs:699-702 DIAG_DROP_SLOT_*). leaderSlotId emission belongs to T-674.1. apps/website/api/src/contract/generated/ is codegen (DO NOT EDIT) — verify = cargo xtask ci schema-codegen. mission.schema.json and flatten.rs are shared with T-936.x, T-299 and T-310 → later wave. Proposed scope schema/mission; note kept verbatim for the operator."
 priority = 2

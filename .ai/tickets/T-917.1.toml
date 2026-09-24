@@ -5,7 +5,7 @@ summary = "Scope vocabulary file + check rule"
 class = "feature"
 status = "shipped"
 order = 5971
-spec = "docs/platform/t917_ticket_schema_v2.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 Vocabulary is data, not compiled enums (except domain) — compiled friction produced the 199-ticket docs landfill. Removing-a-value-in-use redness cannot be enforced yet (tickets still v1); that rule rides S.2.

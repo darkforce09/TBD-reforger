@@ -15,7 +15,7 @@ verify = ["b28a70f6 chromeless AppLayout route with docked sidebars and always-o
 acceptance = ["Chromeless /missions/:id/edit hid platform nav; docked left ORBAT plus Editor Layers and right AssetPalette flushed map edges behind overlayDocked shell."]
 citations = [
     "Source: commit b28a70f6.",
-    "Source: SHIPPED_HISTORY.md T-035.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md T-035.",
 ]
 shipped_at = "b28a70f6"
 created_at = "2026-06-20T23:30:49Z"

@@ -14,7 +14,8 @@
 //! such blocks in the addon today (`TBD_MissionBrowser.c`, `TBD_BriefingController.c`,
 //! `TBD_LobbyController.c`, `TBD_SpectatorHost.c`, `TBD_MarkerController.c`,
 //! `TBD_RadioController.c`); this header used to say three, and the number keeps moving, so treat
-//! the Landmines section of `docs/mod/t181_event_mod_program.md` as the count of record rather than
+//! the Landmines section of `documentation_v2/tickets/specs/t181_event_mod_program.md` as the
+//! count of record rather than
 //! any file header. What matters here is unchanged and is not about the count: every one of those
 //! blocks is a narrow RPC transport (`TBD_SpectatorHost.c` included), because the player controller
 //! is the only entity a client OWNS and can therefore send a `RplRcver.Server` message on. A

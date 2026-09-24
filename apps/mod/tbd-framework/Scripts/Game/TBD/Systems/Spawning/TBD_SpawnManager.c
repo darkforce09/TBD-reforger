@@ -57,8 +57,9 @@ class TBD_DepartedSeat
 	//!
 	//! True for both identity-derived modes — backend uuid AND vanilla's synthesized `00bbbddd-`
 	//! name hash — because that is exactly the set of keys ONE LIFE itself is tracked on
-	//! (m_mDeadPlayers), and the seat must follow the same key the life follows. TBD_MOD_DESIGN.md
-	//! §2 locks that choice for the synthesized case: a same-name reconnect keeps its spent life.
+	//! (m_mDeadPlayers), and the seat must follow the same key the life follows.
+	//! documentation_v2/mod/tbd-framework/mod_design.md section 2 locks that choice for the
+	//! synthesized case: a same-name reconnect keeps its spent life.
 	bool reclaimable;
 }
 
@@ -137,8 +138,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! T-181.11 — ONE LIFE. Operator-locked for TBD events: death is terminal, the slot stays
 	//! claimed (nobody else takes your seat, and a reconnect still finds you), and the only way
 	//! back into the world is an admin acting on a glitch death. Deliberate divergence from CRF,
-	//! which is wave/ticket respawn. See docs/mod/TBD_MOD_DESIGN.md §2 — this is a
-	//! non-negotiable, which is why the default is 1 and stays 1.
+	//! which is wave/ticket respawn. See documentation_v2/mod/tbd-framework/mod_design.md
+	//! section 2: this is a non-negotiable, which is why the default is 1 and stays 1.
 	//!
 	//! T-181.21 — the old comment here said "turn OFF for PIE/dev worlds so the auto-deploy wave
 	//! keeps working". That advice is retired: the wave and one life no longer fight, because the
@@ -1761,8 +1762,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//!                   Gates anything that must not be matched against a recycled playerId.
 	//!
 	//! A synthesized `00bbbddd-` name hash is an identity but not durable, so it lands between
-	//! them: good enough to recognise a same-name reconnect (TBD_MOD_DESIGN.md §2 chooses exactly
-	//! that), not good enough to be trusted across a rename.
+	//! them: good enough to recognise a same-name reconnect
+	//! (documentation_v2/mod/tbd-framework/mod_design.md section 2 chooses exactly that), not
+	//! good enough to be trusted across a rename.
 	protected bool IsIdentityKey(string key)
 	{
 		return !key.IsEmpty() && !key.StartsWith("player:");
@@ -1778,8 +1780,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! degraded modes, so the two calls below competed for it: whichever fired first silenced the
 	//! other for the rest of the session. That is exactly backwards for the case that matters — a
 	//! single mode-2 event (name hash, survivable, documented as an accepted cost in
-	//! TBD_MOD_DESIGN.md §2) permanently swallowed every mode-3 warning (numeric lease, ONE LIFE
-	//! structurally unenforceable, the thing this whole slice exists to make loud).
+	//! documentation_v2/mod/tbd-framework/mod_design.md section 2) permanently swallowed every
+	//! mode-3 warning (numeric lease, ONE LIFE structurally unenforceable, the thing this whole
+	//! slice exists to make loud).
 	//!
 	//! `mode` is a KeyModeLabel() value, so the vocabulary is shared with the JIP verdict line and
 	//! the identity status line rather than invented here.

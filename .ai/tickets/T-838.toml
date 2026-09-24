@@ -5,8 +5,8 @@ summary = "Markers select on the map and list in the outliner; double-click open
 class = "docs"
 status = "ready"
 order = 8470
-spec = "docs/specs/existing/t838_marker_select_outliner.md"
-plan = "docs/plans/t-838_plan.md"
+spec = "documentation_v2/tickets/specs/t838_marker_select_outliner.md"
+plan = "documentation_v2/tickets/plans/t-838_plan.md"
 executor = "claude-code"
 notes = """
 the T-825 marker extraction; operator stated the rule three times — priority; owns collide with T-819 (mission_editor/editor_ops) — pack 210/211 accordingly

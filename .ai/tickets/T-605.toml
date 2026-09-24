@@ -9,7 +9,7 @@ executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
 
-FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
+FOUND while writing `documentation_v2/runbooks/two_client_playtest/README.md` (2026-07-31). Second playtest blocker.
 
 `IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).
 T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if

@@ -306,7 +306,7 @@ class TBD_MarkerWire
 //!
 //! `Rpc()` takes at most EIGHT parameters (measured: a ninth fails with
 //! "Too many parameters for 'Rpc' method"; see TBD_RadioController and
-//! docs/mod/t181_event_mod_program.md). The marker RPC already uses all eight
+//! documentation_v2/tickets/specs/t181_event_mod_program.md). The marker RPC already uses all eight
 //! (fn + xs + zs + icons + labels + faction + mission + served), so the six
 //! style columns cannot be extra Rpc arguments. They travel as a 6-int record
 //! trailer on `xs` (size x100, rotationDeg x100, shape idx, brush idx, 0xRRGGBB,

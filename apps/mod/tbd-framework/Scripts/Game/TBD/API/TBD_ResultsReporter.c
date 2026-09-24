@@ -1,7 +1,8 @@
 //! The THIN end-of-round results POST.
 //!
 //! ══ WHAT "THIN" MEANS HERE ═════════════════════════════════════════════════════════════════
-//! It is an operator instruction, not laziness. `TBD_MOD_DESIGN.md` §6 defers full AAR /
+//! It is an operator instruction, not laziness. Section 6 of
+//! `documentation_v2/mod/tbd-framework/mod_design.md` defers full AAR /
 //! statistics recording in the operator's own words: *"that's also the AAR, which is not easy to
 //! do… we have to record everything. That's very complex. I don't feel like we have the time."*
 //! So there is deliberately NO kill tracking, NO longest-kill measurement and NO

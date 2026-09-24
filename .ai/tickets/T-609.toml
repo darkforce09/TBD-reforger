@@ -33,7 +33,7 @@ or (b) the warnings are noise, in which case fix the validator and explain why t
 Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and
 guarantees the next real regression hides inside the new budget.
 
-RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
+RELATED: T-608 makes `documentation_v2/runbooks/two_client_playtest/README.md` §2.5A tell the operator this specific FAIL is known, so the
 playtest is not blocked on this ticket.
 
 missing=0"""

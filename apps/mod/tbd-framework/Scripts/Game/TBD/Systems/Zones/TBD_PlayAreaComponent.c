@@ -26,7 +26,8 @@ class TBD_PlayAreaComponentClass : SCR_BaseGameModeComponentClass {}
 //! `base_protection` zones, with a warning, a grace countdown and a JSON-driven penalty.
 //!
 //! ══ THE ONE-LIFE DECISION — READ THIS BEFORE CHANGING THE DEFAULT ═══════════════════════════
-//! TBD events are ONE LIFE. Death is terminal by design (TBD_MOD_DESIGN.md §2), recoverable only
+//! TBD events are ONE LIFE. Death is terminal by design
+//! (documentation_v2/mod/tbd-framework/mod_design.md section 2), recoverable only
 //! by an admin `#tbd respawn`. "Kill the player for leaving the AO" is therefore not a slap on the
 //! wrist — it is **permanent removal from the event**, for what is very often a navigation
 //! mistake at a map edge nobody can see.

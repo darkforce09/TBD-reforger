@@ -5,8 +5,8 @@ summary = "The floating Select/Ruler/LoS pill still exists — decision 1 said i
 class = "bug"
 status = "ready"
 order = 8480
-spec = "docs/specs/existing/t839_retire_floating_pill.md"
-plan = "docs/plans/t-839_plan.md"
+spec = "documentation_v2/tickets/specs/t839_retire_floating_pill.md"
+plan = "documentation_v2/tickets/plans/t-839_plan.md"
 executor = "claude-code"
 notes = """
 eye-pass catch wave-205; decision-1 completion; strip+pill files — pack owns-aware

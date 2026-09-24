@@ -189,7 +189,8 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
 
     // `a2sPort` and `bindPort` are separate UDP sockets. Equal ports make the engine log
     // `NETWORK (E): Unable to start replication` and exit **status 0**, so nothing downstream
-    // notices (docs/mod/STAGING-SERVER.md). Refuse here instead of at boot.
+    // notices (documentation_v2/runbooks/game_server_staging/README.md).
+    // Refuse here instead of at boot.
     if o.game_port == o.a2s_port {
         return usage_fail(&format!(
             "--port and --a2s-port must differ (got {} for both); standard layout is 2001 game / 17777 A2S",

@@ -5,7 +5,7 @@ summary = "Prod default flip to Leptos SPA"
 class = "docs"
 status = "queued"
 order = 8580
-spec = ".ai/artifacts/missed_items_handoff.md"
+spec = "documentation_v2/tickets/specs/t166_missed_items_handoff.md"
 executor = "human"
 depends_on = ["T-159"]
 main_goal = "As the operator I flip production to the Leptos SPA with a tested rollback path."
@@ -18,10 +18,10 @@ approach = [
     "set `SPA_DIST_DIR` to the trunk release dist in the prod env, move the Discord OAuth redirect origin, staging soak, then flip.",
     "claude-code prepares configs/runbook + verifies the staging soak gates.",
 ]
-citations = ["Runbook anchor: docs/website/DEV_RUNBOOK.md §SPA serving;"]
+citations = ["Runbook anchor: documentation_v2/runbooks/local_development.md §SPA serving;"]
 estimated = ["scope"]
 owns = [
-    "docs/website/DEV_RUNBOOK.md",
+    "documentation_v2/runbooks/local_development.md",
     "scripts/deploy",
 ]
 

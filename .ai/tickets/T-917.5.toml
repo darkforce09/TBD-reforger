@@ -5,7 +5,7 @@ summary = "Token estimates: factor doc, generator, estimates tree + check"
 class = "docs"
 status = "shipped"
 order = 5975
-spec = "docs/platform/t917_ticket_schema_v2.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 metrics::has_receipt returns true for ANY file under metrics/<id>/ — colocating estimates would let them impersonate receipts (T-913 violation) and crash the deny_unknown_fields walkers. Every estimate records source + inputs + factor; recalibration is regeneration from recorded inputs.
@@ -60,7 +60,7 @@ owns = [
     ".ai/tickets/estimates",
     ".ai/tickets/estimates.schema.json",
     "xtask/src",
-    "docs/platform/token_estimate_factor.md",
+    "documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md",
 ]
 
 [scope]

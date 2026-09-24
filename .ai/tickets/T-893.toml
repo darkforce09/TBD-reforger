@@ -5,7 +5,7 @@ summary = "T-853 wave 228: commit bash↔port RED-arm harness for deploy db port
 class = "chore"
 status = "deferred"
 order = 5670
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

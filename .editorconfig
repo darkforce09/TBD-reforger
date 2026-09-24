@@ -1,4 +1,5 @@
-# EditorConfig — repo-root whitespace governance (CODING_STANDARDS.md §7 FMT-2, T-125.5).
+# EditorConfig — repo-root whitespace governance
+# (documentation_v2/standards/coding_standards/README.md §7 FMT-2, T-125.5).
 # Go formatting stays authoritative under gofmt (FMT-1); editorconfig only aligns editors +
 # the editorconfig-checker CI gate. See .editorconfig-checker.json for path excludes.
 root = true

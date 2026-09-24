@@ -214,7 +214,8 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
     // `--no-slice-dirs` turns it off for the one operator who wants a look before a sweep.
     //
     // The leak is also SELF-INFLICTED and structural, which is what makes "just tell agents to
-    // clean up" insufficient: PLATFORM_FACTORY's Known traps and the brief template now INSTRUCT
+    // clean up" insufficient: the Known traps in documentation_v2/runbooks/factory_waves/README.md
+    // and the brief template now INSTRUCT
     // every slice agent to build its own runnable binary into target-<slice>-api (two slices were
     // served each other's binaries out of the shared target/). Agents are told to delete it and
     // mostly do — one slice reclaimed 8.0 GB itself — but "mostly" is the wrong verb for a slice that

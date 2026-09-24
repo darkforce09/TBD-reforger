@@ -120,7 +120,8 @@ class TBD_AdminAudit
 		entry.m_bUnauthorised = unauthorised;
 		s_aEntries.Insert(entry);
 
-		// Enfusion arrays remove BY INDEX (TBD_MOD_DESIGN.md §5). Index 0 is the oldest.
+		// Enfusion arrays remove BY INDEX (documentation_v2/mod/tbd-framework/mod_design.md
+		// section 5). Index 0 is the oldest.
 		while (s_aEntries.Count() > MAX_ENTRIES)
 		{
 			s_aEntries.Remove(0);
@@ -246,7 +247,7 @@ class TBD_AdminAudit
 	//------------------------------------------------------------------------------------------------
 	//! Server-local wall clock, `HH:MM:SS`. `System.GetHourMinuteSecond` is a native engine call and
 	//! so resolves through no script index — probed against the compiler, which is the only oracle
-	//! for a native symbol (SLICE_WORKFLOW.md §Sources).
+	//! for a native symbol (documentation_v2/runbooks/mod_slice_workflow.md section "Sources").
 	//!
 	//! `int.ToString(2)` is the width argument; whether it pads with zeros or spaces is a
 	//! presentation detail nothing here depends on.

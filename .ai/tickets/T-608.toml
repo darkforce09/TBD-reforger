@@ -30,15 +30,15 @@ the real cause (silent registration hang) appears in no `(E)` line; and the "~95
 generous" comment is wrong -- registration took **13 s** passing, **never** failing, same machine.
 
 === F2 (MAJOR) merge skew reintroduced T-607's own defect class ===
-`docs/mod/STAGING-SERVER.md:48,276-277`. T-604's anti-stale-build detector quotes the current build as
+`documentation_v2/runbooks/game_server_staging/README.md:48,276-277`. T-604's anti-stale-build detector quotes the current build as
 printing `… 18 application(s) IsComplete=1 — spawn open`. **T-605 rewrote that Print**
 (`TBD_SpawnManager.c:1143`); merged main prints `… 18 application(s), 0 unplayable, 2 with a shortfall
 — spawn open`. T-604 merged first and did not own the file T-605 changed. So the detector now tells an
-operator on the CORRECT build that their expected string is missing. `PLAYTEST_RUNBOOK.md` carries the
+operator on the CORRECT build that their expected string is missing. `documentation_v2/runbooks/two_client_playtest/README.md` carries the
 new string, so the two docs disagree.
 
 === F3 (MODERATE, pre-existing root) §2.5A's own commands return FAIL ===
-`docs/platform/PLAYTEST_RUNBOOK.md:349-388`. Both solo pre-flight boots end `WORLD BOOT: FAIL` --
+`documentation_v2/runbooks/two_client_playtest/README.md:349-388`. Both solo pre-flight boots end `WORLD BOOT: FAIL` --
 `validator warnings rose: 5 > baseline 0 for msn_8f3a2c` (4 for slot-loadout-coverage), the
 unconsumed-key family (`environment`, `settings`, `layers`, `factions.tickets`, `orbat.roles.radio`).
 Validator and `.world-boot-warning-baseline` BOTH predate the wave base -- pre-existing. T-605 refused
@@ -47,7 +47,7 @@ to widen the baseline; correct, that would rubber-stamp someone else's regressio
 111 lines of `<mission-id> <budget>`; the earlier `:127-131` citation was wrong.
 
 === F5 (MINOR, session-costing) two flow traps ===
-`PLAYTEST_RUNBOOK.md:206` gives the first boot as `--admin=<your-identityId>` -- but the identityId is
+`documentation_v2/runbooks/two_client_playtest/README.md:206` gives the first boot as `--admin=<your-identityId>` -- but the identityId is
 only discoverable at S3 (`:560-573`) from the log of a server you already joined. Chicken-and-egg on
 the first command; the script tolerates omission, the runbook never says to omit.
 And S3's "restart with it": run the new command before Ctrl-C'ing the old and `:273`'s `rm -f

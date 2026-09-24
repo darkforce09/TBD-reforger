@@ -5,7 +5,7 @@ summary = "Session-expired UX - 401s must not masquerade as empty data"
 class = "bug"
 status = "shipped"
 order = 3722
-spec = "docs/website/DEV_RUNBOOK.md"
+spec = "documentation_v2/runbooks/local_development.md"
 executor = "claude-code"
 main_goal = "401 auth death must not masquerade as empty catalogs."
 context = [
@@ -27,7 +27,7 @@ verify = ["cargo test -p website-frontend client"]
 acceptance = ["Distinguished ApiFailure from empty data via Fetched type; registry and factions consumers surfaced session-expired banner instead of empty-state copy on 401."]
 citations = [
     "commit 69ec59b7",
-    "DEV_RUNBOOK.md session UX",
+    "documentation_v2/runbooks/local_development.md session UX",
     "Source: commit 69ec59b7.",
 ]
 shipped_at = "69ec59b7"

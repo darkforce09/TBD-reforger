@@ -5,6 +5,7 @@ summary = "T-068.2"
 class = "feature"
 status = "shipped"
 order = 680
+spec = "documentation_v2/tickets/specs/t068_2_registry_api.md"
 executor = "claude-code"
 parent = "T-068"
 main_goal = "registry_items GET /registry weak ETag seed import."

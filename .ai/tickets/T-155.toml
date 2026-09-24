@@ -5,7 +5,7 @@ summary = "Cross-tab refresh-token mutex (single-use rotation double-spend)"
 class = "bug"
 status = "shipped"
 order = 3712
-spec = "docs/website/DEV_RUNBOOK.md"
+spec = "documentation_v2/runbooks/local_development.md"
 executor = "claude-code"
 main_goal = "Cross-tab mutex so single-use refresh never double-spends."
 context = ["Found 2026-07-13 via api access log during the T-154.1 pause:"]
@@ -21,7 +21,7 @@ verify = ["cargo test -p website-frontend client"]
 acceptance = ["Serialized refresh under Web Locks REFRESH_LOCK_NAME across tabs; losing tab adopted rotated token pair via BroadcastChannel instead of double-spending stale refresh."]
 citations = [
     "commit 69ec59b7",
-    "DEV_RUNBOOK.md auth section",
+    "documentation_v2/runbooks/local_development.md auth section",
     "Source: commit 69ec59b7.",
 ]
 shipped_at = "a6be2a5d"

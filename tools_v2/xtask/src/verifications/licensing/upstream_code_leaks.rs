@@ -32,7 +32,7 @@
 //! design-mirror and cite, we do not vendor. `playable_selector` has **NO LICENCE AT ALL**, which
 //! is strictly *worse* than APL: with no grant, default copyright applies and there is no
 //! permission to copy, adapt or redistribute any of it. The command keeps the too-narrow name
-//! `no-crf-leak` because the gate steps, `SLICE_WORKFLOW.md` and
+//! `no-crf-leak` because the gate steps, `documentation_v2/runbooks/mod_slice_workflow.md` and
 //! `t181_event_mod_program.md` invoke it by that name; renaming drops it out of the wave runner.
 //!
 //! ── BASH ODDITIES PRESERVED ON PURPOSE ───────────────────────────────────────────────────────

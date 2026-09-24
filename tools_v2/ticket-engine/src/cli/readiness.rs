@@ -20,8 +20,9 @@ pub fn cmd_mark_ready(
     // exact main_goal (summary→title→id) and acceptance (["See spec."]) backfills. The
     // The refusals — "Ticket {id} needs a spec path", "Spec file not found: …",
     // "Blocked by …" — come back verbatim, with the same exit code. The plan gate adds the
-    // plan ready-gate: PLAN defaults to docs/plans/<id-lowercased-dots-to-underscores>_plan.md
-    // and must exist on disk ("Plan file not found: …").
+    // plan ready-gate: PLAN defaults to
+    // documentation_v2/tickets/plans/<id-lowercased-dots-to-underscores>_plan.md and must exist
+    // on disk ("Plan file not found: …").
     let outcome = match ops::mark_ready(
         &mut corpus,
         id,

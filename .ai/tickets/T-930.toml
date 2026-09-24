@@ -5,8 +5,8 @@ summary = "Vehicle first-paint disc until moved — W210 eye-pass"
 class = "bug"
 status = "shipped"
 order = 7790
-spec = "docs/specs/existing/t930_vehicle_first_paint.md"
-plan = "docs/plans/t-930_plan.md"
+spec = "documentation_v2/tickets/specs/t930_vehicle_first_paint.md"
+plan = "documentation_v2/tickets/plans/t-930_plan.md"
 executor = "claude-code"
 notes = """
 WAVE-210 OPERATOR EYE-PASS. Fresh-placed vehicles paint as a disc (tactical yellow placeholder) until the vehicle is moved; after move the correct glyph/sprite appears. First paint should match post-move appearance.

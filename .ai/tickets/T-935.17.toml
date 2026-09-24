@@ -5,8 +5,8 @@ summary = "The pan-allocation probe and the everon rebuild input both have to ex
 class = "chore"
 status = "queued"
 order = 7991
-spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
-plan = "docs/plans/t-935_17_plan.md"
+spec = "documentation_v2/tickets/specs/t938_engine_perf.md"
+plan = "documentation_v2/tickets/plans/t-935_17_plan.md"
 executor = "human"
 notes = """
 FILED 2026-09-08 at wave 256 pre-dispatch, when T-935.15 was pulled and split. THIS ROW BLOCKS THE WHOLE

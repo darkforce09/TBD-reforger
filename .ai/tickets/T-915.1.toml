@@ -5,7 +5,7 @@ summary = "Viewer core: board + detail, typed corpus load, repo discovery"
 class = "bug"
 status = "shipped"
 order = 5961
-spec = "docs/platform/t915_ticketboard_design.md"
+spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = """
 egui/eframe is a first-time workspace dependency family — named supply-chain/build-time event. All IO on worker threads (channel + request_repaint). No writes anywhere under the repo; prefs only via eframe Storage in the user config dir.

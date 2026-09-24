@@ -40,7 +40,7 @@ current_state = [
     "T-177's earlier 'fix the shell crash by using the full chrome' only MOVED this: onMatchFamilyStyleCharacter is unimplemented in both builds.",
 ]
 approach = [
-    "Start from docs/website/EDITOR_GATE_RUNBOOK.md and the gate doctor liveness check (apps/website/frontend doctor.rs:166-172).",
+    "Start from documentation_v2/runbooks/editor_gates.md and the gate doctor liveness check (apps/website/frontend doctor.rs:166-172).",
     "Bisect what the editor route does at load that / does not: wasm size, the wgpu context, or a hung fetch.",
     "FIX: the gate owns its own fontconfig cache ($TMPDIR/tbd-gate-cache) via doctor.rs ensure_gate_font_cache(), called from Harness::new so every smoke, render-check and r-auth inherits it.",
     "Plus three new doctor checks — `fonts`, `dist` (a missing --dist used to 500 everything and then fail on LIVENESS,",
@@ -56,7 +56,6 @@ acceptance = ["Editor gate booted /missions/:id/edit; doctor OK and T-221 persis
 citations = [
     "commit d5f6267dd gate font cache",
     "T-221 A/B proof",
-    "EDITOR_GATE_RUNBOOK.md",
     "doctor.rs:166-172 liveness",
     "SkFontMgr_FontConfigInterface.cpp:163",
     "T-177 full chrome move",
@@ -75,7 +74,7 @@ estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject
 owns = [
     "tools/tbd-tools/src/doctor.rs",
     "tools/tbd-tools/src/smokes.rs",
-    "docs/website/EDITOR_GATE_RUNBOOK.md",
+    "documentation_v2/runbooks/editor_gates.md",
 ]
 
 [scope]

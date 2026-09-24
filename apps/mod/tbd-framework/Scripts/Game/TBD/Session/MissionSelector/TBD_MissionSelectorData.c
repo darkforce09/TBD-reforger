@@ -1,7 +1,8 @@
 //! Pre-game rebuild (2026-09-12) — what the Mission Selector screen reads. Plain models plus the
 //! one read surface (`TBD_MissionCatalog`) the screen talks to.
 //!
-//! Role (UI_STRUCTURE.md table): `TBD_XData.c`, runs on both sides, holds no wire code. Today the
+//! Role (documentation_v2/mod/tbd-framework/UI/README.md table): `TBD_XData.c`, runs on both
+//! sides, holds no wire code. Today the
 //! catalog is filled by `UI/Mock/TBD_MissionSelectorMock.c`; when the mission library reaches the
 //! wire, a `TBD_MissionSelectorClient` hands `TBD_MissionCatalog.Set()` a real one and nothing in
 //! `UI/` changes. That swap point is the reason this file exists apart from the mock.

@@ -5,8 +5,8 @@ summary = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
 class = "feature"
 status = "ready"
 order = 8290
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
-plan = "docs/plans/t-906_plan.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
+plan = "documentation_v2/tickets/plans/t-906_plan.md"
 executor = "claude-code"
 notes = """
 2026-09-05 wave 248 (T-940.5): apps/website/api/src/config.rs is 994 lines against the 1000 SIZE-3 cap; the next slice touching it must split it — config.rs joins this split.

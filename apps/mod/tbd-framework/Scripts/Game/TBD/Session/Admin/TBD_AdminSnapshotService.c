@@ -27,7 +27,8 @@ class TBD_AdminSnapshotService
 	//! `string.Split(sep, out, trim)` is a NATIVE engine call. Whether it emits a token for an
 	//! empty field between two separators is a RUNTIME property, and nothing in this lane can
 	//! prove a runtime property — a compile probe answers "does this symbol exist", not "what does
-	//! it do" (SLICE_WORKFLOW.md §What agents cannot do). If it drops empties, then a record like
+	//! it do" (documentation_v2/runbooks/mod_slice_workflow.md section "What agents cannot do").
+	//! If it drops empties, then a record like
 	//! `P <id> <name> <faction> <group> <role> …` silently shifts every field left the moment a
 	//! player has no slot, and an unslotted player would render with somebody else's data in the
 	//! faction column. That is the exact class of bug an admin panel must not have.

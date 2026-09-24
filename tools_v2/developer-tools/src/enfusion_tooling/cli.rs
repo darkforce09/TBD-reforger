@@ -55,7 +55,7 @@ enum Cmd {
     /// Verify every `@idx lane#Symbol` citation in the docs resolves against an index.
     /// Exits 1 on any unresolved citation — hallucinated APIs fail the build.
     Citations {
-        #[arg(long, default_value = crate::repository_layout::documentation::MOD_DOCS_DIR)]
+        #[arg(long, default_value = crate::repository_layout::documentation::DOCUMENTATION_ROOT)]
         docs: PathBuf,
         #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         index_dir: PathBuf,

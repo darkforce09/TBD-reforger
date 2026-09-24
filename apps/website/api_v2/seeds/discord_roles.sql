@@ -17,7 +17,7 @@
 -- Idempotent: re-running updates name/mapped_role/priority in place.
 --
 -- Squad Leader / leader (priority 30): NOT seeded — no real guild role id is
--- committed in-repo (see docs/website/DEV_RUNBOOK.md §5). After a login,
+-- committed in-repo (see documentation_v2/runbooks/local_development.md §5). After a login,
 -- read snowflakes from user_discord_roles and INSERT the real mapping:
 --
 --   INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority)

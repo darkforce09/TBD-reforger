@@ -5,8 +5,8 @@ summary = "Ship gate ON + stamp-sha verb + plan ready-gate"
 class = "chore"
 status = "shipped"
 order = 5976
-spec = "docs/platform/t917_ticket_schema_v2.md"
-plan = "docs/plans/t-917_6_plan.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
+plan = "documentation_v2/tickets/plans/t-917_6_plan.md"
 executor = "claude-code"
 notes = """
 Gate must land last (S.2-S.5 make the tree gate-satisfiable first) and WITH stamp-sha or every future ship wedges between the ship edit and the SHA stamp. Program shipped_at lives inside Status::Shipped while work carries the field — gate reads through both.
@@ -65,7 +65,7 @@ estimated = ["tokens"]
 owns = [
     "xtask/src",
     "crates/tbd-tickets",
-    "docs/plans",
+    "documentation_v2/tickets/plans",
 ]
 
 [scope]

@@ -5,7 +5,7 @@ summary = "Wave lanes + program tree + filters"
 class = "feature"
 status = "shipped"
 order = 5962
-spec = "docs/platform/t915_ticketboard_design.md"
+spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = """
 Never recompute lanes — the lock is the truth and drift is the trust banner's job. Owns-collision explainer in the detail panel: prefix-containment path pairs for any two selected tickets.

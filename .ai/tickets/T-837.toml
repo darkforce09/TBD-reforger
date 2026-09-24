@@ -5,8 +5,8 @@ summary = "Vehicles cannot be deleted — slots can, vehicles cannot"
 class = "bug"
 status = "ready"
 order = 8460
-spec = "docs/specs/existing/t837_vehicle_delete.md"
-plan = "docs/plans/t-837_plan.md"
+spec = "documentation_v2/tickets/specs/t837_vehicle_delete.md"
+plan = "documentation_v2/tickets/plans/t-837_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing

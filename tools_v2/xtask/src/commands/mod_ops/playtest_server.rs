@@ -28,8 +28,9 @@
 //!   BACKEND: Direct Join Code: 0207990185
 //! ```
 //!
-//! So the room DOES register with the local addon loaded. `docs/mod/STAGING-SERVER.md` said this
-//! was impossible without a Workshop publish; that was measured on `-addons`, never on `-addonsDir`.
+//! So the room DOES register with the local addon loaded.
+//! `documentation_v2/runbooks/game_server_staging/README.md` said this was impossible without a
+//! Workshop publish; that was measured on `-addons`, never on `-addonsDir`.
 //!
 //! ── THE TRAP THIS PROGRAM EXISTS TO CLOSE ────────────────────────────────────────────────────
 //!
@@ -44,7 +45,8 @@
 //! this program kills the server and exits non-zero.
 //!
 //! COUNT THE FORMAT, NOT THE LINES. The bash comment once asserted **109** tagged lines and
-//! `docs/mod/STAGING-SERVER.md` asserted **108** for the same claim. Neither was a typo. Measured
+//! `documentation_v2/runbooks/game_server_staging/README.md` asserted **108** for the same
+//! claim. Neither was a typo. Measured
 //! on this checkout 2026-07-31 with `mod world-boot --keep-logs`: slot-loadout-coverage (7 slots)
 //! -> 147 `[TBD][` lines, bridgehead-at-levie (18 slots) -> 155. The number rots even with the
 //! mission held fixed, and is not monotonic in slot count either. The stable discriminator is the

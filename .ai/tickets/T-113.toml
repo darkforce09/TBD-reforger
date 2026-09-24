@@ -22,7 +22,7 @@ acceptance = [
 ]
 citations = [
     "commit 904ba78f",
-    "MONOREPO_MIGRATION.md",
+    "documentation_v2/archive/monorepo_migration/monorepo_migration_runbook.md",
 ]
 shipped_at = "904ba78f"
 created_at = "2026-06-26T12:01:55Z"

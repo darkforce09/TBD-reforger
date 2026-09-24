@@ -5,8 +5,8 @@ summary = "Batched reviewed reconstruction over shipped tickets without quaranti
 class = "chore"
 status = "shipped"
 order = 6010
-spec = "docs/platform/t920_body_obligations.md"
-plan = "docs/plans/t-921_plan.md"
+spec = "documentation_v2/tickets/specs/t920_body_obligations.md"
+plan = "documentation_v2/tickets/plans/t-921_plan.md"
 executor = "claude-code"
 notes = "Sibling stream to T-919 (whose wall batches also fill tiers + titles on the tickets they drain). Runs after T-920.1 lands the pins. When both streams hit zero the ready-tier rule turns corpus-wide on shipped."
 depends_on = ["T-920.1"]
@@ -22,7 +22,7 @@ requirement = [
 ]
 current_state = [
     "T-919 batch 1 drained 25 walls; this stream covers the wall-less remainder",
-    "Reconstruction sources exist: spec docs, subject commits, diffs, SHIPPED_HISTORY.md",
+    "Reconstruction sources exist: spec docs, subject commits, diffs, documentation_v2/archive/shipped_history/shipped_history.md",
 ]
 approach = [
     "Batches of about 20 per reviewed commit, id order, typed-path or canonical hand edits",

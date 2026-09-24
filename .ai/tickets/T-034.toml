@@ -10,12 +10,12 @@ main_goal = "Align docs on Eden docked-shell UX."
 context = ["PRE-3.5 doc gap before Eden shell."]
 requirement = ["Create Eden UX spec; patch engineering docs."]
 current_state = ["Eden docked-shell UX not yet specified."]
-approach = ["Created 04_eden_editor_ux_spec.md; patched ultra plan."]
-verify = ["93944efe created 04_eden_editor_ux_spec.md and patched ultra plan plus mission_creator_design docs."]
-acceptance = ["04_eden_editor_ux_spec.md and 05_agent_execution_plan.md landed; engineering ultra plan and mission_creator_design aligned to Eden docked-shell UX."]
+approach = ["Created documentation_v2/website/frontend/apps/editor/ux_spec.md; patched ultra plan."]
+verify = ["93944efe created documentation_v2/website/frontend/apps/editor/ux_spec.md and patched ultra plan plus mission_creator_design docs."]
+acceptance = ["documentation_v2/website/frontend/apps/editor/ux_spec.md and documentation_v2/website/frontend/apps/editor/decisions.md landed; engineering ultra plan and mission_creator_design aligned to Eden docked-shell UX."]
 citations = [
     "Source: commit 93944efe.",
-    "Source: SHIPPED_HISTORY.md T-034.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md T-034.",
 ]
 shipped_at = "745b7797"
 created_at = "2026-06-20T23:09:53Z"

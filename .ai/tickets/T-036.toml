@@ -15,7 +15,7 @@ verify = ["8046218e added useSelectTool drag-move and marquee pickRect multi-sel
 acceptance = ["Map drag moved icons via moveEntities transact; marquee multi-select picked slots; group move and delete replaced click-to-teleport."]
 citations = [
     "Source: commit 8046218e.",
-    "Source: SHIPPED_HISTORY.md T-036.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md T-036.",
 ]
 shipped_at = "8046218e"
 created_at = "2026-06-21T00:00:32Z"

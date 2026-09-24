@@ -13,7 +13,7 @@ FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it 
 `make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
 the gate does not cover these forms, so the drift is real and silent.
 
-`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
+`documentation_v2/runbooks/two_client_playtest/README.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
 numbers (the quoted log STRINGS are current; only the numbers moved):
     TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770
       (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)
@@ -25,7 +25,7 @@ numbers (the quoted log STRINGS are current; only the numbers moved):
 wrote, so it was stale on arrival.**
 
 Also in this bucket, from the same report:
-- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says
+- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `documentation_v2/runbooks/game_server_staging/README.md` says
   **108**; measured **108**.
 - The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs
   **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.
@@ -43,14 +43,14 @@ context = [
     "Gate checks 41 @contract only; bare file.c:NNN in docs invisible.",
 ]
 requirement = [
-    "Fix PLAYTEST_RUNBOOK.md S8-S13 cites moved after T-605.",
+    "Fix documentation_v2/runbooks/two_client_playtest/README.md S8-S13 cites moved after T-605.",
     "Fix arsenal_rules.rs IsComplete and unworn Degrade line numbers.",
     "Find wrong 320 map-engine-core tests figure; fix run-playtest 109 vs 108 count.",
 ]
 current_state = [
     "TBD_LoadoutEquipHelper.c cites off by ~150 lines across runbook sections.",
     "arsenal_rules.rs (:209-212) and (:1121-1123) stale inside T-605 new text.",
-    "STAGING-SERVER.md 108 vs run-playtest-server.sh:39 claiming 109.",
+    "documentation_v2/runbooks/game_server_staging/README.md 108 vs run-playtest-server.sh:39 claiming 109.",
     "verify-no-crf-leak exceeds 480s budget twice; agents timeout before PS-GUID scan.",
 ]
 approach = [
@@ -64,7 +64,7 @@ verify = [
 acceptance = [
     "PLAYTEST_RUNBOOK sections S8-S13 cited stable symbol names instead of rotted file:line numbers.",
     "arsenal_rules.rs IsComplete and unworn Degrade line cites were updated inside T-605 text.",
-    "STAGING-SERVER.md line citations were retargeted to section headings after they landed in unrelated sections.",
+    "documentation_v2/runbooks/game_server_staging/README.md line citations were retargeted to section headings after they landed in unrelated sections.",
 ]
 citations = [
     "wave 76 verifier F4 stale cites",
@@ -83,7 +83,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "docs/platform/PLAYTEST_RUNBOOK.md",
+    "documentation_v2/runbooks/two_client_playtest/README.md",
     "apps/website/frontend/src/arsenal_rules.rs",
 ]
 

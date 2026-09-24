@@ -18,7 +18,7 @@ verify = ["npm run build and npm run lint clean after every commit of the series
 acceptance = ["Modpacks, Wiki and Vehicles rode the shared SplitPane; Mortar ran full-bleed."]
 citations = [
     "Source: commit f4557cd8.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "f4557cd8"
 created_at = "2026-06-20T01:27:01Z"

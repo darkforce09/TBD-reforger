@@ -15,7 +15,7 @@ verify = ["e1355d00 wired TreeView DnD rename reparent and destructive removeEdi
 acceptance = ["Outliner rename, reparent, moveSlotToLayer, and destructive folder subtree delete shipped via ydoc ops and TreeView DnD plus inline rename."]
 citations = [
     "Source: commit e1355d00.",
-    "Source: SHIPPED_HISTORY.md T-037.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md T-037.",
 ]
 shipped_at = "e1355d00"
 created_at = "2026-06-21T00:26:27Z"

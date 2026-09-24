@@ -19,7 +19,7 @@ verify = ["tsc -b, npm run build, npm run lint all clean; the dev server boots."
 acceptance = ["The Aegis palette, type scale, glass utilities and shared primitives existed for the page redesigns."]
 citations = [
     "Source: commit 384a552b.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-011.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-011.",
 ]
 shipped_at = "384a552b"
 created_at = "2026-06-19T07:49:44Z"

@@ -5,8 +5,8 @@ summary = "platform wave close writes the marker commit itself: subject self-che
 class = "feature"
 status = "shipped"
 order = 6030
-spec = "docs/platform/t912_wave_lockfile.md"
-plan = "docs/plans/t-923_plan.md"
+spec = "documentation_v2/tickets/specs/t912_wave_lockfile.md"
+plan = "documentation_v2/tickets/plans/t-923_plan.md"
 executor = "claude-code"
 main_goal = "The close ceremony can no longer produce a malformed or oracle-refused marker, because the only writer of marker commits is the code that defines what a marker is."
 context = [
@@ -44,7 +44,7 @@ estimated = [
 ]
 owns = [
     "xtask/src/wave",
-    "docs/plans/t-923_plan.md",
+    "documentation_v2/tickets/plans/t-923_plan.md",
 ]
 
 [scope]

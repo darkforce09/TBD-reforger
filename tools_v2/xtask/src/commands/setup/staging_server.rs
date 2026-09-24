@@ -1,7 +1,8 @@
 //! `cargo xtask mod bootstrap-staging` — one-time discovery of a staging host, and the
 //! directories the deploy expects to find there.
 //!
-//! It installs neither steamcmd nor Arma; `docs/mod/STAGING-SERVER.md` covers those.
+//! It installs neither steamcmd nor Arma;
+//! `documentation_v2/runbooks/game_server_staging/README.md` covers those.
 //!
 //! What it refuses and what it tolerates:
 //! - An absent deploy file is fine: every value it would supply can come from the environment.

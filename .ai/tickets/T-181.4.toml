@@ -1,23 +1,23 @@
 id = "T-181.4"
 kind = "work"
 title = "North-star design doc and oracle gates"
-summary = "Ship TBD_MOD_DESIGN.md plus @idx citation and CRF-leak verification gates."
+summary = "Ship documentation_v2/mod/tbd-framework/mod_design.md plus @idx citation and CRF-leak verification gates."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
-notes = "docs/mod/TBD_MOD_DESIGN.md (north star) + enf citations + make verify-oracle + make verify-no-crf-leak. 14 @idx citations resolve; injecting the hallucinated 'RequestSlotChange' makes it exit 1. Leak gate allows CRF_ in comments (attribution) and treats vanilla GUIDs as engine facts — both false-positive classes measured and handled."
+notes = "documentation_v2/mod/tbd-framework/mod_design.md (north star) + enf citations + make verify-oracle + make verify-no-crf-leak. 14 @idx citations resolve; injecting the hallucinated 'RequestSlotChange' makes it exit 1. Leak gate allows CRF_ in comments (attribution) and treats vanilla GUIDs as engine facts — both false-positive classes measured and handled."
 parent = "T-181"
 context = [
     "Mod program needs a north-star design authority before spine slices land.",
     "Agents hallucinate symbols; gates must fail on invented API names.",
 ]
 requirement = [
-    "Write docs/mod/TBD_MOD_DESIGN.md as the program north star.",
+    "Write documentation_v2/mod/tbd-framework/mod_design.md as the program north star.",
     "Ship verify-oracle @idx gate and verify-no-crf-leak; hallucinated symbol exits 1.",
 ]
 current_state = ["Mod program lacked north-star doc; agents hallucinated symbols without failing gates."]
-approach = ["TBD_MOD_DESIGN.md plus enf citations and verify-no-crf-leak oracle gates."]
+approach = ["documentation_v2/mod/tbd-framework/mod_design.md plus enf citations and verify-no-crf-leak oracle gates."]
 verify = ["Hallucinated RequestSlotChange makes @idx gate exit 1."]
 acceptance = ["North-star design shipped; fourteen @idx citations resolved; hallucinated RequestSlotChange made gate exit 1."]
 citations = [

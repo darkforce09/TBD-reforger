@@ -20,7 +20,8 @@
 //!   └──────────────────────────────────────────────────────────────┘
 //! ```
 //!
-//! ── Design law this screen obeys (TBD_MOD_DESIGN.md §2, §6) ────────────────────────────────
+//! -- Design law this screen obeys -----------------------------------------------------------
+//! (documentation_v2/mod/tbd-framework/mod_design.md section 2, section 6)
 //! * **ONE obvious primary action.** Whatever recovers the currently selected player, and nothing
 //!   else. The shell physically cannot grow a second loud button.
 //! * **Progressive disclosure.** Validator findings and the audit trail are one pick away, not a

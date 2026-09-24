@@ -5,7 +5,7 @@ summary = "T-090.1.1 — Map cartographic view (pyramid + UI switch)"
 class = "feature"
 status = "shipped"
 order = 900
-spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md"
+spec = "documentation_v2/tickets/specs/t090_1_1_map_cartographic_view.md"
 executor = "claude-code"
 parent = "T-090"
 main_goal = "Ship Map basemap WebP pyramid, enable Map radio, remove map→satellite coercion."
@@ -34,6 +34,7 @@ citations = [
     "commit 6e06e679",
     "t090_1_1_verify_log.md",
     "t090_1_1_verify_log M1-M9",
+    "Design: documentation_v2/tickets/specs/t090_basemap_dual_view.md.",
 ]
 shipped_at = "6e06e679"
 created_at = "2026-06-30T22:10:12Z"

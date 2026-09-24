@@ -5,6 +5,7 @@ summary = "T-068.5"
 class = "feature"
 status = "shipped"
 order = 680
+spec = "documentation_v2/tickets/specs/t068_5_mod_equip_loadout.md"
 executor = "claude-code"
 parent = "T-068"
 main_goal = "Equip test NPC from profile loadout-export JSON on dev play."

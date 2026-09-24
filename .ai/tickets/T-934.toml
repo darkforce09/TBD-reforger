@@ -5,8 +5,8 @@ summary = "Restructure flat 73-file frontend into core/shell/pages/editor, decom
 class = "audit"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
-plan = "docs/plans/t-934_plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
+plan = "documentation_v2/tickets/plans/t-934_plan.md"
 executor = "claude-code"
 children = [
     "T-934.1",

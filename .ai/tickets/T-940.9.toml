@@ -5,8 +5,8 @@ summary = "A new wiki_markup service parses H3 and deeper headings, links, image
 class = "feature"
 status = "ready"
 order = 8130
-spec = "docs/specs/audit_2026_09/t940_website_platform.md"
-plan = "docs/plans/t-940_9_plan.md"
+spec = "documentation_v2/tickets/specs/t940_website_platform.md"
+plan = "documentation_v2/tickets/plans/t-940_9_plan.md"
 executor = "claude-code"
 priority = 2
 depends_on = ["T-940.8"]
@@ -14,7 +14,7 @@ parent = "T-940"
 main_goal = "Wiki pages carry the structure authors need and keep history."
 context = [
     "Anchor 2026-09-04: handlers/content/wiki.rs parses a minimal subset (no H3+, links, images, tables, checklists); no revisions table exists.",
-    "The audit's parser-limits claim was false as worded (false_claims.md); the real gap is the missing features.",
+    "The audit's parser-limits claim was false as worded (documentation_v2/archive/audits/audit_2026_09_false_claims.md); the real gap is the missing features.",
     "Depends on T-940.8 (wiki.rs). services/mod.rs is shared with T-940.6; this slice packs after it.",
 ]
 requirement = [

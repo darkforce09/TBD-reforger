@@ -5,7 +5,7 @@ summary = "Modifier-click toggles slot in/out of selection."
 class = "feature"
 status = "shipped"
 order = 530
-spec = "docs/specs/Mission_Creator_Architecture/t053_additive_select.md"
+spec = "documentation_v2/tickets/specs/t053_additive_select.md"
 executor = "claude-code"
 main_goal = "Ctrl/Cmd+LMB toggles slots in/out of the current selection."
 context = [
@@ -32,7 +32,7 @@ acceptance = [
 citations = [
     "t053_additive_select.md spec",
     "7a7bf05f ship commit",
-    "SHIPPED_HISTORY.md §T-053",
+    "documentation_v2/archive/shipped_history/shipped_history.md §T-053",
 ]
 shipped_at = "7a7bf05f"
 created_at = "2026-06-22T03:34:32Z"

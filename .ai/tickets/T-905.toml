@@ -5,8 +5,8 @@ summary = "Split T-159 frontend SIZE-3 files (37) the T-899 allowlist is holding
 class = "feature"
 status = "ready"
 order = 8280
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
-plan = "docs/plans/t-905_plan.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
+plan = "documentation_v2/tickets/plans/t-905_plan.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

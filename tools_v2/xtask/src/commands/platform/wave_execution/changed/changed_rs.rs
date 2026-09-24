@@ -421,7 +421,8 @@ pub fn realpath_m(p: &Path) -> PathBuf {
 
 /// Every `.rs` file under the four source roots, for the `grep -rl` sweeps.
 ///
-/// `grep`, not `rg` — rg is container-only (PLATFORM_FACTORY.md Known traps), and the whole point
+/// `grep`, not `rg` — rg is container-only (documentation_v2/runbooks/factory_waves/README.md
+/// Known traps), and the whole point
 /// of the language bans is that a search tool going absent must not read as a clean result. Here the walk is
 /// compiled in, so the tool cannot be absent at all.
 pub(super) fn rs_files_under(roots: &[&str]) -> Vec<PathBuf> {

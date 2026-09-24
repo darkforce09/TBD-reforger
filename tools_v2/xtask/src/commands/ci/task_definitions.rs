@@ -40,8 +40,9 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-ci-shell"),
             // Grouped with the language gates rather than the build lanes: like them it is a
             // seconds-long source scan, and it guards a one-way wall (map-engine ->
-            // graphics-engine) that nothing in the compiler enforces. ENGINE_SPLIT_PROGRAM §5
-            // requires it here and in ci.yml — a rule nobody is stopped by is not a rule.
+            // graphics-engine) that nothing in the compiler enforces.
+            // documentation_v2/standards/engine_boundary_rules.md §5 requires it here and in
+            // ci.yml — a rule nobody is stopped by is not a rule.
             Step::Task("verify-engine-layers"),
             Step::Task("rust-ci"),
             Step::Task("verify-coding-standards"),
@@ -98,14 +99,14 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-citations",
-        help: "Verify @contract citations in apps/ and tools_v2/ code — NOT docs/ prose (DOCUMENTATION_STANDARDS §10)",
+        help: "Verify @contract citations in apps/ and tools_v2/ code — NOT documentation_v2/ prose (documentation_v2/standards/documentation_standards.md §10)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema citations", false, citations)],
     },
     Task {
         name: "verify-coding-standards",
-        help: "SIZE file length + doc layout + GO-7 @route/router match (CODING_STANDARDS §11)",
+        help: "SIZE file length + doc layout + GO-7 @route/router match (documentation_v2/standards/coding_standards/README.md §11)",
         group: "verify",
         lane: Lane::Ci,
         steps: &[
@@ -130,7 +131,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-editorconfig",
-        help: "FMT-2: run editorconfig-checker from repo root (CODING_STANDARDS §7)",
+        help: "FMT-2: run editorconfig-checker from repo root (documentation_v2/standards/coding_standards/README.md §7)",
         group: "verify",
         lane: Lane::Ci,
         steps: &[Step::Native {
@@ -289,7 +290,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-engine-layers",
-        help: "ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b, 4, 7 — graphics-engine imports no map engine and declares no map noun; map-engine names the frame vocabulary at one enumerated seam and no GPU module at all; data/scenario imports nothing outside itself; data/ and world/ name each other nowhere",
+        help: "§5 rules 1, 2, 3a, 3b, 4, 7 of documentation_v2/standards/engine_boundary_rules.md — graphics-engine imports no map engine and declares no map noun; map-engine names the frame vocabulary at one enumerated seam and no GPU module at all; data/scenario imports nothing outside itself; data/ and world/ name each other nowhere",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!(

@@ -5,8 +5,8 @@ summary = "Fixes the audit's S5 findings in apps/website/api: waitlist seats, re
 class = "bug"
 status = "queued"
 order = 6999
-spec = "docs/specs/audit_2026_09/t940_website_platform.md"
-plan = "docs/plans/t-940_plan.md"
+spec = "documentation_v2/tickets/specs/t940_website_platform.md"
+plan = "documentation_v2/tickets/plans/t-940_plan.md"
 executor = "claude-code"
 priority = 0
 children = [
@@ -27,7 +27,7 @@ children = [
 main_goal = "Event, telemetry, admin and content data on the website stays consistent, complete and operator-tunable."
 context = [
     "Master audit S5 (2026-09-04), verified against main @ 072988d57: events.rs:2042-2053, :2037-2041, :1338-1340; telemetry.rs:579-598; db.rs:31-34; audit.rs:161; admin.rs:60-61, :668-673; app.rs:628; wiki.rs:47/:208; mortar.rs:51-60.",
-    "Two claims are false and get no ticket (false_claims.md): capacity check (already fixed by T-227) and wiki parser limits (real gap is missing features).",
+    "Two claims are false and get no ticket (documentation_v2/archive/audits/audit_2026_09_false_claims.md): capacity check (already fixed by T-227) and wiki parser limits (real gap is missing features).",
     "handlers/events/events.rs is shared by .1/.2/.3/.12 and chains through depends_on; telemetry.rs by .4/.13; admin.rs by .7/.11; wiki.rs by .8/.9; dto.rs by .2/.8/.12; services/mod.rs by .6/.9.",
     "Existing tickets referenced, not re-minted: T-136 AAR replay, T-135 modset manager, T-311 leaderboard tie-breaker, T-301 briefing kit, T-302 equip verify, T-304 registry scan, T-139 lobby preview, T-393 (shipped).",
 ]

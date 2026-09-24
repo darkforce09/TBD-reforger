@@ -12,7 +12,7 @@
 //! the teardown are `cdp::launch_with_gpu` + `Browser::shutdown`; this module carries the driver
 //! logic on top of them.
 //!
-//! The hard-won environment knowledge lives in `docs/tools/editor_capture.md` — the three
+//! The hard-won environment knowledge lives in `documentation_v2/runbooks/editor_capture.md` — the three
 //! non-obvious things (writable `XDG_CACHE_HOME`, `--use-angle=vulkan`, read the map off the canvas
 //! not the compositor) are preserved here. `cdp::launch_with_gpu(_, GpuBackend::Vulkan, _)` carries
 //! the vulkan flags and pins `XDG_CACHE_HOME` on the chromium child (KB-002); this module carries

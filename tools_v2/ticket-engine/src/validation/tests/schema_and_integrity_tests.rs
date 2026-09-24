@@ -655,7 +655,10 @@ fn plan_ready_gate_red_green() {
     // file is reported once, by the spec-and-plan file rule.
     fs::write(
         dir.join("T-001.toml"),
-        ready("ready", "plan = \"docs/plans/t-001_plan.md\"\n"),
+        ready(
+            "ready",
+            "plan = \"documentation_v2/tickets/plans/t-001_plan.md\"\n",
+        ),
     )
     .unwrap();
     assert!(
@@ -664,7 +667,10 @@ fn plan_ready_gate_red_green() {
     );
     let errs = check_spec_and_plan_files_exist(&tmp);
     assert!(
-        errs.contains(&"T-001: plan missing on disk: docs/plans/t-001_plan.md".to_string()),
+        errs.contains(
+            &"T-001: plan missing on disk: documentation_v2/tickets/plans/t-001_plan.md"
+                .to_string()
+        ),
         "{errs:?}"
     );
     // Queued work is exempt (the gate binds on ready-class only).

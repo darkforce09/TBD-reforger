@@ -18,7 +18,7 @@ verify = ["npm run build and npm run lint clean after every commit of the series
 acceptance = ["The Event Hub ran full-bleed with mono ORBAT slot counts and squad fill ratios."]
 citations = [
     "Source: commit f7b18b28.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "f7b18b28"
 created_at = "2026-06-20T01:28:54Z"

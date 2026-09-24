@@ -5,7 +5,7 @@ summary = "Native dblclick on map and ORBAT opens Attributes."
 class = "feature"
 status = "shipped"
 order = 540
-spec = "docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md"
+spec = "documentation_v2/tickets/specs/t054_attributes_entry_points.md"
 executor = "claude-code"
 main_goal = "Native dblclick on map and ORBAT opens Attributes modal."
 context = [
@@ -32,7 +32,7 @@ acceptance = [
 citations = [
     "t054_attributes_entry_points.md",
     "3e302a45 ship commit",
-    "SHIPPED_HISTORY.md §T-054",
+    "documentation_v2/archive/shipped_history/shipped_history.md §T-054",
 ]
 shipped_at = "3e302a45"
 created_at = "2026-06-22T03:46:09Z"

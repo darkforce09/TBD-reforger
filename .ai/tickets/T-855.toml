@@ -5,7 +5,7 @@ summary = "T-853 port: remote-log-grep -> mod remote-logs"
 class = "chore"
 status = "shipped"
 order = 5360
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

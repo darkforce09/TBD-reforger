@@ -5,6 +5,7 @@ summary = "Human sign-off: MC loadout → Save/Export → compiled JSON → mod 
 class = "feature"
 status = "queued"
 order = 8560
+spec = "documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md"
 executor = "human"
 notes = "Phase-2 E2E gate — do not ticket-done T-068 until this passes. Satisfied by T-181.16 (dedicated server + 2 real clients)."
 parent = "T-068"
@@ -18,13 +19,13 @@ requirement = [
     "P7 greps [TBD][Loadout][Slot] and SpawnManager assigned slot — not phantom [Player] tags.",
 ]
 current_state = ["Queued; executor human. Satisfied jointly with T-181.16 dedicated-server playtest."]
-approach = ["Follow docs/platform/PLAYTEST_RUNBOOK.md; attach P6 screenshot and P7 log excerpts."]
+approach = ["Follow documentation_v2/runbooks/two_client_playtest/README.md; attach P6 screenshot and P7 log excerpts."]
 citations = [
     "t068_14_phase2_e2e_gate.md",
-    "PLAYTEST_RUNBOOK.md",
+    "documentation_v2/runbooks/two_client_playtest/README.md",
     "T-068 parent summary",
 ]
-owns = ["docs/mod/capability_verdicts.tsv"]
+owns = ["documentation_v2/mod/tbd-framework/capability_verdicts.tsv"]
 
 [scope]
 domain = "repo"

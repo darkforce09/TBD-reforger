@@ -2,7 +2,8 @@
 //!
 //! Captures screenshots, sweeps zoom levels, and crops images. Drives the live Mission
 //! Creator over CDP on ANGLE/Vulkan; the stack must be
-//! up (`cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos` / `leptos-debug`). See `docs/tools/editor_capture.md`.
+//! up (`cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos` / `leptos-debug`).
+//! See `documentation_v2/runbooks/editor_capture.md`.
 //!
 //! ```text
 //!   capture shot <out.png> <url> <waitMs> [url waitMs ...] [--canvas] [--hide-overlay]

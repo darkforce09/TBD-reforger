@@ -1,29 +1,29 @@
 id = "T-653"
 kind = "work"
 title = "Preserve the three headless editor-screenshot findings"
-summary = "Document in EDITOR_GATE_RUNBOOK.md and KB-002 the three non-obvious headless screenshot fixes: writable XDG_CACHE_HOME for fontconfig, --use-angle=vulkan only, and canvas.toDataURL capture (Page.captureScreenshot returns a black map)."
+summary = "Document in documentation_v2/runbooks/editor_gates.md and KB-002 the three non-obvious headless screenshot fixes: writable XDG_CACHE_HOME for fontconfig, --use-angle=vulkan only, and canvas.toDataURL capture (Page.captureScreenshot returns a black map)."
 class = "docs"
 status = "ready"
 order = 8260
-spec = "docs/specs/ideas/t653_headless_screenshot.md"
-plan = "docs/plans/t-653_plan.md"
+spec = "documentation_v2/tickets/specs/t653_headless_screenshot.md"
+plan = "documentation_v2/tickets/plans/t-653_plan.md"
 executor = "cursor-docs"
 notes = """
 not factory-dispatchable; no owns, no wave row
 
 --- HEAD migration_legacy (verbatim) ---
 
-Three non-obvious fixes were needed to screenshot the editor headless and all three will be re-discovered by the next person otherwise. (1) `XDG_CACHE_HOME` must be writable — the ostree host's default fontconfig cache is not, so Chrome finds zero fonts and the renderer aborts on first text layout (KB-002). (2) `--use-angle=vulkan` ONLY: swiftshader's WebGPU refuses `createBuffer` and wgpu panics, and `--use-angle=gl` gives `webgl2 not available` so `RenderEngine::create` fails. (3) The map must be read via `canvas.toDataURL()` — headless logs `Failed to initialize vulkan surface` and `Page.captureScreenshot`, with EITHER `fromSurface` value, returns a BLACK MAP OVER CORRECT DOM CHROME, which is indistinguishable from a dead engine; 3.7 MB vs 45 KB is the tell. SCOPE CORRECTION on the draft, which proposed promoting the capture scripts into `tools/`: THEY CANNOT LIVE IN THIS REPO. `Makefile:466` `verify-no-python` is a hard gate wired into `ci-local` at :484, and the working scripts are Python. The deliverable is therefore DOCUMENTATION, and `docs/website/EDITOR_GATE_RUNBOOK.md` already exists as its home — which makes this `cursor-docs`, not a code ticket. Left `idea` because the two source artifacts disagree on disposition (one says superseded, one says leave as idea) and neither is an operator decision; it carries no owns and takes no wave slot either way.
+Three non-obvious fixes were needed to screenshot the editor headless and all three will be re-discovered by the next person otherwise. (1) `XDG_CACHE_HOME` must be writable — the ostree host's default fontconfig cache is not, so Chrome finds zero fonts and the renderer aborts on first text layout (KB-002). (2) `--use-angle=vulkan` ONLY: swiftshader's WebGPU refuses `createBuffer` and wgpu panics, and `--use-angle=gl` gives `webgl2 not available` so `RenderEngine::create` fails. (3) The map must be read via `canvas.toDataURL()` — headless logs `Failed to initialize vulkan surface` and `Page.captureScreenshot`, with EITHER `fromSurface` value, returns a BLACK MAP OVER CORRECT DOM CHROME, which is indistinguishable from a dead engine; 3.7 MB vs 45 KB is the tell. SCOPE CORRECTION on the draft, which proposed promoting the capture scripts into `tools/`: THEY CANNOT LIVE IN THIS REPO. `Makefile:466` `verify-no-python` is a hard gate wired into `ci-local` at :484, and the working scripts are Python. The deliverable is therefore DOCUMENTATION, and `documentation_v2/runbooks/editor_gates.md` already exists as its home — which makes this `cursor-docs`, not a code ticket. Left `idea` because the two source artifacts disagree on disposition (one says superseded, one says leave as idea) and neither is an operator decision; it carries no owns and takes no wave slot either way.
 
 missing=0
 
-2026-09-05: queued as a docs ticket (executor cursor-docs, class docs) by command-center decision; owns EDITOR_GATE_RUNBOOK.md + KB-002 — the earlier 'no owns, no wave row' line above is superseded by that decision.
+2026-09-05: queued as a docs ticket (executor cursor-docs, class docs) by command-center decision; owns documentation_v2/runbooks/editor_gates.md + KB-002 — the earlier 'no owns, no wave row' line above is superseded by that decision.
 """
 priority = 3
 main_goal = "Nobody rediscovers the three headless screenshot fixes; the runbook carries them."
 context = [
     "Three fixes were needed to screenshot the editor headless; the next person rediscovers them otherwise.",
-    "Anchor 2026-09-05: docs/website/EDITOR_GATE_RUNBOOK.md sections Run it (:8), Required environment (:41), Known wedge modes (:55); docs/platform/known-bugs/KB-002-editor-gate-boot-wedge.md exists.",
+    "Anchor 2026-09-05: documentation_v2/runbooks/editor_gates.md sections Run it (:8), Required environment (:41), Known wedge modes (:55); documentation_v2/known_bugs/kb_002_editor_gate_boot_wedge.md exists.",
 ]
 requirement = [
     "Runbook 'Required environment' documents a writable XDG_CACHE_HOME (ostree fontconfig cache is read-only; Chrome finds zero fonts and aborts).",
@@ -33,7 +33,7 @@ requirement = [
 current_state = ["The runbook has none of the three; verify-no-python (Makefile:466) forbids the Python capture scripts, so prose is the deliverable."]
 approach = ["Add a 'Headless screenshot prerequisites' section to the runbook with the three findings and the size tell; add a See-also line in KB-002."]
 verify = [
-    "rg -n 'XDG_CACHE_HOME|use-angle=vulkan|toDataURL' docs/website/EDITOR_GATE_RUNBOOK.md",
+    "rg -n 'XDG_CACHE_HOME|use-angle=vulkan|toDataURL' documentation_v2/runbooks/editor_gates.md",
     "cargo xtask ticket check",
 ]
 acceptance = [
@@ -42,8 +42,8 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "docs/website/EDITOR_GATE_RUNBOOK.md",
-    "docs/platform/known-bugs/KB-002-editor-gate-boot-wedge.md",
+    "documentation_v2/runbooks/editor_gates.md",
+    "documentation_v2/known_bugs/kb_002_editor_gate_boot_wedge.md",
 ]
 
 [scope]

@@ -418,7 +418,7 @@ mod t737 {
 
 /* ═══════════ T-739 — inverted suppress-on-multi claim cannot return ═══════════ */
 
-/// Class-R for the wave-112 NIT that became T-739: gap_analysis asserted multi-selection
+/// Class-R for the wave-112 NIT that became T-739: eden_gap_analysis asserted multi-selection
 /// **suppresses** the Attributes modal, and a T-648 comment in `editor_ops` still said the
 /// same after T-649 inverted the guard. Pins are semantic (no false phrase) plus live line
 /// cites for `set_loadout` / its `after_local_edit` tail — hardcoding a stale number goes red
@@ -426,8 +426,8 @@ mod t737 {
 ///
 /// RED (false comment returns): restore `(it suppresses on a multi-selection)` in
 /// `rotate_selection_to_face`'s doc → "editor_ops must not re-claim suppress-on-multi".
-/// RED (gap falsehood returns): restore `multi-selection **suppresses**` in gap_analysis →
-/// "gap_analysis must not re-claim suppress-on-multi".
+/// RED (gap falsehood returns): restore `multi-selection **suppresses**` in eden_gap_analysis →
+/// "eden_gap_analysis must not re-claim suppress-on-multi".
 /// RED (stale arsenal cite): change either `editor_ops.rs:NNNN` cite away from the live
 /// `pub fn set_loadout` / its tail line → "arsenal must cite the live set_loadout line".
 mod t739 {
@@ -542,7 +542,7 @@ mod t739 {
     fn gap_src() -> &'static str {
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md"
+            "/../../../documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md"
         ))
     }
 
@@ -589,15 +589,15 @@ mod t739 {
         let gap = gap_src();
         assert!(
             !gap.contains("multi-selection **suppresses**"),
-            "T-739: gap_analysis ATTR-OPEN-001 must not re-claim suppress-on-multi"
+            "T-739: eden_gap_analysis ATTR-OPEN-001 must not re-claim suppress-on-multi"
         );
         assert!(
             !gap.contains("multi-select suppression"),
-            "T-739: gap_analysis must not re-claim multi-select suppression"
+            "T-739: eden_gap_analysis must not re-claim multi-select suppression"
         );
         assert!(
             gap.contains("a multi-selection now OPENS multi-edit") && gap.contains("T-649 ✅"),
-            "T-739: gap_analysis must state the T-649 open-on-multi truth"
+            "T-739: eden_gap_analysis must state the T-649 open-on-multi truth"
         );
     }
 

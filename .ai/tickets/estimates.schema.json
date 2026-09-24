@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Ticket token estimates — one JSON estimate per shipped ticket without a run receipt",
-  "description": "Files live at .ai/tickets/estimates/<ticket-id>.json — deliberately OUTSIDE .ai/tickets/metrics/: the receipt walkers are deny_unknown_fields over every file there and has_receipt treats ANY file under metrics/<id>/ as a measured receipt, so a colocated estimate would impersonate one. source=diff_loc carries loc_changed + derived_from_shas and tokens_estimated must equal loc_changed x factor (factor pinned by docs/platform/token_estimate_factor.md); source=cohort_median carries the WIDENED cohort key actually used ({} = all diff_loc tickets) + cohort_size. Validated by ticket check via tools_v2/ticket-engine/src/metrics/estimates/; estimates are never summed with receipts.",
+  "description": "Files live at .ai/tickets/estimates/<ticket-id>.json — deliberately OUTSIDE .ai/tickets/metrics/: the receipt walkers are deny_unknown_fields over every file there and has_receipt treats ANY file under metrics/<id>/ as a measured receipt, so a colocated estimate would impersonate one. source=diff_loc carries loc_changed + derived_from_shas and tokens_estimated must equal loc_changed x factor (factor pinned by documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md); source=cohort_median carries the WIDENED cohort key actually used ({} = all diff_loc tickets) + cohort_size. Validated by ticket check via tools_v2/ticket-engine/src/metrics/estimates/; estimates are never summed with receipts.",
   "type": "object",
   "additionalProperties": false,
   "required": ["id", "source", "factor", "tokens_estimated", "generated_at"],

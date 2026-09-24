@@ -19,7 +19,7 @@ Two more from the same slice, both of which produced a misleading 26/44 score on
   - Chrome's `innerText` APPLIES CSS `text-transform: uppercase`, so an assertion against 'Attached Missions' fails against a rendered 'ATTACHED MISSIONS'. T-226 hit this independently and 'fixed' a non-bug because of it.
   - The platform sidebar (`layout.rs:296`) and the mobile drawer (`:97`) are BOTH `<aside>`, so an `<aside>` selector is ambiguous.
 
-Where this belongs: `docs/website/EDITOR_GATE_RUNBOOK.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.
+Where this belongs: `documentation_v2/runbooks/editor_gates.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.
 
 SHIPPED 2026-07-26 — and the committed harness WAS deadlocking live, not merely trapping hand-rolled probes.
 
@@ -48,7 +48,7 @@ context = [
 ]
 requirement = [
     "Chrome stderr pipe must be drained or it blocks at 64 KB and deadlocks mid-CDP.",
-    "Document in EDITOR_GATE_RUNBOOK.md §Known harness gaps and fix cdp.rs if missing.",
+    "Document in documentation_v2/runbooks/editor_gates.md §Known harness gaps and fix cdp.rs if missing.",
 ]
 current_state = [
     "cdp::launch piped stdout (:181) and stderr (:182); nothing read either.",
@@ -71,7 +71,6 @@ citations = [
     "T-232 harness hang",
     "T-320 font-abort misdiagnosis",
     "T-226 innerText trap",
-    "EDITOR_GATE_RUNBOOK.md",
     "layout.rs:296 mobile drawer",
 ]
 shipped_at = "b19a4634"
@@ -85,7 +84,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "docs/website/EDITOR_GATE_RUNBOOK.md",
+    "documentation_v2/runbooks/editor_gates.md",
     "tools/tbd-tools/src/cdp.rs",
 ]
 

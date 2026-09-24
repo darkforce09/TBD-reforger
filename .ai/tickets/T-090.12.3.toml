@@ -5,8 +5,8 @@ summary = "world/occluder: AabbTlas per chunk, 2-D chunk DDA, WorldInstance rows
 class = "feature"
 status = "shipped"
 order = 900
-spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
-plan = "docs/plans/t-090_12_3_plan.md"
+spec = "documentation_v2/tickets/specs/t090_091_map_terrain_program.md"
+plan = "documentation_v2/tickets/plans/t-090_12_3_plan.md"
 executor = "claude-code"
 depends_on = [
     "T-090.12.1",

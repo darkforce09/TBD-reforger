@@ -71,7 +71,8 @@ class TBD_AdminService
 
 	//------------------------------------------------------------------------------------------------
 	//! `Hicks(3)` — how a player appears in the audit trail. Name AND id, because a name can be
-	//! shared (see the identity note in TBD_MOD_DESIGN.md §2) and an id cannot be read back later.
+	//! shared (see the identity note in documentation_v2/mod/tbd-framework/mod_design.md
+	//! section 2) and an id cannot be read back later.
 	static string Label(int playerId)
 	{
 		if (playerId <= 0)
@@ -404,7 +405,8 @@ class TBD_AdminService
 	//------------------------------------------------------------------------------------------------
 	//! The headline action, and the reason this whole screen exists.
 	//!
-	//! Under ONE LIFE a death is terminal by design (TBD_MOD_DESIGN.md §2). This is the single
+	//! Under ONE LIFE a death is terminal by design
+	//! (documentation_v2/mod/tbd-framework/mod_design.md section 2). This is the single
 	//! sanctioned exception, for a player killed by the engine rather than by the enemy. It does
 	//! NOT invent a new spawn path: `TBD_SpawnManager.AdminRespawn` is the same authority-side
 	//! function `#tbd respawn` has always called, and it is the only caller allowed to pass the

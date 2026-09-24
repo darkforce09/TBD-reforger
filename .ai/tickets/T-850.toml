@@ -5,8 +5,8 @@ summary = "T-801 eye-pass: squad tether did not follow drag on same-squad (auto-
 class = "bug"
 status = "ready"
 order = 8530
-spec = "docs/specs/existing/t850_squad_tether_drag.md"
-plan = "docs/plans/t-850_plan.md"
+spec = "documentation_v2/tickets/specs/t850_squad_tether_drag.md"
+plan = "documentation_v2/tickets/plans/t-850_plan.md"
 executor = "claude-code"
 notes = """
 operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)

@@ -4,8 +4,9 @@
 # ~/.config/caddy/Caddyfile.website and point caddy at it:
 #   caddy run --config tools_v2/xtask/deploy/Caddyfile.website
 #
-# Cloudflare Tunnel should target http://127.0.0.1:3080 (see docs/website/HOME_SERVER.md
-# Phase E). Adjust root path if TBD_REMOTE_DIR differs from /home/sam/tbd/repo.
+# Cloudflare Tunnel should target http://127.0.0.1:3080 (see
+# documentation_v2/runbooks/website_deployment.md Phase E). Adjust root path if TBD_REMOTE_DIR
+# differs from /home/sam/tbd/repo.
 #
 # COOP/COEP match Trunk.toml / gate serve — required for Mission Creator wasm
 # SharedArrayBuffer (crossOriginIsolated).

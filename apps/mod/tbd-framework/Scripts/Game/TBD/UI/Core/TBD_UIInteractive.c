@@ -5,7 +5,8 @@
 //! mouse user and a gamepad user see the same affordance, and every subclass repaints through a
 //! single `Repaint()` that reads TBD_UITheme.
 //!
-//! Design law it enforces (docs/mod/TBD_MOD_DESIGN.md §2 — macOS methodology):
+//! Design law it enforces (the macOS methodology of
+//! documentation_v2/mod/tbd-framework/mod_design.md section 2):
 //!   * **Direct manipulation.** A click is the action. There is no "select, then confirm" —
 //!     `OnActivated()` fires on the click itself.
 //!   * **Immediate feedback.** Every state change repaints in the same frame.

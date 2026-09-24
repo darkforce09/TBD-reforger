@@ -5,8 +5,8 @@ summary = "Save Version prefill is a static 0.1.0 — no auto-bump, second save 
 class = "bug"
 status = "ready"
 order = 8360
-spec = "docs/specs/existing/t821_save_version_prefill.md"
-plan = "docs/plans/t-821_plan.md"
+spec = "documentation_v2/tickets/specs/t821_save_version_prefill.md"
+plan = "documentation_v2/tickets/plans/t-821_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; refutes a T-789 summary claim — measured

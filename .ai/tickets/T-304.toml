@@ -5,8 +5,8 @@ summary = "TBD_RegistryScan ReadPhysAttrsPass treats SCR_WeaponAttachmentsStorag
 class = "bug"
 status = "shipped"
 order = 7680
-spec = "docs/specs/ideas/t304_registry_scan_weight.md"
-plan = "docs/plans/t-304_plan.md"
+spec = "documentation_v2/tickets/specs/t304_registry_scan_weight.md"
+plan = "documentation_v2/tickets/plans/t-304_plan.md"
 executor = "claude-code"
 notes = "executor: workbench. | 2026-09-05: executor = claude-code under operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. Re-running the scan stays the operator's Workbench step (MANUAL). Both copies of TBD_RegistryScan.c (tbd-framework, tbd-export) are owned and must stay identical."
 priority = 1

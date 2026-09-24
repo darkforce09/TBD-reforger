@@ -6,9 +6,9 @@
 //! that relocating any of them is one edit here plus the move itself, and so that reading a
 //! module tells you which file it touches without a search.
 //!
-//! [`documentation`] holds the subset that lives under the documentation tree. Those are the
-//! items a relocation of that tree rewrites, gathered in one place so the relocation is a single
-//! edit rather than a survey.
+//! [`documentation`] holds the documents, nearly all of them under the documentation tree. Those
+//! are the items a relocation of that tree rewrites, gathered in one place so the relocation is a
+//! single edit rather than a survey.
 //!
 //! The crates that consume the ticket domain resolve these paths from here rather than declaring
 //! their own: `xtask` and `ticketboard` both read the same registry, and two spellings of one
@@ -107,10 +107,14 @@ pub fn is_repo_root(candidate: &Path) -> bool {
 ///
 /// `root` carries the whole tooling tree because `cargo xtask` is the task surface: a root slice
 /// that cannot build xtask cannot run a single gate. `.cargo` rides with it for the command
-/// aliases that make `cargo xtask` resolve at all.
+/// aliases that make `cargo xtask` resolve at all. A `website` or `mod` slice checks out its
+/// documentation mirror beside the code, because documentation ships with the code it describes.
 pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
-    ("website", &["apps/website"]),
-    ("mod", &["apps/mod"]),
+    (
+        "website",
+        &["apps/website", documentation::WEBSITE_DOCUMENTATION_DIR],
+    ),
+    ("mod", &["apps/mod", documentation::MOD_DOCUMENTATION_DIR]),
     ("shared", &["contracts_v2"]),
     (
         "root",
@@ -126,21 +130,30 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
     ),
 ];
 
-/// Paths under the documentation tree.
+/// The documents the ticket domain names.
 ///
-/// Everything here is a document: a specification a ticket cites, a plan it must carry, a
-/// document `ticket sync` writes into, a tree a scan walks or skips, or a path prefix that only
-/// historical commits carry. Relocating the documentation tree rewrites exactly this module and
-/// nothing else in the crate.
+/// Everything here is a document: a specification a ticket cites, a plan it must carry, the plan
+/// skeleton, a document `ticket sync` writes into, a tree a scan walks or skips, or a path prefix
+/// that only historical commits carry. Relocating the documentation tree rewrites exactly this
+/// module and nothing else in the crate.
 pub mod documentation {
     /// Root of the committed documentation tree.
-    pub const TREE_DIR: &str = "docs";
+    pub const TREE_DIR: &str = "documentation_v2";
+
+    /// The website's documentation, which mirrors `apps/website`. A `website` slice checks it out
+    /// beside the code.
+    pub const WEBSITE_DOCUMENTATION_DIR: &str = "documentation_v2/website";
+
+    /// The game mod's documentation, which mirrors `apps/mod`. A `mod` slice checks it out beside
+    /// the code.
+    pub const MOD_DOCUMENTATION_DIR: &str = "documentation_v2/mod";
 
     /// One four-section plan document per ticket, named by [`plan_path`].
-    pub const PLANS_DIR: &str = "docs/plans";
+    pub const PLANS_DIR: &str = "documentation_v2/tickets/plans";
 
-    /// The plan skeleton a ticket copies when it goes ready without one.
-    pub const PLAN_TEMPLATE: &str = "docs/plans/TEMPLATE.md";
+    /// The plan skeleton a ticket copies when it goes ready without one. It sits with the other
+    /// ticket templates in the registry folder, not in the documentation tree.
+    pub const PLAN_TEMPLATE: &str = ".ai/tickets/plan_template.md";
 
     /// A ticket's own plan document: lowercase id, dots to underscores. `mark-ready` defaults an
     /// unset `plan` field to this path, and refuses while the file is absent.
@@ -151,19 +164,24 @@ pub mod documentation {
         )
     }
 
-    /// Program specifications — the shared authority a ticket's `spec` field points into.
-    pub const SPECS_DIR: &str = "docs/specs";
+    /// Ticket specifications — the documents most ticket `spec` fields name. One flat folder
+    /// inside [`TREE_DIR`].
+    pub const SPECS_DIR: &str = "documentation_v2/tickets/specs";
 
-    /// The architecture roadmap carrying the auto-generated "recommended next work" block that
+    /// The Mission Creator roadmap carrying the auto-generated "recommended next work" block that
     /// `ticket sync` injects between its markers.
-    pub const ROADMAP: &str = "docs/specs/Mission_Creator_Architecture/ROADMAP.md";
+    pub const ROADMAP: &str =
+        "documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md";
 
-    /// The gap-analysis table whose ticket column `ticket sync` keeps in step with the registry.
-    pub const GAP_ANALYSIS: &str = "docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md";
+    /// The Eden gap-analysis table whose ticket column `ticket sync` keeps in step with the
+    /// registry.
+    pub const GAP_ANALYSIS: &str =
+        "documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md";
 
     /// The document of record for the tokens-per-line-changed factor. A test asserts the document
     /// quotes the compiled constant verbatim, so the two can never drift.
-    pub const TOKEN_ESTIMATE_FACTOR_DOC: &str = "docs/platform/token_estimate_factor.md";
+    pub const TOKEN_ESTIMATE_FACTOR_DOC: &str =
+        "documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md";
 
     /// Path prefix of the Markdown queue views that historical commits carry. No command writes
     /// a file under it; the token estimator's `git log --numstat` walk still meets these paths in
@@ -172,25 +190,26 @@ pub mod documentation {
     /// commit keeps the spelling it was made with.
     pub const RETIRED_QUEUE_VIEW_PREFIX: &str = "docs/TICKET_";
 
-    /// Trees the stale-identifier scan walks past. Each is either generated output, an imported
-    /// design corpus, or a frozen pipeline record: none of them is prose an author maintains, so
-    /// an identifier inside one is data rather than a stale reference.
+    /// Trees the stale-identifier scan walks past, each matched as a path prefix or anywhere in
+    /// the path. Each is either generated output, an imported design corpus, or a frozen record:
+    /// none of them is prose an author maintains, so an identifier inside one is data rather than
+    /// a stale reference. The archive and the ticket specifications and plans are frozen records
+    /// that quote retired identifiers by design; every `visual_references/` folder and the
+    /// design-token exports hold imported design exports.
     pub const SCAN_EXEMPT_PREFIXES: &[&str] = &[
         ".ai/artifacts/eden-wiki/",
         "frontend/src/stitch-exports/",
-        "docs/specs/macOS_Blueprints/",
-        "docs/specs/Mission_Creator_Mock_Up/",
+        "documentation_v2/archive/",
+        "documentation_v2/tickets/",
+        "/visual_references/",
+        "documentation_v2/design_system/token_exports/",
         ".stitch-backup-exports/",
     ];
 
     /// Where the stale-identifier scan looks. Files first, then directories walked in full.
-    pub const STALE_TICKET_ID_SCAN_ROOTS: &[&str] = &[
-        TREE_DIR,
-        SPECS_DIR,
-        super::QUEUE_JSON,
-        "CLAUDE.md",
-        "README.md",
-    ];
+    /// [`SPECS_DIR`] sits inside [`TREE_DIR`] and under an exempt prefix, so no root names it.
+    pub const STALE_TICKET_ID_SCAN_ROOTS: &[&str] =
+        &[TREE_DIR, super::QUEUE_JSON, "CLAUDE.md", "README.md"];
 
     /// Path prefixes the token estimator drops from a commit's changed-line count: the `.ai/`
     /// tree (the ticket registry and the agent artifact tree) and the retired queue views
@@ -222,23 +241,23 @@ pub mod documentation {
             "ticket notes and summaries narrate the plan era; owns cells may name deleted paths",
         ),
         (
-            "docs/platform/SHIPPED_HISTORY.md",
+            "documentation_v2/archive/shipped_history/shipped_history.md",
             "the shipped-history archive describes past states in past commits",
         ),
         (
-            "docs/platform/t911_ticket_registry_redesign.md",
+            "documentation_v2/tickets/specs/t911_ticket_registry_redesign.md",
             "an approved design document, written while the plans lived",
         ),
         (
-            "docs/platform/t912_wave_lockfile.md",
+            "documentation_v2/tickets/specs/t912_wave_lockfile.md",
             "the specification of the lock that replaced them names the files it deletes",
         ),
         (
-            "docs/platform/GROK_WAVE_130_HANDOFF.md",
+            "documentation_v2/archive/factory_runs/grok_wave_130_handoff.md",
             "a kickoff document for a finished wave — a snapshot, not a runbook",
         ),
         (
-            "docs/platform/WAVE209_GROK_KICKOFF.md",
+            "documentation_v2/archive/factory_runs/wave_209_grok_kickoff.md",
             "a kickoff document for a finished wave — a snapshot, not a runbook",
         ),
         (

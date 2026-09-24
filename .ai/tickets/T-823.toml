@@ -5,8 +5,8 @@ summary = "OBJ readout counts slots only — placed vehicles are invisible to it
 class = "chore"
 status = "ready"
 order = 8380
-spec = "docs/specs/existing/t823_obj_readout_vehicles.md"
-plan = "docs/plans/t-823_plan.md"
+spec = "documentation_v2/tickets/specs/t823_obj_readout_vehicles.md"
+plan = "documentation_v2/tickets/plans/t-823_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; wording-vs-count decision, small

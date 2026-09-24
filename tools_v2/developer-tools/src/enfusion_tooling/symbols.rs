@@ -8,8 +8,8 @@
 //! An agent asked to summarise `CRF_SlottingManager.c` produced four APIs that do not exist
 //! (`RequestSlotChange`, `ReleaseSlot`, `GetInstance`, and a wrong base class) and missed
 //! `RplSave`/`RplLoad` entirely. Line numbers in prose are therefore never trustworthy.
-//! Everything in `docs/mod/oracle/**` cites rows emitted here, and `verify-oracle` fails the
-//! build when a citation does not resolve.
+//! Every `@idx` citation in `documentation_v2/**` cites rows emitted here, and `verify-oracle`
+//! fails the build when a citation does not resolve.
 //!
 //! SCOPE — this is a deliberate line/brace scanner, not a full Enfusion parser.
 //! It is accurate for the shapes Enfusion actually uses (declarations and members live on

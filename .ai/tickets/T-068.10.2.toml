@@ -5,7 +5,7 @@ summary = "T-068.10.2 — Registry exporter reclassify + kind taxonomy v3"
 class = "feature"
 status = "shipped"
 order = 680
-spec = "docs/specs/Mission_Creator_Architecture/t068_10_2_exporter_reclassify.md"
+spec = "documentation_v2/tickets/specs/t068_10_2_exporter_reclassify.md"
 executor = "claude-code"
 notes = "Arsenal polish A: kind taxonomy v3 + catalog-first auto-classify in T-150 scanner; abstract flag; weight/volume/addon per item; character_default_weapon edges; re-export+import. Census-first: .ai/artifacts/t068_10_2_census.{md,json} freezes H_pred; gate G1 = exact histogram match. Operator: program runs fully in Claude Code chat (docs lane override, 2026-07-12). SHIPPED @ be85a26e (tag T-068.10.2): all gates PASS; 1857 items/4685 edges; EntityCatalog Tier-B parse OPEN (0 refinements, non-blocking) -> optional follow-up slice."
 parent = "T-068"

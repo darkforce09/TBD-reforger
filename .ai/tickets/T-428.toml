@@ -9,7 +9,7 @@ executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---
 
-Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
+Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in documentation_v2/archive/go_and_react_era_design/go_backend_architecture_plan.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
 
 Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30)."""
 priority = 2
@@ -19,7 +19,7 @@ context = [
     "UI caller for POST /admin/roles/sync shipped in personnel.rs.",
 ]
 requirement = [
-    "Nightly/cron scheduler claimed in architecture.md but no API job wires resync_all_roles.",
+    "Nightly/cron scheduler claimed in documentation_v2/archive/go_and_react_era_design/go_backend_architecture_plan.md but no API job wires resync_all_roles.",
     "discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader.",
 ]
 current_state = [
@@ -34,7 +34,7 @@ verify = [
 acceptance = ["Scheduled nightly resync_all_roles on API boot; removed placeholder Squad Leader snowflake from discord_roles seed."]
 citations = [
     "T-247 personnel.rs sync caller",
-    "architecture.md resync_all_roles claim",
+    "documentation_v2/archive/go_and_react_era_design/go_backend_architecture_plan.md resync_all_roles claim",
     "discord_roles.sql:23 placeholder snowflake",
 ]
 shipped_at = "b2b1739e"

@@ -21,7 +21,7 @@ verify = ["dd9c871e wired Y.Doc observeDeep bindings, IconLayer entities, and us
 acceptance = ["Y.Doc normalized store mirrored into Zustand via bindings; IconLayer rendered slots; useMissionDoc persisted meta and slot chunks."]
 citations = [
     "Source: commit dd9c871e.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-030.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-030.",
 ]
 shipped_at = "dd9c871e"
 created_at = "2026-06-20T06:41:49Z"

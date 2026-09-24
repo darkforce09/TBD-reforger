@@ -5,8 +5,8 @@ summary = "Marker captions are world-frozen at bind-time zoom — drift past 40p
 class = "bug"
 status = "ready"
 order = 8410
-spec = "docs/specs/existing/t828_marker_caption_drift.md"
-plan = "docs/plans/t-828_plan.md"
+spec = "documentation_v2/tickets/specs/t828_marker_caption_drift.md"
+plan = "documentation_v2/tickets/plans/t-828_plan.md"
 executor = "claude-code"
 notes = """
 wave204 verifier; the icon half is the in-file template

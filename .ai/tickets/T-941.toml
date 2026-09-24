@@ -5,8 +5,8 @@ summary = "Fixes the audit's S6 findings in apps/mod/tbd-framework: safestart ar
 class = "bug"
 status = "queued"
 order = 7579
-spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
-plan = "docs/plans/t-941_plan.md"
+spec = "documentation_v2/tickets/specs/t941_mod_lifecycle.md"
+plan = "documentation_v2/tickets/plans/t-941_plan.md"
 executor = "claude-code"
 priority = 0
 children = [
@@ -24,7 +24,7 @@ context = [
     "Master audit S6 (2026-09-04), verified against main @ 072988d57: TBD_SafestartManager.c:252-265, TBD_LobbyScreen.c:211-212/:492-507, TBD_UILayouts.c:28-31, TBD_ObjectivesComponent.c:813, TBD_SpectatorComponent.c:61-62, TBD_AdminCommands.c:41, TBD_RadioTuner.c:142-143.",
     "Operator authorization, quoted: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
     "Operator deferral, quoted: RadioManagerEntity world edit — deferred by operator 2026-09-04. T-941.7 ships the script fallback and a checklist only.",
-    "The TickCountdown-loop claim is false (false_claims.md; :389-417 has three exits) and gets no ticket. Gamemode/TBD_SpawnManager.c is shared by .2, .8 and queued T-675.2.",
+    "The TickCountdown-loop claim is false (documentation_v2/archive/audits/audit_2026_09_false_claims.md; :389-417 has three exits) and gets no ticket. Gamemode/TBD_SpawnManager.c is shared by .2, .8 and queued T-675.2.",
     "Existing tickets referenced, not re-minted: T-675.2 vehicle reader (crew), T-311 leaderboard tie-breaker, T-136 AAR replay, T-393 (shipped) identity link, T-070 vehicles placeable.",
 ]
 requirement = [

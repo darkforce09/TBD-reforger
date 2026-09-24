@@ -1,6 +1,7 @@
 name: contracts
 
-# Cross-boundary contract gates (DOCUMENTATION_STANDARDS.md §10). Complements schema.yml
+# Cross-boundary contract gates (documentation_v2/standards/documentation_standards.md §10).
+# Complements schema.yml
 # (which validates the golden fixtures). Triggers on the code boundaries that carry @contract
 # tags + generated projections.
 on:

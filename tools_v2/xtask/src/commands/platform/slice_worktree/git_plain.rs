@@ -171,7 +171,8 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     let p = parent_slice(slice_arg);
     let slice = if p != slice_arg {
         println!(
-            "note: {slice_arg} is a sub-slice — it belongs in {p}'s worktree (SLICE_WORKFLOW.md rule 1)"
+            "note: {slice_arg} is a sub-slice — it belongs in {p}'s worktree ({} rule 1)",
+            crate::core::repository_layout::documentation::SLICE_WORKFLOW_RUNBOOK
         );
         p
     } else {

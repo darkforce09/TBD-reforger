@@ -5,20 +5,20 @@ summary = "`cargo xtask setup all` checks deps, writes .env, runs db up, migrate
 class = "chore"
 status = "ready"
 order = 8240
-spec = "docs/platform/tbd_north_star_backlog.md"
-plan = "docs/plans/t-138_plan.md"
+spec = "documentation_v2/tickets/specs/t131_north_star_backlog.md"
+plan = "documentation_v2/tickets/plans/t-138_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: executor claude-code; the installer is an xtask subcommand because the brief forbids committed .sh/.py/.mjs. Scope repo/xtask/deploy."
 priority = 2
 main_goal = "A fresh clone reaches a running API and frontend with one command plus Docker."
 context = [
-    "Anchor 2026-09-05: xtask/src/main.rs already exposes db, seed-announcement (:367) and migrate-v2 (:1034) subcommands; docs/website/DEV_RUNBOOK.md 'Start everything' (:7) is a manual list.",
+    "Anchor 2026-09-05: xtask/src/main.rs already exposes db, seed-announcement (:367) and migrate-v2 (:1034) subcommands; documentation_v2/runbooks/local_development.md 'Start everything' (:7) is a manual list.",
     "Fresh clones follow the runbook by hand; there is no dependency check and no single entry point.",
 ]
 requirement = [
     "New xtask/src/setup_all.rs (registered in main.rs): deps check (docker, psql, git-lfs, trunk), .env from .env.example if absent, db up, migrate, seed, optional --map-assets lfs pull.",
     "Idempotent: a second run reports every step as already satisfied; a missing dependency is named with an install hint.",
-    "DEV_RUNBOOK.md 'Start everything' points at the one command and keeps the manual list as fallback.",
+    "documentation_v2/runbooks/local_development.md 'Start everything' points at the one command and keeps the manual list as fallback.",
 ]
 current_state = ["No `setup` subcommand exists; the runbook's manual sequence is the only install path."]
 approach = [
@@ -39,7 +39,7 @@ created_at = "2026-09-05T03:30:00Z"
 owns = [
     "xtask/src/setup_all.rs",
     "xtask/src/main.rs",
-    "docs/website/DEV_RUNBOOK.md",
+    "documentation_v2/runbooks/local_development.md",
 ]
 
 [scope]

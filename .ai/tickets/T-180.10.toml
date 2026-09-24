@@ -5,7 +5,7 @@ summary = "Coherency audit, verify-t180 gate, doc and registry remediations."
 class = "feature"
 status = "shipped"
 order = 1760
-spec = "docs/specs/Mission_Creator_Architecture/t180_10_program_coherency.md"
+spec = "documentation_v2/tickets/specs/t180_10_program_coherency.md"
 executor = "cursor-docs"
 notes = "Coherency report + make verify-t180 + doc/registry remediations. Zero P0 → no 10.1. Verify: .ai/artifacts/t180_10_verify_log.md"
 parent = "T-180"
@@ -26,7 +26,7 @@ acceptance = [
 ]
 citations = [
     "Source: commit e267109e — coherency checker.",
-    "Source: SHIPPED_HISTORY.md §T-180.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-180.",
 ]
 shipped_at = "7c0078dd"
 created_at = "2026-07-19T21:02:37Z"

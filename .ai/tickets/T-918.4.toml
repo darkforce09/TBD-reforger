@@ -5,8 +5,8 @@ summary = "In-app markdown viewer"
 class = "feature"
 status = "shipped"
 order = 5984
-spec = "docs/platform/t917_ticket_schema_v2.md"
-plan = "docs/plans/t-918_4_plan.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
+plan = "documentation_v2/tickets/plans/t-918_4_plan.md"
 executor = "claude-code"
 notes = """
 egui_commonmark is a new dependency family — named supply-chain event, version + tree delta reported like eframe was at T-915.1. Read-only: the viewer never edits files.

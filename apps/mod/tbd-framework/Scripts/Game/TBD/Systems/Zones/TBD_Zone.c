@@ -20,7 +20,8 @@ enum TBD_EZoneShapeKind
 //! What happens when a player stays in violation past the grace period.
 //!
 //! ══ THE ONE-LIFE DECISION, IN THE PLACE IT IS MADE ══════════════════════════════════════════
-//! TBD events are ONE LIFE: death is terminal (TBD_MOD_DESIGN.md §2). "Kill the player for leaving
+//! TBD events are ONE LIFE: death is terminal
+//! (documentation_v2/mod/tbd-framework/mod_design.md section 2). "Kill the player for leaving
 //! the AO" therefore does not mean "teleport them back with a slap" — it means **permanent removal
 //! from the event**, recoverable only by an admin `#tbd respawn`. That is a big enough consequence
 //! that it must be an authored choice, never an inherited one.

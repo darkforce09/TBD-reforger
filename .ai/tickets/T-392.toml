@@ -16,7 +16,7 @@ The sibling consts on the same page are the same mechanism and should go with it
 
 Right shape: render nothing (or an explicit 'No briefing' affordance) when the field is empty, the way `mission_overview.rs:930` already does with `"No briefing provided."`. Do NOT back-fill — see T-373 for why an absent value must stay distinguishable from a default.
 
-Found by the T-239 provenance sweep; full map at docs/platform/frontend_data_provenance.md."""
+Found by the T-239 provenance sweep; full map at documentation_v2/archive/audits/frontend_data_provenance.md."""
 priority = 1
 main_goal = "Remove PLACEHOLDER_LORE and sibling placeholder fallbacks when authored event fields are empty."
 context = [

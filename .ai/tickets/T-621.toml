@@ -11,7 +11,7 @@ notes = """
 
 OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
 bound). **Shell has none at all** -- no `verify-no-shell`, no "new tooling goes in xtask" convention,
-nothing in `CODING_STANDARDS.md` or `CLAUDE.md`.
+nothing in `documentation_v2/standards/coding_standards/README.md` or `CLAUDE.md`.
 
 MEASURED: **58 `.sh` files, 15,415 lines** (excluding `.git` and worktrees). `scripts/platform/wave.sh`
 alone is ~2,800 lines and grew by hundreds more across waves 75-79. Nothing was violating a rule --
@@ -34,7 +34,7 @@ Waves 75-79 spent a large fraction of their budget on defects that are **specifi
 None of these failure modes survive contact with a typed language and a test harness.
 
 === FIX SHAPE -- proposal, operator to confirm ===
-1. Write the rule down (`CODING_STANDARDS.md`): **new tooling goes in `xtask`**; bash is permitted only
+1. Write the rule down (`documentation_v2/standards/coding_standards/README.md`): **new tooling goes in `xtask`**; bash is permitted only
    for thin process glue that must run before/without cargo (container entry, `distrobox-host-exec`
    wrappers, git hooks).
 2. **Grandfather with an explicit list**, so the list can only shrink. A `verify-no-new-shell` gate
@@ -55,7 +55,7 @@ context = [
     "58 sh scripts 15415 lines; wave.sh grew across waves.",
 ]
 requirement = [
-    "CODING_STANDARDS.md: new tooling in xtask; bash glue only.",
+    "documentation_v2/standards/coding_standards/README.md: new tooling in xtask; bash glue only.",
     "verify-no-new-shell compares against committed inventory.",
 ]
 current_state = [

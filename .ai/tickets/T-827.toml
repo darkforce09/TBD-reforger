@@ -5,8 +5,8 @@ summary = "Validation chip red measures 4.0-4.3:1 over the live glass — passes
 class = "bug"
 status = "ready"
 order = 8400
-spec = "docs/specs/existing/t827_validation_chip_contrast.md"
-plan = "docs/plans/t-827_plan.md"
+spec = "documentation_v2/tickets/specs/t827_validation_chip_contrast.md"
+plan = "documentation_v2/tickets/plans/t-827_plan.md"
 executor = "claude-code"
 notes = """
 wave204 verifier; measurement methodology matters — live-effective, not plate-calc

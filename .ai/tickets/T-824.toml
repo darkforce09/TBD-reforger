@@ -5,8 +5,8 @@ summary = "Placed zones are not visible on the map — investigate and fix the r
 class = "bug"
 status = "ready"
 order = 8390
-spec = "docs/specs/existing/t824_zone_render_at_rest.md"
-plan = "docs/plans/t-824_plan.md"
+spec = "documentation_v2/tickets/specs/t824_zone_render_at_rest.md"
+plan = "documentation_v2/tickets/plans/t-824_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-203; repro-first — do not assume the mechanism

@@ -5,8 +5,8 @@ summary = "Enfusion mod reader half of T-675: load wire vehicles[] roster and dr
 class = "feature"
 status = "shipped"
 order = 7280
-spec = "docs/specs/existing/t675_vehicle_roster_wire.md"
-plan = "docs/plans/t-675_2_plan.md"
+spec = "documentation_v2/tickets/specs/t675_vehicle_roster_wire.md"
+plan = "documentation_v2/tickets/plans/t-675_2_plan.md"
 executor = "claude-code"
 depends_on = [
     "T-675.1",

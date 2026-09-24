@@ -1,10 +1,10 @@
 id = "T-125"
 kind = "program"
 title = "Coding standards + 11/10 enforcement"
-summary = "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0–.6. Hub: t125_coding_standards_enforcement.md."
+summary = "documentation_v2/standards/coding_standards/README.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0–.6. Hub: t125_coding_standards_enforcement.md."
 status = "shipped"
 order = 1250
-spec = "docs/platform/t125_coding_standards_enforcement.md"
+spec = "documentation_v2/tickets/specs/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 depends_on = ["T-124"]
 children = [

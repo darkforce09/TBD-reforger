@@ -1,7 +1,8 @@
 //! T-181.40 — the ENGINE half: actually putting a player's radio on the mission's frequency.
 //!
 //! ══ WHAT IS AND IS NOT REACHABLE FROM SCRIPT — MEASURED, NOT REMEMBERED ═════════════════════
-//! `TBD_MOD_DESIGN.md` §6 says radio is wanted but NOT via CRF's route, because CRF depends on the
+//! `documentation_v2/mod/tbd-framework/mod_design.md` section 6 says radio is wanted but NOT via
+//! CRF's route, because CRF depends on the
 //! external CVON workshop mod and TBD must not. The open question that made that a risk was
 //! whether Reforger's radio is drivable from script at all without a partner mod. It is. The whole
 //! chain is `proto external` — native, script-callable, and compile-proved on this lane with a

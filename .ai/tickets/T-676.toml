@@ -5,8 +5,8 @@ summary = "Trigger activation and effects — the Enfusion runtime"
 class = "chore"
 status = "shipped"
 order = 7260
-spec = "docs/specs/existing/t676_trigger_runtime.md"
-plan = "docs/plans/t-676_plan.md"
+spec = "documentation_v2/tickets/specs/t676_trigger_runtime.md"
+plan = "documentation_v2/tickets/plans/t-676_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row

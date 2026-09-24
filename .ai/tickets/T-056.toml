@@ -5,7 +5,7 @@ summary = "Copy slot selection and paste at cursor preserving layout."
 class = "feature"
 status = "shipped"
 order = 560
-spec = "docs/specs/Mission_Creator_Architecture/t056_copy_paste.md"
+spec = "documentation_v2/tickets/specs/t056_copy_paste.md"
 executor = "claude-code"
 main_goal = "Ctrl/Cmd+C copies slot selection; Ctrl/Cmd+V pastes at cursor preserving layout."
 context = [
@@ -32,7 +32,7 @@ acceptance = [
 citations = [
     "t056_copy_paste.md spec",
     "b5c5ead6 ship commit",
-    "SHIPPED_HISTORY.md §T-056",
+    "documentation_v2/archive/shipped_history/shipped_history.md §T-056",
 ]
 shipped_at = "61a5fe5c"
 created_at = "2026-06-22T15:41:53Z"

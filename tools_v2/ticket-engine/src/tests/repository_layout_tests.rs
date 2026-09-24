@@ -6,6 +6,14 @@ use std::collections::BTreeSet;
 fn required_documentation_locations() -> Vec<(&'static str, Vec<&'static str>)> {
     vec![
         ("TREE_DIR", vec![documentation::TREE_DIR]),
+        (
+            "WEBSITE_DOCUMENTATION_DIR",
+            vec![documentation::WEBSITE_DOCUMENTATION_DIR],
+        ),
+        (
+            "MOD_DOCUMENTATION_DIR",
+            vec![documentation::MOD_DOCUMENTATION_DIR],
+        ),
         ("PLANS_DIR", vec![documentation::PLANS_DIR]),
         ("PLAN_TEMPLATE", vec![documentation::PLAN_TEMPLATE]),
         ("SPECS_DIR", vec![documentation::SPECS_DIR]),
@@ -81,7 +89,7 @@ fn the_root_sparse_set_carries_the_task_surface() {
 fn a_plan_path_is_the_lowercased_id_under_the_plans_directory() {
     assert_eq!(
         documentation::plan_path("T-917.6"),
-        "docs/plans/t-917_6_plan.md"
+        "documentation_v2/tickets/plans/t-917_6_plan.md"
     );
     assert!(documentation::plan_path("T-090.4").starts_with(documentation::PLANS_DIR));
 }

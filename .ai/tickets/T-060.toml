@@ -5,7 +5,7 @@ summary = "256MB body limit, bulk sync load overlay, save progress UX."
 class = "feature"
 status = "shipped"
 order = 600
-spec = "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md"
+spec = "documentation_v2/tickets/specs/t060_fast_initial_load.md"
 executor = "claude-code"
 main_goal = "256MB body limit, bulk sync load overlay, save progress UX."
 context = ["T-059..T-067 scale program; 360k mission save/load blocked."]
@@ -30,6 +30,7 @@ citations = [
     "Source: commit b1fd25a9.",
     "Source: SHIPPED_HISTORY §T-060.",
     "Source: t060_fast_initial_load.md.",
+    "Design: documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md.",
 ]
 shipped_at = "80c69931"
 created_at = "2026-06-22T17:23:46Z"

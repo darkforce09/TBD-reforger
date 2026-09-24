@@ -31,7 +31,7 @@ WHY THIS IS NOW P0 RATHER THAN HYGIENE: the wave gate's verdict is not reproduci
 carries a chance of a FALSE RED, which is the failure mode that teaches agents gate failures are
 noise (see T-409). And the same interference could equally mask a real failure -- a gate whose
 verdict depends on scheduling cannot be trusted in either direction, which is the standing
-always-BLOCKER class in PLATFORM_FACTORY.md.
+always-BLOCKER class in documentation_v2/runbooks/factory_waves/README.md.
 
 REPRO (either outcome proves it -- run twice, expect different or no failures):
     psql -c 'CREATE DATABASE tbd_x_cold OWNER tbd'

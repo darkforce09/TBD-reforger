@@ -5,8 +5,8 @@ summary = "Chrome docks/Attributes/top bar leak map dblclick — W210 eye-pass"
 class = "bug"
 status = "ready"
 order = 8550
-spec = "docs/specs/existing/t927_chrome_dblclick_leak.md"
-plan = "docs/plans/t-927_plan.md"
+spec = "documentation_v2/tickets/specs/t927_chrome_dblclick_leak.md"
+plan = "documentation_v2/tickets/plans/t-927_plan.md"
 executor = "claude-code"
 notes = """
 WAVE-210 OPERATOR EYE-PASS. Double-clicking editor chrome (docks, Attributes modal, top bar) behaves like a map canvas dblclick (opens place picker / Attributes-on-entity paths). pointerdown is stopped in places but native dblclick still reaches the canvas handler.

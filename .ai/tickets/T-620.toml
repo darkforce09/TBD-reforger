@@ -32,7 +32,7 @@ three straight waves.
 === 3. HALF OF IT PHYSICALLY CANNOT FIRE -- THE SIGNATURE DEFECT, INSIDE THE RULE'S OWN GATE ===
 `scripts/verify-no-python.sh:29` greps with **`rg`**, which does not exist in this environment (it is
 a harness-injected shell function; `bash -c 'command -v rg'` finds nothing -- documented three times
-in `docs/platform/PLATFORM_FACTORY.md`). Measured:
+in `documentation_v2/runbooks/factory_waves/README.md`). Measured:
     ./scripts/verify-no-python.sh: line 29: rg: command not found
       OK (none)
 `|| true` swallows the failure and the check reports **"OK (none)"** -- not because there are no
@@ -105,7 +105,7 @@ owns = [
     "scripts/mod/slice-collisions.py",
     "xtask/src",
     "Makefile",
-    "docs/platform/CODING_STANDARDS.md",
+    "documentation_v2/standards/coding_standards/README.md",
     "scripts/platform/wave.sh",
     "docs/platform/wave_plan.tsv",
 ]

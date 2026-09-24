@@ -134,8 +134,8 @@ fn usage_spells_every_subcommand_as_a_runnable_command() {
 #[test]
 fn unknown_and_empty_subcommands_print_usage_and_exit_2() {
     let root = scratch("dispatch");
-    // `create` is the spelling the factory docs warn about twice (PLATFORM_FACTORY.md:276,
-    // FACTORY_FOR_CURSOR.md:469). It must do NOTHING — no tree, no branch.
+    // `create` is the spelling the factory runbook warns about (the Known traps section of
+    // documentation_v2/runbooks/factory_waves/README.md). It must do NOTHING — no tree, no branch.
     for cmd in ["create", "", "wat", "--help", "reaP"] {
         assert_eq!(dispatch(&root, &[cmd.to_string()]).unwrap(), 2, "`{cmd}`");
     }

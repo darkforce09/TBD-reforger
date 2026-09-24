@@ -28,7 +28,7 @@
 //! `SetText` agree on the same ladder; the engine has no stylesheet to read them from, so they
 //! are duplicated by hand into the `.layout` files and MUST be kept in step with this file.
 //!
-//! Design law this file encodes (docs/mod/TBD_MOD_DESIGN.md §2):
+//! Design law this file encodes (documentation_v2/mod/tbd-framework/mod_design.md section 2):
 //!   * ONE accent colour. ACTION is the single high-priority trigger blue; PRIMARY is the
 //!     everyday "active/selected" blue. Nothing else is allowed to shout.
 //!   * Generous whitespace — the spacing ladder starts at 8 and the screen gutter is 24.

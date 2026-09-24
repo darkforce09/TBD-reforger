@@ -1,13 +1,13 @@
 id = "T-181.2.1"
 kind = "work"
 title = "CRF capability matrix with untriaged gate"
-summary = "docs/mod/capability_verdicts.tsv plus verify-capability; every CRF capability must have a TBD verdict."
+summary = "documentation_v2/mod/tbd-framework/capability_verdicts.tsv plus verify-capability; every CRF capability must have a TBD verdict."
 class = "feature"
 status = "shipped"
 order = 1810
-spec = "docs/mod/t181_event_mod_program.md"
+spec = "documentation_v2/tickets/specs/t181_event_mod_program.md"
 executor = "claude-code"
-notes = "docs/mod/capability_verdicts.tsv + make verify-capability. 57 capabilities, zero untriaged. A forgotten CRF capability is now a build error."
+notes = "documentation_v2/mod/tbd-framework/capability_verdicts.tsv + make verify-capability. 57 capabilities, zero untriaged. A forgotten CRF capability is now a build error."
 parent = "T-181"
 context = ["Factory gates must catch CRF capabilities with no TBD replacement plan."]
 requirement = [

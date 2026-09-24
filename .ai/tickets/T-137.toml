@@ -5,7 +5,7 @@ summary = "Discord structure + bot flows: slot confirm, reminders, AAR links. Co
 class = "feature"
 status = "deferred"
 order = 6442
-spec = "docs/platform/tbd_north_star_backlog.md"
+spec = "documentation_v2/tickets/specs/t131_north_star_backlog.md"
 executor = "human"
 notes = 'deferred by operator 2026-09-04: "T-137 Discord platform rework (executor=human)"'
 depends_on = ["T-118"]

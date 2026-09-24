@@ -273,17 +273,19 @@ pub fn cartographic_rendering_artifacts_dir(root: &Path) -> PathBuf {
 ///
 /// Relocating the documentation tree rewrites this module and nothing else in the crate.
 pub mod documentation {
-    /// Game-mod documentation. `enf citations` walks it and resolves every `@idx lane#Symbol`
-    /// citation in it against the symbol index.
-    pub const MOD_DOCS_DIR: &str = "docs/mod";
+    /// Root of the documentation tree. `enf citations` walks it whole, because the mod design
+    /// and the mod slice runbook carry `@idx lane#Symbol` citations from different folders, and
+    /// resolves every citation in its Markdown against the symbol index.
+    pub const DOCUMENTATION_ROOT: &str = "documentation_v2";
 
     /// The hand-authored verdict table `enf capability` joins the upstream symbol index against,
     /// so a framework file nobody has triaged is a build error rather than an oversight.
-    pub const CAPABILITY_VERDICTS: &str = "docs/mod/capability_verdicts.tsv";
+    pub const CAPABILITY_VERDICTS: &str =
+        "documentation_v2/mod/tbd-framework/capability_verdicts.tsv";
 
     /// Known wedge modes of the headless editor gate, and the recipe for each — named by the
     /// font-cache diagnostic when it cannot explain what it found.
-    pub const EDITOR_GATE_RUNBOOK: &str = "docs/website/EDITOR_GATE_RUNBOOK.md";
+    pub const EDITOR_GATE_RUNBOOK: &str = "documentation_v2/runbooks/editor_gates.md";
 }
 
 #[cfg(test)]

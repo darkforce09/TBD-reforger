@@ -1,10 +1,10 @@
 id = "T-130"
 kind = "program"
 title = "Fable audit — remainder (OPEN + PARTIAL)"
-summary = "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md."
+summary = "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: documentation_v2/tickets/specs/t130_fable_audit_remainder.md."
 status = "shipped"
 order = 1300
-spec = "docs/platform/t130_fable_audit_remainder.md"
+spec = "documentation_v2/tickets/specs/t130_fable_audit_remainder.md"
 executor = "cursor-docs"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-128"]

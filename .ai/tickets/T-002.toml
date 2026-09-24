@@ -7,18 +7,18 @@ status = "shipped"
 order = 20
 executor = "cursor-docs"
 main_goal = "A member logs in with Discord and lands on the dashboard with a working session."
-context = ["The backend OAuth endpoints already existed (TRACKING.md); the SPA callback did not yet consume the redirect."]
+context = ["The backend OAuth endpoints already existed (documentation_v2/website/frontend/README.md); the SPA callback did not yet consume the redirect."]
 requirement = ["Wire the Discord OAuth callback end-to-end."]
 current_state = ["AuthCallbackPage did not parse the token pair the backend redirect delivered in the URL fragment; no session was persisted."]
 approach = [
     "AuthCallbackPage parses the token pair from the URL fragment, stores the access token, fetches the profile via GET /me, persists the session and redirects to the dashboard.",
-    "Backend error codes on the redirect render a friendly message; TRACKING.md updated — T-002 resolved, T-006 confirmed done, T-004/T-005 reassigned to frontend.",
+    "Backend error codes on the redirect render a friendly message; documentation_v2/website/frontend/README.md updated — T-002 resolved, T-006 confirmed done, T-004/T-005 reassigned to frontend.",
 ]
 verify = ["History records the OAuth callback wiring in commit 00852232; no command proof was kept."]
 acceptance = ["A Discord login persisted a session and landed the member on the dashboard."]
 citations = [
     "Source: commit 00852232.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-002.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-002.",
 ]
 shipped_at = "00852232"
 created_at = "2026-06-18T02:35:20Z"

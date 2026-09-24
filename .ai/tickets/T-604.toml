@@ -9,7 +9,7 @@ executor = "claude-code"
 notes = '''
 --- HEAD migration_legacy (verbatim) ---
 
-FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
+FOUND while writing `documentation_v2/runbooks/two_client_playtest/README.md` (2026-07-31). **This blocks T-181.16 and
 T-068.14, which are the only two things standing between this program and finished.**
 
 === THE CATCH-22 ===
@@ -70,7 +70,7 @@ verify = [
 acceptance = [
     "run-playtest-server.sh launched with both -addonsDir and -config, staging profile, and backend room registration assertions.",
     "The launcher failed when Workshop download won over the local addon and printed parsed join address and Direct Join code.",
-    "run-dev-server.sh and STAGING-SERVER.md documented the joinable mod-loaded admin-capable playtest path.",
+    "run-dev-server.sh and documentation_v2/runbooks/game_server_staging/README.md documented the joinable mod-loaded admin-capable playtest path.",
 ]
 citations = [
     "T-604 blocks T-181 T-068",
@@ -90,7 +90,7 @@ estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 com
 owns = [
     "scripts/mod/deploy-staging.sh",
     "scripts/mod/run-dev-server.sh",
-    "docs/mod/STAGING-SERVER.md",
+    "documentation_v2/runbooks/game_server_staging/README.md",
 ]
 
 [scope]

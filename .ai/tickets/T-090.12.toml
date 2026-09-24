@@ -5,8 +5,8 @@ summary = "Umbrella for six slices plus a docs slice: chunk rows with pitch/roll
 class = "feature"
 status = "shipped"
 order = 900
-spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
-plan = "docs/plans/t-090_12_plan.md"
+spec = "documentation_v2/tickets/specs/t090_091_map_terrain_program.md"
+plan = "documentation_v2/tickets/plans/t-090_12_plan.md"
 executor = "claude-code"
 parent = "T-090"
 main_goal = "Every placed object on Everon has a BVH and the mission creator's LOS shot and viewshed judge terrain and objects together, naming the blocker."
@@ -36,7 +36,7 @@ shipped_at = "f9558f428"
 created_at = "2026-09-04T01:22:27Z"
 completed_at = "2026-09-04T13:36:57Z"
 estimated = ["tokens"]
-owns = ["docs/plans/t-090_12_plan.md"]
+owns = ["documentation_v2/tickets/plans/t-090_12_plan.md"]
 
 [scope]
 domain = "engine"

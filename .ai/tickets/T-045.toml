@@ -13,7 +13,7 @@ requirement = [
     "Rename MC docs to descriptive names.",
     "Stub old numbered paths.",
 ]
-current_state = ["MC docs used numbered filenames like 05_agent_execution_plan.md."]
+current_state = ["MC docs used numbered filenames like documentation_v2/website/frontend/apps/editor/decisions.md."]
 approach = [
     "Add domain ROADMAP.md files.",
     "Rename MC corpus; leave stubs at old paths.",

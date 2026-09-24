@@ -11,7 +11,7 @@ parent = "T-181"
 main_goal = "Prove the full event loop on a dedicated server with two real clients."
 context = [
     "Last T-181 slice; T-181 program blocked on this runtime proof.",
-    "PLAYTEST_RUNBOOK closes T-181.16 and T-068.14 in one session.",
+    "documentation_v2/runbooks/two_client_playtest/README.md closes T-181.16 and T-068.14 in one session.",
     "T-068.14 satisfied by same session per its notes.",
 ]
 requirement = [
@@ -23,7 +23,7 @@ current_state = [
     "Factory shipped compile-verified spine; no runtime proof yet.",
     "T-604 shipped joinable server script unblocking playtest.",
 ]
-approach = ["Operator runs PLAYTEST_RUNBOOK numbered session with evidence capture."]
+approach = ["Operator runs documentation_v2/runbooks/two_client_playtest/README.md numbered session with evidence capture."]
 verify = [
     "Two clients connected; both roster Authenticated player lines.",
     "LOBBY picker readable rows; claim and release without flicker.",
@@ -31,13 +31,13 @@ verify = [
     "Terminal death blocks re-claim; admin respawn succeeds.",
 ]
 citations = [
-    "PLAYTEST_RUNBOOK closes both",
+    "documentation_v2/runbooks/two_client_playtest/README.md closes both",
     "T-181 summary blocked human",
     "T-068.14 satisfied-by note",
 ]
 owns = [
-    "docs/mod/capability_verdicts.tsv",
-    "docs/mod/t181_event_mod_program.md",
+    "documentation_v2/mod/tbd-framework/capability_verdicts.tsv",
+    "documentation_v2/tickets/specs/t181_event_mod_program.md",
 ]
 
 [scope]

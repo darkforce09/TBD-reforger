@@ -78,7 +78,8 @@ pub fn report(layout: AssetLayout, remote_dir: &str) -> Result<(), u8> {
         }
         AssetLayout::Absent => {
             // A site that only serves the mission library never asks for `/map-assets`, and
-            // HOME_SERVER documents that as a supported first cutover. Say so and continue.
+            // documentation_v2/runbooks/website_deployment.md documents that as a supported
+            // first cutover. Say so and continue.
             println!(
                 "    WARN: no map asset tree on the server (neither assets_v2/terrains nor \
                  packages/map-assets)."

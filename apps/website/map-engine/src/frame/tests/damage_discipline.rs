@@ -9,7 +9,8 @@
 //!
 //! ── WHY A SOURCE PIN AND NOT A BEHAVIOURAL TEST ──────────────────────────────────────────
 //!
-//! `ENGINE_SPLIT_PROGRAM.md` §2C rule 3 is the one rule of the four whose breach is invisible:
+//! `documentation_v2/standards/engine_boundary_rules.md` §2C rule 3 is the one rule of the four
+//! whose breach is invisible:
 //!
 //! > If packet building becomes "walk the world, rebuild every batch", you have turned a
 //! > damage-driven renderer into an immediate-mode one. That is the whole design gone, not a

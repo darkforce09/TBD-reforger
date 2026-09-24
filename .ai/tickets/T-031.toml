@@ -21,7 +21,7 @@ verify = ["73161c5c shipped frosted overlay shell panels over full-bleed z-0 Tac
 acceptance = ["Full-bleed map sat under frosted TopCommandStrip, BottomToolbelt, Outliner, Inspector, AssetBrowser, and MissionSettingsDialog panels."]
 citations = [
     "Source: commit 73161c5c.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-031.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-031.",
 ]
 shipped_at = "73161c5c"
 created_at = "2026-06-20T07:11:35Z"

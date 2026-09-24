@@ -5,7 +5,7 @@ summary = "Nest 22 handler files by domain at current granularity (auth/events/m
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 Full api suite incl. integration ran against :5434 (rust_it DB created over the wire —

@@ -5,7 +5,7 @@ summary = "Island density-shader forest canopy; continuous guides; Outliner labe
 class = "docs"
 status = "shipped"
 order = 1750
-spec = "docs/platform/t178_forest_guides_chrome.md"
+spec = "documentation_v2/tickets/specs/t178_forest_guides_chrome.md"
 executor = "claude-code"
 depends_on = ["T-177"]
 main_goal = "As a mission maker I see consistent forest canopy, a single Editor Layers title, and continuous clickable YouTube-style tree guides."
@@ -34,7 +34,7 @@ acceptance = [
 ]
 citations = [
     "Source: commit 58d839c7 — density-shader forest canopy.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-178.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-178.",
 ]
 shipped_at = "5859c02b"
 created_at = "2026-07-19T14:50:27Z"

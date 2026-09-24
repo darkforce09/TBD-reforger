@@ -5,8 +5,8 @@ summary = "Environment readers: fog, wind, view distance"
 class = "chore"
 status = "shipped"
 order = 7350
-spec = "docs/specs/existing/t682_environment_readers.md"
-plan = "docs/plans/t-682_plan.md"
+spec = "documentation_v2/tickets/specs/t682_environment_readers.md"
+plan = "documentation_v2/tickets/plans/t-682_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row

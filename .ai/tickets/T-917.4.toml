@@ -5,7 +5,7 @@ summary = "Stamp backfill: git miner over shipped history"
 class = "feature"
 status = "shipped"
 order = 5974
-spec = "docs/platform/t917_ticket_schema_v2.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 Two-pass forced: estimated[] is illegal on disk until T-917.2 widens governance. Writes via store::Corpus write_back (round-trip-verified surgical writes). T-90 must never match T-902 — boundary matching pinned by test.

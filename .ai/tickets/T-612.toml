@@ -26,9 +26,9 @@ defect class as T-606/T-607/T-611: **a check pinned on a log string someone late
 === DOCS QUOTING STRINGS THE BUILD NO LONGER EMITS ===
 - `apps/mod/README.md:43`
 - `apps/mod/tbd-framework/README.md:104-106`
-- `docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md:103`
-- `docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md:31,90,140,153`
-- `docs/specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md:43` -- names BOTH
+- `documentation_v2/tickets/specs/t092_2_mod_compile_route.md:103`
+- `documentation_v2/tickets/specs/t068_12_mod_player_loadout_equip.md:31,90,140,153`
+- `documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md:43` -- names BOTH
   `[TBD][Loadout][Player]` and `[TBD][Slotting]`, **neither of which exists anywhere**. The real tags
   are `[TBD][Loadout][Slot]` and `[TBD][Slots]`. Measured on a fully working loadout pass:
   **0** `[Player]` lines vs **93** `[Slot]` lines (69 vs 0 on the second golden). This is the file a
@@ -39,7 +39,7 @@ defect class as T-606/T-607/T-611: **a check pinned on a log string someone late
 - `apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c:103-104` -- comment says the `[TBD][Stage]`
   helper is "NOT yet wired"; **T-181.17 wired it** at `TBD_FrameworkManager.c:779`.
 
-`docs/platform/PLAYTEST_RUNBOOK.md:904` already documents the correct tag -- so the runbook and the
+`documentation_v2/runbooks/two_client_playtest/README.md:904` already documents the correct tag -- so the runbook and the
 T-068.14 spec currently disagree, and the runbook is the one that is right.
 
 === FIX SHAPE -- copy T-606, do not re-derive ===
@@ -67,7 +67,7 @@ current_state = [
     "mcp-wb-logs.sh and tbd-spawn-verify.sh gate on deleted built slot spawn.",
     "tbd-spawn-determinism extracts Mission loaded from error string only.",
     "t068_14 names [TBD][Loadout][Player] and [TBD][Slotting]; real tags Slot and Slots.",
-    "PLAYTEST_RUNBOOK.md:904 correct; T-068.14 spec disagrees and returns nothing.",
+    "documentation_v2/runbooks/two_client_playtest/README.md:904 correct; T-068.14 spec disagrees and returns nothing.",
 ]
 approach = [
     "Copy T-606: pin structural token not English word; --selftest stale fail healthy pass.",
@@ -103,7 +103,7 @@ owns = [
     "scripts/mod/tbd-spawn-determinism.sh",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c",
-    "docs/specs/Mission_Creator_Architecture",
+    "documentation_v2/tickets/specs",
     "apps/mod/README.md",
     "apps/mod/tbd-framework/README.md",
 ]

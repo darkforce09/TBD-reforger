@@ -1,6 +1,7 @@
 name: ci
 
-# Primary full-repo gate (CODING_STANDARDS.md §0.3 CI-2 + TEST-1/2/3 + FMT-1/2/3).
+# Primary full-repo gate (documentation_v2/standards/coding_standards/README.md §0.3
+# CI-2 + TEST-1/2/3 + FMT-1/2/3).
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
@@ -248,7 +249,8 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
-      # ENGINE_SPLIT_PROGRAM §5 rules 1 and 2 (phase 1F), 3b (2B), 3a (2C), 4 and 7 (2D). The split gave
+      # documentation_v2/standards/engine_boundary_rules.md §5 rules 1 and 2 (phase 1F), 3b (2B),
+      # 3a (2C), 4 and 7 (2D). The split gave
       # apps/website/graphics-engine a one-way dependency arrow (map-engine -> graphics-engine)
       # and NOTHING in the compiler enforces it: a dep line pointing back would still build, and
       # the 50k lines of map domain that phase 1 moved out would start seeping back a type at a
@@ -256,7 +258,7 @@ jobs:
       # rots without enforcement". It runs here, not on the 25-minute API job, for the same reason
       # the language gates do: it reads the working tree, needs no DB/LFS/wasm target, and takes
       # seconds. Rules 5 and 6 police a tree phase 3 has not built yet.
-      - name: verify-engine-layers (ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b, 4, 7)
+      - name: verify-engine-layers (documentation_v2/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 7)
         run: cargo xtask verify engine-layers
       # The ticket registry is the source of truth for the whole ticket pipeline, so a malformed
       # or duplicate-id registry that reaches main surfaces only when the next agent tries to read

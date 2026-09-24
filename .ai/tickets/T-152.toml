@@ -4,7 +4,7 @@ title = "Map cartographic fidelity (glyphs, text, labels)"
 summary = "Map cartographic fidelity COMPLETE @ merge. .12–.21 shipped; .18/.19 deferred; T-152.22 operator GO 2026-07-14. Hub: t152_map_cartographic_fidelity_program.md."
 status = "shipped"
 order = 1520
-spec = "docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md"
+spec = "documentation_v2/tickets/specs/t152_map_cartographic_fidelity_program.md"
 executor = "cursor-docs"
 depends_on = [
     "T-090",

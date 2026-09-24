@@ -1,66 +1,121 @@
-# Aegis Tactical Design Tokens Specification
+# TBD Reforger — Unified Design Tokens
 
-Authoritative specification for the platform visual design system, matching `apps/website/frontend/style/aegis.css`.
+Authoritative theme for all docs, Tailwind v4 `@theme`, and shadcn CSS variables.
 
----
+**Aegis reference:** full token spec in [docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md](../../specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md). Runtime tokens live in `apps/website/frontend/style/aegis.css` (`@theme` block; ported byte-for-byte from the React `index.css` at T-159.2a).
 
-## 1. Core Visual Laws
+## Principles
 
-- **Dark-Only Invariant**: The application enforces a single, authoritative tactical dark theme. Light mode is forbidden; `class="dark"` is permanently set on `<html>`.
-- **T-794 Layout Shift Law**: Entrance animations (`dialog-in`, `menu-in`, popovers) must **never** animate `transform`, `translate`, or `scale`. Animations must strictly animate `opacity` to prevent sub-pixel layout shifts and visual jitter during canvas interactions.
-- **Glassmorphism Discipline**: Tonal stacking uses semi-transparent backgrounds with `backdrop-filter: blur(16px)` and subtle borders (`rgba(255, 255, 255, 0.08)`).
+- **Single primary blue:** `#3b82f6` for buttons, nav accents, icons, links, progress bars, focus rings
+- **No `#adc6ff`:** Stitch HTML used light blue for nav; map to `primary` or `primary/10`–`primary/30`
+- **Dark only:** `class="dark"` on `<html>`; no light mode toggle
+- **Times:** API UTC → display in user local timezone with abbreviated TZ label (`date-fns`)
 
----
+## Stitch → Unified mapping
 
-## 2. Color Palette Tokens
+| Stitch (old) | Unified token |
+|--------------|---------------|
+| `#adc6ff` text-primary | `text-primary` (`#3b82f6`) |
+| `primary-container` glow | `bg-primary/10` or `bg-primary/20` |
+| `shadow-glow-*` rgba(173,198,255,…) | `rgba(59, 130, 246, …)` |
+| OPS CENTER branding | **TBD Reforger** |
+| Section emojis | Removed — Material Symbols only |
 
-### Surface Elevations (Midnight Navy)
-| Token | Hex Value | Semantic Usage |
-|---|---|---|
-| `--surface-floor` | `#0d1322` | Viewport background floor |
-| `--surface-canvas` | `#080e1d` | Deep 2D/3D CAD canvas backdrop |
-| `--surface-base` | `#0b1120` | Form inputs, recessed containers |
-| `--surface-card` | `#191f2f` | Standard cards, panels, list items |
-| `--surface-raised` | `#242a3a` | Hover states, raised panels, popovers |
-| `--surface-overlay`| `#2f3445` | Modal dialog sheets, floating toolbars |
+## Colors
 
-### Brand & Interactive Accents
-| Token | Hex Value | Semantic Usage |
-|---|---|---|
-| `--primary` | `#3b82f6` | Primary action buttons, active selections, focus rings |
-| `--primary-hover` | `#2563eb` | Hover state for primary interactive elements |
-| `--accent-nav` | `#adc6ff` | Active navigation item indicator and breadcrumb accent |
-| `--on-primary` | `#ffffff` | Foreground text on primary action elements |
+| Token | Hex / value | Usage |
+|-------|-------------|--------|
+| `primary` | `#3b82f6` | CTAs, active nav, icons, links, progress fill |
+| `on-primary` | `#ffffff` | Text on primary buttons |
+| `secondary` | `#1f2937` | Card/panel backgrounds |
+| `surface` | `#0b1120` | App canvas, input backgrounds |
+| `background` | `#0d1322` | Page floor |
+| `surface-dim` | `#0d1322` | Sidebar base |
+| `surface-container-lowest` | `#080e1d` | Deepest layer |
+| `surface-container-low` | `#151b2b` | |
+| `surface-container` | `#191f2f` | Cards |
+| `surface-container-high` | `#242a3a` | Raised cards |
+| `surface-container-highest` | `#2f3445` | Pills, badges |
+| `on-surface` | `#ffffff` | Primary text |
+| `on-surface-variant` | `#c2c6d6` | Muted text, labels |
+| `border-subtle` | `#374151` | 1px borders |
+| `outline` | `#8c909f` | Secondary borders |
+| `outline-variant` | `#424754` | |
+| `success` | `#22c55e` | Online, linked state |
+| `success-muted` | `#064e3b` | Success backgrounds |
+| `warning` | `#eab308` | Caution |
+| `error` | `#ef4444` | Destructive |
+| `error-muted` | `#f87171` | Error text (Stitch) |
 
-### Semantic State Tokens
-| Token | Hex Value | Semantic Usage |
-|---|---|---|
-| `--success` | `#22c55e` | Confirmation, healthy server status, BLUFOR/Independent |
-| `--warning` | `#eab308` | Warnings, countdown timers, pending reviews |
-| `--destructive`| `#ef4444` | Errors, deletions, OPFOR hostile indicators |
-| `--border-subtle`| `#374151` | Default container border |
+## Typography
 
----
+| Token | Font | Size | Weight | Line height | Usage |
+|-------|------|------|--------|-------------|--------|
+| `headline-lg` | Inter | 30px | 700 | 38px | Page H1 |
+| `headline-md` | Inter | 24px | 600 | 32px | Section H2 |
+| `headline-sm` | Inter | 20px | 600 | 28px | Card H3 |
+| `body-md` | Inter | 16px | 400 | 24px | Body |
+| `label-md` | Inter | 14px | 500 | 20px | Buttons, form labels |
+| `label-sm` | Inter | 12px | 600 | 16px | Uppercase metadata, table headers |
+| `code-md` | JetBrains Mono | 14px | 400 | 20px | IP, uptime, IDs |
+| `nav-breadcrumb-parent` | Inter | 14px | 400 | 20px | Breadcrumb parent |
+| `nav-breadcrumb-current` | Inter | 14px | 600 | 20px | Breadcrumb current |
+| `menu-item` | Inter | 14px | 500 | 20px | Nav links, dropdown |
 
-## 3. Typography Scale
+## Spacing
 
-Fonts: **Inter** (Primary Sans) and **JetBrains Mono** (Tactical Monospace).
+| Token | Value |
+|-------|-------|
+| `navbar-height` | 64px |
+| `container-padding` | 1.5rem (24px) |
+| `element-gap` | 1rem |
+| `gutter` | 1.5rem |
+| `stack-sm` | 0.5rem |
+| `stack-md` | 1rem |
+| `stack-lg` | 2rem |
+| `container-max` | 1440px |
+| `sidebar-width` | 320px |
 
-| Level | Size | Line Height | Weight | Usage |
-|---|---|---|---|---|
-| `headline-lg` | 30px | 38px | 700 | Main page hero titles |
-| `headline-md` | 24px | 32px | 600 | Section headers, modal titles |
-| `headline-sm` | 20px | 28px | 600 | Card titles, panel headers |
-| `body-lg` | 18px | 28px | 400 | Introductory summaries |
-| `body-md` | 16px | 24px | 400 | Standard body paragraphs |
-| `label-md` | 14px | 20px | 500 | Form labels, button text |
-| `label-sm` | 12px | 16px | 600 | Uppercase badges, status tags |
-| `code-md` | 14px | 20px | 400 | MGRS coordinates, telemetry, IDs |
+## Radii & shadows
 
----
+| Token | Value |
+|-------|-------|
+| `radius-sm` | 0.125rem |
+| `radius-md` | 0.375rem (6px) — standard for buttons, inputs, cards |
+| `radius-lg` | 0.5rem |
+| `radius-xl` | 0.75rem |
+| `shadow-glow-primary` | `0 0 15px rgba(59, 130, 246, 0.5)` |
+| `shadow-glow-active` | `inset 0 0 10px rgba(59, 130, 246, 0.3), 0 0 15px rgba(59, 130, 246, 0.2)` |
 
-## 4. Spacing & Geometry
-- **Base Unit**: 4px (`0.25rem`)
-- **Container Radius**: `radius-md` = `6px` (`0.375rem`). Applied uniformly across buttons, inputs, and cards.
-- **Top Navigation Height**: `64px` (`4rem`).
-- **Sidebar Width**: `320px` (`20rem`).
+## Fonts
+
+- **Sans:** Inter (`@fontsource/inter` weights 400, 500, 600, 700)
+- **Mono:** JetBrains Mono (`@fontsource/jetbrains-mono` 400)
+- **Icons:** Material Symbols Outlined (Google Fonts link in `index.html`)
+
+## Shell utilities (index.css)
+
+- `.sidebar-container` — gradient + grid texture
+- `.nav-item-active` — primary gradient highlight + borders
+- `.custom-scrollbar` — 4px sidebar scrollbar
+- `.pulse-dot` — online indicator animation
+
+## shadcn CSS variable mapping
+
+```css
+--background: #0d1322;
+--foreground: #ffffff;
+--primary: #3b82f6;
+--primary-foreground: #ffffff;
+--secondary: #1f2937;
+--destructive: #ef4444;
+--border: #374151;
+--ring: #3b82f6;
+```
+
+## Time display
+
+- Store and receive ISO 8601 UTC from API
+- Format with `date-fns` `format()` in local timezone
+- Append short TZ: `EEE HH:mm zzz` (e.g. `Tue 20:00 EDT`)
+- Countdowns: `differenceInSeconds` from UTC `start_time` to now

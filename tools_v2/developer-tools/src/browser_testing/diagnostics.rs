@@ -12,7 +12,7 @@
 //! free RAM + orphaned chrome processes, checks that chromium can actually resolve a font
 //! (`check_fonts`; a zero-font chromium is a hard fail), and runs a
 //! **short-timeout editor liveness probe** that FAILS with an actionable message + a native-stack
-//! hint instead of the 130 s hang. See `docs/website/EDITOR_GATE_RUNBOOK.md`.
+//! hint instead of the 130 s hang. See `documentation_v2/runbooks/editor_gates.md`.
 //!
 //! The font cache the whole harness runs against is decided here too —
 //! [`ensure_gate_font_cache`], which every browser gate calls before launching chromium.

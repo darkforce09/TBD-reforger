@@ -22,7 +22,7 @@ verify = ["make test-it including the reservation case with distinct users; fron
 acceptance = ["ORBAT slots carried role, loadout and tag, and a leader reserved a whole squad in one click."]
 citations = [
     "Source: commit 12a0463f.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-010.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-010.",
 ]
 shipped_at = "8f554f3e"
 created_at = "2026-06-19T02:59:38Z"

@@ -5,7 +5,7 @@ summary = "THE cutover: v2 types, migrator, 1182-file rewrite, consumers"
 class = "bug"
 status = "shipped"
 order = 5972
-spec = "docs/platform/t917_ticket_schema_v2.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 Migrator parses v1 as toml::Value — typed v2 refuses v1 by definition. wave.lock must be byte-identical (scope/summary are not lock inputs). parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load + check (documented weakening). Surface REQUIRED on live/new work from here.
@@ -69,7 +69,6 @@ owns = [
     "xtask/src",
     "apps/ticketboard/src",
     ".ai/tickets",
-    "docs/TICKET_REGISTRY.md",
 ]
 
 [scope]

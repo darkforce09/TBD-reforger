@@ -1,6 +1,6 @@
 # Ticket pipeline worktrees (git worktree add — not committed; see worktrees/README.md)
 .ai/artifacts/worktrees/TBD-*/
-# Slice worktrees (docs/mod/SLICE_WORKFLOW.md). These are live git checkouts; staging one
+# Slice worktrees (documentation_v2/runbooks/mod_slice_workflow.md). These are live git checkouts; staging one
 # makes git treat it as an embedded repository, which breaks clones. The rule above covers
 # only `TBD-*`, so dotted slice names need their own rule.
 .ai/artifacts/worktrees/T-*/
@@ -21,7 +21,7 @@ assets_v2/scratch/
 # The DEM and the unified .tbd-sat stay in Git LFS; the pyramid is an optional fallback.
 assets_v2/terrains/**/tiles/
 
-# Local enfusion-mcp IDE config (machine paths — see docs/mod/CLAUDE-CODE-START.md)
+# Local enfusion-mcp IDE config (machine paths — see documentation_v2/runbooks/mod_slice_workflow.md)
 .cursor/mcp.json
 .mcp.json
 apps/mod/.cursor/mcp.json

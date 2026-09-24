@@ -5,8 +5,8 @@ summary = "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rot
 class = "docs"
 status = "ready"
 order = 8450
-spec = "docs/specs/existing/t834_wave205_residue.md"
-plan = "docs/plans/t-834_plan.md"
+spec = "documentation_v2/tickets/specs/t834_wave205_residue.md"
+plan = "documentation_v2/tickets/plans/t-834_plan.md"
 executor = "claude-code"
 notes = """
 wave205 verifier NIT batch; pure cleanup

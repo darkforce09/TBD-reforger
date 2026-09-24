@@ -187,9 +187,6 @@ pub(super) fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
             {
                 continue;
             }
-            if rel.ends_with("REORG_CHANGELOG.md") {
-                continue;
-            }
             let text = match fs::read_to_string(&f) {
                 Ok(t) => t,
                 Err(_) => continue,

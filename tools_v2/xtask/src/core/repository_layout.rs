@@ -57,52 +57,56 @@ pub use ticket_engine::repository::{
 pub mod documentation {
     /// A one-line marker an operator drops in while the factory packs a wave, so the wave gate
     /// can report which wave is being packed without being told.
-    pub const FACTORY_PACK_WAVE: &str = "docs/platform/factory_pack_wave";
+    pub const FACTORY_PACK_WAVE: &str = ".ai/factory_pack_wave";
 
     /// Where documentation belongs, named by the refusal that fires when markdown is committed
     /// inside an application or asset tree instead.
-    pub const LAYOUT_TARGET_DIR: &str = "docs/website/";
+    pub const LAYOUT_TARGET_DIR: &str = "documentation_v2/";
 
     /// Installing and operating the website host: units, Caddy, backups.
-    pub const HOME_SERVER_RUNBOOK: &str = "docs/website/HOME_SERVER.md";
+    pub const HOME_SERVER_RUNBOOK: &str = "documentation_v2/runbooks/website_deployment.md";
 
     /// Standing up and operating the dedicated game server.
-    pub const STAGING_SERVER_RUNBOOK: &str = "docs/mod/STAGING-SERVER.md";
+    pub const STAGING_SERVER_RUNBOOK: &str =
+        "documentation_v2/runbooks/game_server_staging/README.md";
 
     /// The slice worktree lifecycle the mod wave driver automates.
-    pub const SLICE_WORKFLOW_RUNBOOK: &str = "docs/mod/SLICE_WORKFLOW.md";
+    pub const SLICE_WORKFLOW_RUNBOOK: &str = "documentation_v2/runbooks/mod_slice_workflow.md";
 
     /// The platform wave lifecycle `cargo xtask platform wave` automates.
-    pub const PLATFORM_FACTORY_RUNBOOK: &str = "docs/platform/PLATFORM_FACTORY.md";
+    pub const PLATFORM_FACTORY_RUNBOOK: &str = "documentation_v2/runbooks/factory_waves/README.md";
 
     /// The mod's design authority, including the upstream-code oracle lanes.
-    pub const MOD_DESIGN: &str = "docs/mod/TBD_MOD_DESIGN.md";
+    pub const MOD_DESIGN: &str = "documentation_v2/mod/tbd-framework/mod_design.md";
 
     /// How to run the spawn-determinism gate, which needs a live Workbench.
-    pub const SPAWN_DETERMINISM_RUNBOOK: &str = "docs/mod/SPAWN_DETERMINISM.md";
+    pub const SPAWN_DETERMINISM_RUNBOOK: &str = "documentation_v2/runbooks/spawn_determinism.md";
 
     /// The API readiness tree: the acceptance register and the design notes beside it.
     /// `cargo xtask verify api-readiness` fingerprints every source file under it, so an edit
     /// here invalidates recorded evidence. The fingerprint matches this prefix with
     /// `starts_with`; the trailing slash keeps a sibling whose name merely begins the same way
     /// out of the inputs.
-    pub const API_READINESS_EVIDENCE_PREFIX: &str = "docs/verification/api_v2/";
+    pub const API_READINESS_EVIDENCE_PREFIX: &str =
+        "documentation_v2/website/api_v2/verification_evidence/";
 
     /// The API acceptance register: every requirement, the implementation paths it rests on and
     /// the checks that prove it. `cargo xtask verify api-readiness` reads and validates it before
     /// it judges any evidence. It sits under [`API_READINESS_EVIDENCE_PREFIX`], so the source
     /// fingerprint covers it.
-    pub const API_READINESS_REGISTER: &str = "docs/verification/api_v2/requirements.json";
+    pub const API_READINESS_REGISTER: &str =
+        "documentation_v2/website/api_v2/verification_evidence/requirements.json";
 
     /// The top-level folders that hold code. Every tracked folder in them carries a README.md,
     /// and README.md is the only Markdown they hold; `cargo xtask verify readme-coverage` and
     /// `cargo xtask verify markdown-placement` enforce both.
     pub const CODE_TREES: &[&str] = &["apps", "tools_v2", "contracts_v2", "assets_v2"];
 
-    /// Root of the documentation tree: the deeper documents that code READMEs link to. Every
-    /// tracked folder in it carries a README.md, and every live document in it stays at or under
-    /// the size limit.
-    pub const DOCUMENTATION_ROOT: &str = "documentation_v2";
+    // Root of the documentation tree: the deeper documents that code READMEs link to. Every
+    // tracked folder in it carries a README.md, and every live document in it stays at or under
+    // the size limit. Spelled once, in `ticket_engine::repository::documentation`, because the
+    // ticket domain walks and sparse-checks-out the same tree.
+    pub use ticket_engine::repository::documentation::TREE_DIR as DOCUMENTATION_ROOT;
 
     /// Archived documents, one folder per topic. Frozen: never reworded, and exempt from the size
     /// limit.

@@ -28,7 +28,7 @@ pub fn default_plan_path(id: &str) -> String {
 /// gate pattern, extended. The resolved path is WRITTEN to the ticket so the
 /// check-level plan rule can see it. `plan` ≠ `spec`: spec stays the shared program
 /// authority; plan is this ticket's own four-section document
-/// (`docs/plans/TEMPLATE.md`).
+/// (`.ai/tickets/plan_template.md`).
 ///
 /// One divergence inside the backfill, sanctioned by the refuse-up-front rule: the
 /// Value path takes `summary` even when it is the empty string (the key exists), which

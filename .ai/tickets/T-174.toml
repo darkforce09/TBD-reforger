@@ -5,7 +5,7 @@ summary = "Sharp localhost sat progressive load, density heatmap removed, dock g
 class = "docs"
 status = "shipped"
 order = 1710
-spec = "docs/platform/t174_mc_sat_heatmap_guides.md"
+spec = "documentation_v2/tickets/specs/t174_mc_sat_heatmap_guides.md"
 executor = "claude-code"
 depends_on = ["T-173"]
 main_goal = "As a mission maker I see a sharp satellite map without a green tree heatmap wash, and the outliner/palette do not show full-height guide rails."
@@ -27,7 +27,7 @@ acceptance = [
 ]
 citations = [
     "Source: commit bbb99526 — sat fidelity, heatmap removal.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-174.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-174.",
 ]
 shipped_at = "bbb99526"
 created_at = "2026-07-18T19:31:41Z"

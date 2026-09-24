@@ -5,7 +5,7 @@ summary = "TanStack virtual outliner replaces leaf cap band-aid."
 class = "feature"
 status = "shipped"
 order = 640
-spec = "docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md"
+spec = "documentation_v2/tickets/specs/t064_virtualized_outliner.md"
 executor = "claude-code"
 main_goal = "Virtual outliner scrolls 367k rows without DOM freeze."
 context = ["T-059 OUTLINER_LEAF_CAP=500 hid rows; recursive TreeView froze tab."]

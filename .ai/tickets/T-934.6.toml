@@ -5,7 +5,7 @@ summary = "8 state modules to editor/state/ (session, commands_hotkeys, doc_host
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 Phase A exit evidence (2026-08-25): gate doctor OK; editor-suite 22/22 pass, 0 fail;

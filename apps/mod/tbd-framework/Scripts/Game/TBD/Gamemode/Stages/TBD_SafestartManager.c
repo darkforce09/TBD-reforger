@@ -2,7 +2,8 @@
 //! anybody, including themselves.
 //!
 //! ── Why this is not a nicety ────────────────────────────────────────────────────────────────
-//! TBD events are ONE LIFE (TBD_MOD_DESIGN.md §2). Between deploy and "go" every player on the
+//! TBD events are ONE LIFE (documentation_v2/mod/tbd-framework/mod_design.md section 2).
+//! Between deploy and "go" every player on the
 //! server is standing in the open, shoulder to shoulder, checking kit. Without safestart a single
 //! negligent discharge ends someone's entire event. There is no respawn to soften it — only the
 //! admin glitch-death hatch, which is not meant to launder an ND.
@@ -1029,7 +1030,8 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	//! Show the countdown on THIS machine, if it has a screen.
 	//!
 	//! Called from BOTH the replication callback (proxy) and `SetCountdown` (authority), through
-	//! one guarded helper — the listen-host landmine from TBD_MOD_DESIGN.md §5: on a listen host
+	//! one guarded helper -- the listen-host landmine from
+	//! documentation_v2/mod/tbd-framework/mod_design.md section 5: on a listen host
 	//! the authority IS the local player and never receives its own onRplName, so wiring only the
 	//! callback would silently leave the host with no countdown at all.
 	//!

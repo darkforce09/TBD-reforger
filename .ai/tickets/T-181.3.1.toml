@@ -21,7 +21,7 @@ approach = ["fetch-vanilla-api.sh mirrored BI Doxygen; enf apidoc indexed 7990 c
 verify = ["make enf-apidoc."]
 acceptance = ["Official API mirror indexed 7990 classes; SCR_BaseGameMode and RespawnSystemComponent signatures resolved."]
 citations = [
-    "Source: vanilla_carve_coverage.md — API mirror.",
+    "Source: documentation_v2/mod/tbd-framework/vanilla_source_coverage.md — API mirror.",
     "Source: commit d8fc6abc — factory bootstrap.",
 ]
 created_at = "2026-07-25T00:00:00Z"

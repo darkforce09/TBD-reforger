@@ -4,7 +4,7 @@ use std::collections::BTreeSet;
 
 /// Every [`documentation`] constant that names a location a checkout must hold, by name.
 const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &str); 3] = [
-    ("MOD_DOCS_DIR", documentation::MOD_DOCS_DIR),
+    ("DOCUMENTATION_ROOT", documentation::DOCUMENTATION_ROOT),
     ("CAPABILITY_VERDICTS", documentation::CAPABILITY_VERDICTS),
     ("EDITOR_GATE_RUNBOOK", documentation::EDITOR_GATE_RUNBOOK),
 ];

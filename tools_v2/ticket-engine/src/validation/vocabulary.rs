@@ -2,8 +2,8 @@
 //!
 //! The vocabulary is the 4-level domain/layer/component/surface word list ticket `[scope]`
 //! blocks will be validated against from the S.2 cutover on (spec:
-//! `docs/platform/t917_ticket_schema_v2.md` §Scope v2). This slice is ADDITIVE: nothing
-//! here parses tickets or resolves vocab-vs-ticket legality (the corpus load does) — the
+//! `documentation_v2/tickets/specs/t917_ticket_schema_v2.md` §Scope v2). This slice is ADDITIVE:
+//! nothing here parses tickets or resolves vocab-vs-ticket legality (the corpus load does) — the
 //! rule validates ONLY the vocabulary file's own shape:
 //!
 //! * the file exists (missing = one error naming the path — required from this slice on;

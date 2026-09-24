@@ -5,8 +5,8 @@ summary = "T-826 parking: pendingBriefingMarkers drop on server JSON save/reload
 class = "bug"
 status = "queued"
 order = 7875
-spec = "docs/specs/existing/t932_parked_markers_persist.md"
-plan = "docs/plans/t-932_plan.md"
+spec = "documentation_v2/tickets/specs/t932_parked_markers_persist.md"
+plan = "documentation_v2/tickets/plans/t-932_plan.md"
 executor = "claude-code"
 notes = """
 WAVE-211 VERIFIER MAJOR F1 (wave211.md). T-826 parks pre-mint markers on meta.pendingBriefingMarkers and promotes on add_faction — acceptance holds for local yrs. compile_payload does not emit the pending key; hydrate clears it — Save→server→reload can drop parked markers before first slot/faction.

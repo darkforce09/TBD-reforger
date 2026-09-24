@@ -1,5 +1,6 @@
 # .ai/tickets/scope-vocab.toml — the Scope v2 vocabulary tree (T-917.1).
-# Authority: docs/platform/t917_ticket_schema_v2.md §Scope v2 (draft tree, finalized here).
+# Authority: documentation_v2/tickets/specs/t917_ticket_schema_v2.md §Scope v2 (draft tree,
+# finalized here).
 #
 # Four levels: domain → layer → component → surface. This file is DATA, not compiled
 # enums — vocabulary is content that grows weekly with the codebase; only `domain` stays

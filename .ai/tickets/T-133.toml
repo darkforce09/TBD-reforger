@@ -5,8 +5,8 @@ summary = "Objectives that evaluate at mission time T+N: the T-936.2 task model 
 class = "feature"
 status = "shipped"
 order = 7570
-spec = "docs/platform/tbd_north_star_backlog.md"
-plan = "docs/plans/t-133_plan.md"
+spec = "documentation_v2/tickets/specs/t131_north_star_backlog.md"
+plan = "documentation_v2/tickets/plans/t-133_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: T-115 shipped (kept); all three owned files are created by T-936.2 → depends_on it. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. Scope engine/core (was repo/docs)."
 priority = 3

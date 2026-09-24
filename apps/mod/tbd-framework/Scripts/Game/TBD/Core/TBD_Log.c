@@ -103,7 +103,8 @@ class TBD_Log
 	//! `[TBD][Stage] LOADING -> LOBBY`.
 	//! Wired at TBD_FrameworkManager.SetStage (T-181.17), logged before the subsystem fan-out so
 	//! the transition line precedes whatever the subsystems say about it. SetStage also keeps the
-	//! legacy `[TBD] Stage → …` Print verbatim (README.md and STAGING-SERVER.md quote it), so both
+	//! `[TBD] Stage <arrow> <stage>` Print verbatim (README.md and
+	//! documentation_v2/runbooks/game_server_staging/README.md quote it), so both
 	//! formats appear on every transition — detectors should accept either and never depend on the
 	//! non-ASCII arrow (`cargo xtask mod remote-logs` pins the prefix only).
 	static void Stage(TBD_EGameStage from, TBD_EGameStage to)

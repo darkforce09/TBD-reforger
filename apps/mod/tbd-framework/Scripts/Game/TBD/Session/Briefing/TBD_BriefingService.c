@@ -9,7 +9,8 @@
 //! ══ T-181.26 — every field carries a MARKER, so no field is ever the empty string ═══════════
 //! `string.Split(sep, out, trim)` is a NATIVE engine call. Whether it emits a token for an empty
 //! field between two separators is a RUNTIME property; no compile probe on this lane can settle
-//! it and no oracle documents it (SLICE_WORKFLOW.md §What agents cannot do). Until this slice the
+//! it and no oracle documents it (documentation_v2/runbooks/mod_slice_workflow.md section
+//! "What agents cannot do"). Until this slice the
 //! briefing wire simply BET on the answer, and lost either way:
 //!
 //!   * if `Split` DROPS empties, an empty field shortens the record and every later field shifts

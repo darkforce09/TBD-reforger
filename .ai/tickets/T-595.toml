@@ -16,7 +16,7 @@ T-289 wrote the spec in-file under §WHAT THE API SLICE MUST BUILD.
 === WHY THE SECURITY MODEL IS WHAT IT IS — do not redesign it ===
 T-289 REFUTED the premise in `admin.rs:517` ("the game server is a **separate host**"). Independently
 re-verified by wave 73's verifier: `deploy.env.example:17` and both deploy scripts use one
-`TBD_SSH_HOST=sam@192.168.0.140`; `STAGING-SERVER.md:3` is one box; `HOME_SERVER.md:282` puts the API
+`TBD_SSH_HOST=sam@192.168.0.140`; `documentation_v2/runbooks/game_server_staging/README.md:3` is one box; `documentation_v2/runbooks/website_deployment.md:282` puts the API
 in `~/.config/systemd/user/`; `TBD_BACKEND_URL=http://127.0.0.1:8080` is LOOPBACK; compose `api` is
 behind an opt-in `--profile api`.
 So the API and game server are SIBLING `systemctl --user` UNITS UNDER ONE UID, and **the OS is the
@@ -39,7 +39,7 @@ per-server addressing + secret migration T-269 asked for: there is no secret to 
    and filtering to a fixed 4-verb set. Do not widen it to get them.
  - `kick` is UNBUILDABLE until `RconInput` gains a player field -- `admin.rs:422-428` has none and
    `server_control.rs:44` posts a bare `{"action":"kick"}`. Even with a channel it cannot name who.
- - The agent NEVER trusts the systemctl exit status (`STAGING-SERVER.md:246-250` documents this host
+ - The agent NEVER trusts the systemctl exit status (`documentation_v2/runbooks/game_server_staging/README.md:246-250` documents this host
    exiting 0 over a dead server). The API must not re-introduce that trust by reading only a status
    code -- consume the agent's `result`/`state`, which is why it returns both.
  - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to

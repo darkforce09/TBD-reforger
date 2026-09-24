@@ -5,7 +5,7 @@ summary = "T-090 / T-091 — Map & terrain program (hub)"
 class = "feature"
 status = "shipped"
 order = 900
-spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+spec = "documentation_v2/tickets/specs/t090_091_map_terrain_program.md"
 executor = "cursor-docs"
 parent = "T-090"
 main_goal = "Ship map-object JSON schemas, goldens, verify gates, and exact-count census."
@@ -24,6 +24,7 @@ acceptance = [
 citations = [
     "commit 41fb7d0c map-object schemas",
     "t090_091 hub T-090.0.2 row",
+    "Design: documentation_v2/tickets/specs/t090_world_object_type_inventory.md.",
 ]
 shipped_at = "41fb7d0c"
 created_at = "2026-06-30T12:34:00Z"

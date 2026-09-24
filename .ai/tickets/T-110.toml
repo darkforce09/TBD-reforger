@@ -5,7 +5,7 @@ summary = "Binary terrain base layer plus sparse delta props for 1M+ map objects
 class = "feature"
 status = "deferred"
 order = 1100
-spec = "docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md"
+spec = "documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md"
 executor = "cursor-docs"
 notes = "needs-operator: frozen unmappable Scope. "
 

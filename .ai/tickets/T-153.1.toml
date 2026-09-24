@@ -5,7 +5,7 @@ summary = "T-153 — Faction Library (reusable factions + palette swap)"
 class = "feature"
 status = "shipped"
 order = 1510
-spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
+spec = "documentation_v2/tickets/specs/t153_faction_library.md"
 executor = "claude-code"
 notes = "Frontend: FactionManagerDialog (+ArsenalPicksPanel extraction), buildFactionTree palette (vanilla dump deleted), drop path ensureFaction/ensureSquadFor + role loadout on slot. Vehicles listed, placement = T-070."
 parent = "T-153"

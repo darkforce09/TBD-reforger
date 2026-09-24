@@ -5,8 +5,9 @@
 //! This file used to open "Every method below is a deliberate no-op". Most of them still are, and
 //! that is now a DESIGN POSITION rather than a placeholder:
 //!
-//!   * `contracts_v2/definitions/bridge-messages.md` describes an external TBD Voice client
-//!     reached through a partner bridge mod. `TBD_MOD_DESIGN.md` §2 says `tbd-framework` takes NO
+//!   * `documentation_v2/contracts_v2/definitions/bridge_messages.md` describes an external
+//!     TBD Voice client reached through a partner bridge mod.
+//!     `documentation_v2/mod/tbd-framework/mod_design.md` section 2 says `tbd-framework` takes NO
 //!     workshop dependencies, and §6 says radio must not follow CRF's route precisely because CRF
 //!     depends on the external CVON mod. There is no partner bridge in this repo and TBD must not
 //!     acquire one, so `OnPlayerKilled` / `OnPTT` stay empty: they are the documented subscription

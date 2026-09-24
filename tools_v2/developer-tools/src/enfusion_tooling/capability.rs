@@ -11,9 +11,9 @@
 //! CRF source file must map to an explicit TBD verdict. A file that matches no rule is
 //! reported `UNTRIAGED` and the check FAILS. A forgotten capability becomes a build error.
 //!
-//! The verdict table (`docs/mod/capability_verdicts.tsv`) is hand-authored and reviewed —
-//! it is product judgement. The aggregation is mechanical. Same split as the rest of the oracle:
-//! humans decide, the tool measures.
+//! The verdict table (`documentation_v2/mod/tbd-framework/capability_verdicts.tsv`) is
+//! hand-authored and reviewed — it is product judgement. The aggregation is mechanical. Same
+//! split as the rest of the oracle: humans decide, the tool measures.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -46,7 +46,7 @@ pub const VERDICTS: &[&str] = &[
     "REPLACE",  // CRF's mechanism swapped for TBD JSON
     "LATER",    // wanted, not on the critical path
     "SKIP",     // deliberately out of scope
-    "DEFERRED", // out of scope BY OPERATOR WORD (see docs/mod/TBD_MOD_DESIGN.md §Deferrals)
+    "DEFERRED", // out of scope BY OPERATOR WORD (see documentation_v2/mod/tbd-framework/mod_design.md §Deferrals)
 ];
 
 pub fn load_rules(path: &Path) -> Result<Vec<Rule>> {

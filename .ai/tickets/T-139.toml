@@ -5,8 +5,8 @@ summary = "In-game lobby kit preview: a TBD_LoadoutPreview widget renders the se
 class = "feature"
 status = "shipped"
 order = 7690
-spec = "docs/platform/tbd_north_star_backlog.md"
-plan = "docs/plans/t-139_plan.md"
+spec = "documentation_v2/tickets/specs/t131_north_star_backlog.md"
+plan = "documentation_v2/tickets/plans/t-139_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: executor workbench → claude-code under operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. T-068.13 is cancelled (dropped), T-114 shipped (kept); TBD_LobbyScreen.c is shared with T-941.2 → depends_on it."
 priority = 3

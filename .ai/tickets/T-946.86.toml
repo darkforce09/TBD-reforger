@@ -5,8 +5,8 @@ summary = "T-946.82/.83/.84/.85 in one slice: Z gizmo commits elevation, multi-s
 class = "bug"
 status = "ready"
 order = 7538
-spec = "docs/specs/audit_2026_09/t946_86_wave255_dead_code.md"
-plan = "docs/plans/t-946_86_plan.md"
+spec = "documentation_v2/tickets/specs/t946_86_wave255_dead_code.md"
+plan = "documentation_v2/tickets/plans/t-946_86_plan.md"
 executor = "claude-code"
 notes = """
 FILED 2026-09-08 at wave 256 pre-dispatch. Supersedes T-946.82, T-946.83, T-946.84 and T-946.85, all

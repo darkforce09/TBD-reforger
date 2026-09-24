@@ -51,7 +51,8 @@ pub const CHAIKIN_CUT: f64 = 0.25;
 /// Iterations run at the emit (the ticket's "two iterations").
 pub const CHAIKIN_ITERATIONS: usize = 2;
 
-/// LOCKED (`docs/specs/ideas/t149_forest_smooth.md`): a ring with fewer *distinct* vertices than
+/// LOCKED (`documentation_v2/tickets/specs/t149_forest_smooth.md`): a ring with fewer
+/// *distinct* vertices than
 /// this is emitted untouched. A single 32 m cell — a lone clearing inside a forest — traces a
 /// 4-vertex ring, and rounding a 32 m square into a lens would lose a sixth of it for no
 /// cartographic gain. On everon this carve-out covers 665 rings / 2 660 vertices; those plus the

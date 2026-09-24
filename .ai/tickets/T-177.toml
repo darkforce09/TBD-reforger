@@ -5,7 +5,7 @@ summary = "YouTube tree guides, grab cursor, ORBAT Manager modal, editor gate do
 class = "docs"
 status = "shipped"
 order = 1740
-spec = "docs/platform/t177_mc_chrome_orbat_cutover.md"
+spec = "documentation_v2/tickets/specs/t177_mc_chrome_orbat_cutover.md"
 executor = "claude-code"
 depends_on = ["T-176"]
 unblocks = ["T-071"]
@@ -36,7 +36,7 @@ acceptance = [
 ]
 citations = [
     "Source: commit e97a01c6 — MC chrome ORBAT cutover.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-177.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-177.",
 ]
 shipped_at = "e97a01c6"
 created_at = "2026-07-19T09:06:26Z"

@@ -5,7 +5,7 @@
 //!
 //! No chromium and no editor suite in either driver. Rect smokes and the rest of
 //! `gate editor-suite` run only via `cargo xtask mk leptos-gates`, which is a required
-//! editor-factory pre-close step (see `docs/platform/EDITOR_FACTORY_FOR_CURSOR.md` §5).
+//! editor-factory pre-close step (see `documentation_v2/runbooks/factory_waves/README.md` §5).
 //!
 //! Every step is one `run "<label>" <cmd>` line. The runner captures stdout+stderr, prints PASS or
 //! FAIL, shows the last 15 captured lines indented six spaces on failure, and accumulates `fail` —

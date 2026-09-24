@@ -22,7 +22,8 @@
 //! coexistence at N=2, 3, 5 and 6.
 //!
 //! **What is actually known is narrower than either the old claim or the new count suggests**, and
-//! the authority is the Landmines section of `docs/mod/t181_event_mod_program.md`, not this header:
+//! the authority is the Landmines section of
+//! `documentation_v2/tickets/specs/t181_event_mod_program.md`, not this header:
 //!   * N blocks COMPILE and methods declared in one are callable from the others. Measured to N=6.
 //!   * RUNTIME coexistence has NEVER been observed. `world-boot.sh` boots with zero players and
 //!     every one of these blocks only does anything once a client connects. "Compiles" is not

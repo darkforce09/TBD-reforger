@@ -5,7 +5,7 @@ summary = "commands::attach_editor_hotkeys(&ctx); resolve naming vs state/comman
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 Final mission_editor.rs: 3,453 lines (page body + view template + page-pinned anchors/

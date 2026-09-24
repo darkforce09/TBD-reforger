@@ -5,8 +5,8 @@ summary = "Drain BODY_DEBT_PIN 962 to zero: reviewed batches fill every missing 
 class = "chore"
 status = "shipped"
 order = 6020
-spec = "docs/platform/t920_body_obligations.md"
-plan = "docs/plans/t-922_plan.md"
+spec = "documentation_v2/tickets/specs/t920_body_obligations.md"
+plan = "documentation_v2/tickets/plans/t-922_plan.md"
 executor = "claude-code"
 notes = "Operator decision 2026-08-15: full-body round chosen over transition-time-only. Selection = shipped work with ANY of the six missing (broader than the T-921 title/goal/context arms). Final zeroing commit widens check_ready_tier_body to shipped and deletes BODY_DEBT_PIN + its ratchet test."
 depends_on = ["T-921"]
@@ -27,7 +27,7 @@ current_state = [
 ]
 approach = [
     "Batches of about 20 by id order, selection = any of the six fields empty.",
-    "Reconstruct from spec docs, subject commits, diffs, SHIPPED_HISTORY.md; cite sources.",
+    "Reconstruct from spec docs, subject commits, diffs, documentation_v2/archive/shipped_history/shipped_history.md; cite sources.",
     "Thin evidence yields thin honest fields; verify stays empty only when nothing was proven.",
 ]
 verify = [

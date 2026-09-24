@@ -1,7 +1,7 @@
 //! The executor side of the platform's fleet command ledger: claim the next command for this
 //! server, report that its effect is starting, report its outcome. The API side is described in
-//! `docs/verification/api_v2/fleet_command_ledger.md`; the wire contract is
-//! `contracts_v2/definitions/fleet-command.schema.json`.
+//! `documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md`; the wire
+//! contract is `contracts_v2/definitions/fleet-command.schema.json`.
 //!
 //! - `ledger_messages`: the wire messages.
 //! - `ledger_api`: the HTTP calls and the classification of their failures.

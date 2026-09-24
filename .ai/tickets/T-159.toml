@@ -1,10 +1,10 @@
 id = "T-159"
 kind = "program"
 title = "Leptos UI rewrite (React SPA → Rust)"
-summary = "SHIPPED @ merge df181120 (branch tip 50bba633, tags T-159.15.1–.29.3): Leptos SPA rewrite complete + React app DELETED (.29.3, operator go). Frozen V-oracle 25/25 + 15 CDP smokes + census pin in cargo. Residual: prod default flip (SPA_DIST_DIR + OAuth origin + soak) operator-gated. Hub: docs/platform/t159_leptos_ui_program.md."
+summary = "SHIPPED @ merge df181120 (branch tip 50bba633, tags T-159.15.1–.29.3): Leptos SPA rewrite complete + React app DELETED (.29.3, operator go). Frozen V-oracle 25/25 + 15 CDP smokes + census pin in cargo. Residual: prod default flip (SPA_DIST_DIR + OAuth origin + soak) operator-gated. Hub: documentation_v2/tickets/specs/t159_leptos_ui_program.md."
 status = "shipped"
 order = 1570
-spec = "docs/platform/t159_leptos_ui_program.md"
+spec = "documentation_v2/tickets/specs/t159_leptos_ui_program.md"
 executor = "cursor-docs"
 children = [
     "T-159.0",

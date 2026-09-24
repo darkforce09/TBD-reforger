@@ -24,8 +24,8 @@
 //! 2. THE FILTER MAY NEVER HIDE A FAILURE. `ai run` is a token filter, not a verdict filter. A
 //!    non-zero exit prints the raw tail; gate verdict lines pass through byte-for-byte. The
 //!    recurring defect in this codebase is a tool reporting success over input it never examined
-//!    (PLATFORM_FACTORY.md — always a BLOCKER); a filter that swallowed a red would be exactly
-//!    that defect, built on purpose.
+//!    (documentation_v2/runbooks/factory_waves/README.md — always a BLOCKER); a filter that
+//!    swallowed a red would be exactly that defect, built on purpose.
 
 use anyhow::Result;
 use serde_json::Value;

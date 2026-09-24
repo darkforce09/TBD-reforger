@@ -75,7 +75,8 @@ pub(crate) enum VerifyCmd {
     /// CI schema parity + hollow recipe tripwire
     #[command(name = "ci-schema-parity")]
     CiSchemaParity,
-    /// ENGINE_SPLIT_PROGRAM §5 rules 1, 2, 3a, 3b, 4 and 7: apps/website/graphics-engine may not
+    /// documentation_v2/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4 and 7:
+    /// apps/website/graphics-engine may not
     /// import website_map_engine, and may not declare a type/fn/mod name containing terrain,
     /// symbology, mission, orbat or arma; and under apps/website/map-engine only the enumerated
     /// packet boundary may name website_graphics_engine::frame, nothing at all may name its

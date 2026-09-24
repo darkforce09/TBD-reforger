@@ -11,7 +11,7 @@ notes = """
 
 FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
 
-Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
+Also: stale 'IsComplete zero callers' prose in the generated TICKET_LEAD view (retired) and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
 Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.
 

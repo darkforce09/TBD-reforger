@@ -5,7 +5,7 @@ summary = "Extract pure fns (~lines 2317-3338): connection_*, comment_*, hover_*
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 Cross-crate pin fix: map-engine-core store.rs (select_tool, mission_editor) and

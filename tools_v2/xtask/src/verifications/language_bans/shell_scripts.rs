@@ -167,7 +167,8 @@ fn run_at(root: &Path, label: Label) -> Result<u8> {
     } else {
         println!("==> banned tracked paths");
         println!(
-            "FAIL: {} tracked path(s) match the language ban (CODING_STANDARDS.md LANG-1/2/3):",
+            "FAIL: {} tracked path(s) match the language ban \
+             (documentation_v2/standards/coding_standards/README.md LANG-1/2/3):",
             hits.len()
         );
         for (p, why) in &hits {

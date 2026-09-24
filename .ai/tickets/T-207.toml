@@ -37,7 +37,7 @@ estimated = [
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s); shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
     "apps/website/api/.env.example",
-    "docs/website/DEV_RUNBOOK.md",
+    "documentation_v2/runbooks/local_development.md",
 ]
 
 [scope]

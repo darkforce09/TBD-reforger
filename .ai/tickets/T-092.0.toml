@@ -5,7 +5,7 @@ summary = "T-092.0 — Spawn + compile contract (docs)"
 class = "docs"
 status = "shipped"
 order = 920
-spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+spec = "documentation_v2/tickets/specs/t092_0_spawn_contract.md"
 executor = "cursor-docs"
 parent = "T-092"
 main_goal = "Freeze spawn compile contract; hub and slice specs on disk."
@@ -15,7 +15,7 @@ current_state = ["No artifact diagram; UUID slot ids; gaps undocumented."]
 approach = ["Contract tables; S1–S4 verification gates; registry slices."]
 verify = [
     "./scripts/ticket check --strict",
-    "test -f docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
+    "test -f documentation_v2/tickets/specs/t092_spawn_transform_program.md",
 ]
 acceptance = [
     "Spawn transform hub and T-092.1/.2 slice specs linked on disk.",

@@ -1,10 +1,10 @@
 id = "T-162"
 kind = "program"
 title = "Eradicate remaining Python → Rust xtask"
-summary = "SHIPPED: eradicate remaining Python → Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: docs/platform/t162_python_eradication.md."
+summary = "SHIPPED: eradicate remaining Python → Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: documentation_v2/tickets/specs/t162_python_eradication.md."
 status = "shipped"
 order = 1590
-spec = "docs/platform/t162_python_eradication.md"
+spec = "documentation_v2/tickets/specs/t162_python_eradication.md"
 executor = "cursor-docs"
 notes = "needs-operator: frozen unmappable Scope. "
 children = [

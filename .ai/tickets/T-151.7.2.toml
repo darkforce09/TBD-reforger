@@ -5,7 +5,7 @@ summary = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at
 class = "feature"
 status = "shipped"
 order = 1500
-spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
+spec = "documentation_v2/tickets/specs/t151_7_1_interaction_hotfix.md"
 executor = "claude-code"
 notes = "Residual tint + zoom SoT; wheel restore @ 69ca1c08. Spec shared with 7.1 corrective lane."
 parent = "T-151"
@@ -30,7 +30,7 @@ acceptance = [
 citations = [
     "t151_7_2_verify_log.md",
     "commit 64c64d98",
-    "SHIPPED_HISTORY.md",
+    "documentation_v2/archive/shipped_history/shipped_history.md",
 ]
 shipped_at = "64c64d98"
 created_at = "2026-07-09T16:54:57Z"

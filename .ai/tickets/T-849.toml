@@ -5,8 +5,8 @@ summary = "Ungroup / leave-squad — no editor verb to take a slot out of a squa
 class = "bug"
 status = "ready"
 order = 8520
-spec = "docs/specs/existing/t849_ungroup_verb.md"
-plan = "docs/plans/t-849_plan.md"
+spec = "documentation_v2/tickets/specs/t849_ungroup_verb.md"
+plan = "documentation_v2/tickets/plans/t-849_plan.md"
 executor = "claude-code"
 notes = """
 operator W208 eye-pass; pairs with T-848

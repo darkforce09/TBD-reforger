@@ -1,7 +1,7 @@
 # --- Heavy / generated: never commit ---
 **/node_modules/
 
-# --- CRF reference: do-not-ship copy (see CLAUDE-CODE-START.md) ---
+# --- CRF reference: do-not-ship copy (see documentation_v2/runbooks/mod_slice_workflow.md) ---
 /Tbd_framework/
 # NO trailing slash: slice worktrees get these as SYMLINKS to the main tree (the oracle
 # sources are gitignored, so a fresh worktree would otherwise have neither). A trailing

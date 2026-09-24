@@ -5,8 +5,8 @@ summary = "Outliner rows are too cramped — density pass on the layer tree"
 class = "chore"
 status = "ready"
 order = 8420
-spec = "docs/specs/existing/t830_outliner_density.md"
-plan = "docs/plans/t-830_plan.md"
+spec = "documentation_v2/tickets/specs/t830_outliner_density.md"
+plan = "documentation_v2/tickets/plans/t-830_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-204; candidate for the T-825 session or standalone

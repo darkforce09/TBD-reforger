@@ -1,11 +1,11 @@
 id = "T-126"
 kind = "work"
 title = "Fable audit — security + auth follow-up"
-summary = "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md."
+summary = "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: documentation_v2/tickets/specs/t126_audit_security_followup.md."
 class = "audit"
 status = "shipped"
 order = 1260
-spec = "docs/platform/t126_audit_security_followup.md"
+spec = "documentation_v2/tickets/specs/t126_audit_security_followup.md"
 executor = "claude-code"
 unblocks = ["T-127"]
 main_goal = "Close Fable audit security and auth integrity gaps S1–S6."

@@ -5,8 +5,8 @@ summary = "The safestart damage shield arms for LOBBY and BRIEFING as well as SA
 class = "bug"
 status = "shipped"
 order = 7580
-spec = "docs/specs/audit_2026_09/t941_mod_lifecycle.md"
-plan = "docs/plans/t-941_1_plan.md"
+spec = "documentation_v2/tickets/specs/t941_mod_lifecycle.md"
+plan = "documentation_v2/tickets/plans/t-941_1_plan.md"
 executor = "claude-code"
 priority = 0
 parent = "T-941"
@@ -14,7 +14,7 @@ main_goal = "Nobody takes damage before the mission goes live."
 context = [
     "Anchor 2026-09-04: Gamemode/TBD_SafestartManager.c:252-265 arms only for SAFE_START (deliberate per :248-250); LOBBY auto-deploy (~250 ms, TBD_SpawnManager m_bAutoDeploy) puts bodies in the world.",
     "Operator authorization: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.",
-    "The TickCountdown-loop claim is false (false_claims.md); :389-417 has three exits and is not touched.",
+    "The TickCountdown-loop claim is false (documentation_v2/archive/audits/audit_2026_09_false_claims.md); :389-417 has three exits and is not touched.",
 ]
 requirement = [
     "TBD_SafestartManager.c: the arm predicate covers LOBBY, BRIEFING and SAFE_START; disarm happens once on LIVE.",

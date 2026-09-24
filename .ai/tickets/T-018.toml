@@ -12,13 +12,13 @@ requirement = ["Player-count heroes on Dashboard and Server Intel render in JetB
 current_state = ["The hero player counts rendered in the default face beside mono uptime/FPS telemetry figures."]
 approach = [
     "Mono hero numerics land on Dashboard and Server Intel per the Aegis mono-for-telemetry rule.",
-    "Same-tag full-bleed pass: admin (Server Control, Personnel, Comms Broadcaster, Audit), Modpacks and Mortar split-panes; Content Manager renamed Comms Broadcaster; DEV_RUNBOOK.md, cmd/seed mock-data seeder and Mission Creator spec added.",
+    "Same-tag full-bleed pass: admin (Server Control, Personnel, Comms Broadcaster, Audit), Modpacks and Mortar split-panes; Content Manager renamed Comms Broadcaster; documentation_v2/runbooks/local_development.md, cmd/seed mock-data seeder and Mission Creator spec added.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
 acceptance = ["Player-count heroes on Dashboard and Server Intel rendered in JetBrains Mono beside uptime and FPS."]
 citations = [
     "Source: commits 29b4776c + 94e291be.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "3c7d4186"
 created_at = "2026-06-20T01:06:10Z"

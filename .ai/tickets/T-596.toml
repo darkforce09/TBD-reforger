@@ -42,12 +42,12 @@ Small items from wave 73, none live.
    `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"` -- the `}` inside the default TERMINATES the
    expansion, so the fallback is the truncated `{69A85365FC09E2CA`. Masked only because
    `deploy.env.example:35` sets it explicitly.
-9. DOC CONFLICT: `STAGING-SERVER.md:3` says "API + Postgres (Docker)", but `deploy-website.sh` only
+9. DOC CONFLICT: `documentation_v2/runbooks/game_server_staging/README.md:3` says "API + Postgres (Docker)", but `deploy-website.sh` only
    runs `compose up -d postgres` and the compose `api` service is behind `--profile api`. **If the API
    were ever moved into that container the T-289 socket becomes unreachable** -- T-595 depends on the
    API staying host-side. Fix the doc so nobody containerises it by following it.
 10. `dist-<slice>` has no reclaim sweep. Nothing instructs agents to create one today
-    (`FACTORY_FOR_CURSOR.md:179` names only `target-<slice>-api`), so widening was speculative -- but if
+    (`documentation_v2/runbooks/factory_waves/README.md:179` names only `target-<slice>-api`), so widening was speculative -- but if
     a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual
     window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent
     is still PARKED has its dir eligible. An age guard would close it.

@@ -5,7 +5,7 @@ summary = "Language ban extension match is case-sensitive (.SH/.PY/.MK without s
 class = "bug"
 status = "deferred"
 order = 5900
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 wave 235 verifier MINOR; uppercase extensions without shebang; copy-pasteable repro in summary

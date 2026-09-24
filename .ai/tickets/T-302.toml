@@ -5,8 +5,8 @@ summary = "T-182's slot-indexed weapon equip compiles but was never observed in 
 class = "chore"
 status = "shipped"
 order = 7670
-spec = "docs/specs/ideas/t302_weapon_equip_boot.md"
-plan = "docs/plans/t-302_plan.md"
+spec = "documentation_v2/tickets/specs/t302_weapon_equip_boot.md"
+plan = "documentation_v2/tickets/plans/t-302_plan.md"
 executor = "claude-code"
 notes = "Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. TBD_LoadoutEquipHelper.c is shared with T-310, which packs in a later wave."
 priority = 1

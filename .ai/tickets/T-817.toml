@@ -5,8 +5,8 @@ summary = "Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer"
 class = "bug"
 status = "ready"
 order = 8340
-spec = "docs/specs/existing/t817_grid_label_zoom_lag.md"
-plan = "docs/plans/t-817_plan.md"
+spec = "documentation_v2/tickets/specs/t817_grid_label_zoom_lag.md"
+plan = "documentation_v2/tickets/plans/t-817_plan.md"
 executor = "claude-code"
 notes = """
 wave201 verifier NIT-2; single-file eden_toolbelt.rs

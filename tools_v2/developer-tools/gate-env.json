@@ -3,7 +3,7 @@
   "chromium": {
     "playwright_build": "1228",
     "version": "149.0.7827.55",
-    "note": "Use the FULL chrome build (chrome-linux64/chrome) + --headless=new, NOT chrome-headless-shell. The shell ships a stubbed Skia SkFontMgr_FontConfigInterface whose per-character font fallback is a FATAL 'Not implemented' (SkFontMgr_FontConfigInterface.cpp:163) — the editor chrome triggers it, the renderer core-dumps, and the harness saw only a 130 s Runtime.evaluate hang. See cdp.rs find_chromium / launch and docs/website/EDITOR_GATE_RUNBOOK.md."
+    "note": "Use the FULL chrome build (chrome-linux64/chrome) + --headless=new, NOT chrome-headless-shell. The shell ships a stubbed Skia SkFontMgr_FontConfigInterface whose per-character font fallback is a FATAL 'Not implemented' (SkFontMgr_FontConfigInterface.cpp:163) — the editor chrome triggers it, the renderer core-dumps, and the harness saw only a 130 s Runtime.evaluate hang. See cdp.rs find_chromium / launch and documentation_v2/runbooks/editor_gates.md."
   },
   "toolchain": {
     "rustc": "1.95.0",

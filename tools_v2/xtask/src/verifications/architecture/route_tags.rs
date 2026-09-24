@@ -3,7 +3,8 @@
 //!
 //! ── WHY A SCRIPT HAD TO EXIST AT ALL ─────────────────────────────────────────────────────────
 //!
-//! CODING_STANDARDS.md GO-7: *"Every exported handler func SHALL carry `@route` in its Godoc, and
+//! documentation_v2/standards/coding_standards/README.md GO-7: *"Every exported handler func
+//! SHALL carry `@route` in its Godoc, and
 //! the tag MUST match the wired route in `handlers.go` `Register()` (method + path)."* §2 of that
 //! document classes GO-7 **CI-SCRIPT** rather than lint-enforced, and that is the whole reason:
 //! clippy does not read doc comments and `cargo fmt` only reflows them, so nothing in the compiler
@@ -24,9 +25,9 @@
 //!   A. TAG → ROUTER  every `@route METHOD PATH` must be registered, on that method, for that
 //!      handler — the triple: a claim to a door that is not in the wall.
 //!   B. ROUTER → TAG  every registered route must carry a matching `@route` on the handler it
-//!      names. GO-7's "presence" half, and not optional: DOCUMENTATION_STANDARDS.md §3.1 makes
-//!      `@route` REQUIRED on the serving handler, one leg of the three-way triangulation a mod
-//!      author greps.
+//!      names. GO-7's "presence" half, and not optional:
+//!      documentation_v2/standards/documentation_standards.md §3.1 makes `@route` REQUIRED on the
+//!      serving handler, one leg of the three-way triangulation a mod author greps.
 //!
 //! Both keys are (METHOD, PATH, HANDLER FN), not just the path — which is what makes a tag moved
 //! onto the wrong handler, or a handler rewired elsewhere, fail as loudly as one never wired.

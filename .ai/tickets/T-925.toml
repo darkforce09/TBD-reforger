@@ -5,8 +5,8 @@ summary = "wave close targets the oldest pending emptied label: the ship-hook re
 class = "feature"
 status = "shipped"
 order = 6040
-spec = "docs/platform/t912_wave_lockfile.md"
-plan = "docs/plans/t-925_plan.md"
+spec = "documentation_v2/tickets/specs/t912_wave_lockfile.md"
+plan = "documentation_v2/tickets/plans/t-925_plan.md"
 executor = "claude-code"
 main_goal = "The close ceremony has a live target: the wave that just finished shipping can actually be closed, so the ledger can advance past 132 for the first time since the cutover."
 context = [
@@ -45,7 +45,7 @@ estimated = [
 owns = [
     "xtask/src/wave",
     "xtask/src/wave_lock.rs",
-    "docs/plans/t-925_plan.md",
+    "documentation_v2/tickets/plans/t-925_plan.md",
 ]
 
 [scope]

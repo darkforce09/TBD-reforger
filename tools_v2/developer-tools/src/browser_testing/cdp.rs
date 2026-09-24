@@ -103,7 +103,7 @@ const LOG_TAIL_LINES: usize = 200;
 /// The **capture** harness (`capture shot` / `capture zoomsweep`) photographs the *live* Mission
 /// Creator, whose map is a real `wgpu`/WebGPU engine. Under SwiftShader that engine cannot create
 /// its WebGPU buffers — `createBuffer failed, size (32) too large` → wasm abort → the editor hangs
-/// on the boot overlay forever (measured; see `docs/tools/editor_capture.md` §2). It needs
+/// on the boot overlay forever (measured; see `documentation_v2/runbooks/editor_capture.md` §2). It needs
 /// [`GpuBackend::Vulkan`]: ANGLE/Vulkan on the host's real device, which is the only mode that
 /// boots the engine. That is why the capture path exists as its own launch flavour rather than
 /// reusing the gate's flags — everything else (profile hygiene, pipe draining, the font cache, the

@@ -19,7 +19,7 @@ verify = ["npm run build and npm run lint clean after every commit of the series
 acceptance = ["Comms Broadcaster sat on SplitPane and the remaining admin vivid colors moved onto tokens."]
 citations = [
     "Source: commit 5c25cf58.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "3c7d4186"
 created_at = "2026-06-20T01:37:46Z"

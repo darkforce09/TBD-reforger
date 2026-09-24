@@ -18,7 +18,7 @@ verify = ["npm run build and npm run lint clean after every commit of the series
 acceptance = ["Doctrine pages sat on Aegis tokens with no off-palette vivid blue, slate, red or amber."]
 citations = [
     "Source: commit d955efc5.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "d955efc5"
 created_at = "2026-06-20T01:22:05Z"

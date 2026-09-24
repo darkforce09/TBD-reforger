@@ -1,58 +1,54 @@
-# TBD Reforger Platform Documentation Master Hub
+# TBD Reforger — documentation hub
 
-The canonical documentation architecture for the TBD Reforger Platform monorepo. This hierarchy mirrors the codebase directly, providing an unambiguous 1:1 mapping between production code and architectural specifications.
+**Ticket queue (start here for planning):** [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) · [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY.md)
 
-> **Status:** a blueprint. `docs/` is still the authoritative tree, and every code pin and ticket citation points there, until [`ARCHITECTURE_PLAN.md`](ARCHITECTURE_PLAN.md) Phase 3 executes. The hub documents here were derived from `docs/` on 2026-09-16; [`ANALYSIS_AND_INVENTORY.md`](ANALYSIS_AND_INVENTORY.md) §6 lists what changed underneath them since.
+**Domain roadmaps:**
 
-## 1. Monorepo Architectural Atlas
+| Domain | ROADMAP |
+|--------|---------|
+| Frontend | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
+| Backend | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
+| Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) |
 
-```text
-documentation_v2/
-├── tickets/                                  <-- Living ticket specifications & implementation plans
-│   ├── specs/                                <-- Flat repository of all ticket specifications (no subfolders)
-│   └── plans/                                <-- Flat repository of all 4-section implementation plans (TEMPLATE.md)
-│
-├── website/                                  <-- Mirrors apps/website/ (Web platform suite)
-│   ├── api/                                  <-- Axum REST & SSE backend, authentication, database
-│   ├── graphics_engine/                      <-- Pure WebGPU renderer (wgpu), pipelines, shaders
-│   ├── map_engine/                           <-- World spatial computation, 512m chunks, CRDT store
-│   └── frontend/                             <-- Leptos 0.8 CSR single-page application (apps, core, pages)
-│
-├── mod/                                      <-- Mirrors apps/mod/ (Enfusion engine mod suite)
-│   ├── tbd_framework/                        <-- Core gameplay mod (game modes, phase manager, radios, loadouts)
-│   ├── tbd_export/                           <-- Workbench export plugins (terrain DEM, roads, objects, registry)
-│   └── tbd_emcp/                             <-- Enfusion MCP automation bridge (19 NetAPI handlers)
-│
-├── tools/                                    <-- Mirrors tools_v2/ (Platform tooling suite)
-│   ├── xtask/                                <-- Central workspace task runner (`cargo xtask`) & verifications
-│   ├── developer_tools/                      <-- Heavy async CLI suite (`developer-tools`: gate, enf, mcpd, world, map, capture)
-│   ├── ticket_engine/                        <-- Ticket domain database & TOML serialization (`ticket-engine`)
-│   ├── verification_core/                    <-- Fail-closed static verification library (`verification-core`)
-│   └── ticketboard/                          <-- Native egui/eframe desktop ticket viewer (`apps/ticketboard/`)
-│
-├── platform/                                 <-- Mirrors docs/platform/ minus its ticket specs: standards, factory briefs, runbooks, audits, known-bugs
-│
-├── runbooks/                                 <-- Standard operational runbooks
-│   ├── local_development.md                  <-- Host vs container execution, dev-login, cargo wrappers
-│   ├── deployment.md                         <-- Staging & production deployment (Docker, Caddy, Systemd)
-│   ├── database_operations.md                <-- Sqlx migrations, backups, restore safety, drills
-│   └── testing_and_ci.md                     <-- Local CI, headless Chrome CDP test runner, V-suite
-│
-└── design_system/                            <-- Visual & tactical design specifications
-    ├── design_tokens.md                      <-- Dark-only theme, Aegis colorways, typography scale
-    └── military_symbology.md                 <-- NATO MIL-STD-2525 symbology and in-game marker palette
-```
+**Status:** living · **Updated:** 2026-06-26
 
-## 2. Core Architectural Laws
+Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP** for your domain.
 
-1. **Hard Gate — No Silent Deferrals**: Never invent "out of scope" or defer without explicit operator approval.
-2. **Git Discipline — Direct to Main**: All commits land on `main`; git branches are strictly prohibited.
-3. **Fundamentals & Clean Architecture**: Simplicity, understandability, and long-term maintainability supersede temporary patches.
-4. **Zero Context Needed**: Every directory, file, module, and symbol is self-describing without historical context.
-5. **Categorize Variants & Primitives**: Avoid flat dumping of disparate domains; group related tools, pages, and components into dedicated, well-named domains.
-6. **Flat Symmetry in Ticket Artifacts**: Both `tickets/specs/` and `tickets/plans/` operate as flat, deterministic namespaces without arbitrary subdirectories, ensuring 100% predictable path resolution for tickets.
-7. **Strict Boundary Layers**:
-   - `website-graphics-engine`: Pure GPU rendering primitives (knows zero map concepts).
-   - `website-map-engine`: Map graphics, spatial BVH, terrain streaming, CRDT scenario store.
-   - `website-frontend`: Presentation, navigation, and CAD workspace shells.
-   - `website-api`: Axum REST API and SSE real-time broadcast hub.
+## Quick links
+
+| Link | Purpose |
+|------|---------|
+| [**TICKET_LEAD**](../TICKET_LEAD.md) | Ready / active / next queued tickets |
+| [**TICKET_REGISTRY**](../TICKET_REGISTRY.md) | Full ticket table (generated from registry) |
+| [Frontend ROADMAP](frontend/ROADMAP.md) | Routes shipped/deferred + surface spec links |
+| [Backend ROADMAP](backend/ROADMAP.md) | API areas + deferred T-IDs |
+| [Mission Creator ROADMAP](../specs/Mission_Creator_Architecture/ROADMAP.md) | Eden editor ticket queue |
+| [Archive master](archive/README.md) | Historical HTML mockups |
+| [TAGS.md](TAGS.md) | T-0xx naming contract |
+| [AGENT_COMMIT_CHECKLIST.md](AGENT_COMMIT_CHECKLIST.md) | Same-commit doc sync for AI agents |
+| [tickets/AI_PLAYBOOK.md](../../.ai/tickets/AI_PLAYBOOK.md) | Registry edit + `./scripts/ticket sync` |
+| [CLAUDE.md](../../CLAUDE.md) | Agent runtime, doc-on-commit rule |
+| [DEV_RUNBOOK.md](DEV_RUNBOOK.md) | Local stack commands |
+| [HOME_SERVER.md](HOME_SERVER.md) | Deploy website on `192.168.0.140` (SSH + Cloudflare, isolate from PrairieLearn) |
+| [Platform docs](../platform/README.md) | Audit, doc standards, monorepo migration |
+| [Staging server (mod)](../mod/STAGING-SERVER.md) | Game dedicated server + LAN API on same host |
+| [CODEBASE_AUDIT_2026.md](../platform/CODEBASE_AUDIT_2026.md) | T-122 audit findings + shipped/deferred log |
+
+## Role-based entry paths
+
+- **What's next** → [TICKET_LEAD](../TICKET_LEAD.md)
+- **Frontend work** → [frontend ROADMAP](frontend/ROADMAP.md)
+- **Backend / API** → [backend ROADMAP](backend/ROADMAP.md)
+- **Mission Creator** → [MC ROADMAP](../specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) for UX Decisions log
+- **Historical reference** → [archive master](archive/README.md)
+
+## Authority ladder
+
+1. **Running code**
+2. **[CLAUDE.md](../../CLAUDE.md)** — T-0xx milestones (status block synced from registry)
+3. **[TICKET_LEAD.md](../TICKET_LEAD.md)** — ready / queued work
+4. **Domain `ROADMAP.md`** — planning + doc index
+5. **Supporting docs** — linked from ROADMAP
+6. **[Archive](archive/README.md)** — reference only
+
+[`REORG_CHANGELOG.md`](REORG_CHANGELOG.md) — path history (T-043, T-045).

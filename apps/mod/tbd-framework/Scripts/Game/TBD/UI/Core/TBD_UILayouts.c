@@ -6,7 +6,8 @@
 //! one-line edit here rather than a hunt through screens.
 //!
 //! -- Tree (UI reorg 2026-09-12) ----------------------------------------------------------------
-//! `UI/layouts/` mirrors the 7-domain architecture. See `docs/mod/ui/UI_STRUCTURE.md`.
+//! `UI/layouts/` mirrors the 7-domain architecture. See
+//! `documentation_v2/mod/tbd-framework/UI/README.md`.
 //!   Common/      shared component library                     blocks 07, 10-14, 16-18, 24-2E, 36, 38-3D
 //!   Hud/         ObjectiveHud                                  0A
 //!   Session/     Shared 1B-1C · MissionSelector 0B, 1D-23 · Lobby 0C, 2F-37 ·

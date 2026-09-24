@@ -5,7 +5,7 @@ summary = "T-853 port: manual-test -> mod manual-test"
 class = "chore"
 status = "shipped"
 order = 5400
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

@@ -19,7 +19,7 @@ verify = ["tsc -b, npm run build, npm run lint all clean; live dev-login API con
 acceptance = ["Platform pages rendered as macOS split-pane master/detail on the Aegis primitives."]
 citations = [
     "Source: commit b6f0a1c7.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-012.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-012.",
 ]
 shipped_at = "f8ae724a"
 created_at = "2026-06-19T07:59:49Z"

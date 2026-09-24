@@ -18,7 +18,7 @@ verify = ["Integration tests cover the redirect, the token fragment and role def
 acceptance = ["Local login without Discord worked via the development-only endpoint."]
 citations = [
     "Source: commit 1e41ae34.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-003.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-003.",
 ]
 shipped_at = "1e41ae34"
 created_at = "2026-06-18T17:13:26Z"

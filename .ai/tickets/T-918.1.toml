@@ -5,7 +5,7 @@ summary = "Breadcrumb scope + facet filters + class chips"
 class = "bug"
 status = "shipped"
 order = 5981
-spec = "docs/platform/t917_ticket_schema_v2.md"
+spec = "documentation_v2/tickets/specs/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = """
 Reads the vocab file for facet values — display only, never validates (check is the authority). Depends on the T-917.2 cutover types.

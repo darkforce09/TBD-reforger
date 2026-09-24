@@ -21,7 +21,7 @@ approach = ["enf extract by real pak path; PakVfs zlib-to-deflate fallback; inde
 verify = ["cargo run -q -p tbd-tools --bin enf -- extract."]
 acceptance = ["Pak extract pulled 2483 uncompressed scripts; 4012 unknown-codec entries recorded as barrier."]
 citations = [
-    "Source: vanilla_carve_coverage.md — compression barrier.",
+    "Source: documentation_v2/mod/tbd-framework/vanilla_source_coverage.md — compression barrier.",
     "Source: d8fc6abc — enf extract.",
 ]
 created_at = "2026-07-25T00:00:00Z"

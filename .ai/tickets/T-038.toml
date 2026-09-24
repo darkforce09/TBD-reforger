@@ -15,7 +15,7 @@ verify = ["POST 201; dup semver 409; ORBAT round-trips."]
 acceptance = ["compile.ts exported json_payload superset with editor block; hydrateMissionDoc restored rows; manual Save Version POST and Export re-enabled on MissionCreatorPage."]
 citations = [
     "Source: commit c4167e3e.",
-    "Source: SHIPPED_HISTORY.md T-038.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md T-038.",
 ]
 shipped_at = "c4167e3e"
 created_at = "2026-06-21T00:56:44Z"

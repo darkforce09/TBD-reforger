@@ -5,8 +5,8 @@ summary = "T-197 persists weapon attachment edges in SlotLoadoutV2 but flatten's
 class = "bug"
 status = "shipped"
 order = 7490
-spec = "docs/specs/ideas/t310_arsenal_attachments.md"
-plan = "docs/plans/t-310_plan.md"
+spec = "documentation_v2/tickets/specs/t310_arsenal_attachments.md"
+plan = "documentation_v2/tickets/plans/t-310_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: flatten.rs and mission.schema.json are shared with T-242/T-299/T-936.x, TBD_LoadoutEquipHelper.c with T-302 → later wave. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
 priority = 2

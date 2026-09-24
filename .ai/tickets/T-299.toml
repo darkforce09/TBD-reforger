@@ -5,8 +5,8 @@ summary = "flatten pads a stub opposing faction (flatten.rs:2470-2472) to satisf
 class = "bug"
 status = "shipped"
 order = 7480
-spec = "docs/specs/ideas/t299_phantom_opfor.md"
-plan = "docs/plans/t-299_plan.md"
+spec = "documentation_v2/tickets/specs/t299_phantom_opfor.md"
+plan = "documentation_v2/tickets/plans/t-299_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: found by T-186's compiled→mod boot lane. flatten.rs and mission.schema.json are shared with T-242/T-310/T-936.x, TBD_MissionValidator.c with T-290 → later wave. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
 priority = 2

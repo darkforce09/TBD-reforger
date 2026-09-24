@@ -76,7 +76,7 @@ owns = [
     "apps/website/api/src/handlers/oauth.rs",
     "scripts/deploy",
     "Makefile",
-    "docs/platform/CODING_STANDARDS.md",
+    "documentation_v2/standards/coding_standards/README.md",
 ]
 
 [scope]

@@ -5,8 +5,8 @@ summary = "Alt+Space opens a fuzzy palette over every top-strip and toolbelt com
 class = "feature"
 status = "ready"
 order = 7940
-spec = "docs/specs/ideas/t704_command_palette.md"
-plan = "docs/plans/t-704_plan.md"
+spec = "documentation_v2/tickets/specs/t704_command_palette.md"
+plan = "documentation_v2/tickets/plans/t-704_plan.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

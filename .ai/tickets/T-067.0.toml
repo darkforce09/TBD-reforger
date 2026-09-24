@@ -18,7 +18,7 @@ acceptance = [
 ]
 citations = [
     "t067_spatial_chunks.md",
-    "SHIPPED_HISTORY.md T-067",
+    "documentation_v2/archive/shipped_history/shipped_history.md T-067",
 ]
 created_at = "2026-06-23T00:00:00Z"
 completed_at = "2026-06-26T00:00:00Z"

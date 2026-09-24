@@ -5,13 +5,13 @@ summary = "mk leptos-gates exits non-zero after editor-suite 20/20 because v-sui
 class = "bug"
 status = "ready"
 order = 8320
-spec = "docs/specs/existing/t933_leptos_gates_exit.md"
-plan = "docs/plans/t-933_plan.md"
+spec = "documentation_v2/tickets/specs/t933_leptos_gates_exit.md"
+plan = "documentation_v2/tickets/plans/t-933_plan.md"
 executor = "claude-code"
 notes = """
 WAVE-211 VERIFIER MAJOR F2 (wave211.md). T-843 option (b) requires cargo xtask mk leptos-gates as editor pre-close. Live evidence: gate editor-suite exits 0 (20/20 incl. rect smokes + v5_orbatWindowed); then gate v-suite verify mass-fails SPA goldens (~4/25) so the composite mk leptos-gates exit is non-zero. Pre-close evidence for wave 211 close is editor-suite 20/20 (+ doctor), not composite exit-0.
 
-ACCEPTANCE: either v-suite goldens match live SPA so mk leptos-gates exits 0, or the factory recipe splits pre-close to `gate doctor` + `gate editor-suite` (rect path) and treats v-suite as a separate CI lane — with docs/xtask comments agreeing.
+ACCEPTANCE: either v-suite goldens match live SPA so mk leptos-gates exits 0, or the factory recipe splits pre-close to `gate doctor` + `gate editor-suite` (rect path) and treats v-suite as a separate CI lane — with documentation_v2/runbooks/editor_gates.md, documentation_v2/runbooks/factory_waves/README.md and xtask comments agreeing.
 """
 main_goal = "Make editor pre-close exit-0 match the rect-smoke path without false-red v-suite."
 context = [
@@ -26,12 +26,12 @@ current_state = ["mk leptos-gates = doctor + editor-suite + v-suite verify; v-su
 approach = ["Refresh SPA goldens or split leptos-gates recipe so rect pre-close is editor-suite-only."]
 verify = [
     "Named pre-close exits 0 on main when editor-suite 20/20.",
-    "EDITOR_FACTORY_FOR_CURSOR.md matches the live command.",
+    "documentation_v2/runbooks/factory_waves/README.md matches the live command.",
     "cargo xtask mk leptos-gates exits 0 on main with editor-suite 20/20",
 ]
 acceptance = [
     "The pre-close command the recipe names exits 0 on main when the editor suite is 20/20.",
-    "EDITOR_FACTORY_FOR_CURSOR.md and the gate runbook match the live command.",
+    "documentation_v2/runbooks/factory_waves/README.md and the gate runbook match the live command.",
 ]
 citations = [
     "wave211.md F2",
@@ -41,8 +41,8 @@ created_at = "2026-08-19T17:29:12Z"
 estimated = ["scope"]
 owns = [
     "xtask/src/mk_build.rs",
-    "docs/platform/EDITOR_FACTORY_FOR_CURSOR.md",
-    "docs/website/EDITOR_GATE_RUNBOOK.md",
+    "documentation_v2/runbooks/factory_waves/README.md",
+    "documentation_v2/runbooks/editor_gates.md",
 ]
 
 [scope]

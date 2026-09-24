@@ -5,8 +5,8 @@ summary = "Waypoints — group movement orders"
 class = "chore"
 status = "shipped"
 order = 7290
-spec = "docs/specs/existing/t677_waypoint_runtime.md"
-plan = "docs/plans/t-677_plan.md"
+spec = "documentation_v2/tickets/specs/t677_waypoint_runtime.md"
+plan = "documentation_v2/tickets/plans/t-677_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row

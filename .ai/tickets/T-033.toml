@@ -21,7 +21,7 @@ verify = ["831d16f5 threaded editorLayers through Y.Doc; asset drag-drop called 
 acceptance = ["editorLayers entity map threaded through schema, ydoc, bindings, and useMapStore; live Outliner tree and asset drops created slots under activeLayerId."]
 citations = [
     "Source: commit 831d16f5.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-033.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-033.",
 ]
 shipped_at = "831d16f5"
 created_at = "2026-06-20T23:03:02Z"

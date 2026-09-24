@@ -32,7 +32,7 @@
 
 [Unit]
 Description=TBD Reforger website API
-Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/docs/website/HOME_SERVER.md
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/documentation_v2/runbooks/website_deployment.md
 After=network-online.target
 Wants=network-online.target
 

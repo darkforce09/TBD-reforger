@@ -1,7 +1,7 @@
 id = "T-095"
 kind = "work"
 title = "Per-handler API reference doc"
-summary = "CANCELLED (2026-07-26 audit). Target file does not exist: docs/website/backend/api.md and docs/backend/api.md are both absent, and docs/website/backend/ROADMAP.md:3 marks the whole Go-era doc tree SUPERSEDED by T-145/T-171."
+summary = "CANCELLED (2026-07-26 audit). Target file does not exist: docs/website/backend/api.md and docs/backend/api.md are both absent, and documentation_v2/website/api_v2/api_overview.md:3 marks the whole Go-era doc tree SUPERSEDED by T-145/T-171."
 class = "audit"
 status = "cancelled"
 order = 950

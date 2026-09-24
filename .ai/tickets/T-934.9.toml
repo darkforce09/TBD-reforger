@@ -5,7 +5,7 @@ summary = "Move ~7.9k LOC of #[cfg(test)] blocks to editor/mission_editor_tests/
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 mission_editor.rs 15,452 → 7,939 lines. t648_transform::false_t159_22_comment_is_corrected

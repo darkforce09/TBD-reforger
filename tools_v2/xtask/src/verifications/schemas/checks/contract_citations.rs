@@ -163,9 +163,9 @@ pub fn citations() -> Result<u8> {
     );
     println!("  by extension: {breakdown}");
     println!(
-        "  NOT scanned: anything outside that scope. Prose citations in docs/ are governed by\n  \
-         convention (cite stable symbol names, not line numbers — DOCUMENTATION_STANDARDS §10),\n  \
-         not by this gate."
+        "  NOT scanned: anything outside that scope. Prose citations in documentation_v2/ are\n  \
+         governed by convention (cite stable symbol names, not line numbers —\n  \
+         documentation_v2/standards/documentation_standards.md §10), not by this gate."
     );
 
     if !scope_errors.is_empty() {

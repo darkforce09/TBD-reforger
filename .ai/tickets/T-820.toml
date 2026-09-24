@@ -5,8 +5,8 @@ summary = "Catalog failure view shows the generic cause with chips visible where
 class = "bug"
 status = "ready"
 order = 8350
-spec = "docs/specs/existing/t820_catalog_failure_cause.md"
-plan = "docs/plans/t-820_plan.md"
+spec = "documentation_v2/tickets/specs/t820_catalog_failure_cause.md"
+plan = "documentation_v2/tickets/plans/t-820_plan.md"
 executor = "claude-code"
 notes = """
 wave203 verifier; uncertainty stated — repro-first ticket

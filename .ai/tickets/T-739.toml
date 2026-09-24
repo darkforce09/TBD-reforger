@@ -46,7 +46,7 @@ citations = [
     "editor_verify/wave112 NIT-1",
     "T-649 suppress-on-multi invert",
     "wave109 false comment pattern",
-    "gap_analysis.md 244",
+    "documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md 244",
     "73429adb suppress claim fix",
 ]
 shipped_at = "2256030a"
@@ -61,7 +61,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 owns = [
-    "docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md",
+    "documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md",
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/arsenal.rs",
 ]

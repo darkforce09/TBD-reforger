@@ -5,7 +5,7 @@ summary = "T-151.8 — culling + density ladder (W8)"
 class = "feature"
 status = "shipped"
 order = 1500
-spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
+spec = "documentation_v2/tickets/specs/t151_8_culling_density.md"
 executor = "claude-code"
 notes = "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 keeps chunk draw-set."
 parent = "T-151"
@@ -30,7 +30,7 @@ acceptance = [
 citations = [
     "t151_8_verify_log.md",
     "commit ec59d10e",
-    "SHIPPED_HISTORY.md",
+    "documentation_v2/archive/shipped_history/shipped_history.md",
     "draw_indirect tree cull",
 ]
 shipped_at = "ec59d10e"

@@ -18,7 +18,7 @@ verify = ["History records the CLAUDE.md seed in commit 2f18188b; no command pro
 acceptance = ["CLAUDE.md existed as the session entry point with build status, run instructions and conventions."]
 citations = [
     "Source: commit 2f18188b.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-005..T-007.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-005..T-007.",
 ]
 shipped_at = "2f18188b"
 created_at = "2026-06-18T19:31:13Z"

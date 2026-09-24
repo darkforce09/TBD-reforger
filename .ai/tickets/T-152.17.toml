@@ -5,7 +5,7 @@ summary = "T-152.17 — Town label correctness (settlement-only lane + kind hygi
 class = "feature"
 status = "shipped"
 order = 1520
-spec = "docs/specs/Mission_Creator_Architecture/t152_17_town_label_correctness.md"
+spec = "documentation_v2/tickets/specs/t152_17_town_label_correctness.md"
 executor = "claude-code"
 notes = "Shipped @ 45e4d247 (tag T-152.17). Settlement-only town lane (23 @ z=−2); fade [2,3]; band min −4.5; engine remove_lane fix; Highstone peak/required 8→7. Verify t152_17_verify_log.md; operator looks good 2026-07-13."
 parent = "T-152"

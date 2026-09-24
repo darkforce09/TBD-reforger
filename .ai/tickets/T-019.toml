@@ -15,7 +15,7 @@ verify = ["npm run build and npm run lint clean after every commit of the series
 acceptance = ["The mission dossier rode the shared Sheet primitive instead of a hand-rolled slide-over."]
 citations = [
     "Source: commit 5527e0dc.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "5527e0dc"
 created_at = "2026-06-20T01:17:53Z"

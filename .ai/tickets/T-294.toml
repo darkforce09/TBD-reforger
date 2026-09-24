@@ -5,8 +5,8 @@ summary = "terrain-registry.json declares arland queued with P1 only; packages/m
 class = "feature"
 status = "ready"
 order = 8250
-spec = "docs/specs/ideas/t294_arland_objects.md"
-plan = "docs/plans/t-294_plan.md"
+spec = "documentation_v2/tickets/specs/t294_arland_objects.md"
+plan = "documentation_v2/tickets/plans/t-294_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: emitted object files (objects/chunks/*.json.gz, prefabs.json.gz, roads.json.gz) are pipeline artifacts under packages/map-assets/arland/objects/ that owns cannot enumerate by name; the report lists them. MANUAL = the operator's Workbench export (runbook text from xtask/src/gate_export_terrain.rs:58-85)."
 priority = 2

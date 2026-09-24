@@ -5,8 +5,8 @@ summary = "Marker style and Area markers — the $defs/marker widening"
 class = "chore"
 status = "shipped"
 order = 7310
-spec = "docs/specs/existing/t673_marker_style_reader.md"
-plan = "docs/plans/t-673_plan.md"
+spec = "documentation_v2/tickets/specs/t673_marker_style_reader.md"
+plan = "documentation_v2/tickets/plans/t-673_plan.md"
 executor = "claude-code"
 notes = """
 STALE NOTES SUPERSEDED 2026-09-06 (command center, wave 244). T-706 shipped the $defs/marker widening (`9228a458`); mission.schema.json:1176-1298 declares 11 keys; golden-missions/schema-1_3-wire-fields.json:227-257 already carries all six attributes. Executor is factory (claude-code), not workbench. Schema is not this ticket. The six fields must be declared on TBD_MissionMarkerStruct in TBD_MissionLoader.c (JsonLoadContext binds by member name) and TBD_MarkerController.c (four positional array<> RPCs; six more columns change both signatures). Edit BOTH tbd-framework and tbd-export twins. color is #rrggbb on the wire; SetColorEntry takes an enum index — parse hex, map to nearest SCR_EScenarioFrameworkMarkerCustomColor, keep the hex on the struct. size UNREAD_WIRE_FIELDS row is owned by T-681 — expected collision; do not edit schema_gates.rs. Salvage tag salvage/t853-dropped/T-673 is unreviewed reference only.

@@ -5,8 +5,8 @@ summary = "Vehicle states: lock, fuel, ammo"
 class = "chore"
 status = "shipped"
 order = 7330
-spec = "docs/specs/existing/t680_vehicle_states.md"
-plan = "docs/plans/t-680_plan.md"
+spec = "documentation_v2/tickets/specs/t680_vehicle_states.md"
+plan = "documentation_v2/tickets/plans/t-680_plan.md"
 executor = "claude-code"
 notes = """
 workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row

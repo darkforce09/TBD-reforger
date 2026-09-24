@@ -5,7 +5,7 @@ summary = "Owns required + dependency graph on tickets"
 class = "chore"
 status = "shipped"
 order = 5920
-spec = "docs/platform/t912_wave_lockfile.md"
+spec = "documentation_v2/tickets/specs/t912_wave_lockfile.md"
 executor = "claude-code"
 notes = """
 TSVs stay as the wave-label file until T-912.2. Queued Work absent from both TSVs gets owns from its own named paths in the same commit — never left queued-empty. T-212 depends_on becomes T-685 plus T-241 plus T-257. No ALLOWED_NEW here: owns and pack_last already exist in schema.json and the typed structs; the deliberate commit is the nonempty-owns check.

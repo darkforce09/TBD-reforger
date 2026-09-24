@@ -247,8 +247,8 @@ class TBD_MissionBriefingStruct
 //! Every golden mission authors all four fields and, until this slice, the block was not in
 //! `TBD_MissionDocumentStruct` at all — so `safeStartSeconds` was overridden by a hardcoded 300,
 //! `timeLimitSeconds` was authored by every mission and evaluated by none, and `jip: "disabled"`
-//! was silently violated. "JSON is the contract" (TBD_MOD_DESIGN.md §2) is exactly what that
-//! failed.
+//! was silently violated. "JSON is the contract"
+//! (documentation_v2/mod/tbd-framework/mod_design.md section 2) is exactly what that failed.
 //!
 //! ══ EVERY FIELD IS OPTIONAL, AND `0` IS NOT `absent` ═══════════════════════════════════════════
 //! `flow` itself is schema-required, but it declares no `required` PROPERTIES, so a mission may

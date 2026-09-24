@@ -5,8 +5,8 @@ summary = "Player gadget flags — map, compass, watch, GPS, radio"
 class = "feature"
 status = "shipped"
 order = 7400
-spec = "docs/specs/existing/t705_gadget_flags.md"
-plan = "docs/plans/t-705_plan.md"
+spec = "documentation_v2/tickets/specs/t705_gadget_flags.md"
+plan = "documentation_v2/tickets/plans/t-705_plan.md"
 executor = "claude-code"
 notes = """
 --- HEAD migration_legacy (verbatim) ---

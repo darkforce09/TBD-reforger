@@ -5,7 +5,7 @@ summary = "Rewire cmds.rs onto typed ops + parity harness + child verbs"
 class = "feature"
 status = "shipped"
 order = 5952
-spec = "docs/platform/t915_ticketboard_design.md"
+spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = """
 Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work.
@@ -45,7 +45,7 @@ verify = [
     "cargo xtask ticket check --strict prints check OK.",
 ]
 acceptance = [
-    "Parity paste per verb: 0 differing files over .ai/tickets plus docs/TICKET_*.md, MILESTONES.md, CLAUDE.md, ROADMAP, gap file, queue.json, wave.lock (timestamps normalized)",
+    "Parity paste per verb: 0 differing files over .ai/tickets plus the generated ticket and milestone views (retired), CLAUDE.md, ROADMAP, gap file, queue.json, wave.lock (timestamps normalized)",
     "Red-tree runs: both binaries refuse exit 1 with git status --porcelain empty",
     "Child ship end-to-end: child file flips, repack runs, queue/docs reflect it after reload",
     "cargo xtask ticket check --strict prints check OK",

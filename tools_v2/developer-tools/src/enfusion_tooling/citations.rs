@@ -1,6 +1,6 @@
 //! The `@idx` citation gate.
 //!
-//! Prose in `docs/mod/**` may assert things about CRF or vanilla only if the symbol it names
+//! Prose in `documentation_v2/**` may assert things about CRF or vanilla only if the symbol it names
 //! actually exists in a generated index. Markers look like:
 //!
 //! ```text

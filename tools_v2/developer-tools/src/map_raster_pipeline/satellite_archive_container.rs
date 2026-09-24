@@ -4,7 +4,8 @@
 //! Its index is a validated archive rather than v1's hand-packed JSON offset table, and it is a
 //! module of its own because `super::satellite_archive` is already a SIZE-1 file: the writer, the reader
 //! and the geometry every one of them derives live here, and `satellite_archive.rs` keeps only the call
-//! sites (CODING_STANDARDS SIZE-1/3 — allowlisted giants grow by call sites, not by features).
+//! sites (documentation_v2/standards/coding_standards/README.md SIZE-1/3 — allowlisted giants
+//! grow by call sites, not by features).
 //!
 //! **The payload is not touched.** Both container writers consume the same encoded VP8L block
 //! vector in the same order, so a v1 and a v2 bundle built from one source are byte-identical

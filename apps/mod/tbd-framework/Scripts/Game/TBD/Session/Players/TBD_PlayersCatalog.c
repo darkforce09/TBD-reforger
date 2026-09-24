@@ -1,6 +1,7 @@
 //! Briefing pass (2026-09-14) — who is connected, shaped for the PLAYERS modal and the nav badges.
 //!
-//! `UI_STRUCTURE.md` reserved this module for shared player data. Presentation catalog, mock until
+//! `documentation_v2/mod/tbd-framework/UI/README.md` reserved this module for shared player data.
+//! Presentation catalog, mock until
 //! an adapter fills it from the server (player manager + `TBD_SpawnManager` slot map, both
 //! authority-side today — same wall as the lobby roster, same answer: one owner-scoped RPC).
 //! Screens read `TBD_PlayersCatalog.Get()` only; the mock lives in `UI/Mock/TBD_PlayersMock.c`.

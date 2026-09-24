@@ -5,8 +5,8 @@ summary = "Esc with an armed composition and the Controls Hint open clears both 
 class = "bug"
 status = "ready"
 order = 8330
-spec = "docs/specs/existing/t816_esc_hint_layer.md"
-plan = "docs/plans/t-816_plan.md"
+spec = "documentation_v2/tickets/specs/t816_esc_hint_layer.md"
+plan = "documentation_v2/tickets/plans/t-816_plan.md"
 executor = "claude-code"
 notes = """
 wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware

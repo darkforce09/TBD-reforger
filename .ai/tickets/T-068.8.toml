@@ -5,6 +5,7 @@ summary = "T-068.8"
 class = "feature"
 status = "shipped"
 order = 680
+spec = "documentation_v2/tickets/specs/t068_8_workbench_compat_export.md"
 executor = "claude-code"
 notes = "Superseded/implemented by T-150 universal export (compat envelope + items). Tag T-150."
 parent = "T-068"

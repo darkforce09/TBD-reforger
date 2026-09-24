@@ -427,7 +427,7 @@
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-/* Dark-only theme per THEME.md — html has class="dark" */
+/* Dark-only theme per documentation_v2/design_system/design_tokens.md — html has class="dark" */
 .dark,
 :root {
   --background: #0d1322;

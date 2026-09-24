@@ -104,7 +104,8 @@ fn the_unit_install_command_renders_the_shipped_template_for_the_remote_dir() {
 }
 
 /// Only the old packages tree and an unreadable probe stop the deploy. A host with no asset tree at
-/// all is a library-only site, which HOME_SERVER documents as a supported cutover.
+/// all is a library-only site, which `documentation_v2/runbooks/website_deployment.md` documents
+/// as a supported cutover.
 #[test]
 fn only_a_legacy_or_unreadable_layout_refuses_the_deploy() {
     use asset_preflight::{AssetLayout, report};

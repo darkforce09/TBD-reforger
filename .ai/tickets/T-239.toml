@@ -19,7 +19,7 @@ context = [
     "A verified negative, and it reframes this whole ticket.",
     "TWO THINGS THAT ARE REAL TODAY AND ARE IN THIS TICKET'S OWN FILES:",
     "The live vector is a URL scheme, not an HTML body — filed as T-391 (P0).",
-    "A fourth subagent mapped EVERY render site in the frontend by data provenance — recorded at docs/platform/frontend_data_provenance.md so it is not re-derived.",
+    "A fourth subagent mapped EVERY render site in the frontend by data provenance — recorded at documentation_v2/archive/audits/frontend_data_provenance.md so it is not re-derived.",
     "It confirms T-391 is the only live vector (no HTML sink beyond arsenal.rs:1392's const table) and corrects three priors:",
     "arsenal.rs is mixed not mock, leaderboards.rs is fully API-fed since T-195 deleted its MOCK,",
     "and content.rs has ZERO API-fed renders (its list is mock_docs(), so an author cannot see what they just published — T-267).",

@@ -5,6 +5,7 @@ summary = "T-068.0.1"
 class = "feature"
 status = "shipped"
 order = 680
+spec = "documentation_v2/tickets/specs/t068_0_1_registry_schemas.md"
 executor = "claude-code"
 parent = "T-068"
 main_goal = "registry-items and loadout-export schema contracts."

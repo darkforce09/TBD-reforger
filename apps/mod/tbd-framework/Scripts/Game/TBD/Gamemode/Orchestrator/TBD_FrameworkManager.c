@@ -967,7 +967,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	// long the warmup runs, how long the round runs, and who may still join. Every golden mission
 	// authors all four fields and, until this slice, the block was not in
 	// `TBD_MissionDocumentStruct` at all — so all four were silently discarded. "JSON is the
-	// contract" (TBD_MOD_DESIGN.md §2) is exactly what that failed.
+	// contract" (documentation_v2/mod/tbd-framework/mod_design.md section 2) is exactly what
+	// that failed.
 	//
 	// Each field is put where it actually acts, and nowhere else:
 	//   * safeStartSeconds -> handed to TBD_SafestartManager through its EXISTING configured-seconds
@@ -1193,7 +1194,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		// T-181.14 left this hook for whoever owned this file; T-181.17 owns it now. Logged
 		// BEFORE the subsystem fan-out so the transition line precedes whatever the subsystems
 		// say about it. The legacy `[TBD] Stage` line below is kept verbatim — README.md and
-		// STAGING-SERVER.md quote it.
+		// documentation_v2/runbooks/game_server_staging/README.md quote it.
 		TBD_Log.Stage(previous, stage);
 
 		TBD_RadioBridgeStub.OnStageChanged(stage);
@@ -1583,8 +1584,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//!
 	//! Called from two places on purpose, because either one alone is wrong:
 	//!   • `OnStageReplicated()` — the PROXY path. `[RplProp(onRplName:)]` fires only on the proxy
-	//!     (TBD_MOD_DESIGN.md §5), so this is how a dedicated-server client hears about a stage
-	//!     change at all.
+	//!     (documentation_v2/mod/tbd-framework/mod_design.md section 5), so this is how a
+	//!     dedicated-server client hears about a stage change at all.
 	//!   • `SetStage()` — the AUTHORITY path. On a listen host the authority IS the player, and
 	//!     authority never receives its own onRplName callback. Without this call the host's
 	//!     briefing screen would never open — which is exactly the regression the 500 ms poll this

@@ -52,8 +52,8 @@ fn ci_local_step_set_is_frozen() {
             "verify-no-node",
             "verify-no-shell",
             "verify-ci-shell",
-            // ENGINE_SPLIT_PROGRAM §5 rules 1, 2 (phase 1F), 3b (2B), 3a (2C), 4 and 7 (2D).
-            // Sits with the language gates because
+            // documentation_v2/standards/engine_boundary_rules.md §5 rules 1, 2 (phase 1F),
+            // 3b (2B), 3a (2C), 4 and 7 (2D). Sits with the language gates because
             // it is the same shape: a seconds-long source scan of a wall the compiler cannot see.
             "verify-engine-layers",
             "rust-ci",

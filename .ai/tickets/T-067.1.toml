@@ -5,8 +5,8 @@ summary = "WorldResidency evicts by chunk count (cap = max(64, 3 × pinned)); at
 class = "feature"
 status = "cancelled"
 order = 8270
-spec = "docs/specs/ideas/t067_1_chunk_eviction.md"
-plan = "docs/plans/t-067_1_plan.md"
+spec = "documentation_v2/tickets/specs/t067_1_chunk_eviction.md"
+plan = "documentation_v2/tickets/plans/t-067_1_plan.md"
 executor = "claude-code"
 notes = "2026-09-05: body rewritten for the Rust port (slotsById / Y.Doc / spatialChunks.ts were the React era). world_host.rs is shared with T-935.13 → depends_on it; world/mod.rs is shared with T-131 → different waves. residency.rs is an allowlisted SIZE-3 file: call sites only."
 priority = 2

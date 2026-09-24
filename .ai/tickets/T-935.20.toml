@@ -5,8 +5,8 @@ summary = "residency.rs and chunk_bin.rs cease to exist, and the sixteen files c
 class = "chore"
 status = "queued"
 order = 7994
-spec = "docs/specs/audit_2026_09/t938_engine_perf.md"
-plan = "docs/plans/t-935_20_plan.md"
+spec = "documentation_v2/tickets/specs/t938_engine_perf.md"
+plan = "documentation_v2/tickets/plans/t-935_20_plan.md"
 executor = "claude-code"
 notes = """
 Step 3 of the T-935.15 program and the only step that deletes. Filed 2026-09-08.

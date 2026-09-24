@@ -15,7 +15,7 @@ gate simply "did not cover bare file.c:NNN forms in prose." The real scope is la
 === WHAT IT ACTUALLY CHECKS ===
 `verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,
 under scan roots `apps/` and `packages/`. Consequences, all measured:
-- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction
+- **`docs/` is never read.** `documentation_v2/runbooks/two_client_playtest/README.md`'s ~19 stale citations were invisible by construction
   -- the gate was never going to catch them, in any form.
 - **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in
   `apps/**/*.rs` and 2 in `crates/` are unverified.**

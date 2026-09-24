@@ -21,7 +21,7 @@ verify = ["History records the scaffold landing as one commit; no command proof 
 acceptance = ["A Go REST API and React shell existed in the tree after the initial platform commit."]
 citations = [
     "Source: commit 70c39013.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-001.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-001.",
 ]
 created_at = "2026-06-18T00:00:00Z"
 completed_at = "2026-06-18T00:00:00Z"

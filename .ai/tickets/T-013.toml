@@ -19,7 +19,7 @@ verify = ["tsc -b, npm run build, npm run lint clean; live dev-login API contrac
 acceptance = ["Dashboards and grids used the Aegis language; only the 2D Mission Creator remained unbuilt."]
 citations = [
     "Source: commit ce1d3ef6.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-013.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-013.",
 ]
 shipped_at = "ce1d3ef6"
 created_at = "2026-06-19T08:10:38Z"

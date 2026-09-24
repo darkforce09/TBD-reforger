@@ -5,7 +5,7 @@ summary = "Leptos MC performance pass on release serve path; beats React pan/zoo
 class = "docs"
 status = "shipped"
 order = 1700
-spec = "docs/platform/t173_leptos_perf_pass.md"
+spec = "documentation_v2/tickets/specs/t173_leptos_perf_pass.md"
 executor = "claude-code"
 depends_on = ["T-172"]
 main_goal = "As a mission maker I pan/zoom and scroll smoother than the old React editor, with full Mission Settings render toggles and correct fence/building glyphs."
@@ -36,7 +36,7 @@ acceptance = [
 ]
 citations = [
     "Source: commit dddf3158 — Leptos MC performance pass.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-173.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-173.",
 ]
 shipped_at = "61be15a4"
 created_at = "2026-07-18T17:59:59Z"

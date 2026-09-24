@@ -1,8 +1,8 @@
 # T-251 — home-server / staging stack for the website.
 #
 # Always starts Postgres. The API container is optional (Compose profile `api`)
-# so you can run the release binary under user systemd instead (HOME_SERVER
-# Phase D) while still getting a managed DB.
+# so you can run the release binary under user systemd instead
+# (documentation_v2/runbooks/website_deployment.md Phase D) while still getting a managed DB.
 #
 # From repo root (or apps/website/):
 #   docker compose -f apps/website/docker-compose.staging.yml up -d
@@ -38,8 +38,8 @@ services:
       retries: 10
 
   # Optional — enable with `--profile api`. Prefer host systemd + Caddy for the
-  # first home-server cutover (HOME_SERVER Phases D–E); this profile is the
-  # containerized alternative once the Dockerfile build is trusted on the box.
+  # first home-server cutover (documentation_v2/runbooks/website_deployment.md Phases D–E);
+  # this profile is the containerized alternative once the Dockerfile build is trusted on the box.
   api:
     profiles: ["api"]
     build:

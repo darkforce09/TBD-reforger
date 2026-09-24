@@ -5,9 +5,10 @@ summary = "T-090.5 — Map object render layer (Eden-like static world)"
 class = "feature"
 status = "deferred"
 order = 900
-spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
+spec = "documentation_v2/tickets/specs/t090_5_map_object_render_layer.md"
 executor = "claude-code"
 parent = "T-090"
+citations = ["Design: documentation_v2/tickets/specs/t090_world_object_glyphs.md."]
 estimated = ["scope"]
 
 [scope]

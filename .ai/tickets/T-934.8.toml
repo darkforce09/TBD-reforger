@@ -5,7 +5,7 @@ summary = "arsenal/mod.rs keeps ArsenalTab + class_r_scrub; pure loadout core â†
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = """
 Latent guard defect found: class_r_scrub::cut_test_module truncates at the FIRST

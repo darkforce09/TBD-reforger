@@ -21,7 +21,7 @@ current_state = [
 ]
 approach = [
     "Wired make mod-spawn-determinism and preflight to tbd-spawn-determinism.sh.",
-    "Documented asserts and historical verify-log pointer in docs/mod/SPAWN_DETERMINISM.md.",
+    "Documented asserts and historical verify-log pointer in documentation_v2/runbooks/spawn_determinism.md.",
 ]
 verify = ["make mod-spawn-determinism-preflight"]
 acceptance = ["Spawn-determinism gate and docs hub wired; historical verify-log recorded without fresh Workbench run."]
@@ -45,7 +45,7 @@ estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 com
 owns = [
     "scripts/mod/tbd-spawn-determinism.sh",
     "Makefile",
-    "docs/mod",
+    "documentation_v2/mod",
 ]
 
 [scope]

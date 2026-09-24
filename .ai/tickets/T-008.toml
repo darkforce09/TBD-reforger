@@ -22,7 +22,7 @@ verify = ["make test-it, frontend build+lint, and a live dev-login API smoke: cr
 acceptance = ["An Event was a container of sequential missions whose ORBAT slots derived from each mission payload."]
 citations = [
     "Source: commit 2eef30bb.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-008.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-008.",
 ]
 shipped_at = "a1c979ff"
 created_at = "2026-06-18T23:27:00Z"

@@ -9,343 +9,343 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "spec": "documentation_v2/tickets/specs/t090_091_map_terrain_program.md",
       "branch": "ticket/T-090"
     },
     {
       "id": "T-212",
       "title": "Typed per-side objectives with attributes",
       "status": "ready",
-      "spec": "docs/specs/existing/t212_typed_objectives.md",
+      "spec": "documentation_v2/tickets/specs/t212_typed_objectives.md",
       "branch": "ticket/T-212"
     },
     {
       "id": "T-290",
       "title": "Nine dead flatten fields mod never reads",
       "status": "ready",
-      "spec": "docs/specs/ideas/t290_dead_flatten_fields.md",
+      "spec": "documentation_v2/tickets/specs/t290_dead_flatten_fields.md",
       "branch": "ticket/T-290"
     },
     {
       "id": "T-704",
       "title": "Command palette over every editor command",
       "status": "ready",
-      "spec": "docs/specs/ideas/t704_command_palette.md",
+      "spec": "documentation_v2/tickets/specs/t704_command_palette.md",
       "branch": "ticket/T-704"
     },
     {
       "id": "T-142",
       "title": "MC shell layout polish",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-142"
     },
     {
       "id": "T-157",
       "title": "Mission Create visual overhaul",
       "status": "ready",
-      "spec": "docs/specs/ideas/t157_mission_create.md",
+      "spec": "documentation_v2/tickets/specs/t157_mission_create.md",
       "branch": "ticket/T-157"
     },
     {
       "id": "T-158",
       "title": "Editor shell UX consolidation",
       "status": "ready",
-      "spec": "docs/specs/ideas/t158_editor_shell.md",
+      "spec": "documentation_v2/tickets/specs/t158_editor_shell.md",
       "branch": "ticket/T-158"
     },
     {
       "id": "T-129",
       "title": "Building floor selector",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
+      "spec": "documentation_v2/tickets/specs/t090_eden_map_reference.md",
       "branch": "ticket/T-129"
     },
     {
       "id": "T-131",
       "title": "Route planner tool",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-131"
     },
     {
       "id": "T-141",
       "title": "Procedural slot naming",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-141"
     },
     {
       "id": "T-146",
       "title": "Asset Browser Data Wiring",
       "status": "ready",
-      "spec": "docs/specs/existing/t146_asset_browser_data_wiring.md",
+      "spec": "documentation_v2/tickets/specs/t146_asset_browser_data_wiring.md",
       "branch": "ticket/T-146"
     },
     {
       "id": "T-143",
       "title": "Water mask placement guard and exact hydrology",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "spec": "documentation_v2/tickets/specs/t090_091_map_terrain_program.md",
       "branch": "ticket/T-143"
     },
     {
       "id": "T-135",
       "title": "Mission modset manager",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-135"
     },
     {
       "id": "T-309",
       "title": "FactionDoc squad level for Apply Template",
       "status": "ready",
-      "spec": "docs/specs/ideas/t309_faction_doc_squads.md",
+      "spec": "documentation_v2/tickets/specs/t309_faction_doc_squads.md",
       "branch": "ticket/T-309"
     },
     {
       "id": "T-140",
       "title": "Mission client payload budget",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-140"
     },
     {
       "id": "T-136",
       "title": "3D AAR / OCAP-style replay",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-136"
     },
     {
       "id": "T-295",
       "title": "Realtime collaborative editing",
       "status": "ready",
-      "spec": "docs/specs/ideas/t295_realtime_collab.md",
+      "spec": "documentation_v2/tickets/specs/t295_realtime_collab.md",
       "branch": "ticket/T-295"
     },
     {
       "id": "T-132",
       "title": "Multiplayer MC + visual git",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-132"
     },
     {
       "id": "T-138",
       "title": "One-command self-host setup via xtask",
       "status": "ready",
-      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "spec": "documentation_v2/tickets/specs/t131_north_star_backlog.md",
       "branch": "ticket/T-138"
     },
     {
       "id": "T-294",
       "title": "Arland has a manifest and no object data",
       "status": "ready",
-      "spec": "docs/specs/ideas/t294_arland_objects.md",
+      "spec": "documentation_v2/tickets/specs/t294_arland_objects.md",
       "branch": "ticket/T-294"
     },
     {
       "id": "T-653",
       "title": "Preserve the three headless editor-screenshot findings",
       "status": "ready",
-      "spec": "docs/specs/ideas/t653_headless_screenshot.md",
+      "spec": "documentation_v2/tickets/specs/t653_headless_screenshot.md",
       "branch": "ticket/T-653"
     },
     {
       "id": "T-905",
       "title": "Split 37 T-159 frontend SIZE-3 allowlist files",
       "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "spec": "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-905"
     },
     {
       "id": "T-906",
       "title": "Split 7 T-145 API SIZE-3 allowlist files",
       "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "spec": "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-906"
     },
     {
       "id": "T-907",
       "title": "Split 11 map-engine SIZE-3 allowlist files",
       "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "spec": "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-907"
     },
     {
       "id": "T-908",
       "title": "Split 8 xtask/tools SIZE-3 allowlist files",
       "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "spec": "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-908"
     },
     {
       "id": "T-933",
       "title": "leptos-gates v-suite goldens break pre-close exit-0",
       "status": "ready",
-      "spec": "docs/specs/existing/t933_leptos_gates_exit.md",
+      "spec": "documentation_v2/tickets/specs/t933_leptos_gates_exit.md",
       "branch": "ticket/T-933"
     },
     {
       "id": "T-816",
       "title": "Armed composition hint open; one Esc clears both layers wrongly",
       "status": "ready",
-      "spec": "docs/specs/existing/t816_esc_hint_layer.md",
+      "spec": "documentation_v2/tickets/specs/t816_esc_hint_layer.md",
       "branch": "ticket/T-816"
     },
     {
       "id": "T-817",
       "title": "Grid labels lag ~1.4s on stationary wheel zoom",
       "status": "ready",
-      "spec": "docs/specs/existing/t817_grid_label_zoom_lag.md",
+      "spec": "documentation_v2/tickets/specs/t817_grid_label_zoom_lag.md",
       "branch": "ticket/T-817"
     },
     {
       "id": "T-820",
       "title": "Catalog failure generic cause; chips visible wrongly",
       "status": "ready",
-      "spec": "docs/specs/existing/t820_catalog_failure_cause.md",
+      "spec": "documentation_v2/tickets/specs/t820_catalog_failure_cause.md",
       "branch": "ticket/T-820"
     },
     {
       "id": "T-821",
       "title": "Save version prefill static; second save 409s",
       "status": "ready",
-      "spec": "docs/specs/existing/t821_save_version_prefill.md",
+      "spec": "documentation_v2/tickets/specs/t821_save_version_prefill.md",
       "branch": "ticket/T-821"
     },
     {
       "id": "T-822",
       "title": "Outliner dblclick must not open asset picker under Attributes",
       "status": "ready",
-      "spec": "docs/specs/existing/t822_outliner_dblclick_bubble.md",
+      "spec": "documentation_v2/tickets/specs/t822_outliner_dblclick_bubble.md",
       "branch": "ticket/T-822"
     },
     {
       "id": "T-823",
       "title": "OBJ readout must count vehicles or rename honestly",
       "status": "ready",
-      "spec": "docs/specs/existing/t823_obj_readout_vehicles.md",
+      "spec": "documentation_v2/tickets/specs/t823_obj_readout_vehicles.md",
       "branch": "ticket/T-823"
     },
     {
       "id": "T-824",
       "title": "Placed zones must render visibly at rest on map",
       "status": "ready",
-      "spec": "docs/specs/existing/t824_zone_render_at_rest.md",
+      "spec": "documentation_v2/tickets/specs/t824_zone_render_at_rest.md",
       "branch": "ticket/T-824"
     },
     {
       "id": "T-827",
       "title": "Validation chip red under 4.5:1 live-effective",
       "status": "ready",
-      "spec": "docs/specs/existing/t827_validation_chip_contrast.md",
+      "spec": "documentation_v2/tickets/specs/t827_validation_chip_contrast.md",
       "branch": "ticket/T-827"
     },
     {
       "id": "T-828",
       "title": "Marker captions drift when zoom changes without rebind",
       "status": "ready",
-      "spec": "docs/specs/existing/t828_marker_caption_drift.md",
+      "spec": "documentation_v2/tickets/specs/t828_marker_caption_drift.md",
       "branch": "ticket/T-828"
     },
     {
       "id": "T-830",
       "title": "Outliner rows cramped; density pass on layer tree",
       "status": "ready",
-      "spec": "docs/specs/existing/t830_outliner_density.md",
+      "spec": "documentation_v2/tickets/specs/t830_outliner_density.md",
       "branch": "ticket/T-830"
     },
     {
       "id": "T-831",
       "title": "Per-side marker authoring audit then explicit UI",
       "status": "ready",
-      "spec": "docs/specs/existing/t831_per_side_markers_audit.md",
+      "spec": "documentation_v2/tickets/specs/t831_per_side_markers_audit.md",
       "branch": "ticket/T-831"
     },
     {
       "id": "T-833",
       "title": "Rotation ring: relative delta plus live preview",
       "status": "ready",
-      "spec": "docs/specs/existing/t833_rotation_ring_relative.md",
+      "spec": "documentation_v2/tickets/specs/t833_rotation_ring_relative.md",
       "branch": "ticket/T-833"
     },
     {
       "id": "T-834",
       "title": "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar",
       "status": "ready",
-      "spec": "docs/specs/existing/t834_wave205_residue.md",
+      "spec": "documentation_v2/tickets/specs/t834_wave205_residue.md",
       "branch": "ticket/T-834"
     },
     {
       "id": "T-837",
       "title": "Vehicles cannot be deleted \u2014 slots can, vehicles cannot",
       "status": "ready",
-      "spec": "docs/specs/existing/t837_vehicle_delete.md",
+      "spec": "documentation_v2/tickets/specs/t837_vehicle_delete.md",
       "branch": "ticket/T-837"
     },
     {
       "id": "T-838",
       "title": "Map markers selectable; outliner lists; dblclick opens Attributes",
       "status": "ready",
-      "spec": "docs/specs/existing/t838_marker_select_outliner.md",
+      "spec": "documentation_v2/tickets/specs/t838_marker_select_outliner.md",
       "branch": "ticket/T-838"
     },
     {
       "id": "T-839",
       "title": "Retire floating Select/Ruler/LoS bottom-centre pill",
       "status": "ready",
-      "spec": "docs/specs/existing/t839_retire_floating_pill.md",
+      "spec": "documentation_v2/tickets/specs/t839_retire_floating_pill.md",
       "branch": "ticket/T-839"
     },
     {
       "id": "T-841",
       "title": "Type picker popover translucent; make opaque panel",
       "status": "ready",
-      "spec": "docs/specs/existing/t841_type_picker_opaque.md",
+      "spec": "documentation_v2/tickets/specs/t841_type_picker_opaque.md",
       "branch": "ticket/T-841"
     },
     {
       "id": "T-845",
       "title": "A selected vehicle looks identical to an unselected one",
       "status": "ready",
-      "spec": "docs/specs/existing/t845_selected_vehicle_treatment.md",
+      "spec": "documentation_v2/tickets/specs/t845_selected_vehicle_treatment.md",
       "branch": "ticket/T-845"
     },
     {
       "id": "T-848",
       "title": "Group to must use exclusive ORBAT membership",
       "status": "ready",
-      "spec": "docs/specs/existing/t848_group_to_exclusive_orbat.md",
+      "spec": "documentation_v2/tickets/specs/t848_group_to_exclusive_orbat.md",
       "branch": "ticket/T-848"
     },
     {
       "id": "T-849",
       "title": "Add ungroup leave-squad verb without deleting slot",
       "status": "ready",
-      "spec": "docs/specs/existing/t849_ungroup_verb.md",
+      "spec": "documentation_v2/tickets/specs/t849_ungroup_verb.md",
       "branch": "ticket/T-849"
     },
     {
       "id": "T-850",
       "title": "Squad tether must follow drag on auto-grouped units",
       "status": "ready",
-      "spec": "docs/specs/existing/t850_squad_tether_drag.md",
+      "spec": "documentation_v2/tickets/specs/t850_squad_tether_drag.md",
       "branch": "ticket/T-850"
     },
     {
       "id": "T-926",
       "title": "Vehicle Attributes Transform/Position tab",
       "status": "ready",
-      "spec": "docs/specs/existing/t926_vehicle_transform_tab.md",
+      "spec": "documentation_v2/tickets/specs/t926_vehicle_transform_tab.md",
       "branch": "ticket/T-926"
     },
     {
       "id": "T-927",
       "title": "Editor chrome dblclick leak to map",
       "status": "ready",
-      "spec": "docs/specs/existing/t927_chrome_dblclick_leak.md",
+      "spec": "documentation_v2/tickets/specs/t927_chrome_dblclick_leak.md",
       "branch": "ticket/T-927"
     }
   ]

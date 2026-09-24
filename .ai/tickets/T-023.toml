@@ -15,7 +15,7 @@ verify = ["npm run build and npm run lint clean after every commit of the series
 acceptance = ["Server Control rode the shared SplitPane on Aegis tokens with mono telemetry heroes."]
 citations = [
     "Source: commit af2edbcd.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-018..T-025.",
 ]
 shipped_at = "af2edbcd"
 created_at = "2026-06-20T01:31:58Z"

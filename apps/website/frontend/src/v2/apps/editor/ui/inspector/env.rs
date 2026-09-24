@@ -27,7 +27,8 @@
 /// in `apps/mod` or `contracts_v2` — the framework has no view-distance or thermals concept
 /// to receive them, so even a widened schema would land the values in a document nothing reads. That
 /// is a mod feature (`executor: workbench`), not an editor fix. Meanwhile the design corpus
-/// (`engineering_plan.md`, `mission_creator_design.md`) has always described both as *auto-derived*
+/// (`documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md`,
+/// `mission_creator_design.md`) has always described both as *auto-derived*
 /// from the mission, never author-set. Two live controls for a setting nobody had planned to honour
 /// is worse than no controls: the author sets a view distance, saves, and the mission runs at the
 /// default with nothing said.

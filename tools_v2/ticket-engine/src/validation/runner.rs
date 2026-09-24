@@ -143,7 +143,10 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
         if gap.is_file() {
             let text = fs::read_to_string(&gap).unwrap_or_default();
             if text.contains("| priority |") || PRIORITY_P.is_match(&text) {
-                errors.push("gap_analysis still has priority column or numbered P backlog".into());
+                errors.push(format!(
+                    "{} still has priority column or numbered P backlog",
+                    crate::repository::documentation::GAP_ANALYSIS
+                ));
             }
         }
     }

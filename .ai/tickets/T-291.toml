@@ -5,8 +5,8 @@ summary = "environment.windDirDeg, factions[].color, roles[].radio, layers[], an
 class = "feature"
 status = "shipped"
 order = 7550
-spec = "docs/specs/ideas/t291_orphan_schema_fields.md"
-plan = "docs/plans/t-291_plan.md"
+spec = "documentation_v2/tickets/specs/t291_orphan_schema_fields.md"
+plan = "documentation_v2/tickets/plans/t-291_plan.md"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/core written into the body; note kept verbatim for the operator. flatten.rs is shared with T-674.1/T-675.1/T-936.1/T-242/T-299/T-310/T-290 → packs between them. Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
 priority = 3

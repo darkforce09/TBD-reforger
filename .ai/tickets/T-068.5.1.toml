@@ -5,6 +5,7 @@ summary = "T-068.5.1"
 class = "feature"
 status = "shipped"
 order = 680
+spec = "documentation_v2/tickets/specs/t068_5_1_visual_equip_fix.md"
 executor = "claude-code"
 parent = "T-068"
 main_goal = "Fix wear path so test NPC shows kit; worn-verify gate."

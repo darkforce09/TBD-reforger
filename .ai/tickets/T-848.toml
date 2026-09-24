@@ -5,8 +5,8 @@ summary = "Connect ▸ Group to must mean exclusive ORBAT squad membership — n
 class = "bug"
 status = "ready"
 order = 8510
-spec = "docs/specs/existing/t848_group_to_exclusive_orbat.md"
-plan = "docs/plans/t-848_plan.md"
+spec = "documentation_v2/tickets/specs/t848_group_to_exclusive_orbat.md"
+plan = "documentation_v2/tickets/plans/t-848_plan.md"
 executor = "claude-code"
 notes = '''
 operator W208 eye-pass; supersedes treating CONN Group as ORBAT; related shipped T-672 (connection graph) + T-647 (Ctrl+drag regroup)

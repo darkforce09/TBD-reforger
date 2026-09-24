@@ -19,7 +19,7 @@ verify = ["Verified against a live backend: full API contract smoke plus headles
 acceptance = ["Every page ran on live backend data with hardened auth, verified against a running stack."]
 citations = [
     "Source: commit fad698bc.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-004.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-004.",
 ]
 shipped_at = "fad698bc"
 created_at = "2026-06-18T19:15:11Z"

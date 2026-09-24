@@ -5,7 +5,7 @@ summary = "Toolbelt shows X/Y/Z including cursor Z on flat map."
 class = "feature"
 status = "shipped"
 order = 500
-spec = "docs/specs/Mission_Creator_Architecture/t050_cursor_z_readout.md"
+spec = "documentation_v2/tickets/specs/t050_cursor_z_readout.md"
 executor = "claude-code"
 main_goal = "Toolbelt CUR mode shows cursor X/Y/Z; Z=0 on flat map."
 context = [

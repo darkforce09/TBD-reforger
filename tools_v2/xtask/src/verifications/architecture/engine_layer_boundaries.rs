@@ -1,4 +1,5 @@
-//! Engine-layer walls — `ENGINE_SPLIT_PROGRAM.md` §5 rules **1, 2, 3a, 3b, 4, 5, 6 and 7**.
+//! Engine-layer walls — `documentation_v2/standards/engine_boundary_rules.md` §5 rules
+//! **1, 2, 3a, 3b, 4, 5, 6 and 7**.
 //!
 //! ── WHAT THIS DEFENDS ────────────────────────────────────────────────────────────────────────
 //!

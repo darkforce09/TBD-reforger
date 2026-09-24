@@ -114,7 +114,8 @@ class TBD_BriefingReadyRegistry
 				n++;
 		}
 
-		// Enfusion maps remove BY KEY, arrays BY INDEX (TBD_MOD_DESIGN.md §5). Collecting first
+		// Enfusion maps remove BY KEY, arrays BY INDEX
+		// (documentation_v2/mod/tbd-framework/mod_design.md section 5). Collecting first
 		// is what avoids mutating the map during its own foreach.
 		foreach (int gone : stale)
 		{

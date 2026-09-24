@@ -9,9 +9,9 @@ executor = "cursor-docs"
 main_goal = "Reorganize platform docs hub, indexes, and Mission Creator eden layout."
 context = ["Platform documentation scattered across numbered paths and duplicate indexes."]
 requirement = [
-    "docs/website/README.md hub with master indexes.",
+    "documentation_v2/README.md hub with master indexes.",
     "Move platform docs to docs/platform/; MC eden/ reference/.",
-    "Retire FD vs T split; T-0xx-only contract in TAGS.md.",
+    "Retire FD vs T split; T-0xx-only contract in documentation_v2/standards/ticket_identifiers.md.",
 ]
 current_state = ["Docs lived at root numbered paths; FD/T split still documented."]
 approach = [
@@ -19,7 +19,7 @@ approach = [
     "Refresh frontend surface specs.",
 ]
 verify = ["9a669da3 moved platform docs to docs/platform/ and reorged MC corpus into eden/ reference/."]
-acceptance = ["docs/website/README.md hub indexed FE/BE/archive; platform docs moved to docs/platform/; MC corpus reorganized into eden/ and reference/; FD vs T split retired in TAGS.md."]
+acceptance = ["documentation_v2/README.md hub indexed FE/BE/archive; platform docs moved to docs/platform/; MC corpus reorganized into eden/ and reference/; FD vs T split retired in documentation_v2/standards/ticket_identifiers.md."]
 citations = [
     "Source: commit 9a669da3.",
     "Source: SHIPPED_HISTORY T-043.",

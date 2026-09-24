@@ -5,12 +5,12 @@ summary = "Full gate sweep, stale owns remap on queued tickets, wave repack, Cur
 class = "chore"
 status = "shipped"
 order = 6100
-spec = "docs/specs/website_reorg/plan.md"
+spec = "documentation_v2/tickets/specs/t934_website_reorganisation_program.md"
 executor = "claude-code"
 notes = '''
 CURSOR HANDOFF (doc writes are Cursor's per the 2026-06 split):
 1. docs/website/frontend/pages/*.md — `Live source:` paths for every moved SPA page
-   (spec §4 migration table in docs/specs/website_reorg/plan.md is the authority).
+   (spec §4 migration table in documentation_v2/tickets/specs/t934_website_reorganisation_program.md is the authority).
 2. CLAUDE.md §Status — T-934 shipped bullet + latest-shipped bump; §Monorepo layout
    frontend/handlers descriptions now say core/shell/pages/editor and domain-nested
    handlers.

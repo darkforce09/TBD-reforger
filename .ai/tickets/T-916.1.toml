@@ -5,7 +5,7 @@ summary = "Typed corpus store + ops in tbd-tickets"
 class = "chore"
 status = "shipped"
 order = 5951
-spec = "docs/platform/t915_ticketboard_design.md"
+spec = "documentation_v2/tickets/specs/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = """
 Mechanism only — no policy: require_check_ok, sync, wave machinery all stay in xtask. Store becomes the shared substrate for the three duplicate walks (wave_lock::load_views, check_open_work_owns, slice_collisions::ticket_facts) — rewiring them is T-916.2. Injected clock precedent: metrics::stamp_land_at. No new external dependencies (std fs only).

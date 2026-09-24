@@ -21,7 +21,7 @@ verify = ["6f6fba5c added recursive TreeView, AttributesModal, and mock catalog/
 acceptance = ["Recursive TreeView shipped on Outliner and Asset Browser; AttributesModal opened on double-click with mock placedEntities and assetCatalog data."]
 citations = [
     "Source: commit 6f6fba5c.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-032.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-032.",
 ]
 shipped_at = "4639c88d"
 created_at = "2026-06-20T07:36:53Z"

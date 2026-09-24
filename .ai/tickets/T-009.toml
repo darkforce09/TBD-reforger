@@ -15,7 +15,7 @@ verify = ["History records the inline ORBAT hub landing; no command proof was ke
 acceptance = ["Members registered from the mission dossier without a separate Open ORBAT navigation step."]
 citations = [
     "Source: commit cc2eed36.",
-    "Source: docs/platform/SHIPPED_HISTORY.md §T-009.",
+    "Source: documentation_v2/archive/shipped_history/shipped_history.md §T-009.",
 ]
 shipped_at = "6228b9fc"
 created_at = "2026-06-18T23:35:25Z"

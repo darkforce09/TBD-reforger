@@ -5,8 +5,8 @@ summary = "The Type picker popover is translucent — text blurs over the map; m
 class = "bug"
 status = "ready"
 order = 8490
-spec = "docs/specs/existing/t841_type_picker_opaque.md"
-plan = "docs/plans/t-841_plan.md"
+spec = "documentation_v2/tickets/specs/t841_type_picker_opaque.md"
+plan = "documentation_v2/tickets/plans/t-841_plan.md"
 executor = "claude-code"
 notes = """
 operator eye-pass wave-206; small; pairs with T-827 methodology

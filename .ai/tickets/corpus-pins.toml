@@ -16,9 +16,10 @@ never_minted = [
 ]
 
 # Which ticket implements an editor gap row, for the rows of
-# `docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md` that no ticket claims through its
-# own `implements` list and whose notes carry no checkmark citation. `ticket sync` writes the
-# document's ticket column from a ticket's own claim first and from this table only as a fallback.
+# `documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`
+# that no ticket claims through its own `implements` list and whose notes carry no checkmark
+# citation. `ticket sync` writes the document's ticket column from a ticket's own claim first
+# and from this table only as a fallback.
 [gap_implementations]
 "PLACE-004"               = "T-072"
 "XFORM-SHIFT-001"         = "T-073"

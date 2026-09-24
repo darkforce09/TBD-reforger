@@ -5,7 +5,7 @@ summary = "Case-insensitive label search in Factions asset tree."
 class = "feature"
 status = "shipped"
 order = 550
-spec = "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md"
+spec = "documentation_v2/tickets/specs/t055_asset_browser_search.md"
 executor = "claude-code"
 main_goal = "Case-insensitive label search filters Factions Asset Browser tree."
 context = [
@@ -32,7 +32,7 @@ acceptance = [
 citations = [
     "t055_asset_browser_search.md",
     "a2dd1b96 ship commit",
-    "SHIPPED_HISTORY.md §T-055",
+    "documentation_v2/archive/shipped_history/shipped_history.md §T-055",
 ]
 shipped_at = "a264d2b0"
 created_at = "2026-06-22T04:10:24Z"

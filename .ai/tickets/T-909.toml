@@ -5,7 +5,7 @@ summary = "T-468 still regex-walks ci.yml run: — not T-901 serde_norway"
 class = "bug"
 status = "deferred"
 order = 5890
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
+spec = "documentation_v2/tickets/specs/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = '''
 wave 233 verifier NIT; T-468 regex vs T-901 serde_norway; copy-pasteable repro in summary
