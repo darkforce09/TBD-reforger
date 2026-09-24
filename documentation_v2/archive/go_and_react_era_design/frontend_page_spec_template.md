@@ -1,4 +1,4 @@
-**Status:** archived
+**Status:** archived — see [feature doc template](/documentation_v2/standards/templates/feature_doc.md)
 
 # [Surface Name]
 

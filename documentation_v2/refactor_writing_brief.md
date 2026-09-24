@@ -169,7 +169,7 @@ contradicted one. Record any further contradiction as file:line on both sides (b
     the built SPA from `apps/website/frontend/dist` and reverse-proxies API traffic to
     `127.0.0.1:8080` (`tools_v2/xtask/deploy/Caddyfile.website:13`). An API on `:8081` is wrong.
   - Local Postgres: host port `5434` (`apps/website/api_v2/docker-compose.yml:13`; `DATABASE_URL`
-    at `apps/website/api_v2/.env.example:63`), the compose service `db` that `cargo xtask db up`
+    at `apps/website/api_v2/.env.example:64`), the compose service `db` that `cargo xtask db up`
     starts (`tools_v2/xtask/src/commands/db/operations.rs:242`).
   - Staging Postgres: `127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}`
     (`apps/website/docker-compose.staging.yml:29`). `cargo xtask deploy website` exports the value
