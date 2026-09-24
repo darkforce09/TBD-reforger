@@ -73,7 +73,8 @@ view and selection state: none of them edits the document or adds an undo step.
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_left/`; and the outliner smoke
   test in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`,
   which finds the dock by its "Layers" and "Locations" tabs.
-- Rules, held by the tests in `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_left/`:
+- Rules: the tests in
+  `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_left/` hold these:
   - every body that reaches the engine, the selection or local storage compiles for `wasm32`
     only and answers empty or `None` elsewhere, so the helpers run in the native tests;
   - the bookmark key keeps its `tbd-` namespace and its version stamp, and a stored blob is

@@ -18,15 +18,15 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/view/
 The menu row edits the [mission](/documentation_v2/glossary.md#mission) title in place, shows a
 dot for unsaved changes, opens the "File", "Edit", "Arrange", "Mission", "Environment" and "Help"
 menus, opens the [ORBAT](/documentation_v2/glossary.md#orbat) manager, and shows "Draft saved …"
-after the local draft is written. A per-side slot census and the mission summary line also render
-in this row, inside a `hidden` element. The tool row holds "History" (always disabled), undo and
-redo, the three transform widget buttons, the snap toggle and its step buttons, the "Time of day"
-slider and "Weather" select with the settings gear, the validation chip and its findings dropdown,
-the save status, "Save Version", and "Export" with "Export JSON" and "Export Compiled". The
-overlays add the Controls Hint, a backdrop that closes an open menu, export list or findings
-dropdown on a click, and the "Save Version" dialog: version and notes fields, the size estimate
-("~<size> · N objects"), progress while saving, the save findings and "Save", which calls the
-shell's `save_now`.
+after the local draft is written. A per-side [slot](/documentation_v2/glossary.md#slot) census and
+the mission summary line also render in this row, inside a `hidden` element. The tool row holds
+"History" (always disabled), undo and redo, the three transform widget buttons, the snap toggle and
+its step buttons, the "Time of day" slider and "Weather" select with the settings gear, the
+validation chip and its findings dropdown, the save status, "Save Version", and "Export" with
+"Export JSON" and "Export Compiled". The overlays add the Controls Hint, a backdrop that closes an
+open menu, export list or findings dropdown on a click, and the "Save Version" dialog: version and
+notes fields, the size estimate ("~<size> · N objects"), progress while saving, the save findings
+and "Save", which calls the shell's `save_now`.
 
 ## Boundaries
 

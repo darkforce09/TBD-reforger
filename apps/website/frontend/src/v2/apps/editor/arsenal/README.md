@@ -21,7 +21,7 @@ apps/website/frontend/src/v2/apps/editor/arsenal/
 ├── rules.rs             the 14 `LOADOUT_ROWS` and the weapon slots; re-exports the rules
 ├── tab_content/         the loaded tab's header, selection grid and status sections
 ├── tab_content.rs       `loaded_catalog`: the loaded view and its action handlers
-└── tests/               unit tests and source pins for catalog, loadout, rules and tab wiring
+└── tests/               unit tests for catalog, loadout, rules and tab wiring
 ```
 
 ## How it works

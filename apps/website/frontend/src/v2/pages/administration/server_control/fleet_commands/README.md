@@ -1,9 +1,9 @@
 # Fleet command console
 
-The "Fleet commands" section of the server control card: an administrator requests a
-[fleet command](/documentation_v2/glossary.md#fleet-command) for the selected server, follows it
-until an executor reports how it ended, reads the server's command history and cancels a command
-no executor has claimed.
+The "Fleet commands" section of the [server control](/documentation_v2/glossary.md#server-control)
+card: an administrator requests a [fleet command](/documentation_v2/glossary.md#fleet-command) for
+the selected server, follows it until an executor reports how it ended, reads the server's command
+history and cancels a command no executor has claimed.
 
 ## Contents
 
@@ -34,13 +34,15 @@ A newer request, a cancellation of the followed command and the card going away 
 follow through its generation. Only `succeeded` is announced as a success; `indeterminate` is
 announced as an unknown outcome that nothing repeats, and a state this build does not know is
 announced as unknown rather than followed forever. The request controls offer only the six actions
-an operator may request, never the two a mission deployment issues, and `validated_broadcast` and
-`validated_kick` check a request as the [API](/documentation_v2/glossary.md#api) does before it is
-sent: a broadcast of 1 to 256 bytes without line breaks or control characters, and a kick with an
-Arma identity and an optional reason of at most 128 bytes each and a runtime session id. The kick
-form offers the players of the newest successful player listing and the session that confirmed
-the server's newest confirmed deployment, and fills neither on its own. Only a queued command
-offers "Cancel". Every request runs in the browser build only.
+an operator may request, never the two a
+[mission deployment](/documentation_v2/glossary.md#mission-deployment) issues, and
+`validated_broadcast` and `validated_kick` check a request as the
+[API](/documentation_v2/glossary.md#api) does before it is sent: a broadcast of 1 to 256 bytes
+without line breaks or control characters, and a kick with an Arma identity and an optional reason
+of at most 128 bytes each and a runtime session id. The kick form offers the players of the newest
+successful player listing and the session that confirmed the server's newest confirmed deployment,
+and fills neither on its own. Only a queued command offers "Cancel". Every request runs in the
+browser build only.
 
 ## Boundaries
 

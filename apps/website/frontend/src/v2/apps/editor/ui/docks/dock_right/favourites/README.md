@@ -14,19 +14,21 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/favourites/
 
 ## How it works
 
-`Favourites` is a set of starred assets keyed by the Enfusion `resource_name` (the id a catalog
-leaf places), newest first, each with the label remembered when it was starred. It lives in local
-storage under `tbd-mc-editor-favourites`, version 1, capped at 250 entries; a load drops empty and
-duplicate ids, and a write stamps the version. The star on a palette row (`favourite_star`)
-toggles an entry and saves at once.
+`Favourites` is a set of starred assets keyed by the
+[Enfusion](/documentation_v2/glossary.md#enfusion) `resource_name` (the id a catalog leaf places),
+newest first, each with the label remembered when it was starred. It lives in local storage under
+`tbd-mc-editor-favourites`, version 1, capped at 250 entries; a load drops empty and duplicate ids,
+and a write stamps the version. The star on a palette row (`favourite_star`) toggles an entry and
+saves at once.
 
 `resolve_favourites` maps every stored entry to exactly one `FavouriteRow`: `Live`, under the
 catalog's current display name and with the palette that places it, or `Stale` when the loaded
 catalog no longer offers the asset; a stale row stays in the list, disabled, crossed out and
 removable. `favourites_panel` shows "Resolving N favourite(s) against the catalogue…" while the
-registry loads, and "Could not load the catalogue — favourites cannot be resolved." with "Retry"
-when it has failed. `recently_placed_panel` lists the session's placements, newest first, from the
-list `DockRight` keeps, and a press on either list arms the same placement a palette leaf would
+[registry](/documentation_v2/glossary.md#registry) loads, and
+"Could not load the catalogue — favourites cannot be resolved." with "Retry" when it has failed.
+`recently_placed_panel` lists the session's placements, newest first, from the list `DockRight`
+keeps, and a press on either list arms the same placement a palette leaf would
 (`arm_favourite_place`).
 
 ## Boundaries

@@ -53,8 +53,9 @@ unchanged rows, and a row whose owner can be selected selects it through the val
 
 - Depends on: `env`, `win_conditions_card`, `spawn_modules`, `zones_panel` and `validation_panel`
   of `apps/website/frontend/src/v2/apps/editor/ui/inspector/`; the top strip's `RowMirror` and
-  `is_mission_row_id`; the editor's `shell/` (`document_commands`, `review_mode`,
-  `world_layer_prefs`) and bridge (`editor_context::read_env`, the document handle);
+  `is_mission_row_id`; the editor's shell in `apps/website/frontend/src/v2/apps/editor/shell/`
+  (`document_commands`, `review_mode`, `world_layer_prefs`) and its bridge
+  (`editor_context::read_env`, the document handle);
   `crate::v2::core` (the API client, `AuthStore`, toasts, the URL guard, `modal_stack`,
   `MaterialIcon`, the `MissionEnv` DTO); over HTTP, `/api/v1/missions/{id}`.
 - Used by: the parent module, whose `MissionSettingsDialog` `shell::eden_chrome` re-exports for

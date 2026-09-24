@@ -17,7 +17,7 @@ apps/website/frontend/src/v2/apps/editor/
 ├── mission_editor.rs  `MissionEditorPage`, which mounts the canvas and raises the chrome around it
 ├── mod.rs             the module tree
 ├── shell/             the browser session: drafts, hydrate, tab lock, review mode, preferences
-├── tests/             the page's tests and source pins, mounted from `mission_editor.rs`
+├── tests/             unit tests for the page and its source pins, mounted from `mission_editor.rs`
 └── ui/                docks, top strip, toolbelt, outliner, inspectors, Arsenal panels and dialogs
 ```
 

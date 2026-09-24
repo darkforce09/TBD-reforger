@@ -2,9 +2,10 @@
 
 Two parts of the outliner's node model: the flat rows the windowed tree renders, with the
 operations on the active folder, and the [ORBAT](/documentation_v2/glossary.md#orbat) tree of
-factions, squads and slots. The node model itself, `OutlinerNode` and the layers tree, is the
-module root `apps/website/frontend/src/v2/apps/editor/ui/outliner/outliner.rs`, which declares these
-files and re-exports their items.
+factions, squads and [slots](/documentation_v2/glossary.md#slot). The node model itself,
+`OutlinerNode` and the layers tree, is the module root
+`apps/website/frontend/src/v2/apps/editor/ui/outliner/outliner.rs`, which declares these files and
+re-exports their items.
 
 ## Contents
 
@@ -52,9 +53,9 @@ matching the key and never the name.
     host and the comment editor under `apps/website/frontend/src/v2/apps/editor/bridge/`, and from
     the context menu's "Place Comment";
   - `create_layer`, from the left dock's add button.
-- Rules, held by `outliner_hierarchy_visibility_and_comments.rs` in
-  `apps/website/frontend/src/v2/apps/editor/ui/outliner/tests/outliner_model/`: the rows are
-  pre-order with their depths and a collapsed node hides its subtree
+- Rules: `outliner_hierarchy_visibility_and_comments.rs` in
+  `apps/website/frontend/src/v2/apps/editor/ui/outliner/tests/outliner_model/` holds these: the
+  rows are pre-order with their depths and a collapsed node hides its subtree
   (`flatten_is_preorder_with_depths`, `flatten_visible_collapse_hides_subtree`); the ORBAT tree
   keeps document order and skips dangling ids (`orbat_nests_faction_squad_slot_in_order`,
   `orbat_skips_dangling_ids`); the side filter matches the faction key

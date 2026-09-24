@@ -52,9 +52,10 @@ Escape closes, in order, an open menu, the export list, the findings dropdown, t
 dialog and the Controls Hint, unless the modal stack has consumed the key, and the strip registers
 its closer with the modal stack so that a dialog opening elsewhere closes them. The draft chip
 reads the shell's last local-draft write and refreshes every second ("Draft saved just now" under
-5 s). `census_from_rows` counts slots per side from the ORBAT rows the map engine returns, and
-`summary_line` prints "<mode> <total> on <Terrain> — WEST n v EAST n", adding "(+n IND)" and
-"(n unassigned)" when nonzero; both render in a hidden element of the menu row.
+5 s). `census_from_rows` counts [slots](/documentation_v2/glossary.md#slot) per side from the ORBAT
+rows the map engine returns, and `summary_line` prints
+"<mode> <total> on <Terrain> — WEST n v EAST n", adding "(+n IND)" and "(n unassigned)" when
+nonzero; both render in a hidden element of the menu row.
 
 ## Public surface
 
@@ -88,8 +89,9 @@ reads the shell's last local-draft write and refreshes every second ("Draft save
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/top_strip/`; the outliner smoke test in
   `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
   opens the ORBAT manager from its button.
-- Rules, held by that tests folder: the menu bar renders the shared Arrange list in order, and a
-  menu click and a chord share one invoker (`the_menu_bar_renders_the_shared_list_in_order` and
+- Rules: that tests folder holds these: the menu bar renders the shared Arrange list in order,
+  and a menu click and a chord share one invoker
+  (`the_menu_bar_renders_the_shared_list_in_order` and
   `the_menu_click_and_the_chord_share_one_invoker` in `arrange_actions.rs`); a burst of values
   becomes one request, and a second cannot start while one is in flight
   (`a_burst_collapses_to_the_settled_value` and

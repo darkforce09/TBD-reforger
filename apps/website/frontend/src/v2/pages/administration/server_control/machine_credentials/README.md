@@ -42,11 +42,12 @@ this build does not know shows as the API spells it. Every request runs in the b
   `crate::v2::core::ui` (`Sheet`, `MaterialIcon`, the toast queue) and `crate::v2::core::utils`
   (`clipboard`, `utc_timestamp`); over HTTP, the credential routes of the
   [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain.
-- Used by: `server_cards.rs` in `apps/website/frontend/src/v2/pages/administration/server_control/`,
-  which builds the panel, opens the sheet and renders it; `executor_label`, which the fleet command
-  console in `apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands/`
-  names executors with; `server_control_source` in
-  `apps/website/frontend/src/v2/core/test_support/pins.rs`.
+- Used by: `server_cards.rs` in
+  `apps/website/frontend/src/v2/pages/administration/server_control/`, which builds the panel, opens
+  the sheet and renders it; `executor_label`, which the
+  [fleet command](/documentation_v2/glossary.md#fleet-command) console in
+  `apps/website/frontend/src/v2/pages/administration/server_control/fleet_commands/` names executors
+  with; `server_control_source` in `apps/website/frontend/src/v2/core/test_support/pins.rs`.
 - Rules: the secret is shown once and never stored; labels and reasons are bounded as the API
   bounds them (`labels_and_reasons_are_bounded_as_the_backend_bounds_them`), the issue form offers
   exactly the API's program kinds (`the_issue_form_offers_the_backend_program_kinds`), and live

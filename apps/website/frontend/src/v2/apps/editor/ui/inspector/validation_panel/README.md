@@ -48,7 +48,7 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
   `Finding`, `Severity`, `Primitive`); the parent module's model; `derive_object_alias` from the
   [Arsenal](/documentation_v2/glossary.md#arsenal)'s `asset_catalog` in `apps/website/frontend/src/v2/apps/editor/arsenal/`; `MaterialIcon`
   and the `RegistryItem` DTO from `crate::v2::core`.
-- Used by, through the parent module's re-exports:
+- Used by: the modules below, through the parent module's re-exports:
   - `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`, which mounts `ValidationPanel`,
     and, in `apps/website/frontend/src/v2/apps/editor/mission_editor/`, `canvas_mount.rs`,
     `canvas_mount/boot_tasks.rs` and `canvas_mount/review_restore.rs`, which register the hooks

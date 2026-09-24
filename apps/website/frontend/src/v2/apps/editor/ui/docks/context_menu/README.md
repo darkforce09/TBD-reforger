@@ -20,11 +20,11 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/context_menu/
 
 ## How it works
 
-A right-click on the canvas picks the slot or vehicle under the cursor and calls `resolve_target`:
-nothing hit opens the empty-ground rows, a hit inside the selection the entity rows for the whole
-selection, and any other hit the entity rows for that entity alone, which `open` selects first.
-`open` records the click's world point and any connection the map engine has armed, and sets the
-menu signal the editor page registered with `set_menu_signal`.
+A right-click on the canvas picks the [slot](/documentation_v2/glossary.md#slot) or vehicle under
+the cursor and calls `resolve_target`: nothing hit opens the empty-ground rows, a hit inside the
+selection the entity rows for the whole selection, and any other hit the entity rows for that entity
+alone, which `open` selects first. `open` records the click's world point and any connection the map
+engine has armed, and sets the menu signal the editor page registered with `set_menu_signal`.
 
 `MenuState::entries` lays out the take's rows, adds "Arrange" after "Transform" for two or more
 targets, and expands the open submenu: "Connect" ("Sync to", "Group to" and "Set Trigger Owner",
@@ -50,7 +50,7 @@ Enter) act only while it is the topmost surface of `crate::v2::core::ui::modal_s
   and mounts `ContextMenuOverlay`, and its canvas mount, which registers the signal; the right-click
   handler in `apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/context_menu.rs`; the
   tests in `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/context_menu/`.
-- Rules, held by that folder's tests: the enabled rows are exactly the shipped features
+- Rules: that folder's tests hold these: the enabled rows are exactly the shipped features
   (`enabled_rows_are_exactly_the_shipping_features` in `menu_model.rs`); the formations are the
   schema's enum in order (`the_formation_submenu_uses_the_schema_vocabulary_verbatim`); every
   disabled row has a tooltip (`every_disabled_row_in_both_takes_has_a_nonempty_title`); Escape

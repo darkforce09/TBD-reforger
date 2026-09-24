@@ -60,15 +60,15 @@ store, the mission id and the current-semver signal), which the canvas mount ins
   helper, `MissionDetail`); `web_sys` for the Blob download. Over HTTP:
   `POST /api/v1/missions/{id}/versions`, `GET /api/v1/missions/{id}` and
   `GET /api/v1/missions?scope=mine`.
-- Used by, through the parent's re-exports: the top strip's save dialog and export buttons in
+- Used by: through the parent's re-exports, the top strip's save dialog and export buttons in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`; the
   [Arsenal](/documentation_v2/glossary.md#arsenal) tab's loadout download (`download_json`) in
   `apps/website/frontend/src/v2/apps/editor/arsenal/tab_content.rs`; the parent's `__editorCommands`
   bridge; the source contracts in
   `apps/website/frontend/src/v2/apps/editor/shell/tests/document_commands/`.
-- Rules, pinned by the tests in
-  `apps/website/frontend/src/v2/apps/editor/shell/tests/document_commands/`: the save checks
-  duplicate slot ids before it compiles or posts
+- Rules: the tests in
+  `apps/website/frontend/src/v2/apps/editor/shell/tests/document_commands/` pin these: the save
+  checks duplicate slot ids before it compiles or posts
   (`save_now_checks_duplicates_before_it_compiles_or_posts` in `duplicate_slot_guard.rs`); the
   compiled export is never pretty-printed, so it stays byte-comparable with the artifact document
   (`class_r_source_forbids_value_pretty_on_compiled_export` in `source_contracts.rs`); the merge

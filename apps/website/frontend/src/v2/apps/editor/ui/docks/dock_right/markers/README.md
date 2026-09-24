@@ -45,8 +45,8 @@ nothing.
   `apps/website/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/palette_arming.rs`,
   which refuses an icon `marker_icon_is_authorable` rejects; the tests in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_right/`.
-- Rules, held by that folder's `marker_icons_and_briefing.rs` and the browser build: the icon list
-  is the schema's own and only its aliases are authorable (`the_icon_list_is_the_schemas_own`,
+- Rules: that folder's `marker_icons_and_briefing.rs` and the browser build hold these: the icon
+  list is the schema's own and only its aliases are authorable (`the_icon_list_is_the_schemas_own`,
   `only_schema_aliases_are_authorable`); the picker has one row per glyph
   (`picker_has_one_row_per_canonical_icon`), and the browser build fails to compile when
   `CANONICAL_MARKER_GLYPH_COUNT` differs from the engine's `MARKER_GLYPH_COUNT`; marker writes go to

@@ -25,8 +25,8 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/
 ## How it works
 
 `DockRight` in `shell/` receives what the editor page loads and owns (the catalog states, the
-registry rows, `doc_tick`, `active_side`, `objects_mode` and the collapse flag) and draws one tab
-body at a time:
+[registry](/documentation_v2/glossary.md#registry) rows, `doc_tick`, `active_side`, `objects_mode`
+and the collapse flag) and draws one tab body at a time:
 
 | Tab | Drawn by |
 |---|---|
@@ -70,7 +70,8 @@ registers both at mount, and each cleanup removes only its own registration.
     catalog in `arsenal::asset_catalog`, `bridge::host_state` (`armed_placement`,
     `editor_context`), the inspector's zones panel, the outliner's tree rows and styles, and the
     left dock's `collapse_chevron`;
-  - `crate::v2::core`: the API client and `RegistryItem`, the auth store and `MaterialIcon`;
+  - `crate::v2::core`: the [API](/documentation_v2/glossary.md#api) client and `RegistryItem`, the
+    auth store and `MaterialIcon`;
   - `website_map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools::selection`,
     `streaming::host` and `overlay::symbology::markers`;
   - `contracts_v2/definitions/mission.schema.json`, through the zones panel's embed, and the

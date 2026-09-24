@@ -21,7 +21,7 @@ apps/website/frontend/src/v2/pages/administration/event_manager/
 ├── page.rs              `EventManagerPage`: the gate, then the panels and the sheet in stacking order
 ├── schedule_dialog.rs   the "Schedule Operation" form and its two-step publish
 ├── state.rs             `Manager`: calendar position, form fields, busy flags and the three fetches
-└── tests/               unit tests pinning the edit form's wiring and the delete confirmation's copy
+└── tests/               unit tests for the edit form's wiring and the delete confirmation's copy
 ```
 
 ## How it works
@@ -45,17 +45,17 @@ the day panel and the forms agree on which day an event is on; only the value se
 
 The edit form compares start times as instants, sends an empty string to clear the briefing or the
 banner, and sends nothing when nothing changed. Its Status picker offers only the moves
-`lifecycle::can_transition` allows, which mirror the API's rules; a rule the browser cannot check
-comes back as the API's own sentence. Neither form sets an event's server or modpack, and neither
-posts to Discord. The detach confirmation renders last because it shares a stacking level with the
-edit form that opens it. Every request runs in the browser build only; a native build resolves each
-fetch to nothing.
+`lifecycle::can_transition` allows, which mirror the [API](/documentation_v2/glossary.md#api)'s
+rules; a rule the browser cannot check comes back as the API's own sentence. Neither form sets an
+event's server or modpack, and neither posts to Discord. The detach confirmation renders last
+because it shares a stacking level with the edit form that opens it. Every request runs in the
+browser build only; a native build resolves each fetch to nothing.
 
 ## Routes
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
+| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
 
 ## Data
 

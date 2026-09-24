@@ -35,7 +35,7 @@ choose a write-through or a merge. `register_bridge` publishes `window.__mission
   `CHANNEL_PREFIX`, `WRITER_LOCK_PREFIX`, `PEERS`, `LOCK_DECIDED`, `ON_PEER_SAVED`); the browser's
   `navigator.locks`, `BroadcastChannel` and `localStorage` through `web_sys` and `js_sys`;
   `serde_json` for the messages and stamps.
-- Used by, through the parent's re-exports: the draft writer in
+- Used by: through the parent's re-exports, the draft writer in
   `apps/website/frontend/src/v2/apps/editor/shell/persist.rs` and
   `apps/website/frontend/src/v2/apps/editor/shell/persist/save_scheduler.rs` (`join`,
   `register_bridge`, `leave`, `announce_saved`, `read_stamp`, `write_stamp`).

@@ -44,7 +44,7 @@ a native build renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/approvals` | `MissionApprovalsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame; breadcrumb Administration / Mission Approvals; sidebar entry "Mission Approvals" |
+| `/admin/approvals` | `MissionApprovalsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame; breadcrumb Administration / Mission Approvals; sidebar entry "Mission Approvals" |
 
 ## Data
 

@@ -42,7 +42,7 @@ because a publish refuses a relative one. Every request runs in the browser buil
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/content` | `ContentManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Comms Broadcaster; sidebar entry "Comms Broadcaster" |
+| `/admin/content` | `ContentManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Comms Broadcaster; sidebar entry "Comms Broadcaster" |
 
 ## Data
 

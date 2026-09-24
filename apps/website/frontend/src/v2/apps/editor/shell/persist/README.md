@@ -48,7 +48,7 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
   `DocHandle` and undo driver in `apps/website/frontend/src/v2/apps/editor/bridge/document_host/`;
   `save_status`, `tab_lock` and `session` in `apps/website/frontend/src/v2/apps/editor/shell/`; the
   auth store of `crate::v2::core::auth`.
-- Used by, through the parent's re-exports: the boot task in
+- Used by: through the parent's re-exports, the boot task in
   `apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount/boot_tasks.rs`; the undo
   driver's tail in `apps/website/frontend/src/v2/apps/editor/bridge/document_host/history.rs`; the
   hydrate's snapshot pair in `apps/website/frontend/src/v2/apps/editor/shell/hydrate/`; the
@@ -56,9 +56,9 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
   in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, which reads the last flush time
   through `set_last_flush_signal`; the headless editor gates in
   `tools_v2/developer-tools/src/browser_testing/`, through `window.__missionPersist`.
-- Rules, pinned by `apps/website/frontend/src/v2/apps/editor/shell/tests/`: a stored record from
-  another tab is merged, never overwritten, and a read-only tab defers instead of writing
-  (`t190_a_foreign_record_is_merged_not_overwritten` and
+- Rules: the tests in `apps/website/frontend/src/v2/apps/editor/shell/tests/` pin these: a stored
+  record from another tab is merged, never overwritten, and a read-only tab defers instead of
+  writing (`t190_a_foreign_record_is_merged_not_overwritten` and
   `t190_a_read_only_tab_defers_instead_of_writing_or_dropping` in
   `tab_lock/writer_election_and_conflict.rs`); a failed write reports into the save status, and the
   idle debounce stays at or under one second (`run_save_err_arm_reports_into_save_status` and

@@ -13,7 +13,7 @@ apps/website/frontend/src/v2/apps/
 ├── aar/      reserved for the after-action review workspace; holds no code
 ├── debug/    the URL-only benches: the building viewer and the world line-of-sight bench
 ├── editor/   the Mission Creator, the 2D/3D CAD workspace in which missions are built
-├── mod.rs    the module tree: `debug` and `editor`
+├── mod.rs    the module tree
 └── planner/  reserved for the mission planner workspace; holds no code
 ```
 
@@ -31,7 +31,7 @@ it renders without the sidebar and the top bar:
 
 A workspace creates its own `RenderEngine` from `website_map_engine::frame` and reaches the
 graphics engine only through the map engine. The [mission](/documentation_v2/glossary.md#mission)
-document lives in the map engine's store, which the Mission Creator hosts in its `bridge/`; a
+document lives in the map engine's store, which the Mission Creator hosts in `editor/bridge/`; a
 workspace keeps the view and session state around it. Code that touches `web_sys` or a live engine
 handle compiles for `wasm32` only, so the native test build covers each workspace's pure half.
 

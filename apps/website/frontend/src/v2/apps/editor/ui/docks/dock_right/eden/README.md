@@ -23,12 +23,14 @@ a sub-mode, and `custom_chip_visible` shows the disabled "Custom" chip under the
 placeholder ends in `SEARCH_PLACEHOLDER_GRAMMAR`: the grammar of `class:`, `mod:`, wildcards and
 `/…/` expressions the asset catalog's filter reads. `catalog_failure_view` names why a catalog is
 empty ("No modpack is configured, so the … is empty. Set a current modpack, then retry." when the
-registry answers 404, otherwise "Could not load the …. The request to the registry failed.") and
-offers "Retry", which bumps `registry_fetch_gen` so the editor fetches the registry again.
+[registry](/documentation_v2/glossary.md#registry) answers 404, otherwise
+"Could not load the …. The request to the registry failed.") and offers "Retry", which bumps
+`registry_fetch_gen` so the editor fetches the registry again.
 
 ## Boundaries
 
-- Depends on: the `dock_right` scope (Leptos signals and views); no engine or API call.
+- Depends on: the `dock_right` scope (Leptos signals and views); no engine or
+  [API](/documentation_v2/glossary.md#api) call.
 - Used by: the Factions tab in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/shell/factions_panel.rs` and the
   Vehicles tab in `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/shell/layout.rs`;

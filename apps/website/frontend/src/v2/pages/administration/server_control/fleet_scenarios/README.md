@@ -2,8 +2,9 @@
 
 The side sheet that keeps the [fleet scenario](/documentation_v2/glossary.md#fleet-scenario)
 registry: for each terrain, the [mission header](/documentation_v2/glossary.md#mission-header) the
-fleet boots when a mission deployment restarts a server on that terrain. It belongs to the whole
-fleet, so the server picker's heading opens it, not a server's card.
+fleet boots when a [mission deployment](/documentation_v2/glossary.md#mission-deployment) restarts a
+server on that terrain. It belongs to the whole fleet, so the server picker's heading opens it, not
+a server's card.
 
 ## Contents
 
@@ -17,11 +18,12 @@ apps/website/frontend/src/v2/pages/administration/server_control/fleet_scenarios
 
 ## How it works
 
-The server control page builds one `ScenarioRegistry` and renders `scenario_sheet` over the
-screen. `open_sheet` opens it and reads the registry whole, and `put` and `remove` read it again
-after every change the [API](/documentation_v2/glossary.md#api) accepts, since a terrain with no
-registered scenario refuses every deployment. The registry holds the sheet's open flag, the
-registry as read, the `busy` flag and the last refusal.
+The [server control](/documentation_v2/glossary.md#server-control) page builds one
+`ScenarioRegistry` and renders `scenario_sheet` over the screen. `open_sheet` opens it and reads the
+registry whole, and `put` and `remove` read it again after every change the
+[API](/documentation_v2/glossary.md#api) accepts, since a terrain with no registered scenario
+refuses every deployment. The registry holds the sheet's open flag, the registry as read, the `busy`
+flag and the last refusal.
 
 `scenario_registration` checks a registration exactly as the API and the contract do before it is
 sent: a terrain key of lowercase letters, digits and underscores that starts with a letter, at

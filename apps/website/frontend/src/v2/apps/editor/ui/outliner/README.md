@@ -2,9 +2,10 @@
 
 The [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s view of the
 [mission](/documentation_v2/glossary.md#mission) as editor layers: the folders an author files
-slots, comments and other layers into, and the [ORBAT](/documentation_v2/glossary.md#orbat) tree of
-factions, squads and slots. This folder holds the node model built from the document, the windowed
-tree the left dock draws, and the drag latch through which rows are refiled and reparented.
+[slots](/documentation_v2/glossary.md#slot), comments and other layers into, and the
+[ORBAT](/documentation_v2/glossary.md#orbat) tree of factions, squads and slots. This folder holds
+the node model built from the document, the windowed tree the left dock draws, and the drag latch
+through which rows are refiled and reparented.
 
 ## Contents
 
@@ -14,7 +15,7 @@ apps/website/frontend/src/v2/apps/editor/ui/outliner/
 ├── mod.rs       the module tree
 ├── outliner/    the flat rows with the active folder operations, and the ORBAT tree
 ├── outliner.rs  the node model: `OutlinerNode`, `NodeKind` and the layers tree with its comments
-├── tests/       unit and source tests for the drag planner, the node model and the tree rendering
+├── tests/       unit tests for the drag planner, the node model and the tree rendering
 ├── tree/        the windowed tree, the per-kind rows, the folder controls and the drag sets
 └── tree.rs      the tree's module root; re-exports the renderer and the shared row helpers
 ```
@@ -79,7 +80,7 @@ to the top level through the map engine's single-folder latch.
     `apps/website/frontend/src/v2/apps/editor/ui/inspector/`, and the ORBAT manager in
     `apps/website/frontend/src/v2/apps/editor/ui/modals/`;
   - the outliner smoke tests in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`.
-- Rules, held by the tests in `tests/`:
+- Rules: the tests in `tests/` hold these:
   - the tree's shape (Unfiled root, folder order, dangling ids, cycles, inherited flags, comment
     placement) is fixed by `tests/outliner_model/outliner_hierarchy_visibility_and_comments.rs`;
   - a drop onto a folder moves the whole set or nothing, and one member can refuse it

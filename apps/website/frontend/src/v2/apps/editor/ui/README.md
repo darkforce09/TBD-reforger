@@ -13,8 +13,8 @@ apps/website/frontend/src/v2/apps/editor/ui/
 ├── arsenal/    the Arsenal panels: the doll, the compatibility panel, the cargo editor
 ├── docks/      the chrome: left and right docks, top command strip, bottom toolbelt, context menu
 ├── inspector/  the Attributes dialog, the zones tab, the validation loop, the settings block panels
-├── modals/     the Mission Settings, ORBAT Manager and Faction Manager dialogs; the controls hint
 ├── mod.rs      the module tree
+├── modals/     the Mission Settings, ORBAT Manager and Faction Manager dialogs; the controls hint
 └── outliner/   the Editor Layers outliner: the node model, the shared dock tree, the drag latch
 ```
 
@@ -76,7 +76,14 @@ compiles every surface.
     `arsenal/mod.rs`, the `bridge/` document host, host state, overlays, viewport and world assets,
     and the context menu gesture and the measuring tools under `input/`;
   - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/`, which drive these
-    surfaces through the DOM.
+    surfaces through the DOM;
+  - `cargo xtask verify editor-orbat-coherency`
+    (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
+    `modals/orbat_manager.rs` and every source file in `modals/orbat_manager/` for banned
+    interface text;
+  - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
+    `apps/website/frontend/src/v2/core/ui/tests/ui.rs`, which reads
+    `modals/orbat_manager/dialog.rs`.
 - Rules: a surface renders and dispatches and never mutates the document itself; nothing outside
   `apps/website/frontend/src/v2/apps/editor/` imports from this folder; a key binding a surface adds
   needs a row in the shortcut catalog of `modals/help_modal/` (`every_binding_has_a_help_entry` in

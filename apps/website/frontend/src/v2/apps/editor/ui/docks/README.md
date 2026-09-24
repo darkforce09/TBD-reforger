@@ -17,7 +17,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/
 ├── dock_right/      the right dock: the asset browser tabs, favourites and recently placed
 ├── dock_right.rs    the right dock's module root; the crew checkbox and the re-exports
 ├── mod.rs           the module tree
-├── tests/           unit and source tests, one folder per surface
+├── tests/           unit tests for the context menu, both docks, the toolbelt and the top strip
 ├── toolbelt/        the mode toolbar, the status bar, the scale bar and the edge grid references
 ├── toolbelt.rs      the toolbelt's module root; re-exports its components and scale helpers
 ├── top_strip/       the top command strip: menus, tools, environment, validation, save and export
@@ -76,8 +76,8 @@ native test build compiles all five surfaces.
     `bridge` (placement, selection, the editor context, the document history), the asset catalog
     in `arsenal`, the outliner, the inspector's zones panel, validation panel and environment
     update, `ui::modals::help_modal`, and the page's toolbar dispatch in `mission_editor`;
-  - `crate::v2::core`: the API client and DTOs, the auth store, the UI primitives, the modal stack
-    and the toasts;
+  - `crate::v2::core`: the [API](/documentation_v2/glossary.md#api) client and DTOs, the auth
+    store, the UI primitives, the modal stack and the toasts;
   - `website_map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools`,
     `streaming::host`, `camera`, `overlay::symbology::markers` and
     `data::store::operations::document_index`;

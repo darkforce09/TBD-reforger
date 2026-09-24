@@ -58,11 +58,20 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
 - Used by: the parent module, whose `OrbatManagerDialog` `shell::eden_chrome` re-exports for
   `apps/website/frontend/src/v2/apps/editor/mission_editor.rs`; the headless editor gates in
   `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which open the dialog by the
-  "ORBAT Manager" label and read its heading, rows and `window.__outlinerStats`.
+  "ORBAT Manager" label and read its heading, rows and `window.__outlinerStats`;
+  `cargo xtask verify editor-orbat-coherency`
+  (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans the
+  parent module and every source file in this folder; the test
+  `orbat_manager_overlay_derives_z_from_the_modal_stack` in
+  `apps/website/frontend/src/v2/core/ui/tests/ui.rs`, which reads `dialog.rs`.
 - Rules: applying a template changes nothing unless the confirmation is accepted
   (`apply_cancel_noop`), and Escape closes the dialog only while it is the topmost modal
   (`orbat_manager_gates_escape_on_modal_stack`), both in
-  `apps/website/frontend/src/v2/apps/editor/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`.
+  `apps/website/frontend/src/v2/apps/editor/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`;
+  no source file here or in the parent module holds the text "Standardization", "IFAK" or
+  "Grenade Complement" in any letter case (`cargo xtask verify editor-orbat-coherency`); the
+  dialog's overlay z-index comes from `modal_stack::z_class`
+  (`orbat_manager_overlay_derives_z_from_the_modal_stack`).
 
 ## Related documentation
 

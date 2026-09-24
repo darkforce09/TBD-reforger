@@ -38,12 +38,14 @@ its own fetches and signals, and nothing is shared between pages. Every request 
 build only; a native build resolves each fetch to nothing and renders the failure branch.
 
 The pages reach five [API](/documentation_v2/glossary.md#api) domains: `operations` for events,
-their missions and their access; `missions` for approvals, reviews, the library and mission
+their missions and their access; `missions` for
+[approvals](/documentation_v2/glossary.md#approvals), reviews, the library and mission
 [deployments](/documentation_v2/glossary.md#mission-deployment); `server_infrastructure` for
-servers, [fleet commands](/documentation_v2/glossary.md#fleet-command), fleet scenarios and
+servers, [fleet commands](/documentation_v2/glossary.md#fleet-command),
+[fleet scenarios](/documentation_v2/glossary.md#fleet-scenario) and
 [machine credentials](/documentation_v2/glossary.md#machine-credential); `administration` for the
-roster, bans, warnings, the role resync and the audit trail; `community_content` for
-announcements and uploads.
+roster, bans, warnings, the role resync and the audit trail; `community_content` for announcements
+and uploads.
 
 ## Public surface
 

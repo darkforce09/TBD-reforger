@@ -43,7 +43,7 @@ held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive 
   `armed_placement` and `tactical_graphics_authoring` in
   `apps/website/frontend/src/v2/apps/editor/bridge/`; the row classes of the outliner's `tree`
   module; the mission schema above.
-- Used by, through the parent module's re-exports:
+- Used by: the modules below, through the parent module's re-exports:
   - the right dock's zones tab (`dock_right/shell/layout.rs`) and its markers and triggers panels
     (`MISSION_SCHEMA`, `humanize_token`, `humanize_key`, `zone_rule_fields`, `ZoneRuleKind`,
     `DrawTarget`, `ZoneShape`, `polygon_is_committable`, `project_owner_line`) in

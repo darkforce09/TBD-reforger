@@ -10,19 +10,19 @@ selection router selects a zone in the Zones tab.
 apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/shell/
 ├── factions_panel.rs  the Factions tab: side chips, asset or object search, faction or objects tree
 ├── layout.rs          `DockRight`: its signals and effects, the tab strip, the tab bodies, the stub
-└── mod.rs             the tab strip classes and glyphs, `ZONES_TAB` and the zone selection hook
+└── mod.rs             the module tree; re-exports `DockRight`; tab strip classes and glyphs, `ZONES_TAB`, zone hook
 ```
 
 ## How it works
 
 `DockRight` takes what the editor page loads and owns: the character and vehicle catalog states,
-the raw registry rows, the registry failure flag and fetch generation, `doc_tick`, the faction
-manager's open flag, `active_side`, `objects_mode` and the collapse flag. Collapsed, it draws only
-the chevron in a 24 px stub. Expanded, its strip holds seven 20 px glyph tabs, each named by its
-title and `aria-label`, in the order Factions, Vehicles, Zones, Compositions, Triggers, Favourites
-and Markers, then the "Manage factions" verb, which opens the faction manager, and the chevron.
-The tab indices, which `EdenSubmode::from_tab` reads, differ from that order: Markers is index 2
-and Zones is `ZONES_TAB`, 3.
+the raw [registry](/documentation_v2/glossary.md#registry) rows, the registry failure flag and fetch
+generation, `doc_tick`, the faction manager's open flag, `active_side`, `objects_mode` and the
+collapse flag. Collapsed, it draws only the chevron in a 24 px stub. Expanded, its strip holds seven
+20 px glyph tabs, each named by its title and `aria-label`, in the order Factions, Vehicles, Zones,
+Compositions, Triggers, Favourites and Markers, then the "Manage factions" verb, which opens the
+faction manager, and the chevron. The tab indices, which `EdenSubmode::from_tab` reads, differ from
+that order: Markers is index 2 and Zones is `ZONES_TAB`, 3.
 
 | Tab | Body |
 |---|---|
@@ -37,12 +37,13 @@ set reseeds when the side changes, and a search draws its filtered tree fully op
 registry fetch fails, the browser build probes `GET /api/v1/registry?limit=1&offset=0`, and a 404
 answer makes the failure view say that no modpack is configured.
 
-A zone's selection lives in this component, apart from the slot selection. At mount `DockRight`
-installs a hook (`install_select_zone`) that selects a zone, raises the Zones tab and expands the
-dock; the editor's selection router calls `route_select_zone` for a zone subject, which reports
-whether a dock was there to take it. Cleanup removes the hook only while it is still the
-registered one, so an older mount's cleanup never clears a newer mount's hook. `DockRight` installs
-the recently placed recorder the same way.
+A zone's selection lives in this component, apart from the
+[slot](/documentation_v2/glossary.md#slot) selection. At mount `DockRight` installs a hook
+(`install_select_zone`) that selects a zone, raises the Zones tab and expands the dock; the editor's
+selection router calls `route_select_zone` for a zone subject, which reports whether a dock was
+there to take it. Cleanup removes the hook only while it is still the registered one, so an older
+mount's cleanup never clears a newer mount's hook. `DockRight` installs the recently placed recorder
+the same way.
 
 ## Boundaries
 
@@ -61,8 +62,8 @@ the recently placed recorder the same way.
   smoke test in
   `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
   opens the Factions tab by its `aria-label`.
-- Rules, held by that tests folder: the strip fits the 240 px dock and every glyph tab keeps its
-  name (`the_tab_strip_fits_the_dock` and `every_glyph_tab_keeps_its_name` in
+- Rules: that tests folder holds these: the strip fits the 240 px dock and every glyph tab keeps
+  its name (`the_tab_strip_fits_the_dock` and `every_glyph_tab_keeps_its_name` in
   `tab_strip_budget.rs`); the hook selects the zone and shows its tab, and the Zones index is
   stated once (`the_hook_selects_the_zone_and_shows_it` and `the_zones_tab_index_is_stated_once` in
   `zone_selection_seam.rs`); an older mount's cleanup leaves a newer hook in place

@@ -25,7 +25,8 @@ apps/website/frontend/src/v2/apps/editor/ui/outliner/tree/
 Up to `VIRTUAL_SLOT_THRESHOLD` (50) rows it draws them all; above that it draws the visible slice
 of 16 px rows (`ROW_H`), plus six rows of overscan, between two spacers in a measured scroller
 (`data-testid="outliner-window-scroller"`), and publishes its counts to `window.__outlinerStats`.
-The "Placed vehicles" rows close the list and select and open their attributes like slot rows.
+The "Placed vehicles" rows close the list and select and open their attributes like
+[slot](/documentation_v2/glossary.md#slot) rows.
 
 `single_row` draws one row by kind. The "Unfiled" root and faction headers are inert. A folder
 click makes the folder the active layer and selects its direct slots, or its whole subtree with Alt
@@ -57,8 +58,8 @@ window blur or unmounting the tree cancels them at once.
   slot reads; the outliner smoke tests in
   `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`, which read the stats, the
   scroller and the guide toggles.
-- Rules, held by the tests in `apps/website/frontend/src/v2/apps/editor/ui/outliner/tests/tree/`:
-  every row class states the one height `ROW_H` reads back
+- Rules: the tests in `apps/website/frontend/src/v2/apps/editor/ui/outliner/tests/tree/` hold
+  these: every row class states the one height `ROW_H` reads back
   (`every_row_recipe_states_the_one_height_and_row_h_reads_it_back`); every drag arm builds a set,
   and an unselected row drags alone (`every_drag_arm_builds_a_set_and_every_drop_consumes_one`,
   `an_unselected_anchor_drags_alone`); a row's affordance and its click agree

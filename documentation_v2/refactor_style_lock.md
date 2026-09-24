@@ -70,13 +70,11 @@ facts.
 
 ## Don't copy
 
-- The "The page README lists no calls" Data openers of the administration feature docs, and the
-  state texts and route facts they repeat from the page READMEs: interim until R05 rewrites those
-  READMEs.
+- A feature doc that repeats its page README's routes, calls or state texts instead of linking
+  them.
 - Open work that reads "None." without a check of `.ai/tickets/`.
 - Short `/admin/…` route paths.
 - `mod.rs` role variants.
 - Leaves of 70 to 95 lines as a target.
 - Partial paths such as `bin/api.rs`.
-- The backticked H1s and "Not present in the legacy page" sections of the administration page
-  READMEs under `apps/website/frontend/src/v2/pages/administration/`, which R05 rewrites.
+- Backticked or path H1s, and "not present in …" sections that describe another codebase.

@@ -1,9 +1,10 @@
 # Event access sheet
 
-The side sheet the event manager opens on one [event](/documentation_v2/glossary.md#event), which
-the screen calls an operation: who may see and join it, which groups a policy can admit, how many
-places each pool holds, and why each participant is admitted, with the waiting-list promotion of
-each [mission](/documentation_v2/glossary.md#mission).
+The side sheet the [event manager](/documentation_v2/glossary.md#event-manager) opens on one
+[event](/documentation_v2/glossary.md#event), which the screen calls an operation: who may see and
+join it, which groups a policy can admit, how many places each pool holds, and why each participant
+is admitted, with the waiting-list promotion of each
+[mission](/documentation_v2/glossary.md#mission).
 
 ## Contents
 
@@ -50,7 +51,7 @@ click ──► busy? or no view yet? ──► ignore
 
 | Tab | Files | What it changes |
 |---|---|---|
-| Policies | `policy_lists.rs`, `policy_editor.rs`, `policy_draft.rs`, `policy_inheritance.rs`, `waitlist_promotion.rs` | the event's policy; a squad's or a slot's own policy, set or removed; a mission's waiting list |
+| Policies | `policy_lists.rs`, `policy_editor.rs`, `policy_draft.rs`, `policy_inheritance.rs`, `waitlist_promotion.rs` | the event's policy; a squad's or a [slot](/documentation_v2/glossary.md#slot)'s own policy, set or removed; a mission's waiting list |
 | Groups | `groups/`, `member_search.rs` | event groups and managed-roster members |
 | Places | `quota_editor.rs` | the three reservation pools, replaced together |
 | Participants | `participants_table.rs` | nothing: it reads the evidence |
@@ -62,9 +63,9 @@ The invariants that span the tabs:
   the two visibly apart. A slot's own policy wins, then its squad's, then the event's.
 - The open policy editor shuts whenever the view's revision moves, so a draft prepared against an
   older view is never saved over a newer one; a new own policy starts from the inherited one.
-- The draft enforces the API's bounds before sending: at most 32 grants
-  (`policy_draft::MAX_GRANTS`) of 1 to 16 conditions (`MAX_CONDITIONS`), identifiers of 1 to 128
-  bytes without control characters.
+- The draft enforces the [API](/documentation_v2/glossary.md#api)'s bounds before sending: at most
+  32 grants (`policy_draft::MAX_GRANTS`) of 1 to 16 conditions (`MAX_CONDITIONS`), identifiers of
+  1 to 128 bytes without control characters.
 - An uncapped pool is sent as an explicit null limit and zero closes a pool; an opening time left
   untouched is sent back exactly as read.
 - Grant numbers show one-based though the wire counts from zero, and a reservation that current

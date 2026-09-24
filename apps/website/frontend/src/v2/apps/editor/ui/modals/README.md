@@ -65,8 +65,9 @@ checks every such editor binding against the others and against the shortcut cat
     validation router), the outliner (the ORBAT node model, the drag latch) and the top strip's
     row mirror;
   - `website_map_engine::editing::hosted_commands` for every document write;
-  - the editor's `shell/` (`layout` classes, `document_commands`, `review_mode`,
-    `world_layer_prefs`) and bridge (`editor_context`, `entity_selection`, the document handle);
+  - the editor's shell in `apps/website/frontend/src/v2/apps/editor/shell/` (`layout` classes,
+    `document_commands`, `review_mode`, `world_layer_prefs`) and its bridge (`editor_context`,
+    `entity_selection`, the document handle);
   - `crate::v2::core`: the [API](/documentation_v2/glossary.md#api) client and DTOs, `AuthStore`,
     `modal_stack`, `Dialog`, toasts, `MaterialIcon`; over HTTP, `/api/v1/missions/{id}` and
     `/api/v1/factions` of the API's [missions](/documentation_v2/glossary.md#missions) domain.
@@ -76,7 +77,12 @@ checks every such editor binding against the others and against the shortcut cat
   - the top strip in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, for the
     controls hint;
   - the headless editor smoke tests in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`,
-    which find the Mission Settings and ORBAT Manager dialogs by their headings.
+    which find the Mission Settings and ORBAT Manager dialogs by their headings;
+  - `cargo xtask verify editor-orbat-coherency`
+    (`tools_v2/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
+    `orbat_manager.rs` and every source file in `orbat_manager/` for banned interface text;
+  - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
+    `apps/website/frontend/src/v2/core/ui/tests/ui.rs`, which reads `orbat_manager/dialog.rs`.
 - Rules: a dialog stacked over another answers Escape only while topmost
   (`settings_dialogs_gate_escape_on_modal_stack` in `tests/dialog_escape_stack.rs`,
   `faction_manager_gates_escape_on_modal_stack` in `tests/faction_manager/dialog_contract.rs`);

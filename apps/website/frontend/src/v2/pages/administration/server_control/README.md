@@ -45,7 +45,7 @@ renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
+| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` [role](/documentation_v2/glossary.md#role) only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
 
 ## Data
 
@@ -59,7 +59,7 @@ renders the failure branch.
     read back as the `FleetCommandReceipt`.
   - `GET /api/v1/servers/{id}/commands/{commandId}`: the followed receipt, every two seconds.
   - `POST /api/v1/servers/{id}/commands/{commandId}/cancel` with `{}`: read as the receipt.
-- Mission deployments (`mission_deployments/`):
+- [Mission deployments](/documentation_v2/glossary.md#mission-deployment) (`mission_deployments/`):
   - `GET /api/v1/servers/{id}/deployments`: read as `MissionDeploymentPage` of `MissionDeployment`.
   - `POST /api/v1/servers/{id}/deployments`: sends a `DeploymentRequest` (`mission_id`,
     `artifact_id`, optional `event_mission_id`), read back as the `MissionDeployment`.
@@ -68,8 +68,8 @@ renders the failure branch.
   - `POST /api/v1/servers/{id}/deployments/{deploymentId}/cancel` with `{}`.
   - The form's choices, read when it first opens: `GET /api/v1/missions?limit=100`
     (`Paginated<MissionCard>`), `GET /api/v1/events?scope=upcoming&limit=100`
-    (`Paginated<EventListItem>`), and `GET /api/v1/events/{id}` (`EventHub`) for each event whose
-    `server_id` is this server.
+    (`Paginated<EventListItem>`), and `GET /api/v1/events/{id}` (`EventHub`) for each
+    [event](/documentation_v2/glossary.md#event) whose `server_id` is this server.
 - Fleet scenarios (`fleet_scenarios/`): `GET /api/v1/fleet/scenarios`, read as
   `FleetScenarioList`; `PUT /api/v1/fleet/scenarios/{terrainKey}`, sending a `FleetScenarioUpdate`
   (`scenario_id`, `display_name`); `DELETE` on the same path.
@@ -149,8 +149,8 @@ renders the failure branch.
   `MaterialIcon`, `cn`, the toast queue) and `crate::v2::core::utils` (`utc_timestamp`,
   `clipboard`); over HTTP, the server, command, scenario and credential routes of the
   [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain, the
-  deployment routes and mission library of the missions domain, and the event reads of the
-  operations domain.
+  deployment routes and mission library of the [missions](/documentation_v2/glossary.md#missions)
+  domain, and the event reads of the [operations](/documentation_v2/glossary.md#operations) domain.
 - Used by: the `/admin/server` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Server Control" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `server_control_source` in

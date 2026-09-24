@@ -26,14 +26,15 @@ chrome. `ModeToolbar` sets the page's `tool_mode` to Select, Ruler or LoS, and a
 LoS switches its `LosMode` between ray and viewshed; the input layer reads both signals.
 
 `StatusBar` shows, from left to right: X, Y and Z in metres, of the cursor ("CUR") or of the one
-selected entity ("SEL"); "OBJ", the placed slots, and "SEL", the selection count; "SZ", the
-estimated save payload; "SCL", metres per screen pixel; the ruler's total and last leg; the scale
-bar; the debug HUD line while Ctrl+Alt+D shows it; and an "OPEN" button with no action. The scale
-is `m_per_px`, 2 to the power of minus the zoom, which the render loop in
-`apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs` publishes after a frame whenever the
-read-out changes; `pick_scale_bar` takes the largest 1, 2 or 5 times a power of ten that fits in
-200 px. `MapGridRefs` projects the 1 km grid lines (`GRID_STEP_M`) through the live camera and
-labels those inside the map pane with their three-digit references, keyed by position and text.
+selected entity ("SEL"); "OBJ", the placed [slots](/documentation_v2/glossary.md#slot), and "SEL",
+the selection count; "SZ", the estimated save payload; "SCL", metres per screen pixel; the ruler's
+total and last leg; the scale bar; the debug HUD line while Ctrl+Alt+D shows it; and an "OPEN"
+button with no action. The scale is `m_per_px`, 2 to the power of minus the zoom, which the render
+loop in `apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs` publishes after a frame
+whenever the read-out changes; `pick_scale_bar` takes the largest 1, 2 or 5 times a power of ten
+that fits in 200 px. `MapGridRefs` projects the 1 km grid lines (`GRID_STEP_M`) through the live
+camera and labels those inside the map pane with their three-digit references, keyed by position and
+text.
 
 ## Boundaries
 
@@ -50,7 +51,7 @@ labels those inside the map pane with their three-digit references, keyed by pos
   re-exports `BottomToolbelt`; the grid reference test in
   `apps/website/frontend/src/v2/apps/editor/shell/tests/exporter_grid_reference.rs`; the tests in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/toolbelt/`.
-- Rules, held by that folder's tests: the toolbar holds no read-out
+- Rules: that folder's tests hold these: the toolbar holds no read-out
   (`mode_toolbar_holds_no_readouts_and_status_bar_holds_them` in `status_bar.rs`); the ruler
   read-out writes nothing to the document (`readout_is_display_only_no_doc_writes`); the scale bar
   and "SCL" agree (`the_bar_and_the_number_describe_the_same_scale`); the grid labels stay in the

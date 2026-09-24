@@ -53,7 +53,7 @@ sign-out deletes every local document of the departing account (`purge_local_doc
   of `tab_lock`, `session::purge_legacy_markers` and `document_commands::set_row_meta`;
   `crate::v2::core` (`api_get`, `MissionDetail`, `AuthStore`, the toasts); `gloo_net`. Over HTTP,
   `GET /api/v1/missions/{id}`.
-- Used by, through the parent's re-exports: the boot task in
+- Used by: through the parent's re-exports, the boot task in
   `apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount/boot_tasks.rs`; the conflict
   dialog in `apps/website/frontend/src/v2/apps/editor/bridge/overlays/conflict_dialog.rs`; the Save
   in `apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/`; the sign-out in
