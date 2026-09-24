@@ -1,0 +1,14 @@
+id = "T-1047"
+kind = "work"
+title = "Decide whether Mission Creator validation gets cargo and loadout policy"
+summary = "The Mission Creator passes only known asset ids (validation_evaluation_and_findings.rs:12-15); nothing in production calls with_cargo_phys or with_loadout_policy, so CARGO-OVER-CAPACITY, LOADOUT-MAG-COUNT, LOADOUT-HAS-EQUIPMENT and VEHICLE-CARGO-POLICY never apply. Wire the context, or retire the rules."
+class = "feature"
+status = "idea"
+created_at = "2026-09-24T15:16:50Z"
+notes = "apps/website/frontend/src/v2/apps/editor/ui/inspector/validation_panel/validation_evaluation_and_findings.rs:12-16 builds EvalContext with known_asset_ids only. The context-gated rules: apps/website/map-engine/src/data/scenario/validation/validator/cargo.rs:28-39 (LOADOUT-HAS-EQUIPMENT, needs loadout_policy.required_equipment), cargo.rs:127-139 (VEHICLE-CARGO-POLICY, max_vehicle_cargo_items), cargo.rs:193-200 (CARGO-OVER-CAPACITY, cargo_phys), loadout.rs:168-181 (LOADOUT-MAG-COUNT, min_magazines). EvalContext::with_cargo_phys / with_loadout_policy (validator/context.rs:32,42) have no caller in apps/website/frontend/src or apps/website/api_v2/src (git grep); the API runs no rule. Reading 1: wire the cargo catalogue and a loadout policy into the Mission Creator. Reading 2: the rules are intentionally dormant; say so or remove them."
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["validation"]

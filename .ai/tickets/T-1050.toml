@@ -1,0 +1,12 @@
+id = "T-1050"
+kind = "work"
+title = "Fix mission re-hydrate keeping stale connections"
+summary = "map-engine data/store/rows/hydrate.rs:30-48 clears every row map except connections, yet :133-139 reloads them, so adopt_payload (editing/persist/server_adoption.rs:139) re-hydrating a live mission keeps connections the new payload lacks. No test covers a re-hydrate."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T15:17:39Z"
+notes = "apps/website/map-engine/src/data/store/rows/hydrate.rs:30-48 clear list (slots, squads, factions, editor_layers, loadouts, items, objectives, vehicles, entities, zones, compositions, triggers, comments, markers, payloadExtras, entityOrder) omits self.connections; hydrate.rs:133-139 loads payload.connections by id. Caller over a live document: apps/website/map-engine/src/editing/persist/server_adoption.rs:139 (adopt_payload). Existing tests hydrate once only (store/rows/tests/cases_7.rs hydrated_junk_edges..., cases_8.rs connections_never_reach_the_mod_document)."
+
+[scope]
+domain = "engine"
+layer = "core"

@@ -4,7 +4,7 @@ title = "Refactor frontend so core and pages stop importing apps/editor"
 summary = "`apps/website/frontend/src/v2/core` imports `apps::editor` (`core/auth/store.rs:259`, `core/ui/search_box.rs:18`, `core/ui/select.rs:15`, `core/ui/slider.rs:19`) and pages reach in (`pages/mission_hub/review_workspace/page.rs:17-18`, `pages/mission_hub/library/dossier_upload.rs:35`, `pages/mission_hub/library/dossier_upload_panel.rs:311`), contradicting `apps/editor/mod.rs:8`. Move shared pieces into core or a shared module so core never depends on apps."
 class = "chore"
 status = "idea"
-notes = "The fix also rewrites the claims that core never imports an app (`core/mod.rs:8`, `v2/mod.rs:11`) and that no page reaches into the editor (`apps/editor/mod.rs:8-9`); the 'scenario creator' wording beside them (`apps/editor/mod.rs:1,3`, `apps/editor/mission_editor.rs:1`, `apps/mod.rs:4,17`, `v2/mod.rs:4-5`, `src/router.rs:107`) belongs to T-1000."
+notes = "The fix also rewrites the claims that core never imports an app (`core/mod.rs:8`, `v2/mod.rs:11`) and that no page reaches into the editor (`apps/editor/mod.rs:8-9`); the 'scenario creator' wording beside them (`apps/editor/mod.rs:1,3`, `apps/editor/mission_editor.rs:1`, `apps/mod.rs:4,17`, `v2/mod.rs:4-5`, `src/router.rs:107`) belongs to T-1000. The editor also claims a graphics-engine dependency it lacks: apps/website/frontend/src/v2/apps/editor/mod.rs:7-8 says the editor consumes 'the map and graphics engines', but apps/website/frontend/Cargo.toml declares no website-graphics-engine dependency and nothing under src/ imports website_graphics_engine; Cargo.toml:138 calls the map-engine dev-dependency 'the graphics crate'."
 created_at = "2026-09-24T02:04:11Z"
 
 [scope]

@@ -1,0 +1,12 @@
+id = "T-1048"
+kind = "work"
+title = "Check and align mission block checks with the mission schema"
+summary = "Blank-string checks trim in tasks, winConditions and radioPlan but not audio, spawnModules or tacticalGraphics; WEATHER_PRESETS exists twice (weather/timeline.rs:9, flatten/environment.rs:9); mission.schema.json allows empty spawnModules/tacticalGraphics arrays that spawns.rs:73 and shapes.rs:89 refuse."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T15:17:05Z"
+notes = "Trimmed blank checks: apps/website/map-engine/src/data/scenario/extensions/objectives/tasks/hierarchy.rs:290,314; objectives/win_conditions/conditions.rs:231; radio/nets.rs:242,266. Untrimmed (a spaces-only string passes): environment/audio/emitters.rs:250,272; modules/spawns.rs:199,220; tactical_graphics/shapes.rs:397,421. Weather presets held twice: apps/website/map-engine/src/data/scenario/extensions/environment/weather/timeline.rs:9 (pub WEATHER_PRESETS, used by frontend ui/inspector/weather_timeline.rs:23) and apps/website/map-engine/src/data/scenario/compiler/flatten/environment.rs:9 (a private copy). Empty arrays: contracts_v2/definitions/mission.schema.json:105-114 gives spawnModules and tacticalGraphics no minItems, while apps/website/map-engine/src/data/scenario/extensions/modules/spawns.rs:73-76 and tactical_graphics/shapes.rs:89-92 refuse an empty list. Each may be intended; decide per item, then align code, schema and tests."
+
+[scope]
+domain = "engine"
+layer = "core"

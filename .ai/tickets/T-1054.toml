@@ -1,0 +1,12 @@
+id = "T-1054"
+kind = "work"
+title = "Remove unused mission document store helpers and duplicated squad code"
+summary = "Map-engine data/store: slot_hidden_rows (entity/selection.rs:53) and remove_slot (rows/slot_edits.rs:18) have no caller; read_ids, is_native_array, move_id and garrison_firing_positions only tests; squad helpers are duplicated (apply_faction/authorship.rs:88-198, place_orbat/placement.rs:10-183); apply.rs:147 drops vehicle label."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T15:18:47Z"
+notes = "apps/website/map-engine/src/data/store/operations/entity/selection.rs:50-53 slot_hidden_rows (#[allow(dead_code)], comment describes a future consumer; re-exported entity/mod.rs:29); store/rows/slot_edits.rs:16-20 remove_slot (no caller; leaves squad slotIds and layer entityIds); store/crdt/id_arrays/native_arrays.rs:79 read_ids, :90 is_native_array, :204 move_id (pub, only tests call them); store/operations/placement/garrison.rs:22 garrison_firing_positions (re-exported editing/tools/placement.rs:10, only editing/tools/tests/placement.rs calls it). Duplicated helpers: VALID_SIDES apply_faction/library.rs:49 and place_orbat/placement.rs:10; is_minted_squad_name authorship.rs:88 and placement.rs:114; squad_slot_ids :96 / :122; faction_exists apply_faction/apply.rs:178 and placement.rs:147; mint_squad_id :185 / :170; existing_squad_ids :198 / :183. store/operations/apply_faction/apply.rs:147 'let _ = v.label;' accepts FactionLibraryVehicle.label and never writes it. Also decide: store/rows/merge.rs merge_mission_payload carries no comments, connections or loadouts. Some of this may be intended; confirm before deleting."
+
+[scope]
+domain = "engine"
+layer = "core"

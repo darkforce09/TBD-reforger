@@ -5,6 +5,7 @@ summary = "54 test paths carry ticket ids (CLAUDE.md law 4): 38 frontend, e.g. a
 class = "chore"
 status = "idea"
 created_at = "2026-09-24T10:28:21Z"
+notes = "Map-engine compile error text: apps/website/map-engine/src/data/scenario/compiler/flatten/roster.rs:52 ('the T-200 silent swap', inside an author-facing finding) and compiler/flatten/vehicles.rs:80 ('T-425 — refuse silent drop/substitute', inside CompileError::Parse). The kit-aliases.json $comment ids are on T-1056."
 
 [scope]
 domain = "repo"

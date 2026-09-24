@@ -5,6 +5,7 @@ summary = "Delete dead code: BottomToolbelt (ui/docks/toolbelt/bottom_toolbelt.r
 class = "chore"
 status = "idea"
 created_at = "2026-09-24T10:28:37Z"
+notes = "Mission Creator commands with no UI caller: apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/clipboard.rs:70 copy_grid_position_now, :95 copy_classnames_now, :125 copy_selection_summary_now; imp/mission_merge.rs:13 other_missions and :49 merge_mission_now (only shell/tests/document_commands/source_contracts.rs:160-177 reads it). apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs:328-341 installs window.__editorObjectWash 'so a headless probe can wait', and nothing in apps/ or tools_v2/ reads it (git grep ObjectWash); remove it or add the probe."
 
 [scope]
 domain = "repo"

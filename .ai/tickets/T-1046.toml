@@ -1,0 +1,12 @@
+id = "T-1046"
+kind = "work"
+title = "Fix compile findings misfiling refused mission blocks as win conditions"
+summary = "compile_graph.rs:313-324 reports every refused authored block (tasks, audio, spawnModules...) through win_conditions() (diagnostics.rs:149-157): code COMPILE-WIN-CONDITIONS, location /winConditions, message claiming a derived fallback. Author-facing messages diagnostics.rs:117,140 cite nonexistent /compiled."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T15:16:31Z"
+notes = "apps/website/map-engine/src/data/scenario/compiler/flatten/compile_graph.rs:308-324 (AuthoredBlocks::parse and ExtensionBlocks::from_payload refusals, every key in extensions/authored/authored_block.rs:18-47, all routed to diagnostics.win_conditions); apps/website/map-engine/src/data/scenario/compiler/flatten/diagnostics.rs:149-157 (DIAG_WIN_CONDITIONS = COMPILE-WIN-CONDITIONS, identity.rs:28; location /winConditions). The fallback wording holds only for winConditions; a refused tasks, weatherTimeline, audio, spawnModules or tacticalGraphics block is dropped with nothing derived. Dropping with a warning stays; the fix gives each block its own code, location and message. apps/website/map-engine/src/data/scenario/compiler/flatten/diagnostics.rs:117 and :140 tell authors a row would be 'a 500 at /compiled'; no such route exists (api_v2 missions/handlers/mission_export.rs serves only export_mission). The text reaches authors: api_v2 stores the findings with the artifact (missions/services/mission_artifacts/artifact_store.rs:138-140) and the review pages render finding.message (frontend pages/mission_hub/mission_review/artifact_provenance_view.rs:71-100, review_workspace/banner.rs:83)."
+
+[scope]
+domain = "engine"
+layer = "core"
