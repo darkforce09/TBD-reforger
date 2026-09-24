@@ -1,0 +1,12 @@
+id = "T-1064"
+kind = "work"
+title = "Add guards for map binary formats and doll shader layout"
+summary = "io/density/tbdd.rs:123 decode_tbdd never checks the version; nothing ties doll REGION_KEYS (doll/scene/instances.rs:12) to the frontend RAIL_REGIONS, or INSTANCE_STRIDE/UNIFORM_SIZE (doll/renderer/pack.rs:7, lifecycle_1.rs:17) to shaders/doll.wgsl; streamer/validation.rs:19,107 offset+length can overflow."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T19:11:08Z"
+notes = "TBDD: apps/website/map-engine/src/io/density/tbdd.rs:122-135 (decode_tbdd checks magic and length only; the header's version field, :27 and :66, is copied out at :149 and never compared) while the writer pins TBDD_VERSION = 1 in tools_v2/developer-tools/src/world_export_pipeline/vegetation_density.rs:24; the map engine has no TBDD_VERSION constant. Doll regions: apps/website/map-engine/src/doll/scene/instances.rs:11-12 (REGION_KEYS, 14 entries, RAIL order) against apps/website/frontend/src/v2/apps/editor/arsenal/rules/paper_doll_and_weight.rs:23 (RAIL_REGIONS), indexed by position at arsenal/doll.rs:162 and :237; map-engine doll/scene/model/tests/cases_1.rs:14 checks only the length. Doll layout: apps/website/map-engine/src/doll/renderer/pack.rs:7 (INSTANCE_STRIDE = 80), doll/renderer/lifecycle_1.rs:14,17 (UNIFORM_SIZE = 80) and doll/renderer/pipeline.rs:24 (vertex stride 24) against apps/website/map-engine/src/shaders/doll.wgsl:8-23 (DollUniforms mat4 + vec4; VsIn pos, normal, m0-m3, color); no native test parses doll.wgsl (included only by lifecycle_1.rs). Hostile input: apps/website/map-engine/src/world/terrain/satellite/streamer/validation.rs:19 and :107 compute t.offset + t.length unchecked on u64, which wraps in a release build and lets an out-of-range tile pass; use checked_add."
+
+[scope]
+domain = "engine"
+layer = "core"

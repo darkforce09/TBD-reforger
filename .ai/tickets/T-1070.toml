@@ -1,0 +1,12 @@
+id = "T-1070"
+kind = "work"
+title = "Remove map nouns from graphics engine names; widen rule 2"
+summary = "Engine-layers rule 2 (engine_layer_rules.rs:71-72) matches only terrain, symbology, mission, orbat, arma, so graphics-engine BuildingInstance (draw/instances.rs:32), create_building_pipeline, create_forest_density_pipeline, create_map_shader and grid over_hillshade pass; labels name slots and towns."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T19:15:39Z"
+notes = "Rule 2 matcher: tools_v2/xtask/src/verifications/architecture/engine_layer_rules.rs:70-72 (DECL_RE nouns terrain, symbology, mission, orbat, arma; head :176-177, tail :197-201 citing the not-yet-written documentation_v2/standards/engine_boundary_rules.md). Map concepts it lets through in CLAUDE.md law 6's zero-map-concepts crate: apps/website/graphics-engine/src/draw/instances.rs:32 (BuildingInstance), apps/website/graphics-engine/src/pipeline/building.rs:7 (create_building_pipeline), apps/website/graphics-engine/src/pipeline/textured.rs:24 (create_forest_density_pipeline), apps/website/graphics-engine/src/pipeline/mod.rs:40 (create_map_shader), apps/website/graphics-engine/src/draw/grid.rs:26-28 (over_hillshade parameter), apps/website/graphics-engine/src/device/buffers/pool.rs:123 (slot-icon-lane buffer label), apps/website/graphics-engine/src/text/layout.rs:88 (doc names height and town labels). Rename to geometry terms (instanced box, density raster, textured quad, contrast mode) and add the nouns building, forest, map, hillshade, slot, town, road to the matcher, or record why each stays. Source: README writer R11.1."
+
+[scope]
+domain = "engine"
+layer = "render"

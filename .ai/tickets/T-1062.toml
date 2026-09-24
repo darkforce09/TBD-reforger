@@ -1,0 +1,12 @@
+id = "T-1062"
+kind = "work"
+title = "Derive map grid, basemap, peaks and forest from terrain size"
+summary = "Map engine fixes Everon's 12,800 m for every terrain: streaming/host/queries.rs:9, relief/host.rs:28, locations/loader.rs:91-102 (Everon height range), vegetation/density.rs:6-19 and loader.rs:36,144 (625 bins). Arland is 4,096 m (terrain-registry.json:18)."
+class = "feature"
+status = "idea"
+created_at = "2026-09-24T19:09:47Z"
+notes = "Grid and basemap: apps/website/map-engine/src/streaming/host/queries.rs:9 (TERRAIN_M = 12_800.0) feeds set_grid at streaming/host/bootstrap.rs:100,108 and preferences.rs:44, and load_map_basemap's extent at preferences.rs:12. Contours: apps/website/map-engine/src/world/terrain/relief/host.rs:28 (TERRAIN_M = 12_800.0, used at :57-58). Peaks: apps/website/map-engine/src/world/environment/locations/loader.rs:92-103 builds the find_peaks DemManifest with a 12,800 m square and Everon's height range -204.78..375.53 whatever terrain is loaded. Forest: apps/website/map-engine/src/world/environment/vegetation/density.rs:6-19 (ISLAND_CORNERS 1601, CHUNKS_PER_AXIS 25, EVERON_DENSITY_BINS 625), vegetation/loader.rs:36 (WORLD_M = 12_800.0) and :144-146 (nothing uploads unless bins_ok == 625). Terrain sizes: assets_v2/terrains/terrain-registry.json:7 (Everon 12,800 m) and :18 (Arland 4,096 m); each terrain manifest carries world_bounds (used at streaming/host/terrain.rs:128). Line-of-sight walks and the frozen-camera clamp are R10.3 findings for a later batch."
+
+[scope]
+domain = "engine"
+layer = "core"

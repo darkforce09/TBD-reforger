@@ -1,0 +1,12 @@
+id = "T-1060"
+kind = "work"
+title = "Check map streaming stubs re-fetched and satellite budget never released"
+summary = "scheduler/viewport.rs:127-136 note_undelivered never adds known_empty, so evict (:179) drops the stub and a later pin fetches it again; memory/budget/accounting.rs:49 reserves satellite bytes that nothing releases, so a second load sees less budget."
+class = "audit"
+status = "idea"
+created_at = "2026-09-24T19:08:26Z"
+notes = "Stub: apps/website/map-engine/src/streaming/scheduler/viewport.rs:126-136 (note_undelivered inserts an empty WorldChunk; its doc says the stub is never re-requested) is reached from the fetch-failure cap at :117-119; only apps/website/map-engine/src/streaming/loaders/residency.rs:112-122 (apply_parsed_chunk) inserts into known_empty, and evict at scheduler/viewport.rs:171-180 skips only pinned and known_empty ids, so an undelivered stub is evictable and its later pin fetches the missing file again. Satellite: apps/website/map-engine/src/streaming/memory/budget/accounting.rs:43-53 (claim_satellite_floor reserves walk.bytes on Asset::Satellite through Ledger::reserve, ledger.rs:70-79); nothing releases or set_helds the satellite row (the only release calls are streaming/host/terrain.rs:106 and :138, DEM and hillshade), and the ledger is one thread-local per page (memory/budget/mod.rs:8), so a second load_satellite (world/terrain/satellite/quadtree/bootstrap.rs:67 via basemap.rs:119) walks its floor under the first load's bytes. Related test gap: streaming/scheduler/residency/tests/cases_1.rs:203-216 (eviction_order_is_ascending_last_used) checks only that evicted ids are gone, never the order."
+
+[scope]
+domain = "engine"
+layer = "core"

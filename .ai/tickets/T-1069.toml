@@ -1,0 +1,12 @@
+id = "T-1069"
+kind = "work"
+title = "Rename unclear map engine modules and numbered file splits"
+summary = "CLAUDE.md law 4: blueprint/attribution_1.rs and attribution_2.rs, lifecycle_1/2.rs, frame_1/2.rs, coverage_1/2.rs split by size not role; world/architecture/compound/scene/ holds no scene; world/terrain/satellite/quadtree/ holds no quadtree; dem/sample/ re-exports spatial items."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T19:14:49Z"
+notes = "Numbered splits (files named by order, not role): apps/website/map-engine/src/world/architecture/blueprint/attribution_1.rs and attribution_2.rs; apps/website/map-engine/src/doll/renderer/lifecycle_1.rs and lifecycle_2.rs; apps/website/map-engine/src/diagnostics/bench/frame_1.rs and frame_2.rs; apps/website/map-engine/src/spatial/los/world/coverage_1.rs and coverage_2.rs (overlay/symbology/instances/bridge_1-3.rs are R10.3's). Folder names that mislead: apps/website/map-engine/src/world/architecture/compound/scene/ (mod.rs is 14 re-exports plus a JSON test; no scene type); apps/website/map-engine/src/world/terrain/satellite/quadtree/ (basemap, bootstrap, decode, downloads, preview, retry, selection, upload: the preview, the unified mip chain and the map basemap; no quadtree); apps/website/map-engine/src/world/terrain/dem/sample/ (a re-export facade that also re-exports spatial::los::terrain items, mod.rs:33-34). Test name: apps/website/map-engine/src/world/terrain/relief/tests/hillshade_tests.rs:27 constants_are_bit_identical_to_js (no JS remains). A rename must update the frontend source scans that read these files by path: apps/website/frontend/src/v2/apps/editor/tests/t629_satellite_resolution.rs (18 quadtree/ paths) and t628_boot_progress.rs (10). Ticket-id names (t935_10/, t938_6/, t151_11_3_tests/, t152_3_tests/) are on T-1042."
+
+[scope]
+domain = "engine"
+layer = "core"

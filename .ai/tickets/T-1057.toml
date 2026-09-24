@@ -1,0 +1,12 @@
+id = "T-1057"
+kind = "work"
+title = "Fix occluder residency events piling up after prefab load failure"
+summary = "streaming/loaders/occluder_loader.rs:218 returns before take_residency_events() when the occluder never became ready (prefab load failed, world_loader/bootstrap.rs:65-70), so events pushed at scheduler/viewport.rs:154,200,242 grow for the whole map session."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T15:46:42Z"
+notes = "apps/website/map-engine/src/streaming/loaders/occluder_loader.rs:217-219 (run_viewport returns false while ready is false; ready is set only at :69 by init) and :222 (the only take_residency_events caller); apps/website/map-engine/src/streaming/loaders/world_loader/bootstrap.rs:65-70 (occluder.init runs only when load_prefabs succeeds); apps/website/map-engine/src/streaming/scheduler/viewport.rs:154-155 (Inserted), :200-201 and :242-243 (Evicted) push into residency_events (scheduler/state.rs:129); apps/website/map-engine/src/streaming/buffers/revision.rs:213-214 drains them."
+
+[scope]
+domain = "engine"
+layer = "core"
