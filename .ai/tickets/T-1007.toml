@@ -1,0 +1,11 @@
+id = "T-1007"
+kind = "work"
+title = "Fix missing TRUSTED_PROXIES entry in api_v2 .env.example"
+summary = "`Config::load` reads `TRUSTED_PROXIES` (`apps/website/api_v2/src/core/configuration/mod.rs:138`); unset, no proxy is trusted and forwarded client headers are ignored. `apps/website/api_v2/.env.example` has no `TRUSTED_PROXIES=` entry, only a header-comment mention (line 7). Add an entry with its comma-separated address/CIDR format."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T02:04:41Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-1005"
+kind = "work"
+title = "Refactor frontend so core and pages stop importing apps/editor"
+summary = "`apps/website/frontend/src/v2/core` imports `apps::editor` (`core/auth/store.rs:259`, `core/ui/search_box.rs:18`, `core/ui/select.rs:15`, `core/ui/slider.rs:19`) and pages reach in (`pages/mission_hub/review_workspace/page.rs:17-18`, `pages/mission_hub/library/dossier_upload.rs:35`, `pages/mission_hub/library/dossier_upload_panel.rs:311`), contradicting `apps/editor/mod.rs:8`. Move shared pieces into core or a shared module so core never depends on apps."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T02:04:11Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

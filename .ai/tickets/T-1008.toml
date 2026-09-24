@@ -1,0 +1,11 @@
+id = "T-1008"
+kind = "work"
+title = "Rewrite api_v2 missions doc comments citing a nonexistent inject tool"
+summary = "Doc comments name a live-mission inject tool and `game_server_injection::ingest_list_missions`, neither of which exists: `apps/website/api_v2/src/missions/mod.rs:2`, `services/mission_document.rs:4,44`, `handlers/mission_default_overrides.rs:96,109`, `validation/version_payload.rs:31`. The only `build_mission_doc` caller is `handlers/mission_export.rs:28`. Comments name the real consumers."
+class = "docs"
+status = "idea"
+created_at = "2026-09-24T02:04:57Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

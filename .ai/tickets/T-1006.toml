@@ -1,0 +1,11 @@
+id = "T-1006"
+kind = "work"
+title = "Fix staging deploy compose step that never starts the API"
+summary = "`cargo xtask deploy staging` prints `(API + Postgres)` at `tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:214`, but its compose command (:217 dry-run, :223) lacks `--profile api`; the `api` service is profile-gated (`apps/website/docker-compose.staging.yml:44`), so only Postgres starts."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T02:04:26Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
