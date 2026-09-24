@@ -1,13 +1,15 @@
 # Server infrastructure domain
 
-The API's [server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain: the
-game server fleet. It holds the registry row that describes a server and the modpack it requires,
-the per-server [machine credentials](/documentation_v2/glossary.md#machine-credential) of its host
-agent and game runtime, the runtime sessions that fence each boot of the game runtime, the
-[fleet command](/documentation_v2/glossary.md#fleet-command) ledger through which operators control
-servers and executors report what they did, the [fleet scenario](/documentation_v2/glossary.md#fleet-scenario)
-registry, the server intel reads, and the [SSE](/documentation_v2/glossary.md#sse) feed of one
-server's live status.
+The [API](/documentation_v2/glossary.md#api)'s
+[server infrastructure](/documentation_v2/glossary.md#server-infrastructure) domain: the game server
+fleet. It holds the [registry](/documentation_v2/glossary.md#registry) row that describes a server
+and the modpack it requires, the per-server
+[machine credentials](/documentation_v2/glossary.md#machine-credential) of its host agent and
+[game runtime](/documentation_v2/glossary.md#game-runtime), the runtime sessions that fence each
+boot of the game runtime, the [fleet command](/documentation_v2/glossary.md#fleet-command) ledger
+through which operators control servers and executors report what they did, the
+[fleet scenario](/documentation_v2/glossary.md#fleet-scenario) registry, the server intel reads, and
+the [SSE](/documentation_v2/glossary.md#sse) feed of one server's live status.
 
 ## Contents
 
@@ -32,9 +34,10 @@ Operators never reach a game host directly. An administrator's command becomes a
 the ledger, and the program that performs it polls the API outbound with its own machine
 credential: the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) runs process
 control and the [RCON](/documentation_v2/glossary.md#rcon) player list, and the game runtime runs
-broadcasts, kicks and in-process mission loads. A [mission deployment](/documentation_v2/glossary.md#mission-deployment)
-in `missions` issues its `load_mission` or `restart_with_mission` command through the same ledger
-and needs a fleet scenario for its terrain. The platform has no RCON console route.
+broadcasts, kicks and in-process [mission](/documentation_v2/glossary.md#mission) loads. A
+[mission deployment](/documentation_v2/glossary.md#mission-deployment) in `missions` issues its
+`load_mission` or `restart_with_mission` command through the same ledger and needs a fleet scenario
+for its terrain. The platform has no RCON console route.
 
 ## Public surface
 
@@ -56,10 +59,12 @@ and needs a fleet scenario for its terrain. The platform has no RCON console rou
   - `GET /api/v1/fleet/scenarios`: `AdminUser`; the scenario of every terrain.
   - `PUT` and `DELETE /api/v1/fleet/scenarios/{terrainKey}`: `AdminUser`; register or replace,
     withdraw.
-- `services::machine_credentials::MachineCaller`: the machine caller every `/game-runtime/*` and
-  `/fleet-executor/*` handler takes, in this domain, `match_telemetry`, `missions` and `operations`.
+- `services::machine_credentials::MachineCaller`: the machine caller every `/api/v1/game-runtime/*`
+  and `/api/v1/fleet-executor/*` handler takes, in this domain, `match_telemetry`, `missions` and
+  `operations`.
 - `services::runtime_sessions`: the heartbeat fence for `match_telemetry`, the open-session share
-  lock for live slot occupancy in `operations`, and silence expiry for its worker.
+  lock for live [slot](/documentation_v2/glossary.md#slot) occupancy in `operations`, and silence
+  expiry for its worker.
 - `services::status_broadcast`: `publish_server_status`, `publish_server_status_by_id` and
   `publish_all_server_statuses`, for the heartbeat and the status workers.
 - `services::fleet_commands`: the command ledger mission deployments issue through, and

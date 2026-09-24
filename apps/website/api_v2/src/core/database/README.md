@@ -44,7 +44,8 @@ any other `sqlx::Error` becomes the 500 of `crate::core::error_handling`.
   - `apps/website/api_v2/src/bin/api.rs` and `apps/website/api_v2/src/bin/import_registry.rs`,
     which `connect` and then `migrate`;
   - `postgres_errors`, in the match ingest parsing of `match_telemetry`, the version save of
-    `missions` and the event mission attachment of `operations`;
+    `missions` and the attachment of a [mission](/documentation_v2/glossary.md#mission) to an
+    [event](/documentation_v2/glossary.md#event) in `operations`;
   - the integration suites under `apps/website/api_v2/tests/`, which `connect`, `migrate` and
     `connect_lazy`.
 - Rules: the pool settings are read here alone and never through `Config`; a malformed pool

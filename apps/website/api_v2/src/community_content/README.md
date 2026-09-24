@@ -1,9 +1,10 @@
 # Community content domain
 
-The API's [community content](/documentation_v2/glossary.md#community-content) domain: what members
-read and administrators author. It holds the announcement feed and the CMS that writes it, the
-push that mirrors an announcement to Discord, CMS image uploads, the doctrine wiki, the vehicle
-database, and the modpack manifests that game servers and players resolve against.
+The [API](/documentation_v2/glossary.md#api)'s
+[community content](/documentation_v2/glossary.md#community-content) domain: what members read and
+administrators author. It holds the announcement feed and the CMS that writes it, the push that
+mirrors an announcement to Discord, CMS image uploads, the doctrine wiki, the vehicle database, and
+the modpack manifests that game servers and players resolve against.
 
 ## Contents
 
@@ -19,13 +20,13 @@ apps/website/api_v2/src/community_content/
 ## How it works
 
 Reads take `AuthUser`, so any signed-in member sees the published feed, the wiki, the vehicle
-table and the modpacks; every write takes `AdminUser`. The CMS routes under `/cms/*` serve the
-[content manager](/documentation_v2/glossary.md#content-manager) page: an announcement is pushed to
-Discord through `services::discord_webhook::WebhookService` when it is published, and archiving it
-keeps the row. An uploaded image lands in the directory `UPLOAD_DIR` names (`Config::upload_dir`),
-which `core::http_router` serves at `/uploads`. A modpack is always written with its whole mod
-list, and at most one pack at a time is marked current. Administrator writes leave best-effort
-audit lines through `administration::services::audit_writer`.
+table and the modpacks; every write takes `AdminUser`. The CMS routes under `/api/v1/cms/*` serve
+the [content manager](/documentation_v2/glossary.md#content-manager) page: an announcement is pushed
+to Discord through `services::discord_webhook::WebhookService` when it is published, and archiving
+it keeps the row. An uploaded image lands in the directory `UPLOAD_DIR` names
+(`Config::upload_dir`), which `core::http_router` serves at `/uploads`. A modpack is always written
+with its whole mod list, and at most one pack at a time is marked current. Administrator writes
+leave best-effort audit lines through `administration::services::audit_writer`.
 
 ## Public surface
 
@@ -47,7 +48,8 @@ audit lines through `administration::services::audit_writer`.
   `server_infrastructure`.
 - `services::discord_webhook::WebhookService`: the webhook sink `core::application_state` holds.
 - `models`: `Announcement`, read by the dashboard, and `Modpack` with `ModpackMod`, read by
-  `server_infrastructure` and by the registry items in `missions`.
+  `server_infrastructure` and by the [registry](/documentation_v2/glossary.md#registry) items in
+  `missions`.
 
 ## Boundaries
 

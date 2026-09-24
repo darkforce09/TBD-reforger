@@ -3,13 +3,15 @@
 # Server control page
 
 The `/admin/server` page, titled Server Control: administrators pick one of the configured game
-servers, read its live state, issue [fleet commands](/documentation_v2/glossary.md#fleet-command)
-to it and follow each to its outcome, deploy an approved mission
-[artifact](/documentation_v2/glossary.md#artifact) to it, keep the
-[fleet scenario](/documentation_v2/glossary.md#fleet-scenario) registry, and issue and revoke the
-server's [machine credentials](/documentation_v2/glossary.md#machine-credential). Nothing here
-reaches a host directly: a command or a deployment is a request the API records and answers with
-202, and the page follows it to the outcome an executor or a runtime session reports.
+servers, read its live state, issue [fleet commands](/documentation_v2/glossary.md#fleet-command) to
+it and follow each to its outcome, deploy a [mission](/documentation_v2/glossary.md#mission)'s
+approved [artifact](/documentation_v2/glossary.md#artifact) to it, keep the
+[registry](/documentation_v2/glossary.md#registry) of
+[fleet scenarios](/documentation_v2/glossary.md#fleet-scenario), and issue and revoke the server's
+[machine credentials](/documentation_v2/glossary.md#machine-credential). Nothing here reaches a host
+directly: a command or a deployment is a request the [API](/documentation_v2/glossary.md#api)
+records and answers with 202, and the page follows it to the outcome an executor or a runtime
+session reports.
 
 ## Where it lives
 
@@ -31,7 +33,8 @@ reaches a host directly: a command or a deployment is a request the API records 
   the members' read-only view of the same servers; the API's
   [server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/README.md) and
   [missions domain](/apps/website/api_v2/src/missions/README.md); the
-  [fleet host agent](/apps/fleet_host_agent/README.md); the
+  [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) and its
+  [README](/apps/fleet_host_agent/README.md); the
   [fleet command ledger evidence](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)
   and [machine credentials evidence](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md).
 
@@ -72,7 +75,8 @@ required." below the `admin` [role](/documentation_v2/glossary.md#role).
    "List players" are offered for the identity, and "Use the session that confirmed the latest
    deployment (<id>)" fills the session.
 3. An accepted request toasts "<Action> accepted — waiting for the <executor> to carry it out"
-   (the executor being the host agent or the game runtime), and the "Your command" panel follows
+   (the executor being the host agent or the
+   [game runtime](/documentation_v2/glossary.md#game-runtime)), and the "Your command" panel follows
    it: "<Action> is <state> — following it until it finishes.", re-read every two seconds. The
    follow stops when the card goes away, when a newer request replaces it, or after five failed
    reads in a row ("Stopped following the command: …").
@@ -91,10 +95,10 @@ required." below the `admin` [role](/documentation_v2/glossary.md#role).
 ### Mission deployments
 
 1. The "Mission deployments" section offers "Request a deployment". The form reads its choices
-   when it first opens: the live missions whose latest approval names an artifact, and the event
-   missions of upcoming operations scheduled on this server. With no deployable mission it says
-   "No live mission has an approved artifact to deploy. A mission becomes deployable once a
-   reviewer approves its artifact.".
+   when it first opens: the live missions whose latest approval names an artifact, and the
+   [event](/documentation_v2/glossary.md#event) missions of upcoming operations scheduled on this
+   server. With no deployable mission it says "No live mission has an approved artifact to deploy. A
+   mission becomes deployable once a reviewer approves its artifact.".
 2. The form takes a mission ("Choose a mission…") and optionally an event mission ("None — deploy
    without binding seats"), and "Deploy" sends it. An accepted request toasts "Deployment of
    <mission> recorded — waiting for a runtime session to confirm it", and the "Your deployment"
@@ -102,8 +106,9 @@ required." below the `admin` [role](/documentation_v2/glossary.md#role).
 3. A refusal is worded per code, below the form: the artifact is not the approved one of a live
    mission; its modpack differs from the server's; no fleet scenario is registered for its
    terrain; the event mission is not on an operation scheduled on this server; the event mission's
-   seats and the artifact's slots do not correspond one to one, listing every unbound seat and
-   unseated slot; another deployment of the server is in flight; or the server is deactivated.
+   seats and the artifact's [slots](/documentation_v2/glossary.md#slot) do not correspond one to
+   one, listing every unbound seat and unseated slot; another deployment of the server is in flight;
+   or the server is deactivated.
 4. "Deployments" lists the server's deployments, newest first ("Loading the deployments…",
    "Nothing has been deployed to this server yet.", "Refresh"), each as "In flight", "Confirmed",
    "Failed" or "Cancelled". Opened, one shows its mission, state, artifact digest, document
@@ -167,9 +172,8 @@ The page README lists no calls, so the DTOs are named here. Server-side:
   (`request_server_command`): records the command and answers 202 with its receipt; a
   deactivated server is refused with 409 "a deactivated server accepts no commands", and a kick
   against a session that has ended with 409 `RUNTIME_SESSION_ENDED`. It records
-  `server.command_requested`. `start`, `stop`, `restart` and `list_players` go to the
-  [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent); `broadcast` and `kick` go
-  to the [game runtime](/documentation_v2/glossary.md#game-runtime) (`FleetAction` in
+  `server.command_requested`. `start`, `stop`, `restart` and `list_players` go to the fleet host
+  agent; `broadcast` and `kick` go to the game runtime (`FleetAction` in
   `apps/website/api_v2/src/server_infrastructure/models/fleet_command.rs`). A queued command
   expires unclaimed after 300 seconds. Once an executor reports that it is executing, it has an
   execution window to report the outcome: 30 seconds for `list_players`, `broadcast` and `kick`,
@@ -195,9 +199,9 @@ The page README lists no calls, so the DTOs are named here. Server-side:
   `EVENT_MISSION_NOT_ON_SERVER`, `ORBAT_ARTIFACT_MISMATCH` (with every unbound seat and unseated
   slot), `DEPLOYMENT_IN_PROGRESS` and `SERVER_INACTIVE`.
 - `GET /api/v1/servers/{id}/deployments/{deploymentId}` (`get_server_deployment`) and
-  `POST …/{deploymentId}/cancel` (`cancel_server_deployment`): one deployment, and cancellation
-  while its command is unclaimed (`DEPLOYMENT_NOT_IN_FLIGHT` or `COMMAND_NOT_CANCELLABLE`
-  otherwise).
+  `POST /api/v1/servers/{id}/deployments/{deploymentId}/cancel` (`cancel_server_deployment`): one
+  deployment, and cancellation while its command is unclaimed (`DEPLOYMENT_NOT_IN_FLIGHT` or
+  `COMMAND_NOT_CANCELLABLE` otherwise).
 - The deployment form's choices: `GET /api/v1/missions?limit=100` (the page keeps live missions
   with an `approved_artifact_id`), `GET /api/v1/events?scope=upcoming&limit=100` (it keeps the
   operations whose `server_id` is this server) and `GET /api/v1/events/{id}` for each of those.
@@ -215,7 +219,7 @@ The page README lists no calls, so the DTOs are named here. Server-side:
   `DELETE /api/v1/servers/{id}/credentials/{credentialId}?reason=<text>`
   (`revoke_server_credential`) revokes one credential, keeping the reason in the audit trail and
   ending the game-runtime sessions it authenticated.
-- The API has no RCON route. [RCON](/documentation_v2/glossary.md#rcon) is the host agent's
+- The API has no [RCON](/documentation_v2/glossary.md#rcon) route. RCON is the host agent's
   business: it lists players over RCON when it carries out `list_players`.
 
 ## Design
@@ -255,7 +259,9 @@ FLEET SCENARIOS SHEET (side sheet)            CREDENTIALS SHEET (side sheet)
 
 ## Open work
 
-None.
+- [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
+  plan): the page creates, edits and deactivates servers, which the API already allows, and the
+  event manager sets an operation's server, so the deployment form can offer its event missions.
 
 ## Decisions
 

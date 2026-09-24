@@ -27,7 +27,8 @@ member photos, a "Total Records" count, and a dossier with a photo, "Service Tel
 The built page differs: no subtitle; the sort and the filter are two controls that cycle, and the
 filter picks All, Active or Banned instead of a rank; a "Sync Roles" button joins the header;
 initials badges replace photos; the dossier's readings sit in a grid of tiles; its buttons open a
-role note and the ban and warning dialogs; and the table shows no record count. The
+[role](/documentation_v2/glossary.md#role) note and the ban and warning dialogs; and the table shows
+no record count. The
 [personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
 feature doc holds the full comparison.
 

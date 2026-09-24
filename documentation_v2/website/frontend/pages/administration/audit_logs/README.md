@@ -17,10 +17,11 @@ documentation_v2/website/frontend/pages/administration/audit_logs/
 
 Read [audit_logs_page.md](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
-it quotes the page's interface text, gives what the list call means in the API and which audit
-routes the page leaves unused, and compares the built page with the blueprint in
-`visual_references/`. The blueprint is a design-phase reference: it shows a live feed and a CSV
-export, which the built page does not offer. The code folder's README lists the page's files.
+it quotes the page's interface text, gives what the list call means in the
+[API](/documentation_v2/glossary.md#api) and which audit routes the page leaves unused, and compares
+the built page with the blueprint in `visual_references/`. The blueprint is a design-phase
+reference: it shows a live feed and a CSV export, which the built page does not offer. The code
+folder's README lists the page's files.
 
 ## Code
 

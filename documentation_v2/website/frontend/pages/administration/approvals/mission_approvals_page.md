@@ -29,7 +29,8 @@ into the live library, approve it with conditions, or reject it with a reason.
   [mission overview page](/documentation_v2/website/frontend/pages/mission_hub/overview/mission_overview_page.md),
   where the author submits, reads the same review record and replies; the read-only review
   workspace ([README](/apps/website/frontend/src/v2/pages/mission_hub/review_workspace/README.md));
-  the API's [missions domain](/apps/website/api_v2/src/missions/README.md); the
+  the [API](/documentation_v2/glossary.md#api)'s
+  [missions domain](/apps/website/api_v2/src/missions/README.md); the
   [mission artifacts evidence](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md).
 
 ## Behaviour

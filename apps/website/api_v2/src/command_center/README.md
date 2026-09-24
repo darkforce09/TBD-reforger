@@ -1,11 +1,11 @@
 # Command center domain
 
-The API's [command center](/documentation_v2/glossary.md#command-center) domain: the platform's
-read surfaces. It serves the members' dashboard, which composes many best-effort lookups into one
-answer, the ranked community leaderboards and one player's statistics card, and it owns the
-derived figures behind them. The ingest that produces those figures belongs to `match_telemetry`,
-and the [events](/documentation_v2/glossary.md#event) they are attributed to belong to
-`operations`.
+The [API](/documentation_v2/glossary.md#api)'s
+[command center](/documentation_v2/glossary.md#command-center) domain: the platform's read surfaces.
+It serves the members' dashboard, which composes many best-effort lookups into one answer, the
+ranked community leaderboards and one player's statistics card, and it owns the derived figures
+behind them. The ingest that produces those figures belongs to `match_telemetry`, and the
+[events](/documentation_v2/glossary.md#event) they are attributed to belong to `operations`.
 
 ## Contents
 

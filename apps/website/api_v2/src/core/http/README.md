@@ -23,6 +23,8 @@ malformed page link still renders a page.
 - Depends on: `serde`.
 - Used by: the list handlers of `administration` (audit logs, personnel roster),
   `community_content` (announcements, public and administrative), `missions` (approval queue,
-  mission deployments) and `operations` (event listing, leave requests, ORBAT view).
+  [mission deployments](/documentation_v2/glossary.md#mission-deployment)) and `operations`
+  ([event](/documentation_v2/glossary.md#event) listing, leave requests,
+  [ORBAT](/documentation_v2/glossary.md#orbat) view).
 - Rules: a list endpoint that pages takes `PageParams` instead of parsing its own `limit` and
   `offset`, so every list clamps the same way.

@@ -70,8 +70,9 @@ never handle the same account or request at once.
 - Used by: `apps/website/api_v2/src/bin/api.rs`, which calls `spawn_all`; integration suites under
   `apps/website/api_v2/tests/` that run one pass directly (`drain_due_reevaluations`,
   `expire_runtime_sessions`) or the bucket pruning.
-- Rules: nothing in `apps/website/api_v2/src/` imports this module except `bin/api.rs` and
-  `lib.rs` (`background_workers_used_only_by_the_binary` in
+- Rules: nothing in `apps/website/api_v2/src/` imports this module except
+  `apps/website/api_v2/src/bin/api.rs` and `apps/website/api_v2/src/lib.rs`
+  (`background_workers_used_only_by_the_binary` in
   `apps/website/api_v2/src/tests/architecture_rules.rs`); a worker holds no query of its own beyond
   its loop, the work stays in the owning domain's services; `spawn_all` keeps arming the bucket
   pruner (`apps/website/api_v2/tests/durable_rate_limit.rs` checks `mod.rs` for it).

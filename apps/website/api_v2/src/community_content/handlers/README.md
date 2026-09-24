@@ -12,7 +12,7 @@ apps/website/api_v2/src/community_content/handlers/
 ├── announcements_admin.rs        the CMS announcement list, create, partial edit and archive
 ├── announcements_public.rs       the member feed: published announcements, and one of them
 ├── media_upload.rs               the CMS image upload into the configured upload directory
-├── mod.rs                        declares one module per content surface
+├── mod.rs                        the module tree
 ├── modpack_admin.rs              modpack create, full replace, set-current and delete
 ├── modpack_catalog.rs            every modpack with its mods, and the current one
 ├── tests/                        unit tests for the Discord push and the CMS announcement writers
@@ -27,14 +27,14 @@ apps/website/api_v2/src/community_content/handlers/
   to Discord when it is published; `DELETE` archives a row, which stays readable to the writers.
   The manual push route refuses anything not published. A push records `pushed_to_discord` and the
   Discord message id; a failed push writes a `crit` audit line instead.
-- **Uploads.** `POST /cms/uploads` takes one multipart `file` field of at most 5 MB, a JPG, PNG or
-  WEBP, stores it under a random name in `Config::upload_dir` (`UPLOAD_DIR`) and answers its URL
-  under `/uploads/`, which `core::http_router` serves. The route's body limit is
+- **Uploads.** `POST /api/v1/cms/uploads` takes one multipart `file` field of at most 5 MB, a JPG,
+  PNG or WEBP, stores it under a random name in `Config::upload_dir` (`UPLOAD_DIR`) and answers its
+  URL under `/uploads/`, which `core::http_router` serves. The route's body limit is
   `core::middleware::MAX_MULTIPART_BODY`.
 - **Modpacks.** A write replaces a pack's whole mod list, so a pack and its `game.mods[]` entries
   never disagree; at most one pack is current, and set-current moves that mark.
-- **Wiki and vehicles.** `PUT /wiki/{slug}` creates or replaces a markdown page, and
-  `POST /vehicle-database` adds a row to the vehicle table.
+- **Wiki and vehicles.** `PUT /api/v1/wiki/{slug}` creates or replaces a markdown page, and
+  `POST /api/v1/vehicle-database` adds a row to the vehicle table.
 
 ## Boundaries
 

@@ -13,7 +13,7 @@ apps/website/api_v2/src/server_infrastructure/services/fleet_commands/
 ├── command_ledger.rs          the operator side: accept, cancel an unclaimed command, read receipts
 ├── command_reconciliation.rs  expiry, lapsed leases and indeterminate outcomes, decided by time
 ├── executor_claims.rs         the executor side: claim under a lease, report the start and the outcome
-├── mod.rs                     declares the ledger modules
+├── mod.rs                     the module tree
 └── tests/                     unit tests for the argument validation
 ```
 
@@ -35,10 +35,10 @@ issues (`load_mission`, `restart_with_mission`) arrive through `enqueue_deployme
 commits with the deployment. `executor_claims.rs` hands the oldest claimable command to the
 executor whose kind the action needs, checks that the requester still holds administrator
 authority, and requires the current fencing token on every later report, so an executor whose
-lease lapsed cannot overwrite a newer claim; a game runtime names its open runtime session, and a
+lease lapsed cannot overwrite a newer claim; a
+[game runtime](/documentation_v2/glossary.md#game-runtime) names its open runtime session, and a
 command bound to another session fails. `command_reconciliation.rs` runs every pass over all
-servers, skipping rows another transaction holds. Lock order: server, runtime session, command
-rows.
+servers, skipping rows another transaction holds. Lock order: server, runtime session, command rows.
 
 ## Boundaries
 

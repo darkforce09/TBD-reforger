@@ -8,15 +8,15 @@ itself runs in the domain's services.
 
 ```text
 apps/website/api_v2/src/identity_and_access/handlers/
-├── arma_link_codes.rs         the player half of the Arma link: issue a code, report link status, unlink
+├── arma_link_codes.rs         the player half of the Arma link: issue a code, link status, unlink
 ├── arma_link_confirmation.rs  the game half of the Arma link: the game server spends a code
 ├── developer_login.rs         the development-only sign-in as a fixed local account per role
 ├── discord_oauth.rs           Discord OAuth2 login and callback, ending in a session redirect
-├── member_profile.rs          the caller's own account: `GET /me` and `PATCH /me`
-├── mod.rs                     declares one module per handler file
+├── member_profile.rs          the caller's own account: `GET /api/v1/me` and `PATCH /api/v1/me`
+├── mod.rs                     the module tree
 ├── oauth_host_guard.rs        the cookie-host alignment guard and the CSRF check of the callback
 ├── session_tokens.rs          refresh-token rotation and logout
-└── tests/                     unit tests for the link confirmation, the OAuth flow, the profile and the guard
+└── tests/                     unit tests for the link confirmation, OAuth, profile and host guard
 ```
 
 ## How it works
@@ -35,18 +35,19 @@ apps/website/api_v2/src/identity_and_access/handlers/
   `enlisted`, `leader`, `mission_maker` or `admin`; anything else signs in as `admin`. Each
   [role](/documentation_v2/glossary.md#role) has its own fixed Discord id and Arma id, and the
   redirect is the one the Discord callback sends.
-- **Sessions.** `POST /auth/refresh` rotates a single-use refresh token and answers the new access
-  token, its expiry and the next refresh token; replaying a consumed token revokes the account's
-  current sessions. `POST /auth/logout` revokes the session and answers 204, also for an unknown
-  token.
-- **Profile.** `GET /me` answers the stored account with the session's role, `arma_linked` and the
-  membership flags (`membership_stale`, `membership_override_active`,
-  `can_manage_membership_override`). `PATCH /me` changes nothing: every field is owned by the
-  Discord sign-in or the link flow, so it answers the stored account.
-- **Arma link.** `POST /me/link` issues a six-digit code valid for ten minutes and supersedes the
-  caller's pending one (201); `GET /me/link/status` reports the link and whether a code is pending;
-  `DELETE /me/link` removes the link. The game server spends the code with
-  `POST /ingest/link-confirm` (`{code, arma_id, arma_character}`, unknown fields refused).
+- **Sessions.** `POST /api/v1/auth/refresh` rotates a single-use refresh token and answers the new
+  access token, its expiry and the next refresh token; replaying a consumed token revokes the
+  account's current sessions. `POST /api/v1/auth/logout` revokes the session and answers 204, also
+  for an unknown token.
+- **Profile.** `GET /api/v1/me` answers the stored account with the session's role, `arma_linked`
+  and the membership flags (`membership_stale`, `membership_override_active`,
+  `can_manage_membership_override`). `PATCH /api/v1/me` changes nothing: every field is owned by
+  the Discord sign-in or the link flow, so it answers the stored account.
+- **Arma link.** `POST /api/v1/me/link` issues a six-digit code valid for ten minutes and
+  supersedes the caller's pending one (201); `GET /api/v1/me/link/status` reports the link and
+  whether a code is pending; `DELETE /api/v1/me/link` removes the link. The game server spends the
+  code with `POST /api/v1/ingest/link-confirm` (`{code, arma_id, arma_character}`, unknown fields
+  refused).
 
 ## Boundaries
 
@@ -55,8 +56,9 @@ apps/website/api_v2/src/identity_and_access/handlers/
   `models::current_profile`; `core` for the application state, the `AuthUser` and `ServiceAuth`
   extractors, `authentication_primitives`, `http_url_guard` and the RFC 3339 wire format.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
-  and the navigation frame under `apps/website/frontend/src/v2/pages/`, the API client's token
-  refresh in `apps/website/frontend/src/v2/core/api/client/refresh.rs`, and the mod's
+  and the navigation frame under `apps/website/frontend/src/v2/pages/`, the
+  [API](/documentation_v2/glossary.md#api) client's token refresh in
+  `apps/website/frontend/src/v2/core/api/client/refresh.rs`, and the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/website/api_v2/src/tests/architecture_rules.rs`); tokens

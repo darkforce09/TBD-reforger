@@ -25,9 +25,11 @@ extractors and the rate limiter in `crate::core::middleware` answer with the sam
 
 - Depends on: `axum`, `serde_json` and `tracing`.
 - Used by: the handlers and services of all eight domains; the `event_reservation_reevaluator`
-  and `runtime_session_expiry` background workers; `crate::core::authentication_primitives`,
-  whose `SessionAuthority` refuses with it; two integration suites under
-  `apps/website/api_v2/tests/`; and, over HTTP, the single-page app, which reads `error` and a
-  string-array `details` in `apps/website/frontend/src/v2/core/api/client/errors.rs`.
+  and `runtime_session_expiry`
+  [background workers](/documentation_v2/glossary.md#background-workers);
+  `crate::core::authentication_primitives`, whose `SessionAuthority` refuses with it; two
+  integration suites under `apps/website/api_v2/tests/`; and, over HTTP, the single-page app, which
+  reads `error` and a string-array `details` in
+  `apps/website/frontend/src/v2/core/api/client/errors.rs`.
 - Rules: `error` stays a string and `details` stays optional, the shape the single-page app
   parses; a database error never reaches the client as text.

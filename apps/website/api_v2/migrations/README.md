@@ -23,7 +23,7 @@ differ.
 
 `0001_initial_schema.sql` is the baseline: tables, enums, indexes and views. Every later file
 changes that schema (tables, constraints, triggers, backfills) and never rewrites an earlier file.
-Versions 0022, 0023 and 0024 are retired: no file holds them and none may.
+No file holds versions 0022, 0023 and 0024, and none may.
 
 ## Format
 

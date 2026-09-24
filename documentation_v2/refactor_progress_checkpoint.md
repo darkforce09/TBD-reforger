@@ -131,32 +131,63 @@ the base brief names, outside the repository.
 | F01 | 3 · pilot | Doc writer: `website/frontend/pages/administration/**` | stopped at the hard stop (≈495k tokens) | — | Research only: verified every admin page (routes, access, API calls and server meaning, states, exact texts, design references, open tickets, dispositions of all 19 sources) into `<scratchpad>/logs/F01/handoff_verified_facts.txt`; wrote nothing. Writer inputs for R05: `pages/administration/README.md:17` ("doctrine articles" — announcements only), `event_manager/README.md:66` (the API accepts `modpack_id`/`server_id`, `event_create_update.rs:105-106`), `audit_logs/README.md:14-16` (`target_type` filter, `filter_bar.rs:149`) |
 | F01b | 3 · pilot | Doc writer: F01's targets, written from F01's verified handoff | done (≈453k tokens) | this commit | 6 feature docs (117–282 lines), 18 folder READMEs (6 design sets: design-phase references), 13 sources merged and deleted, glossary audit-logs entry corrected, backlinks in 7 code READMEs; gates pass. Writer inputs for R05: `event_manager/README.md:66-67` (operations carry `modpack_id`/`server_id`), `personnel/README.md:13-14,23-24` (no role picker; a Discord note), admin root `README.md:13,17` (no promotions, no doctrine articles); R05 also owns the "The page README lists no calls, so the DTOs are named here" lines in F01b's six Data sections, to replace with links once it writes the README Data sections |
 | P3-4 | 3 | Tooling fix: the documentation gates accept `--with-untracked` | done (≈341k tokens) | this commit | One `DocumentationGateArgs` (`--path`, `--with-untracked`) and one `GateRequest`; the tree reader adds `git ls-files --others --exclude-standard`; summaries say `--with-untracked (untracked files included)`. Caveat for writers: the flag also sees another session's untracked files (4,558 today) — scope `--path` to your slice and ignore failures in foreign untracked paths |
-| P3-3 | 3 · pilot | Pilot verifier over R01a, R01b, F01/F01b | running | — | — |
-| R02 | 4 · W4.1 | README writer: api_v2 `src/{missions, operations}` | pending | — | — |
-| R03 | 4 · W4.1 | README writer: frontend crate root and non-src folders, `src/` root, `src/v2/` root, `src/v2/core/**` | pending | — | — |
-| R04 | 4 · W4.1 | README writer: `src/v2/pages/` root, `pages/{command_center, operations, mission_hub}/**` | pending | — | — |
-| R05 | 4 · W4.1 | README writer: `pages/{administration, doctrine_and_info, field_tools, account, navigation}/**` | pending | — | — |
-| V4.1 | 4 · W4.1 | Wave verifier over R02–R05 | pending | — | — |
-| R06 | 4 · W4.2 | README writer: `src/v2/apps/editor/ui/**` | pending | — | — |
-| R07 | 4 · W4.2 | README writer: `src/v2/apps/` root, `editor/` root and its children except `ui/`, `apps/{debug, planner, aar}/**` | pending | — | — |
-| R08 | 4 · W4.2 | README writer: map-engine `src/data/**` | pending | — | — |
-| R09 | 4 · W4.2 | README writer: map-engine `src/{world, streaming, spatial}/**` | pending | — | — |
-| V4.2 | 4 · W4.2 | Wave verifier over R06–R09 | pending | — | — |
-| R10 | 4 · W4.3 | README writer: map-engine crate root, `src/` root and every other `src/` folder | pending | — | — |
-| R11 | 4 · W4.3 | README writer: `apps/README.md`, `apps/website/` root, `graphics-engine/**`, `apps/website/shared`, `contracts_v2/**`, `assets_v2/**` | pending | — | — |
-| R12 | 4 · W4.3 | README writer: tbd-framework `Scripts/Game/TBD/Systems/**` | pending | — | — |
-| R13 | 4 · W4.3 | README writer: tbd-framework `Scripts/Game/TBD/{Session, API, Core}/**` | pending | — | — |
-| V4.3 | 4 · W4.3 | Wave verifier over R10–R13 | pending | — | — |
-| R14 | 4 · W4.4 | README writer: `apps/mod/` root, tbd-framework root and script root levels, `{Gamemode, UI}` scripts, asset folders, `tbd-emcp/**` | pending | — | — |
-| R15 | 4 · W4.4 | README writer: `apps/mod/tbd-export/**` | pending | — | — |
-| R16 | 4 · W4.4 | README writer: xtask `src/commands/{platform, mod_ops}/**` | pending | — | — |
-| R17 | 4 · W4.4 | README writer: xtask crate root, `deploy/**`, `dedicated_server_profiles/**`, `fixtures/**`, `src/` root, `src/{core, cli}/**`, the other command groups | pending | — | — |
-| V4.4 | 4 · W4.4 | Wave verifier over R14–R17 | pending | — | — |
-| R18 | 4 · W4.5 | README writer: xtask `src/verifications/**` | pending | — | — |
-| R19 | 4 · W4.5 | README writer: developer-tools `src/{browser_testing, blueprint}/**` | pending | — | — |
-| R20 | 4 · W4.5 | README writer: developer-tools crate root, the remaining `src/**`, `src/bin`, `fixtures/**`, `test_fixtures/**` | pending | — | — |
-| R21 | 4 · W4.5 | README writer: `tools_v2/` root, `ticket-engine/**`, `verification-core/**`, `enfusion_mcp_node_package/`, `apps/ticketboard/**`, `apps/fleet_host_agent/**` | pending | — | — |
-| V4.5 | 4 · W4.5 | Wave verifier over R18–R21 | pending | — | — |
+| P3-3 | 3 · pilot | Pilot verifier over R01a, R01b, F01/F01b | done (≈325k tokens) | this commit | FIX-LIST 11 + a 12-rule STYLE-LOCK. Claims: R01a 38/0 wrong, R01b ~60/0, F01b ~60/1; all 66 pilot files conform on structure; scope clean. Item 11 (R05 at its wave): replace F01b's route facts, state texts and "lists no calls" lines with links to the page READMEs' Routes, Data and States |
+| P3-3f | 3 · pilot | Fix run: P3-3 FIX-LIST items 1–10; write `documentation_v2/refactor_style_lock.md` | done (≈486k tokens) | this commit | All 11 applied; style lock rules 1–13 + don't-copy list, 20 models script-checked; also corrected 4 pilot contradictions (low-FPS warning timing, audit-row rule, glossary link placement, "event" wording) |
+| P3-3g | 3 | Fix run: `documentation_v2/README.md` Contents covers the new program records | pending | — | — |
+| R02 | 4 · W4.1 | README writer: 15 folders — `apps/website/api_v2/src/missions` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R03 | 4 · W4.1 | README writer: 14 folders — `apps/website/frontend` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R04 | 4 · W4.1 | README writer: 18 folders — `apps/website/frontend/src/v2/pages (folder only)` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R05.1 | 4 · W4.1 | README writer: 11 folders — `apps/website/frontend/src/v2/pages/account` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.1 | 4 · W4.1 | Wave verifier over W4.1's writers | pending | — | — |
+| R05.2 | 4 · W4.2 | README writer: 13 folders — `apps/website/frontend/src/v2/pages/administration` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R06.1 | 4 · W4.2 | README writer: 16 folders — `apps/website/frontend/src/v2/apps/editor/ui (folder only)` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R06.2 | 4 · W4.2 | README writer: 19 folders — `apps/website/frontend/src/v2/apps/editor/ui/docks` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R07.1 | 4 · W4.2 | README writer: 16 folders — `apps/website/frontend/src/v2/apps (folder only)` + 5 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.2 | 4 · W4.2 | Wave verifier over W4.2's writers | pending | — | — |
+| R07.2 | 4 · W4.3 | README writer: 19 folders — `apps/website/frontend/src/v2/apps/editor/bridge` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R08.1 | 4 · W4.3 | README writer: 13 folders — `apps/website/map-engine/src/data (folder only)` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R08.2 | 4 · W4.3 | README writer: 11 folders — `apps/website/map-engine/src/data/scenario/extensions` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R08.3 | 4 · W4.3 | README writer: 12 folders — `apps/website/map-engine/src/data/store` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.3 | 4 · W4.3 | Wave verifier over W4.3's writers | pending | — | — |
+| R09.1 | 4 · W4.4 | README writer: 16 folders — `apps/website/map-engine/src/spatial` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R09.2 | 4 · W4.4 | README writer: 13 folders — `apps/website/map-engine/src/streaming` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R09.3 | 4 · W4.4 | README writer: 16 folders — `apps/website/map-engine/src/world/architecture` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R10.1 | 4 · W4.4 | README writer: 16 folders — `apps/website/map-engine (folder only)` + 5 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.4 | 4 · W4.4 | Wave verifier over W4.4's writers | pending | — | — |
+| R10.2 | 4 · W4.5 | README writer: 13 folders — `apps/website/map-engine/src/doll` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R10.3 | 4 · W4.5 | README writer: 19 folders — `apps/website/map-engine/src/editing` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R11.1 | 4 · W4.5 | README writer: 16 folders — `apps` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R11.2 | 4 · W4.5 | README writer: 18 folders — `assets_v2/glyphs` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.5 | 4 · W4.5 | Wave verifier over W4.5's writers | pending | — | — |
+| R11.3 | 4 · W4.6 | README writer: 16 folders — `assets_v2/terrains` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R12 | 4 · W4.6 | README writer: 12 folders — `apps/mod/tbd-framework/Scripts/Game/TBD/Systems` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R13 | 4 · W4.6 | README writer: 19 folders — `apps/mod/tbd-framework/Scripts/Game/TBD/API` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R14.1 | 4 · W4.6 | README writer: 14 folders — `apps/mod (folder only)` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.6 | 4 · W4.6 | Wave verifier over W4.6's writers | pending | — | — |
+| R14.2 | 4 · W4.7 | README writer: 15 folders — `apps/mod/tbd-framework/Scripts` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R14.3 | 4 · W4.7 | README writer: 16 folders — `apps/mod/tbd-framework/UI` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R15.1 | 4 · W4.7 | README writer: 16 folders — `apps/mod/tbd-export (folder only)` + 11 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R15.2 | 4 · W4.7 | README writer: 16 folders — `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.7 | 4 · W4.7 | Wave verifier over W4.7's writers | pending | — | — |
+| R15.3 | 4 · W4.8 | README writer: 14 folders — `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R15.4 | 4 · W4.8 | README writer: 18 folders — `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R16 | 4 · W4.8 | README writer: 19 folders — `tools_v2/xtask/src/commands/mod_ops` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R17.1 | 4 · W4.8 | README writer: 16 folders — `tools_v2/xtask (folder only)` + 10 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.8 | 4 · W4.8 | Wave verifier over W4.8's writers | pending | — | — |
+| R17.2 | 4 · W4.9 | README writer: 16 folders — `tools_v2/xtask/src/commands/db` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R18.1 | 4 · W4.9 | README writer: 16 folders — `tools_v2/xtask/src/verifications (folder only)` + 7 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R18.2 | 4 · W4.9 | README writer: 17 folders — `tools_v2/xtask/src/verifications/language_bans` + 10 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R19 | 4 · W4.9 | README writer: 20 folders — `tools_v2/developer-tools/src/blueprint` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.9 | 4 · W4.9 | Wave verifier over W4.9's writers | pending | — | — |
+| R20.1 | 4 · W4.10 | README writer: 16 folders — `tools_v2/developer-tools (folder only)` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R20.2 | 4 · W4.10 | README writer: 11 folders — `tools_v2/developer-tools/src/map_verification` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R20.3 | 4 · W4.10 | README writer: 10 folders — `tools_v2/developer-tools/test_fixtures` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R21.1 | 4 · W4.10 | README writer: 16 folders — `apps/fleet_host_agent` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.10 | 4 · W4.10 | Wave verifier over W4.10's writers | pending | — | — |
+| R21.2 | 4 · W4.11 | README writer: 16 folders — `apps/ticketboard/src/document_viewer` + 3 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R21.3 | 4 · W4.11 | README writer: 15 folders — `apps/ticketboard/src/ticket_actions` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R21.4 | 4 · W4.11 | README writer: 16 folders — `tools_v2/ticket-engine` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| V4.11 | 4 · W4.11 | Wave verifier over W4.11's writers | pending | — | — |
 | F02 | 5 · W5.1 | Doc writer: `pages/{command_center, operations}/**` | pending | — | — |
 | F03 | 5 · W5.1 | Doc writer: `pages/{mission_hub, doctrine_and_info, field_tools}/**` | pending | — | — |
 | F04 | 5 · W5.1 | Doc writer: `pages/{account, navigation}/**`, `website/frontend/README.md`, frontend core docs | pending | — | — |
@@ -255,6 +286,8 @@ the base brief names, outside the repository.
 | 2026-09-24 | R01b questions: its 18 new READMEs commit with the 6 rewrites; a domain root lists routes one bullet per path with methods and access tiers inline (compact form accepted for the pilot; P3-3 judges it for the style lock) | orchestrator decision (delegated) |
 | 2026-09-24 | R01a questions: (1) the three documentation gates get a `--with-untracked` flag (judge untracked, not-ignored files as if tracked) so writers can check new files before the orchestrator commits — new tooling fix run P3-4 before Phase 4; the scratch-index workaround (`GIT_INDEX_FILE`, which `hcargo` does not pass through) is retired; (2) READMEs keep linking `api_overview.md` although its content is stale — F09 rewrites it. Budget: R01a finished at ≈523k despite the 400k stop, R01b at ≈371k for 24 folders — Phase 4 slices are sized at about 15 folders per writer | orchestrator decision (delegated) |
 | 2026-09-24 | F01b questions: (1) re-publishing a pinned announcement unpins it (`editor_form.rs:157` sends `is_pinned: false`; `announcements_admin.rs:304`) joins the next ticket batch; operations without `server_id` are covered by T-1022; (2) the API's audit CSV export has no page button — filed as a feature idea in the next batch; (3) R05 owns F01b's "lists no calls" lines (see F01b's row); (4) T-1015 also covers the event-manager guard test that pins the wrong delete text (`event_manager/tests/event_manager.rs`) and the `lifecycle.rs:60-65` doc comment — the next batch appends that to T-1015's notes | orchestrator decision (delegated) |
+| 2026-09-24 | CP3b (delegated): the pilot passes after fix run P3-3f applies P3-3's items 1–10; P3-3's STYLE-LOCK (12 rules with model files, plus a don't-copy list) is adopted and written to `documentation_v2/refactor_style_lock.md`, which every Phase 4 and Phase 5 writer prompt names as required reading; the style locks | orchestrator decision (delegated) |
+| 2026-09-24 | Phase 4 re-sliced from the pilot's measured cost (R01a ≈29k, R01b ≈15k tokens per folder; the plan's 20 writers would each exceed the cap): 664 remaining code folders → 43 README writers of 4–20 folders (subtrees kept together), 11 waves W4.1–W4.11 of up to four writers, each wave followed by its verifier V4.n, which may run while the next wave writes (verifiers are read-only). The writer list with exact units is the program record `documentation_v2/refactor_phase4_slices.tsv`. Every writer prompt adds `refactor_style_lock.md`, `--with-untracked` for its own new files, the committed-code-only rule, and the facts earlier agents recorded for its folders (roster rows and amendments) | orchestrator (budget amendment) |
 | 2026-09-23 | P2-5 and P2-6: `git mv` keeps link text, so a relative link inside a moved file is resolved against the file's pre-move path (the manifest's source column) before it is rewritten. P1-1's archived records hold three such links: `archive/tools_v2_refactor/analysis_and_inventory.md:5` and `architecture_plan.md:5` (sibling names that are now snake_case) and `phase_one_handoff.md:12` (`../docs/tools/editor_capture.md`, manifest row 816) | P1-1 finding |
 | 2026-09-23 | P1-2 launch additions: ownership of `tools_v2/ticket-engine/src/metrics/estimates/git_changes.rs` (the only other user of `GENERATED_QUEUE_VIEW_PREFIX`, which the plan renames `RETIRED_QUEUE_VIEW_PREFIX`); `tools_v2/ticket-engine/src/validation/**` and its tests (the child-ticket spec and plan check), with additive-only changes in `tools_v2/ticket-engine/src/registry/ticket_file_storage/` if validation needs a helper that lists child ticket files; the `spec` field of `.ai/tickets/T-068.10.5.toml` and `.ai/tickets/T-159.15.0.toml` (through a `ticket` verb if one sets it); the view claims at `tools_v2/README.md:6` and `tools_v2/ticket-engine/README.md:3,12` (the plan's `src/README.md` does not exist; the crate README is meant); one extra check, `hcargo xtask ticket sync`, which must write no view file, with any queue.json, ROADMAP-marker or gap-analysis diff listed as sync output. Added at launch: a `git rm` grant for exactly the eight deletions (`sync/queue_views.rs`, `sync/registry_views.rs`, the five `docs/TICKET_*.md` views, `docs/MILESTONES.md`); ownership of `tools_v2/ticket-engine/src/sync/tests/**` in case a test names a removed item; two more checks, `hcargo build -p xtask` (downstream crate) and `hcargo test -p xtask tooling_prose_rules` (P1-2 edits tools_v2 Markdown; only the two baseline failures may remain) | orchestrator pre-launch scoping |
 
@@ -319,6 +352,18 @@ Written by the orchestrator at each phase (and Phase 4–5 wave) boundary, befor
 
 **Next — Phase 3.** P3-1 splits: P3-1a (the README standard + six README kind templates: area root, crate root, domain, leaf, page, app) → P3-1b (the other six kinds: command-line, data, mod scripts, mod assets, deploy/config, documentation_v2 folder index; the six document templates; the templates folder README; the archive status line of `frontend_page_spec_template.md`). The Contents grammar is copied verbatim from `tools_v2/xtask/src/verifications/documentation/README.md`. Then CP3a (delegated: a reviewer agent's verdict), P3-2, the pilot R01 ∥ F01, P3-3, CP3b (delegated).
 
+### Phase 3 handoff (2026-09-24) — Phase 3 closed, CP3a and CP3b decided under delegation
+
+**Commits:** 7bb4a521e (P3-1a) · af2c55d3e (P3-1b) · 66037b77e (P3-1v, P3-1f — CP3a) · 1e7bd2c2f (P3-2) · dbbb08790 (R01b) · f1c3c8372 (R01a) · a4db61abb (F01, F01b) · 221d22e4c (P3-4, `--with-untracked`) · P3-3/P3-3f (this block's commit) · tickets T-1005–T-1029 in 305ce576f, 07654169c, 6c30f20e6, 167caf418, 3c20c184a.
+
+**State:** the README standard (`standards/readme_standard.md`) and 17 templates are locked; `standards/documentation_standards.md` and `glossary.md` exist; the api_v2 crate (42 folders) and the administration pages are written to the standard; the style lock (`refactor_style_lock.md`, 13 rules) binds Phases 4–5. Gates: the pilot folders pass; `--with-untracked` lets writers check new files before a commit.
+
+**Lessons:** writers cost 15–30k tokens per folder and overshoot a prompt's stop (R01a ≈523k, P3-2 ≈571k); research-heavy slices are split or handed off (F01 → F01b); code findings go to ticket batches (TF1–TF5), never into this program's code.
+
+**Open for the operator:** the CP2 server-address check; every "orchestrator decision (delegated)" row; T-940.1/.3/.11/.12 and T-086 look superseded (not changed).
+
+**Next — Phase 4:** 43 README writers in 11 waves (`refactor_phase4_slices.tsv`), up to four writers per wave, then the wave's verifier V4.n (it may overlap the next wave's writers). P3-3g (the entry README's Contents) runs beside W4.1. Writer prompt: the plan's README writer template + concrete values + the locked standard, templates, glossary and style lock + `--with-untracked` on its own slice (ignore another session's untracked paths) + committed code only + the slice's recorded facts (grep the roster and amendments for its id) + a handoff-and-stop near 350k tokens.
+
 ## Checkpoints
 
 | Checkpoint | Follows | The operator reviews | Status |
@@ -326,5 +371,5 @@ Written by the orchestrator at each phase (and Phase 4–5 wave) boundary, befor
 | CP1 manifest | P0-5 | `refactor_move_manifest.md` and its questions; P0-5 applies the answers in a fix-agent run | answered 2026-09-23 — all 21 recommendations accepted; P0-5f applies 1–3 |
 | CP2 cutover | P2-7 | commits 2a and 2b; ticketboard's spec reader; the server address, identified by its SSH host key | decided 2026-09-24 under delegation: 2a (19738aff0) and 2b pass their verifiers after fix runs; ticketboard's spec reader verified by code reading and a scripted check (770 spec/plan values, all tracked `.md`); the live server-address check stays OPEN for the operator (no remote commands) |
 | CP3a standard | P3-1 | the README standard and its samples; changes go through a P3-1 fix run | decided 2026-09-24 under delegation: reviewer P3-1v's 15 findings applied by P3-1f; the standard is locked (the pilot and P3-3 exercise it before CP3b) |
-| CP3b pilot slices | P3-3 | the R01 and F01 pilot output; the style locks | pending |
+| CP3b pilot slices | P3-3 | the R01 and F01 pilot output; the style locks | decided 2026-09-24 under delegation: the pilot passes after P3-3f; the style lock is `documentation_v2/refactor_style_lock.md` |
 | CP4 roadmap | V5.5 | `product_roadmap.md`; the operator strikes unplanned items and F19b applies the strikes | pending |

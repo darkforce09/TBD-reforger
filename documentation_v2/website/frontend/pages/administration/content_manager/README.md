@@ -18,11 +18,12 @@ documentation_v2/website/frontend/pages/administration/content_manager/
 
 Read [content_manager_page.md](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
-it quotes the page's interface text, gives what each call means in the API, lists where the page's
-wording and the API disagree, and compares the built page with the two blueprints in
-`visual_references/`. Both are design-phase references: the built editor follows the broadcast
-editor blueprint closely, and keeps only the list-beside-detail split of the announcements
-manager blueprint. The code folder's README lists the page's files.
+it quotes the page's interface text, gives what each call means in the
+[API](/documentation_v2/glossary.md#api), lists where the page's wording and the API disagree, and
+compares the built page with the two blueprints in `visual_references/`. Both are design-phase
+references: the built editor follows the broadcast editor blueprint closely, and keeps only the
+list-beside-detail split of the announcements manager blueprint. The code folder's README lists the
+page's files.
 
 ## Code
 

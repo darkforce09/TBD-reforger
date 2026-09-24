@@ -2,10 +2,13 @@
 
 # Server control page documentation
 
-The feature documentation of the `/admin/server` page, where administrators follow the game
-servers, issue [fleet commands](/documentation_v2/glossary.md#fleet-command), deploy approved
-missions, keep the fleet scenario registry and manage machine credentials. The page has no design
-set: its built layout, drawn in the feature doc, is the reference.
+The feature documentation of the `/admin/server` page, where administrators follow the game servers,
+issue [fleet commands](/documentation_v2/glossary.md#fleet-command), deploy approved
+[missions](/documentation_v2/glossary.md#mission), keep the
+[registry](/documentation_v2/glossary.md#registry) of
+[fleet scenarios](/documentation_v2/glossary.md#fleet-scenario) and manage
+[machine credentials](/documentation_v2/glossary.md#machine-credential). The page has no design set:
+its built layout, drawn in the feature doc, is the reference.
 
 ## Contents
 
@@ -21,7 +24,8 @@ documentation_v2/website/frontend/pages/administration/server_control/
   scenario and credential panels.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/) — the server,
   fleet command, fleet scenario and machine credential routes.
-- [Missions domain](/apps/website/api_v2/src/missions/) — the mission deployment routes.
+- [Missions domain](/apps/website/api_v2/src/missions/) — the
+  [mission deployment](/documentation_v2/glossary.md#mission-deployment) routes.
 - [Fleet host agent](/apps/fleet_host_agent/) — the executor of process control and the player
   list.
 

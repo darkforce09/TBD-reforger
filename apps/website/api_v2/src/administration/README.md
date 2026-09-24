@@ -1,10 +1,11 @@
 # Administration domain
 
-The API's [administration](/documentation_v2/glossary.md#administration) domain: the member roster
-and the moderation taken against it (bans, ban lifts, warnings), the Discord role resync, the
-membership grace extension, and the audit log that records every privileged action, with its live
-feed. The identity behind a member (sign-in, tokens, the account row) belongs to
-`identity_and_access`.
+The [API](/documentation_v2/glossary.md#api)'s
+[administration](/documentation_v2/glossary.md#administration) domain: the member roster and the
+moderation taken against it (bans, ban lifts, warnings), the Discord
+[role](/documentation_v2/glossary.md#role) resync, the membership grace extension, and the audit
+log that records every privileged action, with its live feed. The identity behind a member (sign-in,
+tokens, the account row) belongs to `identity_and_access`.
 
 ## Contents
 
@@ -19,12 +20,11 @@ apps/website/api_v2/src/administration/
 
 ## How it works
 
-A request reaches a handler through `routes.rs`; every route sits under `/admin/*`, where only an
+A request reaches a handler through `routes.rs`; every route sits under `/api/v1/admin/*`, where only an
 administrator may read at all. The handlers take `AdminUser`, apart from the grace extension, which
 takes `AuthUser` and lets the identity service require verified administrator authority, so it
-still works while Discord is unreachable. A member's [role](/documentation_v2/glossary.md#role)
-follows their Discord roles: the role edit route refuses every change with 409, and the resync
-route re-applies the `discord_roles` mapping.
+still works while Discord is unreachable. A member's role follows their Discord roles: the role edit
+route refuses every change with 409, and the resync route re-applies the `discord_roles` mapping.
 
 Privileged writes across the crate leave a row in `audit_logs`, either inside their own
 transaction (`services/required_audit.rs`) or best-effort (`services/audit_writer.rs`). Committed
@@ -54,7 +54,7 @@ replaying from a client's `Last-Event-ID`.
 
 ## Boundaries
 
-- Depends on: `core` (the application state, errors, extractors, pagination, the authorized event
+- Depends on: `core` (the application state, errors, extractors, pagination, the authorized SSE
   stream, wire formats); `identity_and_access` (`UserRole`, the account locks, the role resync and
   the grace extension); the reservation re-evaluation queue in `operations::services`.
 - Used by:
@@ -66,8 +66,8 @@ replaying from a client's `Last-Event-ID`.
     `apps/website/frontend/src/v2/pages/administration/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/website/api_v2/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); audit rows enter `audit_logs`
-  only through `services/`, which keeps one audit path for the crate.
+  carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `services/`
+  inserts into `audit_logs`, which keeps one audit path for the crate's code.
 
 ## Related documentation
 

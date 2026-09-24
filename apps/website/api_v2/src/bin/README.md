@@ -74,7 +74,7 @@ Run from `apps/website/api_v2/` as `cargo run --bin <name> -- <arguments>`; both
   `tools_v2/xtask/src/commands/db/operations.rs`); the `editor-api-boot` task of `cargo xtask ci`;
   the release image built by `apps/website/Dockerfile`, whose entry point is `api`; the systemd
   unit `tools_v2/xtask/deploy/systemd/tbd-website-api.service`, which runs the release `api`.
-- Rules: `bin/api.rs` is the one file that arms `background_workers`
+- Rules: `api.rs` is the one file that arms `background_workers`
   (`background_workers_used_only_by_the_binary` in
   `apps/website/api_v2/src/tests/architecture_rules.rs`); the binary names are stable, because the
   xtask recipes, the Dockerfile and the systemd unit call them by name; a new binary adds its
@@ -82,7 +82,7 @@ Run from `apps/website/api_v2/` as `cargo run --bin <name> -- <arguments>`; both
 
 ## Related documentation
 
-- [Local development](/documentation_v2/runbooks/local_development.md) — running the API and
-  importing the registry locally.
+- [Local development](/documentation_v2/runbooks/local_development.md) — running the
+  [API](/documentation_v2/glossary.md#api) and importing the registry locally.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
   the release `api` on the home server.

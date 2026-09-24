@@ -1,11 +1,12 @@
 # Match telemetry domain
 
-The API's [match telemetry](/documentation_v2/glossary.md#match-telemetry) domain: the write half
-of the game-server channel. A running [game runtime](/documentation_v2/glossary.md#game-runtime)
-posts its live server status as heartbeats within its runtime session, and posts a finished-match
-report when a mission ends. Presenting these figures back to members belongs to `command_center`;
-the server registry, the runtime sessions and the live status topic belong to
-`server_infrastructure`.
+The [API](/documentation_v2/glossary.md#api)'s
+[match telemetry](/documentation_v2/glossary.md#match-telemetry) domain: the write half of the
+game-server channel. A running [game runtime](/documentation_v2/glossary.md#game-runtime) posts its
+live server status as heartbeats within its runtime session, and posts a finished-match report when
+a [mission](/documentation_v2/glossary.md#mission) ends. Presenting these figures back to members
+belongs to `command_center`; the server [registry](/documentation_v2/glossary.md#registry), the
+runtime sessions and the live status topic belong to `server_infrastructure`.
 
 ## Contents
 
@@ -23,15 +24,16 @@ apps/website/api_v2/src/match_telemetry/
 A heartbeat is authenticated by the server's `mod_runtime`
 [machine credential](/documentation_v2/glossary.md#machine-credential) and fenced by the runtime
 session's generation and a sequence that strictly increases within the session; the fence, the
-partial status update, the history sample and a low-FPS warning commit together, and the stored
-row is then published on the server's [SSE](/documentation_v2/glossary.md#sse) topic.
+partial status update and the history sample commit together, a low-FPS warning follows
+best-effort, and the stored row is then published on the server's
+[SSE](/documentation_v2/glossary.md#sse) topic.
 
 A match report is authenticated by the shared service token and is idempotent: a report that
 repeats a `source_match_id` merges into the stored match, re-derives attendance for the
-registrants of the old and the new event mission, and retracts what the previous report
-attributed. The whole report (roster checks, player lines, attendance attribution, statistics and
-leaderboard recomputation, audit) commits in one transaction, behind the source-match guard and the
-shared identity and account lock order.
+registrants of the old and the new [event](/documentation_v2/glossary.md#event) mission, and
+retracts what the previous report attributed. The whole report (roster checks, player lines,
+attendance attribution, statistics and leaderboard recomputation, audit) commits in one transaction,
+behind the source-match guard and the shared identity and account lock order.
 
 ## Public surface
 

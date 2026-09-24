@@ -3,8 +3,9 @@
 # Event manager page documentation
 
 The feature documentation of the `/admin/events` page, titled Operations Calendar on screen, where
-administrators schedule and edit [events](/documentation_v2/glossary.md#event), attach missions and
-set who may join them, with the page's design-phase reference.
+administrators schedule and edit [events](/documentation_v2/glossary.md#event), attach
+[missions](/documentation_v2/glossary.md#mission) and set who may join them, with the page's
+design-phase reference.
 
 ## Contents
 
@@ -18,12 +19,12 @@ documentation_v2/website/frontend/pages/administration/event_manager/
 
 Read [event_manager_page.md](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
-its Behaviour runs through the calendar, the schedule and edit forms, deletion and the access
-sheet, then lists where the page's wording and the API disagree; its Data gives what each call
-means in the API; its Design compares the built page with the blueprint in `visual_references/`.
-The blueprint is a design-phase reference: it shows one form beside the calendar, while the built
-page schedules and edits in dialogs and adds the access sheet. The code folder's README lists the
-page's files.
+its Behaviour runs through the calendar, the schedule and edit forms, deletion and the access sheet,
+then lists where the page's wording and the [API](/documentation_v2/glossary.md#api) disagree; its
+Data gives what each call means in the API; its Design compares the built page with the blueprint in
+`visual_references/`. The blueprint is a design-phase reference: it shows one form beside the
+calendar, while the built page schedules and edits in dialogs and adds the access sheet. The code
+folder's README lists the page's files.
 
 ## Code
 

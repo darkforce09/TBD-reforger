@@ -8,10 +8,10 @@ enum `user_role`, ordered `guest` < `enlisted` < `leader` < `mission_maker` < `a
 
 ```text
 apps/website/api_v2/src/identity_and_access/models/
-├── current_profile.rs  the `GET /me` and `PATCH /me` answers: the account with its link and membership flags
+├── current_profile.rs  the `GET` and `PATCH /api/v1/me` answers, with link and membership flags
 ├── generated/          types generated from `current-profile.schema.json`, read by the contract test
-├── mod.rs              declares the modules; re-exports the account types
-└── user_account.rs     `User`, `UserRole`, `DiscordRole`, `UserDiscordRole`, `IdentityLinkCode`, `RefreshToken`
+├── mod.rs              the module tree; re-exports the account types
+└── user_account.rs     `User`, `UserRole` and the Discord role, link code and refresh token rows
 ```
 
 ## Boundaries

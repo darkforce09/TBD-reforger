@@ -21,14 +21,15 @@ documentation_v2/website/frontend/pages/administration/
 
 ## How it works
 
-The folders mirror the page folders under `apps/website/frontend/src/v2/pages/administration/`
-and keep their spelling. Each holds a README index, the page's feature doc and, except for server
+The folders mirror the page folders under `apps/website/frontend/src/v2/pages/administration/` and
+keep their spelling. Each holds a README index, the page's feature doc and, except for server
 control, a `visual_references/` folder with one or two design-phase blueprint sets. A feature doc
 follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md): Where it
-lives, Behaviour (ending in the known discrepancies between the page and the API, where there are
-any), Data (what each call means server-side), Design (the layout as built and each difference
-from the blueprint), Open work and Decisions. Start with the feature doc of the page at hand; its
-Design section leads to the blueprint.
+lives, Behaviour (ending in the known discrepancies between the page and the
+[API](/documentation_v2/glossary.md#api), where there are any), Data (what each call means
+server-side), Design (the layout as built and each difference from the blueprint), Open work and
+Decisions. Start with the feature doc of the page at hand; its Design section leads to the
+blueprint.
 
 Every page is declared in `apps/website/frontend/src/router.rs` for the `admin` tier, sits in the
 sidebar's Administration section and renders its body inside `AdminGate`
@@ -55,13 +56,17 @@ Contents and a row in the table.
 - [Administration domain](/apps/website/api_v2/src/administration/) — the roster, bans, warnings,
   role resync and audit trail behind the personnel and audit logs pages.
 - [Missions domain](/apps/website/api_v2/src/missions/) — the approvals queue and decisions, and
-  the mission deployments of server control.
+  the [mission deployments](/documentation_v2/glossary.md#mission-deployment) of server control.
 - [Community content domain](/apps/website/api_v2/src/community_content/) — the announcements and
   uploads the content manager writes.
-- [Operations domain](/apps/website/api_v2/src/operations/) — the events, event missions and access
-  administration of the event manager.
+- [Operations domain](/apps/website/api_v2/src/operations/) — the
+  [events](/documentation_v2/glossary.md#event), their attached
+  [missions](/documentation_v2/glossary.md#mission) and the access administration of the event
+  manager.
 - [Server infrastructure domain](/apps/website/api_v2/src/server_infrastructure/) — the servers,
-  fleet commands, fleet scenarios and machine credentials of server control.
+  [fleet commands](/documentation_v2/glossary.md#fleet-command),
+  [fleet scenarios](/documentation_v2/glossary.md#fleet-scenario) and
+  [machine credentials](/documentation_v2/glossary.md#machine-credential) of server control.
 
 ## Boundaries
 

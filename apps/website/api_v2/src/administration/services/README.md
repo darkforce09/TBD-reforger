@@ -11,7 +11,7 @@ apps/website/api_v2/src/administration/services/
 ├── audit_notifier.rs     one `LISTEN audit_log` per pool, fanned out to every open stream
 ├── audit_publication.rs  numbers committed audit rows in a durable publication sequence
 ├── audit_writer.rs       best-effort audit append, and the display name a row is attributed to
-├── mod.rs                declares the modules
+├── mod.rs                the module tree
 ├── required_audit.rs     audit rows that commit inside the caller's business transaction
 └── tests/                unit tests for the notifier's signals and backoff
 ```

@@ -21,7 +21,8 @@ member's Discord roles, so the page explains it and never sets it.
   for the `admin` tier, full-bleed, with the breadcrumb "Administration" › "Personnel Roster",
   and the sidebar lists it as "Personnel Roster"
   (`apps/website/frontend/src/v2/pages/navigation/nav_config.rs`).
-- Related: the [personnel](/documentation_v2/glossary.md#personnel) glossary entry; the API's
+- Related: the [personnel](/documentation_v2/glossary.md#personnel) glossary entry; the
+  [API](/documentation_v2/glossary.md#api)'s
   [administration domain](/apps/website/api_v2/src/administration/README.md), which owns the
   roster, bans, warnings and the role resync; the membership grace extension, which the
   navigation frame's membership control sends, not this page.
@@ -126,6 +127,9 @@ The page README lists no calls, so the DTOs are named here. Server-side:
   (ready, [plan](/documentation_v2/tickets/plans/t-940_7_plan.md)): the roster gains a pager, so
   an administrator can reach every member instead of the first 20; the API half (`total`,
   `limit`, `offset`) already answers.
+- [T-1017 — Fix personnel search placeholder promising Discord ID search](/.ai/tickets/T-1017.toml)
+  (idea, no plan): the placeholder and the search agree: either the placeholder stops promising a
+  Discord id search, or the API matches the Discord id too.
 
 ## Decisions
 

@@ -39,8 +39,8 @@ ingest; the [game runtime](/documentation_v2/glossary.md#game-runtime) and the f
 authenticate with per-server [machine credentials](/documentation_v2/glossary.md#machine-credential).
 The [mission](/documentation_v2/glossary.md#mission) compiler and the mortar ballistics come from
 `website-map-engine`, which the crate takes with its default `scenario` tier alone. Game servers
-fetch compiled mission artifacts over HTTPS from `/api/v1/game-runtime/artifacts/{artifactId}`;
-nothing is staged on disk for them.
+fetch compiled mission [artifacts](/documentation_v2/glossary.md#artifact) over HTTPS from
+`/api/v1/game-runtime/artifacts/{artifactId}`; nothing is staged on disk for them.
 
 The integration suites in `tests/` build one test binary per top-level file. A binary that needs
 a database derives its own scratch database from `TEST_DATABASE_URL`, creates and migrates it,
@@ -64,10 +64,10 @@ cargo xtask mk rust-test # the library and binary unit tests, source rules inclu
 migrations create. `psql` carries on past a failed statement, so seeding before the API's first
 boot loads nothing and still exits 0. `db test-it` needs only `db up`: it creates the scratch
 databases, and each suite applies the migrations itself. `cargo xtask db registry-import` loads
-the committed Workbench registry exports into the local database, `cargo xtask mk leptos` serves
-the single-page app on port 3000, proxying `/api` and `/map-assets` to the API,
-`cargo xtask db down` stops Postgres and keeps its volume, and `cargo xtask ci ci-local` replays
-the whole CI suite once `db up` has run.
+the committed Workbench [registry](/documentation_v2/glossary.md#registry) exports into the local
+database, `cargo xtask mk leptos` serves the single-page app on port 3000, proxying `/api` and
+`/map-assets` to the API, `cargo xtask db down` stops Postgres and keeps its volume, and
+`cargo xtask ci ci-local` replays the whole CI suite once `db up` has run.
 
 With `APP_ENV=development`, the [dev login](/documentation_v2/glossary.md#dev-login)
 `GET /api/v1/auth/dev-login?role=<role>` signs in without Discord

@@ -9,7 +9,7 @@ each enum maps a Postgres enum.
 ```text
 apps/website/api_v2/src/administration/models/
 ├── audit_log.rs  `AuditLog`, one audit line, and `AuditSeverity`, the `audit_severity` enum
-├── mod.rs        declares the modules; re-exports `AuditLog`, `AuditSeverity` and `Warning`
+├── mod.rs        the module tree; re-exports `AuditLog`, `AuditSeverity` and `Warning`
 └── warning.rs    `Warning`, one disciplinary warning, counted by the personnel roster
 ```
 

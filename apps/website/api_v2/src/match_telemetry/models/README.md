@@ -1,14 +1,15 @@
 # Match telemetry models
 
-The stored record of a finished match: the match row, its outcome enum and the per-player lines the
-game server reports. Keys are snake_case, absent values are skipped and timestamps are RFC 3339.
+The stored record of a finished match: the match row, its outcome enum (`success`, `failure`,
+`aborted` or `pending`) and the per-player lines the game server reports. Keys are snake_case,
+absent values are skipped and timestamps are RFC 3339.
 
 ## Contents
 
 ```text
 apps/website/api_v2/src/match_telemetry/models/
-├── match_record.rs  `Match`, `MissionOutcome` (`success`, `failure`, `aborted`, `pending`) and `MatchPlayerStat`
-└── mod.rs           declares the module; re-exports the three types
+├── match_record.rs  `Match`, its `MissionOutcome` and the per-player `MatchPlayerStat` lines
+└── mod.rs           the module tree; re-exports the three types
 ```
 
 ## Boundaries

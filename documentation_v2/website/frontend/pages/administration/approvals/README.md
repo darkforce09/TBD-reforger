@@ -3,8 +3,9 @@
 # Mission approvals page documentation
 
 The feature documentation of the `/admin/approvals` page, where administrators review the
-[artifacts](/documentation_v2/glossary.md#artifact) that submitted missions compiled into and
-decide them, with the page's design-phase reference.
+[artifacts](/documentation_v2/glossary.md#artifact) that submitted
+[missions](/documentation_v2/glossary.md#mission) compiled into and decide them, with the page's
+design-phase reference.
 
 ## Contents
 
@@ -18,10 +19,11 @@ documentation_v2/website/frontend/pages/administration/approvals/
 
 Read [mission_approvals_page.md](/documentation_v2/website/frontend/pages/administration/approvals/mission_approvals_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
-it quotes the page's interface text, gives what each call means in the API, and compares the built
-page with the blueprint in `visual_references/`. The blueprint is a design-phase reference: it
-shows a mission dossier with a map and side counts, while the built page reviews an immutable
-artifact with its provenance and compile findings. The code folder's README lists the page's files.
+it quotes the page's interface text, gives what each call means in the
+[API](/documentation_v2/glossary.md#api), and compares the built page with the blueprint in
+`visual_references/`. The blueprint is a design-phase reference: it shows a mission dossier with a
+map and side counts, while the built page reviews an immutable artifact with its provenance and
+compile findings. The code folder's README lists the page's files.
 
 ## Code
 

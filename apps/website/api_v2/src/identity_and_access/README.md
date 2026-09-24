@@ -1,8 +1,9 @@
 # Identity and access domain
 
-The API's [identity and access](/documentation_v2/glossary.md#identity-and-access) domain: who the
-caller is and how they prove it. It holds Discord OAuth2 sign-in with its cookie-host and CSRF
-guards, the single-use rotating refresh token, the caller's own profile, the
+The [API](/documentation_v2/glossary.md#api)'s
+[identity and access](/documentation_v2/glossary.md#identity-and-access) domain: who the caller is
+and how they prove it. It holds Discord OAuth2 sign-in with its cookie-host and CSRF guards, the
+single-use rotating refresh token, the caller's own profile, the
 [dev login](/documentation_v2/glossary.md#dev-login), the six-digit handshake that links a Discord
 account to an Arma identity, and the Discord membership snapshot every account's
 [role](/documentation_v2/glossary.md#role) comes from.
@@ -53,16 +54,19 @@ administrator does to a member lives in `administration`.
   transactions.
 - `services::identity_ownership`: `lock_accounts` and `lock_identities`, the lock order every
   identity, reservation and telemetry transaction takes.
-- `services::account_authority::holds_administrator_authority`, read by mission deployments and
-  fleet command claims; `services::cached_membership_permissions`, read by event access in
-  `operations`; `services::discord_membership_enrollment`, called by event administration and
-  slotting.
+- `services::account_authority::holds_administrator_authority`, read by
+  [mission deployments](/documentation_v2/glossary.md#mission-deployment) and
+  [fleet command](/documentation_v2/glossary.md#fleet-command) claims;
+  `services::cached_membership_permissions`, read by [event](/documentation_v2/glossary.md#event)
+  access in `operations`; `services::discord_membership_enrollment`, called by event administration
+  and slotting.
 - `services::discord_client::DiscordService`: the Discord HTTP client `core::application_state`
   holds.
 - `services::discord_role_sync::resync_all_roles`, `services::refresh_token_purge` and
-  `services::discord_rest_reconciliation`: run by the background workers and by
-  `POST /api/v1/admin/roles/sync`; `services::membership_grace_overrides`, behind the
-  administration grace route.
+  `services::discord_rest_reconciliation`: run by the
+  [background workers](/documentation_v2/glossary.md#background-workers); `resync_all_roles` also by
+  `POST /api/v1/admin/roles/sync`; `services::membership_grace_overrides`, behind the administration
+  grace route.
 - `services::user_lookup::load_user`: the one read of the account row behind a Discord id.
 - `models::user_account`: `User`, `UserRole`, `DiscordRole`, `UserDiscordRole`,
   `IdentityLinkCode`, `RefreshToken`.

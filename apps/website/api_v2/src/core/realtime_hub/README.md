@@ -26,7 +26,8 @@ removed on the next publish. Messages are bytes; the publisher chooses their enc
   the status broadcast service, which publishes each server's status on its `server:{id}` topic,
   and the server status stream handler, which subscribes; the
   [game runtime](/documentation_v2/glossary.md#game-runtime) heartbeat of `match_telemetry` and
-  the `server_status_publisher` and `runtime_session_expiry` background workers, which publish
-  through that service.
+  the `server_status_publisher` and `runtime_session_expiry`
+  [background workers](/documentation_v2/glossary.md#background-workers), which publish through
+  that service.
 - Rules: the hub lives in one process, so a subscriber sees only what its own process
   publishes; the audit log feed does not use it.

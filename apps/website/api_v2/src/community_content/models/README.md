@@ -8,7 +8,7 @@ keys, absent values skipped, RFC 3339 timestamps, and each enum mapped to a Post
 ```text
 apps/website/api_v2/src/community_content/models/
 ├── announcement.rs  `Announcement`, with the `AnnouncementStatus` and `AnnouncementTag` enums
-├── mod.rs           declares the modules; re-exports every model
+├── mod.rs           the module tree; re-exports every model
 ├── modpack.rs       `Modpack`, a downloadable dependency set, and `ModpackMod`, one mod inside it
 └── wiki.rs          `WikiPage`, a markdown doctrine page, and `VehicleDatabase`, one vehicle row
 ```
@@ -24,7 +24,7 @@ structs, because the queries filter them.
 
 - Depends on: `core::wire_format` for timestamps, serde and sqlx.
 - Used by: the domain's handlers and services; `command_center`'s dashboard (`Announcement`);
-  `server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `missions`' registry items
-  (`Modpack`); the web app's `apps/website/frontend/src/v2/core/api/dto/content.rs` mirrors the
-  modpack wire shape.
+  `server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `missions`'
+  [registry](/documentation_v2/glossary.md#registry) items (`Modpack`); the web app's
+  `apps/website/frontend/src/v2/core/api/dto/content.rs` mirrors the modpack wire shape.
 - Rules: an enum here and its Postgres enum in `apps/website/api_v2/migrations/` change together.

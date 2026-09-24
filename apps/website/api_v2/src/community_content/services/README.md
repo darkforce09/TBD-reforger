@@ -8,8 +8,8 @@ are pushed through, and the modpack read path that returns a pack with its mods.
 ```text
 apps/website/api_v2/src/community_content/services/
 ├── discord_webhook.rs  `WebhookService`: posts an announcement embed to Discord, answers the message id
+├── mod.rs              the module tree
 ├── modpack_lookup.rs   `ModpackDto` and its reads: by id, the current pack, and mod hydration
-├── mod.rs              declares the modules
 └── tests/              unit tests for the embed sanitiser and the webhook payload
 ```
 

@@ -20,7 +20,7 @@ apps/website/api_v2/src/core/authentication_primitives/
 
 An access token is an HS256 JSON Web Token that `Manager::issue_access` signs with `JWT_SECRET`.
 `sub` is the member's Discord id, `sid` the id of the persisted session the token belongs to,
-[`role`](/documentation_v2/glossary.md#role) and `arma_linked` the values current at issue, `iss` is `tbd-reforger`, `aud` is
+`role` and `arma_linked` the values current at issue, `iss` is `tbd-reforger`, `aud` is
 `tbd-website`, and `exp` lies `JWT_ACCESS_TTL_MIN` minutes after `iat` (15 when the value is zero
 or negative). `Manager::parse` accepts HS256 alone, requires the issuer, audience, subject and
 expiry with no leeway, and refuses a nil session id, an empty subject, and an `iat` in the future
@@ -28,8 +28,9 @@ or at or after `exp`.
 
 A verified token is not yet an identity. The `AuthUser` extractor in `crate::core::middleware`
 hands the claims to the `SessionAuthority` that `AppState` holds, which reads the session and the
-account from Postgres and answers with the member's current role and account state, or refuses.
-The trait lives here so the extractor depends on `core` alone: `DatabaseSessionAuthority` in
+account from Postgres and answers with the member's current
+[role](/documentation_v2/glossary.md#role) and account state, or refuses. The trait lives here so
+the extractor depends on `core` alone: `DatabaseSessionAuthority` in
 `apps/website/api_v2/src/identity_and_access/services/session_authorization.rs` implements it,
 and `apps/website/api_v2/src/core/application_state.rs` wires it in.
 

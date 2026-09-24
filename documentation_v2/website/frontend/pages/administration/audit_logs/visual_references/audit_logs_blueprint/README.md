@@ -3,7 +3,7 @@
 # Audit logs blueprint
 
 Design-phase reference for the audit logs page at `/admin/audit`: a terminal-style console of
-system events. It gives colour and layout context and is not an implementation source; the built
+the system log. It gives colour and layout context and is not an implementation source; the built
 UI is the Leptos code under `apps/website/frontend/src/v2/pages/administration/audit_logs/`.
 
 ## Contents

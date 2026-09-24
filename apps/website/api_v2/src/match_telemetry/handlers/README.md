@@ -7,11 +7,11 @@ report, with the wire contract, parsing and match upsert they are built from.
 
 ```text
 apps/website/api_v2/src/match_telemetry/handlers/
-├── ingest_parsing.rs          wire-value parsing shared by both ingests, and foreign-key errors mapped to 400
-├── match_results.rs           the finished-match report: roster checks, facts, attribution, recomputation
+├── ingest_parsing.rs          wire-value parsing for both ingests; foreign-key errors mapped to 400
+├── match_results.rs           the match report: roster checks, facts, attribution, recomputation
 ├── match_results_contract.rs  the wire contract of the match-results body and its per-player lines
 ├── match_upsert.rs            the idempotent write of the `matches` row, keyed by `source_match_id`
-├── mod.rs                     declares the modules
+├── mod.rs                     the module tree
 ├── server_heartbeat.rs        the session-fenced live-status heartbeat and its partial update
 └── tests/                     unit tests for the parsing, the contract, the upsert and both ingests
 ```
@@ -33,9 +33,10 @@ apps/website/api_v2/src/match_telemetry/handlers/
   the complete roster, serialises reports of the same match, locks the identities and accounts in
   the shared order, upserts the match by `source_match_id` (`match_upsert.rs`), stores each
   player's line, attributes attendance through `operations::services::participation_attribution`,
-  retracts what a previous report attributed to another event mission, and recomputes the
-  affected statistics and the leaderboard before it commits. Players whose Arma identity no account
-  owns keep their gameplay facts and are listed in the answer and in a system audit row.
+  retracts what a previous report attributed to another
+  [event mission](/documentation_v2/glossary.md#event), and recomputes the affected statistics and
+  the leaderboard before it commits. Players whose Arma identity no account owns keep their gameplay
+  facts and are listed in the answer and in a system audit row.
 - **Contract.** `outcome` is required; every other match field is optional, where absent keeps the
   stored value and present replaces it, and an unparseable non-empty `event_id` or `mission_id` is a
   400.
@@ -48,7 +49,8 @@ apps/website/api_v2/src/match_telemetry/handlers/
   (`recompute_user_stats_on_connection`, `refresh_leaderboard_on_connection`); `administration`
   (audit writers); `missions::models::mission::TerrainType`; the domain's models and
   `services::result_serialization`; `core` for errors, the URL guard and the Postgres error codes.
-- Used by: the domain's `routes.rs`; over HTTP, the game runtime's session loop in
+- Used by: the domain's `routes.rs`; over HTTP, the
+  [game runtime](/documentation_v2/glossary.md#game-runtime)'s session loop in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSession.c` and its results reporter in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler

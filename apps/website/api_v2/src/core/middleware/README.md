@@ -13,7 +13,7 @@ apps/website/api_v2/src/core/middleware/
 ├── client_identity.rs          the client address both rate-limit tiers key on
 ├── cross_origin.rs             `cors`: reflects an allow-listed `Origin`, answers preflights with 204
 ├── durable_ratelimit.rs        `PgRateLimiter`: token buckets in Postgres, shared across processes
-├── mod.rs                      re-exports, body caps, `role_rank`, and the error helper `json_error`
+├── mod.rs                      the module tree; re-exports, body caps, `role_rank` and `json_error`
 ├── rate_limiting.rs            `rate_limit`: an in-memory tier and, on strict prefixes, a Postgres one
 ├── tests/                      unit tests for client resolution and the rate limiter's placement
 └── tracing_correlation.rs      `request_id` and `logging`: the `X-Request-ID` and the access log line
@@ -23,9 +23,9 @@ apps/website/api_v2/src/core/middleware/
 
 `crate::core::http_router` applies the chain, outermost first: `request_id`, `logging`, the
 metrics observer of `crate::core::observability`, panic recovery, `cors`, the default body limit
-`MAX_JSON_BODY` (1 MiB), and `rate_limit`. The `/cms/uploads` route raises its own limit to
-`MAX_MULTIPART_BODY` (6 MiB), and the mission version save route takes the limit that
-`MISSION_VERSION_MAX_BODY_BYTES` sets.
+`MAX_JSON_BODY` (1 MiB), and `rate_limit`. The `/api/v1/cms/uploads` route raises its own limit to
+`MAX_MULTIPART_BODY` (6 MiB), and the [mission](/documentation_v2/glossary.md#mission) version save
+route takes the limit that `MISSION_VERSION_MAX_BODY_BYTES` sets.
 
 ```text
 request ─▶ request_id ─▶ logging ─▶ metrics observer ─▶ panic recovery
@@ -48,7 +48,8 @@ two prefixes also pass the durable tier, `PgRateLimiter`, with the same strict n
 `429` with `Retry-After` and `{"error": "rate limit exceeded"}`; a durable tier that cannot reach
 Postgres answers `503` instead of letting the request through. `/map-assets` and
 `/map-assets/glyphs` are mounted below the layer and never reach it; `/uploads` stays limited. The
-`ratelimit_cleanup_worker` background worker deletes buckets idle for an hour.
+`ratelimit_cleanup_worker` [background worker](/documentation_v2/glossary.md#background-workers)
+deletes buckets idle for an hour.
 
 Authentication is not a layer. A handler takes an extractor, and the tier travels with it:
 `AuthUser` needs `Authorization: Bearer <token>`, verifies the token and asks the session
@@ -59,8 +60,8 @@ authority in `AppState` for the member's current session (401 when either fails)
 compares `X-Service-Token` with `SERVICE_TOKEN` in constant time and refuses every request while
 the token is unset. `authorize_event_stream` wraps an [SSE](/documentation_v2/glossary.md#sse)
 stream: before each delivery, and at least every five seconds, it asks the session authority
-again, and it ends the stream with an `authorization_expired` event as soon as the session or its
-role stops qualifying.
+again, and it ends the stream with an `authorization_expired` SSE event as soon as the session or
+its role stops qualifying.
 
 ## Boundaries
 
@@ -70,9 +71,11 @@ role stops qualifying.
   `rate_limit_buckets` table of migration `0021`.
 - Used by:
   - `crate::core::http_router`, which mounts the chain and the exempt asset mounts;
-  - the handlers of all eight domains, through the extractors and `json_error`; `role_rank` in
-    the mission write lock, mission deployments, the approval queue, reservation authority and
-    fleet commands; `MAX_MULTIPART_BODY` in the `community_content` route table;
+  - the handlers of all eight domains, through the extractors and `json_error`; `role_rank` in the
+    mission write lock, [mission deployments](/documentation_v2/glossary.md#mission-deployment), the
+    approval queue, reservation authority and
+    [fleet commands](/documentation_v2/glossary.md#fleet-command); `MAX_MULTIPART_BODY` in the
+    `community_content` route table;
   - `authorize_event_stream`, in the audit log feed of `administration` and the server status
     stream of `server_infrastructure`;
   - the `ratelimit_cleanup_worker` background worker, through `PgRateLimiter`;

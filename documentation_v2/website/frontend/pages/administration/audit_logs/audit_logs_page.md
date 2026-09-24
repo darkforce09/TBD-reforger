@@ -19,8 +19,9 @@ at a time, and inspect one entry's actor, target and metadata. The screen only r
   for the `admin` tier, full-bleed, with the breadcrumb "Administration" › "Audit Logs", and the
   sidebar's Administration section lists it as "Audit Logs"
   (`apps/website/frontend/src/v2/pages/navigation/nav_config.rs`).
-- Related: the API's [administration domain](/apps/website/api_v2/src/administration/README.md),
-  which serves the trail; every page that changes state writes to it.
+- Related: the [API](/documentation_v2/glossary.md#api)'s
+  [administration domain](/apps/website/api_v2/src/administration/README.md), which serves the
+  trail; every page that changes state writes to it.
 
 ## Behaviour
 
@@ -61,8 +62,8 @@ The page makes one kind of call. Server-side:
   unless `limit` asks for up to 100, and `next_cursor` carries the last id whenever the page came
   back full. Each entry is an `AuditLog` row
   (`apps/website/api_v2/src/administration/models/audit_log.rs`): `id`, `severity` (`info`,
-  `warn` or `crit`), `actor_id` (absent for a server event), `actor_name`, `action`, `message`,
-  `target_type`, `target_id`, free-form JSON `metadata` and `created_at`.
+  `warn` or `crit`), `actor_id` (absent when the entry records no account), `actor_name`, `action`,
+  `message`, `target_type`, `target_id`, free-form JSON `metadata` and `created_at`.
 - The same handler filters by `?severity=` and by `?q=`, a case-insensitive match on the message;
   the page sends neither.
 - The API serves two more routes the page does not call: `GET /api/v1/admin/audit-logs/export.csv`
@@ -71,11 +72,20 @@ The page makes one kind of call. Server-side:
   (`stream_audit_logs`), an [SSE](/documentation_v2/glossary.md#sse) feed that replays from the
   `Last-Event-ID` it is given and is woken by Postgres notifications, falling back to a 2-second
   poll.
-- Entries are written by the API handlers that change state, through `append_actor_audit` in
-  `apps/website/api_v2/src/administration/services/required_audit.rs`, inside the transaction of
-  the change they record, so an entry exists exactly when its change committed. The other
-  administration pages' docs name the actions they record, such as `user.ban`, `mission.approve`
-  and `event.deleted`.
+- Most entries are appended inside the transaction of the change they record, through
+  `append_actor_audit` and its siblings in
+  `apps/website/api_v2/src/administration/services/required_audit.rs`, so the entry and its change
+  commit or fail together; triggers from `apps/website/api_v2/migrations/0025_audit_notify.sql`
+  write the entries for creating an [event](/documentation_v2/glossary.md#event), soft-deleting a
+  [mission](/documentation_v2/glossary.md#mission) and removing a member from a
+  [slot](/documentation_v2/glossary.md#slot) in the statement that makes the change. The role
+  resync, warnings, modpack and announcement administration, the server
+  [registry](/documentation_v2/glossary.md#registry) and mission versions write best-effort instead,
+  through `write_audit` in `apps/website/api_v2/src/administration/services/audit_writer.rs`, after
+  their change has committed, as do the system warnings for a failed Discord push, a failed
+  statistics or leaderboard refresh and a low server FPS: a failed write is only logged, and the
+  change stands without its entry. The other administration pages' docs name the actions they
+  record, such as `user.ban`, `mission.approve` and `event.deleted`.
 
 ## Design
 
@@ -90,7 +100,7 @@ The page makes one kind of call. Server-side:
   [Audit Logs section](/documentation_v2/archive/go_and_react_era_design/platform_context_handoff.md#12-audit-logs).
   The built page differs from the blueprint:
   - no page heading or subtitle: the breadcrumb names the page;
-  - no "Export to CSV" button, although the API serves the export; no ticket covers the button;
+  - no "Export to CSV" button, although the API serves the export (see Open work);
   - no "Live Feed" badge and no live updates: the trail changes only through "Load more";
   - no terminal window chrome (the traffic-light dots and the `~/syslog_view` title bar);
   - each line carries the action as well as the message;
@@ -98,13 +108,16 @@ The page makes one kind of call. Server-side:
 
 ## Open work
 
-- [T-950 — Audit SSE stream has no client](/.ai/tickets/T-950.toml) (idea): either the page
+- [T-950 — Audit SSE stream has no client](/.ai/tickets/T-950.toml) (idea, no plan): either the page
   consumes the audit stream, so new entries appear without a reload, or the stream is recorded as
   an API-only route.
 - [T-944 — Audit stream: id-order race and half-open socket](/documentation_v2/tickets/specs/t944_audit_stream_race.md)
   (queued, [plan](/documentation_v2/tickets/plans/t-944_plan.md)): the stream delivers every
   committed entry exactly once, even when a lower id commits late or the database connection
   silently drops; it matters to this page once the page consumes the stream.
+- [T-1029 — Add CSV export to the audit logs page](/.ai/tickets/T-1029.toml) (idea, no plan): the
+  page gains a control that downloads `GET /api/v1/admin/audit-logs/export.csv`, which the API
+  already serves.
 
 ## Decisions
 

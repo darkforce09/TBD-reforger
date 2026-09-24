@@ -1,0 +1,44 @@
+writer	wave	folders	units (a unit is a subtree root; "(folder only)" = that folder's own README, its subfolders are other units)
+R02	W4.1	15	apps/website/api_v2/src/missions ; apps/website/api_v2/src/operations
+R03	W4.1	14	apps/website/frontend
+R04	W4.1	18	apps/website/frontend/src/v2/pages (folder only) ; apps/website/frontend/src/v2/pages/command_center ; apps/website/frontend/src/v2/pages/mission_hub ; apps/website/frontend/src/v2/pages/operations
+R05.1	W4.1	11	apps/website/frontend/src/v2/pages/account ; apps/website/frontend/src/v2/pages/doctrine_and_info ; apps/website/frontend/src/v2/pages/field_tools ; apps/website/frontend/src/v2/pages/navigation
+R05.2	W4.2	13	apps/website/frontend/src/v2/pages/administration
+R06.1	W4.2	16	apps/website/frontend/src/v2/apps/editor/ui (folder only) ; apps/website/frontend/src/v2/apps/editor/ui/arsenal ; apps/website/frontend/src/v2/apps/editor/ui/inspector ; apps/website/frontend/src/v2/apps/editor/ui/modals
+R06.2	W4.2	19	apps/website/frontend/src/v2/apps/editor/ui/docks ; apps/website/frontend/src/v2/apps/editor/ui/outliner
+R07.1	W4.2	16	apps/website/frontend/src/v2/apps (folder only) ; apps/website/frontend/src/v2/apps/aar ; apps/website/frontend/src/v2/apps/debug ; apps/website/frontend/src/v2/apps/editor (folder only) ; apps/website/frontend/src/v2/apps/editor/arsenal ; apps/website/frontend/src/v2/apps/planner
+R07.2	W4.3	19	apps/website/frontend/src/v2/apps/editor/bridge ; apps/website/frontend/src/v2/apps/editor/input ; apps/website/frontend/src/v2/apps/editor/mission_editor ; apps/website/frontend/src/v2/apps/editor/shell
+R08.1	W4.3	13	apps/website/map-engine/src/data (folder only) ; apps/website/map-engine/src/data/scenario (folder only) ; apps/website/map-engine/src/data/scenario/ast ; apps/website/map-engine/src/data/scenario/ballistics ; apps/website/map-engine/src/data/scenario/compiler ; apps/website/map-engine/src/data/scenario/slot_line ; apps/website/map-engine/src/data/scenario/validation
+R08.2	W4.3	11	apps/website/map-engine/src/data/scenario/extensions
+R08.3	W4.3	12	apps/website/map-engine/src/data/store
+R09.1	W4.4	16	apps/website/map-engine/src/spatial ; apps/website/map-engine/src/world (folder only) ; apps/website/map-engine/src/world/environment
+R09.2	W4.4	13	apps/website/map-engine/src/streaming
+R09.3	W4.4	16	apps/website/map-engine/src/world/architecture ; apps/website/map-engine/src/world/terrain
+R10.1	W4.4	16	apps/website/map-engine (folder only) ; apps/website/map-engine/src (folder only) ; apps/website/map-engine/src/camera ; apps/website/map-engine/src/diagnostics ; apps/website/map-engine/src/frame ; apps/website/map-engine/src/shaders
+R10.2	W4.5	13	apps/website/map-engine/src/doll ; apps/website/map-engine/src/io
+R10.3	W4.5	19	apps/website/map-engine/src/editing ; apps/website/map-engine/src/overlay
+R11.1	W4.5	16	apps ; assets_v2 (folder only)
+R11.2	W4.5	18	assets_v2/glyphs ; assets_v2/storage_spec ; contracts_v2
+R11.3	W4.6	16	assets_v2/terrains
+R12	W4.6	12	apps/mod/tbd-framework/Scripts/Game/TBD/Systems
+R13	W4.6	19	apps/mod/tbd-framework/Scripts/Game/TBD/API ; apps/mod/tbd-framework/Scripts/Game/TBD/Core ; apps/mod/tbd-framework/Scripts/Game/TBD/Session
+R14.1	W4.6	14	apps/mod (folder only) ; apps/mod/tbd-emcp ; apps/mod/tbd-framework (folder only) ; apps/mod/tbd-framework/Configs ; apps/mod/tbd-framework/Data ; apps/mod/tbd-framework/Missions ; apps/mod/tbd-framework/Prefabs
+R14.2	W4.7	15	apps/mod/tbd-framework/Scripts ; apps/mod/tbd-framework/worlds
+R14.3	W4.7	16	apps/mod/tbd-framework/UI
+R15.1	W4.7	16	apps/mod/tbd-export (folder only) ; apps/mod/tbd-export/Missions ; apps/mod/tbd-export/Prefabs ; apps/mod/tbd-export/Scripts (folder only) ; apps/mod/tbd-export/Scripts/Game ; apps/mod/tbd-export/Scripts/WorkbenchGame (folder only) ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport (folder only) ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Core ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Locations ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Registry ; apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport
+R15.2	W4.7	16	apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport
+R15.3	W4.8	14	apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects ; apps/mod/tbd-export/worlds
+R15.4	W4.8	18	apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain ; apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Vegetation
+R16	W4.8	19	tools_v2/xtask/src/commands/mod_ops ; tools_v2/xtask/src/commands/platform
+R17.1	W4.8	16	tools_v2/xtask (folder only) ; tools_v2/xtask/dedicated_server_profiles ; tools_v2/xtask/deploy ; tools_v2/xtask/fixtures ; tools_v2/xtask/src (folder only) ; tools_v2/xtask/src/cli ; tools_v2/xtask/src/commands (folder only) ; tools_v2/xtask/src/commands/agent_context ; tools_v2/xtask/src/commands/build ; tools_v2/xtask/src/commands/ci ; tools_v2/xtask/src/commands/fetch
+R17.2	W4.9	16	tools_v2/xtask/src/commands/db ; tools_v2/xtask/src/commands/debug ; tools_v2/xtask/src/commands/deploy ; tools_v2/xtask/src/commands/generate ; tools_v2/xtask/src/commands/map ; tools_v2/xtask/src/commands/mcp ; tools_v2/xtask/src/commands/reproduction
+R18.1	W4.9	16	tools_v2/xtask/src/verifications (folder only) ; tools_v2/xtask/src/verifications/api_readiness ; tools_v2/xtask/src/verifications/architecture ; tools_v2/xtask/src/verifications/ci ; tools_v2/xtask/src/verifications/database ; tools_v2/xtask/src/verifications/deployment ; tools_v2/xtask/src/verifications/documentation ; tools_v2/xtask/src/verifications/map_assets
+R18.2	W4.9	17	tools_v2/xtask/src/verifications/language_bans ; tools_v2/xtask/src/verifications/licensing ; tools_v2/xtask/src/verifications/mod_scripts ; tools_v2/xtask/src/verifications/registry ; tools_v2/xtask/src/verifications/schemas ; tools_v2/xtask/src/commands/schema ; tools_v2/xtask/src/commands/setup ; tools_v2/xtask/src/commands/ticket ; tools_v2/xtask/src/commands/verify ; tools_v2/xtask/src/commands/wave ; tools_v2/xtask/src/core
+R19	W4.9	20	tools_v2/developer-tools/src/blueprint ; tools_v2/developer-tools/src/browser_testing
+R20.1	W4.10	16	tools_v2/developer-tools (folder only) ; tools_v2/developer-tools/fixtures ; tools_v2/developer-tools/src (folder only) ; tools_v2/developer-tools/src/bin ; tools_v2/developer-tools/src/enfusion_pak ; tools_v2/developer-tools/src/enfusion_tooling ; tools_v2/developer-tools/src/map_raster_pipeline
+R20.2	W4.10	11	tools_v2/developer-tools/src/map_verification ; tools_v2/developer-tools/src/world_export_pipeline
+R20.3	W4.10	10	tools_v2/developer-tools/test_fixtures
+R21.1	W4.10	16	apps/fleet_host_agent ; apps/ticketboard (folder only) ; apps/ticketboard/src (folder only) ; apps/ticketboard/src/application ; apps/ticketboard/src/core ; tools_v2 (folder only) ; tools_v2/enfusion_mcp_node_package
+R21.2	W4.11	16	apps/ticketboard/src/document_viewer ; apps/ticketboard/src/execution_metrics ; apps/ticketboard/src/repository_status ; apps/ticketboard/src/ticket_registry
+R21.3	W4.11	15	apps/ticketboard/src/ticket_actions ; apps/ticketboard/src/ticket_browser ; apps/ticketboard/src/wave_plan
+R21.4	W4.11	16	tools_v2/ticket-engine ; tools_v2/verification-core

@@ -23,7 +23,7 @@ announcements only; the doctrine wiki has no editor here.
   (`apps/website/frontend/src/v2/pages/navigation/nav_config.rs`).
 - Related: the [content manager](/documentation_v2/glossary.md#content-manager) glossary entry;
   the [announcements page](/documentation_v2/website/frontend/pages/command_center/announcements/announcements_page.md),
-  where members read what this page publishes; the API's
+  where members read what this page publishes; the [API](/documentation_v2/glossary.md#api)'s
   [community content domain](/apps/website/api_v2/src/community_content/README.md).
 
 ## Behaviour
@@ -133,8 +133,14 @@ The page README lists no calls, so the DTOs are named here. Server-side, in
 
 ## Open work
 
-- [T-087 — CMS rich text editor](/.ai/tickets/T-087.toml) (deferred): the body becomes a rich-text
-  editor in place of Markdown text with a marker toolbar.
+- [T-087 — CMS rich text editor](/.ai/tickets/T-087.toml) (deferred, no plan): the body becomes a
+  rich-text editor in place of Markdown text with a marker toolbar.
+- [T-1018 — Fix content manager Save Draft and Discord broadcast toast](/.ai/tickets/T-1018.toml)
+  (idea, no plan): "Save Draft" saves the post as a draft instead of only toasting "Draft saved",
+  and the publish toast claims a Discord broadcast only when the push succeeded.
+- [T-1028 — Fix re-publishing a pinned announcement unpinning it](/.ai/tickets/T-1028.toml)
+  (idea, no plan): publishing an existing post keeps its pin instead of sending
+  `is_pinned: false`.
 
 ## Decisions
 

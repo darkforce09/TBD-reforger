@@ -28,8 +28,8 @@ most `Registry::MAX_SERIES` (1024) series; a sample beyond that is dropped and c
 
 `GET /metrics` needs the `X-Service-Token` that `ServiceAuth` checks and answers 401 without it,
 or while `SERVICE_TOKEN` is unset. It renders the request counters, the latency histogram, the
-in-flight gauge, `tbd_http_rate_limited_total`, the build and the uptime, plus what the registry
-cannot accumulate and the scrape samples itself: a bounded database ping and the pool's
+in-flight gauge, `tbd_http_rate_limited_total`, the build and the uptime, plus what the metrics
+registry cannot accumulate and the scrape samples itself: a bounded database ping and the pool's
 connections.
 
 `GET /healthz` runs two checks, either of which turns it red: `database`, a `SELECT 1` bounded at

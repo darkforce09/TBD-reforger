@@ -8,25 +8,25 @@ account lookup other domains share.
 
 ```text
 apps/website/api_v2/src/identity_and_access/services/
-├── account_authority.rs              an account's current permissions from its verified Discord snapshot
-├── cached_membership_permissions.rs  pure decisions over a cached snapshot: grace period, staleness, overrides
+├── account_authority.rs              an account's permissions from its verified Discord snapshot
+├── cached_membership_permissions.rs  grace, staleness and override decisions over a cached snapshot
 ├── discord_client.rs                 the Discord OAuth2 and guild-member HTTP client
 ├── discord_membership_cache.rs       fenced membership observations: lease, accept, record a failure
 ├── discord_membership_enrollment.rs  enrolls the guilds an event's eligibility needs verified
 ├── discord_rest_reconciliation.rs    the bot-authenticated reconciler: leases, rate budget, backoff
 ├── discord_role_sync.rs              re-applies the guild role mapping to every account's display role
-├── discord_user_profile.rs           the Discord user profile and the names and avatar URL taken from it
-├── identity_linking.rs               spends a link code or unlinks, with attribution, statistics and audit
+├── discord_user_profile.rs           the Discord user profile and its derived names and avatar URL
+├── identity_linking.rs               spends a link code or unlinks: attribution, statistics, audit
 ├── identity_ownership.rs             the identity and account locks, in their fixed order
 ├── link_code_issuance.rs             issues the single pending six-digit link code of an account
 ├── membership_grace_overrides.rs     audited, expiring extensions of cached permissions during outages
-├── mod.rs                            declares the modules
+├── mod.rs                            the module tree
 ├── refresh_token_purge.rs            deletes refresh tokens more than seven days past expiry
 ├── session_authorization.rs          decides a session's current authority in PostgreSQL
 ├── session_issuance.rs               mints a session and builds the SPA callback redirect
 ├── session_rotation.rs               single-use refresh rotation and logout under the account lock
 ├── session_storage.rs                persists sessions and refresh tokens, and revokes them
-├── tests/                            unit tests for the permission decisions, the Discord client and profile
+├── tests/                            unit tests for the permission, Discord and session services
 └── user_lookup.rs                    loads the live account row behind a Discord id
 ```
 
@@ -36,9 +36,9 @@ apps/website/api_v2/src/identity_and_access/services/
   that session and the account's authority in PostgreSQL on every request, through
   `DatabaseSessionAuthority`, which the `AuthUser` extractor in `core` calls. Session writers lock
   the account row before any session or token row (`account_authority::lock_account`), a session
-  lasts 30 days, and a development session is refused by a production-configured API.
-  `refresh_token_purge.rs` keeps revoked but unexpired tokens, because a replay of one is how
-  rotation detects theft.
+  lasts 30 days, and a development session is refused by a production-configured
+  [API](/documentation_v2/glossary.md#api). `refresh_token_purge.rs` keeps revoked but unexpired
+  tokens, because a replay of one is how rotation detects theft.
 - **Authority from Discord.** `account_authority.rs` reads the account's verified, guild-scoped
   Discord snapshot and never `users.role`. Cached grants last 48 hours
   (`DEFAULT_MEMBERSHIP_GRACE_PERIOD`) unless an administrator extends them by 1 to 48 hours with a
@@ -46,8 +46,8 @@ apps/website/api_v2/src/identity_and_access/services/
   OAuth callback and the reconciler write observations only under the current lease
   (`discord_membership_cache.rs`), so a superseded request cannot restore older grants; a failed
   lookup never changes verified membership. The reconciler admits at most 25 Discord requests per
-  second across replicas, and a changed membership queues a re-evaluation of the account's event
-  reservations.
+  second across replicas, and a changed membership queues a re-evaluation of the account's
+  [event](/documentation_v2/glossary.md#event) reservations.
 - **Arma identity.** A link code is six digits, valid ten minutes, one pending per account.
   Spending it (`identity_linking.rs`) takes the locks of `identity_ownership.rs` (sorted Arma
   identities, sorted accounts, link codes, match and attendance rows, the leaderboard), attributes
@@ -62,9 +62,10 @@ apps/website/api_v2/src/identity_and_access/services/
   and `participation_attribution`); Discord's REST API over reqwest.
 - Used by: `core::application_state`, which holds `DiscordService` and `DatabaseSessionAuthority`;
   the `token_purge_worker`, `discord_role_synchronizer` and `discord_membership_reconciler` workers
-  in `apps/website/api_v2/src/background_workers/`; `administration` (role resync, grace extension,
-  account locks); `missions`, `operations`, `server_infrastructure` and `match_telemetry`
-  (`authorize_on_connection`, `lock_accounts`, `lock_identities`, `holds_administrator_authority`,
+  in `apps/website/api_v2/src/background_workers/`; `administration`
+  ([role](/documentation_v2/glossary.md#role) resync, grace extension, account locks); `missions`,
+  `operations`, `server_infrastructure` and `match_telemetry` (`authorize_on_connection`,
+  `lock_accounts`, `lock_identities`, `holds_administrator_authority`,
   `evaluate_cached_membership_permissions`, the membership enrollment); `command_center`
   (`load_user`); the integration tests in `apps/website/api_v2/tests/`.
 - Rules: every writer that touches identities or accounts takes the `identity_ownership.rs` lock

@@ -5,9 +5,10 @@
 The `/admin/events` page, titled "Operations Calendar": administrators schedule
 [events](/documentation_v2/glossary.md#event), which the screen calls operations, on a month
 calendar, attach [missions](/documentation_v2/glossary.md#mission) whose
-[ORBAT](/documentation_v2/glossary.md#orbat) becomes each event mission's slots, edit an
-operation's time, briefing, capacity, lifecycle state and registration, delete it, and decide in
-an access sheet who may join, from which pools, and why each participant is admitted.
+[ORBAT](/documentation_v2/glossary.md#orbat) becomes each event mission's
+[slots](/documentation_v2/glossary.md#slot), edit an operation's time, briefing, capacity, lifecycle
+state and registration, delete it, and decide in an access sheet who may join, from which pools, and
+why each participant is admitted.
 
 ## Where it lives
 
@@ -28,7 +29,8 @@ an access sheet who may join, from which pools, and why each participant is admi
 - Related: the [event manager](/documentation_v2/glossary.md#event-manager) glossary entry; the
   [event schedule page](/documentation_v2/website/frontend/pages/operations/schedule/event_schedule_page.md)
   and the [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md),
-  where members see and join what this page schedules; the API's
+  where members see and join what this page schedules; the
+  [API](/documentation_v2/glossary.md#api)'s
   [operations domain](/apps/website/api_v2/src/operations/README.md); the
   [event administration evidence](/documentation_v2/website/api_v2/verification_evidence/event_administration.md),
   [eligibility and allocation evidence](/documentation_v2/website/api_v2/verification_evidence/event_eligibility_allocation.md)
@@ -260,7 +262,19 @@ ACCESS SHEET (side sheet over the calendar)
 
 ## Open work
 
-None.
+- [T-1015 — Fix detach and delete confirm dialogs that misstate server effects](/.ai/tickets/T-1015.toml)
+  (idea, no plan): the detach and delete confirmations say what the API does: detaching withdraws
+  the attachment's registrations and keeps its ORBAT and history, and deleting withdraws every
+  reservation.
+- [T-1016 — Fix event manager calendar showing only the 20 earliest events](/.ai/tickets/T-1016.toml)
+  (idea, no plan): the calendar receives every operation, not only the API's first page of 20,
+  and a failed read no longer looks like an empty month.
+- [T-1019 — Fix operation scheduling toasting failed mission attaches as success](/.ai/tickets/T-1019.toml)
+  (idea, no plan): the schedule form checks each mission attach and reports a failed one instead
+  of counting the staged missions.
+- [T-1022 — Add website admin UI to manage game servers](/.ai/tickets/T-1022.toml) (idea, no
+  plan): the event manager's forms set an operation's server, which the API already accepts, and
+  a page creates, edits and deactivates servers.
 
 ## Decisions
 

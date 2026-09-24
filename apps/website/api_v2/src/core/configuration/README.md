@@ -47,8 +47,10 @@ resolution in `crate::core::middleware` is the only reader.
     and the proxy list, the health probe reads the service token, and
     `crate::core::database::connection_pool` reports through `ConfigError`;
   - the domains, through `AppState::cfg`; `identity_and_access`, `missions` and `operations` also
-    name `Config` directly, in the OAuth host guard, session authorization, the mission write lock,
-    mission deployment requests and the reservation scope;
+    name `Config` directly, in the OAuth host guard, session authorization, the
+    [mission](/documentation_v2/glossary.md#mission) write lock,
+    [mission deployment](/documentation_v2/glossary.md#mission-deployment) requests and the
+    reservation scope;
   - the integration suites under `apps/website/api_v2/tests/`, through `Config::for_tests`.
 - Rules: a variable is added together with the code that reads it, so `Config` holds no setting
   that nothing uses; a value that is set but unusable fails boot instead of falling back to a

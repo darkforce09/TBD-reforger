@@ -2,9 +2,9 @@
 
 # Event manager blueprint
 
-Design-phase reference for the event manager page at `/admin/events`: a tactical month calendar
-beside a form that schedules one operation. It gives colour and layout context and is not an
-implementation source; the built UI is the Leptos code under
+Design-phase reference for the [event manager](/documentation_v2/glossary.md#event-manager) page at
+`/admin/events`: a tactical month calendar beside a form that schedules one operation. It gives
+colour and layout context and is not an implementation source; the built UI is the Leptos code under
 `apps/website/frontend/src/v2/pages/administration/event_manager/`.
 
 ## Contents
@@ -25,9 +25,10 @@ personnel."), and the buttons "Publish Event" and "Delete Event".
 
 The built page differs: its heading reads "Operations Calendar" with its own line; the form beside
 the calendar becomes a day panel that lists the selected day's operations, with the schedule, edit
-and delete actions in dialogs; an operation carries several missions, a lifecycle state, a
-briefing, a banner and a slot ceiling; and an access sheet, which the blueprint does not show,
-decides who may join. The
+and delete actions in dialogs; an operation carries several
+[missions](/documentation_v2/glossary.md#mission), a lifecycle state, a briefing, a banner and a
+[slot](/documentation_v2/glossary.md#slot) ceiling; and an access sheet, which the blueprint does
+not show, decides who may join. The
 [event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
 feature doc holds the full comparison.
 

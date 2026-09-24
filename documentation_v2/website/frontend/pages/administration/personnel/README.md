@@ -18,10 +18,11 @@ documentation_v2/website/frontend/pages/administration/personnel/
 
 Read [personnel_roster_page.md](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
 first. It follows the [feature doc template](/documentation_v2/standards/templates/feature_doc.md):
-it quotes the page's interface text, gives what each call means in the API, including the role
-change the API refuses, and compares the built page with the blueprint in `visual_references/`.
-The blueprint is a design-phase reference: it filters by rank and shows photos, while the built
-page filters by ban status and shows initials. The code folder's README lists the page's files.
+it quotes the page's interface text, gives what each call means in the
+[API](/documentation_v2/glossary.md#api), including the role change the API refuses, and compares
+the built page with the blueprint in `visual_references/`. The blueprint is a design-phase
+reference: it filters by rank and shows photos, while the built page filters by ban status and shows
+initials. The code folder's README lists the page's files.
 
 ## Code
 
