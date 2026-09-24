@@ -166,7 +166,7 @@ the base brief names, outside the repository.
 | R11.2 | 4 · W4.5 | README writer: 18 folders — `assets_v2/glyphs` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
 | V4.5 | 4 · W4.5 | Wave verifier over W4.5's writers | dropped (operator direction: no verifier per wave) | — | — |
 | R11.3 | 4 · W4.6 | README writer: 16 folders — `assets_v2/terrains` (see `refactor_phase4_slices.tsv`) | running | — | — |
-| R12 | 4 · W4.6 | README writer: 12 folders — `apps/mod/tbd-framework/Scripts/Game/TBD/Systems` (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R12 | 4 · W4.6 | README writer: 12 folders — `apps/mod/tbd-framework/Scripts/Game/TBD/Systems` (see `refactor_phase4_slices.tsv`) | running | — | — |
 | R13 | 4 · W4.6 | README writer: 19 folders — `apps/mod/tbd-framework/Scripts/Game/TBD/API` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
 | R14.1 | 4 · W4.6 | README writer: 14 folders — `apps/mod (folder only)` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
 | V4.6 | 4 · W4.6 | Wave verifier over W4.6's writers | dropped (operator direction: no verifier per wave) | — | — |
