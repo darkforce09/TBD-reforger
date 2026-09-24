@@ -120,14 +120,13 @@ redirects to the app's `/auth/callback` with the session in the URL fragment.
 `Config::load` in `src/core/configuration/mod.rs` reads the process environment, then `.env`; an
 exported variable wins. `DATABASE_URL` and `JWT_SECRET` are always required. Outside development,
 `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR` are
-required too, and a set `EQUIPMENT_DATA_DIR` or `EQUIPMENT_EXPORT_SOURCE_DIR` must be absolute.
+required too.
 
 | Group | Variables |
 |---|---|
 | Server | `PORT` (8080), `APP_ENV` (`production` unless set; `development` enables dev-login), `FRONTEND_URL`, `ALLOWED_ORIGINS`, `TRUSTED_PROXIES` |
 | Database | `DATABASE_URL`, and the four `TBD_DB_POOL_*` pool settings |
 | Files | `SPA_DIST_DIR` (serve the built app when set), `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` |
-| Equipment viewer | `EQUIPMENT_DATA_DIR` (the imported exports and their indexes; `../../../assets_v2/equipment` in development), `EQUIPMENT_EXPORT_SOURCE_DIR` (an optional Workbench publication folder the import worker checks; unset, the viewer browses what is already imported) |
 | Request limits | `MISSION_VERSION_MAX_BODY_BYTES` (256 MiB), the body limit of the mission version save route alone |
 | Sessions and Discord | `JWT_SECRET`, `JWT_ACCESS_TTL_MIN` (15), `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL`, `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` |
 | Service token | `SERVICE_TOKEN`, which game-server ingest, `/metrics` and the detailed `/healthz` check |

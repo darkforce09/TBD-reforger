@@ -1,496 +1,452 @@
 **Status:** live
 
-# TBD Reforger — Documentation Standards
+# Documentation standards
 
-**Status:** living
-**Audience:** every engineer and AI agent that writes Rust, Enfusion, or tooling code in this monorepo
-**Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`documentation_v2/README.md`](/documentation_v2/README.md) → **this doc** (supporting tier)
-**Updated:** 2026-07-18 (T-171 path refresh)
+How this repository documents its code and writes its documents: the comment rules for Rust and
+EnfScript, the cross-boundary tags and the checks that hold them, and the layout, naming and
+lifecycle of the documentation tree. It details law 8 of [CLAUDE.md](/CLAUDE.md) with a real
+example of each rule. README.md files follow the
+[README standard](/documentation_v2/standards/readme_standard.md), which this document links rather
+than repeats.
 
-> **Live stack (T-145 / T-159 / T-171):** `apps/website/api_v2/` (Axum + sqlx) + `apps/website/frontend/` (Leptos). Go/TS examples below are **historical patterns** for `@contract` / `@route` vocabulary — prefer Rust rustdoc + clippy today. Homes: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
+## 1. Scope and authority
 
-> This document is the source of truth for **how code is documented** across the three
-> boundaries of `TBD-Reforger`. It is **ruthless and prescriptive**: where it says REQUIRED,
-> non-conforming code is a defect to fix on next edit; where it says FORBIDDEN, the pattern must
-> not be introduced. It defers to running code (the authority ladder above) and never overrides a
-> rule in [`CLAUDE.md`](../../CLAUDE.md) or the [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md).
+- The rules apply to every comment in `apps/` and `tools_v2/` and to every document under
+  `documentation_v2/`; the audience is developers and AI agents.
+- When sources disagree, the running code wins, then `CLAUDE.md`, then the rest of the
+  [authority ladder](/documentation_v2/README.md#authority-ladder) in the entry README.
+- A comment or document the code contradicts is a defect, fixed by the next change that touches
+  it; a stale doc comment is a bug, not a cosmetic issue.
 
----
+## 2. Contracts behind the tags
 
-## 0. Why this exists
+A `@contract` tag (section 3) points at the single definition a type projects; these rules say
+what that definition is and how its projections stay true to it.
 
-The monorepo spans three hard boundaries:
+- **One definition.** A shape that several programs or languages share (the mission document, the
+  editor payload, the registry and loadout exports, fleet commands, machine credentials and the
+  rest of `contracts_v2/definitions/`) is defined once there, as a JSON Schema, and every
+  projection follows it; a new field goes into the schema first. The REST API's other request and
+  response bodies are defined by the Rust models in `apps/website/api_v2/src/<domain>/models/`
+  (law 9).
+- **Projections.** `cargo xtask ci schema-codegen` generates Rust types from the schemas into the
+  API's `generated/` folders (`apps/website/api_v2/src/missions/contract/generated/` and each
+  domain's `models/generated/`), which nobody edits by hand; `cargo xtask ci verify-codegen-fresh`
+  fails when they drift from the schemas. The web app's DTOs in
+  `apps/website/frontend/src/v2/core/api/dto/` are hand-written and held to the API's answers by
+  the golden responses in `apps/website/frontend/tests/fixtures/api/`
+  (`apps/website/frontend/src/v2/core/api/dto/tests/r_api.rs`). EnfScript has no code generator:
+  its DTOs are hand-written, carry `@contract`, and the golden missions in
+  `contracts_v2/fixtures/missions/` are validated against the schemas by
+  `cargo xtask schema validate`.
+- **Runtime validation.** `POST /api/v1/missions/:id/versions` validates the payload against
+  `mission-editor-payload.schema.json` before it stores anything and answers 400 with the
+  violations (`apps/website/api_v2/src/missions/handlers/mission_versions.rs`).
+- **Three version fields.** The canonical mission document (`mission.schema.json`, what the mod
+  loads) carries `schemaVersion` as a string; the editor payload
+  (`mission-editor-payload.schema.json`, what the version save accepts) carries `schemaVersion` as
+  an integer; the export document (`GET /api/v1/missions/:id/export`) carries
+  `exportFormatVersion`, an integer, and no `schemaVersion`. A projection types each field as its
+  own document does.
+- **Published data is immutable.** A mission version is written once, unique per mission and
+  semver, and a database trigger refuses any update
+  (`apps/website/api_v2/migrations/0052_mission_version_immutability.sql`). A contract change is a
+  schema change plus regeneration, never an edit of a stored payload.
 
-| Boundary | Language | Role |
-|----------|----------|------|
-| [`contracts_v2`](../../contracts_v2) | JSON Schema (draft 2020-12) | **The source of truth.** Declares every cross-boundary data contract. |
-| [`apps/website`](../../apps/website) | Rust: `api/` (Axum) + `frontend/` (Leptos) | API server + SPA. |
-| [`apps/mod`](../../apps/mod) | Enfusion / Enforce Script (`.c`) | The Arma Reforger game framework. |
+Wire casing is fixed per document:
 
-A single concept — a mission, a loadout, a registry item — is declared in **four** places (schema,
-Go struct, TS interface, Enforce DTO). **Go and TS contract projections are generated** from
-`contracts_v2` (T-123); Enforce DTOs stay hand-written with `@contract` + golden fixtures
-(Enforce has no codegen). GORM models remain the snake_case DB/API source of truth. The result
-without tags: a developer reading an Enfusion DTO cannot mechanically discover which Go route feeds
-it or which schema defines it. **Architectural context is lost at every boundary crossing.** This
-document fixes that with: a contract ontology (§2), a cross-boundary hyperlink vocabulary (§3),
-strict per-language syntax (§4–§6), mandatory network-authority tagging in Enfusion (§7), a
-decision-record tier (§8), codegen + validation (§9), and CI gates that enforce all of it (§10).
+| Document | Casing |
+|---|---|
+| REST request and response bodies under `/api/v1` | snake_case, as the API's models serialize |
+| List responses | `{ data, total, limit, offset }`; the audit log pages with `{ data, next_cursor }` |
+| The export document, `mission.schema.json`, `mission-editor-payload.schema.json`, `loadout-export.schema.json` | camelCase |
+| `registry-items.schema.json` | camelCase envelope, snake_case item fields |
 
----
+A change to a cross-boundary contract lands in one commit: the schema change, the regenerated
+types, every `@contract` and `@route` that moves with it, and a `decisions.md` entry in the
+feature folder that owns the contract.
 
-## 1. Ownership & the agent split
+## 3. Tags
 
-[`CLAUDE.md`](../../CLAUDE.md) §Documentation and [`.cursor/rules/`](../../.cursor/rules) lock an
-agent split: **Cursor owns documentation, Claude Code owns code.** That split is silent on one
-thing — **in-code comments** — which this section resolves:
-
-- **In-code doc comments are CODE.** Godoc comments, TSDoc blocks, and Enforce `//!`/`/** */`
-  banners are authored and edited by **Claude Code**, in the **same commit** as the code they
-  describe (the same-commit rule in [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md)).
-- **Standards & decision markdown are DOCS.** This file, the per-spec Decisions logs (§8), and
-  anything under `documentation_v2/` are owned by **Cursor**.
-- Authoring *this* file is a one-time, user-directed exception to "Cursor owns docs"; future
-  edits to it follow the split (Cursor).
-
-A code change that adds or alters a documented symbol **must** update its in-code comment in the
-same diff. A stale doc comment is treated as a bug, not a cosmetic issue.
-
----
-
-## 2. The contract ontology
-
-**Rule 2.1 — Single source of truth.** Every data shape that crosses a boundary is **defined
-once** in [`contracts_v2/definitions/*.json`](../../contracts_v2/definitions). Go structs, TS
-interfaces, and Enforce DTOs are **projections** of a schema definition — never the origin of one.
-A new cross-boundary field is added to the schema **first**.
-
-**Rule 2.2 — A field's type is fixed by its schema definition.** Every projection MUST match the
-schema's declared type exactly. The rule is **scoped per artifact** — there are three version
-namespaces and they do not collide:
-- **Canonical mission document** ([`mission.schema.json`](../../contracts_v2/definitions/mission.schema.json),
-  consumed by the Enfusion mod loader): `schemaVersion` is a **string enum** (`"1.0"`, `"1.1"`).
-  Every Go/TS/Enforce projection of a *canonical mission* MUST type it as a **string**.
-- **Editor payload** ([`mission-editor-payload.schema.json`](../../contracts_v2/definitions/mission-editor-payload.schema.json),
-  the `POST /missions/:id/versions` `json_payload` superset): `schemaVersion` is an **integer**
-  (editor format version) — a distinct namespace from the canonical string.
-- **Export envelope** (`GET /missions/:id/export` / inject — `missionJSON`/`MissionExport`): carries
-  **`exportFormatVersion`** (integer), **not** `schemaVersion`, keeping it off the canonical key
-  (renamed in T-123.1). Type drift *within* a namespace is a defect.
-
-**Rule 2.3 — Wire casing is per-artifact and fixed.** Casing is not a matter of taste; it is
-nailed down per artifact and enforced by codegen (§9). This table is normative:
-
-| Artifact | Casing | Authority |
-|----------|--------|-----------|
-| REST API request/response bodies (`/api/v1/**`) | **snake_case** | GORM struct tags = the API contract ([`CLAUDE.md`](../../CLAUDE.md) §Conventions) |
-| Mission **export** envelope (`GET /missions/:id/export`; version field **`exportFormatVersion`**, int — T-123.1) | **camelCase** | the one documented exception |
-| `mission-editor-payload.schema.json` (`POST /missions/:id/versions` payload; int `schemaVersion`) | **camelCase** | schema source |
-| `mission.schema.json`, `loadout-export.schema.json` | **camelCase** | schema source |
-| `registry-items.schema.json` — envelope vs. items | envelope **camelCase**, item fields **snake_case** | schema source |
-| List endpoints | `{ data, total, limit, offset }` (audit logs: `next_cursor`) | [`CLAUDE.md`](../../CLAUDE.md) §Conventions |
-
-**Rule 2.4 — Published artifacts are immutable.** Mission versions are write-once (unique semver).
-A contract change is a **schema bump + regenerate**, never an in-place edit of a published payload.
-
----
-
-## 3. Cross-boundary hyperlinking — the tag vocabulary
-
-This is the core fix for the Interconnection Problem. Four **machine-greppable** tags, usable from
-any language's comment syntax. They are verified in CI (§10).
+Two tags link code across the boundaries between the contracts, the website and the mod; three
+more state where an Enfusion method runs. Each tag sits in a doc comment (`///`, `//!`, or a
+`/** … */` header) so a reader can grep it from either end. A tag points from a projection or a
+caller to its single source, the schema definition or the route, and never lists consumers,
+which are many and change. A contract exchanged as a file rather than over a route, such as the
+loadout export (`loadout-export.schema.json`), takes `@contract` alone.
 
 ### 3.1 Grammar
 
-```
-@contract <schema-basename>#<json-pointer>   ; basename resolved under contracts_v2/definitions/
-@route    <METHOD> <path>                     ; e.g. GET /api/v1/registry
-@model    <go-type>                            ; e.g. models.User  (TS → Go GORM model)
-@consumer <lang>:<repo-relative-path>          ; lang ∈ {go, ts, enf}   (OPTIONAL)
-```
+Each tag is required on the code its row names; sections 5 to 7 give its exact form with a real
+example, and section 10 the checks.
 
-- **`@contract`** — **REQUIRED** on any type that projects a tbd-schema definition. The
-  `<schema-basename>` is the filename only (stable, greppable; resolved against
-  `contracts_v2/definitions/`). The `<json-pointer>` is an RFC 6901 pointer — `#/` for the
-  root, `#/$defs/item` for a definition. Example: `@contract registry-items.schema.json#/$defs/item`.
-- **`@route`** — **REQUIRED** on (a) the Go handler that serves the route, (b) the TS query/
-  mutation hook that calls it, and (c) the Enfusion REST call site that hits it. This is the
-  three-way triangulation: a Mod author greps the route string and finds the Go + TS ends.
-- **`@model`** — **REQUIRED** on a TS type that mirrors a Go GORM model (the snake_case contract).
-- **`@consumer`** — **OPTIONAL** reverse pointer. Forward links (`@contract`/`@route`/`@model`)
-  are authoritative; reverse links rot, so they are optional and best-effort.
+| Tag | Written on | Checked by |
+|---|---|---|
+| `@route <METHOD> <path>` | every Axum handler; every EnfScript REST call site | `cargo xtask verify route-tags` (Rust side, both directions); review (EnfScript) |
+| `@contract <schema>#<pointer>` | every type that projects a schema definition: Rust models and DTOs, hand-written EnfScript DTOs | `cargo xtask schema citations`: every citation resolves |
+| `@authority server\|client\|owner` | every EnfScript method whose correctness depends on where it runs | review |
+| `@rpc <Reliable\|Unreliable> <Server\|Owner\|Broadcast>` | directly above every `[RplRpc]` | review |
+| `@replicated <prop>` | directly above every `[RplProp]` | review |
 
-### 3.2 Forward links only are mandatory
+## 4. Comments in all code
 
-A type points **up** to its source (schema / Go model / route). It does **not** have to enumerate
-its consumers. Rationale: the source is stable and singular; consumers are many and churn.
+A comment says what the code does now and why: the invariant it keeps, the model behind a
+calculation, the engine or hardware constraint it works around, the way it fails. It describes the
+code as it stands, in the present tense.
 
-### 3.3 Worked example — the `registry-items` contract
+- No history: no "formerly", "rewritten from", "fixed in", "legacy", no dates and no comparison
+  with a retired implementation. Commit history owns history.
+- No ticket identifiers and no delivery vocabulary (the wave, the slice or the run that produced
+  the code): a reader of the code has no registry to look them up in.
+- No restating the signature: a doc comment adds what the name and types do not say.
+- A change that alters documented behaviour updates the comment in the same diff.
 
-This concept exists in all three languages plus a route. Today it carries *ad-hoc* cross-refs;
-the standard makes them uniform. The schema definition:
+Two test suites hold parts of these rules, and run with their crate's tests:
+`apps/website/api_v2/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
+narrative about another implementation and retired paths in the API crate's sources, tests,
+`.env.example`, seeds and migration comments; `tools_v2/xtask/src/tests/tooling_prose_rules.rs`
+refuses ticket identifiers, retired names and deleted script names in every tracked file under
+`tools_v2/`. Elsewhere review holds them. The comment below states an engine constraint and the
+invariant that follows from it
+(`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:53-55`):
 
-```jsonc
-// contracts_v2/definitions/registry-items.schema.json  →  #/$defs/item
-"item": {
-  "required": ["resource_name", "display_name", "category", "kind"],   // snake_case items
-  ...
-}
-```
-
-**Go model** — `internal/models/registry.go`, **deleted at T-145**. The tag it carried now sits on
-`RegistryItem` in [`apps/website/api_v2/src/missions/models/registry.rs`](../../apps/website/api_v2/src/missions/models/registry.rs).
-The historical Go form:
-
-```go
-// RegistryItem is one placeable/equipable engine item in a modpack's flat catalog
-// (the web Virtual Arsenal source). Identified by its full Enfusion ResourceName.
-//
-// @contract registry-items.schema.json#/$defs/item
-type RegistryItem struct {
-    ResourceName string `gorm:"column:resource_name;not null" json:"resource_name"`
-    ...
-}
+```c
+	//! Sentinel for "y absent from JSON". JsonLoadContext leaves a missing key at the
+	//! field initializer, and no real ASL height approaches -1e6 m, so the initializer
+	//! doubles as the presence flag (standard JSON cannot carry NaN/Infinity).
 ```
 
-**Go handler** — `internal/handlers/registry.go`, **deleted at T-145**. The `@route` tag now sits on
-`list_registry` in [`apps/website/api_v2/src/missions/handlers/registry_items.rs`](../../apps/website/api_v2/src/missions/handlers/registry_items.rs).
-The historical Go form:
+## 5. Rust comments
 
-```go
-// ListRegistry returns a modpack's flat Virtual Arsenal catalog.
-//
-// @route GET /api/v1/registry
-// Auth: mission_maker+ (mm group). Response: { data, etag, modpack_id, modpack_version }.
-func (h *Handler) ListRegistry(c *gin.Context) { ... }
+These rules cover every Rust crate of the workspace, under `apps/` and `tools_v2/`.
+
+**Module header.** A non-trivial module opens with a `//!` summary line and the four-point
+contract: `**Role:**` (its responsibility), `**Position:**` (its boundary layer, what feeds it and
+who consumes it), `**Signals & state:**` (mutable state, reactive signals and thread ownership, or
+none) and `**Invariants:**` (the guarantees a change must keep). From
+`apps/website/frontend/src/app_routes.rs:1-11`:
+
+```rust
+//! The router's route table, in render form.
+//!
+//! **Role:** binds every path to the component that renders it, and names the fallback used when
+//! none match.
+//! **Position:** rendered by the frame — inside `<main>` for a chromed route, and directly for
+//! the bare and chromeless ones. The chrome lives outside this component, so navigation swaps
+//! only what is declared here.
+//! **Signals & state:** none. Each route component owns its own.
+//! **Invariants:** this list mirrors the route table in `router.rs`, which is the contract the
+//! layout flags and the required tiers are read from; a path added here without a row there
+//! renders with default layout and no tier requirement.
 ```
 
-**TS type** — `frontend/src/types/models/registry.ts`, **deleted at T-159.29.3**. Its successor is
-`RegistryItem` in [`apps/website/frontend/src/dto.rs`](../../apps/website/frontend/src/dto.rs).
-The historical TS form:
+**Symbol docs.** Every public type, function, method and enum carries a `///` Markdown doc
+comment, and names other items as intra-doc links (``[`crate::path::Type`]``) that rustdoc
+resolves. No gate runs rustdoc, so review holds this rule. From
+`apps/website/api_v2/src/core/observability/metrics_registry.rs:90-96`:
 
-```ts
+```rust
+/// One registry per [`crate::core::http_router::router`] call.
+///
+/// Deliberately **not** a `static`: a process-global recorder makes every test that
+/// asserts a count depend on which other tests ran first, which is precisely the
+/// "green over something it never examined" shape this design exists to avoid. The
+/// cost is that only code holding the `Arc` can record — see the module header.
+pub struct Registry {
+```
+
+**Route tags.** Every Axum handler a route table registers carries `/// @route <METHOD> <path>`,
+written at column 0 in the doc comment of a column-0 `pub fn` or `pub async fn`, with the full
+`/api/v1` path; a path parameter is written `:name` or `{name}` with the router's name. The
+route-tag check fails a tag no route table registers for that method and handler, a registered
+route whose handler has no matching tag, and a tag with no handler under it. From
+`apps/website/api_v2/src/administration/handlers/audit_logs.rs:66-69`:
+
+```rust
+/// `GET /api/v1/admin/audit-logs` — newest-first, keyset pagination via `?before=`.
+///
+/// @route GET /api/v1/admin/audit-logs
+pub async fn list_audit_logs(
+```
+
+**Contract tags.** A model or DTO that projects a schema definition carries
+`@contract <schema>#<pointer>`: the schema's file name in `contracts_v2/definitions/`, then an RFC
+6901 JSON pointer, `#/` for the whole document. A module of such types carries it in its `//!`
+header (`apps/website/api_v2/src/missions/models/registry.rs:4`); a single type in its `///`
+comment (the same file, lines 77-79):
+
+```rust
+/// @contract registry-compat.schema.json#/$defs/edge
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct RegistryCompatEdge {
+```
+
+## 6. Enfusion comments
+
+These rules cover every EnfScript file of the three addons under `apps/mod/`. Every line a change
+adds to a `.c` file is ASCII: write `--`, `->` and `...` rather than typographic dashes, arrows and
+ellipses. `git diff -U0 -- <file> | grep -P '^\+.*[^\x00-\x7F]'` prints nothing for a conforming
+change.
+
+**File header.** A top-level script or Workbench plugin opens with a `/** … */` block naming the
+file and what it does. From `apps/mod/tbd-export/Scripts/Game/TBD/Export/TBD_RoadClassifier.c:1-12`:
+
+```c
 /**
- * One Virtual Arsenal catalog item.
- * @model models.RegistryItem
- * @contract registry-items.schema.json#/$defs/item
- * @route GET /api/v1/registry
+ * TBD_RoadClassifier.c
+ *
+ * Deterministic road classification engine for tbd-export.
+ * Categorizes road segments into:
+ *   1. Highways & Major Arterials (highways.json)
+ *   2. Secondary Paved Roads (roads_paved.json)
+ *   3. Dirt & Gravel Roads (roads_dirt.json)
+ *   4. Tracks & Tractor Trails (tracks.json)
+ *   5. Footpaths & Hiking Trails (paths.json)
+ *   6. Airfield Runways & Taxiways (runways.json)
  */
-export interface RegistryItem { resource_name: string; /* ... */ }
 ```
 
-**Enfusion producer** — [`TBD_RegistryItemsExportPlugin.c`](../../apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c) hand-writes the snake_case keys; its header cites the schema in prose. Standardize:
+**Banners, member docs and DTO contracts.** Every class and every non-trivial method carries a
+`//!` banner stating its purpose or contract, and every field or enum member whose meaning the
+name does not carry gets a trailing `//!<` comment with its unit, default or JSON key. A
+hand-written JSON DTO struct carries `//! @contract` and documents every field, because
+`JsonLoadContext` maps JSON keys to field names and the coupling is invisible otherwise. From
+`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:28-35`:
 
-```cpp
-//! Workbench export → contracts_v2/catalogs/registry-items.workbench.json
-//! @contract registry-items.schema.json#/
-class TBD_RegistryItemsExportPlugin { ... }
+```c
+//! One container cargo row (loadout-export v2 {container,item,qty}).
+//! @contract mission.schema.json#/$defs/slot (loadout.cargo[])
+class TBD_SlotCargoStruct
+{
+	string container; //!< Wear container key: vest / pants / jacket / backpack.
+	string item;      //!< Item ResourceName.
+	int qty = 1;      //!< Units to insert (>= 1).
+}
 ```
 
-The same `@contract registry-items.schema.json` string links every projection of the contract; the
-same `@route GET /api/v1/registry` links the server and client ends — the Go and TS pair above
-historically, `list_registry` and `dto.rs` today. (For a file-based contract with no HTTP
-route — e.g. `loadout-export`, copied as `$profile:TBD_LoadoutTest.json` — use `@contract` alone;
-omit `@route`.)
+A method banner states the caller and the receiver when the call crosses machines, as
+`//! CLIENT (owner) -> SERVER: "what does the board look like right now".` does above
+`TBD_RequestLobbyRoster`
+(`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyController.c:33`).
 
----
+**Editor attributes.** Every `[Attribute]` carries a description (`desc:` or the third positional
+argument) with its unit and default, and every `[ComponentEditorProps]` a `description:`. From
+`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorComponent.c:68`:
 
-## 4. Go — Godoc
-
-The Go backend already sits near 100% Godoc coverage; this section **locks that baseline** and
-adds the cross-boundary tags.
-
-**REQUIRED**
-
-1. Every exported `func`, method, type, and `const`/`var` has a doc comment, and it **starts with
-   the identifier name** (Godoc convention). The gold standards this rule was written against —
-   `internal/models/mission.go` and `internal/handlers/handlers.go` — were **deleted at T-145**.
-   Their rustdoc successors are `Mission` in [`apps/website/api_v2/src/missions/models/mission.rs`](../../apps/website/api_v2/src/missions/models/mission.rs)
-   and the handlers under each domain's [`apps/website/api_v2/src/<domain>/handlers/`](../../apps/website/api_v2/src/missions/handlers).
-2. Every package has a `// Package <name> …` doc on exactly one file.
-3. Struct fields carry a **trailing intent comment** where the name is not self-evident
-   (e.g. units, nil-meaning, enum domain). See `RegistryItem` fields above.
-4. A **handler** doc comment states: `@route`, the auth tier, the response DTO name, and
-   `@contract` if it (de)serializes a schema type.
-5. A type that projects a schema definition carries `@contract` (§3).
-
-**FORBIDDEN**
-
-- `@param` / `@returns` JSDoc-style tags — not Godoc idiom. Use prose sentences.
-- Restating the signature ("// GetUser gets a user"). Document *why* / *contract*, not *what the
-  name already says*.
-
----
-
-## 5. TypeScript / React — TSDoc
-
-The feature code is moderately documented; the **contract layer is the gap** and the focus here:
-`src/types/`, `src/api/`, `src/hooks/`.
-
-**REQUIRED**
-
-1. Every exported type/interface/hook/component in the contract layer has a **`/** … */` TSDoc
-   block** (not `//`). The non-conforming examples this rule named — bare interfaces in
-   `types/models/user.ts` and most of `types/api/index.ts` — were **deleted at T-159.29.3** with
-   the React app, so nothing in the tree is held to this rule today.
-2. TSDoc tags where applicable: `@param`, `@returns`, `@remarks`, `@see`.
-3. Cross-boundary tags from §3: `@model` on any type mirroring a Go model; `@contract` on any
-   type mirroring a schema def; `@route` on the query/mutation hook that calls an endpoint.
-4. The custom block tags (`@contract`, `@route`, `@model`, `@consumer`) are declared in a
-   **`tsdoc.json`** at the frontend root so `@microsoft/tsdoc` / the linter accept them.
-5. A **hook** documents its query key, its `@route`, and the return shape. A **component**
-   documents its props via the props interface and a one-line summary of what it renders.
-
-**FORBIDDEN**
-
-- `//`-only comments on exported contract-layer symbols (use TSDoc so tags are parseable).
-- A TS type silently diverging from its Go model without an `@model` pointer.
-
----
-
-## 6. Enfusion / Enforce Script — Doxygen
-
-The mod has a strong house style already; this section codifies it as policy.
-
-**REQUIRED**
-
-1. `//!` single-line banner on **every class** and **every non-trivial method**.
-2. `/** … */` **file-header block** is mandatory on every script under `Scripts/Game/TBD/Backend/`
-   and `Scripts/Game/TBD/Gamemode/` (the cross-boundary + lifecycle-heavy code). Gold standard:
-   the header block atop [`TBD_LoadoutEquipComponent.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c).
-3. Every `[Attribute(...)]` and `[ComponentEditorProps(...)]` carries a human `desc:` /
-   `description:` string.
-4. **DTO structs** parsed from JSON carry a `@contract` header **and a per-field doc comment** on
-   every field. Bare DTO field blocks (e.g. in [`TBD_MissionSlotStruct.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c)
-   and the struct block atop [`TBD_MissionLoader.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c))
-   are non-conforming: the JSON-key↔field-name coupling is invisible without them.
-5. A REST call site carries `@route` (§3) naming the Go endpoint it hits.
-
-**Process note:** per [`CLAUDE.md`](../../CLAUDE.md), do not edit `apps/mod` `.c` files unless a
-ticket slice explicitly assigns `claude-code` to that path, and **use `enfusion-mcp` before editing
-any `.c` file** — do not guess Enforce APIs.
-
----
-
-## 7. Execution context — Enfusion network authority (critical)
-
-In a replicated game, *which machine runs a method* is part of its contract. Today this is
-signalled inconsistently (an `[RplRpc]` attribute here, an `RplMode.Client` guard there, a
-`// CLIENT -> SERVER` line sometimes). This section makes execution context **explicit and
-mandatory**.
-
-**REQUIRED**
-
-1. **`//! @authority server|client|owner`** on any method whose correctness depends on which
-   machine executes it.
-2. Directly above every `[RplRpc(...)]` attribute: **`//! @rpc <Reliable|Unreliable> <Server|Owner|Broadcast>`**
-   (mirroring the attribute in human-readable form) **plus** a `// <SIDE> -> <SIDE>: <intent>`
-   line.
-3. **`//! @replicated <prop>`** on every `[RplProp]` field, naming its `onRplName` hook.
-4. Every server gate — `if (RplSession.Mode() == RplMode.Client) return;` — carries a
-   **`// Authority only — <reason>`** comment.
-
-**Annotated example** (formalizing the pattern on `TBD_RpcAsk_MissionList` /
-`TBD_RpcDo_ReceiveMissionList` in [`TBD_MissionBrowser.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_MissionBrowser.c)):
-
-```cpp
-//! @authority owner
-//! @rpc Reliable Server
-// CLIENT (owner) -> SERVER: ask for the current mission list.
-[RplRpc(RplChannel.Reliable, RplRcver.Server)]
-void TBD_RpcAsk_MissionList() { ... }
-
-//! @rpc Reliable Owner
-// SERVER -> CLIENT (owner): reply routed only to the requesting admin.
-[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-void TBD_RpcDo_ReceiveMissionList(string payload) { ... }
+```c
+	[Attribute("2000", desc: "Max metres a spectator may steer their streaming host from their own death position. Default 2000. 0 uses the default; never unlimited.")]
 ```
 
-```cpp
-//! @replicated m_Stage  (client UI reacts in OnStageReplicated)
-[RplProp(onRplName: "OnStageReplicated")]
-protected TBD_EGameStage m_Stage;
+**REST call sites.** The class or method that calls the API carries `//! @route <METHOD> <path>`
+naming the route it calls, so a search for the route string finds both the Rust handler and the
+EnfScript caller. From `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c:61`, on
+the class that posts match results, with its access tier after the route:
+``//! @route POST /api/v1/ingest/match-results (service-token tier; `X-Service-Token`)``.
+
+## 7. Network authority
+
+In a replicated game, which machine runs a method is part of its contract.
+
+- `//! @authority server|client|owner` sits on every method whose correctness depends on where it
+  runs.
+- `//! @rpc <Reliable|Unreliable> <Server|Owner|Broadcast>` sits directly above every `[RplRpc]`
+  attribute and repeats its channel and receiver.
+- `//! @replicated <prop>` sits directly above every `[RplProp]` field, naming who owns the value
+  and the `onRplName` hook clients react in, when the attribute names one.
+- A server gate, `if (RplSession.Mode() == RplMode.Client) return;`, carries a
+  `// Authority only -- <reason>` comment above it, as at
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:463`.
+
+From `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyController.c:45-48` and
+`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:285-287`:
+
+```c
+	//! @authority server
+	//! @rpc Reliable Server
+	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
+	protected void TBD_RpcAsk_LobbyRoster()
+
+	//! @replicated m_Stage — server-owned; clients react in OnStageReplicated (onRplName hook).
+	[RplProp(onRplName: "OnStageReplicated")]
+	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING;
 ```
 
----
+## 8. Documentation tree
 
-## 8. Architectural decisions — where "why" lives
+### 8.1 Layout
 
-Three tiers. Pick by **scope of the decision**, not by length.
+`documentation_v2/` holds every document beside the code: feature docs, runbooks, standards,
+design references, known bugs, ticket specs and plans, and the archive. The
+[entry README](/documentation_v2/README.md) lists what the root holds now; the layout it grows
+into is:
 
-| Tier | Home | Use for |
-|------|------|---------|
-| In-code comment | the code | A local choice / non-obvious line. Explains *this* code only. |
-| **Decisions log** | the relevant `docs/specs/<area>/*.md` | A reversible-but-load-bearing architecture decision tied to a feature area. **The formal ADR home.** |
-| Platform doc | `docs/platform/` | A cross-cutting standard or audit (this file; [`CODEBASE_AUDIT_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md)). |
-
-**We do NOT add a `docs/adr/` tree.** Decisions live next to their feature spec, extending the
-existing Decisions-log pattern (e.g. the UX Decisions log in
-[`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md)).
-
-### 8.2 Documentation filesystem layout
-
-**Rule 8.2.1 — Single docs root.** All markdown documentation MUST live under repo-root
-[`documentation_v2/`](/documentation_v2/). Exceptions:
-
-- Root [`README.md`](../../README.md) and [`CLAUDE.md`](../../CLAUDE.md) (agent runtime)
-- Per-package **`README.md` only** (one file, no `documentation_v2/` subtree) under `apps/*`, `contracts_v2/*` and `assets_v2/*`
-- Generated pipeline output under [`.ai/artifacts/`](../../.ai/artifacts/) (not hand-authored specs)
-- Archive tiers named in [`documentation_v2/archive/monorepo_migration/docs_website_archive_readme.md`](/documentation_v2/archive/monorepo_migration/docs_website_archive_readme.md)
-
-**Rule 8.2.2 — FORBIDDEN paths.**
-
-- `apps/**/docs/**` (e.g. `apps/website/frontend/docs/`) — **never create**
-- `contracts_v2/**/docs/**` and `assets_v2/**/docs/**` — a README adjacent to the data is the only markdown those trees carry (not surface specs)
-- Duplicate hub trees mirroring `documentation_v2/website/` inside application folders
-
-**Rule 8.2.3 — Frontend surface spec contract.** When adding or changing a frontend route
-([`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs)):
-
-1. Create or update [`docs/website/frontend/pages/<name>.md`](../website/frontend/pages/) from
-   [`_template.md`](/documentation_v2/archive/go_and_react_era_design/frontend_page_spec_template.md)
-2. Add a row to [`documentation_v2/website/frontend/README.md`](/documentation_v2/website/frontend/README.md)
-3. Update [`documentation_v2/website/frontend/README.md`](/documentation_v2/website/frontend/README.md)
-4. Sync per [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md)
-
-**Rule 8.2.4 — Link style.**
-
-- **Within the same hub:** relative paths (`pages/foo.md`, `../platform/...`)
-- **From MC specs to page docs:** `../../website/frontend/pages/...` (from
-  `documentation_v2/website/frontend/apps/editor/`)
-- **In authority docs:** prose uses canonical `documentation_v2/website/frontend/...`; markdown hrefs may be
-  relative within `documentation_v2/website/`
-- **Never** use `docs/frontend/` (directory does not exist) or `frontend/docs/` (retired)
-
-**Rule 8.2.5 — Doc tree map.**
-
-| Doc type | Location |
-|----------|----------|
-| Platform standards | `docs/platform/` |
-| Website hub | `documentation_v2/README.md` |
-| Frontend surfaces | `documentation_v2/website/frontend/pages/` |
-| Backend API | `documentation_v2/website/api_v2/` |
-| Mission Creator engineering | `documentation_v2/website/frontend/apps/editor/` |
-| Tickets (generated views) | `docs/TICKET_*.md` (`.ai/tickets/*.toml` + `cargo xtask ticket sync`) |
-| Live code | `apps/website/`, `apps/mod/`, `tools_v2/` |
-| Wire contracts and map data | `contracts_v2/`, `assets_v2/` |
-
-**Rule 8.2.6 — Agent routing.** Cursor owns all paths under `documentation_v2/`. Claude Code MUST NOT create
-markdown under `apps/` except in-code comments per §1.
-
-Enforced by `cargo xtask ci verify-doc-layout`.
-
-**Decisions-log entry format** (normative):
-
-```markdown
-### YYYY-MM-DD — <decision in one line>
-- **Context:** what forced the choice.
-- **Decision:** what we chose.
-- **Consequences:** what this commits us to / rules out.
-- **Supersedes:** <prior entry date or "none">.
+```text
+documentation_v2/
+├── README.md              entry: the map, the authority ladder, where to find things
+├── glossary.md            project terms and abbreviations
+├── product_roadmap.md     the operator-curated plan
+├── website/               mirrors apps/website/: api_v2/, frontend/ (pages/<area>/,
+│                          apps/editor/ for the Mission Creator), map-engine/, graphics-engine/
+├── mod/                   mirrors apps/mod/: tbd-framework/, tbd-export/, tbd-emcp/
+├── ticketboard/  fleet_host_agent/  tools_v2/<crate>/  contracts_v2/  assets_v2/
+├── design_system/         tokens, typography, colour, symbology, token exports
+├── runbooks/              every operator procedure
+├── standards/             this document, the README standard, templates/, coding standards,
+│                          placement, the commit checklist, ticket identifiers, engine boundaries
+├── known_bugs/            the live bug registry
+├── tickets/               specs/ and plans/, flat and frozen once their ticket closes
+└── archive/<topic>/       frozen history
 ```
 
-**Rule 8.1 — Contract changes require a paper trail.** Any decision that changes a cross-boundary
-contract MUST, in the **same change**: (a) add a Decisions-log entry, (b) bump the tbd-schema
-definition, and (c) regenerate the affected DTOs (§9).
+- **READMEs.** Every folder of the documentation tree and of the code trees carries a README.md
+  built to the [README standard](/documentation_v2/standards/readme_standard.md), which lists the
+  exempt folders. A code README describes its folder at a high level and links the deeper
+  documents here; a documentation README indexes its folder.
+- **Mirror naming.** A feature's documents sit at the path of its code, with the code's folder
+  spellings minus `apps/`, `src/`, `src/v2/` and `Scripts/Game/TBD/`:
+  `apps/website/frontend/src/v2/pages/operations/schedule/` is documented under
+  `documentation_v2/website/frontend/pages/operations/schedule/`. The grain is chosen per case:
+  one `pages/account/` folder covers login, the auth callback and settings, while administration
+  has a folder per page.
+- **Feature grouping.** Everything about one feature lives together: behaviour, interface design,
+  the design target and its `visual_references/`, roadmap, research and evidence. All Mission
+  Creator material sits under `documentation_v2/website/frontend/apps/editor/`.
+- **Feature docs.** Each feature doc is its own file beside its folder's README index, built from
+  the [feature doc template](/documentation_v2/standards/templates/feature_doc.md): a page's doc is
+  `<page component>_page.md` (`personnel_roster_page.md`), the account pages share
+  `account_pages.md`, the frame is `app_layout_and_navigation.md`, and a mod screen's doc is
+  `<screen>_specification.md`.
+- **Visual references.** A set is named `<subject>_<kind>`, kind `blueprint`, `mockup` or
+  `render`, and holds `<set_name>.html` (the export), `<set_name>.png` (its screenshot; a render
+  has only this) and `design_tokens.md` when the export carries tokens. It sits in the
+  `visual_references/` folder of the feature it depicts; a mod screen's in-game captures sit in
+  `reference_screenshots/` beside its sets. Design references are the only images.
+- **Evidence.** Verification evidence sits in a `verification_evidence/` folder of its feature
+  (`documentation_v2/website/api_v2/verification_evidence/`); hyphenated evidence JSON names keep
+  their spelling.
 
----
+### 8.2 Placement
 
-## 9. Codegen & validation — the target state
+Documents live under `documentation_v2/`, the single documentation root. The code trees (`apps/`,
+`tools_v2/`, `contracts_v2/`, `assets_v2/`) hold no Markdown besides README.md files, except below
+a `tests`, `generated` or dot-folder, which `cargo xtask verify markdown-placement` enforces; the
+repository root keeps its own README.md and `CLAUDE.md`. `cargo xtask ci verify-doc-layout`, a step
+of `cargo xtask ci verify-coding-standards`, also refuses any `.md` file below a folder named docs
+anywhere in `apps/`, `contracts_v2/` or `assets_v2/`, so no application grows a documentation tree
+of its own.
 
-Hand-mirroring is the root cause of boundary drift. Generation + validation is **shipped**
-(T-123.4/.5/.6): Go and TS contract types are generated from the schemas, and the mission version
-payload is validated server-side before persist. `@contract` (§3) is **not** a temporary measure —
-it remains **permanently required on hand-written Enforce DTOs** (Enforce has no codegen).
+### 8.3 Names, status lines, size and links
 
-**Mandate**
+- **File names.** snake_case, except `README.md`, `t-<id>_plan.md` and the hyphenated evidence
+  JSON. Sources waiting under `documentation_v2/pending_merge/<writer>/` keep their original names
+  until their writer merges and deletes them.
+- **Status line.** Every Markdown document under `documentation_v2/` starts with one status line
+  and a blank line: `**Status:** live`, `**Status:** frozen record` or `**Status:** archived`, an
+  archived document adding `— see [its replacement](…)` when one exists. No other header block
+  (audience, authority, updated date) follows it. Code READMEs carry no status line.
+- **Size.** A live document stays at or under 500 lines; a longer one splits by topic into a folder
+  with a README.md index. Frozen and archived documents are exempt, and so are the two documents
+  whose tables `cargo xtask ticket sync` rewrites between markers,
+  `documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md` and
+  `documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`.
+- **Links.** Links are repository-root (`[README standard](/documentation_v2/standards/readme_standard.md)`,
+  `[API](/apps/website/api_v2/README.md)`), never `../` climbs. A frozen or archived document's
+  link to code that no longer exists becomes a GitHub permalink with the full commit id,
+  `https://github.com/darkforce09/TBD-reforger/blob/<commit>/<path>`.
+- **Paths and commands.** A path written in backticks is repository-relative
+  (`apps/website/api_v2/src/missions/`), and must name a tracked file or folder, or one git
+  ignores on purpose, such as `tools_v2/xtask/deploy/deploy.env`; a `cargo xtask` command written
+  in a document must exist in the command tree. A README writes paths inside its own folder
+  relative to it, as the README standard says.
+- **Terms.** The editor is the Mission Creator; the document a mission maker authors is a mission;
+  Enfusion's world plus game-mode configuration is the mission header; an event is a scheduled
+  session record; operations is the domain around events. A document links a term's first use to
+  its [glossary](/documentation_v2/glossary.md) entry and quotes code identifiers as the code
+  spells them.
+- **Diagrams.** ASCII, in `text` blocks.
+- **Hosts and paths.** No IP address of a host and no personal absolute path: the deploy host is
+  whatever `TBD_SSH_HOST` names in `tools_v2/xtask/deploy/deploy.env`.
 
-1. **Generated projections (shipped, Rust-only since T-159.29.3).** Contract types are **generated from**
-   `contracts_v2/definitions/*.json` via `cargo xtask ci schema-codegen`:
-   - Rust → `apps/website/api_v2/src/missions/contract/generated/` (DO NOT hand-edit).
-   - Leptos SPA hand-writes `apps/website/frontend/src/v2/core/api/dto/` gated by R-api golden tests.
-   - Enforce Script has no codegen tooling: Enforce DTOs stay hand-written but MUST carry
-     `@contract` (§3/§6.4) **and** a golden fixture that round-trips through schema validate.
-2. **API runtime validation (shipped).** `CreateVersion` validates the incoming version payload
-   against [`mission-editor-payload.schema.json`](../../contracts_v2/definitions/mission-editor-payload.schema.json)
-   **before persist** (`apps/website/api_v2/src/missions/contract/schema_validators.rs`),
-   returning **400** on a malformed payload. It validates the **editor superset**, not the canonical
-   `mission.schema.json` — those are different artifacts (see §2.2).
-3. **Hand-written types remain debt** where not generated. API wire models = `apps/website/api_v2/src/<domain>/models/` (serde snake_case).
+## 9. Document lifecycle
 
-> **Implementation:** [**T-123**](/documentation_v2/tickets/specs/t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
+- **Open work.** A feature doc lists its open work under `## Open work`, each gap linked to its
+  ticket's spec or to its `/.ai/tickets/T-<id>.toml`; a `deferred` ticket counts as open. A
+  README never names a ticket.
+- **Decisions.** A feature's decisions live in a `decisions.md` beside its feature docs, one entry
+  per decision in the [decisions entry format](/documentation_v2/standards/templates/decisions_entry.md):
+  a `### YYYY-MM-DD — <decision>` heading, then Context, Decision, Consequences and Supersedes.
+  There is no separate decision-record tree. A local choice is explained by a comment in the code
+  it concerns; a cross-cutting rule goes into a document under `documentation_v2/standards/`.
+- **Specs and plans.** A ticket's spec is `documentation_v2/tickets/specs/t<id>_<topic>.md` and its
+  plan `documentation_v2/tickets/plans/t-<id>_plan.md`; both folders are flat, and ticketboard
+  reads them. A spec is live while its ticket is `idea`, `queued` or `ready`, and frozen once the
+  ticket ships or is cancelled, and the knowledge that outlasts the ticket then moves into the
+  feature doc. The ticket templates live in `.ai/tickets/`.
+- **Frozen and archived.** A frozen record (a closed ticket's spec or plan) and an archived
+  document (history under `documentation_v2/archive/<topic>/`) are never reworded; only their
+  links change. `link-check` judges only the links in both trees and `markdown-placement` exempts
+  them from the size limit; their README indexes stay live and list the files as they land.
+- **Known bugs.** `documentation_v2/known_bugs/` is the live registry, one file per bug in the
+  [known bug format](/documentation_v2/standards/templates/known_bug.md); a resolved bug stays
+  with its status set to resolved.
+- **Templates.** Every document type has a template in
+  [standards/templates/](/documentation_v2/standards/templates/README.md): the README kinds, the
+  feature doc, the runbook, the decisions entry, the known bug and the glossary entry.
 
----
+## 10. Gates and the same-commit rule
 
-## 10. CI enforcement gates
+Documentation ships in the same commit as the code it describes, whoever writes that code: a
+change updates the comments of the code it alters, the README of every folder whose contents,
+surface, commands or boundaries it changes, and the feature docs whose behaviour it changes.
 
-Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-(`cargo xtask ci ci-local`); path-filtered supplements in `contracts.yml` / `schema.yml`.
+Two checks hold the cross-boundary tags of section 3. `cargo xtask verify route-tags` compares
+every Rust `@route` tag with the routes the API registers, in both directions, and
+`cargo xtask schema citations` resolves every `@contract` citation against
+`contracts_v2/definitions/`. `cargo xtask ci verify-coding-standards` and
+`cargo xtask ci verify-citations` run them, and `cargo xtask ci ci-local` runs both. The citation
+check reads `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and
+`tools_v2/`, never Markdown, and prints that scope on every run; when the printed scope and this
+section disagree, the printed scope is right. Review holds the other tags and the comment rules,
+apart from the prose tests section 4 names.
 
-| Gate | Tool | Scope |
-|------|------|-------|
-| Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
-| Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in source under `apps/` and `tools_v2/` (the gate's scan roots) — **code only, never `documentation_v2/`** |
-| Route tags | `cargo xtask ci verify-coding-standards` (route-tag check) | `@route` against the routes registered in the eight `apps/website/api_v2/src/<domain>/routes.rs` tables |
-| Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
+Three gates check the documents, specified in the
+[documentation gates README](/tools_v2/xtask/src/verifications/documentation/README.md):
+`cargo xtask verify readme-coverage` (every folder in the README span has a README.md whose
+Contents block matches the folder), `cargo xtask verify markdown-placement` (the code trees hold no
+Markdown besides README.md, and live documents stay within 500 lines) and
+`cargo xtask verify link-check` (links, anchors, backticked paths and cited commands resolve).
 
-> **Historical (retired T-145/T-159):** golangci `exported`, eslint TSDoc — replaced by clippy + rustdoc.
+Before committing a documentation change, run the gates over the folders it touches:
 
-The citation verifier is the keystone: it turns `@contract` from a comment into a **checked link**,
-so a renamed schema definition fails CI instead of silently parsing to empty.
+```bash
+cargo xtask verify readme-coverage --path <folder>
+cargo xtask verify link-check --path <folder>
+cargo xtask verify markdown-placement
+```
 
-### 10.1 Prose citations are a convention, not a gate
+### 10.1 Prose citations
 
-`verify-citations` reads **code**. It does not read `documentation_v2/`, and that is deliberate (T-611).
-Scanning markdown was measured: 9 prose citations, 5 reported dangling, **all 5 false** — an
-inline `` `@contract registry-items.schema.json#/$defs/item`. `` loses to the closing backtick
-and the trailing punctuation. A markdown-aware matcher would still be unable to distinguish
-§3.1's grammar template from a live citation, because this document is mostly examples of it.
+The citation check reads code, never documents, so a citation in prose is held by convention.
 
-Prose is therefore held by convention:
+- Cite a symbol by name together with its file path: `TBD_SpawnManager.ClaimSlot` survives an edit
+  above it, and a line number does not. A `:line` suffix may follow the path as a pointer into the
+  file, as this document's examples do, but never replaces the name.
+- Cite a file path without a line number when no symbol fits.
+- A `@contract` written in prose is an illustration, not a checked link; a document that needs a
+  checked one points at the code that carries it.
+- A prose citation that must be machine-checked belongs in code as a tag, or in an index gate of
+  its own, as `cargo run -q -p developer-tools --bin enf -- citations` checks every `@idx`
+  citation under `documentation_v2/` against the Enfusion symbol index.
 
-1. **Cite stable symbol names, never line numbers.** `TBD_SpawnManager.ClaimSlot` survives an
-   edit above it; `TBD_SpawnManager.c:2094` does not. Line numbers in prose are the largest
-   single source of doc rot in this repo (T-610 found ~19 in one runbook).
-2. Cite a repo-relative **file path without a line number** when a symbol will not do.
-3. `@contract` written in prose is **illustrative**, not a checked link. Checked links live in
-   code; a doc that needs one should point at the code that carries it.
-4. A prose citation that genuinely must be machine-checked belongs either in code as a comment
-   tag, or in an index gate of its own (cf. `cargo run -q -p developer-tools --bin enf -- citations` for `@idx` in `documentation_v2/mod`).
+## Related documentation
 
-The gate prints its own scope on every run. Trust that line over this section if they disagree.
-
----
-
-## 11. Fixture homes (T-171)
-
-Pin: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
-
-1. **Fixtures live crate-local** in `tests/fixtures/` beside their primary consumer.
-2. **Cross-crate contract data** lives in `contracts_v2` (schema / golden / golden-missions / registry).
-3. **`.ai/artifacts/` is pipeline OUTPUT only** — never a load-bearing input (`include_str!` / gate reads forbidden).
-4. Byte-pinned goldens are excluded from editorconfig-checker (see `.editorconfig-checker.json`).
-
-SPA R-api goldens: `apps/website/frontend/tests/fixtures/api/`. Gate oracles/manifests: `tools_v2/developer-tools/fixtures/t159/`.
-
-## 12. Quick-reference cheat sheet
-
-Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md). Doc
-**placement** (where markdown files live): §8.2. Homes: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
-
-**Every exported symbol needs:**
-
-| Language | Syntax | Cross-boundary tags |
-|----------|--------|---------------------|
-| Rust (API) | rustdoc on public items; `@route` / `@contract` where cross-boundary | handlers in `api_v2/src/<domain>/handlers/`; models = wire contract |
-| Rust (SPA) | module docs; DTO comments cite schema where useful | `v2/core/api/dto/` R-api goldens |
-| Enfusion | `//!` banner; `/** */` header on Backend/Gamemode; `[Attribute(desc:)]` text; per-field DTO docs | `@contract` on DTOs; `@route` on REST calls; **`@authority` / `@rpc` / `@replicated`** on networked code |
-| Go / TS | **retired** (T-145 / T-159) — historical examples in §3–§6 only | — |
-
-**Contract change checklist:** schema bump → regenerate DTOs → Decisions-log entry → update every
-`@contract`/`@route`/`@model` link → same commit (§1, §8.1).
-
----
-
-*Defects against this standard are fixed on next edit of the affected file. Disputes resolve up the
-authority ladder: running code wins, then [`CLAUDE.md`](../../CLAUDE.md), then this doc.*
+- [README standard](/documentation_v2/standards/readme_standard.md) — the README core, kinds,
+  Contents grammar and writing rules.
+- [Templates](/documentation_v2/standards/templates/README.md) — the skeleton and worked sample of
+  every README kind and document type.
+- [Glossary](/documentation_v2/glossary.md) — the project's terms.
+- [Coding standards](/documentation_v2/standards/coding_standards/README.md) — the code rules that
+  sit beside these comment rules.
+- [Where does X go](/documentation_v2/standards/where_does_x_go.md) — where code, fixtures and
+  data live.
+- [Commit checklist](/documentation_v2/standards/commit_checklist.md) — what a commit carries.
