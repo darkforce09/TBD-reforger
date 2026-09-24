@@ -1,160 +1,163 @@
-# `website-api` — the TBD Reforger backend
+# Website API
 
-The Axum REST API and Server-Sent Events hub behind the web platform. It serves `/api/v1` to the
-Leptos single-page app and to the Enfusion game servers, exposes `/healthz` and `/metrics`, serves
-the uploaded media under `/uploads` and the terrain assets under `/map-assets`, and owns the
-Postgres schema through the SQL migrations in `migrations/`.
+The `website-api` crate: the Axum REST [API](/documentation_v2/glossary.md#api) and
+[SSE](/documentation_v2/glossary.md#sse) streams behind the web platform. It serves `/api/v1` to
+the single-page app, the game servers and the
+[fleet host agent](/documentation_v2/glossary.md#fleet-host-agent), owns the Postgres schema
+through its migrations, and serves uploads and terrain assets.
 
-This document is the live atlas of the crate. The blueprint that the layout implements is
-[`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/api_v2_refactor/architecture_plan.md); the pre-refactor catalog is
-[`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/api_v2_refactor/analysis_and_inventory.md).
-
----
-
-## 1. `src/` layout
+## Contents
 
 ```text
-src/
-├── lib.rs                      Crate root: the module tree and the architecture-rule test hook.
-├── bin/
-│   ├── api.rs                  Server entrypoint: config → pool → migrations → workers → router → serve.
-│   └── import_registry.rs      Offline ingest of registry envelopes into Postgres.
-├── core/                       Cross-cutting foundations. Imports no domain.
-├── background_workers/         The interval tasks the binary arms at boot. Imported only by `bin/api.rs`.
-├── administration/             Member roster, moderation actions, and the audit log.
-├── command_center/             Dashboard, leaderboards, and per-player statistics.
-├── community_content/          Announcements, wiki, vehicle database, modpacks, media uploads.
-├── identity_and_access/        Discord OAuth2, session tokens, the profile, the Arma link handshake.
-├── match_telemetry/            Game-server ingest: live status heartbeat and finished-match reports.
-├── missions/                   Scenario library, versions, armory, registries, approvals, export.
-├── operations/                 Event calendar, ORBAT slotting, service records, fire missions.
-├── server_infrastructure/      Dedicated-server registry, live status SSE, RCON console.
-└── tests/
-    └── architecture_rules.rs   Executable statements of the layout rules below, checked against `src/`.
+apps/website/api_v2/
+├── .env.example         the template the gitignored `.env` is copied from, with development values
+├── .gitignore           keeps `.env` and editor folders out of git
+├── Cargo.toml           the `website-api` package: the library and its two binaries
+├── docker-compose.yml   the local Postgres 18 service `db`, container `tbd_reforger_db`, port 5434
+├── migrations/          the SQL schema migrations, embedded at compile time and applied at boot
+├── rust-toolchain.toml  pins Rust 1.95.0 with rustfmt and clippy
+├── rustfmt.toml         the formatting settings: edition 2024, 100-column lines
+├── seeds/               the development seeds `cargo xtask db seed` applies, and hand-applied data
+├── src/                 the library: `core`, the background workers, the eight domains, the binaries
+└── tests/               integration suites against real Postgres, with their shared support
 ```
 
-Each of the ten module directories carries its own `README.md` with its responsibility, its public
-surface, and a complete listing of its files. Each of the eight domains has the same shape:
-`mod.rs`, `routes.rs`, `handlers/`, `services/`, `models/` (plus `contract/` and `validation/` in
-`missions/`).
+## How it works
 
-## 2. How the `/api/v1` table is composed
+`src/bin/api.rs` loads the configuration, opens the Postgres pool, applies `migrations/` unless
+`SKIP_MIGRATE` is set, arms the [background workers](/documentation_v2/glossary.md#background-workers)
+and serves the router on `0.0.0.0:$PORT` until SIGINT or SIGTERM. The router nests the eight
+domains' route tables under `/api/v1` and wraps everything in one middleware chain, outermost
+first: request id, access log, Prometheus metrics, panic recovery, CORS, body limit, rate limit.
+The terrain and glyph mounts under `/map-assets` sit below the rate limit. Each domain under
+`src/` owns its handlers, services, models and route table, and `core` imports no domain except
+where the router and the application state compose them.
 
-Each domain owns exactly one `routes.rs` with a single `pub fn routes`, listing its own
-registrations. `core::http_router::api_v1_routes` merges the eight tables and nests the result
-under `/api/v1`; it adds no prefix of its own. **A public URL is therefore the literal written in
-the domain's `routes.rs`, with `/api/v1` in front of it** — `/missions/{id}` in `missions/routes.rs`
-is `GET /api/v1/missions/{id}`.
+A route's access tier is the extractor its handler takes: a signed-in member, a member of at
+least a given [role](/documentation_v2/glossary.md#role), or the `X-Service-Token` of game-server
+ingest; the [game runtime](/documentation_v2/glossary.md#game-runtime) and the fleet host agent
+authenticate with per-server [machine credentials](/documentation_v2/glossary.md#machine-credential).
+The [mission](/documentation_v2/glossary.md#mission) compiler and the mortar ballistics come from
+`website-map-engine`, which the crate takes with its default `scenario` tier alone. Game servers
+fetch compiled mission artifacts over HTTPS from `/api/v1/game-runtime/artifacts/{artifactId}`;
+nothing is staged on disk for them.
 
-Authorization tiers are enforced per handler by the extractor each one takes (`AuthUser`, the
-role-gated newtypes, `ServiceAuth`), not by merge order or by path prefix.
+The integration suites in `tests/` build one test binary per top-level file. A binary that needs
+a database derives its own scratch database from `TEST_DATABASE_URL`, creates and migrates it,
+and the suites that drive HTTP build the same router the `api` binary serves. Shared support
+lives in `tests/common/` and the `*_support/` folders, which produce no binary of their own.
 
-`core::http_router::router` wraps that tree in the global middleware chain — outermost first:
-request id → access logging → Prometheus observation → panic recovery → CORS → body limit → rate
-limit. `/map-assets` is mounted *below* the rate-limit layer so cold terrain streaming is never
-limiter-bound; that seam is commented at its call site and pinned by tests.
+## Getting started
 
-## 3. Placement rules
-
-**Dependency direction.** `core` imports no domain, with two exceptions:
-`core/application_state.rs` (it holds the Discord and webhook service instances) and
-`core/http_router.rs` (it merges the route tables). A domain's handlers, services and models never
-import another domain's **handlers** — cross-domain reuse goes through a service or a model.
-`background_workers` is imported only by `src/bin/api.rs`. `src/tests/architecture_rules.rs`
-enforces all of this against the source text, so a new file is covered the moment it is added.
-
-**Where shared logic lives.** Logic that more than one domain needs and that names no domain
-concept belongs on the shared floor in `core/`: offset pagination (`core::http::pagination`),
-Postgres SQLSTATE predicates (`core::database::postgres_errors`), the JSON wire formats
-(`core::wire_format`), HTML sanitation and the URL write-boundary guard (`core::text`), the outbound
-`429` retry (`core::http_client::retry_on_429`), and the token primitives
-(`core::authentication_primitives`).
-
-Logic that *does* name a domain concept stays in that domain's `services/`, and other domains call
-it there rather than re-deriving the query:
-
-| Shared operation | Home |
-|:---|:---|
-| `load_user` | `identity_and_access/services/user_lookup.rs` |
-| `load_mission`, `load_mission_or_404`, `mission_title_terrain` | `missions/services/mission_lookup.rs` |
-| `load_cargo_phys_catalog` | `missions/services/cargo_catalog.rs` |
-| `write_audit`, `actor_display_name` | `administration/services/audit_writer.rs` |
-| `load_modpack`, `load_current_modpack` | `community_content/services/modpack_lookup.rs` |
-| `publish_server_status`, `publish_all_server_statuses` | `server_infrastructure/services/status_broadcast.rs` |
-| Event effective status and transitions | `operations/services/event_status_rules.rs` |
-| Mortar ballistics (`solve_fire_mission`) | `apps/website/map-engine/src/data/scenario/ballistics/` |
-
-**Adding an endpoint.** Write the handler in `src/<domain>/handlers/`, register it in that domain's
-`routes.rs`, and put anything a second surface would need into that domain's `services/`.
-
-## 4. Test conventions
-
-- **Unit tests** live in a sibling file, declared from the production file as
-  `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. Inline `mod tests` blocks are rejected by
-  `src/tests/architecture_rules.rs`.
-- **Integration suites** are the top-level files under `tests/`. Cargo builds one test binary per
-  top-level `tests/*.rs`; shared support lives in `tests/common/` (a subdirectory, so it produces no
-  binary of its own) and is pulled in with `mod common;`.
-- Production files stay under 500 lines, test files under 1000 (`cargo xtask verify file-length`).
-- `cargo xtask verify route-tags` cross-checks the eight route tables against the tagged route
-  inventory in both directions, so a route cannot be added, moved or dropped unnoticed.
-
-## 5. The codegen contract
-
-`src/missions/contract/generated/` is `typify` output produced from
-`contracts_v2/definitions/*.json` by `cargo xtask ci schema-codegen`. Never hand-edit it: change
-the schema and regenerate. `cargo xtask ci verify-codegen-fresh` diffs the directory to prove the
-committed files match their schemas, and the directory is exempt from the prose rules in
-`src/tests/architecture_rules.rs` because its wording belongs to the generator.
-
-`src/missions/contract/loadout_projection.rs` is the one deliberate exception — `typify`'s output
-for the loadout-export root `oneOf` is lossy, so that model is hand-maintained beside the generated
-directory.
-
-The snake_case models under `src/<domain>/models/` are the API contract's source of truth; the
-frontend DTOs in `apps/website/frontend/src/v2/core/api/dto/` mirror them under golden-test parity.
-
-## 6. Running it
-
-Configuration is read from the environment at boot; `.env` holds the development values
-(`APP_ENV=development`, Postgres on port **5434**), and `.env.example` documents every variable.
+Copy `apps/website/api_v2/.env.example` to `apps/website/api_v2/.env` (a fresh git worktree has
+none), then run these from the repository root, in this order:
 
 ```bash
-cargo xtask db up              # Start local Postgres container
-cargo xtask db down            # Stop local Postgres container (keeps volume)
-cargo xtask db seed            # Apply development SQL seeds
-cargo xtask db repair-migration-checksum [--version N]  # Repoint the checksums of comments-only edits to applied migrations
-cargo xtask mk rust-api        # Axum API on :8080 (runs migrations on boot)
-cargo xtask mk leptos          # Leptos SPA on :3000 (Trunk release build)
-cargo xtask db test-it         # Rust backend integration tests (requires db up)
-cargo xtask ci ci-local        # Replay the full CI check suite locally
+cargo xtask db up        # Postgres 18 in the tbd_reforger_db container, host port 5434, detached
+cargo xtask mk rust-api  # cargo run --bin api in this folder; migrates, stays in the foreground
+cargo xtask db seed      # a second terminal, once the API logs `migrations applied`
+cargo xtask db test-it   # the integration suites, each against its own scratch database
+cargo xtask mk rust-test # the library and binary unit tests, source rules included; no database
 ```
 
-With `APP_ENV=development`, `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted` mints a
-session without Discord — open it in a browser, or read `access_token` out of the `302` `Location`
-fragment for API testing.
+`db seed` applies five development seeds in a fixed order to tables that only the API's
+migrations create. `psql` carries on past a failed statement, so seeding before the API's first
+boot loads nothing and still exits 0. `db test-it` needs only `db up`: it creates the scratch
+databases, and each suite applies the migrations itself. `cargo xtask db registry-import` loads
+the committed Workbench registry exports into the local database, `cargo xtask mk leptos` serves
+the single-page app on port 3000, proxying `/api` and `/map-assets` to the API,
+`cargo xtask db down` stops Postgres and keeps its volume, and `cargo xtask ci ci-local` replays
+the whole CI suite once `db up` has run.
 
-`SKIP_MIGRATE=1` keeps the binary from running migrations, for a harness that owns the schema of a
-shared database itself.
+With `APP_ENV=development`, the [dev login](/documentation_v2/glossary.md#dev-login)
+`GET /api/v1/auth/dev-login?role=<role>` signs in without Discord
+(`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value signs in as `admin`)
+and answers with a 302 to the app's `/auth/callback`, the session's `access_token` in the URL
+fragment; outside development the route answers 404.
 
-What the API writes — CMS uploads, served back at `/uploads` — goes to `UPLOAD_DIR`. Development
-defaults it to `../../../assets_v2/scratch/website-api/uploads` (the repository's gitignored
-scratch tree, outside this crate); outside development it is required and must be absolute, and
-the production unit points it at its systemd state directory. Test configurations use a temporary
-directory, so no suite writes into the checkout. Game runtimes read mission artifacts over HTTPS
-from `/api/v1/game-runtime/`; nothing is staged on disk for them.
+## Configuration
 
-Applied migrations are immutable: `sqlx` compares each file's SHA-384 against the hash it recorded
-when the migration ran, comments included, and `tests/migrations_are_immutable.rs` pins every file so
-an edit fails CI before it stops a database. A comments-only edit to an applied file is repointed with
-`cargo xtask db repair-migration-checksum`; a changed statement needs a new migration.
+`Config::load` in `src/core/configuration/mod.rs` reads the process environment, then the first
+`.env` found from the working directory upward; an exported variable wins. `DATABASE_URL` and
+`JWT_SECRET` are always required. Outside development, `DISCORD_CLIENT_ID`,
+`DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR` are required too. A
+value that is set but unusable stops the boot for `UPLOAD_DIR`, `DISCORD_BOT_TOKEN`,
+`TRUSTED_PROXIES` and the pool settings. `.env.example` carries most variables with development
+values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and
+`TEST_DATABASE_URL` are not in it.
 
-## 7. Further reading
+| Variable | Default | Required | Read by |
+|---|---|---|---|
+| `PORT` | `8080` | no | `Config::load` |
+| `APP_ENV` | `production`; `development` enables dev login and the development defaults | no | `Config::load` |
+| `FRONTEND_URL` | `http://localhost:5173`; where sign-in redirects | no | `Config::load` |
+| `ALLOWED_ORIGINS` | the value of `FRONTEND_URL`; a comma-separated CORS allow-list | no | `Config::load` |
+| `TRUSTED_PROXIES` | empty, which trusts no `X-Forwarded-For`; comma-separated addresses and CIDR blocks | no | `Config::load` |
+| `SPA_DIST_DIR` | empty; when set, the built app is served with an `index.html` fallback | no | `Config::load` |
+| `MAP_ASSETS_DIR` | `../../../assets_v2/terrains`, relative to the working directory | no | `Config::load` |
+| `GLYPH_ASSETS_DIR` | `../../../assets_v2/glyphs`, relative to the working directory | no | `Config::load` |
+| `UPLOAD_DIR` | `../../../assets_v2/scratch/website-api/uploads` in development; the systemd unit sets its state directory | outside development, absolute | `Config::load` |
+| `DATABASE_URL` | none | yes | `Config::load`; `import-registry` |
+| `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `src/core/database/connection_pool.rs` |
+| `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | `src/core/database/connection_pool.rs` |
+| `TBD_DB_POOL_MAX_LIFETIME_SECS` | `1800` | no | `src/core/database/connection_pool.rs` |
+| `TBD_DB_POOL_ACQUIRE_TIMEOUT_SECS` | `30` | no | `src/core/database/connection_pool.rs` |
+| `MISSION_VERSION_MAX_BODY_BYTES` | 256 MiB; the body limit of the mission version save route alone | no | `Config::load` |
+| `JWT_SECRET` | none; signs the access tokens | yes | `Config::load` |
+| `JWT_ACCESS_TTL_MIN` | `15` | no | `Config::load` |
+| `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` | empty | outside development | `Config::load` |
+| `DISCORD_GUILD_ID` | empty; the guild whose roles decide members' roles | no | `Config::load` |
+| `DISCORD_BOT_TOKEN` | empty, meaning no bot; a value holding whitespace stops the boot | no | `Config::load` |
+| `DISCORD_WEBHOOK_URL` | empty, which disables announcement pushes | no | `Config::load` |
+| `SERVICE_TOKEN` | empty, which refuses every `X-Service-Token` route | no | `Config::load` |
+| `SERVER_STATUS_PUBLISH_INTERVAL_SECS` | `10` | no | `src/background_workers/server_status_publisher.rs` |
+| `LEADERBOARD_REFRESH_INTERVAL_SECS` | `900` | no | `src/background_workers/leaderboard_refresher.rs` |
+| `ROLE_RESYNC_INTERVAL_SECS` | `86400` | no | `src/background_workers/discord_role_synchronizer.rs` |
+| `SKIP_MIGRATE` | unset; any value skips the migrations at boot, for a harness that migrates a shared database itself | no | `src/bin/api.rs` |
+| `RUST_LOG` | `info`; the log filter | no | `src/bin/api.rs` |
+| `TEST_DATABASE_URL` | none; `cargo xtask db test-it` sets it | for the database suites | `tests/common/database.rs` |
 
-- [`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/api_v2_refactor/architecture_plan.md) — the domain-decomposition blueprint, the
-  middleware hierarchy, and the rate-limit seam.
-- [`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/api_v2_refactor/analysis_and_inventory.md) — the pre-refactor inventory, kept for
-  reference.
-- `PHASE_1_HANDOFF.md` … `PHASE_7_HANDOFF.md` — the record of how the layout was reached, why
-  each piece sits where it does, and the completion audit that closed the last leftovers.
-- The ten module `README.md` files under `src/`.
+## Public surface
+
+- The library `website_api` (`src/lib.rs`): `core`, `background_workers` and the eight domain
+  modules. Its users are this crate's binaries and integration suites.
+- The `api` binary: the server described above.
+- The `import-registry` binary: imports Workbench registry envelopes (`--items`, `--compat`) into
+  Postgres for the envelope's modpack, which `--modpack` overrides; `--prune` deletes that
+  modpack's rows the envelope lacks.
+- The HTTP surface: `/api/v1`, `/healthz`, `/metrics` (service token), `/uploads`, `/map-assets`
+  and `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.
+
+## Boundaries
+
+- Depends on: `website-map-engine` with its default `scenario` tier, which compiles and validates
+  missions and solves fire missions; the schemas in
+  `contracts_v2/definitions/`, embedded at compile time; Postgres 18; Discord's OAuth2 and REST
+  APIs and a channel webhook; and, at run time, the asset trees in `assets_v2/terrains/` and
+  `assets_v2/glyphs/`.
+- Used by:
+  - the single-page app in `apps/website/frontend/`, whose Trunk server proxies `/api` and
+    `/map-assets` to the API on `127.0.0.1:8080` in development;
+  - the game servers, through the mod's `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, and the
+    fleet host agent in `apps/fleet_host_agent/`;
+  - the `mk rust-api`, `db`, `ci` and `deploy website` commands of `tools_v2/xtask/`;
+  - the release image that `apps/website/Dockerfile` builds, the optional `api` service of
+    `apps/website/docker-compose.staging.yml`, and the systemd unit
+    `tools_v2/xtask/deploy/systemd/tbd-website-api.service`.
+- Rules: `core` imports no domain except in `src/core/application_state.rs` and
+  `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
+  `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
+  checks all three); an applied migration never changes (`tests/migrations_are_immutable.rs`);
+  `rust-toolchain.toml` pins the same toolchain as the workspace root's `rust-toolchain.toml`; the
+  filled `.env` is never committed.
+
+## Related documentation
+
+- [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every domain
+  and the layers they share.
+- [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup,
+  Discord sign-in included.
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
+  the API on the home server.
+- [API completion and verification](/documentation_v2/website/api_v2/verification_evidence/completion_plan.md)
+  — the acceptance contract and requirement register the API is verified against.

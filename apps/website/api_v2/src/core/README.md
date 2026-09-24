@@ -1,111 +1,97 @@
-# `core/`
+# API core
 
-The cross-cutting foundations every domain rests on: runtime configuration, the Postgres
-connection lifecycle, the shared application state, the single handler error type, the router and
-its global middleware chain, observability, credential primitives, and the HTTP / text /
-wire-format primitives the domains reuse instead of re-deriving.
+The foundations every domain of the [API](/documentation_v2/glossary.md#api) rests on:
+configuration, the database pool and migrations, the shared application state, the handler error
+type, the router with its middleware chain, authentication primitives, observability, and the
+HTTP, text and wire-format helpers the domains reuse instead of writing their own.
+
+## Contents
+
+```text
+apps/website/api_v2/src/core/
+├── application_state.rs        `AppState`: the pool, config, token manager, hub, limiters and clients
+├── authentication_primitives/  access tokens, opaque-token hashing and the session-authority trait
+├── configuration/              `Config`, read from the environment at boot, and proxy parsing
+├── database/                   the Postgres pool, the embedded migrations and SQLSTATE predicates
+├── error_handling/             `ApiError`, the failure handlers return, and its JSON envelope
+├── http/                       request-shape primitives: offset pagination
+├── http_client/                the bounded retry for outbound calls answered with 429
+├── http_router.rs              `router`: every route and mount, and the middleware chain
+├── middleware/                 the request middleware chain and the authentication extractors
+├── mod.rs                      the module tree
+├── observability/              Prometheus metrics, `GET /metrics` and `GET /healthz`
+├── realtime_hub/               the in-process publish-subscribe hub behind the SSE streams
+├── tests/                      unit tests of the assembled router: metrics, health, route merging
+├── text/                       the URL write guard, HTML sanitation and text previews
+└── wire_format/                the RFC 3339 timestamp serializers and the `jsonb` passthrough type
+```
+
+## How it works
+
+The `api` binary loads `Config`, opens the pool with `database::connect`, applies the migrations
+with `database::migrate`, builds `AppState::new(pool, config)`, arms the
+[background workers](/documentation_v2/glossary.md#background-workers), and
+serves `http_router::router(state)`. `AppState` is the one dependency container: handlers and
+middleware extract it whole or take one part (the pool, the config, the token manager, the hub,
+the Discord and webhook clients, the session authority) through its `FromRef` implementations.
+
+`router` nests the `/api/v1` tree, which merges the eight domains' route tables and adds no
+prefix of its own, so a public URL is the path written in a domain's `routes.rs` with `/api/v1`
+in front. Beside it the router serves `/healthz`, `/metrics`, the upload directory at `/uploads`
+(created when the router is built), the terrain and glyph trees at `/map-assets` and
+`/map-assets/glyphs` (a warning is logged at boot when either directory is missing), and, when
+`SPA_DIST_DIR` is set, the built single-page app with an `index.html` fallback and the
+cross-origin isolation headers. The middleware chain wraps all of it, outermost first: request
+id, access log, metrics, panic recovery, CORS, body limit, rate limit; the two asset mounts sit
+below the rate limit and never reach it.
+
+A route's access tier is the extractor its handler takes (`AuthUser`, `LeaderUser`,
+`MissionMakerUser`, `AdminUser`, `ServiceAuth`), never its position in the router. Logic that
+more than one domain needs and that names no domain concept lives here: pagination, SQLSTATE
+predicates, wire formats, the URL guard, the 429 retry, the token primitives.
 
 ## Public surface
 
-- **`http_router::router(state)`** — builds the whole application: `/healthz`, `/metrics`, the
-  `/api/v1` tree, the static `/uploads` and `/map-assets` mounts, the SPA fallback, and the global
-  middleware chain. `api_v1_routes` merges the eight domain route tables and nests the result under
-  `/api/v1`; it adds no prefix of its own, so a public URL is the literal written in the domain's
-  `routes.rs`.
-- **`application_state::AppState`** — the dependency container handlers and middleware extract from
-  (pool, config, JWT manager, realtime hub, rate-limit state, Discord and webhook clients).
-- **`error_handling::api_error::ApiError`** — the failure type every handler returns.
-- **`http::pagination`**, **`text/`**, **`wire_format/`**, **`database::postgres_errors`**,
-  **`http_client::retry_on_429`**, **`authentication_primitives/`**, **`realtime_hub`**,
-  **`middleware/`**, **`observability/`** — the shared floor. Logic that more than one domain needs,
-  and that names no domain concept, belongs here rather than in whichever domain reached for it
-  first.
+- `http_router::router`: the whole application, for `apps/website/api_v2/src/bin/api.rs` and the
+  integration suites, which exercise the same router.
+- `application_state::AppState` and `AppState::new`: the state every handler and background
+  worker receives.
+- `configuration::Config` (`load`, `for_tests`, `require_discord_bot_token`, `is_development`)
+  and `ConfigError`.
+- `database`: `connect`, `migrate` and `connect_lazy` for the binaries and suites;
+  `postgres_errors` for handlers that answer a constraint violation with a 4xx.
+- `error_handling::api_error::ApiError`: the error every domain returns.
+- `middleware`: the extractors, `json_error`, `role_rank`, `MAX_MULTIPART_BODY`,
+  `authorized_event_stream::authorize_event_stream` for [SSE](/documentation_v2/glossary.md#sse)
+  handlers, and `PgRateLimiter` for the
+  bucket-pruning worker.
+- `authentication_primitives`: `Manager` and `Claims`, `hash_token`, `random_token`,
+  `constant_time_equal`, `numeric_code`, and the `SessionAuthority` trait that
+  `identity_and_access` implements.
+- `realtime_hub::Hub`, `http::pagination::PageParams`,
+  `http_client::retry_on_429::send_with_retry_on_429`, the `text` guard and preview helpers, and
+  the `wire_format` serializers.
+- The HTTP routes `core` owns: `GET /healthz`, `GET /metrics` (service token), `/uploads`,
+  `/map-assets`, `/map-assets/glyphs` and the single-page app fallback.
 
-## Dependency rules
+## Boundaries
 
-- `core` imports no domain. The two exceptions are `application_state.rs` (it holds the Discord and
-  webhook service types, which live in their domains) and `http_router.rs` (it merges the eight
-  domain route tables). `src/tests/architecture_rules.rs` enforces this.
-- Every domain may import `core`. Nothing in `core` may import `background_workers`.
-- Doc links (`///`, `//!`) naming a domain path are pointers for the reader and create no
-  dependency; the rules read code lines only.
+- Depends on: `axum`, `tower-http`, `sqlx`, `tokio`, `jsonwebtoken`, `governor`, `reqwest` and
+  the other crates in `apps/website/api_v2/Cargo.toml`; the migrations in
+  `apps/website/api_v2/migrations/`, embedded at compile time; and, in the two composition-root
+  files only, the domains: `application_state.rs` builds `identity_and_access`'s Discord client
+  and session authority and `community_content`'s webhook client, and `http_router.rs` merges all
+  eight route tables.
+- Used by: `apps/website/api_v2/src/bin/api.rs` and
+  `apps/website/api_v2/src/bin/import_registry.rs`; every domain module and
+  `apps/website/api_v2/src/background_workers/`; the integration suites under
+  `apps/website/api_v2/tests/`.
+- Rules: `core` imports no domain outside `application_state.rs` and `http_router.rs`, and nothing
+  from `background_workers`; the router merges every domain's `routes` table. The checks are
+  `core_imports_no_domain_except_composition_root`, `background_workers_used_only_by_the_binary`
+  and `every_domain_exports_a_route_table` in `apps/website/api_v2/src/tests/architecture_rules.rs`,
+  which read code lines only, so a doc comment that names a domain creates no dependency.
 
-## Files
+## Related documentation
 
-```text
-mod.rs                                 Module tree of the shared foundations.
-application_state.rs                   Shared application state injected into handlers and middleware.
-http_router.rs                         Router assembly, the `/api/v1` merge, and the global middleware chain.
-authentication_primitives/
-  mod.rs                               Credential primitives shared by every authenticated surface.
-  jwt_manager.rs                       HS256 access-token issuance and verification.
-  token_hashing.rs                     Opaque tokens: generation, SHA-256 storage hashing, constant-time compare.
-configuration/
-  mod.rs                               Runtime configuration read from the environment at boot.
-  proxy_network.rs                     `TRUSTED_PROXIES` address/CIDR parsing and peer matching.
-database/
-  mod.rs                               Postgres connection lifecycle: tuned pool, startup retry budget, migrations.
-  connection_pool.rs                   Pool tuning read from the four `TBD_DB_POOL_*` environment variables.
-  postgres_errors.rs                   Classifying a `sqlx::Error` by the SQLSTATE it carries.
-error_handling/
-  mod.rs                               The single failure type every handler returns and its JSON envelope.
-  api_error.rs                         `ApiError` and the `{"error": msg}` rendering.
-http/
-  mod.rs                               Request-shape primitives shared by every feature surface.
-  pagination.rs                        Offset pagination parameters and the clamping rule list endpoints share.
-http_client/
-  mod.rs                               Outbound HTTP behaviour shared by every client this service speaks through.
-  retry_on_429.rs                      Bounded `429 Too Many Requests` retry honoring `Retry-After`.
-middleware/
-  mod.rs                               The global request middleware chain and the primitives its layers share.
-  authentication.rs                    Authentication and role authorization, expressed as axum extractors.
-  client_identity.rs                   Resolving which client a request came from, for the rate limiters.
-  cross_origin.rs                      CORS: reflects an allow-listed `Origin`, never `*`.
-  durable_ratelimit.rs                 Cross-process rate limiting on Postgres — the L2 tier.
-  rate_limiting.rs                     Per-client rate limiting, in-memory L1 over durable L2.
-  tracing_correlation.rs               Request correlation id and the structured access log line.
-observability/
-  mod.rs                               Prometheus metrics and the health probe.
-  health_probe.rs                      `GET /healthz`: database and migration-state probe.
-  metrics_exposition.rs                Prometheus text exposition 0.0.4 and `GET /metrics`.
-  metrics_registry.rs                  Metric families, their label keys, and the cardinality cap.
-  request_observer.rs                  The middleware that feeds the metrics registry.
-realtime_hub/
-  mod.rs                               In-process publish/subscribe hub fanning messages out to SSE clients.
-text/
-  mod.rs                               Text handling shared across the crate.
-  html_sanitizer.rs                    HTML sanitation and the plain-text preview helpers.
-  http_url_guard.rs                    The crate's URL write-boundary guard for absolute `http`/`https` strings.
-wire_format/
-  mod.rs                               The JSON wire contract's shared serialization primitives.
-  rfc3339_timestamps.rs                The RFC 3339 UTC timestamp and midnight-UTC date `#[serde(with = …)]` modules the models share.
-  raw_json.rs                          The `jsonb` passthrough column type.
-tests/
-  http_router.rs                       Sibling unit tests for `http_router.rs`.
-authentication_primitives/tests/
-  jwt_manager.rs                       Sibling unit tests for `jwt_manager.rs`.
-  token_hashing.rs                     Sibling unit tests for `token_hashing.rs`.
-configuration/tests/
-  configuration.rs                     Sibling unit tests for `configuration/mod.rs`.
-  proxy_network.rs                     Sibling unit tests for `proxy_network.rs`.
-database/tests/
-  connection.rs                        Sibling unit tests for `database/mod.rs`.
-  connection_pool.rs                   Sibling unit tests for `connection_pool.rs`.
-http_client/tests/
-  retry_on_429.rs                      Sibling unit tests for `retry_on_429.rs`.
-middleware/tests/
-  client_identity.rs                   Sibling unit tests for `client_identity.rs`.
-  rate_limiting.rs                     Sibling unit tests for `rate_limiting.rs`.
-observability/tests/
-  metrics_exposition.rs                Sibling unit tests for `metrics_exposition.rs`.
-  metrics_registry.rs                  Sibling unit tests for `metrics_registry.rs`.
-realtime_hub/tests/
-  hub.rs                               Sibling unit tests for `realtime_hub/mod.rs`.
-text/tests/
-  html_sanitizer.rs                    Sibling unit tests for `html_sanitizer.rs`.
-  http_url_guard.rs                    Sibling unit tests for `http_url_guard.rs`.
-```
-
-Unit tests live in these sibling files, declared from the production file as
-`#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. Inline `mod tests` blocks are rejected by
-`src/tests/architecture_rules.rs`.
+- [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every domain.
