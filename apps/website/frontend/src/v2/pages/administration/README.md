@@ -16,3 +16,8 @@ Restricted tooling for server administrators, event coordinators, and mission re
    and the approve / approve-with-conditions / reject decision.
 5. **`content_manager/` (`/admin/content`)**: CMS for announcements and doctrine articles.
 6. **`audit_logs/` (`/admin/audit`)**: Security audit trail and administrative action logs.
+
+## Related documentation
+
+- [Administration pages](/documentation_v2/website/frontend/pages/administration/README.md) — the
+  feature docs and design references of the six pages.

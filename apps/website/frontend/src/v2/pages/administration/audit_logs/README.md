@@ -16,3 +16,8 @@ The trail of administrative actions, newest first, beside the expanded record of
   already loaded.
 - **Expandable payload diffs**: an entry's metadata is free-form, and the inspector prints it as
   formatted JSON rather than as a diff.
+
+## Related documentation
+
+- [Audit logs page](/documentation_v2/website/frontend/pages/administration/audit_logs/audit_logs_page.md)
+  — the page's behaviour, what each call means server-side, its design, open work and decisions.

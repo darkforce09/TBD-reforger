@@ -28,3 +28,8 @@ surface a decision is made on.
 ## Mission hub counterpart
 The author reads the same review record — reviews, decisions, conditions, rejection reasons and the
 thread — in the mission hub (`pages/mission_hub/mission_review/`), and replies there.
+
+## Related documentation
+
+- [Mission approvals page](/documentation_v2/website/frontend/pages/administration/approvals/mission_approvals_page.md)
+  — the page's behaviour, what each call means server-side, its design, open work and decisions.

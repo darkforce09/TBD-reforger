@@ -22,3 +22,8 @@ administrator can take on them.
   their game character, their rank, their warning count and their status.
 - **A promotion modal**: the role is changed with an inline picker in the dossier. The two dialogs
   on this screen are the ban and the warning, and both exist to collect a required reason.
+
+## Related documentation
+
+- [Personnel roster page](/documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md)
+  — the page's behaviour, what each call means server-side, its design, open work and decisions.

@@ -75,8 +75,9 @@ See: [Mission artifacts evidence](/documentation_v2/website/api_v2/verification_
 
 ### audit logs
 
-The trail of administrative actions at `/admin/audit`, newest first, with filters, a CSV export and
-a live [SSE](#sse) feed.
+The trail of administrative actions at `/admin/audit`, newest first: the page loads it a page at a
+time, filters the loaded entries by text in the browser and inspects one entry. The API also serves
+a CSV export and a live [SSE](#sse) feed, which the page does not use.
 
 In code: `AuditLogsPage` in `apps/website/frontend/src/v2/pages/administration/audit_logs/`;
 `apps/website/api_v2/src/administration/handlers/audit_logs.rs`.

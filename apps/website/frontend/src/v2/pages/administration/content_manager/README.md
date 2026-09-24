@@ -20,3 +20,8 @@ The unit's posts on the left, the one being written on the right.
   the only rendering of it on this screen.
 - **A category for standing orders on the wire**: the stored tag set has no entry for one, so a
   standing order is stored under the closest tag that exists and reads back as an announcement.
+
+## Related documentation
+
+- [Content manager page](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md)
+  — the page's behaviour, what each call means server-side, its design, open work and decisions.

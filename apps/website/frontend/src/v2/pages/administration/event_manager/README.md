@@ -68,3 +68,8 @@ who may see and join an operation, from which pools, and why each participant is
 - **Publish / cancel / archive actions on the table**: the day panel offers Edit, Access and Delete.
   The lifecycle state is set in the edit form's picker, which offers only the moves the server
   accepts.
+
+## Related documentation
+
+- [Event manager page](/documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md)
+  — the page's behaviour, what each call means server-side, its design, open work and decisions.

@@ -57,3 +57,8 @@ outcome an executor or a runtime session reports.
   and kicks are fleet commands, and loading a mission is a deployment.
 - **The running mission's name on the server card**: the server payload carries the current
   match id, not a mission, so the card shows that id.
+
+## Related documentation
+
+- [Server control page](/documentation_v2/website/frontend/pages/administration/server_control/server_control_page.md)
+  — the page's behaviour, what each call means server-side, its design, open work and decisions.
