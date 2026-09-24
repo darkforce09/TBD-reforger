@@ -1,0 +1,11 @@
+id = "T-1013"
+kind = "work"
+title = "Rename cdp sleep_ms module after its browser launch role"
+summary = "tools_v2/developer-tools/src/browser_testing/cdp/sleep_ms.rs (324 lines, no //! header) holds find_chromium (:18), is_headless_shell, wait_http, launch (:142), launch_with_gpu and new_page beside the sleep helper; cdp.rs:402-411 re-exports them. Move browser discovery and launch into a purpose-named module (CLAUDE.md law 4)."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T02:33:17Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

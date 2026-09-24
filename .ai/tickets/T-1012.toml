@@ -1,0 +1,11 @@
+id = "T-1012"
+kind = "work"
+title = "Fix cargo xtask db --help text naming retired make targets"
+summary = "Seven cargo xtask db --help lines name retired make targets (make db-up, make seed, make rust-test-it; tools_v2/xtask/src/commands/db/operations.rs:167-212), and tools_v2/xtask/src/cli/mod.rs:65 lists a nonexistent migrate subcommand. Describe the cargo xtask db verbs instead."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T02:33:03Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

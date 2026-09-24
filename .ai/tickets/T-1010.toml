@@ -1,0 +1,11 @@
+id = "T-1010"
+kind = "work"
+title = "Refactor deploy files to replace literal host and home paths"
+summary = "Under tools_v2/xtask a literal host address and personal home paths sit in at least src/commands/deploy/website/help_text.rs:22-23, deploy/deploy.env.example:2,18,22-26,63-64, deploy/Caddyfile.website:9,32, deploy/systemd/tbd-website-backup.service:11, tbd-website-backup-drill.service:13, src/commands/deploy/staging/config.rs:237,261, the src/commands/deploy/website.rs:446 remote-dir guard and src/commands/setup/staging_server.rs:37-39. Use TBD_SSH_HOST, deploy.env values or placeholders."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T02:32:35Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

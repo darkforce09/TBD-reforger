@@ -1,0 +1,11 @@
+id = "T-1014"
+kind = "work"
+title = "Fix db seed exiting 0 when a seed statement fails"
+summary = "seed() at tools_v2/xtask/src/commands/db/operations.rs:408 runs psql without -v ON_ERROR_STOP=1, so the command exits 0 after failed statements; seeding before the API boot migrations create the tables reports success. Stop at the first error; document migrate-then-seed."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T02:33:32Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

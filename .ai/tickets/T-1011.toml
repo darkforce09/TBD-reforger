@@ -1,0 +1,11 @@
+id = "T-1011"
+kind = "work"
+title = "Refactor AI scripts: add @authority tags to server-only methods"
+summary = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/TBD_GroupState.c and TBD_WaypointRuntime.c carry no //! @authority tag although OnGameStart returns on RplMode.Client (:501, :858) and arms server-only Tick, Apply*, SpawnGroup and IssueWaypoints. At least Systems/Mission/Data/TBD_GadgetFlags.c:98,109 shares the gap (CLAUDE.md law 8)."
+class = "chore"
+status = "idea"
+created_at = "2026-09-24T02:32:49Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
