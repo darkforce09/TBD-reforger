@@ -10,7 +10,7 @@ opens: it creates a draft mission from a title and its environment, then hands t
 apps/website/frontend/src/v2/pages/mission_hub/create_dialog/
 ├── dialog.rs  `CreateMissionDialog`: the form, the create request, the hand-off to the editor
 ├── mod.rs     the module tree; re-exports `CreateMissionDialog`
-└── tests/     unit tests that the request carries the briefing and the form offers no thumbnail
+└── tests/     unit tests for the request's briefing and the thumbnail field the form omits
 ```
 
 ## How it works

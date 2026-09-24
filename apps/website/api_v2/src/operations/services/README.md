@@ -64,9 +64,10 @@ part. Match ingest share-locks the attachments before any identity or account lo
 ## Boundaries
 
 - Depends on: `operations::models`; `core` for configuration, errors and `AuthUser`;
-  `administration` for the audit rows; `identity_and_access` for account locks, session
-  authorization and cached membership permissions; `server_infrastructure` for the machine caller
-  and the shared runtime session; `website_map_engine::data::scenario::orbat`.
+  `administration` for the audit rows; `command_center` for the user-statistics recompute
+  (`services::user_stats::recompute_user_stats_on_connection`); `identity_and_access` for account
+  locks, session authorization and cached membership permissions; `server_infrastructure` for the
+  machine caller and the shared runtime session; `website_map_engine::data::scenario::orbat`.
 - Used by:
   - the domain's handlers;
   - `administration`, `identity_and_access`, `match_telemetry` and `missions`, through the surface
@@ -74,8 +75,10 @@ part. Match ingest share-locks the attachments before any identity or account lo
   - the `event_lifecycle_sweeper` and `event_reservation_reevaluator` workers in
     `apps/website/api_v2/src/background_workers/`;
   - the [API](/documentation_v2/glossary.md#api) tests
-    `apps/website/api_v2/tests/event_lifecycle_transactions.rs`,
-    `apps/website/api_v2/tests/attendance_no_show_derivation.rs` and
+    `apps/website/api_v2/tests/attendance_no_show_derivation.rs`,
+    `apps/website/api_v2/tests/event_access_context.rs`,
+    `apps/website/api_v2/tests/event_administration_transactions.rs`,
+    `apps/website/api_v2/tests/event_lifecycle_transactions.rs` and
     `apps/website/api_v2/tests/reservation_quota_allocations.rs`.
 - Rules: reads and guards use the derived status, never the stored column, and every time
   comparison uses the database's clock; one lock order holds for every writer of reservations and

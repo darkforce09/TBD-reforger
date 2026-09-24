@@ -110,11 +110,13 @@ domain solves through them and stores the solution.
 - Depends on:
   - `core`: the application state, errors, extractors, pagination, configuration, the URL guard and
     the wire formats;
-  - `administration` for the audit rows; `identity_and_access` for account and identity locks,
-    session authorization, cached membership permissions, user lookups and the Discord membership
-    enrollment of partner guilds; `missions` for mission titles and terrains, `MissionArmory` and
-    the deployment a server runs; `server_infrastructure` for `MachineCaller`, `ExecutorKind` and
-    the open runtime session; `match_telemetry::models` for the matches of a service record;
+  - `administration` for the audit rows; `command_center` for the user-statistics recompute
+    (`services::user_stats::recompute_user_stats_on_connection`); `identity_and_access` for
+    account and identity locks, session authorization, cached membership permissions, user
+    lookups and the Discord membership enrollment of partner guilds; `missions` for mission titles
+    and terrains, `MissionArmory` and the deployment a server runs; `server_infrastructure` for
+    `MachineCaller`, `ExecutorKind` and the open runtime session; `match_telemetry::models` for the
+    matches of a service record;
   - `website_map_engine::data::scenario` for the ORBAT template, the faction join-key check and
     the ballistics.
 - Used by:

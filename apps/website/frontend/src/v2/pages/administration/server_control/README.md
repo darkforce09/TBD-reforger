@@ -45,7 +45,7 @@ renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration › Server Control; sidebar entry "Server Control" |
+| `/admin/server` | `ServerControlPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame, over the topographic backdrop; breadcrumb Administration / Server Control; sidebar entry "Server Control" |
 
 ## Data
 

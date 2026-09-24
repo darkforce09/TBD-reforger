@@ -10,7 +10,7 @@ and the full-screen workspaces. Outside this folder, `apps/website/frontend/src/
 apps/website/frontend/src/v2/
 ├── apps/    the full-screen workspaces: the Mission Creator, the debug benches, two placeholders
 ├── core/    the shared foundations: API client, session, interface primitives, utilities
-├── mod.rs   the module tree: `apps`, `core`, `pages`, and the documentation audit in test builds
+├── mod.rs   the module tree
 ├── pages/   the routed pages, one folder per navigation area, and the navigation frame around them
 └── tests/   unit tests for the documentation standard of every production file here
 ```
@@ -31,7 +31,9 @@ through `core/`. The imports between the three run mostly one way:
 
 Code that touches `web_sys` or a live engine handle compiles for `wasm32` only, gated on its
 `pub mod` line (which then carries the same `cfg` as the code it declares) or inside its file, so
-`cargo test -p website-frontend` builds the native half of the whole tree.
+`cargo test -p website-frontend` builds the native half of the whole tree. Test builds also get
+the documentation audit, which `mod.rs` declares from `tests/doc_audit/` under `cfg(test)` and
+which walks every production file of the tree.
 
 ## Public surface
 

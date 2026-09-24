@@ -83,10 +83,11 @@ at any separation.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_error_message`, and
-  `FireSolution`, `DataEnvelope` and `Paginated` from `dto/telemetry.rs` and `dto/common.rs`),
-  `crate::v2::core::ui` (`AuthGate`, `PageHeader`, the toast queue),
-  `crate::v2::core::utils::datefmt::format_short_date`, the `AuthStore` context, and the browser's
-  `localStorage` through `web_sys`.
+  `FireSolution`, `DataEnvelope` and `Paginated` from
+  `apps/website/frontend/src/v2/core/api/dto/telemetry.rs` and
+  `apps/website/frontend/src/v2/core/api/dto/common.rs`), `crate::v2::core::ui` (`AuthGate`,
+  `PageHeader`, the toast queue), `crate::v2::core::utils::datefmt::format_short_date`, the
+  `AuthStore` context, and the browser's `localStorage` through `web_sys`.
 - Used by: the `/tools/mortar` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Mortar Calculator" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; the DOM oracle's `mortar` capture

@@ -43,7 +43,7 @@ native build renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/personnel` | `PersonnelRosterPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame; breadcrumb Administration › Personnel Roster; sidebar entry "Personnel Roster" |
+| `/admin/personnel` | `PersonnelRosterPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame; breadcrumb Administration / Personnel Roster; sidebar entry "Personnel Roster" |
 
 ## Data
 

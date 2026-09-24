@@ -59,9 +59,9 @@ puts the shipped placeholder in place of anything else. The Arma Identity card c
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_delete`, and `MeResponse`,
-  `LinkStatus` and `LinkCodeResponse` from `dto/auth.rs`), `crate::v2::core::ui` (`AuthGate`,
-  `PageHeader`, `MaterialIcon`, the toast queue), `crate::v2::core::utils::safe_avatar_url` and the
-  `AuthStore` context.
+  `LinkStatus` and `LinkCodeResponse` from `apps/website/frontend/src/v2/core/api/dto/auth.rs`),
+  `crate::v2::core::ui` (`AuthGate`, `PageHeader`, `MaterialIcon`, the toast queue),
+  `crate::v2::core::utils::safe_avatar_url` and the `AuthStore` context.
 - Used by: the `/settings` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the top bar's account menu in
   `apps/website/frontend/src/v2/pages/navigation/top_nav.rs`, which links `/settings` and

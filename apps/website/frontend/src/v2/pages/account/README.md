@@ -11,7 +11,7 @@ redirect lands on, and the account settings.
 apps/website/frontend/src/v2/pages/account/
 ├── auth_callback/  the `/auth/callback` page that installs the session the sign-in redirect carries
 ├── login/          the `/login` page that starts the Discord sign-in
-├── mod.rs          the module tree; declares the three page modules
+├── mod.rs          the module tree
 └── settings/       the `/settings` page: profile, Arma identity link and attendance figures
 ```
 
@@ -42,7 +42,8 @@ imports another.
 ## Boundaries
 
 - Depends on: `crate::v2::core::auth` (the `AuthStore` and session persistence),
-  `crate::v2::core::api` (the request client and the `dto/auth.rs` shapes) and
+  `crate::v2::core::api` (the request client and the shapes in
+  `apps/website/frontend/src/v2/core/api/dto/auth.rs`) and
   `crate::v2::core::ui` (`AuthGate`, the page header, the toast queue); over HTTP, the
   [identity and access](/documentation_v2/glossary.md#identity-and-access) routes of the
   [API](/documentation_v2/glossary.md#api).

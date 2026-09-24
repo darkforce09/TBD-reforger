@@ -10,7 +10,7 @@ have. Their data comes from the
 
 ```text
 apps/website/frontend/src/v2/pages/doctrine_and_info/
-├── mod.rs     the module tree; declares the three page modules
+├── mod.rs     the module tree
 ├── modpacks/  the `/modpacks` page: pack list, manifest, and the administrator's edit form
 ├── vehicles/  the `/vehicles` page: faction-grouped vehicle list and identification dossier
 └── wiki/      the `/wiki` and `/wiki/:slug` page: manual index, Markdown reader and editor

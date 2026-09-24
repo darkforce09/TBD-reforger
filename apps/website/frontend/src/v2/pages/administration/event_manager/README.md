@@ -55,7 +55,7 @@ fetch to nothing.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration › Event Manager; sidebar entry "Event Manager" |
+| `/admin/events` | `EventManagerPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | padded, not full-bleed, inside the navigation frame; breadcrumb Administration / Event Manager; sidebar entry "Event Manager" |
 
 ## Data
 

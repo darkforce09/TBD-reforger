@@ -12,18 +12,20 @@ apps/website/frontend/src/v2/core/test_support/
 ├── class_r_scrub/        the source scrubber the source pins read production code through
 ├── editor_operations.rs  Mission Creator and map-engine operation sources, as text
 ├── fixtures.rs           embeds the captured API responses, the API route tables and `Cargo.toml`
-├── mod.rs                the module tree, compiled only in test builds
+├── mod.rs                the module tree
 ├── pins.rs               one function per logical production file, its shards concatenated
 └── tests/                unit tests for the source scrubber
 ```
 
 ## How it works
 
-`fixtures.rs`, `pins.rs` and `editor_operations.rs` embed files with `include_str!`, so a test
-reads production text and fixtures without touching the file system at run time, and a path that
-stops existing breaks the test build rather than passing quietly. The paths are anchored on the
-crate manifest or on the helper file itself, never on the calling test, so a test moves freely
-within `apps/website/frontend/src/` and a production file that moves changes one path here.
+`apps/website/frontend/src/v2/core/mod.rs` declares this folder under `cfg(test)`, so no shipped
+build compiles it. `fixtures.rs`, `pins.rs` and `editor_operations.rs` embed files with
+`include_str!`, so a test reads production text and fixtures without touching the file system at
+run time, and a path that stops existing breaks the test build rather than passing quietly. The
+paths are anchored on the crate manifest or on the helper file itself, never on the calling test,
+so a test moves freely within `apps/website/frontend/src/` and a production file that moves
+changes one path here.
 
 - `fixtures.rs`: the `golden!` macro embeds one captured response from
   `apps/website/frontend/tests/fixtures/api/` by file name (`golden!("GET__me.json")`);

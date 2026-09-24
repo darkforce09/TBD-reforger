@@ -46,7 +46,7 @@ again after a submit or a decision; approve and deny show only on a pending requ
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/deployments` | `DeploymentsPage` | route tier `none`; the data renders only for a signed-in viewer; the review queue only for `admin` | full-bleed inside the navigation frame; breadcrumb Operations › My Deployments |
+| `/deployments` | `DeploymentsPage` | route tier `none`; the data renders only for a signed-in viewer; the review queue only for `admin` | full-bleed inside the navigation frame; breadcrumb Operations / My Deployments |
 
 ## Data
 

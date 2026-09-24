@@ -39,7 +39,7 @@ in the browser build only; a native build renders the failure branch.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/admin/audit` | `AuditLogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame; breadcrumb Administration › Audit Logs; sidebar entry "Audit Logs" |
+| `/admin/audit` | `AuditLogsPage` | route tier `admin`; the body renders inside `AdminGate`, for the `admin` role only | full-bleed inside the navigation frame; breadcrumb Administration / Audit Logs; sidebar entry "Audit Logs" |
 
 ## Data
 

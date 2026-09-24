@@ -47,7 +47,7 @@ before anything is sent: an item needs a name, and a quantity is a number or bla
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/missions/:id` | `MissionOverviewPage` | route tier `none`; the data renders only for a signed-in viewer; the Edit Armory button and the review record only for the author or an administrator | padded inside the navigation frame; breadcrumb Mission Hub › Mission Overview |
+| `/missions/:id` | `MissionOverviewPage` | route tier `none`; the data renders only for a signed-in viewer; the Edit Armory button and the review record only for the author or an administrator | padded inside the navigation frame; breadcrumb Mission Hub / Mission Overview |
 
 ## Data
 

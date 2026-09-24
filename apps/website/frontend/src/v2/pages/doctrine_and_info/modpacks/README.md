@@ -15,7 +15,7 @@ apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks/
 ├── pack_editor.rs  the administrator's edit form: pack fields, addon rows, save and cancel
 ├── page.rs         `ModpacksPage`: the list fetch, the selection, the mode and the split view
 ├── preset_list.rs  the master pane: title, create button, search box and one row per pack
-└── tests/          unit tests pinning the administrator gate to the signed-in role check
+└── tests/          unit tests for the administrator gate's signed-in role check
 ```
 
 ## How it works
@@ -76,10 +76,11 @@ below.
 ## Boundaries
 
 - Depends on: `crate::v2::core::api` (`api_get`, `api_post`, `api_put`, `api_post_ok`,
-  `api_delete`, `api_error_message`, and `ModpackDto` and `DataEnvelope` from `dto/content.rs` and
-  `dto/common.rs`), `crate::v2::core::auth` (`has_min_role_authed`, `Role`, the `AuthStore`
-  context) and `crate::v2::core::ui` (`AuthGate`, the `split_pane` primitives, `MaterialIcon`, the
-  toast queue).
+  `api_delete`, `api_error_message`, and `ModpackDto` and `DataEnvelope` from
+  `apps/website/frontend/src/v2/core/api/dto/content.rs` and
+  `apps/website/frontend/src/v2/core/api/dto/common.rs`), `crate::v2::core::auth`
+  (`has_min_role_authed`, `Role`, the `AuthStore` context) and `crate::v2::core::ui` (`AuthGate`,
+  the `split_pane` primitives, `MaterialIcon`, the toast queue).
 - Used by: the `/modpacks` route in `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`; the sidebar's "Modpacks" link in
   `apps/website/frontend/src/v2/pages/navigation/nav_config.rs`; `modpacks_source` in

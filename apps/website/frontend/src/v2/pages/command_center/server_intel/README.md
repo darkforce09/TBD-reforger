@@ -47,7 +47,7 @@ feed. The map backdrop and the theatre tile are images on `lh3.googleusercontent
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/server-intel` | `ServerIntelPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Command Center › Server Intel |
+| `/server-intel` | `ServerIntelPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Command Center / Server Intel |
 
 ## Data
 

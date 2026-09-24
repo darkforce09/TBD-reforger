@@ -43,7 +43,7 @@ sheet, whose `OperatorDossier` fetches that operator's card.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/leaderboards` | `LeaderboardsPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Operations › Global Leaderboards |
+| `/leaderboards` | `LeaderboardsPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Operations / Global Leaderboards |
 
 ## Data
 

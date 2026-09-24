@@ -61,7 +61,7 @@ cloned.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/missions` | `MissionLibraryPage` | route tier `none`; the data renders only for a signed-in viewer; creating a mission for `mission_maker` and above; the dossier's actions for the author or an administrator | full-bleed inside the navigation frame; breadcrumb Mission Hub › Mission Library |
+| `/missions` | `MissionLibraryPage` | route tier `none`; the data renders only for a signed-in viewer; creating a mission for `mission_maker` and above; the dossier's actions for the author or an administrator | full-bleed inside the navigation frame; breadcrumb Mission Hub / Mission Library |
 
 ## Data
 

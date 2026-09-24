@@ -38,7 +38,7 @@ An optional field the [API](/documentation_v2/glossary.md#api) leaves out is not
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/announcements` | `AnnouncementsPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Command Center › Announcements |
+| `/announcements` | `AnnouncementsPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Command Center / Announcements |
 | `/announcements/:id` | `AnnouncementsPage` | as above | as above; `:id` opens that announcement |
 
 ## Data

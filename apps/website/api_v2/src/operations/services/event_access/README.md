@@ -14,7 +14,7 @@ apps/website/api_v2/src/operations/services/event_access/
 ├── mod.rs               the module tree
 ├── slot_eligibility.rs  the effective policy of a concrete seat, slot then squad then event
 ├── subject_loading.rs   membership facts for many accounts, under current and last verified evidence
-├── tests/               unit and property tests for the policy evaluation
+├── tests/               unit tests for the policy evaluation
 └── visibility.rs        which events, attachments and seats one viewer may see
 ```
 

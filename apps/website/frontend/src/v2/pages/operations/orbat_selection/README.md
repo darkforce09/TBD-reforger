@@ -28,7 +28,7 @@ selector's change callback fetches the event again, so the notices stay live.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/events/:id/missions/:emid/orbat` | `OrbatSelectionPage` | route tier `none`; the data renders only for a signed-in viewer | padded inside the navigation frame; breadcrumb Operations › ORBAT Selection |
+| `/events/:id/missions/:emid/orbat` | `OrbatSelectionPage` | route tier `none`; the data renders only for a signed-in viewer | padded inside the navigation frame; breadcrumb Operations / ORBAT Selection |
 
 ## Data
 

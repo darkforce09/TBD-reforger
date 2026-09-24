@@ -11,7 +11,7 @@ primitives, small utilities, and the helpers the crate's own tests share.
 apps/website/frontend/src/v2/core/
 ├── api/           the HTTP client, typed endpoint calls, wire types and the live status stream
 ├── auth/          the session store, the role ladder, the route guard and the link guard
-├── mod.rs         the module tree; declares `test_support` for test builds only
+├── mod.rs         the module tree
 ├── test_support/  the source scrubber, the captured API responses and the source pins, for tests
 ├── ui/            the interface primitives: gates, form controls, overlays, notices, layouts
 └── utils/         timestamps, the countdown, the avatar sanitiser and the clipboard write

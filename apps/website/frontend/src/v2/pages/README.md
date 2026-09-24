@@ -10,7 +10,7 @@ workspaces live in `apps/website/frontend/src/v2/apps/` instead.
 
 ```text
 apps/website/frontend/src/v2/pages/
-├── account/            sign-in, the Discord sign-in callback and the viewer's settings
+├── account/            sign-in, the sign-in callback and the viewer's settings
 ├── administration/     the six administrator-only screens under `/admin/*`
 ├── command_center/     the landing dashboard, the server intel panel and the announcement board
 ├── doctrine_and_info/  the doctrine wiki, the vehicle database and the modpack manifests

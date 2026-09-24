@@ -8,7 +8,7 @@ The folder holds one page, the mortar calculator.
 
 ```text
 apps/website/frontend/src/v2/pages/field_tools/
-├── mod.rs   the module tree; declares the `mortar` page module
+├── mod.rs   the module tree
 └── mortar/  the `/tools/mortar` page: coordinates in, the server's firing solution out
 ```
 

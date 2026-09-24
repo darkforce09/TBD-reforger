@@ -46,7 +46,7 @@ a null and a wrong type all read as empty.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/` | `DashboardPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Command Center › Dashboard |
+| `/` | `DashboardPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Command Center / Dashboard |
 
 ## Data
 

@@ -76,8 +76,8 @@ apps/website/api_v2/src/missions/
 A request reaches a handler through `routes.rs`, and the extractor the handler takes sets its tier:
 `AuthUser`, `MissionMakerUser`, `AdminUser`, or the `mod_runtime` machine credential on
 `/game-runtime/*`. Authored input passes the `validation/` predicates and the JSON Schemas in
-`contract/` before a row is written, and every author-or-admin write takes the mission write lock
-first.
+`contract/` before a row is written, and the metadata patch, the delete, the submission and review
+comments take the mission write lock first.
 
 The Mission Creator saves a version with `POST /api/v1/missions/{id}/versions`, whose body limit is
 set for that route alone. Submitting a mission compiles its current version into an immutable
@@ -96,9 +96,9 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
   children; `/approvals`; `/factions`; `/registry` and `/registry/compat`;
   `/servers/{id}/deployments`; the four `/game-runtime/*` routes; and
   `/admin/mission-default-overrides`.
-- `services::mission_lookup`: `load_mission`, `load_mission_on`, `load_mission_or_404`,
-  `mission_title_terrain` and `historical_mission_title_terrain`, the mission-row reads
-  `command_center` and `operations` call instead of writing their own queries.
+- `services::mission_lookup`: `mission_title_terrain` and `historical_mission_title_terrain`, the
+  mission title and terrain `command_center` and `operations` read instead of writing their own
+  queries.
 - `services::mission_deployments`: `deployment_reads::deployment_in_effect` and
   `deployment_settlement::lock_and_settle` for the game-runtime roster in `operations`, and
   `deployment_settlement::reconcile_mission_deployments` for the deployment reconciler worker.

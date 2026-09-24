@@ -45,8 +45,9 @@ the banner of the viewer's next [deployment](/documentation_v2/glossary.md#deplo
 - Depends on: `crate::v2::core` (the [API](/documentation_v2/glossary.md#api) client, its DTOs and
   the `event_registration` endpoint helpers, the `AuthStore` session and
   [role](/documentation_v2/glossary.md#role) checks, the UI primitives and the date and countdown
-  helpers); over HTTP, the `operations` domain of the API (`/api/v1/events`, `/event-missions`,
-  `/members`, `/me/deployments`, the leave requests), its `command_center` domain
+  helpers); over HTTP, the `operations` domain of the API (`/api/v1/events`,
+  `/api/v1/event-missions/…`, `/api/v1/members`, `/api/v1/me/deployments`,
+  `/api/v1/me/leave-requests` and `/api/v1/admin/leave-requests`), its `command_center` domain
   (`/api/v1/leaderboards`, `/api/v1/users/{discordId}/stats`) and its `community_content` domain
   (`/api/v1/modpacks`).
 - Used by: the route table in `apps/website/frontend/src/app_routes.rs`, whose tiers and layout

@@ -64,7 +64,7 @@ subtree, which resets the selector's faction and squad tabs.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/events/:id` | `EventHubPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Operations › Event Hub |
+| `/events/:id` | `EventHubPage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Operations / Event Hub |
 
 ## Data
 

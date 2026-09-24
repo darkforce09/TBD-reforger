@@ -9,7 +9,7 @@ with the full hub of the selected event beside it.
 apps/website/frontend/src/v2/pages/operations/schedule/
 ├── mod.rs           the module tree; re-exports `EventSchedulePage`
 ├── page.rs          the route component: list fetch, selection, hub fetch and the split pane
-├── tests/           unit tests that keep briefings on the shared hub body
+├── tests/           unit tests for keeping briefings on the shared hub body
 └── upcoming_ops.rs  one event card, and the readers for the untyped event row
 ```
 
@@ -37,7 +37,7 @@ window, no archive of past events and no after-action link.
 
 | Route | Component | Access | Layout |
 |---|---|---|---|
-| `/events` | `EventSchedulePage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Operations › Event Schedule |
+| `/events` | `EventSchedulePage` | route tier `none`; the data renders only for a signed-in viewer | full-bleed inside the navigation frame; breadcrumb Operations / Event Schedule |
 
 ## Data
 

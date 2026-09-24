@@ -24,7 +24,7 @@ apps/website/api_v2/src/operations/services/event_reservations/
 ├── scope_snapshot.rs            one projection of a locked event scope, for planning
 ├── seat_claims.rs               the claim decision registration and assignment share
 ├── seat_matching.rs             whether every seatless place holder can still get a seat
-├── tests/                       unit and property tests for pools, planning and seat matching
+├── tests/                       unit tests for pools, planning and seat matching
 └── waitlist_promotion.rs        deterministic promotion of waiting participants into seats
 ```
 
@@ -60,8 +60,12 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
 ## Boundaries
 
 - Depends on: `operations::services::event_access` for policies, membership facts and
-  eligibility; `operations::models`; `identity_and_access` for account locks and session
-  authorization; `administration` for the audit rows; `core` for errors and `AuthUser`.
+  eligibility; `operations::services::event_status_rules` for the derived event status and the
+  statuses that admit registration; `operations::services::event_lifecycle_transition` to store the
+  derived status once the event is locked; `operations::models`; `identity_and_access` for account
+  locks and session authorization; `administration` for the audit rows; `command_center` for the
+  user-statistics recompute (`services::user_stats::recompute_user_stats_on_connection`); `core`
+  for configuration, errors and `AuthUser`.
 - Used by: the [operations](/documentation_v2/glossary.md#operations) handlers for registration,
   assignment, promotion, events, attachments, access administration and the event hub;
   `operations::services::access_administration`; the ban handler in
