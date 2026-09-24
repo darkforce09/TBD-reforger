@@ -1,58 +1,68 @@
-# Frontend Architecture Hub (`src/v2`)
+# Frontend source tree
 
-The domain-driven architecture for the TBD Reforger platform frontend. Outside this directory the
-crate holds only `main.rs`, `router.rs` and `app_routes.rs`.
+The source of the single-page app, organised by domain: the shared foundations, the routed pages,
+and the full-screen workspaces. Outside this folder, `apps/website/frontend/src/` holds only
+`main.rs`, `app_routes.rs`, `router.rs` and their `tests/`.
 
----
-
-## High-Level Architecture Overview
+## Contents
 
 ```text
-src/v2/
-├── core/                              <-- SHARED FOUNDATIONS (API, Auth, Design System, Utils)
-│
-├── pages/                             <-- ALL PLATFORM PAGES & NAVIGATION
-│   ├── navigation/                    <-- Persistent frame (Sidebar, TopNav, NavConfig)
-│   ├── command_center/                <-- Hub 1: Dashboard, Server Intel, Announcements
-│   ├── operations/                    <-- Hub 2: Operations Schedule, Event Dossier & Slotting
-│   ├── mission_hub/                   <-- Hub 3: Mission Library, Overview Dossier, Create Dialog
-│   ├── field_tools/                   <-- Hub 4: Mortar Ballistics Calculator
-│   ├── doctrine_and_info/             <-- Hub 5: Wiki Knowledgebase, Vehicle Index, Modpacks
-│   └── administration/                <-- Hub 6: Event Admin, Server Control, Personnel, Approvals, CMS
-│
-└── apps/                              <-- STANDALONE ENGINE WORKSPACES & CAD TOOLS
-    ├── editor/                        <-- Scenario Creator (Eden CAD workspace)
-    ├── planner/                       <-- Mission Planner (tactical whiteboard) — scaffold, no code
-    ├── aar/                           <-- After-Action Report (telemetry replay) — scaffold, no code
-    └── debug/                         <-- Engine testbenches (building viewer & world line-of-sight)
+apps/website/frontend/src/v2/
+├── apps/    the full-screen workspaces: the Mission Creator, the debug benches, two placeholders
+├── core/    the shared foundations: API client, session, interface primitives, utilities
+├── mod.rs   the module tree: `apps`, `core`, `pages`, and the documentation audit in test builds
+├── pages/   the routed pages, one folder per navigation area, and the navigation frame around them
+└── tests/   unit tests for the documentation standard of every production file here
 ```
 
----
+## How it works
 
-## Core Principles
+`apps/website/frontend/src/app_routes.rs` binds each path to a route component: a page under
+`pages/`, or a workspace under `apps/` for the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) and the debug benches. The
+navigation frame in `pages/` wraps every route, and pages and workspaces fetch, gate and draw
+through `core/`. The imports between the three run mostly one way:
 
-1. **3 Clean Root Domains:** Foundations (`core`), Document Pages (`pages`), and Standalone
-   CAD/Forensics Workspaces (`apps`).
-2. **No Abstract "Shell":** Navigation is simply the platform frame (`pages/navigation/`) that
-   wraps standard pages.
-3. **Page-as-a-Folder:** Every page route has its own folder containing a main layout file and
-   focused panel files.
-4. **Independent Workspaces:** Each workspace under `apps/` owns 100% of its own UI and canvas
-   mount. It imports from `core` and from the engine crates, never from `pages` and never from a
-   sibling workspace. `editor/` and `debug/` are compiled and routed; `planner/` and `aar/` are
-   scaffolds that `apps/mod.rs` does not yet declare.
-5. **The Engines Are Workspace Crates.** The map engine and graphics engine live in
-   `apps/website/map-engine` and `apps/website/graphics-engine`. There is no in-tree engine here,
-   and the frontend never depends on the graphics engine directly — it hands the map engine a
-   canvas handle, and the map engine speaks the graphics engine's frame vocabulary:
+| Child | Imports |
+|---|---|
+| `pages/` | `core/`, and in a few places the Mission Creator's `editor` workspace and the map engine |
+| `apps/` | `core/` and `website-map-engine`; never `pages/`, never a sibling workspace |
+| `core/` | `website-map-engine` in the wire types; nothing from `pages/`; the Mission Creator's `shell` module in four places, which the core README lists |
 
-   ```text
-   frontend ──► website-map-engine ──► website-graphics-engine
-   ```
+Code that touches `web_sys` or a live engine handle compiles for `wasm32` only, gated on its
+`pub mod` line (which then carries the same `cfg` as the code it declares) or inside its file, so
+`cargo test -p website-frontend` builds the native half of the whole tree.
 
-6. **State Lives Where It Survives.** The map engine owns state that survives a reload — the
-   document, the entities, the undo stack, the selection, the tool command definitions. The
-   frontend owns state that dies with the tab — hover, the in-flight drag, the pointer machine,
-   the keybind map.
+## Public surface
 
-See `documentation_v2/archive/engine_split/engine_split_program.md` for the crate layout these principles come from.
+- `core`: the [API](/documentation_v2/glossary.md#api) client, the wire types, the session store
+  and [role](/documentation_v2/glossary.md#role) checks, the interface primitives and the
+  utilities, read by `apps/website/frontend/src/router.rs` and throughout this tree.
+- `pages` and `apps`: the route components that `apps/website/frontend/src/app_routes.rs` mounts,
+  and `pages::navigation::layout::AppLayout`, which `apps/website/frontend/src/main.rs` mounts at
+  startup.
+
+## Boundaries
+
+- Depends on: `crate::router` and `crate::app_routes`, in `apps/website/frontend/src/router.rs`
+  and `apps/website/frontend/src/app_routes.rs`; `website-map-engine`, never the graphics engine;
+  `leptos`, `leptos_router` and the browser bindings `apps/website/frontend/Cargo.toml` names.
+- Used by: `apps/website/frontend/src/main.rs`, which declares `v2` and mounts the layout;
+  `apps/website/frontend/src/app_routes.rs`, which routes to the pages and workspaces;
+  `apps/website/frontend/src/router.rs`, which reads the roles of `core`.
+- Rules:
+  - every production file opens with a `//!` header, stays within 500 lines, documents every
+    visible item, holds no inline test module and names no ticket or wave in a comment
+    (`v2_production_files_meet_the_documentation_standard` in `tests/doc_audit/mod.rs`);
+  - nothing imports `website_graphics_engine` (`cargo xtask verify engine-layers`);
+  - a workspace imports from `core/` and `website-map-engine`, never from `pages/` or a sibling
+    workspace, and nothing in `core/` imports from `pages/`; `core/` does import the Mission
+    Creator's `shell` module, at the four places its README lists, so shared code is not
+    independent of `apps/`; no gate checks these directions.
+
+## Related documentation
+
+- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the index of the
+  page feature docs.
+- [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
+  Mission Creator's documents, starting from its roadmap.
