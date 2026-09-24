@@ -14,53 +14,47 @@ at a time, and inspect one entry's actor, target and metadata. The screen only r
   `log_table.rs` the trail, its load control and the entry inspector. The folder's
   [README](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md) describes
   each file.
-- Entry: the `/admin/audit` route renders `AuditLogsPage`
-  (`apps/website/frontend/src/app_routes.rs`); `apps/website/frontend/src/router.rs` declares it
-  for the `admin` tier, full-bleed, with the breadcrumb "Administration" › "Audit Logs", and the
-  sidebar's Administration section lists it as "Audit Logs"
-  (`apps/website/frontend/src/v2/pages/navigation/nav_config.rs`).
+- Entry: the route, its tier and its layout are in the README's
+  [Routes](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md#routes).
 - Related: the [API](/documentation_v2/glossary.md#api)'s
   [administration domain](/apps/website/api_v2/src/administration/README.md), which serves the
   trail; every page that changes state writes to it.
 
 ## Behaviour
 
-1. The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`): "Loading
-   session…" while the session restores; "Sign in to load live data from the platform." with a
-   "Sign in with Discord" link to `/login` for a signed-out viewer; "Admin access required." for
-   a signed-in viewer below the `admin` [role](/documentation_v2/glossary.md#role). The route
-   redirects no one.
-2. The page fetches the newest page of the trail, showing "Loading…" meanwhile and "Failed to load
-   data." when the fetch fails; the failure offers no retry, so the viewer reloads the page.
-3. The master column lists one line per entry: the local time as `[YYYY-MM-DD HH:MM:SS]`, the
-   level token (`[INFO]`, `[WARN]`, `[CRIT]`; `[----]` when the severity is empty, and an unknown
-   severity upper-cased), the action and the message, with a blinking cursor after the last line.
-   An empty trail reads "No audit logs.".
-4. The search field above the trail, "Filter by admin, action, or keyword...", filters in the
-   browser only: an entry matches when its local stamp, level, action, actor name, message or
-   target type contains the text. Entries not loaded yet are never searched, and the text is
-   never sent to the API. When the filter hides every loaded entry the column reads "No entries
-   match this filter.".
+1. The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`), which
+   shows the session and access states of the README's
+   [States](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md#states) in
+   place of the page until a signed-in viewer holds the `admin`
+   [role](/documentation_v2/glossary.md#role). The route redirects no one.
+2. The page fetches the newest page of the trail; a failed fetch offers no retry, so the viewer
+   reloads the page.
+3. The master column lists one line per entry, in the format the README's
+   [States](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md#states) give:
+   the local time, the level token, the action and the message, with a blinking cursor after the
+   last line.
+4. The search field above the trail filters in the browser only: an entry matches when its local
+   stamp, level, action, actor name, message or target type contains the text. Entries not loaded
+   yet are never searched, and the text is never sent to the API. A filter that hides every
+   loaded entry says so, which reads differently from an empty trail.
 5. While the API reports a further page, a "Load more" control follows the trail. It fetches the
-   entries older than the last one loaded and appends them, so the trail only grows; it reads
-   "Loading…" while the request runs and "Could not load the next page." when it fails.
-6. Selecting a line opens it in the detail column: the severity badge, the action, the message and
-   the stamp, then the fields Entry (the id), Actor (the name with the id in brackets), Target
-   type and Target id, each shown only when the entry carries it, and Metadata, printed as
-   formatted JSON. Before any selection the column reads "Select a log entry to inspect."; a
-   selection missing from the loaded trail reads "That entry is no longer in this page of the
-   trail.". A filter hides lines but never the open entry.
+   entries older than the last one loaded and appends them, so the trail only grows.
+6. Selecting a line opens it in the detail column: the severity, the action, the message and the
+   stamp, then the entry's id, its actor, its target type and target id, each shown only when the
+   entry carries it, and its metadata, printed as formatted JSON. A filter hides lines but never
+   the open entry.
 
 ## Data
 
-The page makes one kind of call. Server-side:
+The page makes one kind of call, which the README's
+[Data](/apps/website/frontend/src/v2/pages/administration/audit_logs/README.md#data) lists with
+the DTO it reads. Server-side:
 
 - `GET /api/v1/admin/audit-logs`, then `?before=<id>` for each further page (`list_audit_logs` in
-  `apps/website/api_v2/src/administration/handlers/audit_logs.rs`): the page reads it as
-  `CursorList<Value>` (`data`, `next_cursor`). The API returns the entries newest first
-  (`ORDER BY id DESC`), keyset-paged: `before` keeps the ids below it, a page holds 20 entries
-  unless `limit` asks for up to 100, and `next_cursor` carries the last id whenever the page came
-  back full. Each entry is an `AuditLog` row
+  `apps/website/api_v2/src/administration/handlers/audit_logs.rs`): the API returns the entries
+  newest first (`ORDER BY id DESC`), keyset-paged: `before` keeps the ids below it, a page holds
+  20 entries unless `limit` asks for up to 100, and `next_cursor` carries the last id whenever the
+  page came back full. Each entry is an `AuditLog` row
   (`apps/website/api_v2/src/administration/models/audit_log.rs`): `id`, `severity` (`info`,
   `warn` or `crit`), `actor_id` (absent when the entry records no account), `actor_name`, `action`,
   `message`, `target_type`, `target_id`, free-form JSON `metadata` and `created_at`.

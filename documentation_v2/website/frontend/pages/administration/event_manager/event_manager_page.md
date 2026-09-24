@@ -21,11 +21,8 @@ why each participant is admitted.
   arithmetic; `access/` the access sheet. The folder's
   [README](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md) describes
   each file.
-- Entry: the `/admin/events` route renders `EventManagerPage`
-  (`apps/website/frontend/src/app_routes.rs`); `apps/website/frontend/src/router.rs` declares it
-  for the `admin` tier, padded rather than full-bleed, with the breadcrumb "Administration" ›
-  "Event Manager", and the sidebar lists it as "Event Manager"
-  (`apps/website/frontend/src/v2/pages/navigation/nav_config.rs`).
+- Entry: the route, its tier and its layout are in the README's
+  [Routes](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md#routes).
 - Related: the [event manager](/documentation_v2/glossary.md#event-manager) glossary entry; the
   [event schedule page](/documentation_v2/website/frontend/pages/operations/schedule/event_schedule_page.md)
   and the [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md),
@@ -38,107 +35,89 @@ why each participant is admitted.
 
 ## Behaviour
 
-The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`): "Loading
-session…" while the session restores, a sign-in prompt for a signed-out viewer, and "Admin access
-required." below the `admin` [role](/documentation_v2/glossary.md#role).
+The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`), which shows
+the session and access states of the README's
+[States](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md#states) in
+place of the page until a signed-in viewer holds the `admin`
+[role](/documentation_v2/glossary.md#role). The README's States quote every text the steps below
+mention.
 
 ### Calendar and day panel
 
-1. The heading "Operations Calendar" carries the line "Schedule operations for any day. ORBATs
-   generate from each attached mission." and a "Schedule Operation" button.
+1. The heading "Operations Calendar" carries a one-line summary and a "Schedule Operation"
+   button.
 2. The month grid opens on the current month, with previous and next controls, weekday headers,
    today in bold and up to three marks on each day that has operations. A failed read of the
    operations leaves the grid without marks.
-3. Selecting a day moves the day panel there and selects that day's first operation. The panel is
-   headed by the local date and "Scheduled Operations" and lists each operation: its name
-   ("Untitled Operation" when unnamed), "<local time> · N mission(s) · filled/total", its
-   lifecycle state and "Open" or "Locked". An empty day reads "No operations scheduled. Schedule
-   one.", where "Schedule one." opens the schedule form.
+3. Selecting a day moves the day panel there and selects that day's first operation. The panel
+   lists each operation with its name, local time, mission count, filled places, lifecycle state
+   and registration state; an empty day offers a link that opens the schedule form.
 4. While an operation is selected the panel offers "Edit Selected Operation", "Access, Groups &
    Places" and "Delete Selected Operation".
 
 ### Scheduling an operation
 
-1. "Schedule Operation" opens a dialog of that name for the selected day (its long date as a
-   caption): a time (19:00 unless changed), a name ("Operation name (e.g. Twin Theaters)"), a
-   "Missions" staging list ("No missions attached yet." until one is staged; "Attach Mission"
-   offers the library, "No more missions in the library." once every one is staged), and
-   Registration "Open" or "Locked".
-2. "Publish Event" ("Publishing…" while it runs) needs a time ("Start time is required"). It
-   creates the operation, then attaches each staged mission at the operation's start time, one
-   request each. It toasts "Event published with N missions" (or "Event published" with none),
-   resets the form and reads the calendar again; a failed create toasts "Failed to publish event".
+1. "Schedule Operation" opens a dialog of that name for the selected day: a time (19:00 unless
+   changed), a name, a staging list of missions picked from the library, and whether registration
+   is open or locked.
+2. "Publish Event" needs a time. It creates the operation, then attaches each staged mission at
+   the operation's start time, one request each. It toasts the result, resets the form and reads
+   the calendar again.
 
 ### Editing an operation
 
-1. "Edit Selected Operation" opens "Edit Operation": date, time, name, briefing ("Briefing
-   (Markdown supported)"), banner image URL, "Max slots", the attached missions, the lifecycle
-   "Status" and Registration "Open" or "Locked".
-2. The attached missions ("Attached Missions") come from the operation's hub, read while the form
-   is open: "Loading…", "Could not load attached missions." or "No missions attached.", else one
-   row per mission with "<local time> · filled/total filled" and a detach control. "Attach
-   Mission" ("Attaching…" while it runs) attaches another at the operation's start time and
-   toasts "Attached <title>".
+1. "Edit Selected Operation" opens "Edit Operation": date, time, name, briefing, banner image URL,
+   max slots, the attached missions, the lifecycle status and whether registration is open.
+2. The attached missions come from the operation's hub, read while the form is open: one row per
+   mission with its local time, its filled places and a detach control. "Attach Mission" attaches
+   another at the operation's start time.
 3. The Status picker offers only the moves the API accepts: `scheduled` to `open`, `locked`,
    `live` or `cancelled`; `open` to `locked`, `live` or `cancelled`; `locked` to `open`, `live` or
    `cancelled`; `live` to `open`, `locked`, `completed` or `cancelled`. Completed and cancelled
-   operations are terminal, and the form says so: "Completed and cancelled operations are
-   terminal — rerunning one is a new operation, not an edit.".
-4. "Save Changes" ("Saving…" while it runs) sends only the fields that changed; with none it
-   answers "No changes to save". A max-slots value that is not a whole number of 0 or more is
-   refused in the form. A save toasts "Operation updated"; a refusal shows the API's sentence,
-   such as "cannot move an event to open once its start time has passed — reschedule it in the
-   same request to postpone it", else "Could not update operation".
-5. Detaching a mission asks "Detach this mission?" and toasts "Mission detached", or the API's
-   sentence, else "Could not detach mission".
+   operations are terminal, and the form says so.
+4. "Save Changes" sends only the fields that changed, and nothing when none did. A max-slots value
+   that is not a whole number of 0 or more is refused in the form. A refusal shows the API's
+   sentence, such as "cannot move an event to open once its start time has passed — reschedule it
+   in the same request to postpone it".
+5. Detaching a mission asks for confirmation first.
 
 ### Deleting an operation
 
-"Delete Selected Operation" asks "Delete this operation?" with the text "It leaves the schedule,
-the dashboard and everyone's deployments, and no one can register on it. Nothing is erased — the
-attached missions, their ORBATs and every registration are kept, so an administrator can still
-restore it from the database." and a "Delete operation" button. It toasts "Operation deleted" or
-"Failed to delete operation".
+"Delete Selected Operation" asks for confirmation, saying that nothing is erased, then deletes the
+operation.
 
 ### Access sheet
 
-1. "Access, Groups & Places" opens a side sheet over the calendar, "Access & Places", with the
-   operation's name and "access revision N" and four tabs: Policies, Groups, Places, Participants.
-   It reads "Loading access settings…" until the access view arrives, and nothing in it is
-   editable before then.
+1. "Access, Groups & Places" opens a side sheet over the calendar with the operation's name, its
+   access revision and four tabs: Policies, Groups, Places, Participants. Nothing in it is
+   editable until the access view arrives.
 2. Every change names the access revision the sheet was read at. The sheet then adopts the view
-   the API answers with and reports what the change did: "Released: …", "Seated from the waiting
-   list: …", or "No reservation was released or promoted.". When another administrator changed
-   the settings first, the change is refused, the view reloads and the sheet says "Another
-   administrator changed this operation's access settings after you loaded them, so your change
-   was not applied. …".
+   the API answers with and reports the registrations the change released and the waiting
+   participants it seated. When another administrator changed the settings first, the change is
+   refused, the view reloads and the sheet says the change was not applied.
 3. Policies: the operation's policy first, then each mission's squads and slots, each stating
-   where its policy comes from ("Own policy.", "Follows its squad's policy.", "Follows the
-   operation's policy.", or "Own policy with no grants: admits nobody"). A slot inherits from its
-   squad and a squad from the operation. "Give it its own policy" starts an own policy from the
-   inherited one, "Edit own policy" edits it, and "Inherit again" removes it. The editor holds
-   grants as alternatives, each with conditions that must all hold ("Any one grant admits an
-   account; every condition inside a grant must hold."); a condition is any signed-in account, a
-   verified TBD member, a holder of a Discord role (guild id and role id), a member of an event
-   group, or one named account found through the member search. Saving a policy with no grants
-   is allowed, and the editor warns first: "No grants: saved like this, the policy admits nobody.
-   That closes every seat it decides — it does not inherit.". Each mission also offers "Promote
-   from waiting list".
-4. Groups: a managed roster ("Managed roster: administrators add and remove members"), listing who
-   added each member and when, with a remove control and a member search to add; or a partner
-   guild, with its guild id and the roles a member must hold ("Membership follows bot-verified
-   Discord observations of the partner guild; there is no roster to edit."). Groups are created,
-   renamed, switched between the two sources and deleted; the API refuses to delete a group some
-   policy still names.
-5. Places: the member, guest and open pools, each with a limit or "Uncapped" and an "Opens (UTC)"
-   time, saved together with "Save pools". The sheet explains the rule: "Members draw from the
-   member pool and everyone else from the guest pool; either overflows to the open pool once it
-   opens. Zero closes a pool; uncapped leaves only the operation-wide limit. A limit cannot go
-   below the places the pool already holds."
+   where its policy comes from: its own, its squad's or the operation's, or its own with no
+   grants, which admits nobody. A slot inherits from its squad and a squad from the operation.
+   "Give it its own policy" starts an own policy from the inherited one, "Edit own policy" edits
+   it, and "Inherit again" removes it. The editor holds grants as alternatives, each with
+   conditions that must all hold; a condition is any signed-in account, a verified TBD member, a
+   holder of a Discord role (guild id and role id), a member of an event group, or one named
+   account found through the member search. Saving a policy with no grants is allowed, and the
+   editor warns first that such a policy closes every seat it decides rather than inheriting.
+   Each mission also offers "Promote from waiting list".
+4. Groups: a managed roster, listing who added each member and when, with a remove control and a
+   member search to add; or a partner guild, with its guild id and the roles a member must hold,
+   whose membership follows bot-verified Discord observations and has no roster to edit. Groups
+   are created, renamed, switched between the two sources and deleted; the API refuses to delete
+   a group some policy still names.
+5. Places: the member, guest and open pools, each with a limit or uncapped and an opening time in
+   UTC, saved together. Members draw from the member pool and everyone else from the guest pool;
+   either overflows to the open pool once it opens. Zero closes a pool; uncapped leaves only the
+   operation-wide limit; a limit cannot go below the places the pool already holds.
 6. Participants: each participant's availability, TBD membership, place and pool, every
    reservation with the policy that decides it and the grants that admit it (numbered from 1),
    whether current and last-verified facts admit it, and the Discord guild observations and roster
-   entries behind those facts; "Nobody holds a place, a seat or a waiting entry yet." when empty.
+   entries behind those facts.
 
 ### Known discrepancies
 
@@ -162,26 +141,24 @@ restore it from the database." and a "Delete operation" button. It toasts "Opera
 
 ## Data
 
-The page README lists no calls, so the DTOs are named here. Server-side, in
+The README's [Data](/apps/website/frontend/src/v2/pages/administration/event_manager/README.md#data)
+lists each call with the DTO or fields it reads or sends. Server-side, in
 `apps/website/api_v2/src/operations/handlers/`:
 
-- `GET /api/v1/events?scope=all` (`list_events` in `event_listing.rs`): read as
-  `Paginated<EventListItem>`. The `all` scope lists every operation the viewer may see, in start
+- `GET /api/v1/events?scope=all` (`list_events` in `event_listing.rs`): the `all` scope lists every operation the viewer may see, in start
   order, 20 per page unless `limit` asks for up to 100; each item adds `mission_count`,
   `registered`, `filled`, `total_slots` and `percent`.
 - `GET /api/v1/missions?scope=global` (`list_missions` in
-  `apps/website/api_v2/src/missions/handlers/mission_library.rs`): read as
-  `Paginated<MissionCard>`, the picker's library: the live missions and the administrator's own
-  missions that are not archived, most recently updated first, 20 of them since the page sends no
-  `limit`.
-- `GET /api/v1/events/{id}` (`get_event` in `event_hub.rs`): the `EventHub` behind the edit form's
+  `apps/website/api_v2/src/missions/handlers/mission_library.rs`): the picker's library, the live
+  missions and the administrator's own missions that are not archived, most recently updated
+  first, 20 of them since the page sends no `limit`.
+- `GET /api/v1/events/{id}` (`get_event` in `event_hub.rs`): the hub behind the edit form's
   attached missions, and the access sheet's missions.
-- `POST /api/v1/events` (`create_event` in `event_create_update.rs`) with `start_time`,
-  `registration_locked` and an optional `name_override`: the API requires a start time, a
+- `POST /api/v1/events` (`create_event` in `event_create_update.rs`): the API requires a start time, a
   `max_slots` of 0 to 256, a pre-start status (`scheduled`, `open` or `locked`), an absolute
   banner URL and a name that is not blank; it also accepts `server_id` and `modpack_id`. It
   records `event.created`.
-- `PATCH /api/v1/events/{id}` (`update_event`) with only the changed fields: the API checks the
+- `PATCH /api/v1/events/{id}` (`update_event`): the API checks the
   capacity and the lifecycle move ("cannot move an event from X to Y"), refuses a move into a
   pre-start state (`scheduled`, `open` or `locked`) once the start time has passed unless the same
   request moves the start into the future, shifts every attached mission's start time by the same
@@ -190,7 +167,7 @@ The page README lists no calls, so the DTOs are named here. Server-side, in
   records `event.updated`.
 - `DELETE /api/v1/events/{id}` (`delete_event`): withdraws every reservation, marks the operation
   deleted and records `event.deleted`; the row stays, so it can be restored in the database.
-- `POST /api/v1/events/{id}/missions` with `{mission_id, start_time}` (`add_event_mission` in
+- `POST /api/v1/events/{id}/missions` (`add_event_mission` in
   `event_mission_attachment.rs`): copies the mission's ORBAT into the event mission's slots and
   records `event.mission_attached`; it refuses a mission already attached and an archived
   mission (409), and restores a detached attachment of the same mission instead of creating one
@@ -200,8 +177,7 @@ The page README lists no calls, so the DTOs are named here. Server-side, in
   participants on the remaining missions and records `event.mission_removed`.
 - The access sheet (`event_access_administration.rs`, `event_group_administration.rs`,
   `waitlist_promotion.rs`, `orbat_view.rs`):
-  - reads `GET /api/v1/events/{id}/access` (`EventAccessAdministration`),
-    `GET /api/v1/events/{id}/access/participants` (`ParticipantAccessExplanation` rows) and
+  - reads `GET /api/v1/events/{id}/access`, `GET /api/v1/events/{id}/access/participants` and
     `GET /api/v1/event-missions/{emid}/orbat` for each mission;
   - changes policies with `PUT /api/v1/events/{id}/access-policy`, and `PUT` or `DELETE` on
     `/api/v1/event-missions/{emid}/squads/{faction}/{squad}/access-policy` and
@@ -211,15 +187,14 @@ The page README lists no calls, so the DTOs are named here. Server-side, in
     pools together with `PUT /api/v1/events/{id}/reservation-quotas`; members are found with
     `GET /api/v1/members?q=`;
   - every change carries the access revision (in the body, or as `?expected_access_revision=` on a
-    `DELETE`) and answers an `AccessChangeOutcome`: the new view with the registrations it
-    released and promoted. The API locks the operation, checks the caller's authority again,
+    `DELETE`) and answers with the new view and the registrations it released and promoted. The API locks the operation, checks the caller's authority again,
     refuses a stale revision with 409 `ACCESS_REVISION_CONFLICT`, re-evaluates the reservations
     (releasing only those whose ineligibility is confirmed), seats waiting participants and
     records the change. A policy holds at most 32 grants of 1 to 16 conditions, each id 1 to 128
     bytes;
   - `POST /api/v1/event-missions/{emid}/waitlist/promote` takes no revision: it seats the earliest
     eligible waiting participants in queue order, refuses with 409 `EVENT_FULL` when nobody can be
-    seated (the sheet says "Nobody waiting on <mission> could be seated: …"), and admits leaders
+    seated (the sheet says so), and admits leaders
     as well as administrators.
 
 ## Design

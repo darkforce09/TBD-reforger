@@ -48,14 +48,14 @@ facts.
     it ends with `### Known discrepancies`, each "the UI says X (file) — the API does Y (handler in
     file)"; every discrepancy's open ticket goes in Open work, after checking `.ai/tickets/` for
     the statuses `idea`, `queued`, `ready`, `running`, `review` and `deferred`. Models:
-    `documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md:30-74`,
-    `documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md:143-161`.
+    `documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md:27-65`,
+    `documentation_v2/website/frontend/pages/administration/event_manager/event_manager_page.md:122-140`.
 11. **Feature doc Data, Design, Open work and Decisions.** Data: one bullet per call,
     "`METHOD /api/v1/…` (`handler` in file): read as `DTO`; server-side meaning". Design: the
     layout as built, then "Design target: <set>, a design-phase reference", then the differences.
     Open work: "(status, plan): what changes", where plan is the ticket's `plan` field as a link or
     "no plan". Decisions: "decision: why". Model:
-    `documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md:80-141`.
+    `documentation_v2/website/frontend/pages/administration/personnel/personnel_roster_page.md:67-130`.
 12. **Documentation folder and set READMEs.** A folder README indexes its pages in a table of page,
     route and feature doc (model:
     `documentation_v2/website/frontend/pages/administration/README.md:39-46`); a set README opens

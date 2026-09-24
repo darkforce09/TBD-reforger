@@ -16,11 +16,8 @@ member's Discord roles, so the page explains it and never sets it.
   `role_dialog.rs` the role note and the ban and warning dialogs. The folder's
   [README](/apps/website/frontend/src/v2/pages/administration/personnel/README.md) describes each
   file.
-- Entry: the `/admin/personnel` route renders `PersonnelRosterPage`
-  (`apps/website/frontend/src/app_routes.rs`); `apps/website/frontend/src/router.rs` declares it
-  for the `admin` tier, full-bleed, with the breadcrumb "Administration" › "Personnel Roster",
-  and the sidebar lists it as "Personnel Roster"
-  (`apps/website/frontend/src/v2/pages/navigation/nav_config.rs`).
+- Entry: the route, its tier and its layout are in the README's
+  [Routes](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#routes).
 - Related: the [personnel](/documentation_v2/glossary.md#personnel) glossary entry; the
   [API](/documentation_v2/glossary.md#api)'s
   [administration domain](/apps/website/api_v2/src/administration/README.md), which owns the
@@ -29,41 +26,35 @@ member's Discord roles, so the page explains it and never sets it.
 
 ## Behaviour
 
-1. The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`): "Loading
-   session…" while the session restores, a sign-in prompt for a signed-out viewer, and "Admin
-   access required." below the `admin` role.
-2. The header holds the heading "Personnel Roster", the "Sync Roles" button, a sort control, a
-   filter control and the search field "Search Discord ID or Arma Name…".
+1. The page body sits in `AdminGate` (`apps/website/frontend/src/v2/core/ui/gates.rs`), which
+   shows the session and access states of the README's
+   [States](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#states) in
+   place of the page until a signed-in viewer holds the `admin` role.
+2. The header holds the heading, the "Sync Roles" button, a sort control, a filter control and the
+   search field.
 3. The roster loads on arrival and again on every keystroke in the search field, which sends its
-   text as `q` whenever it is not empty. The table shows "Loading…" while a request runs,
-   "Failed to load data." when it fails and "No users found." when nothing matches. The page
-   never asks for a further page, so it shows the first 20 members the API returns, in name
+   text as `q` whenever it is not empty; the table's loading, failure and empty texts are in
+   [States](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#states). The
+   page never asks for a further page, so it shows the first 20 members the API returns, in name
    order.
-4. The sort control cycles "Sort: Name", "Sort: Warnings", "Sort: Role" and "Sort: Banned"; the
-   filter control cycles "Filter: All", "Filter: Active" and "Filter: Banned". Both rearrange the
-   loaded rows in the browser and never refetch.
-5. The table's columns are User (an initials badge and the Discord handle, else the username),
-   Arma Character (the character, else the Arma id, else "Unlinked"), Rank (the role's wire value
-   in capitals), Warnings (yellow above zero) and Status ("Active" or "Banned").
-6. Selecting a row opens the dossier; until then it reads "Select personnel to view dossier". The
-   dossier shows the initials badge, the name, the Discord id and the Arma identity ("Unlinked
-   Arma identity" when there is none), four readings (Deployments, Current Rank, Warnings,
-   Status) and three buttons: "Edit Roles", "Issue Warning", and "Ban Personnel" or "Unban
-   Personnel".
-7. "Edit Roles" opens a note, not a form: "Website access follows verified TBD Discord membership
-   and role mappings.", "Current role: …" and "Change the member’s Discord roles to change their
-   access.". It sends nothing.
-8. "Ban Personnel" opens "Ban personnel?" ("A reason is required. This action is recorded on the
-   roster."); its confirm button stays disabled until the reason holds more than whitespace. A
-   ban answers "Personnel banned", flips the dossier's status and refetches the roster. "Unban
-   Personnel" acts at once, without a dialog, and answers "Personnel unbanned".
-9. "Issue Warning" opens "Issue warning?" ("A reason is required. The warning count on this
-   dossier updates after a successful POST."), with the same reason rule. A warning answers
-   "Warning issued", adds one to the dossier's count and refetches the roster.
-10. "Sync Roles" (reading "Syncing…" while it runs) resyncs every member and answers "Discord
-    roles resynced (N user(s) updated)", then refetches. An answer without the count reads "Role
-    sync returned an unexpected response"; a refusal shows the server's sentence, else "Role sync
-    failed". The ban, unban and warning errors likewise show the server's sentence.
+4. The sort control cycles four orders (name, warnings, role, banned first) and the filter
+   control three subsets (all, active, banned). Both rearrange the loaded rows in the browser and
+   never refetch.
+5. The table shows one row per member, with the columns the README's
+   [States](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#states) list.
+6. Selecting a row opens that member's dossier: the profile, four readings and three buttons,
+   "Edit Roles", "Issue Warning", and "Ban Personnel" or "Unban Personnel".
+7. "Edit Roles" opens a note, not a form, saying that access follows the member's Discord roles.
+   It sends nothing.
+8. "Ban Personnel" opens a dialog whose confirm button stays disabled until the reason holds more
+   than whitespace. A ban flips the dossier's status and refetches the roster. "Unban Personnel"
+   acts at once, without a dialog.
+9. "Issue Warning" opens a dialog with the same reason rule. A warning adds one to the dossier's
+   count and refetches the roster.
+10. "Sync Roles" resyncs every member, reports how many were updated, then refetches. An answer
+    without the count is reported as unexpected; a refusal shows the server's sentence, as the
+    ban, unban and warning errors do. Every toast is in the README's
+    [States](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#states).
 
 ### Known discrepancies
 
@@ -75,16 +66,14 @@ member's Discord roles, so the page explains it and never sets it.
 
 ## Data
 
-The page README lists no calls, so the DTOs are named here. Server-side:
+The README's [Data](/apps/website/frontend/src/v2/pages/administration/personnel/README.md#data)
+lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/admin/users` and `?q=<text>` (`list_users` in
-  `apps/website/api_v2/src/administration/handlers/personnel_roster.rs`): read as
-  `Paginated<AdminUserRow>` (`data`, `total`, `limit`, `offset`); a row carries `discord_id`,
-  `username`, `discord_handle`, `arma_id`, `arma_character`, `role`, `is_banned`, `warnings` and
-  `total_deployments` (`apps/website/frontend/src/v2/core/api/dto/auth.rs`). The API orders by
+  `apps/website/api_v2/src/administration/handlers/personnel_roster.rs`): the API orders by
   username, pages by `limit` (20 by default, at most 100) and `offset`, trims `q` and matches it
   case-insensitively as described above; `total` counts every match.
-- `POST /api/v1/admin/users/{discordId}/ban` with `{reason}` (`ban_user` in
+- `POST /api/v1/admin/users/{discordId}/ban` (`ban_user` in
   `apps/website/api_v2/src/administration/handlers/disciplinary.rs`): answers `{banned: true}`.
   In one transaction the API marks the member banned with the reason, the banning administrator
   and the time, revokes their refresh tokens (so the ban takes hold when the current access token
@@ -93,9 +82,9 @@ The page README lists no calls, so the DTOs are named here. Server-side:
   "reason is required"; an unknown member with 404.
 - `DELETE /api/v1/admin/users/{discordId}/ban` (`unban_user`): answers `{banned: false}`, queues
   the same re-evaluation and records `user.unban`.
-- `POST /api/v1/admin/users/{discordId}/warnings` with `{reason}` (`issue_warning`): creates the
+- `POST /api/v1/admin/users/{discordId}/warnings` (`issue_warning`): creates the
   warning (201) and records `user.warn` at warning severity; the same reason rule applies.
-- `POST /api/v1/admin/roles/sync` with `{}` (`resync_roles` in
+- `POST /api/v1/admin/roles/sync` (`resync_roles` in
   `apps/website/api_v2/src/administration/handlers/role_management.rs`): reapplies the guild's
   role mappings to every member, moves members no longer in the guild to `guest`, records
   `roles.resync` and answers `{updated}`, the number of members it updated.
