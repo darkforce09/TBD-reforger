@@ -1,75 +1,99 @@
-# Map Assets Hub (`assets_v2/`)
+# Map assets
 
-Storage layout and specification for the built-in terrain datasets, tactical glyph atlases, and the production volume that holds community-uploaded terrains.
+The map data the web platform serves and draws: the built-in terrain datasets, the world-object
+glyph set, and the specification of a production volume for uploaded terrains. The
+[API](/documentation_v2/glossary.md#api) serves the first two under `/map-assets`, the map engine
+streams and decodes them, and the developer tools write them.
 
----
-
-## 1. Directory Topology
+## Contents
 
 ```text
 assets_v2/
-├── README.md                           <-- Asset storage specification (this document)
-├── ARCHITECTURE_PLAN.md                <-- Streaming residency, chunking, and Git LFS policy
-├── ANALYSIS_AND_INVENTORY.md           <-- Census of every committed asset and its role
-│
-├── terrains/                           # Built-in island datasets, served at /map-assets
-│   ├── README.md
-│   ├── terrain-registry.json           # Catalog of every registered terrain
-│   ├── everon/                         # 12.8 km × 12.8 km primary island
-│   │   └── README.md
-│   └── arland/                         # 4.1 km × 4.1 km island, manifest only
-│       └── README.md
-│
-├── glyphs/                             # World-object glyph atlas and its SVG sources
-│   └── README.md
-│
-├── scratch/                            # Uncommitted export intermediates (gitignored)
-│
-└── storage_spec/                       # Production persistent volume specification
-    └── README.md
+├── glyphs/        the world-object glyph set: SVG sources, the packed atlas and its manifest
+├── storage_spec/  the specification of a production volume for uploaded terrains, not yet built
+└── terrains/      the built-in terrain datasets and the terrain registry, served at `/map-assets`
 ```
 
-```mermaid
-graph TD
-    Dev["terrains/ · built-in datasets"] --> Axum["Axum · /map-assets (rate-limit exempt)"]
-    Glyphs["glyphs/ · atlas + SVG"] --> Axum
-    Prod["/var/data/tbd/terrains/ · uploaded terrains"] --> Axum
-    Axum --> MapEngine["website-map-engine · 512 m chunk residency"]
-    MapEngine --> Gpu["website-graphics-engine · GPU buffers and atlases"]
+## How it works
+
+The API mounts `terrains/` at `/map-assets` and `glyphs/` at `/map-assets/glyphs`
+(`apps/website/api_v2/src/core/http_router.rs`). Their directories come from `MAP_ASSETS_DIR` and
+`GLYPH_ASSETS_DIR`, and default to `../../../assets_v2/terrains` and `../../../assets_v2/glyphs`,
+which resolve here from the API's working directory `apps/website/api_v2/`. Both mounts sit below
+the API's rate limiter, so streaming a terrain spends no request tokens. In development the app's
+Trunk server proxies `/map-assets` to the API.
+
+```text
+developer tools ──write──▶ terrains/   glyphs/
+                                │         │
+             API  /map-assets ◀─┘         └─▶ /map-assets/glyphs
+                         │
+browser: website-frontend ─▶ website-map-engine (fetch, decode, stream) ─▶ website-graphics-engine
 ```
 
----
+A terrain is reached only through the manifest its registry entry names, so a dataset may ship a
+subset of files and the map engine degrades on what the manifest lists. The glyph manifest names
+one glyph per render key that `contracts_v2/rules/prefab-classify.json` assigns to a prefab.
+`storage_spec/` describes a second, uploaded-terrain tier with the same manifest contract; no code
+reads it yet.
 
-## 2. Binary Container Formats
+## Format
 
-Bulk data is stored in the containers T-935 specifies. All multi-byte fields are little-endian; all headers are 32 bytes, `#[repr(C)]` and `bytemuck::Pod`, with field orders chosen so the struct carries no padding.
+- Encoding:
+  - `terrains/`: JSON (the registry, manifests, labels, locations, prefab descriptors, some of it
+    gzipped) and binary payloads: a 16-bit PNG height map, `TBDC` object chunks and `TBDD`
+    forest-density tiles (`.bin`), the `.tbd-sat` satellite bundle, `rkyv` archives and `.bvh`
+    building hierarchies. `apps/website/map-engine/src/io/` defines the binary formats. The
+    binaries are stored in Git LFS (`.gitattributes`), except the forest-density tiles, which are
+    plain git blobs.
+  - `glyphs/`: SVG sources, a WebP atlas with a JSON rectangle index, and a JSON manifest.
+  - `storage_spec/`: its README only.
+- Schema: `contracts_v2/definitions/terrain-registry.schema.json` for the registry,
+  `contracts_v2/definitions/terrain-manifest.schema.json` for each terrain manifest,
+  `contracts_v2/definitions/terrain-anchors.schema.json`,
+  `contracts_v2/definitions/prefab-descriptor.schema.json` and
+  `contracts_v2/definitions/blas-manifest.schema.json` for the terrain's anchors and prefab data.
+- Adding a file: a new terrain is a folder under `terrains/` with a `manifest.json` and a registry
+  entry, written by the export tooling; `cargo xtask schema terrain-manifest --terrain <id>` checks
+  the manifest against its schema and the terrains contract, and `cargo xtask schema map-glyphs`
+  checks glyph coverage. The child READMEs give each tree's rules.
 
-| Tier | Encoding | Assets |
-|:---|:---|:---|
-| 1 | Raw `#[repr(C)]` POD read through `bytemuck::cast_slice` | Object chunk instances (`TBDC`), the DEM grid (`TBDE`), forest density (`TBDD`) |
-| 2 | rkyv 0.8 archives with `bytecheck`, read through `access_checked` | Roads, map labels, prefab catalog, type inventory, forest regions, building blueprints |
-| 3 | Mipmapped containers read by HTTP range or header-computed offset | Satellite (`.tbd-sat`), bathymetry (`.tbd-bath`) |
+## Producers and consumers
 
-`ObjectInstancePod` is 32 bytes: position `x, y, z`, orientation `yaw, pitch, roll`, uniform `scale`, a `u16` index into the prefab catalog, a `u8` class code, and one padding byte. Rows that predate pitch/roll/scale decode as `pitch = roll = 0.0`, `scale = 1.0`.
+- Producers: the developer tools in `tools_v2/developer-tools/`: the world export pipeline
+  (`tools_v2/developer-tools/src/world_export_pipeline/`), the map raster pipeline, which also
+  builds the glyph atlas (`tools_v2/developer-tools/src/map_raster_pipeline/`), and the blueprint
+  compiler (`tools_v2/developer-tools/src/blueprint/`), which resolve these paths through
+  `tools_v2/developer-tools/src/repository_layout.rs`. The glyph SVG sources are hand-authored.
+- Consumers:
+  - the API's `/map-assets` and `/map-assets/glyphs` mounts, in
+    `apps/website/api_v2/src/core/http_router.rs`;
+  - the map engine in `apps/website/map-engine/`, which fetches and decodes the datasets in the
+    browser and reads them from disk in its native tests;
+  - the developer tools' map verifications (`tools_v2/developer-tools/src/map_verification/`) and
+    the xtask schema gates;
+  - `cargo xtask ci lfs-dem` and `cargo xtask ci lfs-sat`, which pull the Everon height map and
+    satellite bundle from LFS;
+  - `cargo xtask deploy website`, whose rsync leaves `terrains/` out (each host keeps its own copy,
+    checked by its asset preflight) and ships `glyphs/`;
+  - the staging compose file `apps/website/docker-compose.staging.yml`, which mounts both trees
+    read-only into the API container.
 
-Each terrain ships every bulk asset in both its JSON and its binary encoding. The JSON twin is the parity oracle: a decode of the binary must equal a decode of the JSON for every chunk.
+## Boundaries
 
----
+- Depends on: the schemas in `contracts_v2/definitions/` and the prefab classification rules in
+  `contracts_v2/rules/prefab-classify.json`.
+- Used by: the API, the map engine, the developer tools, the xtask schema, `ci` and deploy
+  commands, the staging compose file and the CI workflows in `.github/workflows/`, as listed
+  above.
+- Rules: the tree holds data only, no code; a terrain is addressed only through its manifest; an
+  LFS pattern in `.gitattributes` must exist before the first file of its kind is committed, and
+  the forest-density exception stays the file's last rule; a clone without LFS content holds
+  the JSON files and the forest-density tiles, and only pointer files for every other binary.
 
-## 3. Core Architectural Laws Enforced
+## Related documentation
 
-1. **Law 3 (Clean Architecture)**: Repository starter data, local export scratch, and the production upload volume are three separate locations with separate lifecycles. Scratch is never read by anything downstream of an export, because a fresh clone does not have it.
-2. **Law 4 (Zero Context Needed)**: Directory names state their contents — `terrains/`, `glyphs/`, `scratch/`, `storage_spec/`.
-3. **Law 6 (Strict Boundary Layers)**: This tree is data and specification. It holds no GPU pipeline code and no UI.
-4. **Law 8 (Present-Tense Documentation)**: These documents describe the live headers, the shipped partition sizes, and the current volume layout.
-
----
-
-## 4. Documentation Index
-
-- **[`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/assets_v2_relocation/architecture_plan.md)**: Streaming residency budgets, the 512 m partition, the rate-limit seam, and the Git LFS policy.
-- **[`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/assets_v2_relocation/analysis_and_inventory.md)**: Every committed asset, its size, its format, and what reads it.
-- **[`terrains/README.md`](./terrains/README.md)**: The terrain registry and the built-in dataset contract.
-- **[`glyphs/README.md`](./glyphs/README.md)**: The world-object glyph atlas.
-- **[`storage_spec/README.md`](./storage_spec/README.md)**: The production persistent volume and its upload ingest gates.
-- **[`MIGRATION_HANDOFF.md`](/documentation_v2/archive/assets_v2_relocation/migration_handoff.md)**: Where each legacy asset went, the Git LFS proof, and the outstanding host step.
+- [Local development](/documentation_v2/runbooks/local_development.md) — pulling the LFS map
+  assets and serving them to the app.
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — how the deployed host
+  gets its terrain tree.
