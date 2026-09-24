@@ -1,56 +1,129 @@
-# Graphics engine
+# Map engine
 
-`website-graphics-engine` owns map and mannequin rendering, camera math, spatial queries,
-terrain formats, and asset streaming. The frontend supplies the canvas and preference readers.
-It owns UI signals and registers the render context through its lifecycle cleanup mechanism.
+The `website-map-engine` crate: everything between the platform's map data and the pixels, and
+the [mission](/documentation_v2/glossary.md#mission) domain the
+[API](/documentation_v2/glossary.md#api) and the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) share. It holds the mission
+compiler and CRDT document, the headless editing tools, the static world streamed from a terrain's
+assets, spatial queries and line of sight, the map's lanes and symbology, the cameras, and the
+render engine that hands frame packets to `website-graphics-engine`. It depends on no UI
+framework; the frontend supplies the canvas, the preference readers and the page around them.
 
-## Modules
+## Contents
 
-- `src/core`: device lifetime, buffers, culling, damage, and the 48 ordered draw lanes.
-- `src/camera`: orthographic and orbit projection, viewport controls, and coordinate conversion.
-- `src/renderers`: GPU pipelines, batching, bitmap text, and primitive composition.
-- `src/spatial`: point indexes, BVHs, terrain LOS, viewsheds, and world occluders.
-- `src/terrain`: DEMs, relief, satellite streaming, roads, and water geometry.
-- `src/architecture`: building blueprints, compound transforms, sections, and structure LOS.
-- `src/streaming`: chunk residency, fetch and upload scheduling, memory budgets, and host callbacks.
-- `src/formats`: container headers, POD records, validated archives, and density codecs.
-- `src/environment`: buildings, vegetation, settlement labels, and world classification.
-- `src/symbology`: bespoke unit roles and vehicle glyphs, side tints, labels, and squad links.
-- `src/doll`: mannequin scene, rendering, and equipment-region picking.
-- `src/shaders`: map and mannequin WGSL.
-- `src/diagnostics`: readback checks, frame timing, benchmarks, and browser diagnostics.
+```text
+apps/website/map-engine/
+├── Cargo.toml  the `website-map-engine` package: its feature tiers, dependencies and wasm32 crates
+├── src/        the library `website_map_engine`: eleven modules, each behind its feature
+└── tests/      integration suites: deck.gl camera parity and headless document operations
+```
 
-## Boundaries and features
+## How it works
 
-The crate has no dependency on Leptos or on any editor application state. (It had none on
-`website-mission-core` either, until T-0xx Phase 2A folded that crate in — the mission document
-types now live here, under `src/data`.) Its WebAssembly
-platform boundary uses canvas, browser fetch, image decoding, timers, and console APIs. Native
-builds expose the geometry, codecs, and state machines without browser execution.
+The dependency arrow runs one way: the frontend uses this crate, and this crate uses
+`website-graphics-engine`, the pure renderer, which never names a map concept. The crate speaks
+the renderer's frame vocabulary through `src/frame/mod.rs` alone: it builds its pipelines and
+atlases with the renderer's constructors and hands it draw batches and frame packets.
+`RenderEngine`, which owns the device, the surface and every lane, lives here in `src/frame/`.
 
-The default feature is `scenario` alone — the headless mission compiler and validator, three
-optional serde crates and nothing else. It is the tier `website-api` links, and it is the only
-tier that pulls no graphics crate, no PNG, no rkyv and no flate2.
+A consumer takes only the tier it needs, because each module compiles under the feature it
+belongs to (the table in the [source README](/apps/website/map-engine/src/README.md)):
 
-Above it the chain is `world` → `io` → `streaming` → `render`: `world` enables `bvh` and PNG
-decoding and links `website-graphics-engine`; `io` adds the rkyv archive formats; `streaming` adds
-the loader/scheduler stack (flate2); `render` adds the GPU frame path. `store` (`scenario` + yrs)
-is the CRDT document layer and `editing` is `store` + `world`. `streaming` is deliberately its own
-axis rather than part of `world`: real consumers take the world/io pair without the scheduler.
+```text
+render ──▶ streaming ──▶ io ──▶ world ──▶ bvh
+   │           │         │        └────▶ png, website-graphics-engine
+   │           │         └─────▶ scenario, rkyv
+   │           └──────▶ flate2
+   └──────────▶ website-graphics-engine
+editing ──▶ store ──▶ scenario ──▶ serde, serde_json, thiserror   (store adds yrs)
+editing ──▶ world, streaming
+```
 
-Every module in `lib.rs` is gated on the feature it belongs to, so a consumer that asks for one
-tier does not compile the shells of the others.
+`scenario`, the default and the tier the API links, is the headless mission compiler and
+validator: it pulls no graphics crate, PNG decoder, rkyv or flate2. `store` adds the Yjs document
+(`yrs`). `world` adds the static world, spatial queries and the overlay, and links the renderer;
+`io` adds the rkyv archive formats; `streaming` adds the loader and scheduler stack (flate2);
+`render` adds the GPU frame path, the diagnostics and the doll. `editing` joins the document to
+the streamed world, so it takes `streaming` too. Browser code (canvas, fetch, image decoding,
+timers, the console) compiles only for wasm32; native builds keep the geometry, codecs and state
+machines and test them without a browser.
 
-Wire layouts, numeric precision, lane ordering, fetch concurrency, upload budgets, and cleanup
-ownership are preserved. Production files stay below 500 lines and test files below 1,000.
+## Getting started
 
-## Verification
+Run these from the repository root:
 
-With the workspace target directory configured, run `cargo test -p website-graphics-engine
---all-features` and `cargo check -p website-graphics-engine --target wasm32-unknown-unknown`.
-The test tripwire rejects feature sets that would silently omit parts of the suite. Camera
-integration tests pin deck.gl parity; native tests cover format round trips, geometry, residency,
-and memory accounting. Browser readback checks live under `diagnostics`.
+```bash
+cargo xtask ci lfs-dem           # pull the Everon elevation model from Git LFS; one test decodes it
+cargo xtask mk wasm-ci           # fmt, clippy (all features, wasm32) and tests of both engines
+cargo xtask verify engine-layers # the layer rules between the engine crates and inside this one
+```
 
-Capability gaps are recorded in the owning module READMEs. Symbols are bespoke and text uses
-the existing bitmap atlas.
+`cargo test -p website-map-engine --all-features` runs this crate's tests alone. Without
+`--all-features` the tripwire test `map_engine_tests_require_all_features` fails, since the
+default tier compiles only a fraction of the crate. The tests read the Everon terrain under
+`assets_v2/terrains/everon/` from disk. The crate has no binary of its own: the Mission Creator
+runs it in the browser, inside the single-page app that `cargo xtask mk leptos` builds and serves,
+and `cargo xtask mk leptos-gates` runs the editor gate, whose `selfcheck` smoke calls the render
+engine's readback checks.
+
+## Configuration
+
+Cargo features, in `Cargo.toml`:
+
+| Feature | Turns on | Taken by |
+|---|---|---|
+| `scenario` (default) | `serde`, `serde_json`, `thiserror`; `data::scenario` | the API |
+| `store` | `scenario`, `yrs`; `data::store` | the frontend |
+| `bvh` | no crate; gates `spatial::bvh`, which also needs `world` | implied by `world`; `tools_v2/developer-tools` names it too |
+| `world` | `bvh`, `png`, `website-graphics-engine`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools_v2/developer-tools` |
+| `io` | `world`, `scenario`, rkyv and float round trips in `serde_json`; `io` and `streaming`'s bridge | the frontend, `tools_v2/developer-tools` |
+| `streaming` | `io`, `flate2`; the loaders, scheduler, buffers and memory ledger | the frontend on wasm32 and in its tests, `tools_v2/developer-tools` |
+| `render` | `streaming`, `website-graphics-engine`; the GPU frame path, `diagnostics`, `doll` | the frontend on wasm32 |
+| `editing` | `store`, `world`, `streaming`; `editing` | the frontend |
+
+In the browser the crate also reads the page's query string: `memBudgetMb` sets the streaming
+memory budget in MiB (or `window.__memBudgetMb`; default 1536), `sat=preview` loads the satellite
+imagery by range requests alone and never fetches the whole bundle, and `t9382=1` (or
+`window.__t9382Log`) logs chunk allocation. At build time `data::scenario` embeds
+`contracts_v2/rules/kit-aliases.json`.
+
+## Public surface
+
+- The library `website_map_engine`: `data::scenario` for the API's missions and operations
+  domains; `data`, `editing`, `world`, `streaming`, `spatial`, `overlay`, `frame`, `camera` and
+  `doll` for the frontend; `world`, `io`, `spatial`, `streaming` and `overlay` for the offline
+  tools.
+- The JavaScript-facing methods of `RenderEngine` and `DollEngine` (`#[wasm_bindgen]`), which the
+  frontend calls from Rust and the editor gate reaches through the globals the Mission Creator
+  publishes (`window.__selfChecks`, `window.__editorBench`, `window.__arsenalDoll`).
+
+## Boundaries
+
+- Depends on: `website-graphics-engine` (optional, from the `world` tier up); `serde`,
+  `serde_json`, `thiserror`, `yrs`, `png`, `rkyv`, `flate2`, `bytemuck` and `earcutr`; on wasm32,
+  `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `gloo-net`, `futures` and
+  `console_error_panic_hook`; `contracts_v2/rules/kit-aliases.json`; and at run time the terrain
+  assets of `assets_v2/terrains/`, which the API serves under `/map-assets`.
+- Used by:
+  - the API (`apps/website/api_v2/Cargo.toml`), at the default `scenario` tier;
+  - the frontend (`apps/website/frontend/Cargo.toml`): `world`, `io`, `store` and `editing` on
+    every target, `render` and `streaming` on wasm32, and `streaming` for its native tests;
+  - `tools_v2/developer-tools/Cargo.toml`: `world`, `streaming`, `io` and `bvh`, for the world
+    export, the blueprint tooling and the map checks;
+  - `tools_v2/xtask/`: the `wasm-ci` lane and the `engine-layers` gate.
+- Rules:
+  - the arrow is one-way: `apps/website/graphics-engine/` never imports this crate (rule 1 of
+    `cargo xtask verify engine-layers`) and the frontend never imports the graphics engine (rule
+    6); the rules inside the crate are listed in the source README;
+  - the API's tier stays thin: `data/scenario/` names no module of a higher tier and no graphics
+    crate (rule 4; the source README gives the gate's exact list);
+  - the tests run with `--all-features` (`map_engine_tests_require_all_features`), and the camera
+    matches deck.gl's orthographic viewport over 300 golden cases
+    (`tests/deckgl_ortho_parity.rs`).
+
+## Related documentation
+
+- [Local development](/documentation_v2/runbooks/local_development.md) — the terrain assets: what
+  Git LFS holds, how `/map-assets` is served, and the LFS pulls.
+- [Editor gates](/documentation_v2/runbooks/editor_gates.md) — running the editor gate, whose
+  `selfcheck` smoke calls the render engine's readback checks.

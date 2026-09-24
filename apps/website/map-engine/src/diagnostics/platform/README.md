@@ -1,12 +1,26 @@
-# diagnostics/platform
+# Browser console logging
 
-Readback self-checks, frame benchmarks, timing queries, hardware probes, and browser console output.
+The console macros the map engine logs with in the browser: `log!`, `warn!` and `error!` format
+their arguments and write the text to the browser console. They compile only for wasm32 with the
+`render` feature.
 
 ## Contents
 
-- `console.rs`
-- `mod.rs`
+```text
+apps/website/map-engine/src/diagnostics/platform/
+├── console.rs  the `log!`, `warn!` and `error!` macros over `web_sys::console`
+└── mod.rs      the module tree
+```
 
 ## Boundaries
 
-This module owns graphics data and computation. It does not depend on Leptos or on any editor application state; browser I/O is gated to WebAssembly. (It said "does not depend on mission-core" until T-0xx Phase 2A folded that crate in as `data/`; the sentence named a crate that no longer exists.)
+- Depends on: `web-sys` (`console::log_1`, `warn_1` and `error_1`).
+- Used by: `crate::world::terrain::satellite::quadtree` (its bootstrap, retry, basemap, selection
+  and download steps), `crate::streaming::host::preferences` and
+  `crate::streaming::loaders::occluder_loader`.
+- Rules: the macros are `pub(crate)`, so only this crate logs through them; callers spell them in
+  full (`crate::diagnostics::platform::console::warn!`), and
+  `apps/website/frontend/src/v2/apps/editor/tests/t629_satellite_resolution.rs` reads the satellite
+  quadtree's source for those spellings (`no_call_site_may_guess_a_texture_limit`,
+  `a_downscaled_basemap_warns_and_a_stuck_placeholder_warns`), so moving or renaming a macro breaks
+  that suite.

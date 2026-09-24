@@ -1,11 +1,20 @@
-# camera/ortho/camera
+# Orthographic camera re-exports
 
-Orthographic map and orbit-camera coordinates, projection matrices, unprojection, and viewport controls.
+A second path to the orthographic map camera: it re-exports `OrthoCamera` and its plane and zoom
+constants from `apps/website/map-engine/src/camera/ortho/state.rs` under
+`camera::ortho::camera`. Nothing in the repository imports that path; every caller names
+`camera::ortho::state` directly.
 
 ## Contents
 
-- `mod.rs`
+```text
+apps/website/map-engine/src/camera/ortho/camera/
+└── mod.rs  the module tree; re-exports `OrthoCamera`, `NEAR`, `FAR`, `MIN_ZOOM` and `MAX_ZOOM`
+```
 
 ## Boundaries
 
-This module owns graphics data and computation. It does not depend on Leptos or on any editor application state; browser I/O is gated to WebAssembly. (It said "does not depend on mission-core" until T-0xx Phase 2A folded that crate in as `data/`; the sentence named a crate that no longer exists.)
+- Depends on: `crate::camera::ortho::state`, which defines every item re-exported here.
+- Used by: nothing; `git grep` finds no path through `camera::ortho::camera`.
+- Rules: the folder holds re-exports only, so the camera and its constants keep one definition, in
+  `state.rs` beside this folder.
