@@ -1,0 +1,11 @@
+id = "T-1022"
+kind = "work"
+title = "Add website admin UI to manage game servers"
+summary = "api_v2 serves POST /api/v1/servers plus PATCH and deactivate on /api/v1/servers/:id (server_registry.rs:174,241,359) and accepts server_id on event create and update (event_create_update.rs:103,191), but no page calls those routes or sends server_id; server_control/page.rs:40 only lists /servers."
+class = "feature"
+status = "idea"
+created_at = "2026-09-24T04:20:39Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

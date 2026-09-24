@@ -1,0 +1,11 @@
+id = "T-1018"
+kind = "work"
+title = "Fix content manager Save Draft and Discord broadcast toast"
+summary = "content_manager/editor_form.rs:123-129 Save Draft sends no request yet toasts 'Draft saved' and sets published=false (:109), listing a published post as Draft. :219 toasts 'Published & broadcast to Discord' even when the push fails; api_v2 announcements_admin.rs:204-205,326-330 discards push_to_discord's result."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T04:19:42Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

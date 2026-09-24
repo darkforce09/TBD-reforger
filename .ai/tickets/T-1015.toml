@@ -1,0 +1,11 @@
+id = "T-1015"
+kind = "work"
+title = "Fix detach and delete confirm dialogs that misstate server effects"
+summary = "event_manager/confirm_dialogs.rs:156 (also :13-14, :97-98) says detaching deletes slots and registrations irreversibly; api_v2 event_mission_attachment.rs:378-392 withdraws registrations and hides the attachment, keeping ORBAT and history, and :310-326 restores it. lifecycle.rs:61-65 says deletion keeps registrations; event_create_update.rs:321 withdraws them."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T04:19:00Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -1,0 +1,11 @@
+id = "T-1017"
+kind = "work"
+title = "Fix personnel search placeholder promising Discord ID search"
+summary = "personnel/page.rs:177 placeholder reads 'Search Discord ID or Arma Name' and the term goes to GET /api/v1/admin/users?q= (:65-68), but api_v2 personnel_roster.rs:90-96 matches only username, discord_handle, arma_character and arma_id, never discord_id."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T04:19:28Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

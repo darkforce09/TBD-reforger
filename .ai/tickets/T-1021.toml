@@ -1,0 +1,11 @@
+id = "T-1021"
+kind = "work"
+title = "Rewrite stale comments naming things that do not exist"
+summary = "api_v2 core/configuration/mod.rs:298-299 (for_tests) describes an RCON transport setting the literal lacks; RCON lives in apps/fleet_host_agent/src/rcon/. tools_v2 route_tags.rs:6-8,11-14,72 module doc quotes a Go-worded GO-7 (Godoc, handlers.go Register()) absent from coding_standards/README.md:204-206, and cites a nonexistent Makefile."
+class = "docs"
+status = "idea"
+created_at = "2026-09-24T04:20:24Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

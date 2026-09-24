@@ -1,0 +1,11 @@
+id = "T-1019"
+kind = "work"
+title = "Fix operation scheduling toasting failed mission attaches as success"
+summary = "event_manager/schedule_dialog.rs:87-93 discards every POST /events/{id}/missions result (let _ =), and :96-103 toasts 'Event published with {n} missions' from the staged count (:85), so failed attaches, or a missing created id (:86), still read as success."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T04:19:56Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

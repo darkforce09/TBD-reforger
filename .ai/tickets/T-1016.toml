@@ -1,0 +1,11 @@
+id = "T-1016"
+kind = "work"
+title = "Fix event manager calendar showing only the 20 earliest events"
+summary = "event_manager/state.rs:144 requests /events?scope=all without a limit; api_v2 event_listing.rs:53,72-76 sorts by start_time ascending and pagination.rs:18 defaults to 20 (cap 100), so later operations never appear. A failed fetch becomes None (state.rs:147) and renders as an empty calendar (:256-264)."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T04:19:14Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
