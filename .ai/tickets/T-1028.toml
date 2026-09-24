@@ -1,0 +1,11 @@
+id = "T-1028"
+kind = "work"
+title = "Fix re-publishing a pinned announcement unpinning it"
+summary = "content_manager/editor_form.rs:157 sends is_pinned: false on every publish, including the PATCH of an existing post, and api_v2 announcements_admin.rs:303-304 writes it, so re-publishing a pinned announcement unpins it. The editor has no pin control."
+class = "bug"
+status = "idea"
+created_at = "2026-09-24T05:03:53Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

@@ -4,6 +4,7 @@ title = "Fix detach and delete confirm dialogs that misstate server effects"
 summary = "event_manager/confirm_dialogs.rs:156 (also :13-14, :97-98) says detaching deletes slots and registrations irreversibly; api_v2 event_mission_attachment.rs:378-392 withdraws registrations and hides the attachment, keeping ORBAT and history, and :310-326 restores it. lifecycle.rs:61-65 says deletion keeps registrations; event_create_update.rs:321 withdraws them."
 class = "bug"
 status = "idea"
+notes = "The guard test at event_manager/tests/event_manager.rs:119-126 pins the misleading delete text ('nothing is erased', 'kept'), and the doc comment at lifecycle.rs:62-64 repeats it; fixing the dialog text includes both."
 created_at = "2026-09-24T04:19:00Z"
 
 [scope]

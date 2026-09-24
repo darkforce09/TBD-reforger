@@ -1,0 +1,11 @@
+id = "T-1029"
+kind = "work"
+title = "Add CSV export to the audit logs page"
+summary = "api_v2 serves GET /api/v1/admin/audit-logs/export.csv (administration/routes.rs:30-31, handlers/audit_logs.rs:101-102), but no control in audit_logs/ calls it and no frontend code references the route. T-950 covers only the live stream."
+class = "feature"
+status = "idea"
+created_at = "2026-09-24T05:04:07Z"
+
+[scope]
+domain = "repo"
+layer = "docs"
