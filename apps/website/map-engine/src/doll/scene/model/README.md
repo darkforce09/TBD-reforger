@@ -1,12 +1,26 @@
-# doll/scene/model
+# Doll model facade
 
-Character mannequin geometry, equipment-region appearance, camera projection, rendering, and picking.
+One flat import point for the doll preview's CPU-side model: the region keys and states, the
+instances and their colours, the two meshes, the picking and anchor functions, and the orbit
+camera's two projections. It declares nothing of its own and hosts the model's unit tests.
 
 ## Contents
 
-- `mod.rs`
-- `tests`
+```text
+apps/website/map-engine/src/doll/scene/model/
+├── mod.rs  the module tree; re-exports the scene, picking and orbit projection items
+└── tests/  unit tests for region keys, instances, mesh counts, projection, picks, colours, anchors
+```
 
 ## Boundaries
 
-This module owns graphics data and computation. It does not depend on Leptos or on any editor application state; browser I/O is gated to WebAssembly. (It said "does not depend on mission-core" until T-0xx Phase 2A folded that crate in as `data/`; the sentence named a crate that no longer exists.)
+- Depends on: `crate::doll::scene::instances`, `crate::doll::scene::mesh`,
+  `crate::doll::interaction::picking` and `crate::camera::orbit::projection`, whose items it
+  re-exports.
+- Used by: `crate::doll::renderer`'s tests (`tests/pack_tests.rs` there imports the facade); no
+  production code imports it, since the renderer, the readback check and the arsenal preview in
+  `apps/website/frontend/src/v2/apps/editor/arsenal/doll.rs` name the defining modules.
+- Rules: a re-export only, so every item keeps its definition in the module it names; the tests
+  pin the contract the renderer and the page rely on: 14 unique region keys, at least one
+  instance a region, the exact cube and cylinder vertex and index counts, and the pick and anchor
+  goldens (`tests/cases_1.rs`).

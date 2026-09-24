@@ -1,11 +1,22 @@
-# doll/renderer/engine
+# Doll engine re-export
 
-Character mannequin geometry, equipment-region appearance, camera projection, rendering, and picking.
+A one-line module that re-exports `DollEngine`, the doll preview's browser renderer, under
+`crate::doll::renderer::engine`. It compiles only for wasm32 with the `render` feature, like the
+renderer files it points at.
 
 ## Contents
 
-- `mod.rs`
+```text
+apps/website/map-engine/src/doll/renderer/engine/
+└── mod.rs  re-exports `DollEngine` from `crate::doll::renderer::lifecycle_1`
+```
 
 ## Boundaries
 
-This module owns graphics data and computation. It does not depend on Leptos or on any editor application state; browser I/O is gated to WebAssembly. (It said "does not depend on mission-core" until T-0xx Phase 2A folded that crate in as `data/`; the sentence named a crate that no longer exists.)
+- Depends on: `crate::doll::renderer::lifecycle_1`, which defines `DollEngine`.
+- Used by: nothing; the arsenal preview in
+  `apps/website/frontend/src/v2/apps/editor/arsenal/doll.rs` and the readback check in
+  `apps/website/map-engine/src/diagnostics/readback/doll.rs` name
+  `doll::renderer::lifecycle_1::DollEngine` directly.
+- Rules: the module declares nothing of its own; the struct and its methods stay in
+  `lifecycle_1.rs` and `lifecycle_2.rs` beside it.
