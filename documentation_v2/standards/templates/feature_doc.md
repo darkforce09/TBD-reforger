@@ -32,25 +32,29 @@ in this order, spelled this way; finer structure goes into `###` headings inside
 
 ## Behaviour
 
-<What the user or caller sees and does, as the code behaves now: the flows as numbered steps, the
-states and what moves between them, the rules and limits. Interface text is quoted as the code
-writes it.>
+<What the user or caller sees and does, as the code behaves now: the flows as numbered steps, what
+moves the feature from one state to the next, the rules and limits, and the reasons behind them.
+Interface text is quoted as the code writes it; for a page or an app, link the README's Routes and
+States instead of repeating them.>
 
 ## Data
 
-- <METHOD /api/v1/path, message or file>: <the handler or loader, the DTO or schema, and what the
-  feature does with it>
-- <the storage the feature reads and writes: context, browser storage, database tables>
+- <METHOD /api/v1/path, message or file>: <the handler or loader, the DTO or schema where no README
+  lists it, and what the call means server-side: what it returns or changes, and the rules it
+  applies>
+- <the storage the feature reads and writes beyond what the README's Data lists, which is linked
+  here, not repeated>
 
 ## Design
 
 <The layout and visual design as built, and the design target: the visual_references/ sets and the
-design system pages the feature follows, linked.>
+design system pages the feature follows, linked, and each difference between the built UI and the
+target. No screenshots of the built UI; the only images are the visual_references sets.>
 
 ## Open work
 
-- [<ticket id> — <ticket title>](/documentation_v2/tickets/specs/<spec file>.md) (<status>): <what
-  changes for this feature when it ships>
+- [<ticket id> — <ticket title>](<its spec, or `/.ai/tickets/T-<id>.toml` when it has none>)
+  (<status>): <what changes for this feature when it ships>
 
 ## Decisions
 
@@ -60,8 +64,13 @@ design system pages the feature follows, linked.>
 
 Open work lists only tickets whose status is idea, queued, ready, running, review or deferred,
 each checked in `.ai/tickets/`; a shipped ticket's lasting knowledge moves into Behaviour, Data or
-Decisions. Open work says "None." when nothing is open. A feature doc stays within 500 lines and is
-split by topic into a folder with a README index when it grows past that.
+Decisions. Open work says "None." when nothing is open. A design-target gap no open ticket covers
+goes into Design as a difference and into the writer's report; Open work lists tickets only. The
+feature doc and the README of the page or app it covers split the facts: the README holds what the
+code declares (routes, calls with their DTOs, states with their exact text), and the feature doc
+holds the flows, rules and reasons, what each call means server-side, the design, the open work
+and the decisions, linking the README's Routes, Data and States. A feature doc stays within 500
+lines and is split by topic into a folder with a README index when it grows past that.
 
 ## Worked sample
 
@@ -74,46 +83,51 @@ feature doc is written from the same code and may differ.
 
 # Event schedule page
 
-The `/events` page: members browse the upcoming events in a list and open any event's full hub
-beside it, briefing and ORBAT included, without leaving the list.
+The `/events` page: members browse the upcoming [events](/documentation_v2/glossary.md#event) in
+a list and open any event's full hub beside it, briefing and ORBAT included, without leaving the
+list.
 
 ## Where it lives
 
-- Code: [schedule page](/apps/website/frontend/src/v2/pages/operations/schedule/): `page.rs`, the
-  route component `EventSchedulePage`, and `upcoming_ops.rs`, one event card.
-- Entry: the `/events` route in `apps/website/frontend/src/app_routes.rs`; route tier `none`,
-  full-bleed inside the navigation frame (`apps/website/frontend/src/router.rs`).
+- Code: [`apps/website/frontend/src/v2/pages/operations/schedule/`](/apps/website/frontend/src/v2/pages/operations/schedule/):
+  `page.rs`, the route component `EventSchedulePage`, and `upcoming_ops.rs`, one event card.
+- Entry: the `/events` route, whose component, access and layout the page README's
+  [Routes](/apps/website/frontend/src/v2/pages/operations/schedule/README.md#routes) gives.
 - Related features: the [event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md),
   whose view the schedule embeds.
 
 ## Behaviour
 
-1. A viewer who is not signed in sees "Sign in to load live data from the platform." from
-   `AuthGate`; the list loads only for a signed-in viewer.
+1. The list loads only for a signed-in viewer; anyone else gets `AuthGate`'s sign-in prompt.
 2. The master column, headed "Upcoming Ops", shows each upcoming event the viewer may see as a
    card: local start time, status badge, title (`name_override`, else "Untitled Operation"),
-   mission and slot counts, a countdown or `LOCKED` when registration is locked, and a fill bar.
+   [mission](/documentation_v2/glossary.md#mission) and slot counts, a countdown or `LOCKED` when
+   registration is locked, and a fill bar.
 3. The first event is selected until the viewer picks another. The detail column fetches the
    selected event's hub and renders it with the view `/events/:id` uses, so the viewer reads the
    briefing and registers for a slot in place.
 4. A hub fetched for one event never shows under another: the result carries its event id, and
    the column renders it only while that id is the selected one.
-5. States: "Loading…" and "Failed to load data." for the list; "No upcoming operations scheduled."
-   beside "Select an operation to view its hub." when the list is empty; "Loading operation…" and
-   "Could not load this operation's hub." for the hub.
+
+The text of each loading, empty and failed state is in the page README's
+[States](/apps/website/frontend/src/v2/pages/operations/schedule/README.md#states).
 
 ## Data
+
+The page README's [Data](/apps/website/frontend/src/v2/pages/operations/schedule/README.md#data)
+lists each call with the DTO the page reads. Server-side:
 
 - `GET /api/v1/events` (`list_events` in
   `apps/website/api_v2/src/operations/handlers/event_listing.rs`): the default scope `upcoming`
   returns the events that start ahead or are live now, in start order, filtered to those the
   viewer's access admits; each item adds `mission_count`, `registered`, `filled`, `total_slots` and
-  `percent` to the event row. The page reads it as `Paginated<serde_json::Value>`.
-- `GET /api/v1/events/{id}` (`get_event` in `event_hub.rs`): the `EventHub` the detail column
-  renders.
+  `percent` to the event row.
+- `GET /api/v1/events/{id}` (`get_event` in
+  `apps/website/api_v2/src/operations/handlers/event_hub.rs`): once the viewer's access to the
+  event is checked, the event and each attached mission's dossier in start order, read in one
+  read-only snapshot.
 - `POST` and `DELETE /api/v1/event-missions/{emid}/register`: registration and withdrawal, sent by
   the embedded hub view.
-- The session comes from the `AuthStore` context; the page stores nothing.
 
 ## Design
 

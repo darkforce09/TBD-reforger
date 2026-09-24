@@ -21,7 +21,7 @@ Copy the block and replace every `<…>` placeholder; each one says what goes th
 ```text
 <repository path of the folder>/
 ├── <child folder>/  <what it is for: a lowercase phrase, no closing period>
-├── <file>           <what it is for>
+├── <file>           <what it is for; entries run in name order>
 └── mod.rs           <the module tree and what it re-exports>
 ```
 
@@ -53,9 +53,10 @@ reads it as a README; the folder's own README.md is written from the same code a
 ````markdown
 # Missions domain
 
-The API's mission domain: the mission library and the versions the Mission Creator saves, the
-armory, the faction library and the Virtual Arsenal registries, and the path from a saved version
-to a running server through immutable artifacts, reviews, approvals and deployments.
+The API's [mission](/documentation_v2/glossary.md#mission) domain: the mission library and the
+versions the [Mission Creator](/documentation_v2/glossary.md#mission-creator) saves, the armory,
+the faction library and the Virtual Arsenal registries, and the path from a saved version to a
+running server through immutable artifacts, reviews, approvals and deployments.
 
 ## Contents
 
@@ -63,8 +64,8 @@ to a running server through immutable artifacts, reviews, approvals and deployme
 apps/website/api_v2/src/missions/
 ├── contract/     JSON Schema validation of every mission document, and the generated contract types
 ├── handlers/     one HTTP handler module per mission surface
-├── models/       the domain's database and wire models, snake_case on the wire
 ├── mod.rs        the module tree; re-exports `routes`
+├── models/       the domain's database and wire models, snake_case on the wire
 ├── routes.rs     the domain's `/api/v1` route table
 ├── services/     logic other surfaces share: lookups, compile, artifacts, reviews, deployments
 └── validation/   write-boundary predicates: access, scalar fields, semver, version payloads
@@ -128,10 +129,9 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the `routes`
   table that `core::http_router` merges (`apps/website/api_v2/src/tests/architecture_rules.rs`
-  checks both); `contract/generated/`
-  and `models/generated/` are written by `cargo xtask ci schema-codegen` and never edited by hand,
-  with `contract/loadout_projection.rs` as the one hand-maintained contract model; unit tests live in
-  the sibling `tests/` folders.
+  checks both); `contract/generated/` and `models/generated/` are written by
+  `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
+  checks them), with `contract/loadout_projection.rs` as the one hand-maintained contract model.
 
 ## Related documentation
 

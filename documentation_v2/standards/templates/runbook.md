@@ -116,7 +116,7 @@ repository root; the first API build takes several minutes.
    cargo xtask db seed
    ```
 
-   Expected: one line per seed, in order, from
+   Expected: one line per seed file in `apps/website/api_v2/seeds/`, in order, from
    `cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql`
    through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
    `wiki_pages.sql`, each followed by psql's command tags and no `ERROR:` line. psql carries on

@@ -49,8 +49,8 @@ Everon terrain, so the elevation had to come from somewhere the exporter could r
 (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/TBD_MapExportDEM.c`) samples
 `WorldEditorAPI.GetTerrainSurfaceY` across the world grid and encodes each height as a linear
 16-bit value between the terrain's lowest and highest points. Everon's committed result is a
-6400 × 6400 16-bit PNG, `dem/everon-dem-16bit.png`, and its manifest records the source as
-`mod-getsurfacey-resample` (`assets_v2/terrains/everon/manifest.json`).
+6400 × 6400 16-bit PNG, `assets_v2/terrains/everon/dem/everon-dem-16bit.png`, and its manifest,
+`assets_v2/terrains/everon/manifest.json`, records the source as `mod-getsurfacey-resample`.
 
 **Consequences:** The raster agrees with what the engine reports at any point, so it is checked
 against points probed in Workbench: `cargo xtask ci verify-terrain-strict` validates the manifest

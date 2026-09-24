@@ -12,7 +12,9 @@ defines every rule this template follows; the mod scripts kind adds Authority.
 Copy the block and replace every `<…>` placeholder; each one says what goes there. Authority
 matches the `@authority`, `@rpc` and `@replicated` tags in the scripts; where the scripts carry
 none, it says where the code runs as the code decides it, and names no RPC or property that does
-not exist.
+not exist. A Workbench plugin folder, at or under `Scripts/WorkbenchGame/`, holds scripts that run
+only in the editor: its Authority section is the one line
+`None: Workbench runs these scripts in the editor.`
 
 ````markdown
 # <What the scripts do, in plain words: no path, no backticks>

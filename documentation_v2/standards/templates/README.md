@@ -66,8 +66,7 @@ the standard names.
   `documentation_v2/`.
 - Rules: one template per README kind, named as the standard's kind table names it, and one per
   document type; each holds a When to use line, a skeleton and one worked sample, both fenced; a
-  README sample's Contents block matches its folder's tracked children; every template stays within
-  500 lines.
+  README sample's Contents block matches its folder's tracked children.
 
 ## Related documentation
 

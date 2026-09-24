@@ -3,7 +3,7 @@
 # Template: glossary entry
 
 **When to use:** a term that documents use with a project-specific meaning, or an abbreviation
-they use, defined once in the glossary (`glossary.md` at the documentation root). Every document
+they use, defined once in the glossary at the documentation root. Every document
 links the first use of such a term to its entry, and every entry is checked against the code it
 names. The [README standard](/documentation_v2/standards/readme_standard.md) holds the terminology
 every document follows.

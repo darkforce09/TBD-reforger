@@ -35,8 +35,8 @@ no status line.
    (see [The Contents block](#the-contents-block)).
 4. **`## How it works`.** How the children work together: the flow of data and control through the
    folder, the main types, the invariants that span files, and an ASCII diagram in a `text` block
-   when one helps. A leaf folder that holds at most three files (README.md and exempt folders not
-   counted) may leave this section out.
+   when one helps. A folder with no child folders besides exempt ones and at most three files,
+   whatever its kind, may leave this section out (README.md not counted).
 5. **The kind sections.** The sections the folder's kind adds (see [Kinds](#kinds)), in the order
    the kind table lists them.
 6. **`## Boundaries`.** Exactly three top-level bullets, in this order and spelled this way:
@@ -44,7 +44,9 @@ no status line.
      imports and calls.
    - `Used by:` everything outside the folder that uses it, found with `git grep` (callers, routes,
      tools); `nothing` when nothing does.
-   - `Rules:` the invariants a change must keep: layering, placement, generated files, limits.
+   - `Rules:` the invariants particular to this folder that a change must keep (layering,
+     placement, generated files, limits), each with the test or gate that holds it wherever one
+     does; repository-wide laws are not restated.
 
    A bullet may run over several lines and may hold a nested list.
 7. **`## Related documentation`.** Repository-root links to the documents that go deeper into this
@@ -99,7 +101,10 @@ root line, a missing heading at line 1, and every other violation at the line it
 The gate checks the grammar; these conventions keep every block readable the same way.
 
 - Draw the tree: `├── ` before each entry and `└── ` before the last. Entries run in name order,
-  and the roles line up in one column.
+  and the roles line up in one column. Name order is case-insensitive: it compares the lowercased
+  names by character code, puts a name before every longer name that starts with it, and compares
+  a folder without its `/`. So `.gitignore` comes before `Cargo.toml`, `mod.rs` before `models/`,
+  and `mission_editor/` before `mission_editor.rs`.
 - A role says what the child is for, not what it is made of: a lowercase phrase with no closing
   period, short enough that the line stays within about 100 characters.
 - List dot-files: `.gitignore` and `.env.example` are tracked children like any other.
@@ -143,7 +148,9 @@ table, with a skeleton and a worked sample written from a real folder; the
 
 - **`## Getting started`**: the few commands, run from the repository root, that build, run or test
   what the folder holds, each with what to expect; a `cargo xtask` command wherever one exists. The
-  full procedure lives in a runbook, linked under Related documentation.
+  commands are listed in the order they must run; a command that stays in the foreground (a server,
+  a watcher) says so, and a command that waits for an earlier one says what it waits for. The full
+  procedure lives in a runbook, linked under Related documentation.
 - **`## Configuration`**: every setting the folder's code or files read (environment variables,
   config files, feature flags, profile keys), with its default, whether it is required, and the
   file that reads it.
@@ -158,7 +165,8 @@ table, with a skeleton and a worked sample written from a real folder; the
 - **`## States`**: each state the viewer can see (restoring, signed out, loading, empty, failed,
   loaded and the rest), with what shows on screen and what moves the page between them.
 - **`## Commands`**: each command the folder defines: its synopsis, what it does, its exit codes and
-  one example, as the command's own argument parser declares it.
+  one example, as the command's own argument parser declares it. A command that stays in the
+  foreground says so, and one that needs another running first names it.
 - **`## Format`**: the file format: encoding, the schema it follows (linked in `contracts_v2/`), the
   naming convention, and how to add a file.
 - **`## Producers and consumers`**: what writes the files (a command, a tool, a person) and what
@@ -191,9 +199,11 @@ Go down this list and take the first kind that fits.
 7. **data**: schemas, fixtures, migrations, seeds and asset data that code reads rather than runs
    (`contracts_v2/definitions/`, `apps/website/api_v2/seeds/`, `assets_v2/terrains/`,
    `apps/website/shared/`).
-8. **command-line**: the entry points of executables, or one command group
-   (`tools_v2/developer-tools/src/bin/`, `apps/website/api_v2/src/bin/`,
-   `tools_v2/xtask/src/commands/db/`).
+8. **command-line**: a crate's `src/bin/`, and each folder directly under
+   `tools_v2/xtask/src/commands/` (`tools_v2/developer-tools/src/bin/`,
+   `apps/website/api_v2/src/bin/`, `tools_v2/xtask/src/commands/db/`). Any other folder that
+   parses or runs commands, such as a folder inside a command group, is a domain or a leaf and
+   links the command-line README it belongs to.
 9. **app**: a workspace directly under `apps/website/frontend/src/v2/apps/`.
 10. **page**: a folder under `apps/website/frontend/src/v2/pages/` that holds a route component.
 11. **domain or subsystem**: any other folder that has child folders besides exempt ones.
@@ -212,8 +222,9 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
 ## Writing rules
 
 - **Truth.** Every claim is checked against the code it describes: paths with `git ls-files`, routes
-  in `apps/website/frontend/src/app_routes.rs` and each API domain's `routes.rs`, commands in the
-  xtask command tree (`tools_v2/xtask/src/cli/` and each group's `cli.rs`) and safe `--help` runs,
+  in `apps/website/frontend/src/app_routes.rs` and `apps/website/api_v2/src/<domain>/routes.rs`,
+  commands in the xtask command tree (`tools_v2/xtask/src/cli/` and
+  `tools_v2/xtask/src/commands/<group>/cli.rs`) and safe `--help` runs,
   environment variables in `apps/website/api_v2/.env.example` and the code that reads them, callers
   with `git grep`. When a document and the code disagree, the code wins.
 - **Present tense.** A README says what the folder is and does. It holds no history (no dates, no
@@ -221,23 +232,40 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
   plans; commit history owns the past, and feature docs own open work.
 - **No tickets.** A README never names or links a ticket.
 - **Links.** Repository-root links, such as `[API overview](/documentation_v2/website/api_v2/api_overview.md)`,
-  never `../` climbs. A path written in backticks is a full repository path, which `link-check`
-  verifies; a bare name such as `routes.rs` is kept for the folder's own children.
+  never `../` climbs.
+- **Paths.** A backticked path to anything outside the README's folder is a full repository path;
+  inside the folder, a path relative to it (`src/bin/api.rs`); a bare file name only after the
+  same paragraph gave that file's or its folder's full path. `link-check` verifies every backticked
+  full repository path outside a fenced block of a live document.
 - **Terminology.** The editor is the Mission Creator. The document a mission maker authors is a
   mission, and Enfusion's world plus game-mode configuration is the mission header. An event is a
   scheduled session record (its time, missions, ORBAT slots, sign-ups and waitlist), and operations
   is the domain around events, the ORBAT and service records. Code identifiers keep their spelling
-  (`scenario`, `EventHub`), and interface text is quoted as the code writes it. The glossary,
-  `glossary.md` at the documentation root, defines these terms; a README links a term's first use to
-  its glossary entry whenever the glossary holds one.
+  (`scenario`, `EventHub`), and interface text is quoted as the code writes it. The glossary at the
+  documentation root defines these terms, one `###` entry per term; a README links a term's first
+  use to its entry, as `[mission](/documentation_v2/glossary.md#mission)`, whenever the glossary
+  holds one.
 - **Parents and children.** A parent summarises each child in its one Contents line and, where it
-  helps, one clause in How it works. It never repeats what the child's README says: no nested trees,
-  no lists of a child's files, no child's public items. A change inside a child updates the child's
-  README; the parent changes only when the child's one-line role does.
+  helps, one clause in How it works. Its kind sections state what holds at its own boundary or
+  across all its children (an item, route or setting that crosses the boundary; a format every
+  child shares), one line each even when a child defines it; the detail stays in the child's
+  README. A parent never inventories a child: no nested trees, no list of a child's files, no item
+  that stays inside it.
 - **README or feature doc.** The README describes its own folder at a high level: what is here, how
   it fits together, how to use it and where it stops. Behaviour specifications, interface and UX
   design, decisions, roadmaps, research and evidence live in feature docs in the matching folder
-  under `documentation_v2/`, and the README links them under Related documentation.
+  under `documentation_v2/`, and the README links them under Related documentation. A page's or
+  app's README holds what the code declares: routes, calls with their DTOs, states with their exact
+  text. Its feature doc holds the flows, rules and reasons, what each call means server-side,
+  design, open work and decisions, and links the README's Routes, Data and States instead of
+  repeating them.
+- **Same commit.** A code change updates, in the same commit, the README of every folder whose
+  Contents line, surface, commands or boundaries it changes.
+- **Frozen trees.** The README indexes inside `documentation_v2/tickets/` and
+  `documentation_v2/archive/` are live documents (`**Status:** live`, updated as files land),
+  although the trees they index are frozen. `link-check` and `markdown-placement` judge everything
+  under those two trees as frozen, with no path, command or size check, so the writer checks an
+  index's backticked paths, commands and length by hand.
 - **Diagrams.** ASCII, in `text` blocks, placed in How it works or a kind section.
 - **Names.** Code identifiers go in backticks exactly as spelled; everything else is plain words.
 - **Hosts and paths.** No IP address of a host, and no personal absolute path. The deploy host is
@@ -247,7 +275,9 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
 
 ## Writing a README
 
-1. List the folder's tracked children with `git ls-files <folder>` and pick its kind.
+1. List the folder's tracked direct children, each folder with a trailing `/`, with
+   `git -C <folder> ls-files | sed 's|/.*|/|' | sort -u`; the list holds README.md, which Contents
+   leaves out, and Contents puts the rest in name order. Pick the folder's kind.
 2. Read enough code to be exact: the module docs, the public items, the module wiring, the imports
    (for Depends on) and the callers found with `git grep` (for Used by). For scripts, read the class
    names, attributes, RPCs and replicated properties; for data, read the loader or schema that
@@ -256,7 +286,7 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
    Where the folder is two kinds, add the second kind's sections.
 4. Rewriting an existing README, carry every fact that is still true, and drop boilerplate, bare
    file lists, history and every claim the code contradicts.
-5. Run the gates over the folder, and the folder's own tests if they read its README.
+5. Run the gates over the folder.
 
 ## Gates
 
@@ -273,6 +303,8 @@ specifies every rule.
 
 The Contents check is the only structural rule a gate enforces. The section order, the kind
 sections and the writing rules are held by the writers and reviewers who apply this standard.
+`cargo xtask verify readme-coverage` is the one README checker: a crate's own tests check its module
+layout, never the contents of its READMEs.
 
 Before committing a README change, run the gates over the folders it touches:
 
@@ -281,29 +313,3 @@ cargo xtask verify readme-coverage --path <folder>
 cargo xtask verify link-check --path <folder>
 cargo xtask verify markdown-placement
 ```
-
-## The ticketboard README test
-
-`module_roots_and_documentation_describe_the_entire_source_tree` in
-`apps/ticketboard/src/tests/architecture_rules.rs` checks the READMEs of the nine module folders
-under `apps/ticketboard/src/`. It requires each to hold the headings `## Responsibility`,
-`## Public surface`, `## Dependency rules` and `## Files`, and a relative link `](<path>)` to every
-`.rs` file anywhere below the module, test files included. Three of those demands contradict this
-standard: the headings differ from the README core, the inventory reaches below the direct children
-(a nested Contents line fails the gate, and a parent never lists a child's files), and the links are
-relative.
-
-The README writer for `apps/ticketboard/` changes the test in the same commit that rewrites those
-READMEs:
-
-1. The module-root half stays: `apps/ticketboard/src/` holds only `main.rs`, the nine module
-   folders and `tests/`, and each module folder holds a `mod.rs`.
-2. The README half asks only what this standard fixes: each module folder holds a README.md whose
-   `## Contents` section opens a `text` block with the root line `apps/ticketboard/src/<module>/`.
-   The heading list and the `](<path>)` inventory go, and the test's name says what it then checks.
-3. Matching children to entries stays with the gate: the writer runs
-   `cargo xtask verify readme-coverage --path apps/ticketboard`, and the test does not copy the
-   gate's grammar.
-4. The folders inside each module (`models/`, `services/`, `ui/` and the rest) get READMEs of their
-   own, which the README span requires and the test does not check.
-5. `cargo test -p ticketboard` passes after the change.

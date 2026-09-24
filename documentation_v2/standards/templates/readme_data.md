@@ -29,8 +29,8 @@ homogeneous collection lists it as one glob line in Contents.
 ## How it works
 
 <How the files are read and checked: the loader or gate that consumes them, the order they apply
-in, and the invariants that hold across files. A folder of at most three files may leave the
-section out.>
+in, and the invariants that hold across files. A folder with no child folders besides exempt ones
+and at most three files, whatever its kind, may leave the section out (README.md not counted).>
 
 ## Format
 
@@ -78,7 +78,8 @@ contracts_v2/fixtures/missions/
 ## How it works
 
 `cargo xtask schema validate` reads both folders. Every file in `valid/` must pass
-`mission.schema.json`, stay under the schema's `x-tbd-missionFileMaxBytes` ceiling (8 MiB, the
+`contracts_v2/definitions/mission.schema.json`, stay under the schema's `x-tbd-missionFileMaxBytes`
+ceiling (8 MiB, the
 same value as `MISSION_FILE_MAX_BYTES` in the mod's mission loader), and use only kit aliases that
 the mod's spawn registry defines. Every file in `invalid/` must be rejected by the gate its wrapper
 names, and every finding must sit at or below the wrapper's JSON pointer, so a fixture rejected for
@@ -88,7 +89,7 @@ name.
 ## Format
 
 - Encoding: UTF-8 JSON, one document per file, named in lowercase hyphenated words after what the
-  file holds (`bridgehead-at-levie.json`, `net-range-any.json`).
+  file holds (`valid/bridgehead-at-levie.json`, `invalid/net-range-any.json`).
 - Schema: a file in `valid/` is a mission document following
   `contracts_v2/definitions/mission.schema.json`, with its `schemaVersion` (1.0 to 1.3 among the
   current files). A file in `invalid/` is a wrapper: `$comment` says why it exists; `mustFail`
@@ -103,19 +104,20 @@ name.
 - Producers: people; no tool writes these files. The `schema-1_3-*` missions are written by hand
   ahead of the Mission Creator emitting their fields.
 - Consumers:
-  - `cargo xtask schema validate`, also the `schema-validate` CI task:
-    `tools_v2/xtask/src/verifications/schemas/checks/mission_validation.rs`, with the kit-alias
-    cross-reference in `kit_registry_references.rs` beside it;
-  - `cargo xtask mod world-boot --mission <name>`, which resolves the name in `valid/`
-    (`tools_v2/xtask/src/commands/mod_ops/world_boot/execution.rs`), `cargo xtask mod test-mission`,
-    and `cargo xtask mod dev-server`, which boots `bridgehead-at-levie.json` offline through
-    `--artifact-file`;
+  - `cargo xtask schema validate`, also the `schema-validate` CI task, in
+    `tools_v2/xtask/src/verifications/schemas/checks/`: `mission_validation.rs` builds both folder
+    paths itself and checks every file, and `kit_registry_references.rs` cross-checks the kit
+    aliases;
+  - `cargo xtask mod world-boot --mission <name>`, which resolves the name in `valid/` through
+    `mission_fixtures_valid_dir` (`tools_v2/developer-tools/src/repository_layout.rs`, called from
+    `tools_v2/xtask/src/commands/mod_ops/world_boot/execution.rs`), and
+    `cargo xtask mod test-mission <name>`, which stages the mission it finds by file name under
+    `contracts_v2/`; `cargo xtask mod dev-server` only names `valid/bridgehead-at-levie.json` in its
+    usage text, as the offline `--artifact-file` for `cargo xtask mod playtest`;
   - tests that load one mission by name: the map engine's compiler flatten tests
     (`apps/website/map-engine/src/data/scenario/compiler/flatten/tests/`), the API's schema
-    validator test (`apps/website/api_v2/src/missions/contract/tests/schema_validators.rs`) and the
-    xtask schema tests.
-  - The folder paths come from `mission_fixtures_valid_dir` and `mission_fixtures_invalid_dir` in
-    `tools_v2/developer-tools/src/repository_layout.rs`.
+    validator test (`apps/website/api_v2/src/missions/contract/tests/schema_validators.rs`), and the
+    xtask schema and mission-test tests, which reach `valid/` through `mission_fixtures_valid_dir`.
 
 ## Boundaries
 

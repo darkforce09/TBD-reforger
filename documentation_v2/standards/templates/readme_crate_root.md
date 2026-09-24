@@ -33,8 +33,9 @@ the source tree, and the invariants that span them. Name each child's part in on
 
 ## Getting started
 
-<The commands, run from the repository root, that build, run and test it, each with what to
-expect; prefer an xtask recipe wherever one exists. Link the runbook for the full procedure.>
+<The commands, run from the repository root, that build, run and test it, in the order they must
+run, each with what to expect; say which stay in the foreground and what a later command waits
+for. Prefer an xtask recipe wherever one exists. Link the runbook for the full procedure.>
 
 ## Configuration
 
@@ -74,13 +75,13 @@ Postgres schema through its migrations, and serves uploads and terrain assets.
 apps/website/api_v2/
 ├── .env.example         the template the gitignored `.env` is copied from, with development values
 ├── .gitignore           keeps `.env` and editor folders out of git
-├── Cargo.toml           the `website-api` package: the library and the `api` and `import-registry` binaries
-├── docker-compose.yml   the local Postgres 18 service `db`: container `tbd_reforger_db`, host port 5434
+├── Cargo.toml           the `website-api` package: its library and `api` and `import-registry` bins
+├── docker-compose.yml   the local Postgres 18 service `db`, container `tbd_reforger_db`, port 5434
 ├── migrations/          the SQL schema migrations, embedded at compile time and applied at boot
 ├── rust-toolchain.toml  pins Rust 1.95.0 with rustfmt and clippy
 ├── rustfmt.toml         the formatting settings: edition 2024, 100-column lines
-├── seeds/               the development seeds `cargo xtask db seed` applies, and hand-applied data sets
-├── src/                 the library: `core`, the background workers, the eight domains, the binaries
+├── seeds/               the development seeds `cargo xtask db seed` applies, and hand-applied sets
+├── src/                 the library: `core`, the workers, the eight domains, the binaries
 └── tests/               integration suites against a real Postgres, with their shared support
 ```
 
@@ -96,14 +97,19 @@ domain except where the router and the application state compose them.
 
 ## Getting started
 
-Copy `.env.example` to `.env`, then run from the repository root:
+Copy `.env.example` to `.env`, then run these from the repository root, in this order:
 
 ```bash
 cargo xtask db up        # Postgres 18 in the tbd_reforger_db container, host port 5434
-cargo xtask db seed      # the five development seeds, in dependency order
-cargo xtask mk rust-api  # cargo run --bin api in this folder, with its own target folder
+cargo xtask mk rust-api  # cargo run --bin api in this folder; migrates, stays in the foreground
+cargo xtask db seed      # a second terminal, once the API logs `migrations applied`
 cargo xtask db test-it   # the integration suites against a scratch rust_it database
 ```
+
+`db seed` applies the five development seeds in dependency order to tables that only the API's
+migrations create. psql carries on past a failed statement, so seeding before the API's first boot
+loads nothing and still exits 0. `db test-it` needs only `db up`: it creates the scratch database,
+and each suite applies the migrations itself.
 
 With `APP_ENV=development`, `GET /api/v1/auth/dev-login?role=<role>` signs in without Discord
 (`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value signs in as `admin`) and
@@ -114,13 +120,15 @@ redirects to the app's `/auth/callback` with the session in the URL fragment.
 `Config::load` in `src/core/configuration/mod.rs` reads the process environment, then `.env`; an
 exported variable wins. `DATABASE_URL` and `JWT_SECRET` are always required. Outside development,
 `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR` are
-required too.
+required too, and a set `EQUIPMENT_DATA_DIR` or `EQUIPMENT_EXPORT_SOURCE_DIR` must be absolute.
 
 | Group | Variables |
 |---|---|
 | Server | `PORT` (8080), `APP_ENV` (`production` unless set; `development` enables dev-login), `FRONTEND_URL`, `ALLOWED_ORIGINS`, `TRUSTED_PROXIES` |
 | Database | `DATABASE_URL`, and the four `TBD_DB_POOL_*` pool settings |
 | Files | `SPA_DIST_DIR` (serve the built app when set), `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` |
+| Equipment viewer | `EQUIPMENT_DATA_DIR` (the imported exports and their indexes; `../../../assets_v2/equipment` in development), `EQUIPMENT_EXPORT_SOURCE_DIR` (an optional Workbench publication folder the import worker checks; unset, the viewer browses what is already imported) |
+| Request limits | `MISSION_VERSION_MAX_BODY_BYTES` (256 MiB), the body limit of the mission version save route alone |
 | Sessions and Discord | `JWT_SECRET`, `JWT_ACCESS_TTL_MIN` (15), `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL`, `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` |
 | Service token | `SERVICE_TOKEN`, which game-server ingest, `/metrics` and the detailed `/healthz` check |
 | Workers | `SERVER_STATUS_PUBLISH_INTERVAL_SECS`, `LEADERBOARD_REFRESH_INTERVAL_SECS`, `ROLE_RESYNC_INTERVAL_SECS` |
@@ -147,11 +155,10 @@ required too.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the fleet host agent in `apps/fleet_host_agent/`;
   the `mk rust-api`, `db` and `deploy website` commands of `tools_v2/xtask/`; and the release image
   that `apps/website/Dockerfile` builds.
-- Rules: `core` imports no domain except in `core/application_state.rs` and `core/http_router.rs`, a
-  domain's handlers never import another domain's handlers, and `background_workers` is imported
-  only by `src/bin/api.rs` (`src/tests/architecture_rules.rs` checks all three); an applied migration
-  never changes (`tests/migrations_are_immutable.rs`); production files stay under 500 lines and
-  test files under 1000.
+- Rules: `core` imports no domain except in `src/core/application_state.rs` and
+  `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
+  `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
+  checks all three); an applied migration never changes (`tests/migrations_are_immutable.rs`).
 
 ## Related documentation
 

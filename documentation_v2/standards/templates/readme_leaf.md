@@ -9,7 +9,8 @@ defines every rule this template follows; the leaf kind adds no sections of its 
 ## Skeleton
 
 Copy the block and replace every `<…>` placeholder; each one says what goes there. How it works may
-be left out when the folder holds at most three files (README.md and exempt folders not counted).
+be left out by a folder with no child folders besides exempt ones and at most three files, whatever
+its kind (README.md not counted).
 
 ````markdown
 # <What the folder holds, in plain words: no path, no backticks>
@@ -27,7 +28,8 @@ be left out when the folder holds at most three files (README.md and exempt fold
 ## How it works
 
 <How the files work together: the flow through them, the main types, the invariants that span
-files. Leave the section out when the folder holds at most three files.>
+files. A folder with no child folders besides exempt ones and at most three files, whatever its
+kind, may leave the section out (README.md not counted).>
 
 ## Boundaries
 
@@ -72,11 +74,12 @@ apps/website/map-engine/src/spatial/los/interior/
   transforms).
 - Used by: `crate::spatial::los::world`, whose world occluder reuses the walker's trace and
   concealment helpers; `crate::editing::tools::viewshed_scheduler`, whose building-wash lane runs a
-  `WashJob` in budgeted steps; the debug building viewer (`apps/website/frontend/src/v2/apps/debug/building_viewer.rs`); the
-  Mission Creator's line-of-sight tool
-  (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`); and the blueprint
-  tooling (`tools_v2/developer-tools/src/blueprint/bvh/construction.rs`).
-- Rules: `wash_cap_check` refuses a wash radius above `MAX_WASH_RADIUS_M` (400 m); a `WashJob` may
-  pause at any cell, because each cell's verdict depends only on its index, the observer, the eye
-  height and the blocking test; unit tests sit in `tests/`, declared from the file they test.
+  `WashJob` in budgeted steps; the debug building viewer
+  (`apps/website/frontend/src/v2/apps/debug/building_viewer.rs`); the Mission Creator's
+  line-of-sight tool (`apps/website/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`);
+  and the blueprint tooling (`tools_v2/developer-tools/src/blueprint/bvh/construction.rs`).
+- Rules: `wash_cap_check` refuses a wash radius above `MAX_WASH_RADIUS_M` (400 m)
+  (`over_cap_wash_radius_is_refused_with_a_message` in `tests/wash.rs`); a `WashJob` may pause at
+  any cell, because each cell's verdict depends only on its index, the observer, the eye height and
+  the blocking test (`sliced_wash_is_bit_identical_to_the_sync_path` holds that).
 ````

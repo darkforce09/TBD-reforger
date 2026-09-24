@@ -61,18 +61,19 @@ gate reads it as a README; the folder's own README.md is written from the same c
 ````markdown
 # Mission Creator
 
-The Mission Creator: the 2D/3D CAD workspace in which mission makers build a mission on the map.
-This folder holds the editor page, the chrome docked around the map, the canvas mount and its
-overlays, the interactive map tools, the loadout editor and the browser session they all run in.
+The [Mission Creator](/documentation_v2/glossary.md#mission-creator): the 2D/3D CAD workspace in
+which mission makers build a [mission](/documentation_v2/glossary.md#mission) on the map. This
+folder holds the editor page, the chrome docked around the map, the canvas mount and its overlays,
+the interactive map tools, the loadout editor and the browser session they all run in.
 
 ## Contents
 
 ```text
 apps/website/frontend/src/v2/apps/editor/
-├── arsenal/           the loadout editor: loadout rows, compatibility rules, asset catalog, paper doll
+├── arsenal/           the loadout editor: loadout rows, compatibility, asset catalog, paper doll
 ├── bridge/            the engine seam: boot, document host, viewport, overlays, tactical graphics
-├── input/             map pointer and keyboard events turned into map-engine commands; the map tools
-├── mission_editor/    the page's parts: canvas mount, registry loading, placement, transform, toolbar
+├── input/             pointer and keyboard events turned into map-engine commands; the map tools
+├── mission_editor/    the page's parts: canvas mount, registries, placement, transform, toolbar
 ├── mission_editor.rs  `MissionEditorPage`, which mounts the canvas and raises the chrome around it
 ├── mod.rs             declares the six modules and states the workspace's contract
 ├── shell/             the browser session: drafts, hydrate, tab lock, review mode, preferences
@@ -121,7 +122,7 @@ it and every write path refuses.
   - `apps/website/frontend/src/app_routes.rs`, the route table;
   - `apps/website/frontend/src/v2/pages/mission_hub/review_workspace/page.rs`, for the page and the
     review mode;
-  - `apps/website/frontend/src/v2/pages/mission_hub/library/dossier_upload.rs` and
+  - in `apps/website/frontend/src/v2/pages/mission_hub/library/`, `dossier_upload.rs` and
     `dossier_upload_panel.rs`, for `format_bytes`;
   - `apps/website/frontend/src/v2/core/auth/store.rs`, for `purge_local_documents`;
   - the core search box, select and slider in `apps/website/frontend/src/v2/core/ui/`, for the

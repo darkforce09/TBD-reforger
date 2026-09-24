@@ -10,7 +10,9 @@ follows; the deploy or config kind adds Configuration and Installed by.
 ## Skeleton
 
 Copy the block and replace every `<…>` placeholder; each one says what goes there. Configuration
-and Installed by cover the folder's own files; a child folder's files belong to the child's README.
+and Installed by cover the folder's own files in full. For a child folder they state only what
+crosses the folder's boundary or holds for all of the child's files, such as the step that
+installs them or a setting they share, one line each; the detail stays in the child's README.
 
 ````markdown
 # <What the files set up, in plain words: no path, no backticks>
@@ -55,10 +57,10 @@ required, and the code that reads it.>
 
 ## Worked sample
 
-Written from `tools_v2/xtask/deploy/`. The unit templates sit in its `systemd/` folder, whose own
-README says what installs each, so this sample covers the two files beside it. The sample sits in a
-fenced block, so no gate reads it as a README; the folder's own README.md is written from the same
-code and may differ.
+Written from `tools_v2/xtask/deploy/`. The sample covers the two files beside the `systemd/` folder
+in full and gives `systemd/` one line under Installed by, because that folder's own README says
+what installs each unit. The sample sits in a fenced block, so no gate reads it as a README; the
+folder's own README.md is written from the same code and may differ.
 
 ````markdown
 # Deployment templates
@@ -99,9 +101,11 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
   environment variable points the command at another settings file.
 - Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`: `TBD_REMOTE_DIR`,
   `TBD_PROFILE_DIR`, `TBD_ADDONS_STAGING`, `TBD_GAME_SERVER_TOKEN` and
-  `TBD_MOD_RUNTIME_CREDENTIAL` are required; the rest default, among them `TBD_BACKEND_URL`
-  (`http://127.0.0.1:8080`), `TBD_SCENARIO` (the mission header the server boots,
-  `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`) and `TBD_SERVER_MODE` (`config`).
+  `TBD_MOD_RUNTIME_CREDENTIAL` are required. `TBD_SERVER_MODE` defaults to `config`, which also
+  needs a mod source: `TBD_WORKSHOP_MOD_ID`, or a modpack through `TBD_MODPACK_JSON` or
+  `TBD_MODPACK_URL`; the `addons` mode needs none. Among the settings that default are
+  `TBD_BACKEND_URL` (`http://127.0.0.1:8080`) and `TBD_SCENARIO` (the mission header the server
+  boots, `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`).
 - Fleet host agent, read only when `TBD_INSTALL_HOST_AGENT=1`: `TBD_HOST_AGENT_CREDENTIAL` and
   `TBD_RCON_PASSWORD` are required; `TBD_RCON_PORT` defaults to 19999 and
   `TBD_HOST_AGENT_API_URL` to `TBD_BACKEND_URL`.
@@ -115,8 +119,8 @@ elsewhere.
 
 ## Installed by
 
-- `deploy.env.example`: the operator copies it to `tools_v2/xtask/deploy/deploy.env` and fills it
-  in. The file is read by `cargo xtask deploy website`, `cargo xtask deploy staging`,
+- `deploy.env.example`: the operator copies it to `deploy.env` beside it and fills it in. The file
+  is read by `cargo xtask deploy website`, `cargo xtask deploy staging`,
   `cargo xtask mod bootstrap-staging`, `cargo xtask mod remote-logs` and
   `cargo xtask debug direct-join`.
 - `Caddyfile.website`: loaded by Caddy on the host by hand; `cargo xtask deploy website` ends by
@@ -130,9 +134,8 @@ elsewhere.
   container runtime on the host.
 - Used by: the `deploy`, `mod` and `debug` commands above, through the layout constants; the API's
   forwarded-for test, which reads the Caddyfile.
-- Rules: `deploy.env` is never committed and never rsynced; documents name the host only as
-  `TBD_SSH_HOST`; a path added here gets its constant in `repository_layout.rs`, the one place the
-  commands take it from.
+- Rules: `deploy.env` is never committed and never rsynced; a path added here gets its constant in
+  `tools_v2/xtask/src/core/repository_layout.rs`, the one place the commands take it from.
 
 ## Related documentation
 

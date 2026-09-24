@@ -14,6 +14,12 @@ Copy the block and replace every `<…>` placeholder; each one says what goes th
 `**Status:** live` comes first, as the standard sets for every README under `documentation_v2/`,
 the index of a frozen or archived folder included.
 
+A visual reference set, one folder under a feature's `visual_references/`, fills the skeleton this
+way. The purpose opens "Live design target for …" or "Design-phase reference for …", naming the
+page or screen. Contents lists `<set>.html`, `<set>.png` and `design_tokens.md`, as the set has
+them. How it works, kept although the set holds at most three files, says what the set shows and
+how the built UI differs from it. The Code section links the code folder of the page or screen.
+
 ````markdown
 **Status:** live
 
@@ -33,8 +39,9 @@ the index of a frozen or archived folder included.
 ## How it works
 
 <How the documents are organised: which template each follows, how they are named and numbered,
-which one to read first, and how a new one is added. A folder of at most three documents may leave
-the section out.>
+which one to read first, and how a new one is added. A folder with no child folders besides exempt
+ones and at most three files, whatever its kind, may leave the section out (README.md not
+counted).>
 
 ## Code
 
@@ -100,7 +107,7 @@ status set to resolved.
   `.cursor/rules/acceptance-gates-reproducible.mdc`, which sends a recorded gate defect here; and
   comments in the gate harness that name KB-002.
 - Rules: one bug per file; a number is never reused; a resolved entry stays with its status set to
-  resolved; file names are snake_case.
+  resolved.
 
 ## Related documentation
 

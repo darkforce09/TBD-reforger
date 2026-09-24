@@ -34,14 +34,16 @@ detail.>
 
 ## Getting started
 
-<The few commands, run from the repository root, that bring the area up locally, each with what to
-expect. Link the runbook for the full procedure.>
+<The few commands, run from the repository root, that bring the area up locally, in the order they
+must run, each with what to expect; say which stay in the foreground and what a later command waits
+for. Link the runbook for the full procedure.>
 
 ## Boundaries
 
 - Depends on: <the other areas, services and data the products need>
 - Used by: <the areas, tools and clients outside that use the products>
-- Rules: <the invariants that hold across the whole area, and the gate or test that checks each>
+- Rules: <the invariants particular to the area, each with the gate or test that holds it; no
+  repository-wide law>
 
 ## Related documentation
 
@@ -59,19 +61,19 @@ README; the folder's own README.md is written from the same code and may differ.
 # Website platform
 
 The community's web platform: the REST API, the single-page app, and the two engines they share for
-maps, missions and GPU rendering. The folder also holds the API's release image and the staging
-compose stack.
+maps, [missions](/documentation_v2/glossary.md#mission) and GPU rendering. The folder also holds
+the API's release image and the staging compose stack.
 
 ## Contents
 
 ```text
 apps/website/
 ├── api_v2/                     the REST API and SSE hub, crate `website-api`
-├── docker-compose.staging.yml  the staging stack: Postgres, and the API container under the `api` profile
-├── Dockerfile                  the release image of the API binary, built from the repository root
-├── frontend/                   the single-page app, crate `website-frontend`, built to WebAssembly by Trunk
-├── graphics-engine/            GPU rendering primitives that know no map concept, crate `website-graphics-engine`
-├── map-engine/                 world data, spatial queries, streaming and the mission domain, crate `website-map-engine`
+├── docker-compose.staging.yml  the staging stack: Postgres, and the API under the `api` profile
+├── Dockerfile                  the API's release image, built from the repository root
+├── frontend/                   the single-page app, crate `website-frontend`, built by Trunk
+├── graphics-engine/            GPU rendering with no map concept, crate `website-graphics-engine`
+├── map-engine/                 world, streaming and mission domain, crate `website-map-engine`
 └── shared/                     the URL-guard test table that the API and the app both include
 ```
 
@@ -81,7 +83,9 @@ The four crates are members of the root Cargo workspace. The browser runs `websi
 compiled to WebAssembly; it calls `website-api` over `/api/v1` and Server-Sent Events and streams
 terrain from `/map-assets`. Both link `website-map-engine`: the API takes only its `scenario` tier,
 which compiles and validates missions, and the app takes the `world`, `io`, `store` and `editing`
-tiers the Mission Creator draws and edits with. `website-graphics-engine` sits below the map engine.
+tiers, and `render` in its browser build, which the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) draws and edits with.
+`website-graphics-engine` sits below the map engine.
 
 ```text
 browser ── website-frontend ── /api/v1, SSE, /map-assets ──▶ website-api ──▶ Postgres
@@ -93,17 +97,20 @@ browser ── website-frontend ── /api/v1, SSE, /map-assets ──▶ websi
 
 ## Getting started
 
-Copy `apps/website/api_v2/.env.example` to `apps/website/api_v2/.env`, then run from the repository
-root:
+Copy `api_v2/.env.example` to `api_v2/.env`, then run these from the repository root, in this
+order:
 
 ```bash
-cargo xtask db up        # local Postgres 18, host port 5434
-cargo xtask db seed      # the development seeds
-cargo xtask mk rust-api  # the API on port 8080; it applies the migrations first
-cargo xtask mk leptos    # the app on 127.0.0.1:3000, a release build proxying /api and /map-assets
+cargo xtask db up        # Postgres 18 on host port 5434, in the background
+cargo xtask mk rust-api  # the API on port 8080: applies the migrations, stays in the foreground
+cargo xtask db seed      # a second terminal, once the API logs `migrations applied`
+cargo xtask mk leptos    # the app on 127.0.0.1:3000, a release build; stays in the foreground
 ```
 
-In development, `/api/v1/auth/dev-login?role=admin` signs in without Discord.
+The seeds fill tables the migrations create, and only the API applies the migrations; psql carries
+on past a failed statement, so seeding a fresh database before the API's first boot loads nothing
+and still exits 0. The app's server proxies `/api` and `/map-assets` to the API. In development,
+`/api/v1/auth/dev-login?role=admin` signs in without Discord.
 
 ## Configuration
 
@@ -139,8 +146,7 @@ In development, `/api/v1/auth/dev-login?role=admin` signs in without Discord.
   app in a headless browser; and the build, database and deploy commands of `tools_v2/xtask/`.
 - Rules: the graphics engine imports nothing from the map engine and names no map concept; inside the
   map engine only the frame-packet boundary names the graphics engine's `frame` module, and nothing
-  names its device, pipelines or shaders (`cargo xtask verify engine-layers` checks these); production
-  files stay under 500 lines and test files under 1000.
+  names its device, pipelines or shaders (`cargo xtask verify engine-layers` checks these).
 
 ## Related documentation
 
