@@ -67,3 +67,7 @@ the API spells them, and comments trimmed to 1 to 8000 bytes, as the API checks 
   — the administrators' side of a review.
 - [Mission overview page](/documentation_v2/website/frontend/pages/mission_hub/overview/mission_overview_page.md)
   — the dossier the record sits under.
+- [Mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md#managing-a-mission)
+  — the dossier sheet's submit control and its refusals.
+- [Review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
+  — the read-only workspace each review links.

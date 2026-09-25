@@ -43,5 +43,5 @@ whenever the dialog closes. The submit runs in the browser build only.
 
 ## Related documentation
 
-- [Mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md)
-  — the library that opens this dialog.
+- [Mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md#creating-a-mission)
+  — the library that opens this dialog, and the create flow with what the API checks.

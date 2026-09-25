@@ -80,3 +80,8 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
   `apps/website/frontend/src/v2/apps/debug/tests/world_los_scene/`. The route's row in
   `apps/website/frontend/src/router.rs` must match
   `tools_v2/developer-tools/fixtures/dom_oracle/manifests/routes.csv` (`gate s-routes`).
+
+## Related documentation
+
+- [World line-of-sight bench](/documentation_v2/website/frontend/apps/debug/world_los_page.md) —
+  the bench's purpose and behaviour.

@@ -71,5 +71,9 @@ build covers, and a browser half (the `live` modules), which compiles for `wasm3
 
 ## Related documentation
 
+- [Debug benches documentation](/documentation_v2/website/frontend/apps/debug/README.md) — the
+  index of the benches' feature docs.
 - [Building viewer](/documentation_v2/website/frontend/apps/debug/building_viewer_page.md) — the
   building bench's purpose and behaviour.
+- [World line-of-sight bench](/documentation_v2/website/frontend/apps/debug/world_los_page.md) —
+  the world bench's purpose and behaviour.

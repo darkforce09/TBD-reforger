@@ -82,5 +82,7 @@ Links to this route come from the review record's history and from the
 
 ## Related documentation
 
+- [Review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
+  — the page's behaviour, the digest check behind it and its open work.
 - [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
   editor this page opens read-only.

@@ -1,4 +1,4 @@
-**Status:** archived
+**Status:** archived — see [documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md)
 
 # Mission Creator (Setup Wizard)
 

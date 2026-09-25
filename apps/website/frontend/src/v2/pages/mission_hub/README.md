@@ -71,4 +71,8 @@ the Mission Creator itself in its read-only review mode, not a copy of it.
   — the library's behaviour and design.
 - [Mission overview page](/documentation_v2/website/frontend/pages/mission_hub/overview/mission_overview_page.md)
   — the overview's behaviour and design.
+- [Review workspace page](/documentation_v2/website/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
+  — the review workspace's behaviour.
+- [Mission hub pages documentation](/documentation_v2/website/frontend/pages/mission_hub/README.md)
+  — the index of the three pages' feature docs.
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the API routes these pages call.
