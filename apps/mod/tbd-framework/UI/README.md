@@ -78,3 +78,5 @@ is a committed PNG imported here.
   — where each UI file goes and which mockup panel lands in which folder
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md)
   — the design rules the theme and layouts encode
+- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the website tokens
+  `TBD_UITheme` mirrors, the mod's fonts, radii and spacing, and where the two differ

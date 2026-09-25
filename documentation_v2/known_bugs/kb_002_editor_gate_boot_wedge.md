@@ -1,66 +1,80 @@
 **Status:** live
 
-# KB-002 — Editor CDP gate wedges at boot (chrome-headless-shell font-fallback crash)
+# KB-002 — The editor gate wedges at boot on a font-fallback crash
 
-| | |
-|---|---|
-| **Status** | **RESOLVED** — T-177 (harness now uses the full `chrome` build + `--headless=new`) |
-| **Severity** | High (while active) — the entire editor acceptance gate (`cargo xtask mk leptos-gates`) could not run |
-| **Area** | Gate harness (`tools_v2/developer-tools`) + headless chromium / Skia fontconfig |
-| **Discovered** | 2026-07-19, during T-177 verification |
+## Status
+
+Resolved: fixed in the gate harness, which launches the full Chromium build against a font cache
+it owns and checks both before any smoke runs. Severity high while it lasted: no editor gate could
+run, `cargo xtask mk leptos-gates` included. Area: the browser gate harness in
+`tools_v2/developer-tools/src/browser_testing/` and the Chromium it launches.
 
 ## Symptom
 
-`cargo xtask mk leptos-gates` (or `gate smoke <name>`) hangs, then fails after ~130 s with:
+`cargo xtask mk leptos-gates`, or one smoke on its own (`gate smoke <name>`), hangs and fails after
+130 s with:
 
-```
+```text
 gate: driver error: cdp: ws call timed out (Runtime.evaluate)
 ```
 
-The suite fails-closed on the **first** smoke (`selfcheck`, whose first `Runtime.evaluate` is
-`!!document.querySelector('canvas')`), so the cost is ~130 s once, not ×18 — but with no useful signal.
+The suite stops at its first smoke, `selfcheck`, whose first evaluation looks for the canvas, so
+the run fails once, after the full timeout, with no diagnosis. When the browser process aborts
+instead, the crash comes a few hundred milliseconds after the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) page is navigated, and the harness
+reports the same timeout or `timeout waiting for Page.loadEventFired`.
 
-## Root cause
+## Cause
 
-The harness resolved playwright's **`chrome-headless-shell`**, whose stripped Skia font manager stubs
-per-character font fallback as a hard abort:
+Chromium's Skia font manager aborts on any per-character font fallback:
 
-```
+```text
 [FATAL:third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp:163] Not implemented.
 ```
 
-The editor chrome renders text that needs fallback (icons / em-dash / emoji ranges), so the **renderer
-core-dumps at boot**. Over CDP the harness only sees a dead WebSocket → `Runtime.evaluate` never
-answers → the 130 s per-call timeout. It is **environment-dependent** (it fires only when this box's
-fontconfig forces a fallback the shell can't satisfy), which is why it "worked before": the same
-`chrome-headless-shell` build (149.0.7827.55) was the last-known-good, and only a system/font change
-tipped it over.
+The Mission Creator's text needs fallback glyphs (icons, dashes, symbol ranges). In
+`chrome-headless-shell` the abort kills the renderer at boot; the harness sees only a dead
+DevTools socket, so the `Runtime.evaluate` call waits out its 130 s timeout (`send` in
+`tools_v2/developer-tools/src/browser_testing/cdp.rs`). It depends on the machine's fonts: the same
+shell build ran clean until a font change made the fallback necessary. The full `chrome` build
+reaches the same abort from its browser process when it resolves no font at all, which happens
+when a container sharing the home directory has written its own `~/.cache/fontconfig`.
 
-**Ruled out** (all verified): the T-177/app code (the clean T-176 dist wedged identically), the wasm
-build profile (debug wedged too), the chromium version (1223 & 1228 both), multi-GPU Vulkan
-(lavapipe-only still crashed), memory/cgroup pressure (20 GB free, `memory.max = max`), orphaned
-processes. Basic CDP + WebGL2 both worked. The decisive evidence was chromium's own stderr
-(`--enable-logging=stderr --v=1`) showing the Skia FATAL.
+Chromium's own stderr (`--enable-logging=stderr --v=1`) showed the abort. Ruled out: the
+application code (an older build wedged the same way), the build profile (a debug build wedged
+too), the Chromium version (two builds), multi-GPU Vulkan (a software-only device still crashed),
+memory pressure (20 GB free, no cgroup limit) and orphaned processes. A bare page with WebGL2 ran
+fine over the same connection.
 
-## Fix (T-177)
+## Workaround
 
-- **`cdp.rs` `find_chromium`** now prefers the **full `chrome` build** (`chrome-linux64/chrome`) over
-  `chrome-headless-shell` — the full build has the complete font backend and does not crash. (Also
-  fixed a latent path bug: playwright's full-chrome dir is `chrome-linux64`, not `chrome-linux`.)
-- **`cdp.rs` `launch`** adds **`--headless=new`** for the full build (the shell is always headless and
-  ignores it).
-- **Fail-fast:** `gate doctor` (a prerequisite of `cargo xtask mk leptos-gates`) validates the resolved chromium
-  and runs a ~15 s liveness probe, so a future recurrence fails in seconds with a diagnosis instead of
-  the 130 s hang. Pins live in [`tools_v2/developer-tools/gate-env.json`](/tools_v2/developer-tools/gate-env.json).
+None needed. If the wedge returns, `cargo xtask mk gate-doctor` reports which Chromium build
+resolved and whether the gate's font cache is in place.
 
-Two stale/behavioral smoke assertions were exposed once the suite could finally run past `selfcheck`,
-both fixed in the same pass (neither was the wedge):
-- **fullmap** asserted `landcover_polygons === 36`; **T-176** intentionally removed the 32 m landcover
-  wash → now `=== 0`.
-- **keyboard-settings** Ctrl+C/V are natively intercepted by the full chrome's clipboard handling →
-  driven via JS `KeyboardEvent` instead of `Input.dispatchKeyEvent`.
+## Fix
 
-## If it recurs
+- `find_chromium` (`tools_v2/developer-tools/src/browser_testing/cdp/sleep_ms.rs`) prefers the full
+  `chrome` build (`chrome-linux64/chrome`) over `chrome-headless-shell`, and `launch_with_gpu`,
+  behind `launch`, passes it `--headless=new`; the shell is used only when no full build exists.
+- The same launch sets the Chromium child's `XDG_CACHE_HOME` to the font cache the gate owns
+  (`gate_font_cache_dir` in `tools_v2/developer-tools/src/browser_testing/diagnostics.rs`), so a
+  cache written by another distribution is never read.
+- `gate doctor`, which `cargo xtask mk leptos-gates` runs first, checks the resolved build, probes
+  Chromium's log for `Could not find any font` and runs a liveness probe of about 15 s, so a
+  recurrence fails in seconds with a diagnosis. Its pins live in
+  [`tools_v2/developer-tools/gate-env.json`](/tools_v2/developer-tools/gate-env.json).
 
-See [`documentation_v2/runbooks/editor_gates.md`](/documentation_v2/runbooks/editor_gates.md) §Known wedge modes +
-the P0–P6 debug recipe (chrome stderr, `/proc` thread state, `gdb -p <renderer>`, flag levers).
+The [editor gates runbook](/documentation_v2/runbooks/editor_gates.md#known-wedge-modes) lists
+both wedge modes and the debug recipe for a recurrence, and the
+[editor capture runbook](/documentation_v2/runbooks/editor_capture.md) the environment rules for
+headless screenshots.
+
+## Related tickets
+
+- [T-177 — MC chrome UX + ORBAT dock cutover](/documentation_v2/tickets/specs/t177_mc_chrome_orbat_cutover.md)
+  (shipped): the full Chromium build, `--headless=new` and the gate doctor's liveness probe.
+- [T-320 — Gate harness wedges on editor — CDP unverifiable](/.ai/tickets/T-320.toml) (shipped):
+  the gate-owned font cache for the browser-process abort.
+- [T-653 — Preserve the three headless editor-screenshot findings](/documentation_v2/tickets/specs/t653_headless_screenshot.md)
+  (ready, [plan](/documentation_v2/tickets/plans/t-653_plan.md)): the writable font cache, the
+  Vulkan-only ANGLE flag and the canvas capture, recorded in the runbooks with a cross-link here.

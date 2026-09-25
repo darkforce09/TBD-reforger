@@ -54,4 +54,6 @@ apps/website/frontend/style/
 ## Related documentation
 
 - [Design tokens](/documentation_v2/design_system/design_tokens.md) — the design token
-  reference: palette, typography, spacing and radii.
+  reference: palette, typography, spacing, radii and motion, and how the mod mirrors them.
+- [Design system](/documentation_v2/design_system/README.md) — the index of the design documents
+  and the Stitch token exports this file's tokens follow.

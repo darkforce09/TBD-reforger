@@ -1,73 +1,75 @@
 **Status:** live
 
-# KB-001 — Mission Creator: selection & copy/paste break at extreme slot counts
+# KB-001 — Selection and copy-paste break at extreme slot counts in the Mission Creator
 
-| | |
-|---|---|
-| **Status** | Known · **Deferred** (out of realistic scale) |
-| **Severity** | Low — only manifests far beyond the usable envelope |
-| **Area** | Mission Creator — selection / picking / render subsystem |
-| **Discovered** | 2026-07-07, during the T-145 F3.1 operator browser gate @ **517,968 objects** |
-| **Perf** | Not a perf bug — 60 fps sustained at the time |
+## Status
 
-## Why this is deferred
+Resolved: not reproducible from the code. The defect was seen in the React
+[Mission Creator](/documentation_v2/glossary.md#mission-creator), whose whole tree, the selection,
+picking and icon code it names included, commit `50bba633e` deleted when the Leptos app became the
+only frontend. The Rust selection pipeline that replaced it shares no code with it, and no run of
+it has shown the symptom. Severity low while it lasted: it appeared only far above the realistic
+envelope. Real missions stay well under about 10,000 [slots](/documentation_v2/glossary.md#slot),
+and the defect showed at 517,968 objects. Area: Mission Creator selection, picking and slot icon
+drawing.
 
-500k slots is a **performance stress test**, not a realistic mission. Real TBD Reforger missions stay
-well under **~10,000 slots** (Arma Reforger itself makes anything near that unrealistic), and the future
-dynamic entities (vehicles, etc.) are expected to stay in the same order of magnitude. This bug lives
-entirely above that ceiling, so it does not affect real usage and is recorded rather than fixed.
+## Symptom
 
-## Symptoms (observed @ ~518k)
+Seen once, in an operator browser gate of the Rust document core with 517,968 objects, a document
+built by in-session copy and paste rather than a reload, in the detail render mode (zoom about
+-3.40; the cluster mode engaged only at `ZOOM_CLUSTER_MAX` = -4 or below). Frame rate held at
+60 fps, so it was not a performance defect.
 
-1. **Ghost selection.** After select → deselect, some objects stay highlighted (yellow) while the
-   toolbelt reads `SEL 0`. The store `selection.ids` is empty but the icon-cache `.selected` flags (or
-   the rendered colors) have not cleared — the two have desynced.
-2. **Can't select the ghosts.** Clicking a still-highlighted object does not select it.
-3. **Copy/paste appears dead.** Ctrl+C / Ctrl+V do nothing. Almost certainly **downstream of #1**: the
-   copy handler reads `selection.ids` (`MissionCreatorPage` `onKeyDown`, `KeyC` branch); when that is
-   empty (the ghost state), the in-editor clipboard stays empty and Ctrl+V no-ops.
+1. Ghost selection: after a select and a deselect, some objects stayed highlighted while the
+   toolbelt read `SEL 0`. The store's `selection.ids` was empty while the icon cache's `.selected`
+   flags, or the drawn colours, had not cleared.
+2. The ghost-highlighted objects could not be selected by a click.
+3. Ctrl+C and Ctrl+V did nothing. The copy handler read `selection.ids`, so with the ghost state's
+   empty selection the in-editor clipboard stayed empty and a paste had nothing to place.
 
-**Environment:** detail render mode (deck zoom ≈ −3.40; cluster mode only engages at zoom ≤
-`ZOOM_CLUSTER_MAX = -4`). The 517k doc was built by **in-session copy/paste**, not a reload.
+## Cause
 
-## Analysis (not fully root-caused — needs in-browser reproduction)
+Never fully root-caused. The selection, picking and drawing code was unchanged by the document-core
+change under test, so the gate exposed a scale limit of that code rather than a regression. The
+change's own parity test proved the store dictionaries byte-identical to the Rust document, but it
+never compared the icon cache, the spatial index or the cluster index with them.
 
-The entire selection / picking / render subsystem is **byte-identical before and after the T-145 flip**
-(F3/F3.1 changed only the doc-core: `ydoc.ts` mutators, the hooks, undo, persistence, the barrel).
-Untouched: `useSelectTool`, `slotIconCache`, `slotSpatialIndex`, `slotClusterIndex`, `useIconLayer` /
-`useClusterIconLayer` / `useSelectionLayer`, the copy/paste handler, `setSelection`. So this is a
-**pre-existing scale limit** the gate exposed, not a flip regression.
+The leading suspect was the uncapped marquee: the paste path capped its post-paste selection at
+`BULK_SELECT_CAP` (500), because ten thousand selected ids overloaded the highlight set and the
+outliner, while the marquee release in `useSelectTool` put every id `slotSpatialIndex.pickRect`
+returned into `selection.ids`. A six-figure selection then stressed `setSelectionFlags` (a pass over
+every icon), the virtual outliner and the colour attribute of the map layer. It stayed a hypothesis.
 
-Caveat worth recording: the flip's F3.1 `okPatch` test proved the store **dictionaries** stay
-byte-identical to the wasm doc, but it never asserted the **icon-cache / spatial-index / cluster-index**
-state. A future investigation should not assume those caches are correct at scale just because the store
-dicts are.
+The code the entry describes no longer exists: `git ls-files apps/website/frontend/src/features`
+lists nothing. In the Rust Mission Creator, the marquee release and a paste still select every id
+they reach with no cap (`apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs`,
+`paste_at_cursor` in `apps/website/map-engine/src/editing/hosted_commands/entity_clipboard.rs`), and
+a selection change patches only the icon rows whose selected state flips (`set_selection` in
+`apps/website/map-engine/src/overlay/symbology/instances/bridge_1.rs`). The
+[performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md)
+inventory holds what the Rust pipeline does at scale.
 
-**Leading suspect — uncapped marquee selection.** The paste path deliberately caps its post-paste
-selection at `BULK_SELECT_CAP = 500` (`MissionCreatorPage`), with the comment that putting ~10k ids in
-`selection.ids` "blows up the highlight Set + outliner re-render." The **marquee release** in
-`useSelectTool` (`onPointerUp`, marquee branch) has **no such cap** — a zoomed-out marquee over 500k
-slots calls `slotSpatialIndex.pickRect(...)` and dumps the entire result into `selection.ids`. A
-pathological six-figure selection stresses `setSelectionFlags` (O(n) over all icons), the virtual
-outliner, and the deck color attribute — which fits the "worked at small scale, broke at large scale"
-report. This is a hypothesis, not a confirmed cause.
+## Workaround
 
-## If/when this is revisited
+None needed.
 
-Diagnose before touching correct-looking, unchanged code:
+## Fix
 
-1. **Headless ~500k reproduction** (vitest, no GPU) that drives the real state pipeline — seed ~500k
-   slots via `useMapStore._applySnapshot`, then `slotSpatialIndex.pickRect` → `setSelection` →
-   `setSelectionFlags` → deselect, asserting (a) zero residual `.selected` after deselect, (b)
-   `pickNearest` still returns the right id, (c) icon-cache dense ids == `Object.keys(slotsById)` ==
-   spatial-index row set after a run of `pasteSlots`/`moveEntities`/`removeEntities`. This isolates a
-   **state/index desync** (fixable headlessly) from a **Deck-render-only** refresh bug (needs a browser).
-2. **Fix** per the evidence — most likely cap or otherwise bound the marquee selection (mirroring the
-   paste cap), or make the selection machinery tolerate huge id sets.
+No change fixed it; deleting the React frontend removed the code it lived in. If the symptom is
+seen again in the Rust Mission Creator, reproduce it before touching code: seed about 500,000
+slots, marquee-select, deselect, and compare the selected ids with the icon rows the engine holds
+as selected; a mismatch is a state defect a test can pin, while a match with a stale picture is a
+drawing defect that needs the browser. A new entry records it; this one stays resolved.
 
-**Critical files:** `apps/website/frontend/src/features/tactical-map/tools/useSelectTool.ts` ·
-`state/slotIconCache.ts` · `state/slotSpatialIndex.ts` · `state/slotClusterIndex.ts` ·
-`layers/useIconLayer.ts` · `mission-creator/MissionCreatorPage.tsx` · `state/useMapStore.ts`.
+## Related tickets
 
-**Related:** T-059 (`BULK_SELECT_CAP`, bulk paste/delete) · T-065 (cluster / LOD @ extreme zoom) ·
-T-067 (chunk cull, later reverted) · T-090 (map/scale program) · T-145 (Rust/wasm doc-core flip).
+- [T-059 — Bulk paste/delete at scale](/documentation_v2/tickets/specs/t059_bulk_paste_operations.md)
+  (shipped): the bulk paste and delete, and the 500-id post-paste selection cap of the React code.
+- [T-065 — Cluster LOD at extreme zoom](/documentation_v2/tickets/specs/t065_cluster_lod.md)
+  (shipped): the cluster mode below zoom -4.
+- [T-067 — Spatial chunks](/documentation_v2/tickets/specs/t067_spatial_chunks.md) (shipped): the
+  chunk cull of the React map layers.
+- [T-145 — Rust/Wasm Doc Core (Yjs replacement)](/.ai/tickets/T-145.toml) (shipped): the document
+  core change whose gate exposed the defect.
+- [T-090 — Map visualization program](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md)
+  (ready): the map and scale program the gate ran under.

@@ -78,3 +78,10 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
   an atlas cell (`g3_committed_label_data_no_tofu` in `tests/text_layout.rs`); the side tints are
   pinned by `cargo xtask verify editor-orbat-coherency`; no name in the graphics engine may say
   symbology, which is why this vocabulary lives here (rule 2 of `cargo xtask verify engine-layers`).
+
+## Related documentation
+
+- [Map symbology](/documentation_v2/design_system/military_symbology.md) — the unit, vehicle and
+  marker symbols and side tints, and how the game draws the same markers.
+- [Design tokens](/documentation_v2/design_system/design_tokens.md) — the palette the side tints
+  come from.

@@ -76,6 +76,8 @@ disabled classes, `HOVER_FILL` and `DISABLED_GLYPH`, from the
 ## Related documentation
 
 - [Design tokens](/documentation_v2/design_system/design_tokens.md) — the design token
-  reference: palette, typography, spacing and radii.
+  reference: palette, typography, spacing, radii and motion.
+- [Interaction patterns](/documentation_v2/design_system/interaction_patterns.md) — the split
+  pane, create-over-list dialog and slide-over sheet the pages build from these primitives.
 - [Frontend documentation](/documentation_v2/website/frontend/README.md#design) — the design references
   and tokens the primitives follow.
