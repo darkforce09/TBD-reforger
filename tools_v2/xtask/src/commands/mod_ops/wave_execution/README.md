@@ -54,3 +54,9 @@ states, and declares both files.
   anything (`land_refuses_dirty_worktree`); an unknown subcommand prints the help and exits 2
   (`unknown_command_prints_help_rc2`); all in
   `tools_v2/xtask/src/commands/mod_ops/tests/wave_execution.rs`.
+
+## Related documentation
+
+- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — the wave cycle these
+  subcommands automate, the slice gate a merge needs, and the stand-in checks for the gate's
+  `make` steps.
