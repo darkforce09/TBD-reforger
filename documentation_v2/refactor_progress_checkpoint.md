@@ -230,7 +230,7 @@ the base brief names, outside the repository.
 | F16a | 5 · order 5 | Doc writer: runbooks/factory_waves/ (agent-neutral; Law 2 tooling exception) (see `refactor_phase5_slices.tsv`) | running | — | — |
 | F16b | 5 · order 6 | Doc writer: runbooks/{ticket_run_pipeline.md, cursor_workspace_setup.md} (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | F17a | 5 · order 6 | Doc writer: standards/{coding_standards/ (split), where_does_x_go.md, commit_checklist.md, ticket_identifiers.md} (see `refactor_phase5_slices.tsv`) | running | — | — |
-| F17b | 5 · order 6 | Doc writer: known_bugs/**, design_system/** (see `refactor_phase5_slices.tsv`) | pending | — | — |
+| F17b | 5 · order 6 | Doc writer: known_bugs/**, design_system/** (see `refactor_phase5_slices.tsv`) | running | — | — |
 | V5.4 | 5 · W5.4 | Wave verifier over F14–F17 | dropped (operator direction: no verifier per wave) | — | — |
 | F18 | 5 · order 7 | Doc writer: folder-index READMEs for every documentation_v2 folder no other writer owns | pending | — | — |
 | F19 | 5 · order 8 | Doc writer: `glossary.md`, `product_roadmap.md`, final pass on `documentation_v2/README.md` | pending | — | — |
