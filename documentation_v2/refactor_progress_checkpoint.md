@@ -171,7 +171,7 @@ the base brief names, outside the repository.
 | R13 | 4 · W4.6 | README writer: 19 folders — `apps/mod/tbd-framework/Scripts/Game/TBD/API` + 2 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
 | R14.1 | 4 · W4.6 | README writer: 14 folders — `apps/mod (folder only)` + 6 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
 | V4.6 | 4 · W4.6 | Wave verifier over W4.6's writers | dropped (operator direction: no verifier per wave) | — | — |
-| R14.2 | 4 · W4.7 | README writer: 15 folders — `apps/mod/tbd-framework/Scripts` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
+| R14.2 | 4 · W4.7 | README writer: 15 folders — `apps/mod/tbd-framework/Scripts` + 1 more unit(s) (see `refactor_phase4_slices.tsv`) | running | — | — |
 | R14.3 | 4 · W4.7 | README writer: 16 folders — `apps/mod/tbd-framework/UI` (see `refactor_phase4_slices.tsv`) | pending | — | — |
 | R15.1 | 4 · W4.7 | README writer: 16 folders — `apps/mod/tbd-export (folder only)` + 11 more unit(s) (see `refactor_phase4_slices.tsv`) | pending | — | — |
 | R15.2 | 4 · W4.7 | README writer: 16 folders — `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport` (see `refactor_phase4_slices.tsv`) | pending | — | — |
