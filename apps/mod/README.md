@@ -125,3 +125,7 @@ Other mod commands:
   staging server and Direct Join.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local
   playtest.
+- [Export addon documentation](/documentation_v2/mod/tbd-export/README.md) — the map export,
+  the terrain export runbook and the equipment exporter's acceptance evidence.
+- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the two ways to reach
+  Workbench, the bootstrap and the handler loading rules.

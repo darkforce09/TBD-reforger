@@ -105,3 +105,5 @@ script list when it loads the project.
   the daemon, exit codes and the live checks.
 - [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs in
   Workbench and the gates.
+- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — `mcp call` against
+  `mcp wbcall`, the bootstrap order, the loading rules and the known gaps.

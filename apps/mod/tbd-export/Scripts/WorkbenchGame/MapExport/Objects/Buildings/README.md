@@ -128,3 +128,5 @@ None: Workbench runs these scripts in the editor.
 - [Map commands](/tools_v2/xtask/src/commands/map/README.md) — the `cargo xtask map` blueprint and
   parity commands.
 - [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API that
+  `cargo xtask mcp wbcall` reaches.

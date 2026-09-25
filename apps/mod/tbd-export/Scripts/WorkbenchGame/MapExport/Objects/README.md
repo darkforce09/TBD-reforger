@@ -123,3 +123,5 @@ None: Workbench runs these scripts in the editor.
   catalogue the full export feeds.
 - [Map commands](/tools_v2/xtask/src/commands/map/README.md) — `cargo xtask map export-terrain` and
   the parity commands.
+- [Terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
+  the full export through `copy-export-profile`, `export-terrain` and `verify-phase`.

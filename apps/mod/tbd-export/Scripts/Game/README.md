@@ -35,3 +35,9 @@ The addon's other exports live in `Scripts/WorkbenchGame/`, compiled into Workbe
   `cargo xtask mod compile` compiles only the framework addon
   (`tools_v2/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
   Workbench or a game loads `tbd-export`.
+
+## Related documentation
+
+- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+  the runtime road export among the addon's exporters, and the files it shares with the
+  Workbench road layer.

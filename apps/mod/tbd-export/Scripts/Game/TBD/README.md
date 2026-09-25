@@ -33,3 +33,9 @@ files to `$profile:TBD_Export/everon/roads/`.
 - Used by: the export game mode prefab in `apps/mod/tbd-export/Prefabs/Systems/`.
 - Rules: game scripts here never call a Workbench class; `cargo xtask mod compile` compiles only the
   framework addon, so they compile only when Workbench or a game loads `tbd-export`.
+
+## Related documentation
+
+- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+  the runtime road export among the addon's exporters, and the files it shares with the
+  Workbench road layer.

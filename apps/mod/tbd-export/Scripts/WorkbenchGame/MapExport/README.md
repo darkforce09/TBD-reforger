@@ -91,3 +91,7 @@ None: Workbench runs these scripts in the editor.
 - [Map commands](/tools_v2/xtask/src/commands/map/README.md) — the `cargo xtask map` commands that
   read these exports.
 - [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [Map export](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+  every layer, its entry point, the pipeline to committed data and its known gaps.
+- [Terrain export runbook](/documentation_v2/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
+  full export, stage, build, verify and open the next import phase.
