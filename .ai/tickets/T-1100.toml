@@ -1,0 +1,12 @@
+id = "T-1100"
+kind = "work"
+title = "Fix map water export output unreadable by map water"
+summary = "Workbench water export writes bathymetry_*.txt, lakes.json and rivers.json (TBD_MapExportWater.c:94-97, TBD_MapExportRivers.c:126,399), but map water reads TBD_InlandWaterExport_* (inland_water_archive.rs:61-67) and river nodes/pos/averageWidthM (reduce_depth.rs:156-177)."
+class = "bug"
+status = "idea"
+created_at = "2026-09-25T05:07:09Z"
+notes = "Paths under apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water unless stated. Writers: TBD_MapExportWater.c:94-97 writes water/bathymetry_mask.txt, bathymetry_depth.txt, lakes.json and water_meta.json under $profile:TBD_Export/<map>/ (its header :9-12 still names TBD_WaterExport_mask.txt, _depth.txt, _vectors.json, _meta.json); TBD_MapExportInlandWater.c:43 writes inland_water_meta.json and calls the rivers, lakes and ponds exporters (:53-61), which write rivers.json (TBD_MapExportRivers.c:126), lakes.json (TBD_MapExportLakes.c:85) and ponds.json (TBD_MapExportPonds.c:88). Reader: `map water` (tools_v2/developer-tools/src/map_raster_pipeline/cli.rs:91,215 -> inland_water_archive/emit_water.rs:24) reads the staged names TBD_InlandWaterExport_vectors.json, _meta.json, _mask.txt and _depth.txt (tools_v2/developer-tools/src/map_raster_pipeline/inland_water_archive.rs:61-67), one vectors file holding lakes and rivers; its river parser (inland_water_archive/reduce_depth.rs:146-181) requires rivers[].nodes[].pos and averageWidthM, while TBD_MapExportRivers.c:387-420 writes widthM (:399), splinePoints and parts. No step renames or merges the outputs. Same folder: both TBD_MapExportWater.c:96 (water-body catalog) and TBD_MapExportLakes.c:85 (lake dataset) write water/lakes.json with different content, so the later run overwrites the earlier one. Lakes and ponds record fallback values as if measured: TBD_MapExportLakes.c:414-416 substitutes a 10000 m^2 area and :460-461 a 3.5/1.8 m depth, TBD_MapExportPonds.c:427-429 a 2500 m^2 area and :473 a 1.5 m depth, with no flag in the JSON. Every MapExport plugin is unregistered (T-1081), so this bites when registration returns. Decide which side owns the contract (a contracts_v2 schema would pin it), then align names, fields and the staging step. Source: README writer R15.4."
+
+[scope]
+domain = "mod"
+layer = "workbench"

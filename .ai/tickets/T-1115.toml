@@ -1,0 +1,12 @@
+id = "T-1115"
+kind = "work"
+title = "Consolidate xtask host-bridge copies and move slice worktree tests"
+summary = "Three xtask modules re-implement container detection and host-bridge wrapping that core/host_execution.rs owns, with differing rules (compile_host.rs, world_boot/boot_environment.rs:27-60, platform/preflight/ok.rs:17-50); platform/slice_worktree/tests.rs sits outside a tests/ folder."
+class = "chore"
+status = "idea"
+created_at = "2026-09-25T08:21:58Z"
+notes = "Paths under tools_v2/xtask/src. The shared implementation is core/host_execution.rs (in_container :123-126, two clauses, and the Host bridge type), whose doc (:115-122) says widening the rule is a behaviour change needing its own ticket. Copies: commands/mod_ops/compile_host.rs:13-50 (in_container with a third 'container' env clause, host_bridge trying distrobox-host-exec then host-spawn, require_host, hostrun); commands/mod_ops/world_boot/boot_environment.rs:27-60 (two-clause in_container, the same host_bridge, require_host, host_command); commands/platform/preflight/ok.rs:17-50 (three-clause in_container, distrobox-host-exec only, use_host_bridge, hostrun). commands/platform/wave_execution/host.rs:79-84 already wraps the core function and adds the env clause. So the lanes disagree about what a container is and which bridges count. Decide the one rule, move it into core/host_execution.rs, and call it from all four. Test placement: commands/platform/slice_worktree.rs:72-73 declares mod tests from commands/platform/slice_worktree/tests.rs (369 lines), not from a tests/ folder as CLAUDE.md law 7 requires; move it to commands/platform/slice_worktree/tests/ (or commands/platform/tests/slice_worktree/, like its siblings) and fix its header (:3-5), which narrates the split. Source: README writer R16."
+
+[scope]
+domain = "repo"
+layer = "xtask"

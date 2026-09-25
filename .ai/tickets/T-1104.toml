@@ -1,0 +1,12 @@
+id = "T-1104"
+kind = "work"
+title = "Fix dev-bootstrap --api and milestone seed using retired Postgres container"
+summary = "mod dev-bootstrap --api starts podman container tbdevent-postgres and runs npm run dev in apps/website/api_v2 (development_bootstrap.rs:222-236), which has no package.json; db/milestone_announcement.rs:143,208 also targets tbdevent-postgres, not compose's tbd_reforger_db."
+class = "bug"
+status = "idea"
+created_at = "2026-09-25T05:09:22Z"
+notes = "Paths under tools_v2/xtask/src/commands. mod_ops/development_bootstrap.rs:221-236 (--api): runs 'podman start tbdevent-postgres', then spawns 'npm run dev' detached with all output discarded in p.web = apps/website/api_v2 (:38,48), which tracks no package.json, and prints 'API dev server starting on :8080' regardless; both results are ignored (let _ =). The local database is the compose service db with container_name tbd_reforger_db, user tbd, database tbd_reforger (apps/website/api_v2/docker-compose.yml:6-10), started by 'cargo xtask db up'; the API runs with 'cargo xtask mk rust-api'. db/milestone_announcement.rs (the 'cargo xtask mod seed-announcement' command, mod_ops/dispatch.rs:45): with no psql on PATH it falls back to 'podman exec -i tbdevent-postgres psql -U tbdevent -d tbdevent' (:130-150) guarded by tbdevent_postgres_running() (:208), and its doc and error text name the same container (:11, :57), so the fallback never finds the real container. Fix both to the compose container (or call the db lane) and report failures. Related: T-1095 (dev-bootstrap's MCP install), T-1091 (dev-bootstrap's -gproj text). Source: README writer R16."
+
+[scope]
+domain = "repo"
+layer = "xtask"

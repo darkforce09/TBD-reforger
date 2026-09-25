@@ -1,0 +1,13 @@
+id = "T-1116"
+kind = "work"
+title = "Decide one precedence between deploy.env and environment variables"
+summary = "debug remote-logs lets an exported variable beat deploy.env (debug/remote_logs/execution.rs:307-318), while deploy staging lets deploy.env beat the environment (deploy/staging/config.rs:179-184), so the same exported TBD_SSH_HOST reaches different hosts."
+class = "audit"
+status = "idea"
+created_at = "2026-09-25T08:24:21Z"
+notes = "Paths under tools_v2/xtask/src/commands. Three rules for the same keys (TBD_SSH_HOST, TBD_PROFILE_DIR, TBD_SSH_PASS, TBD_SSH_IDENTITY_FILE): (1) environment first, deploy.env fills gaps: debug/remote_logs/execution.rs:304-318 (cmd_remote); (2) deploy.env first, environment fills gaps: deploy/staging/config.rs:179-186 ('Snapshot the process environment, then let the file win') and debug/direct_join.rs:125-139 (load_ssh_vars); (3) deploy.env only, with DEPLOY_ENV choosing the file: deploy/website.rs:58-73 and :81-88 (require_var reads only the parsed map). So an operator who exports TBD_SSH_HOST to probe another machine gets that machine from 'debug remote-logs' but the deploy.env host from 'debug direct-join' and 'deploy staging'. Each command also carries its own deploy.env parser (debug/remote_logs/shell_quote.rs:26, debug/direct_join.rs:141, deploy/staging/config.rs:110, deploy/website.rs:456). Either may be intended (the R17.2 writer marked it 'may be intended'); decide one rule, put it in one shared loader, and state it in the deploy README. Source: README writer R17.2."
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

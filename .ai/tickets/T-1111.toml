@@ -1,0 +1,12 @@
+id = "T-1111"
+kind = "work"
+title = "Fix ai guard treating chained commands as piped input"
+summary = "agent_context/guards.rs:106-131 splits on ; | && || alike and :155 treats every later segment as piped, so 'cd x && rg foo' or 'true; grep -r foo .' passes the uncapped-search rule."
+class = "chore"
+status = "idea"
+created_at = "2026-09-25T08:18:44Z"
+notes = "Paths under tools_v2/xtask/src/commands/agent_context. 'cargo xtask ai guard' is the PreToolUse hook in .claude/settings.json:9. guards.rs:106-131 (segments) splits a Bash command on ';', '|', '&', '&&' and '||' without recording which operator ended each segment, and guard_bash (:149-181) sets piped_from_previous = i > 0 (:155), so the uncapped-search rule (:157-180) only ever inspects the first segment: 'cd dir && rg foo', 'true; grep -r foo .' and 'a || rg foo' are allowed although nothing bounds their output. The doc comment (:141-148) says only a grep reading from a pipe is exempt. Keep the operator per segment and treat only '|' as piped; add cases to the guard tests.. Source: README writer R17.1."
+
+[scope]
+domain = "repo"
+layer = "xtask"

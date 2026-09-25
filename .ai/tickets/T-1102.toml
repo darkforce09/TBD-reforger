@@ -1,0 +1,12 @@
+id = "T-1102"
+kind = "work"
+title = "Rewrite stale map export comments and drop unused WORLD_PATH"
+summary = "TBD_MapExportWater.c:9-12 names files it never writes; TBD_VegetationExportPlugin.c:4-7 lists 3 of 6 classes; TBD_MapExportRoads.c:375 says degree >= 3 but keeps 2; dem_elevation.rs:3-4 says row 0 is north; TBD_MapExportSatellite.c:10 WORLD_PATH is unused."
+class = "docs"
+status = "idea"
+created_at = "2026-09-25T05:08:22Z"
+notes = "Paths under apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport unless stated. Terrain/Water/TBD_MapExportWater.c:8-12 lists outputs TBD_WaterExport_mask.txt, _depth.txt, _vectors.json and _meta.json, but :94-97 write water/bathymetry_mask.txt, bathymetry_depth.txt, lakes.json and water_meta.json. Terrain/Satellite/TBD_SatelliteExportPlugin.c:4-5 names only the .tga raster, while TBD_MapExportSatellite.c:44-45 also writes satellite/satellite_meta.json. Vegetation/TBD_VegetationExportPlugin.c:4-7 lists trees, rocks and bushes, but TBD_MapExportVegetation.c:57-77 also exports plants, crops and stumps. Terrain/Roads/TBD_MapExportRoads.c:375 says the junction catalog keeps only degree >= 3 or transitions, but :380-381 skip only nodes with fewer than 2 connected segments. tools_v2/developer-tools/src/world_export_pipeline/export_preparation/dem_elevation.rs:3-4 says row 0 is the north edge, but the exporter writes row 0 at z = 0 (Terrain/DEM/TBD_MapExportDEM.c:127-130) and apps/website/map-engine/src/world/terrain/dem/sampling.rs:30-35 maps z with an optional flip_z; state the orientation the manifest declares. Dead code: Terrain/Satellite/TBD_MapExportSatellite.c:10 declares WORLD_PATH = worlds/Eden/Eden.ent and nothing reads it. The plugins' 'Menu: Workbench > Plugins > TBD' header lines depend on T-1081's registration decision. Source: README writer R15.4."
+
+[scope]
+domain = "mod"
+layer = "workbench"

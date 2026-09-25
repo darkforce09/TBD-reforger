@@ -1,0 +1,13 @@
+id = "T-1109"
+kind = "work"
+title = "Decide whether rust-ci integration step adopts db test-it isolation"
+summary = "db test-it creates a random per-run database (db/operations/test_it.rs:65-80,192-200), but rust-ci's rust-test-it step recreates fixed rust_it (ci/task_definitions.rs:462-490, build/recipes/shell_word.rs:287-316), and help texts, harness errors and ci.yml say test-it uses rust_it."
+class = "audit"
+status = "idea"
+created_at = "2026-09-25T08:17:19Z"
+notes = "Paths under tools_v2/xtask/src/commands unless stated. 'cargo xtask db test-it' reserves a random database i<label>_<32 hex>_it per invocation (db/operations/test_it.rs:4, :55-80, :192-200; TBD_IT_BASE_DB only sets the label, :43-51) and passes it as TEST_DATABASE_URL (:220). 'cargo xtask ci rust-ci' and 'cargo xtask mk rust-ci' instead run a rust-test-it step that drops and recreates the fixed rust_it database and reaps rust_it_*_it (ci/task_definitions.rs:385 and :462-490; build/recipes/shell_word.rs:287-316 and :318-330), so two concurrent rust-ci runs, or a rust-ci run beside the wave gate, share one database. Texts that still say test-it uses rust_it: the db test-it --help line db/operations.rs:212 ('make rust-test-it — fresh rust_it DB', which also names a retired make target, T-1012), db/operations.rs:15 and :154, apps/website/api_v2/tests/common/database.rs:39, :87 and :255, and .github/workflows/ci.yml:47-48. CI itself provisions rust_it as a service database (ci.yml:60,110), which is why the allow-list keeps it. Decide whether rust-ci delegates to db test-it (keeping CI's fixed name only in ci.yml), then align the texts either way. Source: README writer R17.2."
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "db"

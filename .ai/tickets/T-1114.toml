@@ -1,0 +1,12 @@
+id = "T-1114"
+kind = "work"
+title = "Rename xtask files named after one helper they hold"
+summary = "Seven xtask files carry a helper's name but hold a subsystem: build/recipes/shell_word.rs, ci/task_runner/split_cmd.rs, staging/boot/read_addon_guid.rs, staging/remote/ssh_argv.rs, database_restore_drill/sha384_hex.rs, remote_logs/shell_quote.rs, and build/tests/recipes.rs testing core (CLAUDE.md law 4)."
+class = "chore"
+status = "idea"
+created_at = "2026-09-25T08:21:20Z"
+notes = "Paths under tools_v2/xtask/src. commands/build/recipes/shell_word.rs (385 lines): shell_word (:3) plus the step runner run_steps (:28) and every mk recipe (rust_api :112 through gate_doctor :220, rust_test_it :291, the rust_it reaper :323). commands/ci/task_runner/split_cmd.rs (359 lines): split_cmd (:5) plus the whole task runner (find, run, run_task, run_step, spawn, apply_env, shared_target_dir, :14-222) and the forbidden-document check is_forbidden_doc (:251). commands/deploy/staging/boot/read_addon_guid.rs (331 lines): read_addon_guid (:15) plus the boot-log verdicts assert_local_addon_won, assert_room_registered, assert_admins_configured, verify_boot_log and verify_boot_cli (:69-308). commands/deploy/staging/remote/ssh_argv.rs (375 lines): ssh_argv and rsync_argv (:4, :15) plus exec_start (:63), the V6 verdict (:114) and the whole staging deploy() (:152). commands/deploy/database_restore_drill/sha384_hex.rs (69 lines): sha384_hex (:3) plus psql_scalar, psql_query and drop_scratch_db (:14-53). commands/debug/remote_logs/shell_quote.rs (63 lines): shell_quote (:3) plus parse_deploy_env, tempfile_dir, write_log and append_line (:26-57). commands/build/tests/recipes.rs is the test module of core/cargo_target_directory.rs (:354-356, #[path = \"../commands/build/tests/recipes.rs\"]), although several of its tests (echo_matches_make :120, every_advertised_target_dispatches :227) exercise the build recipes; split it by the module each test exercises. Split or rename each by responsibility and update the folder READMEs' Contents in the same commit. ssh_argv.rs carries another session's uncommitted edit at filing time. Source: README writers R17.1, R17.2."
+
+[scope]
+domain = "repo"
+layer = "xtask"

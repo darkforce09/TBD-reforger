@@ -1,0 +1,13 @@
+id = "T-1103"
+kind = "work"
+title = "Fix wave gate migration 0016 default naming a missing file"
+summary = "platform/wave_execution/migrate/gate_db_migrate_claim_body.rs:23 defaults TBD_GATE_MIGRATION_0016 to migrations/0016_backfill_pre_t326_linked_match_stats.sql; the tracked file is 0016_backfill_linked_match_stats.sql, so the claim-body gate fails when the variable is unset."
+class = "bug"
+status = "idea"
+created_at = "2026-09-25T05:08:56Z"
+notes = "Paths under tools_v2/xtask/src/commands/platform/wave_execution. migrate/gate_db_migrate_claim_body.rs:17-27 reads TBD_GATE_MIGRATION_0016 and otherwise joins apps/website/api_v2/migrations/0016_backfill_pre_t326_linked_match_stats.sql (:23); git ls-files shows only apps/website/api_v2/migrations/0016_backfill_linked_match_stats.sql. With the variable unset, :28-33 prints 'missing migration file' and returns 1, and the message tells the operator to 'restore the file', which never existed under that name. Callers: gate/checkrun.rs:113 and gate/gate_dispatch.rs:205. The default path also carries a ticket id (T-1004 covers comment ids, not this literal). Fix the default to the tracked file name (or resolve the 0016_* file by prefix) and add a test that the default exists. Source: README writer R16."
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

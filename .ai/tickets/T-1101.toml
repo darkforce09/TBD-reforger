@@ -1,0 +1,12 @@
+id = "T-1101"
+kind = "work"
+title = "Fix map export road classes, spline transforms and DEM result"
+summary = "Asphalt highways also pass the paved test (TBD_MapExportPavedRoads.c:264-270); unset-width asphalt passes the runway test (TBD_MapExportRunways.c:187); spline points ignore rotation (TBD_MapExportDirtRoads.c:321) and repeat per entity; DEM returns true without meta (TBD_MapExportDEM.c:176-177)."
+class = "bug"
+status = "idea"
+created_at = "2026-09-25T05:07:42Z"
+notes = "Paths under apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain. (1) Highways in two files: Roads/Highways/TBD_MapExportHighways.c:217-290 (IsHighwayEntity) accepts road_asphalt_e_01/_e_02/_e_03 and dashed-line materials; Roads/Paved/TBD_MapExportPavedRoads.c:200-275 (IsPavedRoadEntity) marks any material containing 'asphalt' as paved (:264-270) and never excludes the highway materials, so every highway entity lands in both roads/highways.json (:322) and the paved file (:297). (2) Runways: Roads/Runways/TBD_MapExportRunways.c:139 defaults widthM to 30.0 and :181-182 overwrite it only when the entity's Width is > 1.0, so an asphalt road with no Width passes 'asphalt && widthM >= 20.0' (:187) and is exported as a runway. (3) Spline points: Roads/Dirt/TBD_MapExportDirtRoads.c:308-321, Roads/Paths/TBD_MapExportFootpaths.c:318, Roads/Runways/TBD_MapExportRunways.c:313, Roads/Tracks/TBD_MapExportTracks.c:323 and Water/TBD_MapExportRivers.c:296 turn GetPointsPositions() local points into world points by adding only the world transform's origin (sseMat[3]), ignoring its rotation, so any rotated spline is exported misplaced. (4) Duplicate splines: the same four road exporters look up a spline per matching road entity (child spline, the entity itself, or the first SplineShapeEntity within 25 m; e.g. Dirt :268-305) and emit one record per entity, with no record of splines already emitted, so one spline shared by several entities is written several times. (5) DEM: DEM/TBD_MapExportDEM.c:176-177 opens the meta file and skips the whole meta block when OpenFile fails, then returns true (:213) after writing only heightmap.txt, although a failed meta write (:205-210) returns false. Every MapExport plugin is unregistered (T-1081). The lakes.json collision and the lake/pond fallback values are on T-1100. Source: README writer R15.4."
+
+[scope]
+domain = "mod"
+layer = "workbench"

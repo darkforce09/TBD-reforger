@@ -1,0 +1,12 @@
+id = "T-1119"
+kind = "work"
+title = "Rewrite xtask help, error and doc texts contradicting the code"
+summary = "platform wave help omits run (platform/cli.rs:25-27); wave --close allowlist omits --tickets (land.rs:13); restore refusals cite a moved allow-list line (database_operations/execution.rs:381); verify_dump.rs:151 asks for a third argument, not --expect-db; four more."
+class = "docs"
+status = "idea"
+created_at = "2026-09-25T08:26:51Z"
+notes = "Paths under tools_v2/xtask/src/commands unless stated. (1) platform/cli.rs:25-27, the clap doc for 'cargo xtask platform wave', lists status, prep, gate, test, wave, verified, reclaim, land, revert and push, but the dispatcher also accepts run (platform/wave_execution/flush.rs:357). (2) platform/wave_execution/land.rs:13 says the 'wave --close' allowlist is --summary and --dry-run 'nothing else', but parse_close_args (land/wave_close.rs:194-215) also takes --tickets, which the CloseArgs tuple at land.rs:15-16 carries. (3) mod_ops/wave_execution.rs:54 (help text) says land merges, reaps trees, then runs the gate; mod_ops/wave_execution/land.rs:57-71 gates before it reaps and keeps the worktrees when the gate fails. (4) deploy/database_operations/execution.rs:381-382 (the restore refusal) and (5) db/operations.rs:88-89 (module doc) cite the integration harness's allow-list at apps/website/api_v2/tests/common/mod.rs:87; that file has 54 lines and the allow-list is is_safe_test_database_name in apps/website/api_v2/tests/common/database.rs:47. (6) deploy/database_operations/verify_dump.rs:151 tells the operator to 'Pass a third argument' to check the database identity; the option is --expect-db (deploy/database_operations.rs:75, deploy/database_restore.rs:43). (7) debug/cli.rs:45 says direct-join 'runs every probe below', but it is the last variant and the probes (a2s-probe, ndjson-append, direct-join-log) are above it. (8) apps/website/api_v2/src/core/middleware/durable_ratelimit.rs:14 calls the deployment's one datastore 'tools_v2/xtask/deploy/systemd/tbd-reforger.service plus the compose Postgres'; that unit is the game server, the API unit is tbd-website-api.service. The dev-bootstrap and milestone container texts are T-1104; the compile and mission-test wording is T-1091. Source: README writers R16, R17.2."
+
+[scope]
+domain = "repo"
+layer = "xtask"
