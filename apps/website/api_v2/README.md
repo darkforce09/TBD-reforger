@@ -155,9 +155,16 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — the routes of every domain
   and the layers they share.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+  — every variable the API reads, with
+  its default, requirement and failure mode.
+- [API decisions](/documentation_v2/website/api_v2/decisions.md) — the cross-domain design
+  decisions and their consequences.
 - [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup,
   Discord sign-in included.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
   the API on the home server.
 - [API completion and verification](/documentation_v2/website/api_v2/verification_evidence/completion_plan.md)
   — the acceptance contract and requirement register the API is verified against.
+- [API verification evidence](/documentation_v2/website/api_v2/verification_evidence/README.md)
+  — the index of the register, the program records and the design notes.

@@ -59,5 +59,8 @@ summarise.
 ## Related documentation
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+  — `LEADERBOARD_REFRESH_INTERVAL_SECS`,
+  the cadence of the scheduled leaderboard refresh.
 - [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)
   — what counts as attendance, which the statistics summarise.

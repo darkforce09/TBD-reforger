@@ -97,5 +97,8 @@ administrator does to a member lives in `administration`.
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
 - [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
   — session authorization, Discord observations, linking and attribution.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+  — the Discord, token and
+  session settings, and what an empty one does.
 - [Local development](/documentation_v2/runbooks/local_development.md) — the dev login and the
   Discord OAuth2 round trip.

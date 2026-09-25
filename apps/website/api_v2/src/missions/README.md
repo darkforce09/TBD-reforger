@@ -157,6 +157,8 @@ with the artifact's compiled slots, which the event roster in `operations` reads
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes and the
   layers they share.
+- [API decisions](/documentation_v2/website/api_v2/decisions.md) — why game servers fetch artifacts over
+  HTTPS rather than from staged files.
 - [Mission artifacts, reviews and deployment](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
 - [Mission library page](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md),

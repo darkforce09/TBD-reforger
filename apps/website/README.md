@@ -110,6 +110,8 @@ guide to frame rate. The map needs the Everon height map and satellite bundle fr
 - [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — deploying to the home
   server.
+- [Website documentation](/documentation_v2/website/README.md) — the index of the platform's
+  deeper documents.
 - [API documentation](/documentation_v2/website/api_v2/README.md), starting at the
   [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
 - [Frontend documentation](/documentation_v2/website/frontend/README.md) — the feature docs of each

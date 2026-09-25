@@ -99,6 +99,8 @@ for its terrain. The platform has no RCON console route.
 ## Related documentation
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [API decisions](/documentation_v2/website/api_v2/decisions.md) — why game hosts are reached only
+  through commands they claim.
 - [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
   — credentials, the session fence and their consumers.
 - [Fleet command ledger](/documentation_v2/website/api_v2/verification_evidence/fleet_command_ledger.md)

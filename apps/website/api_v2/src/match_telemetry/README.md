@@ -67,6 +67,9 @@ behind the source-match guard and the shared identity and account lock order.
 ## Related documentation
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+  — `SERVICE_TOKEN`, the shared
+  token of the match-results ingest.
 - [Machine credentials and runtime sessions](/documentation_v2/website/api_v2/verification_evidence/machine_credentials.md)
   — the credential and the session fence a heartbeat passes.
 - [Reservation and attendance separation](/documentation_v2/website/api_v2/verification_evidence/reservation_attendance.md)

@@ -71,5 +71,8 @@ leave best-effort audit lines through `administration::services::audit_writer`.
 ## Related documentation
 
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md)
+  — `DISCORD_WEBHOOK_URL` and
+  `UPLOAD_DIR`, which the announcement push and the uploads read.
 - [Content manager page](/documentation_v2/website/frontend/pages/administration/content_manager/content_manager_page.md)
   — the CMS that writes announcements and uploads.
