@@ -54,7 +54,7 @@ fn module_roots_and_documentation_describe_the_entire_source_tree() {
             if path.is_dir() {
                 MODULES.contains(&name) || name == "tests"
             } else {
-                name == "main.rs"
+                matches!(name, "main.rs" | "README.md")
             },
             "unexpected flat source or module: {}",
             path.display()
@@ -66,27 +66,6 @@ fn module_roots_and_documentation_describe_the_entire_source_tree() {
             module.join("mod.rs").is_file(),
             "missing module root: {name}"
         );
-        let readme =
-            std::fs::read_to_string(module.join("README.md")).expect("every module has a README");
-        for section in [
-            "## Responsibility",
-            "## Public surface",
-            "## Dependency rules",
-            "## Files",
-        ] {
-            assert!(readme.contains(section), "{name}/README.md lacks {section}");
-        }
-        for (path, _) in rust_sources(&module) {
-            let relative = path
-                .strip_prefix(&module)
-                .unwrap()
-                .to_string_lossy()
-                .replace('\\', "/");
-            assert!(
-                readme.contains(&format!("]({relative})")),
-                "{name}/README.md does not inventory {relative}"
-            );
-        }
     }
 }
 

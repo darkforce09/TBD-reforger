@@ -1,81 +1,95 @@
-# `ticketboard` — native ticket registry workspace
+# Ticketboard
 
-Ticketboard is the egui/eframe desktop interface to `.ai/tickets/`. It displays all parent and child tickets, recorded wave lanes, the program tree, measured run receipts, and historical estimates. Ticket details and repository Markdown documents remain available beside the board.
+The `ticketboard` crate: the native egui/eframe desktop viewer of the
+[ticket](/documentation_v2/glossary.md#ticket) registry in `.ai/tickets/`. It shows every parent
+and child ticket on a status board, the recorded [wave](/documentation_v2/glossary.md#wave) lanes,
+the program tree, measured run receipts and historical estimates, with each ticket's details and
+the repository's Markdown documents beside the board. Developers and operators run it on a
+desktop.
 
-The application reads registry data through `ticket-engine`. Every ticket mutation runs an existing `cargo xtask ticket` command; direct writes are limited to eframe's user preferences outside the repository.
-
-## Source atlas
+## Contents
 
 ```text
-src/
-├── main.rs              CLI arguments and native window startup.
-├── application/         Lifecycle, composition, preferences, and action dispatch.
-├── core/                Processes, clocks, logs, and shared UI primitives.
-├── ticket_registry/     Repository discovery, corpus loading, and shared ticket models.
-├── ticket_browser/      Board, tree, filters, details, and comparisons.
-├── ticket_actions/      CLI commands, change guards, queue, dialogs, and feedback.
-├── wave_plan/           Recorded lock, lane projections, and ownership collisions.
-├── execution_metrics/   Separate measured receipts and estimated-token subsystems.
-├── document_viewer/     Contained document reads, viewer state, and Markdown UI.
-├── repository_status/   Strict checks, Git status, watching, and refresh scheduling.
-└── tests/               Architecture checks and shared test fixtures.
+apps/ticketboard/
+├── Cargo.toml  the `ticketboard` package: one binary, the `glow` feature, the `ticket-engine` path dependency
+└── src/        the entry point, the application, the shared core and the seven feature modules
 ```
 
-Each module's README inventories its files and describes its responsibility, interface, and dependency rules:
+## How it works
 
-- [application](src/application/README.md)
-- [core](src/core/README.md)
-- [ticket_registry](src/ticket_registry/README.md)
-- [ticket_browser](src/ticket_browser/README.md)
-- [ticket_actions](src/ticket_actions/README.md)
-- [wave_plan](src/wave_plan/README.md)
-- [execution_metrics](src/execution_metrics/README.md)
-- [document_viewer](src/document_viewer/README.md)
-- [repository_status](src/repository_status/README.md)
+The viewer reads the registry only through the `ticket-engine` crate in `tools_v2/ticket-engine/`
+and changes it only by running `cargo xtask ticket <verb>` as a subprocess, one command at a time,
+behind a check that the ticket file has not changed since the action was offered. It writes no
+file under the repository: its one direct write is its preferences, kept in eframe storage in the
+user's configuration directory.
 
-## Dependency and placement rules
+On start it finds the repository root, loads the ticket corpus, the wave lock, the run receipts,
+the estimates and the scope vocabulary on a worker thread, and runs `cargo xtask ticket check
+--strict` for the status banner beside a `git status` chip. A file watch on `.ai/tickets/` (and,
+best effort, the repository root and the roadmap folder) reloads the board after 600 ms of quiet.
+A malformed ticket refuses the whole corpus with the file named and the error verbatim, while a
+missing or broken wave lock, receipt or estimate stays local to its own tab. Measured receipts and
+estimated tokens never share a total; wave lanes show the lock exactly as stored; and a document
+opens only when its path, symbolic links resolved, stays inside the repository, with a named
+raw-text fallback when it cannot render as Markdown. `src/README.md` maps the modules.
 
-- `application` composes features. Features never import application internals.
-- `core` contains reusable primitives and imports no ticket domain or feature.
-- `ticket_registry` exposes data to consumers and does not depend on them.
-- Models and services remain independent of egui. Cross-feature reuse goes through models, services, or event contracts; features never import another feature's UI.
-- Feature rendering receives narrow borrowed views and emits feature events. The application supplies the browser's ticket-menu and action-strip callbacks, preserving the UI's composition without coupling feature renderers.
-- Put domain-specific work in its owning feature. Group related variants, detail sections, and dialogs into named subfolders; keep module entry files small.
-- Production Rust files contain **fewer than 500 raw lines**, including comments and blanks. Test files contain **at most 1,000**. There are no ticket-board size exemptions.
-- Comments describe current behavior and invariants. Unit tests live in sibling `tests/` files, declared with `#[cfg(test)] #[path = "tests/<name>.rs"] mod tests;`.
+## Getting started
 
-## Data and interaction flow
-
-1. Startup resolves the repository from CLI arguments, current-directory discovery, or saved preferences. A native picker handles missing repositories.
-2. Application loading gathers the corpus, wave lock, receipt metrics, vocabulary, and estimates on a worker thread. A malformed ticket refuses the whole corpus; wave and metric failures remain local to their displays.
-3. Workspace construction precomputes cards, tree rows, facets, and aggregates. Reloads carry filters and independent sort choices and resolve selected tickets by ID.
-4. A frame polls workers, paints feature views, then applies emitted actions. Document reads have their own state and discard stale results.
-5. Ticket commands pass file-change guards and a single-flight queue. Completion refreshes data and Git status; failures retain output, drop pending commands, and request a strict check. Watch suppression prevents redundant checks during command writes.
-
-Measured receipts and estimated tokens never share totals. Wave membership remains lock-verbatim. Document reads reject paths outside the repository, including symlink escapes, and use a bounded raw-text fallback when needed.
-
-## Running
+Run these from the repository root; the viewer needs a desktop display and a graphics driver.
 
 ```bash
-cargo run -p ticketboard -- [REPO_ROOT]
-cargo run -p ticketboard -- --help
-cargo run -p ticketboard --features glow -- [REPO_ROOT]
+cargo run -p ticketboard                          # opens the window; stays in the foreground
+cargo run -p ticketboard -- /path/to/checkout     # a named repository root instead of discovery
+cargo run -p ticketboard --features glow          # the OpenGL renderer, for drivers wgpu fails on
+cargo run -p ticketboard -- --help                # the usage
 ```
 
-The default renderer is wgpu. The `glow` feature selects the OpenGL fallback. A desktop display and graphics driver are required for the native window. Preferences keep the selected repository and viewer width under the existing `repo_root` and `viewer_w` storage keys.
-
-## Verification
+Check the crate with:
 
 ```bash
 cargo fmt -p ticketboard --check
-cargo test -p ticketboard --locked
-cargo test -p ticketboard --locked -- --ignored
 cargo clippy -p ticketboard --locked --all-targets --all-features -- -D warnings
-cargo build -p ticketboard --locked
+cargo test -p ticketboard --locked                # temporary fixtures; no window, no ticket command
+cargo test -p ticketboard --locked -- --ignored   # the three tests that read the live corpus, estimates and wave lock
 cargo build -p ticketboard --locked --features glow
 cargo xtask verify file-length
 ```
 
-The normal suite uses temporary fixtures. The three ignored tests explicitly read the live checkout's corpus, estimates, and wave lock. Headless egui tests paint every tab, ticket details, mutation dialogs, refusal states, and document states without running ticket commands or requiring a native display.
+## Configuration
 
-[Architecture tests](src/tests/architecture_rules.rs) check file limits, module roots, complete README inventories, external test placement, and dependency direction. [Source inspection tests](src/tests/source_inspection.rs) support grouped imports and ignore comments and string literals. The repository-wide file-length gate also covers this crate.
+- The positional argument: the repository root, which must contain `.ai/tickets/`. It wins over
+  discovery even when it lacks that folder, and the window then says so. Without it, the viewer
+  walks up from the working directory to the first folder holding `.ai/tickets/`, and then tries
+  the root saved in the preferences.
+- The `glow` feature: builds eframe's glow backend and selects it; the default build uses wgpu.
+- Preferences, in eframe storage under the user's configuration directory: `repo_root`, the last
+  adopted repository root, revalidated at the next start; `viewer_w`, the document column's
+  width, clamped to 280 to 1600 on load and 560 by default.
+- The environment: `CARGO`, `PATH` and `HOME` locate the `cargo` binary the ticket commands run
+  (`$CARGO`, then `cargo` on `PATH`, then `$HOME/.cargo/bin/cargo`), since a desktop session's
+  `PATH` can miss it.
+
+## Public surface
+
+- The `ticketboard` binary: `ticketboard [REPO_ROOT]`, or `--help` and `-h` for the usage. It
+  exits when the window closes. There is no library target.
+
+## Boundaries
+
+- Depends on: `tools_v2/ticket-engine/` for the ticket model, validation, repository paths and the
+  wave lock format; `cargo xtask ticket` and `git`, run as subprocesses; the files under
+  `.ai/tickets/`; the `eframe`, `egui_commonmark`, `egui_extras`, `notify`, `rfd`, `serde`,
+  `serde_json`, `time` and `toml` crates.
+- Used by: people at a desktop; no crate or command in the repository runs it.
+- Rules: every ticket change goes through a `cargo xtask ticket` command, and the viewer never
+  runs `wave repack` itself; the module layout, the dependency directions and the file-size limits
+  hold under `src/tests/architecture_rules.rs`, whose `source_inspection.rs` reads grouped imports
+  and aliases and ignores comments and string literals; `cargo xtask verify file-length` covers
+  `src/` too.
+
+## Related documentation
+
+- [Ticket registry](/.ai/tickets/README.md) — the ticket files, statuses and commands the viewer
+  shows and runs.
+- [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — how waves are packed and
+  run.
