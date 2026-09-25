@@ -219,7 +219,7 @@ the base brief names, outside the repository.
 | F10a | 5 · order 3 | Doc writer: mod/tbd-framework/{mod_design.md, capability verdicts index, UI/README.md} and the UI screens lobby, mission_selection, briefing (see `refactor_phase5_slices.tsv`) | running | — | — |
 | F10b | 5 · order 4 | Doc writer: mod/tbd-framework/UI/ remaining screens (end screen, debrief, objective HUD, safe start HUD, play area warning, tactical marker palette, identity link, spectator, in-game menu) and their visual reference folders (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | F11 | 5 · order 3 | Doc writer: `mod/README.md`, `mod/tbd-export/**`, `mod/tbd-emcp/**` | running | — | — |
-| F12 | 5 · order 3 | Doc writer: `tools_v2/**`, `ticketboard/**`, `fleet_host_agent/**`, `contracts_v2/**`, `assets_v2/**` docs | pending | — | — |
+| F12 | 5 · order 3 | Doc writer: `tools_v2/**`, `ticketboard/**`, `fleet_host_agent/**`, `contracts_v2/**`, `assets_v2/**` docs | running | — | — |
 | F13a | 5 · order 4 | Doc writer: runbooks/{local_development.md, database_operations.md} (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | F13b | 5 · order 4 | Doc writer: runbooks/{website_deployment.md, testing_and_ci.md} (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | V5.3 | 5 · W5.3 | Wave verifier over F10–F13 | dropped (operator direction: no verifier per wave) | — | — |
