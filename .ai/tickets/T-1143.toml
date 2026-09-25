@@ -1,0 +1,12 @@
+id = "T-1143"
+kind = "work"
+title = "Fix ticketboard Remove dialog missing descendants remove --force deletes"
+summary = "The Remove dialog lists only dotted-id descendants (ticket_actions/services/commands/transitions.rs:195-208), while remove --force cascades over children[] and parent links (ticket-engine ops/ordering.rs:5-12); removing T-111 would delete its listed child T-067.1 without warning."
+class = "bug"
+status = "idea"
+notes = "apps/ticketboard/src/ticket_actions/services/commands/transitions.rs:195-208 descendants() collects every corpus id that starts with '<id>.', and its doc says this is the closure remove --force cascade-deletes, shown as the Remove dialog's red warning list. tools_v2/ticket-engine/src/ops/ordering.rs:5-12 remove() with force cascade-deletes the closure over children[] edges and work parent back-edges. Live case: program T-111 lists children = [T-067.1] and T-067.1 has parent = T-111, so the dialog for T-111 lists nothing while remove T-111 --force deletes T-067.1. Build the list from children[] and parent links, or ask the engine for its closure. Source: README writer R21.3."
+created_at = "2026-09-25T10:37:43Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

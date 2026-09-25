@@ -1,0 +1,13 @@
+id = "T-1137"
+kind = "work"
+title = "Gate ticket-engine, verification-core, ticketboard and fleet agent tests and clippy"
+summary = "No CI job or wave gate step runs cargo test or clippy for ticket-engine, verification-core, ticketboard or fleet-host-agent (ci.yml, gate_dispatch.rs:269-300), so the ticket key-order break went unseen. Add them to ci.yml, ci-local and the wave gate."
+class = "chore"
+status = "idea"
+notes = "Crates: tools_v2/ticket-engine, tools_v2/verification-core, apps/ticketboard and apps/fleet_host_agent, all workspace members (Cargo.toml:6-18). CI: .github/workflows/ci.yml runs cargo xtask mk rust-fmt (fmt --all), mk rust-clippy (clippy inside apps/website/api_v2 only, tools_v2/xtask/src/commands/ci/task_definitions.rs:399-405), ci developer-tools-test (cargo test -p developer-tools --lib, ci.yml:104-106) and ci website-api-test (:112); no job tests or lints the four crates, and ci-local (task_definitions.rs:29-50) mirrors that. Wave gate: tools_v2/xtask/src/commands/platform/wave_execution/gate/gate_dispatch.rs:269-286 tests and :288-305 lints only xtask and developer-tools. Consequence: ticket-engine's corpus_roundtrip_real_tree_byte_identical failed on main after ticket batches wrote notes below created_at, and only a README writer's manual run caught it. Each crate passes today (ticket-engine 235, verification-core 69, ticketboard 179 with 3 ignored, fleet-host-agent 88 unit plus 39 integration). Also gate_dispatch.rs:261-264 says no workflow job runs the developer-tools tests, but ci.yml:106 runs its lib tests. Source: README writers R21.1 and R21.4; orchestrator decision 2026-09-25 (R21.4 questions: whether these tests join the wave gate or CI is a code decision for a ticket)."
+created_at = "2026-09-25T10:35:06Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

@@ -1,0 +1,12 @@
+id = "T-1148"
+kind = "work"
+title = "Fix map export files overwriting each other and cell-edge duplicates"
+summary = "In one map export run, Objects overwrites the vegetation_meta.json that Vegetation wrote; heuristic and traced building blueprints share one path; anchors write verification.json in a shape the terrain-anchors schema rejects; five AABB sweeps record cell-crossing entities twice."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport. Vegetation meta: the master plugin runs Vegetation (Plugins/TBD_MapExportPlugin.c:119-125) and then Objects (:127-135); Vegetation/TBD_MapExportVegetation.c:44, :84 writes vegetation/vegetation_meta.json for its classes, then Objects/TBD_MapExportObjects.c:165, :348 rewrites it with tree and rock counts only, and :163-164 add vegetation/trees.jsonl and rocks.jsonl beside Vegetation's trees.json and rocks.json. Blueprints: Objects/Buildings/TBD_MapExportBuildings.c:171-179 writes heuristic TBD_BuildingArchitectExtractor blueprints and Objects/Buildings/TBD_BuildingTraceExtract.c:119-122 writes traced (measured) ones, both to prefabs/buildings/<slug>.json, so the last run wins. Anchors: Locations/Anchors/TBD_MapExportAnchors.c:67 writes anchors/verification.json with landmark records (name, pos, groundElevationYM, headingDeg and more), the relative path of the committed assets_v2/terrains/everon/anchors/verification.json, which contracts_v2/definitions/terrain-anchors.schema.json requires to hold terrainId, schemaVersion, thresholdM and anchors[] of id, x, z, surfaceYM, and which tools_v2/developer-tools/src/map_verification/labels/terrain_alignment.rs:30 reads. Duplicates: Objects/Infrastructure/TBD_MapExportFences.c:68-75, TBD_MapExportBridges.c:99-105, TBD_MapExportAviation.c:90-96, TBD_MapExportPowerlines.c:82-88 and Locations/Anchors/TBD_MapExportAnchors.c:73-79 query each cell's AABB and keep every hit, so an entity whose bounds cross a cell edge is written once per cell; Objects/TBD_MapExportObjects.c:221-224 skips entities whose origin lies in another cell, the rule to copy. Registry/TBD_MapExportPrefabs.c:170 dedupes by name. The plugins are unregistered today (T-1081). Source: README writer R15a."
+created_at = "2026-09-25T10:40:10Z"
+
+[scope]
+domain = "mod"
+layer = "workbench"

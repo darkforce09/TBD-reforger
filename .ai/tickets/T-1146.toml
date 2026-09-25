@@ -1,0 +1,13 @@
+id = "T-1146"
+kind = "work"
+title = "Decide one RCON password rule for staging and fleet agent"
+summary = "deploy staging (staging/host_agent.rs:56-61) counts the 3-character minimum in bytes and rejects quotes and backslashes; the fleet agent (agent_configuration/secret_files.rs:84-95) counts characters, accepts quotes and says bytes in its error. A password can pass one and fail the other."
+class = "audit"
+status = "idea"
+notes = "tools_v2/xtask/src/commands/deploy/staging/host_agent.rs:56-66 accepts TBD_RCON_PASSWORD when password.len() (bytes) is 3 to 256 and no character is whitespace, a control character, a quote or a backslash, because the config and payload carry it raw. apps/fleet_host_agent/src/agent_configuration/secret_files.rs:84-95 accepts 3 or more characters (chars().count(), RCON_PASSWORD_MIN_CHARS at :22), at most 256 bytes and no whitespace or control character, allows quotes and backslashes, and its error says '3 to 256 bytes'. So a two-character non-ASCII password passes staging and fails the agent, and one with a quote passes the agent and fails staging. The staging quote ban has a stated reason; decide one rule (shared or with the difference stated) and make the agent's error match its check. Source: README writer R21.1."
+created_at = "2026-09-25T10:39:10Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

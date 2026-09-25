@@ -1,0 +1,13 @@
+id = "T-1150"
+kind = "work"
+title = "Rewrite mission_lookup header claiming every mission read uses it"
+summary = "apps/website/api_v2/src/missions/services/mission_lookup.rs:1 says it serves every surface that resolves a mission id, but event_hub.rs:166, event_mission_attachment.rs:95,216,295, mission_write_lock.rs:26 and approvals_queue.rs:169 query missions by id directly."
+class = "docs"
+status = "idea"
+notes = "apps/website/api_v2/src/missions/services/mission_lookup.rs:1 reads 'Mission row reads shared by every surface that resolves a mission id'. Nine handlers import it, but these resolve a mission id with their own SQL: operations/handlers/event_hub.rs:166, operations/handlers/event_mission_attachment.rs:95, :216 and :295, missions/services/mission_write_lock.rs:26 (row lock) and missions/handlers/approvals_queue.rs:169 (row lock), all under apps/website/api_v2/src. State the reads it owns (the full row, the 404 wrapper, the title and terrain projection) without 'every'. Source: fix run P4f (code-side leftover)."
+created_at = "2026-09-25T10:40:51Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "services"

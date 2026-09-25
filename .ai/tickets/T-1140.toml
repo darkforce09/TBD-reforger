@@ -1,0 +1,12 @@
+id = "T-1140"
+kind = "work"
+title = "Remove ticket-engine duplicate id helpers and test-only public functions"
+summary = "is_parent_id and parent_numeric_id exist twice (store.rs:32,40 and ticket_file_storage/encoding.rs:24,32); run_estimates, on_disk_ids, corpus_ids and ShippingStatus::load are public but called only by tests; xtask repeats 30 and 3600 instead of verification-core DEFAULT_POLL and DEFAULT_MAX."
+class = "chore"
+status = "idea"
+notes = "Paths under tools_v2/ticket-engine/src. Duplicates: store.rs:32 is_parent_id and :40 parent_numeric_id repeat registry/ticket_file_storage/encoding.rs:24 and :32; ops/transitions.rs:30 and ops/validation.rs:121 call the store copies, registry/ticket_file_storage/storage.rs:103 and registry/typed_projection.rs:167 the encoding copies. Keep one. Test-only public items: metrics/estimates/storage.rs:50 run_estimates (re-exported at metrics/estimates/mod.rs:45; the only caller is metrics/estimates/tests/estimate_provenance_tests.rs:226), registry/ticket_file_storage/storage.rs:137 on_disk_ids and :156 corpus_ids (callers only in its tests/ticket_file_storage_tests.rs), registry/shipping_status.rs:39 ShippingStatus::load (production uses load_repo, :54). Decide whether run_estimates backs a future estimates command or goes (orchestrator decision 2026-09-25: a code decision for this ticket); make the rest cfg(test) or remove them. ENCODING_C_KEYS and ALLOWED_NEW (registry/ticket_file_storage/key_contract.rs) are read only by the key-contract tests, which may be their intended role; FROZEN_27 and union_ticket_keys are T-1003's. xtask: tools_v2/xtask/src/commands/platform/wave_execution/mod.rs:301-302 default TBD_GATE_LOCK_POLL and TBD_GATE_LOCK_MAX to the literals 30 and 3600 instead of verification_core::lock::DEFAULT_POLL and DEFAULT_MAX (tools_v2/verification-core/src/lock.rs:42,44), so the two can drift. Source: README writer R21.4."
+created_at = "2026-09-25T10:36:23Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

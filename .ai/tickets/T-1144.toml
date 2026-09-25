@@ -1,0 +1,12 @@
+id = "T-1144"
+kind = "work"
+title = "Add plan path and ready-tier gates to ticketboard ready form"
+summary = "The ticketboard Mark ready form takes only a spec path and mentions only the dependency gate (ticket_actions/ui/dialogs/mark_ready.rs:64-106); mark-ready also refuses without a plan document on disk and while a ready-tier body field is empty (ticket-engine ops/readiness.rs:17-31)."
+class = "feature"
+status = "idea"
+notes = "apps/ticketboard/src/ticket_actions/ui/dialogs/mark_ready.rs:64-106 offers a spec field and the note that unshipped depends_on refuse, and ticket_actions/services/commands/requests.rs:73-79 builds mark-ready <id> [spec] with no plan argument, although cargo xtask ticket mark-ready takes one (tools_v2/xtask/src/commands/ticket/cli.rs:87-94). tools_v2/ticket-engine/src/ops/readiness.rs:17-31 also refuses a work ticket with empty migration_legacy while any of the six ready-tier body fields is empty, and refuses when the plan document (given, already set, or the default plan path) is missing on disk. The form shows these only as a refusal after the run. Add a plan field and state the plan and ready-tier gates (ideally the missing fields) before the run. Source: README writer R21.3."
+created_at = "2026-09-25T10:38:21Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

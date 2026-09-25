@@ -1,0 +1,12 @@
+id = "T-1147"
+kind = "work"
+title = "Enforce or remove the unread enfusion_mcp_node_package .nvmrc"
+summary = "tools_v2/enfusion_mcp_node_package/.nvmrc pins Node 26, but nothing reads it: package.json has no engines field, mod dev-bootstrap runs npm (development_bootstrap.rs:101) and developer-tools starts node or npx (enfusion_mcp_entrypoint.rs:91,134) without a version check."
+class = "chore"
+status = "idea"
+notes = "tools_v2/enfusion_mcp_node_package/.nvmrc holds 26. package.json declares no engines field; tools_v2/xtask/src/commands/mod_ops/development_bootstrap.rs:101 and :228 run npm, and tools_v2/developer-tools/src/enfusion_tooling/enfusion_mcp_entrypoint.rs:91 (npx) and :134 (node) start the server, none checking the Node version; only a developer who runs nvm use in that folder reads the file. Check the version (in dev-bootstrap, or engines plus engine-strict) or delete .nvmrc and its Contents line in the folder README. Source: README writer R21.1."
+created_at = "2026-09-25T10:39:30Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

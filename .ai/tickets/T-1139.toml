@@ -1,0 +1,12 @@
+id = "T-1139"
+kind = "work"
+title = "Rewrite stale ticket-engine and verification-core comments"
+summary = "Comments name code that does not exist or never was: xtask tickets_store (encoding.rs:18, store.rs:30), tbd_tickets (vocabulary.rs:19,30), module header sections NUMBERING and EMPTIED WAVES (wave_lock/model.rs:26,34, compiler.rs:55), developer-tools linking verification-core (Cargo.toml:1-2)."
+class = "docs"
+status = "idea"
+notes = "Paths under tools_v2/ticket-engine/src unless stated. Wrong references: encoding.rs:18 places ALLOWED_NEW in 'xtask tickets_store' (it is registry/ticket_file_storage/key_contract.rs:83); store.rs:30 says is_parent_id follows 'xtask::tickets_store::is_parent_id' (no such module; the twin is registry/ticket_file_storage/encoding.rs:24, see T-1140); validation/vocabulary.rs:19 and :30 name a tbd_tickets domain enum and a tbd-tickets crate (the crate is ticket-engine); wave_lock/model.rs:26, :34 and wave_lock/compiler.rs:55 cite module header sections NUMBERING and EMPTIED WAVES that the one-line wave_lock/mod.rs header does not have, and model.rs:27 and wave_lock/verification.rs:29 cite mod_wave_tests, which does not exist; model/scope.rs:76-78 says the subject miner uses is_sha_shaped and xtask re-exports it, but only metrics/estimates calls it and xtask never names it; cli/shipping/commit_subjects.rs:51-52 says the time dependency carries only the parsing feature (tools_v2/ticket-engine/Cargo.toml:20 enables formatting too). tools_v2/verification-core/Cargo.toml:1-2 says developer-tools links the crate (tools_v2/developer-tools/Cargo.toml has no such dependency; only xtask does). tools_v2/verification-core/src/lib.rs:28-31 and src/verdict.rs:25-29 say cargo xtask platform wave scrapes Finding output to build its step table, but no xtask code parses it (the wave gate's own step runner indents its output tail, tools_v2/xtask/src/commands/platform/wave_execution/tests/gate/tests.rs:4-13). History narration: registry/mod.rs:136, :145 and :210 (Python json.dump and Python truthiness), store.rs:4-23 (a t915 design-spec citation, 'This module replaces the xtask Value round-trip', 'the Value path's parents-only view'), cli/mutations.rs:152 and ops/readiness.rs:34 (the Value path), cli/mutation_support.rs:17-35 ('the pre-typed mutators'), validation/references.rs:14-22 ('save_tree's delete pass demoted to test duty', 'Measured against the live tree 2026-08-14'). Source: README writer R21.4."
+created_at = "2026-09-25T10:35:57Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

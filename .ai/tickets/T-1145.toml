@@ -1,0 +1,12 @@
+id = "T-1145"
+kind = "work"
+title = "Cleanup ticketboard comment residue, stale names and misplaced tests"
+summary = "Stripped ticket ids left broken comments in six ticketboard files (main.rs:85, projection.rs:158-159); comments name xtask/src/main.rs and tbd_tickets; ticket_registry functions are tested in ticket_browser; an architecture test name still promises documentation checks."
+class = "chore"
+status = "idea"
+notes = "Paths under apps/ticketboard/src. Stripped ticket ids left broken sentences: main.rs:85 ('driver quirks — )'), application/background_loading.rs:11-12 ('on the worker thread' then a line holding only ' .'), core/ui/mod.rs:9 ('). reuses it for'), execution_metrics/ui/measured_tables.rs:35 ('content unchanged by; only'), ticket_actions/services/commands/transitions.rs:151 ('repack — ):'), ticket_registry/models/projection.rs:158-159 ('(spec )', '(, `detail::body_field_order`)'), ticket_browser/models/detail_sections.rs:199 ('— is Program T,'). Stale names: ticket_actions/services/commands/requests.rs:59 says the builders mirror tools_v2/xtask/src/main.rs TicketCmd (it is tools_v2/xtask/src/commands/ticket/cli.rs:4); execution_metrics/measured/services.rs:40 names the tbd_tickets validation (ticket-engine); execution_metrics/ui/measured_tables.rs:11 cites 'the acceptance-1 surface'. History: ticket_registry/models/scope.rs:42 tooltip 'scope owns-inferred at migration' and :45 'by the v2 migrator (rather than carried by v1 data)'. Tests: ticket_browser/models/tests/status_board.rs tests ticket_registry functions (breadcrumb_assembly_variants, breadcrumb_estimated_scope_marker, truncate_chars_is_char_safe, view_maps_both_kinds over ticket_registry/models/scope.rs:50 and projection.rs:120), so they belong under ticket_registry/models/tests/. tests/architecture_rules.rs:47 module_roots_and_documentation_describe_the_entire_source_tree now checks only the crate README's presence (:49); rename it. Ticket ids in egui ids and on-screen text are on T-1042; the Mirror-of-xtask comments on T-1142. Source: README writers R21.1, R21.2 and R21.3."
+created_at = "2026-09-25T10:38:37Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

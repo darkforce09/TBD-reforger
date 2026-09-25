@@ -1,0 +1,12 @@
+id = "T-1138"
+kind = "work"
+title = "Fix ticket-engine messages broken by lost line continuations"
+summary = "Three ticket-engine message literals lost their trailing backslash, so each prints a run of about 14 spaces mid-sentence: validation/command.rs:153 (--no-repack waiver note), wave_lock/persistence.rs:68 (repack --reserve refusal) and wave_lock/history.rs:145 (shallow clone refusal)."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/ticket-engine/src. Each literal carries a run of spaces where a trailing-backslash line continuation was lost, so the printed sentence has a gap: validation/command.rs:153 prints '(--no-repack);' then 18 spaces before 'the end-of-wave `cargo xtask wave repack` resolves them'; wave_lock/persistence.rs:68 prints 'so the repack is the' then 14 spaces before 'one-shot migration'; wave_lock/history.rs:145 prints 'fetch full history' then 14 spaces before '(fetch-depth: 0 in CI)'. Restore the continuation (or join the text) and pin one message in a test. Source: README writer R21.4 (command.rs and persistence.rs); history.rs found by TF13 with the same search."
+created_at = "2026-09-25T10:35:41Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"
