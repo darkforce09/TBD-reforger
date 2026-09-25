@@ -1,75 +1,107 @@
-# UI/layouts/Session/MissionSelector — the Scenario Browser screen
+# Mission Selector screen layouts
 
-First Dock & Sub-Layout screen (2026-09-12). The 2736-line monolith is gone; the shell below is
-under 130 lines and everything visible is mounted into it at runtime by
-`Scripts/Game/TBD/Session/MissionSelector/UI/TBD_MissionSelectorScreen.c`.
+The layouts of the Scenario Browser tab, where a player picks a terrain, a
+[mission](/documentation_v2/glossary.md#mission) and its version: a dock shell, the terrain and
+mission column bodies with their pooled rows and cards, and the mission inspector with its photo
+hero. `TBD_MissionSelectorScreen` fills the shell from `TBD_MissionCatalog`, which serves mock data.
 
-## Shell — `TBD_MissionSelector.layout` (GUID `{7BD1A70000000B01}`, block `0B`)
+## Contents
 
-Same path and GUID as the retired monolith, so `Configs/System/chimeraMenus.conf` and the rdb row
-did not move. Backdrop + `WindowFrame` (16 px margin) + docks:
+```text
+apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/
+├── TBD_FactionColumn.layout*     one faction column of the ORBAT and objectives cards
+├── TBD_MissionCard.layout*       one pooled mission card: tag, terrain, slot count, title
+├── TBD_MissionInspector.layout*  right column: photo hero, then a scrolling card stack
+├── TBD_MissionSelector.layout*   the shell: backdrop and empty docks
+├── TBD_ModGridItem.layout*       one mod of the required modset: sync mark, name, version
+├── TBD_ScenarioBrowser.layout*   MISSIONS body: search and Modes docks over a card list
+├── TBD_TerrainRow.layout*        one pooled terrain row: accent, icon, title, count, chevron
+└── TBD_TerrainSelector.layout*   TERRAINS body: search dock over a scrolling row list
+```
 
-| Dock | Geometry (reference px) | Mounted layout | Driven by |
+Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
+
+## How it works
+
+`apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds the `TBD_UIMissionSelector` preset
+to `TBD_MissionSelector.layout` and the `TBD_MissionSelectorScreen` class
+(`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/TBD_MissionSelectorScreen.c`),
+a `TBD_DockScreen`. The shell holds a `Backdrop`, a `WindowFrame` inset 16 px, and the docks, in
+reference pixels:
+
+| Dock | Geometry | Mounted there | By |
 |---|---|---|---|
-| `TopDock` | full width, 56 high | `Session/Shared/TBD_SessionTopBar` | `TBD_DockScreen` |
-| `LeftDock` | x 0, width 320, y 68 → bottom-76 | `Common/TBD_PanelFill` + `TBD_TerrainSelector` body | `TBD_TerrainSelectorPanel` |
-| `CenterDock` | x 332, width 440 | `Common/TBD_PanelFill` + `TBD_ScenarioBrowser` body | `TBD_ScenarioBrowserPanel` |
-| `RightDock` | x 784 → right edge | `TBD_MissionInspector` | `TBD_MissionInspectorPanel` |
-| `BottomDock` | full width, 64 high | `Session/Shared/TBD_SessionBottomBar` | `TBD_DockScreen` |
-| `OverlayDock` | full-bleed, last child, hidden while empty | dropdown menus | `TBD_DropdownComponent` |
+| `TopDock` | full width, 56 high | the session top bar | `TBD_DockScreen` |
+| `LeftDock` | x 0, 320 wide, y 68 to 76 above the bottom | `TBD_PanelFill` with the `TBD_TerrainSelector` body | `TBD_TerrainSelectorPanel` |
+| `CenterDock` | x 332, 440 wide | `TBD_PanelFill` with the `TBD_ScenarioBrowser` body | `TBD_ScenarioBrowserPanel` |
+| `RightDock` | x 784 to the right edge | `TBD_MissionInspector` | `TBD_MissionInspectorPanel` |
+| `BottomDock` | full width, 64 high | the session bottom bar: Select Scenario | `TBD_DockScreen` |
+| `OverlayDock` | full screen, last child, hidden while empty | the Modes and version menus | `TBD_DropdownComponent` |
 
-## Sub-layouts
+The terrain and browser panels pool their rows and cards, rebinding them on each search keystroke.
+The inspector stacks four `TBD_Panel` cards from `apps/mod/tbd-framework/UI/layouts/Common/` in
+`CardsContent`: the required modset (`TBD_ModGridItem`s in `TBD_Columns2`), the summary
+(`TBD_InsetText`), and the [ORBAT](/documentation_v2/glossary.md#orbat) and objectives, each a
+`TBD_Columns2` pair of faction-tinted `TBD_Panel`s whose body is a `TBD_FactionColumn`, with
+`TBD_KeyValueRow`s in its `Rows`.
 
-| Layout | GUID block | Role | Widget contract |
-|---|---|---|---|
-| `TBD_TerrainSelector.layout` | `1D` | body of the TERRAINS panel | `SearchStrip`, `SearchDock`, `SearchRule`, `ListFrame` (clips), `Scroll`, `Content`, `ScrollBarDock`, `EmptyState` |
-| `TBD_TerrainRow.layout` | `22` | one pooled terrain row (`TBD_TerrainRowComponent`) | `Border`, `Background`, `Accent` (glow bar), `Icon`, `Title`, `CountBadgeDock`, `Chevron` |
-| `TBD_ScenarioBrowser.layout` | `1E` | body of the <TERRAIN> MISSIONS panel | `ToolRow`, `SearchDock`, `ModesDock`, `ToolRule`, `ListFrame` (clips), `Scroll`, `Content`, `ScrollBarDock`, `EmptyState` |
-| `TBD_MissionCard.layout` | `23` | one pooled mission card (`TBD_MissionCardComponent`) | `Border`, `Background`, `TagChipDock`, `TerrainText`, `SlotCount`, `PulseDot`, `Title`, `Indicator`, `IndicatorGlyph` |
-| `TBD_MissionInspector.layout` | `1F` | right column: photo hero + scrolling card stack | `PanelBorder`, `PanelBG`, `Hero` (clips; `HeroImage`, `HeroDim`, `HeroFade`, `HeroMaskTL/TR` + `*Img`, `TitleRow`: `HeroTitle`, `HeroTagDock`; `AuthorRow`: `AuthorIcon`, `AuthorBy`, `AuthorName`, `AuthorChipDock`; `VersionDock`), `PanelMaskTL/TR` + `*Img`, `BodyFrame` (clips), `Scroll`, `CardsContent`, `ScrollBarDock`, `EmptyState` |
-| `TBD_ModGridItem.layout` | `20` | one mod in the REQUIRED MODSET grid | `Border`, `Background`, `CheckIcon`, `CheckGlyph`, `ModName`, `VersionChipDock` |
-| `TBD_FactionColumn.layout` | `21` | body of a faction-tinted `TBD_Panel` (ORBAT / objectives) | `ColumnHeader` (`FactionChipDock`, `RoleText`, `CountText`, `CountLabel`), `HeaderRule`, `Rows` |
+The hero is a 176 px band at the top of the inspector: `HeroImage` shows the terrain's hero
+texture, `HeroDim` darkens it, and `HeroFade` (the bottom 110 px) fades it into the solid colour
+the title, author and version rows sit on. Nothing clips an image to an arc, so the inspector
+paints clipped quarters of an inverse disc over its top corners: `HeroMaskTL` and `HeroMaskTR` in
+the panel border colour inside the hero, and `PanelMaskTL` and `PanelMaskTR` in the backdrop
+colour on the panel root. The card stack (`BodyFrame`) starts 16 px below the hero, with no rule
+between them. The textures live in `apps/mod/tbd-framework/UI/Textures/TBD/`.
 
-The inspector's four cards are `Common/TBD_Panel` instances mounted into `CardsContent`; their
-bodies are `Common/TBD_Columns2`, `Common/TBD_InsetText`, `Common/TBD_KeyValueRow` and the two
-selector-specific items above.
-
-## Curves and grounds (pass 3)
-
-| Surface | Radius | Ground it composites over |
+| Layout | Handler | Widgets the handler binds |
 |---|---|---|
-| TERRAINS / MISSIONS columns (`PanelFill`), inspector panel, top + bottom bars | `RADIUS_PANEL` 12 | backdrop (`Ground()`) |
-| top-bar identity + count boxes | `RADIUS_ROW` 8 | the bar fill |
-| terrain rows, mission cards, search boxes, Modes / version triggers, mod items, summary inset, key-value rows | `RADIUS_ROW` 8 | the owning panel's `GetGround()`; faction rows over the faction column's fill |
-| tag chips (`PVP`, `COOP`, `AUTHOR`, `v2.4.0`, `2x`) | `RADIUS_TAG` 6 | the row / card / band they sit on (passed by the mounter) |
-| `N AVAILABLE`, Modes count | `RADIUS_PILL` 10 (`SetPill`) | panel header / trigger fill |
-| inspector cards (`TBD_Panel`) | 12 | `PanelGround()` (set in `MountCard`) |
-| faction columns (tinted `TBD_Panel`) | 12 | the ORBAT / objectives card fill |
+| `TBD_TerrainSelector` | `TBD_TerrainSelectorPanel` | `SearchStrip`, `SearchDock`, `SearchRule`, `ListFrame`, `Scroll`, `Content`, `ScrollBarDock`, `EmptyState` |
+| `TBD_TerrainRow` | `TBD_TerrainRowComponent` | `Border`, `Background`, `Accent`, `Icon`, `Title`, `CountBadgeDock`, `Chevron` |
+| `TBD_ScenarioBrowser` | `TBD_ScenarioBrowserPanel` | `ToolRow`, `SearchDock`, `ModesDock`, `ToolRule`, `ListFrame`, `Scroll`, `Content`, `ScrollBarDock`, `EmptyState` |
+| `TBD_MissionCard` | `TBD_MissionCardComponent` | `Border`, `Background`, `TagChipDock`, `TerrainText`, `SlotCount`, `PulseDot`, `Title`, `Indicator`, `IndicatorGlyph` |
+| `TBD_MissionInspector` | `TBD_MissionInspectorPanel` | `PanelBorder`, `PanelBG`, `Hero`, `HeroImage`, `HeroDim`, `HeroFade`, `HeroMaskTL`/`TR` and their `*Img`, `HeroTitle`, `HeroTagDock`, `AuthorIcon`, `AuthorBy`, `AuthorName`, `AuthorChipDock`, `VersionDock`, `PanelMaskTL`/`TR` and their `*Img`, `BodyFrame`, `Scroll`, `CardsContent`, `ScrollBarDock`, `EmptyState` |
+| `TBD_ModGridItem` | `TBD_MissionInspectorPanel` | `Border`, `Background`, `CheckIcon`, `CheckGlyph`, `ModName`, `VersionChipDock` |
+| `TBD_FactionColumn` | `TBD_MissionInspectorPanel` | `FactionChipDock`, `RoleText`, `CountText`, `CountLabel`, `HeaderRule`, `Rows` |
 
-Square on purpose: rules, the row `Accent` glow bar, the bottom edge of every panel header band (its `HeaderBG` is clipped), the 4 px scrollbar.
+## Format
 
-## Hero (pass 4)
+- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+  text, each beside a `.layout.meta` whose `Name` holds
+  `{GUID}UI/layouts/Session/MissionSelector/<file>.layout`. Every `*Border`, `*BG` and
+  `Background` is an empty `FrameWidgetClass` dock that the handler fills with a rounded shape
+  (columns and the inspector 12, rows, cards and mod items 8); the row `Accent` bar, the rules and
+  the lower edge of each panel header stay square; every text widget carries a `FontProperties`
+  block.
+- Resource GUID: `7BD1A7000000XX01` in each `.meta`, from the ledger in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`: the shell `0B`, then
+  `TBD_TerrainSelector` `1D`, `TBD_ScenarioBrowser` `1E`, `TBD_MissionInspector` `1F`,
+  `TBD_ModGridItem` `20`, `TBD_FactionColumn` `21`, `TBD_TerrainRow` `22` and `TBD_MissionCard`
+  `23`. The shell's GUID is named by the menu config and never changes.
+- Naming: `TBD_<Element>.layout`; a layout another screen needs moves to `Common/`.
+- Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
+  `MISSION_SELECTOR_*` constant to `TBD_UILayouts`, and commit both files; the game finds a new
+  path only after [Workbench](/documentation_v2/glossary.md#workbench) has rewritten
+  `resourceDatabase.rdb`.
 
-The inspector hero is a 176 px photo band: `HeroImage` (per terrain — `TBD_TerrainInfo.m_sHeroImage`;
-Everon = `TBD_UILayouts.HERO_EVERON`, the satellite crop; the others = `HERO_TOPO`, the Stitch
-topo-grid art painted at 25 %), `HeroDim` (`HERO_DIM`, real alpha), `HeroFade` (`TBD_FadeDown_UI`
-tinted `HERO_FADE`, bottom 110 px), then the title / author / version rows sitting on the solid part
-of the fade (`m_iHeroGround = HERO_FADE`). Its top corners are rounded by inverse-disc masks (see
-`Common/README.md`, "A photo under round corners"). No rule under the hero: the first card starts
-16 px below it. Everon band source: `assets_v2/terrains/everon/tiles/satellite/full.webp`,
-`crop=4096:560:0:1600` → `1024x140` (move the crop by re-running the ffmpeg line in
-`Common/README.md`).
+## Referenced by
 
+- `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` names the shell by GUID in the
+  `TBD_UIMissionSelector` preset.
+- `TBD_UILayouts` names each layout by GUID and path (`MISSION_SELECTOR` and the
+  `MISSION_SELECTOR_*` constants); the panels in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/` use them, as the handler
+  table shows.
 
+## Boundaries
 
-## Data
+- Depends on: the layouts in `apps/mod/tbd-framework/UI/layouts/Common/` and the session bars in
+  `apps/mod/tbd-framework/UI/layouts/Session/Shared/`; the hero textures in
+  `apps/mod/tbd-framework/UI/Textures/TBD/`; the handler classes named above.
+- Used by: the Mission Selector screen only.
+- Rules: the widget names above are the handlers' contract; the shell keeps its GUID and path,
+  since the menu config names them; a layout and its `.meta` are committed together.
 
-Everything shown comes from `TBD_MissionCatalog.Get()`
-(`Scripts/Game/TBD/Session/MissionSelector/TBD_MissionSelectorData.c`), filled today by
-`Scripts/Game/TBD/UI/Mock/TBD_MissionSelectorMock.c`. Counts (`N AVAILABLE`, mode counts, slot
-totals) are computed, never typed.
+## Related documentation
 
-## Line budget
-
-Largest file here is `TBD_MissionInspector.layout` at ~300 lines; the rule is 1000, the shell rule
-is 200.
+- [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+  — the Mission Selector's design target

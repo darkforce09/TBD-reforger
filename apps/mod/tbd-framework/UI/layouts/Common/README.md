@@ -1,96 +1,143 @@
-| `TBD_ScrollBar.layout` | none (`TBD_UIScrollBar.Mount` in Core) | `2E` | `Track`, `Thumb` (FrameSlot; script sets pos + height) | `Mount(dock, scroll, content, ground)`, `SetGround`, `Destroy` — ticks at 30 Hz, hides when nothing scrolls | every list: terrain rows, mission cards, inspector stack, dropdown menus |
-# UI/layouts/Common — the component library
+# Shared interface layouts
 
-Atomic primitives every TBD screen is assembled from. Each row below is one `.layout` (plus its
-`.layout.meta`), one handler class in `Scripts/Game/TBD/UI/Core/` or `UI/Common/`, and a widget-name
-contract the handler binds by `FindAnyWidget`. Every write in every handler is null-safe, so a
-screen may ship a stripped copy of a layout and lose only the widgets it dropped.
+The framework's component library: the panels, rows, chips, inputs, grids and rounded shapes that
+every pre-game screen and the shell-based menus are assembled from. Each layout pairs with a
+handler class in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/` or
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Common/` that binds its widgets by name.
 
-Read this table before authoring a new panel: if the shape is here, mount it; do not redraw it.
+## Contents
 
-| Layout | Handler | GUID block | Widget contract (names) | API | Used by |
-|---|---|---|---|---|---|
-| `TBD_ScreenShell.layout` | `TBD_ShellScreen` (Core) | `07` | `Backdrop`, `Panel`, `Title`, `Subtitle`, `BackAction`, `List`, `Status`, `PrimaryAction` | `SetTitle`, `SetSubtitle`, `SetStatus`, `SetPrimaryAction`, `GetList` | Spectator, Admin, bare `TBD_UIShell` |
-| `TBD_ListRow.layout` | `TBD_ListBoxRow` (Core) | `07` (`0750+`) | `Background`, `Accent`, `Title`, `Detail` | pooled by `TBD_ListBox` | every `TBD_ListBox`, dropdown menus |
-| `TBD_Panel.layout` | `TBD_PanelComponent` | `10` | `PanelBorder`, `PanelBG`, `HeaderRow`, `HeaderBG`, `HeaderIcon`, `HeaderTitle`, `HeaderBadgeDock` (row), `HeaderRule`, `BodyDock`, `FooterDock` | `SetTitle` (shouts), `SetIconTint`, `SetIcon`, `ShowHeader`, `SetTint`, `GetBadgeDock`, `GetBodyDock`, `GetFooterDock` | Mission Selector columns + inspector cards; every briefing / lobby panel to come |
-| `TBD_PanelFill.layout` | `TBD_PanelComponent` | `25` | same names as `TBD_Panel` | same API; **frame-anchored** — fills its dock, body takes the remaining height. Columns use this; cards use `TBD_Panel` (a frame-anchored body inside `TBD_Panel` collapses to zero height) | selector TERRAINS + MISSIONS columns |
-| `TBD_Chip.layout` | `TBD_ChipComponent` | `11` | `ChipBorder`, `ChipBG`, `ChipDot`, `ChipText` | `Set(text, tint)`, `SetText`, `SetTint`, `SetDotVisible`, static `Mount(dock, text, tint)` | every badge / tag / count pill |
-| `TBD_SearchBox.layout` | `TBD_SearchBoxComponent` | `12` | `SearchBorder`, `SearchBG`, `SearchIcon`, `SearchInput` (EditBox), `SearchClear`, `SearchClearGlyph` | `GetQuery`, `Clear`, `SetPlaceholder`, `GetOnChanged()(box, query)`, static `Matches(query, text)` | terrain + scenario search; lobby roster next |
-| `TBD_NavItem.layout` | `TBD_NavItemComponent` | `13` (`1300`, children `1303+`) | `Border`, `Background`, `Icon`, `Label`, `Badge`, `SeparatorSize`/`Separator` (1 px rule above the item; `TBD_NavItemData.m_bSeparatorBefore` — the briefing nav's groups) | `Bind(strip, index, TBD_NavItemData)`, `SetActive` | instantiated by `TBD_TabStrip` only |
-| `TBD_TabStrip.layout` | `TBD_TabStripComponent` | `13` (`1340+`, meta `1302`) | `StripBorder`, `StripBG`, `ItemsRow`, `ItemsColumn` | `SetItems(array<ref TBD_NavItemData>)`, `SetActive`, `GetOnSelected()(strip, index)`, `FocusActive`; attrs `m_bVertical`, `m_bChrome` | top bar (row); briefing primary + topic nav (column) next |
-| `TBD_Button.layout` | `TBD_UIButton` (Core) | `14` | `Border`, `Background`, `Label` | `SetLabel`, `SetPrimary`, `SetTint` (PRIMARY / SUCCESS / WARNING for toggled states), `SetInteractive`, `GetOnActivate()` | `TBD_SessionBottomBar.AddAction` |
-| `TBD_KeyValueRow.layout` | `TBD_KeyValueRowComponent` | `16` | `RowBorder`, `RowBG`, `KeyIcon`, `KeyChipDock`, `KeyText`, `ValueText`, `ValueChipDock` | `Set(key, value, valueTint)`, `SetKeyChip`, `SetValueChip`, `SetIcon`, `SetTint`, static `Mount(container)` | inspector ORBAT / objective rows; parameters, frequencies, kit lines next |
-| `TBD_Dropdown.layout` | `TBD_DropdownComponent` | `17` (`1700`, children `1703+`) | `TriggerBorder`, `TriggerBG`, `TriggerLabel`, `TriggerBadgeDock`, `Chevron` | `SetItems(array<ref TBD_DropdownItem>)`, `SetMultiSelect`, `SetMenuTitle`, `SetOverlayHost`, `GetSelectedTag`, `IsChecked`, `GetCheckedCount`, `GetOnChanged()(dropdown, tag)`, static `Mount(dock, overlayHost, label, multi)` | Modes filter (multi), version picker (single); markers plan next |
-| `TBD_DropdownMenu.layout` | created by `TBD_DropdownComponent` | `17` (`1740+`, meta `1702`) | `Scrim`, `Menu`, `MenuBorder`, `MenuBG`, `MenuTitle`, `SelectAll`, `DeselectAll`, `MenuRule`, `MenuList` (`TBD_ListBox`) | mounted into the screen's `OverlayDock`, positioned with `FrameSlot` | — |
-| `TBD_InsetText.layout` | none (screen writes `Body`) | `18` | `InsetBorder`, `InsetBG`, `Body` (wrapping text) | — | mission summary; lore, rules next |
-| `TBD_Columns2.layout` | none | `24` | `ColumnA`, `ColumnB` (vertical layouts, equal fill) | — | mod grid, ORBAT + objective faction pairs |
-| `TBD_Columns3.layout`, `TBD_Columns4.layout` | none | `38`, `39` | `ColumnA..C` / `ColumnA..D` (equal fill, 6 px gutters) | — | kit inspector grids (weapons ×3; gear / gadgets / tools / misc ×4) |
-| `TBD_Section.layout` | `TBD_SectionComponent` | `3A` | `Border`, `Background`, `HeaderButton`, `HeaderOverlay`/`HeaderBG` (clip trick), `HeaderIcon`, `Title`, `BadgeDock`, `ActionDock`, `Chevron`, `HeaderRule`, `Body` | `Mount(parent, title, ground)`, `SetTitle/Icon/Badge/Tint/Ground`, `SetExpanded`, `GetBody`, `GetActionDock`, `GetBodyGround`, `GetOnToggled` — header click folds the body | briefing rules groups, asset types, Vehicle Info, asset instances |
-| `TBD_NumberedCard.layout` | `TBD_NumberedCardComponent` | `3B` | `Border`, `Background`, `NumberPill`/`Number`, `Title`, `ChipDock`, `Body` (paragraph, hidden when empty), `BodyDock`, `FooterRule`, `FooterDock` (`FooterSpacer` pushes children right) | `Mount(parent, number, title, ground)`, `Set`, `SetBody`, `SetChip`, `GetBodyDock`, `GetFooterDock` (shows the footer), `GetGround` | objectives, rules |
-| `TBD_Caption.layout` | none (`TBD_Caption.Mount(parent, text, trailing)`) | `3C` | `Caption` (10 px mono, uppercased), `Trailing` (right, dim) | — | section labels in every briefing page, the markers panel |
-| `TBD_ScrollList.layout` | none (`TBD_ScrollList.Mount(dock, ground, inset)`) | `3D` | `ListFrame` (clip), `Scroll` (24 px overhang), `Content` (pad 34), `ScrollBarDock` | `GetContent`, `Clear`, `ResetScroll`, `Destroy` — the scroll-clip recipe as one mountable piece | briefing page bodies, player lanes |
-| `TBD_StatCell.layout` | none | `36` | `Border`, `Background`, `Label` (mono 10 upper), `Value` (mono 12), `Count` (amber `x4`) | painted by the owner (`TBD_KitInspectorPanel.MountCell`, `TBD_BriefingPage.AddCell`) | kit inspector grids, objective stats, asset inventories — promoted from `Session/Lobby/TBD_KitCell` (2026-09-14, same GUIDs) |
-| `TBD_Rounded5…12.layout` (8 files) | none (`TBD_UILayouts.MountRounded`) | `26-2D` | `Centre`, `Left`, `Right`, `CornerTL/TR/BL/BR` (clipping frames) each holding `Disc*` (our `UI/Textures/TBD/TBD_Disc_UI.edds` filled disc, GUID `{1F2DC726318EC5AF}`; vanilla `circleFull.edds` is a ring); painted by `TBD_UITheme.PaintOver` on the dock (it walks the `Rounded*` subtree — `"Inherit Color"` does NOT propagate from a frame) | mounted into a `*Border` / `*BG` frame dock; radius is the file | every rounded surface below |
+```text
+apps/mod/tbd-framework/UI/layouts/Common/
+├── TBD_Button.layout*        runtime button: bottom-bar actions, Locate and Load Plan buttons
+├── TBD_Caption.layout*       uppercase mono section label with a dim trailing note
+├── TBD_Chip.layout*          tinted mono pill for badges, tags and counts
+├── TBD_Columns2.layout*      two equal columns, `ColumnA` and `ColumnB`
+├── TBD_Columns3.layout*      three equal columns for the kit and asset grids
+├── TBD_Columns4.layout*      four equal columns for the kit and asset grids
+├── TBD_Dropdown.layout*      popover trigger: label, badge dock and chevron
+├── TBD_DropdownMenu.layout*  the popover a dropdown mounts into a screen's `OverlayDock`
+├── TBD_InsetText.layout*     wrapped paragraph in an inset box
+├── TBD_KeyValueRow.layout*   key on the left, mono value on the right, optional chips
+├── TBD_ListRow.layout*       one pooled row of a `TBD_ListBox`: accent, title, detail
+├── TBD_NavItem.layout*       one tab of a tab strip: icon, label, badge, optional rule above
+├── TBD_NumberedCard.layout*  numbered card with title, chip, paragraph, body and footer docks
+├── TBD_Panel.layout*         glass card sized to its content, stacked in a scrolling list
+├── TBD_PanelFill.layout*     the same card anchored to fill its dock, for columns and pages
+├── TBD_Rounded*.layout*      rounded-rectangle shapes, one file per radius from 5 to 12
+├── TBD_ScreenShell.layout*   the full-screen shell of the list-based menus: admin, spectator
+├── TBD_ScrollBar.layout*     the 4 px track and thumb that replaces the engine scroll bar
+├── TBD_ScrollList.layout*    a clipped scrolling list with its scroll-bar dock
+├── TBD_SearchBox.layout*     search field with icon and clear button
+├── TBD_Section.layout*       collapsible card whose header button folds the body
+├── TBD_StatCell.layout*      label, value and count cell of the kit and asset grids
+└── TBD_TabStrip.layout*      segmented control that instantiates a nav item per entry
+```
 
-## Rules that make the table true
+Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
 
-- **Colour is a tint, never a literal.** `TBD_UITheme.ChipFill/ChipBorder/ChipInk` and
-  `PanelFill/PanelBorder` take a `TBD_EUITint` (`NEUTRAL PRIMARY SUCCESS WARNING DANGER TERTIARY
-  BLUFOR OPFOR SOLID`). A new hue is a theme edit, not a handler edit.
-- **Colour is composited in sRGB, by us.** The browser blends `rgba()` in sRGB, Enfusion in
-  linear, so a translucent token must never reach the engine: `TBD_UITheme.Paint` flattens it
-  with `Over(token, ground)` first. Every chrome handler has `SetGround(opaque)` and a panel
-  exposes `GetGround()` (its composited fill); whoever mounts a chip, row, search box or dropdown
-  inside a panel passes `panel.GetGround()`. Defaults: a panel assumes the backdrop, everything
-  else assumes a glass panel. `PaintAlpha` is the only real-alpha path (SCRIM over the world).
-- **Curves.** Enfusion has no corner radius and no 9-slice. Every `*Border` / `*BG` in the table
-  is an empty `FrameWidgetClass` dock; the handler calls `TBD_UILayouts.MountRounded(dock, r)`
-  once at attach — border at `r`, the 1 px-inset fill at `r - 1` so the arcs are concentric — and keeps painting the dock (`PaintOver` tints the seven images itself; a transparent paint hides the shape). Radii come from
-  `TBD_UITheme`: `RADIUS_PANEL` 12 (panels, inspector, dropdown menu), `RADIUS_ROW` 8 (rows, cards,
-  inputs, buttons, nav items, key-value rows, mod items, inset text), `RADIUS_TAG` 6 (chips),
-  `RADIUS_PILL` 10 (`TBD_ChipComponent.SetPill(true)`: count pills). A dock left as an
-  `ImageWidgetClass` is ignored by `MountRounded` and stays square — that is the opt-out.
-- **Fonts are explicit.** Every `TextWidgetClass` / `EditBoxWidgetClass` here carries a `FontProperties FontProperties "{GUID}" { Font "…" }` block (a bare `Font` line is an `Unknown keyword`):
-  `Roboto_Bold` for uppercase headers, card titles, nav + button labels; `RobotoCondensed_Regular`
-  for body and key text (`_Bold` for the selected row title / faction role); `robotomono_msdf_28`
-  for chips, counts, versions, values and search input. GUIDs and the size ladder
-  (`TEXT_HEADER 14 · TEXT_BODY 13 · TEXT_MONO_SM 12 · TEXT_TAG 11`) live in `TBD_UITheme`; the
-  engine has no runtime font setter, so a font change is a layout edit.
-- **Engine scrollbars are clipped away.** `ScrollLayoutWidget` draws its own ~10 px white bar over
-  the right edge of the content and there is no property to style it (vanilla hides it the same
-  way: `SCR_PooledListComponent.ShowScrollbar`, "clip scroll bar to hide"). Recipe, used by every
-  list layout: the frame around `Scroll` gets `Clipping True`; the `Scroll` slot overhangs the
-  right edge by 24 (`SizeX +24`, `OffsetRight -24`); `Content` gets `Padding 0 0 34 0` (24 hidden
-  + 10 gutter); a 4 px `ScrollBarDock` frame sits on the frame's right edge and the owner mounts
-  `TBD_UIScrollBar` into it. Rows end at the gutter with their right corners visible.
-- **Round only some corners = clip the shape.** A `Rounded*` shape has four round corners; to
-  square the bottom ones (panel header band) the dock is made taller than its clipping parent
-  (`HeaderRow`/`HeaderOverlay` clip; `HeaderBG` extends 12 px below) so the bottom arcs fall
-  outside the clip. No extra layout files.
-- **A photo under round corners = inverse-disc masks.** Nothing clips an image to an arc, so the
-  inspector hero paints clipped quarters of `TBD_DiscInv_UI` over its top corners: inside the hero,
-  r11 quarters in the panel BORDER colour; on the panel root, r12 quarters in the BACKDROP colour.
-  Photo inside r11, border ring r11–r12, backdrop beyond. `TBD_MissionInspectorPanel.MountCornerMask`.
-- **Textures are ours.** Vanilla texture GUIDs are pak-only, so every image the framework needs is
-  a committed PNG under `UI/Textures/TBD/` that the operator imports in Workbench (`TextureUI.conf`,
-  as the disc was); the import writes the `.edds` + `.meta`, and the `.meta` GUID is then pinned
-  into `TBD_UILayouts` (all five current textures are pinned; a new PNG is a bare path until its import). `TBD_UILayouts.LoadTexture` hides the widget and
-  logs once when a texture is missing, so a not-yet-imported PNG costs a hidden slot, not a white
-  quad. Sources: disc / inverse disc / fade / topo art from a scratch Node rasteriser; the Everon
-  hero is `ffmpeg -i assets_v2/terrains/everon/tiles/satellite/full.webp -vf "crop=4096:560:0:1600,scale=1024:140"`.
-- **Icons are keys, and the textures are ours.** Image slots are fed by `TBD_UIIcons.Load(widget, key)`:
-  our 64 px white-on-alpha PNGs under `UI/Textures/TBD/Icons/` first (38 Material Symbols keys,
-  `TBD_Icon_<key>_UI.png`; the operator imports the batch and pins the GUIDs in `TBD_UIIcons`),
-  the measured vanilla quads second; an unresolved key hides the slot and logs once. The
-  generation command lives in `Scripts/Game/TBD/UI/Core/README.md`.
-- **Shrink-wrap vs stretch.** Chips, buttons, nav items and dropdown triggers declare an
-  `AlignableSlot` root and size to their text. Panels, search boxes and rows declare a stretched
-  root; when mounted into a layout widget the mounting code calls
-  `AlignableSlot.SetHorizontalAlign(..., Stretch)` (`TBD_UILayouts.CreateStretched`) because a
-  root slot only exists after the widget has a parent.
-- **Docks.** A widget named `*Dock` is an empty container the owner mounts into. Overlay docks
-  shrink-wrap one child; `HeaderBadgeDock` is a horizontal row so two chips can sit side by side.
-- **GUIDs** are `7BD1A7000000XXnn`; the block ledger lives in the header of
-  `Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`. Grep before taking a block.
-- **Registration.** Every layout here has a constant in `TBD_UILayouts`; nothing instantiates a
-  bare path. New files are invisible until Workbench rewrites `resourceDatabase.rdb`.
+## How it works
+
+A screen never names a file here by path: `TBD_UILayouts`
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`) holds one constant per layout,
+and `TBD_UILayouts.Create`, `CreateStretched` or `CreateHandler` instantiates it under a parent.
+Most primitives carry their handler as a widget component on the root, and several handlers add a
+static `Mount(dock, …)` that creates and binds in one call. The handler finds each named widget
+with `FindAnyWidget` and every write is null-safe, so a widget missing from a copy of a layout is
+skipped.
+
+| Layout | Handler | Block | Widgets the handler binds | Mounted by |
+|---|---|---|---|---|
+| `TBD_ScreenShell` | `TBD_ShellScreen` menu | `07` | `Backdrop`, `Panel`, `Title`, `Subtitle`, `BackAction`, `List`, `Status`, `PrimaryAction` | the `TBD_UIShell`, `TBD_Spectator` and `TBD_UIAdmin` presets |
+| `TBD_ListRow` | `TBD_ListBoxRow` | `07` | `Background`, `Accent`, `Title`, `Detail` | `TBD_ListBox`, the default of its row-layout attribute |
+| `TBD_Panel`, `TBD_PanelFill` | `TBD_PanelComponent` | `10`, `25` | `PanelBorder`, `PanelBG`, `HeaderRow`, `HeaderBG`, `HeaderIcon`, `HeaderTitle`, `HeaderBadgeDock`, `HeaderRule`, `BodyDock`, `FooterDock` | Panel: [mission](/documentation_v2/glossary.md#mission) and kit inspector cards; PanelFill: selector, lobby and briefing columns and pages |
+| `TBD_Chip` | `TBD_ChipComponent` | `11` | `ChipBorder`, `ChipBG`, `ChipDot`, `ChipText` | every badge, tag and count |
+| `TBD_SearchBox` | `TBD_SearchBoxComponent` | `12` | `SearchBorder`, `SearchBG`, `SearchIcon`, `SearchInput`, `SearchClear`, `SearchClearGlyph` | terrain and mission search |
+| `TBD_NavItem` | `TBD_NavItemComponent` | `13` | `Border`, `Background`, `Icon`, `Label`, `Badge`, `SeparatorSize`, `Separator` | `TBD_TabStripComponent` only |
+| `TBD_TabStrip` | `TBD_TabStripComponent` | `13` | `StripBorder`, `StripBG`, `ItemsRow`, `ItemsColumn` | the session top bar's tabs |
+| `TBD_Button` | `TBD_UIButton` | `14` | `Border`, `Background`, `Label` | bottom-bar actions, Locate buttons, Load Plan |
+| `TBD_KeyValueRow` | `TBD_KeyValueRowComponent` | `16` | `RowBorder`, `RowBG`, `KeyIcon`, `KeyChipDock`, `KeyText`, `ValueText`, `ValueChipDock` | mission and kit inspectors, briefing pages |
+| `TBD_Dropdown` | `TBD_DropdownComponent` | `17` | `TriggerBorder`, `TriggerBG`, `TriggerLabel`, `TriggerBadgeDock`, `Chevron` | the Modes filter, the version picker, the markers plan |
+| `TBD_DropdownMenu` | `TBD_DropdownComponent` | `17` | `Scrim`, `Menu`, `MenuBorder`, `MenuBG`, `MenuTitle`, `SelectAll`, `DeselectAll`, `MenuRule`, `MenuList` | a dropdown, into the screen's `OverlayDock` |
+| `TBD_InsetText` | none; the screen writes `Body` | `18` | `InsetBorder`, `InsetBG`, `Body` | mission summary, briefing background page |
+| `TBD_Columns2`, `3`, `4` | none | `24`, `38`, `39` | `ColumnA` to `ColumnD` | inspector, kit and asset grids |
+| `TBD_ScrollBar` | `TBD_UIScrollBar` | `2E` | `Track`, `Thumb` | every list's `ScrollBarDock` |
+| `TBD_StatCell` | none; the owner paints it | `36` | `Border`, `Background`, `Label`, `Value`, `Count` | kit inspector and briefing grids |
+| `TBD_Section` | `TBD_SectionComponent` | `3A` | `Border`, `Background`, `HeaderButton`, `HeaderOverlay`, `HeaderBG`, `HeaderIcon`, `Title`, `BadgeDock`, `ActionDock`, `Chevron`, `HeaderRule`, `Body` | briefing assets and rules pages |
+| `TBD_NumberedCard` | `TBD_NumberedCardComponent` | `3B` | `Border`, `Background`, `NumberPill`, `Number`, `Title`, `ChipDock`, `Body`, `BodyDock`, `FooterRule`, `FooterDock` | briefing objectives and rules |
+| `TBD_Caption` | `TBD_Caption.Mount` | `3C` | `Caption`, `Trailing` | briefing pages, markers panel |
+| `TBD_ScrollList` | `TBD_ScrollList.Mount` | `3D` | `ListFrame`, `Scroll`, `Content`, `ScrollBarDock` | briefing page bodies, player lanes |
+| `TBD_Rounded5` to `12` | `TBD_UILayouts.MountRounded` | `26` to `2D` | `Centre`, `Left`, `Right`, `CornerTL`, `CornerTR`, `CornerBL`, `CornerBR` | every `*Border` and `*BG` frame dock |
+
+### Engine limits the library works around
+
+- **No corner radius or 9-slice.** Each `TBD_Rounded*` shape is seven images: a centre, two side
+  strips, and four clipping frames that each show a quarter of the white disc
+  `apps/mod/tbd-framework/UI/Textures/TBD/TBD_Disc_UI.edds`. A handler calls
+  `TBD_UILayouts.MountRounded(dock, radius)` on an empty `FrameWidgetClass` dock (`*Border`,
+  `*BG`, `Background`): the border takes the even radius and the 1 px-inset fill the odd radius
+  below it, so the arcs are concentric. A dock left as an image widget stays square. The radii are
+  `TBD_UITheme.RADIUS_PANEL` 12, `RADIUS_ROW` 8, `RADIUS_TAG` 6 and `RADIUS_PILL` 10; to square
+  only the lower corners, a header band's fill is taller than its clipping parent.
+- **No runtime font setter.** A `TextWidget` cannot change font from script, so each text widget
+  carries a `FontProperties` block naming `Roboto_Bold` (headers, titles, labels),
+  `RobotoCondensed_Regular` (body and key text) or `robotomono_msdf_28` (chips, counts, values,
+  search input); `TBD_UITheme` lists the GUIDs as `FONT_*`. `TBD_ScreenShell` and `TBD_ListRow`
+  carry none and draw in the engine's default font.
+- **An unstyleable engine scroll bar.** A `ScrollLayoutWidget` draws its own bar over the right
+  edge. `TBD_ScrollList` holds the recipe every list layout repeats: the frame around `Scroll`
+  clips, the `Scroll` slot overhangs the right edge by 24 px, `Content` pads 34 px on the right
+  (24 hidden plus a 10 px gutter), and a 4 px `ScrollBarDock` takes a `TBD_UIScrollBar`.
+- **Linear blending.** Colours in these files are placeholders: the handler paints every surface
+  from a `TBD_UITheme` token or `TBD_EUITint`, flattened to an opaque colour over the ground it
+  sits on, and paints each image of a rounded shape itself because a frame's colour does not reach
+  its children.
+
+## Format
+
+- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+  text: a tree of `<Type>WidgetClass "{GUID}" { Name "…" Slot … components { … } { children } }`.
+  The `.layout.meta` beside each is a `MetaFileClass` whose `Name` holds
+  `{GUID}UI/layouts/Common/<file>.layout` and whose `LayoutResourceClass` entries cover each
+  platform.
+- Resource GUID: `7BD1A7000000XXnn`, where `XX` is the layout's block and `nn` numbers the widgets;
+  the `.meta` takes `nn` = `01`, and a second layout sharing a block takes the next free number
+  (`TBD_ListRow` `0702`, `TBD_TabStrip` `1302`, `TBD_DropdownMenu` `1702`). The block ledger is the
+  header of `TBD_UILayouts`; a GUID never changes once a constant or config names it.
+- Naming: `TBD_<Component>.layout`; the radius of a shape is its file name.
+- Adding a primitive: take a free block from the ledger, author the layout with `FrameWidgetClass`
+  docks for its rounded surfaces and a `FontProperties` block on each text, write the `.meta`, add
+  the constant to `TBD_UILayouts`, and commit both files;
+  [Workbench](/documentation_v2/glossary.md#workbench) must rewrite
+  `resourceDatabase.rdb` before the game can find the new path.
+
+## Referenced by
+
+- `TBD_UILayouts` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`, by GUID and
+  path, one constant per layout; the handlers and screens under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/` use those constants.
+- `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`, by GUID: the `TBD_UIShell`,
+  `TBD_Spectator` and `TBD_UIAdmin` menu presets open `TBD_ScreenShell.layout`.
+- `TBD_ListBox` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_ListBox.c`, by GUID: its
+  row-layout attribute defaults to `TBD_ListRow.layout`.
+- The layouts in `apps/mod/tbd-framework/UI/layouts/Session/` and `Hud/` name the handler classes
+  and repeat the dock and scroll conventions; they do not include these files.
+
+## Boundaries
+
+- Depends on: the texture `apps/mod/tbd-framework/UI/Textures/TBD/TBD_Disc_UI.edds`; the game's
+  Roboto fonts; the handler classes in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/` and
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Common/`.
+- Used by: the Mission Selector, lobby, briefing and players screens in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`, the session bars, and the admin and spectator
+  menus through the shell presets.
+- Rules: a widget name a handler binds is part of its contract and changes only with the handler;
+  every layout has a `TBD_UILayouts` constant and nothing instantiates a bare path; a block is
+  taken from the ledger after a `git grep` for it; the layout and its `.meta` are committed
+  together; `cargo xtask mod compile` checks the handler scripts.
+
+## Related documentation
+
+- [Mod UI structure](/documentation_v2/mod/tbd-framework/UI/README.md) — where each UI file goes
+- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md)
+  — the design rules the theme and shapes encode

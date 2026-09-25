@@ -1,66 +1,106 @@
-# UI/layouts/Session/Lobby
+# Lobby screen layouts
 
-The Lobby (rebuilt 2026-09-13 from the `lobby_sidebar`, `orbat_panel_blufor` and
-`slot_kit_inspector` Stitch mockups): a Dock & Sub-Layout screen driven by
-`Scripts/Game/TBD/Session/Lobby/UI/TBD_LobbyScreen.c` (`TBD_DockScreen`). Data comes from
-`TBD_LobbyCatalog.Get()` (mock today; a `TBD_LobbyClient` adapter later).
+The layouts of the Lobby tab, where a player picks a faction and claims a
+[slot](/documentation_v2/glossary.md#slot) in the [ORBAT](/documentation_v2/glossary.md#orbat): a
+dock shell, the faction and roster column bodies, the squad cards and seat rows, and the kit
+inspector with its 3D preview. `TBD_LobbyScreen` fills the shell from `TBD_LobbyCatalog`, which
+serves mock data, so claims stay on the local client.
 
-## Shell — `TBD_LobbyScreen.layout` (GUID `{7BD1A70000000C01}`, block `0C`)
+## Contents
 
-Same shape as the selector shell; same GUID + path as the retired monolith so
-`Configs/System/chimeraMenus.conf` and the rdb row stay valid.
+```text
+apps/mod/tbd-framework/UI/layouts/Session/Lobby/
+├── TBD_KitInspector.layout*      right column: title band with the seat line, scrolling cards
+├── TBD_KitPreview.layout*        preview card: a 3D doll wearing the seat's kit, and a caption
+├── TBD_KitWeaponCard.layout*     one weapon slot card: name, attachments and ammunition
+├── TBD_LobbyFactionList.layout*  FACTIONS body: faction rows, a spectators row, an empty dock
+├── TBD_LobbyFactionRow.layout*   one faction or spectators row with role and count chips
+├── TBD_LobbyRoster.layout*       ROLES body: a clipped scrolling list of squad cards
+├── TBD_LobbyScreen.layout*       the shell: backdrop and empty docks
+├── TBD_LobbySlotRow.layout*      one seat: role, weapon and trait chips, holder, status chip
+└── TBD_LobbySquadCard.layout*    one collapsible squad: header chips, Locate dock, seat rows
+```
 
-| Dock | Geometry (reference px) | Mounted layout | Driven by |
+Each `.layout` sits beside its `.layout.meta`, so every line covers the pair.
+
+## How it works
+
+`apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds the `TBD_UILobby` preset to
+`TBD_LobbyScreen.layout` and the `TBD_LobbyScreen` class
+(`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/TBD_LobbyScreen.c`), a `TBD_DockScreen`.
+The shell holds a `Backdrop`, a `WindowFrame` inset 16 px, and the docks, in reference pixels:
+
+| Dock | Geometry | Mounted there | By |
 |---|---|---|---|
-| `TopDock` | full width, 56 high | `Session/Shared/TBD_SessionTopBar` (mono mission id, Lobby tab active) | `TBD_DockScreen` |
-| `LeftDock` | x 0, width 320, y 68 → bottom-76 | `Common/TBD_PanelFill` + `TBD_LobbyFactionList` body | `TBD_LobbyFactionPanel` |
-| `CenterDock` | x 332, width 500 | `Common/TBD_PanelFill` + `TBD_LobbyRoster` body | `TBD_LobbyRosterPanel` |
-| `RightDock` | x 844 → right edge | `TBD_KitInspector` | `TBD_KitInspectorPanel` |
-| `BottomDock` | full width, 64 high | `Session/Shared/TBD_SessionBottomBar` (`Lock Lobby` quiet, `Ready & Continue` primary) | `TBD_DockScreen` |
-| `OverlayDock` | full-bleed, last child, hidden while empty | popovers | `TBD_DropdownComponent` |
+| `TopDock` | full width, 56 high | the session top bar, the [mission](/documentation_v2/glossary.md#mission) id as the title | `TBD_DockScreen` |
+| `LeftDock` | x 0, 320 wide, y 68 to 76 above the bottom | `TBD_PanelFill` with the `TBD_LobbyFactionList` body | `TBD_LobbyFactionPanel` |
+| `CenterDock` | x 332, 500 wide | `TBD_PanelFill` with the `TBD_LobbyRoster` body | `TBD_LobbyRosterPanel` |
+| `RightDock` | x 844 to the right edge | `TBD_KitInspector` | `TBD_KitInspectorPanel` |
+| `BottomDock` | full width, 64 high | the session bottom bar: Lock Lobby, Ready & Continue | `TBD_DockScreen` |
+| `OverlayDock` | full screen, last child, hidden while empty | popovers | `TBD_DropdownComponent` |
 
-## Sub-layouts
+The roster panel creates a `TBD_LobbySquadCard` per squad and a `TBD_LobbySlotRow` per seat; the
+kit inspector stacks `TBD_Panel` cards from `apps/mod/tbd-framework/UI/layouts/Common/` in
+`CardsContent`, with a `TBD_KitPreview` card, `TBD_KitWeaponCard`s in `TBD_Columns3` or
+`TBD_Columns2` rows, and grids of `TBD_StatCell`s in `TBD_Columns2` to `TBD_Columns4` rows. The
+briefing's ORBAT page reuses `TBD_KitInspector` and the roster column, read only.
 
-| Layout | GUID block | Role | Widget contract |
-|---|---|---|---|
-| `TBD_LobbyFactionList.layout` | `2F` | body of the FACTIONS panel | `Stack`, `Content` (faction rows), `SpectatorDock` (the Spectators row), `VoiceDock` (empty; the voice panel mounts here in its own pass) |
-| `TBD_LobbyFactionRow.layout` | `30` | one faction / spectators row (`TBD_LobbyFactionRowComponent`) | `Border`, `Background`, `Name`, `RoleChipDock` (`DEFENDING`), `CountChipDock` (`0 / 92`) |
-| `TBD_LobbyRoster.layout` | `31` | body of the ROLES panel | `ListFrame` (clips), `Scroll` (−24 overhang), `Content` (pad 34), `ScrollBarDock`, `EmptyState` |
-| `TBD_LobbySquadCard.layout` | `32` | one collapsible squad (`TBD_LobbySquadCardComponent`) | `Border`, `Background`, `HeaderButton` (`HeaderOverlay` clips; `HeaderBG`, `CallsignChipDock`, `VehicleChipDock`, `CountChipDock`, `ActionDock` (briefing Locate button), `Chevron`), `HeaderRule`, `SlotsContent` |
-| `TBD_LobbySlotRow.layout` | `33` | one seat (`TBD_LobbySlotRowComponent`) | `Background` (square image — rows sit inside the card), `RoleText`, `ChipsDock` (weapons + `MED`/`ENG` tags), `HolderText` (amber mono), `StatusChipDock` (`Unslotted` / `DEAD`), `RowRule` |
-| `TBD_KitInspector.layout` | `34` | right column: title band + scrolling section cards | `PanelBorder`, `PanelBG`, `Header` (clips; `HeaderBG`, `HeaderIcon`, `Title`, `SlotRow`: `SlotTitle`, `SlotChipsDock`), `HeaderRule`, `BodyFrame` (clips), `Scroll`, `CardsContent`, `ScrollBarDock`, `EmptyState` |
-| `TBD_KitPreview.layout` | `35` | the preview card: a 320 px render target showing the seat's exact kit on the character (`TBD_KitPreviewComponent` + `TBD_LoadoutPreviewDresser`); `Label` is the fallback caption (`PREVIEW UNAVAILABLE`) | `CardBorder`, `CardBG`, `Box` (`Border`, `Background`, `GridClip`/`GridImage`/`Preview` [ItemPreviewWidget], `Label`) |
-| `TBD_KitWeaponCard.layout` | `37` | one WEAPON SLOT card | `Border`, `Background`, `SlotChipDock`, `NameBorder`/`NameBG`/`Name`, `AttachmentsTitle`, `AttachmentsContent`, `AmmoRule`, `AmmoTitle`, `AmmoSummary`, `AmmoContent` (both contents take `TBD_KeyValueRow`s) |
-
-Grids inside the kit cards are `Common/TBD_Columns3` / `TBD_Columns4` rows of `Common/TBD_StatCell` (was `TBD_KitCell` here until 2026-09-14; the briefing needed it too)
-(GEAR / GADGETS / TOOLS / MISC four wide; GRENADES / MEDICAL three wide; WEAPONS three
-`TBD_KitWeaponCard`s). Section cards are `Common/TBD_Panel`.
-
-## Curves and grounds
-
-| Surface | Radius | Ground it composites over |
+| Layout | Handler | Widgets the handler binds |
 |---|---|---|
-| FACTIONS / ROLES columns (`PanelFill`), kit inspector panel | `RADIUS_PANEL` 12 | backdrop |
-| faction rows, squad cards, weapon cards, preview card | `RADIUS_ROW` 8 | the owning panel's `GetGround()` / the card fill |
-| squad header band | 7, bottom arcs clipped by `HeaderOverlay` (+8 px) | the card fill |
-| kit cells, weapon name box, preview inner box, chips | `RADIUS_TAG` 6 | the card / weapon fill |
-| slot rows | square (inside the rounded card) | `TBD_LobbySquadCardComponent.GetBodyGround()` |
+| `TBD_LobbyFactionList` | `TBD_LobbyFactionPanel` | `Stack`, `Content`, `SpectatorDock`, `VoiceDock` |
+| `TBD_LobbyFactionRow` | `TBD_LobbyFactionRowComponent` | `Border`, `Background`, `Name`, `RoleChipDock`, `CountChipDock` |
+| `TBD_LobbyRoster` | `TBD_LobbyRosterPanel` | `ListFrame`, `Scroll`, `Content`, `ScrollBarDock`, `EmptyState` |
+| `TBD_LobbySquadCard` | `TBD_LobbySquadCardComponent` | `Border`, `Background`, `HeaderButton`, `HeaderOverlay`, `HeaderBG`, `CallsignChipDock`, `VehicleChipDock`, `ActionDock`, `CountChipDock`, `Chevron`, `HeaderRule`, `SlotsContent` |
+| `TBD_LobbySlotRow` | `TBD_LobbySlotRowComponent` | `Background`, `RoleText`, `ChipsDock`, `HolderText`, `StatusChipDock`, `RowRule` |
+| `TBD_KitInspector` | `TBD_KitInspectorPanel` | `PanelBorder`, `PanelBG`, `Header`, `HeaderBG`, `HeaderIcon`, `Title`, `SlotRow`, `SlotTitle`, `SlotChipsDock`, `HeaderRule`, `BodyFrame`, `Scroll`, `CardsContent`, `ScrollBarDock`, `EmptyState` |
+| `TBD_KitPreview` | `TBD_KitInspectorPanel`; `TBD_KitPreviewComponent.Attach` on `Preview` | `CardBorder`, `CardBG`, `Box`, `Border`, `Background`, `GridClip`, `GridImage`, `Preview`, `Label` |
+| `TBD_KitWeaponCard` | `TBD_KitInspectorPanel` | `Border`, `Background`, `SlotChipDock`, `NameBorder`, `NameBG`, `Name`, `AttachmentsTitle`, `AttachmentsContent`, `AmmoRule`, `AmmoTitle`, `AmmoSummary`, `AmmoContent` |
 
-Tokens live in `TBD_UITheme` (`FactionRowFill/Border/Ink(tint)`, `SLOT_*`, `SQUAD_*`, `KIT_*`,
-`HOLDER_INK`, `BTN_SUCCESS_*`, `BTN_WARNING_*`).
+`VoiceDock` is an empty frame: no script mounts anything into it. The seat rows use a square image
+`Background`, since they sit inside a rounded card; the squad header's fill is taller than its
+clipping `HeaderOverlay`, so only its top corners are round. The lists follow the scroll-clip
+recipe of `TBD_ScrollList`, with a `TBD_UIScrollBar` in each `ScrollBarDock`.
 
-## Behaviour
+## Format
 
-Faction click → roster rebuilds for that side, kit inspector clears. The selected faction wears a
-solid tinted border and a lit fill; squad callsign chips wear the side's colour (blue / red).
-Slot click → selected + kit shown; a second click on the selected OPEN seat claims it
-(`[TBD][lobby] CLAIM …`); a second click on your own seat releases it. Holders are amber, your
-own name too. Squad header click folds / unfolds the card (folds survive rebuilds; your own squad
-never folds). The kit inspector resets its scroll on every rebuild (a shorter stack under an old
-offset showed nothing until scrolled — measured). `Lock Lobby` ⇄ `Unlock Lobby` (amber),
-`Ready & Continue` ⇄ `Ready (Waiting for Admin)` (emerald) — labels + tints only until the wire step.
+- File type: [Enfusion](/documentation_v2/glossary.md#enfusion) widget layouts (`.layout`), plain
+  text, each beside a `.layout.meta` whose `Name` holds
+  `{GUID}UI/layouts/Session/Lobby/<file>.layout`. Every `*Border`, `*BG` and card `Background` is
+  an empty `FrameWidgetClass` dock that the handler fills with a rounded shape (columns and the kit
+  inspector 12, rows and cards 8, chips and cells 6); every text widget carries a `FontProperties`
+  block; `Preview` is an `ItemPreviewWidgetClass`.
+- Resource GUID: `7BD1A7000000XX01` in each `.meta`, from the ledger in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`: the shell `0C`, then
+  `TBD_LobbyFactionList` `2F`, `TBD_LobbyFactionRow` `30`, `TBD_LobbyRoster` `31`,
+  `TBD_LobbySquadCard` `32`, `TBD_LobbySlotRow` `33`, `TBD_KitInspector` `34`, `TBD_KitPreview`
+  `35` and `TBD_KitWeaponCard` `37`. The shell's GUID is named by the menu config and never changes.
+- Naming: `TBD_Lobby<Element>.layout` for the roster and factions, `TBD_Kit<Element>.layout` for
+  the kit inspector; a layout another screen needs moves to `Common/`.
+- Adding a layout: take a free block from the ledger, author the layout and its `.meta`, add a
+  `LOBBY_*` constant to `TBD_UILayouts`, and commit both files; the game finds a new path only
+  after [Workbench](/documentation_v2/glossary.md#workbench) has rewritten `resourceDatabase.rdb`.
 
-## Line budget
+## Referenced by
 
-Every file here is under 400 lines; the shell is 127. The old `TBD_LobbyInspector` (1312) and the
-eight other monolith docks were deleted in this rebuild.
+- `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` names the shell by GUID in the
+  `TBD_UILobby` preset.
+- `TBD_UILayouts` names each layout by GUID and path (`LOBBY_SCREEN` and the `LOBBY_*` constants);
+  the panels in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/` use them, as the
+  handler table shows.
+- `TBD_BriefingOrbatPage` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/TBD_BriefingPageComms.c` mounts
+  `LOBBY_KIT_INSPECTOR` and, through `TBD_LobbyRosterPanel`, the roster layouts.
+
+## Boundaries
+
+- Depends on: the layouts in `apps/mod/tbd-framework/UI/layouts/Common/` and the session bars in
+  `apps/mod/tbd-framework/UI/layouts/Session/Shared/`; the handler classes named above; the
+  engine's `ItemPreviewWidgetClass` for the doll.
+- Used by: the lobby screen and, read only, the briefing's ORBAT page.
+- Rules: the widget names above are the handlers' contract; the shell keeps its GUID and path,
+  since the menu config names them; a layout and its `.meta` are committed together.
+
+## Related documentation
+
+- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md)
+  — the lobby's design target

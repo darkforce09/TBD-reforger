@@ -1,78 +1,80 @@
-# UI Layouts Architecture Hub (`tbd-framework/UI`)
+# Framework interface assets
 
-This directory owns the visual presentation layer (Enfusion `.layout` templates and their
-`.layout.meta` descriptors) for the TBD Framework.
+The framework's interface resources: the widget layouts every screen, menu and HUD element is
+built from, and the textures they draw. The scripts that open and paint them live in
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/` and in the `UI/` folder of each screen under
+`apps/mod/tbd-framework/Scripts/Game/TBD/Session/`.
 
----
-
-## Directory Overview
+## Contents
 
 ```text
-UI/
-└── layouts/
-    ├── Common/                    <-- Shared Component Library primitives (see Common/README.md)
-    ├── Hud/                       <-- Persistent in-game HUD overlays
-    └── Session/                   <-- Match flow screens (mirrors Scripts/Game/TBD/Session/)
-        ├── Shared/                <-- Session-wide chrome: TBD_SessionTopBar, TBD_SessionBottomBar
-        ├── MissionSelector/       <-- Scenario browser: dock shell + 7 sub-layouts (shipped 2026-09-12)
-        ├── Lobby/                 <-- ORBAT slotting: dock shell + 9 sub-layouts (rebuilt 2026-09-13)
-        ├── Briefing/              <-- Briefing dock shell over the map + page sub-layouts (2026-09-14)
-        ├── Admin/                 <-- Mission control & referee console panels
-        ├── Spectator/             <-- Broadcast glass pod & forensic trauma panels
-        ├── Pause/                 <-- In-game pause & player options sidebar
-        └── PostGame/              <-- Victory outcome banner & debrief AAR scoreboard
+apps/mod/tbd-framework/UI/
+├── layouts/   the widget layouts: shared primitives, the objective HUD and the session screens
+└── Textures/  the framework's own textures: rounded-shape disc, hero art, masks and icons
 ```
 
----
+## How it works
 
-## Layout Domains
+[Enfusion](/documentation_v2/glossary.md#enfusion) resolves a resource by the GUID in its `.meta`
+file, or by its path inside the addon, through the addon's resource database. Screens never spell
+a path: `TBD_UILayouts`
+(`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`) holds one constant per layout
+and per texture, `TBD_UIIcons` (same folder) maps icon keys to the icon textures, and
+`apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds each menu preset to its shell
+layout and screen class.
 
-| Domain | Responsibility | Driven By Script |
-|---|---|---|
-| **`layouts/Common/`** | Atomic, reusable design primitives: `TBD_Panel`, `TBD_Chip`, `TBD_SearchBox`, `TBD_NavItem` + `TBD_TabStrip`, `TBD_Button`, `TBD_KeyValueRow`, `TBD_Dropdown` + `TBD_DropdownMenu`, `TBD_InsetText`, `TBD_Columns2`, plus the older `TBD_ScreenShell` and `TBD_ListRow`. Contract table: [`layouts/Common/README.md`](layouts/Common/README.md). | `Scripts/Game/TBD/UI/Core/` & `UI/Common/` |
-| **`layouts/Hud/`** | Minimalist in-game tactical overlays that render over live gameplay (`TBD_ObjectiveHud.layout`, capture bars). | `Scripts/Game/TBD/UI/Hud/` |
-| **`layouts/Session/`** | The human interface screens for the player & referee journey. Each folder holds a screen shell layout with empty named docks, plus the sub-layouts injected into those docks at runtime. `Shared/` holds the top/bottom bars every pre-game screen wears. | `Scripts/Game/TBD/Session/<Feature>/UI/` |
+```text
+chimeraMenus.conf ──preset──> layouts/Session/<screen>/<shell>.layout + screen class
+TBD_UILayouts ──constant──> layouts/**.layout, Textures/TBD/*.edds
+TBD_UIIcons ──key──> Textures/TBD/Icons/TBD_Icon_<key>_UI.edds
+layouts/Common/TBD_Rounded*.layout ──GUID──> Textures/TBD/TBD_Disc_UI.edds
+```
 
----
+Four engine limits shape these files. Enfusion has no corner radius or 9-slice, so rounded
+surfaces are layouts of seven images cut from one disc texture. A text widget cannot change font
+from script, so each layout names its fonts. The engine blends colour in linear space, so a
+layout's colours are placeholders that `TBD_UITheme` repaints with flattened, opaque tokens. The
+vanilla texture GUIDs sit only inside the game's packed data, so every image the framework needs
+is a committed PNG imported here.
 
-## The Dock Shell Contract
+## Format
 
-A screen shell is a `.layout` under 200 lines: a `Backdrop`, a `WindowFrame`, and empty, named
-docks. `Scripts/Game/TBD/UI/Core/TBD_DockScreen.c` is the base class that fills them:
+- File type: widget layouts (`.layout`, plain text) and textures (a `.png` source with the `.edds`
+  that the import writes); every resource has a `.meta` beside it whose `Name` holds
+  `{GUID}UI/<path>`.
+- Resource GUID: the `.meta` file. The layouts use `7BD1A7000000XXnn`, one block per layout from the
+  ledger in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`; the textures keep the
+  GUID the import wrote. A GUID never changes once a script constant or a config names it.
+- Naming: `TBD_<Element>.layout` and `TBD_<Subject>_UI` textures; layouts sit in the folder of the
+  screen that uses them, textures under `Textures/TBD/`.
+- Adding or moving an asset: create or `git mv` it with its `.meta`, keep the `.meta` `Name` equal
+  to the new path, update the `TBD_UILayouts` constant and, for a menu shell, the
+  menu config's preset, then let [Workbench](/documentation_v2/glossary.md#workbench) open
+  the addon and rewrite `apps/mod/tbd-framework/resourceDatabase.rdb`, since the game finds a
+  non-script resource at a new path only through that database.
 
-| Dock | Who mounts what |
-|---|---|
-| `TopDock` (56) | `TBD_DockScreen` → `Session/Shared/TBD_SessionTopBar` |
-| `LeftDock` / `CenterDock` / `RightDock` | the screen → its panels (`Mount("LeftDock", TBD_UILayouts.PANEL)` …) |
-| `BottomDock` (64) | `TBD_DockScreen` → `Session/Shared/TBD_SessionBottomBar` |
-| `OverlayDock` (full-bleed, last child) | popovers / modals (`TBD_DropdownComponent`); hidden while empty |
+## Referenced by
 
-Column widths are each shell's own business (selector 320 / 440 / rest; lobby 280 / rest / 380).
-Reference shell: [`layouts/Session/MissionSelector/TBD_MissionSelector.layout`](layouts/Session/MissionSelector/TBD_MissionSelector.layout).
+- `TBD_UILayouts` and `TBD_UIIcons` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`, by GUID
+  and path.
+- `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`, by GUID: its six menu presets name
+  the four shell layouts.
+- The rounded-shape layouts, by GUID: the disc texture.
 
----
+## Boundaries
 
-## Technical Contracts & Rules
+- Depends on: the game's fonts, map layout, icon imageset and `TextureUI.conf` import settings;
+  the script classes under `apps/mod/tbd-framework/Scripts/Game/TBD/` that the layouts name as
+  components.
+- Used by: the framework's screens, HUD and menus.
+- Rules: every resource has one entry in `TBD_UILayouts` or `TBD_UIIcons`, and screens reach it only
+  through them; a resource and its `.meta` are committed together; a new or moved resource needs a
+  Workbench pass over `resourceDatabase.rdb`; `cargo xtask mod compile` checks the scripts that use
+  them.
 
-1. **The Dock / Sub-Layout Rule:**
-   No `.layout` file should exceed 1,000 lines; a shell stays under 200. Screens are shells with
-   named docks; modular sub-layouts are instantiated into them dynamically.
+## Related documentation
 
-2. **Single Source of Truth:**
-   All layout resource strings are registered once in `Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`.
-   Screens must always call `TBD_UILayouts.Create(TBD_UILayouts.CONST, parent)` (or
-   `CreateStretched` / `CreateHandler`) rather than hardcoding bare string paths.
-
-3. **GUID & Meta Invariance:**
-   Every `.layout` has a sibling `.layout.meta`. When moving layouts, preserve the `{GUID}` prefix
-   inside the `.meta` file so that existing engine references and `resourceDatabase.rdb` entries
-   maintain identity. GUIDs are `7BD1A7000000XXnn` (`XX` = block, `nn` = `00` root, `01` meta,
-   `02+` children); the block ledger is the header of `TBD_UILayouts.c`.
-
-4. **Theme, not literals:**
-   Colour comes from `TBD_UITheme` tokens and `TBD_EUITint`; icons from `TBD_UIIcons` keys. A
-   `.layout` carries placeholder colours only; the handler repaints on attach.
-
-5. **Workbench pass after new files:**
-   New `.c` files need a Workbench cold restart; new `.layout` / `.conf` files are invisible until
-   Workbench rewrites `resourceDatabase.rdb`. Headless compile: `cargo xtask mod compile`.
+- [Mod UI structure](/documentation_v2/mod/tbd-framework/UI/README.md)
+  — where each UI file goes and which mockup panel lands in which folder
+- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md)
+  — the design rules the theme and layouts encode
