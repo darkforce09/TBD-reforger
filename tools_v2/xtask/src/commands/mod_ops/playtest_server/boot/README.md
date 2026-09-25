@@ -48,3 +48,8 @@ the host reads as unknown and never as dead.
   and the join details come from the engine's own lines
   (`the_join_details_are_scraped_out_of_the_engines_lines`), all in
   `tools_v2/xtask/src/commands/mod_ops/playtest_server/tests/boot/tests.rs`.
+
+## Related documentation
+
+- [Playtest server runbook](/documentation_v2/runbooks/two_client_playtest/playtest_server.md) —
+  the banner, the registration hang and the Ctrl-C stop as an operator meets them.

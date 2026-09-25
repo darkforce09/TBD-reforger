@@ -44,3 +44,8 @@ tools_v2/xtask/src/commands/mod_ops/playtest_server/lifecycle/
   (`kill_run_keeps_the_pidfile_when_it_cannot_confirm`); the lock is exclusive and released on drop
   (`the_lock_is_exclusive_and_released_on_drop`); all in
   `tools_v2/xtask/src/commands/mod_ops/playtest_server/tests/lifecycle/tests.rs`.
+
+## Related documentation
+
+- [Playtest server runbook](/documentation_v2/runbooks/two_client_playtest/playtest_server.md) —
+  stopping a server before a restart, and what to do with a `STRAY SERVER` block.

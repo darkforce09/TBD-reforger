@@ -168,5 +168,8 @@ minute apart, so a credential pasted in later takes effect without a restart.
   framework on the staging server, and the log lines of a healthy boot.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local
   playtest with `cargo xtask mod playtest`.
+- [Playtest session steps](/documentation_v2/runbooks/two_client_playtest/session_join_to_deploy.md)
+  and [known limitations](/documentation_v2/runbooks/two_client_playtest/known_limitations.md) —
+  the framework's log lines as two players meet them, and what the session cannot yet prove.
 - [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs
   through Workbench and the gates.

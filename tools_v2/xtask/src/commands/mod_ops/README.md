@@ -259,6 +259,10 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
   cycle `mod wave` automates.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a playtest a
   second client joins, with `mod playtest`.
+- [Playtest server](/documentation_v2/runbooks/two_client_playtest/playtest_server.md) and
+  [headless preflight](/documentation_v2/runbooks/two_client_playtest/headless_preflight.md) —
+  running `mod playtest` step by step, and reading a `mod world-boot` of a loadout-carrying
+  mission.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   server `bootstrap-staging` and `remote-logs` serve.
 - [Boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md)

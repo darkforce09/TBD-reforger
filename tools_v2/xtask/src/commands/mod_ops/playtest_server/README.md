@@ -90,5 +90,7 @@ usage_fail::run ─ parse flags (a token acts where it stands: `--help` exits 0 
 
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — running a
   playtest a second client can join.
+- [Playtest server runbook](/documentation_v2/runbooks/two_client_playtest/playtest_server.md) —
+  the dry run, the admin restart, the stop and the join checks, step by step.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   server this lane mirrors locally.
