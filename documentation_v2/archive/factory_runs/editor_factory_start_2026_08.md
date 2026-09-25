@@ -1,3 +1,5 @@
+**Status:** archived — see [documentation_v2/runbooks/factory_waves/README.md](/documentation_v2/runbooks/factory_waves/README.md)
+
 # Editor factory — cold start
 
 **Written 2026-08-02.** Start a **fresh chat** with this file. The planning session that produced

@@ -44,3 +44,8 @@ The run target and its stamp come from
 - Rules: a missing or unreadable stamp blocks like a stale one, so unknown provenance is never
   green (`tools_v2/xtask/src/commands/platform/tests/preflight/run_target_tests.rs`); `--warn`
   changes only the exit code, never which lines print.
+
+## Related documentation
+
+- [Cold start and preflight](/documentation_v2/runbooks/factory_waves/cold_start_and_preflight.md) — where preflight sits in
+  an orchestrating session, and what to do about each BLOCK.

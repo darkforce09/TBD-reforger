@@ -101,3 +101,7 @@ verified <sha> ─▶ wave --close ─▶ marker commit ─▶ next wave
 
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — the platform factory
   procedure this driver automates.
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — every
+  subcommand in the order a wave uses it.
+- [Known traps](/documentation_v2/runbooks/factory_waves/known_traps.md) — why the driver keeps
+  private target folders, the run stamp and the step capture.

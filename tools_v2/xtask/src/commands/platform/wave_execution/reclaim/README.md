@@ -36,3 +36,8 @@ refuse rather than treat every slice as finished. An unknown argument exits 2.
   names the command when it sees reclaimable caches.
 - Rules: a live slice's cache is never removed; the warm gate folders stay unless asked for; the
   tests are in `tools_v2/xtask/src/commands/platform/wave_execution/tests/reclaim/tests.rs`.
+
+## Related documentation
+
+- [Cold start and preflight](/documentation_v2/runbooks/factory_waves/cold_start_and_preflight.md) — when to reclaim in an
+  orchestrating session.

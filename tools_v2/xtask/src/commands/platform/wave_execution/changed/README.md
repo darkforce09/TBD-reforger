@@ -44,3 +44,8 @@ The wave gate passes `<base>..HEAD` from `super::base`, because `main...HEAD` is
   instead of skipping it; the frontend scope holds the frontend's include inputs and not the
   API's (`the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not`); the tests are in
   `tools_v2/xtask/src/commands/platform/wave_execution/tests/changed/tests.rs`.
+
+## Related documentation
+
+- [Known traps](/documentation_v2/runbooks/factory_waves/known_traps.md) — the editions, the shared cache and the
+  vacuous-check traps these helpers guard against.

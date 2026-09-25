@@ -1,3 +1,5 @@
+**Status:** archived — see [documentation_v2/runbooks/factory_waves/README.md](/documentation_v2/runbooks/factory_waves/README.md)
+
 # Editor factory — slice-agent brief
 
 **This file exists because the block below did not.** Through editor waves 100–120 the standing
@@ -55,7 +57,7 @@ re-reads of a path the same agent had already read.
 ## FINAL REPORT — required schema
 
 Return **exactly these fields**. The seven reject conditions in
-[`FACTORY_FOR_CURSOR.md`](/documentation_v2/runbooks/factory_waves/README.md) §Reject are presence checks against this schema,
+[`FACTORY_FOR_CURSOR.md`](/documentation_v2/archive/factory_runs/factory_for_cursor_2026_07.md) §Reject are presence checks against this schema,
 so a missing field is a structural failure rather than a judgement call. Prose padding around the
 fields is what the orchestrator pays for on every subsequent turn — omit it.
 

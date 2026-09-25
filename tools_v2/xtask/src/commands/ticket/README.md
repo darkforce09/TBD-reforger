@@ -141,5 +141,5 @@ other error (`xtask: <cause>`); 2 a clap usage error.
 - [Ticket registry](/.ai/tickets/README.md) — the ticket files, their schema and the derived files.
 - [Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md) — how ticket ids are
   formed and cited.
-- [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — the ship, stamp and repack
-  order during a wave.
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — the ship, stamp
+  and repack order during a wave.

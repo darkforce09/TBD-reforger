@@ -55,3 +55,5 @@ one-dot parent, so a sub-slice shares its parent's tree.
 
 - [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — the slice lifecycle
   these commands automate.
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — the same
+  worktrees in the platform factory, and the `slice/<id>` branch exception to Law 2.

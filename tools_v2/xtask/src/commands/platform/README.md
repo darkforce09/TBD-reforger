@@ -120,5 +120,9 @@ an entry function prints `xtask: <cause>` and exits 1; a clap usage error exits 
 
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — the platform factory
   procedure `platform wave` automates.
+- [Cold start and preflight](/documentation_v2/runbooks/factory_waves/cold_start_and_preflight.md)
+  — `preflight`, `reclaim` and `status` at the start of a session.
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — `slice-worktree`,
+  `slice-run` and `platform wave` step by step.
 - [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — the slice worktree
   lifecycle the usage text points to.

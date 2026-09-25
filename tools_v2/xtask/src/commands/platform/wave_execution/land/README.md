@@ -53,3 +53,8 @@ land [--wave] [--bookkeeping] [<ticket id>…]
   asked for; a red gate after merge never drops a worktree; only `close_ceremony` writes marker
   commits, and what it checked is what lands, by sha; the tests are in
   `tools_v2/xtask/src/commands/platform/wave_execution/tests/land/tests.rs`.
+
+## Related documentation
+
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — landing, shipping, the verifier record
+  and the close, in order.

@@ -43,3 +43,8 @@ There is no `HEAD~1` fallback: after several merges that range covers only the l
 - Rules: the marker grammar stays anchored, since a looser one lets a subject such as
   `wave 76 CLOSED? reopened` become a base; a base that cannot be verified refuses rather than
   passes; the tests are in `tools_v2/xtask/src/commands/platform/wave_execution/tests/base/tests.rs`.
+
+## Related documentation
+
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — the gate base in the wave procedure, and
+  when to confirm one with `TBD_GATE_BASE_CONFIRM`.

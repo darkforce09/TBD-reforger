@@ -1,9 +1,11 @@
+**Status:** archived — see [documentation_v2/runbooks/factory_waves/README.md](/documentation_v2/runbooks/factory_waves/README.md)
+
 # Running the platform factory from Cursor — the procedural runbook
 
 **Audience: Grok 4.5 in Cursor, acting as the platform-factory command center.**
 Authorized by the operator 2026-07-26, when the Claude Code budget ran out after wave 5.
 
-[`PLATFORM_FACTORY.md`](/documentation_v2/runbooks/factory_waves/README.md) explains **why** the factory works this way and carries
+[`PLATFORM_FACTORY.md`](/documentation_v2/archive/factory_runs/platform_factory_2026_08.md) explains **why** the factory works this way and carries
 the wave 3–5 handoff. **This file is the how.** Where the two disagree on procedure, this file wins,
 because it is written to be followed literally rather than interpreted.
 

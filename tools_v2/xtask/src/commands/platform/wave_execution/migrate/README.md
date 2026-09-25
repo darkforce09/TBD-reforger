@@ -44,3 +44,8 @@ with no file, or a failed migration record all fail the step; none reads as a sk
 - Rules: only merged `main` advances the persist database, so its state is always a prefix of
   `main`'s migrations; the persist step never drops its database; the tests are in
   `tools_v2/xtask/src/commands/platform/wave_execution/tests/migrate/tests.rs`.
+
+## Related documentation
+
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — the `TBD_GATE_MIGRATION_0016` setting
+  both gates need.

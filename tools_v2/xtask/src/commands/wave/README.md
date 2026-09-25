@@ -85,5 +85,7 @@ error exits 2.
 
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — how a wave is planned,
   run, landed and closed.
+- [Wave planning](/documentation_v2/runbooks/factory_waves/wave_planning.md) — reading the
+  collision analysis, the width rule and repairing a wave that shipped one ticket at a time.
 - [Ticket registry](/.ai/tickets/README.md) — the ticket fields (`owns`, `depends_on`,
   `pack_last`) the plan is compiled from.

@@ -46,3 +46,10 @@ a ticket id passed where a base belongs.
   one of them, and `cargo xtask verify ci-schema-parity` fails when a row disappears; the slice
   gate writes its verdict receipt on both pass and fail but never when no step ran; the tests are
   in `tools_v2/xtask/src/commands/platform/wave_execution/tests/gate/tests.rs`.
+
+## Related documentation
+
+- [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — when each gate
+  runs in a wave.
+- [Slice agent brief](/documentation_v2/runbooks/factory_waves/slice_agent_brief.md) — the slice
+  gate every agent runs before it reports.
