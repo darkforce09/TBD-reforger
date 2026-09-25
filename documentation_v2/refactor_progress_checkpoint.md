@@ -238,7 +238,7 @@ the base brief names, outside the repository.
 | F19 | 5 · order 8 | Doc writer: `glossary.md`, `product_roadmap.md`, final pass on `documentation_v2/README.md` | running | — | — |
 | V5.5 | 5 · W5.5 | Wave verifier over F18 and F19 | dropped (operator direction: no verifier per wave) | — | — |
 | F19b | 5 · after CP4 | Apply the operator's CP4 strikes to `product_roadmap.md` | pending | — | — |
-| P5f | 5 · close | Closing fix run: the in-code README and doc leftovers Phase 5 writers record | pending | — | — |
+| P5f | 5 · close | Closing fix run: the in-code README and doc leftovers Phase 5 writers record | running (22 items; granted `git mv` of `design_system/military_symbology.md` → `map_symbology.md`) | — | — |
 | G1 | 6 | `CLAUDE.md` full refresh | pending | — | — |
 | G2 | 6 | Cursor rules and `.ai/tickets` instruction files refresh | pending | — | — |
 | G3 | 6 | Verifier over G1 and G2 | pending | — | — |
