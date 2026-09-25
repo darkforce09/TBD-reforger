@@ -152,8 +152,8 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the index of the page
-  feature docs.
+- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the route table: each
+  route with its code folder and feature doc, and the page areas and workspaces.
 - [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup,
   Discord sign-in included.
 - [Editor gates](/documentation_v2/runbooks/editor_gates.md) — running the headless editor gates

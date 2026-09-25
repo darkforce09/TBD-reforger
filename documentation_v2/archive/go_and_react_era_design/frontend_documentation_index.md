@@ -1,8 +1,10 @@
+**Status:** archived — see [frontend documentation](/documentation_v2/website/frontend/README.md)
+
 # Frontend Documentation Index
 
 Master index for all TBD Reforger frontend surfaces.
 
-**Doc hub:** [docs/website/frontend/ROADMAP.md](/documentation_v2/website/frontend/README.md) · **Mission Creator:** [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · **Tickets:** [TICKET_LEAD.md](../../TICKET_LEAD.md)
+**Doc hub:** [docs/website/frontend/ROADMAP.md](/documentation_v2/website/frontend/README.md) · **Mission Creator:** [ROADMAP.md](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) · **Tickets:** [TICKET_LEAD.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)
 
 | Doc | Route | Status | Handoff § | Ticket |
 |-----|-------|--------|-----------|--------|

@@ -72,3 +72,8 @@ All `pub(crate)`, for the crate's tests alone:
   no shipped code can depend on it; a pin lists each shard once, which keeps the one-definition
   guarantee `only_item` and `only_body` rely on; the eight route tables stay enumerated one by
   one, so a domain renamed in the API breaks this crate's test build.
+
+## Related documentation
+
+- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — the shared foundations
+  whose tests this module serves.

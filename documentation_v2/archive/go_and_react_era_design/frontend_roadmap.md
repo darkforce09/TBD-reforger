@@ -1,12 +1,12 @@
-**Status:** live
+**Status:** archived — see [frontend documentation](/documentation_v2/website/frontend/README.md)
 
 # Frontend — ROADMAP
 
 **Start here.** Planning view for the Leptos SPA — what is **shipped**, what is **deferred**, and links to every surface doc.
 
-**Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
+**Queue:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md)
 
-**Code:** [`apps/website/frontend/src/`](../../../apps/website/frontend/src) · **Routes:** [`apps/website/frontend/src/router.rs`](../../../apps/website/frontend/src/router.rs) · Conventions: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md)
+**Code:** [`apps/website/frontend/src/`](/apps/website/frontend/src/) · **Routes:** [`apps/website/frontend/src/router.rs`](/apps/website/frontend/src/router.rs) · Conventions: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md)
 
 ---
 
@@ -21,7 +21,7 @@
 | **[`documentation_v2/archive/audits/codebase_audit_2026.md`](/documentation_v2/archive/audits/codebase_audit_2026.md)** | T-122 audit + T-123 resolutions (T1/T8) |
 | **[`documentation_v2/standards/documentation_standards.md`](/documentation_v2/standards/documentation_standards.md)** | Cross-boundary `@contract` / codegen / validation (T-123 shipped) |
 | **[`docs/platform/macos_ux_architecture.md`](/documentation_v2/archive/go_and_react_era_design/macos_ux_architecture.md)** | Split-pane / frictionlessness methodology |
-| **Root [`CLAUDE.md`](../../../CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
+| **Root [`CLAUDE.md`](/CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
 | **[`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation_v2/standards/commit_checklist.md)** | Same-commit doc sync — read before every T-0xx |
 | **[Archive](/documentation_v2/archive/monorepo_migration/docs_website_archive_readme.md)** | Historical stitch/blueprint HTML (reference only) |
 
@@ -71,7 +71,7 @@ All routes below have a surface spec unless noted. Live UI = `apps/website/front
 | **T-088** | Multi-server picker | [server-intel.md](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md) | UI for `GET /servers` |
 | **T-068+** | Mission editor Eden parity | [mission-editor.md](/documentation_v2/website/frontend/apps/editor/ux_spec.md) | **T-068 Phase 1 shipped**; Phase 2 paused; **T-090–T-092** map gate active |
 
-Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
+Full deferred table: [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md).
 
 ---
 
@@ -111,7 +111,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
 ## Design system
 
-- **Live tokens:** [`apps/website/frontend/style/aegis.css`](../../../apps/website/frontend/style/aegis.css)
+- **Live tokens:** [`apps/website/frontend/style/aegis.css`](/apps/website/frontend/style/aegis.css)
 - **Reference YAML:** [`documentation_v2/design_system/token_exports/aegis_design_tokens.md`](/documentation_v2/design_system/token_exports/aegis_design_tokens.md)
 - **Methodology:** [`docs/platform/macos_ux_architecture.md`](/documentation_v2/archive/go_and_react_era_design/macos_ux_architecture.md)
 

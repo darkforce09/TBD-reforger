@@ -77,3 +77,8 @@ route guard in `auth/` reads the route table of `crate::router`.
   production file opens with a `//!` header, stays within 500 lines, documents every visible item
   and holds no inline test module (`v2_production_files_meet_the_documentation_standard` in
   `apps/website/frontend/src/v2/tests/doc_audit/mod.rs`).
+
+## Related documentation
+
+- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — where these foundations
+  sit among the routes, pages and workspaces they serve.

@@ -77,3 +77,5 @@ or surrounding whitespace, the same rule as the API's
   the auth callback and settings.
 - [Identity transactions](/documentation_v2/website/api_v2/verification_evidence/identity_transactions.md)
   — sessions, refresh rotation and replay revocation in the API, and the browser's generations.
+- [Frontend documentation](/documentation_v2/website/frontend/README.md#route-table) — the route table
+  whose access tiers the route guard enforces.

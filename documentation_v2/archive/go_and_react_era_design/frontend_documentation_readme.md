@@ -1,3 +1,5 @@
+**Status:** archived — see [frontend documentation](/documentation_v2/website/frontend/README.md)
+
 # Frontend documentation
 
 **Start at [`ROADMAP.md`](/documentation_v2/website/frontend/README.md)** — shipped routes, deferred T-IDs, and links to all surface specs.
@@ -9,6 +11,6 @@
 | [`_template.md`](/documentation_v2/archive/go_and_react_era_design/frontend_page_spec_template.md) | Template for new page docs |
 | [`TRACKING.md`](/documentation_v2/website/frontend/README.md) | Pointer to ticket registry (no separate deferred-ID list) |
 
-**Ticket queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)
+**Ticket queue:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md)
 
 **Live UI authority:** `apps/website/frontend/src/` (one module per page; T-159 Leptos rewrite — React deleted at T-159.29.3)

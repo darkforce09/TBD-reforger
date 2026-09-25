@@ -64,7 +64,9 @@ which walks every production file of the tree.
 
 ## Related documentation
 
-- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the index of the
-  page feature docs.
+- [Frontend documentation](/documentation_v2/website/frontend/README.md) — the route table: each
+  route with its code folder and feature doc.
+- [Page areas](/documentation_v2/website/frontend/pages/README.md) — the documentation of `pages/`,
+  one folder per navigation area.
 - [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
   Mission Creator's documents, starting from its roadmap.

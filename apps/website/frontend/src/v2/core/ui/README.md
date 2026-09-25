@@ -77,3 +77,5 @@ disabled classes, `HOVER_FILL` and `DISABLED_GLYPH`, from the
 
 - [Design tokens](/documentation_v2/design_system/design_tokens.md) — the design token
   reference: palette, typography, spacing and radii.
+- [Frontend documentation](/documentation_v2/website/frontend/README.md#design) — the design references
+  and tokens the primitives follow.

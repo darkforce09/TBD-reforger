@@ -51,3 +51,8 @@ server intel page's copy button and the
   instant written back keeps its wire spelling, and anything but a UTC instant is refused
   (`the_wire_spellings_parse_and_write_back_unchanged` and
   `anything_but_a_valid_utc_instant_is_refused` in `tests/utc_timestamp.rs`).
+
+## Related documentation
+
+- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — the shared foundations
+  among the routes, pages and workspaces of the app.

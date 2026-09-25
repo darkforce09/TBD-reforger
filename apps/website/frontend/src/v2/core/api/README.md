@@ -86,3 +86,5 @@ the refresh policy, the endpoint paths and the wire types compile natively, so t
 - [API overview](/documentation_v2/website/api_v2/api_overview.md) — every domain's routes.
 - [Server intel page](/documentation_v2/website/frontend/pages/command_center/server_intel/server_intel_page.md)
   — the page that reads the live status stream.
+- [Frontend documentation](/documentation_v2/website/frontend/README.md#shared-foundations) — the shared foundations
+  among the routes, pages and workspaces of the app.
