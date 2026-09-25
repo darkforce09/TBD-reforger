@@ -4,8 +4,8 @@ title = "Decide whether mission upload and save share one duplicate-slot check"
 summary = "Upload's check_duplicate_slot_ids_in_payload (pages/mission_hub/library/dossier_upload.rs:93) refuses any repeated id per callsign; the engine's duplicate_slot_ids (data/store/operations/slot_ids/duplicates.rs:35-56) skips ids failing slot_exists, so save passes it. mission_saving.rs:30-43 records this gap."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T15:18:32Z"
 notes = "Upload: apps/website/frontend/src/v2/pages/mission_hub/library/dossier_upload.rs:93-124 (called :138) groups by callsign or name and refuses any repeat. Save: apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/mission_saving.rs:27-49 calls live_duplicate_slot_ids -> apps/website/map-engine/src/data/store/operations/slot_ids/duplicates.rs:35-56, which gates each id on doc.slot_exists, so a dangling duplicate id passes save and fails upload. Both group by callsign label rather than squad id: two squads sharing a label share one seen-set, and the report says 'in this squad'. mission_saving.rs:35-43 records the divergence as deliberate and unresolved. T-946.86 (ready) wires the save guard and lists the twin in its context only. Reading 1: collapse both onto one engine function. Reading 2: the difference is intended; document why."
+created_at = "2026-09-24T15:18:32Z"
 
 [scope]
 domain = "website"

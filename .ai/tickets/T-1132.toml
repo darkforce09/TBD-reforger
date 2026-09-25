@@ -1,0 +1,12 @@
+id = "T-1132"
+kind = "work"
+title = "Rename developer-tools files named after one helper they hold"
+summary = "About sixteen developer-tools files carry one helper's name but hold a subsystem, e.g. map_verification/labels/read_json.rs (height-label and location gates), mathematical_verification/tempdir.rs (P1 gates), reclassify/obj_get.rs (the reclassify lane), mesh_format/u16le.rs (parse_xob) (CLAUDE.md law 4)."
+class = "chore"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src; line counts at HEAD. map_verification: labels/read_json.rs (411 lines: read_json plus height_labels, locations and locations_gate_errors, the height-label and location gates); labels/town_labels.rs (341: town_labels plus road_names and decode_u16_gray_png); object_goldens/read_json.rs (207: plus chunk_bin_errors, the chunk binary golden check); world_line_of_sight/gunzip_json.rs (449: plus load_cell, load_dem, replay and run, the whole world-los runner). world_export_pipeline: mathematical_verification/tempdir.rs (238: tempdir plus run_p1_gates); chunk_partitioner/may_clear_density_dir.rs (83: plus phase_kinds, terrain_row, gz9, compact, pretty_nl and the build_world_objects entry point); chunk_partitioner/redensify_from_committed.rs (349: plus gen_density_fixture, road_census and build_roads_from_topo); reclassify/obj_get.rs (452: obj_get plus the whole reclassify lane, reclassify_terrain and friends); forest_smoothing/round_coord.rs (423: plus the Chaikin smoother, smooth_ring and smooth_regions). blueprint: architectural_analysis/contour_tracing.rs (the shared voxel dump-generation skeleton, no contour tracing); bvh/instance_pairs.rs (one-sided collision face pairing, not instance pairs); archive_emission/library_reader.rs (the bvh-batch --all-prefabs library builder, not a reader) and archive_emission/library_reader/gunzip_json.rs (384: plus load_prefab_rows, world_census, the hull and canopy sampling and build_library); mesh_decoding/mesh_format/u16le.rs (353: the byte readers plus parse_xob and the whole XOB decoder); voxel_processing/mesh_voxelization/sub.rs (268: vector helpers plus generate, write_dump and print_stats). blueprint/mod.rs declares these modules by #[path] with short aliases, so renames touch it too. Update each folder README's Contents in the same commit. browser_testing/cdp/sleep_ms.rs is T-1013; the xtask files are T-1114. Source: README writers R19 (R19r) and R20.2."
+created_at = "2026-09-25T08:59:01Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

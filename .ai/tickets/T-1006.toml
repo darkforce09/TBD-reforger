@@ -4,8 +4,8 @@ title = "Fix staging deploy compose step that never starts the API"
 summary = "`cargo xtask deploy staging` prints `(API + Postgres)` at `tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:214`, but its compose command (:217 dry-run, :223) lacks `--profile api`; the `api` service is profile-gated (`apps/website/docker-compose.staging.yml:44`), so only Postgres starts."
 class = "bug"
 status = "idea"
+notes = """Rechecked at HEAD by README writer R17.2 (TF11 batch): the compose step still lacks --profile api; at HEAD the lines are tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:213 (the '(API + Postgres)' banner), :216 (dry-run) and :222 (the real command); the working tree reads one line later because of another session's uncommitted rsync exclude in the same file. apps/website/docker-compose.staging.yml:43-44 still gates api behind profiles ["api"]. The fix is in xtask code, so the scope's layer (docs) does not match; that is a correction for the operator."""
 created_at = "2026-09-24T02:04:26Z"
-notes = "Rechecked at HEAD by README writer R17.2 (TF11 batch): the compose step still lacks --profile api; at HEAD the lines are tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:213 (the '(API + Postgres)' banner), :216 (dry-run) and :222 (the real command); the working tree reads one line later because of another session's uncommitted rsync exclude in the same file. apps/website/docker-compose.staging.yml:43-44 still gates api behind profiles [\"api\"]. The fix is in xtask code, so the scope's layer (docs) does not match; that is a correction for the operator."
 
 [scope]
 domain = "repo"

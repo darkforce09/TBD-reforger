@@ -1,0 +1,12 @@
+id = "T-1123"
+kind = "work"
+title = "Decide whether chunk index paths name the .bin or .json.gz"
+summary = "Everon's committed chunk index lists objects/chunks/<cx>_<cy>.bin; build-objects writes .json.gz paths and calls the gz-JSON authoritative (object_partitioning.rs:408-413). Either the index is right and the builder and validate-exports follow, or rebuild the index as .json.gz."
+class = "audit"
+status = "idea"
+notes = "Reading 1, the committed index is right: assets_v2/terrains/everon/objects/chunks/manifest.json lists .bin paths, the binary twin is what the objects.binary container is built from, and build-objects (tools_v2/developer-tools/src/world_export_pipeline/chunk_partitioner/object_partitioning.rs:413) plus validate-exports (export_preparation/export_validation/artifact_integrity.rs:75, which gunzips the path) change to .bin, with validate-exports decoding the binary. Reading 2, the builder is right: its comment (:409-410) says the gz-JSON stays authoritative until the terrain manifest names only the binary path, so the committed index is stale and a rebuild or a hand edit restores .json.gz paths. The map engine uses only cx and cy (apps/website/map-engine/src/streaming/loaders/residency.rs:74-80), and the world loader reads the objects.binary container or <chunksPath>/<id>.json.gz (streaming/loaders/world_loader/README.md:38), so neither reading changes the runtime. The fix for validate-exports is T-1122. Decision for the operator (orchestrator decision 2026-09-25). Source: README writer R20.2."
+created_at = "2026-09-25T08:50:51Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

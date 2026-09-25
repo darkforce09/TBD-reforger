@@ -4,8 +4,8 @@ title = "Pin the apps/mod MCP configs and drop personal absolute paths"
 summary = "apps/mod/.mcp.json:4-5 runs unpinned 'npx -y enfusion-mcp' instead of the pinned enfusion-mcp@0.6.1 in tools_v2/enfusion_mcp_node_package; it and apps/mod/.cursor/mcp.json:6-11 hard-code one workstation's absolute paths."
 class = "chore"
 status = "idea"
-created_at = "2026-09-25T04:28:47Z"
 notes = "Tracked configs: apps/mod/.mcp.json:4-5 ('command': 'npx', 'args': ['-y', 'enfusion-mcp']) resolves whatever version npm serves, while tools_v2/enfusion_mcp_node_package/package.json pins enfusion-mcp 0.6.1 so callers start the same version from disk, and apps/mod/tbd-emcp/README.md:22 says the committed EMCP_WB_* handlers come from enfusion-mcp@0.6.1. apps/mod/.mcp.json:7-9 set ENFUSION_GAME_PATH, ENFUSION_WORKBENCH_PATH and ENFUSION_PROJECT_PATH to one workstation's home paths; apps/mod/.cursor/mcp.json:6 points node at an absolute checkout path of tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js and :9-11 repeat the three home paths. The repository-root .cursor/mcp.json carries the same content but is gitignored (.gitignore:25), so it is out of scope unless the operator wants it documented. cargo xtask mod dev-bootstrap installs the pinned package (tools_v2/xtask/src/commands/mod_ops/development_bootstrap.rs:98) and setup mcp-game-root prepares the game root, so the configs can point at repository-relative paths or an xtask-generated file. Orchestrator decision 2026-09-25 (R14.1 questions). Source: README writer R14.1."
+created_at = "2026-09-25T04:28:47Z"
 
 [scope]
 domain = "mod"

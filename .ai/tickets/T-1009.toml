@@ -4,6 +4,7 @@ title = "Fix ticket add ignoring its --program, --surfaces and --impact flags"
 summary = "`ticket add` declares --program, --surfaces and --impact (tools_v2/xtask/src/commands/ticket/cli.rs:35-40, defaults eden/MAP/ui), but tools_v2/ticket-engine/src/cli/mutations.rs:20 discards them and ops/creation.rs:59 mints every ticket with scope repo/docs. Apply the flags or remove them."
 class = "bug"
 status = "idea"
+notes = "Class inference (TF11r questions, orchestrator decision 2026-09-25): ticket add has no --class flag. tools_v2/ticket-engine/src/ops/creation.rs:48 sets class from classify_work (tools_v2/ticket-engine/src/model/scope.rs:176-222) over the title and summary together, by whole token, with precedence bug > audit > docs > chore > feature: fix/fixes/fixed/bug/regression mint bug, audit mints audit, docs/doc/readme/documentation mint docs, refactor/cleanup/delete/port/rename/migrate/migration/gate/ci mint chore, anything else feature. So a 'Decide whether' or 'Check whether' ticket mints as feature, and a summary that merely mentions a gate or CI mints as chore; every filing batch hand-corrects the class afterwards. Add a --class flag (and honour the scope flags above) or print the inferred class and its trigger word."
 created_at = "2026-09-24T02:32:19Z"
 
 [scope]

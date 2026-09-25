@@ -1,0 +1,12 @@
+id = "T-1122"
+kind = "work"
+title = "Fix world validate-exports failing on the committed Everon chunks"
+summary = "world validate-exports gunzips every chunk index cells[].path (artifact_integrity.rs:75), but the committed assets_v2/terrains/everon/objects/chunks/manifest.json lists raw .bin paths, so it stops with 'invalid gzip header' and exits 1; the builder writes .json.gz paths (object_partitioning.rs:413)."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src/world_export_pipeline unless stated. export_preparation/export_validation/artifact_integrity.rs:67-75 reads <chunksPath>/manifest.json and passes terrain_dir.join(cells[].path) to gunzip_json. assets_v2/terrains/everon/objects/chunks/manifest.json names objects/chunks/0_0.bin and so on (raw binary), so the first cell fails with 'world: invalid gzip header' and the command exits 1 before any later check runs (live run by README writer R20.2). Both twins are committed (315 .bin and 315 .json.gz under objects/chunks/). chunk_partitioner/object_partitioning.rs:409-413 writes each <key>.bin beside the gz-JSON and records path objects/chunks/<key>.json.gz. The map engine reads only cx and cy from the index (apps/website/map-engine/src/streaming/loaders/residency.rs:74-80, manifest.rs:248-265), so the runtime does not notice. Which side is authoritative is T-1123; this ticket makes validate-exports pass (or fail with a named check) on the committed data once that is decided. Source: README writer R20.2."
+created_at = "2026-09-25T08:50:22Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

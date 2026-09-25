@@ -4,8 +4,8 @@ title = "Fix mcp selftest reading a missing fixture as empty transcript"
 summary = "mcp/call_selftest.rs:449 reads each transcript fixture with unwrap_or_default, so a missing or unreadable fixture becomes an empty body; the empty-response arm (:164-174) then passes without its fixture."
 class = "bug"
 status = "idea"
-created_at = "2026-09-25T08:16:33Z"
 notes = "Paths under tools_v2/xtask. src/commands/mcp/call_selftest.rs:448-451 (xtask_consume) does fs::read_to_string(fixture).unwrap_or_default() and pipes the result to 'cargo xtask mcp consume'. The fixtures live in fixtures/mcp/ (repository_layout::MCP_TRANSCRIPT_FIXTURES_DIR, call_selftest.rs:84) and the five consume arms (:120-174) each name one file; if mcp-empty.jsonl goes missing, the empty body still yields rc 1 and no output, so the 'empty response rc1 empty-out' check passes without its fixture, and the other arms fail with a misleading rc message instead of naming the missing file. Return a NotRun (or a failed check naming the path) when the read fails, so the selftest stays fail-closed. Source: README writer R17.1."
+created_at = "2026-09-25T08:16:33Z"
 
 [scope]
 domain = "repo"

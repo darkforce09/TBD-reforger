@@ -4,8 +4,8 @@ title = "Fix session top bar count icon loading missing key group"
 summary = "TBD_SessionTopBar.c:113 loads icon key 'group', but TBD_UIIcons ships 'groups' (:124) and has no 'group' quad, so Load() hides CountIcon (:77-80) and the player count never shows its icon."
 class = "bug"
 status = "idea"
+notes = 'Paths under apps/mod/tbd-framework. Scripts/Game/TBD/UI/Common/TBD_SessionTopBar.c:111-115 calls TBD_UIIcons.Load(m_wCountIcon, "group") for the CountIcon widget (UI/layouts/Session/Shared/TBD_SessionTopBar.layout:203). Scripts/Game/TBD/UI/Core/TBD_UIIcons.c:120-138 (BuildShipped) lists the 38 shipped keys, including "groups" but not "group"; the quad table (BuildTable, :154-172) has no "group" entry either; Load() (:57-90) therefore finds no texture and no quad and calls w.SetVisible(false) (:77-80). UI/Textures/TBD/Icons/ ships TBD_Icon_groups_UI.edds. Fix: load "groups" (or add a "group" quad). Source: README writer R14.3.'
 created_at = "2026-09-25T05:05:44Z"
-notes = "Paths under apps/mod/tbd-framework. Scripts/Game/TBD/UI/Common/TBD_SessionTopBar.c:111-115 calls TBD_UIIcons.Load(m_wCountIcon, \"group\") for the CountIcon widget (UI/layouts/Session/Shared/TBD_SessionTopBar.layout:203). Scripts/Game/TBD/UI/Core/TBD_UIIcons.c:120-138 (BuildShipped) lists the 38 shipped keys, including \"groups\" but not \"group\"; the quad table (BuildTable, :154-172) has no \"group\" entry either; Load() (:57-90) therefore finds no texture and no quad and calls w.SetVisible(false) (:77-80). UI/Textures/TBD/Icons/ ships TBD_Icon_groups_UI.edds. Fix: load \"groups\" (or add a \"group\" quad). Source: README writer R14.3."
 
 [scope]
 domain = "mod"

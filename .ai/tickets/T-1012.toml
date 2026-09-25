@@ -4,8 +4,8 @@ title = "Fix cargo xtask db --help text naming retired make targets"
 summary = "Seven cargo xtask db --help lines name retired make targets (make db-up, make seed, make rust-test-it; tools_v2/xtask/src/commands/db/operations.rs:167-212), and tools_v2/xtask/src/cli/mod.rs:65 lists a nonexistent migrate subcommand. Describe the cargo xtask db verbs instead."
 class = "bug"
 status = "idea"
-created_at = "2026-09-24T02:33:03Z"
 notes = "Rechecked at HEAD by README writers R17.1 and R17.2 (TF11 batch): the seven --help lines are tools_v2/xtask/src/commands/db/operations.rs:167 (make db-up), :169 (make db-down), :171 (make db-logs), :173 (make seed), :193 (make db-backup-drill), :203 (make db-backup-verify DUMP=…) and :212 (make rust-test-it, which also says the suite uses rust_it while db test-it now reserves a random database; that half is T-1109). tools_v2/xtask/src/cli/mod.rs:65 still documents the Db group as 'up / down / seed / migrate / test-it', and no migrate subcommand exists (the API migrates on boot). Non-help doc comments of the same file that narrate make (:295, :301, :323, :335, :407, :423) are the same retired-Makefile narration as T-1118."
+created_at = "2026-09-24T02:33:03Z"
 
 [scope]
 domain = "repo"

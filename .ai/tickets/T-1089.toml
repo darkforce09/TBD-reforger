@@ -4,8 +4,8 @@ title = "Remove or wire uncalled mod script methods and components"
 summary = "No caller: TBD_ObjectivesComponent.BuildBoardForPlayer (:782), TBD_FrameworkManager.IsNightVisionAllowed (:439), TBD_RequestObjectiveHud (TBD_ObjectiveHud.c:284), TBD_RadioClient.IsServed/ShowNow (:207,:215), five TBD_RadioBridgeStub hooks (:44-82); no prefab attaches TBD_RegistryPocComponent."
 class = "chore"
 status = "idea"
-created_at = "2026-09-25T04:24:45Z"
 notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD; callers checked with git grep over apps/mod .c/.et/.ent/.layer/.conf. Gamemode/Objectives/TBD_ObjectivesComponent.c:782 BuildBoardForPlayer(int playerId): declaration only. Gamemode/Orchestrator/TBD_FrameworkManager.c:439 IsNightVisionAllowed(): declaration only (the replicated m_bNightVision it reads is at :305-306). UI/Hud/TBD_ObjectiveHud.c:284 SCR_PlayerController.TBD_RequestObjectiveHud(): declaration only, which Gamemode/Objectives/TBD_ObjectivesComponent.c:946-947 already states. Systems/Radio/TBD_RadioClient.c:207 IsServed() and :215 ShowNow(): no caller (GetNetLine :176 and GetNetCount :197 are used inside the file at :165 and :371). Systems/Radio/TBD_RadioBridgeStub.c:44 OnPlayerSpawned, :56 OnPlayerSpawnedById, :65 OnPlayerKilled, :76 OnRadioRetune, :82 OnPTT: no call site (header :13, :27-28 says so); only OnStageChanged :95 is called (Gamemode/Orchestrator/TBD_FrameworkManager.c:1200). Core/TBD_RegistryPocComponent.c:4 (SCR_BaseGameModeComponent): no prefab or world attaches it; Systems/Loadouts/TBD_LoadoutEquipComponent.c:135 cites it, and tools_v2/xtask/src/commands/setup/server_profile.rs:117 still tells the operator to add it to the GameMode entity. Source: README writers R12, R13 and R14.2."
+created_at = "2026-09-25T04:24:45Z"
 
 [scope]
 domain = "mod"

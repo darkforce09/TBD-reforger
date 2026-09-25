@@ -4,8 +4,8 @@ title = "Fix mk reclaim-target-ci deleting target-ci under --dry-run"
 summary = "cargo xtask mk parses --dry-run (build/recipes/execution.rs:9) but dispatches reclaim-target-ci (:36) before consulting it, so the dry run calls reclaim_target_ci (core/cargo_target_directory.rs:327-351), which removes target-ci for real."
 class = "bug"
 status = "idea"
-created_at = "2026-09-25T08:16:09Z"
 notes = "Paths under tools_v2/xtask/src. commands/build/recipes/execution.rs:3-7 documents --dry-run as printing recipe lines without running them, and :9 reads the flag, but :30-38 return early for the three non-recipe targets before :55 and :76 consult it; 'reclaim-target-ci' goes to core/cargo_target_directory.rs:327-351, which runs du -sh and std::fs::remove_dir_all on the primary checkout's target-ci. print-cargo-target-dir and verify-cargo-target only read, so reclaim-target-ci is the one target where the flag matters. Make the dry run print what it would remove (size and path) and exit 0 without deleting, and add a test beside the reclaim tests in commands/build/tests/recipes.rs. The build README already warns about it (commands/build/README.md:38). Source: README writer R17.1."
+created_at = "2026-09-25T08:16:09Z"
 
 [scope]
 domain = "repo"

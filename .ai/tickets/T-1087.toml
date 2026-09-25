@@ -4,8 +4,8 @@ title = "Send the task HUD snapshot only when tasks change"
 summary = "Every client asks for the task HUD each second (TBD_TaskStateMachine.c:640-647, TICK_MS :110) and the server always answers with a Reliable Owner RPC (TBD_TaskHud.c:252-262), ungated; the objective HUD skips unchanged snapshots (TBD_ObjectivesComponent.c:36-40)."
 class = "chore"
 status = "idea"
-created_at = "2026-09-25T04:23:32Z"
 notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD. Gamemode/Objectives/TBD_TaskStateMachine.c:618-623 arms TBD_TaskHudTick on clients, and :640-647 calls TBD_TaskHud.RequestLocal() then re-schedules every TICK_MS = 1000 (:110). UI/Hud/TBD_TaskHud.c:216-221 sends Rpc(TBD_RpcAsk_TaskHud) (Reliable Server, :252) and the server handler :253-263 builds a snapshot and always replies Rpc(TBD_RpcDo_TaskHud, xs, zs, icons, labels, ids, states) (Reliable Owner, :267) with no change check, so every client costs two Reliable RPCs a second for the whole round, idle or not. The objective HUD was gated for the same cost: Gamemode/Objectives/TBD_ObjectivesComponent.c:36-40 (hash per owner, RPC only on a difference), which T-946.55 describes. Source: README writer R14.2."
+created_at = "2026-09-25T04:23:32Z"
 
 [scope]
 domain = "mod"

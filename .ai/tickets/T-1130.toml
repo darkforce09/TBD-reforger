@@ -1,0 +1,13 @@
+id = "T-1130"
+kind = "work"
+title = "Tidy xtask verifications: redundant check, scattered paths, wave gate"
+summary = "ci/schema_parity/source_audit.rs:126-139's narrow-run check fires only after has_good already failed; verifications spell API, engine and frontend paths outside core/repository_layout.rs (sql_deserialization.rs:44, route_tags.rs:101-104, engine_layer_rules.rs, editor_orbat_coherency.rs:153-155); the wave gate's VERIFY_STEPS (gate.rs:59) omits engine-layers."
+class = "chore"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src. (1) verifications/ci/schema_parity/source_audit.rs:114-124 fails the schema job when no run step is the full gate (has_good); the narrow check at :126-139 only fires when !has_good, so it adds a second FAIL line to a run that has already failed and can never fail a run on its own. Fold its hint into the has_good message or drop it. (2) core/repository_layout.rs states it spells each checkout location once, but verifications spell their own: verifications/database/sql_deserialization.rs:45 (apps/website/api_v2, inside verify_no_select_star at :44), verifications/architecture/route_tags.rs:101 and :104 (api_v2 core/http_router.rs and src), verifications/architecture/engine_layer_rules.rs:9, :17, :75, :78, :101, :103, :105 (graphics-engine, map-engine, editing, frontend, data, world, data/scenario) and verifications/architecture/editor_orbat_coherency.rs:153-155 (orbat_manager.rs, eden_chrome.rs, overlay/symbology/roles/classify.rs). Move them into repository_layout. (3) commands/platform/wave_execution/gate.rs:59-70 VERIFY_STEPS lists ten verifications; engine-layers is not among them, so the wave gate never runs it (only the ci.yml language-gates job does). Add the row or record why it stays CI-only. Source: README writer R18.1."
+created_at = "2026-09-25T08:56:51Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

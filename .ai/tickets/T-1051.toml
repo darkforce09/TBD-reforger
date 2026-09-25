@@ -4,8 +4,8 @@ title = "Check whether minted vehicle and object ids can collide"
 summary = "mint_id (data/store/operations/entity/identity.rs:55-64) skips only live slot ids, yet mints vehicle and object ids (armed_placement.rs:109, placement.rs:96) from a counter restarting at 0 per session (editing/host.rs:48); rows/vehicles.rs:37,217 and rows/entities.rs:28 insert unchecked."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T15:18:03Z"
 notes = "apps/website/map-engine/src/data/store/operations/entity/identity.rs:55-64 (mint_id checks live_slot_ids only); vehicle/object callers: store/operations/entity/armed_placement.rs:109, entity/placement.rs:96; slot callers placement.rs:56, arming.rs:57, clipboard.rs:85. Counter: apps/website/map-engine/src/editing/host.rs:48 (next_id starts at 0 on every install). Unchecked inserts: store/rows/vehicles.rs:37,217 (vehicles.insert by id), store/rows/entities.rs:28. mint_ids (identity.rs:67-89) does check vehiclesById, entitiesById and commentsById. Reading 1: a reopened mission's vehicle or object n<k> is overwritten by a new placement; bug. Reading 2: another guard prevents it; document that guard."
+created_at = "2026-09-24T15:18:03Z"
 
 [scope]
 domain = "engine"

@@ -4,8 +4,8 @@ title = "Check map render bench stress helpers and calibration hide"
 summary = "diagnostics/bench/frame_1.rs:98-102,149-152 pop the last batch as calibration, but calibration is lane 1 and batches sort ascending (overlay/lanes.rs:225-233), so clear_stress drops every other lane; no callers. frame/lifecycle.rs:315-322 hide_calibration marks no damage."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T19:10:14Z"
 notes = "apps/website/map-engine/src/diagnostics/bench/frame_1.rs:96-102 (seed_stress calls clear_stress, then pops self.batches.last() expecting calibration) and :148-187 (clear_stress pops the last batch as calibration, destroys every other batch's buffers, drains every tex_lanes texture and clears lane_pool, then pushes the popped batch back). Calibration's lane id is 1 (apps/website/map-engine/src/overlay/lanes.rs:225-233; overlay/tests/draw_order.rs:209) and frame upserts keep batches ascending by lane (apps/website/graphics-engine/src/frame/packet.rs:56-64), so the popped batch is the highest lane, not calibration, and every map lane is destroyed. seed_stress and clear_stress are wasm_bindgen exports with no caller in apps/ or tools_v2/: fix or remove. apps/website/map-engine/src/frame/lifecycle.rs:313-322 (hide_calibration flips visible on the calibration lane without self.damage.mark(), unlike mark_dirty at :30-31); callers apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount/boot_tasks.rs:283, apps/debug/world_los/live/mount.rs:70 and apps/debug/building_viewer/live/wiring.rs:146 run during boot, when other uploads mark damage, so the missing mark may be harmless."
+created_at = "2026-09-24T19:10:14Z"
 
 [scope]
 domain = "engine"

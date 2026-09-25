@@ -4,8 +4,8 @@ title = "Close mission runtime gaps: params, AI defaults, late-join audio"
 summary = "TBD_MissionParams.Get/Has (TBD_MissionParams.c:132,168) have no caller; TBD_GroupState.c:270,286 applies group AI defaults only once a slot body joins an SCR_AIGroup; TBD_AudioEmitter.c:350-367,503-521 pushes armed emitters once, so late joiners never hear them."
 class = "feature"
 status = "idea"
-created_at = "2026-09-25T04:23:06Z"
 notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD/Systems. Mission parameters: Mission/Data/TBD_MissionParams.c:132 Get(symbol) and :168 Has(symbol) have no caller in apps/mod; only Resolve() runs (Mission/Loaders/TBD_MissionLoader.c:1815), so a resolved launch value reaches no gameplay reader; the header :10 also says 'There is no lobby on this build'. Related: T-946.36 (the editor flatten drops missionParams before the mod sees them). AI group defaults: AI/TBD_GroupState.c:270 Tick looks up FindLiveGroup :286-300, which walks slot bodies until one already belongs to an SCR_AIGroup (comment :284-285: T-677 arms waypointed groups; otherwise retry next tick), so combatMode, behaviour, formation and speedMode defaults (header :1-8, :35) apply only to groups that T-677's waypoint runtime made AI-enabled and retry forever for the rest. Audio emitters: Audio/TBD_AudioEmitter.c:350-367 ArmEmitters marks an emitter armed once (s_aArmedIds) and PushEmitter :503-521 sends TBD_PushAudioEmitter only to the players connected at that moment; no join hook replays armed emitters (the file has no player-join handling), so a join-in-progress player never hears an already armed looping emitter. Source: README writer R12."
+created_at = "2026-09-25T04:23:06Z"
 
 [scope]
 domain = "mod"

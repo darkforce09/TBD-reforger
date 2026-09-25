@@ -4,8 +4,8 @@ title = "Check whether empty uploads leave stale height and road labels"
 summary = "frame/upload/text.rs:73-78 (height labels) and :169-174 (road labels) zero the drawn count but keep the old lane when bytes are empty and visible; town labels (:122-125) remove it. locations/loader.rs:185-187 sends empty bytes when nothing packs."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T15:47:17Z"
 notes = "apps/website/map-engine/src/frame/upload/text.rs:73-78 (upload_text_labels: empty and visible zeroes text_labels_drawn but keeps the WorldLabels lane) and :169-174 (upload_road_labels, same for WorldRoadLabels); :122-125 (upload_town_labels removes WorldTownLabels on empty); apps/website/map-engine/src/world/environment/locations/loader.rs:185-187 sends all three uploads, with an empty height buffer when pack_height_label_glyphs packs nothing at :177-179. Check whether the kept lane still draws its old instance buffer."
+created_at = "2026-09-24T15:47:17Z"
 
 [scope]
 domain = "engine"

@@ -4,8 +4,8 @@ title = "Fail mod compile when an addon depends on TBD_Framework"
 summary = "tbd-export/addon.gproj:5-8 and tbd-emcp/addon.gproj:5-7 depend only on vanilla (plus TBD_EMCP), but nothing enforces it; mod compile checks only Scripts/WorkbenchGame reappearing in the framework (compile/execution.rs:382-395, workbench_tooling_guard)."
 class = "chore"
 status = "idea"
-created_at = "2026-09-25T04:28:19Z"
 notes = "GUIDs: TBD_Framework B2C3D4E5F6A78901 (apps/mod/tbd-framework/addon.gproj), TBD_EMCP D4E5F6A7B8C90123, TBD_Export C3D4E5F6A7B89012; vanilla 58D0FB3206B6F859. apps/mod/tbd-export/addon.gproj:5-8 lists vanilla and TBD_EMCP; apps/mod/tbd-emcp/addon.gproj:5-7 lists vanilla; commit 4f311079f removed tbd-export's framework dependency. tools_v2/xtask/src/commands/mod_ops/compile/execution.rs:382-395 (workbench_tooling_guard) is the only structural addon check in the gate and fails only when apps/mod/tbd-framework/Scripts/WorkbenchGame reappears. A check would parse each addon.gproj Dependencies block and fail when any addon other than the framework lists B2C3D4E5F6A78901. Related: T-1091 (xtask texts that still say tbd-export loads the framework), T-946.17 (no slice or wave gate step compiles Enfusion script). Orchestrator decision 2026-09-25 (R14.1 questions). Source: README writer R14.1."
+created_at = "2026-09-25T04:28:19Z"
 
 [scope]
 domain = "repo"

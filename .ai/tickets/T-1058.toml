@@ -4,8 +4,8 @@ title = "Fix map basemap switch back never restoring the satellite imagery"
 summary = "Needs a browser check. load_map_basemap (world/terrain/satellite/quadtree/basemap.rs:29-96) overwrites the role-0 satellite texture; show_satellite_basemap (:22-26) only resets opacity, and swap_basemap (streaming/host/preferences.rs:9-24) calls nothing else, so the satellite returns only after a reload."
 class = "bug"
 status = "idea"
-created_at = "2026-09-24T15:47:03Z"
 notes = "apps/website/map-engine/src/world/terrain/satellite/quadtree/basemap.rs:22-26 (show_satellite_basemap sets ROLE_BASEMAP opacity only), :29-96 (load_map_basemap tex_layer_begin/commit on ROLE_BASEMAP, role 0 per quadtree/selection.rs:13); the satellite fills the same role in quadtree/bootstrap.rs:150-181 and quadtree/upload.rs:44-63; apps/website/map-engine/src/streaming/host/preferences.rs:9-24 (swap_basemap), callers streaming/host/state.rs:75 and preferences.rs:70."
+created_at = "2026-09-24T15:47:03Z"
 
 [scope]
 domain = "engine"

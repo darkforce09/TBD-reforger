@@ -1,0 +1,12 @@
+id = "T-1126"
+kind = "work"
+title = "Fix gate v-suite passing when --only matches no route"
+summary = "gate v-suite verify --only <unknown slug> filters the route table to nothing (dom_oracle/routes.rs:388-392) and run_modes returns 0 with 0/0 checked (run_modes.rs:124); accept mode likewise. Refuse an unknown slug with exit 2, as other usage errors do."
+class = "chore"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src/browser_testing. dom_oracle/routes.rs:388-392 keeps the routes whose slug equals --only; an unknown slug leaves the list empty, and dom_oracle/run_modes.rs:3-124 loops over nothing and returns u8::from(fail > 0) = 0, so gate v-suite verify --only typo reports a pass. In accept mode (routes.rs:382-385 requires --only and --note) an unknown slug writes no golden and also exits 0. The usage error path (:376-381) already returns 2. Source: README writer R19 (R19r)."
+created_at = "2026-09-25T08:52:20Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

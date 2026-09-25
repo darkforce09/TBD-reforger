@@ -1,0 +1,12 @@
+id = "T-1125"
+kind = "work"
+title = "Stop world export library code exiting the process mid-gate"
+summary = "chunk_partitioner calls std::process::exit (object_partitioning.rs:79, :221; build_world_objects_opt.rs:57, :64), so an in-process verify-phase E6 rebuild kills the whole run; and phase_gate passes P6-P10 (phase_validation.rs:6-17) that build-objects and verify-phase reject."
+class = "chore"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src/world_export_pipeline. Exit sites in library code: chunk_partitioner/object_partitioning.rs:79 (exit 2 when raw-entities.jsonl, export-meta.json or staged-meta.json is missing) and :221 (exit 1 on a keptCount mismatch); chunk_partitioner/build_world_objects_opt.rs:57 and :64 (exit 1 when the tree or rock corner sum differs from the row count). mathematical_verification/verify_phase.rs:400-443 runs the E6 determinism gate by calling build_world_objects_opt in-process (:411), so any of these ends verify-phase with no gate table and no FAIL line; return anyhow errors instead and let the binaries map them to exit codes. Phase range: mathematical_verification/phase_validation.rs:6-17 (phase_gate's ORDER) runs to P10_full, but chunk_partitioner/may_clear_density_dir.rs:24-39 (phase_kinds) and chunk_partitioner.rs:33 (PHASE_ORDER) stop at P5_props, so world phase-gate (cli.rs:251) approves P6-P10 that build-objects (object_partitioning.rs:52-56) and verify-phase (verify_phase.rs:6-9) then reject; derive the gate's list from PHASE_ORDER or reject phases without kinds. Source: README writer R20.2."
+created_at = "2026-09-25T08:52:02Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

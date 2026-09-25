@@ -1,0 +1,12 @@
+id = "T-1128"
+kind = "work"
+title = "Derive map raster pipeline inputs from the terrain, not Everon"
+summary = "export-height-labels reads dem/everon-dem-16bit.png for any terrain (map_labels/export_height_labels.rs:9); the aerial orthophoto commands refuse other terrains with 'only everon supported this slice'; verify-cartographic requires ticket-numbered logs t152_{0..9}_verify_log.md (build_tile_pyramid.rs:151)."
+class = "feature"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src unless stated. (1) map_raster_pipeline/map_labels/export_height_labels.rs:9 joins dem/everon-dem-16bit.png onto whichever terrain it is given, although each terrain manifest names its DEM (assets_v2/terrains/everon/manifest.json:11-12, dem.path); read dem.path instead. (2) The SAP aerial orthophoto lane prints 'only everon supported this slice (got <terrain>)' and stops for any other terrain: map_raster_pipeline/aerial_orthophoto/analyze_sap_seams.rs:9 and :162, aerial_orthophoto/stitch_sap_ortho.rs:7 and :132, aerial_orthophoto/sap_dir.rs:256 (verify_sap_seams), and world_export_pipeline/export_preparation/aerial_cell_catalog.rs:14; the message names a work slice, and the lane also hard-codes Everon scratch paths marked E2c-allow (aerial_orthophoto/sap_dir.rs:6, analyze_sap_seams.rs:170-171, :259, cartographic_rendering/build_landcover_masks.rs:12-21, :186-188). Either derive the paths from the terrain or say plainly which terrains the lane supports. (3) map_raster_pipeline/cartographic_rendering/build_tile_pyramid.rs:149-151 (verify-cartographic) fails unless ten operator logs named t152_0_verify_log.md to t152_9_verify_log.md exist under .ai/artifacts (repository_layout.rs:228, OPERATIONS_LOG_DIR), a ticket's slice numbering baked into a gate; the ticket-id names are also CLAUDE.md law 4 (T-1042 family). Source: README writer R20.1 (R20.1r)."
+created_at = "2026-09-25T08:53:34Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

@@ -4,8 +4,8 @@ title = "Decide whether placement scatter must stay stable across Rust releases"
 summary = "seed_from_ids (map-engine data/store/operations/placement/geometry.rs:101-110) seeds from std DefaultHasher, whose output Rust does not promise across releases, while the SplitMix64 doc (:112) promises the same scatter on every machine. Use a fixed hash, or narrow the promise."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T15:18:18Z"
 notes = "apps/website/map-engine/src/data/store/operations/placement/geometry.rs:101-110 seed_from_ids XORs std::collections::hash_map::DefaultHasher digests of the ids; geometry.rs:112 SplitMix64 doc promises 'a given selection scatters the same way on every machine'. DefaultHasher is deterministic within one build but its algorithm is not guaranteed across Rust releases. Reading 1: reproducibility across builds matters (goldens, collaborators on different builds); switch to a fixed hash such as FNV or SipHash with fixed keys. Reading 2: per-build stability suffices; narrow the doc."
+created_at = "2026-09-24T15:18:18Z"
 
 [scope]
 domain = "engine"

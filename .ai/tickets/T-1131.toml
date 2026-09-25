@@ -1,0 +1,13 @@
+id = "T-1131"
+kind = "work"
+title = "Decide whether Markdown edits should invalidate API readiness evidence"
+summary = "api_readiness/fingerprint.rs:13-25 hashes every .md (and .mdc, .txt) under apps/, tools_v2/ and contracts_v2/ into the evidence fingerprint, so a README-only commit invalidates recorded API evidence. Decide whether documentation belongs in the fingerprint or is excluded."
+class = "audit"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src/verifications/api_readiness. fingerprint.rs:13-20 (INPUT_ROOTS: apps/, tools_v2/, contracts_v2/, the API readiness evidence prefix, .cargo/, .github/) and :21-26 (SOURCE_EXTENSIONS, including md, mdc, txt, csv) select the files whose bytes form the source fingerprint (:114-131); evidence.rs:46 then rejects a receipt with 'stale source fingerprint'. Every README the documentation program writes under apps/ and tools_v2/ therefore changes the fingerprint and stales all recorded API evidence, although no Markdown is compiled into the API. Reading 1 (intended): evidence binds to the whole tree, docs included, so a reviewer re-runs after any change. Reading 2: exclude Markdown (and other non-build text) or narrow the roots to what the API build reads. The operator's plan has one --execute run at the end of the program (writing brief, 'Verification evidence' decision), which the first reading makes mandatory. Source: README writer R18.1."
+created_at = "2026-09-25T08:58:23Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

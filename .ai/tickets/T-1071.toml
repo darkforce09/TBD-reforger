@@ -4,8 +4,8 @@ title = "Decide whether ignored map engine inputs are intended"
 summary = "relief/hillshade.rs:32 measures slope in samples, not metres; quadtree/retry.rs:43-49 logs a 429 Retry-After but waits fixed backoff; blueprint/archive.rs:105,148 drop door state and furniture size; locations/loader.rs:118-119 ignore archived height labels; dem/png.rs:52-58 accepts RGB against :27."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T19:16:09Z"
 notes = "Hillshade: apps/website/map-engine/src/world/terrain/relief/hillshade.rs:28-32 (cell_meters = src_w / w is the downsample factor in source samples; the DEM's metres per sample never enters, so slopes shade steeper or flatter than the terrain whenever a sample is not 1 m). Satellite retry: apps/website/map-engine/src/world/terrain/satellite/quadtree/retry.rs:43-49 (RateLimited logs retry_after_s) and :60 (waits RANGE_BACKOFF_MS, :15, 100/250/600/1200 ms, regardless). Archived blueprints: apps/website/map-engine/src/world/architecture/blueprint/archive.rs:105 (default_state empty) and :148 (size2_d zero) because the archive rows lack them (apps/website/map-engine/src/io/archives/blueprints.rs:98-205), so apps/website/map-engine/src/world/architecture/blueprint/attribution_2.rs:60-61 (open doors) and :77-82 (furniture) never fire on an archived blueprint; BuildingBlueprint::from_archived has no production caller today. Labels: apps/website/map-engine/src/world/environment/locations/loader.rs:112-122 keeps towns and road names from map_labels.rkyv but not its height_labels field (MapLabels, towns.rs:159-160), and recomputes peaks from the DEM at :92-104. DEM PNG: apps/website/map-engine/src/world/terrain/dem/png.rs:52-58 accepts 16-bit RGB and RGBA and reads channel 0, while NotGray16 (:27) and its Display (:35) say grayscale only. For each: keep with a comment stating why, or change the code."
+created_at = "2026-09-24T19:16:09Z"
 
 [scope]
 domain = "engine"

@@ -4,8 +4,8 @@ title = "Decide whether to delete or render the tbd-reforger.service template"
 summary = "tools_v2/xtask/deploy/systemd/tbd-reforger.service is read by no code: deploy staging writes its own tbd-reforger.service from staging/payloads.rs:89-113 and exec_start (remote/ssh_argv.rs:63-80), so the template's fixed flags can drift unseen."
 class = "audit"
 status = "idea"
-created_at = "2026-09-25T08:20:18Z"
 notes = "Paths under tools_v2/xtask. deploy/systemd/tbd-reforger.service (14 lines) carries TBD_SERVER_DIR, TBD_PROFILE_DIR, TBD_ADDONS_STAGING, TBD_ADDON_GUID and TBD_SCENARIO placeholders (:8-9), but no code substitutes them: 'cargo xtask deploy staging' writes its own unit to ~/.config/systemd/user/tbd-reforger.service from a heredoc (src/commands/deploy/staging/payloads.rs:89-113) whose ExecStart comes from exec_start (src/commands/deploy/staging/remote/ssh_argv.rs:63-80, with a config mode the template lacks), and the one template renderer, 'deploy website' (src/commands/deploy/website/systemd_unit.rs:23-40), substitutes only TBD_REPO_DIR_PLACEHOLDER in the website unit. The unit name itself is live: the fleet host agent controls tbd-reforger.service (src/commands/deploy/staging/host_agent.rs:134) and debug direct-join probes it (src/commands/debug/direct_join.rs:33). Decide: delete the template (and the systemd README row), or make deploy staging render its unit from it so one file owns the launch line. Documentation that cites the template for the staging unit is wrong either way (runbook game_server_staging README :422, and :813's a2sPort 2001 against the 17777 the code passes, ssh_argv.rs:71 and tests/remote/tests.rs:128); those go to the docs writers. Orchestrator decision 2026-09-25 (R17.1 questions). Source: README writer R17.1."
+created_at = "2026-09-25T08:20:18Z"
 
 [scope]
 domain = "repo"

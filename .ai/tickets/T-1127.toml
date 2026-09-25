@@ -1,0 +1,12 @@
+id = "T-1127"
+kind = "work"
+title = "Widen world verify-phase density checks and the E2c source scan"
+summary = "verify-phase runs the density D and F gates only for P2_trees (verify_phase.rs:11, :316), so later phases never recheck density; validate-exports' E2c literal terrain-id scan reads seven module roots (artifact_integrity.rs:345-353) and none of their submodule files."
+class = "chore"
+status = "idea"
+notes = """Paths under tools_v2/developer-tools/src/world_export_pipeline. Density: mathematical_verification/verify_phase.rs:11 sets density_phase = phase == "P2_trees" and :315-316 runs run_p2_gates (PH-P2, D, F) only then, but build-objects rewrites objects/density/*.bin for every phase that includes trees (chunk_partitioner/build_world_objects_opt.rs:44-90; phases P3-P5 keep tree in their kinds, chunk_partitioner/may_clear_density_dir.rs:27-38), so a P3, P4 or P5 rebuild ships density no gate checked. Run D and F whenever the phase's kinds include tree. E2c: export_preparation/export_validation/artifact_integrity.rs:340-371 scans chunk_partitioner.rs, mathematical_verification.rs, export_preparation.rs, polygon_geometry.rs, vegetation_density.rs, forest_contours.rs and tools_v2/xtask/src/commands/map/terrain_export.rs, but not the files under chunk_partitioner/, mathematical_verification/ or export_preparation/; one unmarked literal already sits there (export_preparation/aerial_cell_catalog.rs:12, if terrain != "everon"). Walk the module folders, not the roots. Source: README writer R20.2."""
+created_at = "2026-09-25T08:53:01Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

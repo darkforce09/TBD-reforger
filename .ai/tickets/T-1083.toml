@@ -4,8 +4,8 @@ title = "Keep the marker client poll off dedicated servers"
 summary = "TBD_MarkerComponent.c:42 starts TBD_MarkerClient when GetGame().GetWorkspace() is non-null, but TBD_RadioComponent.c:44-51 records the workspace as measured non-null on the headless dedicated server and gates on RplMode.Dedicated instead."
 class = "bug"
 status = "idea"
-created_at = "2026-09-25T04:21:16Z"
 notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD. Systems/Markers/TBD_MarkerComponent.c:39-45: the comment says 'A dedicated server has no workspace at all (measured - see TBD_UILayouts)' and :42 returns only when GetGame().GetWorkspace() is null, then :45 schedules TBD_MarkerClient.Start (poll armed at Systems/Markers/TBD_MarkerClient.c:80-98). Systems/Radio/TBD_RadioComponent.c:44-51 says the same workspace guard 'let the client-side radio poll start on the server' because GetWorkspace() is measured non-null on the headless dedicated server that world-boot runs, and returns on RplSession.Mode() == RplMode.Dedicated; Session/Admin/TBD_AdminClient.c:120 records the same fix. UI/Core/TBD_UILayouts.c:242-243 still says a dedicated server has no workspace. Other remaining GetWorkspace() guards to review with it: Session/Briefing/TBD_BriefingController.c:275, Session/Spectator/TBD_SpectatorComponent.c:86, Session/Lobby/TBD_PreSlotComponent.c:87, Gamemode/Stages/TBD_SafestartManager.c:1045, Gamemode/Orchestrator/TBD_FrameworkManager.c:754 and :1602, Systems/Radio/TBD_RadioClient.c:318. Source: README writer R12."
+created_at = "2026-09-25T04:21:16Z"
 
 [scope]
 domain = "mod"

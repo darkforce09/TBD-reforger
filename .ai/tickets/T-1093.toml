@@ -4,8 +4,8 @@ title = "Pin the tracked icon texture GUIDs in TBD_UIIcons"
 summary = "TBD_UIIcons.c:135-137 leaves s_mTextureGuids empty ('Pinned GUIDs go here after the import'), so Load() resolves icons by bare path, although all 38 TBD_Icon_*_UI.edds files and their .meta sidecars are tracked under UI/Textures/TBD/Icons/."
 class = "chore"
 status = "idea"
-created_at = "2026-09-25T04:27:49Z"
 notes = "apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UIIcons.c:31-33 declares s_mTextureGuids for pinned '{GUID}UI/Textures/TBD/Icons/...edds' names; BuildShipped :120-138 lists the 38 keys and :135-137 only creates an empty map, so the pinned lookup at :112 never hits and Load() falls back to the bare ICON_DIR path (:29; header :3-8 says so, and still carries the history line 'Briefing pass (2026-09-14)'). apps/mod/tbd-framework/UI/Textures/TBD/Icons/ tracks 38 TBD_Icon_<key>_UI.edds files, each with a .edds.meta holding its GUID. Source: README writer R14.2. Confirmed by README writer R14.3 (TF11 batch): the 38 keys and their .edds.meta GUIDs are all tracked and s_mTextureGuids stays empty at HEAD (TBD_UIIcons.c:135-137). The icons no script loads, and the 'group' key TBD_SessionTopBar.c loads although only 'groups' ships, are T-1099 and T-1098; decide the pinned set after T-1099 trims the list."
+created_at = "2026-09-25T04:27:49Z"
 
 [scope]
 domain = "mod"

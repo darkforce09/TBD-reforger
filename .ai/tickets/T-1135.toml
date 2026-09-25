@@ -1,0 +1,12 @@
+id = "T-1135"
+kind = "work"
+title = "Tidy blueprint test fixtures: unread file, golden drift, shared ID"
+summary = "test_fixtures/blueprint/GarbageContainer_01_children.json is read by no test; FarmHouse_E_1L01_Wood_blueprint.golden.json has no test pinning it to the shipped Everon copy (identical today); the door parity recording's action is unnamed; House_Base.et and House_Wood.et share ID 0000000000000002."
+class = "chore"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools unless stated. (1) test_fixtures/blueprint/GarbageContainer_01_children.json: git grep outside Markdown finds no reader (the rotation pin reads rotation_pin_GarbageContainer_01.json, src/blueprint/tests/rotation_pin/tests.rs:27); delete it or give it a test. (2) test_fixtures/blueprint/FarmHouse_E_1L01_Wood_blueprint.golden.json is checked against the interpreter's output (src/blueprint/tests/module/tests.rs:97-110, :131-138) but nothing compares it with the shipped assets_v2/terrains/everon/prefabs/buildings/FarmHouse_E_1L01_Wood.json; the two are byte-identical at HEAD, so add a pin before they drift (the instances golden already has one, test_fixtures/blueprint/README.md:39). (3) test_fixtures/blueprint/FarmHouse_E_1L01_Wood_parity_doors.json has no named producer: apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/EMCP_WB_TbdBlueprint.c handles recon, parity (:95), dump and world-parity, and none states how the door-inclusive recording was made; name the action or record the procedure. (4) Check whether it is intended that test_fixtures/blueprint/prefab/Prefabs/Houses/House_Base.et:2 and House_Wood.et:2 carry the same entity ID 0000000000000002 (House_Wood inherits House_Base; src/blueprint/tests/prefab/tests.rs:60-70 resolves House_Wood.et through the fixture tree). Ticket ids and dated history in the fixture tests are on T-1004 and T-1042. Source: README writer R20.3."
+created_at = "2026-09-25T09:01:16Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

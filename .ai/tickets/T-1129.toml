@@ -1,0 +1,13 @@
+id = "T-1129"
+kind = "work"
+title = "Check no-crf-leak font and backpack GUID hits for false positives"
+summary = "verify no-crf-leak flags {0E041C5B1F27DCEA} (robotomono_msdf_28.fnt, 28 tbd-framework files) and {95D4766BBE46F23D} (Backpack_IIFS_FieldPack.et, TBD_SourceReaderVerification.c:23) as CRF-only; both look like vanilla assets the pak probe misses. Confirm, then fix the probe or the references."
+class = "audit"
+status = "idea"
+notes = "Live run by README writer R18.2 (cargo xtask verify no-crf-leak, exit 1) lists four CRF-only GUIDs: the two registry GUIDs tracked on T-1097 plus {0E041C5B1F27DCEA} and {95D4766BBE46F23D}. {0E041C5B1F27DCEA}ui/fonts/robotomono_msdf_28.fnt is the mono font of 28 tbd-framework files, e.g. apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UITheme.c:110 (FONT_MONO) and UI/layouts/Common/TBD_Caption.layout:19, :44. {95D4766BBE46F23D}Prefabs/Items/Equipment/Backpacks/Backpack_IIFS_FieldPack.et is read at apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/TBD_SourceReaderVerification.c:23 (committed at HEAD; the file also carries another session's uncommitted edits). The vanilla probe (tools_v2/xtask/src/verifications/licensing/upstream_code_leaks/verify_crf_leak.rs:231-262, in_vanilla and paks) runs grep -qla for the bare GUID over the top-level *.pak files of the local game install's addons/data folder (upstream_code_leaks.rs:99-100, VANILLA_HOME_REL); a GUID stored compressed or in another pak folder reads as not vanilla. Check both GUIDs against the vanilla data (for example with cargo xtask enf tooling or apps/mod/vanilla_reference); if vanilla, fix the probe (and record why it missed them), otherwise re-author the references. Decided by the operator's delegate (R18.2 questions, 2026-09-25)."
+created_at = "2026-09-25T08:54:19Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

@@ -4,8 +4,8 @@ title = "Fix deploy errors citing wrong deploy.env lines and timer links"
 summary = "deploy staging reports missing values at deploy.env lines 1079-1083 (staging/config.rs:202-210) and deploy website at lines 79/80 (website.rs:81,85), which match no example line; both backup timers carry relative Documentation=file:// links."
 class = "bug"
 status = "idea"
-created_at = "2026-09-25T08:19:29Z"
 notes = "Paths under tools_v2/xtask. Staging: src/commands/deploy/staging/config.rs:189-196 (req) prints 'deploy.env: line <n>: <key>: ...' and :202-210 pass lines 1079-1083 for TBD_SSH_HOST, TBD_REMOTE_DIR, TBD_PROFILE_DIR, TBD_ADDONS_STAGING and TBD_GAME_SERVER_TOKEN; deploy/deploy.env.example has 102 lines and holds those keys at :18, :23, :24, :25 and :30, so the numbers are line numbers of a retired shell script. Website: src/commands/deploy/website.rs:81 and :85 pass 79 and 80 to require_var (:409-419), whose comment (:413-414) says the number is the deploy file's line, but those keys sit at :18 and :23; require_var returns 1, while deploy/README.md:39 and :42 say 'deploy website' exits 79 and 80 without them (a README contradiction for the docs writers). Report the key and the example line from the file itself, or drop the line numbers. Timers: deploy/systemd/tbd-website-backup.timer:5 and tbd-website-backup-drill.timer:5 set Documentation=file://tools_v2/..., which systemd reads as host 'tools_v2', not a path; the matching services (tbd-website-backup.service:38, tbd-website-backup-drill.service:30) use file:///TBD_REPO_DIR_PLACEHOLDER/... the same sed the website install applies to its unit (src/commands/deploy/website/systemd_unit.rs:27-40) renders that placeholder; give the timers the same form. Source: README writers R17.1, R17.2."
+created_at = "2026-09-25T08:19:29Z"
 
 [scope]
 domain = "repo"

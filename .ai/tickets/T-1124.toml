@@ -1,0 +1,12 @@
+id = "T-1124"
+kind = "work"
+title = "Fix validate-exports density check ignoring the canopy blur"
+summary = "world validate-exports compares each density bin's tree channel to raw corner counts (artifact_integrity.rs:182-183, :209), but build-objects and redensify write the box-blurred canopy grid (build_world_objects_opt.rs:72-73, redensify_from_committed.rs:82-83), so blurred bins report mismatches."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src/world_export_pipeline. export_preparation/export_validation/artifact_integrity.rs:182-183 accumulates raw tree corner counts (density::accumulate_corners) and :209-211 requires every committed density bin's tree channel (channel 0) to equal density::slice_chunk_corners of that raw grid. chunk_partitioner/build_world_objects_opt.rs:67-73 writes the global grid after density::box_blur_corners with CANOPY_KERNEL_RADIUS_CELLS (the raw grid serves only the corner-sum identity, :50-64), and chunk_partitioner/redensify_from_committed.rs:82-83 does the same. Blur the recomputed grid the same way before comparing (rocks stay raw). The check is not reached today because validate-exports stops earlier on the chunk paths (T-1122). Source: README writer R20.2."
+created_at = "2026-09-25T08:51:08Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

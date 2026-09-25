@@ -4,8 +4,8 @@ title = "Decide whether deploy website force-repoints every drifted migration ch
 summary = "Every deploy website run executes db repair-migration-checksum --force on the server (deploy/website.rs:269-272, website/remote_steps.rs:57-61), which has no .git, so any drifted migration, statement edits included, is repointed unproven (repair_migration_checksum.rs:278-284)."
 class = "audit"
 status = "idea"
-created_at = "2026-09-25T08:18:15Z"
 notes = "Paths under tools_v2/xtask/src/commands. deploy/website.rs:269-272 always adds the step 'repoint the checksums of comments-only migration edits', whose command (deploy/website/remote_steps.rs:50-61) runs 'cargo xtask db repair-migration-checksum --force' with no --version. The repair's own contract (db/operations/repair_migration_checksum.rs:17-29) refuses to repoint a checksum unless it can recover the applied bytes from git history and prove the edit comments-only, and says a server cannot run that proof because the deploy rsync excludes .git; with --force (:278-284) it repoints every drifted migration anyway. The remote_steps doc comment (:53-55) relies on tests/migrations_are_immutable.rs pinning the hashes on the developer's checkout, so a statement edit that also updates that pin reaches the server and is repointed silently, leaving the deployed schema and the file apart. Decide whether the deploy step stays forced, runs only for versions the developer proved locally (for example a list the deploy computes before rsync and passes as --version), or stops and asks. Source: README writer R17.2."
+created_at = "2026-09-25T08:18:15Z"
 
 [scope]
 domain = "repo"

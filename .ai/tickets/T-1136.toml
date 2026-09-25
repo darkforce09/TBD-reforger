@@ -1,0 +1,12 @@
+id = "T-1136"
+kind = "work"
+title = "Make capture zoomsweep configurable and fail on blank canvas frames"
+summary = "capture zoomsweep hard-codes http://localhost:8080 and :3000 (screen_capture/eval_js.rs:337, :343) and writes every canvas PNG without the CANVAS_MIN_BYTES floor that capture_canvas applies (:172), exiting 0 when any frame is written, so black frames pass."
+class = "feature"
+status = "idea"
+notes = "Paths under tools_v2/developer-tools/src/browser_testing. screen_capture/eval_js.rs:324-409 (zoomsweep, cargo run capture zoomsweep <out-prefix> <mission-id> <zooms>, capture_cli.rs:10, :102-116) logs in through http://localhost:8080/api/v1/auth/dev-login (:337) and opens http://localhost:3000/missions/<id>/edit (:343); no flag or environment variable moves either. Per zoom it writes the toDataURL PNG whatever its size (:390-399) and returns u8::from(!wrote_any) (:408), while capture_canvas (:160-175) treats a PNG under CANVAS_MIN_BYTES (screen_capture.rs:45, 20 000 bytes) as a blank frame; the doc above zoomsweep records a ~44 KB black rectangle as the known headless failure, so apply a floor sized for that case and fail the sweep on a blank frame. The lost per-zoom console-error tap is T-709 (deferred). Source: README writer R19 (R19r)."
+created_at = "2026-09-25T09:01:56Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

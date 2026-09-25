@@ -4,8 +4,8 @@ title = "Fix milestone announcement body date disagreeing with its title"
 summary = "db/milestone_announcement.rs:42 titles the seeded announcement 'Saturday 22 August 2026', but the body at :43 says 'Saturday 21 August 2026'; 21 August 2026 is a Friday."
 class = "bug"
 status = "idea"
-created_at = "2026-09-25T05:09:51Z"
 notes = "Paths under tools_v2/xtask/src/commands. db/milestone_announcement.rs:40-54 holds the SQL the 'cargo xtask mod seed-announcement' command runs (mod_ops/dispatch.rs:45): the title at :42 reads 'Milestone #1 — Saturday 22 August 2026' and the body at :43 says the target is 'Saturday 21 August 2026'. 22 August 2026 is a Saturday and 21 August 2026 a Friday, so the body date is the wrong one; fix it to 22 August (or decide whether the seed is still wanted, since the date is past). The insert is guarded by title LIKE 'Milestone #1%' (:52), so a changed body does not reach databases already seeded. The container fallback of the same file is on T-1104. Source: README writer R17.2."
+created_at = "2026-09-25T05:09:51Z"
 
 [scope]
 domain = "repo"

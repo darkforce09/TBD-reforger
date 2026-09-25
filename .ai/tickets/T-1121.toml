@@ -1,0 +1,13 @@
+id = "T-1121"
+kind = "work"
+title = "Fix verify ui-layouts skipping every layout in subfolders"
+summary = "verify ui-layouts (tools_v2/xtask/src/verifications/mod_scripts/ui_layouts.rs:237-241) keeps only .layout files directly in apps/mod/tbd-framework/UI/layouts/; all 65 sit in Common/, Hud/ and Session/, so it prints 'no .layout files', exits 1 and fails the mod wave gate."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src unless stated. verifications/mod_scripts/ui_layouts.rs:231-243 (layout_files) filters walk_files output to p.parent() == ui_dir, a port of the non-recursive shell glob; :126-130 then prints 'FAIL: no .layout files under ...' and returns 1. git ls-files finds 65 .layout files under apps/mod/tbd-framework/UI/layouts/ and none directly in it (Common/, Hud/, Session/). Callers: commands/verify/dispatch.rs:65 (cargo xtask verify ui-layouts) and the mod wave gate step commands/mod_ops/wave_execution/execution.rs:347. Walk the tree recursively (keeping the .layout.meta exclusion and the sorted order) and recheck C1-C6 on the 65 layouts. verifications/mod_scripts/README.md:40-42 documents the current non-recursive walk and must change with the fix. Source: README writer R18.2 (live run exit 1)."
+created_at = "2026-09-25T08:49:44Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

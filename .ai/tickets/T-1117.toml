@@ -4,8 +4,8 @@ title = "Stream map export-terrain world output while each step runs"
 summary = "map export-terrain runs each world step through Run::output() and prints its stdout and stderr only when the child exits (map/terrain_export.rs:150-190), so long build-objects and build-roads runs show nothing until they finish."
 class = "chore"
 status = "idea"
-created_at = "2026-09-25T08:25:07Z"
 notes = "Paths under tools_v2/xtask/src/commands/map. terrain_export.rs:150-190 (world_cargo) runs 'cargo run -q -p developer-tools --bin world -- <step>' with Run::new(...).output() (:163) and writes the captured stdout, then stderr, after the child exits (:164-171). 'cargo xtask map export-terrain' calls it for phase-gate (:47), build-objects (:89) and build-roads with --ops-log (:104), so progress lines, and the interleaving of stdout and stderr, only appear at the end of each step, and a timed-out or signalled step (:177-182) drops everything it printed. Inherit stdio (or tee it) so the operator sees the world tool's output live, keeping the exit-code mapping (:191). Source: README writer R17.2."
+created_at = "2026-09-25T08:25:07Z"
 
 [scope]
 domain = "repo"

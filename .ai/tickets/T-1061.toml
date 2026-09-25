@@ -4,8 +4,8 @@ title = "Check world line-of-sight sidecar eviction ignoring recency"
 summary = "spatial/los/world/state.rs:44 tick starts at 0 (:75) and nothing advances it; residency.rs:133 stamps every sidecar with it, so enforce_cap (residency.rs:200-212) evicts the unneeded sidecar with the lowest path, not the least recently used."
 class = "audit"
 status = "idea"
-created_at = "2026-09-24T19:09:08Z"
 notes = "apps/website/map-engine/src/spatial/los/world/state.rs:44 (pub(crate) tick: u64) and :75 (tick: 0) are the only writes; apps/website/map-engine/src/spatial/los/world/residency.rs:133 (insert_blas stamps blas_last_use with self.tick) is the only read; residency.rs:196-212 (enforce_cap) picks the victim by min (blas_last_use, path) among sidecars no placed descriptor needs. Correctness holds because only unneeded sidecars are evicted; the cost is cache churn. Decide whether tick should advance per insert or per query, as the chunk residency does (streaming/scheduler/viewport.rs use_tick)."
+created_at = "2026-09-24T19:09:08Z"
 
 [scope]
 domain = "engine"
