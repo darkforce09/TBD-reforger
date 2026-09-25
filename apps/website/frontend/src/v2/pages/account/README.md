@@ -62,3 +62,7 @@ imports another.
   behaviour and design of sign-in, the callback and settings.
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the API
   routes behind these pages.
+- [App layout and navigation](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md)
+  — the frame that renders sign-in bare and the account menu that links settings.
+- [Local development](/documentation_v2/runbooks/local_development.md) — the dev login and the
+  Discord sign-in on a workstation.

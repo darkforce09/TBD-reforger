@@ -124,3 +124,7 @@ shows its banner while the membership is stale or the profile says the viewer ma
 
 - [App layout and navigation](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md)
   — the behaviour and design of the layout, the sidebar, the top bar and the not-found page.
+- [Top bar blueprint](/documentation_v2/website/frontend/pages/navigation/visual_references/topbar_blueprint/README.md)
+  — the design-phase reference of the top bar and how the built bar differs.
+- [Account pages](/documentation_v2/website/frontend/pages/account/account_pages.md) — the
+  sign-in pages the frame renders bare and the settings page the account menu opens.

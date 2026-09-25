@@ -86,3 +86,5 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
   behaviour and design of the account pages.
 - [Identity and access domain](/apps/website/api_v2/src/identity_and_access/README.md) — the
   sign-in routes that redirect here.
+- [Local development](/documentation_v2/runbooks/local_development.md) — the dev login, which
+  lands here with the same fragment as the Discord sign-in.
