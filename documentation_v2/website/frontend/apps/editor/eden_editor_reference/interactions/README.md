@@ -1,562 +1,98 @@
 **Status:** live
 
-# Arma 3 Eden Editor — Feature Reference (Interactions)
-
-**Document:** `eden/interactions.md`  
-**Schema:** [reference/feds_schema.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md) (FEDS v2)  
-**UI layout:** [ui_anatomy.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)  
-**Attribute fields:** [attributes.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)  
-**Scrape cache:** `artifacts/eden-wiki/` (28 pages, 2026-06-20)  
-**Gap analysis:** [gap_analysis.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
-
-Scope: **Arma 3 Eden Editor** (3D). TBD is 2D flat — 3D-only items marked `N/A (3D)`.
-
----
-
-## Glossary
-
-See [ui_anatomy.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) and [Terminology](https://community.bistudio.com/wiki/Eden_Editor:_Terminology).
-
----
-
-## RIGHT — Asset Browser
-
-#### RIGHT-MODE-001 — Object mode (F1)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Mode |
-| **Shortcut** | F1 |
-| **Goal** | Browse/place objects (units, vehicles, props) |
-| **Trigger** | Click Object mode tab or press F1 |
-| **Preconditions** | Asset Browser visible |
-| **Procedure** | 1. Mode filter = Object. 2. Submode shows faction/side filters. 3. List shows categorized assets. |
-| **Postconditions** | Object assets available for placement |
-| **Inputs** | F1, tab click |
-| **Outputs** | Browser list content |
-| **Edge cases** | Addon assets appear when mods loaded |
-| **Acceptance** | `- [ ] F1 shows unit/vehicle/prop tree` |
-
-#### RIGHT-MODE-002 — Composition mode (F2)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Mode |
-| **Shortcut** | F2 |
-| **Goal** | Place predefined/custom group compositions |
-| **Trigger** | F2 or Composition tab |
-| **Procedure** | Mode = Composition; tree includes Compositions > Custom; composition toolbar active. |
-| **Acceptance** | `- [ ] Custom compositions under Compositions > Custom` |
-
-#### RIGHT-MODE-003 — Trigger mode (F3)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Mode |
-| **Shortcut** | F3 |
-| **Goal** | Place trigger entities |
-| **Procedure** | Mode = Trigger; no submode. |
-| **Acceptance** | `- [ ] Trigger list; no submode` |
-
-#### RIGHT-MODE-004 — Waypoint mode (F4)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Mode |
-| **Shortcut** | F4 |
-| **Acceptance** | `- [ ] Waypoint assets listed` |
-
-#### RIGHT-MODE-005 — System mode (F5)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Mode |
-| **Shortcut** | F5 |
-| **Acceptance** | `- [ ] Systems modules listed` |
-
-#### RIGHT-MODE-006 — Marker mode (F6)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Mode |
-| **Shortcut** | F6 |
-| **Acceptance** | `- [ ] Marker icons in list` |
-
-#### RIGHT-SUBMODE-001 — Asset submode (faction filter)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | browser_mode |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Submode |
-| **Shortcut** | Edit → Toggle Asset Sub-type; `SubmodeToggle` |
-| **Goal** | Filter objects by side (BLUFOR, OPFOR, …) |
-| **Procedure** | Unavailable for Trigger/Waypoint modes. |
-| **Acceptance** | `- [ ] Faction tabs on Object mode` |
-
-#### RIGHT-SEARCH-001 — Search by asset name
-
-| Field | Value |
-|-------|-------|
-| **Domain** | RIGHT |
-| **UI Surface** | AssetBrowser |
-| **Feature kind** | interaction |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Asset_Search |
-| **Trigger** | Type in search field |
-| **Procedure** | Persists across mode/submode switches. |
-| **Acceptance** | `- [ ] Search survives mode change` |
-
-#### RIGHT-SEARCH-002 — class: prefix search
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Search |
-| **Trigger** | `class B_Soldier` |
-| **Acceptance** | `- [ ] class prefix filters` |
-
-#### RIGHT-SEARCH-003 — mod: prefix search
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Search |
-| **Trigger** | `mod kart` or dropdown |
-| **Acceptance** | `- [ ] mod prefix filters` |
-
-#### RIGHT-SEARCH-004 — Wildcard search
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Search |
-| **Trigger** | `house*ruin` (2.22+) |
-| **Acceptance** | `- [ ] Wildcards work` |
-
-#### RIGHT-SEARCH-005 — Regex search
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Asset_Browser#Search |
-| **Trigger** | `/` prefix e.g. `/(Brick` |
-| **Acceptance** | `- [ ] Regex filter works` |
-
-#### RIGHT-CREW-001 — Vehicle crew toggle
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Placing_vehicles_with_crew |
-| **Shortcut** | Alt inverts while placing |
-| **Trigger** | Switch below browser |
-| **Acceptance** | `- [ ] Manned/unmanned toggle` |
-
----
-
-## PLACE — Entity placement
-
-#### PLACE-001 — Click-then-click place
-
-| Field | Value |
-|-------|-------|
-| **UI Surface** | View |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Placing_Entities |
-| **Trigger** | LMB asset in browser → LMB view |
-| **Procedure** | Entity created + selected. |
-| **Acceptance** | `- [ ] Click place works` |
-
-#### PLACE-002 — Drag browser to view
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Placing_Entities |
-| **Trigger** | Drag leaf to view |
-| **Acceptance** | `- [ ] Drag place works` |
-
-#### PLACE-003 — Dbl-click empty type picker
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Placing_Entities |
-| **Trigger** | Dbl-click empty scene |
-| **Acceptance** | `- [ ] Type picker opens` |
-
-#### PLACE-004 — Ctrl multi-place
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Placing_multiple_entities |
-| **Shortcut** | Ctrl |
-| **Trigger** | Hold Ctrl while placing repeatedly |
-| **Acceptance** | `- [ ] Repeated place without re-select` |
-
-#### PLACE-005 — Area draw (triggers/markers)
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Placing#Placing_area_entities |
-| **Trigger** | Select area asset → LMB hold drag on map |
-| **Acceptance** | `- [ ] Area drawn on map` |
-
-#### PLACE-COMMENT-001 — Place comment (RMB empty)
-
-| Field | Value |
-|-------|-------|
-| **Domain** | PLACE |
-| **UI Surface** | View |
-| **Feature kind** | annotation |
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Comment#Placing_Comments |
-| **Trigger** | RMB empty space → **Place Comment** |
-| **Procedure** | 1. Create virtual comment entity (editor-only). 2. Open attributes for Title + Tooltip. 3. Draggable, copy/paste, layerable, composable. |
-| **Postconditions** | Comment icon at position; no gameplay effect |
-| **Edge cases** | Saved in custom compositions as documentation |
-| **Acceptance** | `- [ ] RMB → Place Comment` `- [ ] Title/tooltip editable` |
-
-#### PLACE-CREW-001 — Empty vehicle (Alt while placing)
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Switching_from_2D_Editor#Empty_Vehicles |
-| **Shortcut** | Alt (invert crew toggle) |
-| **Trigger** | Place vehicle with crew toggle off / hold Alt |
-| **Acceptance** | `- [ ] Vehicle spawns without default crew` |
-
----
-
-## XFORM — Basic transform
-
-#### XFORM-MOVE-001 — LMB drag move
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Transforming#Position |
-| **Shortcut** | LMB drag |
-| **Acceptance** | `- [ ] Drag moves entity` |
-
-#### XFORM-ALT-001 — Alt drag altitude
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Transforming#Altitude |
-| **Shortcut** | Alt + drag |
-| **Eden parity** | N/A (3D) for TBD |
-
-#### XFORM-SHIFT-001 — Shift drag rotate
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Transforming#Direction |
-| **Shortcut** | Shift + drag |
-| **Acceptance** | `- [ ] Rotates to cursor` |
-
-#### XFORM-VERT-001 — Vertical mode
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Transforming#Vertical_Mode |
-| **UI Surface** | Toolbar |
-| **Acceptance** | `- [ ] Sea level / underground` |
-
-#### XFORM-SNAP-001 — Surface snap
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Entity_Transforming#Surface_Snapping |
-| **UI Surface** | Toolbar |
-| **Acceptance** | `- [ ] Snaps to terraces` |
-
----
-
-## CREW — Vehicle crew
-
-#### CREW-PANEL-001 — Hover crew panel
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transforming_Crew#Crew_in_the_editor_interface |
-| **Trigger** | Hover vehicle icon |
-| **Procedure** | Panel lists all crew roles (Driver/Pilot, Commander, Turret, Passenger); visible crew get extra scene icon |
-| **Acceptance** | `- [ ] Crew list beside vehicle icon` |
-
-#### CREW-BOARD-001 — Drag character into vehicle
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transforming_Crew#Moving_crew_into_a_vehicle |
-| **Trigger** | Drag character onto vehicle icon/model |
-| **Edge cases** | Full vehicle → character moves to vehicle position only; enemy vehicle warns |
-| **Acceptance** | `- [ ] Character becomes crew` |
-
-#### CREW-UNBOARD-001 — Drag crew out
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transforming_Crew#Removing_crew_from_a_vehicle |
-| **Trigger** | Drag crew icon away from vehicle |
-| **Acceptance** | `- [ ] Crew detached` |
-
-#### CREW-SEAT-001 — Change seat (RMB)
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transforming_Crew#Changing_Seats |
-| **Trigger** | RMB crew → Change Seat → pick role |
-| **Edge cases** | Occupied seat → swap |
-| **Acceptance** | `- [ ] Seat reassigned` |
-
----
-
-## WIDGET — Transformation widget
-
-#### WIDGET-CYCLE-001 — Cycle widget (Space)
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Variants |
-| **Shortcut** | Space |
-| **Acceptance** | `- [ ] Cycles translation/rotation/area widgets` |
-
-#### WIDGET-TRANS-001 — Translation widget
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Translation_Widget |
-| **Acceptance** | `- [ ] Axis arrows move entity` |
-
-#### WIDGET-ROT-001 — Rotation widget
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Rotation_Widget |
-| **Acceptance** | `- [ ] Rotates on axis` |
-
-#### WIDGET-AREA-SCALE-001 — Area scaling widget
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Area_Scaling_Widget |
-| **Acceptance** | `- [ ] Resizes trigger area` |
-
-#### WIDGET-AREA-001 — Area widget
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Area_Widget |
-| **Acceptance** | `- [ ] Orients area marker` |
-
-#### WIDGET-COORD-001 — Global vs local axes
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Transformation_Widget#Changing_the_Reference_System |
-| **Acceptance** | `- [ ] Local rotates with entity` |
-
----
-
-## TOOLBAR — Index
-
-See [ui_anatomy § Toolbar](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md). IDs: `TOOLBAR-NEW-001` … `TOOLBAR-TUTORIAL-001` (New, Open, Save, Workshop, Undo, Redo, widgets, snap, grids, intel, map, flashlight, vision, phase, tutorials).
-
-Wiki: https://community.bistudio.com/wiki/Eden_Editor:_Toolbar
-
----
-
-## COMP — Custom compositions
-
-#### COMP-SAVE-001 — Save custom composition
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Custom_Composition#Saving_Compositions |
-| **Shortcut** | RMB → Save; browser button; `CreateCustomComposition` |
-| **Procedure** | Saves attrs, layers, visibility, connections. |
-| **Acceptance** | `- [ ] Appears in Compositions > Custom` |
-
-#### COMP-EDIT-001 — Edit metadata
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Custom_Composition#Saving_Compositions |
-| **Trigger** | Dbl-click / Edit button |
-| **Acceptance** | `- [ ] Title/author/category editable` |
-
-#### COMP-PLACE-001 — Place composition
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Custom_Composition#Placing_Compositions |
-| **Edge cases** | Terrain vs Sea vertical mode |
-| **Acceptance** | `- [ ] All entities spawn` |
-
-#### COMP-WORKSHOP-001 — Publish Workshop
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Custom_Composition#Publishing_Compositions |
-| **Acceptance** | `- [ ] Publish dialog completes` |
-
-#### COMP-SUBSCRIBE-001 — Subscribe Workshop
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Custom_Composition#Subscribing_to_Compositions |
-| **Acceptance** | `- [ ] Subscribed comps in browser` |
-
----
-
-## CONN — Connections
-
-#### CONN-START-001 — RMB Connect flow
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Connecting_Entities |
-| **Trigger** | RMB → Connect → type → LMB target |
-| **Acceptance** | `- [ ] Line drawn` |
-
-#### CONN-GROUP-001 — Grouping
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Grouping |
-| **Shortcut** | Ctrl + drag char→char |
-| **Acceptance** | `- [ ] Squad formed` |
-
-#### CONN-SYNC-001 — Syncing
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Syncing |
-| **Acceptance** | `- [ ] Char-object sync` |
-
-#### CONN-TRG-OWNER-001 — Trigger owner
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Setting_Trigger_Owner |
-
-#### CONN-RAND-START-001 — Random start
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Setting_Random_Start |
-
-#### CONN-WP-ACT-001 — Waypoint activation
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Setting_Waypoint_Activation |
-
-#### CONN-WP-ATTACH-001 — Attach waypoint to object
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Waypoint#Attaching_Waypoints |
-| **Trigger** | Drag waypoint onto object; drag away to detach |
-| **Edge cases** | DESTROY / GET IN require attachment; moving object moves attached WPs |
-| **Acceptance** | `- [ ] Attached icon outline` `- [ ] Detach by drag away` |
-
-#### CONN-DEL-001 — Delete connection
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Connecting#Disconnecting_Entities |
-| **Shortcut** | Del on line |
-
----
-
-## SEL / LAYER / ATTR
-
-| ID | Summary | Wiki |
-|----|---------|------|
-| SEL-001 | Click select | Actions#SelectUnit |
-| SEL-MOD-001 | Ctrl+LMB add | Actions#AddUnitToSel |
-| SEL-ALL-001 | Select all on screen | Menu Bar#Edit |
-| SEL-GROUP-ICON-001 | Click group icon | Group |
-| SEL-LAYER-CHILDREN-001 | Select layer children | Actions |
-| SEL-LAYER-DESC-001 | Select all descendants | Actions |
-| LAYER-CREATE-001 | New layer button | Layer#Creating_a_layer |
-| LAYER-DEL-001 | Del deletes subtree | Layer#Deleting_a_layer |
-| ATTR-OPEN-001 | Dbl-click attributes | Setting Attributes |
-| ATTR-MULTI-001 | Multi-select attributes | Switching from 2D Editor |
-| ATTR-MULTI-CHK-001 | Per-field enable checkbox when values differ | Switching from 2D Editor#Editing_Multiple_Entities |
-
-#### ATTR-MULTI-001 — Multi-edit attributes (detail)
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Switching_from_2D_Editor#Editing_Multiple_Entities |
-| **Trigger** | Multi-select → RMB → Attributes (dbl-click opens single only) |
-| **Procedure** | Shared values shown; differing fields **disabled** until right-side checkbox enabled |
-| **Acceptance** | `- [ ] Bulk edit with per-field opt-in` |
-
-#### CTX-FORMATION-001 — Formation in context menu
-
-| Field | Value |
-|-------|-------|
-| **Wiki anchor** | https://community.bistudio.com/wiki/Eden_Editor:_Switching_from_2D_Editor |
-| **Trigger** | RMB group/selection → Formation |
-| **Acceptance** | `- [ ] Formation submenu` |
-
----
-
-## KEY shortcuts
-
-| ID | Keys | Effect |
-|----|------|--------|
-| KEY-WP-001 | Shift+RMB | Quick waypoint |
-| KEY-WIDGET-001 | Space | Cycle widget |
-| KEY-GRID-001 | `;` | Translation grid toggle |
-| KEY-HIDE-UI-001 | Backspace | Hide UI (screenshot) |
-
----
-
-## ACTION appendix
-
-90+ `do3DENAction` names in `artifacts/eden-wiki/Eden_Editor__Actions.md`. Key clipboard/transform actions:
-
-| ID | Action | Effect |
-|----|--------|--------|
-| ACTION-COPY-001 | `CopyUnit` | Copy selection to clipboard |
-| ACTION-CUT-001 | `CutUnit` | Cut selection |
-| ACTION-PASTE-001 | `PasteUnit` | Paste at cursor |
-| ACTION-PASTE-ORIG-001 | `PasteUnitOrig` | Paste at original position |
-| ACTION-LEVEL-001 | `LevelWithSurface` | Align to terrain |
-| ACTION-SNAP-001 | `SnapToSurface` | Snap to ground |
-| ACTION-SEAT-001 | `ChangeSeat` | Crew seat change |
-| ACTION-FORM-001 | `ForceToFormation` | Snap group to formation positions |
-| ACTION-TOGGLE-SEL-001 | `ToggleUnitSel` | Toggle unit in selection |
-| ACTION-WP-QUICK-001 | Shift+RMB | Quick MOVE waypoint |
-
-Also: `MissionSave`, `SelectObjectMode`, `SyncWith`, `GroupWith`, `OpenAttributes`, `SearchEdit`, …
-
-**Note:** `Eden_Editor__Entity_Context_Menu.md` scrape is primarily **modding/config** (`class Cfg3DENContextMenu`) — end-user menu items are better sourced from Switching from 2D Editor + Connecting + per-type pages above.
-
-## STATUS bar
-
-| ID | Entry |
-|----|-------|
-| STATUS-X-001 | Cursor X |
-| STATUS-Y-001 | Cursor Y |
-| STATUS-Z-001 | Elevation |
-| STATUS-ZOOM-001 | Zoom/resolution |
-| STATUS-VER-001 | Game version |
-| STATUS-MOD-001 | Mods loaded |
-| STATUS-SRV-001 | MP server |
-
-Wiki: https://community.bistudio.com/wiki/Eden_Editor:_Status_Bar
+# Eden editor interactions
+
+The interactions catalog of the Arma 3 Eden editor, the reference design the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) is measured against: every Eden
+interaction as an ID with its wiki source, one topic per file. Developers and AI agents read it to
+learn what Eden does before building or judging the Mission Creator's counterpart.
+
+## Contents
+
+```text
+documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/
+├── asset_browser.md                        modes and F-keys, side submode, search, crew switch
+├── compositions.md                         custom compositions: save, edit, place, Workshop
+├── connections.md                          grouping, sync, trigger owner, random start, waypoints
+├── entity_placement.md                     click, drag, repeat, area, comment, empty vehicle
+├── selection_layers_and_attributes.md      selection, layers, Attributes dialog, formation menu
+├── toolbar_keys_actions_and_status_bar.md  toolbar index, shortcuts, engine actions, status bar
+├── transformation.md                       move, altitude, rotate, vertical mode, snap, widgets
+└── vehicle_crew.md                         crew panel, boarding, unboarding, seat changes
+```
+
+## How it works
+
+Each topic file groups the entries of one or two ID domains. An entry is a
+`#### {ID} — {Short name}` heading over a field table, in the Eden reference format of the
+[feature entry schema](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md#eden-reference-entries):
+the UI surface, the wiki anchor it was read from, the shortcut, trigger and procedure, and the
+Acceptance checks that show a feature behaves as Eden's does. Short entries carry only the fields
+their wiki section supports; the index tables of the last two files give an ID, a summary and the
+wiki page. Every fact comes from the Bohemia wiki's Eden pages, cited by URL; the 28 scraped pages
+are in `.ai/artifacts/eden-wiki/`, listed by the
+[scrape manifest](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml).
+
+Eden edits in a 3D scene and on a 2D map. The Mission Creator's map view is top-down, drawn
+through the map engine's orthographic camera (`apps/website/map-engine/src/camera/ortho/`), so an
+entry that exists only in 3D is marked `N/A (3D)`. Parity with the Mission Creator is not stated
+here: the [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+pairs each ID with the Mission Creator's feature by ID, and the
+[feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+says what the Mission Creator does.
+
+| Topic file | ID domains | IDs | Mission Creator area in the feature inventory |
+|---|---|---:|---|
+| [asset_browser.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/asset_browser.md) | `RIGHT` | 13 | [right asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) |
+| [entity_placement.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/entity_placement.md) | `PLACE` | 7 | [placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) |
+| [transformation.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/transformation.md) | `XFORM`, `WIDGET` | 11 | [transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) |
+| [vehicle_crew.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/vehicle_crew.md) | `CREW` | 4 | [attributes and settings](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) (the vehicle view's crew seats) |
+| [compositions.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/compositions.md) | `COMP` | 5 | [right asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) (the Compositions tab) |
+| [connections.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/connections.md) | `CONN` | 8 | none yet; the code is the [map context menu](/apps/website/frontend/src/v2/apps/editor/ui/docks/context_menu/README.md) |
+| [selection_layers_and_attributes.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/selection_layers_and_attributes.md) | `SEL`, `LAYER`, `ATTR`, `CTX` | 12 | [selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md), [left sidebar](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md), [attributes and settings](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) |
+| [toolbar_keys_actions_and_status_bar.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/toolbar_keys_actions_and_status_bar.md) | `TOOLBAR`, `KEY`, `ACTION`, `STATUS` | 23 | [top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md), [keyboard shortcuts](/documentation_v2/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md), [bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) |
+
+The folder defines 83 IDs, each in one file. The gap analysis counts them with:
+
+```bash
+cd documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions
+grep -ohE '\b[A-Z][A-Z0-9]*(-[A-Z0-9]+)*-[0-9]{3}\b' *.md | sort -u | wc -l
+```
+
+A new Eden entry goes into the topic file of its domain, with the next free number in its
+pattern and a wiki anchor, or `UNVERIFIED` in its Evidence field when no source confirms it; a new
+domain gets a new topic file, a Contents line and a table row.
+
+## Code
+
+- [Mission Creator](/apps/website/frontend/src/v2/apps/editor/) — the workspace whose features the
+  gap analysis pairs with these entries.
+- [Map context menu](/apps/website/frontend/src/v2/apps/editor/ui/docks/context_menu/) — the
+  Mission Creator's connect, formation and comment rows, the counterpart of the connection and
+  context menu entries.
+
+## Boundaries
+
+- Depends on: the Eden pages of the Bohemia wiki (`https://community.bistudio.com/wiki/`) and
+  their scrape in `.ai/artifacts/eden-wiki/`; the Eden reference format and ID patterns of the
+  [feature entry schema](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md).
+- Used by: the [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md),
+  which gives each ID a parity row; the feature inventory's README and entry schema; the
+  [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md); the
+  [UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
+  and [attribute catalog](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)
+  beside it; the context menu README in
+  `apps/website/frontend/src/v2/apps/editor/ui/docks/context_menu/`; and the ticket registry,
+  whose tickets name these IDs.
+- Rules: an ID is never renumbered, reused or moved between domains, because the gap analysis,
+  the roadmap and the tickets cite it verbatim; each ID is defined in exactly one file, and the
+  count above stays equal to the gap analysis's interaction rows; every fact cites its wiki
+  anchor; a file stays within 500 lines (`cargo xtask verify markdown-placement`) and has a
+  Contents line (`cargo xtask verify readme-coverage`).
+
+## Related documentation
+
+- [Eden editor reference](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/README.md)
+  — the catalogs, the gap analysis and the scrape manifest together.
+- [Eden terminology](https://community.bistudio.com/wiki/Eden_Editor:_Terminology) — Eden's own
+  terms: entity, asset, Entity List, layer, group, connection and view.

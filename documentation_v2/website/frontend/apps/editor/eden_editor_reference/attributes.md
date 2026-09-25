@@ -1,15 +1,22 @@
 **Status:** live
 
-# Eden Editor — Attribute Field Catalog
+# Eden editor attribute fields
 
-**Document:** `eden/attributes.md`  
-**Schema:** [reference/feds_schema.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md) — `ATTR-FIELD-{TYPE}-{NAME}` IDs  
-**Source:** [Setting Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Setting_Attributes), per-type wiki pages, scrape `artifacts/eden-wiki/`.  
-**Interactions:** [interactions.md](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md). **UI:** [ui_anatomy.md](./ui_anatomy.md).
+The attribute fields of the Arma 3 Eden editor, the reference design the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) is measured against: every field
+of every entity type as an ID with its label, dialog section, SQM property and value type, read
+from the Bohemia wiki. The last section says which of them the Mission Creator's Attributes dialog
+holds.
+
+Sources: [Setting Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Setting_Attributes)
+and the per-type wiki pages each section cites, scraped into `.ai/artifacts/eden-wiki/`. The IDs
+follow the `ATTR-FIELD-{TYPE}-{NAME}` pattern of the
+[feature entry schema](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md#feature-ids).
+The [interactions catalog](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md)
+covers how the dialog opens, and the [UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md#attributes-dialog-attributesdialog)
+its layout.
 
 Attributes are edited via **double-click** → Attributes dialog, or indirectly via drag/widget. Scripting: `set3DENAttribute` / `set3DENAttributes` (editor workspace only).
-
----
 
 ## Catalog format
 
@@ -20,9 +27,7 @@ Attributes are edited via **double-click** → Attributes dialog, or indirectly 
 | **Category** | Dialog tab section |
 | **Property** | SQM/config property (`Development` column) |
 | **Type** | Boolean, String, Number, Array, Position3D |
-| **Wiki** | Anchor |
-
----
+| **Wiki** | Anchor, given once per section as its Source line |
 
 ## Object (`OBJ`)
 
@@ -64,9 +69,7 @@ Source: [Setting Attributes#Object](https://community.bistudio.com/wiki/Eden_Edi
 
 **DoorStates gestures (wiki):** LMB cycle; RMB close; LMB+Alt open; LMB+Shift lock; LMB+Ctrl close.
 
-**TBD maps today:** role, tag, stance (partial), squad read-only — see `06` `ATTR-TAB-*`.
-
----
+The Mission Creator's counterpart of the object fields is in [Mission Creator counterpart](#mission-creator-counterpart).
 
 ## Comment (`CMT`)
 
@@ -79,8 +82,6 @@ Source: [Comment#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Co
 | ATTR-FIELD-CMT-POSITION | Position | Init | position | Position3D |
 
 Editor-only; no gameplay effect. Can be saved in custom compositions.
-
----
 
 ## Group (`GRP`)
 
@@ -103,8 +104,6 @@ Source: [Group#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Grou
 
 **Behaviour options:** Careless, Safe, Aware, Combat, Stealth.
 
----
-
 ## Marker (`MRK`)
 
 Source: [Marker#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Marker)
@@ -124,8 +123,6 @@ Source: [Marker#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Mar
 
 **Marker kinds:** Icon (fixed screen size) vs Area (meters in world space).
 
----
-
 ## Layer (`LYR`)
 
 Source: [Layer#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Layer)
@@ -138,11 +135,12 @@ Source: [Layer#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Laye
 
 **Not scenario visibility** — `Enable Visibility` hides in editor only.
 
----
-
 ## Scenario (`SCN`)
 
 Source: [Scenario Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Scenario_Attributes)
+
+Eden calls the document it edits a scenario; the Mission Creator's equivalent is the
+[mission](/documentation_v2/glossary.md#mission); this section keeps Eden's word for it.
 
 ### General (Presentation)
 
@@ -167,7 +165,7 @@ See full wiki table — includes time of day, weather, fog, wind, view distance,
 | ATTR-FIELD-SCN-WIND | Wind | — | — |
 | ATTR-FIELD-SCN-VIEW-DIST | View distance | — | — |
 
-**TBD today:** `meta.environment.time`, `weather`, `viewDistance` in Mission Settings — partial parity.
+The Mission Creator's Mission Settings dialog writes the time of day and the weather preset; it has no fog, wind or view distance field (see [Mission Creator counterpart](#mission-creator-counterpart)).
 
 ### Multiplayer / Garbage Collection
 
@@ -176,11 +174,9 @@ See full wiki table — includes time of day, weather, fog, wind, view distance,
 | Multiplayer | [Scenario Attributes#Multiplayer](https://community.bistudio.com/wiki/Eden_Editor:_Scenario_Attributes) |
 | Garbage Collection | `GarbageCollection` section — performance cleanup |
 
----
-
 ## Trigger (`TRG`)
 
-Source: [Trigger#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Trigger) — scrape: `artifacts/eden-wiki/Eden_Editor__Trigger.md`
+Source: [Trigger#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Trigger) — scrape: `.ai/artifacts/eden-wiki/Eden_Editor__Trigger.md`
 
 | ID | Name | Category | Property | Type |
 |----|------|----------|----------|------|
@@ -200,11 +196,9 @@ Source: [Trigger#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Tr
 
 **Connections:** Set Trigger Owner (group-specific activation options). Area scalable on map when selected.
 
----
-
 ## Waypoint (`WP`)
 
-Source: [Waypoint#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Waypoint) — scrape: `artifacts/eden-wiki/Eden_Editor__Waypoint.md`
+Source: [Waypoint#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_Waypoint) — scrape: `.ai/artifacts/eden-wiki/Eden_Editor__Waypoint.md`
 
 | ID | Name | Category | Property | Type |
 |----|------|----------|----------|------|
@@ -220,13 +214,9 @@ Source: [Waypoint#Attributes](https://community.bistudio.com/wiki/Eden_Editor:_W
 
 **Placement:** F4 browser or Shift+RMB quick MOVE. Attach by drag onto object; detach by drag away. Completion can require connected triggers (`CONN-WP-ACT-001`).
 
----
-
 ## System (`SYS`)
 
-Full field tables vary per module — see [System](https://community.bistudio.com/wiki/Eden_Editor:_System) and scrape `artifacts/eden-wiki/Eden_Editor__System.md`.
-
----
+Full field tables vary per module — see [System](https://community.bistudio.com/wiki/Eden_Editor:_System) and scrape `.ai/artifacts/eden-wiki/Eden_Editor__System.md`.
 
 ## Composition metadata (not entity attributes)
 
@@ -240,13 +230,35 @@ Custom compositions have **title, author, category** in save/edit dialog — not
 
 Saved payload includes: attribute values, layer structure, visibility, connections ([Custom Composition](https://community.bistudio.com/wiki/Eden_Editor:_Custom_Composition)).
 
----
 
-## TBD Attributes modal mapping
+## Mission Creator counterpart
 
-| Eden object attrs | TBD `AttributesModal` tab | Gap |
-|-------------------|----------------------------|-----|
-| Identity (name, callsign, …) | Identity (role, tag) | Partial |
-| Transformation (position, rotation) | Transform (editable X/Y/Z/rotation) | ✅ T-049 |
-| States (skill, fuel, damage, …) | States stub | **Missing** |
-| Arsenal / loadout | Arsenal (dumb export @ **T-068.4**) | ✅ **Partial** — 4 gear dropdowns + JSON download; paper-doll/smart Forge **T-068.10** |
+What the Mission Creator holds for each Eden attribute group, read from the code. Parity per ID is
+the [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)'s,
+and the dialog's entries are in the feature inventory's
+[attributes and settings](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md)
+area.
+
+The Mission Creator's Attributes dialog edits one or several placed
+[slots](/documentation_v2/glossary.md#slot), or one placed vehicle, in four tabs: "Transform",
+"Identity", "States" and "Arsenal" (`TABS` in
+`apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/field_gates_and_labels.rs`).
+Over a multi-selection, a field whose values differ stays locked until its "Apply to all" box is
+ticked, as Eden's per-field checkbox does.
+
+| Eden attribute group | Mission Creator counterpart | Code |
+|---|---|---|
+| Object Transformation (position, rotation) | the "Transform" tab: X, Y and Z, "Rotation", and "Stance" ("Standing", "Crouched", "Prone") | `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/spatial_transform_tab.rs` |
+| Object Type, Control and Identity (type, role description, name, call sign) | the "Identity" tab: "Type", "Role", "Role Description", "Tag", "Faction" and "Squad"; no name, face or call sign field | `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/identity_tab.rs`, `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/faction_and_squad_reassignment.rs` |
+| Object States and Special States (skill, health, fuel, simulation, …) | the "States" tab, a placeholder: "Medic (soon)" and "Engineer (soon)" with no control | `states_tab` in `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal.rs` |
+| Loadout (Eden's Arsenal, outside the Attributes dialog) | the "Arsenal" tab: the slot's loadout rows, a 3D paper doll, and loadout export and import | `apps/website/frontend/src/v2/apps/editor/arsenal/` |
+| Vehicle crew and cargo | the vehicle view: "Heading", "Cargo" rows and "Crew" seats (driver, gunner, commander and cargo seats) | `apps/website/frontend/src/v2/apps/editor/ui/inspector/attributes_modal/vehicle_attributes.rs` |
+| Comment (title, tooltip, position) | a comment's title and tooltip, edited in the comment editor overlay | `apps/website/frontend/src/v2/apps/editor/bridge/overlays/comment_editor.rs` |
+| Layer (name, Enable Transformation, Enable Visibility) | an editor layer's name, "locked" and "hidden" flags, both editor-only as in Eden | `apps/website/map-engine/src/data/store/rows/layers.rs` |
+| Scenario General and Environment | the Mission Settings dialog: "Presentation" (briefing, thumbnail link), "Mission shape", "Time", "Weather", "Mission flow" and the map display settings | `apps/website/frontend/src/v2/apps/editor/ui/modals/settings_modal/` |
+| Composition metadata (title, author, category) | a saved composition's title, category and author, set on save and edited in the Compositions tab | `apps/website/frontend/src/v2/apps/editor/ui/docks/dock_right/compositions/` |
+
+The environment keys the editor writes into the document are listed in `CARRIED_ENV_KEYS`
+(`apps/website/frontend/src/v2/apps/editor/ui/inspector/env.rs`): `time` and `weather`, which the
+compiler carries into the mission, and the map display keys; `author_env` refuses any other key,
+so fog, wind and view distance have no field.
