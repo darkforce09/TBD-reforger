@@ -1,10 +1,11 @@
-# Documentation Gates
+# Documentation gates
 
-The repository checks that keep documentation where it belongs, shaped the same way everywhere and
+The three checks that keep documentation where it belongs, shaped the same way everywhere and
 linked correctly: `readme-coverage` (every folder carries a README.md whose Contents block matches
-the folder), `markdown-placement` (Markdown lives in the documentation tree, and live documents stay
-short) and `link-check` (every link in the documentation reaches what it names, and every path and
-xtask command a live document writes as code exists).
+the folder), `markdown-placement` (Markdown lives in the documentation tree, and live documents
+stay short) and `link-check` (every link reaches what it names, and every path and xtask command a
+live document writes as code exists). The
+[README standard](/documentation_v2/standards/readme_standard.md) is the rule set they enforce.
 
 ## Contents
 
@@ -25,9 +26,19 @@ tools_v2/xtask/src/verifications/documentation/
 
 ## How it works
 
+```text
+verify <gate> [--path <dir>]... [--with-untracked] [--report]
+  └─▶ tracked_tree.rs: git ls-files -z  (+ git ls-files --others --exclude-standard -z)
+        └─▶ mod.rs prepare: refuse a failed or empty listing; gate_scope.rs resolves --path
+              └─▶ readme_coverage.rs | markdown_placement.rs | link_check.rs
+                    └─▶ one verdict per judged item ─▶ verification_core::Report ─▶ exit 0, 1, 2
+```
+
 Each run lists the index once with `git ls-files -z` (`tracked_tree.rs`) and judges only what that
-listing holds: a file on disk that git does not track is invisible, and a folder exists when it holds
-a tracked file. This committed view is the one CI judges.
+listing holds: a file on disk that git does not track is invisible, and a folder exists when it
+holds a listed file. This committed view is the one CI judges. A listed file's text is read from
+the working tree, so an uncommitted edit to a tracked file is judged as it stands; bytes that are
+not UTF-8 are replaced, not refused.
 
 With `--with-untracked`, the run also lists the untracked files git does not ignore, with
 `git ls-files --others --exclude-standard -z`, and judges each exactly like a tracked file: the
@@ -39,10 +50,10 @@ untracked files apart, and the summary line names the flag, as in
 `readme-coverage --with-untracked (untracked files included): OK`, so such a result is never
 mistaken for a check of the committed files.
 
-`mod.rs` refuses to judge anything when either listing cannot run, fails or is killed, when the
-index lists no file, and when a `--path` value names no folder the listing holds (`gate_scope.rs`);
-each gate then turns every judged item into one `verification_core` verdict and prints them through
-the shared report.
+`mod.rs` refuses to judge anything when either listing cannot run, fails, is killed or passes its
+120-second deadline, when the index lists no file, and when a `--path` value names no folder the
+listing holds (`gate_scope.rs`); each gate then turns every judged item into one
+`verification_core` verdict and prints them through the shared report.
 
 Exit status: 0 when every judged item held, 1 when at least one broke a rule, 2 when a check did not
 run: the listing failed or was empty, a judged file could not be read, the scope was refused, or the
@@ -92,7 +103,8 @@ that never closes each fail.
   lists them.
 
 Every violation prints as `path:line: message`: a child that no entry matches is reported at the root
-line, a missing heading at line 1, and every other violation at the line it concerns.
+line, a missing heading at line 1, and every other violation at the line it concerns. The Contents
+check is the only structural rule: section order, headings and wording are not checked.
 
 ### markdown-placement
 
@@ -100,10 +112,11 @@ line, a missing heading at line 1, and every other violation at the line it conc
    `tests`, `generated` or `.`-prefixed folder.
 2. The retired documentation root (`RETIRED_DOCS_ROOT`: `docs`) holds no tracked file.
 3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
-   except under the ticket records (`TICKET_DOCUMENTS_DIR`), the archive (`ARCHIVE_DIR`) and the
-   pending-merge area, the program records whose path begins with `PROGRAM_RECORDS_PREFIX`, and the
-   two documents that `cargo xtask ticket sync` rewrites between markers (`ROADMAP`,
-   `GAP_ANALYSIS`), whose sync-managed tables stay in one file.
+   except under the [ticket](/documentation_v2/glossary.md#ticket) records
+   (`TICKET_DOCUMENTS_DIR`), the archive (`ARCHIVE_DIR`) and the pending-merge area, the program
+   records whose path begins with `PROGRAM_RECORDS_PREFIX`, and the two documents that
+   `cargo xtask ticket sync` rewrites between markers (`ROADMAP`, `GAP_ANALYSIS`), whose
+   sync-managed tables stay in one file.
 
 ### link-check
 
@@ -113,8 +126,8 @@ included), the project instructions (`PROJECT_INSTRUCTIONS`), the Markdown files
 ticket folder (`TICKETS_DIR`), and the Markdown and `.mdc` files under the Cursor rule folders
 (`CURSOR_RULE_DIRS`). Nothing in the agent artifact tree (`ARTIFACTS_DIR`: `.ai/artifacts`) is
 judged, its README.md included. The ticket records and the archive are frozen: only the link rules
-(1 to 7 below) judge them. Every other judged document is live, and rules 8 and 9 judge the live
-documents alone.
+(1 to 7 below) judge them. Every other judged document is live, the pending-merge area included,
+and rules 8 and 9 judge the live documents alone.
 
 Each document is scanned the way a renderer reads it. Inline links and images, angle destinations,
 autolinks, and reference definitions with their full, collapsed and shortcut uses count as links;
@@ -158,11 +171,11 @@ break names its rule:
    tracked file or a folder that holds one; a trailing `/` asks for a folder. A path the tracked
    tree does not hold passes when git ignores it (runtime output such as a build tree, export
    scratch or a local secrets file) or when the layout module lists it as a historical spelling a
-   live document names on purpose (`HISTORICAL_PATH_SPELLINGS`, each entry with its reason). Every
-   path of a run the tracked tree does not hold is asked in one `git check-ignore --stdin -z`, a
-   span without a trailing `/` both as written and as a folder, so a folder-only ignore pattern
-   answers the same whether or not the folder exists on disk. A `..` that climbs above the
-   repository root names nothing.
+   live document names on purpose (`HISTORICAL_PATH_SPELLINGS`, each entry with its reason; the
+   list is empty). Every path of a run the tracked tree does not hold is asked in one
+   `git check-ignore --stdin -z`, a span without a trailing `/` both as written and as a folder, so
+   a folder-only ignore pattern answers the same whether or not the folder exists on disk. A `..`
+   that climbs above the repository root names nothing.
 9. cited command does not exist: every `cargo xtask` in an inline code span, and in each line of a
    fenced code block whatever its info string, is a citation; `cargo` must stand as a word of its
    own, so `hcargo xtask` is none, and a fenced line ending in `\` continues on the next. The words
@@ -178,8 +191,9 @@ break names its rule:
    positional argument of the command reached: when that argument declares possible values (a
    `ValueEnum` type, or a list given to `value_parser`), the word must be one of them or an alias
    of one, and a placeholder passes. `mk` and `ci` take their first argument as a free string and
-   look it up at run time, in the build recipes (`TARGETS` in `recipes.rs`) and in the CI task
-   table (`TASKS` in `task_definitions.rs`), so the tree declares those names as that argument's
+   look it up at run time, in the build recipes (`TARGETS` in
+   `tools_v2/xtask/src/commands/build/recipes.rs`) and in the CI task table (`TASKS` in
+   `tools_v2/xtask/src/commands/ci/task_definitions.rs`), so the tree declares those names as that argument's
    possible values: `cargo xtask mk leptos` and `cargo xtask ci ci-local` pass, and a recipe or
    task neither table holds breaks. An argument that declares no values, and every word after the
    first argument, is never judged, so `cargo xtask` and `cargo xtask --help` pass. The break names
@@ -199,6 +213,17 @@ A rule is a `DocumentRule` in `link_check.rs`: it says which areas it judges, ju
 document at a time, settles any batched work when the run ends, and adds its own totals lines. A
 new rule joins the list in `verify_link_check` and reads the scan it is given.
 
+### Exemptions at a glance
+
+| Area | readme-coverage | markdown-placement | link-check |
+|---|---|---|---|
+| a folder named `tests` or `generated`, or starting with `.`, and all below it | no README needed, none checked | in a code tree, may hold any Markdown; under the documentation root, still size-limited | judged like any other document |
+| the pending-merge area (`PENDING_MERGE_DIR`) | no README needed, none checked | outside the size limit | judged as live |
+| ticket records (`TICKET_DOCUMENTS_DIR`) and archive (`ARCHIVE_DIR`) | judged | outside the size limit | frozen: rules 1 to 7 only |
+| program records (`PROGRAM_RECORDS_PREFIX`) | judged, when a folder | outside the size limit | not judged |
+| `ROADMAP` and `GAP_ANALYSIS` | not applicable | outside the size limit | judged as live |
+| the agent artifact tree (`ARTIFACTS_DIR`) | outside the span | outside every rule | not judged |
+
 ## Public surface
 
 - `cargo xtask verify readme-coverage [--path <dir>]... [--with-untracked]`
@@ -214,16 +239,33 @@ checkout, names a file or names no folder the listing holds is refused with exit
 can be checked before they are committed. Without it a gate judges the committed view, which is what
 CI runs. Both arguments come from one argument set that the three verbs share
 (`DocumentationGateArgs` in `tools_v2/xtask/src/commands/verify/cli.rs`), which the dispatcher
-turns into the `GateRequest` every gate takes.
+turns into the `GateRequest` every gate takes. `--report` belongs to link-check alone.
 
 ## Boundaries
 
-- Depends on: `verification_core` (verdicts, the shared report, the process runner), `git ls-files`,
-  `git cat-file` and `git check-ignore`, the `regex` crate for globs, xtask's own clap command tree
-  (`crate::cli::Cli`, read through `clap::CommandFactory`) with the build recipes and the CI task
-  table it declares as the values of `mk` and `ci`, and the layout constants in
-  `repository_layout.rs`.
-- Used by: the verify command group, through `dispatch.rs`.
-- Rules: every path comes from the layout module; a check that could not examine its input reports
-  "did not run", never a pass; production files stay under 500 lines, and tests live in the sibling
-  `tests/` folders.
+- Depends on: `verification_core` (verdicts, the shared report, the process runner);
+  `git ls-files`, `git cat-file` and `git check-ignore`; the `regex` crate for globs; xtask's own
+  clap command tree (`crate::cli::Cli`, read through `clap::CommandFactory`) with the build
+  recipes and the CI task table it declares as the values of `mk` and `ci`; and the layout
+  constants in `tools_v2/xtask/src/core/repository_layout.rs`.
+- Used by: `tools_v2/xtask/src/commands/verify/dispatch.rs`, for the three verbs. No `ci-local`
+  step and no GitHub workflow runs them.
+- Rules:
+  - every path and region comes from the layout module;
+  - a check that could not examine its input reports "did not run", never a pass
+    (`a_failed_or_empty_listing_did_not_run`, `a_refused_or_empty_scope_did_not_run`,
+    `a_tracked_readme_missing_from_the_disk_did_not_run`,
+    `an_unreadable_document_or_a_failed_listing_did_not_run`);
+  - untracked files count only under `--with-untracked`, and ignored files never do
+    (`untracked_files_join_the_listing_only_when_included_and_ignored_files_never_do`);
+  - the exemptions above are fixed in `path_regions.rs` and `link_check/judged_documents.rs`
+    (`test_generated_hidden_and_pending_merge_folders_need_no_readme`,
+    `the_size_limit_skips_frozen_pending_record_and_sync_managed_documents`,
+    `every_judged_area_is_judged_and_nothing_else`).
+
+## Related documentation
+
+- [README standard](/documentation_v2/standards/readme_standard.md) — the README core, the kinds
+  and how writers run these gates.
+- [Documentation standards](/documentation_v2/standards/documentation_standards.md) — the
+  documentation tree's layout, placement and size rules.
