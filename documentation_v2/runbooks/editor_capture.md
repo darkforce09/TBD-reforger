@@ -1,93 +1,133 @@
 **Status:** live
 
-# editor-capture — screenshot the Mission Creator headless
+# Editor capture
 
-Drives the live editor over CDP and captures both the DOM chrome and the wgpu map. It serves the
-editor UI/UX program; see
-[`.ai/artifacts/editor_ui_program_plan.md`](../../.ai/artifacts/editor_ui_program_plan.md).
+Screenshots a running [Mission Creator](/documentation_v2/glossary.md#mission-creator) in headless
+Chromium on the real GPU: the interface through the DevTools protocol and the map straight off its
+canvas. Run it to judge layout, copy and the map by eye, or to hand an agent an image of the live
+editor. A capture takes about half a minute once the stack is up. The drivers are the `capture`
+binary of `tools_v2/developer-tools`, described in the
+[capture drivers README](/tools_v2/developer-tools/src/browser_testing/screen_capture/README.md).
 
-It is the `capture` binary of `tools_v2/developer-tools`, on the same CDP plumbing as the gate
-harness in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`. Chrome launch, the
-ANGLE/Vulkan flags, the KB-002 font-cache workaround and the teardown all live inside that binary
-(via `cdp::launch_with_gpu(_, GpuBackend::Vulkan, _)`), so there is no wrapper script to run and
-the `no-node` / `no-shell` language gates stay at zero.
+## Prerequisites
+
+- A GPU with a Vulkan driver on the machine that runs the capture: the map boots only on ANGLE
+  over Vulkan (environment rule 2 below).
+- The full Chromium build the [editor gates](/documentation_v2/runbooks/editor_gates.md) use,
+  found the same way (`CHROME_HEADLESS_SHELL` or the Playwright cache). Check:
+  `cargo run -q -p developer-tools --bin gate -- doctor` prints a `✓ chromium` line.
+- The database, the [API](/documentation_v2/glossary.md#api) on port 8080 and the app on port 3000 running, as in
+  [Local development](/documentation_v2/runbooks/local_development.md): `cargo xtask db up`,
+  `cargo xtask mk rust-api`, then `cargo xtask mk leptos` (release) or `cargo xtask mk leptos-debug`
+  (`trunk serve` without `--release`). Check: `http://localhost:3000/` answers.
+- `APP_ENV=development` in `apps/website/api_v2/.env`, for the
+  [dev login](/documentation_v2/glossary.md#dev-login) the capture signs in with.
+- The id of a [mission](/documentation_v2/glossary.md#mission) to open, from the mission library.
+
+## Steps
+
+Run every command from the repository root, on the machine that owns the GPU; the binary is built
+with the host's toolchain.
+
+1. Sign in with the dev login, open the Mission Creator on a mission, and capture the interface
+   and the map canvas. Each URL is followed by the milliseconds to wait after navigating to it.
+
+   ```bash
+   cargo run -q -p developer-tools --bin capture -- shot /tmp/editor.png "http://localhost:8080/api/v1/auth/dev-login?role=admin" 6000 "http://localhost:3000/missions/<mission-id>/edit" 25000 --canvas
+   ```
+
+   Expected on stderr: `→ <url> (wait <ms>ms)` for each step, the boot-overlay poll ending
+   `overlay cleared after <n>s`, the page state and the last 40 console lines, then
+   `OK via <mode> → /tmp/editor.png`, `canvas toDataURL → <bytes> bytes` and
+   `wrote /tmp/editor_canvas.png`; exit 0. `--hide-overlay` removes a boot overlay that never
+   clears from the DOM before the shot.
+
+2. Cut a region out of a screenshot for close reading, here 400 × 300 pixels at the top left,
+   doubled.
+
+   ```bash
+   cargo run -q -p developer-tools --bin capture -- crop /tmp/editor.png 0 0 400 300 2 /tmp/editor_crop.png
+   ```
+
+   Expected: `/tmp/editor_crop.png  (800x600 = 480000px)` and a warning that the image passes
+   190 000 pixels. An image reader that downscales anything larger makes small text unreadable,
+   so keep width × height × scale² under that.
+
+`capture zoomsweep <out-prefix> <mission-id> <zoom,zoom,...>` writes the canvas at each zoom level
+through `window.__editorCamSet`; under headless Vulkan that call breaks the map (the camera caveat
+below), so its images are black.
+
+## Verify
 
 ```bash
-# stack must be up: cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos-debug
-distrobox-host-exec sh -c 'cd /path/to/TBD-Reforger && \
-  CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target \
-  cargo run -q -p developer-tools --bin capture -- shot /tmp/out.png \
-    "http://localhost:8080/api/v1/auth/dev-login?role=admin" 6000 \
-    "http://localhost:3000/missions/<mission-id>/edit" 25000 \
-    --canvas'
+ls -l /tmp/editor.png /tmp/editor_canvas.png
 ```
 
-Writes `/tmp/out.png` (chrome, via CDP) and `/tmp/out_canvas.png` (the map, via `toDataURL`).
-`--canvas` is the old `CANVAS_CAPTURE=1` (**required to see the map**); `--hide-overlay` is the old
-`FORCE_HIDE_OVERLAY=1`. GPU mode is always ANGLE/Vulkan on the real device now (the only backend the
-live wgpu engine boots on — see §2); the old `GPU_MODE=egl`/`x11` fallbacks were removed with the
-shell wrapper.
+Expected: both files exist, and the canvas file is megabytes, not tens of kilobytes. A canvas PNG
+of 20 000 bytes or less (`CANVAS_MIN_BYTES`) is a black rectangle, and `shot` refuses to write it.
+A healthy Everon map is about 3.7 MB; a black canvas is about 45 KB.
 
-## Three non-obvious things this encodes
+## Troubleshooting
 
-Each cost real time to find. Change them at your peril.
+| Symptom | Cause | Fix |
+|---|---|---|
+| `canvas looks blank (too few bytes) — not written` | the map engine did not render: a wrong GPU mode, a panicked engine, or a wait too short for the boot | check the console lines for the engine error; raise the editor step's wait |
+| `overlay STILL PRESENT after 25s: …` | the editor did not finish booting; the overlay text names the stage | read the console lines; rule 2 when it sits at a fixed download percentage |
+| `/tmp/editor.png` shows a black map over a correct interface | expected: the compositor screenshot never contains the map (rule 3) | read `/tmp/editor_canvas.png` instead; pass `--canvas` |
+| `capture shot: need at least one <url> <waitMs> step`, exit 2 | no URL and wait pair was given | pass at least one pair |
+| the shot shows the sign-in page | the dev login step failed: the API is not in development mode or not on port 8080 | check `APP_ENV=development` and the API |
+| Chromium aborts on its first text layout with `Could not find any font` | its fontconfig cache is unusable (rule 1) | clear the cache, or set `TBD_GATE_FONT_CACHE` to an empty directory |
 
-**1. `XDG_CACHE_HOME` must point somewhere writable.** This host's default fontconfig cache is
-read-only (ostree), so chrome finds **zero** fonts and the renderer aborts on first text layout:
+### Environment rules
 
-```
-ERROR:ui/gfx/platform_font_skia.cc:258] Could not find any font: , sans
-… TextRunHarfBuzz error … glyph_count: 0
-[end of stack trace]   ← renderer core-dumped
-```
+Three facts about headless Chromium that the capture encodes; changing any of them breaks it.
 
-This is KB-002 in [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md); the gate
-harness solves it the same way in `developer-tools`
-`browser_testing::diagnostics::gate_font_cache_dir()`.
+1. **Chromium needs a usable fontconfig cache.** With a cache it cannot use, Chromium finds zero
+   fonts and the renderer aborts on its first text layout, logging
+   `Could not find any font: , sans` and `glyph_count: 0`. The capture launch gets the same
+   gate-owned cache as the gates (`gate_font_cache_dir` in
+   `tools_v2/developer-tools/src/browser_testing/diagnostics/`); wedge mode 4 of
+   [Editor gates](/documentation_v2/runbooks/editor_gates.md) has the cause.
+2. **`--use-angle=vulkan`, never SwiftShader and never `gl`.** The map is a WebGPU engine, and
+   only ANGLE over Vulkan on the real device boots it:
 
-**2. `--use-angle=vulkan`, never swiftshader and never `gl`.** All three modes behave differently:
+   | Mode | Result |
+   |---|---|
+   | `--use-angle=swiftshader` | `createBuffer failed, size (32) too large`, a wasm abort, and the editor stays on the boot overlay with no failure state, its bar stopped at the download's full size |
+   | `--use-angle=gl` | `RenderEngine::create: webgl2 not available or canvas already in use`; the engine never starts |
+   | `--use-angle=vulkan` | boots: the satellite basemap loads at 12800² with 14 mip levels, `maxTextureDimension2D` 16384 |
 
-| Mode | Result |
-|---|---|
-| `--use-angle=swiftshader` | `wgpu webgpu.rs:2331: createBuffer failed, size (32) too large` → wasm abort → editor stuck on the boot overlay forever |
-| `--use-angle=gl` | `RenderEngine::create: webgl2 not available or canvas already in use` — engine never starts |
-| **`--use-angle=vulkan`** | **Boots. Satellite basemap up, 12800² with 14 mips, `maxTextureDimension2D = 16384`.** |
+   `cdp::launch_with_gpu` with `GpuBackend::Vulkan` passes
+   `--use-angle=vulkan --enable-features=Vulkan --use-vulkan --ignore-gpu-blocklist`; the gates
+   keep SwiftShader because they need no GPU and do not boot the WebGPU map.
+3. **The map is read off the canvas, not the compositor.** Headless Chromium logs
+   `Failed to initialize vulkan surface`, and `Page.captureScreenshot` returns a black map over a
+   correct interface with either `fromSurface` value, which looks exactly like a dead engine.
+   `canvas.toDataURL()` bypasses the compositor and returns the real pixels; `--canvas` writes
+   them to `<out>_canvas.png`.
 
-The swiftshader path exposes the boot-overlay defect: the engine dies and the bar sits at
-`50% · 71.9 MB / 71.9 MB` with no failure state.
+### Camera caveat
 
-**3. The map must be read off the canvas, not the compositor.** Headless chrome logs
-`Failed to initialize vulkan surface`, and `Page.captureScreenshot` — with **either** `fromSurface`
-value — returns a **black map over correct DOM chrome**. That is indistinguishable from a dead
-engine and is the single most misleading failure here. `canvas.toDataURL()` bypasses the
-compositor and returns the real pixels.
+`window.__editorCamSet(x, y, zoom)` (installed by
+`apps/website/frontend/src/v2/apps/editor/bridge/viewport.rs`) panics the render engine under
+headless Vulkan: after the first call every `__editorCam()` returns `undefined` and every canvas
+read is a black rectangle of about 44 KB. In a real browser the call works and the editor renders
+at full frame rate, so this is an artifact of the headless Vulkan surface, not an engine defect.
+`capture zoomsweep` makes the call as it is and does not work around it. For a headless zoom that
+has to move the map, drive mouse wheel events instead. The measurement is in
+[camset_panic_finding.md](/.ai/artifacts/parity/camset_panic_finding.md).
 
-The byte count is the tell: **~45 KB means you captured a black rectangle, ~3.7 MB means you
-captured the map.** `capture shot` checks this (`CANVAS_MIN_BYTES`) and refuses to write a blank
-canvas.
-
-## Subcommands
-
-All three are `cargo run -q -p developer-tools --bin capture -- <sub> …` (via `distrobox-host-exec` — bare
-`cargo` fails on GLIBC in the container). Source: `tools_v2/developer-tools/src/browser_testing/screen_capture.rs`.
-
-| Subcommand | What it does |
-|---|---|
-| `shot <out.png> <url> <waitMs> [url waitMs …]` | Launches chrome (ANGLE/Vulkan), waits for CDP, navigates the steps, polls the boot overlay out, dumps console + page diagnostics, captures chrome (`Page.captureScreenshot`) and — with `--canvas` — the map (`toDataURL`), then tears chrome down. Flags: `--canvas`, `--hide-overlay`. |
-| `zoomsweep <prefix> <mission-id> <z,z,…>` | Boots the editor, then for each zoom calls `window.__editorCamSet(6400,6400,z)`, settles, reads the wgpu canvas → `<prefix>_z<z>.png`. **See the `__editorCamSet` caveat below — it panics the engine headless.** |
-| `crop <img> <x> <y> <w> <h> [scale] [out]` | Crops a region (nearest-neighbour upscale by `scale`) so it can be Read at full detail. The Read tool downscales anything over ~190,000 px, which makes small UI text unreadable — keep `W × H × SCALE²` under that. It uses the `image` crate, so there is no ffmpeg or python dependency. |
-
-## Caveats
-
-`cargo xtask mk leptos-debug` FPS is **not** representative — the HUD read 8–57 FPS during these captures.
-Judge layout, spacing, flow and copy on debug; switch to `cargo xtask mk leptos` before judging map
+A debug build (`cargo xtask mk leptos-debug`) renders far below release frame rates; judge layout,
+spacing, flow and copy on it, and switch to `cargo xtask mk leptos` before judging map
 performance.
 
-**`window.__editorCamSet(...)` panics the render engine under headless Vulkan.** The first call dies
-at `wgpu-29.0.4/src/backend/webgpu.rs`, poisons the `RefCell` in `mission_editor.rs`'s `cam_set`,
-and every subsequent `__editorCam()` returns `undefined` while every canvas read returns a ~44 KB
-**black rectangle** instead of the ~3.7 MB map. This is a **headless artifact of the vulkan surface,
-confirmed fine in a real browser (147 FPS)** — NOT an engine bug, and no ticket is filed against it.
-`capture zoomsweep` issues the call verbatim and records this in a code comment; a black canvas from
-it is the artifact. See [`.ai/artifacts/parity/camset_panic_finding.md`](../../.ai/artifacts/parity/camset_panic_finding.md).
-For headless zoom that must actually move the map, drive `mouseWheel` events instead.
+## Related
+
+- [Mission Creator capture drivers](/tools_v2/developer-tools/src/browser_testing/screen_capture/README.md)
+  — what `shot`, `zoomsweep` and `crop` do, step by step.
+- [Developer tool executables](/tools_v2/developer-tools/src/bin/README.md) — the `capture`
+  synopsis and exit codes.
+- [Editor gates](/documentation_v2/runbooks/editor_gates.md) — the headless gates on SwiftShader,
+  and the font-cache wedge.
+- [Editor UI program plan](/.ai/artifacts/editor_ui_program_plan.md) — the Mission Creator
+  interface work the capture serves.

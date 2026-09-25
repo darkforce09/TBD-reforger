@@ -52,3 +52,8 @@ The verdict is one JSON object of named checks; the smoke exits 0 only when ever
 - Rules: gestures go through the editor's real handlers with trusted input, never a copied
   gesture model; a held mouse button always travels with a matching `buttons` mask, or Chromium
   drops pointer capture on the next move.
+
+## Related documentation
+
+- [Editor gates](/documentation_v2/runbooks/editor_gates.md) — running `gate smoke outliner-drag`
+  and the rest of the suite.

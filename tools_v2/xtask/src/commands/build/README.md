@@ -91,3 +91,5 @@ since half of them cover that module's pin.
   API and `rust-ci` run against.
 - [Editor gates](/documentation_v2/runbooks/editor_gates.md) — `mk gate-doctor` and
   `mk leptos-gates`.
+- [Editor capture](/documentation_v2/runbooks/editor_capture.md) — screenshots of the app that
+  `mk leptos` or `mk leptos-debug` serves.

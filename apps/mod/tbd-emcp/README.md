@@ -107,3 +107,5 @@ script list when it loads the project.
   Workbench and the gates.
 - [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — `mcp call` against
   `mcp wbcall`, the bootstrap order, the loading rules and the known gaps.
+- [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) — the Workbench gate that
+  plays the framework world through these handlers.

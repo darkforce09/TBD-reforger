@@ -159,3 +159,5 @@ Each runs as `cargo xtask mcp <command>`; a clap usage error exits 2.
   pinned server package and calling Workbench from the command line.
 - [MCP transcript fixtures](/tools_v2/xtask/fixtures/mcp/README.md) — the recorded replies the
   self-test replays.
+- [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) — the Workbench gate that
+  drives Play through `mcp call`.

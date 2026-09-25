@@ -1,170 +1,183 @@
 **Status:** live
 
-# Workbench MCP shell tooling
+# Enfusion MCP tooling
 
-**Shipped:** `e7e7232` (2026-06-30) · **Pinned package:** `enfusion-mcp@0.6.1` in `tools_v2/enfusion_mcp_node_package/package.json`  
-**Entry for agents:** [`CLAUDE-CODE-START.md`](/documentation_v2/runbooks/mod_slice_workflow.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap` (launches Workbench on `apps/mod/tbd-export/addon.gproj`; the bridge handlers are committed in [`apps/mod/tbd-emcp/`](../../apps/mod/tbd-emcp/))
+Drives a running [Workbench](/documentation_v2/glossary.md#workbench) from a terminal through the
+pinned `enfusion-mcp` server: brings the bridge up, calls MCP tools and raw Net API handlers, reads
+back a Workbench Play log, and cleans up the broker. [Mod](/documentation_v2/glossary.md#mod) developers and agents run it whenever a
+task needs Workbench. The first call pays a one-time index load of about 35 seconds; later calls go
+to the warm broker. How the bridge is built, and the `mcp call` against `mcp wbcall` choice, is in
+[Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
+synopsis and exit codes are in the [MCP commands README](/tools_v2/xtask/src/commands/mcp/README.md).
 
-Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Replaces the old flaky one-shot `timeout 90 npx …` path that hung to the full timeout or returned empty mid-stream.
+## Prerequisites
 
----
+- Arma Reforger Tools installed through Steam (app 1874910), with the Net API enabled in
+  Workbench's general options. Check: `ss -tln` lists port 5775 once Workbench runs.
+- Node.js and npm, for the pinned server `enfusion-mcp` 0.6.1 in
+  `tools_v2/enfusion_mcp_node_package/package.json`; `cargo xtask mod dev-bootstrap` runs `npm ci`
+  there when it is missing. Its `node_modules/` is gitignored.
+- The `timeout` and `pgrep` tools on `PATH`: a one-shot call without `timeout` fails rather than
+  hangs.
+- The three paths the server reads, which `mcp call` fills with these defaults when unset:
 
-## Architecture
+  | Variable | Default | Names |
+  |---|---|---|
+  | `ENFUSION_GAME_PATH` | `~/.cache/enfusion-mcp-root` | the pak symlink farm that `cargo xtask setup mcp-game-root` builds |
+  | `ENFUSION_WORKBENCH_PATH` | `~/.local/share/Steam/steamapps/common/Arma Reforger Tools` | the Workbench install |
+  | `ENFUSION_PROJECT_PATH` | `~/Documents/Games/ArmaReforgerWorkbench/addons` | the Workbench addons folder |
 
-```text
-cargo xtask mcp call
-  ├─ (default) warm daemon  →  AF_UNIX socket  →  `mcpd` (Rust, tools_v2/developer-tools)  →  one enfusion-mcp child
-  └─ fallback one-shot      →  node …/dist/index.js  →  cargo xtask mcp consume (early exit on id==2)
-```
+## Steps
 
-| Component | Path | Role |
-|-----------|------|------|
-| Call wrapper | `cargo xtask mcp call` | Daemon-first; one-shot fallback; exports all three `ENFUSION_*` paths |
-| JSON-RPC consumer | `cargo xtask mcp consume` | Shared parser + exit-code contract (daemon, one-shot, self-test) |
-| Daemon broker | `mcpd` (`tools_v2/developer-tools`, built in-process by `xtask mcp daemon`) | One index load (~35 s cold); serializes `tools/call` |
-| Daemon control | `cargo xtask mcp daemon` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
-| Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
-| Offline gates | `cargo xtask mcp selftest` | 19 fixture tests, no Workbench |
-| Live smoke | `cargo xtask mcp smoke` (`cargo xtask mcp smoke`) | `wb_connect` + `wb_state` after bootstrap |
+Run every command from the repository root.
 
-**Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `tools_v2/enfusion_mcp_node_package/` when needed, launches Workbench with `steam -applaunch 1874910 -gproj <repo>/apps/mod/tbd-export/addon.gproj` (skips the project picker), pre-warms the daemon, then `wb_connect` + `mod_validate`. It no longer copies any handlers — they are committed in `apps/mod/tbd-emcp/`.
+1. Check the call path offline, with no Workbench.
 
----
+   ```bash
+   cargo xtask mcp selftest
+   ```
 
-## Usage
+   Expected: `✓ mcpd build+path`, then a `✓` line for each recorded transcript, one-shot and
+   daemon arm, ending `mcp-call-selftest: ALL PASS (<n>)` and exit 0; a failed arm prints a `✗`
+   line on stderr, the run ends `mcp-call-selftest: FAIL (<n> failed, <m> passed)` and exits 1.
+
+2. Bring the bridge up: the pak farm, the pinned server, Workbench on the export addon (which loads
+   `TBD_EMCP`), the warm broker, then `wb_connect` and `mod_validate` on both addons.
+
+   ```bash
+   cargo xtask mod dev-bootstrap
+   ```
+
+   Expected: `== TBD dev bootstrap ==`, `Port 5775 is listening.`, `Pre-warming MCP daemon...`,
+   the `wb_connect` answer, the two `mod_validate` results, then `Bootstrap complete.` and exit 0.
+   When the port stays closed for `TBD_WB_WAIT_SEC` seconds (default 180) it prints
+   `ACTION REQUIRED: Launch Arma Reforger Tools from Steam, open …/apps/mod/tbd-export/addon.gproj,
+   enable Net API (File > Options > General).` and exits 1; do that and run it again.
+
+3. Check the broker.
+
+   ```bash
+   cargo xtask mcp daemon status
+   ```
+
+   Expected: `running (<socket>, pid <pid>)` and exit 0; `stopped` and exit 1 when no broker runs,
+   in which case the next `mcp call` starts one.
+
+4. Call an MCP tool; the arguments are one JSON object and default to `{}`.
+
+   ```bash
+   cargo xtask mcp call api_search '{"query":"GetWorldBounds"}'
+   ```
+
+   Expected: the text content of the result on stdout and exit 0. The `wb_*` tools reach the open
+   Workbench (`cargo xtask mcp call wb_state`); `mod_validate` checks an addon on disk
+   (`cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'`).
+
+5. Call a Net API handler directly, for a handler no MCP tool maps to.
+
+   ```bash
+   cargo xtask mcp wbcall EMCP_WB_Ping
+   ```
+
+   Expected: the handler's response JSON on stdout and exit 0; exit 2 when nothing listens on
+   `ENFUSION_WORKBENCH_HOST`:`ENFUSION_WORKBENCH_PORT` (default 127.0.0.1:5775). It waits up to
+   600 s (`--timeout <s>`).
+
+6. After a Play session in Workbench, grade the newest Workbench console log for the framework's
+   spawn lines.
+
+   ```bash
+   cargo xtask mcp wb-logs
+   ```
+
+   Expected: the matching log extract and a verdict: exit 0 PASS (a player was assigned a [slot](/documentation_v2/glossary.md#slot)),
+   1 FAIL, 2 PARTIAL (no player deployed yet), 3 ENVIRONMENT (no log found, or a usage error).
+   `--file <path>` grades a given log.
+
+7. When the session ends, or when stray brokers or servers load the machine, stop them all.
+
+   ```bash
+   cargo xtask mcp daemon stop-all
+   ```
+
+   Expected: `mcp-daemon: stop-all done`; no `mcpd` or `enfusion-mcp` process remains
+   (`pgrep -af 'mcpd|enfusion-mcp'` prints nothing).
+
+## Verify
+
+With Workbench open on the export addon:
 
 ```bash
-cargo xtask mcp call <tool> '<json-args>'           # args default to {}
-cargo xtask mcp daemon status
-cargo xtask mcp daemon stop-all                     # nuke every stray broker + orphaned server
-cargo xtask mcp selftest                            # offline — no Workbench
-cargo xtask mcp smoke                               # live — Workbench Net API up
+cargo xtask mcp smoke
 ```
 
-**Examples:**
+Expected: `mcp-smoke: wb_connect OK` and `mcp-smoke: wb_state OK`, exit 0; a tool that fails prints
+`mcp-smoke: <tool> FAIL (rc=<n>)` and the exit is 1.
 
-```bash
-cargo xtask mcp call wb_connect '{}'
-cargo xtask mcp call wb_state '{}'
-cargo xtask mcp call api_search '{"query":"GetWorldBounds"}'
-cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
-cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-export"}'
-```
+## Troubleshooting
 
-Warm daemon calls return in **~0.3 s**. First call (or after daemon idle/max-life) pays the **~35 s** one-time 8,693-class index load once, then stays warm.
+`mcp call` exits 0 on success, 1 on a missing tool name or an empty answer after every retry, 2
+when the server's `initialize` failed, 3 on a JSON-RPC error or a result with `isError: true`
+(its text on stderr), and 4 on a timeout. `MCP_DEBUG=1` prints the runner tier and the captured
+stderr of a failed attempt.
 
----
+| Symptom | Cause | Fix |
+|---|---|---|
+| exit 3 with the error on stderr | the tool reported an error, such as a bad argument or no Workbench connection; never retried | read the message; for a `wb_*` tool, run step 2 |
+| exit 4 | every one-shot attempt ran past `MCP_CALL_TIMEOUT` (180 s by default, so 360 s with the default retry) | raise `MCP_CALL_TIMEOUT` for a long tool; check Workbench is responsive |
+| exit 2 | the server did not answer `initialize`: a missing or broken package | `npm ci` in `tools_v2/enfusion_mcp_node_package/`, or set `ENFUSION_MCP_BIN` |
+| the first call takes about 35 s | the server's index load; the broker then stays warm | none; step 2 pre-warms it |
+| `mcp-daemon: failed to start (see <socket>.log)` | `mcpd` exited or its socket did not accept within 60 s | read the log; `mcp call` still works one-shot |
+| Workbench reports "Multiple declaration" and the `wb_*` tools die | `wb_launch` with `gprojPath` copied a second handler set into that addon | delete that addon's copied `Scripts/WorkbenchGame/EnfusionMCP/`, restart Workbench; never pass `gprojPath` |
+| `wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open …` | Workbench has another project open, so `TBD_EMCP` is not loaded | open the export addon and rerun step 2 |
+| machine load climbs while nothing calls | stray brokers or servers from crashed sessions | step 7 |
 
-## Handlers live in `apps/mod/tbd-emcp`
+Never point the MCP's `wb_cleanup` at `apps/mod/tbd-emcp`: it deletes the committed handlers. The
+loading rules behind both warnings are in
+[Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md).
 
-The Workbench side of the bridge is **19 Net API handler scripts** (`Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c`) taken from `enfusion-mcp@0.6.1` (MIT), plus a local `getAllText` patch in `EMCP_WB_ScriptEditor.c`. They are a **committed addon** — `TBD_EMCP`, GUID `D4E5F6A7B8C90123` — not a gitignored copy re-injected by bootstrap.
-
-**How it loads.** `TBD_EMCP` is a dependency of `TBD_Export`, so opening `apps/mod/tbd-export/addon.gproj` brings the bridge up with the rest of the dev session. For a framework-only Workbench session, load `TBD_EMCP` beside `TBD_Framework` — `tbd-framework` carries no `Scripts/WorkbenchGame/` of its own, so on its own it has no bridge.
-
-**Two rules:**
-
-- **Never** call `wb_launch` with `gprojPath` pointed at `tbd-framework` or `tbd-export` — it injects a second copy of the handlers into that addon's `Scripts/WorkbenchGame/EnfusionMCP/`, Workbench reports "Multiple declaration", and the bridge is dead.
-- **Never** call `wb_cleanup` with `apps/mod/tbd-emcp` — it `rm -rf`s the committed handlers.
-
-**Upgrade procedure:** see [`apps/mod/tbd-emcp/README.md`](../../apps/mod/tbd-emcp/README.md).
-
----
-
-## Exit codes
-
-| Code | Meaning |
-|------|---------|
-| 0 | Success — non-empty stdout |
-| 1 | Usage error, or empty stdout after all retries |
-| 2 | MCP init failed (no valid id=1 / no JSON-RPC stream) |
-| 3 | Tool error — JSON-RPC `"error"` **or** `result.isError:true` |
-| 4 | Timeout (`timeout` exit 124) |
-
-Use **`MCP_DEBUG=1`** to print runner tier + captured stderr on failure.
-
----
-
-## Environment
+### Environment
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
-| `ENFUSION_GAME_PATH` | `~/.cache/enfusion-mcp-root` | Pak symlink farm (see `cargo xtask setup mcp-game-root`) |
-| `ENFUSION_WORKBENCH_PATH` | Steam Arma Reforger Tools path | Workbench install |
-| `ENFUSION_PROJECT_PATH` | Workbench addons folder | Project/addon discovery |
-| `ENFUSION_MCP_BIN` | (auto) | Override enfusion-mcp entry |
-| `MCP_SOCK` | `$XDG_RUNTIME_DIR/tbd-mcp-<uid>.sock` | Daemon socket |
-| `MCP_CALL_TIMEOUT` | `180` | Per-call hard ceiling (seconds) |
-| `MCP_CALL_RETRIES` | `1` | Re-run once on empty stdout (not on exit 3) |
-| `MCP_NO_DAEMON` | `0` | Force one-shot path |
-| `MCP_DAEMON_IDLE` | `1800` | Daemon self-exit after idle (seconds; `0` = no idle timer) |
-| `MCP_DAEMON_MAX_LIFE` | `14400` | Hard max daemon lifetime (4 h) — fires even if `IDLE=0` |
+|---|---|---|
+| `MCP_SOCK` | `$XDG_RUNTIME_DIR/tbd-mcp-<uid>.sock` | the broker socket; `/tmp/tbd-mcp-<uid>.sock` when `XDG_RUNTIME_DIR` is unset or the path passes 100 bytes |
+| `MCP_CALL_TIMEOUT` | `180` | seconds per call |
+| `MCP_CALL_RETRIES` | `1` | one-shot retries after exit 1, 2 or 4; never after 0 or 3 |
+| `MCP_NO_DAEMON` | unset | `1` skips the broker and always runs one-shot |
+| `MCP_DEBUG` | unset | `1` prints the runner tier and captured stderr |
+| `MCP_DAEMON_IDLE` | `1800` | seconds idle before the broker exits; `0` never |
+| `MCP_DAEMON_MAX_LIFE` | `14400` | seconds of life before the broker exits, idle or not; `0` never |
+| `MCPD_CARGO_TARGET_DIR` | `target-dev-mcpd` in the checkout | where `daemon start` builds `mcpd` |
+| `ENFUSION_MCP_BIN` | unset | the server entry file, ahead of every other tier |
+| `ENFUSION_WORKBENCH_HOST`, `ENFUSION_WORKBENCH_PORT` | `127.0.0.1`, `5775` | the Net API that `wbcall` reaches |
 
----
+### Files and server tiers
 
-## Binary resolution (4 tiers)
+The broker keeps its files beside the socket: `<socket>.pid` (the pid `daemon stop` kills),
+`<socket>.log` (`mcpd`'s output) and `<socket>.lock` (held while one call starts the broker, so
+two concurrent calls never start two). `daemon stop-all` kills every `mcpd --socket` process and
+any server child left behind, and removes the `tbd-mcp-*` files in `XDG_RUNTIME_DIR` and `/tmp`.
 
-1. `ENFUSION_MCP_BIN` if set and file exists  
-2. `tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js` (after `npm ci`)  
-3. First hit under `~/.npm/_npx/**/enfusion-mcp/dist/index.js`  
-4. `npx -y enfusion-mcp` (offline/cache-missing fallback)
+The server command comes from the first tier that resolves
+(`tools_v2/developer-tools/src/enfusion_tooling/enfusion_mcp_entrypoint.rs`):
 
-Install pinned deps: `(cd tools_v2/enfusion_mcp_node_package && npm ci)`.
+1. `ENFUSION_MCP_BIN`, when it names an existing file;
+2. `tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js`, after `npm ci`;
+3. a copy npm already downloaded under `~/.npm/_npx`;
+4. `npx -y enfusion-mcp`, which downloads the newest release on demand, unpinned.
 
----
+## Related
 
-## Root causes fixed @ `e7e7232`
-
-### 1. Bash brace bug (primary flake during T-090.3.0 spike)
-
-`ARGS="${2:-{}}"` is **wrong** — bash matches the first `}` to close the expansion, appending a literal trailing `}` to every args-bearing call. Example: `{"query":"X"}` became `{"query":"X"}}` → corrupt JSON → tools silently received `{}`. That is why args-bearing MCP calls were flaky during the spike and raw hand-rolled JSON-RPC was used as a workaround.
-
-**Fix:** `ARGS="${2:-}"` then `[ -z "$ARGS" ] && ARGS='{}'`. Regression gate: self-test **T7 args round-trip**.
-
-### 2. One-shot hung to full timeout
-
-The stdio MCP server does not exit on stdin EOF. The old consumer looped until EOF, so `timeout 90` always waited ~90 s (or SIGKILL mid-response → empty stdout).
-
-**Fix:** `cargo xtask mcp consume` exits immediately after printing id==2 → pipe closes → server gets SIGPIPE → returns at response time. One-shot path also uses a generous `MCP_CALL_TIMEOUT` backstop.
-
-### 3. Tool errors misclassified
-
-enfusion-mcp returns some failures as `result.isError:true` (not a top-level JSON-RPC `"error"`).
-
-**Fix:** both shapes map to **exit 3** with stderr detail — no retry as “empty”.
-
-### 4. Missing path exports
-
-Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all three paths (now mirrored from bootstrap).
-
----
-
-## Safeguards against load / leak
-
-| Safeguard | Behavior |
-|-----------|----------|
-| Daemon idle timeout | Exits after 30 min idle (configurable) |
-| Daemon max-life | Hard 4 h cap — restarts transparently on next call |
-| One-shot fail-fast | Early consumer exit; timeout is a ceiling, not the common path |
-| `cargo xtask mcp daemon stop-all` | Kills all brokers, reaps orphaned `enfusion-mcp` children, clears sockets |
-| Self-test cleanup | Short idle in tests; verifies zero stray processes after run |
-| `.gitignore` | `node_modules/` — never commit an npm dependency tree |
-
-**If load spikes:** run `cargo xtask mcp daemon stop-all` and confirm no `enfusion-mcp` / `mcpd` processes remain.
-
----
-
-## Verification gates
-
-| Gate | Command | PASS |
-|------|---------|------|
-| **T1–T7** (offline) | `cargo xtask mcp selftest` | exit 0, 19/19 |
-| **S1** (live) | `cargo xtask mcp smoke` / `cargo xtask mcp smoke` | exit 0 after bootstrap |
-| **S2** | `time cargo xtask mcp call wb_state '{}'` ×3 | exit 0, ~response time (not ~180 s) |
-| **S5** | `cargo xtask mcp call totally_fake_tool '{}'` | exit 3 |
-
----
-
-## Related tickets
-
-- **T-121** item 3 (MCP helper hardening) — **shipped** @ `e7e7232`; remaining T-121 scope: Arland DEM re-export, optional game-mode fallback.
-- **T-090.3.0** spike — enumeration proven; some probe calls used raw JSON-RPC before this fix (see spike spec lessons).
+- [MCP commands](/tools_v2/xtask/src/commands/mcp/README.md) — every `cargo xtask mcp` command, its
+  flow and its exit codes.
+- [Enfusion MCP bridge](/documentation_v2/mod/tbd-emcp/workbench_mcp_bridge.md) — the bootstrap
+  order, the loading rules and the known gaps.
+- [TBD EMCP addon](/apps/mod/tbd-emcp/README.md) — the nineteen Net API handlers and the
+  `enfusion-mcp` upgrade procedure.
+- [Developer tool executables](/tools_v2/developer-tools/src/bin/README.md) — the `mcpd` broker.
+- [MCP transcript fixtures](/tools_v2/xtask/fixtures/mcp/README.md) — the recorded replies the
+  self-test replays.
+- [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) — the Workbench gate that
+  drives Play through `mcp call`.
+- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work uses
+  Workbench and the gates.

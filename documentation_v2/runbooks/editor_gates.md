@@ -1,201 +1,276 @@
 **Status:** live
 
-# Editor gate runbook (`cargo xtask mk leptos-gates`)
+# Editor gates
 
-How to run the editor CDP smokes + frozen V-suite, the environment they need, and how to debug the
-one failure mode that has bitten hard (a boot wedge). Authority for the "gates must be reproducible +
-fail-fast" contract: [`.cursor/rules/acceptance-gates-reproducible.mdc`](../../.cursor/rules/acceptance-gates-reproducible.mdc).
-Pins: [`tools_v2/developer-tools/gate-env.json`](../../tools_v2/developer-tools/gate-env.json).
+Runs the headless browser gates of the single-page app: the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) smokes (`gate editor-suite`), the
+frozen DOM oracle (`gate v-suite verify`) and the `gate doctor` preflight that runs before them,
+and shows how to diagnose a gate that hangs or fails. `cargo xtask mk leptos-gates` runs all three;
+after the release build, the doctor takes about 15 seconds and the whole suite a few minutes. What
+each gate asserts is in the
+[browser testing README](/tools_v2/developer-tools/src/browser_testing/README.md); this runbook
+does not repeat it.
 
-## Run it
+## Prerequisites
+
+- **The full Chromium build, never `chrome-headless-shell`.** `find_chromium` takes
+  `CHROME_HEADLESS_SHELL` when it names an existing file, else the newest
+  `~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome`, and adds `--headless=new`. The
+  headless shell aborts on per-character font fallback, and the doctor warns when it resolves to
+  one. The pinned version is `chromium.version` in `tools_v2/developer-tools/gate-env.json`. Check:
+  the doctor's `chromium` line.
+- **The toolchain** pinned by the root `rust-toolchain.toml` (1.95.0 with the
+  `wasm32-unknown-unknown` target) and Trunk at the version in `gate-env.json`. Check: the doctor's
+  `rustc` and `trunk` lines.
+- **At least 1024 MiB of available memory** (`limits.min_mem_available_mib`): SwiftShader thrashes
+  below it. Check: the doctor's `memory` line.
+- **The [API](/documentation_v2/glossary.md#api) on `127.0.0.1:8080`** for the `hydrate` smoke in the suite and for `gate smoke
+  mutations`; the other smokes need none. Start it as in
+  [Local development](/documentation_v2/runbooks/local_development.md).
+- **The Everon map assets from Git LFS** (`assets_v2/terrains/everon/`) for the `fullmap` and
+  `hillshade` smokes and the perf probes.
+- **The gate font cache.** Every `gate` command sets `XDG_CACHE_HOME` to
+  `$TMPDIR/tbd-gate-cache-<distro>`, keyed on `ID` and `VERSION_ID` of `/etc/os-release` (for
+  example `tbd-gate-cache-debian-12`), and every Chromium launch gets it. The only override is
+  `TBD_GATE_FONT_CACHE`; an `XDG_CACHE_HOME` you export yourself is ignored, because a shared
+  cross-distribution cache is what leaves Chromium with zero fonts (wedge mode 4 below). Check:
+  the doctor's `fonts` line names the cache.
+
+## Steps
+
+Run every command from the repository root. The gate commands build and run the `gate` binary of
+`tools_v2/developer-tools` with the host's toolchain; a binary built against a newer glibc than a
+container's does not run inside that container.
+
+### Run the whole gate
+
+1. Start the local database.
+
+   ```bash
+   cargo xtask db up
+   ```
+
+   Expected: compose starts the `tbd_reforger_db` container on host port 5434.
+
+2. In a second terminal, run the API; it applies the migrations on boot and stays in the
+   foreground.
+
+   ```bash
+   cargo xtask mk rust-api
+   ```
+
+   Expected: the API logs `listening on 0.0.0.0:8080`.
+
+3. Build the app and run the doctor, the smoke suite and the DOM oracle.
+
+   ```bash
+   cargo xtask mk leptos-gates
+   ```
+
+   Expected: the four commands in order, as `--dry-run` prints them:
+   `cd apps/website/frontend && trunk build --release`, then
+   `cargo run -q -p developer-tools --bin gate -- doctor`, `… -- editor-suite` and
+   `… -- v-suite verify`; the doctor ends `== gate doctor: OK — 0 warning(s)`, each smoke prints
+   its JSON verdict, and the run exits 0. It stops at the first step that fails, with that step's
+   exit code.
+
+An editor factory [wave](/documentation_v2/glossary.md#wave) runs step 3 after its wave gate
+passes and before it closes: `cargo xtask platform wave gate` runs no Chromium, so this is the only
+automated run of the rect smokes (`save-dialog-rect`, `entrance-motion-rect`). The wave procedure
+is in [Factory waves](/documentation_v2/runbooks/factory_waves/README.md).
+
+### Run one gate
+
+4. Run the preflight alone. `cargo xtask mk gate-doctor` does the release build first.
+
+   ```bash
+   cargo run -q -p developer-tools --bin gate -- doctor
+   ```
+
+   Expected: one line per check, `✓` or `!` or `✗`: `chromium`, `rustc`, `trunk`, `memory`,
+   `processes`, `fonts`, `dist`, `liveness`, then `== gate doctor: OK — 0 warning(s)` and exit 0.
+   `--strict` turns any warning into exit 1; `--dist <dir>` points it at another build.
+
+5. Run one smoke by name; the names are the table in the
+   [smoke tests README](/tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/README.md).
+
+   ```bash
+   cargo run -q -p developer-tools --bin gate -- smoke cur
+   ```
+
+   Expected: the smoke's JSON verdict of named checks and exit 0; 1 on a failed check, 2 on a
+   missing prerequisite, 3 on a driver error.
+
+6. Run the DOM oracle alone.
+
+   ```bash
+   cargo run -q -p developer-tools --bin gate -- v-suite verify
+   ```
+
+   Expected: a `PASS` or `FAIL` line with the difference count for each of the 25 routes, then
+   `25/25 routes match the frozen oracle` and exit 0; each failing route's first differences
+   follow as JSON, and the exit is 1. `--only <slug>` limits the run to one route.
+
+### Update a DOM oracle reference
+
+The capture that `accept` writes is the same capture `verify` compares, so a route whose fixtures
+are missing or broken cannot be accepted: an API request with no
+fixture fails the route with every unanswered URL and the fixture file that would answer it.
+The fixture naming and the capture's settle rules are in the
+[DOM oracle README](/tools_v2/developer-tools/src/browser_testing/dom_oracle/README.md).
+
+7. Once a route's populated state and every difference `verify` printed are reviewed as intended,
+   accept that one route.
+
+   ```bash
+   cargo run -q -p developer-tools --bin gate -- v-suite accept --only <slug> --note "<the intended change and where it came from>"
+   ```
+
+   Expected: `accept <slug> <bytes> B <digest>  (react ref kept)` and exit 0, with
+   `<slug>.dom.json`, `<slug>.png` and the route's `manifest.json` row (note, size, SHA-256)
+   rewritten in the golden folder under `tools_v2/developer-tools/fixtures/dom_oracle/`; the
+   first accept of a route also keeps the original golden as `<slug>.react.dom.json`. Without
+   `--only` and `--note` it exits 2; a capture that fails or is empty or undersized is a driver
+   error, exit 3, and writes no golden. Accept each changed route separately with its own note,
+   and leave unchanged routes alone.
+
+## Verify
+
+Run the whole oracle again after the accepted updates, and again once they are on `main`.
 
 ```bash
-cargo xtask db up          # Postgres :5434 (hydrate/mutations smokes need the API)
-cargo xtask mk rust-api            # Axum API :8080 (migrates on boot)
-cargo xtask mk leptos-gates   # trunk release build → gate doctor → editor-suite (21 smokes) → v-suite verify
+cargo run -q -p developer-tools --bin gate -- v-suite verify
 ```
 
-**Editor-factory pre-close (T-843 option b):** every editor factory wave must run
-`cargo xtask mk leptos-gates` after the wave gate PASS and before close. That is the path that
-executes the rect smokes (`save-dialog-rect`, `entrance-motion-rect`). Chromium stays **out** of
-`cargo xtask platform wave gate` — do not wire `editor-suite` into the wave gate to "save a step".
+Expected: `25/25 routes match the frozen oracle` and exit 0.
 
-`cargo xtask mk leptos-gates` runs **`gate doctor` first** (a prerequisite). The doctor validates the resolved
-chromium + toolchain against `gate-env.json`, checks free RAM + orphaned chrome, checks that
-**chromium can resolve a font at all** (T-320 — see wedge mode 4), verifies the `--dist` exists, and
-runs a ~15 s editor liveness probe — so a wedge fails in seconds with a diagnosis, not a 130 s hang.
+## Troubleshooting
 
-Every browser gate (`gate doctor`, every `gate smoke`, `gate render-check`, `gate r-auth`) points
-chromium at a **gate-owned fontconfig cache** (`$TMPDIR/tbd-gate-cache`) instead of `~/.cache`, for
-the reason in wedge mode 4. An `XDG_CACHE_HOME` you export yourself is respected and inherited.
+| Symptom | Cause | Fix |
+|---|---|---|
+| `✗ fonts       chromium resolves NO font ('Could not find any font') …` | the Chromium font cache holds another distribution's entries (wedge mode 4) | clear the cache the line names, or set `TBD_GATE_FONT_CACHE` to an empty directory |
+| `! chromium    resolved to chrome-headless-shell …` | the Playwright cache holds only the headless shell, or `CHROME_HEADLESS_SHELL` names it | install the full build, or point `CHROME_HEADLESS_SHELL` at a full `chrome` |
+| `! processes   N stray chrome process(es) …` | an earlier run crashed and left Chromium children behind | `pkill -9 -f chrome-headless-shell; pkill -9 -f 'chrome-linux64/chrome'` |
+| `✗ liveness    the headless browser process DIED during the probe …` | a crash, or a browser blocked on a full output pipe: the same signature | P-1 of the debug recipe tells them apart |
+| `✗ liveness    editor page did not become ready within the budget` | a slow or stalled page, a missing build or low memory | check the `dist` and `memory` lines, then the debug recipe |
+| `smoke_hydrate: backend not reachable on :8080`, exit 2 | the API is not running; a gate that could not run never reports green | step 2 |
+| `DOM never stabilized at <path>` | the route's DOM changed on every read for 60 tries | find the animation or poll that keeps it changing; the freeze script covers the clock and random numbers only |
+| a route fails with a list of unanswered `/api/v1/` URLs | the fixture corpus lacks a response the page requests | add the named fixture file under `apps/website/frontend/tests/fixtures/api/`, then verify again |
+| `gate: driver error: cdp: ws call timed out (Runtime.evaluate)` after about 130 s | a call to a browser that died or blocked; the per-call timeout is 130 s | run the doctor, then P-1 |
 
-Single smoke / doctor standalone:
+### Known wedge modes
 
-```bash
-cargo run -q -p developer-tools --bin gate -- doctor            # preflight only
-cargo run -q -p developer-tools --bin gate -- smoke cur         # one smoke (see EDITOR_SUITE for names)
-cargo run -q -p developer-tools --bin gate -- v-suite verify    # frozen DOM oracle only
-```
+1. **Font-fallback crash in the headless shell.** `chrome-headless-shell` aborts at
+   `SkFontMgr_FontConfigInterface.cpp:163 "Not implemented"` when a page needs a fallback glyph;
+   the renderer dies and the harness waits out a 130 s `Runtime.evaluate`. The gates use the full
+   `chrome` build for this reason; if it recurs, the resolved binary is a shell. Recorded as
+   [KB-002](/documentation_v2/known_bugs/kb_002_editor_gate_boot_wedge.md).
+2. **Stray Chromium starving the next smoke.** A crashed run can leave renderer and GPU children
+   pegging every core under software GL. The doctor counts them; kill them with the command in
+   the table above.
+3. **Memory pressure.** SwiftShader thrashes under a low memory ceiling. The doctor checks
+   `MemAvailable` only, not a cgroup limit; check `memory.max` of your cgroup yourself inside a
+   container.
+4. **Font-fallback crash in the browser process.** The same `SK_ABORT` also fires in the full
+   `chrome` build, on a `ThreadPoolForeground` thread of the browser process:
+   `onMatchFamilyStyleCharacter` is unimplemented in both builds, so any per-character fallback
+   is fatal once Chromium has no fonts at all.
+   - Precondition: Chromium logs `Could not find any font: , sans` at startup and every UI text
+     run shapes to `glyph_count: 0`.
+   - Cause: a fontconfig cache written by a container that shares the home directory describes
+     that container's fonts; Chromium's bundled fontconfig accepts it and never rescans, so it has
+     zero fonts while `fc-list` on the host lists hundreds. An empty cache directory fixes it.
+   - Symptom: `cdp: ws call timed out (Runtime.evaluate)` or `timeout waiting for
+     Page.loadEventFired` a few hundred milliseconds after the editor navigates. Other routes
+     render with fonts they already matched and survive; only the Mission Creator reaches a
+     per-character fallback.
+   - The same signature comes from a browser blocked on a full output pipe (the first harness gap
+     below), so run P-1 before concluding a font abort.
+   - Handled by the gate font cache in the prerequisites. The doctor's font probe launches
+     Chromium on `about:blank`, watches its log for `Could not find any font` for 5 s, then kills
+     the process group; it inherits `XDG_CACHE_HOME`, so it measures the cache the smokes get.
+     Outside the gates, `rm -rf ~/.cache/fontconfig` clears a poisoned cache.
 
-CI: [`.github/workflows/editor-gates.yml`](../../.github/workflows/editor-gates.yml) (nightly + on
-demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-installed pinned chrome.
+### Known harness gaps
 
-## V-suite capture readiness and reference updates
+- **Chromium's output pipes must be drained.** A pipe holds 64 KiB, and Chromium with
+  `--enable-logging=stderr --v=1` writes more than that in its first second. An undrained pipe
+  blocks whichever Chromium thread writes next; when that is the browser's main thread, the
+  DevTools endpoint stops answering and the doctor reports that the browser died. `cdp::launch`
+  drains both pipes from spawn and keeps the last 200 lines for `Browser::recent_output()`, the
+  only copy of Chromium's own abort reason. A probe that spawns Chromium itself drains its pipes,
+  sends them to a file or uses `Stdio::null()`, and never calls `Command::output()`, which waits
+  for EOF on pipes that Chromium's zygote and crashpad children inherit.
+- **`innerText` returns the text CSS renders.** Under `text-transform: uppercase`, `innerText`
+  reads `ATTACHED MISSIONS` where `textContent` reads `Attached Missions` (the heading in
+  `apps/website/frontend/src/v2/pages/administration/event_manager/mission_picker.rs:216` carries
+  the `uppercase` class). `render-check --expect` matches against `document.body.innerText`; use
+  `textContent` in `--assert-js` for source-exact text, or compare case-insensitively.
+- **`aside` is ambiguous.** The desktop sidebar
+  (`apps/website/frontend/src/v2/pages/navigation/sidebar.rs:47`), the mobile drawer
+  (`apps/website/frontend/src/v2/pages/navigation/layout.rs:135`) and the membership notice
+  (`apps/website/frontend/src/v2/pages/navigation/membership_status.rs:96`) are all `<aside>`, and
+  `document.querySelector('aside')` returns the first in DOM order whether or not it is shown.
+  Select on a discriminating class or scope to a landmark.
+- **`render-check` proxies `/api` to a live API.** `--api-proxy` defaults to
+  `http://127.0.0.1:8080`, which `--seed-auth` needs to hydrate a signed-in page; without an API
+  there, API requests fail.
 
-V-suite `verify` and per-route `accept` use the same capture function in `tools_v2/developer-tools/src/browser_testing/dom_oracle.rs`. Required fixture responses and their rendered consumers must be ready before two consecutive normalized DOM samples can establish stability. Missing fixtures, malformed JSON, invalid consumer payloads and request-dispatch failures fail capture; a stable loading or error screen is not an acceptable baseline. Waiting is bounded and reports pending resources or the consumer state when it times out.
+### Debug recipe (P-1 to P6)
 
-Fixtures remain under `apps/website/frontend/tests/fixtures/api/`, named `<METHOD>__<path with `/` as `__`>` plus an extension that names the media type: `.json` for a response body, `.sse.txt` for a Server-Sent Events wire body served as `text/event-stream`. The query string does not select the fixture. An `/api/v1/` request with no fixture behind it is not answered with a placeholder: it is recorded and, once the DOM has settled, fails the route with every unanswered URL and the corpus file that would have served it. Server Intel's status stream is fixtured, so the suite now renders a decoded live frame rather than cached status alone. The frozen clock, 1440×900 viewport, serializer and structural diff remain unchanged. PNGs accompany the DOM evidence but this gate does not perform pixel comparison.
+For a smoke that hangs or fails when the doctor does not already name the cause, cheapest decisive
+check first.
 
-A capture that could not be fed cannot be accepted, because `accept` captures through the same function and never reaches the write. Use `gate v-suite accept --only <slug> --note "<specific intended change and provenance>"` only after reviewing the populated state and complete differences. Preserve original React references, explain each route separately, and keep unchanged route references intact. A missing or broken fixture must be repaired before acceptance. Run the full V-suite again after the reviewed updates and after integration into main.
+- **P-1: is the browser alive?** While the call hangs, ask the browser rather than the page:
+  `curl -sv http://127.0.0.1:<debug-port>/json/version`, and read curl's exit code.
+  - 7, connection refused: nothing listens; the browser is gone (a crash or `SK_ABORT`). Go to P2;
+    the abort reason is on Chromium's stderr or in `Browser::recent_output()`.
+  - 52, empty reply: the browser is alive and its main thread is blocked. `cat
+    /proc/<browser-pid>/syscall` starting with `1` (`write`) and `/proc/<browser-pid>/wchan`
+    reading `anon_pipe_write` mean a full output pipe, not a crash. A `--headless=new` browser
+    blocked this way still shows every thread in state `S`, so `ps` alone does not tell.
+- **P0: processes and resources.** `pgrep -af 'chrome-headless-shell|chrome_crashpad'`, `uptime`,
+  `MemAvailable` in `/proc/meminfo` and the cgroup's `memory.max`; kill strays, free memory, retry.
+- **P1: environment drift.** The resolved Chromium's `--version`, `rustc --version` and
+  `trunk --version` against `gate-env.json`, and any recent graphics-driver or kernel update.
+- **P2: Chromium's own stderr, decisive for a crash.** Serve the built app, then launch Chromium
+  on the editor with `--enable-logging=stderr --v=1` and look for `FATAL`, `SkFontMgr` or
+  `Received signal`:
 
-## Required environment
+  ```bash
+  cargo run -q -p developer-tools --bin gate -- serve --dir apps/website/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets_v2/terrains
+  ```
 
-- **Chromium — the FULL `chrome` build, not `chrome-headless-shell`.** `find_chromium` (`cdp.rs`)
-  prefers `~/.cache/ms-playwright/chromium-<n>/chrome-linux64/chrome` and adds `--headless=new`.
-  Override with `CHROME_HEADLESS_SHELL=<path-to-a-chrome-binary>`. **The shell FATAL-crashes on font
-  fallback** (see below) — the doctor warns if it resolves to the shell. Pinned build in `gate-env.json`.
-- **Toolchain** pinned by the root [`rust-toolchain.toml`](../../rust-toolchain.toml) (rustc 1.95.0 +
-  `wasm32-unknown-unknown`) + trunk. Validated by the doctor.
-- **API on :8080** (`cargo xtask mk rust-api`) for the `hydrate` / `mutations` smokes. Most smokes don't need it.
-- **map-assets** (LFS) for `fullmap` / `hillshade` (the full satellite + DEM + world objects).
-- **`?force=webgl&sat=preview`** — the smokes pin the WebGL2/SwiftShader backend (`EDIT_PATH`); the
-  default WebGPU/lavapipe path is unreliable headless (`editor_smoke_tests.rs` §force=webgl). `sat=preview` avoids
-  the 205 MB satellite fetch except in `fullmap`.
+- **P3: renderer thread state.** While it hangs, field 3 (state) of
+  `/proc/<renderer-pid>/task/*/stat` and `wchan`: every thread running in a `swiftshader` thread
+  means a CPU-bound shader compile; `D` or `S` on a futex means a wait on GPU IPC. Then
+  `gdb -p <pid> -batch -ex 'thread apply all bt'`, which names the shared libraries even in a
+  stripped build.
+- **P4: one-flag levers.** Drop `--enable-unsafe-webgpu`; add `--in-process-gpu` or
+  `--disable-gpu-compositing`.
+- **P5: application breadcrumbs.** Rebuild with `leptos::logging::log!("[BOOT] …")` lines through
+  the Mission Creator's boot and the render engine's creation; the last line printed locates the
+  stall.
+- **P6: land the fix.** Make it durable as a harness flag or a pin, and revert every probe.
 
-## Known wedge modes
+## Related
 
-1. **Font-fallback crash (KB-002, resolved).** `chrome-headless-shell` aborts at
-   `SkFontMgr_FontConfigInterface.cpp:163 "Not implemented"` when the page needs a fallback glyph → the
-   renderer dies → a 130 s `Runtime.evaluate` hang. Fix: use the full `chrome` build (T-177). If you
-   ever see this again, the resolved binary is wrong (a shell) — check `gate doctor` / `find_chromium`.
-2. **Orphaned chrome starving the next smoke.** A crashed run can leave renderer/gpu children pegging
-   every core under software GL (`cdp.rs` process-group note). The doctor scans for these; kill with
-   `pkill -9 -f chrome-headless-shell; pkill -9 -f 'chrome-linux64/chrome'`.
-3. **Memory pressure.** SwiftShader thrashes under a low RAM ceiling (`editor_smoke_tests.rs` §force=webgl). The
-   doctor checks `MemAvailable` + cgroup limits.
-4. **Font-fallback crash, part two — the BROWSER process (KB-002b / T-320).** The same
-   `SkFontMgr_FontConfigInterface.cpp:163 "Not implemented"` `SK_ABORT`, reached from the **full
-   `chrome` build** rather than the shell, on a **`ThreadPoolForeground` thread of the browser
-   process**. T-177 moved the crash, it did not remove it: `onMatchFamilyStyleCharacter` is
-   unimplemented in *both* builds, so any per-character font fallback is fatal.
-   **Precondition:** chromium resolves **no font at all** — it logs
-   `ERROR:ui/gfx/platform_font_skia.cc: Could not find any font: , sans` at startup and every UI text
-   run shapes to `glyph_count: 0` (`render_text_harfbuzz.cc:1016`, hundreds of lines).
-   **Cause:** a **cross-distro `~/.cache/fontconfig`.** A container that shares the home directory
-   (distrobox/toolbox) writes cache entries describing *its* font set; chromium's bundled fontconfig
-   accepts them and never rescans, so it comes up with zero fonts even though `fc-list` on the host
-   reports hundreds. Proven by A/B: the same cache **copied to a different path** still kills it, an
-   **empty** cache dir fixes it.
-   **Symptom seen by the harness:** `cdp: ws call timed out (Runtime.evaluate)` or
-   `timeout waiting for Page.loadEventFired` ~200–400 ms after navigating the editor. It is not a
-   slow page — the browser is a corpse and nothing will ever answer that websocket.
-   **This signature is NOT unique to this mode.** An undrained output pipe (KB-003, §Known harness
-   gaps) produces the identical message from a browser that is still alive. **P-1 separates them by
-   curl exit code** — do that before concluding "font abort".
-   **Why only the editor route:** `/` and every other SPA route (`/dashboard`, `/missions`,
-   `/missions/:id`, `/vehicles`, `/mortar` — all verified) render inside fonts they already matched
-   and survive with the errors above; only the mission editor reaches a per-character fallback.
-   **Fixed by:** `doctor::ensure_gate_font_cache` — every browser gate runs with a gate-owned
-   `XDG_CACHE_HOME`. `gate doctor` also reports `✗ fonts` (a 1 s `--dump-dom` probe) and
-   distinguishes `the headless browser process DIED` from a page that is merely not ready.
-   **Operator remedy if you hit it outside the gate:** `rm -rf ~/.cache/fontconfig`.
-
-## Known harness gaps (not wedges — read before blaming the app)
-
-- **Chrome's output pipes MUST be drained (KB-003 / T-354, fixed in `cdp::launch`).** A pipe holds
-  **64 KiB**. Pipe chrome's stdout/stderr and never read them, and the first `write(2)` past that
-  blocks **the chrome thread that issued it** — permanently, because a pipe nobody drains never
-  drains. `cdp::launch` had `.stdout(piped())` + `.stderr(piped())` and no reader, so this was a
-  **live intermittent fault in the committed gate**, not only a trap for hand-rolled probes.
-  **How chatty is chromium?** MEASURED with `--enable-logging=stderr --v=1`, written to a file so
-  nothing throttled it: **87,583 bytes of stderr in the first second** on `about:blank` alone
-  (109,581 by t+6 s) — 1.34× the buffer before a page exists. T-320's broken-font environment on its
-  own produces 250–400 `render_text_harfbuzz` lines per launch. You do not need an exotic page to
-  cross 64 KiB.
-  **Why it is intermittent:** whichever chrome thread happens to own the write that crosses the
-  threshold is the thread that parks. A `ThreadPoolForeground` thread parking is survivable; the
-  **browser main thread** parking stops the DevTools endpoint dead. That is scheduling roulette, so
-  it takes out a fraction of runs and reads as flake. MEASURED A/B over `gate doctor` against a
-  deliberately chatty chrome, identical but for `cdp.rs`: **undrained 4 PASS / 2 FAIL of 6; drained
-  18 PASS / 0 FAIL of 18** — and 6 s per run instead of 11–16 s, because the launch poll was
-  stalling on the same block.
-  **Symptom seen by the harness — and this is the trap:** the *exact* wedge-mode-4 signature.
-  `cdp: ws call timed out (Runtime.evaluate)`, or `error sending request for .../json/new` when the
-  block lands earlier, and `gate doctor` reporting **"the headless browser process DIED"**. It has
-  not died. It is alive and blocked in `write`. T-232 lost its second hand-rolled harness to this;
-  T-320 lost five sessions to that same signature from a genuinely different cause. **Do not read
-  that message as a font abort until P-1 below has ruled this out.**
-  **Fixed by:** `cdp::drain_pipe` — both pipes drained from spawn, last 200 lines kept and readable
-  via `Browser::recent_output()` (chrome's stderr is the only copy of its own abort reason, and
-  `launch` used to discard it). **If you write a probe that spawns chromium yourself, drain it or
-  use `Stdio::null()`.** `doctor::check_fonts` shows the other correct answer: hand chrome a *file*,
-  and never `Command::output()` — that waits for EOF on pipes chrome's zygote/crashpad children
-  inherit, so it can block long after the browser itself exited.
-  **Does this explain T-338's top-level-document wedge?** Probably not, and it should not be assumed
-  to. T-338 wedged on **four consecutive** attempts doing IndexedDB + wasm-bridge work in a
-  top-level editor document, and was stable once the editor moved into an iframe. This gap is
-  scheduling-dependent rather than reproducible four times running, and document topology has no
-  obvious path to stderr volume. But T-338's per-step timeout races would not have defeated a pipe
-  block either, so it is **worth re-running that repro now that the pipes are drained** — and if it
-  still wedges, `Browser::recent_output()` will for the first time show what chrome said about it.
-- **`innerText` returns the text CSS *renders*, so `text-transform: uppercase` is applied.** An
-  assertion against `'Attached Missions'` fails against a rendered `'ATTACHED MISSIONS'`. Not
-  hypothetical for this gate: `editor_smoke_tests::render_check` matches `--expect` against
-  `document.body.innerText`, and both "Attached Missions" headings (`events.rs:398`,
-  `event_manager.rs:1206`) carry the Tailwind `uppercase` class. MEASURED on the pinned chromium: a
-  `text-transform: uppercase` element yields `innerText` `"ATTACHED MISSIONS"` and `textContent`
-  `"Attached Missions"`; on `/` the live `<h3>`s report `textContent` `"Command Center"` against
-  `innerText` `"COMMAND CENTER"`. **Use `textContent` for source-fidelity text assertions**, or
-  compare case-insensitively. This cost T-232 part of a misleading 26/44 and led T-226 to "fix" a
-  non-bug before it caught itself.
-- **An `<aside>` selector is ambiguous — there are two.** The platform sidebar (`layout.rs:296`,
-  `hidden … lg:flex`) and the mobile drawer (`layout.rs:97`, `fixed inset-y-0 … lg:hidden`) are both
-  `<aside>`. At the gate's 1440×900 viewport the desktop sidebar is the visible one, but
-  `document.querySelector('aside')` returns whichever comes first in the DOM regardless of which is
-  displayed — not a stable thing to assert on. Select on a discriminating class or scope to a
-  landmark. Also part of T-232's 26/44.
-- **`render-check` never proxies `/api`.** `editor_smoke_tests::render_check` builds its `Harness`
-  with `api_proxy: None` (`mutations.rs`), so an `/api/v1/...` fetch falls through to the SPA index.html
-  instead of a backend. Harmless for the editor route — verified: it boots, installs
-  `__missionDoc` / `__missionPersist` / `__missionBackup` and answers `--assert-js` — but a probe that
-  needs real API data cannot use `render-check` today. Wiring an `--api-proxy` through
-  `bin/gate.rs` → `RenderCheckArgs` is the fix (T-320 found it; the CLI is outside that slice).
-- **`gate smoke hydrate` / `mutations` need the API on :8080** and return exit **2** with
-  `backend not reachable` when it is down. That is deliberate — they are data-safety gates and a gate
-  it could not run must not report green. Start `cargo xtask mk rust-api` rather than reinterpreting the code.
-- **`gate v-suite` launches its own chromium** (`dom_oracle.rs`) and therefore does **not** get the
-  T-320 gate-owned font cache. It renders ordinary routes, which survive a broken font environment,
-  so it is unaffected today; moving `ensure_gate_font_cache()` into `cdp::launch` would close it for
-  every caller at once.
-
-## Debug recipe (P0–P6, cheapest-decisive first)
-
-When a smoke hangs/fails and the doctor doesn't already name it:
-
-- **P-1 — is the browser still alive?** Ask it, not the page:
-  `curl -sv http://127.0.0.1:<debug-port>/json/version` while the call is "hanging". No answer means
-  every timeout after that is a symptom, not the fault (T-320). **Read curl's exit code — "no
-  answer" has two distinct causes** (T-354, both measured):
-  - **exit 7, connection refused** — nothing is listening. The browser is genuinely gone (a crash /
-    `SK_ABORT`). Go to P2; the abort reason is on chromium's stderr, or already in
-    `Browser::recent_output()`.
-  - **exit 52, empty reply** — the socket is accepted and then nothing is written. The browser is
-    **alive** but its main thread is blocked. Confirm with
-    `cat /proc/<browser-pid>/syscall` (leading `1` = `write`) and `/proc/<browser-pid>/wchan`
-    (`anon_pipe_write` = a full, undrained output pipe → the KB-003 gap above, not a crash).
-    A `--headless=new` browser blocked this way still shows all threads in state `S`, so `ps` alone
-    will not tell you.
-- **P0 — process + resources:** `pgrep -af 'chrome-headless-shell|chrome_crashpad'` + `uptime`;
-  `/proc/meminfo` `MemAvailable`; cgroup `memory.max`. Kill strays / free RAM → retry.
-- **P1 — env drift:** resolved chromium `--version` vs `gate-env.json`; `rustc`/`trunk` `--version`;
-  `rpm-ostree status` (a Mesa/kernel bump correlating with "last worked").
-- **P2 — chrome's own stderr (decisive for a crash):** launch chromium on the served editor with
-  `--enable-logging=stderr --v=1` and grep for `FATAL` / `SkFontMgr` / `Received signal`. Serve it with
-  `gate serve --dir apps/website/frontend/dist --port 5199 --api-proxy http://127.0.0.1:8080 --map-assets assets_v2/terrains`.
-- **P3 — renderer thread state:** while hung, `/proc/<renderer-pid>/task/*/stat` field 3 (State) +
-  `wchan` — all-R in a `swiftshader` thread = CPU-bound sync compile; D/S on a futex = GPU-IPC wait.
-  Escalate to `gdb -p <pid> -batch -ex 'thread apply all bt'` (shows `.so` names even stripped).
-- **P4 — one-flag levers:** drop `--enable-unsafe-webgpu`; `--in-process-gpu`; `--disable-gpu-compositing`.
-- **P5 — app breadcrumbs (last; needs a rebuild):** `leptos::logging::log!("[BOOT] …")` through the
-  `mission_editor` boot + `engine.rs` `RenderEngine::create`; the last line printed localizes the stall.
-- **P6 — land the fix durably** (a harness flag / a pin) + **revert every probe**.
+- [Browser testing](/tools_v2/developer-tools/src/browser_testing/README.md) — every `gate`
+  command, what it asserts and its exit codes.
+- [Gate doctor and font cache](/tools_v2/developer-tools/src/browser_testing/diagnostics/README.md)
+  — each doctor check and the font cache.
+- [Mission Creator smoke tests](/tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/README.md)
+  — the smokes, `r-auth` and `render-check`.
+- [DOM oracle gate](/tools_v2/developer-tools/src/browser_testing/dom_oracle/README.md) — the
+  routes, the fixture router and the accept rules.
+- [DOM oracle fixtures](/tools_v2/developer-tools/fixtures/dom_oracle/README.md) — the goldens and
+  the route table.
+- [KB-002](/documentation_v2/known_bugs/kb_002_editor_gate_boot_wedge.md) — the headless-shell
+  font-fallback crash.
+- [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md) — the other gates.
+  `.github/workflows/editor-gates.yml` runs this gate nightly, on demand and on pull requests that
+  touch the frontend, the map engine or `tools_v2/developer-tools/`: a Postgres service, the pinned
+  Chrome for Testing from `cargo xtask ci ci-chrome`, the API from `cargo xtask ci editor-api-boot`,
+  then `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`.
+- [Editor capture](/documentation_v2/runbooks/editor_capture.md) — screenshots of a running
+  Mission Creator on the real GPU.
