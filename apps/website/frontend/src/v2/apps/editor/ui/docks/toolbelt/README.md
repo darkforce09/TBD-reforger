@@ -60,5 +60,4 @@ text.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the toolbelt's tools and read-outs, one entry each.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — each tool and read-out, with its status.

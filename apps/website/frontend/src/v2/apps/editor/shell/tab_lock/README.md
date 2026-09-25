@@ -45,3 +45,7 @@ choose a write-through or a merge. `register_bridge` publishes `window.__mission
   `apps/website/frontend/src/v2/apps/editor/shell/tests/tab_lock/writer_election_and_conflict.rs`);
   a message is one flat struct, so a message from a build with other fields is ignored rather than
   half-read.
+
+## Related documentation
+
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — one writer tab per mission.

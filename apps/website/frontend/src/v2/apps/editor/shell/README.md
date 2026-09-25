@@ -121,7 +121,7 @@ preferences and marker it stores outlive it.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — local persistence, the server hydrate, the load conflict dialog, Save Version and the exports.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft, hydrate, conflict dialog and tab lock.
+- [Mission Creator feature inventory: map basemap and world objects](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_basemap_and_world_objects.md) — the per-user basemap and world-layer preferences.
 - [Mission Creator decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) — the
   load-conflict, autosave, undo and editor-session decisions.

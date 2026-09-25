@@ -39,3 +39,7 @@ apps/website/frontend/src/v2/apps/editor/bridge/document_host/history/
   (`the_vehicle_lane_columns_come_from_one_sorted_reader`), both in
   `apps/website/frontend/src/v2/apps/editor/tests/t808_symbology_feed.rs`; the tactical lane packs
   the same rows the canvas picks from, with the in-flight vertex drag laid over them.
+
+## Related documentation
+
+- [Mission Creator feature inventory: keyboard shortcuts](/documentation_v2/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) — undo and redo from the keyboard.

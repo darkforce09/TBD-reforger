@@ -1,211 +1,154 @@
 **Status:** live
 
-# FEDS — Feature Entry Documentation Schema
+# Feature entry schema (FEDS)
 
-**Document:** `reference/feds_schema.md`  
-**Status:** Normative. All entries in `feature_inventory.md` and `eden/interactions.md` **must** follow this schema. Gap analysis `eden/gap_analysis.md` links rows by `id` only.
+The rules every feature entry of the [Mission Creator](/documentation_v2/glossary.md#mission-creator)
+inventory and of the Eden editor reference follows: how a feature is named and numbered, what an
+entry holds, the terms both catalogues share, and the row format of the Eden gap analysis, which
+links the two by ID. An entry exists so that a developer or an agent can build, check or compare
+a feature without guessing.
 
----
+## Feature IDs
 
-## Purpose
-
-FEDS exists so an agent (or engineer) can implement a feature **without guessing**:
-
-- **Goal** — why it exists  
-- **Trigger** — exact user/system event  
-- **Procedure** — numbered internal steps  
-- **Acceptance** — verifiable smoke tests  
-- **Evidence** — code path (TBD) or cited source (Eden)
-
-If a field cannot be confirmed, write `UNVERIFIED` and what must be checked.
-
----
-
-## Feature ID taxonomy
-
-```
-{DOMAIN}-{SUBDOMAIN}-{NNN}
-```
+An ID reads `{DOMAIN}-{SUBDOMAIN}-{NNN}`: the domain from the table below, a short grouping token
+(`VIEW`, `LAYER`, `TAB`, …) and a zero-padded number, `001` to `999`, per subdomain. One behaviour
+takes one ID: a click select, a marquee and a Shift-add are three entries, never one "selection"
+entry. An ID is never reused or renumbered, because the gap analysis and other documents cite it.
 
 | Domain | Scope |
-|--------|--------|
-| `SHELL` | Route, layout, chrome, load lifecycle |
-| `MAP` | Canvas viewport, grid, camera, cursor |
-| `SEL` | Selection (click, marquee, modifiers, modes) |
-| `XFORM` | Move, rotate, snap, align, sync, delete |
-| `PLACE` | Drag-from-palette, spawn defaults, click-place |
-| `LEFT` | Left sidebar (ORBAT, layers, tabs) |
-| `RIGHT` | Asset palette / browser |
-| `TOP` | Command strip, menus, save/export |
-| `BOTTOM` | Toolbelt, coordinates HUD |
-| `ATTR` | Attributes modal / entity properties |
-| `KEY` | Keyboard shortcuts |
-| `DATA` | Persistence, hydrate, compiler, undo |
-| `ENV` | Time, weather, view distance, fog |
-| `ORBAT` | Factions, squads, groups, slots (export truth) |
-| `LAYER` | Editor workflow folders (TBD Y.Doc `editorLayers`) |
-| `WP` | Waypoints |
-| `TRG` | Triggers / modules |
-| `MRK` | Markers |
-| `VEH` | Vehicles |
-| `MEAS` | Ruler, elevation, distance |
-| `FILE` | New/open/save/session menus |
-| `COMP` | Custom compositions (save/edit/workshop) |
-| `TOOLBAR` | Workspace toolbar buttons |
-| `WIDGET` | Transformation widget variants |
-| `CTX` | Entity context menu entries |
-| `CONN` | Connection / sync types |
-| `MENU` | Menu bar items |
-| `RIGHT` | Asset browser (use `RIGHT-MODE`, `RIGHT-SEARCH` subdomains) |
+|---|---|
+| `SHELL` | route, layout, chrome, load lifecycle |
+| `MAP` | map viewport, grid, camera, cursor, basemap, world objects |
+| `SEL` | selection: click, marquee, modifiers |
+| `XFORM` | move, rotate, snap, align, delete |
+| `PLACE` | placing from the palette, spawn defaults |
+| `LEFT` | left dock: editor layers, Locations, the ORBAT tree |
+| `RIGHT` | asset palette and browser (`RIGHT-MODE`, `RIGHT-SEARCH` subdomains) |
+| `TOP` | top command strip: menus, save, export, settings |
+| `BOTTOM` | toolbelt, status bar and its read-outs |
+| `ATTR` | the Attributes dialog and entity properties |
+| `KEY` | keyboard shortcuts |
+| `DATA` | persistence, hydrate, compile, collaboration |
+| `PERF` | behaviour at scale |
+| `FILE` | route loading; in Eden, the new, open and save menus |
+| `ENV` | time, weather, view distance, fog |
+| `ORBAT` | factions, squads, slots as the game receives them |
+| `LAYER` | editor layers, the workflow folders |
+| `TBD` | features Eden has no counterpart for |
+| `WP`, `TRG`, `MRK`, `VEH` | waypoints, triggers and modules, markers, vehicles |
+| `MEAS` | ruler, elevation, distance |
+| `COMP`, `TOOLBAR`, `WIDGET`, `CTX`, `CONN`, `MENU` | Eden compositions, toolbar buttons, transformation widget, context menu entries, connection types, menu bar items |
 
-**Subdomain** is a short grouping token (`MAP`, `MOD`, `TREE`, `PAL`, …). **NNN** is zero-padded `001`…`999` per subdomain.
+The Eden reference adds these patterns: `RIGHT-MODE-00N` (the asset browser's F1 to F6 modes),
+`RIGHT-SEARCH-00N` (search syntax), `COMP-00N`, `TOOLBAR-00N`, `WIDGET-00N`, `CTX-00N`,
+`CONN-00N`, `MENU-{MENU}-{ITEM}`, `ACTION-{NAME}` (an engine action from the
+[Eden actions](https://community.bistudio.com/wiki/Eden_Editor:_Actions) page) and
+`ATTR-FIELD-{TYPE}-{NAME}` (one attribute field, such as `ATTR-FIELD-OBJ-TYPE`). Attribute
+fields are rows of a table in the [Eden attributes reference](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md),
+and the interactions reference cites them by ID rather than repeating them.
 
-**Extended ID patterns (Eden `07`):**
+## Mission Creator inventory entries
 
-| Pattern | Use |
-|---------|-----|
-| `RIGHT-MODE-00N` | Asset browser F1–F6 modes |
-| `RIGHT-SEARCH-00N` | Search syntax behaviors |
-| `COMP-00N` | Custom compositions |
-| `TOOLBAR-00N` | Toolbar buttons |
-| `WIDGET-00N` | Transformation widget |
-| `CTX-00N` | Context menu entries |
-| `CONN-00N` | Connection types |
-| `ATTR-FIELD-{TYPE}-{NAME}` | Single attribute field in `07b` (e.g. `ATTR-FIELD-OBJ-ALLOWDAMAGE-001`) |
-| `MENU-{MENU}-{ITEM}` | Menu bar items |
-| `ACTION-{NAME}` | Engine action from [Eden Actions](https://community.bistudio.com/wiki/Eden_Editor:_Actions) wiki |
+Each area file of the [inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+is a [feature doc](/documentation_v2/standards/templates/feature_doc.md): Where it lives,
+Behaviour, Data, Design, Open work and Decisions. Its entries sit in Behaviour:
 
-**One behavior = one ID.** Do not bundle “selection” into one row — split click, marquee, Shift-add, Ctrl-toggle, etc.
+1. A table with one row per ID: the ID, the feature in a few words, and its status from the
+   legend below.
+2. One `###` heading per ID, or per small group of IDs, reading `{ID} — {short name}`, then
+   numbered steps that say what the mission maker does and what the code does in reply, with
+   interface text quoted exactly as the code writes it and the limits that apply. The code paths
+   go in Where it lives and in the steps; the in-code README of each folder carries the detail and
+   is linked, not repeated.
+3. A closing `### Known discrepancies`: each place where interface text, a code comment or a
+   README says one thing and the code does another, with the file on both sides.
 
-**Attribute catalog rule:** Attribute **fields** live in `eden/attributes.md` as `ATTR-FIELD-*` rows. `eden/interactions.md` references them; do not inline 200+ fields in the interaction reference.
+| Status | Meaning |
+|---|---|
+| shipped | the committed code does what the entry says |
+| partial | part of the entry works; the steps say which part does not |
+| not built | nothing in the code does it, or a visible control has no action |
 
----
+A status is read from the committed code, never from a ticket. An entry that the code shows to
+have changed keeps its ID and gets new steps; a feature the code has and the inventory lacks gets
+a new ID, noted under the area's table.
 
-## Glossary (define once per inventory doc)
+## Eden reference entries
 
-Each of `06` and `07` opens with a glossary. Terms **must not** be conflated across docs.
+Each Eden feature in the [interactions reference](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md)
+is a `#### {ID} — {Short name}` heading over a field table:
 
-### TBD (`06`) — required terms
+| Field | Holds |
+|---|---|
+| Domain | the ID's domain and subdomain, such as `SEL-MAP` |
+| UI Surface | `MenuBar`, `Toolbar`, `AssetBrowser`, `EntityList`, `View`, `AttributesDialog`, `ScenarioAttributes`, `ContextMenu`, `StatusBar`, `ConnectionLine` or `—` |
+| Feature kind | `interaction`, `ui_chrome`, `attribute_field`, `connection_type`, `browser_mode` or `engine_action` |
+| Wiki anchor | the full URL with the `#Section_Heading` it was read from |
+| Shortcut | the key combination, or `—` |
+| Goal | the outcome for the user |
+| Trigger | the exact event, with explicit `Ctrl`, `Shift`, `Alt`, `LMB`, `RMB`, `MMB` |
+| Preconditions | tool, selection and view state |
+| Procedure | numbered steps, as the wiki describes them |
+| Postconditions | the state after success |
+| Inputs, Outputs | buttons, keys and modifiers; the visible feedback |
+| Edge cases | cancel paths, limits, conflicts |
+| Acceptance | at least one `- [ ]` check, three or more for a complex feature |
+| Evidence | the wiki URL; `UNVERIFIED` and what to check when no source confirms it |
+| Parent ID | optional grouping |
 
-| Term | Definition |
-|------|------------|
-| **Entity** | Any placeable mission object (slot, vehicle, marker, objective, …) stored in Y.Doc entity maps |
-| **Slot** | A placed unit in `slotsById`; export row in `orbat[].slots[]` |
-| **ORBAT** | Export-truth hierarchy: Faction → Squad → Slot (`compile.ts` → `orbat[]`) |
-| **Editor Layer** | Workflow folder in `editorLayers`; does **not** map 1:1 to Eden Layer; filed in `editor` block for reload |
-| **Active layer** | `activeLayerId` — drop target for new placements |
-| **Selection** | `useMapStore.selection: { kind, ids[] }` |
-| **Squad** | ORBAT grouping of slots (`squadsById`); auto-created on first placement |
-| **Faction** | ORBAT top level (`factionsById`) |
+An Eden entry is never guessed: without a cited source its Evidence reads `UNVERIFIED`.
 
-### Eden (`07`) — required terms
+## Terms
 
-| Term | Definition | Source |
-|------|------------|--------|
-| **Entity** | Object, group, trigger, waypoint, system, or marker in the scenario | [Eden Terminology](https://community.bistudio.com/wiki/Eden_Editor:_Terminology) |
-| **Asset** | Browser entry before placement | same |
-| **Entity List** | Left panel listing all scenario entities | same |
-| **Layer** | Folder containing entities; hide/show via attributes | [Eden Layer](https://community.bistudio.com/wiki/Eden_Editor:_Layer) |
-| **Group** | Multiple units with a leader | Terminology |
-| **Sync / Connect** | General connection between entities (modules, tasks, triggers) | [Connecting](https://community.bistudio.com/wiki/Eden_Editor:_Connecting) |
-| **View** | 3D or map camera workspace | Terminology |
+Both catalogues keep these terms apart; the document keys are those of the mission document in
+`apps/website/map-engine/src/data/store/rows/construction.rs`.
 
----
+| Term | Meaning in the Mission Creator |
+|---|---|
+| Entity | any placed mission object: the document's `slots`, `vehicles`, `entities` (world objects), `zones`, `triggers`, `comments`, `connections`, `compositions`, `objectives` and `markers` maps |
+| Slot | a placed unit in the `slots` map, filed in one squad's `slotIds` and in at most one editor layer's `entityIds`; the saved payload's `editor.slots[]`, the compiled mission's `slots[]` |
+| ORBAT | faction → squad → slot in the document and the saved payload's `editor` block; the export's `orbat` list of squads; the compiled mission's `orbat` object, keyed by faction, of groups and roles |
+| Faction | a row of the `factions` map, `faction-{SIDE}` for BLUFOR, OPFOR or INDFOR; the compiled mission's `factions[]` |
+| Squad | a row of the `squads` map; placing a unit joins the side's last open squad or creates "Squad N", and the first slot placed becomes its leader; the compiled mission calls it a group |
+| Editor layer | a workflow folder in the `editorLayers` map (name, parent, filed entity ids, hidden, locked); saved in the payload's `editor.editorLayers` and never compiled for the game; not an Eden layer |
+| Active layer | the folder new placements file into: page state (`active_layer`), not document state |
+| Selection | the selected entity ids, held by the map engine's editing host and mirrored to the page; never saved |
 
-## Mandatory feature block
+The payload schemas are `contracts_v2/definitions/mission-editor-payload.schema.json`, what Save
+Version sends and the editor loads, and `contracts_v2/definitions/mission.schema.json`, the
+compiled mission the game reads.
 
-Copy this structure for **every** feature. Heading level: `#### {ID} — {Short name}`.
+| Eden term | Meaning | Source |
+|---|---|---|
+| Entity | object, group, trigger, waypoint, system or marker in the scenario | [Eden terminology](https://community.bistudio.com/wiki/Eden_Editor:_Terminology) |
+| Asset | a browser entry before placement | same |
+| Entity List | the left panel listing every scenario entity | same |
+| Layer | a folder of entities, hidden and shown through its attributes | [Eden layer](https://community.bistudio.com/wiki/Eden_Editor:_Layer) |
+| Group | several units with a leader | same as Entity |
+| Sync / Connect | a general link between entities (modules, tasks, triggers) | [Eden connecting](https://community.bistudio.com/wiki/Eden_Editor:_Connecting) |
+| View | the 3D or map camera workspace | same as Entity |
 
-```markdown
-#### {ID} — {Short name}
+## Gap analysis rows
 
-| Field | Value |
-|-------|-------|
-| **Domain** | e.g. SEL-MAP |
-| **Goal** | User outcome or Eden parity reason |
-| **Trigger** | Exact event (e.g. "LMB down on empty map, drag >4px, release") |
-| **Preconditions** | Tool, permissions, doc loaded, selection state, … |
-| **Procedure** | 1. … 2. … 3. … (UI → handler → state → feedback) |
-| **Postconditions** | State after success |
-| **Inputs** | Mouse buttons, keys, modifiers, drag MIME types |
-| **Outputs** | Visual feedback + Y.Doc / API writes |
-| **Edge cases** | Cancel paths, empty selection, limits, conflicts |
-| **Acceptance** | `- [ ]` verifiable bullets |
-| **Eden parity** | `Eden:{ID}` \| `N/A ({reason})` \| `TBD-only` |
-| **Status** | *(06 only)* `working` \| `partial` \| `stub` \| `disabled` \| `not_built` |
-| **Ticket** | *(06, optional)* Shipped `T-0xx` when a registry ticket owns the slice (e.g. `T-049`) |
-| **Evidence** | *(06)* file paths + symbols; *(07)* URL or `UNVERIFIED` |
-| **UI Surface** | *(07 required)* `MenuBar` \| `Toolbar` \| `AssetBrowser` \| `EntityList` \| `View` \| `AttributesDialog` \| `ScenarioAttributes` \| `ContextMenu` \| `StatusBar` \| `ConnectionLine` \| `—` |
-| **Feature kind** | *(07 required)* `interaction` \| `ui_chrome` \| `attribute_field` \| `connection_type` \| `browser_mode` \| `engine_action` |
-| **Wiki anchor** | *(07 required)* Full URL + `#Section_Heading` (exact scrape source) |
-| **Shortcut** | Explicit key combo or `—` |
-| **Parent ID** | Optional grouping (e.g. `TOOLBAR-SNAP-001` under `TOOLBAR-GRID-001`) |
-```
+The [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+pairs the two catalogues by ID only, never by a free-text feature name:
 
-### Field rules
-
-| Field | Rule |
-|-------|------|
-| **Trigger** | Use explicit modifiers: `Ctrl`, `Shift`, `Alt`, `LMB`, `RMB`, `MMB` — never "modifier click" |
-| **Procedure** | Must be code-backed in 06; wiki/manual-backed in 07 |
-| **Acceptance** | At least one checkbox; complex features need 3+ |
-| **Evidence** | 06: `path/to/file.ts` → `functionName`; 07: full wiki URL |
-| **Eden parity** | 06 links to 07 id when applicable |
-
----
-
-## Writer rules (agents)
-
-1. **Grep/read before write** — 06 `Procedure` must match implementation.  
-2. **No guessed Eden** — 07 without cite → `Evidence: UNVERIFIED`.  
-3. **Never conflate** ORBAT, Editor Layer, Eden Layer, Eden Group.  
-4. **Visible stubs count** — disabled buttons and "(soon)" menus get IDs with `stub` or `disabled`.  
-5. **08 uses IDs only** — no free-text feature names in gap rows.
-
----
-
-## Optional YAML index
-
-At the top of `06` or `07`, an optional machine index:
-
-```yaml
-# feature-index (optional)
-features:
-  - id: SEL-MAP-003
-    name: Marquee box-select
-    domain: SEL
-    status: working   # 06 only
-```
-
-The markdown FEDS block remains authoritative.
-
----
-
-## Gap analysis row format (`eden/gap_analysis.md`)
-
-```markdown
+```text
 | eden_id | tbd_id | parity | ticket | gap_notes |
-|---------|--------|--------|--------|-----------|
+|---|---|---|---|---|
 | SEL-MAP-003 | SEL-MAP-003 | match | — | |
-| SEL-MOD-001 | SEL-MOD-001 | match | T-053 | Ctrl+LMB additive select |
 ```
 
-**Parity:** `match` | `partial` | `missing` | `deferred` | `na` | `tbd_only`
+Parity is one of `match`, `partial`, `missing`, `deferred`, `na` and `tbd_only`; the ticket column
+names the registry ticket that owns the gap, or `—`.
 
-**Ticket:** Registry `T-0xx` when queued or shipped; `—` when not ticketed. Open Eden backlog: [`docs/TICKET_LEAD.md`](../../../TICKET_LEAD.md). Deferred map/DEM infra: **T-090** (aligned tiles), **T-091** (DEM + Z-axis). Terrain base at scale: **T-110** ([`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md)).
+## Documents
 
----
-
-## Document map
-
-| File | Role |
-|------|------|
-| `reference/feds_schema.md` | This file — normative schema (FEDS v2) |
-| `feature_inventory.md` | TBD implementation inventory |
-| `eden/ui_anatomy.md` | Eden workspace layout — what you see per panel |
-| `eden/attributes.md` | Per-entity-type attribute fields (`ATTR-FIELD-*`) |
-| `eden/interactions.md` | Eden interaction reference (wiki-anchored) |
-| `eden/gap_analysis.md` | ID-linked parity matrix + backlog |
-| `eden/wiki_manifest.yaml` | Wiki pages to scrape + status |
-| `artifacts/eden-wiki/` | Scraper raw page cache |
-| `artifacts/eden-feds-draft.jsonl` | Scraper draft FEDS candidates |
+| Document | Role |
+|---|---|
+| [Feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) | what the Mission Creator has, by area |
+| [Eden interactions](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md) | Eden's interactions, wiki-anchored |
+| [Eden UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) | Eden's workspace, panel by panel |
+| [Eden attributes](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md) | Eden's attribute fields |
+| [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | the two catalogues paired by ID |
+| [Eden wiki scrape manifest](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml) | the wiki pages the Eden reference was read from |

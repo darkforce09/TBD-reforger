@@ -86,3 +86,7 @@ span, so an edge label always sits on a drawn line.
     `apps/website/frontend/src/v2/apps/editor/shell/tests/exporter_grid_reference.rs`);
   - only `viewport.rs` names the render engine or the overlay, so the rest of the module stays
     free of the `render` feature and of any browser binding.
+
+## Related documentation
+
+- [Mission Creator feature inventory: map viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, zoom and the map view in the Mission Creator.

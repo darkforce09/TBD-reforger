@@ -67,5 +67,4 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — local persistence and the chunked IndexedDB restore.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft as the mission maker sees it.

@@ -73,5 +73,5 @@ store at the current device-pixel ratio.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the fast initial load, the hydrate gate and local persistence.
+- [Mission Creator feature inventory: map viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — the map view, terrain and camera at boot.
+- [Mission Creator feature inventory: editor route and boot loading](/documentation_v2/website/frontend/apps/editor/feature_inventory/editor_route_loading.md) — the boot overlay.

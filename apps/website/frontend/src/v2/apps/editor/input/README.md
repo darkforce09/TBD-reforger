@@ -101,5 +101,5 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
 
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
   the interaction contract and the keyboard shortcuts.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the map, selection, transform, placement and keyboard features.
+- [Mission Creator feature inventory: keyboard shortcuts](/documentation_v2/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) — every key binding and the field guard.
+- [Mission Creator feature inventory: map viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, zoom and centring on the selection.

@@ -105,5 +105,4 @@ the harness.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the undo and redo buttons, the unsaved-changes dot and local persistence.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the seed, the draft writes and the reconciliation.

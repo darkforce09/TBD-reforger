@@ -91,7 +91,6 @@ undo clock (`install_wasm_now`), so no browser binding enters this tree.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the undo and redo, placement, layer and ORBAT features the document backs.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the draft, the hydrate and the compile as the editor uses them.
 - [Architecture gates](/tools_v2/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.

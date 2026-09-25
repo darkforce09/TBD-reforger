@@ -38,3 +38,4 @@ menu"), each row carrying its `KeyboardEvent` codes in `data-codes`.
 
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
   — the editor's layout, interaction contract and shipped keyboard shortcuts.
+- [Mission Creator feature inventory: keyboard shortcuts](/documentation_v2/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) — the bindings the shortcut list documents.

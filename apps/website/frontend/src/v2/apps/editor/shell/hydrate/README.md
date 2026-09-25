@@ -66,5 +66,4 @@ sign-out deletes every local document of the departing account (`purge_local_doc
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the local-versus-server load conflict dialog and the server hydrate.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the boot restore and the load-conflict dialog.

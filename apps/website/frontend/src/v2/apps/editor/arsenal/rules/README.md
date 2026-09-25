@@ -66,5 +66,4 @@ which optic and magazine are edge rows fed by the graph, and re-exports this fol
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md#attr--attributes--settings)
-  — the Attributes dialog and its Arsenal tab.
+- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab whose verdict chip the rules drive.

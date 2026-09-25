@@ -65,5 +65,4 @@ injected world-to-pixel projector and key each node by its world endpoints quant
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the ruler among the toolbelt's features.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Ruler as the mission maker uses it.

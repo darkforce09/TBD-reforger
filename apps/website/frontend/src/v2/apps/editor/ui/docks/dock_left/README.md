@@ -96,5 +96,4 @@ view and selection state: none of them edits the document or adds an undo step.
 
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
   the dock layout and the outliner interactions.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the left sidebar's features, one entry each.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the dock's tabs, trees and folder actions.

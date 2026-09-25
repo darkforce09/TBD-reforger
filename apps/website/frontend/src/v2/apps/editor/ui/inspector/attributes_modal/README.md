@@ -63,7 +63,6 @@ tab of `apps/website/frontend/src/v2/apps/editor/arsenal/` for the id the dialog
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md#attr--attributes--settings)
-  — the Attributes dialog and its tabs.
+- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its tabs, entry by entry.
 - [Eden attribute catalog](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)
   — the Arma 3 Eden attributes the dialog is measured against.

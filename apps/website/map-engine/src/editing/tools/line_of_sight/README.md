@@ -92,5 +92,4 @@ the ruler's point-capture arm (`crate::editing::tools::ruler::should_begin_ruler
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the line-of-sight tool among the toolbelt's features.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Line of Sight tool, ray and viewshed.

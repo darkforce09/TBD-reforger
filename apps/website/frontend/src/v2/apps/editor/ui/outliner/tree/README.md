@@ -65,3 +65,7 @@ window blur or unmounting the tree cancels them at once.
   `an_unselected_anchor_drags_alone`); a row's affordance and its click agree
   (`the_affordance_and_the_click_cannot_disagree_over_any_row_kind`); `TREE_PRODUCTION_SOURCE` in
   the module root lists every file here for the source checks, so a new file joins that list.
+
+## Related documentation
+
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — selecting, renaming, deleting and dragging rows.

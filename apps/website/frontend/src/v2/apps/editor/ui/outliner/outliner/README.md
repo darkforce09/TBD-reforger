@@ -60,3 +60,7 @@ matching the key and never the name.
   keeps document order and skips dangling ids (`orbat_nests_faction_squad_slot_in_order`,
   `orbat_skips_dangling_ids`); the side filter matches the faction key
   (`orbat_side_tab_filters_by_faction_key`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the trees these builders produce.

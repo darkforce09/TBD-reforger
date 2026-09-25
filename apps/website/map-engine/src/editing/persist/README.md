@@ -95,3 +95,4 @@ save a draft (host)
 
 - [Mission document store](/apps/website/map-engine/src/data/store/README.md) — the document, its
   origins, hydrate and undo scope.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the local draft, the reconciliation and the conflict scope.

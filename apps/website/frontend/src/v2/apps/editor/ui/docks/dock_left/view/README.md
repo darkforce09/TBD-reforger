@@ -32,3 +32,7 @@ apps/website/frontend/src/v2/apps/editor/ui/docks/dock_left/view/
   (`the_tree_claims_the_dock_height_the_decoration_used_to_hold` and
   `the_drop_target_affordance_ships` in
   `apps/website/frontend/src/v2/apps/editor/ui/docks/tests/dock_left/dock_density_and_search.rs`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the expanded dock's tabs, strip, search and tree.

@@ -114,7 +114,6 @@ handlers, and each view has a native stand-in that renders nothing.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md#attr--attributes--settings)
-  — the Attributes dialog and the mission settings.
+- [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its tabs.
 - [Eden attribute catalog](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)
   — the Arma 3 Eden attributes the inspectors are measured against.

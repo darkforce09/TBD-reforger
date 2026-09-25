@@ -87,7 +87,6 @@ None: the handlers are private to the parent module, which exposes `EditorGestur
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — pan, zoom, click and marquee selection, drag-move, rotation and placement.
+- [Mission Creator feature inventory: map viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, wheel zoom and double-click.
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
   the interaction contract.

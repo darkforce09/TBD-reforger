@@ -73,3 +73,4 @@ The three modules are reached through the aliases of `data::scenario`:
   the saved payload.
 - [Mission artifacts](/documentation_v2/website/api_v2/verification_evidence/mission_artifacts.md)
   — what the API does with a compiled document.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.

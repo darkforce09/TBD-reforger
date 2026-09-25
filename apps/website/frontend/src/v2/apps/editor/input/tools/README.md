@@ -74,5 +74,4 @@ headless gates; the pick and the marquee themselves belong to
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the select, ruler and line-of-sight tools of the toolbelt.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Select, Ruler and Line of Sight tools.

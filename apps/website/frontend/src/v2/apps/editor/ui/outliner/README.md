@@ -94,7 +94,6 @@ to the top level through the map engine's single-folder latch.
 
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
   the editor layers panel and its interactions.
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — the left sidebar's layer features and the virtualised outliner.
+- [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — the layers tree and the ORBAT tree, entry by entry.
 - [Eden editor UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
   — the Eden entity list this tree follows.

@@ -41,5 +41,4 @@ None: the items of `imp/` cross the boundary only through the parent's `pub use 
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-  — Save Version and the exports.
+- [Mission Creator feature inventory: data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the compile behind Save Version and the exports.
