@@ -166,5 +166,7 @@ A clap usage error exits 2.
 
 - [Local development](/documentation_v2/runbooks/local_development.md) — the database, the API and
   the app on a developer machine.
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — psql access, sample
+  data, the integration tests, the checksum repair, backups, drills and restores.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — the server database and
   its backups.

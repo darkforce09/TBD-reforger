@@ -87,5 +87,7 @@ since half of them cover that module's pin.
 
 - [Local development](/documentation_v2/runbooks/local_development.md) — running the API and the
   app locally.
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — the database the
+  API and `rust-ci` run against.
 - [Editor gates](/documentation_v2/runbooks/editor_gates.md) — `mk gate-doctor` and
   `mk leptos-gates`.

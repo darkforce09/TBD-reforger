@@ -1,431 +1,366 @@
 **Status:** live
 
-# Dev Runbook — spin up the stack
+# Local development
 
-Quick steps to bring up DB + Axum API + Leptos (Trunk) locally. Canonical context: root [`CLAUDE.md`](../../CLAUDE.md).
-Backend planning (partially archive): [`documentation_v2/website/api_v2/api_overview.md`](/documentation_v2/website/api_v2/api_overview.md).
-Conventions: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
+Brings up the whole web platform on a developer machine: Postgres, the website
+[API](/documentation_v2/glossary.md#api) on port 8080 and the single-page app on port 3000, signed
+in through the [dev login](/documentation_v2/glossary.md#dev-login) or through Discord. Run it on
+a fresh checkout or worktree, and after a reboot from step 2 on. The first API and app builds take
+several minutes; later starts take seconds. Database work beyond the first seed (backups,
+restores, the checksum repair, sample data) is in
+[Database operations](/documentation_v2/runbooks/database_operations.md).
 
-## Start everything
+## Prerequisites
 
-**Toolchain:** Rust stable (API + SPA + tooling). Postgres **18** (`postgres:18-alpine` in `apps/website/api_v2/docker-compose.yml`). Node exists only for `enfusion-mcp`, pinned in `tools_v2/enfusion_mcp_node_package`.
+- The Rust toolchain through rustup. The root `rust-toolchain.toml` pins 1.95.0 with rustfmt,
+  clippy and the `wasm32-unknown-unknown` target, and rustup installs it on the first `cargo`
+  call in the checkout. Check: `rustc --version` from the repository root prints `1.95.0`.
+- Trunk, for the app: `trunk --version`. The gate harness pins 0.21.14
+  (`tools_v2/developer-tools/gate-env.json`); Trunk fetches the Tailwind 4.3.2 binary that
+  `apps/website/frontend/Trunk.toml` names by itself.
+- A container runtime with a compose provider. `cargo xtask db` takes `TBD_CONTAINER_RUNTIME`
+  when set, then `podman`, then `docker`, then `distrobox-host-exec podman` or `docker` from
+  inside a distrobox container. `podman compose` also needs `podman-compose` or the
+  `docker-compose` plugin installed. Check: `podman compose version` or `docker compose version`.
+- Git LFS, for the terrain binaries the
+  [Mission Creator](/documentation_v2/glossary.md#mission-creator) draws: `git lfs version`.
+- Node is not needed. It serves only the Enfusion MCP tools
+  ([Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md)).
 
-**CI replay:** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Local mirror:
+## Steps
+
+Run every command from the repository root unless a step says otherwise.
+
+### Start the stack
+
+1. Create the API's environment file. Its development values work as they stand:
+   `APP_ENV=development`, `DATABASE_URL` on host port 5434, `FRONTEND_URL=http://localhost:3000`
+   and a placeholder `JWT_SECRET`. The file is gitignored, so a new git worktree has none; copy
+   the main checkout's `.env` into it instead when it holds real Discord values.
+
+   ```bash
+   cp apps/website/api_v2/.env.example apps/website/api_v2/.env
+   ```
+
+   Expected: no output; `apps/website/api_v2/.env` exists. Every variable, its default and its
+   failure mode is in
+   [API environment variables](/documentation_v2/website/api_v2/environment_variables.md).
+
+2. Start Postgres 18 in the background.
+
+   ```bash
+   cargo xtask db up
+   ```
+
+   Expected: `cd apps/website/api_v2 && podman compose up -d db` (with the runtime it found),
+   then compose starts the `tbd_reforger_db` container from `postgres:18-alpine`, listening on
+   host port 5434 with the user, password and database `tbd`, `tbd` and `tbd_reforger`.
+
+3. Run the API. It builds the `api` binary into `target-dev-api/` in this checkout, applies the
+   pending migrations and stays in the foreground; leave it running and open a second terminal.
+
+   ```bash
+   cargo xtask mk rust-api
+   ```
+
+   Expected: the line
+   `cd apps/website/api_v2 && CARGO_TARGET_DIR=<checkout>/target-dev-api cargo run --bin api`,
+   the build, then the log lines `migrations applied` and `listening on 0.0.0.0:8080`. Restart it
+   after a change to the API; `cargo run` does not reload.
+
+4. Load the development seeds: the Discord role mapping, a small item
+   [registry](/documentation_v2/glossary.md#registry), the starter factions, the vehicle database
+   and the wiki pages. Run it only after step 3 has logged `migrations applied`: the tables come
+   from the migrations.
+
+   ```bash
+   cargo xtask db seed
+   ```
+
+   Expected: one line per file, from
+   `cd apps/website/api_v2 && podman compose exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql`
+   through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
+   `wiki_pages.sql`, each followed by psql's command tags (`INSERT 0 3` for the roles) and no
+   `ERROR:` line. psql carries on past a failed statement, so check the output, not only the
+   exit code. The seeds upsert, so running them again converges.
+
+5. Serve the app. Trunk builds a release build and stays in the foreground on
+   `127.0.0.1:3000`, proxying `/api` and `/map-assets` to the API on `127.0.0.1:8080`, with the
+   cross-origin isolation headers the Mission Creator needs. `cargo xtask mk leptos-debug`
+   serves a faster unoptimized build instead; do not judge frame rates on it.
+
+   ```bash
+   cargo xtask mk leptos
+   ```
+
+   Expected: `cd apps/website/frontend && trunk serve --release`, the build, then Trunk serving
+   on `http://127.0.0.1:3000`.
+
+6. Sign in without Discord. Open the dev login in the browser; `role` is one of `guest`,
+   `enlisted`, `leader`, `mission_maker` and `admin`, and any other value signs in as `admin`.
+   The route exists only while `APP_ENV=development`.
+
+   ```text
+   http://localhost:3000/api/v1/auth/dev-login?role=admin
+   ```
+
+   Expected: a 302 to `http://localhost:3000/auth/callback` with the session in the URL fragment
+   (`access_token`, `refresh_token`, `expires_at`, `arma_linked`); the app stores it in local
+   storage under `tbd-auth` and loads `/` signed in as "Dev Operator". Each role signs in as its
+   own fixed account.
+
+### Call the API from a shell
+
+1. Take an access token from the dev login's redirect, without a browser.
+
+   ```bash
+   curl -s -o /dev/null -w '%{redirect_url}\n' \
+     'http://127.0.0.1:8080/api/v1/auth/dev-login?role=mission_maker'
+   ```
+
+   Expected: `http://localhost:3000/auth/callback#access_token=…&arma_linked=…` and so on; the
+   value of `access_token` is the bearer token.
+
+2. Call a route with it, here the item registry, which needs at least the mission maker
+   [role](/documentation_v2/glossary.md#role).
+
+   ```bash
+   curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/v1/registry | jq .
+   ```
+
+   Expected: the registry page of the current modpack, with a weak `ETag` header; the same
+   request with `If-None-Match` answers 304. `GET /api/v1/registry/compat` takes an
+   `?edge_type=` filter. A [mission](/documentation_v2/glossary.md#mission)'s compiled
+   [artifact](/documentation_v2/glossary.md#artifact) reads the same way from
+   `GET /api/v1/missions/{id}/reviews` and
+   `GET /api/v1/missions/{id}/artifacts/{artifact_id}/document`; every route is listed in the
+   [API overview](/documentation_v2/website/api_v2/api_overview.md).
+
+### Load the full item registry
+
+The seed holds 21 items and 4 vehicles. The committed Workbench export holds 1,857 items and
+20,908 compatibility edges.
+
+1. Import it into the database `DATABASE_URL` names.
+
+   ```bash
+   cargo xtask db registry-import
+   ```
+
+   Expected: cargo runs the API's `import-registry` binary over
+   `contracts_v2/catalogs/registry-items.workbench.json` and
+   `contracts_v2/catalogs/registry-compat.workbench.json`, applying pending migrations first.
+   The import upserts, so it can run again. The binary itself takes `--items`, `--compat`,
+   `--modpack <uuid>` and `--prune`
+   (the [API README](/apps/website/api_v2/README.md#public-surface)).
+
+### Fetch the terrain assets
+
+The API serves `assets_v2/terrains/` at `/map-assets` (`MAP_ASSETS_DIR`, default
+`../../../assets_v2/terrains` from the API's working directory) and Trunk proxies it to the app.
+About 2,000 of its files live in Git LFS (`.gitattributes`): the Everon elevation raster
+(`everon/dem/everon-dem-16bit.png`, 72 MB), the satellite container
+(`everon/satellite/everon-sat.tbd-sat`, 153 MB), the object chunks (`*.bin`), the prefab
+collision hierarchies (`*.bvh`) and the `*.rkyv` archives. The 625 forest-density tiles under
+`objects/density/` are ordinary git blobs. A clone without the LFS objects has pointer files
+instead: manifests and JSON load, and the elevation, satellite and object layers do not.
+
+1. Pull the elevation raster, which the `website-map-engine` tests and the hillshade need.
+
+   ```bash
+   cargo xtask ci lfs-dem
+   ```
+
+   Expected: `git lfs pull --include assets_v2/terrains/everon/dem/everon-dem-16bit.png`, then
+   the 72 MB file in place of its pointer.
+
+2. Pull the satellite container.
+
+   ```bash
+   cargo xtask ci lfs-sat
+   ```
+
+   Expected: `git lfs pull --include assets_v2/terrains/everon/satellite/everon-sat.tbd-sat`.
+   `git lfs pull` alone fetches every LFS object, the chunks and hierarchies included.
+
+3. Optionally build the tile pyramids, which are gitignored build output under
+   `assets_v2/terrains/**/tiles/`. The map basemap needs the cartographic one.
+
+   ```bash
+   cargo xtask ci map-cartographic-everon
+   ```
+
+   Expected: the cartographic ortho and its pyramid are built, the manifest patched, and
+   `map-cartographic-verify` passes. `cargo xtask ci map-water-everon` rebuilds the water
+   composite and needs the export scratch in `assets_v2/scratch/`, a sibling of the served tree
+   that `/map-assets` cannot reach.
+
+In the app, the satellite layer loads a preview and then the full container; the `?sat=preview`
+query parameter stops at the preview, as the gates do. Each terrain's `manifest.json` follows
+`contracts_v2/definitions/terrain-manifest.schema.json`, which `cargo xtask ci verify-terrain`
+checks with the alignment (`verify-terrain-strict` is the strict form). The layout of the tree is
+in the [terrains README](/assets_v2/terrains/README.md).
+
+### Discord OAuth2 — live round-trip
+
+The dev login needs none of this. This procedure proves the real Discord sign-in: the
+`oauth_state` cookie, the token exchange and the guild role mapping. It needs a browser and a
+person at Discord's consent screen. The request and response of each call are in
+[account pages](/documentation_v2/website/frontend/pages/account/account_pages.md).
+
+1. Register the redirect. In the Discord Developer Portal, under the application's OAuth2
+   Redirects, add exactly the value of `DISCORD_REDIRECT_URL` in `apps/website/api_v2/.env`:
+
+   ```text
+   http://localhost:8080/api/v1/auth/discord/callback
+   ```
+
+   Expected: the portal lists it. Discord compares it byte for byte twice, on the authorize URL
+   and on the token exchange: scheme, host, port and a trailing slash all count. The API builds
+   its own authorize URL with the scopes `identify guilds.members.read` (`OAUTH_SCOPES` in
+   `apps/website/api_v2/src/identity_and_access/services/discord_client.rs`), so the portal's URL
+   generator and a bot are not involved.
+
+2. Fill the credentials and align the hosts. Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and
+   `DISCORD_GUILD_ID` in `apps/website/api_v2/.env`, and keep `FRONTEND_URL` on the same host as
+   `DISCORD_REDIRECT_URL`: the template's `http://localhost:3000` and `http://localhost:8080/…`
+   agree. The cookie is host-only (`Path=/; Max-Age=600; HttpOnly; SameSite=Lax`, no `Secure` in
+   development), and `localhost` and `127.0.0.1` are different cookie hosts; ports do not matter.
+   Change `FRONTEND_URL` rather than the redirect, which must stay equal to the portal entry.
+
+   ```bash
+   grep -E '^(FRONTEND_URL|DISCORD_REDIRECT_URL)=' apps/website/api_v2/.env
+   ```
+
+   Expected: both values name the same host. In development the API refuses to start the flow
+   when they differ: it logs "REFUSING to start the Discord OAuth flow" and sends the browser to
+   `/auth/callback#error=oauth_host_mismatch`.
+
+3. Check the credential pair without a browser. The client-credentials grant validates the id and
+   secret; the command reads both from `.env` and never puts them on the command line.
+
+   ```bash
+   cd apps/website/api_v2 && set -a && . ./.env && set +a && \
+     curl -s -o /dev/null -w '%{http_code}\n' -u "$DISCORD_CLIENT_ID:$DISCORD_CLIENT_SECRET" \
+     -d grant_type=client_credentials -d scope=identify https://discord.com/api/oauth2/token
+   ```
+
+   Expected: `200`. `401` means a wrong id or secret: regenerate the secret in the portal and
+   update `.env`.
+
+4. Sign in. With steps 2 to 5 of Start the stack running (restart the API after editing `.env`),
+   open the app on the host `FRONTEND_URL` names, not the API port, and click "Sign in with
+   Discord".
+
+   ```text
+   http://localhost:3000/login
+   ```
+
+   Expected: Discord's consent screen, then a 302 to `{FRONTEND_URL}/auth/callback` with the
+   session in the fragment, and the top bar showing your Discord name and avatar. A failure
+   arrives as `#error=<reason>` and the callback page shows its sentence (troubleshooting
+   below). Confirm it in the database, as in
+   [Database operations](/documentation_v2/runbooks/database_operations.md), step 1 of Query the
+   local database:
+
+   ```sql
+   SELECT discord_id, username, role, last_login_at FROM users ORDER BY last_login_at DESC LIMIT 5;
+   SELECT guild_id, membership_status, verified_at, last_error FROM discord_membership_snapshots;
+   SELECT guild_id, discord_role_id FROM user_discord_roles WHERE discord_id = '<your id>';
+   SELECT created_at, action FROM audit_logs WHERE action LIKE 'auth.%' ORDER BY id DESC LIMIT 5;
+   ```
+
+   A good sign-in upserts the `users` row, records a `member` snapshot for the guild with its
+   `verified_at`, stores your guild role ids and writes an `auth.session_created` audit row.
+
+5. Map the guild's roles. Permissions come from the verified Discord snapshot, never from
+   `users.role`: a member takes the mapped role of the highest-priority `discord_roles` row that
+   matches one of their guild roles, and `enlisted` when none matches; a non-member, or an
+   account whose membership was never verified, is `guest`. `cargo xtask db seed` maps the TBD
+   guild's Command Staff (`admin`), Mission Maker (`mission_maker`) and Player (`enlisted`)
+   roles; no Squad Leader (`leader`) role id is committed. For another guild, or for `leader`,
+   read your role ids from `user_discord_roles` after a sign-in and insert the mapping, as the
+   header of `apps/website/api_v2/seeds/discord_roles.sql` shows.
+
+   ```sql
+   INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority)
+   VALUES ('<role id>', 'Squad Leader', 'leader', 30)
+   ON CONFLICT (discord_role_id) DO UPDATE SET name = EXCLUDED.name,
+     mapped_role = EXCLUDED.mapped_role, priority = EXCLUDED.priority;
+   ```
+
+   Expected: `INSERT 0 1`. The permission check reads the mapping on every request, so the new
+   role applies at once. The roster's displayed role follows at the nightly resync
+   (`ROLE_RESYNC_INTERVAL_SECS`, 86400 by default), or at once with
+   `POST /api/v1/admin/roles/sync` under an administrator's token. An administrator cannot set a
+   role by hand: `PATCH /api/v1/admin/users/{discordId}` answers 409, since website roles are
+   derived from Discord.
+
+6. Optionally, sign out and in again with a second Discord account that is not in the guild.
+
+   ```text
+   http://localhost:3000/login
+   ```
+
+   Expected: the sign-in succeeds as `guest`, and the snapshot reads `nonmember`. Discord answers
+   404 to the member lookup, and that 404 means "not a member".
+
+### Stop
+
+1. Stop the API and Trunk with Ctrl-C in their terminals, then stop Postgres.
+
+   ```bash
+   cargo xtask db down
+   ```
+
+   Expected: compose stops and removes the `tbd_reforger_db` container and keeps the data volume,
+   so the next `db up` starts on the same data.
+
+## Verify
 
 ```bash
-cargo xtask db up          # Postgres on host :5434
-cargo xtask ci ci-local       # editorconfig + website-api + coding-standards + leptos + schema/citations
+curl -sf http://127.0.0.1:8080/healthz
 ```
 
-**Formatting:** `cargo xtask ci verify-editorconfig` · `cargo fmt --check` in `apps/website/api_v2` + `-p website-frontend`. Coding-standards: `cargo xtask ci verify-coding-standards`.
+Expected: `{"status":"ok"}` with status 200; `curl` exits 22 when the probe answers 503, which it
+does while the database is down or `_sqlx_migrations` records a failed migration. `/healthz` and
+`/metrics` sit at the root, outside `/api/v1`. Then `http://localhost:3000` shows the app, signed
+in after step 6. Before pushing, `cargo xtask ci ci-local` replays the CI suite; it needs step 2
+first (the [CI task commands](/tools_v2/xtask/src/commands/ci/README.md) list its steps).
 
-```bash
-# 1. Postgres (port 5434)
-cargo xtask db up
-
-# 2. Axum API on :8080 (CWD = apps/website/api_v2; migrates on boot)
-cargo xtask mk rust-api
-
-# 3. Leptos Trunk SPA on :3000 (proxies /api + /map-assets → :8080)
-#    T-173: cargo xtask mk leptos = trunk serve --release (day-to-day / perf-honest).
-#    Fast rebuilds only: cargo xtask mk leptos-debug (unoptimized wasm — do not judge FPS).
-#    T-174: satellite = preview→full progressive by default (sharp TBDS).
-#           ?sat=preview = Range-only (gates / fast local); ?sat=full is a no-op.
-cargo xtask mk leptos
-```
-
-Config: `apps/website/api_v2/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
-
-Runtime storage: what the API writes — CMS uploads, served back at `/uploads` — goes to
-`UPLOAD_DIR`. In development it defaults to `assets_v2/scratch/website-api/uploads` (gitignored,
-outside the crate); outside development it is required and must be absolute, and the production
-unit points it at its systemd state directory. Nothing the API writes lands in
-`apps/website/api_v2/`. Game runtimes read deployed mission artifacts from `/api/v1/game-runtime/`.
-
-## Confirm it's up
-
-```bash
-curl -sf http://localhost:8080/healthz
-```
-
-`/healthz` and `/metrics` are mounted at the root, outside the `/api/v1` tree.
-
-- API: http://localhost:8080
-- Web: http://127.0.0.1:3000
-
-## Contract codegen, validation & CI (T-123)
-
-```bash
-cargo xtask ci schema-codegen    # → apps/website/api_v2/src/missions/contract/generated/ (DO NOT hand-edit)
-cargo xtask ci schema-validate   # contracts_v2 goldens
-cargo xtask ci verify-citations
-```
-
-CI jobs: `website-api` + `website-frontend` (renamed from `rust-backend` / `website-leptos` at T-171). Path-filtered supplements: [`contracts.yml`](../../.github/workflows/contracts.yml), [`schema.yml`](../../.github/workflows/schema.yml).
-
-## Where backend code goes
-
-A new endpoint goes in `apps/website/api_v2/src/<domain>/handlers/`, is registered in that domain's
-`routes.rs`, and anything a second surface would need goes in that domain's `services/`. The eight
-domains are `administration`, `command_center`, `community_content`, `identity_and_access`,
-`match_telemetry`, `missions`, `operations`, `server_infrastructure`.
-
-`core::http_router::api_v1_routes` merges the eight route tables and nests the result under
-`/api/v1`, so a public URL is the literal in the domain's `routes.rs` with `/api/v1` in front of it.
-Full atlas: [`apps/website/api_v2/README.md`](../../apps/website/api_v2/README.md) and the
-`README.md` in each module directory under `src/`.
-
-## Log in (no Discord needed)
-
-```
-http://localhost:8080/api/v1/auth/dev-login?role=admin
-```
-
-Roles: `admin | mission_maker | leader | enlisted`. Requires `APP_ENV=development`.
-
-## Discord OAuth2 — live round-trip (T-207)
-
-dev-login above is the everyday path and needs none of this. This section is for proving the
-**real** Discord flow. The implementation is complete — state cookie, constant-time compare,
-token exchange, role sync, bounded 429 retry — but **has never been run against live Discord in
-this tree**. Finishing it needs a browser and a human at a Discord consent screen; there is no
-unattended substitute.
-
-**Credential state** in `apps/website/api_v2/.env` (verified 2026-07-26 — presence and length only,
-values never recorded):
-
-| Var | State | Required for |
-|-----|-------|--------------|
-| `DISCORD_CLIENT_ID` | set, 19-digit numeric snowflake | starting the flow |
-| `DISCORD_CLIENT_SECRET` | set, 32 chars (Discord's secret length) | the token exchange |
-| `DISCORD_REDIRECT_URL` | set, `http://localhost:8080/api/v1/auth/discord/callback` | both, byte-exact |
-| `DISCORD_GUILD_ID` | set, 19-digit numeric snowflake | role sync (blank ⇒ skipped) |
-| `DISCORD_BOT_TOKEN` | **empty** | nothing — no consumer reads it (T-279) |
-| `DISCORD_WEBHOOK_URL` | **empty** | announcement pushes only, not OAuth |
-
-Root `CLAUDE.md`'s note that *"Real Discord OAuth credentials are blank in `.env`"* is **stale** —
-client id, secret and guild id are all populated. What is unproven is whether they are *valid*.
-
-`.env` is gitignored, so a **git worktree has no `.env` at all**. Copy the main checkout's
-`apps/website/api_v2/.env` in before `cargo xtask mk rust-api`, or the API won't boot (`DATABASE_URL` is required).
-
-### 1. Register the redirect URI
-
-Discord Developer Portal → your application → **OAuth2 → Redirects** → add, byte-for-byte:
-
-```
-http://localhost:8080/api/v1/auth/discord/callback
-```
-
-It must equal `DISCORD_REDIRECT_URL` exactly. The value is sent **twice** — once as
-`redirect_uri` on the authorize URL, again as a form field on the token exchange — and Discord
-string-compares it both times. Trailing slash, `127.0.0.1` vs `localhost`, `http` vs `https`, port:
-all significant.
-
-Do **not** use the portal's URL generator. The app builds its own authorize URL and requests
-`identify guilds.members.read` (`OAUTH_SCOPES` in
-`apps/website/api_v2/src/identity_and_access/services/discord_client.rs`). `guilds.members.read`
-returns only the caller's own membership in one guild, so **no bot and no bot token are involved**.
-
-### 2. Align the host string (do this before you touch a browser)
-
-The `oauth_state` CSRF cookie is set with `Path=/; Max-Age=600; HttpOnly; SameSite=Lax` and **no
-`Domain`** — so it is host-only, and **`localhost` and `127.0.0.1` are different cookie hosts**
-(ports don't matter, hosts do).
-
-The committed dev config mixes them: `FRONTEND_URL=http://127.0.0.1:3000` but
-`DISCORD_REDIRECT_URL=http://localhost:8080/...`. Start the flow from the SPA at `127.0.0.1:3000`
-and the cookie is stored for host `127.0.0.1`; Discord then returns you to `localhost:8080`, which
-never receives it, and **every login fails `invalid_state`**. Pick one host and use it everywhere:
-
-- **Recommended:** set `FRONTEND_URL=http://localhost:3000` and browse the SPA at
-  `http://localhost:3000`. Everything — flow start, callback, final redirect — stays on host
-  `localhost`, and the committed `ALLOWED_ORIGINS` already lists that origin.
-- Browsing at `localhost:3000` while leaving `FRONTEND_URL` on `127.0.0.1` also *works* (the
-  cookie is only needed between login-start and callback), but you finish signed in on
-  `127.0.0.1:3000`, not the tab you started in — the session lands at `FRONTEND_URL`.
-- Or move everything to `127.0.0.1` — but then `DISCORD_REDIRECT_URL` **and** the portal entry
-  must both become `http://127.0.0.1:8080/...`. `http://localhost` is the better-supported dev
-  origin on Discord's side; prefer it.
-
-### 3. Pre-flight the secret without a browser
-
-A wrong or rotated secret and a genuine network outage produce the *same* user-visible error, and
-the exchange failure is not logged (see the table below). Check the pair directly first — the
-client-credentials grant validates id+secret and needs no consent screen:
-
-```bash
-cd apps/website/api_v2 && set -a && . ./.env && set +a
-curl -s -o /dev/null -w '%{http_code}\n' \
-  -u "$DISCORD_CLIENT_ID:$DISCORD_CLIENT_SECRET" \
-  -d grant_type=client_credentials -d scope=identify \
-  https://discord.com/api/oauth2/token
-```
-
-`200` = the credential pair is good. `401` (`invalid_client`) = wrong client id/secret; regenerate
-the secret in the portal and update `.env`. Never paste the secret on a command line or into a
-commit — source it from `.env` as above.
-
-### 4. Run it
-
-```bash
-cargo xtask db up && cargo xtask db seed     # role mappings must exist — see §5
-cargo xtask mk rust-api                    # :8080
-cargo xtask mk leptos                 # :3000
-```
-
-Then in a browser: open `/login` on your chosen host (e.g. `http://localhost:3000/login`), click
-**Sign in with Discord**, approve at Discord's consent screen, and land back on the SPA. Start
-from the SPA, not from `:8080` directly — the state cookie must be set on the host you return to
-(§2).
-
-**Success** is a 302 to `{FRONTEND_URL}/auth/callback` with the session in the URL **fragment**
-(`#access_token=…&arma_linked=…&expires_at=…&refresh_token=…`, keys sorted), the SPA signed in,
-and your Discord display name and avatar in the top bar. Errors arrive the same way —
-`#error=<reason>` — which the SPA renders as human copy (`apps/website/frontend/src/auth.rs`).
-
-Confirm it server-side rather than trusting the UI:
-
-```sql
--- the upserted profile + resolved tier
-SELECT discord_id, username, discord_handle, role, last_login_at
-  FROM users ORDER BY last_login_at DESC LIMIT 5;
-
--- the authoritative role snapshot Discord returned
-SELECT discord_role_id, synced_at FROM user_discord_roles WHERE discord_id = '<your-id>';
-
--- one auth.login INFO row, and NO auth.role_sync_skipped WARN row next to it
-SELECT created_at, severity, action, message
-  FROM audit_logs WHERE action LIKE 'auth.%' ORDER BY id DESC LIMIT 10;
-```
-
-### 5. Map guild roles to web tiers
-
-A flawless login still resolves to **enlisted** unless the guild's role snowflakes are mapped.
-`cargo xtask db seed` applies `apps/website/api_v2/seeds/discord_roles.sql`, whose ids are specific to the TBD
-guild (Command Staff / Mission Maker / Player). **Squad Leader / `leader` is not seeded** — the old
-placeholder snowflake `1517290000000000000` was removed at T-428 (no real guild id is committed).
-Insert the real mapping after a login (recipe is in the seed file header), then re-resolve.
-`resolve_role` takes the `mapped_role` of the highest-`priority` matching row and falls back to
-enlisted when nothing matches.
-
-The API also arms a nightly Discord role resync (`ROLE_RESYNC_INTERVAL_SECS`, default 24h — T-428)
-as a safety net. For an immediate re-resolve of **everyone** without waiting:
-
-```bash
-# admin JWT — in dev, read access_token out of the dev-login redirect fragment
-curl -X POST http://localhost:8080/api/v1/admin/roles/sync \
-  -H "Authorization: Bearer $ADMIN_JWT"
-```
-
-If a dirty DB still has the old placeholder row, re-`cargo xtask db seed` clears it (T-487:
-`DELETE` of `1517290000000000000` before INSERT). Manual delete is still fine.
-
-`resolve_role` returns enlisted for an empty snapshot, so a user who is genuinely in no mapped
-role stays enlisted by design — that is not the same failure as an unmapped snowflake.
-
-### 6. Telling the failure modes apart
+## Troubleshooting
 
 | Symptom | Cause | Fix |
-|---------|-------|-----|
-| Discord's own *"Invalid OAuth2 redirect_uri"* page; you never return to the app | `DISCORD_REDIRECT_URL` isn't registered, or doesn't match byte-for-byte | §1 — no app-side error exists for this, because the request never reached the app |
-| `#error=oauth_unconfigured` | `DISCORD_CLIENT_ID` blank | fill it; the app refuses to send you to Discord with an empty client id |
-| `#error=invalid_state` | cookie host mismatch (§2), >10 min at the consent screen (`Max-Age=600`), or cookies blocked | §2 first — it is the overwhelmingly likely cause on a fresh setup |
-| `#error=discord_unreachable` | bad/rotated secret **or** a real network failure **or** a redirect_uri mismatch caught at exchange time | §3 discriminates. **The exchange error is not logged** — `exchange_code`/`fetch_user` failures are mapped to this one reason and the cause is dropped, so the curl is your only signal |
-| `#error=missing_code` | consent was denied, or the callback URL was hand-built | retry and approve |
-| `#error=banned` | `users.is_banned` is true for that Discord id | clear the ban in admin |
-| `#error=server_error` | a DB write failed — user upsert, role sync, user reload, or session issue | also silent: the callback's `let-else` arms drop the sqlx error. Confirm Postgres is up and migrated (`cargo xtask db up`, restart `cargo xtask mk rust-api`), then retry |
-| Login succeeds, but you are `enlisted` | (a) role snowflakes unmapped, (b) you aren't in the guild, (c) `DISCORD_GUILD_ID` blank | (a) is the common one → §5. (b) is a **legitimate answer**: Discord 404s the member lookup, that 404 means "not a member", and demoting is correct. (c) leaves a WARN audit row — see below |
+|---|---|---|
+| `db up` stops with `FATAL:` and exit 1 | no container runtime resolved from `TBD_CONTAINER_RUNTIME`, podman, docker or `distrobox-host-exec` | install podman or docker, or set `TBD_CONTAINER_RUNTIME` |
+| `db up` or `db seed` exits 125 with "looking up compose provider failed" | podman has no compose provider | install `podman-compose` or the `docker-compose` plugin; for an existing container, `podman start tbd_reforger_db` starts it, and [Database operations](/documentation_v2/runbooks/database_operations.md) seeds without compose |
+| the API exits with `DATABASE_URL is required` or `JWT_SECRET is required` | no `apps/website/api_v2/.env`, as in a new worktree | step 1 |
+| the API exits with `migration N was previously applied but has been modified` | an applied migration file changed, comments included | [Database operations](/documentation_v2/runbooks/database_operations.md), Repair a migration checksum; never reset the volume for this |
+| `db seed` prints `relation "discord_roles" does not exist` and exits 0 | the seeds ran before the API migrated the database | step 3, then step 4 again |
+| the map shows no elevation or satellite layer | the LFS objects are pointer files | Fetch the terrain assets |
+| a cartographic basemap is missing | the tile pyramid is gitignored and not built | Fetch the terrain assets, step 3 |
+| Discord shows "Invalid OAuth2 redirect_uri" and never returns to the app | `DISCORD_REDIRECT_URL` is not registered, or differs by a byte | Discord OAuth2, step 1 |
+| `#error=oauth_host_mismatch` ("Something went wrong completing sign-in.") | `FRONTEND_URL` and `DISCORD_REDIRECT_URL` name different hosts | Discord OAuth2, step 2 |
+| `#error=oauth_unconfigured` | `DISCORD_CLIENT_ID` is blank | fill it, restart the API |
+| `#error=invalid_state` | no cookie: more than 10 minutes at the consent screen, cookies blocked, or a host mismatch; a cookie that does not match: a replayed or forged callback | the API log says which; retry from `/login` |
+| `#error=discord_unreachable` | the token exchange or the profile read failed | the API log line `discord token_exchange failed [config]` means Discord refused the call (401 `invalid_client`: wrong id or secret; 400 `invalid_grant`: wrong redirect, or a used code); `[outage]` is the network or Discord, so retry; `[protocol]` is an undecodable reply, usually a proxy; Discord OAuth2, step 3 |
+| `#error=missing_code` | consent was denied, or the callback was opened by hand | sign in again and approve |
+| `#error=banned` | `users.is_banned` is true for the account | lift the ban in the personnel page |
+| `#error=server_error` | a database write failed during the callback | check that Postgres is up (step 2) and the API migrated (step 3), then retry |
+| signed in as `enlisted` | a guild member whose roles have no mapping | Discord OAuth2, step 5 |
+| signed in as `guest` | not a guild member, `DISCORD_GUILD_ID` blank (no membership is read), or a membership last verified over 48 hours ago | join the guild, fill `DISCORD_GUILD_ID`, or sign in again; an administrator can extend cached permissions with `POST /api/v1/admin/users/{discordId}/membership-grace` |
 
-### 7. Two live hazards, fixed in code — what you'd see now
+## Related
 
-Both used to destroy an admin's tier permanently, because `sync_roles` DELETEs every stored
-`user_discord_roles` row before re-inserting, and `resync_all_roles` rebuilds from that same table
-— once the snapshot was gone there was nothing left to restore from.
-
-- **A transient Discord failure demoted an admin to enlisted, irrecoverably.** Fixed:
-  `RoleSnapshot::Unavailable` never mutates roles. Today a timeout or 5xx logs
-  *"discord guild-member lookup failed — keeping the stored role snapshot"* and writes nothing.
-- **A 200 whose body omits `roles` did the same** — a proxy or gateway serving a JSON error
-  envelope with a 200 status decoded to `roles: []`, which reads as "Discord says this user holds
-  no roles". Fixed: `roles` is no longer `#[serde(default)]`, so such a body fails to decode and
-  travels the same write-nothing path. An explicit `"roles": []` is still a real answer and still
-  demotes, correctly.
-
-A blank `DISCORD_GUILD_ID` lands on that same path (it used to enlist the whole community, one
-login at a time, without a single log line).
-
-**How you see it:** an `auth.role_sync_skipped` **WARN** audit row alongside the `auth.login`
-row. That means the login was *degraded* — the tier you see is the **stored** one, not a fresh
-answer from Discord. One is a blip. Two in a row for the same user is a real Discord, proxy, or
-config problem, and roles are frozen until it clears.
-
-### 8. Known unfixed: admin role edits are clobbered at the next successful login
-
-`PATCH /api/v1/admin/users/{discord_id}` writes `users.role` directly. Discord is the source of
-truth and **nothing records that an override happened**, so the next *successful* login recomputes
-the role from the guild snapshot and silently overwrites the edit. You will hit this.
-
-The perverse part: an override survives exactly as long as Discord stays unreachable (that path
-writes nothing), and dies the moment Discord recovers.
-
-The only durable fix today is to make Discord agree — map the guild role in `discord_roles` and
-`POST /admin/roles/sync` (§5). Use the PATCH for temporary, same-session changes only.
-
-## Stop
-
-```bash
-cargo xtask db down      # stops Postgres, keeps volume
-# API + trunk: kill the background processes
-```
-
-## Postgres 18 upgrade (T-124)
-
-If `cargo xtask mk rust-api` fails migrations after pulling T-124, the local volume may still be Postgres **16** data. Re-init:
-
-```bash
-cargo xtask db down
-# podman volume rm tbd-reforger_db_data   # or docker — inspect compose project name
-cargo xtask db up && cargo xtask db seed
-```
-
-Dev data is reseedable; mock missions are optional (see below).
-
-## `migration N was previously applied but has been modified`
-
-The API refuses to boot with this after an applied migration file changes in any way — `sqlx`
-hashes the whole file, comments included, and compares it against `_sqlx_migrations.checksum`.
-The schema is not necessarily wrong; a rewritten comment trips it too. Do not reset the volume for
-this.
-
-```bash
-cargo xtask db repair-migration-checksum --version N   # one migration
-cargo xtask db repair-migration-checksum               # every applied migration whose file changed
-```
-
-The command recovers the bytes the database applied from the migration's git history, compares
-them with the current file with comments stripped, and repoints the row only when the statements are
-identical. A real DDL change is refused with a diff — that needs a new migration. A checkout without
-the applied bytes in its history (a deploy target has no `.git/`) is refused unless `--force`, which
-says a human verified the edit by hand. `tests/migrations_are_immutable.rs` pins every migration's
-hash so the edit fails CI before it reaches a database.
-
-## Registry catalog (T-068 / T-150 / T-068.9)
-
-**Dev seed** (`cargo xtask db seed` → `apps/website/api_v2/seeds/registry_dev.sql`) is the thin 21-row smoke set.
-
-**Full catalog** (Workbench universal export): **1,880 items** + **4,012 compat edges**.
-
-```bash
-# From repo root — upserts both committed envelopes into the dev DB (idempotent)
-cargo xtask db registry-import
-
-# Or explicit paths / prune:
-# cargo run --bin import-registry --manifest-path apps/website/api_v2/Cargo.toml -- \
-#   --items contracts_v2/catalogs/registry-items.workbench.json \
-#   --compat contracts_v2/catalogs/registry-compat.workbench.json \
-#   [--modpack <uuid>] [--prune]
-```
-
-Restart `cargo xtask mk rust-api` after handler changes — `cargo run` does not hot-reload.
-
-| Route | Auth | Notes |
-|-------|------|--------|
-| `GET /api/v1/registry` | mission_maker+ JWT | Items; weak ETag / 304 |
-| `GET /api/v1/registry/compat` | mission_maker+ JWT | Edges; `?edge_type=` filter; ETag |
-
-**Mission artifacts (the compiled document the mod runs):** submitting a mission compiles its
-current version into an immutable artifact; the author or an administrator reads the exact bytes,
-and a game server reads the artifact deployed to it with its `mod_runtime` machine credential.
-
-```bash
-# The artifact under review (or approved) and its exact document bytes, as the author:
-curl -sS -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/missions/{mission_id}/reviews | jq '.reviews[0].artifact_id'
-curl -sS -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/v1/missions/{mission_id}/artifacts/{artifact_id}/document | jq .schemaVersion
-# What a game server runs, with its machine credential:
-curl -sS -H "Authorization: Bearer $MACHINE_CREDENTIAL" \
-  http://localhost:8080/api/v1/game-runtime/deployment | jq '{artifact_id, artifact_sha256, state}'
-```
-
-## Map assets (T-090 / T-091 / T-171)
-
-Corpus: `assets_v2/terrains/` — Everon ~1.3 GB on disk; **tracked in LFS = exactly 2 objects**:
-
-| Object | Size | Purpose |
-|--------|------|---------|
-| `everon/dem/everon-dem-16bit.png` | ~72 MB | DEM / hillshade / map-engine tests |
-| `everon/satellite/everon-sat.tbd-sat` | ~153 MB | Unified satellite basemap |
-
-`assets_v2/scratch/` + `assets_v2/terrains/**/tiles/` are gitignored (rebuildable via the `cargo xtask ci map-*` tasks). The export scratch is a **sibling** of the served tree, not nested inside it, so `/map-assets` cannot reach it. `.gitattributes` LFS patterns: `assets_v2/terrains/**/*.{png,r16,tbd-sat}`.
-
-| Consumer | Needs | Mechanism |
-|----------|-------|-----------|
-| CI `map-engine` job | DEM only | `git lfs pull --include …/everon-dem-16bit.png` |
-| CI other jobs | none | sat deliberately never dragged |
-| Local dev editor | DEM + sat | Axum `ServeDir` `/map-assets` (`MAP_ASSETS_DIR`, default `../../../assets_v2/terrains` from the `apps/website/api_v2/` CWD) ← Trunk proxy ← SPA `fetch("/map-assets/…")` |
-| Gate harness | dist + optional map-assets | `gate serve --map-assets` |
-| Clone without LFS | degraded | manifest/JSON/chunks plain-git; DEM/sat 404 → no sat/hillshade |
-
-**Convenience targets:**
-
-```bash
-cargo xtask ci lfs-dem   # ~72 MB — enough for map-engine tests + hillshade
-cargo xtask ci lfs-sat   # ~153 MB — full satellite bundle
-# or: git lfs install && git lfs pull
-```
-
-Each terrain has a `manifest.json` validated against [`terrain-manifest.schema.json`](../../contracts_v2/definitions/terrain-manifest.schema.json).
-
-**Tile pyramid (optional):** not in git. Rebuild:
-
-```bash
-cargo xtask ci map-water-everon
-cargo xtask ci map-cartographic-everon
-cargo xtask ci map-cartographic-verify
-```
-
-**Mission Settings → Map basemap (T-173):** the Satellite/Map radio is live. **Map** view needs the cartographic tile pyramid from `cargo xtask ci map-cartographic-everon`; when those tiles are absent the host **falls back to satellite** (not a broken toggle).
-
-**Satellite load (T-174):** day-to-day `cargo xtask mk leptos` upgrades preview→full TBDS automatically (no `?sat=full`). Use `?sat=preview` only for Range-only / fast iteration (same as CI gates). Density-heatmap green glow is removed.
-
-**Forest canopy (T-176):** island forest highlight is **8 m TBDD canopy mass** (not the old 32 m Path B landcover forest wash). Clearings stay open. Retune tightness: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO`, then `cargo run -p developer-tools --bin world -- redensify --terrain everon` (committed-chunk path; no Workbench).
-
-See [`assets_v2/terrains/README.md`](../../assets_v2/terrains/README.md). **Ops:** ImageMagick spill → `/var/tmp`.
-
-**Verify:**
-
-```bash
-cargo xtask ci verify-terrain
-cargo xtask ci verify-terrain-strict
-```
-
-**Frontend/engine tests:** `cargo test -p website-frontend` + `cargo test -p map-engine-core --all-features` (DEM peaks need `cargo xtask ci lfs-dem` or `git lfs pull`).
-
-## Notes
-
-- A fresh DB only has Discord role mappings + registry smoke rows (`cargo xtask db seed` → `apps/website/api_v2/seeds/`).
-- Frontend: `cargo xtask mk ci-local-leptos`; full editor gates: `cargo xtask mk leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](/documentation_v2/runbooks/editor_gates.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
-- Integration tests: `cargo xtask db test-it` (needs `cargo xtask db up`).
-
-## Mock data (optional, not run by `cargo xtask db seed`)
-
-`apps/website/api_v2/seeds/mock_data.sql` (Operation Red Dawn etc.) is **manual psql only** — the Go `cmd/seed` applier was deleted at T-145. Example:
-
-```bash
-podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger < \
-  apps/website/api_v2/seeds/mock_data.sql
-```
-
-To purge those four fixed-UUID missions (children first; no ON DELETE CASCADE):
-
-```bash
-docker compose -f apps/website/api_v2/docker-compose.yml exec -T db psql -U tbd -d tbd_reforger <<'SQL'
-DELETE FROM mission_versions  WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
-DELETE FROM mission_armories  WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
-DELETE FROM mission_bookmarks WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
-UPDATE missions SET current_version_id = NULL WHERE id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
-DELETE FROM missions WHERE id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
-SQL
-```
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — psql access, sample
+  data, the checksum repair, backups and restores.
+- [Editor gates](/documentation_v2/runbooks/editor_gates.md) — `cargo xtask mk gate-doctor` and
+  the browser gates of the Mission Creator.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md) — every
+  variable `.env` can set.
+- [Website API](/apps/website/api_v2/README.md) — the crate, its binaries and its configuration.
+- [Database commands](/tools_v2/xtask/src/commands/db/README.md) and
+  [build and development-server commands](/tools_v2/xtask/src/commands/build/README.md) — every
+  `cargo xtask db` and `cargo xtask mk` command.
+- [Website deployment](/documentation_v2/runbooks/website_deployment.md) — the same stack on the
+  home server.

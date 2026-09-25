@@ -162,6 +162,8 @@ values; `TRUSTED_PROXIES`, `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RU
   decisions and their consequences.
 - [Local development](/documentation_v2/runbooks/local_development.md) — the full local setup,
   Discord sign-in included.
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — the integration
+  tests, the migration checksum repair, sample data, backups and restores.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — building and running
   the API on the home server.
 - [API completion and verification](/documentation_v2/website/api_v2/verification_evidence/completion_plan.md)
