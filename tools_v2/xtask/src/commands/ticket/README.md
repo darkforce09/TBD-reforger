@@ -143,3 +143,5 @@ other error (`xtask: <cause>`); 2 a clap usage error.
   formed and cited.
 - [Running a wave](/documentation_v2/runbooks/factory_waves/running_a_wave.md) — the ship, stamp
   and repack order during a wave.
+- [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) — the
+  single-ticket lifecycle from `add` through `run`, `ship` and `stamp-sha`.

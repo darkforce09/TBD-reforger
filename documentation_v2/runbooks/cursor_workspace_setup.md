@@ -1,196 +1,224 @@
 **Status:** live
 
-# Cursor workspace setup — TBD Reforger
+# Setting up the Cursor workspace
 
-**Purpose:** Fresh-start checklist for opening this monorepo in Cursor — local stack, persistent agent artifacts, scoped chats, and health checks. No application code changes.
+Opens this repository in Cursor so that its project rules load, the local stack runs, the
+[Enfusion](/documentation_v2/glossary.md#enfusion) MCP server reaches
+[Workbench](/documentation_v2/glossary.md#workbench) for [mod](/documentation_v2/glossary.md#mod)
+work, and the health checks pass. Run it once per machine, and again after a clone to a new
+path; it changes no code and takes about ten minutes plus the first builds.
 
-**Authority:** [`CLAUDE.md`](../../CLAUDE.md) · [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) · [DEV_RUNBOOK.md](/documentation_v2/runbooks/local_development.md)
+## Prerequisites
 
----
+- Cursor, and a clone of the repository on `main`.
+- For the local stack: the Rust toolchain and a container runtime, as
+  [Local development](/documentation_v2/runbooks/local_development.md#prerequisites) lists.
+- For mod work only: Arma Reforger Tools with the Net API enabled, and Node.js with npm, as
+  [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md#prerequisites) lists.
 
-## Recommendation
+## Where the workspace files live
 
-**Commit both artifacts** — a root always-on rule ([`.cursor/rules/tbd-platform.mdc`](../../.cursor/rules/tbd-platform.mdc)) and this setup doc. Matches how the repo treats agent authority (`CLAUDE.md`, ticket registry, mod rules under `apps/mod/.cursor/`). Survives machine switches without re-pasting prompts.
+| Path | Tracked | Role |
+|---|---|---|
+| `.cursor/rules/*.mdc` | yes | the project rules Cursor loads for the whole workspace |
+| `.cursor/mcp.json` | no, gitignored (`.gitignore:25`) | this machine's MCP servers for the workspace |
+| `apps/mod/.cursor/rules/single-branch-main.mdc` | yes | a nested rule for the mod folder: work on `main` only, never a feature branch |
+| `apps/mod/.cursor/mcp.json` | yes | the Enfusion MCP server entry to copy from: `node` on the pinned package, and the three `ENFUSION_*` paths |
+| `apps/mod/.mcp.json` | yes | the same server for an agent started inside `apps/mod/`, launched as `npx -y enfusion-mcp` |
+| `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the [ticket](/documentation_v2/glossary.md#ticket) files and the agents' working files; Cursor loads no rule from `.ai/` |
 
-For a one-off session with zero git noise, skip the file commits and use Cursor UI **Project Rules** only — same behavior locally, nothing shared or versioned.
+Both tracked MCP files hard-code one workstation's absolute paths, and `apps/mod/.mcp.json` starts
+whatever `enfusion-mcp` release npm serves rather than the pinned 0.6.1 in
+`tools_v2/enfusion_mcp_node_package/`. Treat them as the shape of the entry, not as values: step 4
+writes the machine's own copy.
 
----
+## The project rules
 
-## Why `.cursor` stays at root (not under `.ai/`)
+Cursor applies each rule in `.cursor/rules/` to every chat (`alwaysApply: true`) or, for
+`application-code-forbidden.mdc`, when a chat touches a file its globs match.
 
-| Folder | Role |
-|--------|------|
-| [`.ai/`](../../.ai/) | Repo-owned agent **pipeline** — [`tickets/`](../../.ai/tickets/) (registry) + [`artifacts/`](../../.ai/artifacts/) (generated research) |
-| [`.cursor/`](../../.cursor/) | **Cursor IDE mount point** — product reads `.cursor/rules/*.mdc` and `.cursor/mcp.json` only from workspace root; mod tooling (`cargo xtask mod manual-test`, T-859) also expects root `.cursor/mcp.json` |
+| Rule | Applies | What it binds |
+|---|---|---|
+| `tbd-platform.mdc` | always | read `CLAUDE.md` first; the ticket files; `main` only; the executor gate; factory mode overrides the single-ticket lines |
+| `cursor-agent-workflow.mdc` | always | the modes Cursor infers from a message: plan review (read-only), ticket and docs, code (not Cursor), platform factory |
+| `application-code-forbidden.mdc` | [API](/documentation_v2/glossary.md#api), app and mod sources | no Cursor edit of application code without the operator's word, except in factory mode |
+| `platform-factory-mode.mdc` | always | when the operator starts the factory, Cursor orchestrates slice agents that edit code in `slice/<id>` worktrees |
+| `no-silent-deferrals.mdc` | always | the whole ask is done; only the operator defers a piece (`CLAUDE.md` law 1) |
+| `no-duplicate-slice-agents.mdc` | always | one agent per ticket worktree until it finishes or the operator replaces it |
+| `acceptance-gates-reproducible.mdc` | always | gates are pinned and fail fast; a gate that cannot run is fixed, never skipped |
+| `class-r-plans.mdc` | always | plan rigor: every pin measured before a plan is written |
+| `claude-prompt-delivery.mdc` | always | a prompt for another agent is delivered as one complete fenced block per stream |
+| `subagent-model-routing.mdc` | always | cheap models for locating code, expensive ones for hard analysis and coding |
 
-Cursor will **not** auto-load rules from `.ai/`. Do not move project rules into `.ai/cursor/` unless you also keep a root `.cursor/` symlink — the IDE only discovers rules at repo root.
+**Documentation ships with its code.** Several rules still give Cursor all documentation and
+forbid the coding agent to touch it: the description and the Cursor and Claude Code lines of
+`tbd-platform.mdc`, and the agent-split table of `cursor-agent-workflow.mdc`. That split is
+retired: documentation ships in the same commit as the code it describes, whichever agent writes
+that code, as the [commit checklist](/documentation_v2/standards/commit_checklist.md) states. Where
+a rule and this decision disagree, the decision wins.
 
-`apps/mod/.cursor/` remains **mod-scoped** (Workbench); do not copy `single-branch-main.mdc` to root — it conflicts with the ticket-branch workflow in [`CLAUDE.md`](../../CLAUDE.md).
+**The executor gate.** A ticket's `executor` says who may take it. `claude-code` means any AI
+coding agent run through the ticket tooling; `cursor-docs` a ticket, spec or documentation pass;
+`workbench`, `human` and `ci` mean an agent stops and waits for that party.
 
----
+**Branches.** Work lands on `main` (`CLAUDE.md` law 2). The one exception is the `slice/<id>`
+branches that `cargo xtask platform slice-worktree` and the [wave](/documentation_v2/glossary.md#wave)
+tooling create, merge and delete themselves, which is what factory mode uses; the nested mod rule
+agrees with law 2 and needs no copy at the root.
 
-## Current repo state (check on open)
+## Steps
 
-| Item | Expected |
-|------|----------|
-| Workspace root | `/run/media/system/Disk_2/Projects/TBD-Reforger` — monorepo layout |
-| Agent bible | [`CLAUDE.md`](../../CLAUDE.md) — §Status synced from registry |
-| Ticket registry | [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) — `active_slice` + executor gate |
-| Root `.cursor/` | [`.cursor/rules/tbd-platform.mdc`](../../.cursor/rules/tbd-platform.mdc) (always-on platform rule) |
-| Stack docs | [DEV_RUNBOOK.md](/documentation_v2/runbooks/local_development.md) — Go PATH gotcha |
-| Health targets | `cargo xtask ci ci-local-schema`, `cargo xtask ticket check --strict`, frontend build/lint |
+Run every command from the repository root.
 
-Ignore sibling archived folders outside the workspace (`TBD_Website`, `Arma reforger`).
+1. Open the checkout root as the workspace (File > Open Folder), not a parent folder: the rules
+   and the MCP file load from the opened folder's `.cursor/`.
 
----
+   ```bash
+   git rev-parse --show-toplevel
+   ```
 
-## Step 1 — Open workspace
+   Expected: the path to open.
 
-**File → Open Folder** → `/run/media/system/Disk_2/Projects/TBD-Reforger`
+2. Confirm the rules are present.
 
-Confirm key paths exist:
+   ```bash
+   git ls-files .cursor/rules
+   ```
 
-- [`CLAUDE.md`](../../CLAUDE.md) — `cargo xtask help` is the task surface (no Makefile)
-- [`apps/website/`](../../apps/website/)
-- [`documentation_v2/website/frontend/apps/editor/`](/documentation_v2/website/frontend/apps/editor/)
-- [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)
+   Expected: the ten `.mdc` files of the table above. Cursor's project rules settings list them;
+   a chat started now answers under them. For a machine where nothing may be committed, the same
+   text can go into Cursor's own project rules instead, unversioned and unshared.
 
----
+3. Start the local stack: the database, the API on port 8080 and the single-page app on port
+   3000, as [Local development](/documentation_v2/runbooks/local_development.md#start-the-stack)
+   describes step by step. Then check the API.
 
-## Step 2 — Local stack (once)
+   ```bash
+   curl -sf http://127.0.0.1:8080/healthz
+   ```
 
-From repo root:
+   Expected: `{"status":"ok"}`. The [dev login](/documentation_v2/glossary.md#dev-login) is
+   `http://localhost:3000/api/v1/auth/dev-login?role=mission_maker`, and the
+   [Mission Creator](/documentation_v2/glossary.md#mission-creator) opens at
+   `/missions/<id>/edit` once a [mission](/documentation_v2/glossary.md#mission) exists.
+
+4. For mod work only, give Cursor the Enfusion MCP server: copy the tracked entry into the
+   workspace's own, gitignored file.
+
+   ```bash
+   cp apps/mod/.cursor/mcp.json .cursor/mcp.json
+   ```
+
+   Expected: no output. Then edit all four paths in the copy for this machine: the `node` argument
+   to `<checkout>/tools_v2/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js`, and
+   `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH` and `ENFUSION_PROJECT_PATH` to the pak farm, the
+   Workbench install and the addons folder, whose defaults the
+   [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md#prerequisites)
+   runbook gives.
+
+5. For mod work only, install the pinned server and bring the bridge up.
+
+   ```bash
+   cargo xtask mod dev-bootstrap
+   ```
+
+   Expected: `== TBD dev bootstrap ==`, `Port 5775 is listening.`, the `wb_connect` answer and the
+   two `mod_validate` results, then `Bootstrap complete.`; its `npm ci` creates the `dist/index.js`
+   the MCP file names. Cursor's MCP settings then show `enfusion-mcp` connected.
+
+6. Check the ticket files.
+
+   ```bash
+   cargo xtask ticket check --strict
+   ```
+
+   Expected: the debt and token counters, then `check OK`.
+
+7. Check the contracts: generated types fresh, the golden missions valid and the contract
+   citations resolved.
+
+   ```bash
+   cargo xtask ci ci-local-schema
+   ```
+
+   Expected: `verify-codegen-fresh`, `schema-validate` and `verify-citations` run in turn and the
+   command exits 0.
+
+8. Check the app.
+
+   ```bash
+   cargo xtask mk ci-local-leptos
+   ```
+
+   Expected: formatting, clippy for `wasm32`, the app's tests and a release build pass. The deeper
+   `cargo xtask ci build` builds the API in release and the app; the whole CI replay is
+   `cargo xtask ci ci-local`, in [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md).
+
+## Working in Cursor
+
+Two chats, named so they can be found again, keep exploration apart from changes. Paste each
+opening prompt once.
+
+**Brainstorm** explores anything in the repository and changes nothing:
+
+```text
+You are in the Brainstorm chat for TBD Reforger: ideas and design for anything in the monorepo
+(Mission Creator, website, API, mod). Read CLAUDE.md first. Write no code and edit no file unless I
+ask. Decisions that should land go to the Tickets chat. For ticket context run
+`cargo xtask ticket next` or `cargo xtask ticket show <id>`.
+```
+
+**Tickets** turns decisions into tickets, specs and plans:
+
+```text
+You are in the Tickets chat for TBD Reforger. You file and change tickets with `cargo xtask ticket`
+commands, write specs and plans under documentation_v2/tickets/, and keep ticket files in the
+engine's canonical form. After a change run `cargo xtask ticket check --strict`. Never edit
+.ai/tickets/queue.json or other files `ticket sync` writes. Stop at a ticket whose executor is
+workbench, human or ci.
+```
+
+Code for a ready ticket runs through the ticket tooling, whichever agent does it:
+[Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) covers
+`cargo xtask ticket brief`, `ticket run` and the ship. When the operator starts the platform
+factory, Cursor orchestrates instead, as [Factory waves](/documentation_v2/runbooks/factory_waves/README.md)
+describes.
+
+For Mission Creator work, read in this order: the
+[editor documentation index](/documentation_v2/website/frontend/apps/editor/README.md), the
+[roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md), the
+[decisions](/documentation_v2/website/frontend/apps/editor/decisions.md), the
+[feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
+and the [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
+
+## Verify
 
 ```bash
-cp apps/website/api_v2/.env.example apps/website/api_v2/.env   # only if .env missing
-cargo xtask db up
-cargo xtask mk rust-api      # background terminal — Axum :8080
-cargo xtask mk leptos   # background terminal — Trunk :3000
-curl -sf http://localhost:8080/api/v1/health
-```
-
-- **Dev login:** `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
-- **Mission Creator:** `http://127.0.0.1:3000/missions/:id/edit` (after creating/opening a mission)
-- **Full details:** [DEV_RUNBOOK.md](/documentation_v2/runbooks/local_development.md)
-
-**Mod Workbench (T-068.1 / T-068.5 / T-068.8):** Claude Code runs **`cargo xtask mod dev-bootstrap`** (auto-launches Workbench) + MCP — see [`documentation_v2/runbooks/mod_slice_workflow.md`](/documentation_v2/runbooks/mod_slice_workflow.md).
-
----
-
-## Step 3 — Repo artifacts
-
-### Root Cursor rule — `.cursor/rules/tbd-platform.mdc`
-
-Already in repo. Condensed contract:
-
-- Read [`CLAUDE.md`](../../CLAUDE.md) first every session.
-- Ticket source of truth: [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) — never hand-edit generated `docs/TICKET_*.md` or marker blocks.
-- **Cursor** writes docs/registry/sync; **Claude Code** implements only `executor: claude-code` slices via `./scripts/ticket run`.
-- Respect executor gate: stop on `workbench`, `human`, or `ci` slices.
-
-### This doc
-
-Linked from [docs hub README](/documentation_v2/README.md).
-
----
-
-## Step 4 — MCP (mod work only)
-
-Copy [`apps/mod/.cursor/mcp.json`](../../apps/mod/.cursor/mcp.json) → `.cursor/mcp.json` at repo root **only** when opening Workbench/Enfusion chats. Paths inside are machine-specific (`ENFUSION_*`); verify against your Steam/Workbench install.
-
----
-
-## Step 5 — Two scoped Cursor chats (manual UI)
-
-Name chats exactly so they are searchable. Paste each opening prompt **once** per chat.
-
-Claude Code runs in the **terminal** — no dedicated Cursor chat. Paste verify output into **Docs & Tickets**.
-
-| Chat name | Purpose |
-|-----------|---------|
-| **Brainstorm** | Everything exploratory — MC, platform, backend, mod. No code unless asked. No registry/spec edits. |
-| **Docs & Tickets** | Registry, spec markdown, `./scripts/ticket sync`, mark-ready, doc sync. Claude Code handoff + status. |
-
-### Chat 1 — Brainstorm (opening prompt)
-
-```
-You are in the Brainstorm chat for TBD Reforger — ideas and design for anything in the monorepo (Mission Creator, website, backend, mod).
-
-Read CLAUDE.md §Status when you need current ticket context. No code unless I ask.
-Do not edit .ai/tickets/registry.json or spec files here — landed decisions go to the Docs & Tickets chat.
-For MC work, useful refs: TICKET_LEAD, MC ROADMAP, program hub (`t068_virtual_arsenal_program.md`).
-```
-
-Optional @ pins: `CLAUDE.md`, `docs/TICKET_LEAD.md`.
-
-### Chat 2 — Docs & Tickets (opening prompt)
-
-```
-You are in the Docs & Tickets chat for TBD Reforger.
-
-You own cursor-docs work: .ai/tickets/registry.json, specs under docs/specs/, and doc sync on main.
-Never hand-edit generated docs/TICKET_*.md. After registry edits: ./scripts/ticket sync && cargo xtask ticket check --strict.
-Stop on workbench/human/ci executor slices.
-
-Claude Code runs outside Cursor (./scripts/ticket run). I paste **Verify paste blocks** (program hub §Verification contract) here; Cursor checks **§Verification gate** tables before `./scripts/ticket advance-slice T-068`.
-For status: read CLAUDE.md §Status + docs/TICKET_LEAD.md and answer in one screen.
-```
-
-Optional @ pins: `CLAUDE.md`, `.ai/tickets/registry.json`, `docs/TICKET_LEAD.md`.
-
-**Claude Code** (terminal):
-
-```bash
-./scripts/ticket brief T-068
-./scripts/ticket run   # claude-code slices only
-```
-
----
-
-## Step 6 — Health check (once after open)
-
-From repo root:
-
-```bash
-cargo xtask ci ci-local-schema
 cargo xtask ticket check --strict
-cargo xtask mk ci-local-leptos
 ```
 
-Optional deeper check:
+Expected: `check OK`; with steps 3, 7 and 8 green and, for mod work, `enfusion-mcp` connected, the
+workspace is ready.
 
-```bash
-PATH="$HOME/.local/go/bin:$PATH" cargo xtask ci build
-```
+## Troubleshooting
 
-All green → workspace is healthy. Use **Brainstorm** for T-068.0 ideas; **Docs & Tickets** when landing registry/spec changes.
+| Symptom | Cause | Fix |
+|---|---|---|
+| a chat ignores the project rules | a parent or a subfolder was opened as the workspace | open the checkout root (step 1) |
+| the `enfusion-mcp` server fails to start: `Cannot find module …/dist/index.js` | the pinned package is not installed, or the path in `.cursor/mcp.json` names another checkout | step 5, then fix the `node` argument (step 4) |
+| MCP calls time out | Workbench is not running, or its Net API is off | the `ACTION REQUIRED` line of `mod dev-bootstrap` names the fix; see [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md#troubleshooting) |
+| an agent inside `apps/mod/` runs another `enfusion-mcp` release | `apps/mod/.mcp.json` launches `npx -y enfusion-mcp`, unpinned | point it at the pinned `dist/index.js`, as step 4 does for Cursor |
+| an agent refuses to update documentation beside its code | a rule still carries the retired documentation split | documentation ships with its code (see [The project rules](#the-project-rules)) |
+| `curl` exits 22 on `/healthz` | the probe returned 503: the database is down or the migrations failed | [Local development](/documentation_v2/runbooks/local_development.md#troubleshooting) |
 
----
+## Related
 
-## Brainstorm → ship pipeline
-
-Matches [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md):
-
-```
-Idea (Brainstorm) → registry row (Docs & Tickets) → ./scripts/ticket sync
-→ spec markdown → mark-ready → Claude Code (claude-code executor)
-→ ticket done + Cursor doc sync (Docs & Tickets)
-```
-
-### MC doc read order (when doing MC work)
-
-1. [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md)
-2. [`documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
-3. [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md)
-4. [`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md)
-5. [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
-6. [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
-
----
-
-## What this setup does NOT do
-
-- No app-code implementation in Cursor — Claude Code on **`main`** for `executor: claude-code` slices
-- Workbench export (**T-068.1**), mod equip (**T-068.5**), compat export (**T-068.8**) — **claude-code** runs bootstrap + MCP (not skipped by `./scripts/ticket run`)
-- Phase 1 E2E sign-off (**T-068.6**) remains **human** executor
-- No changes to ticket registry unless you start spec work in **Docs & Tickets**
+- [Local development](/documentation_v2/runbooks/local_development.md) — the whole local stack.
+- [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP server, the
+  broker and the Workbench bridge.
+- [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) — the
+  ticket lifecycle and `ticket run`.
+- [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — what factory mode runs.
+- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — the same cycle for mod
+  tickets.
+- [Commit checklist](/documentation_v2/standards/commit_checklist.md) — what every commit carries.

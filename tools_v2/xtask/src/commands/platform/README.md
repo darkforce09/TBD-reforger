@@ -126,3 +126,5 @@ an entry function prints `xtask: <cause>` and exits 1; a clap usage error exits 
   `slice-run` and `platform wave` step by step.
 - [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — the slice worktree
   lifecycle the usage text points to.
+- [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) — how
+  `ticket run` hands each ready ticket to `slice-run`, and where the run receipt goes.

@@ -104,6 +104,8 @@ by hand after a change here.
   formed and cited.
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — the ship, stamp and repack
   order during a wave.
+- [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) — the
+  ticket lifecycle these commands implement, and the canonical form of a hand-edited ticket file.
 - [Token estimate factor](/documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md) — the
   measurement behind the token estimates.
 - [Ticket engine documentation](/documentation_v2/tools_v2/ticket-engine/README.md) — the index of

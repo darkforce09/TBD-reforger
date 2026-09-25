@@ -100,3 +100,8 @@ it runs.
 - A commit written with an AI agent ends with a `Co-Authored-By:` trailer.
 - An agent commits only when asked. When the tree holds someone else's uncommitted work, stage
   only your own hunks.
+
+## Related documentation
+
+- [Taking a ticket from idea to shipped](/documentation_v2/runbooks/ticket_run_pipeline.md) — the
+  ticket lifecycle around a landing commit: ready, run, ship and stamp.
