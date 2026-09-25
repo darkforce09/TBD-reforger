@@ -1,16 +1,72 @@
-# Core
+# Framework core utilities
 
-Foundational utilities: structured logging, asset alias resolution, player chat and SHA-256.
+The small utilities every other part of the TBD framework [mod](/documentation_v2/glossary.md#mod)
+leans on: the structured log, the alias-to-prefab resolver, server-to-player chat, and SHA-256 in
+script.
 
-### Roles & Responsibilities
-- `TBD_Log.c`: Static structured logger outputting standard greppable `[TBD][<channel>]` events across all mod systems.
-- `TBD_Registry.c`: Static asset resolver translating mission semantic alias strings (`kit:*`, `vehicle:*`) into Enfusion prefab resource paths via `Data/registry.json`.
-- `TBD_RegistryPocComponent.c`: Development harness component spawning registered aliases in Workbench for visual verification.
-- `TBD_PlayerChat.c`: Server -> player chat, to one player (`Tell`) or every connected player (`TellEveryone`, which returns how many it reached).
-- `Hashing/`: SHA-256 in script, since the engine exposes none; a mission artifact loads only when the SHA-256 of its exact bytes matches the published one.
-  - `TBD_Sha256.c`: FIPS 180-4 over bytes held one per element of an `array<int>` (every script call on a `string` copies the whole string, so large inputs are read from a file with `FileHandle.ReadArray`), absorbed in pieces, as 64 lowercase hex; unsigned 32-bit words carried in signed `int` (masked logical shifts, bytes masked to 0..255). Measured on a dedicated server: 1 MiB in about 0.35 s of CPU.
-  - `TBD_Sha256SelfTest.c`: FIPS test vectors, once per process before the first artifact is judged: the empty message, `abc`, the 448- and 896-bit messages, 55/56/64/1000 x `a`, uneven pieces, and bytes above 127 (UTF-8 or Latin-1, whichever the engine's JSON decoder produced), and a string written to a file and read back with `ReadArray`. `[TBD][Sha256] self-test-passed vectors=11 ...` or an ERROR naming each failed vector.
-  - `TBD_Sha256Job.c`: The same hash spread across frames (1 KiB slices, about 8 ms per frame) for artifacts up to 8 MiB; reports wall time and hashing time apart.
+## Contents
 
-### Call Flow & Contracts
-Pure static utilities consumed across all domains without circular dependencies.
+```text
+apps/mod/tbd-framework/Scripts/Game/TBD/Core/
+├── Hashing/                     SHA-256 in script: the hasher, a frame-spread job and the self-test
+├── TBD_Log.c                    the structured log: one greppable `[TBD][<channel>]` line per call
+├── TBD_PlayerChat.c             server-to-player chat, to one player or to every connected player
+├── TBD_Registry.c               resolves registry aliases (`kit:*`, `veh:*`, ...) to prefabs
+└── TBD_RegistryPocComponent.c   dev harness: spawns every registry alias in a row, off by default
+```
+
+## How it works
+
+`TBD_Log` is static and stateless. `Event`, `Warn` and `Error` print `[TBD][<channel>] <message>` at
+an explicit `LogLevel`; `Kv` appends a pre-built `key=value` string; `MissionLoaded`,
+`ValidationResult` and `Stage` print the three lines operators grep for most
+(`[TBD][Mission] loaded …`, `[TBD][Validate] mission result=PASS|FAIL …`, `[TBD][Stage] A -> B`), and
+`Banner` frames a load-blocking failure between two rules. The fixed channels are `CH_MISSION`,
+`CH_VALIDATE`, `CH_STAGE` and `CH_SAFESTART`; other callers pass their own channel constant. No call
+sits on a per-frame path.
+
+`TBD_Registry` loads the alias registry once, on the first `Load`, `Resolve` or `GetAllAliases`,
+from `$TBD_Framework:Data/registry.json`, or from `$profile:TBD_Registry.json` only when the mod file
+is missing. It keeps each entry's `alias` and `guid` and logs `[TBD] Registry loaded (<n> aliases).`;
+an unknown alias logs an ERROR and resolves to an empty name with `ok` false.
+`TBD_RegistryPocComponent`, a game mode component, spawns every alias along a line when its
+`m_bRunPoc` attribute is on, starting at `m_vSpawnOrigin` and `m_fSpacing` metres apart.
+
+`TBD_PlayerChat.Tell` sends a private chat message through the player controller's
+`SCR_ChatComponent`, and `TellEveryone` returns how many players it reached. Chat is the one
+channel that reaches a player on a dedicated server without a menu preset, so replies, refusals and
+announcements go through it. `Hashing/` holds the SHA-256 that gates every mission
+[artifact](/documentation_v2/glossary.md#artifact).
+
+## Authority
+
+- Server: `TBD_PlayerChat` (`@authority server`) and the SHA-256 job and self-test. The registry
+  proof-of-concept spawn runs only when `RplSession.Mode()` is not `RplMode.Client`.
+- Client: nothing of its own; `TBD_Log` and `TBD_Registry` carry no tag and run wherever they are
+  called.
+- Owner: nothing.
+- RPCs: none.
+- Replicated properties: none.
+
+## Boundaries
+
+- Depends on: `TBD_EGameStage` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`
+  (for `TBD_Log.Stage`); `apps/mod/tbd-framework/Data/registry.json`; the engine's
+  `SCR_BaseGameModeComponent`, `SCR_ChatComponent`, `PlayerManager` and `JsonLoadContext`.
+- Used by: `TBD_Log` by nearly every framework script; `TBD_Registry` by `TBD_MissionLoader`,
+  `TBD_MissionValidator`, `TBD_SpawnManager`, `TBD_TriggerRuntime`, `TBD_MissionVehicleStruct`,
+  `TBD_FrameworkManager`, `TBD_ObjectiveRegistry`, `TBD_LobbyCatalog` and `TBD_BriefingCatalog`;
+  `TBD_PlayerChat` by `TBD_FrameworkManager`, `TBD_SafestartManager`, `TBD_DeploymentAuthorization`,
+  the fleet actions in `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`, and
+  `TBD_MissionBrowser` and `TBD_MissionDeploymentRelay` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`. No prefab attaches
+  `TBD_RegistryPocComponent`.
+- Rules: every log line starts `[TBD][<channel>]`, and log scrapers such as
+  `cargo xtask mod remote-logs` pin that prefix, never the sentence; the registry's shape follows
+  `contracts_v2/definitions/registry.schema.json`; the proof-of-concept spawn stays off in a
+  shipped prefab; sources stay ASCII and `cargo xtask mod compile` checks that they compile.
+
+## Related documentation
+
+- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the framework's thesis, its
+  non-negotiables and the event loop it serves

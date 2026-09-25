@@ -1,22 +1,77 @@
-# Session/Briefing
+# Briefing
 
-Tactical map briefing: the wire (server → owner RPC) and the rebuilt Briefing screen (2026-09-14).
+The pre-game briefing: the server builds each player's side-specific briefing from the loaded
+[mission](/documentation_v2/glossary.md#mission) and sends it to that player alone, tallies who has
+marked ready, and opens the Briefing screen on every client when the round enters `BRIEFING`.
 
-### Roles & Responsibilities
-- `TBD_BriefingData.c`: Serializable models holding mission orders, situation reports, and rules of engagement.
-- `TBD_BriefingService.c`: Server service assembling faction-specific briefing payloads from the loaded mission.
-- `TBD_BriefingController.c`: Player controller RPC conduit synchronizing briefing payloads to connected clients.
-- `TBD_BriefingClient.c`: Client cache holding briefing text and firing invokers when data arrives.
-- `TBD_BriefingCatalog.c` (2026-09-14): the read surface behind the screen — nets, objectives, rule groups, lore, parameters, assets (both sides), uniforms (both sides), plans, own/enemy faction. Wire-shaped presentation models; `TBD_BriefingMock` builds it today, an adapter over `TBD_BriefingPayload` + `TBD_RadioClient` + `TBD_MarkerClient` + `TBD_LobbyCatalog` calls `Set()` later (vehicles need a wire line first — the roster is server-only).
-- `UI/TBD_BriefingScreen.c`: `TBD_BriefingScreen : TBD_DockScreen` over the full-screen `SCR_MapEntity` (map lifecycle kept verbatim, `MapContext` re-armed each tick). `TBD_BriefingPrimaryNav` in LeftDock, `TBD_BriefingTopicNav` (10 topics, 3 groups) in CenterDock, the page in RightDock at its mockup width; `SetMode` / `ShowPage`; `LocateOnMap(x, z)` pans the map; bottom bar = Lock Lobby (mock) + Ready & Continue (reports readiness, then `TBD_SpawnClient.Request()` → `TBD_SpawnManager.DeployOnReady`; deployed → `TBD_MenuStack.CloseAll()`); PLAYERS is a mode: `TBD_PlayersPanel` pops out beside the primary nav in `WideDock`, the map live behind it.
-- `UI/TBD_BriefingPrimaryNav.c`: the primary navigation panel (`TBD_BriefingPrimaryNav` + `TBD_PrimaryNavItemComponent : TBD_UIInteractive`): glass panel, icon boxes, active blue fill with the white accent bar, BLUFOR / OPFOR slotted-count chips on Players; `GetOnSelected()(nav, index)` with `TBD_EBriefingMode` indices.
-- `UI/TBD_BriefingTopicNav.c`: the topic navigation panel (`TBD_BriefingTopicNav` + `TBD_TopicNavItemComponent`): ten topics from `TBD_BriefingNav.TopicItems`, separators between the three groups, active = solid blue; `GetOnSelected()(nav, index)` with `TBD_EBriefingPage` indices.
-- `UI/TBD_BriefingNav.c`: `TBD_EBriefingMode`, `TBD_EBriefingPage`, the two item tables, `PageWidth`, `CreatePage`.
-- `UI/TBD_BriefingPage.c`: page base — `TBD_PanelFill` + `TBD_ScrollList`, badge chips, tracked 3D previews (destroyed with the page), Locate buttons, `AddRow` / `AddCellGrid` helpers.
-- `UI/TBD_BriefingPageInfo.c`: Objectives (time-limit row, numbered cards with a stat grid + Locate), Rules (two `TBD_Section` groups of numbered cards), Background (inset paragraphs), Parameters (icon rows).
-- `UI/TBD_BriefingPageComms.c`: Frequencies (LR net gold, SR nets, own net highlighted), ORBAT (the lobby roster read-only + kit inspector, own side).
-- `UI/TBD_BriefingPageAssets.c`: Assets (per type: section → Vehicle Info with a real vehicle render + specs, one section per vehicle with ammunition + inventory grids, Locate on the friendly side) and Uniforms (one card per faction component, doll = that component's rifleman prefab). Enemy pages = the same builders in the enemy tint.
-- `UI/TBD_BriefingMarkersPanel.c`: plan dropdown + `Load Plan` (logs the plan id; no plan store yet, by operator word).
+## Contents
 
-### Call Flow & Contracts
-Server `TBD_BriefingService` compiles mission text -> `TBD_BriefingController` RPC -> `TBD_BriefingClient` cache (unchanged). The screen reads `TBD_BriefingCatalog.Get()` only; wiring the payload into it is the adapter pass, together with `TBD_BriefingClient.ReportReady` behind the bottom bar's Ready toggle.
+```text
+apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/
+├── TBD_BriefingCatalog.c     the Briefing screen's read surface: nets, objectives, rules, assets, plans
+├── TBD_BriefingClient.c      client cache of the last briefing and ready tally, with invokers
+├── TBD_BriefingController.c  modded `SCR_PlayerController`: briefing and ready RPCs, the stage handler
+├── TBD_BriefingData.c        the briefing payload models: roles, groups, zones, kit lines
+├── TBD_BriefingService.c     server payload builder for one player's side, and the wire format
+└── UI/                       the Briefing screen: map, navigation and the ten pages
+```
+
+## How it works
+
+```text
+TBD_FrameworkManager (server) enters BRIEFING -> pushes TBD_OnStageChanged to each controller
+  (a joining client reads the replicated stage once instead)
+client TBD_OnStageChanged(BRIEFING) -> TBD_BriefingClient.Reset, TBD_MenuStack.Open(TBD_UIBriefing)
+client TBD_BriefingClient.Request -> TBD_RpcAsk_Briefing  --RPC-->  server
+server TBD_BriefingService builds the caller's side from TBD_SpawnManager and TBD_MissionLoader
+       <--RPC-- TBD_RpcDo_Briefing(wire, situation, mission, execution) -> TBD_BriefingClient.Accept
+client Ready & Continue -> TBD_BriefingClient.ReportReady -> TBD_RpcAsk_Ready  --RPC-->  server
+server TBD_BriefingReadyRegistry records it <--RPC-- TBD_RpcDo_ReadyTally(own side's tally, accepted)
+```
+
+`TBD_OnStageChanged` is the only thing that opens or closes the screen: it opens it on `BRIEFING`
+and closes it on any other stage. The server resolves the caller's side from its own state, so a
+player receives only their side's briefing and their own side's ready tally. The briefing wire is
+tab-separated lines of at most `MAX_PAYLOAD_LINES` (400), every field prefixed with `.`, with the
+orders' situation, mission and execution texts sent as separate string arrays; its log channel is
+`Briefing`.
+
+`TBD_BriefingCatalog` is what the pages draw: faction, nets, objectives, rule groups, lore,
+parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it from
+`TBD_BriefingMock` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/` until something calls
+`Set()`, and no script does, so the pages show mock content while the payload above reaches
+`TBD_BriefingClient`.
+
+## Authority
+
+- Server: `TBD_BriefingService` and `TBD_BriefingReadyRegistry`, and the server halves of the RPCs
+  (`@authority server`); the caller is `GetPlayerId()` of the controller the request arrived on.
+- Client: `TBD_BriefingClient`, `TBD_BriefingCatalog`, the stage handler (`@authority client` on the
+  joining-client read) and the screen.
+- Owner: `TBD_RpcDo_Briefing` and `TBD_RpcDo_ReadyTally` (`@authority owner`), on the requesting
+  client only.
+- RPCs, on the modded `SCR_PlayerController`, as their `@rpc` tags state: `TBD_RpcAsk_Briefing`
+  and `TBD_RpcAsk_Ready` (Reliable, Server); `TBD_RpcDo_Briefing` and `TBD_RpcDo_ReadyTally`
+  (Reliable, Owner).
+- Replicated properties: none here; a joining client reads `TBD_FrameworkManager`'s replicated
+  stage.
+
+## Boundaries
+
+- Depends on: `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`;
+  `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`;
+  `TBD_FrameworkManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`;
+  `TBD_Registry` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_SessionSelection` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_MenuStack` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; `TBD_BriefingMock` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`.
+- Used by: `TBD_FrameworkManager`, which pushes `TBD_OnStageChanged`; `TBD_DockScreen` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/` (the top-bar Briefing tab).
+- Rules: a player receives only their own side's briefing and tally, resolved on the server; the
+  stage handler is the one opener and closer of the screen; sources stay ASCII and
+  `cargo xtask mod compile` checks that they compile.
+
+## Related documentation
+
+- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+  — the briefing's design target

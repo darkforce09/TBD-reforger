@@ -1,10 +1,46 @@
-# Session/Players
+# Shared player data
 
-Shared player data and the PLAYERS panel (2026-09-14).
+Who is connected, shaped for the screens that show players: the briefing's PLAYERS panel and the
+slotted-count badges on its navigation.
 
-### Roles & Responsibilities
-- `TBD_PlayersCatalog.c`: `TBD_PlayerInfo` (name, faction, ping, tag, SLOTTED | SPECTATOR | UNSLOTTED) and the catalog (`GetSlotted(faction)`, `GetByState`, `Capacity`, totals). Mock until an adapter fills it from the authority (player manager + slot map) over one owner-scoped RPC; `Get()` / `Set()` is the swap point.
-- `UI/TBD_PlayersPanel.c`: `TBD_PlayersPanel : Managed` — a briefing MODE like Markers: press Players and it pops out directly right of the primary nav, 800 wide (`Build(dock)` into the host's `WideDock`, `Destroy()`), header (title · TOTAL) and four `TBD_PlayerLane`s (BLUFOR / OPFOR tinted, Spectators / Unslotted neutral). No scrim, no window, no stacked menu (a menu pushed on top hides the one beneath and `SCR_MapEntity` closes with it — MEASURED). Layouts in `UI/layouts/Session/Shared/`.
+## Contents
 
-### Call Flow & Contracts
-`TBD_BriefingScreen.SetMode(PLAYERS)` shows `WideDock`, builds the panel, and destroys it on the next mode. Any dock screen with a wide dock can host it the same way. The nav badge and the top bar count read the same catalog.
+```text
+apps/mod/tbd-framework/Scripts/Game/TBD/Session/Players/
+├── TBD_PlayersCatalog.c  `TBD_PlayerInfo` and `TBD_PlayersCatalog`: players by state and faction
+└── UI/                   the PLAYERS panel of the briefing
+```
+
+## How it works
+
+`TBD_PlayerInfo` holds a player's name, faction key (`BLUFOR`, `OPFOR` or empty), ping, an optional
+tag such as `ADMIN`, and a `TBD_EPlayerState` of `SLOTTED`, `SPECTATOR` or `UNSLOTTED`.
+`TBD_PlayersCatalog` holds the players and the seat capacity per faction, and answers `Total`,
+`Capacity`, `GetSlotted(faction)`, `GetByState`, `CountSlotted` and the totals across factions.
+Screens read `TBD_PlayersCatalog.Get()`, which builds the catalog from `TBD_PlayersMock` in
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/` on first use; `Set()` replaces it, and no script
+calls `Set()`, so every screen shows the mock players. The live data it would need, the player
+manager and `TBD_SpawnManager`'s slot map, exists only on the server.
+
+## Authority
+
+- Server: nothing.
+- Client: everything; the catalog and the panel live on the local machine.
+- Owner: nothing.
+- RPCs: none; no transport carries player data to the catalog.
+- Replicated properties: none.
+
+## Boundaries
+
+- Depends on: `TBD_PlayersMock` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`; the shared
+  UI library in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`.
+- Used by: `TBD_BriefingScreen` and `TBD_BriefingPrimaryNav` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/`.
+- Rules: screens read player data only through `TBD_PlayersCatalog.Get()`, so a live source
+  replaces the mock with one `Set()` call; `cargo xtask mod compile` checks that the scripts
+  compile.
+
+## Related documentation
+
+- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+  — the briefing's design target, the players panel included
