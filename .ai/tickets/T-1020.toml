@@ -4,6 +4,7 @@ title = "Add missing EnfScript @replicated, @rpc and @route annotations"
 summary = "CLAUDE.md law 8: TBD_FrameworkManager.c:300,305,311,316,321 [RplProp] fields lack //! @replicated; TBD_MissionBrowser.c:167 [RplRpc] has //! @rpc at :165, split off by a plain comment; at least 12 TBD_GameRuntimeHttp.Post/Get call sites lack //! @route, e.g. TBD_FleetCommandPoller.c:137, TBD_RosterLoader.c:249. T-1011 covers @authority."
 class = "feature"
 status = "idea"
+notes = "Related (TF15): no gate reads @rpc, @replicated or @authority, so these gaps can recur; the gate is T-1203."
 created_at = "2026-09-24T04:20:10Z"
 
 [scope]

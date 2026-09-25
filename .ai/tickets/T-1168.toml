@@ -1,0 +1,14 @@
+id = "T-1168"
+kind = "work"
+title = "Fix the OFFLINE uplink pill colour and Discord id byline"
+summary = "The dashboard uplink pill keeps its green border, fill and text when the server is OFFLINE (dashboard/server_uplink.rs:34,45); the announcement viewer shows author_id, the author's raw Discord snowflake, as the byline (announcements/article_viewer.rs:69,96)."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2/pages/command_center unless stated. Uplink: dashboard/server_uplink.rs:34 gives the pill border-success/30 bg-success-muted and :45 text-success unconditionally; only the dot (:35-43) switches to bg-outline when offline, so OFFLINE reads green. Byline: announcements/article_viewer.rs:69 reads author_id and :96 prints it (or 'Command' when empty); apps/website/api_v2/src/community_content/handlers/announcements_admin.rs:163 stores the creating admin's discord_id there, and GET /announcements returns the bare column (announcements_public.rs:29). Show a display name: join users in the API or resolve it in the viewer. Possible defect, found by reading. Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:30:18Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["dashboard"]

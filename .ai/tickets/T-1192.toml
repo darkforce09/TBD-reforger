@@ -1,0 +1,13 @@
+id = "T-1192"
+kind = "work"
+title = "Let deploy.env set the staging Postgres password"
+summary = "The staging compose file defaults POSTGRES_PASSWORD to CHANGE_ME, and deploy website exports only the host port from deploy.env, so the operator cannot set the database password through deploy.env."
+class = "chore"
+status = "idea"
+notes = "apps/website/docker-compose.staging.yml:25 sets POSTGRES_PASSWORD to ${POSTGRES_PASSWORD:-CHANGE_ME}. 'cargo xtask deploy website' brings the service up with compose_up (tools_v2/xtask/src/commands/deploy/website/remote_steps.rs:29-35), which exports only TBD_POSTGRES_HOST_PORT from deploy.env (tools_v2/xtask/src/commands/deploy/website.rs:89-93); deploy.env.example has no POSTGRES_PASSWORD key, and an untracked apps/website/.env on the server would be removed by the --delete rsync (tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs excludes only apps/website/api_v2/.env). So the staging database starts with the CHANGE_ME password unless the remote login shell exports POSTGRES_PASSWORD, and the API's DATABASE_URL in the server's api_v2/.env must match it by hand. Read an optional POSTGRES_PASSWORD (or TBD_POSTGRES_PASSWORD) from deploy.env, export it in compose_up without printing it, and document it in deploy.env.example. Source: doc writer F13b."
+created_at = "2026-09-25T23:40:06Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

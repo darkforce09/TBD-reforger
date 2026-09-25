@@ -1,0 +1,12 @@
+id = "T-1198"
+kind = "work"
+title = "Fix ship --no-repack refusing after an unstamped earlier ship"
+summary = "ship --no-repack exists to ship a whole wave before one repack, but its preflight still reds on the previous ticket's missing shipped_at, so a second id cannot ship until the first is committed and stamped."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/ticket-engine/src. 'ticket ship <id> --no-repack' exists so a whole wave can be shipped and repacked once (tools_v2/xtask/src/commands/ticket/cli.rs:66-73). Its preflight waives only errors whose text names a repack as the fix (cli/shipping.rs:39-49 calling validation/command.rs require_check_ok_deferring_repack, which retains every other error). The shipping check reds any shipped ticket with no shipped_at and no estimated[] marker ('shipped without shipped_at', validation/shipping.rs:160-164), and ship never writes shipped_at ('ticket stamp-sha' does, after the landing commit). So after 'ticket ship A --no-repack', 'ticket ship B --no-repack' refuses until A is committed and stamped, which defeats the batch flow the flag documents. Waive the missing-shipped_at error for tickets shipped in the open batch window, or let ship take the landing sha. documentation_v2/runbooks/factory_waves/ describes the per-ticket ship, commit, stamp workaround. Source: doc writer F16a."
+created_at = "2026-09-25T23:42:24Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

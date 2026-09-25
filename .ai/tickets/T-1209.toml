@@ -1,0 +1,12 @@
+id = "T-1209"
+kind = "work"
+title = "Advertise server schema versions and refuse unreadable missions"
+summary = "The schema evolution policy's breaking-change rule 3 (servers advertise the mission schema versions they read; the API refuses to stage what a server cannot parse) has no implementation, so no breaking schema change is safe to ship."
+class = "feature"
+status = "idea"
+notes = "documentation_v2/contracts_v2/schema_evolution_policy.md (Breaking changes, rule 3) requires servers to advertise the mission schema versions they read at boot and the API to refuse staging a mission a target server cannot parse; the same page records that rule 3 has no implementation: no game-runtime route carries a server's schema versions, and the only protection is the compiler's lowest-version emission and the mod's own version check at load. Until it exists, a breaking schema change (a new major file such as mission.v2.schema.json) is not safe to ship. Build it: the mod reports its accepted schemaVersion range with its status heartbeat or registration, the API stores it per server, and deployment staging refuses (with a clear reason) a compiled mission whose schemaVersion the target cannot read. Scope spans the API (match_telemetry or server_infrastructure), the mod (API/ heartbeat) and the contract. Source: doc writer F12."
+created_at = "2026-09-25T23:47:14Z"
+
+[scope]
+domain = "schema"
+layer = "contract"

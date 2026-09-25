@@ -1,0 +1,13 @@
+id = "T-1206"
+kind = "work"
+title = "Fix aegis.css radius override, unloaded fonts and unused spacing tokens"
+summary = "aegis.css's @theme inline block turns rounded-md into 0.3rem against the stated 0.375rem, Inter and JetBrains Mono are named but never loaded, and three spacing tokens have no user."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/frontend. (1) Radius: style/aegis.css:111 declares --radius-md: 0.375rem in the @theme block, but the later @theme inline block redefines --radius-md: calc(var(--radius) * 0.8) (:425) with --radius: 0.375rem (:451), so the compiled rounded-md (137 uses under src/) renders at 0.3rem, not the stated 0.375rem (documentation_v2/design_system/design_tokens.md). Pick one definition. (2) Fonts: aegis.css:74-75 set --font-sans 'Inter' and --font-mono 'JetBrains Mono', but index.html loads only Material Symbols (:7-8) and no @font-face exists (the aegis.css:5 comment promises self-hosted woff2), so every page falls back to system fonts unless the viewer has them installed. Self-host both or name the system stacks. (3) Unused tokens: --spacing-navbar-height, --spacing-gutter and --spacing-container-max (aegis.css:108-110) have no user under src/; use or remove them. Source: doc writer F17b."
+created_at = "2026-09-25T23:45:57Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "shell"

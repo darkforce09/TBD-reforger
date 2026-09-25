@@ -1,0 +1,14 @@
+id = "T-1158"
+kind = "work"
+title = "Place map edge grid labels from the live dock widths"
+summary = "ui/docks/toolbelt/map_furniture.rs:83-84 bounds the easting and northing edge labels with the constant DOCK_LEFT_PX and DOCK_RIGHT_PX (shell/layout.rs:37-40), so collapsing a dock leaves the labels inset by a dock that is gone."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2/apps/editor. ui/docks/toolbelt/map_furniture.rs:83-86 computes pane_left = DOCK_LEFT_PX and pane_right = vw - DOCK_RIGHT_PX for edge_eastings and edge_northings. shell/layout.rs:36-40 documents both constants as the open width, which becomes STUB_PX when the dock is collapsed and 0 while chrome_hidden. With a dock collapsed or the chrome hidden (Backspace), the edge labels stop up to 240 px (DOCK_PX, layout.rs:33) short of the visible map edge. Read the live inset the pointer handlers already use (see T-1045's note on the inset readers) instead of the constants. Source: Phase 5 doc writer F05."
+created_at = "2026-09-25T23:25:10Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

@@ -1,0 +1,14 @@
+id = "T-1172"
+kind = "work"
+title = "Hide mission write actions from demoted authors the API refuses"
+summary = "The library dossier and mission overview gate Manage, Edit Armory and review replies on author-or-admin alone (dossier_sheet.rs:102, overview/page.rs:95-97), but PATCH, DELETE, submit, armory PUT and review-comment POST all require MissionMakerUser, so a demoted author gets 403."
+class = "bug"
+status = "idea"
+notes = "Frontend (paths under apps/website/frontend/src/v2/pages/mission_hub): library/dossier_sheet.rs:102 can_manage = is_owner || is_admin gates submit, archive, delete and the review feedback (library/dossier_body.rs:70, :81); overview/page.rs:95-97 can_edit = author or admin gates the Manage record and the Edit Armory dialog. API (paths under apps/website/api_v2/src/missions/handlers): mission_lifecycle.rs:171 (PATCH) and :335 (DELETE), mission_submission.rs:45 (submit), mission_armory.rs:103 (armory PUT) and mission_reviews.rs:69 (review comment POST) take MissionMakerUser, so an author demoted below mission_maker by a role sync sees the controls and gets 403. The frontend comments state the opposite and must change with the fix: library/dossier_sheet.rs:92-101 ('those three routes each test author-or-administrator and nothing else'), library/dossier_body.rs:33-36 ('submit, update and delete each take a plain authenticated user') and overview/page.rs:92-94 ('deliberately not a role tier'). Either add the maker tier to the frontend gates (keeping the rejection reason readable) or drop MissionMakerUser from those handlers; decide which the product wants. Source: Phase 5 doc writer F03."
+created_at = "2026-09-25T23:32:44Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["missions"]

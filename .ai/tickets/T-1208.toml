@@ -1,0 +1,13 @@
+id = "T-1208"
+kind = "work"
+title = "Decide whether marquee and paste selection need a cap"
+summary = "The Mission Creator's marquee and paste select every id they reach with no cap; the retired editor capped paste selection at 500 because huge selections overloaded the outliner and highlights. Measure at scale, then decide."
+class = "audit"
+status = "idea"
+notes = "The marquee release puts every id selection::marquee_ids_with_vehicles returns into the selection (apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs:372-407), and paste_at_cursor selects every pasted id (apps/website/map-engine/src/editing/hosted_commands/entity_clipboard.rs:60-85); neither has a cap. The retired editor capped its post-paste selection at 500 (BULK_SELECT_CAP) because ten thousand selected ids overloaded the highlight set and the outliner, and an uncapped marquee was the leading suspect of KB-001 (documentation_v2/known_bugs/kb_001_mission_creator_selection_at_scale.md, resolved as not reproducible). The Rust selection patches only the icon rows whose state flips (set_selection in apps/website/map-engine/src/overlay/symbology/instances/bridge_1.rs), so a cap may be unnecessary. Measure a marquee and a paste over a mission with tens of thousands of slots and objects (outliner, inspector, highlight), then decide whether both need a cap and what the UI says when it applies. Source: doc writer F17b."
+created_at = "2026-09-25T23:46:51Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

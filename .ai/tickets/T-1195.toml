@@ -1,0 +1,13 @@
+id = "T-1195"
+kind = "work"
+title = "Remove podman and compose assumptions from the db lanes"
+summary = "rust-ci's rust-test-it step hard-codes podman exec tbd_reforger_db (task_definitions.rs:470-487, shell_word.rs), and db up and db seed need a compose provider with no fallback."
+class = "chore"
+status = "idea"
+notes = """Paths under tools_v2/xtask/src/commands. (1) The rust-test-it step of 'cargo xtask ci rust-ci' runs 'podman exec tbd_reforger_db psql ...' literally (ci/task_definitions.rs:470-487), and the 'mk' copy does the same through Run::new("podman") (build/recipes/shell_word.rs:295-297, :326-329, :342-345), although db/operations.rs:67-70 says the port routes runtime, container and user through deploy_db_common and resolve_runtime (deploy/database_operations/execution.rs:92) so a docker-only or renamed-container host works; on a docker-only host, or inside the dev container without the bridge, the step fails 127. (2) 'cargo xtask db up', 'down', 'logs' and 'seed' all go through '<runtime> compose' (db/operations.rs:241-243, :365-376, :408-412), with no fallback when no compose provider is installed, while the database can be started without compose ('podman start tbd_reforger_db', as the documentation runbooks do). Route both through the shared runtime resolver, and give db up / seed a compose-less path (start the existing container, psql through exec). T-1109 decides whether rust-ci delegates to db test-it. Sources: doc writers F13a, F13b."""
+created_at = "2026-09-25T23:41:09Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "db"

@@ -1,0 +1,14 @@
+id = "T-1180"
+kind = "work"
+title = "Show link code expiry, poll link status, redirect signed-in /login"
+summary = "Settings shows the Arma link code (account/settings/page.rs:228-236) but not its expiry, which the API returns as expires_at, and never polls the link status, so a completed link needs a reload; /login shows the sign-in card to a signed-in viewer."
+class = "feature"
+status = "idea"
+notes = "Paths under apps/website unless stated. frontend/src/v2/pages/account/settings/page.rs:105 keeps only resp.code from the issue response and :228-236 prints 'Link code: <code>'; the API returns expires_at (api_v2/src/identity_and_access/handlers/arma_link_codes.rs:18-22), and the code lives ten minutes (api_v2/src/identity_and_access/services/link_code_issuance.rs:23). Nothing on the page re-reads the link status after the code is shown, so when the player redeems it in game the page still says unlinked until a reload. frontend/src/v2/pages/account/login/page.rs:21-40 renders the sign-in card with no auth-store check, so a signed-in viewer who opens /login is offered Discord sign-in again. Show the expiry (and a countdown or regenerate prompt), poll the status while a code is pending, and redirect a signed-in /login to the dashboard. Source: Phase 5 doc writer F04b."
+created_at = "2026-09-25T23:36:27Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["auth_pages"]

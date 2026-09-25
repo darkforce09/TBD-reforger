@@ -1,0 +1,13 @@
+id = "T-1169"
+kind = "work"
+title = "Keep overall leaderboard ranks inside a name search"
+summary = "GET /leaderboards numbers rows offset + index + 1 after the username ILIKE filter (api_v2 command_center/handlers/leaderboards.rs:84-98), so a searched player shows rank 1 instead of their standing on the full board."
+class = "bug"
+status = "idea"
+notes = "apps/website/api_v2/src/command_center/handlers/leaderboards.rs:84 applies 'WHERE u.username ILIKE %q%' and :96-98 assigns row.rank = offset + i + 1 over the filtered rows. The leaderboard page (apps/website/frontend/src/v2/pages/operations/leaderboards/board_table.rs:171-186) shows that rank, including the first-place styling, so a search always starts at 1. Compute the rank over the unfiltered board (a window function such as RANK() OVER the category order in a subquery) and filter after. Possible defect. Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:30:37Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

@@ -1,0 +1,13 @@
+id = "T-1179"
+kind = "work"
+title = "Paint the objective capture bar's contested state"
+summary = "The objective HUD capture bar keeps its fill colour while contested; only the row glyph and ' -- CONTESTED' text mark it. Send a contested flag with the bar and paint it as the design target does."
+class = "feature"
+status = "idea"
+notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD. Gamemode/Objectives/TBD_ObjectivesComponent.c:1028-1034 (FillHudSnapshot) lets a contested objective win the bar but sends only barLabel, barPercent and barVisible; the signature (:858-860) and the Owner RPC SCR_PlayerController.TBD_PushObjectiveHud (UI/Hud/TBD_ObjectiveHud.c:298-299) carry no contested flag, and TBD_ObjectiveHud.PaintBar (:181-190) always paints the ACTION fill. The contest shows only as the row glyph '!' (TBD_ObjectivesComponent.c:1039-1050) and the ' -- CONTESTED' detail text (Gamemode/Objectives/TBD_Objective.c:655-657). The design target (documentation_v2/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md, Design) turns the contested bar amber or red, flashes it and tags it '[!] CONTESTED'. Add the flag to the snapshot and its signature, then paint the fill from a TBD_UITheme token. Source: doc writer F10b."
+created_at = "2026-09-25T23:36:00Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "objectives"

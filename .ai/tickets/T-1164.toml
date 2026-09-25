@@ -1,0 +1,14 @@
+id = "T-1164"
+kind = "work"
+title = "Decide whether Alt inverts the crew toggle while placing vehicles"
+summary = "Eden's Alt inverts the 'place with crew' toggle (eden_editor_reference/interactions/entity_placement.md:68-74); the Mission Creator's Alt always places an empty vehicle (input/pointer_gestures/pointer_up.rs:108-113), and the gap analysis scores PLACE-CREW-001 and RIGHT-CREW-001 as matching."
+class = "audit"
+status = "idea"
+notes = "apps/website/map-engine/src/data/store/operations/entity/armed_placement.rs:83-85 vehicle_places_its_crew is crew_toggle && !alt_empty, so Alt only ever removes the crew; with the toggle off, Alt changes nothing. The Eden reference (documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/entity_placement.md:68-74, asset_browser.md:153) says Alt inverts the toggle, so Alt with the toggle off places a crewed vehicle. eden_gap_analysis.md:83 and :95 mark RIGHT-CREW-001 and PLACE-CREW-001 as match (T-646, T-647). Decide: invert (crew_toggle != alt_empty) or record the deliberate difference in decisions.md and the gap analysis row. May be intended. Source: Phase 5 doc writer F08a."
+created_at = "2026-09-25T23:28:21Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["tools"]

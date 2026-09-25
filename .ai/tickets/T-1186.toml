@@ -1,0 +1,13 @@
+id = "T-1186"
+kind = "work"
+title = "Fix spawn-determinism Workbench relaunch and record a five-run pass"
+summary = "The live spawn-determinism gate relaunches Workbench without -gproj, spawns nested cargo runs per MCP call and has help calling it log-based; no 5/5 pass of the current possess-route deploy is recorded."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src unless stated. (1) Relaunch: verifications/mod_scripts/spawn_determinism_live.rs:68-80 (restart_wb_once) kills WorkbenchSteamDiag and relaunches with 'steam -applaunch 1874910' and no -gproj, then opens the world through the MCP bridge (:99-104); the default world is worlds/TBD_Dev_POC.ent (commands/mod_ops/dispatch.rs:32, cli.rs:50), a tbd-framework world, while dev-bootstrap opens -gproj tbd-export (commands/mod_ops/development_bootstrap.rs:132-137), which does not depend on the framework (apps/mod/tbd-export/addon.gproj). The relaunched Workbench therefore opens whichever project it last had, or none. Pass the framework gproj on relaunch (T-1091 decides which gproj dev-bootstrap opens). (2) The gate's mcp helper (spawn_determinism_live.rs:17-33) spawns 'cargo run -q -p xtask -- mcp call' per call; call the mcp module in process, as mod wave prep does for slice-worktree. (3) commands/mod_ops/cli.rs:39 says the gate runs 'over a recorded server log'; it drives live Workbench Play runs. (4) No five-run pass of the current possess-route deploy is recorded: .ai/artifacts/spawn_determinism_verify_log.md holds a 5-of-5 pass for the older spawn pipeline and a run stopped after 2 of 5 for the possess deploy (documentation_v2/runbooks/spawn_determinism.md, Recorded results). After the fix, run the gate to 5/5 and record the digest. Source: doc writer F14b."
+created_at = "2026-09-25T23:38:17Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

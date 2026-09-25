@@ -1,0 +1,13 @@
+id = "T-1200"
+kind = "work"
+title = "Rewrite wave and slice help texts contradicting the drivers"
+summary = "platform wave prep help says it creates worktrees (it prints), slice and wave help promise three worktrees at a time, preflight says 'commit or stash', and the wave README says CARGO_TARGET_DIR is inherited."
+class = "docs"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src/commands. (1) platform/wave_execution/mod.rs:106 help says 'platform wave prep # create worktrees for the next disjoint set'; cmd_prep only prints the set and the slice-worktree command to run (platform/wave_execution/status.rs:101-117). (2) platform/slice_worktree.rs:48-50 usage says 'Three worktrees at a time; merge when all three are complete', and mod_ops/wave_execution.rs:46 says 'dispatch 3 -> merge -> reap -> verify -> next 3'; nothing caps a wave at three, the slices come from the wave lock (mod_ops/wave_execution/execution.rs:51-84). (3) platform/preflight/execution.rs:123-124 blocks with 'dirty — commit or stash first', while the factory rules forbid git stash (documentation_v2/runbooks/factory_waves/known_traps.md:118-119); say 'commit first'. (4) platform/wave_execution/README.md:45 says the driver's CARGO_TARGET_DIR is 'inherited, else <main checkout>/target', but disown_ambient_target_dir (platform/wave_execution/flush.rs:329-343) removes any inherited value. mod_ops/wave_execution.rs:54 (land order) is T-1119 item 3. Sources: doc writers F15b, F16a."
+created_at = "2026-09-25T23:43:24Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

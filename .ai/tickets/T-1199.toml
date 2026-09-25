@@ -1,0 +1,13 @@
+id = "T-1199"
+kind = "work"
+title = "Fix wave prep exit code, close dry-run and push bypass"
+summary = "mod wave prep exits 0 when slice-worktree new refuses a slice; platform wave --close --dry-run runs the full gate before printing; mod wave push always skips hooks with --no-verify, even with git-lfs installed."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src/commands. (1) 'cargo xtask mod wave prep' calls slice-worktree new for each slice of the wave and discards the exit code (mod_ops/wave_execution/execution.rs:242-266, 'let _ = ... run_at'), then returns 0, so a refused 'new' (dirty tree, existing branch) still reports success; return non-zero when any slice failed, after trying the rest. (2) 'cargo xtask platform wave --close --dry-run' runs the full wave gate (platform/wave_execution/land/wave_close.rs:180-186, gate::cmd_gate) before it reaches close_ceremony's dry run (:191), so a dry run costs a whole gate and refuses on a red main instead of printing the plan; skip or clearly announce the gate under --dry-run. (3) 'cargo xtask mod wave push' always pushes with --no-verify (mod_ops/wave_execution/land.rs:117-120) once no assets_v2/terrains/ file is in the range (:96-115), even where git-lfs is installed and the pre-push hook would run cleanly; use the hook when git-lfs is present and bypass only when it is absent. Sources: doc writers F15b, F16a."
+created_at = "2026-09-25T23:43:04Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

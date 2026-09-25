@@ -1,0 +1,13 @@
+id = "T-1189"
+kind = "work"
+title = "Decide how the world-boot goldens pass the warning ratchet"
+summary = "The golden missions' warning budgets are 0 while the validator warns on unconsumed environment, radio and layers keys, so world-boot on every golden ends FAIL and operators are told to ignore it."
+class = "audit"
+status = "idea"
+notes = ".world-boot-warning-baseline budgets msn_8f3a2c and msn_5c1de7 at 0 warnings, and msn_4c7e1b089a354d62b1f7e30d5a86c941 at 0, while TBD_MissionValidator.CheckUnconsumedKeys (apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c:1207 onward) still warns on authored blocks the mod does not consume: environment and orbat.roles.radio on slot-loadout-coverage, plus layers on bridgehead-at-levie; the baseline file's own T-609 section records the same reds and forbids raising the budgets. So 'cargo xtask mod world-boot --mission=<golden>' ends WORLD BOOT: FAIL with 'validator warnings rose' on main, and documentation_v2/runbooks/two_client_playtest/headless_preflight.md (How to judge a boot) tells operators to ignore that FAIL under a three-part test. The shipped T-609 lists 'world-boot.sh --mission=golden ends WORLD BOOT PASS' under verify, which does not hold. Decide how the goldens go green: consume the blocks (T-290 covers the environment reader), drop the keys from the contract, or make the verdict report these known unconsumed-key warnings separately from the pass/fail ratchet. Not booted here; source: doc writer F15a."
+created_at = "2026-09-25T23:39:08Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

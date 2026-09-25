@@ -1,0 +1,12 @@
+id = "T-1196"
+kind = "work"
+title = "Fix ticket run --stream selecting nothing and unused queue settings"
+summary = "ticket run --stream and ready-ids --stream filter on a stream key no ticket file carries, so they select nothing; gap analysis reads a dead implements key; queue.json's concurrency and batch_size are pinned and unused."
+class = "bug"
+status = "idea"
+notes = """Paths under tools_v2/ticket-engine/src. (1) 'cargo xtask ticket run --stream <S>' filters with opt_str(row, "stream") (cli/batch.rs:142) and 'ready-ids --stream' the same way (cli/status.rs:42), but stream is not a TicketFile key: it survives only in the frozen legacy key list (registry/ticket_file_storage/key_contract.rs:16), .ai/tickets/schema.json has no stream property and no ticket file carries one, so every --stream run selects nothing and exits 1 'No ready tickets'. Remove the flag or give tickets a real field to filter on (validation/runner.rs:78 also reads it). (2) The same dead read: sync/gap_analysis.rs:154-163 looks for an implements array on registry rows, a key no ticket file or schema carries (key_contract.rs:29 frozen list only); drop the loop. (3) cmd_run prints 'concurrency=<n>' (cli/batch.rs:160-164) but runs tickets one by one (:165-169), and 'ticket sync' writes batch_size 10 and concurrency 3 into queue.json on every sync (sync/queue_json.rs:41-42), so neither value can be tuned or has an effect; remove them or honour them. The no-ready hint at batch.rs:155-156 is T-1119 item 16. Source: doc writer F16b."""
+created_at = "2026-09-25T23:41:29Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

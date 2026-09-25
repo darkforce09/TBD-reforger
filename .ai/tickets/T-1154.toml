@@ -1,0 +1,14 @@
+id = "T-1154"
+kind = "work"
+title = "Fix Outliner folder edge cases: last delete, Placing into, names"
+summary = "Deleting the only folder confirms, changes nothing, yet marks the mission unsaved; the 'Placing into:' strip can name a different folder than placement uses; a new mission's folder is 'Layer 1' but a reseeded one 'Default Layer'."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website unless stated. Last folder: the row delete asks window.confirm (frontend/src/v2/apps/editor/ui/outliner/tree/row_actions.rs:174-181), map-engine/src/data/store/rows/layers.rs:28 returns early when the folder is the only layer, and map-engine/src/editing/hosted_commands/editor_layers.rs:97-99 routes through commit_document_edit (document_edit.rs:14-19), which runs the post-edit tail whenever a document is hosted, so the mission is marked unsaved and a draft save is scheduled for a no-op (the general no-op tail is T-1077). Refuse or disable the delete for the last folder, or reseed as the doc comment at rows/layers.rs:25 describes. Placing into: frontend/src/v2/apps/editor/ui/docks/dock_left/view/full_dock.rs:80 labels the fallback with first_folder_label (ui/docks/dock_left/places.rs:103, the first Folder node in Outliner tree order), while placement falls back to the first row of layer_rows in document order (map-engine/src/data/store/operations/entity/layers.rs:124-126). Names: ui/outliner/outliner.rs:24 DEFAULT_LAYER_NAME 'Layer 1' against map-engine/src/data/store/rows/layers.rs:86 'Default Layer' for the reseeded folder; use one constant. Source: Phase 5 doc writer F05."
+created_at = "2026-09-25T23:23:04Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["outliner"]

@@ -1,0 +1,14 @@
+id = "T-1155"
+kind = "work"
+title = "Remove the editor's leaked window keydown and resize listeners"
+summary = "input/window_keydown.rs:236-240 and :282-283 add window keydown closures and forget them, and ui/outliner/tree/virtual_tree.rs:147-162 does the same for resize; none is removed on unmount, so leaving the editor leaves stale handlers and a remount doubles undo."
+class = "bug"
+status = "idea"
+notes = "Needs a browser check (found by reading, not run). Paths under apps/website/frontend/src/v2/apps/editor. input/window_keydown.rs:236-240 installs the shortcut closure on window and forgets it; the closure reads page signals such as widget_variant (:226-228) that Leptos disposes when the editor unmounts, so a key press on another page after leaving the editor can hit a disposed signal. register_key_handler (:250-283) adds a second forgotten undo/redo listener on every mount; its doc (:250-251) says it leaks like the other listeners, and a remount leaves two listeners, so one Ctrl+Z steps back twice. ui/outliner/tree/virtual_tree.rs:147-162 adds a forgotten window resize closure that sets container_h after the tree is gone. Keep each closure in an owner and remove it in on_cleanup, as virtual_tree.rs:79-90 already does for its pointer listeners. Source: Phase 5 doc writer F05."
+created_at = "2026-09-25T23:23:34Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["layout_chrome"]

@@ -1,0 +1,13 @@
+id = "T-1188"
+kind = "work"
+title = "Fix world-boot --compiled asserting fixture weapons on any mission"
+summary = "world-boot --compiled=<uuid> boots an authored mission but still asserts the seeded fixture's four equipped weapons (compiled_lane.rs:67-82, execution.rs:280), so every other mission fails. Assert only on the seeded fixture."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src/commands/mod_ops. 'cargo xtask mod world-boot --compiled' seeds its own fixture mission through the API; '--compiled=<uuid>' boots any existing mission instead (world_boot/execution.rs:35-39, world_boot/compiled_lane.rs:20-31). Both then run assert_four_weapon_equip (world_boot/execution.rs:280-282; compiled_lane.rs:67-82), which demands exactly EXPECTED_EQUIP_OK = 4 '[TBD][Equip] slot=N weapon=... result=ok' lines for slots 0 to 3 (world_boot.rs:75), the seeded fixture's shape. Any authored mission with another slot count or weapon layout therefore ends WORLD BOOT: FAIL. Apply the four-weapon assertion only when the lane seeded the fixture (compiled_uuid was absent), or derive the expected lines from the compiled document. documentation_v2/runbooks/two_client_playtest/headless_preflight.md:81 describes the assertion. Source: doc writer F15a."
+created_at = "2026-09-25T23:38:50Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

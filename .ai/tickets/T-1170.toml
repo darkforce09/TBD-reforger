@@ -1,0 +1,14 @@
+id = "T-1170"
+kind = "work"
+title = "Show an ORBAT load error instead of 'No ORBAT slots'"
+summary = "pages/operations/event_detail/slotting_selector.rs:73-75 turns a failed GET /event-missions/{id}/orbat into None with .ok(), and :115-119 renders None like an empty ORBAT: 'No ORBAT slots defined for this mission.'"
+class = "bug"
+status = "idea"
+notes = "apps/website/frontend/src/v2/pages/operations/event_detail/slotting_selector.rs:67-83 builds the ORBAT LocalResource with api_get(...).await.ok(); :115 maps None to an empty list and :116-121 prints 'No ORBAT slots defined for this mission.', so a 401, 403, 500 or network failure reads as a mission with no slots, and nothing offers a retry. Keep the error (Result, not Option) and render api_error_message with a retry, as other pages do. Possible defect. Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:31:19Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["orbat"]

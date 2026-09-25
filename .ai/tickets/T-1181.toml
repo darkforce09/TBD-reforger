@@ -1,0 +1,13 @@
+id = "T-1181"
+kind = "work"
+title = "Decide debrief team-kill credit, countdown and auto-advance"
+summary = "The debrief kill credit counts team kills although TBD_FrameworkManager.c:897 says they are ignored, and DEBRIEF never counts down or advances by itself. Decide both rules, then align the code or the comment."
+class = "audit"
+status = "idea"
+notes = "Paths under apps/mod/tbd-framework/Scripts/Game/TBD. Team kills: Gamemode/Orchestrator/TBD_FrameworkManager.c:897 says 'Team-kills and world/AI kills are ignored', but OnPlayerKilled (:898-919) returns only for a missing killer or a suicide (:907-910), so a team kill adds a kill to m_mKills and to the debrief board; the debrief design target shows team kills as their own column. Decide the rule, then fix either the code (compare the killer's and victim's factions) or the comment. Countdown and advance: nothing leaves DEBRIEF on its own; '#tbd stage next' stops at DEBRIEF (HandleAdminStageCommand, :1621-1627) and an admin must name LOBBY or deploy the next mission, while the design target (documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md, Design) counts down 120 s to the next match and offers admins 'RETURN TO LOBBY NOW'. Decide whether DEBRIEF counts down and advances. The field comment :319 is on T-1090. Source: doc writer F10b."
+created_at = "2026-09-25T23:36:51Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "gamemode"

@@ -1,0 +1,13 @@
+id = "T-1177"
+kind = "work"
+title = "Check event existence and access for fire mission save, list"
+summary = "POST /fire-missions stores any well-formed event_id without checking the event exists (no foreign key either: migration 0019:109-110), and GET /events/{id}/fire-missions returns an event's rows to any signed-in user without viewer_event_access (operations/handlers/fire_missions.rs:191-265, :274-291)."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/api_v2. src/operations/handlers/fire_missions.rs:221-238 parses event_id and inserts it with no SELECT on events; migrations/0019_ingest_pointer_foreign_keys.sql:109-110 leaves fire_missions.event_id unconstrained because save_fire has no foreign_key_error arm, so a fire mission can point at a missing or deleted event and is then unreachable. :274-291 list_event_fire_missions takes AuthUser (_u unused) and returns every row for the event id, while other event reads apply operations/services/event_access/visibility.rs viewer_event_access (operations/handlers/event_listing.rs:87). Check existence and visibility on save and list (and add the FK with an error arm). Source: Phase 5 doc writer F03."
+created_at = "2026-09-25T23:35:04Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

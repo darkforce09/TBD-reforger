@@ -1,0 +1,13 @@
+id = "T-1190"
+kind = "work"
+title = "Fix a first website deploy stopping at checksum repair"
+summary = "deploy website runs db repair-migration-checksum --force before the first API boot; on a fresh database _sqlx_migrations does not exist, the repair bails and the deploy aborts, so the API that would create it never starts."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask/src/commands. deploy/website.rs:269-272 always adds the remote step 'repoint the checksums of comments-only migration edits' (deploy/website/remote_steps.rs:50-61, 'cargo xtask db repair-migration-checksum --force' against tbd_staging_db), before the unit restart. On a fresh database the API has never booted, so _sqlx_migrations does not exist: applied_checksums (db/operations/repair_migration_checksum.rs:147-155, called at :235) bails with 'could not read _sqlx_migrations', remote_step (deploy/website.rs:282-291) aborts the deploy, and the API that would create the table on boot is never restarted. A first deploy therefore needs a manual API start. Treat a missing _sqlx_migrations as nothing to repoint (exit 0), or skip the step when the table is absent. T-1110 decides whether the step should run with --force at all. Source: doc writer F13b."
+created_at = "2026-09-25T23:39:27Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

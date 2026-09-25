@@ -4,6 +4,7 @@ title = "Rewrite stale comments in api_v2 core, workers, seeds and tests"
 summary = "Doc and config comments contradict code: `apps/website/api_v2/src/core/database/mod.rs:4-5` claims one frozen migration (50 exist); `src/core/configuration/mod.rs:61` and `.env.example:40-41` tie `/map-assets` to SPA serving, yet `src/core/http_router.rs:102-104,163-171` always mounts it; and 10 more (see the ticket's notes)."
 class = "docs"
 status = "idea"
+notes = "The summary's '10 more' list was never recorded in this file. One stale comment found since (TF15, doc writer F13a): apps/website/api_v2/.env.example:121-123 says a blank DISCORD_GUILD_ID writes an 'auth.role_sync_skipped' WARN audit row, but no code under apps/website/api_v2/src writes that action (git grep role_sync_skipped finds only the .env.example); the only auth.* audit actions are auth.session_created, auth.refresh_replay and auth.logout. Write the row or drop the claim."
 created_at = "2026-09-24T04:34:54Z"
 
 [scope]

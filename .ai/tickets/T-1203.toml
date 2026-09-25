@@ -1,0 +1,13 @@
+id = "T-1203"
+kind = "work"
+title = "Gate EnfScript @rpc, @replicated and @authority tags"
+summary = "CLAUDE.md law 8 requires @rpc above every [RplRpc], @replicated above every [RplProp] and @authority on context-dependent methods, but no gate reads those tags; only @contract is checked."
+class = "chore"
+status = "idea"
+notes = "CLAUDE.md law 8 makes '//! @rpc <Reliable|Unreliable> <Server|Owner|Broadcast>' mandatory directly above every [RplRpc] attribute, '//! @replicated <prop>' above every [RplProp] field and '//! @authority server|client|owner' on context-dependent methods, but no gate reads them: 'enf citations' and 'cargo xtask schema citations' check only @contract (documentation_v2/standards/coding_standards/enfusion_code_policy.md:24-27, ENF-3), and git grep finds no reader of @authority, @rpc or @replicated in tools_v2. apps/mod/tbd-framework/Scripts holds 31 [RplRpc] and 7 [RplProp] attributes, so a missing tag lands silently (T-1020 lists current gaps, T-1011 the AI scripts). Add a check (an enf subcommand or a cargo xtask verify rule wired into the mod gates) that fails on an [RplRpc] without an @rpc line directly above it and an [RplProp] without @replicated, with a well-formedness check for @authority values. Source: doc writer F17a."
+created_at = "2026-09-25T23:44:44Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

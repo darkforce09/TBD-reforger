@@ -1,0 +1,13 @@
+id = "T-1183"
+kind = "work"
+title = "Decide whether to build the admin help ticket"
+summary = "The player-to-admin help ticket is designed but has no code, and its design opens it with F8, which already toggles the admin screen. Decide whether to build it and, if so, on which key."
+class = "audit"
+status = "idea"
+notes = "The admin help ticket (a player asks a referee for help; admins see a tickets panel) is designed but unbuilt: no script, layout, RPC, API call or storage exists for it (documentation_v2/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md and the admin_tickets_panel_mockup set). The capability verdicts file lists help tickets under 'Admin menu' as BUILD (documentation_v2/mod/tbd-framework/capability_verdicts.tsv). The target opens the dialog with F8, but F8 is already bound to the TBD_AdminMenu action that toggles the admin screen (apps/mod/tbd-framework/Configs/System/Actions/TBD_AdminMenu.conf:6, KC_F8). Decide whether to build it; if so, open it from the pause menu and a free key, not F8, and decide where tickets are stored. Source: doc writer F10b."
+created_at = "2026-09-25T23:37:17Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "ui"

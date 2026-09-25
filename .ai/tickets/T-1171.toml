@@ -1,0 +1,14 @@
+id = "T-1171"
+kind = "work"
+title = "Close operations and command center page gaps: locks, paging, countdown"
+summary = "The event hub offers Register and Join waiting list on locked or closed events; lists load one page, no pager; the schedule fill bar goes stale after registering; the countdown reads 'T-MINUS LIVE NOW'; announcement deep links miss beyond 20."
+class = "feature"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2/pages unless stated. Locks: operations/event_detail/registration_access/mission_standing.rs:84-90 seat_claim_offered and :94-98 waiting_list_offered never read registration_locked or the event status, so operations/event_detail/reservation_actions.rs:187-228 shows 'Join waiting list' and 'Register for Deployment' on a locked, completed or cancelled event and the API refuses (apps/website/api_v2/src/operations/services/event_reservations/mutation_authority.rs:63, waitlist_promotion.rs:36). Paging: the API pages at 20 by default (apps/website/api_v2/src/core/http/pagination.rs:18); operations/schedule/page.rs:65 (/events), operations/leaderboards/page.rs:132-142 (/leaderboards), operations/deployments/leave_review_queue.rs:30-32 (/admin/leave-requests) and command_center/announcements/page.rs:37 (/announcements) request the first page only and offer no pager. Announcements: a /announcements/:id deep link resolves only against that first page (command_center/announcements/article_feed.rs:146-160); nothing calls GET /announcements/{id} (apps/website/api_v2/src/community_content/handlers/announcements_public.rs:53). Fill bar: operations/schedule/page.rs:180 refetches the hub after a registration but not the events list whose card carries the fill bar (operations/schedule/upcoming_ops.rs:70). Countdown: operations/event_detail/hero_countdown.rs:105-107 prefixes 'T-MINUS ' to core/utils/countdown.rs:25-26 'LIVE NOW'. Modpack link: hero_countdown.rs:130-137 renders href '#' with target _blank when the pack has no workshop URL. Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:32:01Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["events"]

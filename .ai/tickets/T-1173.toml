@@ -1,0 +1,13 @@
+id = "T-1173"
+kind = "work"
+title = "Stop listing bookmarked missions the viewer can no longer open"
+summary = "The bookmarked scope of GET /missions (api_v2 missions/handlers/mission_library.rs:93-97) lists every bookmarked mission whatever its status, but GET /missions/{id} 404s a non-live mission to anyone but its author or an admin (validation/access.rs:13-14)."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/api_v2/src/missions. handlers/mission_library.rs:93-97 filters the bookmarked scope by mission_bookmarks only, while the global scope (:98-102) admits live missions and the viewer's own non-archived ones. handlers/mission_library.rs:182-185 get_mission returns 404 unless validation/access.rs:13-14 can_view (live, or author or admin). A mission bookmarked while live and then archived, rejected or pulled back to draft by its author stays in the viewer's Bookmarked tab and 404s when opened. Apply can_view's predicate to the bookmarked scope (or show such rows as unavailable). Source: Phase 5 doc writer F03."
+created_at = "2026-09-25T23:33:06Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

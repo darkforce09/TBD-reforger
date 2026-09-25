@@ -1,0 +1,13 @@
+id = "T-1167"
+kind = "work"
+title = "Apply event access to the dashboard next event; order status"
+summary = "command_center/handlers/live_dashboard.rs:57-80 picks the next event with no viewer_event_access check (event_listing.rs applies one), preferring any event the viewer created; :187-195 reads 'FROM server_statuses LIMIT 1' with no ORDER BY or server filter."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/api_v2/src. Next event: command_center/handlers/live_dashboard.rs:57-80 first takes the viewer's own next upcoming event, then the global next one, with no access check, so the home bento can name an event whose access policy (operations/models/event_access_policy.rs; default grant TbdMember) hides it from the viewer, while GET /events filters each row through operations/services/event_access/visibility.rs:87 viewer_event_access (operations/handlers/event_listing.rs:87). The prefer-mine rule (comment :50-56) exists to stabilise test databases, so a creator sees their own event ahead of an earlier community one. Server status: :187-195 selects from server_statuses with LIMIT 1 and no ORDER BY or server_id, so with more than one registered server the card shows an arbitrary row (the comment says 'single primary server assumption'). Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:29:41Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

@@ -1,0 +1,14 @@
+id = "T-1159"
+kind = "work"
+title = "Check the Mission Creator terrain read racing the draft restore"
+summary = "mission_editor/canvas_mount/boot_tasks.rs:322-335 reads meta.terrain from the document as soon as the engine mounts, whether or not the restore has settled (restore_settled, set at :189), and falls back to everon; a mission on another terrain may boot the wrong world."
+class = "audit"
+status = "idea"
+notes = "Needs a browser check. Paths under apps/website/frontend/src/v2/apps/editor/mission_editor/canvas_mount. boot_tasks.rs:318-320 rebinds from the document only when restore_settled is already true, but the terrain read right after (:322-335) runs unconditionally and passes its result to bridge::world_assets::bootstrap (:337-343); world_assets is never re-bootstrapped when the restore later settles (:189; review_restore.rs:60). If the engine mounts before the server hydrate or the local draft restore has written meta.terrain, the editor loads Everon's DEM and imagery for an Arland mission. Confirm the ordering in a browser with a non-Everon mission, then either wait for the restore or re-bootstrap on a terrain change. Source: Phase 5 doc writer F05."
+created_at = "2026-09-25T23:25:44Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

@@ -1,0 +1,12 @@
+id = "T-1205"
+kind = "work"
+title = "Decide gate or retirement for the 12 unenforced coding rules"
+summary = "Twelve live coding rules have no gate, including COMP-1, whose complexity limit no lint checks while three #[allow(clippy::too_many_lines)] silence a lint that is off. Decide gate, review rule or retire for each."
+class = "audit"
+status = "idea"
+notes = "documentation_v2/standards/coding_standards/README.md (Rule index, :61-108) counts 41 codes: 18 gated, 2 MANUAL, 9 retired and 12 live with no gate: COMP-1, ERR-1, ERR-2, ERR-4, ERR-5, GO-1, GO-3, GO-5, LOG-2, LOG-3, TS-4 and TS-7 (ERR-1 and LOG-3 are held by construction). For each, decide: add a gate, keep it as a review rule, or retire it; the operator decides. COMP-1 (at most 15 independent paths per function) has the most concrete gap: no clippy.toml and no [workspace.lints] configure cognitive_complexity or any complexity lint, and #[allow(clippy::too_many_lines)] targets a pedantic lint that is never enabled (apps/website/frontend/src/v2/apps/debug/building_viewer/live/wiring.rs:8, apps/website/map-engine/src/diagnostics/readback/doll.rs:111, tools_v2/developer-tools/src/map_raster_pipeline/inland_water/analyze_water_sources.rs:7); either enable a complexity lint with a threshold and drop the dead allows, or retire COMP-1. The @authority/@rpc/@replicated half of ENF-3 has its own ticket (gate EnfScript tags). Source: doc writer F17a."
+created_at = "2026-09-25T23:45:37Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

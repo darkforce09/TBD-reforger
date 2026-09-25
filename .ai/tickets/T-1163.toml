@@ -1,0 +1,13 @@
+id = "T-1163"
+kind = "work"
+title = "Decide whether GET /missions/{id}/export keeps a server route"
+summary = "api_v2 missions/handlers/mission_export.rs:18 serves the strict export envelope to mission makers, but no frontend, mod or tools_v2 code calls it; the Mission Creator builds the same envelope client-side (shell/document_commands/imp/exports.rs:93 export_now)."
+class = "audit"
+status = "idea"
+notes = "apps/website/api_v2/src/missions/handlers/mission_export.rs:18-23 (registered at apps/website/api_v2/src/missions/routes.rs:101) builds the export envelope with build_mission_doc. git grep finds no caller in apps/website/frontend/src, apps/mod or tools_v2; only a frontend test comment cites a captured response (apps/website/frontend/src/v2/pages/mission_hub/library/tests/mission_library_versions.rs:525). The Mission Creator's File > Export builds its envelope in the browser (apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/exports.rs:86-93). Decide: keep the route (and give the mission hub a download that uses it, or document it as an API for tooling) or remove it and its tests. Source: Phase 5 doc writer F07a."
+created_at = "2026-09-25T23:27:46Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"

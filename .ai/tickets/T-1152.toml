@@ -1,0 +1,14 @@
+id = "T-1152"
+kind = "work"
+title = "Fix Load server version blanking the mission title"
+summary = "Load server version adopts with RowMeta::default() (shell/hydrate/server_reconciliation.rs:263-269) on the claim that the title stays untouched, but hydrate (map-engine data/store/rows/hydrate.rs:53) removes meta.title and restores it only when the payload carries one."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website unless stated. frontend/src/v2/apps/editor/shell/hydrate/server_reconciliation.rs:261-262 says the compile drops the title, so the existing title is left untouched, and :263-269 passes RowMeta::default(). map-engine/src/data/store/rows/hydrate.rs:53 removes meta.title on every hydrate and :64 re-inserts it only from a non-blank payload title; the compile writes title only when the document title is non-blank (map-engine/src/data/scenario/compiler/payload/serialization.rs:161-165). A server version saved without a title (the create_mission seed payload, an imported file) therefore blanks the open mission's title after Load server version. Pass the row's title, or re-apply it after the adopt. Related: T-1050 (the same hydrate keeps stale connections). Source: Phase 5 doc writer F05."
+created_at = "2026-09-25T23:22:08Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

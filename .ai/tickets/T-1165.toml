@@ -1,0 +1,14 @@
+id = "T-1165"
+kind = "work"
+title = "Remove the invented Recent Intelligence lines from Server Intel"
+summary = "pages/command_center/server_intel/server_list.rs:127-143 renders two hard-coded lines ('[14:02:00Z] New hostile movement detected in Sector 4', 'Server Uplink maintenance completed') under 'Recent Intelligence' on every server panel as if they were live."
+class = "bug"
+status = "idea"
+notes = "apps/website/frontend/src/v2/pages/command_center/server_intel/server_list.rs:127-143: static text in the view, not data; the lines arrived with the command center pages in d37663767. Either remove the block or feed it from a real source (match events, server status transitions). Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:28:51Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["servers"]

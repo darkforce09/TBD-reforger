@@ -1,0 +1,14 @@
+id = "T-1166"
+kind = "work"
+title = "Mark the leave-of-absence reason as required, as the API does"
+summary = "The leave form's reason input says 'Optional reason…' (pages/operations/deployments/leave_of_absence.rs:185) and the DTO skips an empty reason (core/api/dto/events.rs:234-235), but POST /me/leave-requests answers 400 'reason is required' (api_v2 operations/handlers/leave_requests.rs:32,49-53)."
+class = "bug"
+status = "idea"
+notes = "apps/website/frontend/src/v2/pages/operations/deployments/leave_of_absence.rs:180-189 labels the field 'Reason' with placeholder 'Optional reason…'; apps/website/frontend/src/v2/core/api/dto/events.rs:234-235 serializes reason with skip_serializing_if String::is_empty, so an empty reason omits the key and the body fails to deserialize (apps/website/api_v2/src/operations/handlers/leave_requests.rs:32 reason has no serde default; :44 maps that to 400 'starts_on, ends_on and reason are required'); a whitespace reason gets 'reason is required' (:49-53). Make the field required in the form (and drop the skip on the DTO), or make the API accept an empty reason; the API comment at :47-48 argues for required. Source: Phase 5 doc writer F02."
+created_at = "2026-09-25T23:29:17Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["deployments"]

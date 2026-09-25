@@ -1,0 +1,14 @@
+id = "T-1175"
+kind = "work"
+title = "Decide the review workspace route's role tier"
+summary = "The SPA guards /missions/:id/artifacts/:artifact_id/workspace with auth mission_maker (frontend/src/router.rs:106-113 at HEAD), while GET .../workspace takes a plain AuthUser and serves the mission's author or an administrator (api_v2 missions/handlers/mission_reviews.rs:34-43, :145-150)."
+class = "audit"
+status = "idea"
+notes = "apps/website/frontend/src/router.rs:106-113 at HEAD (RouteDef for ReviewWorkspacePage, auth mission_maker; its comment at :107-108 says the backend serves the author and administrators). apps/website/api_v2/src/missions/handlers/mission_reviews.rs:145-150 get_review_workspace takes AuthUser and load_reviewable (:34-43) admits author or admin with no role tier; the review list and artifact reads do the same, while the review comment POST (:67-69) takes MissionMakerUser. A demoted author can read the review record on the dossier but the route guard bounces them from the workspace. Decide one tier for reading reviews and apply it to both sides; T-1172 is the same split for write actions. Source: Phase 5 doc writer F03."
+created_at = "2026-09-25T23:33:53Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "shell"
+surface = ["router"]

@@ -1,0 +1,14 @@
+id = "T-1151"
+kind = "work"
+title = "Fix local draft check ignoring objects, blocks and title"
+summary = "AUTHORED_KEYS (map-engine editing/persist/local_versus_server.rs:42) compares only editor, loadouts, objectives, vehicles and markers, so a local draft differing only in objects, zones, triggers, comments, connections or title boots as MatchesServer and is marked clean."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website unless stated. map-engine/src/editing/persist/local_versus_server.rs:42 AUTHORED_KEYS is ['editor', 'loadouts', 'objectives', 'vehicles', 'markers']; the compiled payload also carries entities (placed objects), title and the authored blocks the compile writes at the root from payloadExtras (zones, compositions, triggers, comments, connections; map-engine/src/data/scenario/compiler/payload/serialization.rs:9-22 and :180, data/store/rows/README.md:75). The comment at :34-41 excludes only the map and the environment on purpose. frontend/src/v2/apps/editor/shell/hydrate/server_reconciliation.rs:195-197 then calls set_dirty(false) on MatchesServer, so unsaved object, zone, trigger, comment, connection or title edits show no unsaved marker after a reload and no conflict prompt. Compare every authored root key (or everything except map and environment). Source: Phase 5 doc writer F05."
+created_at = "2026-09-25T23:21:26Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

@@ -1,0 +1,14 @@
+id = "T-1161"
+kind = "work"
+title = "Cache the editor pick index and bind only changed lanes"
+summary = "Every map pick re-materializes the slot table (map_render_slot_soa, map-engine editing/selection_universe.rs:107-111) and rebuilds a PointIndex (spatial/indexing/picking.rs:13); every document edit rebinds every slot, vehicle and marker lane (bridge/document_host/history.rs:271-300)."
+class = "chore"
+status = "idea"
+notes = "Performance; found by reading, not measured. Picks: the pointer handlers pass map_render_slot_soa(c) per event (apps/website/frontend/src/v2/apps/editor/input/pointer_gestures/pointer_up.rs:190, :272, :389, pointer_move.rs:227, double_click.rs:57, context_menu.rs:44); map_render_slot_soa (apps/website/map-engine/src/editing/selection_universe.rs:107-111) materializes the whole slot table and re-parses small_maps_json for the crew filter, and the slot pick (apps/website/map-engine/src/editing/picking.rs:20-22 into apps/website/map-engine/src/spatial/indexing/picking.rs:9-13) copies xs and ys into a new PointIndex per query; input/tools/select_tool.rs:86, :174 and :218 materialize again. Edits: after_doc_change (apps/website/frontend/src/v2/apps/editor/bridge/document_host/history.rs:271-300) re-materializes and rebinds slot symbology, squad links, vehicles and markers after every edit, so moving one marker re-uploads every slot. Cache the render SoA and its PointIndex per document revision, and rebind only the lanes an edit touched. Source: Phase 5 doc writer F06."
+created_at = "2026-09-25T23:26:48Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

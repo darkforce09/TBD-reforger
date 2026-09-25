@@ -1,0 +1,13 @@
+id = "T-1193"
+kind = "work"
+title = "Fix staging smoke URL and launch-mode texts"
+summary = "deploy staging's game-runtime smoke hard-codes 127.0.0.1:8080 instead of TBD_BACKEND_URL; deploy.env.example's config-mode comment and the Workshop-id refusal disagree with the -addonsDir launch; remote-logs prints stale tagged-line counts."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask. (1) src/commands/deploy/staging/payloads.rs:56-60 (smoke_payload, the V2-V4 game-runtime smoke) hard-codes API='http://127.0.0.1:8080/api/v1/game-runtime', while the same file's :44 and the host agent (src/commands/deploy/staging/config.rs:217, :231) use env.backend_url from TBD_BACKEND_URL; a server whose API listens elsewhere smoke-tests the wrong URL. Build the smoke URL from env.backend_url. (2) deploy/deploy.env.example:51-55 says config mode 'Requires the mod to be PUBLISHED to the Workshop' and addons mode is 'NOT Direct-Joinable (registers no backend room)'; exec_start's config mode passes -addonsDir with -config (src/commands/deploy/staging/remote/ssh_argv.rs:63-68), and the playtest runner records that -addonsDir plus -config loads the local addon and registers a room (src/commands/mod_ops/playtest_server.rs:17-31), while config.rs:332-345 still refuses config mode without TBD_WORKSHOP_MOD_ID. Decide whether the Workshop id is still required and align the comment and the refusal. (3) src/commands/debug/remote_logs/execution.rs:79-81 prints measured healthy tagged-line counts ('108 (18-slot msn_8f3a2c), 147 (slot-loadout-coverage)') that the doc writer found stale; re-measure or drop the numbers. Source: doc writer F14a."
+created_at = "2026-09-25T23:40:28Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

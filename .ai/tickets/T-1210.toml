@@ -1,0 +1,12 @@
+id = "T-1210"
+kind = "work"
+title = "Decide the voice bridge radioClass values against engine radios"
+summary = "The voice bridge contract's radioClass has four values (none, handheld, manpack, vehicle), but missions only express short or long range and the engine has two radio gadget types. Decide whether the enum narrows."
+class = "audit"
+status = "idea"
+notes = "contracts_v2/definitions/bridge-messages.schema.json:18 defines radioClass as one of none, handheld, manpack or vehicle (used at :104 and :148), and the bridge requires it on spawn messages (:98). The mission maps only net.range short or long onto it (documentation_v2/contracts_v2/definitions/bridge_messages.md, the field table), and the engine has exactly two radio gadget types, EGadgetType.RADIO (handheld) and RADIO_BACKPACK (apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/TBD_RadioTuner.c:10-13, :89, :352). Nothing in the repository emits radioClass (both ends of the bridge are built elsewhere), so no mission or engine state can produce vehicle, and manpack is the engine's backpack. Decide whether the enum stays wider than the engine (vehicle intercoms reserved for later, with a stated source) or narrows to none/handheld/manpack, and record the mapping. Source: doc writer F12."
+created_at = "2026-09-25T23:47:37Z"
+
+[scope]
+domain = "schema"
+layer = "contract"

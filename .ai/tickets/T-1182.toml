@@ -1,0 +1,13 @@
+id = "T-1182"
+kind = "work"
+title = "Validate JWT_ACCESS_TTL_MIN at configuration load"
+summary = "Config accepts any i64 for JWT_ACCESS_TTL_MIN (core/configuration/mod.rs:151); jwt_manager.rs:40-45 silently replaces zero or negative with 15 minutes, and a huge value reaches chrono Duration::minutes (:55), which panics out of range. Refuse out-of-range values in Config::validate."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/api_v2/src/core. configuration/mod.rs:151 (line at HEAD; the working tree carries uncommitted edits that shift it) reads get_env_int('JWT_ACCESS_TTL_MIN', 15), which falls back only when the text does not parse; Config::validate (:166) never checks the value. authentication_primitives/jwt_manager.rs:39-45 maps a value at or below zero to DEFAULT_TTL_MIN with no log line, so a typo such as -15 runs silently with 15; a value above about 1.5e14 minutes (i64::MAX milliseconds) overflows chrono's Duration::minutes at :55 and panics at boot. configuration/README.md:25-26 documents only the parse fallback. Refuse values outside a sane range (for example 1 to 1440) in validate with a ConfigError naming the variable. Possible defect. Source: Phase 5 doc writer F09a."
+created_at = "2026-09-25T23:37:09Z"
+
+[scope]
+domain = "website"
+layer = "backend"
+component = "auth"

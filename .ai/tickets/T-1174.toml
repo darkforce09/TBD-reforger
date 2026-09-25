@@ -1,0 +1,14 @@
+id = "T-1174"
+kind = "work"
+title = "Make the dossier's Share for review button share something"
+summary = "pages/mission_hub/library/dossier_collaboration.rs:22-24 answers 'Share for review' (:44-47) with a success toast, 'Will allow anyone to view and comment', and sends no request; nothing changes who can view or comment."
+class = "feature"
+status = "idea"
+notes = "apps/website/frontend/src/v2/pages/mission_hub/library/dossier_collaboration.rs:22-24 toasts_share only calls use_toasts().success; the button at :44-47 is shown to editors (can_edit). No API route shares a mission for review with non-authors (the review routes in apps/website/api_v2/src/missions/routes.rs serve the author and administrators). Build the share (a route plus a viewer grant) or remove the button until it exists; a success toast for an action that did not happen is the defect. Source: Phase 5 doc writer F03."
+created_at = "2026-09-25T23:33:28Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["missions"]

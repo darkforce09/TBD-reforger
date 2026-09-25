@@ -1,0 +1,12 @@
+id = "T-1187"
+kind = "work"
+title = "Rewrite stale api_v2 comments: role-sync audit row, modpack routes, RCON"
+summary = ".env.example:121-124 promises an auth.role_sync_skipped audit row nothing writes; server_registry.rs:136-139 says the crate has no modpack write route (community_content/routes.rs:40-57 at HEAD has four); configuration/mod.rs:298-299 is an RCON comment with no field after it."
+class = "docs"
+status = "idea"
+notes = "Paths under apps/website/api_v2 (line numbers at HEAD; .env.example and configuration/mod.rs carry uncommitted edits in the working tree). .env.example:121-124 says a blank DISCORD_GUILD_ID emits tracing::error! and writes an auth.role_sync_skipped WARN audit row; git grep finds no writer of that action, and src/identity_and_access/handlers/discord_oauth.rs:173-180 only returns RoleSnapshot::Unavailable. src/server_infrastructure/handlers/server_registry.rs:136-139 calls the modpack race unreachable because '/modpacks and /modpacks/current are registered GET only', but src/community_content/routes.rs:40-57 registers POST /modpacks, PUT and DELETE /modpacks/{id} and POST /modpacks/{id}/set-current, so the dangling-pointer race it describes is reachable. src/core/configuration/mod.rs:298-299 (the test Config literal) ends with an RCON comment and no field after it; delete it or restore the field it described. Source: Phase 5 doc writers F03 and F09a."
+created_at = "2026-09-25T23:38:19Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

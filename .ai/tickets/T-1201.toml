@@ -1,0 +1,12 @@
+id = "T-1201"
+kind = "work"
+title = "Re-triage the ready queue and four stale tickets"
+summary = "queue.json holds 49 ready tickets, so ticket run would start them all; T-940.11 and T-908 (ready) and T-970, T-971 look stale against the code. Re-triage before any ticket run."
+class = "audit"
+status = "idea"
+notes = ".ai/tickets/queue.json lists 49 ready tickets (74 ticket files carry status ready), and 'cargo xtask ticket run' starts an agent for every ready ticket it selects (tools_v2/ticket-engine/src/cli/batch.rs cmd_run), so a run today would dispatch the whole backlog at once. Some ready or open tickets look stale against the code: T-940.11 (ready) plans against apps/website/api_v2 admin.rs and services/game_agent.rs, which do not exist (documentation_v2/tickets/plans/t-940_11_plan.md:6-11),; T-908 (ready) splits files on the retired SIZE-3 allowlist (CLAUDE.md law 7 has no allowlist); T-970 (idea) names packages/map-assets chunk .bin files, a tree the repository no longer tracks, and T-971 (idea) treats the exported chunk .bin files as deliberately uncommitted, while .gitattributes:20 now tracks assets_v2/terrains/**/*.bin in LFS; kick for T-940.11 already runs as a fleet command in the game runtime (apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/). Re-triage the ready queue (demote or cancel what no longer applies) before anyone runs 'ticket run'. Sources: doc writers F12, F16b."
+created_at = "2026-09-25T23:43:42Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

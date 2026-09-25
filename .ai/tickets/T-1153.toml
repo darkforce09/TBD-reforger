@@ -1,0 +1,14 @@
+id = "T-1153"
+kind = "work"
+title = "Fix Export JSON taking its version from the Save field"
+summary = "File > Export passes save_semver, the Save Version dialog's editable field (static 0.1.0 prefill), as the export envelope version (ui/docks/top_strip/view.rs:191-195), not the mission's saved or current version."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2/apps/editor. ui/docks/top_strip/view.rs:191-195 calls shell::document_commands::export_now(&save_semver.get_untracked()); save_semver starts as '0.1.0' (mission_editor.rs:120) and changes only when the author types in the Save Version dialog, and shell/document_commands/imp/exports.rs:88-89 writes it as the envelope version. An export before any save, or after typing a version and cancelling the dialog, carries a version no saved row has. Take the version from the mission's current version (or leave it empty for unsaved work). The static prefill itself is T-821. Source: Phase 5 doc writer F06."
+created_at = "2026-09-25T23:22:36Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["top_strip"]

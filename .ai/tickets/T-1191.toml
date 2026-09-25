@@ -1,0 +1,13 @@
+id = "T-1191"
+kind = "work"
+title = "Fix website deploy deleting old-layout uploads before moving them"
+summary = "deploy website's --delete rsync removes apps/website/api_v2/uploads on the server before the later step that moves those uploads into the unit's state directory, so an old-layout host loses its CMS uploads."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask. The website rsync is '-avz --delete' over the whole checkout with no exclude for apps/website/api_v2/uploads (src/commands/deploy/website/rsync_argv.rs:12-49; the file's own header says an exclusion is also the delete guard), and it runs (src/commands/deploy/website.rs:166-185) before the remote plan's last step, runtime_state_move (src/commands/deploy/website/remote_steps.rs:63-70, planned at website.rs:273-276), which moves an old-layout apps/website/api_v2/uploads into the unit's state directory. So on a host that still keeps uploads inside the checkout, rsync deletes them first (the path is neither tracked nor ignored locally), and the move finds nothing; deploy/systemd/tbd-website-api.service:29-31 promises the move. Exclude apps/website/api_v2/uploads/ from the rsync, or move the uploads before rsync runs. Source: doc writer F13b."
+created_at = "2026-09-25T23:39:46Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

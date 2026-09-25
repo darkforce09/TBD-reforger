@@ -1,0 +1,14 @@
+id = "T-1160"
+kind = "work"
+title = "Stop filing unarmable objects under the Factions tree sides"
+summary = "arsenal/asset_catalog/faction_catalog_trees.rs:77-81 files side-matched world objects as Factions leaves, but arm() refuses an object outside Objects mode (bridge/host_state/armed_placement/mod.rs:53-63); the leaf press still records the object as recently placed (palette/mod.rs:285-290)."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2/apps/editor unless stated. arsenal/asset_catalog/faction_catalog_trees.rs:77-81 files any non-abstract object kind with a registered alias into a side's tree; arsenal/asset_catalog.rs:202-206 placeable_palette resolves it to CatalogPalette::Object; the palette leaf (ui/docks/dock_right/palette/mod.rs:272-290) calls arm_favourite_place (ui/docks/dock_right/favourites/panels.rs:60, begin_place_object) and then record_recent. arm (bridge/host_state/armed_placement/mod.rs:53-63) asks map-engine placement_is_armable (data/store/operations/entity/arming.rs:43-45), which admits an Object only in Objects mode, clears the pending arm and returns. The press arms nothing and the object still enters the recent list. Either keep objects out of the side trees, or make the leaf switch to Objects mode, and record a recent entry only after a successful arm. Source: Phase 5 doc writer F06."
+created_at = "2026-09-25T23:26:10Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["dock_right"]

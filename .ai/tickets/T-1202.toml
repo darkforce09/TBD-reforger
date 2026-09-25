@@ -1,0 +1,12 @@
+id = "T-1202"
+kind = "work"
+title = "Remove stale Go, TypeScript, Prettier and Make sections from .editorconfig"
+summary = ".editorconfig still carries Go, TypeScript and Make sections and comments naming gofmt and Prettier, although the repository tracks none of those files and runs neither tool."
+class = "chore"
+status = "idea"
+notes = ".editorconfig:2-4 cite FMT-2, T-125.5, 'Go formatting stays authoritative under gofmt (FMT-1)'; :13-14 a [*.go] section; :16-18 a [*.{ts,tsx,js,mjs,cjs}] section; :24-26 say CSS indentation is owned by Prettier (FMT-3, the TS/TSX/CSS formatter of record); :34-37 keep a [{Makefile,*.mk}] section for a deleted Makefile. The repository tracks no .go, .ts, .tsx, .js, .mjs, .cjs, Makefile or .mk file (git ls-files, outside the untracked reference trees), Prettier is not run (FMT-3 is retired in documentation_v2/standards/coding_standards/formatting.md), and FMT-1 is rustfmt. Drop the dead sections and rewrite the header and the CSS comment to the rules 'cargo xtask ci verify-editorconfig' enforces. Source: doc writer F17a."
+created_at = "2026-09-25T23:44:18Z"
+
+[scope]
+domain = "repo"
+layer = "ci"

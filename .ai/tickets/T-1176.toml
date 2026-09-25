@@ -1,0 +1,14 @@
+id = "T-1176"
+kind = "work"
+title = "Complete the modpack and vehicle admin forms: size, confirm, URLs"
+summary = "The modpack editor has no size input (pack_editor.rs:38 total_size is never set), Delete fires without confirmation (mod_table.rs:182-199), and the API stores workshop_url and vehicle profile_image_url without an http(s) check (modpack_admin.rs:192,260; vehicle_database.rs:80)."
+class = "feature"
+status = "idea"
+notes = "Frontend (paths under apps/website/frontend/src/v2/pages/doctrine_and_info/modpacks): pack_editor.rs:38 seeds total_size from the pack and :249 sends it back, but no input writes it, and a new pack is created with total_size_bytes 0 (preset_list.rs:56), so the download size shown at preset_list.rs:143 is always what the API last stored; mod_table.rs:182-199 deletes on the first click with no confirmation. API (paths under apps/website/api_v2/src/community_content/handlers): modpack_admin.rs:192 and :260 bind workshop_url.trim() and vehicle_database.rs:80 binds profile_image_url.trim() with no scheme check, although core/text/http_url_guard.rs is_http_url exists and announcements_admin.rs:39 applies it to thumbnail_url; the workshop URL becomes an href with target _blank (apps/website/frontend/src/v2/pages/operations/event_detail/hero_countdown.rs:130-137). Add the size field, a confirm step, and is_http_url on both URL fields. Source: Phase 5 doc writer F03."
+created_at = "2026-09-25T23:34:16Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "site_pages"
+surface = ["modpacks"]

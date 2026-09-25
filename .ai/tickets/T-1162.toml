@@ -1,0 +1,14 @@
+id = "T-1162"
+kind = "work"
+title = "Add Mission Creator controls for fields the mod already reads"
+summary = "The mod reads OBJ states, vehicle lock/fuel/ammo, group AI state, placement scatter, marker style and area, fog/wind/view distance and waypoints (T-673, T-677 to T-682, shipped), but the Mission Creator has no control for them and the compiler emits few."
+class = "feature"
+status = "idea"
+notes = "Umbrella for the rows documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md:52-54 and :463-466 describe: the schema key and the mod reader exist, the Mission Creator control and the compiler emit do not. Shipped mod halves: T-673 (marker style and area markers), T-677 (waypoints), T-678 (group combat mode, behaviour, formation, speed), T-679 (placement scatter radius and shape), T-680 (vehicle lock, fuel, ammo), T-681 (entity health, allow-damage, show-model, size, stamina), T-682 (fog, wind, view distance; apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/TBD_EnvironmentReader.c). Compiler: the environment emit already carries fog, wind and view distance when authored (apps/website/map-engine/src/data/scenario/compiler/flatten/environment.rs), but no Mission Creator control writes them (the weather timeline panel that edits wind and fog never mounts, T-946.45; ui/inspector/env.rs removed the view distance control). Existing compile-side tickets: T-946.36 (flatten omits mission params, group AI fields, vehicle lock/fuel/ammo), T-946.41 (scatter radius and shape), T-946.38 and T-946.40 (reader gaps). No open ticket owns the controls; split into one ticket per family when planned. Source: Phase 5 doc writer F07b."
+created_at = "2026-09-25T23:27:10Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["attr_panel"]

@@ -1,0 +1,14 @@
+id = "T-1156"
+kind = "work"
+title = "Snap the Mission Creator drag-move to the move snap rung"
+summary = "The drag-move commit (input/pointer_gestures/pointer_up.rs:295-352) applies the raw pointer delta; snap_translate (mission_editor/transform.rs:52) has no caller, so moves never snap although the status bar reads 'SNAP move <step>' (transform.rs:208-216)."
+class = "bug"
+status = "idea"
+notes = "Paths under apps/website/frontend/src/v2/apps/editor. The snap state reaches the drag handlers (input/pointer_gestures/pointer_move.rs:25, pointer_up.rs:26), but only the elevation drag (pointer_move.rs:97, z_drag_snap_step) and the rotate commit (pointer_up.rs:462, effective_rotate_rung) use it; the horizontal move commit at pointer_up.rs:295-352 moves slots, vehicles and comments by the raw dx/dy. mission_editor/transform.rs:52 snap_translate over TRANSLATE_LADDER_M is referenced nowhere outside tests (git grep snap_translate). T-648 (shipped) introduced the snap grid. Snap the drag delta (or the anchor position) with the move rung, including the live drag preview, or drop the move rung from the readout. Source: Phase 5 doc writers F06 and F07b."
+created_at = "2026-09-25T23:24:00Z"
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

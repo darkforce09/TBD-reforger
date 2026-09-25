@@ -1,0 +1,12 @@
+id = "T-1185"
+kind = "work"
+title = "Refresh capability matrix and fix enf lookup on API indexes"
+summary = "The committed capability_matrix.tsv differs from what enf capability writes (line 18), no verdict row reads HAVE for shipped screens, and enf lookup reports NOT FOUND for every class in the two-column API class index."
+class = "chore"
+status = "idea"
+notes = "Three enf tooling gaps. (1) Stale committed matrix: 'enf capability' (tools_v2/developer-tools/src/enfusion_tooling/cli.rs:316-330) rewrites .ai/artifacts/enf-index/capability_matrix.tsv on every run; regenerated at HEAD into a scratch index directory, only line 18 differs: the committed 'CRF Workbench plugins' note says 'TBD has its own under apps/mod/tbd-framework/Scripts/WorkbenchGame', the verdict table now says apps/mod/tbd-export/Scripts/WorkbenchGame. Commit the regenerated file. (2) No HAVE rows: documentation_v2/mod/tbd-framework/capability_verdicts.tsv holds 37 BUILD, 22 LATER, 21 SKIP, 9 PARTIAL, 3 DEFERRED, 1 REPLACE and no HAVE rule, so the lobby / slot picker, briefing screen, spectator, safe start and admin menu rows still read BUILD although those screens ship; decide whether verdicts track build progress and flip the shipped rows to HAVE, or state that they never do. (3) 'enf lookup <symbol> --index .ai/artifacts/enf-index/vanilla_api_classes.tsv' always prints NOT FOUND: index::lookup (tools_v2/developer-tools/src/enfusion_tooling/index.rs:162-178) needs four tab-separated columns (name, kind, file, line), and the API class index has two (class, doc_page). Accept the two-column shape (print the doc page) or refuse it with a clear error. documentation_v2/runbooks/mod_slice_workflow.md:442 documents the workaround. Sources: doc writers F10a, F15b."
+created_at = "2026-09-25T23:37:53Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

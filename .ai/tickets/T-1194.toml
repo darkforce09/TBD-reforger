@@ -1,0 +1,13 @@
+id = "T-1194"
+kind = "work"
+title = "Fix backup units naming the development database container"
+summary = "The website backup and drill units set TBD_DB_CONTAINER=tbd_reforger_db, but deploy website runs Postgres as tbd_staging_db, so the nightly backup and drill target a container the host does not have."
+class = "bug"
+status = "idea"
+notes = "Paths under tools_v2/xtask. deploy/systemd/tbd-website-backup.service:55 and deploy/systemd/tbd-website-backup-drill.service:39 set TBD_DB_CONTAINER=tbd_reforger_db, the local development container (apps/website/api_v2/docker-compose.yml). On the deployed host, 'cargo xtask deploy website' starts Postgres from apps/website/docker-compose.staging.yml, whose container is tbd_staging_db (:21), and its own remote steps pass TBD_DB_CONTAINER=tbd_staging_db (src/commands/deploy/website/remote_steps.rs:12, :59). The nightly backup and the drill therefore dump or restore a container that does not exist there, unless the host also runs the development compose. Point both units at tbd_staging_db, or render the name from the same constant when the units are installed (src/commands/deploy/website/systemd_unit.rs). Possible defect; not run on a host. Source: doc writer F13a."
+created_at = "2026-09-25T23:40:45Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

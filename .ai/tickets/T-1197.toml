@@ -1,0 +1,13 @@
+id = "T-1197"
+kind = "work"
+title = "Fix ticket and slice tools naming worktrees nobody creates"
+summary = "ticket clean, done and brief target TBD-<id> and ticket/<id>, but slice-worktree creates <id> on slice/<id>; slice-run falls back to the main checkout when no worktree exists while telling the agent to commit on the slice branch."
+class = "bug"
+status = "idea"
+notes = "The slice tooling creates the worktree .ai/artifacts/worktrees/<id> on branch slice/<id> ('cargo xtask platform slice-worktree new', tools_v2/xtask/src/commands/platform/slice_worktree/git_plain.rs:198). Other tools use different names. (1) 'cargo xtask ticket clean <id>' and 'ticket done <id>' remove <worktree_base>/TBD-<id> and branch ticket/<id> (tools_v2/ticket-engine/src/cli/batch.rs:71-96 cleanup_targets; tools_v2/xtask/src/commands/ticket/execution.rs:20-40), so they never clean what slice-worktree made. (2) 'ticket brief <id>' prints BRANCH ticket/<id> and 'EXECUTION: ... worktree .../TBD-<id> @ <branch> ... Docs-only slices (cursor-docs) may commit on main' plus 'DO NOT: edit documentation' (tools_v2/ticket-engine/src/cli/brief.rs:25-30, :48-55), which also contradicts the rule that docs ship in the same commit as the code. (3) 'cargo xtask platform slice-run <id>' runs the agent in .ai/artifacts/worktrees/<id> when it exists, else silently in the main checkout (tools_v2/xtask/src/commands/platform/slice_execution.rs:78-84 run_cwd), while its prompt says 'commit on the slice branch only' (:71-76); with no worktree the agent works on main. Align all three on <WORKTREES_DIR>/<id> and slice/<id>, make slice-run refuse (or create the worktree) when none exists, and drop the documentation ban from the brief. Source: doc writer F16b."
+created_at = "2026-09-25T23:42:00Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"
