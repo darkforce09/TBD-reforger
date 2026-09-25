@@ -1,28 +1,62 @@
-# `document_viewer/`
+# Document viewer
 
-## Responsibility
+The [ticketboard](/documentation_v2/glossary.md#ticketboard) feature that opens a repository
+Markdown document, such as a [ticket](/documentation_v2/glossary.md#ticket)'s spec, plan or a
+citation, in a read-only column beside the ticket details, and shows it as Markdown or, when it
+cannot, as raw text with a note saying why.
 
-Loads repository-contained documents on worker threads and displays Markdown or a clearly labeled raw-text fallback.
+## Contents
+
+```text
+apps/ticketboard/src/document_viewer/
+├── events.rs  `DocumentEvent`: close the viewer, or open a path with the operating system's handler
+├── mod.rs     the module tree
+├── models/    `ViewerState` and the read outcomes it lands
+├── services/  the viewer click predicate, the repository fence and the bounded read on a worker thread
+└── ui/        the document column: header, progress, Markdown or raw-text fallback
+```
+
+## How it works
+
+A click on a `.md` spec, plan or citation path in the ticket details emits the application's
+`OpenDoc` action. The application's `open_doc` puts the `ViewerState` into `Loading` for that
+repository-relative path and starts `spawn_read`, replacing any read in flight. The worker resolves
+the path inside the repository, reads at most 512 KB and sends back a `LoadedDocument`; the
+application polls it each frame and `land`s it, which applies it only when the viewer still waits
+for that same path.
+
+```text
+Closed ──open(rel)──▶ Loading(rel) ──land(rel, outcome)──▶ Rendered(rel) or Fallback(rel)
+   ▲                     │  a later open(rel2) restarts at Loading(rel2); the old read is dropped
+   └───── close (Back) ──┴──────────────────────────────────────────────────┘
+```
+
+The column paints from that state through `ui::viewer_pane_ui`, and its Back and "open externally"
+buttons come back as `DocumentEvent`s, which the application turns into `CloseViewer` and
+`OpenPath` actions. The application owns the Markdown render cache and the saved column width
+(280 to 1600 points, 560 by default).
 
 ## Public surface
 
-`models::ViewerState` accepts only the active request's result. `services::document_loading` classifies paths, enforces the repository boundary, caps reads, and reports results. UI emits `DocumentEvent` for closing or opening a document externally.
+- `services::document_loading`: `wants_viewer`, which the ticket details of `crate::ticket_browser`
+  call to choose the viewer or the external handler; `spawn_read`, which `crate::application`
+  starts; and the re-exported `ViewerState` and `LoadedDocument`, which the application holds.
+- `ui::viewer_pane_ui`: the column, which `crate::application` paints.
+- `events::DocumentEvent`: `CloseViewer` and `OpenPath`, converted into the application's actions.
 
-## Dependency rules
+## Boundaries
 
-Models and readers contain no egui types; the application owns the render cache and saved column width. File reads are bounded, canonicalization prevents symlink escapes, and stale results never replace the active document. Closing this feature does not alter ticket selection.
-
-## Files
-
-- [events.rs](events.rs) — Events.
-- [mod.rs](mod.rs) — Module interface and composition.
-- [models/mod.rs](models/mod.rs) — Module interface and composition.
-- [models/read_outcome.rs](models/read_outcome.rs) — Read outcome.
-- [models/viewer_state.rs](models/viewer_state.rs) — Viewer state.
-- [services/document_loading.rs](services/document_loading.rs) — Document loading.
-- [services/mod.rs](services/mod.rs) — Module interface and composition.
-- [services/tests/document_loading.rs](services/tests/document_loading.rs) — Tests for document loading.
-- [ui/document_column.rs](ui/document_column.rs) — Document column.
-- [ui/mod.rs](ui/mod.rs) — Module interface and composition.
-
-Unit tests live in sibling `tests/` files declared with `#[cfg(test)]` and an explicit `#[path = "tests/…"]`. Production files contain fewer than 500 raw lines; test files contain at most 1,000.
+- Depends on: `crate::core::ui` (`OUTPUT_ROW_H`); `std` for files, threads and channels;
+  `eframe::egui` and `egui_commonmark` in `ui/` only. It is the one feature besides `core` that uses
+  nothing from `ticket_engine`.
+- Used by: `crate::application` (`mod.rs`, `lifecycle.rs`, `background_events.rs`,
+  `action_dispatch.rs`, `events.rs` and `feature_views.rs` in `apps/ticketboard/src/application/`);
+  `crate::ticket_browser`'s detail panel, through `wants_viewer`.
+- Rules:
+  - no document outside the repository root is read, by `..` or by a symbolic link, and no read
+    passes 512 KB (`apps/ticketboard/src/document_viewer/services/tests/document_loading.rs`);
+  - a stale read never replaces the open document, and closing the viewer never changes the ticket
+    selection;
+  - `models/` and `services/` name no egui type, and no other feature imports `ui/`
+    (`dependency_boundaries_and_external_test_placement_are_enforced` in
+    `apps/ticketboard/src/tests/architecture_rules.rs`).
