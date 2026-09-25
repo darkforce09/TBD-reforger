@@ -206,7 +206,7 @@ the base brief names, outside the repository.
 | F03 | 5 · order 1 | Doc writer: `pages/{mission_hub, doctrine_and_info, field_tools}/**` | running | — | — |
 | F04a | 5 · order 1 | Doc writer: website/frontend/README.md (route table: every route to page folder to feature doc), website/frontend/pages/README.md, the frontend core docs (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | F04b | 5 · order 2 | Doc writer: website/frontend/pages/{account, navigation}/** (see `refactor_phase5_slices.tsv`) | pending | — | — |
-| F09a | 5 · order 1 | Doc writer: website/README.md, website/api_v2/** (overview, env reference, domain docs, verification_evidence/README.md index) (see `refactor_phase5_slices.tsv`) | pending | — | — |
+| F09a | 5 · order 1 | Doc writer: website/README.md, website/api_v2/** (overview, env reference, domain docs, verification_evidence/README.md index) (see `refactor_phase5_slices.tsv`) | running | — | — |
 | F09b | 5 · order 2 | Doc writer: website/map-engine/**, website/graphics-engine/**, standards/engine_boundary_rules.md (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | V5.1 | 5 · W5.1 | Wave verifier over F02, F03, F04 and F09 | dropped (operator direction: no verifier per wave) | — | — |
 | F05 | 5 · order 2 | Doc writer: Mission Creator feature inventory, part 1 (areas A–M) and its folder README | pending | — | — |
