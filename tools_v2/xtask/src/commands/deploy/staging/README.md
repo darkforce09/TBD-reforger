@@ -80,5 +80,9 @@ single `TBD_WORKSHOP_MOD_ID`; every source passes the same checks.
 
 ## Related documentation
 
-- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — preparing the
-  host, filling `deploy.env` and running the deploy.
+- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
+  runbooks' index: the host, the launch modes and the ports.
+- [Staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md) — every
+  `deploy.env` setting, the refusals, the deploy's stages and the host agent install.
+- [Boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md)
+  — running `--verify-boot` and its self-test by hand, and what each assertion proves.

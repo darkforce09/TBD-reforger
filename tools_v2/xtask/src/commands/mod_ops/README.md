@@ -261,6 +261,10 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
   second client joins, with `mod playtest`.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   server `bootstrap-staging` and `remote-logs` serve.
+- [Boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md)
+  — `remote-logs` by hand and the log line prefixes to match.
+- [Machine credentials and mission deployment](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
+  — the credential `test-game-runtime-api` needs, and what it checks.
 - [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP bridge
   `dev-bootstrap` and the spawn checks use.
 - [Spawn determinism](/documentation_v2/runbooks/spawn_determinism.md) — running

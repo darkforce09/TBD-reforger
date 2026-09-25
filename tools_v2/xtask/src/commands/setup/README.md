@@ -118,6 +118,10 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   host that `mod bootstrap-staging` prepares and `setup server-profile` configures.
+- [Host preparation](/documentation_v2/runbooks/game_server_staging/host_preparation.md) — the
+  one-time host steps around `mod bootstrap-staging`.
+- [Client join and mod updates](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md)
+  — where `setup client-addons` fits when a client joins.
 - [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — where the pak folder
   of `mcp-game-root` is used.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — the client

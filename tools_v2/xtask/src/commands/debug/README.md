@@ -100,3 +100,7 @@ Each runs as `cargo xtask debug <command>`; a clap usage error exits 2.
 
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   server these commands probe.
+- [Client join and mod updates](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md)
+  — running `debug direct-join` around a failed Direct Join.
+- [Boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md)
+  — running `mod remote-logs`, its four outcomes and the log lines it matches.

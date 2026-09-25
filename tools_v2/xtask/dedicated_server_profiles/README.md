@@ -60,3 +60,5 @@ Both commands also read `game.scenarioId` from the profile to name the mission h
   `cargo xtask mod playtest` with a second client.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   server, whose config comes from `deploy.env` instead.
+- [Staging deploy](/documentation_v2/runbooks/game_server_staging/staging_deploy.md) — the
+  `deploy.env` settings the staging server config is rendered from.

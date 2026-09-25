@@ -123,6 +123,10 @@ Other mod commands:
   and its checks.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — deploying to the
   staging server and Direct Join.
+- [Boot and log verification](/documentation_v2/runbooks/game_server_staging/boot_and_log_verification.md)
+  — which build a server loaded, and the mod's log lines to match.
+- [Client join and mod updates](/documentation_v2/runbooks/game_server_staging/client_join_and_mod_updates.md)
+  — getting a script change to the staging server and to players.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local
   playtest.
 - [Export addon documentation](/documentation_v2/mod/tbd-export/README.md) — the map export,
