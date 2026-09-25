@@ -1,7 +1,8 @@
-# Eden Editor wiki scrape manifest
-# Used by scripts/tools/scrape-eden-wiki.mjs
+# Eden Editor wiki scrape manifest: every Bohemia wiki page the Eden catalogs cite, by category.
+# Each scraped page is cached as Markdown in .ai/artifacts/eden-wiki/, named after its slug with
+# ":" written "__". No tool reads this file; a page is scraped and its entry updated by hand.
 # status: pending | scraped | reviewed | failed
-# ticket: T-0xx backlog row (replaces legacy parity tier field)
+# ticket: the registry ticket (.ai/tickets/T-<id>.toml) whose topic the page informs
 
 version: 1
 mirrors:
