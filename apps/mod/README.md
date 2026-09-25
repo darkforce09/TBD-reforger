@@ -1,128 +1,127 @@
-# TBD Reforger Platform — Mod (`apps/mod/`)
+# Mod suite
 
-Data-driven Arma Reforger event platform: missions are JSON from the website backend,
-one greenfield Enfusion mod runs them all, and the web stack handles auth, events, and ORBAT.
+The Arma Reforger [mod](/documentation_v2/glossary.md#mod) of the TBD platform, as three
+[Enfusion](/documentation_v2/glossary.md#enfusion) addons: the game mod that runs every TBD
+session from the [mission](/documentation_v2/glossary.md#mission) JSON the platform deploys, and
+two [Workbench](/documentation_v2/glossary.md#workbench) addons, one that exports the game data
+the platform ingests and one that lets the Enfusion MCP tools drive Workbench.
 
-**Repo:** [github.com/darkforce09/TBD-reforger](https://github.com/darkforce09/TBD-reforger) (monorepo — this folder is the Enfusion mod; see the root [`CLAUDE.md`](../../CLAUDE.md) for the platform-wide map and current status)
+## Contents
 
----
-
-## Status (snapshot 2026-06-14 — current status lives in root `CLAUDE.md` §Status)
-
-| Area | Status |
-|---|---|
-| Phase 0 spikes | REST 0.1 ✓ · Registry 0.4 ✓ · Schema **1.1** ✓ |
-| `tbd-framework/` | Mission loader, slot spawn (`TBD_SpawnManager`), game mode prefab, dev scenario |
-| Workbench slot spawn | ✓ Per-slot `slots[]` deploy verified (2026-06-14) |
-| Dedicated server POC | Mission from API verified 2026-06-14 **against the Phase-0 REST spike backend, since removed** — the REST loader chain is **BLOCKED on T-092**; the `$profile:` file fallback is the working path |
-| Web backend (Phase 1 API) | ✓ Missions, link codes, roster, ORBAT slot assignment (web `/api/v1`; game-server routes = **T-092**) |
-| **Staging server** | `192.168.0.140` — **LAN Direct Join WORKS** (Workshop mod + `-config`; client joined + spawned 2026-06-14) — see [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md) |
-| **Phase 1 in progress** | In-game admin **mission browser** (last 5%: input actions — CLAUDE-CONTINUATION.md §16), capture objective, ORBAT enforcement, admin UI |
-| Milestone #1 target | **Sat 2026-08-22** — see [`MILESTONES.md`](/documentation_v2/archive/product_plans/mod_milestones.md) |
-
----
-
-## Quick start
-
-### Claude Code (Enfusion work)
-
-1. Read [`documentation_v2/runbooks/mod_slice_workflow.md`](/documentation_v2/runbooks/mod_slice_workflow.md)
-2. Run **`cargo xtask mod dev-bootstrap`** (from monorepo root) — launches Workbench on `tbd-export/addon.gproj` (`-gproj`, skips the project picker) and pre-warms the MCP daemon; the `EnfusionMCP` handlers are committed in [`tbd-emcp/`](tbd-emcp/) and nothing is copied any more
-3. Enable **enfusion-mcp** before editing any `.c` file
-4. Open `tbd-export/addon.gproj` in Workbench for export tooling sessions (pulls in `tbd-emcp`), or `tbd-framework/addon.gproj` for framework development. Never open the gitignored `Tbd_framework/` or `crf_framework/` reference copies
-
-### Dedicated server (local POC)
-
-```bash
-# Prereq: Steam app 1874900 (Arma Reforger Server stable), API on :8080, Postgres for website
-# From monorepo root:
-cargo xtask setup server-profile      # default: apps/mod/.local-test-profile/
-cargo xtask mod dev-server                    # -server + -addons (local mod)
+```text
+apps/mod/
+├── .cursor/        Cursor's MCP server entry and rule for work opened at this folder
+├── .gitignore      keeps reference copies, the local server profile and Workbench build output out
+├── .mcp.json       the MCP server entry that starts `enfusion-mcp` for sessions opened here
+├── tbd-emcp/       addon `TBD_EMCP`: the Workbench Net API handlers the MCP `wb_*` tools call
+├── tbd-export/     addon `TBD_Export`: Workbench map, equipment, vehicle and registry export tooling
+└── tbd-framework/  addon `TBD_Framework`: the game mod dedicated servers run
 ```
 
-Watch logs for `[TBD][Mission] loaded id=…`, 18× `[TBD][Slots] Slot-…`, then — once a client
-joins — `[TBD] SpawnManager: assigned slot …`. (T-612: the old `[TBD] Mission loaded`,
-`built slot spawn` and `spawn requested` lines are deleted; the only `Mission loaded` still
-printed is the *failure* line `[TBD] Mission loaded but invalid — staying in LOADING.` Pin
-tags + event keys, never sentences — see `cargo xtask mod remote-logs`.)
+## How it works
 
-### Staging server (192.168.0.140)
+Only `tbd-framework/` reaches players and servers. A dedicated server loads it as a loose addon or
+from the Workshop, boots its [mission header](/documentation_v2/glossary.md#mission-header), and the
+framework fetches the mission deployed to that server from the website API, verifies it and runs it.
+The other two addons run inside Workbench only: `tbd-export/` holds the export plugins and its own
+export world, and `tbd-emcp/` holds the Net API handlers of the Enfusion MCP bridge.
 
-```bash
-cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env   # fill SSH + token
-cargo xtask deploy staging
+```text
+                  addon.gproj dependencies
+TBD_Framework ──▶ vanilla 58D0FB3206B6F859
+TBD_EMCP      ──▶ vanilla
+TBD_Export    ──▶ vanilla, TBD_EMCP
+
+dedicated server ── loads ──▶ TBD_Framework ── HTTP ──▶ apps/website/api_v2
+Workbench ── opens ──▶ TBD_Export (+ TBD_EMCP) ◀── Net API ── enfusion-mcp, cargo xtask mcp
 ```
 
-See [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md). **Staging is Direct-Joinable** (Workshop mod + `-config`): set `TBD_SERVER_MODE=config` + `TBD_WORKSHOP_MOD_ID` in `deploy.env`, deploy, then Direct Join `192.168.0.140:2001` — the client auto-downloads the Workshop mod. (Legacy local-`-addons` join via `cargo xtask setup client-addons` is **not** Direct-Joinable — see STAGING-SERVER.md.) The V2–V4 API smoke gates are **skipped until T-092** (game-server REST routes not in the current backend).
-
-### Website (local dev)
-
-```bash
-# From monorepo root (see root CLAUDE.md §Run it locally):
-cargo xtask db up            # Postgres on :5434
-cargo xtask mk rust-api      # Rust API on :8080
-cargo xtask mk leptos        # Leptos Trunk SPA on :3000
-cargo xtask mod test-phase1-api
-```
-
----
-
-## Repository map (monorepo)
-
-| Path | Purpose |
-|---|---|
-| [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) — the shipping addon; carries no `Scripts/WorkbenchGame/` |
-| [`tbd-export/`](tbd-export/) | Standalone addon — map-export, equipment and vehicle extraction tooling (`Scripts/WorkbenchGame/**`, road exporter, `TBD_Export_Everon.conf`). **Depends on** vanilla + `TBD_EMCP`; decoupled from framework |
-| [`tbd-emcp/`](tbd-emcp/) | The committed enfusion-mcp Workbench Net API bridge handlers (`Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_*.c`, MIT, from `enfusion-mcp@0.6.1`) |
-| [`contracts_v2/`](../../contracts_v2/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
-| [`apps/website/`](../website/) | Rust API + Leptos SPA |
-| `Tbd_framework/` | CRF reference only, **gitignored** — do not open in Workbench |
-| [`tools_v2/xtask/`](../../tools_v2/xtask/) | Every `cargo xtask mod` command: Workbench setup, server profile, dev server, staging deploy, MCP bridge, API smokes |
-| [`documentation_v2/mod/`](/documentation_v2/mod/) | Ops docs, [`STAGING-SERVER.md`](/documentation_v2/runbooks/game_server_staging/README.md) |
-
-**Handoff docs:** [`CLAUDE-CONTINUATION.md`](/documentation_v2/archive/handoffs_and_kickoffs/mod_claude_continuation.md) · [`MILESTONES.md`](/documentation_v2/archive/product_plans/mod_milestones.md) · [`tbd-reforger-platform-build-plan.md`](/documentation_v2/archive/product_plans/tbd_reforger_platform_build_plan.md)
-
----
-
-## Commands (run from the monorepo root)
-
-| Command | Purpose |
-|---------|---------|
-| `cargo xtask mcp call` | JSON-RPC to enfusion-mcp from a shell |
-| `cargo xtask mcp wb-logs` | Grep the latest Proton Workbench `console.log` |
-| `cargo xtask mod spawn-verify` | `wb_play` plus a log grep for the spawn lines |
-| `cargo xtask mod dev-bootstrap` | MCP root, `wb_connect` and `mod_validate` |
-| `cargo xtask setup mcp-game-root` | Pak symlink farm the MCP reads |
-| `cargo xtask deploy staging` | Rsync → 192.168.0.140, API, game server restart |
-| `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
-| `cargo xtask setup client-addons` | Local client mod symlink (not Direct-Joinable; the Workshop mod is) |
-| `cargo xtask mod remote-logs` | SSH log verify on the staging server |
-| `cargo xtask mod bootstrap-staging` | One-time SSH discovery and mkdir |
-| `cargo xtask setup server-profile` | Dedicated server profile and mission fallback |
-| `cargo xtask mod dev-server` | Local dedicated server launcher |
-
----
-
-## Key IDs
+No addon depends on the framework, and the framework carries no Workbench scripts, so the shipping
+mod stays free of editor tooling. Every command that builds, checks, boots or deploys the addons is
+a `cargo xtask mod`, `mcp`, `setup` or `deploy` command in `tools_v2/xtask/`.
 
 | Item | Value |
 |---|---|
-| Framework GUID (`TBD_Framework`) | `B2C3D4E5F6A78901` |
-| Export GUID (`TBD_Export`) | `C3D4E5F6A7B89012` |
-| EMCP GUID (`TBD_EMCP`) | `D4E5F6A7B8C90123` |
-| Dev scenario | `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` |
-| Dev world | `{F652B97A6F497348}worlds/TBD_Dev_POC.ent` (Eden subscene) |
-| Golden mission | `msn_8f3a2c` (Bridgehead at Levie) |
-| Dev server port | `2001` (when using `-server` mode) |
+| Addon GUIDs | `TBD_Framework` `B2C3D4E5F6A78901`, `TBD_Export` `C3D4E5F6A7B89012`, `TBD_EMCP` `D4E5F6A7B8C90123` |
+| Development mission header | `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` |
+| Development world | `{F652B97A6F497348}worlds/TBD_Dev_POC.ent`, a sub-scene of Eden |
+| Golden mission | `msn_8f3a2c`, "Bridgehead at Levie", 18 slots (`contracts_v2/fixtures/missions/valid/bridgehead-at-levie.json`) |
+| Development server game port | 2001 (`tools_v2/xtask/dedicated_server_profiles/tbd-dev-server.config.json`) |
 
----
+## Getting started
 
-## What not to do
+Run these from the repository root. The gates need the Linux Arma Reforger dedicated server
+installed through Steam, and the Workbench commands need Arma Reforger Tools.
 
-- Do not open or ship `Tbd_framework/` (60+ Coalition deps)
-- Do not guess Enfusion APIs — use enfusion-mcp
-- Do not call the MCP's `wb_launch` with `gprojPath` on `tbd-framework` or `tbd-export` — it injects a second copy of the handlers into that addon's `Scripts/WorkbenchGame/EnfusionMCP/` → Workbench "Multiple declaration" → bridge dead
-- Do not call `wb_cleanup` with `apps/mod/tbd-emcp` — it `rm -rf`s the committed handlers
-- Do not copy `tbd-framework` files into `tbd-export` — it is a dependency addon, not a mirror
-- Do not use `-config` and `-addons` together for local dev mods
-- Payments / Stripe are out of scope; VOIP is partner-owned (external app)
+```bash
+cargo xtask mod compile         # compiles the framework's game scripts headless; exit 0 when clean
+cargo xtask mod world-boot      # boots the development mission header headless; exit 0 PASS
+cargo xtask mod dev-bootstrap   # opens Workbench on tbd-export with the MCP bridge; exit 0 once wb_connect answers
+cargo xtask mcp smoke           # checks the live bridge with wb_connect and wb_state
+```
+
+With the API running (`cargo xtask db up`, then `cargo xtask mk rust-api` in the foreground), a
+local server plays a platform mission:
+
+```bash
+cargo xtask setup server-profile                                # the profile under apps/mod/.local-test-profile/
+cargo xtask mod playtest --mission=<uuid> --admin=<identityId>  # a local dedicated server; stays in the foreground
+cargo xtask mod test-game-runtime-api                           # the game-runtime routes, with TBD_MACHINE_CREDENTIAL
+```
+
+The staging server takes `cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env`,
+filled with `TBD_SSH_HOST` and the tokens, then `cargo xtask deploy staging`. With
+`TBD_SERVER_MODE=config` and `TBD_WORKSHOP_MOD_ID` set, clients Direct Join it and download the
+Workshop mod; a local `-addons` client from `cargo xtask setup client-addons` cannot Direct Join.
+
+Other mod commands:
+
+- `cargo xtask mod spawn-verify`: play the world in Workbench and scan the log for the slot spawn
+  lines.
+- `cargo xtask mod remote-logs`: judge a dedicated server's `console.log` over SSH, or a local file
+  with `--file`.
+- `cargo xtask mod bootstrap-staging`: the one-time staging host discovery and folder setup.
+- `cargo xtask mcp call <tool> '<json>'`: call one MCP tool through the warm daemon;
+  `cargo xtask mcp wb-logs` scans Workbench's latest `console.log`.
+- `cargo xtask setup workbench` and `cargo xtask setup mcp-game-root`: the Workbench base-game link
+  and the pak farm the MCP reads.
+- `cargo xtask debug direct-join`: LAN Direct Join diagnostics.
+- `cargo xtask mod dev-server`: with no arguments, the usage of `mod playtest`, exit 2.
+
+## Boundaries
+
+- Depends on: the vanilla Arma Reforger data addon; the website API in `apps/website/api_v2/`,
+  which the framework calls over HTTP; the wire shapes in `contracts_v2/definitions/`; the pinned
+  `enfusion-mcp` package in `tools_v2/enfusion_mcp_node_package/`.
+- Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
+  the fleet host agent in `apps/fleet_host_agent/` boot; the gates in
+  `tools_v2/xtask/src/commands/mod_ops/`, run by `.github/workflows/mod-gates.yml`; the Mission
+  Creator in `apps/website/frontend/`, which embeds the framework's alias registry; and the
+  importers of the Workbench exports in `contracts_v2/catalogs/` and `assets_v2/terrains/`.
+- Rules:
+  - No addon depends on `tbd-framework`, and it carries no `Scripts/WorkbenchGame/`
+    (`cargo xtask mod compile` exits 1 otherwise); no upstream reference code or upstream-only
+    asset GUID enters it (`cargo xtask verify no-crf-leak`).
+  - The MCP handlers exist once, in `tbd-emcp/`: the MCP's `wb_launch` with `gprojPath` on
+    another addon copies a second set that breaks the bridge, and its `wb_cleanup` on `tbd-emcp/`
+    deletes the committed set.
+  - Enfusion APIs are looked up with the Enfusion MCP tools or in the vanilla sources, never
+    guessed; the upstream reference copies that `.gitignore` excludes are read only and never
+    opened in Workbench.
+  - A dedicated server takes `-config` or `-addons`, never both; `-addonsDir` combines with
+    `-config` (`tools_v2/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`).
+  - `resourceDatabase.rdb` in each addon is written by Workbench only.
+
+## Related documentation
+
+- [Mod documentation](/documentation_v2/mod/README.md) — the index of the mod's deeper documents.
+- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — what the framework is for and
+  its non-negotiables.
+- [Mod slice workflow](/documentation_v2/runbooks/mod_slice_workflow.md) — how mod work runs
+  through Workbench and the gates.
+- [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP call path
+  and its checks.
+- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — deploying to the
+  staging server and Direct Join.
+- [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local
+  playtest.
