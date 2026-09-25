@@ -109,4 +109,4 @@ position to every player through `TBD_TaskHud`; on a client it asks for the snap
 ## Related documentation
 
 - [Objective capture HUD specification](/documentation_v2/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
-  — the design of the objective board and capture bar
+  — the objective board and capture bar as built, their delivery and design target

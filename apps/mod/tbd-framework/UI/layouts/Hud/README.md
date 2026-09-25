@@ -48,4 +48,4 @@ apps/mod/tbd-framework/UI/layouts/Hud/
 ## Related documentation
 
 - [Objective capture HUD specification](/documentation_v2/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
-  — the HUD's design target
+  — the HUD as built, its delivery and design target

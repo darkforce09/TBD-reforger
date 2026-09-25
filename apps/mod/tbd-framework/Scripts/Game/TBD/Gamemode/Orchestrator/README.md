@@ -114,5 +114,7 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the event loop and one life
 - [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner the replicated winner and reason feed
+- [Debrief specification](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
+  — the DEBRIEF scoreboard the kill count and packed board feed
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the stage log
   lines of a healthy boot

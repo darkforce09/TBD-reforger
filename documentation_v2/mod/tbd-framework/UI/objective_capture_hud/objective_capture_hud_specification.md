@@ -1,79 +1,114 @@
 **Status:** live
 
-# TBD Reforger — Objective & Capture HUD Specification
+# Objective capture HUD
 
-**System Domain:** In-Game Mission Objectives, Real-Time Capture Progression, Ownership & Contest Telemetry  
-**Framework Alignment:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`), `TBD_ObjectiveHud` (`Scripts/Game/TBD/UI/Hud/TBD_ObjectiveHud.c`), Layout `{7BD1A70000000A01}` (`UI/layouts/TBD_ObjectiveHud.layout`), and Server Runner (`TBD_ObjectivesComponent.c`)  
-**Visual & Theming Standards:** Aegis Design System (`TBD_UITheme.c`)
+The objective board a player sees during live play: a panel in the top-left corner that lists each
+objective of the [mission](/documentation_v2/glossary.md#mission) from the player's side, and a
+capture bar while the player stands in a capture zone. The server composes every word; the client
+only paints it.
 
----
+## Where it lives
 
-## 1. Purpose & Core Principles
+- Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/README.md)
+  (`TBD_ObjectiveHud.c`, the panel and its RPC pair) and
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/README.md)
+  (`TBD_ObjectivesComponent.c`, which ticks the objectives and builds each player's board;
+  `TBD_Objective.c`, the status texts).
+- Layout: [`apps/mod/tbd-framework/UI/layouts/Hud/`](/apps/mod/tbd-framework/UI/layouts/Hud/README.md),
+  `TBD_ObjectiveHud.layout`, whose README gives the geometry and every widget the handler binds.
+- Entry: `TBD_ObjectivesComponent.Deliver`, run by the component's 1 s server tick while the round
+  is `LIVE`.
+- Related features: the [end screen](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md),
+  which an objective end trigger opens; the task markers on the map, which `TBD_TaskHud` in the
+  same folder draws.
 
-The **Objective & Capture HUD** provides combatants with an in-game, real-time tactical summary of mission objectives and dynamic capture zone status directly within the gameplay viewport during the `LIVE` match stage.
+## Behaviour
 
-### Primary Objectives
-1. **Unobtrusive Combat Awareness:** Deliver immediate clarity on objective status (held, contested, progress %) without obstructing the player's primary engagement and aiming sectors.
-2. **Asymmetric / Role-Framed Clarity:** Objectives reflect per-side contextualization (Attacker vs. Defender vs. Neutral framing) derived authoritatively from server-side slot assignments.
-3. **Context-Sensitive Immersion:** General objective cards remain visible persistently while deployed, but detailed capture progress bars and contest alerts activate dynamically when the player enters an objective's physical boundary.
+### What the board shows
 
----
+1. The panel is titled "OBJECTIVES". Each objective is one row, `[<glyph>] <title>`, with a detail
+   line, both resolved for the viewer's faction: the title and the task text follow the
+   objective's per-side framing (attacker or defender) where the mission authors one.
+2. The glyph: `o` neutral, `+` held by the viewer's side, `-` held by another side, `!`
+   contested, `v` complete, `#` a destroy target, `H` a hold, `.` inactive. A `!` row takes the
+   danger state, `+` and `v` the active state, `-` the taken state.
+3. The detail line for a capture objective: "neutral", "OURS" or "held by <faction key>", then
+   " -- CONTESTED" while contested, or " -- <n>% <faction key>" while a capture is part done. A
+   destroy objective reads "intact <destroyed>/<required>", then "DESTROYED"; a hold reads
+   "hold <n>s left", with " (PAUSED)" while paused, then "HELD"; an inactive objective reads
+   "inactive". The side's task text follows after " | ".
+4. The capture bar appears only while the player stands alive in a capture objective. It shows
+   `<title>  <percent>%` and a fill scaled to the percentage; when the player stands in more than
+   one, a contested one wins.
 
-## 2. Structural Architecture & Layout Anatomy
+### Capture rules the board reflects
 
-The HUD is implemented as a lightweight, glass-morphism overlay anchored to the **top-left** of the screen.
+1. A zone is contested when players of more than one side stand in it alive; a contest freezes
+   progress in both directions.
+2. Taking a zone another side holds is two stages: neutralise it, then capture it; progress decays
+   when nobody acts on it.
+3. The completion of an objective also goes to every player as one chat line: "TBD: <name> has
+   been CAPTURED by <faction>.", "… has been DESTROYED." or "… has been HELD to the clock by
+   <faction>.". Progress and contests are never chatted.
 
-```
-┌────────────────────────────────────────────────────────┐
-│ OBJECTIVES                                             │ <- Title Bar (Font 16, ON_SURFACE)
-├────────────────────────────────────────────────────────┤
-│ [+] North Zone          OURS                           │ <- Objective Card / Row
-│ [!] South Zone          held by OPFOR -- CONTESTED     │ <- Contested Status Row
-│ [#] Radar Station       intact 1/2                     │ <- Destroy / Alternate Objective
-│                                                        │
-├────────────────────────────────────────────────────────┤
-│ South Zone  65%                                        │ <- Zone Context Label
-│ [████████████████████████████░░░░░░░░░░] [!] CONTESTED │ <- Capture Progress Bar & Warning
-└────────────────────────────────────────────────────────┘
-```
+### Delivery
 
----
+1. Every second the server builds each connected player's board and sends it only when it differs
+   from the last board that player was sent (`ReplicateHud` compares a length-prefixed signature).
+   A player the server has not yet sent a board to, a new connection included, gets the whole
+   board.
+2. The first board opens the panel; a repaint happens only when the board's signature changes.
+3. When the round leaves `LIVE`, the server sends every player an empty board with `show` 0, which
+   closes the panel and resets what each player is known to hold.
 
-## 3. UI Elements & Data Specifications
+### Known discrepancies
 
-### 3.1 Objective Summary Cards / List
-Each active mission objective is rendered as a distinct line card within the list:
+- The server offers a pull for a client that wants its board (`TBD_ObjectivesComponent.PushHudTo`,
+  `SCR_PlayerController.TBD_RequestObjectiveHud` in `TBD_ObjectiveHud.c`) — but no script calls
+  the request, so a client only ever receives pushed boards.
 
-| Element | Description & Formatting | Examples |
-| :--- | :--- | :--- |
-| **Status Glyph (`Icon`)** | 1-character bracketed visual tag denoting current state | `[+]` Friendly / Secured<br>`[-]` Hostile / Enemy Held<br>`[o]` Neutral / Uncaptured<br>`[!]` Contested (Both sides present)<br>`[#]` Destroy Target<br>`[H]` Hold Until Clock |
-| **Objective Title** | Name of the objective zone, resolved to the player's side | `North Outpost`<br>`Command Bunker`<br>`Ammo Depot` |
-| **Ownership Status** | Faction ownership state evaluated against the local viewer | `OURS` (Friendly controlled)<br>`held by OPFOR` (Enemy controlled)<br>`neutral` (Unclaimed) |
-| **Task Detail** | Secondary contextual information appended to the row | `intact 1/2` (Destroy)<br>`hold 340s left` (Hold)<br>`hold (PAUSED)` (Hold contested) |
+## Data
 
----
+The HUD makes no HTTP call. Its wire, on the modded `SCR_PlayerController` (the HUD README's
+[Authority](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/README.md#authority) lists both RPCs):
 
-### 3.2 Capture Progress Bar & Dynamic Meter
-Docked at the base of the HUD panel, the capture progress section is context-sensitive:
+- `TBD_RpcDo_ObjectiveHud`, Reliable, Owner: three string arrays (glyphs, titles, details), the
+  bar's label, percentage and visibility, and `show`. The server fills it from
+  `TBD_ObjectiveRegistry`'s objectives and the viewer's faction, resolved from the [slot](/documentation_v2/glossary.md#slot)
+  `TBD_SpawnManager` assigned; a client holds no mission document and computes nothing.
+- On a listen host, the host's own board is applied in place without an RPC.
 
-* **Trigger Condition:** Activates automatically when the player enters the spatial boundary of a capture zone.
-* **Track & Fill:** Slate track with color fill indicating capturing team progress.
-* **Numeric Readout:** Real-time text indicator formatted as `<Zone Name>  <Percent>%` (e.g., `North Zone  74%`).
+## Design
 
----
+- As built: a 360 x 320 px glass panel (`SURFACE_GLASS`) 24 px from the top-left corner with the
+  title, a `TBD_ListBox` of rows and a capture bar: a `SURFACE_CONTAINER_HIGH` track and an
+  `ACTION` fill 328 px wide at 100 %. Texts draw in the engine's default font. The
+  [layouts README](/apps/mod/tbd-framework/UI/layouts/Hud/README.md) gives the geometry.
+- Design target: the specification's wireframe; the folder has no mockup set. It matches the built
+  panel's position, title, `[glyph]` rows, status texts and `<zone>  <percent>%` bar label.
+- Differences from the target:
+  - the target's glyph set has no `v` complete and no `.` inactive row;
+  - the target's contested bar turns amber or red and flashes, with a "[!] CONTESTED" tag beside
+    it; the built bar keeps its fill colour and only the row marks the contest;
+  - the target's panel dims while the player aims down sights; the built panel does not.
+- No open ticket covers these differences.
 
-### 3.3 Contested Zone Warning Indicator
-When opposing factions have living combatants simultaneously present within the capture perimeter:
+## Open work
 
-* **State Trigger:** Multiple opposing factions occupy the zone simultaneously.
-* **Capture Freezing:** The capture bar freezes progress immediately (progress does not advance while contested).
-* **Visual Cue — List Row:** The objective icon shifts to `[!]` and the text appends `-- CONTESTED`.
-* **Visual Cue — Status Bar:** Highlights in warning colors (amber/red) with a flashing alert to signal active enemy presence inside the zone.
+- [T-946.55 — Objective HUD replicates to every player at 1 Hz](/documentation_v2/tickets/specs/t936_mission_logic.md)
+  (ready, [plan](/documentation_v2/tickets/plans/t-946_55_plan.md)): sends a board only when it
+  changes; `ReplicateHud` already does, so the ticket's status is behind the code.
+- [T-212 — Typed per-side objectives with attributes](/documentation_v2/tickets/specs/t212_typed_objectives.md)
+  (ready, [plan](/documentation_v2/tickets/plans/t-212_plan.md)): objectives become typed, placed,
+  per-side entities, which changes the titles and task texts each side's board carries.
+- [T-1089 — Remove or wire uncalled mod script methods and components](/.ai/tickets/T-1089.toml)
+  (idea, no plan): wires or removes `TBD_RequestObjectiveHud`, the uncalled pull.
 
----
+## Decisions
 
-## 4. Operational Mechanics & Functional Flow
-
-1. **Server-Authoritative Evaluation:** The server ticks objective state at 1 Hz (`TBD_ObjectivesComponent`), checking player zone containment and calculating capture math.
-2. **Event-Gated Replication:** RPC updates are sent to clients only when objective state, ownership, or capture progress changes, preventing network spam.
-3. **Lifecycle Gating:** The HUD is visible strictly during `TBD_EGameStage.LIVE`. It automatically unloads during `SAFE_START`, `LOBBY`, `BRIEFING`, or match `END`.
+- The board is composed on the server for each player: clients hold no mission document, and each
+  side sees its own framing and ownership words.
+- The board replaced a per-tick private chat pump: chat keeps only the completion lines, so the
+  log is not buried in progress messages.
+- A board is sent only on a difference, and a miss always sends: an idle round costs one board per
+  player, and no player is starved of a real change.

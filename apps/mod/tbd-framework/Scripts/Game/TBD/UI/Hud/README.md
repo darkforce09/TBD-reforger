@@ -67,6 +67,6 @@ not side-scoped: every player gets the same snapshot.
 ## Related documentation
 
 - [Objective capture HUD specification](/documentation_v2/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
-  — the design of the objective board and capture bar
+  — the objective board and capture bar as built, their delivery and design target
 - [Tactical marker palette specification](/documentation_v2/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
-  — the marker icons the task markers draw from
+  — the map markers each side sees, task markers included, and the unbuilt marker palette

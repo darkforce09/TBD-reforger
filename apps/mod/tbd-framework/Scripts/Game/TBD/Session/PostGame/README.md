@@ -39,6 +39,6 @@ reason, and a packed board of kills and deaths per player.
 ## Related documentation
 
 - [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
-  — the END banner's design target
+  — the END banner as built, how a round ends and the design target
 - [Debrief specification](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md)
-  — the debrief and after-action review design target
+  — the DEBRIEF scoreboard as built, kill counting and the design target

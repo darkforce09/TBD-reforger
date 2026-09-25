@@ -34,6 +34,6 @@ None: no resource refers to this folder. The `TBD_UIAdmin` preset in
 ## Related documentation
 
 - [In-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
-  — the in-game menus' design target
+  — the pause menu and admin screen as built, and the design target
 - [Admin help ticket specification](/documentation_v2/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
-  — the admin tickets panel's design target
+  — the admin help ticket and tickets module, designed and not built

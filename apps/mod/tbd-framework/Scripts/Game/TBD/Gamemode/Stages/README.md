@@ -95,6 +95,8 @@ SCR_BaseGameMode` arms a self-re-arming 2 s tick (`TICK_MS`) in a framework worl
 ## Related documentation
 
 - [Safe start HUD specification](/documentation_v2/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
-  — the design of the safe start countdown the player sees
+  — the safe start notices as built and their design target
+- [End screen specification](/documentation_v2/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+  — the END banner that names the win rule's endings
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — one life and the
   [event](/documentation_v2/glossary.md#event) loop the stages follow

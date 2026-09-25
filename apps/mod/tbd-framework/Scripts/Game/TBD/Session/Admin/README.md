@@ -105,6 +105,6 @@ so no field is ever empty on the wire. A non-admin's payload holds the refusal a
 ## Related documentation
 
 - [In-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
-  — the in-game menus and administrative toolset's design target
+  — the pause menu and admin screen as built, and the admin suite design target
 - [Admin help ticket specification](/documentation_v2/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
-  — the admin tickets panel's design target
+  — the admin help ticket and tickets module, designed and not built

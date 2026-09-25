@@ -82,3 +82,5 @@ one process.
 
 - [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the event loop, one life and the
   [Enfusion](/documentation_v2/glossary.md#enfusion) facts the stage machine relies on
+- [Mod UI screens](/documentation_v2/mod/tbd-framework/UI/README.md) — the screens each stage opens, the safe start,
+  objective, end and debrief screens among them

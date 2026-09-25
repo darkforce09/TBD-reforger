@@ -92,4 +92,4 @@ before a deployment and on disconnect.
 ## Related documentation
 
 - [Spectator specification](/documentation_v2/mod/tbd-framework/UI/spectator/spectator_specification.md)
-  — the spectator interface's design target
+  — the spectator as built, its policies and controls, and the design target

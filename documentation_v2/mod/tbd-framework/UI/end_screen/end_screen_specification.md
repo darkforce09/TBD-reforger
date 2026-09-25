@@ -1,136 +1,126 @@
 **Status:** live
 
-# TBD Reforger — End Screen Banner UI Functional Reference Specification
+# End screen
 
-**System Domain:** Match Conclusion, Decisive Win/Defeat Presentation, Game Lifecycle Transition (`LIVE` → `END` → `DEBRIEF`)  
-**Framework Alignment:** Enfusion Mod Framework (`apps/mod/tbd-framework`), Gamemode Lifecycle (`TBD_FrameworkManager.c`, `TBD_GameStage.c`), Screen Component (`TBD_EndScreen.c`), Audio Subsystem (`TBD_AudioEmitter.c`), Layout Resource (`TBD_EndScreen.layout`)
+The END banner: the moment a round is decided, every player with a screen sees "MISSION ENDED",
+the winning faction and why the round ended, over a dimmed world. It stays up until the next
+stage closes it, which only an admin moves; the DEBRIEF scoreboard follows.
 
----
+## Where it lives
 
-## 1. Purpose & Lifecycle Context
+- Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/README.md)
+  (`TBD_EndScreen.c`) and the stage machine in
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/README.md)
+  (`TBD_FrameworkManager.c`), which records the winner and the reason.
+- Layout: [`apps/mod/tbd-framework/UI/layouts/Session/PostGame/`](/apps/mod/tbd-framework/UI/layouts/Session/PostGame/README.md),
+  `TBD_EndScreen.layout`, whose README lists every widget the handler binds.
+- Entry: `TBD_FrameworkManager.ApplyEndScreens`, which opens `TBD_EndScreen` on the `END` stage
+  and closes it on every other stage.
+- Related features: the [debrief](/documentation_v2/mod/tbd-framework/UI/debrief_after_action_review/debrief_after_action_review_specification.md),
+  the scoreboard the `DEBRIEF` stage opens; the
+  [in-game menu](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md),
+  whose admin screen forces the next stage.
 
-### 1.1 What It Is
-The **End Screen Banner** is a high-visibility, cinematic HUD overlay presented to all connected players (both active combatants and spectators) at the immediate conclusion of a tactical round. It delivers an unambiguous verdict on the match outcome, establishes the victorious faction, explains the decisive win/loss condition, and manages the pacing transition between active gameplay and the detailed After-Action Report (AAR) / Debriefing screen.
+## Behaviour
 
-### 1.2 When It Appears
-The banner triggers the exact frame the authoritative server resolves a terminal mission condition during the `LIVE` stage, causing `TBD_FrameworkManager` to transition `m_Stage` to `TBD_EGameStage.END`:
+### How a round ends
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> LIVE: Safe Start Lifts / Round Hot
-    LIVE --> END: Decisive Condition Met (TickWinConditions)
-    state END {
-        [*] --> DisplayBanner
-        DisplayBanner --> PlayAudioStinger
-        PlayAudioStinger --> LockCombatInput
-        LockCombatInput --> CountdownToDebrief
-    }
-    END --> DEBRIEF: Timer Expires (10–15s) / Server SetStage
-    DEBRIEF --> [*]: Return to Lobby / Rotation
-```
+The server ends a round by moving the stage machine from `LIVE` to `END`. Five paths lead there:
 
-### 1.3 Decisive Termination Triggers
-The screen dynamically adapts to one of four authoritative resolution triggers evaluated on the server's 1 Hz win-condition tick (`TickWinConditions`):
-1. **Faction Elimination (`faction_eliminated`):** All fielded combatants of opposing factions have been killed or rendered combat-ineffective (attrition threshold reached in one-life mode).
-2. **Objective Completion / Capture (`objective_captured` / `objective_completed`):** A side captures the required territorial sector, extracts the high-value asset/VIP, or successfully defends/destroys a mission objective.
-3. **Round Time Expiry (`time_limit`):** The authored scenario mission clock (`flow.roundSecondsRemaining`) reaches `00:00`, resolving victory to the defensive force or highest-scoring side.
-4. **Administrative Stoppage (`admin`):** A game referee or match administrator issues `#tbd stage END` or an admin command to terminate the round manually.
+1. The objective end triggers, checked every 2 s while `LIVE` by `TickWinConditions`:
+   `TBD_ObjectiveRegistry.EvaluateEndTriggers` returns `all_objectives_captured`,
+   `objective_destroyed` or `hold_expired` with the winning faction.
+2. Attrition, in the same tick: when at least two factions claimed a
+   [slot](/documentation_v2/glossary.md#slot) and only one still has a living player, the reason is
+   `faction_eliminated` and that faction wins.
+3. The round clock, armed at `LIVE` from the [mission](/documentation_v2/glossary.md#mission)'s
+   time limit: at zero it broadcasts "[TBD] TIME. The round is over." and ends the round with
+   `time_limit`; the winner is the one faction still alive, else none.
+4. The authored win rule's `extraction` and `vip` modes (`TBD_WinConditionEvaluator`) and a
+   trigger's `end_mission` effect (`TBD_TriggerRuntime`).
+5. An admin forcing the stage: `#tbd stage END` or `#tbd stage next` in chat, or the admin
+   screen's "Force stage".
 
----
+Paths 1 to 3 record their reason and winner before the stage changes. Paths 4 and 5 record none,
+so on entering `END` the server infers them (`InferEndBanner`): an objective trigger that holds,
+else `faction_eliminated` when exactly one of two or more contesting factions is alive, else
+`admin` with the survivor arithmetic's winner.
 
-## 2. Visual Layout & Required Information Elements
+### What the player sees
 
-The End Screen Banner is designed as a focused, high-contrast modal banner anchored over the center of the viewport, rendered on top of a darkened tactical world scrim.
+1. On `END`, `TBD_EndScreen.Open` creates the layout on the workspace of every machine that has
+   one; a dedicated server has none and only logs `[TBD] END - winner=<key> reason=<reason>` to
+   chat and console.
+2. The panel reads "MISSION ENDED", the subtitle "The round is over.", the winner line and the
+   reason line, and the footer "The next stage closes this screen.".
+3. The winner line is the winning faction's key as the mission names it, or "No winner".
+4. The reason line: "Faction eliminated." for `faction_eliminated`, "Time limit expired." for
+   `time_limit`, "An admin ended the round." for `admin`, "The round ended." when no reason
+   arrived, and the raw key for anything else (`all_objectives_captured`, `objective_destroyed`,
+   `hold_expired`).
+5. The layout's "BACK" button closes the banner on that machine only.
+6. The banner stays until the stage changes. Nothing moves `END` to `DEBRIEF` on a timer: an admin
+   does, with `#tbd stage next` or "Force stage". Any stage other than `END` closes it, and
+   `LOADING` or `LOBBY` clears the stored winner, reason and board.
 
-### 2.1 Visual Wireframe & Layout Architecture
+The overlay is a workspace widget, never a menu, so no key it swallows and no failure inside it
+can refuse a stage change. On `END` the server also ends every life it opened on the platform
+(`TBD_SpawnManagerDeploymentAuthorization.OnStageChanged`), the dynamic spawner deletes the AI
+groups it spawned (`TBD_DynamicSpawner`), and a mission's authored `mission_end` audio cues fire
+once (`TBD_AudioEmitter`).
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                                                                        │
-│                                      [ DISMISS / VIEW MAP (ESC) ]                                      │
-│                                                                                                        │
-│       ┌────────────────────────────────────────────────────────────────────────────────────────┐       │
-│       │                                     MISSION ENDED                                      │       │
-│       │                              TACTICAL ENGAGEMENT RESOLVED                              │       │
-│       ├────────────────────────────────────────────────────────────────────────────────────────┤       │
-│       │                                                                                        │       │
-│       │                               [ FACTION INSIGNIA / LOGO ]                              │       │
-│       │                             BLUFOR — UNITED STATES MARINE CORPS                        │       │
-│       │                                      DECISIVE VICTORY                                  │       │
-│       │                                                                                        │       │
-│       │         "All opposing forces in the operational area have been eliminated."            │       │
-│       │                                                                                        │       │
-│       ├────────────────────────────────────────────────────────────────────────────────────────┤       │
-│       │  ⏱ MATCH DURATION: 38m 24s                  ⏳ DEBRIEF SCOREBOARD IN: 00:09            │       │
-│       └────────────────────────────────────────────────────────────────────────────────────────┘       │
-│                                                                                                        │
-│                                                                                                        │
-└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+### Known discrepancies
 
-### 2.2 Layout Breakdown & Widget Hierarchy
+- The banner names the reason for every ending (`TBD_EndScreen.c`) — but the extraction, VIP and
+  trigger endings call `SetStage(END)` without a reason (`TBD_WinConditionEvaluator.c`
+  `EndRound`, `TBD_TriggerRuntime.c` `EffectEndMission`), so the inference labels them
+  `faction_eliminated` or "An admin ended the round.".
+- The objective triggers reach the player as raw keys such as `all_objectives_captured`
+  (`TBD_EndScreen.DescribeReason`), since only three keys have a sentence.
 
-| Widget Name | Type | Visual Style / Color Tokens | Content & Behavioral Function |
-| :--- | :--- | :--- | :--- |
-| `ScreenRoot` | `FrameWidget` | Fullscreen Anchor (`0 0 1 1`) | Root container for the workspace overlay. |
-| `Backdrop` | `ImageWidget` | Semi-translucent Scrim (`#080E1D` @ 72% opacity) | Darkens the 3D world, isolates combat distractions, and increases text legibility. |
-| `PanelFrame` | `FrameWidget` | Center Docked (`Offset: 240px X, 120px Y`) | Main floating card holding the verdict presentation. |
-| `Panel` | `ImageWidget` | Dark Slate Surface (`#0D1322` @ 100% opacity) | Solid opaque card backing with subtle outline. |
-| `Title` | `TextWidget` | Bold Primary Text (`#DDE2F7`, 30pt, Center) | Static global headline: **`MISSION ENDED`**. |
-| `Subtitle` | `TextWidget` | Secondary Muted (`#C4C6D0`, 16pt, Center) | Context status: `"TACTICAL ENGAGEMENT RESOLVED"`. |
-| `HeaderRule` | `ImageWidget` | Horizontal Rule (`#44474F`, 2px height) | Visual separation between title and victory verdict. |
-| `WinnerBanner` | `FrameWidget` / `Overlay` | Side-Themed Accent Fill (BLUFOR Blue, OPFOR Red, INDFOR Green) | Dynamic faction pill badge establishing the victor. |
-| `Winner` | `TextWidget` | High-Contrast Bold (`#FFFFFF`, 24pt, Center) | Winning faction display name: e.g. **`BLUFOR — USMC VICTORIOUS`** or **`ROUND DRAW / STALEMATE`**. |
-| `Reason` | `TextWidget` | Distinct Accent (`#A3C7FF` / `#F1F1F1`, 18pt, Center) | Human-readable decisive win explanation describing the outcome trigger. |
-| `FooterRule` | `ImageWidget` | Horizontal Rule (`#44474F`, 2px height) | Separator between victory reason and telemetry bar. |
-| `MatchDuration` | `TextWidget` | Tabular Numerals (`#C4C6D0`, 15pt, Left-aligned) | Formatted scenario duration elapsed during `LIVE` stage (`MM:SS` or `HH:MM:SS`). |
-| `CountdownTimer` | `TextWidget` | Amber Highlight (`#FFCC00`, 16pt, Right-aligned) | Live 1 Hz countdown ticker indicating transition to the AAR: e.g. **`Debriefing in: 10s`**. |
-| `BackAction` / `Dismiss` | `ButtonWidget` | Subtle Outline Button (`#2C303E`, Top-right) | Optional dismiss button labeled `DISMISS (ESC)` to toggle banner visibility. |
+## Data
 
----
+The screen makes no HTTP call and sends no RPC. It reads three `TBD_FrameworkManager` properties,
+replicated to every client:
 
-## 3. Required Data Fields & State Logic
+- `m_sEndWinner` (`GetEndWinner`) and `m_sEndReason` (`GetEndReason`): written on the authority
+  inside `SetStage(END)` by `SnapshotEndBanner`, from the pending pair the ending path recorded or
+  from `InferEndBanner`.
+- `m_sDebriefBoard`: the packed scoreboard, snapshotted at the same moment for the debrief.
 
-### 3.1 Winning Faction Resolution (`Winner`)
-* **Data Source:** Replicated via `TBD_FrameworkManager.GetEndWinner()`.
-* **State Presentation:**
-  * **Faction Victory:** Displays the capitalized human-readable name of the winning faction accompanied by its canonical military side color:
-    * **BLUFOR (US / NATO):** Deep Blue (`#1D4ED8` accent fill, `#3B82F6` highlight border).
-    * **OPFOR (USSR / Russian Armed Forces):** Crimson Red (`#991B1B` accent fill, `#EF4444` highlight border).
-    * **INDFOR / Independent:** Forest Olive Green (`#166534` accent fill, `#22C55E` highlight border).
-  * **Draw / Stalemate:** Rendered in neutral Slate Gray (`#475569`) with the text `NO DECISIVE WINNER` or `STALEMATE`.
+## Design
 
-### 3.2 Decisive Victory Reason (`Reason`)
-* **Data Source:** Replicated via `TBD_FrameworkManager.GetEndReason()`.
-* **Mapping Matrix:**
+- As built: a full-screen `ScreenRoot` with a `Backdrop` painted `TBD_UITheme.SCRIM`, a centred
+  `PanelFrame` whose `Panel` is `SURFACE`, the `Title`, `Subtitle`, `Winner`, `Reason` and
+  `Status` texts, two `OUTLINE_VARIANT` rules, and a "BACK" button. The layout shares the list
+  shell's shape; the handler hides its `List` and `PrimaryAction`. Texts draw in the engine's
+  default font, and faction colours are not applied.
+- Design target: the [end screen banner mockup](/documentation_v2/mod/tbd-framework/UI/end_screen/visual_references/ultra_clear_2_second_end_screen_banner_mockup/README.md),
+  a design-phase reference: a faction pill ("BLUFOR // US MARINE CORPS"), a large "VICTORY", a
+  reason headline and a sentence, in a glowing glass card.
+- The design target set out, and the built banner lacks:
+  - a faction-coloured winner badge (blue, red or green fill; slate for a draw) and a full faction
+    name in place of the key;
+  - a reason headline and sentence per trigger: "ENEMY FORCES ELIMINATED", "OBJECTIVE SECURED",
+    "MISSION GOAL ACCOMPLISHED", "TIME LIMIT EXPIRED" and "ADMINISTRATIVE TERMINATION";
+  - the round's length (`MM:SS`, or `HH:MM:SS` past an hour) and a 1 Hz countdown to the debrief
+    ("Debrief in: 10s"), with the server moving to `DEBRIEF` after 10 to 15 s;
+  - "DISMISS (ESC)" in place of "BACK";
+  - a combat freeze on `END`: weapons safed, movement locked, damage off;
+  - a win fanfare, a loss tone and ambience ducked by 6 dB, beyond the authored cues.
+- No open ticket covers these differences.
 
-| Internal Reason Key | Rendered Headline Text | Detailed Context Description |
-| :--- | :--- | :--- |
-| `faction_eliminated` | **ENEMY FORCES ELIMINATED** | `"All opposing combatants have been neutralized or routed."` |
-| `objective_captured` | **OBJECTIVE SECURED** | `"All critical territorial zones have been captured and fortified."` |
-| `objective_completed` | **MISSION GOAL ACCOMPLISHED** | `"The primary mission objective has been completed successfully."` |
-| `time_limit` | **TIME LIMIT EXPIRED** | `"The mission clock has elapsed; defending side holds operational territory."` |
-| `admin` | **ADMINISTRATIVE TERMINATION** | `"The match was halted by server administration."` |
+## Open work
 
-### 3.3 Match Summary Duration (`MatchDuration`)
-* **Data Source:** Calculated on the server as `(EndTimestamp - LiveStartTimestamp)` and replicated via round state.
-* **Format:** Formatted as `MM:SS` (or `HH:MM:SS` for operations lasting > 60 minutes).
+- [T-1082 — Record end reason and winner for extraction, VIP, trigger endings](/.ai/tickets/T-1082.toml)
+  (idea, no plan): the extraction, VIP and trigger endings record their own reason and winner, so
+  the banner stops calling them admin endings.
 
-### 3.4 Auto-Transition Countdown Timer (`CountdownTimer`)
-* **Data Source:** Synchronized client-side countdown timer based on server-declared transition window (default: `10` or `15` seconds).
-* **Format:** Dynamic text updated once per second: `Debrief in: 10s` → `09s` → `...` → `00s`.
-* **Behavior:** When the timer reaches `0`, the server transitions state to `TBD_EGameStage.DEBRIEF`, which automatically tears down the End Screen Banner and mounts the full scoreboard.
+## Decisions
 
----
-
-## 4. Functional Mechanics & Engine Integration
-
-1. **Server-Authoritative State Change:** The server sets `m_sPendingEndReason` and `m_sPendingEndWinner`, invokes `SetStage(TBD_EGameStage.END)`, and replicates state to all clients.
-2. **Player Input Locking & Combat Freeze:**
-   - Weapons are safed and projectile creation suppressed.
-   - Locomotion inputs (WASD, sprint, crouch) are locked.
-   - Characters receive damage invulnerability (`SetDamageHandlingEnabled(false)`) to preserve final combat records.
-3. **Audio Stinger:** Plays a triumphant fanfare for winners, a solemn tone for losers, and ducks ambient combat noise by -6dB.
-4. **Simple Dismissal:** Pressing `ESC` or clicking `DISMISS` hides the overlay locally so players can inspect the battlefield while awaiting the stage countdown.
-5. **Debrief Transition:** When the countdown completes, `TBD_EndScreen` is torn down and `TBD_DebriefScreen` mounts automatically.
+- The END and DEBRIEF screens are workspace overlays, not menus: a menu can swallow Esc and hold
+  input, and nothing on a player's screen may refuse or delay the server's stage change.
+- Every ending passes through `SetStage(END)` and one banner snapshot: a new way to end a round
+  adds a reason, never a second end path, so every guard and log line applies to it.
+- The winner and reason replicate as two strings on `TBD_FrameworkManager`: a client holds no
+  mission document, so it paints only what the server decided.

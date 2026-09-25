@@ -1,93 +1,115 @@
 **Status:** live
 
-# TBD Reforger — Safestart HUD Functional Reference Specification
+# Safe start HUD
 
-**Module:** TBD Reforger Enfusion Framework (`apps/mod/tbd-framework`)  
-**Domain:** In-Game HUD, Staging Lifecycle, Mission Safety Enforcement  
-**Applicable Stage:** `TBD_EGameStage.SAFE_START`  
-**Backend & Authority Coupling:** `TBD_SafestartManager.c`, `TBD_PlayAreaComponent.c`, `TBD_AdminService.c`  
-**UI Engine & Theme:** Enfusion UI Layout (`.layout`), `ScriptedWidgetComponent`, Aegis Design Tokens (`TBD_UITheme.c`)
+What a player is told during safe start, the warm-up before a round goes live in which no one can
+be hurt: the countdown and the weapons-cold and weapons-live notices. Under one life a single
+negligent discharge before the start would end a player's [event](/documentation_v2/glossary.md#event),
+so the notices must be impossible to miss. The [mod](/documentation_v2/glossary.md#mod) has no safe start panel of its own: the notices
+are the game's pop-up banners and chat lines.
 
----
+## Where it lives
 
-## 1. Purpose & Core Design Philosophy
+- Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/README.md)
+  (`TBD_SafestartManager.c`: the shield, the countdown, the pop-ups and the chat lines).
+- Admin control: `#tbd safestart [status|go|<seconds>]`, served by `TBD_AdminService.Safestart` in
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md).
+- Entry: `TBD_SafestartManager.OnStageChanged`, which `TBD_FrameworkManager.SetStage` calls on
+  every stage change.
+- Layout: none; the notices use the game's `SCR_PopUpNotification` and the chat feed.
+- Related features: the [play area warning](/documentation_v2/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md),
+  which enforces nothing until the round is live; the
+  [in-game menu](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md),
+  whose staging-phase mockup draws a readiness panel for this phase.
 
-### 1.1 The Staging Safeguard Under "One Life"
-In the TBD Reforger milsim ecosystem, events adhere to an uncompromising **One Life** rule. When a mission enters the tactical phase, players deploy into the world simultaneously, standing shoulder-to-shoulder to review equipment, assign fireteams, configure radios, and mount vehicles.
+## Behaviour
 
-Without safe start, an accidental mouse click or negligent discharge (ND) instantly kills a friendly teammate and ends their entire multi-hour event with no respawn.
+### The shield
 
-The **Safestart HUD** serves as the persistent, high-visibility visual anchor during this critical warmup window (`TBD_EGameStage.SAFE_START`). It operates directly in the player's primary viewport to:
-1. Provide unambiguous confirmation that **weapons are safe and damage is disabled**.
-2. Display a prominent **real-time countdown timer** to synchronization ("Go Live").
-3. Remind personnel to remain within designated **staging perimeter boundaries**.
-4. Surface **admin intervention states** (pause, time extensions, or manual release).
-5. Signal the transition to combat with an unmistakable visual and auditory **"WEAPONS FREE"** release banner.
+1. The shield arms on `LOBBY`, `BRIEFING` and `SAFE_START` and lifts on any other stage. While
+   armed, every character body has damage handling off, its weapon safety on, and every shot or
+   grenade deleted the instant it exists; a re-sweep every 3 s covers bodies that appear later.
+2. The server logs the first suppressed shot or throw per player as a negligent discharge, at
+   warning level; the player is not told.
+3. The lift restores each body's own earlier damage setting and reads it back. When any body stays
+   unrestored, every player reads "[TBD] !! SAFESTART FAILED TO LIFT for some players — damage may
+   still be OFF. Tell an admin NOW." and a watchdog retries every 5 s; when it recovers, "[TBD]
+   Safestart lift recovered — damage is ON for everyone.".
 
----
+### The countdown
 
-## 2. Visual Architecture & Layout Specification
+1. The countdown runs on `SAFE_START` only, from the configured length: the [mission](/documentation_v2/glossary.md#mission)'s
+   `flow.safeStartSeconds`, else 300 s; an admin's `#tbd safestart <seconds>` sets it within 5 to
+   3600 s.
+2. On arming, every player reads the chat line "[TBD] SAFESTART — damage OFF, weapons cold. Live
+   in <MM:SS>." and each screen shows the pop-up "SAFESTART — WEAPONS COLD" with "No damage,
+   rounds are suppressed. Live in <MM:SS>." for 8 s. A player who joins mid-countdown gets the same
+   pop-up.
+3. Chat repeats "[TBD] SAFESTART — live in <MM:SS>. Weapons cold, damage off." at 600, 300, 120,
+   60, 30 and 10 s. The pop-up "SAFESTART — LIVE IN <MM:SS>" with "Weapons cold, damage off" shows
+   for 3 s at those marks and also at 240, 180 and 15 s and each of the last 5 s.
+4. At zero, or on `#tbd safestart go`, the stage machine moves to `LIVE`; the lift follows through
+   the stage change.
+5. After the lift, chat reads "[TBD] SAFESTART OVER — WEAPONS LIVE. Damage is ON, and you have ONE
+   life." and the pop-up "SAFESTART OVER — WEAPONS LIVE" with "Damage is ON. You have ONE life."
+   shows for 8 s.
+6. `#tbd safestart <seconds>` while the countdown runs restarts it at the new length and tells
+   everyone "[TBD] SAFESTART extended — live in <MM:SS>."; `#tbd safestart status` answers the
+   admin with the phase, the time left, the bodies covered and the suppressed shots and grenades.
 
-### 2.1 Viewport Anchor & Layering
-* **Position:** Top-center of the screen, docked at `Y = 24px` from the screen top margin.
-* **Z-Order / Layer:** Anchored on the game HUD layer above standard player status, but below modal dialogs (pause menu, map, admin dashboard).
-* **Reference Resolution:** 1920×1080 Enfusion Canvas. Layout dynamically centers horizontally.
+### Limits
 
-### 2.2 Visual Layout Diagram
+The shield covers characters only; vehicles, static weapons and world objects keep their damage.
+It cannot holster or lower a weapon: a shot still fires, with report, flash and recoil, and only
+the projectile is deleted. Melee, falls, drowning and vehicle impacts are stopped by the damage
+switch alone. A body that was already invulnerable before the sweep comes out of it still
+invulnerable, and the lift line counts it.
 
-```text
-                                  SCREEN TOP (Y: 0)
-───────────────────────────────────────────────────────────────────────────────────
-                                      [ 24px ]
-         ┌───────────────────────────────────────────────────────────────┐
-         │  [SHIELD]  SAFESTART ACTIVE                 [ ADMIN: PAUSED ] │ ◄ Status Bar / Admin Tag
-         ├───────────────────────────────────────────────────────────────┤
-         │                                                               │
-         │                          04:32                                │ ◄ Warmup Countdown Timer
-         │                                                               │
-         ├───────────────────────────────────────────────────────────────┤
-         │           WEAPONS COLD  •  DAMAGE OFF  •  ONE LIFE            │ ◄ Safety Warning Banner
-         ├───────────────────────────────────────────────────────────────┤
-         │       ▲ REMAIN INSIDE STAGING PERIMETER (120m to edge)        │ ◄ Staging Boundary Reminder
-         └───────────────────────────────────────────────────────────────┘
-                                   Width: 460px
-```
+## Data
 
-### 2.3 Post-Safestart Release State (Flash Banner)
+The HUD makes no HTTP call and sends no RPC of its own:
 
-```text
-         ┌───────────────────────────────────────────────────────────────┐
-         │  [UNLOCK]  SAFE START ENDED — WEAPONS FREE                    │
-         │            DAMAGE IS LIVE • CHECK TARGET IDENTIFICATION      │
-         └───────────────────────────────────────────────────────────────┘
-                               Accent: SUCCESS Green (#22C55E)
-```
+- `m_iSecondsRemaining`, a replicated property of `TBD_SafestartManager`, carries the countdown;
+  -1 means safe start is not running. Each client reacts in `OnCountdownReplicated`; the authority
+  calls the same helper from its setter, because an authority never receives its own replication
+  callback.
+- The chat lines go from the server to every player through `TBD_PlayerChat.TellEveryone`.
 
----
+## Design
 
-## 3. Component & Visual Inventory
+- As built: vanilla pop-up banners, which appear wherever the game draws them, and chat lines.
+  Nothing on screen persists between milestones, and nothing shows a boundary.
+- Design target: the specification's wireframe; the folder has no mockup set. It draws a
+  persistent 460 x 116 px glass panel 24 px below the top centre of the screen, and the built HUD
+  has none of it:
+  - a "SAFESTART ACTIVE" badge with a shield icon, amber while armed and green on lift;
+  - a large `MM:SS` countdown that turns amber under 30 s and flashes red under 10 s;
+  - a "WEAPONS COLD • DAMAGE OFF • ONE LIFE" line;
+  - a staging-perimeter strip, "REMAIN INSIDE STAGING PERIMETER" with the distance to the edge,
+    pulsing amber when the player strays; the mod enforces no staging boundary during safe start;
+  - an admin badge, "PAUSED BY REF" or "TIME EXTENDED (+02:00)"; the mod has no pause, and an
+    admin sets a new length rather than adding time;
+  - a green release banner, "SAFE START ENDED — WEAPONS FREE" and "DAMAGE IS LIVE • CHECK TARGET
+    IDENTIFICATION", held for 6 s with a radio chime; the built lift shows the vanilla pop-up for
+    8 s with no sound;
+  - the panel dimming while the player aims down sights.
+- A pop-up rather than a mod screen: a mod menu preset resolves only after
+  [Workbench](/documentation_v2/glossary.md#workbench) regenerates `resourceDatabase.rdb`, and a
+  countdown nobody can see is not a countdown.
+- No open ticket covers these differences.
 
-| Component ID | UI Element | Visual Description & Tokens | Behavior & Function |
-| :--- | :--- | :--- | :--- |
-| **`HUD_PANEL`** | Container Card | Midnight navy glass panel (`SURFACE_GLASS`: `0xB31F2937`), subtle border (`BORDER_SUBTLE`: `0xFF374151`), rounded 4px. Size: 460×116 px. | Docks top-center. Opacity suppresses slightly during iron sight aim (ADS) to preserve line of sight. |
-| **`STATUS_BADGE`** | "SAFESTART ACTIVE" | Shield icon + uppercase bold label. Tinted in tactical amber (`TACTICAL_YELLOW`: `0xFFFACC15`). | Latches active on `SAFE_START`. Changes to `SUCCESS` green (`#22C55E`) on lift. |
-| **`TIMER_DISPLAY`** | Warmup Countdown | Huge, monospaced digital clock (`MM:SS`). Color: `ON_SURFACE` (`0xFFDDE2F7`). Font: 32px mono bold. | Driven by server `m_iSecondsRemaining`. Turns amber under 30s; flashes red (`ERROR`: `0xFFEF4444`) under 10s. |
-| **`SAFETY_BANNER`** | Weapons Warning Subtitle | High-contrast status line: `"WEAPONS COLD • DAMAGE OFF • ONE LIFE"`. Tint: `ON_SURFACE_VARIANT` (`0xFFC4C6D0`). | Informs players that projectile sinks and character damage gates are active. |
-| **`BOUNDARY_STRIP`** | Staging Perimeter Reminder | Sub-panel or banner strip: `"▲ STAY WITHIN STAGING AREA"` + optional distance readout. | Driven by `TBD_PlayAreaComponent`. Pulses amber if player steps outside staging bounds into warning grace period. |
-| **`ADMIN_BADGE`** | Admin Status Indicator | Pill chip anchored top-right: `"PAUSED BY REF"` or `"TIME EXTENDED (+02:00)"`. | Hidden during normal countdown. Appears when an admin pauses the clock (`#tbd safestart pause`), overrides time, or forces go. |
+## Open work
 
----
+None. Checked `.ai/tickets/` for open tickets on safe start, its countdown and its notices.
 
-## 4. Functional Mechanics & Technical Operation
+## Decisions
 
-1. **Three-Tier Safety Enforcement:**
-   - **Damage Gate:** Player character damage handling is disabled (`EnableDamageHandling(false)`).
-   - **Projectile Sink:** Any weapon discharge or thrown grenade is intercepted and deleted on creation.
-   - **Weapon Safety:** Character safeties are forced on.
-2. **Staging Boundary Reminder:** If a player wanders near or beyond the staging boundary, the banner pulses warning text alerting them to return before safe start lifts.
-3. **Admin Controls:** Displays pause and extension indicators when referees manage the clock via admin commands.
-4. **Transition to Live ("Weapons Free"):**
-   - When the timer reaches `00:00` or an admin triggers `#tbd safestart go`, the banner flips to green (`#22C55E`) with the message `"SAFE START ENDED — WEAPONS FREE"`.
-   - A distinct radio chime sound effect plays locally.
-   - Damage handling is restored and verified server-side.
-   - The banner persists for 6 seconds to ensure everyone sees the alert, then smoothly fades out.
+- The shield arms from `LOBBY`, not only `SAFE_START`: players stand together from the moment they
+  deploy, so the window before the countdown needs the same protection.
+- Damage off, projectile deletion and weapon safety stack: damage off is the enforcement, deletion
+  covers bodies whose damage manager was not found, and safety is a convenience the player can
+  undo.
+- The lift is verified and retried, and a failed lift is broadcast: a safe start that fails to
+  lift is worse than none, since bullets that do nothing are found only at first contact.
+- Chat and pop-up both: the pop-up is glanceable, the chat line still there for a player who was
+  looking at the map.

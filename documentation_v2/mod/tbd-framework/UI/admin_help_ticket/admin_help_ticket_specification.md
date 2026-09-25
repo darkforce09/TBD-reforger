@@ -1,92 +1,83 @@
 **Status:** live
 
-# TBD Reforger — Admin Help Ticket UI Specification & Functional Reference
+# Admin help ticket
 
-**System Domain:** In-Game Player Support, Terrain Recovery, Bug Remediation & Referee Dispatch  
-**Target Platform:** Reforger Enfusion Mod Framework (`apps/mod/tbd-framework`)  
-**Backend & Replication:** `CRF_AdminMenuManager.c`, `CRF_PlayerRplToAuthorityManager.c`, `CRF_RplBroadcastManager.c`
+A designed, unbuilt way for a player to ask the admins for help without leaving the round: a
+request dialog with a category, a description and the player's position attached, and a tickets
+module in the admin menu where an admin claims, resolves and acts on each request. No code
+implements either; this document records the design target and what exists instead.
 
----
+## Where it lives
 
-## 1. Purpose & System Overview
+- Code: none. What a stuck player can use today is the admin screen and the `#tbd` commands in
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md),
+  run by an admin, and the game's own chat.
+- Reference: the design follows the admin menu of the Coalition Reforger Framework (CRF), whose
+  scripts sit in the gitignored local reference copy `apps/mod/crf_framework/`
+  (`CRF_AdminMenuManager.c`, `CRF_PlayerRplToAuthorityManager.c`, `CRF_RplBroadcastManager.c`);
+  TBD reads that code and never copies it.
+- Related features: the [in-game menu](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md),
+  whose designed admin sidebar has a Tickets entry and whose pause sidebar has "Contact Admin".
 
-The **Admin Help Ticket** is an in-game modal dialog enabling players in competitive milsim scenarios to quickly report game-breaking issues directly to connected referees and administrators without leaving the simulation.
+## Behaviour
 
-### Operational Focus:
-- **Collision & Terrain Extraction:** Rapid recovery for players clipped into rocks, buildings, or subsurface terrain meshes.
-- **Client Desync & Medical Remediation:** Quick reporting for persistent uniform/vest model invisibility, broken bleeding/unconscious loops, or inventory glitches.
-- **Spectator Cam Restoration:** One-life spectator camera recovery when players are trapped in black screens or desynced post-death.
-- **Rule Violation & Match Administration:** Discreet signaling of safe-start breaches, asset theft, or intentional teamkilling with verified spatial coordinates.
+Nothing is built. Today a player who needs an admin types in chat, and a listed admin acts with the
+admin screen (respawn or deploy the player) or a `#tbd` command; the rest of the target's powers
+(teleport, heal, uniform repair) do not exist in the [mod](/documentation_v2/glossary.md#mod).
 
----
+### Known discrepancies
 
-## 2. UI Layout & Visual Wireframe
+- The target opens the dialog with F8 — but F8 is bound to the `TBD_AdminMenu` action, which
+  toggles the admin screen (`apps/mod/tbd-framework/Configs/System/Actions/TBD_AdminMenu.conf`).
 
-The dialog appears centered on screen over a darkened backdrop, pausing background game input while active.
+## Data
 
-```
-┌───────────────────────────────────────────────────────────────────────────────┐
-│ [!] REQUEST REFEREE ASSISTANCE                                           [ ✕ ] │
-├───────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  ISSUE CATEGORY                                                               │
-│  ┌─────────────────────────────────────────────────────────────────────────┐  │
-│  │ [▾] Stuck in Terrain / Wedged in Geometry                               │  │
-│  └─────────────────────────────────────────────────────────────────────────┘  │
-│      Options: Stuck in Terrain | Medical / Uniform Glitch                     │
-│               Spectator Bug   | Rule Violation / Admin Request                │
-│                                                                               │
-│  INCIDENT DESCRIPTION                                                         │
-│  ┌─────────────────────────────────────────────────────────────────────────┐  │
-│  │ Fell through floor of warehouse near hangar. Legs broken, cannot move.  │  │
-│  │ Please extract to safe ground outside.                                  │  │
-│  │                                                                         │  │
-│  │                                                               78 / 256  │  │
-│  └─────────────────────────────────────────────────────────────────────────┘  │
-│                                                                               │
-│  TELEMETRY & LOCATION METADATA (Auto-Attached)                                │
-│  ┌─────────────────────────────────────────────────────────────────────────┐  │
-│  │  Player: [1stID] Miller (BLUFOR)           Grid: 042-088 (Elev: 42m)    │  │
-│  │  State: Alive / Injured (Bleeding)         Vehicle: None (On Foot)      │  │
-│  │  Time: 12:44:19 UTC                        Active Admins Online: 2      │  │
-│  └─────────────────────────────────────────────────────────────────────────┘  │
-│                                                                               │
-│  [ CANCEL ]                                                [ SUBMIT TICKET ]  │
-└───────────────────────────────────────────────────────────────────────────────┘
-```
+None: no RPC, [API](/documentation_v2/glossary.md#api) call or storage exists for a ticket.
 
----
+## Design
 
-## 3. UI Components & Control Inventory
+The design target, from the specification's wireframe and the
+[admin tickets panel mockup](/documentation_v2/mod/tbd-framework/UI/admin_help_ticket/visual_references/admin_tickets_panel_mockup/README.md),
+a design-phase reference.
 
-| Widget Name | Element Type | Purpose & Behavior |
-| :--- | :--- | :--- |
-| **`HeaderBanner`** | Header Panel | Displays modal title `REQUEST REFEREE ASSISTANCE`. Non-interactive. |
-| **`CloseButton`** | Push Button (`✕`) | Dismisses the dialog without dispatching ticket (`Esc`). |
-| **`CategorySelector`** | Dropdown / ComboBox | 4 selectable categories: `Stuck in Terrain`, `Medical / Uniform Glitch`, `Spectator Bug`, `Rule Violation / Admin Request`. |
-| **`DescriptionInput`** | Multiline Edit Box | Freeform description box. Max limit: 256 characters. |
-| **`CharCounter`** | Text Label | Real-time counter: `<Current> / 256`. |
-| **`MetadataPanel`** | Readout Card | Displays auto-attached telemetry: player callsign, faction, 6-digit military grid, elevation, life state, and active admin count. |
-| **`CancelButton`** | Action Button | Aborts submission, closes menu, releases mouse lock. |
-| **`SubmitButton`** | Action Button | Dispatches payload to server authority via reliable RPC. Disabled if active ticket exists or cooldown active. |
+### Player side
 
----
+1. The player opens "REQUEST REFEREE ASSISTANCE" from the pause menu ("HELP TICKET") or a key,
+   alive or spectating. The dialog sits centred over a darkened backdrop and takes the input.
+2. Controls: a close cross (Esc); a category ("Stuck in Terrain", "Medical / Uniform Glitch",
+   "Spectator Bug" or "Rule Violation / Admin Request"); a description of up to 256 characters with
+   a live counter; a read-only card of attached data (callsign and side, grid and elevation, life
+   state, vehicle, time and the number of admins online); "CANCEL" and "SUBMIT TICKET".
+3. Submit sends the ticket to the server over a reliable RPC. It is disabled while the player has
+   an open ticket and for 60 s after the last one.
+4. When an admin claims the ticket the player sees "TICKET ACKNOWLEDGED: Referee <name> is
+   reviewing your request."; on closure, a confirmation banner.
 
-## 4. Functional Lifecycle & Two-Way Alerts
+### Admin side
 
-1. **Invocation:**
-   - Accessible via pause menu (`Esc` → `HELP TICKET`) or dedicated keybind (`F8`).
-   - Usable while alive or in spectator mode.
-2. **Server Dispatch & Referee Alerts:**
-   - Broadcasts alert to all connected referees in their admin panel (`admin_chat`):
-     `"[TICKET #12] <Player> (<Faction> @ <Grid>) [Stuck in Terrain]: <Description>"`
-   - Plays an administrative chime on referee clients.
-3. **Referee Acknowledgment:**
-   - When a referee claims the ticket, the player receives an on-screen toast:
-     `"TICKET ACKNOWLEDGED: Referee <AdminName> is reviewing your request."`
-4. **Action Execution:**
-   - **Terrain Unstick:** Referee clicks unstick; player is teleported to adjacent clear ground with safe collision offset.
-   - **Medical Heal:** Referee clicks heal; removes injuries and revives player.
-5. **Ticket Closure:**
-   - Referee closes ticket upon resolution; player receives confirmation banner.
-   - 60-second client cooldown prevents ticket spamming.
+1. Every admin gets the ticket in their admin chat, "[TICKET #12] <player> (<side> @ <grid>)
+   [<category>]: <description>", with a chime.
+2. The tickets module lists tickets filtered by All, Pending and Resolved, each with its number,
+   category, state, player, side, grid or claiming referee, and age.
+3. The selected ticket shows its category and priority, submission time, the player with "Teleport
+   To" and "Spectate", the grid, health, posture and transport, the description and quick tags.
+4. Actions: "Unstick to Surface" (moves the player 1.5 m to the nearest open ground), "Full Heal &
+   Revive", "Fix Uniform/Vest" (resyncs the containers without losing items), "Dispatch Toast to
+   Player & Close" and "Resolve & Notify".
+
+### Purpose the target serves
+
+Players clipped into terrain or buildings, uniforms or vests that do not show, broken bleeding or
+unconscious states, a spectator camera stuck on black, and rule breaches (safe start, theft,
+deliberate team kills) reported with a position.
+
+No open ticket covers the feature.
+
+## Open work
+
+None. Checked `.ai/tickets/` for open tickets on help tickets, player reports and the admin
+tickets module.
+
+## Decisions
+
+None recorded: nothing is built.
