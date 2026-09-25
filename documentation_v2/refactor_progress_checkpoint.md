@@ -211,7 +211,7 @@ the base brief names, outside the repository.
 | V5.1 | 5 · W5.1 | Wave verifier over F02, F03, F04 and F09 | dropped (operator direction: no verifier per wave) | — | — |
 | F05 | 5 · order 2 | Doc writer: Mission Creator feature inventory, part 1 (areas A–M) and its folder README | running | — | — |
 | F06 | 5 · order 3 | Doc writer: Mission Creator feature inventory, part 2 (areas N–Z) | pending | — | — |
-| F07a | 5 · order 2 | Doc writer: website/frontend/apps/editor/{mission_creator_roadmap.md, ux_spec.md} (see `refactor_phase5_slices.tsv`) | pending | — | — |
+| F07a | 5 · order 2 | Doc writer: website/frontend/apps/editor/{mission_creator_roadmap.md, ux_spec.md} (see `refactor_phase5_slices.tsv`) | running | — | — |
 | F07b | 5 · order 3 | Doc writer: website/frontend/apps/editor/{decisions.md (split if over 500 lines), eden_editor_reference/eden_gap_analysis.md} (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | F08a | 5 · order 2 | Doc writer: website/frontend/apps/editor/eden_editor_reference/{README.md, interactions/ (split), attributes, ui_anatomy} (see `refactor_phase5_slices.tsv`) | pending | — | — |
 | F08b | 5 · order 3 | Doc writer: website/frontend/apps/editor/{README.md, arsenal/, visual_references/}, website/frontend/apps/{README.md, planner/, aar/} (see `refactor_phase5_slices.tsv`) | pending | — | — |
