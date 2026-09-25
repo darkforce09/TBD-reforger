@@ -103,4 +103,7 @@ recipe of `TBD_ScrollList`, with a `TBD_UIScrollBar` in each `ScrollBarDock`.
 ## Related documentation
 
 - [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md)
-  — the lobby's design target
+  — the screen as built, its
+  data, design target, open work and decisions
+- [Lobby design references](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/README.md)
+  — the Stitch mockup sets and the Arma 3 captures the screen started from

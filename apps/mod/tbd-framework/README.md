@@ -160,6 +160,10 @@ minute apart, so a credential pasted in later takes effect without a restart.
   its non-negotiables and the Enfusion facts it relies on.
 - [Mod UI documentation](/documentation_v2/mod/tbd-framework/UI/README.md) — the specification of
   each in-game screen.
+- [Capability verdicts](/documentation_v2/mod/tbd-framework/capability_verdicts.md) — the TBD
+  verdict for every CRF capability and the check that enforces it.
+- [TBD Framework documentation](/documentation_v2/mod/tbd-framework/README.md) — the index of the
+  framework's design documents.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — booting the
   framework on the staging server, and the log lines of a healthy boot.
 - [Two-client playtest](/documentation_v2/runbooks/two_client_playtest/README.md) — a local

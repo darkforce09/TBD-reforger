@@ -100,4 +100,7 @@ so the screen shows mock missions, separate from the platform's deployable list 
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the deployable list and the
   relayed deployment request on the API side
 - [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
-  — the Mission Selector's design target
+  — the screen as built, its
+  data, design target, open work and decisions
+- [Mission selection design references](/documentation_v2/mod/tbd-framework/UI/mission_selection/visual_references/README.md)
+  — the Stitch mockup sets and the Arma 3 captures the screen started from

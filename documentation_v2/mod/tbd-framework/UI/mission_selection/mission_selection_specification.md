@@ -1,130 +1,116 @@
 **Status:** live
 
-# TBD Reforger — Mission Selection UI Specification & Visual Breakdown
+# Mission selection screen
 
-**Source File:** [`mission_selection.png`](/documentation_v2/mod/tbd-framework/UI/mission_selection/visual_references/reference_screenshots/mission_selection.png)  
-**Panel Title:** `CREATE GAME`  
-**Host Identity Context:** `Mission Maker`  
-**Scope:** Complete textual representation, visual layout, interactive controls, information architecture, and operational mechanics of the multiplayer mission selection and hosting interface.
+The Mission Selector, the "Scenario Browser" tab of the pre-game screens: a player browses
+terrains, the [missions](/documentation_v2/glossary.md#mission) built for each, and one mission's
+versions, modset, summary, [ORBAT](/documentation_v2/glossary.md#orbat) and objectives, and picks
+the mission and version the lobby and briefing are titled with. The screen renders mock data and
+requests no deployment.
 
----
+## Where it lives
 
-## 1. Screen Title, Headers, and Navigation Context
+- Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/README.md)
+  (the screen and its panels) and
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/README.md)
+  (the models, `TBD_MissionCatalog`, `TBD_SessionSelection`, and the admin deployment path).
+- Layouts: [`apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/`](/apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/README.md),
+  whose README gives the dock geometry, the inspector hero and every widget the handlers bind.
+- Entry: `TBD_MissionSelectorScreen` on the `TBD_UIMissionSelector` menu preset
+  (`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/TBD_MissionSelectorScreen.c`).
+- Related features: the [lobby](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md)
+  and the [briefing](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md),
+  which read the pick.
 
-* **Main Title Banner (Top Left):** `CREATE GAME` — Rendered in bold black uppercase on an edge-to-edge solid amber/gold header bar (`#D49B2A`).
-* **Host Profile / Context Indicator (Top Right):** `Mission Maker` — Rendered in white bold text on the right edge of the amber header bar, identifying the host player's profile and administrative authority.
-* **Navigation Context:** Serves as the multiplayer server hosting, scenario discovery, and match configuration screen. It bridges server creation / the server browser with the role assignment and slotting lobby. The host selects the map/terrain, selects a scenario, verifies telemetry and rules, configures server options, or accesses the workshop before committing to launch into the lobby.
+## Behaviour
 
----
+### Opening
 
-## 2. Structural Architecture & Visual Layout
+1. On entering the `LOBBY` stage, `TBD_LobbyStage` raises the Mission Selector, and raises it
+   again while the stage stays in `LOBBY`, no pre-game screen is open, the player has no body and
+   no deploy was accepted.
+2. F9 (`TBD_MissionSelector` in the `TBD_BrowserContext` input context) raises or drops it
+   (`Toggle`); the top bar's "Scenario Browser" tab reaches it from the lobby and briefing.
+3. The top bar shows "Scenario Browser" as the title, the player's identity chip and the connected
+   count; the bottom bar holds one primary action, "Select Scenario".
 
-The UI uses a modular, dark translucent HUD overlay docked over an in-engine 3D backdrop (blurred airfield/hangar vista). The interface is structured into four primary quadrants flanked by global top and bottom control rails:
+### Browsing
 
-```
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ [ CREATE GAME ]                                                                    [ Mission Maker ]  │ <- Top Bar (Amber)
-├───────────────────┬─────────────────────┬─────────────────────────────────────────────────────────────┤
-│ MISSION SETTINGS: │ MAPS: 53            │ Missions: 30     [ Search Input... ] [Q] [SHOW ALL MISSIONS]│
-│ • Min Players: 1  │ - !Virtual Reality  │ - <<New - 3D Editor>>                                       │
-│ • Max Players: 48 │ - [Altis] (Active)  │ - COOP 04 Firing From Vehicles                              │
-│ • Type: Warlords  │ - Anizay            │ - COOP 12 Combat Patrol                                     │
-│ • Respawn: BASE   │ - Beketov           │ - End Game 16 Kavala                                        │
-│                   │ - Bukovina          │ - RHS BECTI 32 - Altis                                      │
-│ SERVER PRESET:    │ - ...               │ - [SC 48 Warlords (Whole Island)] (Selected)                │
-│   Regular         │                     │ - Support 04 Rodopoli                                       │
-├───────────────────┤                     │ - Vanguard 50 Syrta                                         │
-│ [SUMMARY] [CHAT]  │                     │ - Zeus 16+2 Master Altis (NATO)                             │
-│ SC 48 Warlords    │                     │                                                             │
-│ by Bohemia        │                     │                                                             │
-│ [ Hero Graphic ]  │                     │                                                             │
-│ Briefing synopsis │                     │                                                             │
-├───────────────────┴─────────────────────┴─────────────────────────────────────────────────────────────┤
-│ [ BACK ]                                               [ GAME OPTIONS ] [ STEAM WORKSHOP ] [ PLAY ]   │ <- Bottom Bar
-└───────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+1. The "Terrains" column lists each terrain with an icon, its mission count and a chevron, under a
+   "Search Maps..." field; the first terrain is selected on open. A search with no hit shows "No
+   terrain matches.".
+2. The centre column, titled "<terrain> Missions" with an `N AVAILABLE` chip, lists that terrain's
+   mission cards: a mode tag, the terrain, `N SLOTS` and the title. "Search Scenario..." filters by
+   title as the player types, and the Modes dropdown ("Filter modes") narrows by mode, with a count
+   per mode. No hit shows "No scenario matches.".
+3. Choosing a card fills the inspector and enables "Select Scenario": a hero band with the terrain
+   art, the title, a mode tag, "by" and the author with an `AUTHOR` chip, and a version dropdown
+   ("Select mission version"); then four cards: "Required Modset & Mods" (each mod with a synced
+   or missing mark and its version, `N SYNCED & ACTIVE`), "Mission Summary" (`SITREP`), "ORBAT
+   Overview" (per faction, slots and assets, `N SLOTS`) and "Objectives" (per faction,
+   `N ACTIVE`). With no card chosen it reads "Pick a scenario to inspect it.".
 
-### Visual Regions & Docking:
-1. **Top Header Rail:** Full-width high-contrast banner establishing operational mode (`CREATE GAME`) and host profile.
-2. **Top-Left Telemetry Panel:** Compact card displaying scenario constraints (player capacity, game mode, respawn model) and server difficulty.
-3. **Bottom-Left Detail & Comms Dock:** Tabbed container hosting either the scenario synopsis (title, author attribution, hero branding graphic, overview) or the pre-lobby multiplayer chat.
-4. **Upper-Center-Left Column (Map Library):** Vertical scrollable list displaying installed maps/terrains with terrain type icons.
-5. **Upper-Center-Right Column (Mission Library):** Two-column-wide scrollable scenario roster for the active map, equipped with keyword search and global filter toggles.
-6. **Bottom Control Rail (Footer):** Navigation and commitment dock with navigation back, server settings, external workshop discovery, and game launch execution.
+### Selecting
 
----
+1. "Select Scenario" stores the mission and version label in `TBD_SessionSelection`, which titles
+   the lobby and briefing, and logs `[TBD][selector] SELECT SCENARIO <title> (<id>) on <terrain>,
+   version <label>`. With nothing selected it logs a warning and does nothing.
+2. Changing the version logs the label; nothing else follows.
 
-## 3. Interactive Controls Inventory
+### Known discrepancies
 
-| Control Element | Label / Text | Control Type | Visual State | Purpose & Functional Logic |
-| :--- | :--- | :--- | :--- | :--- |
-| **Top Header Bar** | `CREATE GAME` | Status / Title | Static text (black on amber) | Identifies hosting mode. Non-interactive. |
-| **User Identity** | `Mission Maker` | Profile indicator | Static text (white on amber) | Confirms active hosting administrator identity. |
-| **Map Selection Row** | `Altis` (under `MAPS: 53`) | Selectable List Item | **Selected / Active** (White background pill, black text) | Filters the mission list to scenarios built for Altis. Refreshes count and metadata. |
-| **Unselected Map Rows** | `!Virtual Reality`, `Anizay`, `Beketov`, `Bukovina`, etc. | Selectable List Items | Idle / Inactive (Translucent dark, white text, terrain icon) | Switching maps repopulates the mission library column with matching missions. |
-| **Map Scroll Arrows** | `▲` (up), `▼` (down) | Scroll Indicators | Active / Interactive | Scrolls through the 53 detected terrain packages. |
-| **Mission Search Bar** | Text input field | Text Input | Empty / Active focus | Real-time text filter to query missions by name, mode, or tags. |
-| **Search Icon** | Magnifying glass icon (`Q`) | Button / Indicator | Dark bordered box | Commits or clears query search. |
-| **Show All Missions** | `SHOW ALL MISSIONS` | Toggle Button | Default / Inactive (white text on dark slate) | When toggled on, ignores the selected map filter and displays all scenarios across all terrains. |
-| **New 3D Editor** | `<<New - 3D Editor>>` | Action List Item | Accent (Bright green text) | Shortcut to launch the 3D Eden Editor on the selected map directly from the multiplayer session. |
-| **Active Mission Row** | `SC 48 Warlords (Whole Island)` | Selectable List Item | **Selected** (Semi-transparent light-gray selection bar) | Loads scenario telemetry, synopsis text, and hero graphic into the left panels. |
-| **Unselected Mission Rows** | `COOP 12 Combat Patrol`, `Escape 10 Altis`, `Zeus 16+2...` | Selectable List Items | Inactive (White text on dark background) | Selecting changes active scenario and refreshes detail panes. |
-| **Mission Summary Tab** | `MISSION SUMMARY` | Sub-Panel Tab | **Active** (Solid white rectangular background, black uppercase text) | Displays mission synopsis, author, and preview artwork. |
-| **Chat Tab** | `CHAT` | Sub-Panel Tab | Inactive (Dark translucent background, white text) | Displays live lobby chat log to communicate with connected players before starting. |
-| **Back Button** | `BACK` | Push Button | Bottom-left docked, dark button with thin border | Cancels hosting and returns to the server browser or main menu. |
-| **Game Options Button** | `GAME OPTIONS` | Push Button | Bottom-right area, dark button with thin border | Opens server configuration modal (passwords, ports, difficulty overrides, admin rules). |
-| **Workshop Button** | `WORKSHOP` (with Steam icon) | Push Button | Highlighted (Teal/cyan background, black Steam logo, white text) | Opens Steam Workshop overlay for discovering, subscribing, and downloading new missions. |
-| **Play Button** | `PLAY` | Push Button | Far bottom-right, dark button with thin border | Commits selection, binds mission payload, and advances all players into the slotting lobby. |
+- The screen lists the platform's missions (`TBD_MissionCatalog` in `TBD_MissionSelectorData.c`)
+  — but the catalog is built from `TBD_MissionSelectorMock`
+  (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`), because no script calls `Set()`.
+- "Select Scenario" reads as choosing what the server runs (`TBD_MissionSelectorScreen.c`) — but
+  it only records the pick for the next screens. Deploying a mission from inside the game is the
+  admin path of the MissionSelector folder: F6 and F7, or `#tbd missions` and
+  `#tbd mission <n>`, relay the pick to the platform (see Data).
+- Comments in `TBD_MissionSelectorScreen.c` and `TBD_MissionBrowser.c` name F6 for this screen —
+  but F6 is `TBD_MissionCycle`, which steps through the deployable list; F9 opens the screen.
 
----
+## Data
 
-## 4. Information Architecture & Displayed Features
+The screen makes no HTTP call and sends no RPC. The admin deployment path beside it, listed in the
+MissionSelector README's [How it works](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/README.md#how-it-works):
 
-### 4.1 Mission Telemetry & Server Difficulty Panel (Top-Left)
-* **`MISSION SETTINGS:`**
-  * **`MIN. PLAYERS:`** `1` — Minimum player threshold required or recommended to start.
-  * **`MAX. PLAYERS:`** `48` — Hard player capacity capped by mission slot design.
-  * **`TYPE:`** `Warlords` — Game mode classification (e.g., Warlords, COOP, End Game, Zeus, Support, Vanguard, TVT).
-  * **`RESPAWN:`** `BASE` — Defined respawn model (Base, Respawn on leader, Instant, None/1-Life).
-* **`SERVER DIFFICULTY PRESET:`**
-  * **`Regular`** — Active difficulty profile (Recruit, Regular, Veteran, Custom) governing crosshairs, 3rd-person camera, friendly tags, and AI skill.
+- `GET /api/v1/game-runtime/missions` (`TBD_DeployableMissionList.Refresh`, on entering `LOBBY`
+  or `#tbd refresh`): the missions the platform lets this server deploy, by title; the browser
+  numbers them from 1 and marks the running one.
+- `POST /api/v1/game-runtime/deployments` (`TBD_MissionDeploymentRelay.RequestByNumber`): the
+  admin's pick as a [mission deployment](/documentation_v2/glossary.md#mission-deployment)
+  request with the admin's `arma_id`; the platform decides whether that identity is an
+  administrator and validates the pick as it validates a website deployment. The relay restarts
+  nothing; a refusal reaches the admin's chat in words for its `details.code`.
 
-### 4.2 Terrain / Map Library Column (`MAPS: 53`)
-* **Total Terrains:** `53` detected maps.
-* **Special Pinning:** Prefix conventions like `!Virtual Reality` use punctuation to sort foundational testing maps to the very top.
-* **Terrain Icons:** Small graphic thumbnails next to each map name convey geographical biome (desert, temperate forest, winter, Mediterranean island).
+## Design
 
-### 4.3 Mission Library Column (`Missions: 30`)
-* **Total Scenarios:** `30` missions found matching the active terrain filter (`Altis`).
-* **Naming Conventions & Prefix Standards:**
-  * `COOP [slots] [Name]` (e.g., `COOP 04 Firing From Vehicles`, `COOP 12 Combat Patrol`)
-  * `End Game [slots] [Location]` (e.g., `End Game 16 Kavala`)
-  * `Escape [slots] [Island]` (e.g., `Escape 10 Altis`)
-  * `RHS [Mod/Mode] [Slots]` (e.g., `RHS BECTI 32 - Altis`, `RHS Co 1-10 Insurgency Action`)
-  * `SC [slots] Warlords ([Sub-area])` (Sector Control Warlords variations: 16, 32, 48, 64 slots)
-  * `Support [slots] [Location]` (e.g., `Support 04 Rodopoli`)
-  * `Vanguard [slots] [Location]` (e.g., `Vanguard 50 Syrta`)
-  * `Zeus [players+gamemaster] [Subtype]` (e.g., `Zeus 10+1 Defend Syrta`, `Zeus 16+2 Master Altis (NATO)`)
+- As built: a dock shell with a 320 px Terrains column, a 440 px mission column and the inspector
+  filling the rest, between the 56 px top bar and the 64 px bottom bar; the inspector's 176 px
+  photo hero fades into the card stack. The
+  [layouts README](/apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/README.md) gives the
+  geometry and the corner masks.
+- Design target: the four Stitch sets in
+  [visual_references](/documentation_v2/mod/tbd-framework/UI/mission_selection/visual_references/README.md)
+  (top bar, terrain selector, mission browser, mission inspector), design-phase references. The
+  built panels follow them; their mock data carries the mockups' sample missions and modsets.
+- Starting point: the Arma 3 "CREATE GAME" screen in
+  [reference_screenshots](/documentation_v2/mod/tbd-framework/UI/mission_selection/visual_references/reference_screenshots/README.md).
+  TBD keeps its terrain-first drill-down, the mission search and a summary of the chosen mission;
+  it drops the mission settings and difficulty panel, the chat tab, the in-game editor shortcut,
+  "SHOW ALL MISSIONS", `GAME OPTIONS`, the Steam Workshop button and `BACK`, and adds versions,
+  the required modset, the ORBAT and the objectives, since a TBD mission comes from the platform.
 
-### 4.4 Mission Summary Panel (Bottom-Left)
-* **Scenario Title:** `SC 48 Warlords (Whole Island)`
-* **Author / Attribution:** `by Bohemia Interactive`
-* **Hero Graphic / Artwork:** High-resolution branded mission artwork featuring the stylized "WARLORDS" logotype (NATO star in 'A', tactical hex grid in 'O'), yellow Bohemia crest lion, overlaid across a tactical topographic contour map.
-* **Briefing Synopsis:** `"Capture sectors. Through them, advance to the enemy base and raid it. Parameters allow you to change various rules within the mission."` — Summarizes core objective loop and alerts host to configurable parameters.
+## Open work
 
----
+- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
+  (idea, no plan): the catalog reads the platform's missions.
+- [T-1084 — Arm the mission browser input context every frame](/.ai/tickets/T-1084.toml) (idea, no
+  plan): the F6 to F9 keys stay live, and the F6 comments are corrected.
 
-## 5. Operational Mechanics for TBD Reforger
+## Decisions
 
-1. **Terrain-First Drilldown:**
-   * Selecting a terrain immediately scopes down the mission list to compatible scenarios.
-   * `SHOW ALL MISSIONS` allows overriding this filter to inspect unassigned or multi-terrain missions.
-2. **Instant Keyword Querying:**
-   * Text search filters scenario titles by substring (e.g., "Warlords", "COOP", "Zeus", "RHS") in real time.
-3. **Pre-Lobby Communication:**
-   * Host can switch between `MISSION SUMMARY` and `CHAT` to poll connected players on preferred game modes before committing to a map change.
-4. **Mission Creator & 3D Editor Handoff:**
-   * `<<New - 3D Editor>>` provides a direct authoring shortcut to open the 3D editor on the selected map from the hosting workflow.
-5. **Execution & Session Binding:**
-   * `GAME OPTIONS` configures server passwords, port overrides, and engine rules.
-   * Clicking `PLAY` commits the scenario payload and transitions all connected clients into the role assignment and ORBAT slotting screen.
+- The screen records a pick and deploys nothing: deployment is an administrator's act the platform
+  validates, so it stays on the admin keys and chat commands.
+- Terrain first: a mission belongs to one terrain, so choosing the terrain scopes the list and the
+  counts.

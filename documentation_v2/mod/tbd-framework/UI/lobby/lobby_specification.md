@@ -1,174 +1,127 @@
 **Status:** live
 
-# TBD Reforger — Lobby & Role Assignment UI Specification & Visual Breakdown
+# Lobby screen
 
-**Source File:** [`lobby_screen.png`](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/reference_screenshots/lobby_screen.png)  
-**Panel Title:** `ROLE ASSIGNMENT`  
-**Host Context Indicator:** `Mission Maker`  
-**Scenario Name:** `wog_187_chollima_on_the_wing_10`  
-**Active Faction:** `BLUFOR` (US Army, Attacking)
+The Lobby tab of the pre-game screens: a player picks a faction, reads its squads and
+[slots](/documentation_v2/glossary.md#slot), claims a seat in the
+[ORBAT](/documentation_v2/glossary.md#orbat) and inspects the seat's kit on a 3D doll before the
+[event](/documentation_v2/glossary.md#event) goes to the briefing. The screen renders mock data;
+the server-side roster wire it will use exists beside it.
 
----
+## Where it lives
 
-## 1. Executive Summary & Screen Purpose
+- Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/README.md)
+  (the screen and its panels) and
+  [`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/README.md)
+  (the catalog, the stage watcher and the roster wire).
+- Layouts: [`apps/mod/tbd-framework/UI/layouts/Session/Lobby/`](/apps/mod/tbd-framework/UI/layouts/Session/Lobby/README.md),
+  whose README gives the dock geometry and every widget the handlers bind.
+- Entry: `TBD_LobbyScreen` on the `TBD_UILobby` menu preset
+  (`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/TBD_LobbyScreen.c`).
+- Related features: the [Mission Selector](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md),
+  whose pick titles the lobby, and the [briefing](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md),
+  whose ORBAT page reuses the lobby's roster and kit inspector read only.
 
-The **Role Assignment** screen (commonly known as the **Lobby** or **Slotting Screen**) is the primary pre-match staging interface in the milsim framework. It bridges scenario selection (`CREATE GAME` / Server Browser) with live deployment (`Briefing` -> `Safestart` -> Combat).
+## Behaviour
 
-Connected clients select their side (BLUFOR vs. OPFOR), navigate a hierarchical Order of Battle (ORBAT), claim designated combat roles within squads and vehicle crews, monitor client latency/ping, toggle AI bot occupancy, and wait for the match host or referee to lock the lobby and commit the roster into the briefing phase.
+### Opening
 
----
+1. On the `LOBBY` stage, `TBD_LobbyStage` raises the Mission Selector, not the lobby; the player
+   reaches the lobby through the top bar's "Lobby" tab. The Lobby README's
+   [stage watcher](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/README.md#the-stage-watcher)
+   gives the timings.
+2. During `BRIEFING`, `SAFE_START` and `LIVE`, the game's pause menu shows "Change slot" in place
+   of its leave-faction button; it closes the pause menu and opens the lobby
+   (`TBD_LobbyScreen.OpenFromPause`).
+3. The top bar shows the mission id in a mono face as the title, the "Lobby" tab active, and the
+   player's identity chip; the bottom bar holds "Lock Lobby" and the primary "Ready & Continue".
 
-## 2. Screen Headers, Profile Badges & Scenario Telemetry
+### Picking a seat
 
-### 2.1 Top Global Header Bar
-* **Main Title Banner (Top Left):** `ROLE ASSIGNMENT` — Rendered in bold, uppercase black sans-serif typography (`#000000`) docked edge-to-edge on a solid amber/gold header rail (`#D49B2A`).
-* **Host Identity / Administrative Authority (Top Right):** `Mission Maker` — Rendered in bold white sans-serif text (`#FFFFFF`), confirming that the client possesses administrative hosting controls (e.g., `LOCK` and `DISABLE AI`).
+1. The "Factions" column lists each faction with its role chip (for example `DEFENDING`) and a
+   claimed-of-total count (`0 / 92`), then a Spectators row.
+2. Choosing a faction fills the "Roles" column with its squad cards: callsign and vehicle chips, a
+   filled count (`3/8`) and a fold chevron. Each seat row shows the role in capitals, weapon chips,
+   trait chips (`MED` in the success tint), the holder, and a status chip: `Unslotted` for an open
+   seat, `DEAD` for a spent life. A dead seat takes no clicks.
+3. The first click on a seat selects it and shows its kit. A second click on the selected open seat
+   claims it (`TBD_LobbyCatalog.Claim`); a second click on the player's own seat releases it
+   (`Release`). Focus opens on the player's own seat, else the first seat.
+4. The "KIT INSPECTOR" column shows the seat line (`8: RIFLEMAN (AT)`), a 3D preview of the kit on
+   a character, and cards for gear, weapons (mounted attachments and ammunition), grenades,
+   gadgets, tools, medical and miscellaneous items. With no seat chosen it reads "Pick a slot to
+   inspect its kit."; when the preview cannot be built it captions "PREVIEW UNAVAILABLE".
 
-### 2.2 Scenario Telemetry & Player Count Strip (Sub-Header)
-Located immediately beneath the amber header rail on a translucent dark slate container (`#0A0A0A` @ ~85% opacity):
+### Bottom bar
 
-| Telemetry Field | Displayed Value | Description & Purpose |
-| :--- | :--- | :--- |
-| **`Mission:`** | `wog_187_chollima_on_the_wing_10` | Standard community scenario filename: 187 total player slots; scenario title *"Chollima on the Wing"* v1.0. |
-| **`Map:`** | `Chernarus Autumn` | Island / terrain environment (autumn vegetation variant of Chernarus). |
-| **`Description:`** | `US Army (синие, атака) vs КНДР (красные, оборона)` | Bilingual matchup synopsis: US Army (*Blue / BLUFOR, Attacking*) vs DPRK / North Korea (*Red / OPFOR, Defending*). |
-| **`Listed Players:`** | `1` | Real-time counter of total clients currently connected inside the lobby. |
+1. "Lock Lobby" flips to "Unlock Lobby" in the warning tint and back.
+2. "Ready & Continue" flips to "Ready (Waiting for Admin)" in the success tint and back.
+3. Each press logs one line (`[TBD][lobby] LOCK LOBBY -> …`, `[TBD][lobby] READY -> …`); neither
+   reaches the server. The player deploys from the briefing's "Ready & Continue".
 
----
+### Known discrepancies
 
-## 3. UI Layout & Structural Architecture
+- The screen shows a server-owned roster (`TBD_LobbyCatalog.c`) — but the catalog is built from
+  `TBD_LobbyMock` (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`), because no script calls
+  `TBD_LobbyCatalog.Set()`, so claims and releases change only this client's copy.
+- The roster wire (`TBD_LobbyClient.Request`, `Claim`, `Release` and `Deploy` in
+  `TBD_LobbyClient.c`) is complete on both sides — but no script calls it.
+- "Lock Lobby" and "Ready & Continue" read as session controls (`TBD_LobbyScreen.c`) — but they
+  only toggle their labels; the server holds no lobby lock and no lobby ready state.
 
-The interface uses a 16:9 full-screen dark HUD overlay docked over an in-engine 2D satellite/topographical map of Chernarus (showing coastline contours and terrain elevation in dark blues and greens).
+## Data
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ ROLE ASSIGNMENT                                                                           Mission Maker │ <- Top Rail
-├──────────────────────────────────────────────────────────────────────┬──────────────────────────────────┤
-│ Mission:     wog_187_chollima_on_the_wing_10                         │ Listed Players:                1 │ <- Telemetry
-│ Map:         Chernarus Autumn                                        │                                  │
-│ Description: US Army (синие, атака) vs КНДР (красные, оборона)       │                                  │
-├─────────┬────────────────────────────────────────────────────────────┼────────────────────────┬───┬─────┤
-│ Side:   │ Roles for BLUFOR:                                       [^]│ Players:             ▲ │Ping:  🔊│
-│ ┌─────┐ │ A1-1 Company HQ - M113A3 MEV                               │ -----------------------+---+-----│
-│ │0/92 │ │ ┌──────────────────────────────────────────────────┬───┬──┐│ Mission Maker (Host)   │ 0 │     │
-│ │Blufor│ │ │ Company commander                                │[C]│👤││                        │   │     │
-│ └─────┘ │ │ AI                                               │   │  ││                        │   │     │
-│ ┌─────┐ │ └──────────────────────────────────────────────────┴───┴──┘│                        │   │     │
-│ │0/95 │ │   2ic                                              [C] 👤̸ │                        │   │     │
-│ │Opfor│ │   AI                                                       │                        │   │     │
-│ └─────┘ │                                                            │                                  │
-│ (Red    │ A1-2 M60A1                                                 │                                  │
-│ diamond)│   Tank commander                                   [C] 👤̸ │                                  │
-│         │   AI                                                       │                                  │
-│         │   Driver | Eng                                     [C] 👤̸ │                                  │
-│         │   AI                                                       │                                  │
-│         │   Gunner                                           [C] 👤̸ │         (Dark Satellite          │
-│         │   AI                                                       │          Terrain / Map           │
-│         │                                                            │           Background)            │
-│         │ A1-3 M60A1                                                 │                                  │
-│         │   Tank commander                                   [C] 👤̸ │                                  │
-│         │   AI                                                       │                                  │
-│         │   Driver | Eng                                     [C] 👤̸ │                                  │
-│         │   AI                                                       │                                  │
-│         │   Gunner                                           [C] 👤̸ │                                  │
-│         │   AI                                                       │                                  │
-│         │                                                            │                                  │
-│         │ A1-4 M60A1                                                 │                                  │
-│         │   Tank commander                                   [C] 👤̸ │                                  │
-│         │   AI                                                       │                                  │
-│         │   Driver | Eng                                     [C] 👤̸ │                                  │
-│         │   AI                                                    [v]│                                  │
-│         ├─────────────────────────────────────────────────┬──────────┤                                  │
-│         │                                                 │DISABLE AI│                                  │
-├─────────┴─────────────────────────────────────────────────┴──────────┴──────────────────────────────────┤
-│ [ BACK ]                                                                                 [ LOCK ] [ OK ]│ <- Bottom Rail
-└─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+The screen makes no HTTP call and sends no RPC. The wire it is meant to use, listed in the Lobby
+README's [roster wire](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/README.md#the-roster-wire):
 
-### Visual Regions & Docking
-1. **Top Rail (Y: 0% - 4%):** Solid amber bar housing screen mode title and host administrative profile.
-2. **Metadata Strip (Y: 4% - 10%):** Translucent row with scenario name, terrain, matchup overview, and connected client count.
-3. **Left Workspace — Faction & ORBAT Tree (X: 0% - 47%, Y: 10% - 94%):**
-   - **Faction Rail (X: 0% - 7%):** Narrow vertical dock with faction selection buttons (`Side:`).
-   - **Role Assignment Pane (X: 7% - 47%):** Scrollable nested hierarchy of squads and individual playable slots.
-   - **AI Command Sub-rail:** Bottom-docked `DISABLE AI` button and vertical scroll arrows (`^` / `v`).
-4. **Right Workspace — Connected Players & Tactical Map (X: 47% - 100%, Y: 10% - 94%):**
-   - **Player Roster Table:** Column-sorted table of connected clients, host badges, pings, and audio indicators.
-   - **Tactical Viewport / Backdrop:** In-engine 2D satellite map of the scenario theater.
-5. **Bottom Control Rail (Y: 94% - 100%):** Navigation return (`BACK`) on the far left; administrative lock (`LOCK`) and readiness/launch (`OK`) on the far right.
+- `TBD_RpcAsk_LobbyRoster`, `TBD_RpcAsk_ClaimSlot(string)`, `TBD_RpcAsk_ReleaseSlot` and
+  `TBD_RpcAsk_Deploy` (`TBD_LobbyController.c`): the server takes the caller from
+  `GetPlayerId()`, applies the action through `TBD_SpawnManager` (`ClaimSlot`, `ReleaseSlot`,
+  `DeployPlayerEx`), and answers with `TBD_RpcDo_LobbyRoster`: the whole roster as it stands after
+  the action, parsed from `TBD_SpawnManager.BuildSlotRoster`, with a `V` verdict record naming
+  the action and why it failed. The client replaces its roster with each reply, so a refused claim
+  reverts in the message that explains it.
+- A deploy the platform is still deciding answers `AUTHORIZING`, one it cannot authorize now
+  `UNAUTHORIZED` (`TBD_LobbyServiceDeploymentAuthorization.c`).
+- `TBD_SessionSelection` (`apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionSelectorData.c`)
+  carries the Mission Selector's pick to the lobby's title.
 
----
+## Design
 
-## 4. Interactive Controls Inventory
+- As built: a dock shell with a 320 px Factions column, a 500 px Roles column and the kit inspector
+  filling the rest, between the 56 px top bar and the 64 px bottom bar; rounded glass panels
+  painted from `TBD_UITheme` tokens. The
+  [layouts README](/apps/mod/tbd-framework/UI/layouts/Session/Lobby/README.md) gives the geometry.
+- Design target: the four Stitch sets in
+  [visual_references](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/README.md)
+  (sidebar, ORBAT panel, slot kit inspector, bottom bar), design-phase references. Differences:
+  the faction column's `VoiceDock` stays empty, since no voice panel is built; the bottom bar's
+  two actions only toggle.
+- Starting point: the Arma 3 "ROLE ASSIGNMENT" screen in
+  [reference_screenshots](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/reference_screenshots/README.md).
+  TBD keeps its side → squad → seat drill-down, per-side counts, the player's own name on a claimed
+  seat and a host lock, and drops its amber header rail, the per-seat AI toggle and `DISABLE AI`,
+  leader-first seat locking, the ping-sorted player table and `BACK` / `OK`; the kit inspector has
+  no counterpart there.
 
-| Control Element | Label / Graphic | Control Type | Visual State | Placement | Purpose & Functional Behavior |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Top Header** | `ROLE ASSIGNMENT` | Status / Title | Static text (black on amber) | Top-left rail | Identifies active lobby phase. Non-interactive. |
-| **Host Profile** | `Mission Maker` | Status / Identity | Static text (white on amber) | Top-right rail | Confirms host player and administrator permissions. |
-| **BLUFOR Side Button** | `0/92`<br>`Blufor` | Faction Button | **Active / Selected** (Solid blue rectangular fill `#0E4D8B`, white text) | Left rail under `Side:` | Filters ORBAT tree to BLUFOR forces. Shows `0` claimed out of `92` slots. |
-| **OPFOR Side Button** | `0/95`<br>`Opfor` | Faction Button | **Inactive / Unselected** (Red diamond boundary `#990000`, dark fill, white text) | Left rail under `Side:` | Switches ORBAT tree to OPFOR forces. Shows `0` claimed out of `95` slots. (Total = 187 slots). |
-| **Scroll Up** | `▲` (`^`) | Scroll Button | Active | Top-right of role tree pane | Scrolls the ORBAT slot list upwards. |
-| **Scroll Down** | `▼` (`v`) | Scroll Button | Active | Bottom-right of role tree pane | Scrolls the ORBAT slot list downwards. |
-| **Selected Role Row** | `Company commander`<br>`AI` | Selectable List Item | **Selected / Focused** (Full-width light-gray translucent highlight bar) | First slot under `A1-1 Company HQ` | Focused role item. Shows slot title and current occupant (`AI` in red). |
-| **Unselected Role Rows** | `2ic`, `Tank commander`, etc. | Selectable List Items | Idle / Inactive (Dark background, white text, red `AI`) | Grouped under respective squad headers | Clicking focuses the slot for inspection or claiming. |
-| **AI Slot Indicator** | Microchip / CPU Icon (`🔲`) | Indicator Icon | Active / Per slot | Right edge of each role row | Indicates whether the slot will spawn a bot if unoccupied at match launch. |
-| **Slot Claim Icon** | Solid Silhouette (`👤`) | Status / Claim Icon | **Available / Claimable** (Solid white human silhouette) | Right edge of `Company commander` row | Signals that the slot is open and immediately claimable by a human player. |
-| **Slot Restricted Icon** | Crossed-Out Silhouette (`👤̸`) | Status / Lock Icon | **Restricted / Subordinate Lock** (Silhouette with diagonal slash) | Right edge of `2ic` and crew rows | Indicates slot is locked until the unit leader slots in, or requires specific admin permissions. |
-| **Disable AI Button** | `DISABLE AI` | Action Push Button | Active (Dark button with light border, white text) | Bottom-right of role tree pane | Host administrative command: globally clears AI from all unoccupied slots so bots do not spawn. |
-| **Player List Header** | `Players:` | Table Header | Static | Top-left of right column | Column title for connected clients list. |
-| **Ping Sort Header** | `▲` `Ping:` | Table Sort Header | Active (Ascending sort arrow `▲`) | Top-right of right column | Sorts player roster ascending by network round-trip time. |
-| **Voice / VON Icon** | Speaker Icon (`🔊`) | Status / Audio Toggle | Static / Active icon | Far-right edge of player header | Indicates global lobby voice communications status or player mute control. |
-| **Connected Player Row** | `Mission Maker (Host)` | Table Row Item | Selected / Host entry | First row under `Players:` | Displays player name with `(Host)` badge; ping column shows `0` ms (local host). |
-| **Back Button** | `BACK` | Push Button | Active (Dark rectangle, thin light border, white text) | Bottom-left corner | Cancels role assignment and returns to Mission Selection or Server Browser. |
-| **Lock Button** | `LOCK` | Push Button | Active (Dark rectangle, thin light border, white text) | Bottom-right corner (left of `OK`) | Host administrative control: locks the lobby, preventing new joins or slot switching. |
-| **OK Button** | `OK` | Push Button | Inactive / Dimmed state | Bottom-right corner (far right) | Readiness commit / Launch button. Commits slot choice; once players are ready and host clicks `OK`, advances match to Briefing. |
+## Open work
 
----
+- [T-1085 — Feed the pre-game screens live catalogs instead of mocks](/.ai/tickets/T-1085.toml)
+  (idea, no plan): the catalog reads the server's roster through `TBD_LobbyClient`, so claims,
+  releases and deploys reach `TBD_SpawnManager`.
+- [T-946.58 — T-139 kit preview is empty on a dedicated server](/.ai/tickets/T-946.58.toml) (idea,
+  no plan): the kit preview on a client that is not also the server; its summary names an older
+  code path (`TBD_MissionLoader.GetSlotById`) that the screen no longer reads.
+- [T-181.16 — Two-client dedicated-server event loop E2E](/.ai/tickets/T-181.16.toml) (queued, no
+  plan): a human playtest of connect, slot, brief and deploy.
 
-## 5. Order of Battle (ORBAT) Architecture & Displayed Units
+## Decisions
 
-The mission shown features a combined-arms mechanized engagement with **187 total playable slots** (BLUFOR: 92 slots; OPFOR: 95 slots). The visible BLUFOR hierarchy includes:
-
-```
-BLUFOR (0/92 Claimed)
-├── A1-1 Company HQ - M113A3 MEV (Mechanized Command & Medical Section)
-│   ├── [Selected] Company commander ── [AI] ── [Chip] [👤 Available]
-│   └── 2ic (Executive Officer) ──────── [AI] ── [Chip] [👤̸ Restricted]
-│
-├── A1-2 M60A1 (Armor Section — Patton MBT #1)
-│   ├── Tank commander ────────────────── [AI] ── [Chip] [👤̸ Restricted]
-│   ├── Driver | Eng ──────────────────── [AI] ── [Chip] [👤̸ Restricted]
-│   └── Gunner ────────────────────────── [AI] ── [Chip] [👤̸ Restricted]
-│
-├── A1-3 M60A1 (Armor Section — Patton MBT #2)
-│   ├── Tank commander ────────────────── [AI] ── [Chip] [👤̸ Restricted]
-│   ├── Driver | Eng ──────────────────── [AI] ── [Chip] [👤̸ Restricted]
-│   └── Gunner ────────────────────────── [AI] ── [Chip] [👤̸ Restricted]
-│
-└── A1-4 M60A1 (Armor Section — Patton MBT #3)
-    ├── Tank commander ────────────────── [AI] ── [Chip] [👤̸ Restricted]
-    └── Driver | Eng ──────────────────── [AI] ── [Chip] [👤̸ Restricted]
-        (Gunner row truncated by scroll view)
-```
-
-### Tactical Conventions
-* **Callsign Taxonomy:** `[Company Letter][Platoon Number]-[Squad/Vehicle Number]` (e.g., `A1-1` = Alpha Company, 1st Platoon, Section 1).
-* **Asset-Bound Squads:** Unit headers explicitly name the organic vehicle allocated to that unit (`M113A3 MEV`, `M60A1`).
-* **Specialization Suffixes:** Roles like `Driver | Eng` signify that the driver holds combat engineering and repair authorizations.
-
----
-
-## 6. Operational & Slotting Mechanics
-
-1. **Faction Side Selection:**
-   - Clicking `Blufor (0/92)` or `Opfor (0/95)` filters and loads that faction's ORBAT tree.
-2. **Role Browsing & Claiming:**
-   - Clicking an available slot (`👤`) claims it for the player. The red `AI` label is replaced with the player's username.
-   - The faction counter updates in real time (e.g., `1/92 Blufor`).
-3. **Leadership Gating & Subordinate Locking:**
-   - Subordinate roles (`2ic`, `Gunner`, `Driver`) display the restricted icon (`👤̸`) until the unit leader (`Company commander`, `Tank commander`) is claimed. This prevents squads from deploying without leadership and communications.
-4. **AI Bot Toggle (`DISABLE AI`):**
-   - By default, unslotted roles spawn as AI bots (`[AI]` + chip icon). Clicking `DISABLE AI` clears all bots, ensuring only human-claimed roles spawn.
-5. **Host Administrative Controls:**
-   - `LOCK` freezes the lobby so players cannot switch slots during final briefings.
-   - Clicking `OK` as host verifies ready states and advances all players into the **Briefing Screen**.
+- The lobby is a dock shell whose panels mount into named docks: each panel owns its widgets and
+  the screen owns only the wiring, so the briefing reuses the roster and kit inspector.
+- A seat is claimed by a second click, not a separate button: selecting first shows the kit, so a
+  player sees what they carry before committing.
+- A dead seat stays visible with `DEAD` and cannot be clicked: one life means a spent seat is part
+  of the ORBAT's truth, not a free slot.
+- The server answers every roster request with the whole roster and a verdict, never a delta: the
+  client cannot drift from `TBD_SpawnManager`.

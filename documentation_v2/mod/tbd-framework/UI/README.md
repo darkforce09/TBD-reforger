@@ -1,109 +1,130 @@
 **Status:** live
 
-# Mod UI structure (`apps/mod/tbd-framework`)
+# Mod UI screens
 
-Set 2026-09-12, before the Stitch-mockup rebuild; updated the same day when the first rebuilt
-screen (Mission Selector) shipped. Source of truth for **where a UI file goes**.
-Mockups: [`ui_stitch_mockup/`](/documentation_v2/mod/tbd-framework/UI/) (4 groups, 43 panels). Layout path registry:
-`Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`. Component contracts:
-`apps/mod/tbd-framework/UI/layouts/Common/README.md`.
+The in-game screens of the TBD Framework [mod](/documentation_v2/glossary.md#mod): where each
+screen's code and layouts live, how the pre-game screens are built, and one folder per screen with
+its specification and design references. Developers and agents read it before adding or moving a
+screen, a panel or a layout.
 
-## Principle
+## Contents
 
-`Scripts/Game/TBD/UI/` is a **view layer**. It holds screens, widget handlers, the menu framework and mock
-data - nothing that talks to the server. Wire code lives in **feature modules** next to `Radio/` and
-`Markers/`, which already follow this shape:
+```text
+documentation_v2/mod/tbd-framework/UI/
+├── admin_help_ticket/            the player-to-admin help ticket popup and the admin tickets panel
+├── briefing/                     the Briefing screen over the map: navigation, ten pages, deploy
+├── debrief_after_action_review/  the DEBRIEF scoreboard after the END banner
+├── discord_identity_link/        linking a game identity to a platform account
+├── end_screen/                   the END banner: winner, reason and round length
+├── in_game_menu/                 the pause menu's added actions and the admin menu
+├── lobby/                        the Lobby screen: factions, squads and seats, kit inspector
+├── mission_selection/            the Mission Selector: terrains, missions, mission inspector
+├── objective_capture_hud/        the live objective board and capture bar
+├── play_area_warning/            the out-of-bounds warning and countdown
+├── safe_start_hud/               the safe start countdown and weapons-cold notices
+├── spectator/                    the one-life spectator camera and roster
+└── tactical_marker_palette/      placing side-scoped markers on the map
+```
+
+## How it works
+
+Each screen folder holds `<screen>_specification.md`, a
+[feature doc](/documentation_v2/standards/templates/feature_doc.md) of the screen as built and of
+its design target, and `visual_references/`: the Stitch mockup sets (`<panel>_mockup/`, an HTML
+export and its PNG) and `reference_screenshots/`, the Arma 3 captures the design started from.
+The lobby, mission selection and briefing folders also carry a README index, and their
+`reference_screenshots/` README breaks down each Arma 3 capture.
+
+### Where a screen's code lives
+
+The script side follows one rule: `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` is a view layer
+(the menu framework, shared widget handlers, the HUD and the mock catalogs) and holds nothing that
+talks to the server; each feature module keeps its wire code beside its screen:
 
 | File role | Runs on | Holds |
 |---|---|---|
-| `TBD_XData.c` | both | plain model classes (Mission Selector: `TBD_MissionSelectorData.c` incl. the `TBD_MissionCatalog` read surface) |
-| `TBD_XService.c` | server | builds payloads from the mission doc; `Serialise` / `Parse` |
-| `TBD_XController.c` | both | `modded class SCR_PlayerController` RPC pairs |
-| `TBD_XClient.c` | client | static cache + `ScriptInvoker`s the screens subscribe to |
-| `TBD_XComponent.c` | server | `SCR_BaseGameModeComponent` lifecycle host |
-| `TBD_XStage.c` | client | stage watcher that raises / drops a screen (Lobby only, so far) |
+| `TBD_<X>Data.c` | both | plain model classes |
+| `TBD_<X>Service.c` | server | builds payloads from the mission document; `Serialise` / `Parse` |
+| `TBD_<X>Controller.c` | both | `modded class SCR_PlayerController` RPC pairs |
+| `TBD_<X>Client.c` | client | static cache and the invokers screens subscribe to |
+| `TBD_<X>Component.c` | server | the `SCR_BaseGameModeComponent` lifecycle host |
+| `TBD_<X>Catalog.c` | client | the read surface a screen draws from |
+| `UI/` | client | the screen class and its panels |
 
-A screen reads `TBD_XClient` (or `UI/Mock/` while unwired) and never a Service or the mission document.
-Shared player data, when it arrives, becomes a sibling module `Players/`.
+A screen reads its catalog and never a service or the mission document. The four pre-game
+catalogs (`TBD_MissionCatalog`, `TBD_LobbyCatalog`, `TBD_BriefingCatalog`, `TBD_PlayersCatalog`)
+build themselves from the mocks in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/` until
+something calls their `Set()`, and no script does, so those screens show sample data.
 
-## Scripts
-
-```
-Scripts/Game/TBD/
-  Core/            TBD_Log  TBD_Registry  TBD_RegistryPocComponent
-  API/             TBD_BackendConfig  TBD_ResultsReporter  TBD_IdentityLink  TBD_PlayerIdentity
-  Gamemode/        Orchestrator/ (TBD_FrameworkManager) · Stages/ (GameStage, Safestart, WinCondition) · Objectives/
-  Systems/         Mission/ (Data, Ingestion, Loaders) · Spawning/ · Loadouts/ · Audio/ · Zones/ · Radio/ · Markers/ · AI/
-  Session/         Lobby/ (+PreSlot, +UI) · Briefing/ (+UI) · Spectator/ (+UI) · Admin/ (+UI) · MissionSelector/ (+Browser, +Router, +Data, +UI) · PostGame/ (+UI)
-  UI/              Core/ (UILayouts, UITheme, UIIcons, MenuBase, MenuStack, DockScreen, ShellScreen, UIButton, UIInteractive, ListBox)
-                   Common/ (Panel, Chip, SearchBox, TabStrip, KeyValueRow, Dropdown, SessionTopBar, SessionBottomBar) · Hud/ (ObjectiveHud, TaskHud) · Mock/
-```
-
-## Layouts
-
-`UI/layouts/` mirrors the 7-domain architecture. Every `.layout` has a sibling `.meta` whose `Name` is `"{GUID}UI/layouts/<same path>"`.
-
-```
-UI/layouts/
-  Common/          component library: TBD_ScreenShell, TBD_ListRow, TBD_Panel, TBD_Chip, TBD_SearchBox,
-                   TBD_NavItem + TBD_TabStrip, TBD_Button, TBD_KeyValueRow, TBD_Dropdown + TBD_DropdownMenu,
-                   TBD_InsetText, TBD_Columns2
-  Hud/             TBD_ObjectiveHud
-  Session/
-    Shared/        TBD_SessionTopBar, TBD_SessionBottomBar, TBD_PlayersPanel + PlayerLane + PlayerRow (shipped) · voice panel (pending)
-    MissionSelector/ TBD_MissionSelector (dock shell) + TBD_TerrainSelector, TBD_TerrainRow, TBD_ScenarioBrowser,
-                   TBD_MissionCard, TBD_MissionInspector, TBD_ModGridItem, TBD_FactionColumn
-    Lobby/         TBD_LobbyScreen (dock shell) + TBD_LobbyFactionList, TBD_LobbyFactionRow, TBD_LobbyRoster,
-                   TBD_LobbySquadCard, TBD_LobbySlotRow, TBD_KitInspector, TBD_KitPreview, TBD_KitWeaponCard (TBD_KitCell moved to Common/TBD_StatCell)
-    Briefing/      TBD_BriefingScreen (dock shell over the map) + TBD_FreqRow, TBD_OrbatPage, TBD_AssetPreview, TBD_UniformCard, TBD_MarkersPanel
-    Spectator/     top/bottom bar, roster, combat_details
-    Admin/         admin_panel_sidebar + 10 panels
-    Pause/         pause_menu_left_sidebar, player_options, staging_phase, identity_link
-    PostGame/      TBD_EndScreen, TBD_DebriefScreen
-```
-
-Folders that are empty today carry a `README.md` naming the mockup panels that land there.
-
-## The dock shell
-
-A rebuilt screen is a shell (< 200 lines) with named docks, driven by a `TBD_DockScreen` subclass:
-`TopDock` (56) and `BottomDock` (64) take the shared bars from `Session/Shared/`; `LeftDock`,
-`CenterDock`, `RightDock` take the screen's panels; `OverlayDock` (full-bleed, last, hidden while
-empty) hosts popovers. Column widths are the shell's own. Reference:
-`UI/layouts/Session/MissionSelector/TBD_MissionSelector.layout` +
-`Scripts/Game/TBD/Session/MissionSelector/UI/TBD_MissionSelectorScreen.c`.
-
-## Where does a mockup panel go?
-
-| Mockup group / panel | Layout folder | Script folder | Status |
+| Screen | Scripts | Layouts | Opened by |
 |---|---|---|---|
-| pregame · mission_selector_top_bar, lobby_bottom_bar | `Session/Shared/` | `UI/Common/` | **shipped** as `TBD_SessionTopBar` / `TBD_SessionBottomBar` |
-| pregame · players_panel | `Session/Shared/` | `Session/Players/UI/` | **shipped** (2026-09-14) as `TBD_PlayersPanel`, a briefing mode beside the primary nav (a stacked menu would close the map) |
-| pregame · voice_panel | `Session/Shared/` | `UI/Common/` | pending |
-| pregame · terrain_selector, scenario_browser, mission_inspector | `Session/MissionSelector/` | `Session/MissionSelector/UI/` | **shipped** |
-| pregame · lobby_sidebar, orbat_panel, slot_kit_inspector | `Session/Lobby/` | `Session/Lobby/UI/` | **shipped** (2026-09-13) incl. the kit visual preview (3D doll, exact kit) |
-| pregame · primary_navigation, briefing_navigation, frequencies, objectives, rules, lore, parameters, markers, friendly/enemy assets, uniforms | `Session/Briefing/` | `Session/Briefing/UI/` | **shipped** (2026-09-14): dock shell over the map, both navs = vertical `TBD_TabStrip`, pages from `TBD_Section` / `TBD_NumberedCard` / `TBD_KeyValueRow` / `TBD_StatCell` / `TBD_InsetText`, real 3D vehicle + uniform previews, ORBAT = the lobby roster + kit inspector |
-| ingame_menu · pause_menu_left_sidebar, player_options, staging_phase, identity_link | `Session/Pause/` | `Session/Pause/UI/` | pending |
-| ingame_menu · admin_panel_sidebar + 10 admin panels | `Session/Admin/` (+`Panels/`) | `Session/Admin/UI/` | pending |
-| ingame_hud · spectator top/bottom bar, roster, combat_details | `Session/Spectator/` | `Session/Spectator/UI/` | pending |
-| postgame · end_screen_banner, aar | `Session/PostGame/` | `Session/PostGame/UI/` | current screens |
-| any row / chip / chrome reused by 2+ screens | `Common/` | `UI/Common/` | see the Common README table |
+| [Mission selection](/documentation_v2/mod/tbd-framework/UI/mission_selection/README.md) | [Session/MissionSelector/UI](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/) | [Session/MissionSelector](/apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/) | `TBD_UIMissionSelector` preset: `LOBBY` stage, F9, the top-bar tab |
+| [Lobby](/documentation_v2/mod/tbd-framework/UI/lobby/README.md) | [Session/Lobby/UI](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/UI/) | [Session/Lobby](/apps/mod/tbd-framework/UI/layouts/Session/Lobby/) | `TBD_UILobby` preset: the top-bar tab, the pause menu's "Change slot" |
+| [Briefing](/documentation_v2/mod/tbd-framework/UI/briefing/README.md) | [Session/Briefing/UI](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/) | [Session/Briefing](/apps/mod/tbd-framework/UI/layouts/Session/Briefing/) | `TBD_UIBriefing` preset: `BRIEFING` stage, the top-bar tab |
+| In-game menu | [Session/Admin/UI](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/UI/); the pause hook in `TBD_LobbyScreen.c` | the list shell in [Common](/apps/mod/tbd-framework/UI/layouts/Common/) | `TBD_UIAdmin` preset (F8); the game's `PauseMenuUI` |
+| Spectator | [Session/Spectator/UI](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/UI/) | the list shell in [Common](/apps/mod/tbd-framework/UI/layouts/Common/) | `TBD_Spectator` preset, after death |
+| End screen, debrief | [Session/PostGame/UI](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/UI/) | [Session/PostGame](/apps/mod/tbd-framework/UI/layouts/Session/PostGame/) | `END` and `DEBRIEF` stages, as workspace overlays |
+| Objective HUD | [UI/Hud](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/) | [Hud](/apps/mod/tbd-framework/UI/layouts/Hud/) | the objective snapshot the server sends each client |
+| Safe start, play area, identity link, markers | [Gamemode/Stages](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/), [Systems/Zones](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/), [API](/apps/mod/tbd-framework/Scripts/Game/TBD/API/), [Systems/Markers](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/) | none: engine pop-ups, chat and map markers | the stage, the zone check, a chat command, the mission |
+| Admin help ticket | none | none | no code yet; the folder holds the design target |
 
-## Rules
+### The pre-game dock shell
 
-- No `.layout` over 1000 lines: split into a screen shell + sub-layouts injected into named docks
-  (see `TBD_MissionSelector.layout` + `TBD_MissionSelectorScreen`, or `TBD_LobbyScreen.layout` +
-  `TBD_LobbyScreen`). No oversize layout remains since the lobby rebuild (2026-09-13).
-- Every layout path is named once, in `TBD_UILayouts`; screens use the constant. No bare-path fallbacks.
-- GUIDs are `7BD1A7000000XXnn` (`XX` = block per layout, `nn` = `00` root, `01` meta id, `02+` children).
-  The block ledger is the header of `TBD_UILayouts.c`. Grep before taking one.
-- Colour is a `TBD_UITheme` token or a `TBD_EUITint`; icons are `TBD_UIIcons` keys. A `.layout`
+The Mission Selector, lobby and briefing are dock shells: a layout of empty named docks that a
+`TBD_DockScreen` subclass (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_DockScreen.c`)
+fills at open. `TopDock` (56 high) and `BottomDock` (64 high) take the shared bars from
+`apps/mod/tbd-framework/UI/layouts/Session/Shared/`; `LeftDock`, `CenterDock` and `RightDock` take
+the screen's panels, at widths the shell sets; `OverlayDock`, full screen, last and hidden while
+empty, hosts popovers. The briefing adds `WideDock` for the players panel and lays everything over
+the live map. The top bar's tabs, "Scenario Browser", "Lobby" and "Briefing", move between the
+three screens. The [Session layouts README](/apps/mod/tbd-framework/UI/layouts/Session/README.md)
+draws the whole flow.
+
+### Rules
+
+- A shell holds only its backdrop or map and empty docks; a screen whose layout would grow large
+  splits into a shell plus sub-layouts mounted into the docks.
+- Every layout is named once, as a constant in `TBD_UILayouts`
+  (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/TBD_UILayouts.c`), and screens use the
+  constant. `TBD_UILayouts.Create` falls back to the bare path when a GUID does not resolve, which
+  does not replace a resource database pass.
+- Layout GUIDs are `7BD1A7000000XXnn`: `XX` a block per layout, `nn` `00` the root widget, `01`
+  the `.meta` resource id, `02` and up the children. The block ledger heads `TBD_UILayouts.c`;
+  grep it before taking a block.
+- Colour is a `TBD_UITheme` token or a `TBD_EUITint`, and icons are `TBD_UIIcons` keys; a layout
   carries placeholder colours only.
-- Moving a layout = `git mv` + edit the `.meta` `Name` + the `TBD_UILayouts` constant +
-  `Configs/System/chimeraMenus.conf` if it is a menu preset. Then a Workbench open of `addon.gproj`
-  to rewrite `resourceDatabase.rdb` (non-script resources are not directory-scanned).
-- New `.c` files: Workbench cold restart (see `tbd-framework/README.md`). Headless compile gate:
-  `cargo xtask mod compile` (`hcargo` from inside the container).
-- `apps/mod/tbd-export/` is a thin addon that **depends on** `tbd-framework` (map-export tooling only —
-  no UI of its own, nothing to mirror). `apps/mod/tbd-emcp/` carries the enfusion-mcp Workbench
-  bridge handlers. Neither holds a copy of this UI tree.
+- Moving a layout is `git mv`, the `.meta` `Name`, the `TBD_UILayouts` constant and, for a menu
+  shell, `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`; then
+  [Workbench](/documentation_v2/glossary.md#workbench) opens `addon.gproj` and rewrites
+  `resourceDatabase.rdb`, since non-script resources are not found by a directory scan.
+- New `.c` files compile headless with `cargo xtask mod compile`; the
+  [framework README](/apps/mod/tbd-framework/README.md) covers the Workbench restart they need.
+- `apps/mod/tbd-export/` and `apps/mod/tbd-emcp/` hold no UI and no copy of this tree.
+
+## Code
+
+- [Framework interface assets](/apps/mod/tbd-framework/UI/) — the layouts and textures of every
+  screen
+- [UI scripts](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/) — the menu stack, dock screen, theme,
+  shared primitives, HUD and mock catalogs
+- [Session scripts](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/) — each screen's feature
+  module and its `UI/` folder
+
+## Boundaries
+
+- Depends on: the [feature doc template](/documentation_v2/standards/templates/feature_doc.md) and
+  the [style lock](/documentation_v2/refactor_style_lock.md) for the screen specifications; the
+  code folders above.
+- Used by: `TBD_UILayouts.c`, `TBD_MissionSelectorData.c` and `TBD_PlayersCatalog.c`, whose
+  comments cite this index; the in-code READMEs of the screens, which link their specification;
+  the [mod design](/documentation_v2/mod/tbd-framework/mod_design.md).
+- Rules: one folder per screen, named in snake_case after the screen; a specification describes
+  the built screen first and its design target second; mockup sets keep the `<panel>_mockup/`
+  name and their HTML and PNG together.
+
+## Related documentation
+
+- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — the design methodology and
+  the one-life rules every screen serves
+- [Common layouts](/apps/mod/tbd-framework/UI/layouts/Common/README.md) — the shared primitives
+  and their handler contracts

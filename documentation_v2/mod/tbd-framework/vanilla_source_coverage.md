@@ -1,162 +1,101 @@
 **Status:** live
 
-# Vanilla source coverage — four lanes (T-181.3 / .3.1 / .3.2 / .3.3)
+# Vanilla source coverage
 
-## LANE 4 IS THE ANSWER — full source WITH BODIES (T-181.3.3)
+Where the vanilla Arma Reforger script source that the `enf` oracle indexes comes from: four lanes,
+what each one reaches, and which to use for a question. Read it before assuming a vanilla class is
+greppable. Every lane writes under `apps/mod/vanilla_reference/`, which is gitignored (Bohemia's
+copyrighted source is never committed); only the derived `.ai/artifacts/enf-index/vanilla_*.tsv`
+indexes are.
 
-**arexplorer.zeroy.com** is a Doxygen build of the same game version (1.7.0.54) with
-SOURCE_BROWSER enabled: **6,495 `*_source.html` pages — exactly matching the pak script
-count** — each containing the complete file *including method bodies*. This is strictly better
-than every other lane and supersedes the codec problem entirely; cracking the pak compression is
-no longer needed.
+## The lanes
+
+| Lane | Command | Reaches | Gives |
+|---|---|---|---|
+| Source pages | `cargo xtask fetch vanilla-source`, then `enf source` | any class, one page per file | complete `.c` files **with method bodies** |
+| Pak extract | `enf extract` | the scripts stored uncompressed in the paks, by real path | complete files |
+| API docs | `enf apidoc`, `cargo xtask fetch vanilla-api <Class>…` | all 7,990 classes of the Script API | signatures and inheritance, no bodies |
+| Byte carving | `enf carve` | plaintext script fragments in the paks | 610 fragment files |
+
+`enf` is `cargo run -q -p developer-tools --bin enf --`. After any lane, rebuild the index:
 
 ```bash
-cargo xtask fetch vanilla-source                          # curated spine set
-cargo xtask fetch vanilla-source --grep Respawn
-cargo run -q -p developer-tools --bin enf -- source       # rebuild .c from cached pages
 cargo run -q -p developer-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
 ```
 
-Every class that was previously unreachable now resolves to real source:
+The committed index (`.ai/artifacts/enf-index/vanilla_files.tsv`) holds 2,146 files, 98,475
+lines and 1,775 class declarations: 610 carved fragments, 47 reconstructed source files and the
+extracted scripts.
 
-| symbol | resolves to |
-|---|---|
-| `SCR_BaseGameMode` | `Source/SCR_BaseGameMode.c:133` |
-| `SCR_RespawnSystemComponent` | `Source/SCR_RespawnSystemComponent.c:6` |
-| `ChimeraMenuBase` | `Source/ChimeraMenuBase.c:69` |
-| `SCR_SpawnRequestComponent` | `Source/SCR_SpawnRequestComponent.c:12` |
+### Source pages: the answer for bodies
 
-Combined vanilla index: **2,116 files · 88,670 LOC · 1,702 declarations**.
+A public Doxygen build of the same game version (1.7.0.54) at arexplorer.zeroy.com, with its source
+browser enabled, publishes one
+`*_source.html` page per script: 6,495 pages, exactly the pak's script count, each with the whole
+file including method bodies. `cargo xtask fetch vanilla-source` mirrors a curated spine set
+(`--grep <pattern>` adds matches) into `apps/mod/vanilla_reference/source_html/`, and `enf source`
+rebuilds `.c` files from the cached pages into `apps/mod/vanilla_reference/Source/`. The spine
+classes resolve there: `SCR_BaseGameMode`, `SCR_RespawnSystemComponent`, `ChimeraMenuBase`,
+`SCR_SpawnRequestComponent`.
 
-**BE A GOOD CITIZEN.** It is one person's site and a full mirror is gigabytes. The fetcher
-defaults to a curated spine set, caches everything, never refetches, and sleeps between
-requests. `--all` exists; think before using it.
+**Be a good citizen.** It is one person's site and a full mirror is gigabytes. The fetcher defaults
+to the spine set, caches everything, never refetches and sleeps between requests. `--all` exists;
+think before using it.
 
----
+### Pak extract, and the compression barrier
 
+`enf extract` reads scripts by name through the pak file table. The table lists every script
+under a lowercase `scripts/` (`scripts/Game/GameMode/SCR_BaseGameMode.c`; `Scripts/` finds
+nothing), but of the 6,495 entries only 2,483 are stored uncompressed and extract. The other 4,012
+are compressed with a codec that is neither zlib nor raw deflate, and the entries' method bytes
+are all zero, so nothing names it. A sample failing header reads `49 b6 e5 36 4d b7 c0 16`
+(3,064 bytes that expand to 14,720). LZ4 block is the leading guess; confirming it needs a new
+crate. The `enfusion-mcp` pak reader fails on the same entries, which is why `game_browse` lists
+`SCR_BaseGameMode.c` while `game_read` answers `incorrect header check`. The source pages make this
+barrier moot for reading source.
 
-**Current best:** `enf extract` (T-181.3.2) pulls vanilla scripts **by real path** out of the pak
-file table — strictly better than carving where it works. Combined index today:
-**2,099 files · 72,226 LOC · 1,659 declarations** (1,489 real-path + 610 carved blobs).
+### API docs: signatures for every class
 
-```bash
-cargo run -q -p developer-tools --bin enf -- index crf                                            # CRF
-cargo run -q -p developer-tools --bin enf -- extract            # vanilla, by real path
-cargo run -q -p developer-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
-cargo run -q -p developer-tools --bin enf -- apidoc                                           # 7,990 class signatures
+Bohemia publishes the complete Script API as Doxygen HTML. `enf apidoc` parses the class index
+into `vanilla_api_classes.tsv` and `vanilla_api_members.tsv`; `cargo xtask fetch vanilla-api`
+fetches single class pages. Measured member counts: `SCR_BaseGameMode` 145,
+`SCR_RespawnSystemComponent` 49, `SCR_PossessSpawnRequestComponent` 35, `ChimeraMenuBase` 16,
+`SCR_PossessSpawnData` 12, including the call the possess deploy rests on:
+
+```text
+SCR_PossessSpawnData    static SCR_PossessSpawnData FromEntity (notnull IEntity entity)
 ```
 
-## The pak compression barrier (measured, T-181.3.2)
+Fetch the class pages a slice needs, never all 7,990. The page cache is gitignored.
 
-The pak FILE table **does** list every script — `scripts/Game/GameMode/SCR_BaseGameMode.c`, 84 KB,
-is right there (note the lowercase `scripts/`; `Scripts/` returns nothing). Of 6,495 script
-entries:
+### Byte carving
 
-| | count | why |
-|---|---|---|
-| extracted | **2,483** | stored **uncompressed** (`compressed=false`) |
-| failed | **4,012** | `compressed=true`, and the payload is **neither zlib nor raw deflate** |
+`enf carve --game "<Arma Reforger install>" --out apps/mod/vanilla_reference` scans the 16 paks
+for printable runs of at least 400 bytes and keeps the Enfusion script among them: 610 files,
+1.0 MB, 41,958 lines, 1,106 declarations (882 of them `SCR_*`), 2,493 symbols. It takes about six
+minutes. It reaches the AI and behaviour-tree, camera, action-condition, UI-component and
+Workbench-plugin layers, not the spawn pipeline: `SCR_BaseGameMode`, `SCR_PossessSpawnData`,
+`SCR_PossessSpawnRequestComponent`, `SCR_RespawnSystemComponent` and `ChimeraMenuBase` sit in
+compressed blocks (the plaintext `SCR_BaseGameMode` hits are `.et` prefab references). The
+400-byte floor matters: `class SCR_AIDangerReaction` sits in a 1,312-byte run, and a 2 KB floor
+keeps 127 files instead of 610.
 
-Fixing `PakVfs` to fall back from zlib to raw deflate was necessary but not sufficient. Sample
-failing header: `49 b6 e5 36 4d b7 c0 16` (clen 3064 → dlen 14720, ~4.8x). The six entry
-"method" bytes are **all zero**, so there is no codec flag to switch on — the codec is implicit.
+## Which lane answers what
 
-`enfusion-mcp` cannot read these either: its pak reader only calls `inflateSync`, which is why
-`game_browse` lists `SCR_BaseGameMode.c` but `game_read` returns `incorrect header check`. **This
-is the single error that made the vanilla source look unavailable.**
+1. Behaviour of a vanilla class: its reconstructed source under `apps/mod/vanilla_reference/Source/`;
+   fetch its page first when it is missing.
+2. A signature or member list: `rg '^<Class>\t' .ai/artifacts/enf-index/vanilla_api_members.tsv`,
+   or `cargo xtask mcp call api_search '{"query":"<Class>"}'`.
+3. How a pipeline is driven in practice: CRF's usage, through `enf lookup <symbol>` on the CRF
+   lane. `CRF_SCR_PossessSpawnHandlerComponent.c` is how the possess pipeline was found.
+4. Component composition, GUIDs and default property values: `.et` prefab configs, which are
+   plaintext in the paks even where the `.c` is compressed.
 
-**Follow-up (unstarted):** identify the codec — LZ4 block is the leading hypothesis from the
-token-shaped first byte, but no lz4 tooling is installed and confirming it means adding a crate.
-Doing so would unlock the remaining ~4,000 files including the whole gameplay layer.
+## Related documentation
 
----
-
-## Legacy: byte-carving (T-181.3)
-
-
-**Measured 2026-07-25. Read this before assuming a vanilla class is greppable.**
-
-Regenerate: `cargo run -q -p developer-tools --bin enf -- carve --game "$HOME/.local/share/Steam/steamapps/common/Arma Reforger" --out apps/mod/vanilla_reference` (~6 min, then `enf index vanilla`).
-
-## What you get
-
-| Measure | Value |
-|---|---|
-| paks scanned | 16 |
-| printable runs ≥ 400 B | 9,976 |
-| kept as Enfusion script | **610 files, 1.0 MB** |
-| indexed LOC | 41,958 |
-| declarations | **1,106** (882 of them `SCR_*`) |
-| symbols (incl. methods) | 2,493 |
-
-Query it:
-```bash
-cargo run -q -p developer-tools --bin enf -- lookup SCR_AIDangerReaction \
-  --index .ai/artifacts/enf-index/vanilla_symbols.tsv
-rg 'class SCR_AIDecoTest' apps/mod/vanilla_reference/
-```
-
-## What it does NOT reach — and why
-
-**Only a subset of vanilla script ships uncompressed.** The rest lives in compressed blocks of
-the FORM/PAC1 archives and cannot be recovered by byte-scanning. Verified absent as plaintext:
-
-| Class | Status | Notes |
-|---|---|---|
-| `SCR_BaseGameMode` | **ABSENT** | the 23 plaintext hits in `data007.pak` are `.et` *prefab config* references (`SCR_BaseGameMode : "{GUID}Prefabs/…"`), not a class declaration |
-| `SCR_PossessSpawnData` | **ABSENT** | compressed |
-| `SCR_PossessSpawnRequestComponent` | **ABSENT** | compressed |
-| `SCR_RespawnSystemComponent` | **ABSENT** | compressed |
-| `ChimeraMenuBase` | **ABSENT** | compressed |
-
-That is the honest result for *carving*: it delivers the AI/behaviour-tree, camera,
-action-condition, UI-component and Workbench-plugin layers, but not the spawn pipeline.
-
-## RESOLVED — the official API docs cover every one of them (T-181.3.1)
-
-Operator's suggestion ("it might exist already online to download") was correct. Bohemia
-publishes the complete Script API as Doxygen HTML: **7,990 classes**, and all five "absent"
-classes are there with full member lists.
-
-```bash
-cargo run -q -p developer-tools --bin enf -- apidoc          # fetch the class index + parse (1 request for the index)
-cargo xtask fetch vanilla-api SCR_BaseGameMode SCR_PossessSpawnData   # per-class pages
-rg '^SCR_PossessSpawnData\t' .ai/artifacts/enf-index/vanilla_api_members.tsv
-```
-
-Measured members recovered: `SCR_BaseGameMode` **145**, `SCR_RespawnSystemComponent` **49**,
-`SCR_PossessSpawnRequestComponent` **35**, `ChimeraMenuBase` **16**, `SCR_PossessSpawnData` **12**
-— including the exact call the handoff fought four Workbench restarts to find:
-
-    SCR_PossessSpawnData    static SCR_PossessSpawnData FromEntity (notnull IEntity entity)
-
-**Signatures and inheritance, no bodies** — same class of information as `api_search`, but bulk,
-offline and greppable. For *behaviour* (what the body actually does), CRF remains the oracle.
-
-Do not bulk-fetch all 7,990 class pages; pull the ones a slice needs. The cache is gitignored;
-only the derived `vanilla_api_*.tsv` is committed.
-
-The earlier claim that "33.9 MB / 1,859 class declarations" were carveable from `data007.pak`
-conflated two things: a large share of that printable volume is `.et` prefab config, not script.
-
-**Fallbacks for anything listed ABSENT, in order:**
-1. `cargo xtask mcp call api_search '{"query":"SCR_PossessSpawnData"}'` — signatures only, no bodies.
-2. CRF's own usage as the behavioural oracle — e.g.
-   `CRF_SCR_PossessSpawnHandlerComponent.c` is exactly how the possess pipeline was found.
-   `cargo run -q -p developer-tools --bin enf -- lookup <symbol>` (CRF lane).
-3. `.et` prefab config *is* plaintext and greppable in the paks — useful for component
-   composition, GUIDs, and default property values even when the `.c` is not available.
-
-## Known follow-up
-
-`tools_v2/developer-tools/src/enfusion_pak/world_source.rs` (`PakVfs`) already parses FORM/PAC1 **with zlib inflate** for
-named files. Scripts are not name-addressable in the FILE tree, but inflating every compressed
-block wholesale and re-running the carver over the inflated bytes is the plausible route to the
-remaining corpus. Not attempted in T-181.3 — filed as the next step if the spawn/menu sources
-are needed badly enough.
-
-## Sizing note
-
-Blob floor is **400 bytes**, not 2 KB: `class SCR_AIDangerReaction` sits in a 1,312-byte run,
-and a 2 KB floor silently dropped ~2/3 of real script (127 files vs 610). Vanilla ships many
-small fragments, not a few large ones.
+- [Mod design](/documentation_v2/mod/tbd-framework/mod_design.md) — §5 cites the facts these lanes
+  proved
+- [Enfusion tooling](/tools_v2/developer-tools/src/enfusion_tooling/README.md) — the `enf`
+  subcommands
+- [Enfusion pak reader](/tools_v2/developer-tools/src/enfusion_pak/README.md) — the pak file table
+  and payload decoding the extract lane uses

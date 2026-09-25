@@ -110,7 +110,9 @@ it spawns `TBD_PreSlotCamera`, which orbits the centre of the world's bound box 
 
 ## Related documentation
 
-- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md) — the
-  lobby's design target
+- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
+  data, design target, open work and decisions
+- [Lobby design references](/documentation_v2/mod/tbd-framework/UI/lobby/visual_references/README.md)
+  — the Stitch mockup sets and the Arma 3 captures the screen started from
 - [Spawning](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — the slot map,
   one-life bookkeeping and deployment the lobby wire calls into
