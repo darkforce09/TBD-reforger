@@ -1,0 +1,12 @@
+id = "T-1097"
+kind = "work"
+title = "Resolve the two CRF-only prefab GUIDs in the framework registry"
+summary = "Data/registry.json:1382 ({8A239DEA19509B1B} Radio_VirtualArsenalSlot) and :1762 ({41174B59DA65659A} Vest_SovietHarness_GrenadeBandolier) exist only in the upstream CRF oracle, so verify no-crf-leak fails by design (upstream_code_leaks.rs:3-22); re-author from vanilla or record attribution."
+class = "audit"
+status = "idea"
+created_at = "2026-09-25T04:29:57Z"
+notes = "apps/mod/tbd-framework/Data/registry.json:1381-1383 alias prop:radio_virtualarsenalslot -> {8A239DEA19509B1B}Prefabs/Vehicles/Core/VirtualSlots/Radio_VirtualArsenalSlot.et; :1761-1763 alias prop:vest_sovietharness_grenadebandolier -> {41174B59DA65659A}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_GrenadeBandolier.et. tools_v2/xtask/src/verifications/licensing/upstream_code_leaks.rs:3-22 documents that cargo xtask verify no-crf-leak ships red on exactly these two GUIDs (found in apps/mod/crf_framework assets, absent from every vanilla .pak), forbids exempting them, and names the fix as a licence decision: re-author the two prefab references from vanilla or record an Arma Public License attribution; its line numbers (:13 'lines 1367 and 1747') are stale, the entries now sit at :1382 and :1762. Both GUIDs also appear in contracts_v2/catalogs/registry-items.workbench.json:77,9140 (a Workbench export), so first check whether the current vanilla data carries them, which would make the gate's vanilla probe the thing to fix. No other open ticket tracks the finding (T-181.4, T-181.52, T-1001 cover the gate itself). Source: README writer R14.1."
+
+[scope]
+domain = "mod"
+layer = "assets"

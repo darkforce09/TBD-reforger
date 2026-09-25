@@ -1,0 +1,12 @@
+id = "T-1084"
+kind = "work"
+title = "Arm the mission browser input context every frame"
+summary = "TBD_MissionBrowser.c:74 activates TBD_BrowserContext once, but contexts decay per frame (TBD_MenuBase.c:12-13, TBD_SpectatorCamera.c:224-236); :85,:89 and TBD_MissionSelectorScreen.c:18,29 name F6 for the selector (F6 is TBD_MissionCycle); check TBD_MissionSelector.conf.meta LayoutResourceClass."
+class = "bug"
+status = "idea"
+created_at = "2026-09-25T04:21:49Z"
+notes = "Paths under apps/mod/tbd-framework. Scripts/Game/TBD/Session/MissionSelector/TBD_MissionBrowser.c:60-90 TBD_TryRegisterListeners runs once per local controller (m_TBD_ListenersRegistered) and calls im.ActivateContext(\"TBD_BrowserContext\") at :74 only there; Configs/System/ActionContext/TBD_BrowserContext.conf holds TBD_MissionCycle, TBD_MissionLoad, TBD_AdminMenu and TBD_MissionSelector. Scripts/Game/TBD/UI/Core/TBD_MenuBase.c:12-13 and Scripts/Game/TBD/Session/Spectator/TBD_SpectatorCamera.c:224-236 record that input contexts decay and must be re-armed every frame, so F6-F9 may fire only in the frames right after registration; confirm in game before changing. Key wording: Configs/System/Actions/TBD_MissionCycle.conf:6 binds KC_F6, TBD_MissionLoad.conf:6 KC_F7, TBD_AdminMenu.conf:6 KC_F8, TBD_MissionSelector.conf:6 KC_F9, but TBD_MissionBrowser.c:85 ('Mission Selector (F9 or F6)') and :89 (log 'Press F6 or F9 for Mission Selector!') and Scripts/Game/TBD/Session/MissionSelector/UI/TBD_MissionSelectorScreen.c:18 ('toggles it on F6 / F9', also history '2736-line monolith') and :29 name F6. Check: Configs/System/Actions/TBD_MissionSelector.conf.meta:6,8,10,12,14,16 declare LayoutResourceClass for XBOX_ONE, XBOX_SERIES, PS4, PS5, HEADLESS and Xbox, where every other action meta (e.g. TBD_MissionCycle.conf.meta) uses CONFResourceClass; it is the only .conf.meta under apps/mod with LayoutResourceClass. Source: README writers R13 and R14.1."
+
+[scope]
+domain = "mod"
+layer = "scripts"
