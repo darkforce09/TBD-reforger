@@ -114,3 +114,5 @@ and the crate's tests use them.
 - [Terrain assets](/assets_v2/terrains/README.md) — the served terrain tree the loaders read.
 - [Architecture gates](/tools_v2/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` gate that scans this tree.
+- [Map streaming](/documentation_v2/website/map-engine/map_streaming.md) — the boot sequence,
+  viewport passes, residency, memory budget and loaders as one flow, with open work and decisions.

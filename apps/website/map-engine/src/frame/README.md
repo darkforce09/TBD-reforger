@@ -106,3 +106,10 @@ it culls.
     against `crate::overlay::lanes::ALL_LANES`;
   - the overlay's draw-order suites in `apps/website/map-engine/src/overlay/tests/tests/` read
     these files by path, so a moved or renamed file breaks them.
+
+## Related documentation
+
+- [Map engine overview](/documentation_v2/website/map-engine/map_engine_overview.md) — the path
+  from a mounted canvas to a drawn frame.
+- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the four
+  frame-path rules (§2C) and the frame vocabulary this module alone names (§2C.1, rule 3a).

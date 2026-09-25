@@ -127,3 +127,7 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
   Git LFS holds, how `/map-assets` is served, and the LFS pulls.
 - [Editor gates](/documentation_v2/runbooks/editor_gates.md) — running the editor gate, whose
   `selfcheck` smoke calls the render engine's readback checks.
+- [Map engine documentation](/documentation_v2/website/map-engine/README.md) — the crate's
+  overview, map streaming, the editing layer and draft persistence.
+- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the layer rules
+  `cargo xtask verify engine-layers` enforces, and why.

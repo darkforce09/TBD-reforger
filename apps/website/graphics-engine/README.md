@@ -87,3 +87,10 @@ Rust 1.95.
     `frame` module (rule 3a), and only that file and `apps/website/map-engine/src/frame/pump.rs`
     name `device`, `pipeline`, `shaders` or `r#loop` (rule 3b);
   - the frontend never imports this crate (rule 6).
+
+## Related documentation
+
+- [Graphics engine overview](/documentation_v2/website/graphics-engine/graphics_engine_overview.md)
+  — one frame across the modules, the design and the open work.
+- [Engine boundary rules](/documentation_v2/standards/engine_boundary_rules.md) — the one-way
+  arrow and the rules `cargo xtask verify engine-layers` holds this crate to.

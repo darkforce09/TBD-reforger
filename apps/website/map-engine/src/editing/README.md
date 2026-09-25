@@ -111,3 +111,7 @@ probe and the click with one resolution, so a row is clickable only when a click
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — the Mission Creator features this layer backs.
+- [Editing layer](/documentation_v2/website/map-engine/editing_layer.md) — the host, hosted
+  commands, undo and tools as flows, with open work and decisions.
+- [Draft persistence](/documentation_v2/website/map-engine/draft_persistence.md) — how the
+  Mission Creator opens, reconciles, adopts, snapshots and saves a draft through `persist/`.

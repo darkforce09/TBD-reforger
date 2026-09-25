@@ -13,7 +13,9 @@ below the code READMEs, for behaviour, design, open work and decisions.
 ```text
 documentation_v2/website/
 ├── api_v2/    the API: overview, environment variables, decisions and verification evidence
-└── frontend/  the single-page app: page and app feature docs, design references, the editor corpus
+├── frontend/  the single-page app: page and app feature docs, design references, the editor corpus
+├── graphics-engine/  the pure renderer: its modules, one frame, design and open work
+└── map-engine/  the map engine: overview, map streaming, the editing layer, draft persistence
 ```
 
 ## How it works
