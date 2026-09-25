@@ -1,93 +1,102 @@
 **Status:** live
 
-# Agent commit checklist
+# Commit checklist
 
-**Use on every feature commit.** Sync docs **in the same commit** as code — never merge stale docs.
+What every commit that changes code carries, for people and AI agents alike. Documentation ships
+in the same commit as the code it describes, whichever agent or person writes that code; a commit
+never leaves the documentation stale.
 
-**Authority ladder:** running code → [`CLAUDE.md`](../../CLAUDE.md) §Status → [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) → domain **ROADMAP.md** → supporting docs → archive.
+## Before you start
 
-**Doc ownership (locked 2026-06):** **Cursor (Composer 2.5)** writes and syncs all documentation. **Claude Code** reads docs and implements code only — return verify output to Cursor for the §Same-commit sync pass before the human commits.
+**Authority.** Running code wins over every document, then `CLAUDE.md` (its laws), then the
+feature docs and roadmaps under `documentation_v2/`, then the archive, which is history and never
+working context.
 
-**Where does X go?** [`documentation_v2/standards/where_does_x_go.md`](/documentation_v2/standards/where_does_x_go.md) (T-171 pin).
+| Work | Read first |
+|---|---|
+| any work | the [ticket](/documentation_v2/glossary.md#ticket), its spec and its plan (`cargo xtask ticket brief <id>`) |
+| the app's pages | [Frontend documentation](/documentation_v2/website/frontend/README.md): every route, its page folder and its feature doc |
+| the [Mission Creator](/documentation_v2/glossary.md#mission-creator) | its [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) and [decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) |
+| the [API](/documentation_v2/glossary.md#api) | the [API overview](/documentation_v2/website/api_v2/api_overview.md) and the code in `apps/website/api_v2/` |
+| where a new file goes | [Where does X go?](/documentation_v2/standards/where_does_x_go.md) |
+| comments and cross-boundary tags | [Documentation standards](/documentation_v2/standards/documentation_standards.md) |
+| code rules and their gates | [Coding standards](/documentation_v2/standards/coding_standards/README.md) |
+| ticket ids in commits and files | [Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md) |
 
----
+## Same-commit updates
 
-## Ticket registry workflow
+| What changed | Update in the same commit |
+|---|---|
+| a ticket shipped | `cargo xtask ticket ship <id>` (it runs `ticket sync`), then after the commit `cargo xtask ticket stamp-sha <id> <sha>`; the feature doc's Open work |
+| a program's active slice | `cargo xtask ticket advance-slice <id>` |
+| a route added or removed | `apps/website/frontend/src/app_routes.rs` and `apps/website/frontend/src/router.rs`; the route table of the [frontend documentation](/documentation_v2/website/frontend/README.md); the page's feature doc and README |
+| a page's visible surface | the page's feature doc and its code folder's README |
+| the navigation or sidebar | `apps/website/frontend/src/v2/pages/navigation/` and [App layout and navigation](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md) |
+| an API model | the model in `apps/website/api_v2/src/<domain>/models/`, the DTO in `apps/website/frontend/src/v2/core/api/dto/` and its R-api golden (CLAUDE.md law 9) |
+| a cross-boundary type or handler | its `@contract`, `@route` or `@authority` tag, per the documentation standards |
+| a schema | the definition in `contracts_v2/definitions/`, its fixture, and the regenerated types (`cargo xtask ci schema-codegen`) |
+| the Mission Creator | [decisions](/documentation_v2/website/frontend/apps/editor/decisions.md), the [feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) or the [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md), as the change touches them |
+| a code folder's files | its README's Contents, which `cargo xtask verify readme-coverage` checks |
+| work put off | the ticket's status set to `deferred` (`cargo xtask ticket set-status <id> deferred`); never `shipped` before it is verified |
+| documentation only | a commit of its own |
 
-1. **Plan / queue change** — edit the ticket's [`.ai/tickets/<id>.toml`](../../.ai/tickets) (`status`, `order`, `spec`, `active_slice`).
-2. **Regenerate views** — `cargo xtask ticket sync` (updates `docs/TICKET_*.md`, `CLAUDE.md` status markers).
-3. **Validate** — `cargo xtask ticket check` or `cargo xtask ticket check --strict`.
-4. **Implement** — Claude Code on **`main`**; **does not edit docs**.
-5. **Ship** — human verifies → `cargo xtask ticket ship <id>` → `cargo xtask ticket sync` → Cursor syncs narrative docs below.
+## Never edit by hand
 
-Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead view: [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
+- What `cargo xtask ticket sync` writes: `.ai/tickets/queue.json`, the next-work block of the
+  Mission Creator roadmap and the ticket column of the Eden gap analysis. Change the ticket, then
+  sync.
+- The generated contract types in the `generated/` folders under `apps/website/api_v2/src/`;
+  regenerate them.
+- The frozen records: `documentation_v2/tickets/` once a ticket ships or is cancelled, and
+  `documentation_v2/archive/`. Only their links change.
+- The design exports in a `visual_references/` folder, which are references, not the source of
+  the UI; the live UI is the Leptos code under `apps/website/frontend/src/v2/`.
 
----
+Markdown never goes under a `docs` folder in `apps/`, `contracts_v2/` or `assets_v2/`; it goes in
+`documentation_v2/`, beside the feature it describes.
 
-## Before you code
+## Verify before committing
 
-| Domain | Start here |
-|--------|------------|
-| **Any work** | [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) → registry row → spec path |
-| **Frontend surfaces** | [`documentation_v2/website/frontend/README.md`](/documentation_v2/website/frontend/README.md) → [`INDEX.md`](/documentation_v2/website/frontend/README.md) |
-| **Mission Creator** | MC [`ROADMAP.md`](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) → [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) |
-| **Backend / API** | [`documentation_v2/website/api_v2/api_overview.md`](/documentation_v2/website/api_v2/api_overview.md) · live code `apps/website/api_v2/` |
-| **Conventions pin** | [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md) |
-| **Cross-boundary comments** | [`DOCUMENTATION_STANDARDS.md`](/documentation_v2/standards/documentation_standards.md) |
-| **Coding standards** | [`CODING_STANDARDS.md`](/documentation_v2/standards/coding_standards/README.md) — before commit: `cargo xtask db up` then `cargo xtask ci ci-local` |
-| **Tag contract** | [`docs/TAGS.md`](/documentation_v2/standards/ticket_identifiers.md) |
-
----
-
-## Same-commit sync table
-
-| What changed | Update these |
-|--------------|--------------|
-| **Shipped milestone** | Ticket → `shipped`; `cargo xtask ticket sync`; [`CLAUDE.md`](../../CLAUDE.md) §Status Done bullet |
-| **Active slice** | Ticket `active_slice`; MC `agent_execution.md` if applicable |
-| **New or removed route** | [`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs) + [`pages/*.md`](/documentation_v2/website/frontend/pages) + [`INDEX.md`](/documentation_v2/website/frontend/README.md) + [`ROADMAP.md`](/documentation_v2/website/frontend/README.md) |
-| **UI surface (no route)** | Page spec **Element Inventory** + **`Live source:`** → `apps/website/frontend/src/<page>.rs` |
-| **Nav / sidebar** | [`apps/website/frontend/src/nav.rs`](../../apps/website/frontend/src/nav.rs) + [`shell/sidebar.md`](/documentation_v2/website/frontend/pages/navigation/app_layout_and_navigation.md) |
-| **API / model** | `apps/website/api_v2/src/<domain>/models/` + matching `apps/website/frontend/src/v2/core/api/dto/` (R-api golden) |
-| **Cross-boundary type/handler** | `@contract` / `@route` / `@model` per DOCUMENTATION_STANDARDS — same commit as code |
-| **Mission Creator** | Decisions log / feature_inventory / gap_analysis as applicable |
-| **Deferred** | Ticket `status: deferred` — never mark shipped until verified |
-| **Doc-only reorg** | Own T-0xx commit; §Status note if authority changed |
-
----
-
-## Mission Creator slice workflow
-
-1. **Spec** — Cursor writes `t0xx_*.md`; ticket `ready`; `cargo xtask ticket sync`.
-2. **Code** — Claude Code; `cargo xtask mk ci-local-leptos` (+ `cargo xtask db test-it` when API touched).
-3. **Docs** — Cursor: ticket `shipped` + sync + narrative rows.
-
----
-
-## Never update
-
-- `docs/specs/**/code.html`, `screen.png` mockups (archive)
-- Generated `docs/TICKET_*.md` (edit registry + sync)
-- Historical T-0xx bullets in CLAUDE (commit archaeology)
-- **Do not create** markdown under `apps/**/docs/`, `contracts_v2/**/docs/` or `assets_v2/**/docs/` — specs live in [`documentation_v2/website/frontend/`](/documentation_v2/website/frontend/)
-
-Live UI authority: `apps/website/frontend/src/` (Leptos page modules).
-
----
-
-## Verify before commit
+Run what the change touches, from the repository root:
 
 ```bash
-cargo xtask mk ci-local-leptos   # fmt + clippy wasm32 + cargo test + trunk release
-cargo xtask db test-it           # when API/DB touched (needs cargo xtask db up)
-cargo xtask ticket check         # when tickets or authority docs changed
+cargo xtask mk ci-local-leptos
 ```
 
----
+Expected: formatting, clippy for `wasm32`, the app's tests and a release build pass (for the app).
+
+```bash
+cargo xtask db test-it
+```
+
+Expected: the API's tests pass against a new database (for the API or the database; needs
+`cargo xtask db up`).
+
+```bash
+cargo xtask ticket check --strict
+```
+
+Expected: `check OK` (for tickets, specs, plans or documents under `documentation_v2/`).
+
+```bash
+cargo xtask verify link-check --with-untracked --path <folder>
+```
+
+Expected: exit 0 (for documentation; `readme-coverage` and `markdown-placement` take the same
+flags). The whole gate is `cargo xtask ci ci-local`; the
+[Testing and CI](/documentation_v2/runbooks/testing_and_ci.md) runbook lists every gate and where
+it runs.
 
 ## Commit conventions
 
-- Commit directly to **`main`** (no feature branches; old `ticket/T-0xx` flow retired).
-- Tag messages **T-0xx** at start.
-- End with `Co-Authored-By:` trailer when using AI.
-- **Do not commit** unless the user explicitly asks.
+- Commit directly to `main`; create no branch (CLAUDE.md law 2). The one exception is the
+  `slice/<id>` branches that `cargo xtask platform slice-worktree` and the
+  [wave](/documentation_v2/glossary.md#wave) tooling create, merge and delete themselves.
+- Subject: `type(scope): summary`, with the type one of `feat`, `fix`, `refactor`, `test`, `docs`
+  or `chore`. A commit that lands a ticket names its id in the subject: `ticket stamp-sha` and the
+  token estimator read ticket ids from commit subjects, as
+  [Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md#in-commit-subjects)
+  describes.
+- A commit written with an AI agent ends with a `Co-Authored-By:` trailer.
+- An agent commits only when asked. When the tree holds someone else's uncommitted work, stage
+  only your own hunks.
