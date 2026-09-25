@@ -1,23 +1,108 @@
 # Ticket engine
 
-Self-contained ticket storage, validation, command services, sync outputs (queue JSON, roadmap markers, gap-analysis ticket columns), scheduling, and accounting. This crate has no internal workspace dependencies.
+The `ticket-engine` crate: everything about the [ticket](/documentation_v2/glossary.md#ticket)
+registry in `.ai/tickets/` that is not a process side effect. It stores, validates and changes the
+ticket files, regenerates the files derived from them, compiles the
+[wave](/documentation_v2/glossary.md#wave) lock, and keeps the run metrics. `cargo xtask` mounts it
+as the `ticket` and `wave` command groups and the platform wave driver, and the
+[ticketboard](/documentation_v2/glossary.md#ticketboard) reads tickets through it.
 
-## Ownership
+## Contents
 
-- `model`, `encoding`, `vocab`, and `timestamp`: public ticket types, canonical TOML, scope resolution, and UTC timestamps. Existing crate-root exports remain stable.
-- `store` and `ops`: fail-closed corpus loading, validated post-images, and surgical atomic file replacement.
-- `registry`: ticket files on disk, read-only value projections, and ticket statuses at a past revision. The whole-tree writer refuses a typed tree, so the typed operations are the only writer.
-- `validation`: schema, vocabulary, ownership, body, readiness, shipping, hierarchy, accounting, debt, and repository-reference checks.
-- `cli`: briefs, queries, mutations, shipping, batch selection, and configuration.
-- `sync`: queue JSON, roadmap markers, and gap-analysis ticket columns.
-- `wave_lock`: dependency packing, collision selection, deterministic lock files, drift checks, reservations, and decoding of the archived wave plans at the revisions that still carry them.
-- `metrics`: measured receipts, elapsed time, token accounting, and derived estimates.
-- `repository`: every repository path the crate reads or writes, spelled once, with a `documentation` submodule for the ones under the documentation tree; plus checkout-root discovery. `xtask` and `ticketboard` resolve those paths from here.
+```text
+tools_v2/ticket-engine/
+├── .gitignore  keeps a local `wip/` folder out of git
+├── Cargo.toml  the `ticket-engine` library package, with no workspace dependency
+├── src/        the library: model, store, operations, commands, checks, sync, wave lock, metrics
+└── tests/      the closed-`Domain` compile-fail test and run receipt fixtures shared with xtask
+```
 
-## Host interfaces
+## How it works
 
-Filesystem services receive the active repository root. `cli::cmd_run` receives an execution callback; `cli::cleanup_targets` returns a worktree path and branch without deleting either. The host owns process invocation and cleanup. Shared `wave_lock::history` functions give the compiler and platform checks one close-marker authority while retaining their different HEAD and numbering policies.
+The crate reads and writes the files under `.ai/tickets/` and nothing else in the checkout, apart
+from the two documents `ticket sync` writes into and git history. Every function takes the
+checkout root as an argument; `repository::find_repo_root` finds it for a running command by
+walking up to `.ai/tickets/ROOT`, so a command run inside a linked worktree reads that worktree's
+files.
 
-Unit tests live in sibling `tests/` files. Production files remain below 500 lines, tests below 1,000. Execution receipt fixtures are shared with xtask and live in `tests/fixtures/execution_receipts`.
+```text
+cargo xtask ticket <verb> ──► cli::cmd_<verb> ──► validation preflight ──► ops over store::Corpus
+                                                                        ──► write_back, sync, wave_lock repack
+cargo xtask wave <verb>   ──► wave_lock::cmd_repack / cmd_check / collisions::run
+cargo xtask platform …    ──► wave_lock, registry, metrics, history rules
+apps/ticketboard          ──► model types, parse_ticket_toml, repository paths
+```
 
-See the archived, frozen [phase-three verification](/documentation_v2/archive/tools_v2_refactor/phase_three_handoff.md) record of the `tools_v2` refactor program.
+The typed operations are the only writer of ticket files, and each writes only the files it names;
+the wave lock has one writer, the repack. The crate never starts an agent and never deletes a
+worktree or branch: `cli::cmd_run` takes the executor as a callback and `cli::cleanup_targets`
+only resolves paths, and xtask performs both. The `src/` README describes the layers.
+
+## Getting started
+
+Run these from the repository root:
+
+```bash
+cargo test -p ticket-engine        # every unit test, the property tests and the compile-fail test
+cargo xtask ticket check --strict  # the full check of the committed tickets, as CI runs it
+cargo xtask wave check             # the wave lock against the ticket files
+cargo xtask ticket --help          # every ticket subcommand
+```
+
+The tests need a git checkout with full history: several read the live `.ai/tickets/` tree and git
+log. Neither the CI workflow nor the platform wave gate runs `cargo test -p ticket-engine`; run it
+by hand after a change here.
+
+## Configuration
+
+- `TBD_MAX_CONCURRENT` (optional): the most tickets one wave may hold. Unset, a repack keeps the
+  width the committed lock records, and a lock with none uses 8
+  (`src/wave_lock/compiler.rs`, `src/wave_lock/ticket_views.rs`).
+- The files under `.ai/tickets/` that configure the rules, all required: `schema.json` (the
+  ticket schema), `scope-vocab.toml` (the scope words), `corpus-pins.toml` (never-minted ids, the
+  game-mod program, pinned gap rows), `metrics.schema.json` and `estimates.schema.json`; their
+  paths are in `src/repository.rs`.
+- `queue.json`'s `batch_size` (10), `concurrency` (3), `worktree_base`
+  (`.ai/artifacts/worktrees`) and `git_base` (`main`), read by `ticket config`, `ticket run` and
+  `ticket clean`; `ticket sync` rewrites the file with these defaults.
+
+## Public surface
+
+- The library `ticket_engine`: the model, `Corpus`, `parse_ticket_toml` and `render_ticket_toml`
+  at the crate root, and the modules `cli`, `registry`, `sync`, `validation`, `wave_lock`,
+  `metrics`, `corpus_pins` and `repository`; the [source README](/tools_v2/ticket-engine/src/README.md)
+  lists who calls each.
+- No binary: every command runs through `cargo xtask`.
+
+## Boundaries
+
+- Depends on: `anyhow`, `regex`, `serde`, `serde_json`, `toml`, `time`, `walkdir` and
+  `jsonschema`, and no workspace crate; `git` on `PATH`.
+- Used by: `tools_v2/xtask/` (the `ticket`, `wave`, `platform`, `mod`, `fetch` and `schema`
+  command groups and `src/core/`) and `apps/ticketboard/`, both by path dependency.
+- Rules:
+  - the crate depends on no workspace crate (`foundational_engines_have_no_workspace_dependencies`),
+    and ticket logic lives here rather than in xtask, whose `ticket` and `wave` adapters must
+    delegate to it (`ticket_implementations_have_one_owner`), both in
+    `tools_v2/xtask/src/tests/tooling_dependency_boundaries.rs`;
+  - production files stay under 500 lines and test files under 1,000, with tests in separate
+    `tests/` files (`tooling_source_files_stay_below_their_structural_limits`,
+    `tooling_test_modules_live_in_separate_files`, same file);
+  - every tracked file here is held to the prose rules of
+    `tools_v2/xtask/src/tests/tooling_prose_rules.rs`: no ticket ids, no history words, no
+    retired names, no script file names, and every `.rs` named exists;
+  - `Domain` stays a closed enum without `frontend` (`tests/trybuild.rs`).
+
+## Related documentation
+
+- [Ticket registry](/.ai/tickets/README.md) — the ticket files, their schema and the derived files.
+- [Ticket command group](/tools_v2/xtask/src/commands/ticket/README.md) — the `ticket`
+  subcommands.
+- [Wave lock command group](/tools_v2/xtask/src/commands/wave/README.md) — `wave repack`,
+  `wave check` and `slice-collisions`.
+- [Ticket identifiers](/documentation_v2/standards/ticket_identifiers.md) — how ticket ids are
+  formed and cited.
+- [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — the ship, stamp and repack
+  order during a wave.
+- [Token estimate factor](/documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md) — the
+  measurement behind the token estimates.
