@@ -72,3 +72,4 @@ unchanged rows, and a row whose owner can be selected selects it through the val
 
 - [Missions domain](/apps/website/api_v2/src/missions/README.md) — the mission row routes the
   dialog reads and patches.
+- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the Mission Settings dialog, and why it has no view distance or thermals control.

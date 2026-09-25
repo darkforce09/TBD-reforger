@@ -68,3 +68,5 @@ dragged [slot](/documentation_v2/glossary.md#slot) and vehicle height inside one
 
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — the load conflict dialog and the transform features.
+- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the transform widget, the snap read-out and the elevation drag.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — the empty-ground asset picker.

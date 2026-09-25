@@ -50,3 +50,8 @@ the native `triggers_panel` draws nothing.
   machine (`trigger_draw_is_second_consumer_of_the_zone_tool`); the owner line is a
   pointer-events-none SVG from the pure projection (`owner_line_uses_the_selection_overlay_idiom`),
   both in that folder's `triggers_and_owner_links.rs`.
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Triggers tab.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — drawing a trigger area.

@@ -95,3 +95,4 @@ registers both at mount, and each cleanup removes only its own registration.
   — the asset palette's features, one entry each.
 - [Eden editor UI anatomy](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)
   — the Eden asset browser this dock follows.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — what a palette pick-up does on the map.

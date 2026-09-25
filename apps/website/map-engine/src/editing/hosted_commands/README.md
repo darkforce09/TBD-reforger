@@ -82,3 +82,4 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — the [ORBAT](/documentation_v2/glossary.md#orbat), layers, markers, zones, triggers,
   connections and clipboard features.
+- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the arrange, rotate, formation and delete commands.

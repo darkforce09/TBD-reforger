@@ -102,3 +102,5 @@ Everything reaches the rest of the editor through the page module's declarations
   — the route and layout, the load and the transform features.
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
   the layout and the keyboard shortcuts.
+- [Mission Creator feature inventory: shell route and layout](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the chrome the page raises.
+- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the snap model and the transform widget.

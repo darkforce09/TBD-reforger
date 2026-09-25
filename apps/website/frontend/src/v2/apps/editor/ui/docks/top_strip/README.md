@@ -110,3 +110,4 @@ nonzero; both render in a hidden element of the menu row.
   the command strip's place in the layout and the shipped shortcuts.
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — the command strip's features, one entry each.
+- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — every control of the strip, one entry each.

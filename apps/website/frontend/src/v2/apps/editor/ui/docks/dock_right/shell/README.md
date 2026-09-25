@@ -68,3 +68,7 @@ the same way.
   stated once (`the_hook_selects_the_zone_and_shows_it` and `the_zones_tab_index_is_stated_once` in
   `zone_selection_seam.rs`); an older mount's cleanup leaves a newer hook in place
   (`an_older_owners_cleanup_does_not_clobber_a_newer_registration` in `zone_hook_lifecycle.rs`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the tab strip, the Factions tab and the Vehicles tab.

@@ -101,3 +101,8 @@ ring below three vertices.
     (`an_activation_outside_the_closed_set_never_reaches_the_document` in `tests/triggers.rs`);
   - `cargo xtask verify editor-orbat-coherency` scans the files it lists from this folder for
     `ensure_default_squad` and fails when one of them is missing.
+
+## Related documentation
+
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — what a map release commits, per kind.
+- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — what Delete removes.

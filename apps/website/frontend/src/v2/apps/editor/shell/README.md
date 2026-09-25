@@ -125,3 +125,5 @@ preferences and marker it stores outlive it.
 - [Mission Creator feature inventory: map basemap and world objects](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_basemap_and_world_objects.md) — the per-user basemap and world-layer preferences.
 - [Mission Creator decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) — the
   load-conflict, autosave, undo and editor-session decisions.
+- [Mission Creator feature inventory: shell route and layout](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the review mode and the chrome layout.
+- [Mission Creator feature inventory: performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the load, save and warm-session behaviour at scale.

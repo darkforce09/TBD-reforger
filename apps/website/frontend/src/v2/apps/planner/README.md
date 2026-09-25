@@ -29,3 +29,7 @@ compiles.
   from `crate::v2::core` and `website_map_engine`, and never from a page or a sibling workspace;
   its route needs a row in both `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`.
+
+## Related documentation
+
+- [Mission planner](/documentation_v2/website/frontend/apps/planner/mission_planner.md) — the planned workspace's design notes and open work.

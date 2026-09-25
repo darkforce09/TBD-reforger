@@ -71,3 +71,5 @@ when the dragged entity is selected, otherwise that entity alone.
 
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — selection, marquee, move and rotate among the Mission Creator's features.
+- [Mission Creator feature inventory: selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) — the click, marquee and modifier rules as the mission maker meets them.
+- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the drag-move and the rotate gesture.

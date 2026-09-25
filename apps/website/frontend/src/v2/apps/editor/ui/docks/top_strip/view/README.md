@@ -48,3 +48,7 @@ and "Save", which calls the shell's `save_now`.
   folder's `menu_row_layout.rs`); the dialog focuses its version field and keeps Tab inside it
   (`version_input_takes_focus_on_open` and `traps_tab_within_the_dialog_subtree` in
   `save_version_dialog.rs`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the menus, the tool row and the Save Version dialog.

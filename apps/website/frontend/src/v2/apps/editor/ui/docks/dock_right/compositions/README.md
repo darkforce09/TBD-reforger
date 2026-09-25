@@ -41,3 +41,8 @@ browser build; the native `compositions_panel` draws nothing.
   (`compositions_tab_is_wired_not_stubbed`); a capture keeps comments and each entity's authored
   elevation (`a_composition_captures_comments_and_authored_elevation`); arming uses the editor's
   shared pending-placement state (`composition_arm_rides_the_shared_pending_machine`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Compositions tab.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — stamping a composition.

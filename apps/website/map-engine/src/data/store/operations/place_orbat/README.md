@@ -42,3 +42,7 @@ from the document on every call, so it is right again after an undo.
     (`the_current_squad_is_re_derived_after_undo`);
   - both files are on the place path that `cargo xtask verify editor-orbat-coherency` scans for
     `ensure_default_squad`, and the gate runs the `place_` tests.
+
+## Related documentation
+
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — where a placed character lands in the ORBAT.

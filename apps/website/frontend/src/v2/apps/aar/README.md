@@ -28,3 +28,7 @@ compiles.
   from `crate::v2::core` and `website_map_engine`, and never from a page or a sibling workspace;
   its route needs a row in both `apps/website/frontend/src/app_routes.rs` and
   `apps/website/frontend/src/router.rs`.
+
+## Related documentation
+
+- [After-action review](/documentation_v2/website/frontend/apps/aar/after_action_review.md) — the planned replay's design notes, the telemetry it needs and its open work.

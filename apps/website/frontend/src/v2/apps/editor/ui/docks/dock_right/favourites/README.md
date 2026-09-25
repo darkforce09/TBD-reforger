@@ -49,3 +49,7 @@ keeps, and a press on either list arms the same placement a palette leaf would
   favourite is kept and marked, never dropped (`stale_favourite_is_kept_and_marked_not_dropped`);
   `arm_favourite_place` moves its payload rather than cloning it, so the palette's own arm stays
   distinct for the source checks (`favourites_place_arm_stays_clone_free` in `palette_chips.rs`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Favourites and Recently placed lists.

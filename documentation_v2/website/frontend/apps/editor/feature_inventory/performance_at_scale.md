@@ -1,240 +1,177 @@
 **Status:** live
 
-#### PERF-BULK-PASTE-001 — Bulk paste/delete at scale (T-059)
+# Performance at scale
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Paste **10k** slots without browser hard-freeze; one undo step; pan ≥55 fps after |
-| **Trigger** | Ctrl/Cmd+V with large clipboard; bulk delete |
-| **Preconditions** | T-056 copy/paste working; T-058 OBJ readout for verification |
-| **Procedure** | Batch `slotIds`/`entityIds` append in `pasteSlots`; cap selection ids >500; outliner virtualization (T-064 supersedes T-059 leaf cap) |
-| **Postconditions** | OBJ correct; tab responsive; undo reverts entire paste |
-| **Inputs** | `ClipboardSlot[]`, cursor anchor, active layer |
-| **Outputs** | New slot ids (selection capped when bulk) |
-| **Edge cases** | Paste 10k → selection cleared not 10k ids; large folders scroll via virtual outliner (T-064) |
-| **Acceptance** | `- [x] Paste 10k no hard freeze` `- [x] OBJ correct` `- [x] Pan ≥55 fps after` `- [x] Undo one step` `- [x] 360k @ 100+ fps pan validated` |
-| **Eden parity** | Eden:ACTION-PASTE-001 (bulk scale) |
-| **Status** | working |
-| **Ticket** | T-059 |
-| **Evidence** | `state/ydoc.ts` (`pasteSlots`), `MissionCreatorPage.tsx`, `VirtualOutliner.tsx`, `flattenOutliner.ts` |
+How the [Mission Creator](/documentation_v2/glossary.md#mission-creator) behaves when a
+[mission](/documentation_v2/glossary.md#mission) holds tens of thousands of
+[slots](/documentation_v2/glossary.md#slot): bulk paste, the windowed trees, the clustered map at
+far zoom, the drag and pick paths, the per-edit redraw, and the load and save of a large
+document. Each entry states what the code does; none records a measured frame rate or duration.
 
----
+## Where it lives
 
-#### PERF-OUTLINER-001 — Virtualized outliner @ scale (T-064)
+- Code: the slot icon lane, its selection patches, drag overlay and clusters in
+  [`apps/website/map-engine/src/overlay/symbology/instances/`](/apps/website/map-engine/src/overlay/symbology/instances/README.md);
+  the picks in `apps/website/map-engine/src/editing/picking.rs` and
+  `apps/website/map-engine/src/spatial/indexing/picking.rs`; the windowed trees in
+  [`apps/website/frontend/src/v2/apps/editor/ui/outliner/tree/`](/apps/website/frontend/src/v2/apps/editor/ui/outliner/tree/README.md)
+  and `apps/website/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_panel.rs`; the undo
+  driver's redraw in `apps/website/frontend/src/v2/apps/editor/bridge/document_host/history.rs`;
+  the load in [`apps/website/frontend/src/v2/apps/editor/shell/hydrate/`](/apps/website/frontend/src/v2/apps/editor/shell/hydrate/README.md)
+  and the save in [`apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/`](/apps/website/frontend/src/v2/apps/editor/shell/document_commands/imp/README.md).
+- Related features: [editor route and boot loading](/documentation_v2/website/frontend/apps/editor/feature_inventory/editor_route_loading.md)
+  (the boot overlay), [data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md),
+  [selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md),
+  [transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md).
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Scroll through **100k–360k+** slot rows in ORBAT + Editor Layers without DOM explosion or tab freeze |
-| **Trigger** | Expand a large squad/layer folder; scroll the left sidebar |
-| **Preconditions** | T-060 deferred sidebar until `docStatus === 'ready'`; trees populated on first mount |
-| **Procedure** | `@tanstack/react-virtual` in `VirtualOutliner.tsx`; segment-index flatten (`flattenOutliner.ts`); `virtualSlotIds` on folders with ≥50 slots (`VIRTUAL_SLOT_THRESHOLD`); callback-ref `scrollEl` (T-064.1) |
-| **Postconditions** | Only ~viewport rows mounted; DnD/rename/select/dbl-click preserved |
-| **Inputs** | ORBAT + Editor Layers tree models from Zustand |
-| **Outputs** | Virtual row list in single `LeftSidebar` scroll container |
-| **Edge cases** | Blank first frame if scroll element null — fixed T-064.1 via `scrollElement` state not RefObject |
-| **Acceptance** | `- [x] Outliner visible on first paint @ ~367k` `- [x] Scroll 367k virtual rows` `- [x] No tab freeze` `- [x] DnD/reparent/root-drop/rename/delete` `- [x] Map pan/pick unchanged` |
-| **Eden parity** | Eden outliner scroll (scale) |
-| **Status** | working |
-| **Ticket** | T-064 |
-| **Evidence** | `VirtualOutliner.tsx`, `flattenOutliner.ts`, `TreeRow.tsx`, `LeftSidebar.tsx`, `EditorLayersSection.tsx`, `OrbatSection.tsx` |
+## Behaviour
 
----
+| ID | Feature | Status |
+|---|---|---|
+| PERF-BULK-PASTE-001 | Bulk paste as one transaction | shipped |
+| PERF-OUTLINER-001 | Windowed layer and ORBAT trees | shipped |
+| PERF-CLUSTER-001 | Cluster discs at far zoom | shipped |
+| PERF-WORKER-001 | Compile off the main thread | not built |
+| PERF-CHUNK-001 | Slots held in spatial chunks | not built |
+| PERF-LOAD-001 | Load with determinate progress | partial |
+| PERF-SAVE-001 | Save a large version with progress | partial |
+| PERF-DRAG-001 | Drag preview without document writes | shipped |
+| PERF-PICK-001 | Spatial index for click and marquee | partial |
+| PERF-BIND-001 | Incremental redraw after an edit | partial |
+| PERF-SESSION-001 | Warm return without a server read | partial |
+| PERF-IDB-001 | Chunked local-draft restore with progress | not built |
 
-#### PERF-CLUSTER-001 — Cluster / LOD @ extreme zoom (T-065)
+The status legend is in the [inventory index](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md#how-it-works).
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | At extreme zoom-out on mega missions (>500 slots), show pan-stable cluster discs; at normal edit zoom keep full detail IconLayer @ ~160 fps |
-| **Trigger** | Zoom to ≤ `ZOOM_CLUSTER_MAX` (-4) on mission with > `CLUSTER_SLOT_THRESHOLD` (500) slots |
-| **Preconditions** | T-061 pan-stable icon cache; T-063 spatial pick; slotClusterIndex kept in sync via `slotIconCache` mutators |
-| **Procedure** | `supercluster` in `slotClusterIndex.ts`; `getClusterMarkers` full-terrain pan-stable cache (T-065.2); `useClusterIconLayer` memoized on `markersVersion` + `iconCacheVersion`; `clusterMode` gates detail vs selected-only in `useIconLayer` |
-| **Postconditions** | Default open zoom -2 = all rings; cluster drill-in via `pickClusterAt` → `flyTo` +1; selected slots visible in cluster band |
-| **Inputs** | `slotIconCache` dense positions; Deck zoom; terrain bounds |
-| **Outputs** | Cluster disc `IconLayer` (count-sized discs, no TextLayer) |
-| **Edge cases** | ≤500 slots → never cluster; T-065.1 viewport-bbox pan stutter — fixed T-065.2; further cluster perf tuning deferred unless regression |
-| **Acceptance** | `- [x] Detail @ -2 ~160 fps @ 367k` `- [x] Pan-stable cluster path (T-065.2)` `- [x] Git tag T-065` |
-| **Eden parity** | Group icons when zoomed out (geo clusters v1 only) |
-| **Status** | working |
-| **Ticket** | T-065 |
-| **Evidence** | `slotClusterIndex.ts`, `useClusterIconLayer.ts`, `constants.ts`, `TacticalMap.tsx`, `useSelectTool.ts`, `slotIconCache.ts` |
+### PERF-BULK-PASTE-001 — Bulk paste
 
----
+Ctrl/Cmd+V writes every copied slot in one document transaction, one undo step, and selects every
+pasted slot; no cap limits the count or the selection (`paste_slots`,
+`apps/website/map-engine/src/data/store/rows/paste.rs:22-55`; KEY-COPY-001). A bulk delete is one
+`remove_slots` call (XFORM-DEL-001).
 
-#### PERF-WORKER-001 — Compiler worker offload (T-066 + T-066.1)
+### PERF-OUTLINER-001 — Windowed trees
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Run `compileMissionWithProgress` + `buildVersionBlob` off main thread @ 367k+; stretch ≤10 s @ 1M |
-| **Trigger** | Save Version or Export on large mission |
-| **Preconditions** | T-060 compile progress + T-060.1.2 blob streaming; **T-066.1:** `pickMapSnapshot(getState())` before Comlink RPC |
-| **Procedure** | `compiler.worker.ts` + `compilerClient.ts` (Comlink); `useMissionEditor` Save + Export; `terminateCompiler` on unmount |
-| **Postconditions** | Same `MissionPayload` / POST contract; Save progress phases unchanged |
-| **Inputs** | `MapSnapshot` via `pickMapSnapshot(useMapStore.getState())` — **never raw getState()** |
-| **Outputs** | `MissionPayload` or version POST `Blob` |
-| **Edge cases** | Raw `getState()` → DataCloneError 25 (T-066.1 fixed); Export `JSON.stringify` still on main thread |
-| **Acceptance** | `- [x] Save 201 @ ~367k` `- [x] pickMapSnapshot hotfix` `- [x] Git tag T-066` |
-| **Eden parity** | n/a (infra) |
-| **Status** | shipped |
-| **Ticket** | T-066 |
-| **Evidence** | `compiler.worker.ts`, `compilerClient.ts`, `compile.ts`, `useMissionEditor.ts`, `pickMapSnapshot` in `useMapStore.ts`; spec [`t066_worker_compile.md`](/documentation_v2/tickets/specs/t066_worker_compile.md) |
+1. The layers tree draws every row up to 50 (`VIRTUAL_SLOT_THRESHOLD`,
+   `ui/outliner/outliner.rs:27`); above that it draws only the visible 16 px rows plus six of
+   overscan between two spacers (`ui/outliner/tree/row_geometry.rs:197-201`), and publishes its
+   counts to `window.__outlinerStats`.
+2. The ORBAT Manager's tree windows the same way above the same threshold, with 32 px rows and
+   eight of overscan (`ui/modals/orbat_manager.rs:27-29`, `orbat_manager/tree_panel.rs:71`).
 
----
+### PERF-CLUSTER-001 — Clusters
 
-#### PERF-CHUNK-001 — Spatial chunks / bulk-paste scale (T-067)
+With more than 500 slots (`CLUSTER_SLOT_THRESHOLD`) at zoom −4 or farther (`ZOOM_CLUSTER_MAX`),
+the slot lane switches to discs sized by how many slots each covers; the camera re-checks the gate
+on every move (`cluster_mode`, `apps/website/map-engine/src/overlay/symbology/instances/symbols.rs:44-56`;
+`apps/website/map-engine/src/camera/viewport.rs:110-128`). The cluster grid is built over Everon's
+bounds whatever the terrain (`instances/bridge_1.rs:228-241`). Clicking a disc does not zoom
+into it; picks still test the slots beneath.
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Bulk paste O(k) not O(n) snapshot; chunk scaffolding for 1M+ lazy RAM / GPU cull |
-| **Trigger** | Ctrl+V bulk paste; (future) viewport crosses chunk @ 1M |
-| **Preconditions** | T-062 incremental bindings; T-066 worker save unchanged |
-| **Procedure** | **Shipped:** `slot-add-bulk` in `incPatchPlan` → `_patchAddSlotsBulk`; dormant `chunkBuckets` in `slotIconCache`. **Render:** `getBaseIcons()` (CPU cull reverted T-067.0.1). **Follow-on (`idea`):** **T-111** lazy RAM; **T-112** GPU `DataFilterExtension` |
-| **Postconditions** | Paste ≤10k avoids full snapshot; pan ~160 fps @ 367k zoom -2 |
-| **Inputs** | Added slot ids from Y.Doc txn; (future) viewport bounds |
-| **Outputs** | O(k) store + cache updates on bulk paste |
-| **Edge cases** | Structural squad/layer paste → full snapshot fallback (unchanged) |
-| **Acceptance** | `- [x]` pan ~160 fps @ 367k `- [x]` build/lint `- [x]` 6k paste `- [x]` pick/drag/cluster `- [~]` Save 201 (no T-067 save-path change; repro mission needs local DB seed) |
-| **Eden parity** | n/a (infra) |
-| **Status** | **shipped** (bulk paste + scaffolding; CPU cull deferred) |
-| **Ticket** | T-067 |
-| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md); follow-ons [`T-111`/`T-112`](../../TICKET_BRAINSTORM.md#scale) |
+### PERF-WORKER-001 — Compile worker
 
----
+Not built: Save Version, both exports, the conflict check and the validation chip compile the
+document on the page's main thread (`compile_payload` in `shell/document_commands/imp/mission_saving.rs:51`;
+DATA-COMP-001).
 
-#### PERF-LOAD-001 — Fast initial load / hydrate gate (T-060 + T-060.1 + T-060.1.1)
+### PERF-CHUNK-001 — Slot chunks
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Open **10k–1M** missions with **determinate progress bar**; coalesce boot snapshots; **≤10 s ideal @ 1M** (stretch → **T-066** worker) |
-| **Trigger** | Navigate to `/missions/:id/edit` |
-| **Preconditions** | Y.Doc persisted in IndexedDB (possibly 100k–360k+ slots) |
-| **Procedure** | Bulk-sync window; `docStatus` gate; **four-phase** overlay: **restoring** (v2 chunked `loadSlotsWithProgress` T-062.1, or legacy y-indexeddb poll T-060.1.1) → download → apply → local flush; `docToSnapshotWithProgress` + `hydrateMissionDocWithProgress` + `onDownloadProgress`; `endBulkSync` async after hydrate; LeftSidebar deferred until ready |
-| **Postconditions** | Map interactive; OBJ correct; pan ≥55 fps |
-| **Inputs** | v2 `tbd-mission-persist` (`idb`) and/or legacy y-indexeddb; optional server `json_payload` |
-| **Outputs** | `docStatus: ready`; `loadProgress` with determinate % (v2 restoring has `done/total`) |
-| **Edge cases** | Legacy v1: one-time blocking replay + migrate. v2: smooth restoring @ ~360k. Server-adopted mission not cached to v2 until first `LOCAL_ORIGIN` edit. Warm return skips GET (T-062.2) |
-| **Acceptance** | `- [x] Overlay + bulk-sync (T-060)` `- [x] Determinate % + chunked snapshot/hydrate (T-060.1)` `- [x] Hydrate inside bulk window (T-060.1)` `- [x] Restoring phase (T-060.1.1 legacy)` `- [x] v2 chunked IDB restore (T-062.1)` `- [ ] Pan regression clean (manual)` |
-| **Eden parity** | — |
-| **Status** | **shipped (T-060 + T-062.1)** — v2 determinate restore @ ~360k |
-| **Ticket** | T-060 |
-| **Evidence** | `useMissionDoc.ts`, `persistence/*`, `bindings.ts`, `ydoc.ts`, `MissionCreatorPage.tsx`, `t062_1_idb_streaming_load.md` |
+Not built: the document keeps slots in one map, and the icon lane holds every slot at once. The
+map engine's 512 m chunks stream terrain and world objects only.
 
----
+### PERF-LOAD-001 — Load
 
-#### PERF-SAVE-001 — Fast Save Version + progress (T-060 + T-060.1 + T-060.1.2 + T-060.1.3 + T-060.1.4)
+1. The boot overlay's "Loading mission…" segment streams the saved version and advances by bytes
+   against the response's `content-length` (`shell/hydrate/server_reconciliation.rs:25-75`); the
+   terrain, satellite and world-object segments advance by their own budgets (FILE-BOOT-001).
+2. Partial: the local draft is read as one blob with no progress of its own, and every slot is
+   bound to the icon lane in one pass once the document is ready.
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | **Save Version** with **progress bar**; compile + POST without hard-freeze at **50k+**; **API accepts payloads >> 1 MB** (256 MB route limit — T-060); **≤10 s ideal @ 1M** |
-| **Trigger** | User clicks Save → Save Version in TopCommandStrip |
-| **Preconditions** | Valid mission UUID; dirty or explicit save |
-| **Procedure** | `compileMissionWithProgress` → **`preparing`** (✅ chunked `buildVersionBlob`) → **`uploading`** (✅ Blob POST; **E3b:** auto direct `:8080` in dev when body >1 MB) → 256 MB cap, `timeout: 600_000` |
-| **Postconditions** | Version 201; dirty cleared |
-| **Inputs** | `useMapStore` snapshot |
-| **Outputs** | POST body; progress UI |
-| **Edge cases** | Mid-upload `ERR_NETWORK` @ ~4% / ~135 MB → **FIXED T-060.1.4**; payload >256 MB → pre-gate 413; **T-062.1.1:** Save omits duplicate `orbat[]` (editor-only POST); Go derives ORBAT for events |
-| **Acceptance** | `- [x] E1/E2/E3b` `- [x] SZ + Save dialog (T-060.1.3)` `- [x] browser Save @ ~367k → 201` `- [x] T-062.1.1 IT: editor-only → event ORBAT` `- [x] Manual Save @ ~367k: ~94.8 MB estimated (~33% smaller vs ~141 MB)` |
-| **Status** | **shipped** — T-060..T-060.1.4 + **T-062.1.1** orbat dedup |
-| **Ticket** | T-060 |
-| **Evidence** | `useMissionEditor.ts`, `compiler/compile.ts`, `lib/missionSize.ts`, `internal/services/mission_payload.go`, `internal/handlers/missions_orbat_integration_test.go`, `t062_1_1_batch_save.md` |
+### PERF-SAVE-001 — Save
 
----
+1. The Save Version dialog shows the estimated size before saving, yellow over 200 MB, and an
+   indeterminate bar while the status reads "Saving v…" (`ui/docks/top_strip/view/overlays.rs:28-51`,
+   `:119-130`).
+2. The client compiles and posts the whole payload; the server lifts its body limit for this route
+   alone, 256 MiB by default, and answers 413 above it ("Payload too large").
+3. Partial: the bar shows activity, not progress, and the compile runs on the main thread
+   (PERF-WORKER-001).
 
-#### PERF-DRAG-001 — Drag-move preview @ 360k (T-061)
+### PERF-DRAG-001 — Drag
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | **Drag-move** of selected slots acceptable @ ~360k (motion, pickup, release); preview transient (Y.Doc commit on pointer-up) |
-| **Trigger** | Left-drag a selected slot icon (or selection) on the map |
-| **Preconditions** | T-057 pan/cursor path shipped; mission has many slots (stress @ 360k) |
-| **Procedure** | T-061.0: dual IconLayer + split drag state + rAF delta. T-061.0.1: `slotIconCache` O(k) + bindings slot fast path (`fastSlotPatchIds`) |
-| **Postconditions** | Icons follow pointer smoothly; commit on release; undo reverts |
-| **Inputs** | Pointer gesture in `useSelectTool` |
-| **Outputs** | Transient store preview; Y.Doc update on release |
-| **Edge cases** | 1 vs N selected; asset palette drop lag → **resolved T-062** (slot-add path). Release: possible single dropped frame (two cache bumps) — **deferred** |
-| **Acceptance** | `- [x] Drag motion 1 slot @ 360k ≥55 fps` `- [x] Drag motion ~10 selected @ 360k ≥55 fps` `- [x] Pickup/release good enough (not perfect)` `- [x] build + lint clean` `- [x] Full regression sweep documented` |
-| **Eden parity** | Eden:XFORM-MOVE-001 |
-| **Status** | **shipped (good enough)** — spec [`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md) |
-| **Ticket** | T-061 |
-| **Evidence** | `slotIconCache.ts`, `useMapStore.ts`, `bindings.ts`, `useIconLayer.ts`, `useSelectTool.ts`, `selectors.ts`, `TacticalMap.tsx` |
+A drag uploads the dragged rows once into an overlay, hides them in the base lane and then moves
+them with a shader offset; the document is written once, on release (`set_drag` and
+`drag.rs` in `overlay/symbology/instances/`; XFORM-MOVE-001).
 
----
+### PERF-PICK-001 — Picks
 
-#### PERF-PICK-001 — Spatial index for pick/marquee @ 360k (T-063)
+1. Click, drag-start, right-click, double-click and marquee picks query a grid point index over
+   the slot positions (`pick_slot_row`, `apps/website/map-engine/src/spatial/indexing/picking.rs:9-24`),
+   and vehicles are tested in a separate pass.
+2. Partial: every pick first rebuilds the slot table from the whole document
+   (`map_render_slot_soa`, `apps/website/map-engine/src/editing/selection_universe.rs:107-111`)
+   and then builds the index afresh, so a single click costs work in proportion to every slot.
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | **Click, dbl-click, drag-start, marquee** pick without scanning all ~367k icons |
-| **Trigger** | LMB click, dbl-click, drag-start, marquee release on map |
-| **Preconditions** | Mission loaded with many slots; pan/drag paths already fast (T-057, T-061) |
-| **Procedure** | rbush R-tree in `slotSpatialIndex.ts`; maintained alongside `slotIconCache`; `pickNearest` / `pickRect` replace `deck.pickObject` / `pickObjects`; `slot-icons` `pickable: false` |
-| **Postconditions** | Selection unchanged vs Eden contract; no GPU pick pass on IconLayer |
-| **Inputs** | Screen px + viewport (point picks); world bbox (marquee) |
-| **Outputs** | `selection.ids[]`; Attributes via dbl-click |
-| **Edge cases** | Overlapping icons → nearest to click; Ctrl/Cmd toggle (T-053); drag exclude no tree change |
-| **Acceptance** | `- [x] Click @ 367k instant` `- [x] Marquee no multi-s freeze` `- [x] Dbl-click Attributes` `- [x] Pan/drag unchanged` `- [x] build + lint clean` |
-| **Status** | **shipped** — spec [`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md) |
-| **Ticket** | T-063 |
-| **Evidence** | `slotSpatialIndex.ts`, `slotIconCache.ts`, `useSelectTool.ts`, `TacticalMap.tsx`, `useIconLayer.ts` |
+### PERF-BIND-001 — Redraw after an edit
 
----
+1. A selection change patches only the icon rows that changed, 12 bytes each, and never repacks
+   the lane (`set_selection`, `overlay/symbology/instances/patches.rs`).
+2. Partial: every document edit runs the undo driver's tail, which rebuilds the slot table and
+   rebinds the whole slot lane, the squad links and the vehicle lane
+   (`after_doc_change`, `bridge/document_host/history.rs:271-300`).
 
-#### PERF-BIND-001 — Incremental bindings @ 360k (T-062)
+### PERF-SESSION-001 — Warm return
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Patch Zustand O(k) on everyday Y.Doc edits @ ~360k instead of full `docToSnapshot(n)` |
-| **Trigger** | Asset drop, Delete, title/env edit, outliner layer rename/reparent/move |
-| **Preconditions** | T-061 drag path shipped; mission @ scale (stress @ 360k) |
-| **Procedure** | **T-062.0:** `incPatchPlan.classifyTransaction` → `PatchPlan` (`slot-fields`, `slot-add`, `slot-remove`, `meta`, `editor-layers`) → store patch methods + `slotIconCache.append`/`remove`. **T-062.0.1:** batched `removeEntities('slots')`; `slotCount`/`slotsRevision`; `REMOVE_PATCH_CAP` 10_000 |
-| **Postconditions** | Store mirror updated without `e.slots.toJSON()` over all slots for classified txns |
-| **Inputs** | Y.Doc observer events |
-| **Outputs** | Incremental Zustand patches; `iconCacheVersion` bumps |
-| **Edge cases** | Bulk paste / `addEditorLayer` / empty-doc bootstrap / `removeEditorLayer` → full snapshot fallback. Undo large multi-delete → full snapshot (verified OK @ 6k undo). IDB 0→300k jump → **fixed T-062.1** (v2 chunked restore). `_patchSlots` drag release still O(n) spread — deferred mega opt |
-| **Acceptance** | `- [x] Asset drop instant @ 360k` `- [x] Delete 150/4000 no crash` `- [x] Drag not regressed` `- [x] Undo 6000 delete OK` `- [x] build + lint clean` |
-| **Eden parity** | Eden:XFORM-PLACE-001 (drop), Eden:DELETE-001 |
-| **Status** | **shipped** — spec [`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md) |
-| **Ticket** | T-062 |
-| **Evidence** | `incPatchPlan.ts`, `bindings.ts`, `useMapStore.ts`, `slotIconCache.ts`, `ydoc.ts`, `BottomToolbelt.tsx`, `EditorLayersSection.tsx`, `OrbatSection.tsx` |
+1. Switching away from the tab and back never reloads the page, so the document stays in memory.
+2. Partial: a reload always restores the draft and fetches the server version again. The
+   warm-session marker is written after each boot (`mark_ready`, `shell/session.rs:56`), but only
+   the `__missionPersist.warm()` test probe reads it (`read_warm`, `shell/session.rs:80`).
 
-#### PERF-SESSION-001 — Editor session / alt-tab (T-062.2)
+### PERF-IDB-001 — Local draft restore
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Alt-tab back to editor without automatic full load overlay; warm same-tab return skips multi-MB server GET |
-| **Trigger** | Extended background tab (dev: Vite WS disconnect); same-tab reload with warm `sessionStorage` marker |
-| **Procedure** | Dev: `viteReloadGuard` blocks `vite:beforeFullReload` on `/missions/:id/edit`. `editorSession.ts` marks ready → on reboot, `onSynced` skips GET when warm + `hasLocalContent(md)`. `yieldToUi` + restore poll visibility-aware |
-| **Edge cases** | Warm path trusts local v2 store — remote server changes undetected until cold load. New tab = cold. `dirty` UI flag resets on reload (data in IDB). Undo stack session-only |
-| **Acceptance** | `- [x] Alt-tab 30+ min → no overlay (Firefox dev @ ~360k)` `- [x] Edits preserved` `- [x] Cold load unchanged` |
-| **Status** | **shipped** — spec [`t062_2_editor_session_persistence.md`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md) |
-| **Ticket** | T-062.2 |
-| **Evidence** | `viteReloadGuard.ts`, `editorSession.ts`, `useMissionEditor.ts`, `useMissionDoc.ts`, `yieldToUi.ts` |
+Not built: the draft is one whole-document CRDT update in the IndexedDB store `tbd-mission-yrs`,
+read and applied in one step (DATA-IDB-001); there is no per-chunk restore and no restore
+progress.
 
-#### PERF-IDB-001 — Chunked IDB slot restore (T-062.1)
+### Known discrepancies
 
-| Field | Value |
-|-------|-------|
-| **Domain** | PERF |
-| **Goal** | Restore ~360k slots from local persistence with **determinate** restoring progress (no 0→300k jump on 2nd+ load) |
-| **Trigger** | Navigate to `/missions/:id/edit` when v2 `tbd-mission-persist` exists (or legacy v1 → migrate once) |
-| **Preconditions** | T-062.2 warm path; T-060 bulk-sync window |
-| **Procedure** | v2: `loadMissionMetaIntoDoc` → `loadSlotsWithProgress` (5k/chunk, `INIT_ORIGIN`, `yieldToUi`) — **no** y-indexeddb. Legacy: y-indexeddb replay → `migrateLegacyToV2` → delete `tbd-mission-${id}`. Writes: debounced meta + slot save on `LOCAL_ORIGIN`; flush on tab hide/pagehide |
-| **Postconditions** | Y.Doc populated; overlay shows smooth `done/total` during v2 restoring |
-| **Edge cases** | Server-adopted mission not v2-cached until first edit. SPA navigate-away within ~2s debounce may drop last edits. `docAlive` / `isCancelled` guards prevent corrupt writes on teardown |
-| **Acceptance** | `- [x] Migration once` `- [x] 2nd+ load smooth progress @ ~360k` `- [x] Legacy DB deleted` `- [x] build/lint/tsc clean` |
-| **Status** | **shipped** — spec [`t062_1_idb_streaming_load.md`](/documentation_v2/tickets/specs/t062_1_idb_streaming_load.md) |
-| **Ticket** | T-062.1 |
-| **Evidence** | `persistence/*`, `useMissionDoc.ts`, `useMissionEditor.ts`, `ydoc.ts` (`entityToYMap`) |
+- None found: the READMEs of these folders agree with the code on every mechanism above.
 
----
+## Data
 
+- `GET /api/v1/missions/{id}` (streamed, measured by `content-length`) at boot and
+  `POST /api/v1/missions/{id}/versions` on save; both are described in
+  [data persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md#data).
+
+## Design
+
+- Design target: the scale expectations of the [UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
+  and the [roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md).
+  The inventory records the mechanisms; measured frame rates belong to the engine benchmarks.
+
+## Open work
+
+- [T-938 — Engine and wasm performance](/documentation_v2/tickets/specs/t938_engine_perf.md)
+  (queued, [plan](/documentation_v2/tickets/plans/t-938_plan.md)): pooled lane buffers, GPU
+  culling for every icon lane and a wasm memory guard.
+- [T-939.7 — Vehicles panel virtualization, memoized outliner flatten](/documentation_v2/tickets/specs/t939_editor_usability.md)
+  (ready, [plan](/documentation_v2/tickets/plans/t-939_7_plan.md)): windowed vehicle rows and a
+  cached tree flatten.
+- [T-140 — Mission client payload budget](/documentation_v2/tickets/specs/t131_north_star_backlog.md)
+  (ready, [plan](/documentation_v2/tickets/plans/t-140_plan.md)): a size budget the compile
+  reports against.
+- [T-734 — Validation panel: full-compile cost, wasm panic, seam pin](/.ai/tickets/T-734.toml),
+  [T-729 — Owner-line materialize per frame; zones mislabels triggers](/.ai/tickets/T-729.toml),
+  [T-731 — ROW_ACTIVE border-t skews virtual tree by 1px](/.ai/tickets/T-731.toml) and
+  [T-847 — push_drag_preview Class-R pins omit bind_squad_link_preview](/.ai/tickets/T-847.toml)
+  (deferred, no plan).
+
+No open ticket covers the per-pick index rebuild, the full slot rebind after every edit or a
+compile worker.
+
+## Decisions
+
+- A drag never writes the document until release: the preview is a GPU offset, so a drag's cost
+  does not grow with the mission.
+- A selection change patches rows rather than repacking the lane: selecting stays cheap at any
+  mission size.

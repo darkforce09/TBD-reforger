@@ -20,13 +20,13 @@ documentation_v2/website/frontend/apps/editor/feature_inventory/
 ├── left_sidebar.md                     the left dock: editor layers, Locations, and the ORBAT tree
 ├── map_basemap_and_world_objects.md    the basemap, the world-object layers and their switches
 ├── map_viewport_and_camera.md          the map view: pan, zoom, grid, centring, cursor, terrain
-├── performance_at_scale.md             bulk paste, windowed trees, clustering and load at scale
-├── placement.md                        placing from the palette and by click
-├── right_asset_palette.md              the asset palette's tabs, catalog and search
-├── selection.md                        click, marquee, modifier and tree selection
-├── shell_route_and_layout.md           the chromeless layout, the invalid-id banner, the FPS read-out
+├── performance_at_scale.md             bulk paste, windowed trees, clusters, picks, redraw, load and save
+├── placement.md                        the palette pick-up and map release, crew, picker, areas, comments
+├── right_asset_palette.md              the right dock's seven tabs, chips, search, favourites, factions
+├── selection.md                        click, marquee, modifier, tree and context-menu selection
+├── shell_route_and_layout.md           the chromeless route, the chrome layout, review mode, map notices
 ├── top_command_strip.md                menus, title, undo, save, export, environment, settings
-└── transform_and_delete.md             move, rotate, snap and delete
+└── transform_and_delete.md             move, rotate, elevation, snap, arrange, formation and delete
 ```
 
 ## How it works
@@ -53,19 +53,17 @@ reused; a feature the code has and the inventory lacks gets a new ID in its area
 | DATA — persistence and compile | [data_persistence_and_compile.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) | 11: 8 shipped, 1 partial, 2 not built | yes |
 | KEY — keyboard | [keyboard_shortcuts.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/keyboard_shortcuts.md) | 14: 13 shipped, 1 partial | yes |
 | FILE — route and boot | [editor_route_loading.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/editor_route_loading.md) | 2: 1 shipped, 1 not built | yes |
-| SHELL — route and layout | [shell_route_and_layout.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) | — | no |
-| SEL — selection | [selection.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) | — | no |
-| XFORM — transform and delete | [transform_and_delete.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) | — | no |
-| PLACE — placement | [placement.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) | — | no |
-| RIGHT — asset palette | [right_asset_palette.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) | — | no |
-| TOP — command strip | [top_command_strip.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) | — | no |
-| PERF — behaviour at scale | [performance_at_scale.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) | — | no |
+| SHELL — route and layout | [shell_route_and_layout.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) | 7: 6 shipped, 1 not built | yes |
+| SEL — selection | [selection.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) | 11: 10 shipped, 1 partial | yes |
+| XFORM — transform and delete | [transform_and_delete.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) | 11: 8 shipped, 2 partial, 1 not built | yes |
+| PLACE — placement | [placement.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) | 13: 11 shipped, 2 partial | yes |
+| RIGHT — asset palette | [right_asset_palette.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) | 14: 13 shipped, 1 not built | yes |
+| TOP — command strip | [top_command_strip.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) | 19: 14 shipped, 1 partial, 4 not built | yes |
+| PERF — behaviour at scale | [performance_at_scale.md](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) | 12: 4 shipped, 5 partial, 3 not built | yes |
 
-An area marked "no" still holds entries whose names, statuses and evidence describe code the
-repository does not hold (React components, Yjs, Deck.gl); its statuses are not evidence until the
-area is verified and rewritten to the schema. Features Eden has no counterpart for carry the
-`TBD-` domain inside their area: TBD-LAYER-001 in the left sidebar, TBD-CONFLICT-001 in data
-persistence, TBD-SAVE-001 and TBD-EXPORT-001 in the top command strip.
+Features Eden has no counterpart for carry the `TBD-` domain inside their area: TBD-LAYER-001 in
+the left sidebar, TBD-CONFLICT-001 in data persistence, TBD-SAVE-001 and TBD-EXPORT-001 in the top
+command strip.
 
 ## Code
 

@@ -56,3 +56,8 @@ held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive 
   (`zone_types_come_from_the_schema`, `zone_rule_fields_cover_the_whole_vocabulary`), and the
   panel rounds coordinates exactly as the compiler does (`zone_quantisation_mirrors_flatten`), all
   in `apps/website/frontend/src/v2/apps/editor/ui/inspector/tests/zones_panel/zone_geometry_and_schema.rs`.
+
+## Related documentation
+
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — drawing a zone area.
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Zones tab.

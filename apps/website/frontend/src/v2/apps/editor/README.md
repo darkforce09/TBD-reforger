@@ -100,3 +100,4 @@ and every write path refuses.
   — what the editor ships by area, and the open and deferred work.
 - [Editor gates runbook](/documentation_v2/runbooks/editor_gates.md) — running the headless editor
   gates.
+- [Mission Creator feature inventory: shell route and layout](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md) — the chromeless route, the chrome layout and the review workspace.

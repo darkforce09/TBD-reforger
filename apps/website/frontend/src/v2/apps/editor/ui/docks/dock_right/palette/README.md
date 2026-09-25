@@ -46,3 +46,8 @@ which arm a press calls, because a vehicle leaf that armed a character placement
   tab draws the merged tree filtered by the side chips, and its leaf press both arms and records
   the placement (`factions_tab_draws_the_merged_tree` and
   `a_merged_leaf_press_feeds_recently_placed` in `favourites_and_recent_placements.rs`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Factions and Vehicles trees.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — what a leaf press arms.

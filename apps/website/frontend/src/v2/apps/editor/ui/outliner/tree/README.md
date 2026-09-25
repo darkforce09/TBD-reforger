@@ -69,3 +69,4 @@ window blur or unmounting the tree cancels them at once.
 ## Related documentation
 
 - [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) — selecting, renaming, deleting and dragging rows.
+- [Mission Creator feature inventory: performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the windowed tree at scale.

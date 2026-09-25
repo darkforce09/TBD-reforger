@@ -63,3 +63,5 @@ Enter) act only while it is the topmost surface of `crate::v2::core::ui::modal_s
   — the Eden context menu these rows follow.
 - [Eden editor interactions](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md)
   — the connection and formation interactions.
+- [Mission Creator feature inventory: selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) — how a right-click picks its target.
+- [Mission Creator feature inventory: transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the formation and Arrange submenus.

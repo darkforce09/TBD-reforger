@@ -76,3 +76,4 @@ write. An arm itself is never document state and never an undo step.
 
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — palette placement and click-to-place.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — the pick-up, release, repeat and cancel rules, one entry each.

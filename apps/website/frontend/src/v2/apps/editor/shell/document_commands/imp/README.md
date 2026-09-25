@@ -78,3 +78,4 @@ store, the mission id and the current-semver signal), which the canvas mount ins
 
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)
   — the Save Version dialog and the exports.
+- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — Save Version, the exports and the merge that has no surface.

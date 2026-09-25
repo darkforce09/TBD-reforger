@@ -67,3 +67,7 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
   a finding row is clickable exactly when the router resolves its subject
   (`a_finding_row_is_clickable_iff_the_router_resolves_its_subject` in `finding_route_probe.rs`
   beside it).
+
+## Related documentation
+
+- [Mission Creator feature inventory: top command strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) — the validation chip and its findings.

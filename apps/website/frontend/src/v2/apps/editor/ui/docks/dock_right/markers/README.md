@@ -52,3 +52,8 @@ nothing.
   `CANONICAL_MARKER_GLYPH_COUNT` differs from the engine's `MARKER_GLYPH_COUNT`; marker writes go to
   the side's briefing, never to a root marker map
   (`marker_writes_go_to_the_briefing_not_the_root_map`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Markers tab.
+- [Mission Creator feature inventory: placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md) — dropping a briefing marker.

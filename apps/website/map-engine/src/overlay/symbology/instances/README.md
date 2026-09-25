@@ -76,3 +76,7 @@ which converts world positions to the scene anchor.
   symbology degrades to dots past the stated scale
   (`symbology_degrades_to_dots_past_the_stated_m_per_px`); the bind paths are pinned by
   `apps/website/map-engine/src/overlay/tests/tests/draw_order_t808_symbology_bind_paths.rs`.
+
+## Related documentation
+
+- [Mission Creator feature inventory: performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.

@@ -38,3 +38,7 @@ dock mounted it does nothing, since the placement has already committed.
   with its cleanup, and both off-dock placements call `record_placed`
   (`off_dock_placements_feed_recently_placed_through_the_recorder_seam`), both in that folder's
   `favourites_and_recent_placements.rs`.
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the Recently placed list.

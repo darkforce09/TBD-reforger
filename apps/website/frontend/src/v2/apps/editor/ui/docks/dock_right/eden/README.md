@@ -44,3 +44,7 @@ empty ("No modpack is configured, so the … is empty. Set a current modpack, th
   search box carries the hint, which hides while its catalog has failed
   (`every_asset_search_box_advertises_the_grammar` and
   `grammar_hint_hides_while_the_tree_is_failed` in `favourites_and_recent_placements.rs`).
+
+## Related documentation
+
+- [Mission Creator feature inventory: asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) — the side chips, the search grammar and the failure view.
