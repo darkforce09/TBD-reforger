@@ -107,6 +107,8 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
 
 ## Related documentation
 
+- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — the tab's
+  flows, rules, data, design references, open work and decisions.
 - [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Attributes dialog and its Arsenal tab.
 - [Mission Creator documentation](/documentation_v2/website/frontend/apps/editor/README.md) — the
   Mission Creator's documents, starting from its roadmap.

@@ -44,4 +44,6 @@ the receipt of what landed, and ends with the persistence line: the last pick wa
 
 ## Related documentation
 
+- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — the
+  loaded view section by section, with its design references.
 - [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab as the mission maker uses it.

@@ -65,4 +65,6 @@ Apply and Remove Everything receipts count the writes the document took, not the
 
 ## Related documentation
 
+- [Arsenal loadout editor](/documentation_v2/website/frontend/apps/editor/arsenal/arsenal_loadout_editor.md) — how
+  import, export and the loadout buffer behave for the mission maker.
 - [Mission Creator feature inventory: attributes dialog](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) — the Arsenal tab's loadout edits, import and export.
