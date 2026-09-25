@@ -1,0 +1,12 @@
+id = "T-1073"
+kind = "work"
+title = "Fix compiler golden regeneration test writing outside contracts_v2"
+summary = "map-engine data/scenario/compiler/flatten/tests/cases_3.rs:434 joins CARGO_MANIFEST_DIR with /../../contracts_v2, which resolves to apps/contracts_v2; the ignored regen_compiler_shaped_fixture test writes its golden there. The reader in flatten/tests/mod.rs:359 climbs three levels."
+class = "bug"
+status = "idea"
+created_at = "2026-09-25T03:40:13Z"
+notes = "apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_3.rs:427-438 (#[ignore = manual golden regeneration] fn regen_compiler_shaped_fixture): concat!(env!(CARGO_MANIFEST_DIR), \"/../../contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json\") with CARGO_MANIFEST_DIR = apps/website/map-engine resolves to apps/contracts_v2/..., a folder that does not exist, so std::fs::write fails (or, once the folder exists, writes a stray copy) and the committed golden is never regenerated. The golden reader apps/website/map-engine/src/data/scenario/compiler/flatten/tests/mod.rs:359 uses /../../../contracts_v2, the correct depth. Consumers of the golden: contracts_v2/fixtures/missions/valid/compiler-shaped-two-faction.json, cases_3.rs:456,467 (drift message), apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c:1155. Source: README writer R11.2."
+
+[scope]
+domain = "engine"
+layer = "core"

@@ -1,0 +1,12 @@
+id = "T-1079"
+kind = "work"
+title = "Rewrite shared URL-guard case table header naming moved files"
+summary = "apps/website/shared/is_http_url_cases.rs:5,7,11 name api_v2/src/services/text.rs and frontend/src/url_guard.rs; the guards are api_v2/src/core/text/http_url_guard.rs and frontend/src/v2/core/auth/url_guard.rs. Lines 1, 5 and 7 also carry ticket ids (T-391, T-405)."
+class = "docs"
+status = "idea"
+created_at = "2026-09-25T03:44:05Z"
+notes = "apps/website/shared/is_http_url_cases.rs:5 names apps/website/api_v2/src/services/text.rs (real: apps/website/api_v2/src/core/text/http_url_guard.rs), :7 and :11 name apps/website/frontend/src/url_guard.rs (real: apps/website/frontend/src/v2/core/auth/url_guard.rs). Ticket ids in the same comments: :1 (T-405), :5 (T-391), :7 (T-405), :34 ('The literal T-391 defect'). Consumers that include! the table: apps/website/api_v2/src/core/text/tests/http_url_guard.rs:106, apps/website/api_v2/tests/aar_replay_url_backfill.rs:46, apps/website/frontend/src/v2/core/auth/tests/url_guard.rs:9 and seven frontend page tests (settings, announcements, mission_library, layout, deployments, event_hub, leaderboards). Source: README writer R11.1."
+
+[scope]
+domain = "website"
+layer = "shared"

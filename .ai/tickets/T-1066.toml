@@ -5,7 +5,7 @@ summary = "contracts_v2/definitions/map-object-instance.schema.json:9 says the l
 class = "docs"
 status = "idea"
 created_at = "2026-09-24T19:12:07Z"
-notes = "contracts_v2/definitions/map-object-instance.schema.json:9 ($defs.objectInstancePodRow.description: Live definition: crates/map-engine-core/src/world/binary/pod.rs); the struct is apps/website/map-engine/src/io/pod/instance.rs:19 (ObjectInstancePod, POD_BYTES :11, POD_NAME :14). The other two citations hold: cargo xtask schema terrain-manifest (tools_v2/xtask/src/commands/schema/cli.rs:66) and S15 (tools_v2/developer-tools/src/map_verification/object_goldens/map_object_golden.rs:424). Line 5 also calls the id-first array a legacy tuple (history word)."
+notes = "contracts_v2/definitions/map-object-instance.schema.json:9 ($defs.objectInstancePodRow.description: Live definition: crates/map-engine-core/src/world/binary/pod.rs); the struct is apps/website/map-engine/src/io/pod/instance.rs:19 (ObjectInstancePod, POD_BYTES :11, POD_NAME :14). The other two citations hold: cargo xtask schema terrain-manifest (tools_v2/xtask/src/commands/schema/cli.rs:66) and S15 (tools_v2/developer-tools/src/map_verification/object_goldens/map_object_golden.rs:424). Line 5 also calls the id-first array a legacy tuple (history word). Rechecked at HEAD by TF9: map-object-instance.schema.json:9 is the only crates/map-engine-core path left in that schema. Other schema descriptions naming retired code are filed separately: mission-editor-payload.schema.json:5,62 and mission.schema.json:88 on T-1080; terrain-manifest.schema.json:25,75,230,250,260,271 and terrain-anchors.schema.json:40 on T-1075."
 
 [scope]
 domain = "engine"

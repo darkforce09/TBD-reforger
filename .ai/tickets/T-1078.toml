@@ -1,0 +1,12 @@
+id = "T-1078"
+kind = "work"
+title = "Remove unused text parameters and fix stale graphics engine comments"
+summary = "text/layout.rs:61 ignores _tint (map-engine text_packing.rs:57,90,123-131 still passes one) and :95-101 computes then discards char_m; draw/instances.rs:62 says a 28-entry UV table (shader.wgsl:166 has 32); draw/cull/oracle.rs:11 links nonexistent crate::scene; 17 placeholder //! headers."
+class = "chore"
+status = "idea"
+created_at = "2026-09-25T03:43:36Z"
+notes = "Paths under apps/website/graphics-engine/src unless stated. Unused inputs: text/layout.rs:61 glyphs_from_specs takes _tint: u32 and never reads it; the tint is applied later by pack_text_icon_bytes_tint (text/layout.rs:89-103; apps/website/map-engine/src/overlay/symbology/text_packing.rs:143), yet apps/website/map-engine/src/overlay/symbology/text_packing.rs:57, :90 and the adapter :123-131 thread a tint into it. text/layout.rs:95 computes char_m and :101 discards it (let _ = char_m;). Wrong comments: draw/instances.rs:62 ('Index into the 28-entry UV uniform table'; shaders/shader.wgsl:166 declares array<vec4<f32>, 32> and draw/tests/instances_tests.rs:61-73 pins it to ATLAS_GLYPH_COUNT); draw/cull/oracle.rs:11 links [crate::scene::IconInstance] (no scene module; IconInstance is draw/instances.rs); draw/grid.rs:20 calls the grid 'an exact mirror of useBaseMapLayer.ts:44-58' (no such file). Placeholder //! headers ('Signals & state: camera, spatial, asset, or GPU data owned by this module.' / 'Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.'): device/buffers/mod.rs, device/buffers/pool.rs, device/buffers/readback.rs, draw/cull/compute.rs, draw/cull/oracle.rs, draw/triangulate.rs, frame/damage.rs, pipeline/building.rs, pipeline/icon.rs, pipeline/mod.rs, pipeline/quad.rs, pipeline/text.rs, pipeline/textured.rs, pipeline/vector.rs, text/atlas.rs, text/font.rs, text/pack.rs. History and ticket-id comments are on T-1004; map nouns in names are on T-1070; the stale text::gpu matcher is on T-1055. Source: README writer R11.1."
+
+[scope]
+domain = "engine"
+layer = "render"

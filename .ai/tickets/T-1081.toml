@@ -1,0 +1,12 @@
+id = "T-1081"
+kind = "work"
+title = "Decide whether Workbench registry and map export plugins stay unregistered"
+summary = "TBD_RegistryItemsExportPlugin.c:26 has its WorkbenchPluginAttribute commented out (commit 4f311079f, with the MapExport plugins), so the menu run its header documents (:16-20) cannot happen and contracts_v2/catalogs cannot be refreshed."
+class = "audit"
+status = "idea"
+created_at = "2026-09-25T03:45:29Z"
+notes = "apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c:26 reads '// [WorkbenchPluginAttribute(name: \"Export TBD Registry Items\", ...)]'; its header :16-20 still says to run Workbench > Plugins > TBD > Export TBD Registry Items (or NetAPI wb_execute_action menuPath Plugins,TBD,Export TBD Registry Items) and copy the output to contracts_v2/catalogs/registry-items.workbench.json and registry-compat.workbench.json, which contracts_v2/catalogs/README.md:28,56-58 and apps/mod/tbd-export/README.md:19 name as the catalog producer. Commit 4f311079f (decouple the export addon from the framework) commented it out together with the MapExport plugin attributes; at HEAD 32 files under apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/ carry a commented attribute and none a live one, including MapExport/Objects/TBD_WorldFullExportPlugin.c:19 ('Export TBD World Objects (full)'), the step tools_v2/xtask/src/commands/map/terrain_export.rs:70,72 tells the operator to run. The 19 EquipmentExport, EquipmentVehicleExport and VehicleExport plugins stay registered. apps/mod/tbd-export/README.md:14 says the MapExport plugins are reachable under Plugins,TBD. Decide whether the registration stays off (then fix the headers, READMEs and the export-terrain runbook, or remove the plugins) or comes back. Source: README writer R11.2 (R11.2r)."
+
+[scope]
+domain = "mod"
+layer = "workbench"

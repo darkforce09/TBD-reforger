@@ -1,0 +1,12 @@
+id = "T-1080"
+kind = "work"
+title = "Clean up contract schema descriptions, $id hosts and workflow name"
+summary = "prefab-classify.json:3 cites retired tbd-tools, T-244 and t090 specs; schema.yml:1 and blueprint_assembly.rs:2,237 say tbd-schema; $id hosts mix tbd.example, tbd.local and schema.tbdevent.eu; bridge-messages.schema.json:5 says 'decided in Phase 0.2'; mission-editor-payload.schema.json:5,62 cite retired code."
+class = "chore"
+status = "idea"
+created_at = "2026-09-25T03:44:42Z"
+notes = "Retired names: contracts_v2/rules/prefab-classify.json:3 description names 'tbd-tools world build-objects' (real: cargo run -q -p developer-tools --bin world -- build-objects, driven by cargo xtask map export-terrain; reclassify is world reclassify [--write]), cites design specs t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md (now documentation_v2/tickets/specs/) and ticket T-244. .github/workflows/schema.yml:1 is named 'tbd-schema compatibility test' (the package is contracts_v2; the job runs cargo xtask schema validate); tools_v2/developer-tools/src/blueprint/archive_emission/blueprint_assembly.rs:2 and :237 say 'the tbd-schema contract'. $id hosts: blas-manifest.schema.json:3, building-instances.schema.json:3 and prefab-descriptor.schema.json:3 use https://tbd.example/schema/<name>.schema.json; equipment-vehicle-export.schema.json:3 uses https://tbd.local/contracts/<name>.schema.json; the other 22 use https://schema.tbdevent.eu/<name>/v<N>.json (all under contracts_v2/definitions/). History wording: contracts_v2/definitions/bridge-messages.schema.json:5 description ('REST/WebSocket/pipe - decided in Phase 0.2'). Retired code in descriptions: contracts_v2/definitions/mission-editor-payload.schema.json:5 ('mirrors the frontend compile.ts MissionPayload'), :62 (crates/map-engine-core/src/mission/wire_safety.rs; real apps/website/map-engine/src/data/scenario/validation/wire_safety/), contracts_v2/definitions/mission.schema.json:88 ('map-engine-core doc/store.rs add_vehicle'; real apps/website/map-engine/src/data/store/rows/vehicles.rs:25). The map-object-instance pod path is T-1066; terrain-manifest and terrain-anchors descriptions are T-1075; the kit-aliases.json $comment is T-1056. Source: README writer R11.2 (R11.2r)."
+
+[scope]
+domain = "schema"
+layer = "contract"

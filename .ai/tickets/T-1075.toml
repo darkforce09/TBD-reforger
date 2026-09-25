@@ -1,0 +1,12 @@
+id = "T-1075"
+kind = "work"
+title = "Remove orphan BLAS files and fix stale terrain manifest docs"
+summary = "Three Everon BLAS (LightSwitch_01/02, GarbageAmmunition_USSR_01) are in no blas-manifest or descriptor; occluder_loader.rs never reads buildings.blas (hard-codes prefabs/ at :199); terrain-manifest.schema.json:271 buildings text contradicts :124,172; terrain_manifest.rs:305-339 and schema :25 cite retired terrains.ts."
+class = "chore"
+status = "idea"
+created_at = "2026-09-25T03:41:15Z"
+notes = "Orphan BLAS: assets_v2/terrains/everon/prefabs/blas/LightSwitch_01.bvh, LightSwitch_02.bvh and GarbageAmmunition_USSR_01.bvh are absent from assets_v2/terrains/everon/prefabs/blas-manifest.json and no descriptor under prefabs/descriptors/ names them as a blas path (the LightSwitch descriptors say 'has no collision chunk - no BLAS, no instance'); the folder holds 1,690 .bvh files against 1,687 manifest entries. Unread manifest field: assets_v2/terrains/everon/manifest.json:135-138 buildings.blas = prefabs/blas; apps/website/map-engine/src/streaming/loaders/occluder_loader.rs:138 reads only buildings.archive, and BLAS and descriptors come from hard-coded paths (:66 prefabs/blas-manifest.json, :172 prefabs/descriptors/{pid}.json, :199 prefabs/{rel}); only the verifier checks the field (tools_v2/developer-tools/src/map_verification/terrain_manifest.rs:223). Either read it or drop it from the schema and manifest. Contradicted description: contracts_v2/definitions/terrain-manifest.schema.json:271 says the archive is 'one BuildingBlueprintArchive fetch in place of 1623 individual descriptor fetches', but the loader still fetches every blocking descriptor as JSON (occluder_loader.rs:124 log '{blocking} descriptors still JSON', :172). Retired terrains.ts: tools_v2/developer-tools/src/map_verification/terrain_manifest.rs:305, :308, :333, :339 (messages 'dem.heightRangeMinM !== terrains.ts', 'PASS  Manifest matches terrains.ts'; the contract is the match at :229-246) and terrain-manifest.schema.json:25 worldBounds 'must match coords/terrains.ts'; contracts_v2/definitions/terrain-anchors.schema.json:40 names verify-terrain-alignment.ts (the gate is cargo xtask schema terrain-alignment). terrain-manifest.schema.json:75, :230, :250, :260, :271 say the blocks mirror structs in 'the map engine's world manifest module'; they are in apps/website/map-engine/src/streaming/loaders/manifest.rs (DemRawBlock :103, BuildingsBlock :139). Source: README writer R11.3 (R11.3r)."
+
+[scope]
+domain = "engine"
+layer = "world"
