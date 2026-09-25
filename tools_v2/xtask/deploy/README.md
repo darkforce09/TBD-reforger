@@ -102,3 +102,5 @@ site root is a fixed absolute path, edited when the checkout sits elsewhere on t
   the app to the home server.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the staging
   game server and its host agent.
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — installing the backup
+  and restore-drill timers of `systemd/`.

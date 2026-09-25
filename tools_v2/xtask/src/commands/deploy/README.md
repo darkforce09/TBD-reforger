@@ -149,3 +149,5 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   game server and its host agent.
 - [Deployment templates](/tools_v2/xtask/deploy/README.md) — `deploy.env`, the Caddy site and the
   systemd units these commands read or print.
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — the `deploy db` backups,
+  restore drills and restores, run by hand and by the backup timers.

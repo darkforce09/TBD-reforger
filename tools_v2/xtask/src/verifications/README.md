@@ -82,3 +82,5 @@ environment that `api_readiness/` checks.
 
 - [Local development](/documentation_v2/runbooks/local_development.md) — running `ci-local` and
   its prerequisites.
+- [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md) — which gates `ci-local`, the
+  workflows and the wave gate run, and the documentation gates.

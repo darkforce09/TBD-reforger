@@ -120,6 +120,8 @@ browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 ## Related documentation
 
+- [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md) — running `ci-local` and single
+  tasks, and where each gate runs: `ci-local`, the workflows and the wave gate.
 - [Local development](/documentation_v2/runbooks/local_development.md) — running `ci-local` and
   its prerequisites.
 - [Editor gates](/documentation_v2/runbooks/editor_gates.md) — the browser gates that run outside

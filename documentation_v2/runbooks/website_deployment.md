@@ -1,495 +1,358 @@
 **Status:** live
 
-# Home-server website setup — LAN (`dooley`)
+# Website deployment
 
-Deploy the **TBD Reforger website** (Rust API + Leptos SPA) on the same home server used for PrairieLearn and the Reforger game staging stack.
+Deploys the website [API](/documentation_v2/glossary.md#api) and the single-page app to the home
+server: `cargo xtask deploy website` copies the checkout to the host, starts the staging Postgres,
+builds the release API and the app there and restarts the API's systemd user unit; Caddy serves
+the app on port 3080 and a Cloudflare Tunnel can publish it. The first
+[deployment](/documentation_v2/glossary.md#deployment) runs Phases A to E once, about an hour with
+the server-side builds; every later one is the single command under
+[Redeploy](#redeploy). The dedicated game server on the same host has its own runbook,
+[Game server staging](/documentation_v2/runbooks/game_server_staging/README.md).
 
-**Scope of this doc:** LAN website (Postgres + API + SPA). Cloudflare Tunnel is optional later — not required for LAN.  
-**Out of scope:** Arma dedicated server — see [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md).
-
-**Do not touch PrairieLearn.** TBD lives under `/home/sam/tbd/` only. Never write into `/home/sam/prairielearn/`.
-
-**Connection protocol source (already on this PC):**  
-[`/home/Samuel/Documents/PrairieLearn/PrairieLearn.md`](/home/Samuel/Documents/PrairieLearn/PrairieLearn.md) +  
-[`/home/Samuel/Documents/PrairieLearn/HandoverContext.md`](/home/Samuel/Documents/PrairieLearn/HandoverContext.md)
-
----
-
-## Live status (2026-07-10)
-
-**Interim deploy.** What’s on the server today was built from the current main/worktree — **not** the Rust rewrite under audit. Do **not** re-upload until that audit is done and you explicitly ask for a full redeploy.
-
-Host DHCP moved (was `.140`, now **`192.168.0.124`**, hostname `dooley`). Pin it (below) so reboots don’t break bookmarks/SSH.
-
-| URL | What |
-|-----|------|
-| http://192.168.0.124:3080/ | **Interim** TBD Reforger SPA (nginx → static + `/api` proxy) |
-| http://192.168.0.124:8081/healthz | **Interim** Rust API direct |
-| http://127.0.0.1:8080/ (on server) | **Existing** older `Tbdevent_Website` stack — left running, do not stop |
-
-**Additive only (shipped):** `/home/sam/tbd/website/` + containers `tbd-reforger-pg` (`127.0.0.1:5433`) + `tbd-reforger-web` (host-net `:3080`) + `bin/api` process on `:8081`.  
-**Untouched:** `tbdevent_website-*`, PrairieLearn, Huly, n8n, etc.
-
-Dev-login (temporary `APP_ENV=development`):  
-http://192.168.0.124:3080/api/v1/auth/dev-login?role=admin  
-(via nginx proxy to `:8081`)
-
-### Sticky LAN IP (so it doesn’t change on reboot)
-
-Best: **router DHCP reservation** — bind MAC of `wlo1` (or ethernet) to e.g. `192.168.0.140` or keep `.124`. Survives OS reinstalls.
-
-On the Ubuntu box itself (Netplan), after you pick a permanent address:
-
-```bash
-# On server — inspect current Wi‑Fi connection name + MAC
-ip -br link show wlo1
-nmcli -t -f NAME,DEVICE,TYPE connection show --active
-# Or edit Netplan under /etc/netplan/*.yaml: set addresses: [192.168.0.124/24],
-# gateway4 / routes + nameservers, then: sudo netplan try
+```text
+browser ──▶ Cloudflare Tunnel (optional, Phase E) ──▶ Caddy :3080  (tools_v2/xtask/deploy/Caddyfile.website)
+                                                      ├── /api/*, /uploads/*, /map-assets/*, /healthz
+                                                      │     ──▶ API 0.0.0.0:8080  (tbd-website-api.service, Phase D)
+                                                      └── every other path ──▶ apps/website/frontend/dist
+API ──▶ Postgres tbd_staging_db on 127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}  (apps/website/docker-compose.staging.yml)
+API uploads ──▶ ~/.local/state/tbd-website-api/uploads  (outside the checkout)
 ```
 
-Prefer reservation over a hard-coded static if the router already manages the LAN — less chance of a clash.
-
----
+The host is whatever `TBD_SSH_HOST` names in `tools_v2/xtask/deploy/deploy.env`; this runbook
+writes it, and the checkout folder `TBD_REMOTE_DIR`, as placeholders.
+
+## Prerequisites
 
-## Target architecture (LAN)
+On the development machine:
 
-```mermaid
-flowchart LR
-  browser[Browser_LAN]
-  remote[dooley_LAN_IP]
+- ssh and rsync, plus sshpass when the host takes a password (`TBD_SSH_PASS`). Check:
+  `command -v ssh rsync`.
+- The Rust toolchain, for `cargo xtask`.
+- ssh access to the host as the deploy user; a key (`TBD_SSH_IDENTITY_FILE`) is preferred over a
+  password. The host keeps a fixed LAN address (a DHCP reservation on the router), so
+  `TBD_SSH_HOST` stays valid across reboots.
+
+On the host:
+
+- docker or podman with a compose provider; the deploy tries `docker compose` first, then
+  `podman compose`. Check: `docker compose version` or `podman compose version`.
+- rustup under `~/.cargo/bin`, with Trunk installed there too: the remote build steps put only
+  `$HOME/.cargo/bin` on `PATH`. The root `rust-toolchain.toml` pins 1.95.0 with the
+  `wasm32-unknown-unknown` target, and rustup installs it on the first build. Check:
+  `~/.cargo/bin/trunk --version`.
+- Caddy, and cloudflared only for the tunnel in Phase E.
+- Ports 3080, 8080 and the Postgres port free: `ss -tlnp`. The host runs other services; the
+  deploy refuses a `TBD_REMOTE_DIR`, `TBD_SSH_HOST` or `TBD_PROFILE_DIR` that contains
+  `prairielearn` in any case, and a `TBD_REMOTE_DIR` outside the fixed prefix
+  `require_tbd_remote_prefix` checks (`tools_v2/xtask/src/commands/deploy/website.rs`), because the
+  rsync runs with `--delete`.
+- Disk space: the website needs little; the game server beside it needs at least 30 GB
+  (`df -h ~`).
+
+## Steps
+
+Run the development-machine steps from the repository root; a step that runs on the host says so.
+
+### Phase A — Configure the deploy
+
+1. Create the deploy settings from the template, then set `TBD_SSH_HOST`, either
+   `TBD_SSH_IDENTITY_FILE` or `TBD_SSH_PASS`, `TBD_REMOTE_DIR` and, when 5432 is taken on the host,
+   `TBD_POSTGRES_HOST_PORT`. The file is gitignored and never rsynced; the commands parse it as
+   `KEY=VALUE` lines and never run it. Every key the website deploy reads is in the
+   [deployment templates README](/tools_v2/xtask/deploy/README.md#configuration).
+
+   ```bash
+   cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env
+   ```
+
+   Expected: no output. A `DEPLOY_ENV` environment variable points `deploy website`, and only
+   that command, at another file.
+
+2. Print the plan without contacting the host.
+
+   ```bash
+   cargo xtask deploy website --dry-run
+   ```
+
+   Expected, exit 0: `==> deploy-website → <TBD_SSH_HOST>:<TBD_REMOTE_DIR>`, then the map-asset
+   probe, the rsync with one `[dry-run]   --exclude=` line per protected path (`.git/`,
+   `target/`, the gate build folders, `node_modules/`, `apps/website/frontend/dist/`, the server's
+   `apps/website/api_v2/.env`, `tools_v2/xtask/deploy/deploy.env`, `assets_v2/terrains/`,
+   `assets_v2/scratch/`, `packages/` and the reference mod folders), the five remote steps below,
+   `==> remote: restart tbd-website-api.service`, the Caddy hint,
+   `==> unit: tools_v2/xtask/deploy/systemd/tbd-website-api.service is installed by hand (see documentation_v2/runbooks/website_deployment.md Phase D)`,
+   the smoke hints and `==> done`. The printed list is the authority; the code is
+   `tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs`.
+
+   | Remote step, as printed | What runs on the host |
+   |---|---|
+   | `staging Postgres (docker compose)` | `compose -f apps/website/docker-compose.staging.yml up -d postgres` with `TBD_POSTGRES_HOST_PORT`; skipped by `TBD_SKIP_COMPOSE=1` |
+   | `cargo build --release -p website-api --bin api` | the release API into `target/release/api`; skipped by `TBD_SKIP_API_BUILD=1` |
+   | `trunk build --release (Leptos SPA → frontend/dist)` | the app into `apps/website/frontend/dist`; skipped by `TBD_SKIP_SPA_BUILD=1` |
+   | `repoint the checksums of comments-only migration edits` | `TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force` |
+   | `move runtime files into the unit's state directory` | creates `~/.local/state/tbd-website-api/uploads` and moves an `uploads` folder left inside `apps/website/api_v2/` into it |
+
+   A failing step stops the deploy before the restart, so the running API keeps serving the
+   previous build. A failed restart only warns: the code is on the host by then.
+
+### Phase B — Prepare the host
+
+3. Create the checkout folder. The deploy's first act is a probe that `cd`s into it and refuses
+   when it cannot (probe exit 12).
+
+   ```bash
+   ssh <TBD_SSH_HOST> 'mkdir -p <TBD_REMOTE_DIR>'
+   ```
+
+   Expected: no output.
+
+4. On the host, let the deploy user's systemd user units run while nobody is logged in; the API
+   unit and the backup timers need it.
+
+   ```bash
+   sudo loginctl enable-linger "$USER"
+   ```
+
+   Expected: no output; `loginctl show-user "$USER" --property=Linger` prints `Linger=yes`.
+
+The staging Postgres takes its password from `POSTGRES_PASSWORD` in the environment of the
+deploy's login shell (the remote steps run through `bash -lc`), and falls back to `CHANGE_ME`.
+Export a real one in the deploy user's `~/.profile` before the first deploy: the container keeps
+the password its volume was first created with. The database listens on the host's loopback only.
+
+### Phase C — Sync, build and start Postgres
 
-  browser -->|"http://IP:3080"| reverse[nginx_host_3080]
-  subgraph remote
-    reverse -->|"/api /uploads /healthz"| api[API_0_0_0_0_8081]
-    reverse -->|"SPA static"| spa[frontend_dist]
-    pg[(Postgres_tbd_reforger_pg_5433)]
-    pg --> api
-    oldApi[Legacy_Tbdevent_Website_8080]
-  end
-```
+5. Run the deploy.
+
+   ```bash
+   cargo xtask deploy website
+   ```
 
-| Piece | Bind | Notes |
-|-------|------|--------|
-| SPA + proxy | `0.0.0.0:3080` | Container `tbd-reforger-web` (`--network host`) |
-| New API | `0.0.0.0:8081` | `/home/sam/tbd/website/bin/api` + `config.env` |
-| New Postgres | `127.0.0.1:5433` | Volume `tbd_reforger_pgdata` — **not** the legacy `:5432` |
-| Legacy API | `127.0.0.1:8080` | `tbdevent_website-api-1` — leave alone |
-| Legacy Postgres | `127.0.0.1:5432` | `tbdevent_website-postgres-1` — leave alone |
+   Expected on the first run: the probe prints
+   `WARN: no map asset tree on the server (neither assets_v2/terrains nor packages/map-assets).`
+   and continues, rsync lists the files it copies, compose starts `tbd_staging_db`, both builds
+   finish, and then the checksum repair stops the deploy with
+   `could not read _sqlx_migrations (psql exit 1)` and exit 1, because a fresh database has no
+   migration table until the API first boots. Phase D boots it; the [redeploy](#redeploy) then
+   runs through. Once the API has applied its migrations, the deploy runs to the end: it prints
+   `WARN: systemctl restart failed — is tbd-website-api.service installed?` and the install line
+   while the unit is missing, and `==> done` either way.
 
----
+The rsync mirrors the checkout with `--delete`: a file on the host outside the excluded paths
+disappears at the next deploy, so the server keeps its own files only at `apps/website/api_v2/.env`,
+under `assets_v2/terrains/` and outside the checkout. The glyph atlas `assets_v2/glyphs/` is not
+excluded; it is tracked and arrives with every deploy.
 
-## Server + SSH (from PrairieLearn protocol)
+A host that serves only the [mission](/documentation_v2/glossary.md#mission) library needs no map assets: every `/map-assets` request
+answers 404 and the deploy warns and continues. For the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator), the host needs its own copy of
+the terrain tree (about 590 MB of LFS content, never rsynced) at `assets_v2/terrains/` in the
+checkout, with `terrain-registry.json` at its top; see
+[Terrain assets](/assets_v2/terrains/README.md) for what the tree holds.
 
-| Item | Value |
-|------|--------|
-| Host (LAN) | Current DHCP IP (verify with `hostname -I` on server; was `192.168.0.124` at last ship) |
-| SSH user | `sam` |
-| Auth | Password via `sshpass` (see PL handover) **or** SSH key — this PC’s key was **not** in `authorized_keys` yet |
-| Server OS | Ubuntu Server (`dooley`) |
-| TBD root | `/home/sam/tbd/` |
-| New website tree | `/home/sam/tbd/website/` |
-| Legacy monorepo snapshot | `/home/sam/tbd/repo` (old layout; do not confuse with current dev tree) |
+### Phase D — Install and run the API
 
-```bash
-# Discover IP if DHCP moved again
-# On server: hostname -I
-sshpass -p "$TBD_SSH_PASS" ssh -o StrictHostKeyChecking=no sam@192.168.0.124 'echo ok'
-```
+6. On the host, create the server's API settings from the template that arrived with the rsync.
 
-Prefer lasting setup: install this PC’s SSH public key on the server + `tools_v2/xtask/deploy/deploy.env`.
+   ```bash
+   install -m 600 <TBD_REMOTE_DIR>/apps/website/api_v2/.env.example <TBD_REMOTE_DIR>/apps/website/api_v2/.env
+   ```
 
----
+   Expected: no output; the file is readable by the deploy user only. Set these values; the full
+   list, with defaults and failure modes, is
+   [API environment variables](/documentation_v2/website/api_v2/environment_variables.md).
 
-## Paths (isolated from PrairieLearn)
+   | Variable | Value on the host |
+   |---|---|
+   | `PORT` | `8080`, which Caddy and the smoke hints expect |
+   | `APP_ENV` | `production` (any value but `development`). `development` registers the [dev login](/documentation_v2/glossary.md#dev-login) and relaxes the checks below: use it only for a LAN-only first smoke, never behind the tunnel |
+   | `FRONTEND_URL`, `ALLOWED_ORIGINS` | the public origin, `https://<site host>` |
+   | `DATABASE_URL` | `postgres://tbd:<POSTGRES_PASSWORD>@127.0.0.1:<TBD_POSTGRES_HOST_PORT>/tbd_reforger?sslmode=disable` |
+   | `JWT_SECRET` | the output of `openssl rand -hex 32` |
+   | `JWT_ACCESS_TTL_MIN` | `15`, the template's value |
+   | `TRUSTED_PROXIES` | `127.0.0.1/32`: Caddy on the loopback is the only proxy believed |
+   | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` | required outside development; the redirect is `https://<site host>/api/v1/auth/discord/callback` |
+   | `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` | optional; empty turns the path that needs them off |
+   | `SERVICE_TOKEN` | the output of `openssl rand -hex 24`; the game server's `TBD_GAME_SERVER_TOKEN` in `deploy.env` carries the same value |
 
-| Path | Purpose |
-|------|---------|
-| `/home/sam/tbd/repo` | Monorepo checkout / rsync target |
-| `/home/sam/tbd/repo/apps/website/api_v2/.env` | **Server-only** secrets (never rsync from dev) |
-| `/home/sam/tbd/repo/apps/website/frontend/dist` | Built SPA |
-| `/home/sam/tbd/website-data/postgres` | Optional named volume / bind for DB (if not compose default) |
-| `/home/sam/prairielearn/` | **Forbidden** for TBD |
+   The unit sets `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR` and `UPLOAD_DIR` itself; leave them out of
+   the file.
 
-Create layout:
+7. On the host, create the user unit folder.
 
-```bash
-ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,website-data}'
-```
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   ```
 
----
+   Expected: no output.
 
-## Honest gaps (as of 2026-07-27)
+8. On the host, from `<TBD_REMOTE_DIR>`, render the unit template into it. The placeholder takes
+   `TBD_REMOTE_DIR` without its leading slash, because the template already writes
+   `/TBD_REPO_DIR_PLACEHOLDER/…`.
 
-`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`cargo xtask deploy staging`) and website deploy (`cargo xtask deploy website`) both compose from that path (T-438). Local laptop compose remains `apps/website/api_v2/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
+   ```bash
+   sed 's|TBD_REPO_DIR_PLACEHOLDER|<TBD_REMOTE_DIR without its leading slash>|g' tools_v2/xtask/deploy/systemd/tbd-website-api.service > ~/.config/systemd/user/tbd-website-api.service
+   ```
 
-| Gap | Needed for “one command” website host |
-|-----|----------------------------------------|
-| Serve SPA from API **or** Caddy/nginx | `/` → `index.html`, `/api` → Axum (`tools_v2/xtask/deploy/Caddyfile.website` exists; wire still manual) |
-| COOP/COEP headers on SPA | Same as Trunk (`same-origin` + `credentialless`) — required for map wasm / SAB |
+   Expected: no output. The unit runs `target/release/api` from `apps/website/api_v2`, loads that
+   folder's `.env`, pins `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to the checkout's
+   `assets_v2/terrains` and `assets_v2/glyphs`, and keeps uploads under its state directory
+   (`StateDirectory=tbd-website-api`); the
+   [systemd README](/tools_v2/xtask/deploy/systemd/README.md#configuration) explains each line.
+   When a deploy's restart fails, the deploy prints steps 7 to 10 as one line
+   (`install_command` in `tools_v2/xtask/src/commands/deploy/website/systemd_unit.rs`).
 
----
+9. On the host, make systemd read the new unit.
 
-## One-time prerequisites
+   ```bash
+   systemctl --user daemon-reload
+   ```
 
-### Dev PC
+   Expected: no output.
 
-```bash
-which sshpass rsync ssh curl git cargo docker
-rustc --version  # toolchain pin: root rust-toolchain.toml
-cp tools_v2/xtask/deploy/deploy.env.example tools_v2/xtask/deploy/deploy.env
-# Set TBD_SSH_HOST=sam@192.168.0.140 and SSH pass or identity file
-```
+10. On the host, enable the unit and start the API. It applies the pending migrations at boot.
 
-### Server
+    ```bash
+    systemctl --user enable --now tbd-website-api.service
+    ```
 
-| Check | Command / note |
-|-------|----------------|
-| Disk | `df -h ~` (website alone is light; game staging needs ≥30 GB) |
-| Docker | `docker compose version` |
-| Ports free of TBD use | `ss -tlnp \| grep -E '8080|5432'` — PL uses **3001**, not 8080 |
-| Linger (if user systemd) | `sudo loginctl enable-linger sam` |
-| cloudflared | Already used for `tenta.icanteam.com`; add a route for TBD |
+    Expected: `Created symlink … → …/tbd-website-api.service`.
 
----
+11. On the host, follow the boot.
 
-## Phase A — Postgres on the server
+    ```bash
+    journalctl --user -u tbd-website-api -f
+    ```
 
-Dev compose maps host **5434**; on the home server prefer host **5432** (unless busy — then remap).
+    Expected: the log lines `migrations applied` and `listening on 0.0.0.0:8080`. A missing
+    setting stops the boot with `<VARIABLE> is required` (see Troubleshooting).
 
-**Option A1 — temporary reuse of local compose on server (host port change):**
+The staging compose file also carries an `api` profile that runs the API in a container
+(`apps/website/Dockerfile`), with its settings in the compose `environment` block and its uploads in
+a named volume. The deploy does not use it, and it binds the same `127.0.0.1:8080` as the unit, so
+run one or the other.
 
-```bash
-# On server, inside /home/sam/tbd/repo/apps/website/api_v2 after first sync
-# Edit docker-compose.yml ports to "127.0.0.1:5432:5432" OR use apps/website/docker-compose.staging.yml
-docker compose up -d db
-```
-
-**Option A2 — inline one-shot (no file yet):**
-
-```bash
-docker run -d --name tbd_reforger_db --restart unless-stopped \
-  -e POSTGRES_USER=tbd -e POSTGRES_PASSWORD='CHANGE_ME' -e POSTGRES_DB=tbd_reforger \
-  -p 127.0.0.1:5432:5432 \
-  -v tbd_pgdata:/var/lib/postgresql \
-  docker.io/library/postgres:18-alpine
-```
-
-Health: `docker exec tbd_reforger_db pg_isready -U tbd -d tbd_reforger`
-
----
-
-## Phase B — Server `.env` (never commit, never rsync)
-
-On the server:
-
-```bash
-cd /home/sam/tbd/repo/apps/website/api_v2
-cp .env.example .env
-chmod 600 .env
-```
-
-Recommended production values (adjust domain when tunnel is live):
-
-```bash
-PORT=8080
-APP_ENV=production
-
-# Public SPA origin (Cloudflare hostname)
-FRONTEND_URL=https://tbd.icanteam.com
-ALLOWED_ORIGINS=https://tbd.icanteam.com
-
-# DB — if API runs on host (not in compose network):
-DATABASE_URL=postgres://tbd:CHANGE_ME@127.0.0.1:5432/tbd_reforger?sslmode=disable
-# If API shares Docker network with service name "postgres":
-# DATABASE_URL=postgres://tbd:CHANGE_ME@postgres:5432/tbd_reforger?sslmode=disable
-
-JWT_SECRET=<long-random-64+ hex>
-JWT_ACCESS_TTL_MIN=15
-
-# Behind Cloudflare / reverse proxy — trust tunnel/proxy CIDRs when wired in code
-TRUSTED_PROXIES=127.0.0.1/32
-
-# Discord (production OAuth — create a dedicated app redirect)
-DISCORD_CLIENT_ID=
-DISCORD_CLIENT_SECRET=
-DISCORD_REDIRECT_URL=https://tbd.icanteam.com/api/v1/auth/discord/callback
-DISCORD_GUILD_ID=
-DISCORD_BOT_TOKEN=
-DISCORD_WEBHOOK_URL=
-
-SERVICE_TOKEN=<shared-with-game-server-if-used>
-```
-
-Notes:
-
-- `APP_ENV=production` **disables** `GET /api/v1/auth/dev-login`. Use Discord OAuth for real users.
-- For a first LAN-only smoke you may temporarily use `APP_ENV=development` + `FRONTEND_URL=http://192.168.0.140:3000` — do **not** leave that on a public tunnel.
-- Game token must match `TBD_GAME_SERVER_TOKEN` in `tools_v2/xtask/deploy/deploy.env` when the Reforger server calls the API (see staging doc). The token covers only identity-link confirmation and match results; everything else a game server calls uses its own machine credentials (below).
-
-Generate secrets:
-
-```bash
-openssl rand -hex 32   # JWT_SECRET
-openssl rand -hex 24   # SERVICE_TOKEN
-```
-
----
-
-## Phase C — Sync code + build website
-
-From **dev PC** (repo root), first sync (exclude secrets + heavy junk):
-
-```bash
-source tools_v2/xtask/deploy/deploy.env
-RSYNC_RSH="ssh -o StrictHostKeyChecking=no"
-# Prefer key auth; sshpass if you still use password like PrairieLearn
-rsync -avz --delete \
-  --exclude '.git' \
-  --exclude 'node_modules' \
-  --exclude 'apps/website/frontend/node_modules' \
-  --exclude 'apps/website/frontend/dist' \
-  --exclude 'apps/website/api_v2/.env' \
-  --exclude 'apps/website/api_v2/.tools/' \
-  --exclude 'tools_v2/xtask/deploy/deploy.env' \
-  --exclude 'target' \
-  --exclude 'target-gate-*' \
-  --exclude 'dist-gate-*' \
-  --exclude 'apps/mod/crf_framework' \
-  --exclude 'apps/mod/vanilla_reference' \
-  --exclude 'apps/mod/playable_selector' \
-  --exclude 'apps/mod/.local-test-profile' \
-  --exclude 'assets_v2/terrains' \
-  --exclude 'assets_v2/scratch' \
-  --exclude 'packages' \
-  ./ "${TBD_SSH_HOST}:${TBD_REMOTE_DIR}/"
-```
-
-This list mirrors the deploy's own, entry for entry, and exists only for a first sync before
-`cargo xtask deploy website` can run on the box. **The authoritative set is the deploy's** — print it
-with `cargo xtask deploy website --dry-run` and prefer that command once the server is reachable.
-Two of these entries are secrets: `apps/website/api_v2/.env` is the server's own configuration
-(rsyncing a dev copy overwrites it, and `--delete` is in this command), and
-`tools_v2/xtask/deploy/deploy.env` holds `TBD_SSH_PASS` and `TBD_GAME_SERVER_TOKEN`.
-
-`assets_v2/scratch` is ~1.5 GB of gitignored local export output; before the asset relocation it
-sat inside the terrain tree and the one exclusion covered both. `packages` no longer exists in the
-repo, and is excluded so that `--delete` cannot remove a server still holding its assets at the old
-`packages/map-assets` path. Note that `assets_v2/glyphs` is deliberately **not** excluded — it is
-188 KB, and the API has no other source for it.
-
-Then on the **server**:
-
-```bash
-cd /home/sam/tbd/repo
-# Toolchain: install Rust if missing, then from repo root:
-cargo xtask mk leptos-build
-cd /home/sam/tbd/repo/apps/website/api_v2
-cargo build --release --bin api
-```
-
-Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `assets_v2/terrains` initially — `/map-assets` then 404s, which `cargo xtask deploy website` warns about and allows. For full Mission Creator, sync or build the terrain tree separately on the server at `assets_v2/terrains`, and set both `MAP_ASSETS_DIR` and `GLYPH_ASSETS_DIR` to absolute paths (the unit below does this).
-
-If the server still holds its assets at the pre-relocation `packages/map-assets`, move them once — `cargo xtask deploy website` refuses to deploy until you do, and prints these commands:
-
-```bash
-cd /home/sam/tbd/repo
-mkdir -p assets_v2/terrains
-mv packages/map-assets/everon \
-   packages/map-assets/arland \
-   packages/map-assets/terrain-registry.json \
-   assets_v2/terrains/
-```
-
----
-
-## Phase D — Run the API
-
-```bash
-cd /home/sam/tbd/repo/apps/website/api_v2
-# Ensure .env is present; migrations run on boot. The CWD matters: the API resolves its
-# map-asset defaults relative to it (the unit below sets both explicitly instead).
-../../../target/release/api
-# Smoke:
-curl -sf http://127.0.0.1:8080/healthz
-curl -sf http://127.0.0.1:8080/api/v1/health   # if exposed; else /healthz only
-```
-
-User systemd unit: [`tools_v2/xtask/deploy/systemd/tbd-website-api.service`](../../tools_v2/xtask/deploy/systemd/tbd-website-api.service). Substitute `TBD_REPO_DIR_PLACEHOLDER` for your `TBD_REMOTE_DIR` and install it:
-
-```bash
-sed "s|TBD_REPO_DIR_PLACEHOLDER|${TBD_REMOTE_DIR#/}|g" \
-  tools_v2/xtask/deploy/systemd/tbd-website-api.service \
-  > ~/.config/systemd/user/tbd-website-api.service
-```
-
-It sets `WorkingDirectory` to `apps/website/api_v2` and pins `MAP_ASSETS_DIR` / `GLYPH_ASSETS_DIR`
-to absolute paths. Both matter: the API resolves its asset defaults against the working directory,
-and `ServeDir` never checks that the root exists, so a wrong CWD serves 404 for every map asset
-without logging anything.
-
-It also declares `StateDirectory=tbd-website-api` and points `UPLOAD_DIR` at
-`~/.local/state/tbd-website-api/uploads`: everything the API writes lives there, never in the
-checkout the deploy rsyncs with `--delete`. Outside development the API refuses to boot unless it is
-set to an absolute path. `cargo xtask deploy website` creates the directory and moves any uploads
-an older layout left under `apps/website/api_v2/uploads` into it before restarting
-the unit; Caddy's `/uploads/*` proxy is unchanged because the API serves that path from wherever
-`UPLOAD_DIR` points.
-
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now tbd-website-api.service
-journalctl --user -u tbd-website-api -f
-```
-
-### If the API refuses to boot after a deploy: `migration N was previously applied but has been modified`
-
-`sqlx` hashes each migration file whole, comments included, and compares it against the hash it
-recorded when the migration ran. An edit to an applied migration's comments therefore stops every
-database that applied it — production included — although the schema is untouched. Do not reset
-the database. `cargo xtask deploy website` runs the repair on the server for every applied
-migration before it restarts the unit, so a deploy that reaches the restart has already repointed
-them; if a boot still refuses, run it by hand on the server:
-
-```bash
-cd /home/sam/tbd/repo
-TBD_DB_CONTAINER=tbd_staging_db cargo xtask db repair-migration-checksum --force
-```
-
-`--force` is required on the server: the command proves an edit was comments-only by recovering the
-applied bytes from git history, and the deploy rsync excludes `.git/`. Verify the edit on a dev
-checkout first (`cargo xtask db repair-migration-checksum --version N` there refuses anything but a
-comments-only change) and then repoint the server's row. The container name and credentials come
-from `TBD_DB_CONTAINER`, `TBD_DB_USER`, `TBD_DB_NAME` (defaults `tbd_reforger_db`, `tbd`,
-`tbd_reforger`).
-
----
-
-## Phase E — SPA reverse proxy + Cloudflare Tunnel
-
-PrairieLearn pattern: **cloudflared** on the host publishes a hostname to a **local** port. TBD should get its own hostname (suggestion: `tbd.icanteam.com`) so PL cookies/OAuth stay isolated.
-
-### E1 — Local reverse proxy (Caddy example)
-
-Until the API serves `frontend/dist`, put Caddy (or nginx) on `127.0.0.1:3080` (any free local port):
-
-```caddy
-:3080 {
-  # Mission Creator wasm / SharedArrayBuffer parity with Trunk
-  header Cross-Origin-Opener-Policy same-origin
-  header Cross-Origin-Embedder-Policy credentialless
-
-  handle /api/* {
-    reverse_proxy 127.0.0.1:8080
-  }
-  handle /uploads/* {
-    reverse_proxy 127.0.0.1:8080
-  }
-  handle /healthz {
-    reverse_proxy 127.0.0.1:8080
-  }
-  handle {
-    root * /home/sam/tbd/repo/apps/website/frontend/dist
-    try_files {path} /index.html
-    file_server
-  }
-}
-```
-
-### E2 — Cloudflare Tunnel route
-
-On the server (same cloudflared used for `tenta.icanteam.com`):
-
-1. Cloudflare Zero Trust → Networks → Tunnels → your existing tunnel (or new).
-2. Public hostname: `tbd.icanteam.com` → `http://127.0.0.1:3080` (Caddy) **or** directly to API once SPA is nested.
-3. DNS: CNAME `tbd` → tunnel.
-
-PL stays on `tenta.icanteam.com` → its existing service (`localhost:3001`).
-
-### E3 — Discord OAuth app
-
-In the Discord developer portal, add redirect:
-
-`https://tbd.icanteam.com/api/v1/auth/discord/callback`
-
-Match `DISCORD_REDIRECT_URL` and `FRONTEND_URL` / `ALLOWED_ORIGINS`.
-
----
-
-## Phase F — Verification checklist
-
-| # | Check | Pass |
-|---|--------|------|
-| W1 | SSH | `ssh sam@192.168.0.140` works |
-| W2 | Postgres | `pg_isready` inside container |
-| W3 | API local | `curl -sf http://127.0.0.1:8080/healthz` → ok |
-| W4 | SPA local | `curl -sfI http://127.0.0.1:3080/` → 200 |
-| W5 | API via proxy | `curl -sf http://127.0.0.1:3080/api/v1/...` or proxied health |
-| W6 | Tunnel | Browser `https://tbd.icanteam.com` loads SPA |
-| W7 | CORS/OAuth | Discord login round-trips to `/auth/callback` |
-| W8 | Isolation | PL `https://tenta.icanteam.com` still healthy; no writes under `prairielearn/` |
-| W9 | Game (optional) | Staging game token hits same API if intended — see STAGING-SERVER |
-
----
-
-## Game server credentials and the host agent
-
-Each game server authenticates with its own machine credentials, issued by an administrator in
-**Server Control → credentials** (`POST /api/v1/servers/{id}/credentials`). The secret
-(`tbdm_…`) is shown once.
-
-| Executor | Credential kind | Where it goes | What it does |
+### Phase E — Caddy and the Cloudflare Tunnel
+
+12. On the host, check the site root in the Caddyfile. `tools_v2/xtask/deploy/Caddyfile.website`
+    names the built app's folder as a fixed absolute path, which matches the template's
+    `TBD_REMOTE_DIR`; edit that `root` line on the host when the checkout sits elsewhere, then
+    confirm it.
+
+    ```bash
+    grep -n 'root \*' <TBD_REMOTE_DIR>/tools_v2/xtask/deploy/Caddyfile.website
+    ```
+
+    Expected: one line naming `<TBD_REMOTE_DIR>/apps/website/frontend/dist`.
+
+13. On the host, start Caddy on the site. Later changes to the file take
+    `caddy reload --config` with the same path, the line every deploy prints.
+
+    ```bash
+    caddy start --config <TBD_REMOTE_DIR>/tools_v2/xtask/deploy/Caddyfile.website
+    ```
+
+    Expected: Caddy listens on `:3080`, sends `Cross-Origin-Opener-Policy: same-origin` and
+    `Cross-Origin-Embedder-Policy: credentialless` (the Mission Creator's WebAssembly needs both),
+    proxies `/api/*`, `/uploads/*`, `/map-assets/*` and `/healthz` to `127.0.0.1:8080`, and serves
+    every other path from the built app with an `index.html` fallback.
+
+14. Publish the site through the tunnel. No command: in Cloudflare Zero Trust, under Networks and
+    Tunnels, add a public hostname for the site to the host's tunnel with the service
+    `http://127.0.0.1:3080`, and point the DNS name at the tunnel. The site gets its own hostname,
+    so other services on the host keep their cookies and OAuth apps apart.
+
+    Expected: the hostname loads the app in a browser.
+
+15. Register the Discord redirect. No command: in the Discord developer portal, add
+    `https://<site host>/api/v1/auth/discord/callback` to the OAuth2 redirects of the production
+    application; it matches `DISCORD_REDIRECT_URL`, and `FRONTEND_URL` and `ALLOWED_ORIGINS` name
+    the same host.
+
+    Expected: signing in with Discord returns to the app's `/auth/callback` page and signs in.
+
+### Redeploy
+
+16. Deploy the current checkout. This is the whole procedure after the first deployment.
+
+    ```bash
+    cargo xtask deploy website
+    ```
+
+    Expected: every step of the dry run in step 2 runs, the restart prints `active`, and the deploy
+    ends with `==> done`. The checksum repair prints
+    `every applied migration examined matches its file. Nothing to repair.` unless a migration's
+    comments changed. Caddy serves the new build at once; it reads the built files per request.
+
+### Game server credentials
+
+Each game server signs in to the API with its own
+[machine credentials](/documentation_v2/glossary.md#machine-credential), which an administrator
+issues on the [Server Control](/documentation_v2/glossary.md#server-control) page (`/admin/server`; `POST /api/v1/servers/{id}/credentials`). The
+secret, `tbdm_…`, is shown once; revoking it stops its executor at the next request.
+
+| Executor | Credential kind | Where the secret goes | Commands it runs |
 |---|---|---|---|
-| Game runtime (the mod) | `mod_runtime` | `machineCredential` in the server profile's `TBD_BackendConfig.json` — `deploy.env` `TBD_MOD_RUNTIME_CREDENTIAL` | reads its deployment and artifact, runs sessions and heartbeats, `broadcast` / `kick` / `load_mission` |
-| Host agent (`apps/fleet_host_agent`) | `host_agent` | `~/.config/fleet-host-agent/machine-credential` — `deploy.env` `TBD_HOST_AGENT_CREDENTIAL` | `start` / `stop` / `restart` / `list_players`, `restart_with_mission` |
+| the game runtime (the mod) | `mod_runtime` | `TBD_MOD_RUNTIME_CREDENTIAL` in `deploy.env`, written into the server profile's `TBD_BackendConfig.json` as `machineCredential` | `broadcast`, `kick`, `load_mission`; runtime sessions, heartbeats, roster reads |
+| the [fleet host agent](/documentation_v2/glossary.md#fleet-host-agent) | `host_agent` | `TBD_HOST_AGENT_CREDENTIAL` in `deploy.env`, written to `~/.config/fleet-host-agent/machine-credential` | `start`, `stop`, `restart`, `list_players`, `restart_with_mission` |
 
-`cargo xtask deploy staging` with `TBD_INSTALL_HOST_AGENT=1` builds the agent on the host,
-writes its configuration and secret files (mode 600), adds a loopback `rcon` block (monitor
-permission, `TBD_RCON_PASSWORD`) to the server config, and runs it as the user service
-`fleet-host-agent.service` next to `tbd-reforger.service` (template:
-`tools_v2/xtask/deploy/systemd/fleet-host-agent.service`). The agent polls the API outbound, so
-nothing on the host listens for it. A revoked credential stops its executor at the next request;
-revoke and reissue in Server Control, then redeploy.
+`cargo xtask deploy staging` installs both; which mission a server runs is a
+[mission deployment](/documentation_v2/glossary.md#mission-deployment). Issuing them step by step,
+and the first deployment, are in
+[Give the staging server its credentials and a mission](/documentation_v2/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md).
 
-Which mission a server runs is a **deployment** (Server Control → deployments, or `#tbd` in game
-for a linked administrator): the approved mission's artifact, its terrain's fleet scenario, and
-the transition the platform chooses — a scenario restart in the running game for the same
-terrain, a host restart through the agent otherwise. The deployment is confirmed only when the
-server's next runtime session reports the exact artifact and SHA-256.
+## Verify
 
-## Ongoing deploy (manual)
+Run the checks on the host unless the row says otherwise.
 
-```bash
-# Dev PC: sync (same rsync as Phase C)
-# Server:
-cd /home/sam/tbd/repo && cargo xtask mk leptos-build
-cd /home/sam/tbd/repo && cargo build --release -p website-api --bin api
-systemctl --user restart tbd-website-api.service
-# Caddy picks up new dist automatically (static files)
-```
+| Check | Command | Pass |
+|---|---|---|
+| ssh, from the development machine | `ssh <TBD_SSH_HOST> true` | exit 0 |
+| Postgres | `docker exec tbd_staging_db pg_isready -U tbd -d tbd_reforger` (or `podman exec`) | `accepting connections` |
+| API | `curl -sf http://127.0.0.1:8080/healthz` | `{"status":"ok"}` |
+| app through Caddy | `curl -sfI http://127.0.0.1:3080/` | `HTTP/1.1 200 OK` |
+| API through Caddy | `curl -sf http://127.0.0.1:3080/healthz` | `{"status":"ok"}` |
+| tunnel | the public hostname in a browser | the app loads |
+| sign-in | Discord sign-in in the browser | back on `/auth/callback`, signed in |
+| isolation | `ss -tlnp` | the website holds only 3080, 8080 and the Postgres port; the other services keep theirs |
 
-Website one-button path: `cargo xtask deploy website` (compose file exists; see `xtask deploy website --help`). Keep the verification table above for manual checks.
+`/healthz` answers 503 with `{"status":"unavailable"}` while the database is down or the
+migrations are unreadable. The API has no other health route.
 
----
+## Troubleshooting
 
-## Relationship to existing docs
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Missing <path> — copy from tools_v2/xtask/deploy/deploy.env.example`, exit 1 | no `deploy.env`, or `DEPLOY_ENV` names a missing file | step 1 |
+| `deploy.env: line 79: TBD_SSH_HOST: TBD_SSH_HOST required in deploy.env`, exit 1 (`line 80` for `TBD_REMOTE_DIR`) | the value is missing or empty; the line number is fixed in the message, not the file's line | set the value |
+| `Refusing to deploy: TBD_REMOTE_DIR must be under …`, or `… must not contain 'prairielearn'`, exit 1 | the folder is outside the deploy prefix, contains `..`, or names the other service | point `TBD_REMOTE_DIR` inside the prefix |
+| `ERROR: could not determine the server's map asset layout (probe exit 12)` | `TBD_REMOTE_DIR` does not exist on the host; exit 255 means ssh itself failed | step 3; check ssh with the Verify row |
+| `ERROR: <dir>/assets_v2/terrains is missing, but the pre-relocation packages/map-assets is present.` | the host keeps its terrain tree at the old place, which this build does not serve | on the host, move `packages/map-assets/everon`, `arland` and `terrain-registry.json` into `assets_v2/terrains/`, as the message prints, then deploy again |
+| `sshpass: command not found`, exit 127 | `TBD_SSH_PASS` is set without sshpass installed | install sshpass, or use `TBD_SSH_IDENTITY_FILE` |
+| `could not read _sqlx_migrations (psql exit 1)` during the checksum repair | the database has never seen the API boot | Phase D, then [redeploy](#redeploy) |
+| `WARN: systemctl restart failed — is tbd-website-api.service installed?` | the unit is not installed, or its boot failed | Phase D; the journal shows why a boot failed |
+| the API refuses to boot with `migration N was previously applied but has been modified` | a comments-only edit to an applied migration; sqlx hashes the whole file | the deploy repairs it before each restart; by hand, [repair a migration checksum](/documentation_v2/runbooks/database_operations.md#repair-a-migration-checksum) (step 2 there, on the host). Never reset the database for it |
+| the journal shows `DISCORD_CLIENT_ID is required` (or the secret or redirect) | outside development the three Discord settings are required | step 6 |
+| `UPLOAD_DIR is malformed: must be an absolute path outside development` | the API was started without the unit, which sets it | start it through the unit (steps 8 to 10) |
+| every `/map-assets` request answers 404 and the journal says nothing | the terrain tree is missing, or the API runs with another working directory; the asset server never checks its root | put the tree at `assets_v2/terrains/`, and run the API through the unit, which pins both folders |
+| the Mission Creator reports that `SharedArrayBuffer` is missing | the page is not served through the Caddyfile, so it lacks the cross-origin isolation headers | serve the app through Caddy (step 13) |
+| the API stops when the deploy user logs out | lingering is off | step 4 |
+| the backup timers fail to find their container | the backup units name `tbd_reforger_db`; the deploy's compose starts `tbd_staging_db` | [Database operations](/documentation_v2/runbooks/database_operations.md#schedule-the-home-servers-backups) |
 
-| Doc | Role |
-|-----|------|
-| This file | **Website** on home server + Cloudflare |
-| [`documentation_v2/runbooks/game_server_staging/README.md`](/documentation_v2/runbooks/game_server_staging/README.md) | Game server + LAN API smoke |
-| [`documentation_v2/runbooks/local_development.md`](/documentation_v2/runbooks/local_development.md) | Local laptop stack (`cargo xtask db up/api/web`) |
-| [`tools_v2/xtask/deploy/deploy.env.example`](../../tools_v2/xtask/deploy/deploy.env.example) | Shared SSH + paths (`TBD_REMOTE_DIR=/home/sam/tbd/repo`) |
-| PL `PrairieLearn.md` / `HandoverContext.md` | SSH + Cloudflare precedent (do not copy PL ports/paths) |
+## Related
 
----
-
-## Suggested next code slice (not this doc)
-
-Shipped already: `apps/website/docker-compose.staging.yml`, `cargo xtask deploy website`, `tools_v2/xtask/deploy/Caddyfile.website`. Remaining:
-
-1. Wire Caddy/SPA + COOP/COEP as the default one-button host path (or Axum `ServeDir` + SPA fallback).
-2. Optional Dockerfile for release `api` if you prefer container API over host systemd.
-3. Ticket/registry entry only if you want residual SPA hosting tracked as `T-xxx`.
-
-Until SPA static hosting is one-button, **Phases A–F above are enough to get the website reachable** on the home server using the same SSH + Cloudflare pattern as PrairieLearn.
+- [Local development](/documentation_v2/runbooks/local_development.md) — the same stack on a
+  developer machine.
+- [Database operations](/documentation_v2/runbooks/database_operations.md) — backups, restore
+  drills, the backup timers and the checksum repair on the home server.
+- [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — the dedicated
+  game server and its host agent on the same host.
+- [Testing and CI](/documentation_v2/runbooks/testing_and_ci.md) — the gates a change passes before
+  it is deployed.
+- [API environment variables](/documentation_v2/website/api_v2/environment_variables.md) — every
+  setting of the server's `.env`.
+- [Deployment templates](/tools_v2/xtask/deploy/README.md) — `deploy.env`, the Caddyfile and the
+  units; [the deploy commands](/tools_v2/xtask/src/commands/deploy/website/README.md) — how
+  `deploy website` works.
