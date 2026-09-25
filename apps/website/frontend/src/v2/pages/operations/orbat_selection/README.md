@@ -65,5 +65,7 @@ selector's change callback fetches the event again, so the notices stay live.
 
 ## Related documentation
 
+- [ORBAT selection page](/documentation_v2/website/frontend/pages/operations/orbat_selection/orbat_selection_page.md)
+  — the page's behaviour, stale links and design.
 - [Event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)
   — the event dossier and its slotting, which this page mounts.

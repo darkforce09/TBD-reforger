@@ -64,6 +64,8 @@ the banner of the viewer's next [deployment](/documentation_v2/glossary.md#deplo
   — the schedule's behaviour and design.
 - [Event hub page](/documentation_v2/website/frontend/pages/operations/event_detail/event_hub_page.md)
   — the event dossier and its slotting.
+- [ORBAT selection page](/documentation_v2/website/frontend/pages/operations/orbat_selection/orbat_selection_page.md)
+  — one mission's slotting on a page of its own.
 - [Deployments page](/documentation_v2/website/frontend/pages/operations/deployments/deployments_page.md)
   — the service record page.
 - [Leaderboards page](/documentation_v2/website/frontend/pages/operations/leaderboards/leaderboards_page.md)
