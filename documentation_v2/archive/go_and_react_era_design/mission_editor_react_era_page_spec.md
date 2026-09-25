@@ -1,3 +1,5 @@
+**Status:** archived — see [documentation_v2/website/frontend/apps/editor/ux_spec.md](/documentation_v2/website/frontend/apps/editor/ux_spec.md)
+
 # Mission Editor (2D Canvas)
 
 > **Live (T-151 / T-159 / T-171 / T-172 / T-173 / T-174 / T-175 / T-176 / T-177 / T-178 / T-179):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk **`--release`** via `cargo xtask mk leptos`). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
@@ -117,7 +119,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M5.26c — [x] T-068.5 Mod equip loadout JSON (`TBD_LoadoutEquipComponent` @ 6400) @ `21ec91e` — mod; see [`t068_5_mod_equip_loadout.md`](/documentation_v2/tickets/specs/t068_5_mod_equip_loadout.md)
 ### M5.26d — [x] T-068.5.1 Visual wear on test NPC (`EquipCloth`/`EquipWeapon` + worn-verify) @ `b233b11` — **not** human player
 ### M5.26e — [x] T-068.6 Phase 1 E2E gate PASS @ 2026-06-27 — [`t068_6_phase1_e2e_gate.md`](/documentation_v2/tickets/specs/t068_6_phase1_e2e_gate.md)
-### M5.25 — [ ] **T-111** lazy chunk residency @ 1M+ / **T-112** GPU viewport cull (`idea` — [`TICKET_BRAINSTORM.md`](../../../TICKET_BRAINSTORM.md#scale))
+### M5.25 — [ ] **T-111** lazy chunk residency @ 1M+ / **T-112** GPU viewport cull (`idea` — [`TICKET_BRAINSTORM.md`](https://github.com/darkforce09/TBD-reforger/blob/fb8445b60c81fd3d99c04708ab41af83a017f4c2/docs/TICKET_BRAINSTORM.md#scale))
 
 ## Test Plan
 
@@ -140,4 +142,4 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 - **[PERF-008] Outliner @ 360k** — **Resolved T-064.** Virtualized ORBAT + Editor Layers; outliner visible on first paint @ ~367k; scrollable 367k rows; T-064.1 scroll-ref hotfix. Spec: [t064_virtualized_outliner.md](/documentation_v2/tickets/specs/t064_virtualized_outliner.md).
 - **[PERF-009] Spatial chunks / bulk paste @ 367k+** — **Partially resolved T-067.** Bulk paste `slot-add-bulk` shipped; pan ~160 fps @ 367k (CPU cull deferred). Lazy RAM + GPU cull @ 1M+ deferred. Spec: [t067_spatial_chunks.md](/documentation_v2/tickets/specs/t067_spatial_chunks.md).
 - **Active slice:** **T-090.1.1.1** Map land-cover · **T-071** ORBAT Manager **ready** (T-092 unblocks). **T-092 shipped** @ `a73224f2`.
-- **Next queued:** **T-092** spawn transform → **T-071** ORBAT → **T-068 Phase 2** → T-069 markers, T-070 vehicles — see [Mission Creator ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) and [TICKET_REGISTRY.md](../../../TICKET_REGISTRY.md).
+- **Next queued:** **T-092** spawn transform → **T-071** ORBAT → **T-068 Phase 2** → T-069 markers, T-070 vehicles — see [Mission Creator ROADMAP](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md) and [TICKET_REGISTRY.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md).

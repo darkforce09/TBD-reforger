@@ -95,6 +95,8 @@ and every write path refuses.
   entry point to the roadmap, the specifications and the decisions.
 - [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) — every feature by area, with its status in the code.
 - [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
-  the layout, the interaction contract and the shortcuts.
+  the layout, the gestures, the shortcuts and the load and save flow.
+- [Mission Creator roadmap](/documentation_v2/website/frontend/apps/editor/mission_creator_roadmap.md)
+  — what the editor ships by area, and the open and deferred work.
 - [Editor gates runbook](/documentation_v2/runbooks/editor_gates.md) — running the headless editor
   gates.

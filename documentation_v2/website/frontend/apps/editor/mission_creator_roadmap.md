@@ -1,14 +1,18 @@
 **Status:** live
 
-# Mission Creator — ROADMAP
+# Mission Creator roadmap
 
-> **Live surface (T-159 / T-171):** [`apps/website/frontend/src/mission_editor.rs`](../../../apps/website/frontend/src/mission_editor.rs) + editor modules on wgpu (`map-engine-render`). React/Deck/Vite/`features/tactical-map` paths below are **ship history**. Conventions: [`WHERE_DOES_X_GO.md`](/documentation_v2/standards/where_does_x_go.md).
+The planning view of the [Mission Creator](/documentation_v2/glossary.md#mission-creator): what the
+editor ships today, area by area, the open work that changes it, grouped into tracks, the work
+deferred for now, and the questions no [ticket](/documentation_v2/glossary.md#ticket) answers yet.
+Every status here is the ticket's `status` field in `.ai/tickets/`; the feature inventory and the
+code READMEs hold the detail.
 
-**Start here.** Single planning view for the 2D mission editor — what is **done**, what **must work**, and links to all supporting documentation.
+## Recommended next work
 
-**Route:** `/missions/:id/edit` · **Code (live):** `apps/website/frontend/src/mission_editor.rs` (+ modules) · **Historical React tree:** `features/mission-creator/` + `tactical-map/` (deleted)
-
-**Open work:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (auto-generated queue, dependencies, ready/queued tickets). Eden parity item detail: [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) (`eden_id` columns).
+`cargo xtask ticket sync` writes the list between the two markers from the whole ticket registry,
+editor and platform tickets alike; `cargo xtask ticket check` fails when a marker is missing. The
+list is never edited by hand.
 
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
@@ -25,517 +29,153 @@
 - **T-937** — Editor data layer: id arrays, undo, persist (queued)
 <!-- ticket-sync:next:end -->
 
----
-
-## Current strategy (updated — 2026-07-19)
-
-**ORBAT + Eden placement:** **[T-180](/documentation_v2/tickets/specs/t180_orbat_eden_program.md) COMPLETE** through **T-180.9** @ `cba837b3` (Stitch ORBAT Manager, side chips, map tint/lines, templates/vehicles, Open Arsenal + derive loadout). Coherency: **T-180.10** · `cargo xtask verify t180`. **T-071.1+ / T-074 / T-147** absorbed — do not re-implement.
-
-**Map-verify gate:** **T-091 / T-092 shipped**; T-090 continues as map engine lane. Hub: [`t090_091_map_terrain_program.md`](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md).
-
-**Next loadout path:** **T-068** (active T-068.11+) → **T-068.13** LOBBY picker — no longer blocked on T-071.
-
-**T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.
-
-### Execution order (recommended)
-
-1. **T-068.11–.14** — compiled loadout + player equip + LOBBY picker ([`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md))
-2. **T-069+** — markers and remaining Eden backlog (see TICKET_LEAD)
-3. Map polish / T-090 residual as needed
-
-See [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) for registry queue.
-
-### Map performance (contract + scale program)
-
-**Contract (engineering plan §4.4):** 60 fps pan/zoom with **200+** pickable slot icons on the flat grid. **Observed regression (2026-06):** ~100–200 slots + pan → ~9 fps. **T-057** is an **interrupt hotfix** — **shipped** (fps acceptance is a manual in-browser check via `FpsCounter`).
-
-**Root causes → T-057 fix (shipped):**
-
-| Layer | Issue | T-057 fix (done) |
-|-------|--------|-----------|
-| React shell | `onHover` → `setCursor` re-renders entire `MissionCreatorPage` every pointer move | ✅ Cursor moved to transient `useMapStore.cursor` (rAF-throttled); only `BottomToolbelt` subscribes. `React.memo` on the panels |
-| Deck picking | `IconLayer` `pickable: true` + `onHover` runs a pick pass over all icons for cursor coords | ✅ Removed `onHover`; cursor unprojected from the mouse on `onPointerMove`. Picking only on click/dbl-click/marquee/drag-start |
-| Pan | `useOrthographicView` `setViewState` every pan frame re-renders `TacticalMap` + children | ✅ `useSelectTool` rAF-coalesces pan to one `setViewState`/frame (layers already memoized) |
-| Gestures | `pickObject` on pointerdown + hover during pan | ✅ Hover picking removed (T-057); **T-063:** rbush `pickNearest`/`pickRect` replaces Deck GPU pick; `slot-icons` not pickable |
-
-**1M–10M editable entities** is the **north star** (Arma 3 reference ~8M map objects); reach it **step-by-step** (not one commit). **Validated (2026-06):** pan/zoom **100+ fps @ 360k** (T-057 + T-059); repeat **6k paste** loops smooth. **Bulk paste — fixed (T-059).** **T-060 shipped** (`b1fd25a`): load partial pass @ ~360k; Save @ ~367k/~142 MB → **201**. **T-061 shipped (good enough):** drag motion ~60 fps @ 360k. **T-062 shipped:** incremental bindings — asset drop, delete (≤10k/batch), meta, editor-layers @ 360k. **T-062.2 shipped:** editor session / alt-tab — no automatic reload overlay after extended background (dev Vite guard + warm session fast path). **T-062.1 shipped:** chunked IDB slot restore — v2 `tbd-mission-persist`; determinate restoring @ ~360k (no 0→300k jump on 2nd+ load). **T-062.1.1 shipped:** Save orbat dedup — editor-only POST; Go derives ORBAT for events. **T-063 shipped:** rbush spatial index — click/marquee pick @ ~367k significantly faster vs Deck GPU pick. **T-064 shipped:** virtualized outliner — scrollable @ ~367k, no DOM explosion; T-064.1 scroll-ref hotfix. **T-065 shipped** (`845bfb2`) — cluster/LOD. **T-066 shipped** (`53bc2a8`) — worker compile + `pickMapSnapshot`; Save 201 @ ~367k. **T-067 shipped** — bulk-paste `slot-add-bulk` + chunk scaffolding; CPU viewport cull deferred (T-067.0.1). Remaining @ 1M+: lazy RAM (T-067.1) + GPU cull. Phased track:
-
-| Tag | Focus | Entity target | FPS / UX target |
-|-----|-------|---------------|-----------------|
-| **T-057** ✅ | Hotfix | 200+ | ≥55 fps pan/zoom — **shipped**. Spec: [`t057_map_performance_hotfix.md`](/documentation_v2/tickets/specs/t057_map_performance_hotfix.md) |
-| **T-058** ✅ | Scale prep | — | Toolbelt **OBJ** + **SEL** — **shipped**. Spec: [`t058_entity_count_readout.md`](/documentation_v2/tickets/specs/t058_entity_count_readout.md) |
-| **T-059** ✅ | Bulk ops | 360k+ paste/pan | Batch O(n) paste; selection/outliner caps — **shipped** (validated **360k @ 100+ fps** pan). Spec: [`t059_bulk_paste_operations.md`](/documentation_v2/tickets/specs/t059_bulk_paste_operations.md) |
-| **T-060** ✅ | Fast load + save | 10k–1M | Load gate + bulk sync + overlay; chunked compile + Save progress; **256 MB** version POST + **413** — **shipped** `b1fd25a`. Spec: [`t060_fast_initial_load.md`](/documentation_v2/tickets/specs/t060_fast_initial_load.md) |
-| **T-060.1.1** ✅ | IDB progress | 300k+ | `restoring` phase + `yieldToUi` — **shipped**; legacy v1 only (0→300k jump) — **superseded by T-062.1 v2** |
-| **T-060.1.2** ✅ | Save upload fixes | 300k+ | E1/E2/E3b — **shipped**. Spec: [`t060_1`](/documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md) §T-060.1.2 |
-| **T-060.1.3** ✅ | Save observability | 300k+ | **Shipped** — measured size, debug panel, failure diagnosed @ 367k. Spec: [`t060_1`](/documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md) §T-060.1.3 |
-| **T-060.1.4** ✅ | Fix mid-upload | 300k+ | **Shipped** — hardened skip + production-like IT; browser ~142 MB + curl 140 MB → 201. Spec: [`t060_1`](/documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md) §T-060.1.4 |
-| **T-061** | Drag-move | 360k drag-move | **Shipped (good enough)** — dual IconLayer + `slotIconCache` + slot fast path. Spec: [`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md) |
-| **T-061.0** | (sub) Motion | 360k drag sustained | **Shipped** — ~60 fps sustained @ 360k |
-| **T-061.0.1** | (sub) Boundaries | 360k pickup/release | **Shipped** — O(k) cache + incremental slot observer |
-| **T-061.1** | Optional | 50k–500k+ | **Deferred** — typed-array IconLayer; see §Deferred mega optimizations |
-| **T-062** | Bindings | 50k+ | **Shipped** — interactive incremental `bindings.ts` + bulk delete @ 360k. Spec: [`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md) |
-| **T-062.0** | (sub) Classifier | 360k edits | **Shipped** — `incPatchPlan` + O(k) store/icon-cache patches |
-| **T-062.0.1** | (sub) Bulk delete | ≤10k/batch | **Shipped** — batched `removeEntities`, `slotCount`/`slotsRevision`, `REMOVE_PATCH_CAP` 10k |
-| **T-062.2** | (sub) Session | Alt-tab / reload | **Shipped** — Vite reload guard + warm session + background yields. Spec: [`t062_2_editor_session_persistence.md`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md) |
-| **T-062.1** ✅ | Load | 360k+ | Chunked IDB slot restore (v2 `tbd-mission-persist`) — **shipped**; spec: [`t062_1`](/documentation_v2/tickets/specs/t062_1_idb_streaming_load.md) |
-| **T-062.1.1** ✅ | Save | 360k+ | Save orbat dedup (editor-only POST; Go derives ORBAT) — **shipped**; spec: [`t062_1_1`](/documentation_v2/tickets/specs/t062_1_1_batch_save.md) |
-| **T-063** ✅ | Pick | 50k+ pick | Spatial index (rbush) for pick/marquee — **shipped**; spec: [`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md) |
-| **T-064** ✅ | Outliner | 50k+ UI | Virtualized outliner — **shipped**; spec: [`t064_virtualized_outliner.md`](/documentation_v2/tickets/specs/t064_virtualized_outliner.md) |
-| **T-065** ✅ | Cluster/LOD | 100k–1M | Cluster/LOD extreme zoom — **shipped**; spec: [`t065_cluster_lod.md`](/documentation_v2/tickets/specs/t065_cluster_lod.md) |
-| **T-066** ✅ | Worker | 1M+ export | Worker offload — **shipped** (T-066.1 `pickMapSnapshot`); spec: [`t066_worker_compile.md`](/documentation_v2/tickets/specs/t066_worker_compile.md) |
-| **T-067** | Chunks | 1M–10M | **Shipped** — bulk paste + scaffolding; CPU cull deferred ([`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md)) |
-| **T-110** | Terrain base | 1M–10M props | Binary world base + sparse terrain deltas — **future**; see [`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md) |
-
-**Dual-layer north star (T-110, not current work):** **Terrain base** (millions of read-mostly map objects → binary + sparse deltas) is separate from **authored mission entities** (ORBAT slots, markers → Y.Doc + T-061..T-062). Do **not** replace the mission layer with terrain deltas. External “Base + Delta” proposal adopted **only** for the terrain track after T-067 + **T-068+**.
-
-**Milestone ladder:**
-
-| Objects | Pan/zoom | Bulk paste | Load / Save |
-|---------|----------|------------|-------------|
-| 10k–360k | ✅ 100+ fps | ✅ T-059 | ✅ T-060 (load partial pass; Save ~142 MB → 201) |
-| 1M ideal | T-061–T-065 | ✅ T-059 | T-060 + T-062.1 + **≤10 s** stretch (**T-066** worker) |
-| 1M–10M props | T-061–T-067 + **T-110** | ✅ T-059 | Terrain base + deltas; mission patch save |
-
-**T-057–T-067 shipped.** **T-068+** Eden backlog → **T-110** terrain base (optional).
-
-Spec: [`t057_map_performance_hotfix.md`](/documentation_v2/tickets/specs/t057_map_performance_hotfix.md) (shipped T-057).
-
----
-
-## Documentation (read from here)
-
-| Doc | When to open it |
-|-----|-----------------|
-| **[`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)** | **Open work** — ready/queued tickets, dependency graph |
-| **[`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md)** | Locked UX decisions, agent phase history, copy-paste agent prompt |
-| **[`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)** | Per-feature code-evidenced status (FEDS) |
-| **[`engineering_plan.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md)** | Y.Doc schema, compiler, workers, engineering phases 0–9 |
-| **[`ux_spec.md`](ux_spec.md)** | Eden docked-shell UX contract |
-| **[`problem_statement.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_problem_statement.md)** | Why 200-slot GPU, DEM, nesting, registry matter |
-| **[`reference/feds_schema.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/feds_schema.md)** | FEDS v2 feature-entry schema |
-| **[`eden/interactions.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md)** | Eden interaction reference |
-| **[`eden/ui_anatomy.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md)** | Panel-by-panel Eden UI |
-| **[`eden/attributes.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md)** | Attribute catalog |
-| **[`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)** | Eden parity backlog (`eden_id` ↔ ticket mapping) |
-| **[`eden/wiki_manifest.yaml`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml)** | Scrape manifest — 28 Bohemia Eden Editor wiki pages |
-| **[`artifacts/eden-wiki/`](/.ai/artifacts/eden-wiki)** | **Cached wiki markdown** (generated; do not hand-edit) |
-| **[`scripts/tools/scrape-eden-wiki.mjs`](../../../scripts/website/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
-| **[`artifacts/eden-feds-draft.jsonl`](/.ai/artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
-| **[`artifacts/README.md`](/.ai/artifacts/README.md)** | Generated artifacts policy |
-| **[`t058_entity_count_readout.md`](/documentation_v2/tickets/specs/t058_entity_count_readout.md)** | **T-058** — Toolbelt OBJ/SEL entity counts (shipped) |
-| **[`t059_bulk_paste_operations.md`](/documentation_v2/tickets/specs/t059_bulk_paste_operations.md)** | **T-059** — Bulk paste/delete at scale (shipped) |
-| **[`t060_fast_initial_load.md`](/documentation_v2/tickets/specs/t060_fast_initial_load.md)** | **T-060** — Fast load + save (**shipped** `b1fd25a`) |
-| **[`t060_1_scale_load_save_completion.md`](/documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md)** | **T-060.1 + T-060.1.1 + T-060.1.2 + T-060.1.3 + T-060.1.4** — Load/save @ 360k (**shipped**) |
-| **[`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md)** | **T-061** — Drag-move @ 360k (**shipped — good enough**) |
-| **[`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md)** | **T-062** — Incremental bindings @ 360k (**shipped**) |
-| **[`t062_2_editor_session_persistence.md`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md)** | **T-062.2** — Editor session / alt-tab resilience (**shipped**) |
-| **[`t062_1_idb_streaming_load.md`](/documentation_v2/tickets/specs/t062_1_idb_streaming_load.md)** | **T-062.1** — Chunked IDB slot restore @ 360k (**shipped**) |
-| **[`t062_1_1_batch_save.md`](/documentation_v2/tickets/specs/t062_1_1_batch_save.md)** | **T-062.1.1** — Save orbat dedup (**shipped**) |
-| **[`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md)** | **T-063** — rbush spatial index for pick/marquee (**shipped**) |
-| **[`t064_virtualized_outliner.md`](/documentation_v2/tickets/specs/t064_virtualized_outliner.md)** | **T-064** — Virtualized outliner @ 100k–360k+ leaves (**shipped**) |
-| **[`t065_cluster_lod.md`](/documentation_v2/tickets/specs/t065_cluster_lod.md)** | **T-065** — Cluster / LOD @ extreme zoom (**shipped** `845bfb2`) |
-| **[`t066_worker_compile.md`](/documentation_v2/tickets/specs/t066_worker_compile.md)** | **T-066** — Worker compile + version blob (**shipped** — T-066.1 `pickMapSnapshot`) |
-| **[`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md)** | **T-067** — Spatial chunks / bulk-paste scale (**shipped**) |
-| **[`t057_map_performance_hotfix.md`](/documentation_v2/tickets/specs/t057_map_performance_hotfix.md)** | **T-057** — Map perf hotfix: ≥55 fps pan/zoom @ 200+ slots (shipped) |
-| **[`t056_copy_paste.md`](/documentation_v2/tickets/specs/t056_copy_paste.md)** | **T-056** — Ctrl+C/V copy-paste at cursor (slots) (shipped) |
-| **[`t055_asset_browser_search.md`](/documentation_v2/tickets/specs/t055_asset_browser_search.md)** | **T-055** — Asset browser search (filters Factions tree) (shipped) |
-| **[`t054_attributes_entry_points.md`](/documentation_v2/tickets/specs/t054_attributes_entry_points.md)** | **T-054** — Attributes entry points (map native dblclick + ORBAT dbl-click) (shipped) |
-| **[`t053_additive_select.md`](/documentation_v2/tickets/specs/t053_additive_select.md)** | **T-053** — Ctrl/Cmd+LMB additive (toggle) select (shipped) |
-| **[`t052_undo_shortcuts.md`](/documentation_v2/tickets/specs/t052_undo_shortcuts.md)** | **T-052** — Ctrl/Cmd+Z/Y undo-redo keyboard (shipped) |
-| **[`t050_cursor_z_readout.md`](/documentation_v2/tickets/specs/t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
-| **[`t049_terrain_title_position.md`](/documentation_v2/tickets/specs/t049_terrain_title_position.md)** | **T-049** — Terrain + title hydrate + numeric position (shipped) |
-| **[`t048_library_create_dialog.md`](/documentation_v2/tickets/specs/t048_library_create_dialog.md)** | T-048 — Library create dialog (shipped) |
-| [`documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md`](/documentation_v2/website/frontend/pages/mission_hub/library/mission_library_page.md) | Surface spec for `/missions` (+ create dialog T-048) |
-| [`documentation_v2/website/frontend/apps/editor/ux_spec.md`](/documentation_v2/website/frontend/apps/editor/ux_spec.md) | Surface spec for `/missions/:id/edit` |
-| [`documentation_v2/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md) | Archived — wizard moved into library (T-048) |
-| **[`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub (**Phase 1 shipped**; active **T-068.7**) |
-| [`t068_5_1_visual_equip_fix.md`](/documentation_v2/tickets/specs/t068_5_1_visual_equip_fix.md) | **T-068.5.1 shipped** — visual wear on test NPC @ `b233b11` |
-| [`t068_6_phase1_e2e_gate.md`](/documentation_v2/tickets/specs/t068_6_phase1_e2e_gate.md) | **T-068.6 shipped** — Phase 1 E2E sign-off PASS @ 2026-06-27 |
-| [`t068_2_registry_api.md`](/documentation_v2/tickets/specs/t068_2_registry_api.md) | **T-068.2 shipped** — `GET /api/v1/registry`, seed, import CLI |
-| [`t068_3_palette_wire.md`](/documentation_v2/tickets/specs/t068_3_palette_wire.md) | **T-068.3 shipped** — Factions palette → live registry |
-| [`t068_4_dumb_loadout_ui.md`](/documentation_v2/tickets/specs/t068_4_dumb_loadout_ui.md) | **T-068.4 shipped** — Arsenal dumb loadout download @ `a85f16b` |
-| [`t068_5_mod_equip_loadout.md`](/documentation_v2/tickets/specs/t068_5_mod_equip_loadout.md) | **T-068.5 shipped** — mod equip scaffold @ `21ec91e` |
-| [`t068_asset_registry.md`](/documentation_v2/tickets/specs/t068_asset_registry.md) | Legacy stub → redirects to program hub |
-| **[`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md)** | **T-110** — Terrain base + mission layers (future; Base + Delta for props only) |
-| [`CLAUDE.md`](/CLAUDE.md) §Status | **ACTIVE: T-068.7**; Phase 1 T-068.0.1–T-068.6 shipped |
-
----
-
-## Terminology (fixes the “kits vs armory” confusion)
-
-| Term | What it is today | Where |
-|------|------------------|-------|
-| **Mission Armory** | Aggregate briefing list (“M16A2 Rifle ×45”) per faction | Backend `MissionArmory` + `GET/PUT /missions/:id/armory` — **already exists**, separate from the editor |
-| **ORBAT slot `loadout`** | Short string on each slot in export (`"L85A3 + GL"`) | `json_payload.orbat[].slots[].loadout` — compiler writes `''` today |
-| **Loadout (editor model)** | Full per-slot gear graph: uniform, vest, weapons, mags, attachments | Y.Doc `loadouts` + `items` maps in schema — **UI not built** |
-| **Master Item Registry** | Every valid `resource_name` + slot rules + icons | **Phase 1 shipped** — API + palette + dumb export + **test NPC mod equip**; **human player loadout** = T-068.11–T-068.12; **mod slot picker** = T-068.13; ship gate **T-068.14** |
-| **Loadout Forge** | Web UI to edit a slot’s loadout | **Dumb export shipped @ T-068.4** (`AttributesModal` Arsenal tab); smart Forge **T-068.10** |
-
-**Arma Reforger** (game + modpack entity/workshop data) = **data source** for the loadout program, not something the map editor implements. The website needs an **ingest pipeline + Postgres registry**, then the editor **reads** it.
-
----
-
-## DONE (code-evidenced, 2026-06-20)
-
-### Editor shell & routing
-- Lazy route `/missions/:id/edit` (`mission_maker+`, full-bleed)
-- Aegis glass UI: top strip (+ **ORBAT Manager**), left sidebar (**Editor Layers** only — T-177/T-178), right asset palette, bottom toolbelt; continuous clickable YouTube-style tree guides (T-178)
-- Forest canopy: island TBDD density shader (`fs_forest_density`) — T-178/T-179 (Linear soft fill + MS outline hairlines; `bins_ok===625`); no progressive mesh fill / no 32 m landcover forest wash
-- Mission Settings dialog (time, weather, view distance, thermals)
-- Attributes modal (Identity / Transform editable / States stub / **Arsenal dumb loadout @ T-068.4**)
-
-### Map engine (partial — T-049, T-050, T-057)
-- Deck.gl orthographic viewport, Arma meter coords (`flipY: false`, identity projection)
-- Terrain **definitions** (Everon 12800×12800 m, Arland, custom bounds)
-- Vector grid base map (no satellite/topo imagery yet)
-- Pan/zoom with bounds clamp; cursor X/Y/Z in toolbelt (Z=0 flat until DEM, T-050)
-- Icon layer for placed **slots**; selection highlight; marquee select + live overlay
-- Drag-move slots with live preview + Y.Doc commit; undo/redo (buttons + keyboard Cmd/Ctrl+Z/Y, T-052)
-
-### Placement (partial — slots only)
-- Mock asset palette (Factions tab); HTML5 drag-drop → `addSlot`
-- Auto squad/faction on first drop; active Editor Layer targets drops
-- Double-click slot in **Editor Layers** tree → Attributes
-
-### State & persistence (partial)
-- Y.Doc normalized store + Zustand mirror + **v2 chunked IDB** (`tbd-mission-persist`; legacy y-indexeddb migrate-once — T-062.1)
-- `compileMission` → `json_payload` superset (`orbat[]` + `editor` block with positions)
-- Semver Save Version to API; IndexedDB vs server conflict dialog
-- Hydrate from server `json_payload` (or lossy ORBAT-only fallback)
-
-### Documentation & Eden wiki research (T-042)
-- FEDS inventory ([`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md)), Eden reference ([`eden/`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/))
-- **Arma 3 Eden Editor wiki scrape:** 28 pages in [`artifacts/eden-wiki/`](/.ai/artifacts/eden-wiki) via [`eden/wiki_manifest.yaml`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml) + [`scrape-eden-wiki.mjs`](../../../scripts/website/tools/scrape-eden-wiki.mjs); feeds [`eden/interactions.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/interactions/README.md), [`eden/ui_anatomy.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/ui_anatomy.md), [`eden/attributes.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/attributes.md), [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
-
----
-
-## DONE — T-060 (Fast load + save — code landed; acceptance → T-060.1)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Load/save foundation** | [`t060_fast_initial_load.md`](/documentation_v2/tickets/specs/t060_fast_initial_load.md) | ✅ **256 MB** version POST (`bodylimit.go`); bulk-sync coalesce; `docStatus` + overlay; deferred sidebar; `compileMissionWithProgress` + Save phases + 413/409 surfacing. Completion: [`t060_1_scale_load_save_completion.md`](/documentation_v2/tickets/specs/t060_1_scale_load_save_completion.md) (**shipped**). |
-
-## DONE — T-059 (Bulk paste/delete at scale)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **10k paste without freeze** | [`t059_bulk_paste_operations.md`](/documentation_v2/tickets/specs/t059_bulk_paste_operations.md) | ✅ Batch O(n) `pasteSlots`; selection cap 500; outliner virtualization (T-064 supersedes T-059 leaf cap). **Live validated:** repeat **6k paste** smooth; **360k objects @ 100+ fps** pan/zoom. Chunked paste not needed. |
-
-## DONE — T-058 (Toolbelt entity count readout)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **OBJ/SEL counts** | [`t058_entity_count_readout.md`](/documentation_v2/tickets/specs/t058_entity_count_readout.md) | ✅ Bottom toolbelt shows **OBJ** = total placed slots (memoized `selectSlotCount(slotsById)` in `selectors.ts`, re-exported from `index.ts`) + **SEL** = `selection.ids.length` when `kind==='slot'` else 0, right of the X/Y/Z block (mono `tabular-nums`, plain integers). Both subscribe inside the already-memoized `BottomToolbelt`, so they update on add/remove/paste/delete/selection but **not** on cursor move (T-057 channel untouched). Slots only; vehicles/markers join in **T-068+**. No Deck/schema/backend change. |
-
-## DONE — T-057 (Map performance hotfix)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Map perf hotfix** | [`t057_map_performance_hotfix.md`](/documentation_v2/tickets/specs/t057_map_performance_hotfix.md) | ✅ Restores ≥55 fps pan/zoom @ 200+ slots (manual `FpsCounter` check): cursor → transient `useMapStore.cursor` (rAF-throttled, only `BottomToolbelt` re-renders on move); drop Deck `onHover` (self-unproject for toolbelt coords); pan rAF-coalesce in `useSelectTool`; `React.memo` on `TacticalMap`, sidebars, toolbelt, modal. **UX trade:** constant `crosshair` cursor (no pointer glyph over icons). All interactions unchanged (T-053–T-056). |
-
-## DONE — T-056 (copy-paste)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Ctrl+C/V copy-paste** | [`t056_copy_paste.md`](/documentation_v2/tickets/specs/t056_copy_paste.md) | ✅ Ctrl/Cmd+C snapshots the slot selection to an in-editor clipboard (`ClipboardSlot[]` ref); Ctrl/Cmd+V pastes at the map cursor preserving relative layout (centroid → cursor; off-map → +20m/+20m nudge). New batched `pasteSlots(md, clip, { anchorAt, layerId })` in `state/ydoc.ts` (one transact; re-attaches to source squad or default, files into active layer, clamps to terrain bounds, returns new ids → selection). Two keydown branches in `MissionCreatorPage` behind the form-field guard (native text copy/paste preserved); cursor read via ref. Scope: copy+paste, slots only (Cut / paste-orig out). Closes gap_analysis **ACTION-COPY-001** / **ACTION-PASTE-001**. |
-
-## DONE — T-055 (asset browser search)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Asset browser search** | [`t055_asset_browser_search.md`](/documentation_v2/tickets/specs/t055_asset_browser_search.md) | ✅ `AssetBrowser` (Factions tab) gains a search field over a recursive `filterCatalog(ASSET_CATALOG, q)` (case-insensitive label substring; folder kept on self-match → full subtree, else on descendant match → filtered children; retained folders force-expanded). `TreeView` keyed on the query so its mount-time expand pass re-runs and reveals matches; empty result → "No assets match"; X/Esc clears. Filtered leaves still drag-to-place. One real file — no `TreeView`/`ASSET_CATALOG`/store change. Closes gap_analysis **RIGHT-SEARCH-001**. |
-
-## DONE — T-054 (Attributes entry points)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Attributes entry points** | [`t054_attributes_entry_points.md`](/documentation_v2/tickets/specs/t054_attributes_entry_points.md) | ✅ Map double-click moved off the hand-rolled 350ms `lastClick` timer to a native `onDoubleClick` on the container + `deckRef.pickObject('slot-icons')` → `onEntityActivate`; `OrbatSection` gains `onActivateSlot` (threaded via `LeftSidebar`) and passes `onActivate` to its `TreeView` so an ORBAT slot row's dbl-click opens Attributes — mirrors `EditorLayersSection`. Multi-select suppression (`ids.length <= 1`) and T-053 Ctrl/Cmd toggle unchanged. Closes gap_analysis **SEL-ORBAT-DBL-001** (and hardens **SEL-MAP-004**). |
-
-## DONE — T-053 (additive select)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Ctrl/Cmd+LMB additive select** | [`t053_additive_select.md`](/documentation_v2/tickets/specs/t053_additive_select.md) | ✅ `TacticalMap onClick` reads `event.srcEvent.ctrlKey/metaKey`; Ctrl/Cmd-click toggles a slot in/out of `selection.ids` (empties → `none`); Ctrl/Cmd + empty-click preserves selection. **Shift unbound** (reserved for range-select); marquee still replaces. One file, no store/`useSelectTool` change. Closes gap_analysis **SEL-MOD-001**. |
-
-## DONE — T-052 (undo keyboard)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](/documentation_v2/tickets/specs/t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
-
-**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 Phase 1 shipped** @ 2026-06-27; **active T-068.7**. **Human player loadout:** T-068.11 (compiler) → T-068.12 (mod equip). **Mod slot picker POC:** T-068.13. **`ticket done T-068` @ T-068.14.** Production roster picker: **T-114**.
-
----
-
-## DONE — T-061 (drag-move @ 360k)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Drag-move perf** | [`t061_drag_move_hotfix.md`](/documentation_v2/tickets/specs/t061_drag_move_hotfix.md) | ✅ T-061.0: dual IconLayer + split drag state + rAF delta (~60 fps sustained @ 360k). ✅ T-061.0.1: `slotIconCache` O(k) boundaries + bindings slot fast path. **Good enough** for Eden-blocking work; mega optimizations deferred (§Deferred mega optimizations). |
-
----
-
-## DONE — T-050 (cursor Z readout)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Cursor X/Y/Z** | [`t050_cursor_z_readout.md`](/documentation_v2/tickets/specs/t050_cursor_z_readout.md) | ✅ Toolbelt **CUR** mode shows cursor **X/Y/Z** (was X/Y + dimmed `—`). `onCursorMove` payload + `TacticalMap` `onHover` carry `z: info.coordinate[2] ?? 0`; **Z = 0** on the flat map (real value, not placeholder), off-map → `—`. SEL mode unchanged. |
-
----
-
-## DONE — T-049 (terrain, title, numeric position)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Terrain + title + numeric position** | [`t049_terrain_title_position.md`](/documentation_v2/tickets/specs/t049_terrain_title_position.md) | ✅ `meta.terrain` → `<TacticalMap>` viewport (key-remount on change; **MAP-TERRAIN-001**); `applyMissionRowMeta` hydrates row title/terrain/env on load (**DATA-HYD-TITLE-001**); `updateSlotPosition` → editable X/Y/Z/rotation in Attributes Transform (**ATTR-FIELD-OBJ-POSITION**), selection-aware toolbelt readout |
-
-**T-091 shipped** @ `dde589e` (DEM + Z). **T-090.1** aligned tiles still pending. Does not include registry/markers/vehicles (**T-068+**).
-
----
-
-## DONE — T-048 (platform UX)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Create from Library** | [`t048_library_create_dialog.md`](/documentation_v2/tickets/specs/t048_library_create_dialog.md) | ✅ `CreateMissionDialog` on `/missions` (header button + My-Missions empty-state CTA + Cmd/Ctrl+N, `mission_maker+`); `/missions/create` route + sidebar nav removed |
-
-"Mission Creator" labels remain on the dossier CTA + `/missions/:id/edit` breadcrumb (only the standalone wizard tab was removed).
-
----
-
-## NOT DONE — Map & positioning (**T-090 / T-091 / T-092** active program)
-
-Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_program.md`](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md).
-
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| **Aligned map imagery** (Satellite + Map basemap views, same origin as Reforger) | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified @ `.2.8`; Map cartographic pyramid + radio @ **T-090.1.1**. [`t090_basemap_dual_view.md`](/documentation_v2/tickets/specs/t090_basemap_dual_view.md). |
-| **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
-| **DEM loader / `sampleElevation`** | **Done (T-091.1)** @ `2c56c2e` | `tactical-map/dem/*`; consumed by T-091.2. |
-| **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `cargo xtask ci verify-terrain-strict` PASS. |
-| **Z on place & move** (sample DEM at x,y) | **Done (T-091.2)** @ `dde589e` | `terrainZ` in `addSlot` / `pasteSlots` / `moveEntities`; Attributes X/Y re-sample. |
-| **Z in UI** (toolbelt + Attributes, editable) | **Done (T-091.2)** @ `dde589e` | CUR/SEL + X/Y/Z @ 3 dp; hillshade + grid toggles in Mission Settings. |
-| **Satellite / Map basemap views** | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified bundle + Map cartographic pyramid; Mission Settings **Satellite | Map** switch. Rebuild: `cargo xtask ci map-water-everon` / `cargo xtask ci map-cartographic-everon`. [`t090_basemap_dual_view.md`](/documentation_v2/tickets/specs/t090_basemap_dual_view.md). |
-| **Typed world objects** (roads, trees, buildings on map) | **T-090.2–.5** — spec ready | Taxonomy → Workbench export → Z audit → Deck layers. Eden UX ref: [`t090_eden_map_reference.md`](/documentation_v2/tickets/specs/t090_eden_map_reference.md). |
-| **Z burial / floating props** | **T-090.4** + **T-090.6** — automated @ 1M | Phase A: pivot vs DEM. Phase B: OBB samples + `visibleAboveGroundPct` (no manual verify). |
-| **Building floor selector** | **T-129** — idea | Explicit out of T-090 scope. |
-| **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
-| **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
-| **Mod spawn parity** (x/z/y/headingDeg) | **Done (T-092)** @ `a73224f2` | Schema 1.2 optional `y`; `GET /api/v1/missions/:id/compiled`; mod loader v1 + `X-Service-Token`; wb_play E2E PASS. Hub: [`t092_spawn_transform_program.md`](/documentation_v2/tickets/specs/t092_spawn_transform_program.md). |
-| **Export contract verified** | **Done (T-092.2)** @ `a73224f2` | `/compiled` validates against `mission.schema.json`; mod round-trip @ 4 slots. |
-| **Title hydrate from API** | **Done (T-049)** | `applyMissionRowMeta` applies the mission row `title` (+ terrain/env) to `meta` on load, including empty-`json_payload` missions. No PATCH-back (deferred **T-051**). |
-| **Autosave to mission version** | **Partial** | Save Version works; continuous autosave debounce not fully wired per [`engineering_plan.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md). |
-
-**Accuracy note:** Deck.gl `unproject` is exact in **world meters** for the defined terrain bounds. “Off by 10%” failures usually mean **(1)** map tiles not aligned to world origin, **(2)** wrong terrain bounds vs game, or **(3)** Z always zero. Fix aligned tiles + DEM + numeric edit before tuning icons.
-
----
-
-## DONE — T-068.4 (Arsenal dumb loadout UI)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Arsenal tab dumb export** | [`t068_4_dumb_loadout_ui.md`](/documentation_v2/tickets/specs/t068_4_dumb_loadout_ui.md) | ✅ `loadoutExport.ts` + `AttributesModal` `ArsenalTab` — 4 registry gear dropdowns + **Download loadout JSON**; character-only guard; stub removed. Tag **T-068.4** @ `a85f16b`. Closes **ATTR-TAB-004** (dumb export). |
-
----
-
-## DONE — T-068.5 (mod equip scaffold)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Mod loadout equip scaffold** | [`t068_5_mod_equip_loadout.md`](/documentation_v2/tickets/specs/t068_5_mod_equip_loadout.md) | ✅ `TBD_LoadoutEquipComponent.c` — profile JSON → **test NPC** @ 6400. Tag **T-068.5** @ `21ec91e`. Visual wear fixed in **T-068.5.1**. |
-
----
-
-## DONE — T-068.5.1 (visual wear on test NPC)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Visual wear fix** | [`t068_5_1_visual_equip_fix.md`](/documentation_v2/tickets/specs/t068_5_1_visual_equip_fix.md) | ✅ `EquipCloth`/`EquipWeapon` + worn-verify. Test **NPC** dressed @ spawn. Tag **T-068.5.1** @ `b233b11`. **Not** human player. |
-
----
-
-## DONE — T-068.6 (Phase 1 E2E gate)
-
-| Item | Spec | Deliverable |
-|------|------|-------------|
-| **Phase 1 sign-off** | [`t068_6_phase1_e2e_gate.md`](/documentation_v2/tickets/specs/t068_6_phase1_e2e_gate.md) | ✅ E1–E12 PASS @ 2026-06-27. Phase 2 approved. |
-
----
-
-## IN PROGRESS — T-068 Virtual Arsenal (Phase 2)
-
-| Slice | Spec | Status |
-|-------|------|--------|
-| **T-068.7** | [`t068_7_compat_matrix_spec.md`](/documentation_v2/tickets/specs/t068_7_compat_matrix_spec.md) | **active** — compat matrix spec (cursor-docs) |
-| **T-068.8** | [`t068_8_workbench_compat_export.md`](/documentation_v2/tickets/specs/t068_8_workbench_compat_export.md) | queued |
-| **T-068.9** | [`t068_9_registry_worker_ingest.md`](/documentation_v2/tickets/specs/t068_9_registry_worker_ingest.md) | queued |
-| **T-068.10** | [`t068_10_smart_forge_ui.md`](/documentation_v2/tickets/specs/t068_10_smart_forge_ui.md) | queued |
-| **T-068.11** | [`t068_11_compiler_loadout_export.md`](/documentation_v2/tickets/specs/t068_11_compiler_loadout_export.md) | queued — per-slot loadout in compiled JSON |
-| **T-068.12** | [`t068_12_mod_player_loadout_equip.md`](/documentation_v2/tickets/specs/t068_12_mod_player_loadout_equip.md) | queued — **mod:** dress **human player** on deploy |
-| **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](/documentation_v2/tickets/specs/t068_13_mod_slotting_screen_poc.md) | queued — **mod:** LOBBY slot picker (production UI) |
-| **T-068.14** | [`t068_14_phase2_e2e_gate.md`](/documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md) | queued — human E2E → `ticket done T-068` |
-| **T-114** | platform mod queue | queued after **T-068.13** + **T-118** — roster-synced picker (**not** full web ORBAT) |
-
-### Phase 1 (shipped @ 2026-06-27)
-
-| Slice | Spec | Status |
-|-------|------|--------|
-| **T-068.0.1** | [`t068_0_1_registry_schemas.md`](/documentation_v2/tickets/specs/t068_0_1_registry_schemas.md) | ✅ shipped `2487d59` |
-| **T-068.1** | [`t068_1_workbench_flat_export.md`](/documentation_v2/tickets/specs/t068_1_workbench_flat_export.md) | ✅ shipped `ca4f2cd` |
-| **T-068.2** | [`t068_2_registry_api.md`](/documentation_v2/tickets/specs/t068_2_registry_api.md) | ✅ shipped `4c609fe` |
-| **T-068.3** | [`t068_3_palette_wire.md`](/documentation_v2/tickets/specs/t068_3_palette_wire.md) | ✅ shipped `da78452` |
-| **T-068.4** | [`t068_4_dumb_loadout_ui.md`](/documentation_v2/tickets/specs/t068_4_dumb_loadout_ui.md) | ✅ shipped `a85f16b` |
-| **T-068.5** | [`t068_5_mod_equip_loadout.md`](/documentation_v2/tickets/specs/t068_5_mod_equip_loadout.md) | ✅ shipped `21ec91e` |
-| **T-068.5.1** | [`t068_5_1_visual_equip_fix.md`](/documentation_v2/tickets/specs/t068_5_1_visual_equip_fix.md) | ✅ shipped `b233b11` |
-| **T-068.6** | [`t068_6_phase1_e2e_gate.md`](/documentation_v2/tickets/specs/t068_6_phase1_e2e_gate.md) | ✅ E2E PASS |
-
-Hub: [`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md)
-
----
-
-## ORBAT — web status (honest)
-
-**Mission Creator ORBAT authoring shipped via T-180** (hub [`t180_orbat_eden_program.md`](/documentation_v2/tickets/specs/t180_orbat_eden_program.md)). T-008–T-010 remain Event attach + inline claim. Standardization UI deferred (T-180 L8).
-
-| Area | Status | Ticket |
-|------|--------|--------|
-| MC left ORBAT tree | **Removed** (T-177 / T-071.0) — Editor Layers only | — |
-| Squad graph / place / refile / SL / lines / dock chips | **Shipped** | **T-180.1–.6** |
-| ORBAT Manager (Stitch) + templates/vehicles + Open Arsenal | **Shipped** | **T-180.7–.9** |
-| Event slotting UX + admin | **Partial** | **T-118** |
-| Mod slot picker (verify kits) | **Not built** | **T-068.13** (requires **T-092.2** ✓) |
-
-**T-068.13** requires compiled mod `slots[]` (**T-092.2** ✓). Gate: `cargo xtask verify t180`.
-
----
-
-## NOT DONE — T-068+ Eden backlog
-
-Required to place **real objects**, not just generic slots. **Queue and dependencies:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **Per-feature status:** [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
-
-| Ticket | Requirement | Status |
-|--------|-------------|--------|
-| **T-068** | Virtual Arsenal — through **T-068.10**; **T-068.11** compiled loadout next | **Active T-068.11** — [`t068_virtual_arsenal_program.md`](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md) |
-| **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Deferred** (data lane first — **T-150**) — [`t069_markers_on_map.md`](/documentation_v2/tickets/specs/t069_markers_on_map.md) |
-| **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
-| **T-071** | ORBAT Manager — **.0** ✅ via T-177; **.1+** via **T-180** | **Shipped / superseded** — [`t180_orbat_eden_program.md`](/documentation_v2/tickets/specs/t180_orbat_eden_program.md) |
-| **T-072** | Ctrl multi-place | **Queued** |
-| **T-073** | Shift + map rotation | **Queued** |
-| **T-074** | Faction submode / catalog filter | **Absorbed by T-180.5** (deferred) |
-| **T-075** | Spacebar flyTo vs widget | **Queued** |
-| **T-076** | Vehicle crew UI | **Queued** |
-| **T-077+** | Compositions, triggers, waypoints, … | **Queued** — see TICKET_LEAD |
-
-**T-068 Factions palette @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** dumb loadout export shipped (`a85f16b`). **T-068.5.1** mod equip on **test NPC** shipped (`b233b11`) — **not** human player. **T-068.6** Phase 1 E2E PASS. **Phase 2 paused @ T-068.7**. Full attachment compatibility rules remain Phase 2.
-
----
-
-## NOT DONE — Loadouts & registry (future program)
-
-**Hardest program.** Separate from “put a unit on the map.” Not ticketed on the active queue yet.
-
-### What “complete” means
-- Every gear variant in DB: uniforms, vests, weapon variants, ammo, attachments, grenades, items, vehicle inventories
-- Slot compatibility validation (cannot put X on Y)
-- Loadout Forge UI (paper doll + search grid)
-- Per-slot `loadoutId` → resolved export in `json_payload.loadouts` + human string in `orbat[].loadout`
-- Optional: sync with **Mission Armory** totals (aggregate counts for briefing page)
-
-### Prerequisites (all missing)
-- **Ingest format** from **Arma Reforger** / modpack export — define JSON schema for one export run
-- **Postgres schema** — items, attachments, slot types, compat matrix, modpack version
-- **Ingest job** — idempotent upsert per modpack version
-- **Registry worker** (frontend) — IndexedDB cache, `canEquip` / `canAttach`
-- **Loadout Forge UI** — `ArsenalInspector`, `SoldierDoll`, `ItemPicker`
-- **Compiler** — resolve `loadoutId` → classnames for mod export
-- **Golden loadout** — one kit exported → correct in Reforger spawn
-
-**Do not start Phase 2 loadout until map verify (T-090–T-092) completes** — otherwise loadouts attach to slots that cannot spawn accurately in-game.
-
----
-
-## NOT DONE — T-110 terrain base (future)
-
-Millions of read-mostly map props via binary world base + sparse terrain deltas — separate from authored mission entities. Spec: [`t110_terrain_base_mission_layers.md`](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md). Runs **after T-090/T-091** hosted world assets + Eden **T-068+** ship.
-
----
-
-## Current vs target (one glance)
-
-```
-TODAY                          TARGET (functional v1)
-─────────────────────────────────────────────────────────
-Grid map                       Aligned topo/sat map + DEM
-Slots only                     Units + vehicles + markers
-z = 0 always                   z = DEM sample, editable
-Mock catalog                   Registry-backed catalog (shipped T-068.3 @ da78452)
-loadout = ''                   Named loadout per slot (loadout program)
-editor block positions         Positions verified in-game
-Local IndexedDB + manual save  Autosave + semver versions
-```
-
----
-
-## Recommended program order
-
-**Active strategy:** T-180 ORBAT complete · continue **T-068** loadout Phase 2 · map residual on T-090 as needed.
-
-| Phase | Deliverable | Depends on |
-|-------|-------------|------------|
-| **1** | Terrain wired, title hydrate, numeric X/Y | — ✅ **T-049** |
-| **1b** | Scale program T-057–T-067 | — ✅ shipped |
-| **2–4** | **T-090 / T-091 / T-092** map + spawn | — ✅ **T-091/T-092**; T-090 residual |
-| **5** | **T-180** ORBAT + Eden placement | T-092 ✅ · **COMPLETE** @ `cba837b3` |
-| **6** | **T-068.11–.14** player loadout + LOBBY picker | T-092.2 ✅ |
-| **7** | **T-069+** markers, … | Full **T-068** ship |
-| **8** | **T-110** terrain base @ scale | T-090/T-091 |
-| **9** | Full item matrix + compiler loadouts (T-068.7–.14) | T-092 |
-
-Phases **5** = **ORBAT (done).** Phases **6+** = **player loadout + Eden backlog.**
-
----
-
-## Deferred mega optimizations (not current work)
-
-**Product decision (2026-06):** T-061 drag-move @ ~360k is **good enough** for now. T-062 shipped interactive bindings @ 360k. Do **not** pursue further render/bindings micro-optimizations until **T-063..T-067**, **T-068+**, and core feature gaps are closed. Revisit only if profiling shows Eden-blocking regressions or scale targets (1M+) demand it.
-
-| Item | Tag / area | What | When |
-|------|------------|------|------|
-| Typed-array / binary IconLayer buffers | **T-061.1** | GPU-stable buffers instead of JS `SlotIcon[]` rebuilds | After T-062+ if profiling warrants |
-| Collapse drag-release to one cache bump | T-061 follow-up | Merge restore + `_patchSlots` into single `iconCacheVersion` tick | Optional polish; known residual |
-| Editor session / alt-tab resilience | **T-062.2** ✅ | Warm session + dev Vite guard; spec [`t062_2`](/documentation_v2/tickets/specs/t062_2_editor_session_persistence.md) |
-| Full incremental bindings (interactive edits) | **T-062** ✅ | Classifier + O(k) patches for drop/delete/meta/layers; bulk delete ≤10k | **Shipped** — spec [`t062_incremental_bindings.md`](/documentation_v2/tickets/specs/t062_incremental_bindings.md) |
-| IDB streaming + Save dedup | **T-062.1** ✅ load / **T-062.1.1** ✅ save | Chunked v2 restore; editor-only Save + Go ORBAT derive | **Both shipped** |
-| Spatial index for pick/marquee | **T-063** ✅ | rbush instead of Deck `pickObjects` | **Shipped** — spec [`t063_spatial_index.md`](/documentation_v2/tickets/specs/t063_spatial_index.md) |
-| Virtualized outliner | **T-064** ✅ | Sidebar @ 100k+ leaves | **Shipped** — spec [`t064_virtualized_outliner.md`](/documentation_v2/tickets/specs/t064_virtualized_outliner.md) |
-| Cluster / LOD extreme zoom | **T-065** ✅ | Pan-stable clusters @ zoom ≤ -4; detail @ -2 | [`t065_cluster_lod.md`](/documentation_v2/tickets/specs/t065_cluster_lod.md) |
-| Worker offload compile/export | **T-066** ✅ | `compiler.worker.ts` + `pickMapSnapshot`; Save 201 @ ~367k | [`t066_worker_compile.md`](/documentation_v2/tickets/specs/t066_worker_compile.md) |
-| Spatial chunks / lazy regions | **T-067** shipped | Bulk paste + scaffolding; CPU cull deferred; follow-ons **T-111** / **T-112** (`idea`) | [`t067_spatial_chunks.md`](/documentation_v2/tickets/specs/t067_spatial_chunks.md) |
-| Terrain base + sparse deltas | **T-110** | Millions of map props (separate from mission layer) | After T-068+ |
-| ≤10 s load @ 1M | T-062.1 ✅ + T-066 | Chunked IDB + worker — not drag perf | Stretch north star |
-
-**Do not block Eden or T-065 on the items above.** T-061 + T-062 + T-062.2 + **T-063** + **T-064** closed Eden-blocking interactive edits, session reload, pick/marquee, and outliner @ 360k.
-
----
-
-## Related docs
-
-All linked in **Documentation** section above. Quick pointers:
-
-| Need | Doc |
-|------|-----|
-| **Open work queue** | [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) |
-| Code-evidenced feature list | [`feature_inventory.md`](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) |
-| Eden UI parity backlog | [`eden/gap_analysis.md`](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) |
-| Engineering ADRs + compiler | [`engineering_plan.md`](/documentation_v2/archive/go_and_react_era_design/mission_creator_engineering_plan.md) |
-| Agent execution + Decisions log | [`agent_execution.md`](/documentation_v2/website/frontend/apps/editor/decisions.md) |
-
----
-
-## Open decisions (need human input)
-
-1. **Map assets** — Do we have Everon top-down tiles + heightmap exports, or must we generate them from Reforger/workshop tools? *(Gather in parallel; **implementation deferred** until T-068+ per §Current strategy.)*
-2. **Mod JSON contract** — Who provides the golden `json_payload` / spawn format for position + loadout verification?
-3. **Arma Reforger / modpack export** — Exact file/API format for ingest (this unlocks loadout program scope: “50 vests” = count rows in export).
-4. **Mission Armory vs slot loadouts** — Should Loadout Forge changes update `MissionArmory` quantities automatically, or stay separate?
+## Where the Mission Creator stands
+
+The editor is a Leptos page over the graphics engine's wgpu renderer, a top-down 2D map of the
+[mission](/documentation_v2/glossary.md#mission)'s terrain; the
+[UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) gives its layout,
+gestures and shortcuts. What ships, by area:
+
+| Area | What ships | Detail |
+|---|---|---|
+| Shell and layout | chromeless route; two 240 px docks that collapse to a stub; the 48 px top strip and the status bar; hidden chrome on Backspace | [shell and layout](/documentation_v2/website/frontend/apps/editor/feature_inventory/shell_route_and_layout.md), [top strip](/documentation_v2/website/frontend/apps/editor/feature_inventory/top_command_strip.md) |
+| Map and camera | north-up orthographic map, middle-button pan, wheel zoom about the cursor, 1 km grid, cursor and selection X/Y/Z from the terrain's elevation | [viewport and camera](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) |
+| Basemap and world | satellite and map basemaps, hillshade, contours, forests, roads, buildings and labels, with per-browser world-layer switches | [basemap and world objects](/documentation_v2/website/frontend/apps/editor/feature_inventory/map_basemap_and_world_objects.md) |
+| Placement | characters, vehicles, objects, compositions, markers, triggers and zones from the seven-tab asset browser; the asset picker on a double-click | [placement](/documentation_v2/website/frontend/apps/editor/feature_inventory/placement.md), [asset palette](/documentation_v2/website/frontend/apps/editor/feature_inventory/right_asset_palette.md) |
+| Selection | click, Ctrl/Cmd toggle, marquee, select all in view, the mission search and the narrowing chips | [selection](/documentation_v2/website/frontend/apps/editor/feature_inventory/selection.md) |
+| Transform | drag-move, the translate and rotate widget, the Z arm, the snap grid, nineteen Arrange commands, Delete | [transform and delete](/documentation_v2/website/frontend/apps/editor/feature_inventory/transform_and_delete.md) |
+| Layers and ORBAT | editor layers with hide and lock; the [ORBAT](/documentation_v2/glossary.md#orbat) Manager over sides, squads, [slots](/documentation_v2/glossary.md#slot) and squad vehicles; the faction library | [left dock](/documentation_v2/website/frontend/apps/editor/feature_inventory/left_sidebar.md) |
+| Attributes and arsenal | the Attributes dialog, single and multi-edit, with the Transform, Identity and [Arsenal](/documentation_v2/glossary.md#arsenal) tabs and the vehicle heading, cargo and crew | [attributes and settings](/documentation_v2/website/frontend/apps/editor/feature_inventory/attributes_and_settings.md) |
+| Mission logic | win conditions, spawn modules, tasks, radio nets, audio, the weather timeline, tactical graphics, connections and comments | [inspectors README](/apps/website/frontend/src/v2/apps/editor/ui/inspector/README.md) |
+| Measuring tools | the ruler, the line of sight and the viewshed | [toolbelt](/documentation_v2/website/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) |
+| Persistence and versions | the per-account IndexedDB draft, the server hydrate and conflict dialog, one writer tab per mission, Save Version, Export JSON and Export Compiled, the read-only review mode | [persistence and compile](/documentation_v2/website/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) |
+| Scale | windowed outliner trees, slot clustering at far zoom, GPU culling, and world assets streamed around the camera | [performance at scale](/documentation_v2/website/frontend/apps/editor/feature_inventory/performance_at_scale.md) |
+
+The [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+pairs each feature with its Arma 3 Eden counterpart and names the ticket that closes each gap.
+
+## Open work
+
+Each row links the ticket's spec, or its ticket file when it has none, then its status and plan.
+
+### Editor usability and fixes
+
+| Ticket | Status | What changes |
+|---|---|---|
+| [T-939 — Editor usability: selection, gizmo, arrange, templates](/documentation_v2/tickets/specs/t939_editor_usability.md) | queued, [plan](/documentation_v2/tickets/plans/t-939_plan.md) | batch faction and squad reassign (T-939.2), Arrange in the context menu with shortcuts (T-939.4), squad templates (T-939.5), canvas error badges and connection wires (T-939.6), a virtualized vehicles panel (T-939.7), Ctrl+F for the document search (T-939.8); all ready |
+| [T-704 — Command palette over every editor command](/documentation_v2/tickets/specs/t704_command_palette.md) | ready, [plan](/documentation_v2/tickets/plans/t-704_plan.md) | one searchable list of every editor command |
+| [T-158 — Editor shell UX consolidation](/documentation_v2/tickets/specs/t158_editor_shell.md) | ready, [plan](/documentation_v2/tickets/plans/t-158_plan.md) | one settings entry point; the inert top-strip buttons wired |
+| [T-142 — MC shell layout polish](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-142_plan.md) | toolbelt placement, Attributes grouping, stub-tool visibility |
+| [T-821 — Save version prefill static; second save 409s](/documentation_v2/tickets/specs/t821_save_version_prefill.md) | ready, [plan](/documentation_v2/tickets/plans/t-821_plan.md) | the Save Version pre-fill bumps from the current version |
+| [T-823 — OBJ readout must count vehicles or rename honestly](/documentation_v2/tickets/specs/t823_obj_readout_vehicles.md) | ready, [plan](/documentation_v2/tickets/plans/t-823_plan.md) | "OBJ" counts what it names |
+| [T-837 — Vehicles cannot be deleted](/documentation_v2/tickets/specs/t837_vehicle_delete.md) | ready, [plan](/documentation_v2/tickets/plans/t-837_plan.md) | Delete removes vehicles |
+| [T-845 — A selected vehicle looks identical to an unselected one](/documentation_v2/tickets/specs/t845_selected_vehicle_treatment.md) | ready, [plan](/documentation_v2/tickets/plans/t-845_plan.md) | selected vehicles are highlighted |
+| [T-926 — Vehicle Attributes Transform/Position tab](/documentation_v2/tickets/specs/t926_vehicle_transform_tab.md) | ready, [plan](/documentation_v2/tickets/plans/t-926_plan.md) | vehicles gain X, Y, Z and heading fields |
+| [T-838 — Map markers selectable; outliner lists; dblclick opens Attributes](/documentation_v2/tickets/specs/t838_marker_select_outliner.md) | ready, [plan](/documentation_v2/tickets/plans/t-838_plan.md) | markers join selection, the outliner and the Attributes dialog |
+| [T-831 — Per-side marker authoring audit then explicit UI](/documentation_v2/tickets/specs/t831_per_side_markers_audit.md) | ready, [plan](/documentation_v2/tickets/plans/t-831_plan.md) | markers authored per side |
+| [T-828 — Marker captions drift when zoom changes without rebind](/documentation_v2/tickets/specs/t828_marker_caption_drift.md) | ready, [plan](/documentation_v2/tickets/plans/t-828_plan.md) | captions stay on their markers |
+| [T-824 — Placed zones must render visibly at rest on map](/documentation_v2/tickets/specs/t824_zone_render_at_rest.md) | ready, [plan](/documentation_v2/tickets/plans/t-824_plan.md) | zones drawn when idle |
+| [T-833 — Rotation ring: relative delta plus live preview](/documentation_v2/tickets/specs/t833_rotation_ring_relative.md) | ready, [plan](/documentation_v2/tickets/plans/t-833_plan.md) | the rotate ring turns by the drag's delta, with a preview |
+| [T-848 — Group to must use exclusive ORBAT membership](/documentation_v2/tickets/specs/t848_group_to_exclusive_orbat.md), [T-849 — Add ungroup leave-squad verb](/documentation_v2/tickets/specs/t849_ungroup_verb.md), [T-850 — Squad tether must follow drag](/documentation_v2/tickets/specs/t850_squad_tether_drag.md) | ready, plans [848](/documentation_v2/tickets/plans/t-848_plan.md), [849](/documentation_v2/tickets/plans/t-849_plan.md), [850](/documentation_v2/tickets/plans/t-850_plan.md) | squad grouping on the map |
+| [T-839 — Retire floating Select/Ruler/LoS bottom-centre pill](/documentation_v2/tickets/specs/t839_retire_floating_pill.md) | ready, [plan](/documentation_v2/tickets/plans/t-839_plan.md) | the mode toolbar goes |
+| [T-816 — Armed composition hint; one Esc clears both layers](/documentation_v2/tickets/specs/t816_esc_hint_layer.md) | ready, [plan](/documentation_v2/tickets/plans/t-816_plan.md) | Escape closes one layer at a time |
+| [T-817 — Grid labels lag on stationary wheel zoom](/documentation_v2/tickets/specs/t817_grid_label_zoom_lag.md) | ready, [plan](/documentation_v2/tickets/plans/t-817_plan.md) | grid labels follow the zoom |
+| [T-820 — Catalog failure generic cause; chips visible wrongly](/documentation_v2/tickets/specs/t820_catalog_failure_cause.md) | ready, [plan](/documentation_v2/tickets/plans/t-820_plan.md) | the catalog failure names its cause |
+| [T-822 — Outliner dblclick must not open asset picker](/documentation_v2/tickets/specs/t822_outliner_dblclick_bubble.md), [T-927 — Editor chrome dblclick leak to map](/documentation_v2/tickets/specs/t927_chrome_dblclick_leak.md) | ready, plans [822](/documentation_v2/tickets/plans/t-822_plan.md), [927](/documentation_v2/tickets/plans/t-927_plan.md) | a double-click on the chrome stays off the map |
+| [T-827 — Validation chip red under 4.5:1](/documentation_v2/tickets/specs/t827_validation_chip_contrast.md), [T-830 — Outliner rows cramped](/documentation_v2/tickets/specs/t830_outliner_density.md), [T-841 — Type picker popover translucent](/documentation_v2/tickets/specs/t841_type_picker_opaque.md) | ready, plans [827](/documentation_v2/tickets/plans/t-827_plan.md), [830](/documentation_v2/tickets/plans/t-830_plan.md), [841](/documentation_v2/tickets/plans/t-841_plan.md) | contrast and density of the chrome |
+| [T-834 — Wave-205 residue](/documentation_v2/tickets/specs/t834_wave205_residue.md), [T-653 — Preserve the three headless editor-screenshot findings](/documentation_v2/tickets/specs/t653_headless_screenshot.md) | ready, plans [834](/documentation_v2/tickets/plans/t-834_plan.md), [653](/documentation_v2/tickets/plans/t-653_plan.md) | stale comments and dead code; the screenshot runbook |
+
+### Mission data and the wire to the game
+
+| Ticket | Status | What changes |
+|---|---|---|
+| [T-212 — Typed per-side objectives with attributes](/documentation_v2/tickets/specs/t212_typed_objectives.md) | ready, [plan](/documentation_v2/tickets/plans/t-212_plan.md) | objectives become typed, placed, per-side entities |
+| [T-290 — Nine dead flatten fields mod never reads](/documentation_v2/tickets/specs/t290_dead_flatten_fields.md) | ready, [plan](/documentation_v2/tickets/plans/t-290_plan.md) | the [mod](/documentation_v2/glossary.md#mod) reads, or the compiler drops, nine compiled fields |
+| [T-674 — Slot identity reaches the wire](/documentation_v2/tickets/specs/t674_slot_identity_wire.md) | queued, [plan](/documentation_v2/tickets/plans/t-674_plan.md) | slot identity fields reach the compiled document |
+| [T-675 — Vehicle roster reaches game](/documentation_v2/tickets/specs/t675_vehicle_roster_wire.md) | queued, [plan](/documentation_v2/tickets/plans/t-675_plan.md) | placed vehicles and crews reach the compiled document |
+| [T-932 — Parked briefing markers survive server save/reload](/documentation_v2/tickets/specs/t932_parked_markers_persist.md) | queued, [plan](/documentation_v2/tickets/plans/t-932_plan.md) | parked briefing markers survive a save and reload |
+| [T-309 — FactionDoc squad level for Apply Template](/documentation_v2/tickets/specs/t309_faction_doc_squads.md) | ready, [plan](/documentation_v2/tickets/plans/t-309_plan.md) | faction templates keep their squads |
+| [T-146 — Asset Browser Data Wiring](/documentation_v2/tickets/specs/t146_asset_browser_data_wiring.md) | ready, [plan](/documentation_v2/tickets/plans/t-146_plan.md) | [registry](/documentation_v2/glossary.md#registry) vehicles and crates placeable from the asset browser |
+| [T-140 — Mission client payload budget](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-140_plan.md) | compile reports a payload-budget diagnostic |
+| [T-141 — Procedural slot naming](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-141_plan.md) | generated slot display names with a manual override |
+| [T-068.14 — Phase 2 E2E gate editor to player](/documentation_v2/tickets/specs/t068_14_phase2_e2e_gate.md) | queued, no plan | a human sign-off from an editor loadout to a dressed player in game |
+
+### Map and terrain
+
+| Ticket | Status | What changes |
+|---|---|---|
+| [T-090 — Map visualization program](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md) | ready, no plan | the open children below |
+| [T-090.4 — Z placement audit](/documentation_v2/tickets/specs/t090_4_z_placement_audit.md), [T-090.6 — Geometry-aware placement audit](/documentation_v2/tickets/specs/t090_6_geometry_placement_audit.md) | ready, plans [090.4](/documentation_v2/tickets/plans/t-090_4_plan.md), [090.6](/documentation_v2/tickets/plans/t-090_6_plan.md) | buried and floating objects found automatically |
+| [T-090.7 — Eden AI world object schema](/documentation_v2/tickets/specs/t090_eden_ai_world_object_schema.md) | ready, [plan](/documentation_v2/tickets/plans/t-090_7_plan.md) | the exact field contract of a world object |
+| [T-090.9 — World-object interaction](/documentation_v2/tickets/specs/t090_9_world_object_interaction.md) | ready, [plan](/documentation_v2/tickets/plans/t-090_9_plan.md) | hover, inspect, filter and legend for world objects |
+| [T-090.10.2 — Map Engine v2 cleanup](/documentation_v2/tickets/specs/t090_10_map_engine_v2.md) | ready, [plan](/documentation_v2/tickets/plans/t-090_10_2_plan.md) | the legacy map-view branches and tile fallback go |
+| [T-090.12.7 — Docs pass: LOS tool, world-los bench, map-assets, MCP](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md) | ready, [plan](/documentation_v2/tickets/plans/t-090_12_7_plan.md) | documentation of the line-of-sight tool and the map assets |
+| [T-129 — Building floor selector](/documentation_v2/tickets/specs/t090_eden_map_reference.md) | ready, [plan](/documentation_v2/tickets/plans/t-129_plan.md) | placement on a chosen floor of a building |
+| [T-143 — Water mask placement guard and exact hydrology](/documentation_v2/tickets/specs/t090_091_map_terrain_program.md) | ready, [plan](/documentation_v2/tickets/plans/t-143_plan.md) | placement refuses the ocean and warns in lakes |
+| [T-294 — Arland has a manifest and no object data](/documentation_v2/tickets/specs/t294_arland_objects.md) | ready, [plan](/documentation_v2/tickets/plans/t-294_plan.md) | Arland gets its world objects |
+| [T-131 — Route planner tool](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-131_plan.md) | routes planned on the road graph, with distance and profile |
+
+### Map asset storage
+
+| Ticket | Status | What changes |
+|---|---|---|
+| [T-935 — Map binary storage — hybrid rkyv + POD](/documentation_v2/tickets/specs/t935_map_binary_storage.md) | queued, [plan](/documentation_v2/tickets/plans/t-935_plan.md) | T-935.1 to T-935.14 shipped; T-935.16 (ready) finishes the gz-JSON cutover; T-935.15 and T-935.17 to T-935.20 (queued) replace the chunk files with one object container, a spatial index and range fetches |
+
+### Collaboration
+
+| Ticket | Status | What changes |
+|---|---|---|
+| [T-295 — Realtime collaborative editing](/documentation_v2/tickets/specs/t295_realtime_collab.md) | ready, [plan](/documentation_v2/tickets/plans/t-295_plan.md) | several authors edit one mission live over a websocket |
+| [T-132 — Multiplayer MC + visual git](/documentation_v2/tickets/specs/t131_north_star_backlog.md) | ready, [plan](/documentation_v2/tickets/plans/t-132_plan.md) | an entity-level diff between two versions, for review before publishing |
+
+### Programs whose children have all shipped
+
+[T-936 — Mission logic the audit found missing](/documentation_v2/tickets/specs/t936_mission_logic.md),
+[T-937 — Editor data layer: id arrays, undo, persist](/documentation_v2/tickets/specs/t937_editor_data_layer.md) and
+[T-938 — Engine and wasm performance](/documentation_v2/tickets/specs/t938_engine_perf.md) are queued, while every child of
+each has shipped; they wait only for their own closure.
+
+### Idea-stage findings
+
+The code audits filed these as `idea` tickets, each without a spec: the status bar's dead "OPEN"
+button (T-1033), the hidden side census (T-1034), multi-folder drop onto the dock header
+(T-1032), the paper-doll hotspots and the keyboard (T-1035), dead frontend code (T-1043), stale
+doc comments (T-1045), compile findings misfiling refused blocks (T-1046), validation policy for
+cargo and loadouts (T-1047), block checks against the mission schema (T-1048), stale connections
+after a re-hydrate (T-1050), minted-id collisions (T-1051), placement scatter across releases
+(T-1052), one duplicate-slot check for upload and save (T-1053), unused document store helpers
+(T-1054), the basemap switch back to satellite (T-1058), terrain-size-derived map layers (T-1062)
+and hosted commands on no-op edits (T-1077); and, beyond the editor, frontend pages importing the
+editor (T-1005).
+
+## Deferred work
+
+| Ticket | What waits |
+|---|---|
+| [T-068 — Virtual Arsenal](/documentation_v2/tickets/specs/t068_virtual_arsenal_program.md) | the program closes with T-068.14, a human two-client sign-off |
+| [T-110 — Terrain base + sparse deltas](/documentation_v2/tickets/specs/t110_terrain_base_mission_layers.md) | a binary terrain base with sparse prop deltas for a million or more map objects, kept apart from the authored mission layer |
+| [T-090.3](/documentation_v2/tickets/specs/t090_3_map_asset_export.md), [T-090.5](/documentation_v2/tickets/specs/t090_5_map_object_render_layer.md), [T-090.8](/documentation_v2/tickets/specs/t090_8_forest_vegetation_regions.md) | the remaining map asset export, world-object render layer and forest region slices |
+| [T-121 — Terrain DEM export automation](/documentation_v2/tickets/specs/t121_terrain_dem_export_automation.md) | an automated elevation export |
+| [T-083](/.ai/tickets/T-083.toml), [T-093](/.ai/tickets/T-093.toml), [T-094](/.ai/tickets/T-094.toml) | an Eden-style full menu bar, autosave feedback polish, typed-array icon buffers |
+| [T-205](/.ai/tickets/T-205.toml), [T-206](/.ai/tickets/T-206.toml), [T-652](/.ai/tickets/T-652.toml) | vehicle seats and turrets, the empty item data, rock rendering |
+| T-712 to T-734, T-825, T-829, T-835, T-840, T-844, T-846, T-847, T-851, T-852 | deferred editor defects from the headless audits, each in its ticket file |
+| [T-1000 — Rename scenario to mission across code, data and mod](/.ai/tickets/T-1000.toml) | code identifiers that still say scenario |
+
+## Open questions
+
+- Mission armory and slot loadouts: the armory (`GET` and `PUT /api/v1/missions/{id}/armory`) is a
+  separate list that a write replaces whole, and nothing derives it from the slots' loadouts.
+  Whether loadout edits in the Arsenal update the armory's quantities, or the two stay apart, is
+  not decided and no ticket covers it.
+
+## Related documentation
+
+- [Mission Creator UX specification](/documentation_v2/website/frontend/apps/editor/ux_spec.md) —
+  the layout, the gestures, the shortcuts and the save flow.
+- [Mission Creator feature inventory](/documentation_v2/website/frontend/apps/editor/feature_inventory/README.md) — every feature by area, with its status in
+  the code.
+- [Mission Creator decisions](/documentation_v2/website/frontend/apps/editor/decisions.md) — the
+  dated decisions behind the editor.
+- [Eden gap analysis](/documentation_v2/website/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md)
+  — parity with Arma 3 Eden, feature by feature.
+- [Mission Creator code](/apps/website/frontend/src/v2/apps/editor/README.md) — the editor's folders and boundaries.
