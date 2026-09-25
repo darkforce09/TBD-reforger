@@ -1,37 +1,71 @@
-# UI/Mock
+# Pre-game screen mock data
 
-Static mock datasets for offline UI development, screen styling, and layout verification.
+The mock catalogs behind the rebuilt pre-game screens: fixed datasets taken from the Stitch mockups
+that the [mission](/documentation_v2/glossary.md#mission) selector, lobby, briefing and players
+screens render when no live catalog has been handed to them.
 
-### Roles & Responsibilities
-- `TBD_BriefingMock.c` (2026-09-14): builds the `TBD_BriefingCatalog` behind the Briefing from the
-  mockups verbatim — 7 nets, 2 objectives (Everon coordinates for Locate), 4 + 4 rules, the lore
-  paragraph, 5 parameters, friendly / enemy assets with vanilla vehicle prefabs on record (BTR-70,
-  BRDM-2, Ural-4320, UAZ-469 / M1025, M923A1, M151A2) and the mockup's loadout rows, uniform cards
-  whose dolls are the registry's faction riflemen, 4 plans.
-- `TBD_PlayersMock.c` (2026-09-14): builds the `TBD_PlayersCatalog` behind the PLAYERS modal — the
-  mockup's named rows plus generated ones up to 36 / 40 and 48 / 50, 4 spectators, 6 unslotted (94).
-- `TBD_LobbyMock.c`: Builds the `TBD_LobbyCatalog` behind the Lobby from the Stitch pre-game mockup
-  (lobby_sidebar / orbat_panel / slot_kit_inspector) — BLUFOR 92 vs OPFOR 95 + Spectators 10, the
-  drawn squads / roles / holders / tags, four kits keyed by role. Each kit also carries its WIRE half —
-  kit alias `kit:sov_rifleman` + a real `TBD_SlotLoadoutStruct` of GUID-pinned vanilla prefabs (read off
-  golden-missions/slot-loadout-coverage.json and the `Character_USSR_*.et` prefabs) so the 3D preview
-  dresses what the server would spawn; `crew` is kit-only, the Makarov has no GUID on record (handgun
-  empty). Replaces `TBD_LobbyMockData` (2026-09-13); its voice channels return with the voice-panel
-  pass, from that mockup.
-- `TBD_MissionSelectorMock.c`: Builds the `TBD_MissionCatalog` behind the Mission Selector from
-  the Stitch pre-game mockup — three terrains, nine missions, five modes, the PVP Test 1 inspector
-  (versions, modset, factions, objectives), identity `Mission Maker` / `ADMIN`. Replaces the
-  retired `TBD_MissionSelectorData.c` mock (2026-09-12).
+## Contents
 
-### The swap point
-Screens never hold a mock class. They read `TBD_MissionCatalog.Get()`
-(`Session/MissionSelector/TBD_MissionSelectorData.c`), which lazily calls
-`TBD_MissionSelectorMock.Build()` until a client cache calls `TBD_MissionCatalog.Set(...)`. The lobby, the briefing (`TBD_BriefingCatalog.Get()`) and the players modal (`TBD_PlayersCatalog.Get()`)
-are the same shape: `TBD_LobbyCatalog.Get()` (`Session/Lobby/TBD_LobbyCatalog.c`) lazily calls
-`TBD_LobbyMock.Build()` until the `TBD_LobbyClient` adapter calls `TBD_LobbyCatalog.Set(...)`. Wiring
-the real mission library therefore touches nothing under `UI/`. Counts shown in the UI are
-computed from the catalog, not stored in it.
+```text
+apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/
+├── TBD_BriefingMock.c         TBD_BriefingMock: briefing nets, objectives, rules, assets and uniforms
+├── TBD_LobbyMock.c            TBD_LobbyMock: the lobby's sides, squads, slots and kits
+├── TBD_MissionSelectorMock.c  TBD_MissionSelectorMock: the selector's terrains, modes and missions
+└── TBD_PlayersMock.c          TBD_PlayersMock: the players modal's lanes, spectators and unslotted
+```
 
-### Call Flow & Contracts
-Standalone data repositories consumed solely by UI controllers when developing screens without
-active network or server dependencies.
+## How it works
+
+Each class has one `static Build()` that returns a filled catalog. A screen never names a mock
+class: it reads its catalog's `Get()`, which calls `Build()` once when no catalog has been set,
+and a catalog's `Set(...)` replaces it (null brings the mock back on the next `Get()`). No script
+in the addon calls a catalog's `Set(...)` today, so these datasets are what the screens show.
+
+| Mock | Catalog, read through `Get()` | Dataset |
+|---|---|---|
+| `TBD_MissionSelectorMock` | `TBD_MissionCatalog` in `Session/MissionSelector/TBD_MissionSelectorData.c` | three terrains (Everon, Arland, Kolguyev), five modes, nine missions, the `PVP Test 1` inspector |
+| `TBD_LobbyMock` | `TBD_LobbyCatalog` in `Session/Lobby/TBD_LobbyCatalog.c` | BLUFOR (92 seats), OPFOR (95) and spectators (10), the drawn squads and holders, four kits keyed by role |
+| `TBD_BriefingMock` | `TBD_BriefingCatalog` in `Session/Briefing/TBD_BriefingCatalog.c` | seven radio nets, objectives, rules, lore, parameters, both sides' assets and uniforms, plans |
+| `TBD_PlayersMock` | `TBD_PlayersCatalog` in `Session/Players/TBD_PlayersCatalog.c` | BLUFOR 36 of 40, OPFOR 48 of 50, four spectators, six unslotted |
+
+The catalog paths are under `apps/mod/tbd-framework/Scripts/Game/TBD/`. Counts a screen shows
+(seats taken, missions available, badges) are computed by the screen from the rows, never stored
+in a catalog. The previews render real vanilla prefabs: the briefing's vehicles are GUID-pinned
+vanilla prefabs standing in for the mockup's names, and each lobby kit except `crew` carries a
+`TBD_SlotLoadoutStruct` of GUID-pinned vanilla items, read off
+`contracts_v2/fixtures/missions/valid/slot-loadout-coverage.json` and the vanilla
+`Character_USSR_*.et` prefabs, so the 3D doll wears what the server would spawn. The players mock
+names the mockup's first nine players per side and generates the rest up to the lane count.
+
+## Authority
+
+- Server: nothing.
+- Client: everything; the catalogs are built in the local UI and never replicate.
+- Owner: nothing.
+- RPCs: none.
+- Replicated properties: none.
+
+## Boundaries
+
+- Depends on: the catalog and row classes in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/` (`TBD_MissionCatalog`, `TBD_LobbyCatalog`,
+  `TBD_BriefingCatalog`, `TBD_PlayersCatalog` and their rows); `TBD_SlotLoadoutStruct` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_SessionIdentity` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Common/`; `TBD_UILayouts` and `TBD_EUITint` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`.
+- Used by: the four catalogs' `Get()`, in the files the table names; through them, the mission
+  selector, lobby, briefing and players screens under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`.
+- Rules: a screen reads its catalog, never a mock class, so a live catalog replaces a mock without
+  touching `UI/`; a mock holds rows, never a count the screen can compute; a prefab a mock names is
+  GUID-pinned and exists in the vanilla data; lines added to a script stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile.
+
+## Related documentation
+
+- [Mission selection specification](/documentation_v2/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+  — the design the selector mock reproduces
+- [Lobby specification](/documentation_v2/mod/tbd-framework/UI/lobby/lobby_specification.md) — the
+  design the lobby mock reproduces
+- [Briefing specification](/documentation_v2/mod/tbd-framework/UI/briefing/briefing_specification.md)
+  — the design the briefing and players mocks reproduce
