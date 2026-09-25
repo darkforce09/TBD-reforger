@@ -1,35 +1,70 @@
-# Contract Fixtures (`contracts_v2/fixtures/`)
+# Contract fixtures
 
-Ground truth for every boundary: samples that must always be accepted, and samples that must always be rejected.
+The golden test data of every contract boundary: samples each schema must accept, and
+[mission](/documentation_v2/glossary.md#mission) documents it must reject. A fixture pins
+agreement between components that no single unit test can state: one committed file is read by
+the schema gate, by the tests of the crates on each side of the boundary, and by the commands that
+stage it into a game server.
 
----
-
-## 1. Topology
+## Contents
 
 ```text
-fixtures/
-├── README.md
-├── missions/
-│   ├── valid/                          <-- 9 missions that must parse, validate and compile
-│   └── invalid/                        <-- 6 malformed missions, one rejection gate each
-├── map/                                <-- 20 spatial fixtures, JSON and binary
-├── registry/                           <-- 8 arsenal, loadout, and faction samples
-├── enfusion_samples/                   <-- 10 raw payloads as the game mod emits them
-└── bridge_samples/                     <-- 6 voice-bridge IPC messages
+contracts_v2/fixtures/
+├── bridge_samples/    voice bridge messages across a voice session's lifecycle
+├── enfusion_samples/  one sample per mission-schema definition the mod's JSON classes read
+├── map/               terrain and world-object samples, chunk and density binaries included
+├── missions/          complete missions that must pass, and wrapped missions that must fail
+└── registry/          item, compatibility, alias, loadout, faction and editor-payload samples
 ```
 
----
+## How it works
 
-## 2. What a Fixture Is For
+`cargo xtask schema validate` reads every folder here: it validates each sample against its schema
+in `contracts_v2/definitions/`, requires each invalid mission to fail its named gate at its named
+pointer, and cross-checks kit aliases and registry references.
+`cargo xtask schema map-object-golden` adds the world export's semantic gates over `map/`, including
+the byte-level checks of its binary twins. Both run in the `schema-validate` CI task, and the
+`schema.yml` workflow runs the first on every change under `contracts_v2/`. Beyond the gates, the
+[API](/documentation_v2/glossary.md#api)'s and the map engine's tests load single fixtures by path,
+and the xtask [mod](/documentation_v2/glossary.md#mod) commands stage missions from
+`missions/valid/` into a game server.
 
-A fixture pins a behaviour that no unit test can state on its own, because the behaviour is agreement *between* components. The mission goldens are read by the API validator, the map engine's compiler, and the game mod's loader; when all three agree on the same file, the contract holds.
+The negative fixtures matter as much as the positive ones. Each invalid mission isolates one
+defect at one pointer, so a gate that grows permissive fails here, naming the rule that broke,
+instead of letting malformed missions through until one reaches a live
+[event](/documentation_v2/glossary.md#event).
 
-The negative fixtures matter more than the positive ones. Each invalid mission isolates exactly one defect, so a gate that stops rejecting it names the rule that broke. A validator that grows permissive fails loudly here instead of silently accepting malformed missions until one reaches a live operation.
+## Format
 
----
+- Encoding: UTF-8 JSON, one document per file, named by each folder's convention; `map/` also holds
+  two small binaries, kept as plain git blobs so every clone and worktree reads real bytes.
+- Schema: each file follows a schema in `contracts_v2/definitions/`, named in its folder's README;
+  `missions/invalid/` wraps its missions in a `mustFail` envelope.
+- Adding a file: put it in the folder of the boundary it exercises, name it where its gate reads
+  it (most gates name their files one by one), and run `cargo xtask schema validate`.
 
-## 3. Invariants
+## Producers and consumers
 
-1. **Both halves move together.** Adding a property to a closed schema means updating every fixture that schema validates, in the same commit.
-2. **Binary and JSON twins agree.** In `map/`, a decode of the `.bin` must equal a decode of the `.json`. That pair is what keeps the zero-copy reader honest about alignment and endianness.
-3. **A fixture is never repaired to make a test pass.** If a golden stops validating, either the schema changed or the validator regressed; both are findings.
+- Producers: people, apart from two files that tools regenerate: the map engine's compiled
+  two-faction mission in `missions/valid/` and the density tile in `map/density/`.
+- Consumers:
+  - the xtask schema gates in `tools_v2/xtask/src/verifications/schemas/checks/` and the
+    map-object golden gates in `tools_v2/developer-tools/src/map_verification/object_goldens/`,
+    which reach these folders through `tools_v2/developer-tools/src/repository_layout.rs`;
+  - the xtask mod commands `world-boot`, `test-mission` and `dev-server`;
+  - tests in `apps/website/api_v2/`, `apps/website/map-engine/` and `tools_v2/`, named in each
+    folder's README.
+
+## Boundaries
+
+- Depends on: the schemas in `contracts_v2/definitions/`, the spawn registry
+  `apps/mod/tbd-framework/Data/registry.json`, and the binary formats of
+  `apps/website/map-engine/src/io/`.
+- Used by: the xtask schema gates, the developer tools' map verification, the xtask mod commands
+  and the crate tests above.
+- Rules: a schema change keeps every fixture it validates passing, in the same change
+  (`cargo xtask schema validate`); a binary fixture is the exact encoding of its JSON twin
+  (`cargo xtask schema map-object-golden`); a golden that stops validating means the schema changed
+  or a validator regressed, and is never edited just to pass; live
+  [Workbench](/documentation_v2/glossary.md#workbench) exports stay in `contracts_v2/catalogs/`,
+  never here.

@@ -1,34 +1,90 @@
-# Map & Spatial Fixtures (`contracts_v2/fixtures/map/`)
+# Map and world-object fixtures
 
-Twenty fixtures covering the object pipeline: chunks, catalogs, regions, roads, manifests, and the phased import.
+Golden samples of the terrain and world-object contracts: prefab, instance, chunk, region, road,
+resolved-object and catalogue rows, terrain manifests and registries, locations, and the type
+census. The xtask schema gates validate them against their schemas and run the world export's
+semantic rules over them, and the map engine's native tests decode them.
 
----
+## Contents
 
-## 1. Contents
+```text
+contracts_v2/fixtures/map/
+├── density/                               the `TBDD` forest-density golden and its positions
+├── locations-everon-sample.json           settlements, peaks and cartographic labels
+├── map-object-catalog-everon-sample.json  a catalogue bundle: prefabs, instances, regions, roads
+├── map-object-chunk-sample.{bin,json}     one 512 m object chunk, as `TBDC` binary and as JSON
+├── map-object-instances-sample.json       placed instance rows referencing prefabs by index
+├── map-object-prefabs-sample.json         prefab rows, at least one per closed class
+├── map-object-regions-everon-sample.json  forest and field region rows
+├── map-object-resolved-sample.json        resolved objects: an instance joined with its prefab
+├── map-object-roads-sample.json           road segments with their class and polyline
+├── phased/                                per-phase world export samples
+├── regions-derivation-fixture.json        tree points and the forest regions they must yield
+├── terrain-manifest-everon-*.json         Everon manifests: dual, tile-only, unified satellite
+├── terrain-registry.sample.json           a terrain registry
+└── type-inventory-pending-everon.json     a type census in its `pending_export` state
+```
 
-| Fixture | Role |
-|:---|:---|
-| `map-object-chunk-sample.bin` + `.json` | A 512 m chunk in both encodings. The parity pair. |
-| `density/density-fixture.bin` + `.json` | A forest-density tile in both encodings |
-| `map-object-catalog-everon-sample.json` | Prefab catalog with classification metadata |
-| `map-object-prefabs-sample.json` | Prefab metadata rows |
-| `map-object-instances-sample.json` | Placed instance rows |
-| `map-object-resolved-sample.json` | Resolved references with transforms and tags |
-| `map-object-regions-everon-sample.json` | Chunk region boundaries |
-| `regions-derivation-fixture.json` | Input for the forest-region derivation |
-| `map-object-roads-sample.json` | Road splines and intersection nodes |
-| `type-inventory-pending-everon.json` | Type inventory in its pending state |
-| `terrain-registry.sample.json` | Registry shape sample |
-| `terrain-manifest-everon-unified-satellite.json` | Manifest with a unified satellite bundle |
-| `terrain-manifest-everon-dual-tiles.json` | Manifest with both tile pyramids |
-| `terrain-manifest-everon-tile-only-satellite.json` | Manifest whose satellite is tiles only |
-| `phased/P1-buildings.json`, `phased/P2-trees.json`, `phased/P1-anchor-fixture.json` | Per-phase import fixtures |
-| `locations-everon-sample.json` | Settlements, hills, and landmarks |
+## How it works
 
----
+Two gates read this folder, both steps of the `schema-validate` CI task:
 
-## 2. Invariants
+- `cargo xtask schema validate`
+  (`tools_v2/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs`) validates
+  every JSON file directly in this folder except `regions-derivation-fixture.json`, plus
+  `phased/P1-buildings.json`, against its schema in `contracts_v2/definitions/`, resolving
+  cross-file `$ref`s through each map-object schema's `$id`. Row files are checked row by row:
+  each prefab, instance, chunk row, region and resolved object.
+- `cargo xtask schema map-object-golden`
+  (`tools_v2/developer-tools/src/map_verification/object_goldens/`) runs the semantic gates:
+  S2 to S7 over the prefab, instance, road and catalogue tables (resolvable kind and class, one
+  example per kind, road classes, prefab deduplication, prefab references, required AI and
+  gameplay fields), S8 over the resolved rows, S9 for full closed-enum coverage, S11 over the chunk
+  rows (tuple shape, bounds, sort order), S12 over the `phased/` anchor fixture, S13 over
+  `density/`, S14 over `regions-derivation-fixture.json`, and S15 over the chunk pair.
 
-1. **Dual-encoding parity.** Decoding `map-object-chunk-sample.bin` must produce exactly what decoding `map-object-chunk-sample.json` produces, field for field. The same holds for the density pair. This is the only check that catches an alignment, padding, or endianness mistake in the zero-copy reader, because a wrong-but-well-formed decode is otherwise indistinguishable from a right one.
-2. **Instances stay inside their chunk.** Every instance in a chunk sample lies within that chunk's 512 m bounds.
-3. **The three terrain manifests are all legal.** They pin that the loader still accepts the unified bundle, the dual pyramid, and the legacy tile-only arrangement — the manifest contract is what lets a dataset ship a subset.
+Gate S15 is the only check of the zero-copy chunk reader's byte layout: re-emitting
+`map-object-chunk-sample.json` must reproduce `map-object-chunk-sample.bin` byte for byte, the
+columns decoded from the binary must equal the JSON's, and the header's chunk coordinates come
+from the header alone. A wrong decode that is still well formed is otherwise indistinguishable
+from a right one. `cargo xtask schema map-object-enums` and `cargo xtask schema map-glyphs` also
+read the prefab and region samples, and `cargo xtask schema type-inventory` reads the census.
+
+## Format
+
+- Encoding: UTF-8 JSON, plus two binaries (`map-object-chunk-sample.bin` and
+  `density/density-fixture.bin`) that stay plain git blobs, since `.gitattributes` scopes LFS to
+  `assets_v2/terrains/`. Names are lowercase hyphenated words ending in `-sample`, `-fixture` or
+  the state they hold, with the terrain (`everon`) when the sample is taken from one.
+- Schema: `contracts_v2/definitions/map-object-*.schema.json` for the object rows and bundles,
+  `terrain-manifest.schema.json`, `terrain-registry.schema.json` and `locations.schema.json`;
+  `map-object-type-inventory.schema.json` for the census. The binary chunk follows the `TBDC`
+  layout in `apps/website/map-engine/src/io/`.
+- Adding a file: add the sample, name it in the gate that must read it
+  (`tools_v2/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs` or
+  `tools_v2/developer-tools/src/map_verification/object_goldens/map_object_golden.rs` names each
+  file by path), and run both gates.
+
+## Producers and consumers
+
+- Producers: people write the samples; the chunk pair is kept in step by gate S15, and
+  `density/` is regenerated by the `world` binary's `gen-density-fixture` command.
+- Consumers:
+  - the two gates above, and `cargo xtask schema map-object-enums`, `map-glyphs` and
+    `type-inventory` in `tools_v2/xtask/src/verifications/schemas/checks/`;
+  - the map engine's native tests:
+    `apps/website/map-engine/src/streaming/loaders/tests/chunk_tests.rs` parses the chunk and
+    prefab samples, and
+    `apps/website/map-engine/src/world/environment/vegetation/tests/regions_tests.rs` parses the
+    region sample.
+
+## Boundaries
+
+- Depends on: the map-object, terrain and locations schemas in `contracts_v2/definitions/`, the
+  closed enums of `map-object-enums.schema.json`, and the binary formats of
+  `apps/website/map-engine/src/io/`.
+- Used by: the xtask schema gates and the map engine tests above.
+- Rules: every sample validates against its schema (`cargo xtask schema validate`); the chunk
+  binary is the exact emitter output of its JSON twin (gate S15 of
+  `cargo xtask schema map-object-golden`); every chunk instance lies inside its chunk's 512 m
+  bounds (gate S11); the prefab sample keeps one example of every closed class (gate S9).

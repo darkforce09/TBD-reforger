@@ -1,17 +1,91 @@
-# Valid Mission Fixtures (`contracts_v2/fixtures/missions/valid/`)
+# Valid mission fixtures
 
-Nine missions that must always parse, validate, and compile.
+Positive goldens of the [mission](/documentation_v2/glossary.md#mission) contract: complete
+missions that must pass the schema, the size ceiling and the kit-alias check. Commands and tests
+also load them by name as sample missions.
 
-| Fixture | What it holds open |
-|:---|:---|
-| `bridgehead-at-levie.json` | A full playable mission; the default for boot and staging tests |
-| `last-stand-at-montfort.json` | Second full mission, used by the API validator round trip |
-| `compiler-shaped-two-faction.json` | Two-faction ORBAT the compiler must flatten correctly |
-| `slot-loadout-coverage.json` | Every gear slot populated across slots |
-| `slot-y-absent-and-present.json` | Slot elevation both omitted and supplied, so the absent case stays legal |
-| `empty-warning-fields.json` | Empty-but-present warning fields, which must not be read as missing |
-| `schema-1_3-wire-fields.json` | The schema 1.3 wire additions |
-| `schema-1_3-tasks.json` | Task definitions |
-| `schema-1_3-tactical-graphics.json` | Tactical graphics |
+## Contents
 
-The three `schema-1_3-*` fixtures exist because the additions were made schema-first: they are hand-staged missions that exercise fields ahead of the editor emitting them, which is what lets readers ship before writers.
+```text
+contracts_v2/fixtures/missions/valid/
+└── *.json  one complete mission document each, named in hyphenated words after what it exercises
+```
+
+## How it works
+
+`cargo xtask schema validate`
+(`tools_v2/xtask/src/verifications/schemas/checks/mission_validation.rs`) checks every file against
+`contracts_v2/definitions/mission.schema.json`, keeps every file under the schema's
+`x-tbd-missionFileMaxBytes` ceiling (8 MiB, the value of `MISSION_FILE_MAX_BYTES` in the
+[mod](/documentation_v2/glossary.md#mod)'s `TBD_MissionLoader.c`), and requires every `kit:` alias
+in `slots[]` and in the [ORBAT](/documentation_v2/glossary.md#orbat) roles to be defined in the
+mod's spawn registry. The four UK kits of `last-stand-at-montfort.json` are the only waived aliases
+(`KNOWN_UNRESOLVABLE_KITS` in `tools_v2/xtask/src/verifications/schemas/checks.rs`), since vanilla
+Reforger ships no UK faction. Some files carry a further pin:
+
+| Fixture | Schema version | What it holds open |
+|---|---|---|
+| `bridgehead-at-levie.json` | 1.1 | a full playable mission; the offline [artifact](/documentation_v2/glossary.md#artifact) of the mod's dev server, and the briefings block the compiler must reproduce |
+| `compiler-shaped-two-faction.json` | 1.1 | the map engine compiler's exact output for a two-faction editor payload |
+| `empty-warning-fields.json` | 1.1 | every key the mod's validator warns is unconsumed (`environment`, `settings`, `layers`, faction `tickets`, role `radio`) plus `entities`, authored empty |
+| `last-stand-at-montfort.json` | 1.0 | an ORBAT-only mission with no `slots[]`; the base of the oversized-document checks |
+| `schema-1_3-tactical-graphics.json` | 1.3 | the 1.3 `tacticalGraphics` block |
+| `schema-1_3-tasks.json` | 1.3 | the 1.3 `tasks` and `editorTriggers` blocks |
+| `schema-1_3-wire-fields.json` | 1.3 | the 1.3 wire additions: `objectives`, `missionParams`, `variants` and the rest |
+| `slot-loadout-coverage.json` | 1.1 | seven [slot](/documentation_v2/glossary.md#slot)s with real gear and cargo loadouts, the mod's equip and spawn reference |
+| `slot-y-absent-and-present.json` | 1.2 | slots with and without an explicit spawn height `y` |
+
+The gate also pins two files by content: `slot-y-absent-and-present.json` must stay at schema
+version 1.2 with at least one slot that has `y` and one that has none, since no other golden
+exercises the mod's `Y_ABSENT` spawn-height path; and `empty-warning-fields.json` must keep
+authoring every warned key, since it is the negative control for the unconsumed-key warnings of
+`TBD_MissionValidator.c`. The `schema-1_3-*` files are written ahead of the
+[Mission Creator](/documentation_v2/glossary.md#mission-creator) emitting their fields, so
+readers can ship before writers.
+
+## Format
+
+- Encoding: UTF-8 JSON, one mission document per file, named in lowercase hyphenated words.
+- Schema: `contracts_v2/definitions/mission.schema.json`, with `schemaVersion` 1.0 to 1.3 among
+  the current files; `meta.id` and `meta.terrain` identify the mission to the staging commands.
+- Adding a file: write the mission, check it alone with `cargo xtask schema validate-file <path>`,
+  then run `cargo xtask schema validate`.
+
+## Producers and consumers
+
+- Producers: people write every file except `compiler-shaped-two-faction.json`, which is the
+  serialised output of the map engine's mission flatten, compared line for line by
+  `compiler_shaped_golden_is_a_fresh_emitter_output` in
+  `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/cases_3.rs` and regenerated by
+  the ignored test `regen_compiler_shaped_fixture` in the same file.
+- Consumers:
+  - `cargo xtask schema validate`, as above, which is also the first step of the
+    `schema-validate` CI task;
+  - `cargo xtask mod world-boot --mission <name>`, which resolves a bare name here through
+    `mission_fixtures_valid_dir` (`tools_v2/developer-tools/src/repository_layout.rs`, called from
+    `tools_v2/xtask/src/commands/mod_ops/world_boot/execution.rs`), and
+    `cargo xtask mod test-mission <name>`, which stages the golden it finds by file name under
+    `contracts_v2/` (`tools_v2/xtask/src/commands/mod_ops/mission_test.rs`);
+    `cargo xtask mod dev-server` names `bridgehead-at-levie.json` in its usage text as the offline
+    `--artifact-file`;
+  - the map engine's compiler flatten tests in
+    `apps/website/map-engine/src/data/scenario/compiler/flatten/tests/`, which load
+    `bridgehead-at-levie.json`, `compiler-shaped-two-faction.json` and
+    `last-stand-at-montfort.json`;
+  - the [API](/documentation_v2/glossary.md#api)'s contract test
+    `apps/website/api_v2/src/missions/contract/tests/schema_validators.rs`, which pads
+    `last-stand-at-montfort.json` past the byte ceiling;
+  - the xtask schema tests `staged_golden_tests.rs` and `side_fallback_tests.rs` in
+    `tools_v2/xtask/src/verifications/schemas/tests/checks/`, which read
+    `schema-1_3-wire-fields.json`.
+
+## Boundaries
+
+- Depends on: `contracts_v2/definitions/mission.schema.json`, and the spawn registry
+  `apps/mod/tbd-framework/Data/registry.json`, whose `entries[].alias` values are the kit aliases a
+  mission may name.
+- Used by: the xtask schema gate, the xtask mod commands and the tests listed above.
+- Rules: every file stays schema-valid, under the byte ceiling and free of unknown kit aliases
+  (`cargo xtask schema validate`); `compiler-shaped-two-faction.json` changes only by regeneration
+  (`compiler_shaped_golden_is_a_fresh_emitter_output`); commands and tests load missions by file
+  name, so a rename updates every `git grep` hit in the same change.

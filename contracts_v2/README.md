@@ -1,75 +1,97 @@
-# Contracts Hub (`contracts_v2/`)
+# Contracts
 
-Every data shape that crosses a network, process, or language boundary on this platform: the web API, the Leptos frontend, the WebAssembly map engine, the Enfusion game mod, and the external voice bridge.
+Every data shape that crosses a network, process or language boundary on the platform: between the
+[API](/documentation_v2/glossary.md#api), the single-page app, the map engine, the game
+[mod](/documentation_v2/glossary.md#mod), the developer tools and the external voice bridge. The
+tree holds data only (JSON Schemas, lookup tables, exported catalogues and golden samples) and no
+code; the code that follows it lives in `apps/` and `tools_v2/`.
 
----
-
-## 1. Directory Topology
+## Contents
 
 ```text
 contracts_v2/
-├── README.md                           <-- Contract hub (this document)
-├── ARCHITECTURE_PLAN.md                <-- Codegen pipeline, versioning policy, CI gates
-├── ANALYSIS_AND_INVENTORY.md           <-- Census of every schema, rule, catalog, and fixture
-│
-├── definitions/                        # 25 authoritative JSON Schema definitions
-│   └── README.md
-├── rules/                              # Classification and alias tables applied at export time
-│   └── README.md
-├── catalogs/                           # Live Workbench exports the platform ingests
-│   └── README.md
-└── fixtures/                           # Golden test data for every boundary
-    ├── README.md
-    ├── missions/{valid,invalid}/       # 9 playable, 6 deliberately malformed
-    ├── map/                            # 20 spatial fixtures, JSON and binary
-    ├── registry/                       # 8 item, loadout, faction, and alias samples
-    ├── enfusion_samples/               # 10 raw mod-emitted payloads
-    └── bridge_samples/                 # 6 voice-bridge IPC messages
+├── catalogs/     the live item registry and compatibility graph exported from the Workbench
+├── definitions/  the authoritative JSON Schema of every cross-boundary payload and file
+├── fixtures/     golden samples each schema must accept, and missions the gates must reject
+└── rules/        prefab classification and kit-alias tables applied while producing data
 ```
 
-```mermaid
-graph TD
-    Def["definitions/ · JSON Schema"] -->|cargo xtask schema codegen| Gen["api_v2/src/missions/contract/generated/"]
-    Def -->|runtime validation| Validate["api_v2/src/missions/contract/schema_validators.rs"]
-    Def -->|document model| MapEngine["map-engine/src/data/scenario/"]
-    Def -->|mission ingest| Mod["tbd-framework/Scripts/Game/TBD/Systems/Mission/"]
+## How it works
 
-    Rules["rules/ · classification"] -->|object taxonomy| Export["developer-tools · world export"]
-    Rules -->|kit aliases| Compiler["map-engine · scenario compiler"]
+The four folders hold four kinds of data, and each is changed differently:
 
-    Catalogs["catalogs/ · Workbench exports"] -->|import-registry| Db["Postgres arsenal tables"]
+| Folder | What it holds | Changing it means |
+|---|---|---|
+| `definitions/` | the shape of a wire message or file; nothing puts a property on the wire that its schema does not define | a contract change: regenerated types, updated fixtures and citing code in the same change |
+| `rules/` | deterministic tables consulted while producing data: prefab classification, kit and vehicle aliases | a data change that takes effect only when the output it shapes (a terrain catalogue, a compiled [mission](/documentation_v2/glossary.md#mission)) is rebuilt |
+| `catalogs/` | the live item [registry](/documentation_v2/glossary.md#registry), production content exported from the [Enfusion](/documentation_v2/glossary.md#enfusion) [Workbench](/documentation_v2/glossary.md#workbench) and imported by the platform | new game content, replaced whole by a re-export and never edited by hand |
+| `fixtures/` | ground truth for tests: samples that must parse, and wrapped missions that must be rejected | a test-surface change; an invalid fixture that starts passing is a regression in a rejection gate |
 
-    Fixtures["fixtures/ · goldens"] --> Tests["API, map-engine, and mod gates"]
+The live catalogues stay out of `fixtures/` on purpose: the gates and the import read each from its
+own folder, so an import can never fall back to a sample and fill the
+[arsenal](/documentation_v2/glossary.md#arsenal) with sample data while every test passes.
+
+```text
+definitions/ ──schema codegen──▶ API models/generated/ and contract/generated/
+     ├── include_str! ──▶ API validators, Mission Creator zone and loadout checks
+     ├── @contract tags ◀── mod DTO classes, API models (schema citations)
+     └── schema gates ◀── fixtures/, catalogs/ (schema validate)
+
+rules/ ── prefab-classify.json ──▶ world export ──▶ assets_v2/terrains catalogues
+      └── kit-aliases.json ──▶ map engine mission compiler ──▶ compiled missions
+
+catalogs/ ──db registry-import──▶ Postgres registry tables ──▶ /api/v1/registry
 ```
 
----
+The API's release image copies `definitions/` and `rules/kit-aliases.json`, since the API embeds
+them at compile time (`apps/website/Dockerfile`).
 
-## 2. The Four Kinds of Data Here
+## Getting started
 
-The split exists because these four are governed differently, and a flat directory hides that.
+Run these from the repository root after a change here; none needs a database or a server:
 
-| Directory | What it is | Changing it means |
-|:---|:---|:---|
-| **`definitions/`** | The authoritative shape of a wire message. Nothing may put a property on the wire that its schema does not define. | A contract change. Follows the versioning policy in `ARCHITECTURE_PLAN.md`; readers deploy before writers emit. |
-| **`rules/`** | Deterministic lookup tables consulted while producing data: prefab taxonomy, kit aliases. | A data change. The output they shape is a committed artifact, so an edit is latent until that artifact is rebuilt. |
-| **`catalogs/`** | Live production data exported from the Enfusion Workbench and ingested by the platform. | New game content. Replaced wholesale by a re-export, never hand-edited. |
-| **`fixtures/`** | Ground truth for tests. Valid samples that must always parse; invalid samples that must always be rejected. | A test-surface change. An invalid fixture that starts passing is a regression in a rejection gate. |
+```bash
+cargo xtask schema validate     # every fixture, catalogue and committed manifest against its schema
+cargo xtask schema codegen      # regenerate the API's typed models after a schema change
+cargo xtask ci ci-local-schema  # codegen freshness, the schema-validate task, citations
+```
 
-Keeping live catalogs out of `fixtures/` matters most: an ingest that silently fell back to a test sample would populate the arsenal with sample data and pass every test.
+`cargo xtask schema validate-file <path>` checks one mission file on its own, and
+`cargo xtask schema map-object-golden` runs the world export's semantic gates over
+`fixtures/map/`. `cargo xtask db registry-import` loads `catalogs/` into the development database
+once `cargo xtask db up` has started it.
 
----
+## Boundaries
 
-## 3. Core Architectural Laws Enforced
+- Depends on: the mod's spawn registry `apps/mod/tbd-framework/Data/registry.json`, which the kit
+  aliases and the mission fixtures must agree with; the registry export plugin in
+  `apps/mod/tbd-export/Scripts/WorkbenchGame/`, which produces the catalogues; the binary chunk and
+  density formats of `apps/website/map-engine/src/io/`; and the glyph keys of
+  `assets_v2/glyphs/manifest.json`.
+- Used by:
+  - `apps/website/api_v2/`: generated models, embedded validators, the registry import binary and
+    the contract test suites;
+  - `apps/website/frontend/`: the [Mission Creator](/documentation_v2/glossary.md#mission-creator)'s
+    schema embeds for zones and loadout export;
+  - `apps/website/map-engine/`: the embedded kit-alias table and the compiler's fixture tests;
+  - `apps/mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;
+  - `apps/fleet_host_agent/`, whose ledger client follows the fleet-command schema;
+  - `tools_v2/xtask/` (the schema gates, codegen, `db registry-import` and the `mod` commands that
+    stage fixture missions) and `tools_v2/developer-tools/` (world export, blueprint compiler and
+    map verification), which find these folders through
+    `tools_v2/developer-tools/src/repository_layout.rs`;
+  - the `schema.yml` and `contracts.yml` workflows, which run on every change under
+    `contracts_v2/`.
+- Rules:
+  - the tree holds data only, never code;
+  - readers ship before writers emit: a field lands in its schema and in the readers before any
+    writer puts it on the wire, as the version 1.3 mission fixtures do ahead of the Mission Creator;
+  - a schema change updates its generated types (`cargo xtask ci verify-codegen-fresh`), every
+    fixture it validates (`cargo xtask schema validate`) and every `@contract` citation of it
+    (`cargo xtask schema citations`) in the same change;
+  - live exports stay in `catalogs/` and samples in `fixtures/`.
 
-1. **Law 4 (Zero Context Needed)**: `definitions/` holds schemas, `rules/` holds lookup tables, `catalogs/` holds live exports, `fixtures/` holds test data. Nothing is named for its history.
-2. **Law 5 (Categorize Variants)**: Fixtures are grouped by the boundary they exercise rather than dumped in one directory.
-3. **Law 6 (Strict Boundary Layers)**: Contracts are pure interface. No SQL, no rendering, no platform code.
-4. **Law 8 (Present-Tense Documentation)**: Schema descriptions state the constraint that holds now.
+## Related documentation
 
----
-
-## 4. Documentation Index
-
-- **[`ARCHITECTURE_PLAN.md`](/documentation_v2/archive/contracts_v2_relocation/architecture_plan.md)**: The typify codegen pipeline, the schema evolution policy, and the CI gates that enforce both.
-- **[`ANALYSIS_AND_INVENTORY.md`](/documentation_v2/archive/contracts_v2_relocation/analysis_and_inventory.md)**: Every file here, what reads it, and what breaks without it.
-- **[`MIGRATION_HANDOFF.md`](/documentation_v2/archive/contracts_v2_relocation/migration_handoff.md)**: Where each legacy file went, and the validation record.
+- [TBD Voice game bridge contract](/documentation_v2/contracts_v2/definitions/bridge_messages.md)
+  — the transport, envelope and lifecycle of the voice bridge messages.
