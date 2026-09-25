@@ -51,8 +51,8 @@ data from `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`.
   spectator components), `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` (the screen
   presets) and `TBD_FrameworkManager`.
 - Rules: the server decides, and a client renders only what the server sent it; every RPC takes
-  its caller from the controller it arrived on; sources stay ASCII and `cargo xtask mod compile`
-  checks that they compile.
+  its caller from the controller it arrived on; lines added stay ASCII and `cargo xtask mod compile`
+  checks that the scripts compile.
 
 ## Related documentation
 

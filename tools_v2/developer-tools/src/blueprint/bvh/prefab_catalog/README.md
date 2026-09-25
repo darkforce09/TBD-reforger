@@ -34,12 +34,13 @@ gives each child its class, prefab, `ID`, pivot, `coords`, `angles` and `scale`.
 - Used by: `prefab_catalog.rs`, which re-exports `parse_et` and `strip_guid`; `strip_guid` is also
   read by the prefab library in `tools_v2/developer-tools/src/blueprint/archive_emission/`.
 - Rules: the parser is tolerant, since the `.et` grammar has no published specification; the
-  tokenizer and block shapes, and a resolver walk over inheritance, sockets and children, are
-  pinned against the `.et` fixtures in `tools_v2/developer-tools/test_fixtures/blueprint/prefab/`
-  (`tokenizer_and_block_shapes`, `resolver_walks_inheritance_sockets_and_children` in
-  `tools_v2/developer-tools/src/blueprint/tests/prefab/tests.rs`).
+  tokenizer and block shapes are pinned against an inline `.et` text (`tokenizer_and_block_shapes`),
+  and a resolver walk over inheritance, sockets and children against the `.et` fixtures in
+  `tools_v2/developer-tools/test_fixtures/blueprint/prefab/`
+  (`resolver_walks_inheritance_sockets_and_children`), both in
+  `tools_v2/developer-tools/src/blueprint/tests/prefab/tests.rs`.
 
 ## Related documentation
 
 - [Prefab text fixtures](/tools_v2/developer-tools/test_fixtures/blueprint/prefab/README.md) — the
-  `.et` files the parser and resolver tests read.
+  `.et` files the resolver test reads.

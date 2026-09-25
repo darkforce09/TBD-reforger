@@ -46,5 +46,5 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Roads/`. No committed tool reads
   `roads_paved.json`.
 - Rules: `IsPavedRoadEntity` is the one place that decides what a paved road is; the file keeps the
-  field set every road class writes. Sources stay ASCII, and they compile only when Workbench loads
-  `tbd-export`.
+  field set every road class writes. Lines added stay ASCII, and the scripts compile only when
+  Workbench loads `tbd-export`.

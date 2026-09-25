@@ -99,8 +99,8 @@ so no field is ever empty on the wire. A non-admin's payload holds the refusal a
   `apps/mod/tbd-framework/Configs/System/Actions/TBD_AdminMenu.conf`.
 - Rules: one permission gate (`TBD_AdminService.IsAdmin`) and one audit trail for both surfaces;
   the caller id never comes from the wire; every attempt, refused ones included, is audited; the
-  snapshot for a non-admin carries nothing but the refusal; sources stay ASCII and
-  `cargo xtask mod compile` checks that they compile.
+  snapshot for a non-admin carries nothing but the refusal; lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

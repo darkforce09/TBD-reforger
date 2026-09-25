@@ -157,8 +157,8 @@ blocks the stage machine.
   status and `details.code`, never by message text; a world's session starts only after its
   artifact report is decided and the previous session has closed; the wire shapes follow
   `contracts_v2/definitions/game-runtime-session.schema.json` and
-  `contracts_v2/definitions/fleet-command.schema.json`; sources stay ASCII and
-  `cargo xtask mod compile` checks that they compile.
+  `contracts_v2/definitions/fleet-command.schema.json`; lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

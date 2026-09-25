@@ -78,17 +78,25 @@ the harness.
     readers `mission_editor.rs` re-exports;
   - `web_sys`, `js_sys` and `wasm_bindgen` for the window bridges and the unload prompt.
 - Used by:
-  - in `apps/website/frontend/src/v2/apps/editor/`: the canvas mount in `mission_editor/`, the host
-    state in `apps/website/frontend/src/v2/apps/editor/bridge/host_state/`, the gestures, tools and
-    window keydown in `input/`, the hydrate, draft writer and document commands in `shell/`, the top
-    strip's undo and redo in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, the
-    Mission Settings dialog in `apps/website/frontend/src/v2/apps/editor/ui/modals/settings_modal/`,
-    and `arsenal/`;
+  - the canvas mount in `apps/website/frontend/src/v2/apps/editor/mission_editor/`, the host state
+    in `apps/website/frontend/src/v2/apps/editor/bridge/host_state/`, the gestures, tools and window
+    keydown in `apps/website/frontend/src/v2/apps/editor/input/`, the hydrate, draft writer and
+    document commands in `apps/website/frontend/src/v2/apps/editor/shell/`, the top strip's undo and
+    redo in `apps/website/frontend/src/v2/apps/editor/ui/docks/top_strip/`, the Mission Settings
+    dialog in `apps/website/frontend/src/v2/apps/editor/ui/modals/settings_modal/`, and the loadout
+    commands in `apps/website/frontend/src/v2/apps/editor/arsenal/`;
   - the headless editor gates in `tools_v2/developer-tools/src/browser_testing/editor_smoke_tests/`,
     through `window.__missionDoc` and `window.__editorHistory`;
-  - the source pins in `apps/website/frontend/src/v2/apps/editor/tests/t808_symbology_feed.rs` and
-    `apps/website/map-engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs`, which
-    read `history.rs`.
+  - the source pins that read `history.rs`: in `apps/website/frontend/src/v2/apps/editor/tests/`,
+    the helper `live_document_history` in
+    `apps/website/frontend/src/v2/apps/editor/tests/mission_editor/source.rs`, which
+    `t760_markers_bind_feed.rs`, `t780_connection_line.rs`, `t784_comment_glyph.rs`,
+    `t790_marker_glyph_caption.rs`, `t808_symbology_feed.rs`, `t936_7_tactical_lane_bind.rs` and
+    `w145_selection_prune.rs` call, and `t819_crewed_render_hide.rs`, which includes the file
+    itself; `apps/website/frontend/src/v2/apps/editor/shell/tests/review_mode/read_only_review.rs`,
+    `apps/website/frontend/src/v2/apps/editor/ui/inspector/tests/attributes_modal/numeric_field_input.rs`,
+    `apps/website/frontend/src/v2/apps/editor/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`
+    and `apps/website/map-engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs`.
 - Rules: both modules hold a live document handle, so each is `#[cfg(target_arch = "wasm32")]`, and
   so is its `pub mod` line; `rebind_engine_from_doc` and `after_doc_change` both bind the comment
   lane (`rebind_and_after_doc_change_both_feed_comments_bind` in

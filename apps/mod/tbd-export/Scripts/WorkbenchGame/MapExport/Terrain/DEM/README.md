@@ -60,7 +60,7 @@ None: Workbench runs these scripts in the editor.
   moves the files out of the profile; the operator passes their paths.
 - Rules: the encoding range written to `dem_meta.json` is the one the samples were quantised
   against, and the converter falls back to the same fixed range when the keys are absent; the matrix
-  holds exactly `widthPx × heightPx` values, which the converter checks; sources stay ASCII.
+  holds exactly `widthPx × heightPx` values, which the converter checks; lines added stay ASCII.
   `cargo xtask mod compile` compiles only the framework addon, so these scripts compile only when
   Workbench loads `tbd-export`.
 

@@ -34,8 +34,8 @@ side tint; Spectators and Unslotted stay neutral.
   `TBD_UILayouts` and `TBD_UITheme` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`.
 - Used by: `TBD_BriefingScreen` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Briefing/UI/`,
   which builds the panel into its `WideDock` in the PLAYERS mode and destroys it on the next mode.
-- Rules: the panel never opens as a stacked menu over the briefing; sources stay ASCII and
-  `cargo xtask mod compile` checks that they compile.
+- Rules: the panel never opens as a stacked menu over the briefing; lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

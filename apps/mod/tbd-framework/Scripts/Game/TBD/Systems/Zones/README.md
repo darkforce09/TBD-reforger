@@ -110,9 +110,9 @@ modules arm on a `FIRED` trigger, and the task state machine follows them.
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches `TBD_PlayAreaComponent`.
 - Rules: zones are built and tested on the server only; "no boundary applies" and "outside the
   boundary" stay separate verdicts, so a mission without an AO confines nobody; the default penalty
-  stays `warn`; `TBD_PlayAreaComponent.OnDelete` clears the registry for the next world; sources
-  stay ASCII, and `cargo xtask mod compile` checks that they compile, while whether a trigger fires
-  or a player is warned is checked in a round.
+  stays `warn`; `TBD_PlayAreaComponent.OnDelete` clears the registry for the next world; lines added
+  stay ASCII, and `cargo xtask mod compile` checks that the scripts compile, while whether a trigger
+  fires or a player is warned is checked in a round.
 
 ## Related documentation
 

@@ -77,7 +77,8 @@ None: Workbench runs these scripts in the editor.
   topology from the game paks (`tools_v2/developer-tools/src/world_export_pipeline/roads_emit.rs`).
 - Rules: each class exporter returns its records to the coordinator and keeps the shared dataset
   format; a class's classifier decides membership alone, and nothing stops two classifiers accepting
-  one entity. Sources stay ASCII, and they compile only when Workbench loads `tbd-export`.
+  one entity. Lines added stay ASCII, and the scripts compile only when Workbench loads
+  `tbd-export`.
 
 ## Related documentation
 

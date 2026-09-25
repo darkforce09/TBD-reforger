@@ -70,5 +70,5 @@ of a group without waypoints take no effect.
 - Rules: the scripts run on the server only; each reader declares its own wire structs beside the
   code that interprets them instead of adding fields to the mission loader's structs; an absent
   string attribute is tested with `IsEmpty()`, because `JsonLoadContext` allocates a nested class
-  field even when its key is absent; sources stay ASCII; `cargo xtask mod compile` checks that they
-  compile, and whether a group walks its path on a dedicated server is checked by hand.
+  field even when its key is absent; lines added stay ASCII; `cargo xtask mod compile` checks that
+  the scripts compile, and whether a group walks its path on a dedicated server is checked by hand.

@@ -55,5 +55,5 @@ Two rules hold across the three folders:
   document through `TBD_MissionLoader`.
 - Rules: nothing loads before the artifact's SHA-256 matches, and there is no default mission; the
   document is parsed and held on the server only; wire field names are the JSON keys, each struct
-  tagged `@contract` (`cargo xtask schema citations`); sources stay ASCII and
-  `cargo xtask mod compile` checks that they compile.
+  tagged `@contract` (`cargo xtask schema citations`); lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.

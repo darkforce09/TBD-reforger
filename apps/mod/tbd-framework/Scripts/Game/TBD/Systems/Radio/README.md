@@ -84,8 +84,8 @@ TBD_FrameworkManager stage change ──> TBD_RadioBridgeStub.OnStageChanged ─
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches `TBD_RadioComponent`.
 - Rules: a side's nets never reach another side, and a request carries no faction; a tune is
   reported only after its read-back matches; the net RPC stays within the eight-parameter limit;
-  the framework takes no partner radio mod as a dependency; sources stay ASCII, and
-  `cargo xtask mod compile` checks that they compile, while tuning is checked in game.
+  the framework takes no partner radio mod as a dependency; lines added stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile, while tuning is checked in game.
 
 ## Related documentation
 

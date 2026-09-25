@@ -70,7 +70,7 @@ log `[TBD][lobby] LOCK LOBBY -> …` and `[TBD][lobby] READY -> …`; neither re
   reuses `TBD_LobbyRosterPanel` and `TBD_KitInspectorPanel`.
 - Rules: the screen reads seats and kits only through `TBD_LobbyCatalog.Get()`; the screen owns
   wiring and the panels own their widgets; the preview is destroyed before its card is cleared;
-  sources stay ASCII and `cargo xtask mod compile` checks that they compile.
+  lines added stay ASCII and `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

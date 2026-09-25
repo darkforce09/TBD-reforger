@@ -85,6 +85,6 @@ field even when its key is absent and leaves an absent scalar at its initializer
   `//! @contract mission.schema.json#…` tag (`cargo xtask schema citations`); presence uses the
   sentinel, empty-string and `Count()` tests above, never a null test; a new per-row key gets its
   own second-pass reader instead of a field on a primary struct; the Enforce keyword `default` is
-  never a field name, so `TBD_MissionParams` reads that key by string; sources stay ASCII, and
-  `cargo xtask mod compile` checks that they compile, while whether a state shows in a round is
-  checked by hand.
+  never a field name, so `TBD_MissionParams` reads that key by string; lines added stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile, while whether a state shows in a round
+  is checked by hand.

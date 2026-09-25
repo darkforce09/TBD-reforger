@@ -49,8 +49,8 @@ button, "SORT BY KILLS", and a click on the header row flip the order.
   `apps/mod/tbd-framework/UI/layouts/Session/PostGame/`.
 - Used by: `TBD_FrameworkManager`, which opens and closes both screens and packs the board.
 - Rules: the overlays never block or refuse a stage change; a packed field never holds the row or
-  field separator (`SanitizeField`); sources stay ASCII and `cargo xtask mod compile` checks that
-  they compile.
+  field separator (`SanitizeField`); lines added stay ASCII and `cargo xtask mod compile` checks
+  that the scripts compile.
 
 ## Related documentation
 

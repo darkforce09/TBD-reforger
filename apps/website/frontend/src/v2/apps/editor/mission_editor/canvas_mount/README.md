@@ -56,7 +56,8 @@ store at the current device-pixel ratio.
   session's draft writer, hydrate, review mode, warm-session marker and document commands in
   `apps/website/frontend/src/v2/apps/editor/shell/`; the registry fetches in
   `apps/website/frontend/src/v2/apps/editor/mission_editor/registry_loading.rs`; the asset catalog
-  and compatibility rules of `arsenal/`; the validation panel's compile findings; the input layer;
+  and compatibility rules of `apps/website/frontend/src/v2/apps/editor/arsenal/`; the validation
+  panel's compile findings; the input layer;
   `website_map_engine` (`frame::engine::RenderEngine`, `editing::persist::server_adoption`,
   `editing::hosted_commands`, `data::store`, `overlay::symbology`).
 - Used by: the parent's `install_canvas_mount`, which the editor page

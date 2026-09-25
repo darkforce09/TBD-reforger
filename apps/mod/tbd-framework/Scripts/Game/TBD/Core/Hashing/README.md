@@ -60,8 +60,9 @@ damaged artifact.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/` (`IsHexDigest`).
 - Rules: a digest is always 64 lowercase hex characters; large inputs reach the hasher as a byte
   array read from a file, never byte by byte from a string; the self-test runs before the first
-  artifact is judged; sources stay ASCII; `cargo xtask mod compile` checks that they compile, and
-  the self-test line in a dedicated server's log checks the hasher on that engine build.
+  artifact is judged; lines added stay ASCII; `cargo xtask mod compile` checks that the scripts
+  compile, and the self-test line in a dedicated server's log checks the hasher on that engine
+  build.
 
 ## Related documentation
 

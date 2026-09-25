@@ -90,5 +90,5 @@ on (off by default), it reads `$profile:TBD_LoadoutTest.json`, the web arsenal's
   which attaches `TBD_LoadoutEquipComponent`.
 - Rules: the preview and the server pass apply the same composition rule, so the doll wears what
   the slot spawns; only a blocking failure stops a session, and a shortfall stays a WARNING; the
-  harness stays off on the shipped game mode; sources stay ASCII, and `cargo xtask mod compile`
-  checks that they compile, while what a body wears is checked in a round.
+  harness stays off on the shipped game mode; lines added stay ASCII, and `cargo xtask mod compile`
+  checks that the scripts compile, while what a body wears is checked in a round.

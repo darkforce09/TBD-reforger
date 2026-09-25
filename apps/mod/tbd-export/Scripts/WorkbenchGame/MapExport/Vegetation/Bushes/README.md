@@ -43,5 +43,5 @@ None: Workbench runs these scripts in the editor.
   `m_bExportBushes` is set. No committed tool reads `bush.json`.
 - Rules: `IsBushPrefab` is the one place that decides what this layer holds, and it rejects the
   folders and names the other vegetation layers take; the file is written as JSON text by hand and
-  keeps its field names. Sources stay ASCII, and they compile only when Workbench loads
+  keeps its field names. Lines added stay ASCII, and the scripts compile only when Workbench loads
   `tbd-export`.

@@ -36,15 +36,16 @@ systemd/           ──see that folder's README for what installs each unit
 `deploy.env`, from `deploy.env.example`:
 
 - Host access, read by every command that reaches the host: `TBD_SSH_HOST` (required;
-  `deploy website` exits 79 without it), and `TBD_SSH_PASS` (for sshpass) or
-  `TBD_SSH_IDENTITY_FILE` (for `ssh -i`), both optional.
-- Website, read by `tools_v2/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR` (required,
-  exit 80 without it), which must sit under the fixed deploy prefix `require_tbd_remote_prefix`
-  checks; `TBD_POSTGRES_HOST_PORT` (default 5432), the host port of the staging compose Postgres;
-  `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`); and `TBD_SKIP_COMPOSE`,
-  `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set to 1. `TBD_REMOTE_DIR`,
-  `TBD_SSH_HOST` and `TBD_PROFILE_DIR` are refused when they contain `prairielearn` in any case. A
-  `DEPLOY_ENV` environment variable points this command, and only this one, at another file.
+  `deploy website` exits 1 without it, with a message that cites deploy.env line 79), and
+  `TBD_SSH_PASS` (for sshpass) or `TBD_SSH_IDENTITY_FILE` (for `ssh -i`), both optional.
+- Website, read by `tools_v2/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR` (required;
+  exit 1 without it, with a message that cites line 80), which must sit under the fixed deploy
+  prefix `require_tbd_remote_prefix` checks; `TBD_POSTGRES_HOST_PORT` (default 5432), the host port
+  of the staging compose Postgres; `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`);
+  and `TBD_SKIP_COMPOSE`, `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set
+  to 1. `TBD_REMOTE_DIR`, `TBD_SSH_HOST` and `TBD_PROFILE_DIR` are refused when they contain
+  `prairielearn` in any case. A `DEPLOY_ENV` environment variable points this command, and only
+  this one, at another file.
 - Game server, read by `tools_v2/xtask/src/commands/deploy/staging/config.rs`, where a value in
   the file wins over the process environment: `TBD_REMOTE_DIR`, `TBD_PROFILE_DIR`,
   `TBD_ADDONS_STAGING`, `TBD_GAME_SERVER_TOKEN` (the API's `SERVICE_TOKEN`) and

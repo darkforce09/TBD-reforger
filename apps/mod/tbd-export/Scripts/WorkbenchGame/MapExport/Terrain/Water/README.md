@@ -88,8 +88,8 @@ None: Workbench runs these scripts in the editor.
   `pos` and an `averageWidthM`, which `rivers.json` does not write.
 - Rules: 0 is the only dry class code, since `map water` reads every other code as water; the depth
   unit and `depthScaleToMeters` change together; the raster and vector exports both write
-  `lakes.json`, so running both keeps whichever ran last. Sources stay ASCII, and they compile only
-  when Workbench loads `tbd-export`.
+  `lakes.json`, so running both keeps whichever ran last. Lines added stay ASCII, and the scripts
+  compile only when Workbench loads `tbd-export`.
 
 ## Related documentation
 

@@ -50,9 +50,24 @@ sub-layout, or at runtime through a static `Mount(...)` that creates the layout 
 returns the handler (`TBD_ChipComponent`, `TBD_KeyValueRowComponent`, `TBD_DropdownComponent`,
 `TBD_SectionComponent`, `TBD_NumberedCardComponent`, `TBD_Caption`, `TBD_ScrollList`). Child
 events, such as an edit box's change or a clear button's click, arrive at the root handler and are
-matched by widget identity.
+matched by widget identity. The static mounts and the list setters take:
 
-Three conventions hold across the folder:
+| Call | Signature |
+|---|---|
+| `TBD_ChipComponent.Mount` | `(Widget dock, string text, TBD_EUITint tint, int ground = 0)` |
+| `TBD_KeyValueRowComponent.Mount` | `(Widget container)` |
+| `TBD_DropdownComponent.Mount` | `(Widget dock, Widget overlayHost, string label, bool multi)` |
+| `TBD_SectionComponent.Mount` | `(Widget parent, string title, int ground)` |
+| `TBD_NumberedCardComponent.Mount` | `(Widget parent, int number, string title, int ground)` |
+| `TBD_Caption.Mount` | `(Widget parent, string text, string trailing = "")`, returns the widget |
+| `TBD_ScrollList.Mount` | `(Widget dock, int ground, int inset = 12)` |
+| `TBD_TabStripComponent.SetItems` | `(notnull array<ref TBD_NavItemData> items)` |
+| `TBD_DropdownComponent.SetItems` | `(notnull array<ref TBD_DropdownItem> items)` |
+
+`TBD_ScrollList` mounts its bar with `TBD_UIScrollBar.Mount`, which ticks at 30 Hz, and its
+`Destroy` stops the bar and drops its widget references.
+
+Four conventions hold across the folder:
 
 - Ground: every chrome handler takes `SetGround(opaqueArgb)`, the opaque colour it sits on, and
   paints through `TBD_UITheme.PaintOver`, which composites translucent tokens in sRGB;
@@ -64,6 +79,11 @@ Three conventions hold across the folder:
 - Interaction: `TBD_NavItemComponent` and `TBD_DropdownComponent` derive from `TBD_UIInteractive`,
   so hover and gamepad focus are one state and one click is the action. Colour comes from
   `TBD_UITheme` with `TBD_EUITint`, icons from `TBD_UIIcons` keys.
+- Shrink-wrap or stretch: chips, buttons, nav items and dropdown triggers have a left-aligned
+  `AlignableSlot` root and size to their text; panels and search boxes anchor to fill their frame
+  dock; rows, sections, numbered cards and captions declare a stretched root, and the section,
+  numbered-card and caption mounts create it with `TBD_UILayouts.CreateStretched`, which re-applies
+  the stretch inside a layout widget.
 
 The dropdown menu opens into the owning screen's overlay dock (`SetOverlayHost`) under the
 trigger; its full-bleed `Scrim` closes it, forwarded by `TBD_DropdownMenuBridge`, and its rows are

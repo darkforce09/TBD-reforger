@@ -91,9 +91,9 @@ so the screen shows mock missions, separate from the platform's deployable list 
   which read `TBD_SessionSelection`.
 - Rules: every server half of an RPC takes the caller from `GetPlayerId()` and checks the admin
   list; the relay never restarts anything itself; the request and list shapes follow
-  `contracts_v2/definitions/mission-deployment.schema.json` (`RelayedDeploymentRequest`,
-  `DeployableMissionList`); sources stay ASCII and `cargo xtask mod compile` checks that they
-  compile.
+  `contracts_v2/definitions/mission-deployment.schema.json`
+  (`RelayedDeploymentRequest`, `DeployableMissionList`); lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

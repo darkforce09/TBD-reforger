@@ -112,8 +112,8 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 ### gate
 
-- Synopsis: `gate <COMMAND>`: `equipment-data-viewer`, `v-suite`, `s-routes`, `smoke`,
-  `editor-suite`, `doctor`, `r-auth`, `render-check`, `serve`.
+- Synopsis: `gate <COMMAND>`: `v-suite`, `s-routes`, `smoke`, `editor-suite`, `doctor`, `r-auth`,
+  `render-check`, `serve`.
 - Does: drives headless Chromium over the DevTools protocol against the built app: the DOM-oracle
   and route-drift gates, the Mission Creator smoke suite, the session-refresh gate, a render check,
   and a static server with the cross-origin isolation headers; `doctor` is the preflight the others

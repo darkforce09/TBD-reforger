@@ -15,7 +15,9 @@ assets_v2/terrains/everon/dem/
 ## Format
 
 - Encoding: a 16-bit single-channel PNG, 6400 × 6400 samples covering the manifest's
-  `worldBounds` (0 to 12,800 m on both axes), row 0 at the north edge. A sample `v` is
+  `worldBounds` (0 to 12,800 m on both axes), with column 0 at x = 0 and row 0 at z = 0, the south
+  edge: the exporter writes row `py` at world z = `py` × step, and the map engine samples row 0 at
+  the bounds' minimum z, since the manifest's `axisFlip` is false on both axes. A sample `v` is
   `min + v / 65535 · (max − min)` metres, with `min` −204.78 m and `max` 375.53 m, so black is the
   deepest seabed and white the highest peak. About 72 MB, stored in Git LFS
   (`.gitattributes`: `assets_v2/terrains/**/*.png`); a clone without LFS content holds a pointer

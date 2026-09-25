@@ -70,10 +70,10 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
 - Used by: `TBD_TaskHud` in `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`
   (`TBD_MarkerClient.FindMarkerManager`, `TBD_MarkerIcons.Resolve`, `MARKER_COLOR`);
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches `TBD_MarkerComponent`.
-- Rules: a side's markers never reach another side, and a request carries no faction; the reply
-  goes to the owner only, and the client inserts markers locally; the marker RPC stays within the
-  eight-parameter limit; sources stay ASCII, and `cargo xtask mod compile` checks that they
-  compile, while which glyph an icon draws is checked in game.
+- Rules: a side's markers never reach another side, and a request carries no faction; the reply goes
+  to the owner only, and the client inserts markers locally; the marker RPC stays within the
+  eight-parameter limit; lines added stay ASCII, and `cargo xtask mod compile` checks that the
+  scripts compile, while which glyph an icon draws is checked in game.
 
 ## Related documentation
 

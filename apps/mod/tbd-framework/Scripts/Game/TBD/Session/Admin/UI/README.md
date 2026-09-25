@@ -45,8 +45,8 @@ holds only the server's refusal, so the screen has nothing else to draw.
 - Used by: `TBD_AdminClient`, which opens and toggles the `TBD_UIAdmin` preset; the preset entry
   in `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`.
 - Rules: the screen holds no permission of its own and no path to a power; every colour comes from
-  `TBD_UITheme`; one primary action at a time; sources stay ASCII and `cargo xtask mod compile`
-  checks that they compile.
+  `TBD_UITheme`; one primary action at a time; lines added stay ASCII and `cargo xtask mod compile`
+  checks that the scripts compile.
 
 ## Related documentation
 

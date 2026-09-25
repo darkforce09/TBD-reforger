@@ -105,8 +105,8 @@ it spawns `TBD_PreSlotCamera`, which orbits the centre of the world's bound box 
 - Rules: the server never takes a player id from the client, and `TBD_SpawnManager.ClaimSlot` judges
   every claimed seat; the roster is only ever the
   parse of `TBD_SpawnManager.BuildSlotRoster`, never a second opinion; a reply replaces the client
-  roster, never merges into it; the wire self-check passes at boot; sources stay ASCII and
-  `cargo xtask mod compile` checks that they compile.
+  roster, never merges into it; the wire self-check passes at boot; lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

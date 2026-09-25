@@ -142,5 +142,5 @@ world's fetch is dropped.
   after a match, identity last; there is no default mission; `MISSION_FILE_MAX_BYTES`,
   `x-tbd-missionFileMaxBytes` and the `artifact_bytes` maximum change together; wire field names are
   the JSON keys, each struct with its `@contract` tag (`cargo xtask schema citations`); every static
-  resets per world; sources stay ASCII, and `cargo xtask mod compile` checks that they compile,
-  while a boot against the platform is checked on a dedicated server.
+  resets per world; lines added stay ASCII, and `cargo xtask mod compile` checks that the scripts
+  compile, while a boot against the platform is checked on a dedicated server.

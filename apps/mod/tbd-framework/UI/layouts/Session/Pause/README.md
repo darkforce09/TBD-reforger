@@ -34,5 +34,3 @@ None: no resource refers to this folder.
 
 - [In-game menu specification](/documentation_v2/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the in-game menus' design target
-- [Discord identity link specification](/documentation_v2/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
-  — the identity link's design target

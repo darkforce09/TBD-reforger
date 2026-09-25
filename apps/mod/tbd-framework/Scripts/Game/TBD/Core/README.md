@@ -63,8 +63,8 @@ announcements go through it. `Hashing/` holds the SHA-256 that gates every missi
   `TBD_RegistryPocComponent`.
 - Rules: every log line starts `[TBD][<channel>]`, and log scrapers such as
   `cargo xtask mod remote-logs` pin that prefix, never the sentence; the registry's shape follows
-  `contracts_v2/definitions/registry.schema.json`; the proof-of-concept spawn stays off in a
-  shipped prefab; sources stay ASCII and `cargo xtask mod compile` checks that they compile.
+  `contracts_v2/definitions/registry.schema.json`; the proof-of-concept spawn stays off in a shipped
+  prefab; lines added stay ASCII and `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

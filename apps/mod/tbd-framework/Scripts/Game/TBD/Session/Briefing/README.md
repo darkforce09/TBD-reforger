@@ -68,8 +68,8 @@ parameters, assets and uniforms for both sides, and plans. Its `Get()` builds it
 - Used by: `TBD_FrameworkManager`, which pushes `TBD_OnStageChanged`; `TBD_DockScreen` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/` (the top-bar Briefing tab).
 - Rules: a player receives only their own side's briefing and tally, resolved on the server; the
-  stage handler is the one opener and closer of the screen; sources stay ASCII and
-  `cargo xtask mod compile` checks that they compile.
+  stage handler is the one opener and closer of the screen; lines added stay ASCII and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

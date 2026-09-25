@@ -64,8 +64,8 @@ every menu through `TBD_MenuStack.CloseAll`. Load Plan logs the chosen plan id; 
 - Used by: `TBD_BriefingController`, which opens and closes the `TBD_UIBriefing` preset on the
   `BRIEFING` stage; `TBD_DockScreen` (the top-bar Briefing tab).
 - Rules: pages read only `TBD_BriefingCatalog.Get()`; the map stays open under every mode, so no
-  mode pushes a stacked menu; sources stay ASCII and `cargo xtask mod compile` checks that they
-  compile.
+  mode pushes a stacked menu; lines added stay ASCII and `cargo xtask mod compile` checks that the
+  scripts compile.
 
 ## Related documentation
 

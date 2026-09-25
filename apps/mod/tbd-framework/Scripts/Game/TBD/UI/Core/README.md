@@ -63,16 +63,20 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
   afterwards only re-binds text and colour, hiding surplus rows, so a list refreshed on every
   [slot](/documentation_v2/glossary.md#slot) claim costs no widget churn. A build is `BeginUpdate`,
   `AddSection` and `AddItem`, `EndUpdate`.
-- `TBD_UIScrollBar` is mounted by the owner of a scroll widget; it ticks at 30 Hz through the call
-  queue, sizes and moves the thumb from the viewport and content, and hides when nothing
-  scrolls. The engine's own bar is clipped away by the list layout.
+- `TBD_UIScrollBar` is mounted by the owner of a scroll widget with
+  `Mount(dock, scroll, content, ground)` into the list's 4 px `ScrollBarDock`, repainted with
+  `SetGround` and removed with `Destroy`; it ticks at 30 Hz through the call queue (`TICK_MS` 33),
+  sizes and moves the thumb from the viewport and content, and hides when nothing scrolls. The
+  engine's own bar is clipped away by the list layout.
 
 ### Resources, colour and icons
 
 - `TBD_UILayouts` names every layout and texture once as `"{GUID}path"`; its header holds the GUID
   block ledger (`7BD1A7000000XXnn`). `Create` returns null without a workspace (a dedicated
   server) and retries by bare path when a GUID does not resolve; `CreateStretched` and
-  `CreateHandler` wrap it; `MountRounded` fills a `*Border` or `*BG` frame dock with the
+  `CreateHandler` wrap it, `CreateStretched` pinning the new root to the full width of a layout
+  widget parent with `AlignableSlot.SetHorizontalAlign(..., LayoutHorizontalAlign.Stretch)`;
+  `MountRounded` fills a `*Border` or `*BG` frame dock with the
   `TBD_Rounded<N>` layout for radius 5 to 12 (8 for any other value) and leaves a non-frame dock
   square.
 - `TBD_UITheme` holds the colour tokens, ported by name and hex from

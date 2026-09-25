@@ -59,6 +59,6 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/
   `TBD_PlacementScatter.ForSlot`; the game mode, through the modded `SCR_BaseGameMode`.
 - Rules: numbers that may be authored as 0 keep the `ABSENT` sentinel; readers declare their own
   wire structs instead of adding fields to the loader's structs; scatter stays deterministic, so a
-  slot spawns at the same offset on every respawn; sources stay ASCII, and
-  `cargo xtask mod compile` checks that they compile, while whether fog, weather or scatter shows
-  in a round is checked by hand.
+  slot spawns at the same offset on every respawn; lines added stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile, while whether fog, weather or scatter
+  shows in a round is checked by hand.

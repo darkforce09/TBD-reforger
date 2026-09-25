@@ -54,5 +54,5 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Roads/`, which merges the segments
   into the network-wide junction graph. No committed tool reads `highways.json`.
 - Rules: `IsHighwayEntity` is the one place that decides what a highway is; the file keeps the field
-  set every road class writes. Sources stay ASCII, and they compile only when Workbench loads
-  `tbd-export`.
+  set every road class writes. Lines added stay ASCII, and the scripts compile only when Workbench
+  loads `tbd-export`.

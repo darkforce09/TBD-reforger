@@ -59,8 +59,8 @@ mission from the shared primitives. Select Scenario stores the mission and versi
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/`, which raises the screen on `LOBBY`; the
   preset entry in `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`.
 - Rules: the screen reads missions only through `TBD_MissionCatalog.Get()`; the screen owns wiring
-  and the panels own their widgets; sources stay ASCII and `cargo xtask mod compile` checks that
-  they compile.
+  and the panels own their widgets; lines added stay ASCII and `cargo xtask mod compile` checks that
+  the scripts compile.
 
 ## Related documentation
 

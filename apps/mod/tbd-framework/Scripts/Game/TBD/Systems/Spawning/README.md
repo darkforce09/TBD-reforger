@@ -173,10 +173,10 @@ groups live; a `garrison` spawns once and is not restocked. A module names eithe
   `SCR_RespawnSystemComponent`.
 - Rules: in a framework world only `TBD_SpawnManager` spawns a player, and only `NOT_MINE` falls
   through to vanilla; a spawn ticket names one player and one body and is spent once; one life is
-  keyed on the durable player key, never the numeric id; deployment authorization fails closed
-  until the slot table loads, and a lost request is repeated with the same `player_life_id`; every
-  `Rpc()` stays within eight parameters; sources stay ASCII, and `cargo xtask mod compile` checks
-  that they compile, while a deploy on a dedicated server is checked by hand.
+  keyed on the durable player key, never the numeric id; deployment authorization fails closed until
+  the slot table loads, and a lost request is repeated with the same `player_life_id`; every `Rpc()`
+  stays within eight parameters; lines added stay ASCII, and `cargo xtask mod compile` checks that
+  the scripts compile, while a deploy on a dedicated server is checked by hand.
 
 ## Related documentation
 

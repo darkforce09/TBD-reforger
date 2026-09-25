@@ -41,7 +41,8 @@ whether the view is limited to the viewer's own side, and the status line explai
   `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`.
 - Rules: the screen never pauses or captures the camera; the list shows only what
   `TBD_SpectatorTargets` allows; a new preset takes effect only after Workbench registers
-  `chimeraMenus.conf`; sources stay ASCII and `cargo xtask mod compile` checks that they compile.
+  `chimeraMenus.conf`; lines added stay ASCII and `cargo xtask mod compile` checks that the scripts
+  compile.
 
 ## Related documentation
 

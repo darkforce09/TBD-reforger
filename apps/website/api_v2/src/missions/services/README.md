@@ -16,7 +16,7 @@ apps/website/api_v2/src/missions/services/
 ├── mission_compile.rs     the map engine's compile of a mission row and payload; the findings headers
 ├── mission_deployments/   request, validate, bind, settle and read deployments of approved artifacts
 ├── mission_document.rs    the camelCase export document of a mission and its current version
-├── mission_lookup.rs      the mission row reads every surface uses to resolve a mission id
+├── mission_lookup.rs      mission row reads shared by the mission routes, dashboard and service record
 ├── mission_reviews.rs     open a review on submission, decide exactly its artifact, the review thread
 ├── mission_write_lock.rs  the row and account lock the patch, delete, submit and review comment take
 ├── mod.rs                 the module tree

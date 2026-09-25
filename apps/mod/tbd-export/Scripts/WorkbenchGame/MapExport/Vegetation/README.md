@@ -67,8 +67,8 @@ None: Workbench runs these scripts in the editor.
   (`assets_v2/terrains/everon/objects/`) comes from the full world-object export in
   `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/` and `world build-objects`.
 - Rules: a layer's classifier decides its membership, keyed on prefab paths and file names; each
-  file is written as JSON text by hand, flushed every 8,000 characters. Sources stay ASCII, and they
-  compile only when Workbench loads `tbd-export`.
+  file is written as JSON text by hand, flushed every 8,000 characters. Lines added stay ASCII, and
+  the scripts compile only when Workbench loads `tbd-export`.
 
 ## Related documentation
 

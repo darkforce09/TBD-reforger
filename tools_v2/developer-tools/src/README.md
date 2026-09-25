@@ -50,8 +50,8 @@ xtask schema` commands call their entry functions directly with the checkout roo
   `tools_v2/xtask/src/commands/map/` adapts one to one.
 - `map_verification`: `labels`, `object_goldens`, `terrain_manifest`, `blas_manifest` and
   `world_line_of_sight`, which the xtask schema and map verifications call.
-- `world_export_pipeline`: `INSTANCE_KINDS` and `vegetation_density`, which xtask schema checks
-  read.
+- `world_export_pipeline`: `INSTANCE_KINDS`, which the xtask `schema type-inventory` check
+  compares against its own copy.
 - `enfusion_tooling::enfusion_mcp_entrypoint`: the enfusion-mcp server command that `cargo xtask mcp
   call` and `cargo xtask mcp daemon` start.
 - `repository_layout`: the contract, fixture, terrain, glyph and MCP package paths that xtask

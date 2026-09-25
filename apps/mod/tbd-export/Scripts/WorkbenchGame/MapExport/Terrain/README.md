@@ -46,8 +46,8 @@ None: Workbench runs these scripts in the editor.
   other names from the export scratch; no committed tool reads the road or rasterization files, and
   no committed step moves any of them out of the profile.
 - Rules: the layers write only below the config's destination folder, through `TBD_MapExportPaths`;
-  sources stay ASCII. `cargo xtask mod compile` compiles only the framework addon, so these scripts
-  compile only when Workbench loads `tbd-export`.
+  lines added stay ASCII. `cargo xtask mod compile` compiles only the framework addon, so these
+  scripts compile only when Workbench loads `tbd-export`.
 
 ## Related documentation
 

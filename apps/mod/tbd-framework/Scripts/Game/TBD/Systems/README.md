@@ -80,8 +80,8 @@ Three patterns hold across the folders:
 - Rules: the server alone reads the mission document, and a client learns only its own side's
   markers and nets; every modded vanilla class does its work only in a framework world; an RPC
   carries at most eight parameters, the `Rpc()` limit; wire structs keep their JSON keys'
-  spelling with a `@contract` tag (`cargo xtask schema citations`); sources stay ASCII, and
-  `cargo xtask mod compile` checks that they compile.
+  spelling with a `@contract` tag (`cargo xtask schema citations`); lines added stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation
 

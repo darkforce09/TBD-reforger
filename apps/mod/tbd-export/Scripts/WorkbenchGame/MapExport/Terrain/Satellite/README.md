@@ -47,8 +47,8 @@ None: Workbench runs these scripts in the editor.
   engine streams (`assets_v2/terrains/everon/satellite/`) is built by the map raster pipeline from
   the game's own textures.
 - Rules: the image path handed to `MapDataExporter` is a native path, never a `$profile:` path; the
-  Proton prefix path is the constant in `TBD_MapExportPaths`. Sources stay ASCII, and they compile
-  only when Workbench loads `tbd-export`.
+  Proton prefix path is the constant in `TBD_MapExportPaths`. Lines added stay ASCII, and the
+  scripts compile only when Workbench loads `tbd-export`.
 
 ## Related documentation
 

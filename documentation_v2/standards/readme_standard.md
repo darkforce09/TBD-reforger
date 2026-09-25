@@ -91,7 +91,9 @@ block that never closes each fail.
     fails.
 - Matching: every tracked direct child except `README.md` matches exactly one entry of its own kind,
   a file against file entries and a folder against folder entries, and every entry matches at least
-  one tracked child. Untracked and ignored files are invisible.
+  one tracked child. Ignored files are invisible, and so are untracked files unless
+  `--with-untracked` lists them: with the flag, each untracked file git does not ignore is judged
+  exactly like a tracked file.
 
 Every violation prints as `path:line: message`: a child that no entry matches is reported at the
 root line, a missing heading at line 1, and every other violation at the line it concerns.
@@ -186,7 +188,7 @@ Go down this list and take the first kind that fits.
 
 1. **documentation_v2 folder**: any folder under `documentation_v2/`.
 2. **area root**: the top of a code tree, or a folder that groups several products without being
-   one (`apps/`, `apps/website/`, `apps/mod/`, `tools_v2/`, `contracts_v2/`, `assets_v2/`).
+   one (`apps/`, `apps/website/`, `apps/mod/`, `tools_v2/`, `contracts_v2/`).
 3. **crate, package or addon root**: the folder that holds a `Cargo.toml`, a `package.json` or an
    Enfusion `addon.gproj` (`apps/website/api_v2/`, `apps/ticketboard/`,
    `tools_v2/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/`).
@@ -197,7 +199,7 @@ Go down this list and take the first kind that fits.
 6. **deploy or config**: templates, service units and profiles that set up a host or a server
    (`tools_v2/xtask/deploy/`, `tools_v2/xtask/dedicated_server_profiles/`).
 7. **data**: schemas, fixtures, migrations, seeds and asset data that code reads rather than runs
-   (`contracts_v2/definitions/`, `apps/website/api_v2/seeds/`, `assets_v2/terrains/`,
+   (`contracts_v2/definitions/`, `apps/website/api_v2/seeds/`, `assets_v2/`, `assets_v2/terrains/`,
    `apps/website/shared/`).
 8. **command-line**: a crate's `src/bin/`, and each folder directly under
    `tools_v2/xtask/src/commands/` (`tools_v2/developer-tools/src/bin/`,

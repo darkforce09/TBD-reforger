@@ -84,10 +84,10 @@ before a deployment and on disconnect.
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/` (`TBD_SpectatorController.IsActive`);
   `TBD_FrameworkManager`, whose roll call checks the component.
 - Rules: a host is never a character, never damageable and never a path back into the world
-  (`TBD_SpawnManager.AdminRespawn` is the only one); the server trusts no client position beyond
-  its own clamps; statics are cleared on shutdown because they outlive a world; sources stay ASCII
-  and `cargo xtask mod compile` checks that they compile, while spectating is checked by hand on a
-  dedicated server.
+  (`TBD_SpawnManager.AdminRespawn` is the only one); the server trusts no client position beyond its
+  own clamps; statics are cleared on shutdown because they outlive a world; lines added stay ASCII
+  and `cargo xtask mod compile` checks that the scripts compile, while spectating is checked by hand
+  on a dedicated server.
 
 ## Related documentation
 

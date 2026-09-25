@@ -91,8 +91,8 @@ nothing restarts.
 - Rules: `executing` is admitted before any effect starts, and an effect never repeats; one command
   at a time; the argument checks match the platform's validation in
   `contracts_v2/definitions/fleet-command.schema.json` (`ClaimRequest`, `ClaimedFleetCommand`,
-  `ExecutionStart`, `ExecutionResult`); sources stay ASCII and `cargo xtask mod compile` checks
-  that they compile.
+  `ExecutionStart`, `ExecutionResult`); lines added stay ASCII and `cargo xtask mod compile` checks
+  that the scripts compile.
 
 ## Related documentation
 

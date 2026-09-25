@@ -58,6 +58,6 @@ itself is 2D: the radius is what makes it positional, and the volume does not ch
   `SCR_BaseGameMode`, and each client through the modded `SCR_PlayerController`.
 - Rules: the server alone reads the document, and clients act only on what an owner RPC delivers;
   presence is `Count()` on `emitters` and `musicCues`, never a null test on `audio`; each emitter
-  arms and each start or end cue fires once per mission; sources stay ASCII, and
-  `cargo xtask mod compile` checks that they compile, while whether a sound plays in a round is
-  checked by hand.
+  arms and each start or end cue fires once per mission; lines added stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile, while whether a sound plays in a round
+  is checked by hand.
