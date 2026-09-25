@@ -110,3 +110,7 @@ ci-local` nor the CI workflow runs them.
   `mcpd` runs.
 - [Map asset commands](/tools_v2/xtask/src/commands/map/README.md) — the xtask commands that wrap
   `world` and the blueprint compiler.
+- [Developer tools documentation](/documentation_v2/tools_v2/developer-tools/README.md) — the
+  Enfusion script oracle and the map raster pipeline, end to end.
+- [Terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md) —
+  the world export flow from Workbench to the committed terrain.

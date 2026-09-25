@@ -97,3 +97,7 @@ reads it yet.
   assets and serving them to the app.
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — how the deployed host
   gets its terrain tree.
+- [Terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md) —
+  the flow from a Workbench world to the datasets here, and their gates.
+- [Uploaded terrain volume](/documentation_v2/assets_v2/uploaded_terrain_volume.md) — the design of
+  the uploaded tier `storage_spec/` specifies.

@@ -90,3 +90,5 @@ settings belong to its callers: `cargo xtask platform wave` takes the lock path 
 - [Verifications](/tools_v2/xtask/src/verifications/README.md) — the gates built on this crate.
 - [Documentation gates](/tools_v2/xtask/src/verifications/documentation/README.md) — the README
   and link gates, as one example of a gate family.
+- [Tooling architecture](/documentation_v2/tools_v2/tooling_architecture.md) — the one outcome
+  vocabulary and the shared lock across the tooling.

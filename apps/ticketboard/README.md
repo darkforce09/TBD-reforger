@@ -93,3 +93,5 @@ cargo xtask verify file-length
   shows and runs.
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — how waves are packed and
   run.
+- [Ticketboard viewer](/documentation_v2/ticketboard/ticketboard_viewer.md) — the flows, the
+  reasons behind them and the open work.

@@ -173,3 +173,5 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
   — issuing and revoking the credential the agent authenticates with.
 - [Game server staging](/documentation_v2/runbooks/game_server_staging/README.md) — deploying the
   staging game server with the host agent.
+- [Fleet command execution](/documentation_v2/fleet_host_agent/fleet_command_execution.md) — the
+  design across the API, the agent and the game runtime, and the open work.

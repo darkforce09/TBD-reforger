@@ -106,3 +106,7 @@ by hand after a change here.
   order during a wave.
 - [Token estimate factor](/documentation_v2/tools_v2/ticket-engine/token_estimate_factor.md) — the
   measurement behind the token estimates.
+- [Ticket engine documentation](/documentation_v2/tools_v2/ticket-engine/README.md) — the index of
+  the deeper documents on this crate.
+- [Tooling architecture](/documentation_v2/tools_v2/tooling_architecture.md) — the dependency rules
+  this crate lives under.

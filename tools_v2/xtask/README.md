@@ -108,3 +108,5 @@ The crate has no features and reads no configuration file of its own. What it re
 - [Website deployment](/documentation_v2/runbooks/website_deployment.md) — the website deploy
   and the host setup.
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — the platform wave commands.
+- [Tooling architecture](/documentation_v2/tools_v2/tooling_architecture.md) — the router's place
+  among the tooling crates, and the verification surface it runs.

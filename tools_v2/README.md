@@ -94,10 +94,10 @@ Each crate's README lists its own commands and checks.
 
 ## Related documentation
 
-- [Tooling architecture plan](/documentation_v2/archive/tools_v2_refactor/architecture_plan.md) —
-  the archived statement of the tooling's invariants and dependency direction.
-- [Tooling analysis and inventory](/documentation_v2/archive/tools_v2_refactor/analysis_and_inventory.md)
-  — the archived map of every tooling module to its responsibility.
+- [Tooling architecture](/documentation_v2/tools_v2/tooling_architecture.md) — the crates, their
+  dependency direction, the invariants and the verification surface.
+- [Tooling documentation](/documentation_v2/tools_v2/README.md) — the index of the deeper
+  documents on each crate.
 - [Enfusion MCP tooling](/documentation_v2/runbooks/enfusion_mcp_tooling.md) — the MCP daemon and
   call path.
 - [Factory waves](/documentation_v2/runbooks/factory_waves/README.md) — running waves of tickets

@@ -99,3 +99,10 @@ multipart archive
 - Used by: nothing.
 - Rules: the uploaded tier keeps the built-in tier's manifest contract, so one loader serves both;
   a terrain becomes visible only after every gate passes and the atomic rename completes.
+
+## Related documentation
+
+- [Uploaded terrain volume](/documentation_v2/assets_v2/uploaded_terrain_volume.md) — the design
+  of this tier with its known discrepancies, decisions and open work.
+- [Terrain export and map assets](/documentation_v2/assets_v2/terrain_export_and_map_assets.md) —
+  the built-in tier whose manifest contract the uploaded tier keeps.

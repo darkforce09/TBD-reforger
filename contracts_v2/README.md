@@ -93,5 +93,7 @@ once `cargo xtask db up` has started it.
 
 ## Related documentation
 
+- [Schema evolution policy](/documentation_v2/contracts_v2/schema_evolution_policy.md) — how a
+  schema may change: additive rules, versions, breaking changes and the steps of a change.
 - [TBD Voice game bridge contract](/documentation_v2/contracts_v2/definitions/bridge_messages.md)
   — the transport, envelope and lifecycle of the voice bridge messages.
