@@ -1,0 +1,29 @@
+writer	order	targets (under documentation_v2/ unless a path starts elsewhere)	sources and notes
+F02	1	website/frontend/pages/{command_center, operations}/**	plan row F02; manifest rows and pending_merge/F02/; new docs for /announcements/:id and the ORBAT route
+F03	1	website/frontend/pages/{mission_hub, doctrine_and_info, field_tools}/**	plan row F03; manifest rows and pending_merge/F03/; new docs for /debug/world-los and the artifact workspace; mission-creator.md to archive
+F04a	1	website/frontend/README.md (route table: every route to page folder to feature doc), website/frontend/pages/README.md, the frontend core docs	plan row F04 (frontend README/INDEX/ROADMAP/TRACKING/_template and core docs); pending_merge/F04/ core and hub files
+F04b	2	website/frontend/pages/{account, navigation}/**	plan row F04 (auth/*, settings, not-found, shell/*, nav_config.md, layout.md); pending_merge/F04/ page files; after F04a
+F09a	1	website/README.md, website/api_v2/** (overview, env reference, domain docs, verification_evidence/README.md index)	plan row F09 (backend/ROADMAP, backend/README, .env.example, draft api hubs)
+F09b	2	website/map-engine/**, website/graphics-engine/**, standards/engine_boundary_rules.md	plan row F09 (the rule sections of ENGINE_SPLIT_PROGRAM, draft engine hubs); the per-rule table in tools_v2/xtask/src/verifications/architecture/README.md; after F09a
+F05	2	website/frontend/apps/editor/feature_inventory/ (split the 1799-line README into area files; folder README; areas A to M), reference/feds_schema	plan row F05
+F06	3	website/frontend/apps/editor/feature_inventory/ areas N to Z	plan row F06; after F05 (F05 performs the split)
+F07a	2	website/frontend/apps/editor/{mission_creator_roadmap.md, ux_spec.md}	plan row F07 (ROADMAP, agent_execution, ux_spec, pages/mission-editor.md); pins: ROADMAP sync markers; `ticket check --strict`
+F07b	3	website/frontend/apps/editor/{decisions.md (split if over 500 lines), eden_editor_reference/eden_gap_analysis.md}	plan row F07; pins: every eden_id priority table stays in one file and round-trips with no priority column; keep "a multi-selection now OPENS multi-edit" and "T-649 ✅"; `ticket check --strict`, `mk ci-local-leptos`; after F07a
+F08a	2	website/frontend/apps/editor/eden_editor_reference/{README.md, interactions/ (split), attributes, ui_anatomy}	plan row F08 (the Eden catalogs)
+F08b	3	website/frontend/apps/editor/{README.md, arsenal/, visual_references/}, website/frontend/apps/{README.md, planner/, aar/}	plan row F08 (arsenal docs, mockup sets, draft planner and aar hubs); after F08a
+F10a	3	mod/tbd-framework/{mod_design.md, capability verdicts index, UI/README.md} and the UI screens lobby, mission_selection, briefing	plan row F10; pins: the 12 @idx citations and the section names verify_crf_leak.rs:38-42 cites; `enf citations`, `enf capability`
+F10b	4	mod/tbd-framework/UI/ remaining screens (end screen, debrief, objective HUD, safe start HUD, play area warning, tactical marker palette, identity link, spectator, in-game menu) and their visual reference folders	plan row F10; R14.3's phase5_spec_disagreements list; after F10a
+F11	3	mod/README.md, mod/tbd-export/** (exporter docs, the verification_evidence folder indexes), mod/tbd-emcp/**	plan row F11
+F12	3	tools_v2/**, ticketboard/**, fleet_host_agent/**, contracts_v2/** (incl. definitions/bridge_messages.md), assets_v2/** docs	plan row F12; pins: token_estimate_factor quotes; `hcargo test -p ticket-engine estimate_provenance`
+F13a	4	runbooks/{local_development.md, database_operations.md}	plan row F13; safe runs only
+F13b	4	runbooks/{website_deployment.md, testing_and_ci.md}	plan row F13; safe runs only; after F13a
+F14a	4	runbooks/game_server_staging/ (split)	plan row F14 (STAGING-SERVER)
+F14b	5	runbooks/{editor_gates.md, editor_capture.md, enfusion_mcp_tooling.md, spawn_determinism.md}	plan row F14; runs: `mcp selftest`, gate doctor
+F15a	5	runbooks/two_client_playtest/ (split)	plan row F15 (PLAYTEST_RUNBOOK)
+F15b	5	runbooks/mod_slice_workflow.md	plan row F15 (SLICE_WORKFLOW, VERIFY_AGENT_PROMPT, CLAUDE-CODE-START)
+F16a	5	runbooks/factory_waves/ (agent-neutral; Law 2 tooling exception)	plan row F16 (PLATFORM_FACTORY, FACTORY_FOR_CURSOR, EDITOR_FACTORY_*; dated parts to archive/factory_runs)
+F16b	6	runbooks/{ticket_run_pipeline.md, cursor_workspace_setup.md}	plan row F16 (the ticket section of AGENT_COMMIT_CHECKLIST, CURSOR_SETUP, EDITOR_SLICE/VERIFY_BRIEF); after F16a
+F17a	6	standards/{coding_standards/ (split), where_does_x_go.md, commit_checklist.md, ticket_identifiers.md}	plan row F17
+F17b	6	known_bugs/**, design_system/**	plan row F17 (KB-001, KB-002, THEME, token DESIGN files, draft design system; verify against aegis.css, classify.rs, TBD_UITheme.c, TBD_MarkerData.c)
+F18	7	folder-index READMEs for every documentation_v2 folder no other writer owns: tickets/ (specs and plans by glob), archive/ and every archive/<topic>/, runbooks/, standards/	plan row F18; readme-coverage green across documentation_v2/; last but one
+F19	8	glossary.md (fill), product_roadmap.md, final pass on documentation_v2/README.md	plan row F19 (build plan, mod MILESTONES, north-star backlog, discord post); then CP4
