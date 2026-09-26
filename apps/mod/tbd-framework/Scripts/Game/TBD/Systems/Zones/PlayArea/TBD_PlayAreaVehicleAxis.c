@@ -1,53 +1,50 @@
-//! T-689 -- play-area vehicle-class axis: which occupants the penalty applies to.
-//!
-//! T-706 put `vehicleClasses` on `$defs/zoneRules`. Nothing bound it. Play-area enforcement
-//! already has graceSeconds / warnEverySeconds / penalty; the missing axis is WHICH classes
-//! those rules confine. FNF v4's play-zone AIR flag is false: aircraft may leave the play
-//! area, and a player who then exits the aircraft outside it is infantry again and is
-//! confined (teleport-back in FNF; warn/kill here via the existing penalty).
-//!
-//! Presence (JsonLoadContext allocates an absent `ref array`, so Count() is the test):
-//!   * Count() == 0 (key absent, or authored `[]` which this typed reader cannot tell
-//!     apart from absent) -- the rule applies to EVERY class. Today's behaviour.
-//!   * Count() > 0 -- the rule applies to exactly the named classes. Omitting `aircraft`
-//!     is how the aircraft exemption is authored.
-//!
-//! Occupant class: on-foot -> infantry; heli/plane -> aircraft; buoyancy-only -> sea;
-//! any other Vehicle -> ground. Unknown vehicle class -> ground.
-//! @contract mission.schema.json#/$defs/zoneRules
+/**
+ * @file TBD_PlayAreaVehicleAxis.c
+ * @brief Which occupant classes a play-area zone confines, from `zoneRules.vehicleClasses`.
+ *
+ * Role: binds each zone's `vehicleClasses` (`infantry`, `ground`, `sea`, `aircraft`), classifies
+ * a body's occupant class and says whether a zone confines it.  Position: bound by
+ * `TBD_ZoneCompiler.ResolveRules`; asked by `TBD_ZoneRegistry.IsInsideBoundary` and
+ * `FindViolatedProtection`.
+ * State: static filter list for the life of the script VM, cleared with the zone registry.
+ * Invariants: an empty or absent list confines every class (a typed reader cannot tell `[]` from
+ * absent), so leaving out `aircraft` is how the aircraft exemption is authored; an unknown vehicle
+ * is ground; with no body found at the sampled XZ the zone confines.
+ */
 
-//! One zone's resolved vehicle-class filter, copied off the loader struct.
+//! One zone's resolved vehicle-class filter.
 class TBD_PlayAreaVehicleAxisBound
 {
-	string zoneId;
-	bool restrict;
-	bool infantry;
-	bool ground;
-	bool aircraft;
-	bool sea;
+	string zoneId; //!< `zones[].id`
+	bool restrict; //!< false = the zone confines every class
+	bool infantry; //!< `infantry` listed: on-foot players are confined
+	bool ground; //!< `ground` listed: ground vehicle occupants are confined
+	bool aircraft; //!< `aircraft` listed: helicopter and plane occupants are confined
+	bool sea; //!< `sea` listed: boat occupants are confined
 }
 
-//! Server-side bind + classify + effective-penalty. TBD_ZoneRegistry applies the result on
-//! the boundary / base_protection query path so PlayAreaComponent's existing caller does not
-//! have to change.
+//! The vehicle-class axis of play-area zones.
+//! @authority server
 class TBD_PlayAreaVehicleAxis
 {
-	static const string CH = "PlayAreaAxis";
+	static const string CH = "PlayAreaAxis"; //!< log channel
 
-	static const string CLASS_INFANTRY = "infantry";
-	static const string CLASS_GROUND = "ground";
-	static const string CLASS_AIRCRAFT = "aircraft";
-	static const string CLASS_SEA = "sea";
+	static const string CLASS_INFANTRY = "infantry"; //!< `vehicleClasses` token: on foot
+	static const string CLASS_GROUND = "ground"; //!< `vehicleClasses` token: any other vehicle
+	static const string CLASS_AIRCRAFT = "aircraft"; //!< `vehicleClasses` token: helicopter or plane
+	static const string CLASS_SEA = "sea"; //!< `vehicleClasses` token: buoyant vehicle
 
-	protected static ref array<ref TBD_PlayAreaVehicleAxisBound> s_aBounds;
+	protected static ref array<ref TBD_PlayAreaVehicleAxisBound> s_aBounds; //!< one filter per bound zone; null until bound
 
+	//! Drop every filter.
 	static void Clear()
 	{
 		s_aBounds = null;
 	}
 
-	//! Copy vehicleClasses off this zone. Called from TBD_ZoneRegistry.ResolveRules once per
-	//! zone; statics outlive a world so Registry.Clear calls Clear() first.
+	//! Bind one zone's `vehicleClasses`, logging unknown tokens and the resolved filter.
+	//! @param zoneId the zone's id
+	//! @param rules the zone's wire rules; may be null (confines every class)
 	static void Bind(string zoneId, TBD_MissionZoneRulesStruct rules)
 	{
 		if (!s_aBounds)
@@ -106,7 +103,10 @@ class TBD_PlayAreaVehicleAxis
 			zoneId, bound.infantry, bound.ground, bound.aircraft, bound.sea));
 	}
 
-	//! Schema class of this occupant. On-foot is infantry. Unknown vehicle -> ground.
+	//! The schema class of this occupant: on foot is infantry, a helicopter or plane aircraft, a
+	//! buoyant vehicle sea, anything else ground.
+	//! @param body the player's controlled entity; null reads as ground
+	//! @return one of the `CLASS_*` tokens
 	static string ClassifyOccupant(IEntity body)
 	{
 		if (!body)
@@ -125,7 +125,10 @@ class TBD_PlayAreaVehicleAxis
 		return CLASS_GROUND;
 	}
 
-	//! Does this zone's axis confine this occupant? Absent filter -> yes (today's everyone).
+	//! Whether this zone's filter confines this occupant.
+	//! @param zoneId the zone
+	//! @param body the player's controlled entity
+	//! @return true with no filter or an unrestricted one, else whether the class is listed
 	static bool AppliesToOccupant(string zoneId, IEntity body)
 	{
 		TBD_PlayAreaVehicleAxisBound bound = Find(zoneId);
@@ -146,7 +149,11 @@ class TBD_PlayAreaVehicleAxis
 		return bound.ground;
 	}
 
-	//! Authored penalty, or NONE when this occupant is off the axis (the aircraft exemption).
+	//! The penalty that applies to this occupant.
+	//! @param authored the zone's penalty
+	//! @param zoneId the zone
+	//! @param body the player's controlled entity
+	//! @return `authored`, or `NONE` when the occupant is off the zone's axis
 	static TBD_EZonePenalty EffectivePenalty(TBD_EZonePenalty authored, string zoneId, IEntity body)
 	{
 		if (!AppliesToOccupant(zoneId, body))
@@ -154,9 +161,12 @@ class TBD_PlayAreaVehicleAxis
 		return authored;
 	}
 
-	//! Reverse-lookup the body PlayAreaComponent just sampled at this XZ, then ask the axis.
-	//! No body -> confined (fail toward today's apply-all). Exemption is EffectivePenalty
-	//! dropping the authored value -- that is the apply, not a second unused helper.
+	//! Whether the zone confines whoever stands exactly at this XZ, found among the players'
+	//! controlled entities (the position the play area just sampled).
+	//! @param zone the zone; null confines
+	//! @param px world X in metres
+	//! @param pz world Z in metres
+	//! @return true when confined, or when no zone or no body is found
 	static bool OccupantConfinedByZone(TBD_Zone zone, float px, float pz)
 	{
 		if (!zone)
@@ -170,6 +180,9 @@ class TBD_PlayAreaVehicleAxis
 		return effective == zone.m_ePenalty;
 	}
 
+	//! Whether a vehicle is a helicopter or a plane, by its controller or simulation component.
+	//! @param vehicle the vehicle entity
+	//! @return true for an aircraft
 	protected static bool IsAircraft(IEntity vehicle)
 	{
 		if (vehicle.FindComponent(HelicopterControllerComponent))
@@ -183,6 +196,9 @@ class TBD_PlayAreaVehicleAxis
 		return false;
 	}
 
+	//! The filter bound for this zone.
+	//! @param zoneId the zone
+	//! @return the filter, or null
 	protected static TBD_PlayAreaVehicleAxisBound Find(string zoneId)
 	{
 		if (!s_aBounds)
@@ -195,6 +211,10 @@ class TBD_PlayAreaVehicleAxis
 		return null;
 	}
 
+	//! The player-controlled entity whose origin is exactly at this XZ.
+	//! @param px world X in metres
+	//! @param pz world Z in metres
+	//! @return the body, or null
 	protected static IEntity FindOccupantAt(float px, float pz)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
