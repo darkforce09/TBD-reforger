@@ -4,9 +4,9 @@
 
 Milestones E, F, M and T are implemented and verified; overall readiness is **not passing**,
 because milestones C, B, V and S have not started (see `remaining_milestones.md`) and
-`cargo xtask verify api-readiness --execute` was not run (it needs a quiet working tree). All work
-is uncommitted on main. Do not reset, clean, stash or revert anything in the working tree: it also
-holds another agent's uncommitted work (equipment/vehicle export and the equipment data viewer in
+`cargo xtask verify api-readiness --execute` was not run (it needs a quiet working tree). T is
+committed on main as 0ef292758. Do not reset, clean, stash or revert anything in the working tree:
+it holds another agent's uncommitted work (equipment/vehicle export and the equipment data viewer in
 `tools_v2/xtask`, `apps/website/api_v2/src/community_content`, the frontend `data_viewer`,
 `contracts_v2/definitions/equipment-*` and `assets_v2/equipment`).
 
