@@ -1,46 +1,60 @@
-//! The missions an in-game administrator may deploy to this server,
-//! `GET /api/v1/game-runtime/missions` (mod_runtime credential): every live mission whose approved
-//! artifact this server can run, in the platform's order (by title). The admin surfaces number them
-//! from 1 in that order - `#tbd missions` and the mission browser keys - and a number selects the
-//! entry TBD_MissionDeploymentRelay asks the platform to deploy. The list is refreshed when the
-//! stage machine enters LOBBY and by `#tbd refresh`; it belongs to the server, not to a world.
-//! @authority server
+/**
+ * @file TBD_DeployableMissionList.c
+ * @brief The missions an in-game admin may deploy to this server, fetched from the platform.
+ *
+ * Role: fetches `GET /api/v1/game-runtime/missions` (mod_runtime credential) and numbers the
+ * entries for the admin surfaces.  Position: the stage machine entering LOBBY and `#tbd refresh`
+ * call Refresh; `#tbd missions`, TBD_MissionBrowserService and TBD_MissionDeploymentRelay read the
+ * entries by 1-based number.
+ * State: the static entry list, the loaded and in-flight flags and the last failure, on the
+ * server; it belongs to the server process, not to a world.  Invariants: one fetch at a time;
+ * entries keep the platform's order (by title) and are numbered from 1 in it; a failed fetch keeps
+ * the previous list.
+ */
 
 //! One mission an in-game administrator may deploy. Field names are the JSON keys.
+//! @contract mission-deployment.schema.json#/definitions/DeployableMission
 class TBD_DeployableMissionStruct
 {
-	string mission_id;
-	string title;
-	string terrain_key;
-	string artifact_id;
-	string artifact_sha256;
+	string mission_id; //!< JSON `mission_id`
+	string title; //!< JSON `title`
+	string terrain_key; //!< JSON `terrain_key`
+	string artifact_id; //!< JSON `artifact_id`: the approved artifact this server would run
+	string artifact_sha256; //!< JSON `artifact_sha256`
 }
 
 //! `GET /api/v1/game-runtime/missions` answer. The field name is the JSON key.
+//! @contract mission-deployment.schema.json#/definitions/DeployableMissionList
 class TBD_DeployableMissionListStruct
 {
-	ref array<ref TBD_DeployableMissionStruct> missions;
+	ref array<ref TBD_DeployableMissionStruct> missions; //!< JSON `missions`, in the platform's order
 }
 
 //! The list fetch on its way to the platform.
 class TBD_DeployableMissionListCall : TBD_GameRuntimeCall
 {
+	//! Hand the platform's answer to TBD_DeployableMissionList.OnAnswered.
+	//! @param answer the platform's answer
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeployableMissionList.OnAnswered(answer);
 	}
 }
 
+//! The deployable mission list of this server, numbered from 1.
+//! @authority server
 class TBD_DeployableMissionList
 {
-	static const string CH_MISSIONS = "Missions"; //!< Greppable channel: `grep '\[TBD\]\[Missions\]' console.log`.
+	static const string CH_MISSIONS = "Missions"; //!< TBD_Log channel: `grep '\[TBD\]\[Missions\]' console.log`
 
-	protected static ref array<ref TBD_DeployableMissionStruct> s_aEntries;
-	protected static bool s_bLoaded;
-	protected static bool s_bInFlight;
-	protected static string s_sLastFailure; //!< Why the last refresh did not load the list, or empty.
+	protected static ref array<ref TBD_DeployableMissionStruct> s_aEntries; //!< the list in platform order; null before the first load
+	protected static bool s_bLoaded; //!< a fetch has loaded a list
+	protected static bool s_bInFlight; //!< a fetch is on its way
+	protected static string s_sLastFailure; //!< why the last refresh did not load the list, or empty
 
-	//! Fetch the list again. False when a fetch is in flight already or none can be sent.
+	//! Fetch the list again.
+	//! @return false when a fetch is in flight already or none can be sent
+	//! @route GET /api/v1/game-runtime/missions
 	static bool Refresh()
 	{
 		if (s_bInFlight)
@@ -61,7 +75,8 @@ class TBD_DeployableMissionList
 		return false;
 	}
 
-	//! Called by TBD_DeployableMissionListCall with the platform's answer.
+	//! Take the platform's answer: replace the list on success, else keep it and remember why.
+	//! @param answer the platform's answer
 	static void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		s_bInFlight = false;
@@ -84,6 +99,7 @@ class TBD_DeployableMissionList
 		TBD_Log.Kv(CH_MISSIONS, "list-loaded", string.Format("missions=%1", s_aEntries.Count()));
 	}
 
+	//! @return how many missions the list holds
 	static int Count()
 	{
 		if (!s_aEntries)
@@ -92,7 +108,9 @@ class TBD_DeployableMissionList
 		return s_aEntries.Count();
 	}
 
-	//! The entry numbered `number` (from 1) in the list shown to admins, or null.
+	//! The entry numbered `number` in the list shown to admins.
+	//! @param number the 1-based list number
+	//! @return the entry, or null when out of range
 	static TBD_DeployableMissionStruct GetEntryByNumber(int number)
 	{
 		int index = number - 1;
@@ -102,7 +120,8 @@ class TBD_DeployableMissionList
 		return s_aEntries[index];
 	}
 
-	//! `#tbd missions`: a header and one numbered line per mission, or one line saying why none.
+	//! The `#tbd missions` reply.
+	//! @return a header and one numbered line per mission, or one line saying why there are none
 	static array<string> BuildListLines()
 	{
 		array<string> lines = {};
@@ -123,7 +142,9 @@ class TBD_DeployableMissionList
 		return lines;
 	}
 
-	//! `n) Title [terrain]`, marked when this world runs the mission.
+	//! One list line, marked when this world runs the mission.
+	//! @param number the 1-based list number
+	//! @return `n) Title [terrain]` with `(running)` or `(running another version)`; empty when out of range
 	static string DescribeEntry(int number)
 	{
 		TBD_DeployableMissionStruct entry = GetEntryByNumber(number);
@@ -142,7 +163,7 @@ class TBD_DeployableMissionList
 		return line;
 	}
 
-	//! Why there is no list to show.
+	//! @return why there is no list to show
 	static string DescribeEmpty()
 	{
 		if (s_bLoaded)

@@ -74,7 +74,7 @@ None found: every action the screen offers is one the server's `TBD_AdminService
 ## Data
 
 The screen makes no HTTP call. Its wire, on the modded `SCR_PlayerController`
-(`TBD_MissionBrowser.c`):
+(`SCR_PlayerController.c` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`):
 
 - `TBD_RequestAdminSnapshot` and `TBD_RequestAdminAction` go to the server; the caller is the player
   of the controller the request arrived on, never an argument.

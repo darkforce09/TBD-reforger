@@ -44,7 +44,7 @@ every pak.
 On the committed tree, with a local game install and no PlayableSelector folder, the gate exits 1:
 
 - the `CRF_` arm reports the text `@CRF_Framework` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionSelectorData.c`
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/Catalog/TBD_MissionSummary.c`
   (inside a trailing `//!<` comment, which the line filter does not treat as a comment) and in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/TBD_MissionSelectorMock.c` (a string);
 - the framework GUID arm reports four GUIDs: the two that

@@ -9,14 +9,16 @@ lands in one audit trail, because under one life a respawn or a forced stage dec
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/
-├── TBD_AdminAudit.c                           the bounded audit trail of every admin attempt
-├── TBD_AdminClient.c                          client cache of the last snapshot and action result
-├── TBD_AdminCommands.c                        modded `SCR_ChatComponent`: the `#tbd` chat commands
-├── TBD_AdminData.c                            the snapshot models: player rows, audit rows, payload
-├── TBD_AdminService.c                         the admin authority: permission gate and the powers
-├── TBD_AdminServiceDeploymentAuthorization.c  respawn and deploy replies while the platform decides
-├── TBD_AdminSnapshotService.c                 builds the snapshot on the server; wire format
-└── UI/                                        the admin screen over the shared shell
+├── SCR_PlayerController.c      modded `SCR_PlayerController`: the admin snapshot and action RPCs
+├── TBD_AdminAudit.c            the bounded audit trail of every admin attempt
+├── TBD_AdminClient.c           client cache of the last snapshot and action result
+├── TBD_AdminCommands.c         modded `SCR_ChatComponent`: the `#tbd` chat commands
+├── TBD_AdminPayload.c          the snapshot model, with its player and audit rows
+├── TBD_AdminService.c          the admin authority: permission gate and the menu powers
+├── TBD_AdminSnapshotService.c  builds the snapshot on the server; wire format
+├── TBD_AdminSubcommands.c      the `#tbd safestart` and `#tbd identity` chat powers
+├── TBD_EAdminAction.c          `TBD_EAdminAction`: the powers the admin screen can ask for
+└── UI/                         the admin screen over the shared shell
 ```
 
 ## How it works
@@ -34,10 +36,10 @@ F8 / "#tbd menu" -> TBD_AdminClient.Open -> TBD_AdminScreen
 `TBD_AdminService.IsAdmin` reads the vanilla admin list (`SCR_PlayerListedAdminManagerComponent`)
 on the authority, and the caller is always the player id of the controller the request arrived on,
 never an argument. `Execute` runs the menu's actions (`TBD_EAdminAction`: `RESPAWN` a player whose
-life is spent, `DEPLOY` a live player with no body, `STAGE_ADVANCE`); `ForceStage`, `Safestart` and
-`Identity` serve the chat forms that take arguments. `TBD_AdminServiceDeploymentAuthorization`
-rewords a respawn or deploy the platform is still deciding (`AUTHORIZING`) or cannot authorize
-now (`UNAUTHORIZED`). Refused attempts by non-admins are counted per player and surface
+life is spent, `DEPLOY` a live player with no body, `STAGE_ADVANCE`); `ForceStage` and
+`TBD_AdminSubcommands.Safestart` and `.Identity` serve the chat forms that take arguments. A
+respawn or deploy the platform is still deciding (`AUTHORIZING`) or cannot authorize now
+(`UNAUTHORIZED`) gets its own sentence. Refused attempts by non-admins are counted per player and surface
 (`NoteDeniedAccess`).
 
 The chat commands, for listed admins only; everyone else gets "TBD: admin only.":
@@ -66,21 +68,21 @@ private chat and to the server console.
 unauthorized-access refusals may hold at most 12, so an attacker cannot flush real actions out.
 Each entry is logged on the `Admin` channel, refusals at WARNING. `TBD_AdminSnapshotService`
 builds the payload one admin may see (mission, stage, validation findings, players, the newest 20
-audit lines) and serialises it as tab-separated lines of at most 400, every field prefixed with `.`
-so no field is ever empty on the wire. A non-admin's payload holds the refusal and nothing else.
+audit lines) and serialises it with `TBD_WireCodec` as tab-separated lines of at most 400, every field prefixed
+with `.` so no field is ever empty on the wire. A non-admin's payload holds the refusal and nothing else.
 
 ## Authority
 
-- Server: `TBD_AdminService`, `TBD_AdminAudit`, `TBD_AdminSnapshotService.BuildForAdmin` and the
-  chat commands (`@authority server`); every mutating function refuses off the authority, and the
+- Server: `TBD_AdminService`, `TBD_AdminSubcommands`, `TBD_AdminAudit`,
+  `TBD_AdminSnapshotService.BuildForAdmin`, the server halves of the RPCs and the chat commands
+  (`@authority server`); every mutating function refuses off the authority, and the
   chat hook returns on a client before dispatching.
 - Client: `TBD_AdminClient` and the screen; they hold the server's last answer, never a permission.
 - Owner: the snapshot and action-result replies, received on the requesting admin's client.
-- RPCs: none declared here. The admin transport lives on the modded `SCR_PlayerController` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionBrowser.c`:
-  `TBD_RpcAsk_AdminSnapshot` and `TBD_RpcAsk_AdminAction` (Reliable, Server) and
-  `TBD_RpcDo_AdminSnapshot`, `TBD_RpcDo_AdminActionResult` and `TBD_RpcDo_OpenAdminMenu`
-  (Reliable, Owner).
+- RPCs, on the modded `SCR_PlayerController` in this folder: `TBD_RpcAsk_AdminSnapshot` and
+  `TBD_RpcAsk_AdminAction(int, int)` (Reliable, Server); `TBD_RpcDo_AdminSnapshot(string)`,
+  `TBD_RpcDo_AdminActionResult(string, bool)` and `TBD_RpcDo_OpenAdminMenu` (Reliable, Owner). On
+  a listen host the snapshot and action requests run in place, without an RPC.
 - Replicated properties: none.
 
 ## Boundaries
@@ -90,9 +92,11 @@ so no field is ever empty on the wire. A non-admin's payload holds the refusal a
   `TBD_SafestartManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/`;
   `TBD_MissionLoader` and `TBD_MissionValidator` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`; `TBD_IdentityLink` and
-  `TBD_BackendConfig` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the MissionSelector
-  scripts above; the engine's `SCR_PlayerListedAdminManagerComponent` and `SCR_ChatComponent`.
-- Used by: `TBD_MissionBrowser` (the admin RPCs, the F8 key), `TBD_MissionDeploymentRelay`,
+  `TBD_BackendConfig` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; `TBD_WireCodec` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Core/Wire/`; the MissionSelector scripts above; the engine's `SCR_PlayerListedAdminManagerComponent` and `SCR_ChatComponent`.
+- Used by: the mission browser's `SCR_PlayerController` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/` (the F8 key),
+  `TBD_MissionDeploymentRelay`,
   `TBD_FleetPlayerActions`, `TBD_DeploymentAuthorization` and `TBD_SpawnManager`, which write to
   `TBD_AdminAudit`; the `TBD_UIAdmin` preset in
   `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`; the key bindings in

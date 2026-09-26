@@ -1,43 +1,44 @@
-//! T-181.11.2 -- CLIENT side of the admin menu: the last snapshot this client received, the last
-//! answer the server gave to an action, and the notifications the screen binds to.
-//!
-//! Static for the same reason `TBD_BriefingClient` is: the menu manager creates and destroys the
-//! screen, so parking state on the screen would lose it on every close. The screen still asks for
-//! a fresh snapshot on open and on a timer -- an admin panel showing a two-minute-old roster is
-//! worse than useless -- but it always has something to draw in the meantime.
-//!
-//! **Nothing here is authoritative.** `m_bAuthorised` on the cached payload is the server's answer
-//! being remembered, not a permission this class grants. Every request and every action goes back
-//! over the wire and is re-checked there; there is no local path from this class to
-//! `TBD_SpawnManager` or `TBD_FrameworkManager`, and on a dedicated server those are not even
-//! present in the client's process.
+/**
+ * @file TBD_AdminClient.c
+ * @brief Client side of the admin menu: the cached snapshot and verdict, the requests, open and close.
+ *
+ * Role: remembers the last snapshot and action verdict the server sent, asks for new ones, and
+ * opens or toggles the admin screen.  Position: TBD_AdminScreen reads it and binds its invokers;
+ * the admin RPCs on SCR_PlayerController feed Accept and AcceptActionResult; the `TBD_AdminMenu`
+ * key and `#tbd menu` call Toggle and Open.
+ * State: static, on the client, so it survives the menu manager destroying the screen.
+ * Invariants: nothing here is authoritative; m_bAuthorised on the cached payload is the server's
+ * remembered answer, and every request and action is re-checked on the server.
+ */
+
+//! Static client cache and request surface of the admin menu.
 class TBD_AdminClient
 {
-	protected static ref TBD_AdminPayload s_Payload;
+	protected static ref TBD_AdminPayload s_Payload; //!< last snapshot received; null until one arrives
+	protected static string s_sLastResult; //!< last line the server sent about an action
+	protected static bool s_bLastResultOk; //!< whether that action worked
+	protected static ref ScriptInvoker s_OnPayloadChanged; //!< (TBD_AdminPayload payload); created on first use
+	protected static ref ScriptInvoker s_OnActionResult; //!< (string message, bool ok); created on first use
 
-	protected static string s_sLastResult; //!< Last line the server sent back about an action, and whether it worked.
-	protected static bool s_bLastResultOk;
-
-	protected static ref ScriptInvoker s_OnPayloadChanged; //!< (TBD_AdminPayload payload)
-
-	protected static ref ScriptInvoker s_OnActionResult; //!< (string message, bool ok)
-
+	//! @return the last snapshot received, or null
 	static TBD_AdminPayload GetPayload()
 	{
 		return s_Payload;
 	}
 
+	//! @return the last line the server sent about an action
 	static string GetLastResult()
 	{
 		return s_sLastResult;
 	}
 
+	//! @return whether the last action worked
 	static bool IsLastResultOk()
 	{
 		return s_bLastResultOk;
 	}
 
-	//! (TBD_AdminPayload) -- lazily created.
+	//! @return the invoker raised with (TBD_AdminPayload) when a snapshot arrives
 	static ScriptInvoker GetOnPayloadChanged()
 	{
 		if (!s_OnPayloadChanged)
@@ -46,7 +47,7 @@ class TBD_AdminClient
 		return s_OnPayloadChanged;
 	}
 
-	//! (string message, bool ok) -- lazily created.
+	//! @return the invoker raised with (string message, bool ok) when a verdict arrives
 	static ScriptInvoker GetOnActionResult()
 	{
 		if (!s_OnActionResult)
@@ -55,8 +56,8 @@ class TBD_AdminClient
 		return s_OnActionResult;
 	}
 
-
 	//! Ask the server for a fresh snapshot. No-op without a local player controller.
+	//! @authority client
 	static void Request()
 	{
 		SCR_PlayerController controller = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -67,6 +68,9 @@ class TBD_AdminClient
 	}
 
 	//! Ask the server to run one admin power. The server decides; this only asks.
+	//! @param action the power
+	//! @param targetId the player it acts on; 0 for STAGE_ADVANCE
+	//! @authority client
 	static void Act(TBD_EAdminAction action, int targetId)
 	{
 		SCR_PlayerController controller = SCR_PlayerController.Cast(GetGame().GetPlayerController());
@@ -76,8 +80,8 @@ class TBD_AdminClient
 		controller.TBD_RequestAdminAction(action, targetId);
 	}
 
-
-	//! A snapshot arrived (or was built locally on a listen host).
+	//! Cache a snapshot that arrived (or was built in place on a listen host) and raise the invoker.
+	//! @param payload the snapshot
 	static void Accept(TBD_AdminPayload payload)
 	{
 		s_Payload = payload;
@@ -86,8 +90,9 @@ class TBD_AdminClient
 			s_OnPayloadChanged.Invoke(s_Payload);
 	}
 
-	//! The server's verdict on an action. Always shown verbatim -- an admin acting under pressure
-	//! needs the authority's own words, not a client-side guess at what probably happened.
+	//! Cache the server's verdict on an action and raise the invoker; the screen shows it verbatim.
+	//! @param message the server's line
+	//! @param ok whether the action worked
 	static void AcceptActionResult(string message, bool ok)
 	{
 		s_sLastResult = message;
@@ -97,15 +102,10 @@ class TBD_AdminClient
 			s_OnActionResult.Invoke(message, ok);
 	}
 
-
-	//! Raise the admin screen. Safe to call from anywhere on a client: a dedicated server does
-	//! nothing, and a non-admin gets a screen that shows only the refusal the server sends back.
-	//!
-	//! T-181.49 -- the guard below was `if (!GetGame().GetWorkspace())`, which does NOT mean "no
-	//! screen": `GetGame().GetWorkspace()` is MEASURED NON-NULL on a headless dedicated server
-	//! (engine 1.7.0.54), so a server reaching `#tbd menu` would have tried to open a menu. The
-	//! test both oracles use, and the one the rest of this addon already uses, is the replication
-	//! mode.
+	//! Raise the admin screen, or refresh it when it is already open. Does nothing on a dedicated
+	//! server, which has a workspace but no screen. A non-admin gets a screen showing only the
+	//! server's refusal.
+	//! @authority client
 	static void Open()
 	{
 		if (RplSession.Mode() == RplMode.Dedicated)
@@ -123,6 +123,8 @@ class TBD_AdminClient
 		TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UIAdmin);
 	}
 
+	//! Close the admin screen when it is open, else Open it.
+	//! @authority client
 	static void Toggle()
 	{
 		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UIAdmin))
@@ -134,8 +136,8 @@ class TBD_AdminClient
 		Open();
 	}
 
-	//! Forget the last session's answers. Called on open so a stale roster cannot be mistaken for a
-	//! live one during the beat before the first snapshot lands.
+	//! Forget the cached snapshot and verdict. Open calls it so a stale roster is never shown as
+	//! live before the first snapshot lands.
 	static void Reset()
 	{
 		s_Payload = null;

@@ -8,20 +8,21 @@ player. It renders only what the server sent this client.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/UI/
-└── TBD_AdminScreen.c  `TBD_AdminScreen` over the shared shell, and the `TBD_UIAdmin` menu preset
+├── TBD_AdminScreen.c          `TBD_AdminScreen` over the shared shell: selection, footer, primary action
+└── TBD_AdminScreenSections.c  the four list sections and the row-tag scheme
 ```
 
 ## How it works
 
 `TBD_AdminScreen` extends `TBD_ShellScreen` and uses the shared shell layout through the
 `TBD_UIAdmin` preset that
-`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds. `TBD_AdminClient` opens it through
 `TBD_MenuStack`, from the `TBD_AdminMenu` key (F8) or the `#tbd menu` chat command. On open it
 draws the cached `TBD_AdminPayload`, asks for a fresh snapshot, and asks again every `REFRESH_MS`
 (3 s) while open.
 
-The list has four sections: MISSION (the validation verdict, whose findings open on a pick), STAGE
+The list has four sections, written by `TBD_AdminScreenSections`: MISSION (the validation verdict, whose findings open on a pick), STAGE
 (forcing the next stage, armed by one pick and confirmed by a second), PLAYERS (name, admin tag,
 faction, group and role, and `LIFE SPENT` or `NO BODY`) and ADMIN ACTIONS (the audit trail, opened
 on a pick). The one primary action follows the selected player: "RESPAWN <name>" for a spent life,
@@ -32,7 +33,7 @@ holds only the server's refusal, so the screen has nothing else to draw.
 ## Authority
 
 - Server: nothing here; every request goes back to `TBD_AdminService` over the admin RPCs on
-  `SCR_PlayerController` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionBrowser.c`.
+  `SCR_PlayerController` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/SCR_PlayerController.c`.
 - Client: everything; the screen reads `TBD_AdminClient` only.
 - Owner: nothing.
 - RPCs: none in this folder.

@@ -1,47 +1,30 @@
-//! Admin feature module - SERVER snapshot builder + wire Serialise/Parse. Split out of TBD_AdminData.c (UI reorg 2026-09-12); logic unchanged.
-//!
-//! Builds the admin snapshot on the server, moves it over one RPC, rebuilds it on the client.
-//!
-//! Wire format is line-based with tab-separated fields, matching the precedent already in the tree
-//! (`TBD_MissionBrowserService`, `TBD_BriefingService`): one string per RPC, no schema to register,
-//! greppable in a log when something goes wrong.
+/**
+ * @file TBD_AdminSnapshotService.c
+ * @brief Builds the admin snapshot on the server and moves it over the wire as one string.
+ *
+ * Role: gathers what one admin may see into a TBD_AdminPayload, serialises it, and parses it back.
+ * Position: the admin RPCs on SCR_PlayerController call BuildForAdmin and Serialise on the server
+ * and Parse on the owning client; it reads TBD_MissionLoader, TBD_FrameworkManager,
+ * TBD_MissionValidator, TBD_SpawnManager and TBD_AdminAudit, and encodes with TBD_WireCodec.
+ * State: none; pure functions.  Invariants: a non-admin's payload carries the refusal and no data;
+ * the wire holds at most MAX_PAYLOAD_LINES records, and a clip logs a warning; every field is
+ * marked with TBD_WireCodec.FIELD_MARK so no field is empty; authored text and names are sanitised
+ * when the payload is built, so the encoder writes fields as given; an empty or unparseable wire
+ * parses as not authorised.
+ */
+
+//! Server-side builder and wire codec of the admin snapshot.
 class TBD_AdminSnapshotService
 {
-	//! Defensive cap on one payload, matching `TBD_BriefingService.MAX_PAYLOAD_LINES`. A full server
-	//! with a long audit trail must not become an unbounded reliable-channel string.
-	//!
-	//! Headroom check: 5 header records + ~20 validator findings + one line per connected player +
-	//! 20 audit lines. A 128-slot event lands around 173, so the cap is slack, not a squeeze -- and
-	//! `Join` logs loudly if it is ever hit rather than truncating in silence.
-	protected static const int MAX_PAYLOAD_LINES = 400;
+	protected static const int MAX_PAYLOAD_LINES = 400; //!< records per payload, as in TBD_BriefingWire; a full 128-slot server with findings and audit lines needs about 173
+	protected static const int AUDIT_LINES = 20; //!< newest audit entries shipped to the screen
+	protected static const string CLIP_WARNING = "snapshot clipped at %1 lines -- raise MAX_PAYLOAD_LINES"; //!< clip warning text; %1 = MAX_PAYLOAD_LINES
 
-	//! Newest audit entries shipped to the screen. The server console holds the rest.
-	protected static const int AUDIT_LINES = 20;
-
-	protected static const string FIELD_SEP = "\t";
-	protected static const string LINE_SEP = "\n";
-
-	//! Every field is written with this leading marker, so **no field is ever the empty string**.
-	//!
-	//! `string.Split(sep, out, trim)` is a NATIVE engine call. Whether it emits a token for an
-	//! empty field between two separators is a RUNTIME property, and nothing in this lane can
-	//! prove a runtime property -- a compile probe answers "does this symbol exist", not "what does
-	//! it do" (documentation_v2/runbooks/mod_slice_workflow.md section "What agents cannot do").
-	//! If it drops empties, then a record like
-	//! `P <id> <name> <faction> <group> <role> ...` silently shifts every field left the moment a
-	//! player has no slot, and an unslotted player would render with somebody else's data in the
-	//! faction column. That is the exact class of bug an admin panel must not have.
-	//!
-	//! Marking every field removes the question instead of answering it: a marked empty value is
-	//! the one-character string `.`, which no tokeniser can drop and no trim can erase. The cost is
-	//! one byte per field and a wire that reads `P<TAB>.7<TAB>.Vasquez<TAB>.us_army...`.
-	protected static const string FIELD_MARK = ".";
-
-
-	//! Build the snapshot this player is entitled to.
-	//!
-	//! @authority server -- reads `TBD_SpawnManager`, `TBD_MissionLoader` and `TBD_MissionValidator`,
-	//! none of which hold anything on a client.
+	//! Build the snapshot this player is entitled to. A non-admin gets the refusal only, and the
+	//! refusal is noted.
+	//! @param playerId the requesting player
+	//! @return the payload, never null
+	//! @authority server
 	static TBD_AdminPayload BuildForAdmin(int playerId)
 	{
 		TBD_AdminPayload payload = new TBD_AdminPayload();
@@ -65,6 +48,8 @@ class TBD_AdminSnapshotService
 		return payload;
 	}
 
+	//! Fill the mission name and terrain and whether the loaded mission is valid.
+	//! @authority server
 	protected static void BuildMission(TBD_AdminPayload payload)
 	{
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
@@ -76,19 +61,20 @@ class TBD_AdminSnapshotService
 		if (!doc.meta)
 			return;
 
-		payload.m_sMissionName = Sanitise(doc.meta.name);
-		payload.m_sTerrain = Sanitise(doc.meta.terrain);
+		payload.m_sMissionName = TBD_WireCodec.Sanitise(doc.meta.name);
+		payload.m_sTerrain = TBD_WireCodec.Sanitise(doc.meta.terrain);
 	}
 
-	//! Current stage, and the one a force-advance would land on. `m_sNextStage` empty is what tells
-	//! the screen there is nothing to offer -- the screen never computes the transition itself.
+	//! Fill the current stage and the one a force-advance would land on; an empty next stage tells
+	//! the screen there is nothing to offer. `NOT READY` when the framework is missing.
+	//! @authority server
 	protected static void BuildStage(TBD_AdminPayload payload)
 	{
 		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
 		if (!framework)
 		{
-			// Distinguished from DEBRIEF on purpose: "there is nothing left to advance to" and
-			// "the stage machine is not up yet" are different problems and want different words.
+			// Distinct from DEBRIEF: "nothing left to advance to" and "the stage machine is not up
+			// yet" are different problems.
 			payload.m_sStage = "NOT READY";
 			return;
 		}
@@ -106,9 +92,9 @@ class TBD_AdminSnapshotService
 		payload.m_sNextStage = typename.EnumToString(TBD_EGameStage, next);
 	}
 
-	//! T-181.14 -- a mission the validator rejected is otherwise INVISIBLE from in-game: the stage
-	//! machine simply never leaves LOADING and nothing on screen says why. An admin panel is
-	//! exactly where that has to surface.
+	//! Fill the validator verdict and its report lines. A mission the validator rejected never leaves
+	//! LOADING, and this is where an admin sees why.
+	//! @authority server
 	protected static void BuildValidation(TBD_AdminPayload payload)
 	{
 		payload.m_bValidationRun = TBD_MissionValidator.HasRun();
@@ -125,16 +111,14 @@ class TBD_AdminSnapshotService
 
 		foreach (string line : report)
 		{
-			payload.m_aValidationLines.Insert(Sanitise(line));
+			payload.m_aValidationLines.Insert(TBD_WireCodec.Sanitise(line));
 		}
 	}
 
-	//! Who is connected, whose seat is whose, and who has spent their life.
-	//!
-	//! `m_bInWorld` is asked of the player controller rather than inferred from `m_bDead`, because
-	//! the two failures this screen exists to fix are DIFFERENT: a dead player needs Respawn, and a
-	//! player who is alive but has no body needs Deploy. Collapsing them into one flag would hide
-	//! the second failure entirely.
+	//! Fill one row per connected player: seat, one-life state, body, admin flag. m_bInWorld is read
+	//! from the controlled entity rather than inferred from m_bDead, because a dead player needs
+	//! Respawn and a live player without a body needs Deploy.
+	//! @authority server
 	protected static void BuildPlayers(TBD_AdminPayload payload)
 	{
 		PlayerManager players = GetGame().GetPlayerManager();
@@ -150,7 +134,7 @@ class TBD_AdminSnapshotService
 		{
 			TBD_AdminPlayerRow row = new TBD_AdminPlayerRow();
 			row.m_iPlayerId = id;
-			row.m_sName = Sanitise(players.GetPlayerName(id));
+			row.m_sName = TBD_WireCodec.Sanitise(players.GetPlayerName(id));
 			if (row.m_sName.IsEmpty())
 				row.m_sName = string.Format("player %1", id);
 
@@ -165,9 +149,9 @@ class TBD_AdminSnapshotService
 				if (slot)
 				{
 					row.m_bHasSlot = true;
-					row.m_sFaction = Sanitise(slot.faction);
-					row.m_sGroup = Sanitise(slot.groupCallsign);
-					row.m_sRole = Sanitise(slot.role);
+					row.m_sFaction = TBD_WireCodec.Sanitise(slot.faction);
+					row.m_sGroup = TBD_WireCodec.Sanitise(slot.groupCallsign);
+					row.m_sRole = TBD_WireCodec.Sanitise(slot.role);
 				}
 			}
 
@@ -179,8 +163,8 @@ class TBD_AdminSnapshotService
 		}
 	}
 
-	//! Newest first -- an admin opening the screen after something went wrong wants the last action,
-	//! not the first one of the session.
+	//! Fill the newest AUDIT_LINES audit entries, newest first.
+	//! @authority server
 	protected static void BuildAudit(TBD_AdminPayload payload)
 	{
 		array<ref TBD_AdminAuditEntry> entries = TBD_AdminAudit.GetEntries();
@@ -193,14 +177,13 @@ class TBD_AdminSnapshotService
 			if (!entry)
 				continue;
 
-			payload.m_aAudit.Insert(new TBD_AdminAuditRow(entry.m_sTime, Sanitise(entry.m_sText), entry.m_bDenied));
+			payload.m_aAudit.Insert(new TBD_AdminAuditRow(entry.m_sTime, TBD_WireCodec.Sanitise(entry.m_sText), entry.m_bDenied));
 			taken++;
 		}
 	}
 
-
 	//! Flatten a payload to one string. Field 0 is the record kind; every field after it carries
-	//! `FIELD_MARK` (see the note on that constant). Record types:
+	//! TBD_WireCodec.FIELD_MARK. Record types:
 	//!   `A` authorised (0/1) / denial reason  -- when 0 this is the ONLY record present
 	//!   `M` mission   loaded / name / terrain
 	//!   `S` stage     current / next ("" = last stage) / stage machine ready
@@ -209,6 +192,8 @@ class TBD_AdminSnapshotService
 	//!   `C` counts    connected / spent / auditTotal
 	//!   `P` player    id / name / faction / group / role / hasSlot / dead / inWorld / isAdmin
 	//!   `L` audit     time / text / denied
+	//! @param payload the snapshot; null gives the empty string
+	//! @return the wire string
 	static string Serialise(TBD_AdminPayload payload)
 	{
 		if (!payload)
@@ -216,21 +201,21 @@ class TBD_AdminSnapshotService
 
 		array<string> lines = {};
 
-		lines.Insert(Record2("A", Flag(payload.m_bAuthorised), payload.m_sDeniedReason));
+		lines.Insert(TBD_WireCodec.Record2("A", TBD_WireCodec.Flag(payload.m_bAuthorised), payload.m_sDeniedReason, false));
 
 		if (!payload.m_bAuthorised)
-			return Join(lines);
+			return TBD_WireCodec.Join(lines, MAX_PAYLOAD_LINES, TBD_AdminAudit.CH_ADMIN, CLIP_WARNING);
 
-		lines.Insert(Record3("M", Flag(payload.m_bMissionLoaded), payload.m_sMissionName, payload.m_sTerrain));
-		lines.Insert(Record3("S", payload.m_sStage, payload.m_sNextStage, Flag(payload.m_bStageReady)));
-		lines.Insert(Record4("V", Flag(payload.m_bValidationRun), Flag(payload.m_bValidationPassed),
-			payload.m_iValidationErrors.ToString(), payload.m_iValidationWarnings.ToString()));
-		lines.Insert(Record3("C", payload.m_iConnected.ToString(), payload.m_iSpent.ToString(),
-			payload.m_iAuditTotal.ToString()));
+		lines.Insert(TBD_WireCodec.Record3("M", TBD_WireCodec.Flag(payload.m_bMissionLoaded), payload.m_sMissionName, payload.m_sTerrain, false));
+		lines.Insert(TBD_WireCodec.Record3("S", payload.m_sStage, payload.m_sNextStage, TBD_WireCodec.Flag(payload.m_bStageReady), false));
+		lines.Insert(TBD_WireCodec.Record4("V", TBD_WireCodec.Flag(payload.m_bValidationRun), TBD_WireCodec.Flag(payload.m_bValidationPassed),
+			payload.m_iValidationErrors.ToString(), payload.m_iValidationWarnings.ToString(), false));
+		lines.Insert(TBD_WireCodec.Record3("C", payload.m_iConnected.ToString(), payload.m_iSpent.ToString(),
+			payload.m_iAuditTotal.ToString(), false));
 
 		foreach (string finding : payload.m_aValidationLines)
 		{
-			lines.Insert(Record1("F", finding));
+			lines.Insert(TBD_WireCodec.Record1("F", finding, false));
 		}
 
 		foreach (TBD_AdminPlayerRow row : payload.m_aPlayers)
@@ -240,17 +225,17 @@ class TBD_AdminSnapshotService
 
 		foreach (TBD_AdminAuditRow audit : payload.m_aAudit)
 		{
-			lines.Insert(Record3("L", audit.m_sTime, audit.m_sText, Flag(audit.m_bDenied)));
+			lines.Insert(TBD_WireCodec.Record3("L", audit.m_sTime, audit.m_sText, TBD_WireCodec.Flag(audit.m_bDenied), false));
 		}
 
-		return Join(lines);
+		return TBD_WireCodec.Join(lines, MAX_PAYLOAD_LINES, TBD_AdminAudit.CH_ADMIN, CLIP_WARNING);
 	}
 
-	//! Rebuild a payload on the client. A malformed line is skipped rather than fatal -- a panel
-	//! that renders most of itself beats a blank screen (design law: nothing blocking).
-	//!
-	//! Note the default: a payload that arrives empty or unparseable is **not authorised**. The
-	//! client's failure mode is "show nothing", never "assume the server said yes".
+	//! Rebuild a payload on the client. A malformed line is skipped, not fatal, so the panel renders
+	//! what arrived.
+	//! @param wire the string Serialise produced
+	//! @return the payload; an empty or unparseable wire is not authorised
+	//! @authority owner
 	static TBD_AdminPayload Parse(string wire)
 	{
 		TBD_AdminPayload payload = new TBD_AdminPayload();
@@ -262,12 +247,12 @@ class TBD_AdminSnapshotService
 		}
 
 		array<string> lines = {};
-		wire.Split(LINE_SEP, lines, false);
+		wire.Split(TBD_WireCodec.LINE_SEP, lines, false);
 
 		foreach (string line : lines)
 		{
 			array<string> f = {};
-			line.Split(FIELD_SEP, f, false);
+			line.Split(TBD_WireCodec.FIELD_SEP, f, false);
 			if (f.IsEmpty())
 				continue;
 
@@ -275,174 +260,77 @@ class TBD_AdminSnapshotService
 
 			if (kind == "A" && f.Count() >= 3)
 			{
-				payload.m_bAuthorised = IsSet(f[1]);
-				payload.m_sDeniedReason = Unmark(f[2]);
+				payload.m_bAuthorised = TBD_WireCodec.IsSet(f[1]);
+				payload.m_sDeniedReason = TBD_WireCodec.Unmark(f[2]);
 			}
 			else if (kind == "M" && f.Count() >= 4)
 			{
-				payload.m_bMissionLoaded = IsSet(f[1]);
-				payload.m_sMissionName = Unmark(f[2]);
-				payload.m_sTerrain = Unmark(f[3]);
+				payload.m_bMissionLoaded = TBD_WireCodec.IsSet(f[1]);
+				payload.m_sMissionName = TBD_WireCodec.Unmark(f[2]);
+				payload.m_sTerrain = TBD_WireCodec.Unmark(f[3]);
 			}
 			else if (kind == "S" && f.Count() >= 4)
 			{
-				payload.m_sStage = Unmark(f[1]);
-				payload.m_sNextStage = Unmark(f[2]);
-				payload.m_bStageReady = IsSet(f[3]);
+				payload.m_sStage = TBD_WireCodec.Unmark(f[1]);
+				payload.m_sNextStage = TBD_WireCodec.Unmark(f[2]);
+				payload.m_bStageReady = TBD_WireCodec.IsSet(f[3]);
 			}
 			else if (kind == "V" && f.Count() >= 5)
 			{
-				payload.m_bValidationRun = IsSet(f[1]);
-				payload.m_bValidationPassed = IsSet(f[2]);
-				payload.m_iValidationErrors = Unmark(f[3]).ToInt();
-				payload.m_iValidationWarnings = Unmark(f[4]).ToInt();
+				payload.m_bValidationRun = TBD_WireCodec.IsSet(f[1]);
+				payload.m_bValidationPassed = TBD_WireCodec.IsSet(f[2]);
+				payload.m_iValidationErrors = TBD_WireCodec.Unmark(f[3]).ToInt();
+				payload.m_iValidationWarnings = TBD_WireCodec.Unmark(f[4]).ToInt();
 			}
 			else if (kind == "C" && f.Count() >= 4)
 			{
-				payload.m_iConnected = Unmark(f[1]).ToInt();
-				payload.m_iSpent = Unmark(f[2]).ToInt();
-				payload.m_iAuditTotal = Unmark(f[3]).ToInt();
+				payload.m_iConnected = TBD_WireCodec.Unmark(f[1]).ToInt();
+				payload.m_iSpent = TBD_WireCodec.Unmark(f[2]).ToInt();
+				payload.m_iAuditTotal = TBD_WireCodec.Unmark(f[3]).ToInt();
 			}
 			else if (kind == "F" && f.Count() >= 2)
 			{
-				payload.m_aValidationLines.Insert(Unmark(f[1]));
+				payload.m_aValidationLines.Insert(TBD_WireCodec.Unmark(f[1]));
 			}
 			else if (kind == "P" && f.Count() >= 10)
 			{
 				TBD_AdminPlayerRow row = new TBD_AdminPlayerRow();
-				row.m_iPlayerId = Unmark(f[1]).ToInt();
-				row.m_sName = Unmark(f[2]);
-				row.m_sFaction = Unmark(f[3]);
-				row.m_sGroup = Unmark(f[4]);
-				row.m_sRole = Unmark(f[5]);
-				row.m_bHasSlot = IsSet(f[6]);
-				row.m_bDead = IsSet(f[7]);
-				row.m_bInWorld = IsSet(f[8]);
-				row.m_bIsAdmin = IsSet(f[9]);
+				row.m_iPlayerId = TBD_WireCodec.Unmark(f[1]).ToInt();
+				row.m_sName = TBD_WireCodec.Unmark(f[2]);
+				row.m_sFaction = TBD_WireCodec.Unmark(f[3]);
+				row.m_sGroup = TBD_WireCodec.Unmark(f[4]);
+				row.m_sRole = TBD_WireCodec.Unmark(f[5]);
+				row.m_bHasSlot = TBD_WireCodec.IsSet(f[6]);
+				row.m_bDead = TBD_WireCodec.IsSet(f[7]);
+				row.m_bInWorld = TBD_WireCodec.IsSet(f[8]);
+				row.m_bIsAdmin = TBD_WireCodec.IsSet(f[9]);
 				payload.m_aPlayers.Insert(row);
 			}
 			else if (kind == "L" && f.Count() >= 4)
 			{
-				payload.m_aAudit.Insert(new TBD_AdminAuditRow(Unmark(f[1]), Unmark(f[2]), IsSet(f[3])));
+				payload.m_aAudit.Insert(new TBD_AdminAuditRow(TBD_WireCodec.Unmark(f[1]), TBD_WireCodec.Unmark(f[2]), TBD_WireCodec.IsSet(f[3])));
 			}
 		}
 
 		return payload;
 	}
 
-
-	//! MEASURED: a nine-field record written as one `+` chain fails to compile with
-	//! `Formula too complex` -- and the *second* diagnostic on the same line is a misleading
-	//! `Incompatible parameter 'FIELD_SEP'`, which sends you hunting a type problem that is not
-	//! there. Enfusion has an expression-complexity ceiling; the fix is to append in steps.
+	//! The `P` record of one player. Appended in steps: a nine-field `+` chain trips the engine's
+	//! `Formula too complex` ceiling.
+	//! @param row the player row, already sanitised
+	//! @return the record
 	protected static string RecordPlayer(TBD_AdminPlayerRow row)
 	{
 		string line = "P";
-		line = line + Field(row.m_iPlayerId.ToString());
-		line = line + Field(row.m_sName);
-		line = line + Field(row.m_sFaction);
-		line = line + Field(row.m_sGroup);
-		line = line + Field(row.m_sRole);
-		line = line + Field(Flag(row.m_bHasSlot));
-		line = line + Field(Flag(row.m_bDead));
-		line = line + Field(Flag(row.m_bInWorld));
-		line = line + Field(Flag(row.m_bIsAdmin));
+		line = line + TBD_WireCodec.Field(row.m_iPlayerId.ToString(), false);
+		line = line + TBD_WireCodec.Field(row.m_sName, false);
+		line = line + TBD_WireCodec.Field(row.m_sFaction, false);
+		line = line + TBD_WireCodec.Field(row.m_sGroup, false);
+		line = line + TBD_WireCodec.Field(row.m_sRole, false);
+		line = line + TBD_WireCodec.Field(TBD_WireCodec.Flag(row.m_bHasSlot), false);
+		line = line + TBD_WireCodec.Field(TBD_WireCodec.Flag(row.m_bDead), false);
+		line = line + TBD_WireCodec.Field(TBD_WireCodec.Flag(row.m_bInWorld), false);
+		line = line + TBD_WireCodec.Field(TBD_WireCodec.Flag(row.m_bIsAdmin), false);
 		return line;
-	}
-
-	protected static string Join(array<string> lines)
-	{
-		int shown = lines.Count();
-		bool clipped = false;
-		if (shown > MAX_PAYLOAD_LINES)
-		{
-			shown = MAX_PAYLOAD_LINES;
-			clipped = true;
-		}
-
-		string result;
-		for (int i = 0; i < shown; i++)
-		{
-			if (i > 0)
-				result = result + LINE_SEP;
-
-			result = result + lines[i];
-		}
-
-		if (clipped)
-		{
-			TBD_Log.Warn(TBD_AdminAudit.CH_ADMIN,
-				string.Format("snapshot clipped at %1 lines -- raise MAX_PAYLOAD_LINES", MAX_PAYLOAD_LINES));
-		}
-
-		return result;
-	}
-
-	protected static string Record1(string kind, string a)
-	{
-		return kind + Field(a);
-	}
-
-	protected static string Record2(string kind, string a, string b)
-	{
-		return kind + Field(a) + Field(b);
-	}
-
-	protected static string Record3(string kind, string a, string b, string c)
-	{
-		return kind + Field(a) + Field(b) + Field(c);
-	}
-
-	protected static string Record4(string kind, string a, string b, string c, string d)
-	{
-		return kind + Field(a) + Field(b) + Field(c) + Field(d);
-	}
-
-	//! `<TAB>.<value>` -- separator, marker, value. The marker is what guarantees a non-empty token
-	//! for an empty value; see FIELD_MARK.
-	protected static string Field(string value)
-	{
-		return FIELD_SEP + FIELD_MARK + value;
-	}
-
-	//! Strip the marker back off a parsed field. A field shorter than the marker is treated as
-	//! empty rather than as an error -- the parser's job is to render what arrived, not to refuse.
-	protected static string Unmark(string field)
-	{
-		int length = field.Length();
-		if (length <= 1)
-			return string.Empty;
-
-		return field.Substring(1, length - 1);
-	}
-
-	protected static bool IsSet(string field)
-	{
-		return Unmark(field) == "1";
-	}
-
-	protected static string Flag(bool value)
-	{
-		if (value)
-			return "1";
-
-		return "0";
-	}
-
-	//! Strip the field and line separators out of any text that came from authored data or a player
-	//! name, so a name containing a tab cannot shift every field of its record.
-	//!
-	//! MEASURED: `string.Replace` mutates the receiver IN PLACE and returns the replacement COUNT,
-	//! not the new string -- `s = s.Replace(a, b)` does not compile.
-	protected static string Sanitise(string value)
-	{
-		if (value.IsEmpty())
-			return value;
-
-		string clean = value;
-		clean.Replace(FIELD_SEP, " ");
-		clean.Replace(LINE_SEP, " ");
-		clean.Replace("\r", " ");
-		return clean;
 	}
 }

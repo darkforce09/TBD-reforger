@@ -1,66 +1,59 @@
-//! Pre-game rebuild (2026-09-12) -- the right column of the Mission Selector.
-//!
-//! ```
-//!   ┌─────────────────────────────────────────────────────────────────┐
-//!   │  PVP Test 1  [PVP]                          [v2.14.99 LATEST v] │  hero
-//!   │  👤 by Bohemia Interactive [AUTHOR]                              │
-//!   ├─────────────────────────────────────────────────────────────────┤
-//!   │ ┌ REQUIRED MODSET & MODS [TBD CORE COMPETITIVE V1.8] [● 6 SYNCED] ┐
-//!   │ │ ✓ @CRF_Framework v2.4.0   │ ✓ @RHSAFRF v0.6.1                │
-//!   │ └─────────────────────────────────────────────────────────────┘ │
-//!   │ ┌ MISSION SUMMARY                                     [SITREP] ┐
-//!   │ ┌ ORBAT OVERVIEW                                    [48 SLOTS] ┐
-//!   │ │ ┌ BLUFOR Defending  24 SLOTS ┐ ┌ OPFOR Attacking 24 SLOTS ┐ │
-//!   │ ┌ OBJECTIVES                                         [4 ACTIVE] ┐
-//!   └─────────────────────────────────────────────────────────────────┘
-//! ```
-//!
-//! Controller for `TBD_MissionInspector.layout` (hero + `CardsContent`). The four cards are
-//! `TBD_Panel`s mounted once; their bodies are rebuilt per mission from Common primitives
-//! (`TBD_Columns2`, `TBD_ModGridItem`, `TBD_InsetText`, tinted `TBD_Panel` + `TBD_FactionColumn`,
-//! `TBD_KeyValueRow`). Selection is user-paced, so rebuild-not-pool is the right cost model here.
+/**
+ * @file TBD_MissionInspectorPanel.c
+ * @brief The right column of the Mission Selector: the hero band and the four mission cards.
+ *
+ * Role: controller for `TBD_MissionInspector.layout`: paints the rounded glass panel and the hero
+ * photo, binds title, tag, author and version to the selected mission, and hands the cards to
+ * TBD_MissionInspectorCards.  Position: TBD_MissionSelectorScreen builds it on RightDock and calls
+ * Show on each selection; data comes from TBD_MissionCatalog; GetOnVersionChanged reports the
+ * version pick.
+ * State: widget references, the chips, the version dropdown and the cards helper, owned by the
+ * screen on the client.  Invariants: Show(null) shows the empty state and hides the hero content;
+ * a missing widget is skipped, never fatal.
+ *
+ *   | PVP Test 1  [PVP]                     [v2.14.99 LATEST v]  |  hero
+ *   | by Bohemia Interactive [AUTHOR]                            |
+ *   | REQUIRED MODSET & MODS  [TBD CORE COMPETITIVE]  [6 SYNCED] |
+ *   | MISSION SUMMARY                                  [SITREP]  |
+ *   | ORBAT OVERVIEW                                 [48 SLOTS]  |
+ *   | OBJECTIVES                                     [4 ACTIVE]  |
+ */
+
+//! Controller of the mission inspector column. Not a widget handler: the screen mounts the layout
+//! and hands its root here.
 class TBD_MissionInspectorPanel
 {
-	protected Widget m_wRoot;
-	protected TextWidget m_wHeroTitle;
-	protected Widget m_wHeroTagDock;
-	//! Composited hero band colour -- ground for the tag chip, author chip and version pill.
-	protected int m_iHeroGround;
-	//! Ground of the faction column most recently built by MountFactionColumn (for its rows).
-	protected int m_iColumnGround;
-	protected ImageWidget m_wAuthorIcon;
-	protected TextWidget m_wAuthorBy;
-	protected TextWidget m_wAuthorName;
-	protected Widget m_wAuthorChipDock;
-	protected Widget m_wVersionDock;
-	protected Widget m_wHero;
-	protected ImageWidget m_wHeroImage;
-	protected ref TBD_UIScrollBar m_ScrollBar;
-	protected Widget m_wCardsContent;
-	protected Widget m_wEmptyState;
+	protected Widget m_wRoot; //!< the mounted inspector layout
+	protected TextWidget m_wHeroTitle; //!< `HeroTitle`
+	protected Widget m_wHeroTagDock; //!< `HeroTagDock`: the mode tag chip
+	protected int m_iHeroGround; //!< composited hero band colour, ground for the tag chip, author chip and version pill
+	protected ImageWidget m_wAuthorIcon; //!< `AuthorIcon`
+	protected TextWidget m_wAuthorBy; //!< `AuthorBy`
+	protected TextWidget m_wAuthorName; //!< `AuthorName`
+	protected Widget m_wAuthorChipDock; //!< `AuthorChipDock`
+	protected Widget m_wVersionDock; //!< `VersionDock`: the version dropdown
+	protected Widget m_wHero; //!< `Hero`
+	protected ImageWidget m_wHeroImage; //!< `HeroImage`: terrain satellite band or topo art
+	protected ref TBD_UIScrollBar m_ScrollBar; //!< scroll bar of the card column
+	protected Widget m_wCardsContent; //!< `CardsContent`: the card column
+	protected Widget m_wEmptyState; //!< `EmptyState`, shown when no mission is selected
+	protected ref TBD_MissionInspectorCards m_Cards; //!< the four cards; null before Build and after Destroy
 
-	protected TBD_ChipComponent m_TagChip;
-	protected TBD_ChipComponent m_AuthorChip;
-	protected TBD_DropdownComponent m_Version;
+	protected TBD_ChipComponent m_TagChip; //!< mode tag chip; mounted on the first Show
+	protected TBD_ChipComponent m_AuthorChip; //!< AUTHOR chip
+	protected TBD_DropdownComponent m_Version; //!< version dropdown
 
-	protected TBD_PanelComponent m_ModsPanel;
-	protected TBD_ChipComponent m_ModsetChip;
-	protected TBD_ChipComponent m_SyncedChip;
-	protected TBD_PanelComponent m_SummaryPanel;
-	protected TBD_PanelComponent m_OrbatPanel;
-	protected TBD_ChipComponent m_OrbatChip;
-	protected TBD_PanelComponent m_ObjectivesPanel;
-	protected TBD_ChipComponent m_ObjectivesChip;
-
-	protected TBD_MissionCatalog m_Catalog;
-	protected TBD_MissionSummary m_Mission;
+	protected TBD_MissionCatalog m_Catalog; //!< the catalog in force
+	protected TBD_MissionSummary m_Mission; //!< the mission shown, or null
 
 	protected ref ScriptInvoker m_OnVersionChanged; //!< (TBD_MissionInspectorPanel panel, int versionIndex)
 
-	static const int CARD_GAP = 12;
-	static const int CARD_INSET = 14;
-
-	//! `root` is a mounted `TBD_MissionInspector.layout`.
+	//! Find the inspector widgets, paint the panel and hero, mount the chips, the version dropdown
+	//! and the cards, then show the empty state.
+	//! @param root a mounted `TBD_MissionInspector.layout`
+	//! @param overlayHost where the version dropdown opens its menu
+	//! @param catalog the catalog in force
+	//! @return false when root is null
 	bool Build(Widget root, Widget overlayHost, TBD_MissionCatalog catalog)
 	{
 		m_Catalog = catalog;
@@ -131,12 +124,16 @@ class TBD_MissionInspectorPanel
 			AlignableSlot.SetHorizontalAlign(m_Version.GetRootWidget(), LayoutHorizontalAlign.Right);
 		}
 
-		BuildCards();
+		m_Cards = new TBD_MissionInspectorCards(m_wCardsContent);
 		Show(null);
 		return true;
 	}
 
-	//! One quarter of the inverse disc, painted in the colour that lies BEHIND the hero there.
+	//! Load one quarter of the inverse disc into a corner mask, painted in the colour behind the hero
+	//! there, which fakes a rounded corner on the photo.
+	//! @param root the inspector root
+	//! @param name the mask widget
+	//! @param opaqueArgb the colour behind that corner
 	protected void MountCornerMask(Widget root, string name, int opaqueArgb)
 	{
 		ImageWidget mask = ImageWidget.Cast(root.FindAnyWidget(name));
@@ -144,7 +141,8 @@ class TBD_MissionInspectorPanel
 			TBD_UITheme.Paint(mask, opaqueArgb);
 	}
 
-	//! Satellite band for terrains that have one, the topo art (at 25 %) for the rest.
+	//! Show the terrain's satellite band when it has one, else the topo art at reduced alpha.
+	//! @param terrainKey the mission's terrain
 	protected void ShowHeroImage(string terrainKey)
 	{
 		ResourceName texture = TBD_UILayouts.HERO_TOPO;
@@ -166,6 +164,7 @@ class TBD_MissionInspectorPanel
 			TBD_UITheme.Paint(m_wHeroImage, TBD_UITheme.BRIGHT_INK);
 	}
 
+	//! Release the scroll bar, the version dropdown and the cards before the screen closes.
 	void Destroy()
 	{
 		if (m_ScrollBar)
@@ -181,10 +180,12 @@ class TBD_MissionInspectorPanel
 		m_Version = null;
 		m_wRoot = null;
 		m_wCardsContent = null;
+		m_Cards = null;
 		m_Mission = null;
 	}
 
-	//! Rebind everything to `mission`. Null shows the empty state.
+	//! Rebind the hero and the cards to `mission`.
+	//! @param mission the mission to show; null shows the empty state
 	void Show(TBD_MissionSummary mission)
 	{
 		m_Mission = mission;
@@ -214,13 +215,11 @@ class TBD_MissionInspectorPanel
 			m_TagChip.Set(m_Catalog.ModeLabel(mission.m_sTag), m_Catalog.ModeTint(mission.m_sTag));
 
 		FillVersions(mission);
-		FillMods(mission);
-		FillSummary(mission);
-		FillOrbat(mission);
-		FillObjectives(mission);
+		if (m_Cards)
+			m_Cards.Fill(mission);
 	}
 
-	//! Index into the mission's version list, -1 when none.
+	//! @return the index into the mission's version list, -1 when none
 	int GetSelectedVersionIndex()
 	{
 		if (!m_Version)
@@ -229,7 +228,7 @@ class TBD_MissionInspectorPanel
 		return m_Version.GetSelectedTag();
 	}
 
-	//! Label of the chosen version ("v2.14.99"), empty when none.
+	//! @return the label of the chosen version ("v2.14.99"), empty when none
 	string GetSelectedVersionLabel()
 	{
 		if (!m_Mission)
@@ -242,7 +241,7 @@ class TBD_MissionInspectorPanel
 		return m_Mission.m_aVersions[index].m_sLabel;
 	}
 
-	//! (TBD_MissionInspectorPanel panel, int versionIndex)
+	//! @return the invoker raised with (TBD_MissionInspectorPanel panel, int versionIndex) on a version pick
 	ScriptInvoker GetOnVersionChanged()
 	{
 		if (!m_OnVersionChanged)
@@ -251,54 +250,7 @@ class TBD_MissionInspectorPanel
 		return m_OnVersionChanged;
 	}
 
-
-	protected void BuildCards()
-	{
-		m_ModsPanel = MountCard("Required Modset & Mods", "extension");
-		if (m_ModsPanel)
-		{
-			m_ModsetChip = TBD_ChipComponent.Mount(m_ModsPanel.GetBadgeDock(), "", TBD_EUITint.PRIMARY, m_ModsPanel.GetGround());
-			m_SyncedChip = TBD_ChipComponent.Mount(m_ModsPanel.GetBadgeDock(), "", TBD_EUITint.SUCCESS, m_ModsPanel.GetGround());
-			if (m_SyncedChip)
-			{
-				m_SyncedChip.SetDotVisible(true);
-				AlignableSlot.SetPadding(m_SyncedChip.GetRootWidget(), 8, 0, 0, 0);
-			}
-		}
-
-		m_SummaryPanel = MountCard("Mission Summary", "notes");
-		if (m_SummaryPanel)
-			TBD_ChipComponent.Mount(m_SummaryPanel.GetBadgeDock(), "SITREP", TBD_EUITint.NEUTRAL, m_SummaryPanel.GetGround());
-
-		m_OrbatPanel = MountCard("ORBAT Overview", "groups");
-		if (m_OrbatPanel)
-			m_OrbatChip = TBD_ChipComponent.Mount(m_OrbatPanel.GetBadgeDock(), "", TBD_EUITint.NEUTRAL, m_OrbatPanel.GetGround());
-
-		m_ObjectivesPanel = MountCard("Objectives", "description");
-		if (m_ObjectivesPanel)
-			m_ObjectivesChip = TBD_ChipComponent.Mount(m_ObjectivesPanel.GetBadgeDock(), "", TBD_EUITint.NEUTRAL, m_ObjectivesPanel.GetGround());
-	}
-
-	protected TBD_PanelComponent MountCard(string title, string icon)
-	{
-		if (!m_wCardsContent)
-			return null;
-
-		TBD_PanelComponent panel = TBD_PanelComponent.Cast(TBD_UILayouts.CreateHandler(TBD_UILayouts.PANEL, m_wCardsContent, TBD_PanelComponent));
-		if (!panel)
-			return null;
-
-		Widget root = panel.GetRootWidget();
-		AlignableSlot.SetHorizontalAlign(root, LayoutHorizontalAlign.Stretch);
-		AlignableSlot.SetPadding(root, 0, 0, 0, CARD_GAP);
-
-		// A card sits on the inspector's glass, not on the backdrop.
-		panel.SetGround(TBD_UITheme.PanelGround());
-		panel.SetTitle(title);
-		panel.SetIcon(icon);
-		return panel;
-	}
-
+	//! Fill the version dropdown from the mission and select the first version.
 	protected void FillVersions(TBD_MissionSummary mission)
 	{
 		if (!m_Version)
@@ -317,220 +269,7 @@ class TBD_MissionInspectorPanel
 			m_Version.SetSelectedTag(0);
 	}
 
-	protected void FillMods(TBD_MissionSummary mission)
-	{
-		if (!m_ModsPanel)
-			return;
-
-		if (m_ModsetChip)
-		{
-			m_ModsetChip.SetText(mission.m_sModsetName);
-			m_ModsetChip.SetChipVisible(!mission.m_sModsetName.IsEmpty());
-		}
-
-		if (m_SyncedChip)
-			m_SyncedChip.SetText(string.Format("%1 SYNCED & ACTIVE", mission.GetSyncedModCount()));
-
-		Widget body = m_ModsPanel.GetBodyDock();
-		TBD_UILayouts.Clear(body);
-
-		Widget columns = MountColumns(body);
-		if (!columns)
-			return;
-
-		Widget columnA = columns.FindAnyWidget("ColumnA");
-		Widget columnB = columns.FindAnyWidget("ColumnB");
-
-		for (int i = 0; i < mission.m_aMods.Count(); i++)
-		{
-			TBD_MissionMod mod = mission.m_aMods[i];
-
-			Widget column = columnA;
-			if (i % 2 == 1)
-				column = columnB;
-
-			Widget item = TBD_UILayouts.CreateStretched(TBD_UILayouts.MISSION_SELECTOR_MOD_ITEM, column);
-			if (!item)
-				continue;
-
-			int cardGround = m_ModsPanel.GetGround();
-			int itemGround = TBD_UITheme.Over(TBD_UITheme.INSET_FILL, cardGround);
-			Widget itemBorder = item.FindAnyWidget("Border");
-			Widget itemBG = item.FindAnyWidget("Background");
-			TBD_UILayouts.MountRounded(itemBorder, TBD_UITheme.RADIUS_ROW);
-			TBD_UILayouts.MountRounded(itemBG, TBD_UITheme.RADIUS_ROW - 1);
-			TBD_UITheme.PaintOver(itemBorder, TBD_UITheme.GLASS_BORDER, cardGround);
-			TBD_UITheme.PaintOver(itemBG, TBD_UITheme.INSET_FILL, cardGround);
-			TBD_UITheme.Write(TextWidget.Cast(item.FindAnyWidget("ModName")), mod.m_sName);
-			TBD_UITheme.Paint(item.FindAnyWidget("ModName"), TBD_UITheme.ON_SURFACE);
-
-			int ink = TBD_UITheme.SUCCESS;
-			string icon = "check_circle";
-			string glyph = "+";
-			if (!mod.m_bSynced)
-			{
-				ink = TBD_UITheme.WARNING;
-				icon = "cancel";
-				glyph = "!";
-			}
-
-			ImageWidget check = ImageWidget.Cast(item.FindAnyWidget("CheckIcon"));
-			bool iconShown = TBD_UIIcons.Load(check, icon);
-			TBD_UITheme.Paint(check, ink);
-			TextWidget checkGlyph = TextWidget.Cast(item.FindAnyWidget("CheckGlyph"));
-			TBD_UITheme.Show(checkGlyph, !iconShown);
-			TBD_UITheme.Write(checkGlyph, glyph);
-			TBD_UITheme.Paint(checkGlyph, ink);
-
-			TBD_ChipComponent.Mount(item.FindAnyWidget("VersionChipDock"), mod.m_sVersion, TBD_EUITint.NEUTRAL, itemGround);
-		}
-	}
-
-	protected void FillSummary(TBD_MissionSummary mission)
-	{
-		if (!m_SummaryPanel)
-			return;
-
-		Widget body = m_SummaryPanel.GetBodyDock();
-		TBD_UILayouts.Clear(body);
-
-		Widget inset = TBD_UILayouts.CreateStretched(TBD_UILayouts.INSET_TEXT, body);
-		if (!inset)
-			return;
-
-		AlignableSlot.SetPadding(inset, CARD_INSET, CARD_INSET, CARD_INSET, CARD_INSET);
-		Widget insetBorder = inset.FindAnyWidget("InsetBorder");
-		Widget insetBG = inset.FindAnyWidget("InsetBG");
-		TBD_UILayouts.MountRounded(insetBorder, TBD_UITheme.RADIUS_ROW);
-		TBD_UILayouts.MountRounded(insetBG, TBD_UITheme.RADIUS_ROW - 1);
-		TBD_UITheme.PaintOver(insetBorder, TBD_UITheme.GLASS_BORDER, m_SummaryPanel.GetGround());
-		TBD_UITheme.PaintOver(insetBG, TBD_UITheme.INSET_FILL, m_SummaryPanel.GetGround());
-
-		TextWidget text = TextWidget.Cast(inset.FindAnyWidget("Body"));
-		TBD_UITheme.Write(text, mission.m_sSummary);
-		TBD_UITheme.Paint(text, TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL));
-	}
-
-	protected void FillOrbat(TBD_MissionSummary mission)
-	{
-		if (!m_OrbatPanel)
-			return;
-
-		if (m_OrbatChip)
-			m_OrbatChip.SetText(string.Format("%1 SLOTS", mission.GetSlotTotal()));
-
-		Widget body = m_OrbatPanel.GetBodyDock();
-		TBD_UILayouts.Clear(body);
-
-		Widget columns = MountColumns(body);
-		if (!columns)
-			return;
-
-		for (int i = 0; i < mission.m_aFactions.Count(); i++)
-		{
-			TBD_MissionFactionSummary faction = mission.m_aFactions[i];
-			Widget rows = MountFactionColumn(columns, i, faction, faction.m_iSlots, "SLOTS", m_OrbatPanel.GetGround());
-			if (!rows)
-				continue;
-
-			foreach (TBD_MissionAsset asset : faction.m_aVehicles)
-			{
-				TBD_KeyValueRowComponent row = TBD_KeyValueRowComponent.Mount(rows);
-				if (!row)
-					continue;
-
-				row.SetGround(m_iColumnGround);
-				row.Set(asset.m_sName, string.Empty);
-				row.SetKeyChip(string.Format("%1x", asset.m_iCount), faction.m_eTint);
-			}
-		}
-	}
-
-	protected void FillObjectives(TBD_MissionSummary mission)
-	{
-		if (!m_ObjectivesPanel)
-			return;
-
-		if (m_ObjectivesChip)
-			m_ObjectivesChip.SetText(string.Format("%1 ACTIVE", mission.GetObjectiveTotal()));
-
-		Widget body = m_ObjectivesPanel.GetBodyDock();
-		TBD_UILayouts.Clear(body);
-
-		Widget columns = MountColumns(body);
-		if (!columns)
-			return;
-
-		for (int i = 0; i < mission.m_aFactions.Count(); i++)
-		{
-			TBD_MissionFactionSummary faction = mission.m_aFactions[i];
-			Widget rows = MountFactionColumn(columns, i, faction, faction.m_aObjectives.Count(), "OBJECTIVES", m_ObjectivesPanel.GetGround());
-			if (!rows)
-				continue;
-
-			foreach (TBD_MissionObjective objective : faction.m_aObjectives)
-			{
-				TBD_KeyValueRowComponent row = TBD_KeyValueRowComponent.Mount(rows);
-				if (!row)
-					continue;
-
-				row.SetGround(m_iColumnGround);
-				row.Set(objective.m_sTitle, string.Empty);
-				row.SetIcon(objective.m_sIcon, TBD_UITheme.ChipInk(faction.m_eTint));
-			}
-		}
-	}
-
-
-	//! Two-column grid inset inside a card body.
-	protected Widget MountColumns(Widget body)
-	{
-		Widget columns = TBD_UILayouts.CreateStretched(TBD_UILayouts.COLUMNS_2, body);
-		if (columns)
-			AlignableSlot.SetPadding(columns, CARD_INSET, CARD_INSET, CARD_INSET, CARD_INSET - 8);
-
-		return columns;
-	}
-
-	//! A faction-tinted panel with a `TBD_FactionColumn` body in column `index % 2`. Returns the
-	//! `Rows` container to fill, or null. `ground` is the owning card's fill; the column's own
-	//! composited fill is left in `m_iColumnGround` for the rows the caller adds.
-	protected Widget MountFactionColumn(Widget columns, int index, TBD_MissionFactionSummary faction, int count, string countLabel, int ground)
-	{
-		string columnName = "ColumnA";
-		if (index % 2 == 1)
-			columnName = "ColumnB";
-
-		Widget column = columns.FindAnyWidget(columnName);
-		if (!column)
-			return null;
-
-		TBD_PanelComponent panel = TBD_PanelComponent.Cast(TBD_UILayouts.CreateHandler(TBD_UILayouts.PANEL, column, TBD_PanelComponent));
-		if (!panel)
-			return null;
-
-		AlignableSlot.SetHorizontalAlign(panel.GetRootWidget(), LayoutHorizontalAlign.Stretch);
-		panel.ShowHeader(false);
-		panel.SetGround(ground);
-		panel.SetTint(faction.m_eTint);
-		m_iColumnGround = panel.GetGround();
-
-		Widget body = TBD_UILayouts.CreateStretched(TBD_UILayouts.MISSION_SELECTOR_FACTION_COL, panel.GetBodyDock());
-		if (!body)
-			return null;
-
-		TBD_ChipComponent.Mount(body.FindAnyWidget("FactionChipDock"), faction.m_sKey, faction.m_eTint, m_iColumnGround);
-		TBD_UITheme.Write(TextWidget.Cast(body.FindAnyWidget("RoleText")), faction.m_sRole);
-		TBD_UITheme.Paint(body.FindAnyWidget("RoleText"), TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL));
-		TBD_UITheme.Write(TextWidget.Cast(body.FindAnyWidget("CountText")), count.ToString());
-		TBD_UITheme.Paint(body.FindAnyWidget("CountText"), TBD_UITheme.BRIGHT_INK);
-		TBD_UITheme.Write(TextWidget.Cast(body.FindAnyWidget("CountLabel")), countLabel);
-		TBD_UITheme.Paint(body.FindAnyWidget("CountLabel"), TBD_UITheme.MUTED_INK);
-		TBD_UITheme.PaintOver(body.FindAnyWidget("HeaderRule"), TBD_UITheme.PanelBorder(faction.m_eTint), m_iColumnGround);
-
-		return body.FindAnyWidget("Rows");
-	}
-
+	//! Forward a version pick to GetOnVersionChanged.
 	protected void OnVersionChanged(TBD_DropdownComponent dropdown, int tag)
 	{
 		if (m_OnVersionChanged)

@@ -3,16 +3,18 @@
 How server administrators pick what runs next from inside the game: the list of missions the
 platform lets this server deploy, the admin browser keys that step through it, and the deployment
 request relayed to the platform as a [mission deployment](/documentation_v2/glossary/g_to_m.md#mission-deployment).
-The folder also holds the Mission Selector screen's models and the admin screen's RPC transport.
+The folder also holds the Mission Selector screen's catalog, its last pick, and the session keys.
 
 ## Contents
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/
+├── Catalog/                      the Mission Selector's catalog and its models
+├── SCR_PlayerController.c        modded `SCR_PlayerController`: session keys and the browser RPCs
 ├── TBD_DeployableMissionList.c   the missions the platform lets this server deploy, numbered from 1
-├── TBD_MissionBrowser.c          modded `SCR_PlayerController`: admin keys, browser and admin RPCs
+├── TBD_MissionBrowserService.c   the browser's list payload, built and split back into lines
 ├── TBD_MissionDeploymentRelay.c  relays an admin's pick to the platform as a deployment request
-├── TBD_MissionSelectorData.c     selector models, `TBD_MissionCatalog` and `TBD_SessionSelection`
+├── TBD_SessionSelection.c        the scenario browser's last pick, for the lobby and briefing
 └── UI/                           the Mission Selector screen: terrains, missions and the inspector
 ```
 
@@ -44,16 +46,13 @@ words for its `details.code` (`IDENTITY_NOT_LINKED`, `NOT_AN_ADMINISTRATOR`,
 `MODPACK_MISMATCH`, `TERRAIN_NOT_RUNNABLE`, `ORBAT_ARTIFACT_MISMATCH` and others). The browser
 payload is capped at 100 lines (`MAX_LIST_LINES`); numbering still covers the whole list.
 
-`TBD_MissionBrowser` registers the `TBD_BrowserContext` keys on the local client:
+The modded `SCR_PlayerController` registers the `TBD_BrowserContext` keys on the local client:
 `TBD_MissionCycle` (F6), `TBD_MissionLoad` (F7), `TBD_AdminMenu` (F8, `TBD_AdminClient.Toggle`) and
-`TBD_MissionSelector` (F9, `TBD_MissionSelectorScreen.Toggle`). Its controller block also carries
-the admin screen's RPCs, whose logic stays in
-`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`.
+`TBD_MissionSelector` (F9, `TBD_MissionSelectorScreen.Toggle`). The admin screen's RPCs live on
+the controller block in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`.
 
-`TBD_MissionSelectorData` holds the Mission Selector screen's models (`TBD_TerrainInfo`,
-`TBD_MissionMode`, `TBD_MissionVersion`, `TBD_MissionMod`, `TBD_MissionAsset`,
-`TBD_MissionObjective`, `TBD_MissionFactionSummary`, `TBD_MissionSummary`) and its read surface
-`TBD_MissionCatalog`, which `Get()` builds from `TBD_MissionSelectorMock` in
+`Catalog/` holds the Mission Selector screen's models and its read surface `TBD_MissionCatalog`,
+which `Get()` builds from `TBD_MissionSelectorMock` in
 `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/` until something calls `Set()`; no script does,
 so the screen shows mock missions, separate from the platform's deployable list above.
 `TBD_SessionSelection` keeps the screen's last pick for the lobby and briefing titles.
@@ -65,17 +64,16 @@ so the screen shows mock missions, separate from the platform's deployable list 
   (`SCR_PlayerListedAdminManagerComponent`) itself or through `TBD_AdminService` before acting.
 - Client: the key listeners, the cached list lines, the models and the screen.
 - Owner: the replies below, delivered to the requesting client only.
-- RPCs, all on the modded `SCR_PlayerController`, as their `@rpc` tags state:
-  - `TBD_RpcAsk_MissionList`, `TBD_RpcAsk_SelectMission(int)`, `TBD_RpcAsk_AdminSnapshot` and
-    `TBD_RpcAsk_AdminAction(int, int)`: Reliable, Server;
-  - `TBD_RpcDo_ReceiveMissionList(string)`, `TBD_RpcDo_AdminSnapshot(string)`,
-    `TBD_RpcDo_AdminActionResult(string, bool)` and `TBD_RpcDo_OpenAdminMenu`: Reliable, Owner.
-  On a listen host the admin snapshot and action requests run directly, without an RPC.
+- RPCs, on the modded `SCR_PlayerController` in this folder, as their `@rpc` tags state:
+  `TBD_RpcAsk_MissionList` and `TBD_RpcAsk_SelectMission(int)` (Reliable, Server);
+  `TBD_RpcDo_ReceiveMissionList(string)` (Reliable, Owner). The admin screen's RPCs are listed in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/`.
 - Replicated properties: none.
 
 ## Boundaries
 
-- Depends on: `TBD_GameRuntimeHttp`, `TBD_GameRuntimeAnswer` and `TBD_PlayerIdentity` in
+- Depends on: `TBD_GameRuntimeHttp`, `TBD_GameRuntimeAnswer`, `TBD_BackendText` and
+  `TBD_PlayerIdentity` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; `TBD_PlayerChat` and `TBD_Log` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_DeployedMission` (the running deployment)
   in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`; the admin scripts in
@@ -92,7 +90,7 @@ so the screen shows mock missions, separate from the platform's deployable list 
 - Rules: every server half of an RPC takes the caller from `GetPlayerId()` and checks the admin
   list; the relay never restarts anything itself; the request and list shapes follow
   `contracts_v2/definitions/mission-deployment.schema.json`
-  (`RelayedDeploymentRequest`, `DeployableMissionList`); lines added stay ASCII and
+  (`RelayedDeploymentRequest`, `MissionDeployment`, `DeployableMissionList`); lines added stay ASCII and
   `cargo xtask mod compile` checks that the scripts compile.
 
 ## Related documentation

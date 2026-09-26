@@ -1,197 +1,54 @@
-//! Pre-game rebuild (2026-09-12) -- the <TERRAIN> MISSIONS column of the Mission Selector.
-//!
-//! ```
-//!   ┌ ▦ EVERON MISSIONS                      [3 AVAILABLE] ┐
-//!   │ [🔍 Search Scenario...        ] [Modes (5) v]        │
-//!   ├──────────────────────────────────────────────────────┤
-//!   │ ┌ PVP  Everon                     48 SLOTS ● ┐       │  <- selected card
-//!   │ │ PVP Test 1                              ✓ │       │
-//!   │ └───────────────────────────────────────────┘       │
-//!   │ ┌ COOP Everon                      4 SLOTS ┐         │
-//!   │ │ Co-op Test 1                            > │         │
-//!   └──────────────────────────────────────────────────────┘
-//! ```
-//!
-//! Two classes, one file:
-//!   * `TBD_MissionCardComponent` -- one pooled card (`TBD_MissionCard.layout`). Widget contract:
-//!     `Border`, `Background`, `TagChipDock`, `TerrainText`, `SlotCount`, `PulseDot`, `Title`,
-//!     `Indicator` (image), `IndicatorGlyph` (text fallback).
-//!   * `TBD_ScenarioBrowserPanel` -- the controller. Filters = terrain ∩ checked modes ∩ query; all
-//!     counts (`N AVAILABLE`, the Modes badge, per-mode counts) are computed from the catalog.
-//!     Output: `GetOnSelected()(panel, missionId)` -- empty id when nothing is visible.
+/**
+ * @file TBD_ScenarioBrowserPanel.c
+ * @brief The missions column of the Mission Selector: search, Modes filter, pooled mission cards.
+ *
+ * Role: filters the catalog's missions by terrain, ticked modes and search text, and owns the
+ * mission selection.  Position: TBD_MissionSelectorScreen builds it on CenterDock and calls
+ * SetTerrain on a terrain pick; cards are TBD_MissionCardComponent; GetOnSelected (panel,
+ * missionId) is its only output, with an empty id when nothing is visible.
+ * State: the card pool, the live card ids, the terrain, the selection, the query and the hidden
+ * modes, owned by the screen on the client.  Invariants: every count (`N AVAILABLE`, the Modes
+ * badge, per-mode counts) is computed from the catalog; a selection the filter hides moves to the
+ * first visible card, or clears.
+ *
+ *   |  EVERON MISSIONS                      [3 AVAILABLE] |
+ *   | [ Search Scenario...       ]  [Modes (5) v]          |
+ *   | [PVP]  Everon                      48 SLOTS *        |  <- selected card
+ *   |  PVP Test 1                                  (ok)    |
+ *   | [COOP] Everon                       4 SLOTS          |
+ *   |  Co-op Test 1                                  >     |
+ */
 
-class TBD_MissionCardComponent : TBD_UIInteractive
-{
-	protected Widget m_wBorder;
-	protected Widget m_wBackground;
-	protected Widget m_wTagDock;
-	protected TextWidget m_wTerrain;
-	protected TextWidget m_wSlots;
-	protected Widget m_wPulse;
-	protected TextWidget m_wTitle;
-	protected ImageWidget m_wIndicator;
-	protected TextWidget m_wIndicatorGlyph;
-	protected TBD_ChipComponent m_TagChip;
-
-	protected TBD_ScenarioBrowserPanel m_Owner;
-	protected int m_iIndex = -1;
-	protected bool m_bSelected;
-	protected TBD_EUITint m_eTagTint = TBD_EUITint.NEUTRAL;
-
-	override protected void OnBind(Widget w)
-	{
-		m_wBorder = w.FindAnyWidget("Border");
-		m_wBackground = w.FindAnyWidget("Background");
-		m_wTagDock = w.FindAnyWidget("TagChipDock");
-		m_wTerrain = TextWidget.Cast(w.FindAnyWidget("TerrainText"));
-		m_wSlots = TextWidget.Cast(w.FindAnyWidget("SlotCount"));
-		m_wPulse = w.FindAnyWidget("PulseDot");
-		m_wTitle = TextWidget.Cast(w.FindAnyWidget("Title"));
-		m_wIndicator = ImageWidget.Cast(w.FindAnyWidget("Indicator"));
-		m_wIndicatorGlyph = TextWidget.Cast(w.FindAnyWidget("IndicatorGlyph"));
-
-		TBD_UILayouts.MountRounded(m_wBorder, TBD_UITheme.RADIUS_ROW);
-		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
-	}
-
-	void Bind(TBD_ScenarioBrowserPanel owner, int index, TBD_MissionSummary mission, string terrainName, string tagLabel, TBD_EUITint tagTint)
-	{
-		m_Owner = owner;
-		m_iIndex = index;
-		m_eTagTint = tagTint;
-
-		if (!m_TagChip)
-			m_TagChip = TBD_ChipComponent.Mount(m_wTagDock, tagLabel, tagTint);
-		else
-			m_TagChip.Set(tagLabel, tagTint);
-
-		TBD_UITheme.Write(m_wTerrain, terrainName);
-		TBD_UITheme.Write(m_wSlots, string.Format("%1 SLOTS", mission.GetSlotTotal()));
-		TBD_UITheme.Write(m_wTitle, mission.m_sTitle);
-
-		Repaint();
-	}
-
-	void SetSelected(bool selected)
-	{
-		if (m_bSelected == selected)
-			return;
-
-		m_bSelected = selected;
-		Repaint();
-	}
-
-	override void Repaint()
-	{
-		if (!m_wRoot)
-			return;
-
-		int fill;
-		int border;
-		int titleInk;
-		int slotInk;
-		int terrainInk;
-		int indicatorInk;
-		string indicatorIcon;
-		string glyph;
-
-		if (m_bSelected)
-		{
-			fill         = TBD_UITheme.CARD_SELECTED_FILL;
-			border       = TBD_UITheme.CARD_SELECTED_BORDER;
-			titleInk     = TBD_UITheme.BRIGHT_INK;
-			slotInk      = TBD_UITheme.CARD_SELECTED_INK;
-			terrainInk   = TBD_UITheme.PRIMARY_FIXED;
-			indicatorInk = TBD_UITheme.CARD_SELECTED_INK;
-			indicatorIcon = "check_circle";
-			glyph = "*";
-		}
-		else if (IsHighlighted() && m_bInteractive)
-		{
-			fill         = TBD_UITheme.CARD_HOVER_FILL;
-			border       = TBD_UITheme.CARD_HOVER_BORDER;
-			titleInk     = TBD_UITheme.BRIGHT_INK;
-			slotInk      = TBD_UITheme.ON_SURFACE;
-			terrainInk   = TBD_UITheme.MUTED_INK;
-			indicatorInk = TBD_UITheme.ON_SURFACE;
-			indicatorIcon = "chevron_right";
-			glyph = ">";
-		}
-		else
-		{
-			fill         = TBD_UITheme.CARD_IDLE_FILL;
-			border       = TBD_UITheme.CARD_IDLE_BORDER;
-			titleInk     = TBD_UITheme.ON_SURFACE;
-			slotInk      = TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL);
-			terrainInk   = TBD_UITheme.MUTED_INK;
-			indicatorInk = TBD_UITheme.DIM_INK;
-			indicatorIcon = "chevron_right";
-			glyph = ">";
-		}
-
-		// Cards sit on the MISSIONS panel; the tag chip sits on the card's own fill.
-		int ground = TBD_UITheme.PanelGround();
-		TBD_UITheme.PaintOver(m_wBackground, fill, ground);
-		TBD_UITheme.PaintOver(m_wBorder, border, ground);
-		TBD_UITheme.Paint(m_wTitle, titleInk);
-		TBD_UITheme.Paint(m_wSlots, slotInk);
-		TBD_UITheme.Paint(m_wTerrain, terrainInk);
-		TBD_UITheme.Show(m_wPulse, m_bSelected);
-		TBD_UITheme.Paint(m_wPulse, TBD_UITheme.CARD_BORDER);
-
-		if (m_TagChip)
-		{
-			m_TagChip.SetGround(TBD_UITheme.Over(fill, ground));
-			if (m_bSelected)
-				m_TagChip.SetTint(TBD_EUITint.SOLID);
-			else
-				m_TagChip.SetTint(m_eTagTint);
-		}
-
-		// Icon when the imageset has one, glyph otherwise -- never both, never neither.
-		bool iconShown = TBD_UIIcons.Load(m_wIndicator, indicatorIcon);
-		TBD_UITheme.Paint(m_wIndicator, indicatorInk);
-		TBD_UITheme.Show(m_wIndicatorGlyph, !iconShown);
-		TBD_UITheme.Write(m_wIndicatorGlyph, glyph);
-		TBD_UITheme.Paint(m_wIndicatorGlyph, indicatorInk);
-	}
-
-	override protected void OnActivated()
-	{
-		if (m_Owner)
-			m_Owner.OnCardActivated(m_iIndex);
-	}
-
-	void SetCardVisible(bool visible)
-	{
-		TBD_UITheme.Show(m_wRoot, visible);
-	}
-}
-
+//! Controller of the missions column. Not a widget handler: the screen mounts a TBD_Panel into
+//! CenterDock and hands its root here.
 class TBD_ScenarioBrowserPanel
 {
-	protected TBD_PanelComponent m_Panel;
-	protected TBD_ChipComponent m_CountChip;
-	protected Widget m_wBody;
-	protected TBD_SearchBoxComponent m_Search;
-	protected TBD_DropdownComponent m_Modes;
-	protected Widget m_wContent;
-	protected Widget m_wEmptyState;
-	protected ref TBD_UIScrollBar m_ScrollBar;
+	protected TBD_PanelComponent m_Panel; //!< the mounted missions panel
+	protected TBD_ChipComponent m_CountChip; //!< `N AVAILABLE` badge
+	protected Widget m_wBody; //!< the browser body layout inside the panel
+	protected TBD_SearchBoxComponent m_Search; //!< `Search Scenario...` box
+	protected TBD_DropdownComponent m_Modes; //!< Modes checklist dropdown
+	protected Widget m_wContent; //!< `Content`: the card container
+	protected Widget m_wEmptyState; //!< `EmptyState`, shown when no card matches
+	protected ref TBD_UIScrollBar m_ScrollBar; //!< scroll bar of the card list
 
-	protected TBD_MissionCatalog m_Catalog;
-	protected ref array<TBD_MissionCardComponent> m_aCards;
-	protected ref array<string> m_aCardIds;
-	protected int m_iLiveCards;
+	protected TBD_MissionCatalog m_Catalog; //!< the catalog in force
+	protected ref array<TBD_MissionCardComponent> m_aCards; //!< card pool; handlers owned by their widgets
+	protected ref array<string> m_aCardIds; //!< mission id per live card
+	protected int m_iLiveCards; //!< cards bound by the last Refresh
 
-	protected string m_sTerrainKey;
-	protected string m_sSelectedId;
-	protected string m_sQuery;
-	//! Modes the user unticked. Kept across terrain changes so a filter survives browsing.
-	protected ref set<string> m_sHiddenModes;
+	protected string m_sTerrainKey; //!< the terrain shown
+	protected string m_sSelectedId; //!< selected mission id, empty when none
+	protected string m_sQuery; //!< current search text
+	protected ref set<string> m_sHiddenModes; //!< mode keys the user unticked; kept across terrain changes
 
 	protected ref ScriptInvoker m_OnSelected; //!< (TBD_ScenarioBrowserPanel panel, string missionId)
 
+	//! Title the panel, mount the count badge, search box, Modes dropdown and scroll bar.
+	//! @param panelRoot a mounted `TBD_Panel.layout`
+	//! @param overlayHost where the Modes dropdown opens its menu
+	//! @param catalog the catalog in force
+	//! @return false when the layout tree is missing pieces
 	bool Build(Widget panelRoot, Widget overlayHost, TBD_MissionCatalog catalog)
 	{
 		m_Catalog = catalog;
@@ -242,6 +99,7 @@ class TBD_ScenarioBrowserPanel
 		return true;
 	}
 
+	//! Release the scroll bar, the search listener and the Modes dropdown before the screen closes.
 	void Destroy()
 	{
 		if (m_ScrollBar)
@@ -266,7 +124,8 @@ class TBD_ScenarioBrowserPanel
 			m_aCards.Clear();
 	}
 
-	//! Point the browser at a terrain: retitles, recounts the mode checklist, refilters the cards.
+	//! Point the browser at a terrain: retitle, recount the mode checklist, refilter the cards.
+	//! @param terrainKey the terrain
 	void SetTerrain(string terrainKey)
 	{
 		m_sTerrainKey = terrainKey;
@@ -341,6 +200,9 @@ class TBD_ScenarioBrowserPanel
 		}
 	}
 
+	//! Select a mission.
+	//! @param missionId the mission; empty selects nothing
+	//! @param notify false updates the cards only, without raising GetOnSelected
 	void Select(string missionId, bool notify)
 	{
 		m_sSelectedId = missionId;
@@ -354,12 +216,13 @@ class TBD_ScenarioBrowserPanel
 			m_OnSelected.Invoke(this, missionId);
 	}
 
+	//! @return the selected mission id, empty when none
 	string GetSelectedId()
 	{
 		return m_sSelectedId;
 	}
 
-	//! (TBD_ScenarioBrowserPanel panel, string missionId)
+	//! @return the invoker raised with (TBD_ScenarioBrowserPanel panel, string missionId) on a selection
 	ScriptInvoker GetOnSelected()
 	{
 		if (!m_OnSelected)
@@ -368,7 +231,8 @@ class TBD_ScenarioBrowserPanel
 		return m_OnSelected;
 	}
 
-
+	//! Select the mission of an activated card.
+	//! @param index the card's live index; out of range is ignored
 	void OnCardActivated(int index)
 	{
 		if (index < 0 || index >= m_iLiveCards)
@@ -377,7 +241,7 @@ class TBD_ScenarioBrowserPanel
 		Select(m_aCardIds[index], true);
 	}
 
-
+	//! Refilter the cards by the new search text.
 	protected void OnSearchChanged(TBD_SearchBoxComponent box, string query)
 	{
 		m_sQuery = query;
@@ -419,6 +283,8 @@ class TBD_ScenarioBrowserPanel
 		m_Modes.SetItems(items);
 	}
 
+	//! The pooled card at `index`, created when the pool is shorter.
+	//! @return the card, or null when the layout fails
 	protected TBD_MissionCardComponent AcquireCard(int index)
 	{
 		if (index < m_aCards.Count())

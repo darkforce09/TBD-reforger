@@ -1,81 +1,46 @@
-//! T-181.11.2 -- the admin menu. Under ONE LIFE this screen is the event's safety valve: it is the
-//! only way a player who died to a glitch gets back in.
-//!
-//! ```
-//!   ┌──────────────────────────────────────────────────────────────┐
-//!   │  ADMIN                                          [ Back ]     │
-//!   │  LIVE - 12 connected - 2 lives spent                         │
-//!   ├──────────────────────────────────────────────────────────────┤
-//!   │  MISSION                              Bridgehead at Levie    │  <- section
-//!   │    Validation             FAILED -- 3 error(s), 1 warning  +  │  <- pick to disclose
-//!   │  STAGE                                            LIVE       │  <- section
-//!   │    Force stage -> END               irreversible - pick twice │  <- arm, then confirm
-//!   │  PLAYERS                            12 - 2 lives spent       │  <- section
-//!   │    Cpl. Hicks             ADMIN - us_army - ALPHA/SL - in    │
-//!   │    Pvt. Vasquez         us_army - ALPHA/RFL - LIFE SPENT     │  <- pick, then RESPAWN
-//!   │  ADMIN ACTIONS                              4 this session   │  <- section
-//!   │    Show the audit trail                              +       │
-//!   ├──────────────────────────────────────────────────────────────┤
-//!   │  ONE LIFE -- Respawn hands Vasquez ...    [ RESPAWN VASQUEZ ]   │  <- ONE primary action
-//!   └──────────────────────────────────────────────────────────────┘
-//! ```
-//!
-//! (documentation_v2/mod/tbd-framework/mod_design.md section 2, section 6)
-//! * **ONE obvious primary action.** Whatever recovers the currently selected player, and nothing
-//!   else. The shell physically cannot grow a second loud button.
-//! * **Progressive disclosure.** Validator findings and the audit trail are one pick away, not a
-//!   wall of text an admin has to scroll past to reach the player they came here for.
-//! * **Immediate feedback, nothing blocking.** The server's verdict lands in the footer status
-//!   line. No modal, ever -- an admin fixing a broken round must never be stuck behind a dialog.
-//! * **Aegis tokens only.** Every colour comes from `TBD_UITheme`; this file contains no literal.
-//!
-//! "Respawn" under ONE LIFE is not a normal respawn -- TBD events are one life, death is terminal
-//! by design, and this spends the event's single sanctioned exception. The screen says so in the
-//! status line every time a dead player is selected, in those words, because an admin under
-//! pressure should not have to remember the design doc.
-//!
-//! It renders a `TBD_AdminPayload` and nothing else. It cannot read `TBD_SpawnManager`,
-//! `TBD_MissionLoader` or `TBD_MissionValidator` -- on a dedicated server none of them hold
-//! anything in the client's process (see the header of `TBD_AdminData.c`). Every list here was
-//! built on the authority and sent to this one client. There is therefore no local state a
-//! patched client could render instead, and no local path from a widget to a power.
+/**
+ * @file TBD_AdminScreen.c
+ * @brief The admin menu: mission, stage, players and audit trail, with one primary recovery action.
+ *
+ * Role: renders the latest TBD_AdminPayload through TBD_AdminScreenSections, keeps the admin's
+ * selection, disclosure and arming across refreshes, and asks for the power the selected player
+ * needs.  Position: TBD_AdminClient opens it through TBD_MenuStack (preset `TBD_UIAdmin`); it reads
+ * TBD_AdminClient's cache and invokers and sends requests through TBD_AdminClient.Request and Act.
+ * State: the snapshot shown, the selected player id, the disclosure and arming flags and the held
+ * footer verdict, on the client; a repeating poll while open.  Invariants: it renders only what the
+ * server sent and holds no path from a widget to a power; the selection is a player id, never a row
+ * index; a stage change under an armed force disarms it; no modal ever opens; every colour comes
+ * from TBD_UITheme.
+ *
+ *   | ADMIN                                           [ Back ]     |
+ *   | LIVE - 12 connected - 2 lives spent                          |
+ *   | MISSION                              Bridgehead at Levie     |  <- section
+ *   |   Validation         FAILED -- 3 error(s), 1 warning  +      |  <- pick to disclose
+ *   | STAGE                                           LIVE         |
+ *   |   Force stage -> END              irreversible - pick twice  |  <- arm, then confirm
+ *   | PLAYERS                           12 - 2 lives spent         |
+ *   |   Pvt. Vasquez        us_army - ALPHA/RFL - LIFE SPENT       |  <- pick, then RESPAWN
+ *   | ADMIN ACTIONS                             4 this session     |
+ *   |   Show the audit trail                             +         |
+ *   | ONE LIFE -- Respawn hands Vasquez ...  [ RESPAWN VASQUEZ ]   |  <- one primary action
+ */
+
+//! The admin screen over the shared shell. Respawn under ONE LIFE spends the event's single
+//! sanctioned exception, and the footer says so whenever a dead player is selected.
 class TBD_AdminScreen : TBD_ShellScreen
 {
-	//! How often the open screen re-asks the server. An admin panel that lies about who is alive is
-	//! worse than no panel; 3 s is well inside human reaction time and costs one small string.
-	protected static const int REFRESH_MS = 3000;
+	protected static const int REFRESH_MS = 3000; //!< ms between snapshot requests while open
 
-	//! Row tags. Negative = inert content; the rest decode without a lookup table.
-	protected static const int TAG_INERT = -1;
-	protected static const int TAG_VALIDATION = 1;
-	protected static const int TAG_STAGE = 2;
-	protected static const int TAG_AUDIT = 3;
-	protected static const int TAG_PLAYER_BASE = 1000;
+	protected ref TBD_AdminPayload m_Payload; //!< the snapshot shown; null until one arrives
+	protected int m_iSelectedPlayer = -1; //!< selected player id, -1 for none; an id, so a refresh that reorders rows cannot retarget it
+	protected bool m_bValidationExpanded; //!< validator findings disclosed; survives a refresh
+	protected bool m_bAuditExpanded; //!< audit trail disclosed; survives a refresh
+	protected bool m_bStageArmed; //!< the first pick armed the force-stage; the second fires it
+	protected string m_sLastStage; //!< stage of the last snapshot; a change disarms the force-stage
+	protected string m_sPendingResult; //!< footer line held until the admin picks something else, so a refresh cannot wipe the server's verdict
 
-	protected ref TBD_AdminPayload m_Payload;
-
-	//! Selection is held as a PLAYER ID, never a row index: the roster is rebuilt every 3 s and a
-	//! player who disconnects shifts every index below them. An id cannot be aimed at the wrong
-	//! person by a refresh.
-	protected int m_iSelectedPlayer = -1;
-
-	//! Disclosure state. Survives a refresh -- a rebuild must not collapse what the admin opened.
-	protected bool m_bValidationExpanded;
-	protected bool m_bAuditExpanded;
-
-	//! Force-stage is armed by the first pick and executed by the second. Not a modal (design law:
-	//! nothing blocking) and not a bare one-click either, because this one moves the round for
-	//! everybody and cannot be undone.
-	protected bool m_bStageArmed;
-
-	//! Stage the round was in when the admin armed. A refresh that moves the stage underneath them
-	//! disarms, so a confirming second pick can never land on a transition they did not read.
-	protected string m_sLastStage;
-
-	//! The last thing the SERVER said about an action, held so the 3 s refresh cannot wipe it off
-	//! the footer a heartbeat after it arrives. Cleared the moment the admin picks something else.
-	protected string m_sPendingResult;
-
+	//! Wire the list, the primary action and TBD_AdminClient's invokers, draw the cached snapshot,
+	//! request a fresh one, and start the poll.
 	override protected void OnScreenOpen()
 	{
 		super.OnScreenOpen();
@@ -92,16 +57,15 @@ class TBD_AdminScreen : TBD_ShellScreen
 		AdoptPayload(TBD_AdminClient.GetPayload());
 		TBD_AdminClient.Request();
 
-		// A poll, not a subscription: the things this screen shows (who is alive, who has a body,
-		// what the stage is) live in server-side maps with no replicated change notification to
-		// hang off, and the two classes that own them belong to other slices this wave.
+		// A poll, not a subscription: who is alive, who has a body and the stage live in
+		// server-side maps with no replicated change notification.
 		GetGame().GetCallqueue().CallLater(Poll, REFRESH_MS, true);
 	}
 
+	//! Stop the poll and unwire everything OnScreenOpen wired.
 	override protected void OnScreenClose()
 	{
-		// Statics outlive the screen; a live repeat pointed at a destroyed menu is exactly the kind
-		// of leak this codebase has already measured once.
+		// The call queue outlives the screen; a live repeat pointed at a destroyed menu leaks.
 		GetGame().GetCallqueue().Remove(Poll);
 
 		TBD_ListBox list = GetList();
@@ -116,13 +80,13 @@ class TBD_AdminScreen : TBD_ShellScreen
 		super.OnScreenClose();
 	}
 
+	//! @return the shell title
 	override protected string GetScreenTitle()
 	{
 		return "ADMIN";
 	}
 
-	//! Stage, headcount and how many lives the round has already spent -- the three numbers an admin
-	//! wants before they have read anything else.
+	//! @return stage, headcount and lives spent, or the waiting or refusal line
 	override protected string GetScreenSubtitle()
 	{
 		if (!m_Payload)
@@ -135,20 +99,22 @@ class TBD_AdminScreen : TBD_ShellScreen
 			m_Payload.m_sStage, m_Payload.m_iConnected, m_Payload.m_iSpent);
 	}
 
-
+	//! Poll tick: request a fresh snapshot.
 	protected void Poll()
 	{
 		TBD_AdminClient.Request();
 	}
 
+	//! TBD_AdminClient invoker: adopt the new snapshot.
 	protected void OnPayloadChanged(TBD_AdminPayload payload)
 	{
 		AdoptPayload(payload);
 	}
 
-	//! Take a new snapshot without throwing away what the admin was doing: disclosure stays open,
-	//! the selected player survives if they are still connected, and the server's last verdict
-	//! stays on the footer.
+	//! Take a new snapshot without losing what the admin was doing: disclosure stays open, the
+	//! selection survives while that player is connected, the held verdict stays on the footer, and
+	//! a stage change disarms the force-stage.
+	//! @param payload the snapshot, or null
 	protected void AdoptPayload(TBD_AdminPayload payload)
 	{
 		m_Payload = payload;
@@ -159,8 +125,8 @@ class TBD_AdminScreen : TBD_ShellScreen
 			m_iSelectedPlayer = -1;
 		}
 
-		// The round moved while the admin was reading. Anything they armed was armed against a
-		// stage that no longer exists, so it must not survive into this one.
+		// The round moved while the admin was reading; anything armed was armed against another
+		// stage.
 		string stage;
 		if (m_Payload)
 			stage = m_Payload.m_sStage;
@@ -176,20 +142,16 @@ class TBD_AdminScreen : TBD_ShellScreen
 		RefreshFooter();
 	}
 
-	//! The authority's own words, verbatim, and they STAY on screen.
-	//!
-	//! A fresh snapshot follows on the same round trip and the poll fires every 3 s after that --
-	//! so without holding this, the one line telling the admin whether the respawn worked would be
-	//! overwritten by contextual guidance within a heartbeat of arriving.
+	//! TBD_AdminClient invoker: show the server's verdict verbatim and hold it on the footer, since a
+	//! fresh snapshot and the poll follow within seconds.
 	protected void OnActionResult(string message, bool ok)
 	{
 		m_sPendingResult = message;
 		SetStatus(message);
 	}
 
-
-	//! Write the whole list from the snapshot plus the disclosure flags. Cheap by construction --
-	//! `TBD_ListBox` pools its rows, so a rebuild is property writes on widgets that already exist.
+	//! Write the whole list from the snapshot and the disclosure and arming flags. TBD_ListBox pools
+	//! its rows, so a rebuild is property writes on existing widgets.
 	protected void Rebuild()
 	{
 		TBD_ListBox list = GetList();
@@ -213,207 +175,29 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return;
 		}
 
-		EmitMission(list);
-		EmitStage(list);
-		EmitPlayers(list);
-		EmitAudit(list);
+		TBD_AdminScreenSections.EmitMission(list, m_Payload, m_bValidationExpanded);
+		TBD_AdminScreenSections.EmitStage(list, m_Payload, m_bStageArmed);
+		TBD_AdminScreenSections.EmitPlayers(list, m_Payload);
+		TBD_AdminScreenSections.EmitAudit(list, m_Payload, m_bAuditExpanded);
 
 		list.EndUpdate();
 
 		// Re-assert the visual selection: EndUpdate re-applies it from the tag, and the tag survives
 		// a rebuild because it is derived from the player id, not the row order.
-		list.SetSelectedTag(PlayerTag(m_iSelectedPlayer));
+		list.SetSelectedTag(TBD_AdminScreenSections.PlayerTag(m_iSelectedPlayer));
 	}
 
-	//! Mission identity, and the validator verdict.
-	//!
-	//! T-181.14: a mission the validator REJECTED never leaves LOADING and nothing in game says so.
-	//! This is where that becomes visible, which is the whole reason it is on the admin screen and
-	//! not buried in a log an operator would have to SSH for.
-	protected void EmitMission(TBD_ListBox list)
-	{
-		string name = m_Payload.m_sMissionName;
-		if (name.IsEmpty())
-			name = "none loaded";
-		else if (!m_Payload.m_sTerrain.IsEmpty())
-			name = string.Format("%1 - %2", name, m_Payload.m_sTerrain);
-
-		list.AddSection("MISSION", name);
-
-		if (!m_Payload.m_bValidationRun)
-		{
-			list.AddItem("    Validation", "not run yet", TAG_INERT, TBD_EUIState.NORMAL, false);
-			return;
-		}
-
-		string verdict = string.Format("PASSED -- %1 warning(s)", m_Payload.m_iValidationWarnings);
-		TBD_EUIState state = TBD_EUIState.NORMAL;
-
-		if (!m_Payload.m_bValidationPassed)
-		{
-			verdict = string.Format("FAILED -- %1 error(s), %2 warning(s)",
-				m_Payload.m_iValidationErrors, m_Payload.m_iValidationWarnings);
-			state = TBD_EUIState.DANGER;
-		}
-
-		bool hasFindings = !m_Payload.m_aValidationLines.IsEmpty();
-		if (hasFindings)
-			verdict = string.Format("%1  %2", verdict, DisclosureMark(m_bValidationExpanded));
-
-		list.AddItem("    Validation", verdict, TAG_VALIDATION, state, hasFindings);
-
-		if (!hasFindings || !m_bValidationExpanded)
-			return;
-
-		foreach (string finding : m_Payload.m_aValidationLines)
-		{
-			list.AddItem("        " + finding, string.Empty, TAG_INERT, state, false);
-		}
-	}
-
-	//! Stage, and the force-advance lever.
-	//!
-	//! Exposed on purpose: the stage machine is exactly what strands an event (a rejected mission
-	//! sits in LOADING forever), and an admin is the only recovery. Armed-then-confirmed because it
-	//! moves the round for everybody and there is no undo.
-	protected void EmitStage(TBD_ListBox list)
-	{
-		list.AddSection("STAGE", m_Payload.m_sStage);
-
-		if (!m_Payload.m_bStageReady)
-		{
-			list.AddItem("    Force stage", "the stage machine is not up yet", TAG_INERT, TBD_EUIState.NORMAL, false);
-			return;
-		}
-
-		if (m_Payload.m_sNextStage.IsEmpty())
-		{
-			list.AddItem("    Force stage", "already at the last stage", TAG_INERT, TBD_EUIState.NORMAL, false);
-			return;
-		}
-
-		// ASCII arrow on purpose. `-`, `--` and `...` are already rendered by the shipped briefing
-		// screen so they are the established set; `->` appears nowhere in a widget in this codebase,
-		// and nothing in this lane can render a framebuffer to find out whether the UI font has it.
-		// A missing glyph would draw as a tofu box on the one control that moves the whole round.
-		string label = string.Format("    Force stage -> %1", m_Payload.m_sNextStage);
-
-		if (m_bStageArmed)
-		{
-			list.AddItem(label, "ARMED -- pick again to move the whole round", TAG_STAGE, TBD_EUIState.DANGER, true);
-			return;
-		}
-
-		list.AddItem(label, "irreversible - pick twice", TAG_STAGE, TBD_EUIState.NORMAL, true);
-	}
-
-	//! Who is here, and what state they are in. This is the list the headline action operates on.
-	protected void EmitPlayers(TBD_ListBox list)
-	{
-		list.AddSection("PLAYERS", string.Format("%1 connected - %2 lives spent",
-			m_Payload.m_iConnected, m_Payload.m_iSpent));
-
-		if (m_Payload.m_aPlayers.IsEmpty())
-		{
-			list.AddItem("    Nobody is connected.", string.Empty, TAG_INERT, TBD_EUIState.NORMAL, false);
-			return;
-		}
-
-		foreach (TBD_AdminPlayerRow row : m_Payload.m_aPlayers)
-		{
-			list.AddItem("    " + row.m_sName, DescribePlayer(row), PlayerTag(row.m_iPlayerId),
-				PlayerState(row), true);
-		}
-	}
-
-	//! `ADMIN - us_army - ALPHA/RFL - LIFE SPENT` -- seat first, then the thing an admin acts on.
-	protected string DescribePlayer(TBD_AdminPlayerRow row)
-	{
-		string detail;
-
-		if (row.m_bIsAdmin)
-			detail = "ADMIN";
-
-		if (row.m_bHasSlot)
-		{
-			string seat = string.Format("%1 - %2/%3", row.m_sFaction, row.m_sGroup, row.m_sRole);
-			if (detail.IsEmpty())
-				detail = seat;
-			else
-				detail = detail + " - " + seat;
-		}
-		else
-		{
-			if (detail.IsEmpty())
-				detail = "no slot";
-			else
-				detail = detail + " - no slot";
-		}
-
-		string status = "in world";
-		if (row.m_bDead)
-			status = "LIFE SPENT";
-		else if (!row.m_bInWorld)
-			status = "NO BODY";
-
-		return detail + " - " + status;
-	}
-
-	//! Colour carries the triage: a spent life is the thing this screen exists for, and a player
-	//! with no body is the other thing that needs an admin.
-	protected TBD_EUIState PlayerState(TBD_AdminPlayerRow row)
-	{
-		if (row.m_bDead)
-			return TBD_EUIState.DANGER;
-
-		if (!row.m_bInWorld)
-			return TBD_EUIState.TAKEN;
-
-		return TBD_EUIState.NORMAL;
-	}
-
-	//! The audit trail -- who did what to whom. These are powers, not conveniences, so their use is
-	//! on the same screen that grants them rather than in a log nobody opens.
-	protected void EmitAudit(TBD_ListBox list)
-	{
-		list.AddSection("ADMIN ACTIONS", string.Format("%1 this session", m_Payload.m_iAuditTotal));
-
-		if (m_Payload.m_aAudit.IsEmpty())
-		{
-			list.AddItem("    No admin actions yet.", string.Empty, TAG_INERT, TBD_EUIState.NORMAL, false);
-			return;
-		}
-
-		list.AddItem("    Show the audit trail", DisclosureMark(m_bAuditExpanded), TAG_AUDIT,
-			TBD_EUIState.NORMAL, true);
-
-		if (!m_bAuditExpanded)
-			return;
-
-		foreach (TBD_AdminAuditRow audit : m_Payload.m_aAudit)
-		{
-			TBD_EUIState state = TBD_EUIState.NORMAL;
-			if (audit.m_bDenied)
-				state = TBD_EUIState.DANGER;
-
-			list.AddItem("        " + audit.m_sTime, audit.m_sText, TAG_INERT, state, false);
-		}
-	}
-
-
-	//! The recovery the selected player needs -- and the honest sentence about what it costs.
-	//!
-	//! Respawn and Deploy are deliberately NOT one button. `AdminRespawn` refuses a player who is
-	//! not dead and `DeployPlayerEx` refuses one who is, so a merged button would silently do
-	//! nothing half the time.
+	//! Set the primary action and the footer line for the current selection. Respawn and Deploy are
+	//! separate: AdminRespawn refuses the living and DeployPlayerEx refuses the dead.
 	protected void RefreshFooter()
 	{
 		SetPrimaryAction(PrimaryLabel(), PrimaryEnabled());
 		SetStatus(ComposeStatus());
 	}
 
-	//! The footer line. The server's last verdict wins over guidance -- an admin who just pressed
-	//! RESPAWN needs to know what happened more than they need to be told what the button does.
+	//! The footer line: the held verdict first, else the waiting or refusal line, else what the
+	//! primary action would do for the selected player.
+	//! @return the line
 	protected string ComposeStatus()
 	{
 		if (!m_sPendingResult.IsEmpty())
@@ -431,8 +215,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 
 		if (row.m_bDead)
 		{
-			// Say what it actually costs, in the words the design doc uses. TBD events are ONE
-			// LIFE and death is terminal by design; this is the single sanctioned exception.
+			// ONE LIFE: death is terminal by design and this is the single sanctioned exception.
 			return string.Format("ONE LIFE -- this hands %1 their life back and rebuilds them on their own slot. It is the event's escape hatch: use it for glitch deaths, not for losing a fight.",
 				row.m_sName);
 		}
@@ -446,6 +229,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return string.Format("%1 is alive and in the world -- nothing to recover.", row.m_sName);
 	}
 
+	//! @return `RESPAWN <name>`, `DEPLOY <name>`, or empty when there is nothing to recover
 	protected string PrimaryLabel()
 	{
 		TBD_AdminPlayerRow row = SelectedActionable();
@@ -458,13 +242,14 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return string.Format("DEPLOY %1", row.m_sName);
 	}
 
+	//! @return whether the selected player needs a recovery
 	protected bool PrimaryEnabled()
 	{
 		return SelectedActionable() != null;
 	}
 
-	//! The selected player IF there is something an admin can actually do for them. Null otherwise,
-	//! which is what hides the loud button -- a screen with nothing to commit shows no primary at all.
+	//! The selected player when there is something to recover for them: a spent life or no body.
+	//! @return the row, or null, which hides the primary action
 	protected TBD_AdminPlayerRow SelectedActionable()
 	{
 		if (!m_Payload || !m_Payload.m_bAuthorised)
@@ -480,16 +265,15 @@ class TBD_AdminScreen : TBD_ShellScreen
 		return null;
 	}
 
+	//! Primary action: ask for RESPAWN for a spent life, else DEPLOY, and hold a waiting line.
 	protected void OnPrimaryPressed(TBD_ShellScreen screen)
 	{
 		TBD_AdminPlayerRow row = SelectedActionable();
 		if (!row)
 			return;
 
-		// The client picks which action to ASK for; the server decides whether it happens. This
-		// branch is a convenience, never a permission -- `TBD_AdminService` re-derives the caller,
-		// re-checks the admin list, and refuses a respawn for a live player or a deploy for a dead
-		// one regardless of which one the client asked for.
+		// The client picks which action to ask for; TBD_AdminService re-derives the caller,
+		// re-checks the admin list and refuses a mismatched action whatever the client asked.
 		if (row.m_bDead)
 		{
 			TBD_AdminClient.Act(TBD_EAdminAction.RESPAWN, row.m_iPlayerId);
@@ -501,18 +285,20 @@ class TBD_AdminScreen : TBD_ShellScreen
 		Announce(string.Format("Deploying %1 -- waiting for the server...", row.m_sName));
 	}
 
-	//! Put a line in the footer and hold it there until the admin picks something else. Used for
-	//! optimistic "asking the server..." feedback, which the server's real answer then overwrites.
+	//! Put a line in the footer and hold it until the admin picks something else; the server's
+	//! verdict overwrites it.
+	//! @param text the line
 	protected void Announce(string text)
 	{
 		m_sPendingResult = text;
 		SetStatus(text);
 	}
 
-
+	//! A row pick: the stage row arms or fires; any other pick disarms, clears the held verdict,
+	//! and toggles a disclosure or selects a player.
 	protected void OnRowPicked(TBD_ListBox list, int tag)
 	{
-		if (tag == TAG_STAGE)
+		if (tag == TBD_AdminScreenSections.TAG_STAGE)
 		{
 			OnStagePicked();
 			return;
@@ -524,7 +310,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 		DisarmStage();
 		m_sPendingResult = string.Empty;
 
-		if (tag == TAG_VALIDATION)
+		if (tag == TBD_AdminScreenSections.TAG_VALIDATION)
 		{
 			m_bValidationExpanded = !m_bValidationExpanded;
 			Rebuild();
@@ -532,7 +318,7 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return;
 		}
 
-		if (tag == TAG_AUDIT)
+		if (tag == TBD_AdminScreenSections.TAG_AUDIT)
 		{
 			m_bAuditExpanded = !m_bAuditExpanded;
 			Rebuild();
@@ -540,15 +326,15 @@ class TBD_AdminScreen : TBD_ShellScreen
 			return;
 		}
 
-		if (tag >= TAG_PLAYER_BASE)
+		if (tag >= TBD_AdminScreenSections.TAG_PLAYER_BASE)
 		{
-			m_iSelectedPlayer = tag - TAG_PLAYER_BASE;
+			m_iSelectedPlayer = tag - TBD_AdminScreenSections.TAG_PLAYER_BASE;
 			Rebuild();
 			RefreshFooter();
 		}
 	}
 
-	//! First pick arms, second pick fires.
+	//! The force-stage row: the first pick arms, the second asks for STAGE_ADVANCE.
 	protected void OnStagePicked()
 	{
 		if (!m_Payload || !m_Payload.m_bAuthorised || !m_Payload.m_bStageReady || m_Payload.m_sNextStage.IsEmpty())
@@ -569,38 +355,18 @@ class TBD_AdminScreen : TBD_ShellScreen
 		Announce("Forcing the stage -- waiting for the server...");
 	}
 
+	//! Clear the force-stage arming.
 	protected void DisarmStage()
 	{
 		m_bStageArmed = false;
 	}
 
-
-	//! Player rows carry `TAG_PLAYER_BASE + playerId`, so a tag decodes straight back to a player
-	//! without a side table that a rebuild could desynchronise.
-	protected int PlayerTag(int playerId)
-	{
-		if (playerId <= 0)
-			return -1;
-
-		return TAG_PLAYER_BASE + playerId;
-	}
-
+	//! @return the server's refusal reason, or "The server did not answer."
 	protected string Reason()
 	{
 		if (m_Payload && !m_Payload.m_sDeniedReason.IsEmpty())
 			return m_Payload.m_sDeniedReason;
 
 		return "The server did not answer.";
-	}
-
-	//! The only affordance a row has for "there is more behind me". Deliberately plain ASCII:
-	//! nothing in this lane can render a framebuffer, so the UI font's glyph coverage is
-	//! unverifiable here -- a geometric triangle the font lacks would draw as a tofu box.
-	protected string DisclosureMark(bool expanded)
-	{
-		if (expanded)
-			return "-";
-
-		return "+";
 	}
 }

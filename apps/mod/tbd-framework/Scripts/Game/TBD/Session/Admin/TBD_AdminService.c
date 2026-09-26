@@ -1,59 +1,31 @@
-//! T-181.11.2 -- the admin AUTHORITY. One server-side choke point for every power an admin
-//! surface can trigger, and the only place those powers are reachable from.
-//!
-//! The admin backend already worked through chat (`TBD_AdminCommands`). The menu is a **second
-//! front-end onto the same operations**, not a second implementation of them -- so the operations
-//! moved here, once, and both surfaces call in. Two consequences that matter more than the tidiness:
-//!
-//!  1. **One permission gate.** `Execute` and `ForceStage` refuse before they do anything unless
-//!     `IsAdmin(callerId)` says yes, resolved from `SCR_PlayerListedAdminManagerComponent` -- the
-//!     same vanilla admin list the chat path has always used. A future third surface cannot reach
-//!     a power without passing it, because there is no other public function here that touches
-//!     `TBD_SpawnManager` or `TBD_FrameworkManager`.
-//!  2. **One audit trail.** Every attempt -- allowed or refused -- lands in `TBD_AdminAudit`, so the
-//!     chat fallback and the screen write the same history instead of two partial ones.
-//!
-//! `callerId` is **never** taken from the wire. The RPC entry points in `TBD_MissionBrowser.c`
-//! pass `GetPlayerId()` of the replicated player controller the RPC arrived on, which the client
-//! cannot forge. There is no API here that accepts "I am an admin" as an argument, and no
-//! client-side flag anywhere is consulted -- the screen's own `m_bAuthorised` is a rendering hint
-//! derived FROM the server's answer, never an input to it.
+/**
+ * @file TBD_AdminService.c
+ * @brief The admin authority: the one permission gate and the menu powers behind it.
+ *
+ * Role: answers who is an admin and runs the respawn, deploy and stage powers for both admin
+ * surfaces.  Position: the admin RPCs on SCR_PlayerController and TBD_AdminCommands call Execute and
+ * ForceStage; TBD_AdminSubcommands and TBD_AdminSnapshotService use IsAdmin, Label and
+ * NoteDeniedAccess; the powers drive TBD_SpawnManager and TBD_FrameworkManager and write
+ * TBD_AdminAudit.
+ * State: the per-(player, surface) refusal counts, static on the server.  Invariants: every power
+ * refuses on a client and refuses a caller IsAdmin rejects before it touches anything; the caller id
+ * is the player id of the controller the request arrived on, never a wire argument; every attempt,
+ * refused or not, is audited; no other public function here reaches TBD_SpawnManager or
+ * TBD_FrameworkManager.
+ */
 
-//! The powers the admin surfaces expose. `NONE` is 0 so an unset int is inert.
-enum TBD_EAdminAction
-{
-	NONE,
-	//! One-life escape hatch -- put a player who has SPENT their life back in the world.
-	RESPAWN,
-	//! Recovery for a player who still has their life but never got a body (stuck on loading).
-	DEPLOY,
-	//! Force the round's stage machine one step forward.
-	STAGE_ADVANCE
-}
-
-//! @authority server -- every function that mutates state refuses outright off the authority.
+//! Server-side choke point for every admin power. The screen and the `#tbd` chat commands both
+//! call in, so they share one gate and one audit trail.
+//! @authority server
 class TBD_AdminService
 {
-	//! "<playerId>|<surface>" -> how many times that pair has been refused. See NoteDeniedAccess.
-	//!
-	//! T-181.30 -- this was a `map<string, bool>` whose comment said an entry meant "a refusal has
-	//! already taken a slot in the bounded audit ring for this pair". That stopped being true the
-	//! moment the ring rolled that entry off, and the map -- never reset, never bounded -- kept
-	//! asserting it for the rest of the process. The practical effect was that refusals gradually
-	//! stopped appearing in the trail at all, silently, on exactly the long-running server where
-	//! the trail matters most. A count says something that stays true.
-	protected static ref map<string, int> s_mDeniedCount;
+	protected static ref map<string, int> s_mDeniedCount; //!< "<playerId>|<surface>" -> refusals counted; see NoteDeniedAccess
+	protected static const int MAX_DENIED_KEYS = 256; //!< refusal-count rows kept; the map is cleared when it grows past this
 
-	//! T-181.30 -- ceiling on that map, following the same reasoning as `TBD_MarkerData.MAX_LOG_STATES`:
-	//! playerIds are recycled and there is no disconnect hook here, so a long session would otherwise
-	//! accumulate rows forever. Dropping the whole table costs one extra ring entry and one extra
-	//! console line per pair still active, which is a much smaller price than an unbounded static.
-	protected static const int MAX_DENIED_KEYS = 256;
-
-	//! THE permission question. Server-side, resolved from the vanilla listed-admin manager.
-	//!
-	//! Fails closed on every uncertainty: a non-positive id (no such player), a missing manager
-	//! (nobody is an admin yet) and a player absent from the list all return false.
+	//! Whether a player is on the vanilla listed-admin list, the one permission question.
+	//! @param playerId the player to ask about
+	//! @return false for a non-positive id, a missing admin manager, or a player not on the list
+	//! @authority server
 	static bool IsAdmin(int playerId)
 	{
 		if (playerId <= 0)
@@ -66,9 +38,10 @@ class TBD_AdminService
 		return admins.IsPlayerOnAdminList(playerId);
 	}
 
-	//! `Hicks(3)` -- how a player appears in the audit trail. Name AND id, because a name can be
-	//! shared (see the identity note in documentation_v2/mod/tbd-framework/mod_design.md
-	//! section 2) and an id cannot be read back later.
+	//! How a player appears in the audit trail: `Name(id)`, since a name can be shared and an id
+	//! alone cannot be read back later.
+	//! @param playerId the player; a non-positive id is the server itself
+	//! @return `server`, `Name(id)`, or `player(id)` when the player manager or name is missing
 	static string Label(int playerId)
 	{
 		if (playerId <= 0)
@@ -85,12 +58,10 @@ class TBD_AdminService
 		return string.Format("%1(%2)", name, playerId);
 	}
 
-	//! Turn an int that arrived over the wire into an action, or `NONE`.
-	//!
-	//! Enfusion will happily assign any int to an enum-typed variable, so without this a client
-	//! could hand the switch a value no case covers. Everything downstream already fails closed on
-	//! an unrecognised action, but an admin surface should reject a malformed request at the wire
-	//! rather than rely on a default branch several frames later still being a refusal.
+	//! Turn an int that arrived over the wire into an action. Enfusion assigns any int to an enum
+	//! variable, so the wire boundary rejects values no member names.
+	//! @param actionId the int the client sent
+	//! @return the matching TBD_EAdminAction, or NONE for any other value
 	static TBD_EAdminAction FromWire(int actionId)
 	{
 		if (actionId == TBD_EAdminAction.RESPAWN)
@@ -105,6 +76,8 @@ class TBD_AdminService
 		return TBD_EAdminAction.NONE;
 	}
 
+	//! The audit name of an action.
+	//! @return `respawn`, `deploy`, `stage-advance`, or `none`
 	static string ActionName(TBD_EAdminAction action)
 	{
 		if (action == TBD_EAdminAction.RESPAWN)
@@ -119,12 +92,13 @@ class TBD_AdminService
 		return "none";
 	}
 
-
-	//! Run one admin power on behalf of `callerId`. Returns the line to show the admin; `ok` is
-	//! true only when the operation actually achieved what it set out to do.
-	//!
-	//! @authority server -- refuses on a client build outright, so a modified client that somehow
-	//! reached this function bounces off it instead of half-running it locally.
+	//! Run one menu power on behalf of `callerId`.
+	//! @param callerId the requesting player, taken from the controller the request arrived on
+	//! @param action the power to run
+	//! @param targetId the player the power acts on; unused by STAGE_ADVANCE
+	//! @param ok true only when the power achieved what it set out to do
+	//! @return the line to show the admin; a refusal on a client or for a non-admin
+	//! @authority server
 	static string Execute(int callerId, TBD_EAdminAction action, int targetId, out bool ok)
 	{
 		ok = false;
@@ -154,9 +128,12 @@ class TBD_AdminService
 		return message;
 	}
 
-	//! `#tbd stage next` / `#tbd stage LOBBY`. Public because chat needs the named form, which the
-	//! menu's single STAGE_ADVANCE button does not expose; gated identically, so this is a second
-	//! door into the same locked room rather than a way around the lock.
+	//! `#tbd stage next` or `#tbd stage <NAME>`: the named stage form the menu's single button does
+	//! not offer, behind the same gate as Execute.
+	//! @param callerId the sender's player id
+	//! @param arg `next` or a stage name
+	//! @param ok true when the stage changed
+	//! @return the line to show the admin
 	//! @authority server
 	static string ForceStage(int callerId, string arg, out bool ok)
 	{
@@ -179,163 +156,15 @@ class TBD_AdminService
 		return message;
 	}
 
-	//! T-181.17 -- `#tbd safestart [status|go|<seconds>]`. Public for the same reason `ForceStage`
-	//! is: chat needs an argument form the menu's single-button actions cannot express. Gated and
-	//! audited identically, so it is another door into the same locked room, not a way around it.
-	//!
-	//! `status` is deliberately readable by any admin without changing anything -- during a live
-	//! event "is damage actually off right now" is a question that has to be answerable in one
-	//! command, not inferred from the server console.
-	//! @authority server
-	static string Safestart(int callerId, string arg, out bool ok)
-	{
-		ok = false;
-
-		// Authority only -- the countdown and every damage mutation are server-owned; a client
-		// build reaching here would half-run them locally and protect nobody.
-		if (TBD_Authority.IsClient())
-			return "TBD: admin actions execute on the server only.";
-
-		if (!IsAdmin(callerId))
-		{
-			NoteDeniedAccess(callerId, "action 'safestart'");
-			return "TBD: refused -- you are not a listed server admin.";
-		}
-
-		TBD_SafestartManager safestart = TBD_SafestartManager.GetInstance();
-		if (!safestart)
-			return "TBD: safestart manager not on this game mode -- SAFE_START cannot be enforced here.";
-
-		string request = arg;
-		if (request.IsEmpty())
-			request = "status";
-
-		if (request == "status")
-		{
-			ok = true;
-			return safestart.StatusLine();
-		}
-
-		if (request == "go")
-		{
-			if (!safestart.IsArmed())
-				return "TBD: safestart is not running -- nothing to end.";
-
-			safestart.GoLive(string.Format("admin %1", Label(callerId)));
-			ok = true;
-			TBD_AdminAudit.Record(string.Format("%1 ended safestart early", Label(callerId)), false);
-			return "TBD: safestart ended -- weapons live.";
-		}
-
-		int seconds = request.ToInt();
-		if (seconds <= 0)
-			return "Usage: #tbd safestart [status|go|<seconds>]";
-
-		bool applied = false;
-		string reply = safestart.AdminSetSeconds(seconds, applied);
-		ok = applied;
-		TBD_AdminAudit.Record(string.Format("%1 set safestart length to %2s -> %3",
-			Label(callerId), seconds, applied), !applied);
-		return reply;
-	}
-
-	//! T-181.32 -- `#tbd identity [status|override <phrase>|enforce]`.
-	//!
-	//! ONE LIFE is a promise about a PERSON, and a dedicated server with no backend identity has no
-	//! concept of a person -- it hands out `player:<id>`, a lease on a NUMBER. `TBD_SpawnManager`
-	//! therefore refuses SAFE_START/LIVE on such a host. That is right for an event and wrong for a
-	//! legitimate test session, so this is the documented way out.
-	//!
-	//! It is a WAIVER, not a setting, and everything about the shape follows from that:
-	//!   * `status` changes nothing and is readable by any admin -- during an event "can this host
-	//!     even enforce one life" has to be answerable in one command, exactly like `#tbd safestart
-	//!     status`.
-	//!   * `override` demands an exact phrase (`TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE`) as a
-	//!     separate argument. A yes/no flag, or a `--force`, is something an admin can fat-finger
-	//!     while trying to do something else; a literal sentence naming the consequence is not.
-	//!   * Both outcomes -- signed AND refused -- hit `TBD_AdminAudit`. A waiver nobody can prove was
-	//!     signed is not a waiver, and a refused attempt is exactly the thing a post-event dispute
-	//!     needs to be able to see.
-	//!   * `enforce` re-arms it, with no phrase required. Putting a safety rail BACK never needs
-	//!     ceremony.
-	//! The waiver only unblocks the STAGE GATE. It does not touch ONE LIFE itself, the one-life
-	//! boundary in `DeployPlayerInternal`, or the mode-3 mark handling in `OnPlayerDisconnected` --
-	//! it buys permission to start a round that the host cannot enforce, and says so every time it
-	//! lets a stage through.
-	//! @authority server
-	static string Identity(int callerId, string arg, string confirm, out bool ok)
-	{
-		ok = false;
-
-		// Authority only -- the waiver and the census are server-owned, and off the authority
-		// vanilla's GetPlayerIdentityId returns NULL_UUID for everybody, so a client build would
-		// read a census that is pure noise.
-		if (TBD_Authority.IsClient())
-			return "TBD: admin actions execute on the server only.";
-
-		if (!IsAdmin(callerId))
-		{
-			NoteDeniedAccess(callerId, "action 'identity'");
-			return "TBD: refused -- you are not a listed server admin.";
-		}
-
-		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
-		if (!spawn)
-			return "TBD: spawn manager not on this game mode -- ONE LIFE is not enforced here at all (see the roll-call).";
-
-		string request = arg;
-		if (request.IsEmpty())
-			request = "status";
-
-		if (request == "status")
-		{
-			ok = true;
-			return spawn.IdentityStatusLine();
-		}
-
-		if (request == "enforce")
-		{
-			spawn.RequireDurableIdentity(Label(callerId));
-			ok = true;
-			TBD_AdminAudit.Record(string.Format("%1 re-armed ONE LIFE identity enforcement", Label(callerId)), false);
-			return "TBD: identity enforcement re-armed -- SAFE_START/LIVE are refused again while any connected player is on a NUMERIC key.";
-		}
-
-		if (request == "override")
-		{
-			if (!spawn.AcceptNonDurableIdentity(Label(callerId), confirm))
-			{
-				TBD_AdminAudit.Record(string.Format("%1 identity override REFUSED -- wrong or missing confirmation phrase",
-					Label(callerId)), true);
-				return string.Format("TBD: refused. This waives ONE LIFE on a host that cannot enforce it, so it needs the phrase verbatim: '#tbd identity override %1'.",
-					TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE);
-			}
-
-			ok = true;
-			TBD_AdminAudit.Record(string.Format("%1 WAIVED ONE LIFE enforcement (no durable player identity on this host)",
-				Label(callerId)), false);
-			return "TBD: ONE LIFE enforcement WAIVED. SAFE_START/LIVE may now be entered, deaths will NOT survive a reconnect, and every stage this lets through says so in the log. '#tbd identity enforce' undoes it.";
-		}
-
-		return string.Format("Usage: #tbd identity [status|override %1|enforce]", TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE);
-	}
-
-	//! Someone who is not an admin touched an admin surface.
-	//!
-	//! The refusal paths are the ones an attacker controls -- an unauthorised client can poll the
-	//! snapshot every 3 s or macro `#tbd` forever -- so this is the one audit path that has to
-	//! assume hostile input. Three separate bounds, because they fail in three different ways:
-	//!
-	//!   1. THE RING cannot be flushed: `TBD_AdminAudit.RecordUnauthorised` holds these to
-	//!      `MAX_UNAUTHORISED_ENTRIES` slots, so real admin actions keep a guaranteed 48. This is
-	//!      the load-bearing one, and it is the one T-181.30 added -- de-duplication alone bounded a
-	//!      single client while ten of them could still evict everything.
-	//!   2. THE CONSOLE grows logarithmically, not linearly: the first attempt for a pair is
-	//!      recorded, then only decade milestones (10th, 100th, 1000th ...), each carrying the running
-	//!      count. WHAT IS TRADED: per-attempt timestamps for repeats. What is kept: who, which
-	//!      surface, and how many times -- which is what an incident review actually asks. The old
-	//!      behaviour wrote one WARNING per attempt forever, which an attacker sets the volume of.
-	//!   3. THE MAP is bounded by `MAX_DENIED_KEYS` and dropped wholesale when it overflows.
+	//! Record that a non-admin touched an admin surface. The caller of a refusal path controls its
+	//! rate, so three bounds apply:
+	//!   1. TBD_AdminAudit.RecordUnauthorised holds these to its own few ring slots, so real admin
+	//!      actions keep the rest of the ring.
+	//!   2. The console gets the first attempt per (player, surface) and then only the 10th, 100th,
+	//!      1000th and so on, each with the running count.
+	//!   3. The count map is cleared when it grows past MAX_DENIED_KEYS.
+	//! @param playerId the refused player
+	//! @param surface what they touched, as it reads in the audit line
 	//! @authority server
 	static void NoteDeniedAccess(int playerId, string surface)
 	{
@@ -364,13 +193,10 @@ class TBD_AdminService
 			TBD_AdminAudit.Note(string.Format("%1 (x%2)", text, seen));
 	}
 
-	//! T-181.30 -- is this repeat count one worth a console line? Exact powers of ten: 10, 100, 1000, ...
-	//!
-	//! Divides DOWN rather than multiplying a running decade up: the multiplying version overflows
-	//! int on a long enough attack and then loops on a negative bound, which is a hang on the one
-	//! code path an attacker sets the iteration count of. Dividing terminates in log10(count) steps
-	//! for every input.
-	//! @authority server
+	//! Whether a repeat count is an exact power of ten from 10 up. Divides down, so it terminates in
+	//! log10(count) steps for every input and cannot overflow.
+	//! @param count the refusal count for one (player, surface)
+	//! @return true for 10, 100, 1000, ...
 	protected static bool IsRepeatMilestone(int count)
 	{
 		if (count < 10)
@@ -385,16 +211,43 @@ class TBD_AdminService
 		return n == 1;
 	}
 
-
-	//! The headline action, and the reason this whole screen exists.
-	//!
-	//! Under ONE LIFE a death is terminal by design
-	//! (documentation_v2/mod/tbd-framework/mod_design.md section 2). This is the single
-	//! sanctioned exception, for a player killed by the engine rather than by the enemy. It does
-	//! NOT invent a new spawn path: `TBD_SpawnManager.AdminRespawn` is the same authority-side
-	//! function `#tbd respawn` has always called, and it is the only caller allowed to pass the
-	//! one-life override (which lives on a `protected` overload precisely so nothing else can).
+	//! Respawn a player whose one life is spent, and reword the reply while the TBD platform decides
+	//! on their seat. Clears the player's last deploy result first, so the reading after the respawn
+	//! is this attempt's; the audit line keeps the plain result name.
+	//! @param callerId the admin
+	//! @param targetId the player to respawn
+	//! @param ok true when the player is back in the world
+	//! @return the line to show the admin; AUTHORIZING and UNAUTHORIZED get their own sentences
+	//! @authority server
 	protected static string Respawn(int callerId, int targetId, out bool ok)
+	{
+		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
+		if (spawn)
+			spawn.ForgetDeployResult(targetId);
+
+		string message = RespawnThroughSpawnManager(callerId, targetId, ok);
+		if (!spawn)
+			return message;
+
+		TBD_EDeployResult result = spawn.LastDeployResult(targetId);
+		if (result == TBD_EDeployResult.AUTHORIZING)
+			return string.Format("TBD: respawn player=%1 -> AUTHORIZING - the TBD platform is deciding on their seat; they stay dead until it allows the new life.", targetId);
+
+		if (result == TBD_EDeployResult.UNAUTHORIZED)
+			return string.Format("TBD: respawn player=%1 -> UNAUTHORIZED - their seat cannot be authorized right now (see the audit trail); they stay dead.", targetId);
+
+		return message;
+	}
+
+	//! The one sanctioned exception to ONE LIFE, for a player killed by the engine rather than the
+	//! enemy. Runs TBD_SpawnManager.AdminRespawn, the only caller of the one-life override, and
+	//! audits the result.
+	//! @param callerId the admin
+	//! @param targetId the player to respawn; non-positive means none selected
+	//! @param ok true when the result is DEPLOYED
+	//! @return the reply for DEPLOYED, a queued RETRY, or any other result
+	//! @authority server
+	protected static string RespawnThroughSpawnManager(int callerId, int targetId, out bool ok)
 	{
 		ok = false;
 
@@ -425,14 +278,43 @@ class TBD_AdminService
 		return string.Format("TBD: respawn player=%1 -> %2 -- they are STILL dead, run it again.", targetId, outcome);
 	}
 
-	//! The other half of "spawn shit if it breaks": a player who still HAS their life but never
-	//! got a body -- stuck on the loading screen because a deploy failed or was never requested.
-	//!
-	//! Deliberately a different action from Respawn, and deliberately refused for a dead player.
-	//! `AdminRespawn` refuses anyone who is not dead, and `DeployPlayerEx` refuses anyone who is
-	//! (it carries no override) -- so mapping one button onto both would silently do nothing half
-	//! the time. Two honest actions beat one that lies about what it can do.
+	//! Deploy a live player who has no body, and reword the reply while the TBD platform decides on
+	//! their seat. Clears the player's last deploy result first, so the reading after the deploy is
+	//! this attempt's; the audit line keeps the plain result name.
+	//! @param callerId the admin
+	//! @param targetId the player to deploy
+	//! @param ok true when the player is in the world
+	//! @return the line to show the admin; AUTHORIZING and UNAUTHORIZED get their own sentences
+	//! @authority server
 	protected static string Deploy(int callerId, int targetId, out bool ok)
+	{
+		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
+		if (spawn)
+			spawn.ForgetDeployResult(targetId);
+
+		string message = DeployThroughSpawnManager(callerId, targetId, ok);
+		if (!spawn)
+			return message;
+
+		TBD_EDeployResult result = spawn.LastDeployResult(targetId);
+		if (result == TBD_EDeployResult.AUTHORIZING)
+			return string.Format("TBD: deploy player=%1 -> AUTHORIZING - the TBD platform is deciding on their seat; they deploy once it allows it.", targetId);
+
+		if (result == TBD_EDeployResult.UNAUTHORIZED)
+			return string.Format("TBD: deploy player=%1 -> UNAUTHORIZED - their seat cannot be authorized right now (see the audit trail); they were told why and keep the seat.", targetId);
+
+		return message;
+	}
+
+	//! Put a player who still has their life but no body into the world. Refused for a dead player:
+	//! AdminRespawn refuses the living and DeployPlayerEx refuses the dead, so the two are separate
+	//! actions. Runs TBD_SpawnManager.DeployPlayerEx and audits the result.
+	//! @param callerId the admin
+	//! @param targetId the player to deploy; non-positive means none selected
+	//! @param ok true when the result is DEPLOYED
+	//! @return the reply for the result, or the refusal for a spent life
+	//! @authority server
+	protected static string DeployThroughSpawnManager(int callerId, int targetId, out bool ok)
 	{
 		ok = false;
 
@@ -467,13 +349,14 @@ class TBD_AdminService
 		return string.Format("TBD: deploy player=%1 -> %2 -- not in the world.", targetId, outcome);
 	}
 
-	//! Force the round forward. Exposed because the stage machine is exactly the thing that can
-	//! strand an event: a mission rejected by the validator never leaves LOADING, and nothing
-	//! in-game says so. The admin is the only recovery, so the recovery has to be reachable.
-	//!
-	//! Drives `TBD_FrameworkManager.HandleAdminStageCommand` -- the existing authority-side entry
-	//! point -- and reads the stage either side of it rather than duplicating the transition rules,
-	//! which is also how "it refused" is detected without that function reporting anything.
+	//! Force the round forward, the recovery for a round that cannot advance on its own (a mission the
+	//! validator rejected never leaves LOADING). Drives TBD_FrameworkManager.HandleAdminStageCommand
+	//! and compares the stage either side of it to detect a refusal.
+	//! @param callerId the admin
+	//! @param arg `next` (also empty) or a stage name, upper-cased before use
+	//! @param ok true when the stage changed
+	//! @return the transition, or why the stage is unchanged
+	//! @authority server
 	protected static string AdvanceStage(int callerId, string arg, out bool ok)
 	{
 		ok = false;
@@ -489,7 +372,7 @@ class TBD_AdminService
 		if (request.IsEmpty())
 			request = "next";
 
-		// `ToUpper()` mutates IN PLACE and returns a COUNT (measured landmine) -- so this is two
+		// `ToUpper()` mutates IN PLACE and returns a COUNT (an engine behaviour) -- so this is two
 		// statements, and `next` is compared before the uppercase so `#tbd stage next` still works.
 		if (request != "next")
 			request.ToUpper();
@@ -506,9 +389,8 @@ class TBD_AdminService
 			TBD_AdminAudit.Record(string.Format("%1 stage '%2' -> REFUSED, still %3",
 				Label(callerId), request, fromName), true);
 
-			// T-181.17 -- a transition can now be refused for a REASON rather than only for being
-			// unparseable (SAFE_START with no enforcement behind it). Carry that reason to the
-			// admin; "not a stage" would send them hunting a typo that is not there.
+			// A transition can be refused for a reason (SAFE_START with no enforcement behind it) as
+			// well as for being unparseable; the reason goes to the admin when there is one.
 			string why = framework.GetLastStageRefusal();
 			if (!why.IsEmpty())
 				return string.Format("TBD: stage unchanged (%1). %2", fromName, why);

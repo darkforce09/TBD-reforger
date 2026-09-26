@@ -1,167 +1,44 @@
-//! Pre-game rebuild (2026-09-12) -- the TERRAINS column of the Mission Selector.
-//!
-//! ```
-//!   ┌ TERRAINS ─────────────────────┐
-//!   │ [🔍 Search Maps...          ] │
-//!   ├───────────────────────────────┤
-//!   │ ▔▔  Everon              3  >  │  <- selected: glow bar, chevron, blue border
-//!   │     Arland              3     │
-//!   │     Kolguyev            3     │
-//!   └───────────────────────────────┘
-//! ```
-//!
-//! Two classes, one file:
-//!   * `TBD_TerrainRowComponent` -- one pooled row (`TBD_TerrainRow.layout`). Widget contract:
-//!     `Border`, `Background`, `Accent`, `Icon`, `Title`, `CountBadgeDock`, `Chevron`.
-//!   * `TBD_TerrainSelectorPanel` -- the controller. Not a widget handler: the screen mounts a
-//!     `TBD_Panel` into LeftDock and hands its root here; this class fills it (search box, rows)
-//!     and owns the selection. `GetOnSelected()(panel, terrainKey)` is its only output.
-//!
-//! Rows are pooled the TBD_ListBox way (create once, rebind, hide surplus) so search-as-you-type
-//! never churns widgets.
+/**
+ * @file TBD_TerrainSelectorPanel.c
+ * @brief The TERRAINS column of the Mission Selector: search box, pooled terrain rows, selection.
+ *
+ * Role: fills the TERRAINS panel from the catalog through the search query and owns the terrain
+ * selection.  Position: TBD_MissionSelectorScreen builds it on LeftDock; rows are
+ * TBD_TerrainRowComponent; GetOnSelected (panel, terrainKey) is its only output.
+ * State: the row pool, the live row keys, the selected key and the query, owned by the screen on
+ * the client.  Invariants: rows are created once and rebound, surplus rows hidden, so typing in the
+ * search never churns widgets.
+ *
+ *   | TERRAINS                    |
+ *   | [ Search Maps...          ] |
+ *   | ==  Everon           3  >   |  <- selected: glow bar, chevron, blue border
+ *   |     Arland           3      |
+ */
 
-class TBD_TerrainRowComponent : TBD_UIInteractive
-{
-	protected Widget m_wBorder;
-	protected Widget m_wBackground;
-	protected Widget m_wAccent;
-	protected ImageWidget m_wIcon;
-	protected TextWidget m_wTitle;
-	protected Widget m_wCountDock;
-	protected TextWidget m_wChevron;
-	protected TBD_ChipComponent m_CountChip;
-
-	protected TBD_TerrainSelectorPanel m_Owner; //!< weak -- the panel outlives its rows only by a frame
-	protected int m_iIndex = -1;
-	protected bool m_bSelected;
-	protected bool m_bIconShown;
-
-	override protected void OnBind(Widget w)
-	{
-		m_wBorder = w.FindAnyWidget("Border");
-		m_wBackground = w.FindAnyWidget("Background");
-		m_wAccent = w.FindAnyWidget("Accent");
-		m_wIcon = ImageWidget.Cast(w.FindAnyWidget("Icon"));
-		m_wTitle = TextWidget.Cast(w.FindAnyWidget("Title"));
-		m_wCountDock = w.FindAnyWidget("CountBadgeDock");
-		m_wChevron = TextWidget.Cast(w.FindAnyWidget("Chevron"));
-
-		TBD_UILayouts.MountRounded(m_wBorder, TBD_UITheme.RADIUS_ROW);
-		TBD_UILayouts.MountRounded(m_wBackground, TBD_UITheme.RADIUS_ROW - 1);
-	}
-
-	void Bind(TBD_TerrainSelectorPanel owner, int index, TBD_TerrainInfo terrain, int missionCount)
-	{
-		m_Owner = owner;
-		m_iIndex = index;
-
-		TBD_UITheme.Write(m_wTitle, terrain.m_sName);
-		m_bIconShown = TBD_UIIcons.Load(m_wIcon, terrain.m_sIcon);
-
-		if (!m_CountChip)
-			m_CountChip = TBD_ChipComponent.Mount(m_wCountDock, missionCount.ToString(), TBD_EUITint.NEUTRAL);
-		else
-			m_CountChip.SetText(missionCount.ToString());
-
-		Repaint();
-	}
-
-	void SetSelected(bool selected)
-	{
-		if (m_bSelected == selected)
-			return;
-
-		m_bSelected = selected;
-		Repaint();
-	}
-
-	override void Repaint()
-	{
-		if (!m_wRoot)
-			return;
-
-		int fill;
-		int border;
-		int accent;
-		int ink;
-		int iconInk;
-
-		if (m_bSelected)
-		{
-			fill    = TBD_UITheme.CARD_SELECTED_FILL;
-			border  = TBD_UITheme.ROW_SELECTED_BORDER;
-			accent  = TBD_UITheme.ROW_ACTIVE_GLOW;
-			ink     = TBD_UITheme.BRIGHT_INK;
-			iconInk = TBD_UITheme.ROW_ACTIVE_GLOW;
-		}
-		else if (IsHighlighted() && m_bInteractive)
-		{
-			fill    = TBD_UITheme.NAV_HOVER_FILL;
-			border  = TBD_UITheme.TRANSPARENT;
-			accent  = TBD_UITheme.TRANSPARENT;
-			ink     = TBD_UITheme.ON_SURFACE;
-			iconInk = TBD_UITheme.MUTED_INK;
-		}
-		else
-		{
-			fill    = TBD_UITheme.TRANSPARENT;
-			border  = TBD_UITheme.TRANSPARENT;
-			accent  = TBD_UITheme.TRANSPARENT;
-			ink     = TBD_UITheme.ChipInk(TBD_EUITint.NEUTRAL);
-			iconInk = TBD_UITheme.DIM_INK;
-		}
-
-		// Rows sit on the TERRAINS panel; the chip sits on the row's own fill.
-		int ground = TBD_UITheme.PanelGround();
-		TBD_UITheme.PaintOver(m_wBackground, fill, ground);
-		TBD_UITheme.PaintOver(m_wBorder, border, ground);
-		TBD_UITheme.Paint(m_wAccent, accent);
-		TBD_UITheme.Paint(m_wTitle, ink);
-		TBD_UITheme.Paint(m_wIcon, iconInk);
-		TBD_UITheme.Show(m_wChevron, m_bSelected);
-
-		if (m_CountChip)
-		{
-			m_CountChip.SetGround(TBD_UITheme.Over(fill, ground));
-			if (m_bSelected)
-				m_CountChip.SetTint(TBD_EUITint.PRIMARY);
-			else
-				m_CountChip.SetTint(TBD_EUITint.NEUTRAL);
-		}
-	}
-
-	override protected void OnActivated()
-	{
-		if (m_Owner)
-			m_Owner.OnRowActivated(m_iIndex);
-	}
-
-	void SetRowVisible(bool visible)
-	{
-		TBD_UITheme.Show(m_wRoot, visible);
-	}
-}
-
+//! Controller of the TERRAINS column. Not a widget handler: the screen mounts a TBD_Panel into
+//! LeftDock and hands its root here.
 class TBD_TerrainSelectorPanel
 {
-	protected TBD_PanelComponent m_Panel;
-	protected Widget m_wBody;
-	protected TBD_SearchBoxComponent m_Search;
-	protected Widget m_wContent;
-	protected Widget m_wEmptyState;
-	protected ref TBD_UIScrollBar m_ScrollBar;
+	protected TBD_PanelComponent m_Panel; //!< the mounted TERRAINS panel
+	protected Widget m_wBody; //!< the terrains body layout inside the panel
+	protected TBD_SearchBoxComponent m_Search; //!< `Search Maps...` box
+	protected Widget m_wContent; //!< `Content`: the row container
+	protected Widget m_wEmptyState; //!< `EmptyState`, shown when no row matches
+	protected ref TBD_UIScrollBar m_ScrollBar; //!< scroll bar of the row list
 
-	protected TBD_MissionCatalog m_Catalog;
-	protected ref array<TBD_TerrainRowComponent> m_aRows;   //!< pool; handlers owned by their widgets
-	protected ref array<string> m_aRowKeys;                 //!< terrain key per live row
-	protected int m_iLiveRows;
-	protected string m_sSelectedKey;
-	protected string m_sQuery;
+	protected TBD_MissionCatalog m_Catalog; //!< the catalog in force
+	protected ref array<TBD_TerrainRowComponent> m_aRows; //!< row pool; handlers owned by their widgets
+	protected ref array<string> m_aRowKeys; //!< terrain key per live row
+	protected int m_iLiveRows; //!< rows bound by the last Refresh
+	protected string m_sSelectedKey; //!< selected terrain key, empty when none
+	protected string m_sQuery; //!< current search text
 
 	protected ref ScriptInvoker m_OnSelected; //!< (TBD_TerrainSelectorPanel panel, string terrainKey)
 
-	//! `panelRoot` is a mounted `TBD_Panel.layout`. Returns false when the layout tree is missing
-	//! pieces; the screen then shows an empty column rather than crashing.
+	//! Title the panel, mount the search box and scroll bar, and fill the rows.
+	//! @param panelRoot a mounted `TBD_Panel.layout`
+	//! @param catalog the catalog in force
+	//! @return false when the layout tree is missing pieces; the column then stays empty
 	bool Build(Widget panelRoot, TBD_MissionCatalog catalog)
 	{
 		m_Catalog = catalog;
@@ -200,6 +77,7 @@ class TBD_TerrainSelectorPanel
 		return true;
 	}
 
+	//! Release the scroll bar and the search listener before the screen closes.
 	void Destroy()
 	{
 		if (m_ScrollBar)
@@ -251,7 +129,9 @@ class TBD_TerrainSelectorPanel
 		TBD_UITheme.Show(m_wEmptyState, m_iLiveRows == 0);
 	}
 
-	//! Pick a terrain. `notify` false = visual only (restoring state).
+	//! Select a terrain.
+	//! @param terrainKey the terrain
+	//! @param notify false updates the rows only, without raising GetOnSelected
 	void Select(string terrainKey, bool notify)
 	{
 		m_sSelectedKey = terrainKey;
@@ -265,12 +145,13 @@ class TBD_TerrainSelectorPanel
 			m_OnSelected.Invoke(this, terrainKey);
 	}
 
+	//! @return the selected terrain key, empty when none
 	string GetSelectedKey()
 	{
 		return m_sSelectedKey;
 	}
 
-	//! Key of the first terrain in catalog order, or empty.
+	//! @return the key of the first terrain in catalog order, or empty
 	string GetFirstKey()
 	{
 		array<ref TBD_TerrainInfo> terrains = m_Catalog.GetTerrains();
@@ -280,7 +161,8 @@ class TBD_TerrainSelectorPanel
 		return terrains[0].m_sKey;
 	}
 
-	//! Put focus on the selected row (else the first). False when there is no row to focus.
+	//! Put focus on the selected row, else the first.
+	//! @return false when there is no row to focus
 	bool FocusSelected()
 	{
 		WorkspaceWidget workspace = GetGame().GetWorkspace();
@@ -299,7 +181,7 @@ class TBD_TerrainSelectorPanel
 		return true;
 	}
 
-	//! (TBD_TerrainSelectorPanel panel, string terrainKey)
+	//! @return the invoker raised with (TBD_TerrainSelectorPanel panel, string terrainKey) on a selection
 	ScriptInvoker GetOnSelected()
 	{
 		if (!m_OnSelected)
@@ -308,7 +190,8 @@ class TBD_TerrainSelectorPanel
 		return m_OnSelected;
 	}
 
-
+	//! Select the terrain of an activated row.
+	//! @param index the row's live index; out of range is ignored
 	void OnRowActivated(int index)
 	{
 		if (index < 0 || index >= m_iLiveRows)
@@ -317,13 +200,15 @@ class TBD_TerrainSelectorPanel
 		Select(m_aRowKeys[index], true);
 	}
 
-
+	//! Refilter the rows by the new search text.
 	protected void OnSearchChanged(TBD_SearchBoxComponent box, string query)
 	{
 		m_sQuery = query;
 		Refresh();
 	}
 
+	//! The pooled row at `index`, created when the pool is shorter.
+	//! @return the row, or null when the layout fails
 	protected TBD_TerrainRowComponent AcquireRow(int index)
 	{
 		if (index < m_aRows.Count())

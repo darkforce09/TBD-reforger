@@ -9,9 +9,12 @@ for the screens that follow without requesting a deployment.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/UI/
-├── TBD_MissionInspectorPanel.c  right column: hero, versions, modset, summary, ORBAT, objectives
+├── TBD_MissionCardComponent.c   `TBD_MissionCardComponent`: one pooled mission card
+├── TBD_MissionInspectorCards.c  the inspector's four cards: modset, summary, ORBAT, objectives
+├── TBD_MissionInspectorPanel.c  right column: hero, versions, and the cards helper
 ├── TBD_MissionSelectorScreen.c  `TBD_MissionSelectorScreen`: dock wiring, Select Scenario, preset
 ├── TBD_ScenarioBrowserPanel.c   centre column: pooled mission cards, search and the Modes filter
+├── TBD_TerrainRowComponent.c    `TBD_TerrainRowComponent`: one pooled terrain row
 └── TBD_TerrainSelectorPanel.c   the left column: pooled terrain rows with search and selection
 ```
 
@@ -28,15 +31,15 @@ OverlayDock the Modes and version popovers
 
 `TBD_MissionSelectorScreen` extends `TBD_DockScreen` and opens through `TBD_MenuStack` on the
 `TBD_UIMissionSelector` preset, which
-`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/ChimeraMenuPreset.c` adds and
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Screens/ChimeraMenuPreset.c` adds and
 `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` binds to
 `apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/TBD_MissionSelector.layout`. `Toggle()`
 raises or drops it. On open it reads `TBD_MissionCatalog.Get()`, mounts the three panels and wires
 them with their invokers, then selects the first terrain. The terrain and browser panels pool their
 rows and cards (`TBD_TerrainRowComponent`, `TBD_MissionCardComponent`) and rebind them on each
 search keystroke; the browser filters by terrain, checked modes and the query, and computes its
-`N AVAILABLE` count and per-mode counts from the catalog. The inspector rebuilds its four cards per
-mission from the shared primitives. Select Scenario stores the mission and version in
+`N AVAILABLE` count and per-mode counts from the catalog. The inspector's `TBD_MissionInspectorCards` rebuilds the
+four cards per mission from the shared primitives. Select Scenario stores the mission and version in
 `TBD_SessionSelection`, which the lobby and briefing titles read, and logs
 `[TBD][selector] SELECT SCENARIO <title> (<id>) on <terrain>, version <label>`.
 
@@ -50,13 +53,15 @@ mission from the shared primitives. Select Scenario stores the mission and versi
 
 ## Boundaries
 
-- Depends on: `TBD_MissionCatalog`, the mission models and `TBD_SessionSelection` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_DockScreen`,
+- Depends on: `TBD_MissionCatalog` and the mission models in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/Catalog/`;
+  `TBD_SessionSelection` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/`; `TBD_DockScreen`,
   `TBD_MenuStack`, `TBD_UILayouts` and `TBD_UITheme` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`; the shared primitives in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Common/`; the layouts in
   `apps/mod/tbd-framework/UI/layouts/Session/MissionSelector/`.
-- Used by: `TBD_MissionBrowser` (the F9 key calls `Toggle()`) and `TBD_LobbyStage` in
+- Used by: the modded `SCR_PlayerController` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/` (the F9 key calls `Toggle()`) and `TBD_LobbyStage` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/`, which raises the screen on `LOBBY`; the
   preset entry in `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf`.
 - Rules: the screen reads missions only through `TBD_MissionCatalog.Get()`; the screen owns wiring

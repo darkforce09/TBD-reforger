@@ -1,42 +1,53 @@
-//! An in-game administrator's mission selection, relayed to the platform as a deployment request:
-//! `POST /api/v1/game-runtime/deployments` {mission_id, artifact_id, event_mission_id?,
-//! requested_by_arma_id} (mod_runtime credential). The platform decides: the admin's game identity
-//! must be linked to a platform administrator, and the selection is validated like a deployment
-//! made on the website. Nothing restarts here. An accepted deployment runs when its fleet command
-//! does - a `load_mission` this runtime executes (TBD_FleetLoadMissionAction), or a restart by the
-//! host agent - and the admin is told the outcome in chat: accepted, or the refusal in words.
-//!
-//! Selecting the mission this world runs for an event keeps the event: the request names the
-//! running deployment's event mission, so restarting the event's mission keeps its seats and
-//! reservations. Any other selection deploys without an event.
-//! @authority server
+/**
+ * @file TBD_MissionDeploymentRelay.c
+ * @brief An in-game admin's mission selection, relayed to the platform as a deployment request.
+ *
+ * Role: posts the selection to `POST /api/v1/game-runtime/deployments` (mod_runtime credential)
+ * and tells the admin the platform's decision in words.  Position: `#tbd mission <n>`
+ * (TBD_AdminCommands) and TBD_RpcAsk_SelectMission call RequestByNumber with an entry of
+ * TBD_DeployableMissionList; TBD_MissionDeploymentRelayCall brings the answer back to OnAnswered;
+ * replies go to TBD_PlayerChat and TBD_AdminAudit.
+ * State: none; each request travels in its own call object.  Invariants: nothing restarts here,
+ * since an accepted deployment runs when its fleet command does; a request without a readable
+ * game identity is not sent; selecting the mission this world runs for an event keeps that event
+ * mission, and any other selection deploys without one.
+ */
 
 //! The accepted deployment (202), as far as the admin is told about it. Field names are the JSON keys.
+//! @contract mission-deployment.schema.json#/definitions/MissionDeployment
 class TBD_RelayedDeploymentStruct
 {
-	string id;
-	string mission_title;
-	string transition;
-	string state;
-	int bound_slots;
+	string id; //!< JSON `id`: the deployment id
+	string mission_title; //!< JSON `mission_title`
+	string transition; //!< JSON `transition`: scenario_restart or host_restart
+	string state; //!< JSON `state`
+	int bound_slots; //!< JSON `bound_slots`: seats bound to the event mission
 }
 
 //! A relayed deployment request on its way to the platform.
 class TBD_MissionDeploymentRelayCall : TBD_GameRuntimeCall
 {
-	int m_iAdminPlayerId;
-	string m_sTitle;
+	int m_iAdminPlayerId; //!< the admin who asked
+	string m_sTitle; //!< the mission title, for the reply
 
+	//! Hand the platform's answer to TBD_MissionDeploymentRelay.OnAnswered.
+	//! @param answer the platform's answer
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_MissionDeploymentRelay.OnAnswered(this, answer);
 	}
 }
 
+//! Relays an admin's mission selection to the platform and words the decision.
+//! @authority server
 class TBD_MissionDeploymentRelay
 {
 	//! Ask the platform to deploy mission `number` of the list on behalf of admin `adminPlayerId`.
-	//! Returns the immediate reply; the platform's decision reaches the admin in chat.
+	//! The platform's decision reaches the admin in chat later.
+	//! @param adminPlayerId the requesting admin
+	//! @param number the 1-based list number
+	//! @return the immediate reply: the request is on its way, or why it was not sent
+	//! @route POST /api/v1/game-runtime/deployments
 	static string RequestByNumber(int adminPlayerId, int number)
 	{
 		TBD_DeployableMissionStruct entry = TBD_DeployableMissionList.GetEntryByNumber(number);
@@ -48,14 +59,14 @@ class TBD_MissionDeploymentRelay
 			return "TBD: this server cannot read your game identity, so the platform cannot tell who asks - nothing was deployed.";
 
 		string body = string.Format("{\"mission_id\":\"%1\",\"artifact_id\":\"%2\",\"requested_by_arma_id\":\"%3\"",
-			TBD_GameRuntimeHttp.JsonEscape(entry.mission_id), TBD_GameRuntimeHttp.JsonEscape(entry.artifact_id), TBD_GameRuntimeHttp.JsonEscape(armaId));
+			TBD_BackendText.JsonEscape(entry.mission_id), TBD_BackendText.JsonEscape(entry.artifact_id), TBD_BackendText.JsonEscape(armaId));
 
 		string eventMissionId;
 		if (entry.mission_id == TBD_DeployedMission.GetMissionId())
 			eventMissionId = TBD_DeployedMission.GetEventMissionId();
 
 		if (!eventMissionId.IsEmpty())
-			body += string.Format(",\"event_mission_id\":\"%1\"", TBD_GameRuntimeHttp.JsonEscape(eventMissionId));
+			body += string.Format(",\"event_mission_id\":\"%1\"", TBD_BackendText.JsonEscape(eventMissionId));
 
 		body += "}";
 
@@ -78,7 +89,9 @@ class TBD_MissionDeploymentRelay
 		return reply + "...";
 	}
 
-	//! Called by TBD_MissionDeploymentRelayCall with the platform's decision.
+	//! Tell the admin the platform's decision and audit it.
+	//! @param call the request, carrying the admin and the title
+	//! @param answer the platform's answer
 	static void OnAnswered(notnull TBD_MissionDeploymentRelayCall call, notnull TBD_GameRuntimeAnswer answer)
 	{
 		string text;
@@ -105,6 +118,8 @@ class TBD_MissionDeploymentRelay
 	}
 
 	//! The platform's refusal in words the admin can act on, with its code.
+	//! @param answer a refused or unreachable answer
+	//! @return the sentence
 	protected static string Explain(notnull TBD_GameRuntimeAnswer answer)
 	{
 		if (answer.m_eOutcome == TBD_EGameRuntimeOutcome.TRANSIENT)
@@ -125,7 +140,9 @@ class TBD_MissionDeploymentRelay
 		return string.Format("the platform refused it (%1).", status);
 	}
 
-	//! What a refusal code means for the admin, or empty for a code without its own words.
+	//! What a refusal code means for the admin.
+	//! @param code the platform's error code
+	//! @return the words, or empty for a code without its own
 	protected static string WordsFor(string code)
 	{
 		if (code == "IDENTITY_NOT_LINKED")

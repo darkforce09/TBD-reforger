@@ -59,14 +59,14 @@ requests no deployment.
 
 ### Known discrepancies
 
-- The screen lists the platform's missions (`TBD_MissionCatalog` in `TBD_MissionSelectorData.c`)
+- The screen lists the platform's missions (`TBD_MissionCatalog` in `TBD_MissionCatalog.c`)
   — but the catalog is built from `TBD_MissionSelectorMock`
   (`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`), because no script calls `Set()`.
 - "Select Scenario" reads as choosing what the server runs (`TBD_MissionSelectorScreen.c`) — but
   it only records the pick for the next screens. Deploying a mission from inside the game is the
   admin path of the MissionSelector folder: F6 and F7, or `#tbd missions` and
   `#tbd mission <n>`, relay the pick to the platform (see Data).
-- Comments in `TBD_MissionSelectorScreen.c` and `TBD_MissionBrowser.c` name F6 for this screen —
+- The console line the session keys print on registration names F6 for this screen —
   but F6 is `TBD_MissionCycle`, which steps through the deployable list; F9 opens the screen.
 
 ## Data
