@@ -9,8 +9,11 @@ the end banner and debrief board the post-game screens show.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/
-├── Heartbeat/              TBD_RuntimeHeartbeat: the one game-mode loop that ticks the mission runtimes
-└── TBD_FrameworkManager.c  TBD_FrameworkManager: the stage machine; TBD_MissionFlow: the flow block
+├── Flow/                    the mission's `flow` block: durations, join policy, load report
+├── Heartbeat/               TBD_RuntimeHeartbeat: the one game-mode loop that ticks the mission runtimes
+├── Stage/                   the helpers the manager owns: loading gate, end checks, round clock, END banner
+├── TBD_FrameworkManager.c   TBD_FrameworkManager: the stage machine and its replicated fields
+└── TBD_FrameworkRollCall.c  TBD_FrameworkRollCall: the component roll-call line world-boot asserts
 ```
 
 ## How it works
@@ -20,6 +23,9 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/
 resolve it off the live game mode on every call, never from a static, because statics outlive a
 world and a `load_mission` [fleet command](/documentation_v2/glossary/a_to_f.md#fleet-command) restarts the
 world in-process; every modded vanilla class in the addon asks `IsFrameworkWorld()` before it acts.
+The manager keeps the engine hooks, the six replicated fields and the public surface; its
+constructor creates one instance of each helper in `Stage/`, and `OnDelete` cancels every
+call-queue entry they armed.
 
 ```text
 OnPostInit ─▶ LOADING ── mission loaded and valid ──▶ roster settled ──▶ LOBBY
@@ -30,75 +36,55 @@ LOBBY ──▶ BRIEFING ──▶ SAFE_START ── countdown ──▶ LIVE �
       (admin: #tbd stage next | <STAGE>)                  (TBD_SafestartManager.GoLive)
 ```
 
-- Loading: `OnPostInit` prints the component roll-call one frame later, and on the server enters
-  `LOADING`, starts `TBD_MissionLoader.BeginLoad()` and polls each second. Once the mission is
-  loaded and valid it applies `flow`, `environment.windDirDeg` and `settings`, loads the registry,
-  materializes the [slot](/documentation_v2/glossary/n_to_z.md#slot) bodies, starts the
-  [event](/documentation_v2/glossary/a_to_f.md#event) roster fetch, and enters `LOBBY` when the roster has
-  settled (force-settled after 2 s) and the loadout settle is no longer pending.
+- Loading: `OnPostInit` schedules `TBD_FrameworkRollCall` one frame later and, on the server,
+  enters `LOADING`, starts `TBD_MissionLoader.BeginLoad()` and hands over to `TBD_LoadingGate`
+  (`Stage/`), which applies the mission and asks for `LOBBY` once the roster and loadouts settle.
 - `SetStage` is the only way the stage changes. It refuses `SAFE_START` on a world without
   `TBD_SafestartManager`, and any stage `TBD_SpawnManager.StageRefusalFor` refuses, keeping the
   reason for `GetLastStageRefusal()`. A transition logs `[TBD][Stage] <FROM> -> <TO>` and
-  `[TBD] Stage → <STAGE>`, then tells the radio stub, `TBD_SpawnManager`, `TBD_SafestartManager` and
-  this machine's local UI, and runs the stage's hook: `LOBBY` refreshes the deployable mission
-  list, `BRIEFING` announces the authored `flow.briefingSeconds` without advancing on it, `LIVE`
-  arms the end checks, and `END` broadcasts the winner and reason.
-- `TBD_MissionFlow` turns `flow` into answers, testing each field against the
-  `TBD_MissionFlowStruct.ABSENT` sentinel: `safeStartSeconds` goes to
-  `TBD_SafestartManager.AdminSetSeconds`; `timeLimitSeconds` arms a 1 Hz round clock at `LIVE`,
-  only when `winConditions.endOn` also declares `time_limit` (`0` means no limit), with chat
-  warnings from 30 minutes down; `jip` (`always`, the default, `until_safestart_end` or
-  `disabled`) is answered by `AllowsJoinAtStage` for the join door in `TBD_SpawnManager`.
-- The end checks tick every 2 s while `LIVE`: first `TBD_ObjectiveRegistry.EvaluateEndTriggers`,
-  then `faction_eliminated`, which fires when at least two sides fielded players and only one
-  still has a living one. The clock, the objective triggers and elimination all end the round
-  through `SetStage(END)`.
-- End and debrief: entering `END` fixes the winner and reason for the banner (inferred from the
-  objective triggers and survivors when the caller named none, else `admin`) and packs the
-  scoreboard from `TBD_DebriefScoreboard.Fill`; kills are credited per player while
-  `LIVE`, team kills excluded. `LOADING` and `LOBBY` clear them. `NotifyLocalStageUI` opens or
-  closes `TBD_EndScreen` and `TBD_DebriefScreen` and calls the local player controller's
-  `TBD_OnStageChanged`, from `SetStage` on a listen host and from the replication hook on a
-  client.
-- `settings.nightVision` false strips night-vision gadgets from each spawned body 1.5 s after it
-  spawns; `settings.spectatorPolicy` is replicated for the client spectator controller.
-- `OnDelete` removes every call-queue entry the component armed, so no timer fires into the next
-  world.
+  `[TBD] Stage -> <STAGE>`, then tells the radio stub, `TBD_SpawnManager`, `TBD_SafestartManager`
+  and this machine's local UI, and runs the stage's hook: `LOBBY` refreshes the deployable mission
+  list, `BRIEFING` announces `flow.briefingSeconds` (`Flow/`), `LIVE` arms the end checks and the
+  round clock (`Stage/`), and `END` broadcasts the winner and reason.
+- Every end rule in this folder ends the round through `EndRound(reason, winner)`, which records
+  the pair for the banner and calls `SetStage(END)`. Entering `END` fixes the replicated winner
+  and reason (`TBD_EndBanner.Resolve`) and packs the scoreboard; `LOADING` and `LOBBY` clear them.
+- `NotifyLocalStageUI` opens or closes `TBD_EndScreen` and `TBD_DebriefScreen` and calls the local
+  player controller's `TBD_OnStageChanged`, from `SetStage` on a listen host and from the
+  replication hook on a client.
+- `LatchAuthoredSettings` copies `settings.spectatorPolicy` and `settings.nightVision` into the
+  replicated fields; `TBD_StageEnvironment` strips night-vision gadgets on spawn when it is false.
 
 ## Authority
 
 - Server: mission load, the stage machine, flow, weather and settings, the round clock, the end
-  checks, kill credit and the night-vision strip. `OnPostInit` returns before any of it on
-  `RplMode.Client`, and the stage methods carry `@authority server`.
+  checks, kill credit and the night-vision strip. `OnPostInit` returns before any of it on a
+  client, and the stage methods and helpers carry `@authority server`.
 - Client: `OnStageReplicated` (`@authority client`) opens and closes the local screens; on a
   listen host `SetStage` calls the same `NotifyLocalStageUI`, since the hook never fires on the
   authority. A dedicated server has no workspace, so it opens nothing.
 - Owner: nothing.
 - RPCs: none.
-- Replicated properties:
-  - `m_Stage`, the current `TBD_EGameStage`, with the hook `OnStageReplicated`
-    (`@replicated m_Stage`);
-  - `m_sSpectatorPolicy` and `m_bNightVision`, the authored settings; `m_sEndWinner`,
-    `m_sEndReason` and `m_sDebriefBoard`, the end banner and the packed scoreboard. These five
-    replicate without a hook or a `@replicated` tag.
+- Replicated properties, each tagged `@replicated`: `m_Stage`, the current `TBD_EGameStage`, with
+  the hook `OnStageReplicated`; `m_sSpectatorPolicy` and `m_bNightVision`, the authored settings;
+  `m_sEndWinner`, `m_sEndReason` and `m_sDebriefBoard`, the END banner and the packed scoreboard.
 
 ## Boundaries
 
-- Depends on: `TBD_EGameStage` and `TBD_SafestartManager` in
+- Depends on: `TBD_EGameStage` and `TBD_SafestartManager` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/`; `TBD_ObjectiveRegistry` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_MissionLoader`,
   `TBD_RosterLoader`, `TBD_SpawnManager` and `TBD_RadioBridgeStub` under
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_Registry`, `TBD_Log` and `TBD_PlayerChat`
-  in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_ResultsReporter` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; `TBD_DeployableMissionList`,
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_Registry`, `TBD_Log`, `TBD_PlayerChat`
+  and `TBD_ClockText` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_DeployableMissionList`,
   `TBD_BriefingService`, `TBD_EndScreen` and `TBD_DebriefScreen` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Session/`; the `flow`, `settings`, `environment` and
   `winConditions` definitions in `contracts_v2/definitions/mission.schema.json`.
 - Used by: nearly every script under `apps/mod/tbd-framework/Scripts/Game/TBD/` through
   `GetInstance()`, `GetStage()` or `IsFrameworkWorld()`; `TBD_SafestartManager`,
   `TBD_WinConditionEvaluator`, `TBD_TriggerRuntime` and `TBD_SpawnManager`, which call `SetStage`;
-  `TBD_AdminService`, through `HandleAdminStageCommand`; `TBD_SpawnManager` and
-  `TBD_MissionValidator`, through `TBD_MissionFlow`; `TBD_EndScreen`, `TBD_DebriefScreen` and the
+  `TBD_AdminService`, through `HandleAdminStageCommand`; `TBD_SpawnManager` and the mission
+  validator, through `TBD_MissionFlow`; `TBD_DebriefScoreboard`, through `GetKills`; `TBD_EndScreen`, `TBD_DebriefScreen` and the
   spectator controller, through the replicated fields; and
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches the component.
 - Rules: the stage changes only through `SetStage`, and a round ends only through
