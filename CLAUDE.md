@@ -24,7 +24,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **at or under 500 lines**.
    - Test files (inside a `tests/` folder or named `*_tests.rs`) must stay **at or under 1000 lines**.
-   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`apps/mod/tbd-framework/Scripts`) by raw line count.
+   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`) by raw line count.
    - **Zero Exemptions / No Allowlist**: There is NO allowlist file and NO exemption mechanism. Never create an allowlist (`.coding-standards-allowlist.yaml` or any other), use allowlist comments, or bypass these limits. If a file approaches or exceeds 500 lines, you MUST decompose it by responsibility into cohesive submodules.
    - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 8. **Present-Tense, Context-Free Code Documentation**:
