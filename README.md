@@ -22,6 +22,7 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── .github/                     the GitHub Actions workflows: CI, contracts, editor gates, mod gates, schema
 ├── .gitignore                   keeps the deploy settings, build output, export scratch and local reference copies out of git
 ├── .world-boot-warning-baseline the per-mission warning budget of `cargo xtask mod world-boot`
+├── AGENTS.md                    a symlink to CLAUDE.md for agents that read AGENTS.md
 ├── apps/                        the products: website, mod suite, fleet host agent, ticketboard
 ├── assets_v2/                   terrain datasets and the world-object glyph set, served at `/map-assets`
 ├── Cargo.lock                   the workspace lockfile
