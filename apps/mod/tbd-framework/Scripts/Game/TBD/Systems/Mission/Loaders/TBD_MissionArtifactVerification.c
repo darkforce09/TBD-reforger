@@ -1,21 +1,25 @@
-//! A mission artifact's exact bytes, verified: fetched from the platform
-//! (`GET /api/v1/game-runtime/artifacts/{artifact_id}`, mod_runtime credential) or taken from the
-//! local cache, then hashed (TBD_Sha256Job) and accepted only when the SHA-256 of the bytes equals
-//! the one the platform published for the artifact. Nothing reads the bytes before that. Received
-//! bytes are staged in a file and hashed as read back from it (TBD_MissionArtifactCache), so the
-//! digest judges exactly the bytes on disk.
-//!
-//! The artifact route answers the exact compiled bytes with their SHA-256 as strong entity tag and
-//! the compile's findings in `x-compile-diagnostics-*` headers. The engine's RestCallback exposes no
-//! response header, so the digest is computed here and the findings are not read.
-//!
-//! The owner subclasses this class and receives the outcome in `OnFinished`.
-//! @authority server
+/**
+ * @file TBD_MissionArtifactVerification.c
+ * @brief A mission artifact's exact bytes, fetched or cached, hashed and accepted only when their
+ * SHA-256 equals the digest the platform published.
+ *
+ * Role: one verification: fetch the artifact from the platform or take the cached bytes, stage
+ * received bytes in a file (`TBD_MissionArtifactCache.StageReceived`), hash them across frames
+ * (`TBD_Sha256Job`) and compare.  Position: subclassed by `TBD_BootArtifactVerification`
+ * (`TBD_DeployedMission`) and the `load_mission` fleet command, which receive the outcome in
+ * `OnFinished`.
+ * State: the artifact id, expected digest, pending bytes, digest job and result of one
+ * verification, owned by its caller on the server.  Invariants: nothing reads the bytes before the
+ * digest matches; received bytes are hashed as read back from disk, so the digest judges exactly the
+ * bytes stored; a body over `MISSION_FILE_MAX_BYTES` is refused unhashed; the engine's
+ * `RestCallback` exposes no response header, so the route's entity tag and
+ * `x-compile-diagnostics-*` headers are not read and the digest is computed here.
+ */
 
 //! How a verification ended.
 enum TBD_EArtifactVerificationResult
 {
-	PENDING,
+	PENDING,    //!< Not finished; the initial result.
 	VERIFIED,   //!< m_sDocument holds the bytes; their SHA-256 is the expected one.
 	UNANSWERED, //!< No answer, a timeout or a server-side failure: the same fetch may succeed later.
 	REFUSED,    //!< The platform refused the fetch, or its answer cannot be used.
@@ -25,8 +29,10 @@ enum TBD_EArtifactVerificationResult
 //! The artifact fetch on its way to the platform.
 class TBD_ArtifactFetchCall : TBD_GameRuntimeCall
 {
-	TBD_MissionArtifactVerification m_Verification;
+	TBD_MissionArtifactVerification m_Verification; //!< The verification to answer; not owned.
 
+	//! Hand the answer to the verification, when it still exists.
+	//! @param answer the platform's answer
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		if (m_Verification)
@@ -37,8 +43,11 @@ class TBD_ArtifactFetchCall : TBD_GameRuntimeCall
 //! The hash of the bytes under verification.
 class TBD_ArtifactDigestJob : TBD_Sha256Job
 {
-	TBD_MissionArtifactVerification m_Verification;
+	TBD_MissionArtifactVerification m_Verification; //!< The verification to answer; it owns this job.
 
+	//! Hand the digest to the verification, when it still exists.
+	//! @param digest the lowercase hex SHA-256
+	//! @param elapsedMs wall-clock milliseconds of the hash
 	override void OnHashed(string digest, int elapsedMs)
 	{
 		if (m_Verification)
@@ -46,24 +55,31 @@ class TBD_ArtifactDigestJob : TBD_Sha256Job
 	}
 }
 
+//! One artifact verification; the owner subclasses it and overrides `OnFinished`.
+//! @authority server
 class TBD_MissionArtifactVerification
 {
-	string m_sArtifactId;
-	string m_sExpectedSha256;
+	string m_sArtifactId;     //!< The artifact being verified.
+	string m_sExpectedSha256; //!< The SHA-256 the platform published, lowercase hex.
 	int m_iExpectedBytes; //!< The byte count the platform published, or 0 when unknown (the cache records none).
 	bool m_bFromCache; //!< True when the bytes came from the local cache rather than the platform.
 
-	TBD_EArtifactVerificationResult m_eResult = TBD_EArtifactVerificationResult.PENDING;
+	TBD_EArtifactVerificationResult m_eResult = TBD_EArtifactVerificationResult.PENDING; //!< How the verification ended; PENDING until then.
 	string m_sDocument; //!< The verified bytes; empty unless the result is VERIFIED.
-	string m_sComputedSha256;
+	string m_sComputedSha256; //!< The SHA-256 of the bytes; empty until hashed.
 	string m_sFailure; //!< One log-ready sentence on a result other than VERIFIED.
-	int m_iHashMs; //!< Wall-clock milliseconds of the hash, and the part of them spent hashing.
-	int m_iHashWorkMs;
+	int m_iHashMs;     //!< Wall-clock milliseconds of the hash.
+	int m_iHashWorkMs; //!< The part of `m_iHashMs` spent hashing.
 
-	protected string m_sPending;
-	protected ref TBD_ArtifactDigestJob m_Digest;
+	protected string m_sPending;                  //!< The bytes being hashed; empty otherwise.
+	protected ref TBD_ArtifactDigestJob m_Digest; //!< The hash in flight or last run; null before one starts.
 
-	//! Fetch `artifactId` from the platform and verify it against `expectedSha256`.
+	//! Fetch `artifactId` from the platform and verify it against `expectedSha256`; an unsent
+	//! request finishes UNANSWERED at once.
+	//! @param artifactId the artifact id
+	//! @param expectedSha256 the published SHA-256
+	//! @param expectedBytes the published byte count, or 0 when unknown
+	//! @route GET /api/v1/game-runtime/artifacts/{artifactId}
 	void FetchFromPlatform(string artifactId, string expectedSha256, int expectedBytes)
 	{
 		m_sArtifactId = artifactId;
@@ -197,6 +213,9 @@ class TBD_MissionArtifactVerification
 			m_sArtifactId, m_sComputedSha256, m_sDocument.Length(), origin, m_iHashMs, m_iHashWorkMs);
 	}
 
+	//! Hash `bytes` and hold `document` pending until the digest answers.
+	//! @param document the bytes as text
+	//! @param bytes the same bytes, one per element
 	protected void Verify(string document, notnull array<int> bytes)
 	{
 		m_sPending = document;
@@ -205,6 +224,9 @@ class TBD_MissionArtifactVerification
 		m_Digest.Start(bytes);
 	}
 
+	//! Record the result and report it to the owner.
+	//! @param result how the verification ended
+	//! @param failure one log-ready sentence, empty on VERIFIED
 	protected void Finish(TBD_EArtifactVerificationResult result, string failure)
 	{
 		m_eResult = result;

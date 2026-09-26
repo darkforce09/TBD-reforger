@@ -504,8 +504,8 @@
         "apps/website/api_v2/src/server_infrastructure/services/tests/machine_credentials.rs",
         "apps/website/api_v2/tests/server_machine_credentials.rs",
         "contracts_v2/definitions/machine-credential.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_GameRuntimeHttp.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_GameRuntimeAnswer.c"
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeHttp.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeAnswer.c"
       ],
       "checks": [
         "fleet_server_credentials",
@@ -552,7 +552,7 @@
         "apps/website/api_v2/tests/fleet_command_ledger.rs",
         "apps/website/api_v2/tests/fleet_support/mod.rs",
         "contracts_v2/definitions/fleet-command.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSessionLifecycle.c"
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c"
       ],
       "checks": [
         "fleet_fleet_commands",
@@ -838,8 +838,8 @@
         "apps/website/api_v2/src/missions/services/mission_deployments/deployment_settlement.rs",
         "apps/website/api_v2/src/server_infrastructure/services/runtime_sessions.rs",
         "apps/website/api_v2/src/background_workers/mission_deployment_reconciler.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_LoadedArtifactReport.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSession.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_LoadedArtifactReport.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c",
         "apps/website/frontend/src/v2/pages/administration/server_control/mission_deployments/deployment_list.rs",
         "apps/website/frontend/src/v2/pages/administration/server_control/mission_deployments/deployment_wording.rs",
         "apps/website/frontend/src/v2/pages/administration/server_control/mission_deployments/tests/mission_deployments.rs",
@@ -1028,10 +1028,10 @@
         "apps/website/api_v2/src/server_infrastructure/handlers/game_runtime_sessions.rs",
         "apps/website/api_v2/tests/runtime_session_fencing.rs",
         "contracts_v2/definitions/game-runtime-session.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSessionLifecycle.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSessionWire.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeSessionClosing.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_RuntimeStatusReadings.c"
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionCall.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionClosing.c",
+        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c"
       ],
       "checks": [
         "telemetry_heartbeat_fencing",

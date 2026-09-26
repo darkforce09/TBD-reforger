@@ -266,11 +266,6 @@ pub mod documentation {
              included",
         ),
         (
-            "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c",
-            "a lane note in an Enfusion comment; mod scripts compile through the Workbench and \
-             are not edited from a platform slice",
-        ),
-        (
             "apps/website/api_v2/migrations/0011_events_server_modpack.sql",
             "committed migrations are checksum-frozen; rewording a comment in one breaks every \
              checkout that already applied it",

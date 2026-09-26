@@ -64,7 +64,7 @@ pub(super) fn validate(
             ));
         }
         let loader = root.join(
-            "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionLoader.c",
+            "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c",
         );
         let loader_src =
             fs::read_to_string(&loader).with_context(|| format!("read {}", loader.display()))?;

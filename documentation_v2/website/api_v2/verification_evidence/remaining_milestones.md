@@ -181,10 +181,10 @@ CLAUDE.md law 7 has no exemptions. Six EnfScript files were already over 500 lin
 E, F and M, and E/F/M only keeps them from growing:
 
 - `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/TBD_SpawnManager.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionLoader.c`
+- `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c`
 - `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c`
 - `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/TBD_LobbyService.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/API/TBD_ResultsReporter.c`
+- `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c`
 - `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c`
 
 Each is decomposed by responsibility in a dedicated pass, verified by `cargo xtask mod compile`

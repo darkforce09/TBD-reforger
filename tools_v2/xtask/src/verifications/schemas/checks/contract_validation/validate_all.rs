@@ -368,12 +368,18 @@ pub fn validate_all() -> Result<u8> {
 
     println!("TBD_MissionValidator unconsumed-key warnings:");
     {
-        let validator_c =
-            root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionValidator.c");
-        let src = fs::read_to_string(&validator_c)
+        let validation_dir =
+            root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation");
+        let validator_c = validation_dir.join("TBD_MissionValidator.c");
+        let validator_src = fs::read_to_string(&validator_c)
             .with_context(|| format!("read {}", validator_c.display()))?;
+        let check_c = validation_dir.join("TBD_MissionUnconsumedKeyCheck.c");
+        let src =
+            fs::read_to_string(&check_c).with_context(|| format!("read {}", check_c.display()))?;
         let mut bad = Vec::new();
-        if !src.contains("CheckUnconsumedKeys(mission)") {
+        if !validator_src
+            .contains("TBD_MissionUnconsumedKeyCheck.CheckUnconsumedKeys(findings, mission)")
+        {
             bad.push(
                 "CheckUnconsumedKeys is not wired from Run() — unconsumed keys would stay silent"
                     .to_string(),
@@ -409,7 +415,7 @@ pub fn validate_all() -> Result<u8> {
             || src.contains("does not spawn the mission document")
         {
             bad.push(
-                "forbidden entities[]-never-spawn lie string still present in MissionValidator"
+                "forbidden entities[]-never-spawn lie string still present in the unconsumed-key check"
                     .to_string(),
             );
         }
@@ -448,7 +454,7 @@ pub fn validate_all() -> Result<u8> {
         }
         if bad.is_empty() {
             println!(
-                "  PASS  TBD_MissionValidator.c (5 unconsumed-key warnings wired; entities retired)"
+                "  PASS  TBD_MissionUnconsumedKeyCheck.c (5 unconsumed-key warnings wired; entities retired)"
             );
         } else {
             failures.set(failures.get() + 1);

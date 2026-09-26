@@ -11,11 +11,11 @@ deployments.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/
+├── Mission/                           the parse, the variant filter, the world applier and every query on the document
+├── Validation/                        one pass over the parsed document reporting every error and warning
 ├── TBD_DeployedMission.c              the boot sequence: deployment read, cache or fetch, verification, load
 ├── TBD_MissionArtifactCache.c         the verified artifact bytes and their deployment in the server profile
 ├── TBD_MissionArtifactVerification.c  an artifact's bytes, fetched or cached, hashed and matched to the digest
-├── TBD_MissionLoader.c                the mission document structs, the parse, variants and every query on it
-├── TBD_MissionValidator.c             one pass over the parsed document reporting every error and warning
 ├── TBD_RosterLoader.c                 the event roster: reserved seats and the platform ids of every slot
 └── TBD_RuntimeDeploymentStruct.c      the deployment wire struct and its checks, also the cache identity file
 ```
@@ -62,27 +62,13 @@ again before anything loads them.
 
 ### Parse and validation
 
-`LoadDocument` refuses a document over `MISSION_FILE_MAX_BYTES` (8 MiB, the same ceiling as
-`x-tbd-missionFileMaxBytes` in `contracts_v2/definitions/mission.schema.json`), then parses it into
-`TBD_MissionDocumentStruct` with `JsonLoadContext`, whose field names are the JSON keys. It then:
-
-1. filters the document to its active variant set: the `activeVariants` of
-   `$profile:TBD_VariantConfig.json` when that file exists, else the `variants[]` rows marked
-   `default: true`; a row whose `variantId` is not declared is dropped with a WARNING, and an
-   excluded vehicle takes its entity twin and crew seats with it;
-2. runs `TBD_MissionValidator.Run`, which checks the schema version, meta, factions, slots (identity,
-   faction, kit, position, loadout), ORBAT parity, faction coverage, win conditions and whether each
-   end trigger can fire, unconsumed keys and zones, and logs every finding as a `[TBD][Validate]`
-   line. An ERROR (the mission cannot be played) discards the document, so the stage machine never
-   leaves `LOADING`; a WARNING (it can be played but may not end) lets the round run. `#tbd validate`
-   (`TBD_AdminCommands`) replays the findings;
-3. on a valid document, places `entities[]` (`SpawnMissionEntities`), applies the spectator policy,
-   and calls `TBD_EnvironmentReader.Apply`, `TBD_GadgetFlags.Bind`, `TBD_MissionParams.Resolve`,
-   `TBD_ResultsReporter.Arm` and `TBD_IdentityLink.Arm`.
-
-`TBD_MissionLoader` answers every later query: `GetMission`, `GetMissionId`, `GetSlots`, `GetSlotById`,
-`GetFactions`, `GetZones`, `GetEntities`, `GetVehicles`, `GetSettings`, `GetRawJson` (for second-pass
-readers), `GetActiveVariantIds`, `HasEndTrigger` and the squad-leader lookups.
+`LoadDocument` in `Mission/` refuses a document over `MISSION_FILE_MAX_BYTES` (8 MiB, the same
+ceiling as `x-tbd-missionFileMaxBytes` in `contracts_v2/definitions/mission.schema.json`), parses it
+into `TBD_MissionDocumentStruct` (`Data/Document/`), filters it to its active variant set, and runs
+`TBD_MissionValidator.Run` in `Validation/`. An ERROR (the mission cannot be played) discards the
+document, so the stage machine never leaves `LOADING`; a WARNING (it can be played but may not end)
+lets the round run, and `#tbd validate` (`TBD_AdminCommands`) replays the findings. A valid document
+is applied to the world and arms the readers and reports; each subfolder's README has the detail.
 
 ### Event roster
 
@@ -105,10 +91,9 @@ world's fetch is dropped.
 
 ## Authority
 
-- Server: everything. Every file except `TBD_MissionLoader.c` carries `//! @authority server` on its
-  header or entry point (`TBD_MissionValidator.Run` among them); `TBD_MissionLoader` runs from
-  `TBD_FrameworkManager.OnPostInit`, which returns on `RplMode.Client`, and its own
-  `ApplyMissionSettings` is tagged `@authority server`.
+- Server: everything. The deployment, cache, verification and roster classes carry
+  `//! @authority server`, as do the entry points in `Mission/` and `Validation/`; the load path
+  starts from `TBD_FrameworkManager.OnPostInit`, which returns on `RplMode.Client`.
 - Client: nothing; clients never hold or parse the mission document, and receive what they need
   from the lobby, briefing and other services.
 - Owner: nothing.

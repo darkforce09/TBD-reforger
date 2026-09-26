@@ -1,122 +1,113 @@
-//! The event roster, `GET /api/v1/game-runtime/events/{eventId}/roster` (wire version 2): which
-//! player is seated where, and which platform ORBAT slot every compiled mission slot stands for.
-//! The event is the one the running mission is deployed for (TBD_DeployedMission.GetEventId); a
-//! deployment without an event has no roster, and slots are assigned round-robin.
-//!
-//! One response feeds two lookups with two lifetimes:
-//!   * SEATING, `armaId -> slotUid` from `assignments`: the seat a player reserved on the website,
-//!     which TBD_SpawnManager seats them in (`GetSlotForIdentity`). Seating settles once - on the
-//!     first answer, or at the stage machine's roster deadline (`ForceSettle`) - and stays as
-//!     settled, so slot assignment is a function of settled state. A failed fetch settles it empty
-//!     (round-robin seating).
-//!   * the SLOT TABLE, `slotUid -> (orbatSlotId, eventMissionId)` from `slots`: what a deployment
-//!     request names for ANY compiled slot, reserved or open (`ResolveSlotBinding`). Until it has
-//!     loaded, TBD_DeploymentAuthorization refuses every deployment into an event seat, so the
-//!     fetch is repeated until it loads: after a failure without an answer (network, 5xx, watchdog)
-//!     with exponential backoff from 2 s to 60 s; after a refusal (401, 403, 404, a wire version
-//!     other than 2, an unreadable body, a roster of another mission) every 60 s, with an ERROR
-//!     once per distinct refusal. Each repeat re-reads the backend config, so a credential
-//!     corrected in the profile and a server binding corrected on the platform take effect without
-//!     a restart.
-//!
-//! The platform lists the slots of the deployment it runs for this server, and names that
-//! deployment's mission in `missionId` (empty when it runs no mission of this event). A roster
-//! counts only when `missionId` is the mission this world runs: a roster of another deployment
-//! would authorize seats of a mission that is not loaded. A matching roster that lists no slot is
-//! loaded too: that deployment has no seats.
-//!
-//! The keys are camelCase on this wire because `JsonLoadContext` binds JSON keys to field names by
-//! exact match and silently ignores a key no field declares. `armaId` is the raw engine identity
-//! that `TBD_PlayerIdentity.GetArmaId` puts on every wire and `users.arma_id` is written with;
-//! `slotUid` is the compiled slot's `uid`, which `TBD_MissionLoader.GetSlotById` resolves.
-//!
-//! The roster covers every mission attached to the event. When one slot uid is listed under more
-//! than one event mission (the same mission attached twice), the first listing wins: the platform
-//! lists event missions by start time and seats a player registered on two of them in the earliest,
-//! so both lookups agree. A player's own reservation always names its own event mission.
-//!
-//! Authenticated with this server's `mod_runtime` machine credential (TBD_GameRuntimeHttp); the
-//! platform answers 403 when the event is not bound to this server. Statics outlive a world inside
-//! one process, so every world starts from `Reset` and an answer to an earlier world's fetch is
-//! dropped.
-//! @authority server
+/**
+ * @file TBD_RosterLoader.c
+ * @brief The event roster: which player is seated where, and which platform ORBAT slot every
+ * compiled mission slot stands for.
+ *
+ * Role: reads `GET /api/v1/game-runtime/events/{eventId}/roster` (wire version 2) for the event the
+ * running mission is deployed for (`TBD_DeployedMission.GetEventId`) and keeps two lookups: seating,
+ * `armaId -> slotUid` from `assignments`, which `TBD_SpawnManager` seats players by
+ * (`GetSlotForIdentity`); and the slot table, `slotUid -> (orbatSlotId, eventMissionId)` from
+ * `slots`, which a deployment request names for any compiled slot (`ResolveSlotBinding`).
+ * Position: started by the stage machine after the mission loads; authenticated with the server's
+ * `mod_runtime` machine credential (`TBD_GameRuntimeHttp`); read by `TBD_SpawnManager` and
+ * `TBD_DeploymentAuthorization`.
+ * State: both lookups, the settle reason, the fetch-in-flight flag, the backoff counter and a
+ * per-world generation, static on the server and cleared by `Reset` for every world.
+ * Invariants: seating settles once (first answer, or the stage machine's deadline through
+ * `ForceSettle`) and a failed fetch settles it empty (round-robin); until the slot table loads,
+ * deployment into an event seat is refused, so the fetch repeats: with backoff from 2 s to 60 s
+ * after no answer (network, 5xx, watchdog), every 60 s after a refusal (401, 403 when the event is
+ * not bound to this server, 404, another wire version, an unreadable body, a roster of another
+ * mission) with one ERROR per distinct refusal, re-reading the backend config each time; a roster
+ * counts only when its `missionId` is the mission this world runs, and one listing no slot loads
+ * too; when a slot uid is listed under two event missions the first listing wins (the platform
+ * lists event missions by start time and seats a player registered on two in the earliest); an
+ * answer to an earlier world's fetch is dropped. Keys are camelCase on this wire because
+ * `JsonLoadContext` binds JSON keys to field names exactly.
+ */
 
 //! One seated player. Field names are the JSON keys.
+//! @contract game-runtime-roster.schema.json#/definitions/RosterAssignment
 class TBD_RosterAssignmentStruct
 {
-	string armaId;
-	string slotUid;
-	string orbatSlotId;
-	string eventMissionId;
+	string armaId;         //!< JSON `armaId`: the raw engine identity (`TBD_PlayerIdentity.GetArmaId`, `users.arma_id`).
+	string slotUid;        //!< JSON `slotUid`: the compiled slot's `uid` (`TBD_MissionLoader.GetSlotById`).
+	string orbatSlotId;    //!< JSON `orbatSlotId`: the platform ORBAT slot.
+	string eventMissionId; //!< JSON `eventMissionId`: the event mission the reservation belongs to.
 }
 
 //! One compiled slot and the platform ids a deployment into it names. Field names are the JSON keys.
+//! @contract game-runtime-roster.schema.json#/definitions/RosterSlot
 class TBD_RosterSlotStruct
 {
-	string eventMissionId;
-	string slotUid;
-	string orbatSlotId;
+	string eventMissionId; //!< JSON `eventMissionId`: the event mission the slot belongs to.
+	string slotUid;        //!< JSON `slotUid`: the compiled slot's `uid`.
+	string orbatSlotId;    //!< JSON `orbatSlotId`: the platform ORBAT slot.
 }
 
 //! The roster response. Field names are the JSON keys.
+//! @contract game-runtime-roster.schema.json#/
 class TBD_RosterResponseStruct
 {
-	int version;
-	string eventId;
-	//! The catalog mission of the deployment the platform runs for this server, or empty when that
-	//! deployment runs no mission of this event.
-	string missionId;
-	ref array<ref TBD_RosterAssignmentStruct> assignments;
-	ref array<ref TBD_RosterSlotStruct> slots;
+	int version;                                           //!< JSON `version`: the wire version; this client reads 2.
+	string eventId;                                        //!< JSON `eventId`: the event.
+	string missionId;                                      //!< JSON `missionId`: the catalog mission of the deployment the platform runs here; empty when it runs no mission of this event.
+	ref array<ref TBD_RosterAssignmentStruct> assignments; //!< JSON `assignments`: the seated players.
+	ref array<ref TBD_RosterSlotStruct> slots;             //!< JSON `slots`: every compiled slot of the running deployment.
 }
 
 //! The roster fetch on its way to the platform, with the world it was sent for.
 class TBD_RosterFetchCall : TBD_GameRuntimeCall
 {
-	int m_iGeneration;
+	int m_iGeneration; //!< The world generation the fetch was sent in.
 
+	//! Hand the answer to `TBD_RosterLoader.OnFetchAnswered`.
+	//! @param answer the platform's answer
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_RosterLoader.OnFetchAnswered(this, answer);
 	}
 }
 
+//! The event roster's two lookups and their fetch.
+//! @authority server
 class TBD_RosterLoader
 {
 	protected static const string CH_ROSTER = "Roster"; //!< Greppable channel: `grep '\[TBD\]\[Roster\]' console.log`.
 
-	//! `%1` = the event the running mission is deployed for.
-	protected static const string ROSTER_PATH = "/api/v1/game-runtime/events/%1/roster";
+	protected static const string ROSTER_PATH = "/api/v1/game-runtime/events/%1/roster"; //!< `%1` = the event the running mission is deployed for.
 
 	protected static const int WIRE_VERSION = 2; //!< The only roster wire this client reads.
 
-	protected static const int RETRY_BASE_MS = 2000;
-	protected static const int RETRY_CAP_MS = 60000;
+	protected static const int RETRY_BASE_MS = 2000; //!< First backoff delay after no answer, milliseconds.
+	protected static const int RETRY_CAP_MS = 60000; //!< Longest retry delay, milliseconds; also the delay after a refusal.
 
-	//! armaId -> that player's reserved seat.
-	protected static ref map<string, ref TBD_RosterAssignmentStruct> s_Assignments;
+	protected static ref map<string, ref TBD_RosterAssignmentStruct> s_Assignments; //!< armaId -> that player's reserved seat.
 	protected static ref map<string, ref TBD_RosterSlotStruct> s_Slots; //!< slotUid -> that slot's platform ids.
 	protected static bool s_Loaded; //!< Seating has settled; the stage machine waits on this.
-	//! How seating settled ("loaded"/"no-event"/"unconfigured"/"failed"/"timeout"), for the
-	//! `[TBD][Spawn] roster settled=...` line.
-	protected static string s_SettleReason = "pending";
-	//! A version-2 roster has been read: s_Slots lists every event seat, possibly none.
-	protected static bool s_bSlotTableLoaded;
-	protected static bool s_bFetchInFlight;
+	protected static string s_SettleReason = "pending"; //!< How seating settled ("loaded", "no-event", "unconfigured", "failed", "timeout"), for the `[TBD][Spawn] roster settled=...` line.
+	protected static bool s_bSlotTableLoaded;           //!< A version-2 roster has been read: s_Slots lists every event seat, possibly none.
+	protected static bool s_bFetchInFlight;             //!< A fetch is sent and not answered yet.
 	protected static int s_iUnansweredFetches; //!< Consecutive fetches that got no answer, for the backoff.
 	protected static ref map<string, bool> s_mReportedRefusals; //!< Refusals already reported at ERROR.
 	protected static int s_iGeneration; //!< Bumped by Reset; a fetch answered for an earlier world is dropped.
 
+	//! Whether seating has settled; the stage machine waits on this.
+	//! @return true once settled
 	static bool IsLoaded()
 	{
 		return s_Loaded;
 	}
 
+	//! How seating settled.
+	//! @return the settle reason, or "pending"
 	static string GetSettleReason()
 	{
 		return s_SettleReason;
 	}
 
+	//! The number of seated players in the settled roster.
+	//! @return the count; 0 before settling
 	static int GetAssignmentCount()
 	{
 		if (!s_Assignments)
@@ -202,6 +193,8 @@ class TBD_RosterLoader
 			queue.Remove(FetchAgain);
 	}
 
+	//! Start loading the roster of the running deployment's event; a deployment with no event
+	//! settles seating at once (round-robin).
 	static void BeginLoad()
 	{
 		if (s_Loaded || s_bFetchInFlight)
@@ -217,6 +210,8 @@ class TBD_RosterLoader
 		Fetch();
 	}
 
+	//! Send the roster fetch for the running event.
+	//! @route GET /api/v1/game-runtime/events/{eventId}/roster
 	protected static void Fetch()
 	{
 		string eventId = TBD_DeployedMission.GetEventId();
@@ -386,6 +381,7 @@ class TBD_RosterLoader
 		ScheduleFetch(RETRY_CAP_MS);
 	}
 
+	//! Fetch again after `delayMs` milliseconds, replacing any scheduled fetch.
 	protected static void ScheduleFetch(int delayMs)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -396,6 +392,7 @@ class TBD_RosterLoader
 		queue.CallLater(FetchAgain, delayMs, false);
 	}
 
+	//! Re-read the backend config and fetch, unless the slot table loaded or a fetch is in flight.
 	protected static void FetchAgain()
 	{
 		if (s_bSlotTableLoaded || s_bFetchInFlight)

@@ -22,7 +22,7 @@ mission; every other file is validated against `#/$defs/<name>`, and a file whos
 definition fails the run. The ten samples cover `root`, `meta`, `faction`, `orbatFaction`,
 `group`, `role`, `slot`, `zone`, `shape` and `circle`, the definitions the mod's DTO classes cite
 with `@contract mission.schema.json#/$defs/<name>` (for example in
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionLoader.c`).
+`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/Document/TBD_MissionZoneStruct.c`).
 
 ## Format
 

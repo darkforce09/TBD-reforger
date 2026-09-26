@@ -9,6 +9,7 @@ loads and while its slot bodies materialize.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/
+├── Document/                   the typed mission document: root, zones, ORBAT, briefings, entities, flow, settings, variants
 ├── TBD_EntityState.c           entities[] health, allowDamage, showModel and size, applied to placed bodies
 ├── TBD_GadgetFlags.c           slots[].gadgets: map, compass, watch, GPS and radio added or removed at spawn
 ├── TBD_MissionFactionNames.c   a faction key's authored display name, falling back to the key
@@ -22,9 +23,9 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/
 ## How it works
 
 `TBD_MissionSlotStruct` (with `TBD_SlotLoadoutStruct`, `TBD_SlotGearStruct`, `TBD_SlotCargoStruct`)
-and `TBD_MissionVehicleStruct` are fields of `TBD_MissionDocumentStruct`, which `TBD_MissionLoader`
-binds with `JsonLoadContext` in the primary parse. `JsonLoadContext` binds JSON keys onto class
-fields by exact name, so every field name is its JSON key.
+and `TBD_MissionVehicleStruct` are fields of `TBD_MissionDocumentStruct` (in `Document/`), which
+`TBD_MissionLoader` binds with `JsonLoadContext` in the primary parse. `JsonLoadContext` binds JSON
+keys onto class fields by exact name, so every field name is its JSON key.
 
 The other files each run a second `JsonLoadContext` pass over `TBD_MissionLoader.GetRawJson()`
 into wire structs that declare only the keys they read, so the primary structs do not grow:

@@ -1,22 +1,27 @@
-//! The mission artifact files of this host, in `$profile:TBD_MissionArtifactCache/`:
-//!   * `document.json` - the last verified artifact's bytes, exactly as the platform served them;
-//!   * `identity.json` - the deployment they belong to (TBD_RuntimeDeploymentStruct): artifact id,
-//!     its SHA-256, mission, event, event mission and terrain;
-//!   * `received.json` - bytes just received and not verified yet, staged so their hash is taken
-//!     from the file in one linear read (TBD_Sha256 explains why not from the string).
-//!
-//! The cache is written only after a verification succeeded, by the boot flow (TBD_DeployedMission)
-//! and by a `load_mission` fleet command before it restarts the scenario (TBD_FleetLoadMissionAction).
-//! A write removes the identity first and writes it last, so an interrupted write leaves no cached
-//! artifact rather than a mismatched one. A read trusts nothing: the bytes are hashed again and
-//! compared with the identity's SHA-256 before anything loads them (TBD_MissionArtifactVerification).
+/**
+ * @file TBD_MissionArtifactCache.c
+ * @brief The mission artifact files of this host: the last verified bytes, their deployment, and
+ * bytes being verified.
+ *
+ * Role: `$profile:TBD_MissionArtifactCache/` holds `document.json` (the last verified artifact's
+ * bytes exactly as served), `identity.json` (its `TBD_RuntimeDeploymentStruct`) and `received.json`
+ * (bytes just received, staged so their hash is taken from the file in one linear read).
+ * Position: written by `TBD_DeployedMission` and by the `load_mission` fleet command
+ * (`TBD_FleetLoadMissionAction`) after a verification succeeds; read by the boot sequence.
+ * State: the files on disk; no script state.  Invariants: a write removes the identity first and
+ * writes it last, so an interrupted write leaves no cached artifact rather than a mismatched one; a
+ * file outside 1..`MISSION_FILE_MAX_BYTES` is refused before it is read; a read trusts nothing, and
+ * the bytes are hashed again (`TBD_MissionArtifactVerification`) before anything loads them.
+ */
+
+//! Static access to the cached artifact files.
 //! @authority server
 class TBD_MissionArtifactCache
 {
-	protected static const string DIRECTORY = "$profile:TBD_MissionArtifactCache";
-	protected static const string DOCUMENT_PATH = "$profile:TBD_MissionArtifactCache/document.json";
-	protected static const string IDENTITY_PATH = "$profile:TBD_MissionArtifactCache/identity.json";
-	protected static const string RECEIVED_PATH = "$profile:TBD_MissionArtifactCache/received.json";
+	protected static const string DIRECTORY = "$profile:TBD_MissionArtifactCache";                    //!< Cache directory.
+	protected static const string DOCUMENT_PATH = "$profile:TBD_MissionArtifactCache/document.json"; //!< Last verified artifact bytes.
+	protected static const string IDENTITY_PATH = "$profile:TBD_MissionArtifactCache/identity.json"; //!< Deployment of the cached bytes; written last.
+	protected static const string RECEIVED_PATH = "$profile:TBD_MissionArtifactCache/received.json"; //!< Received bytes being verified.
 
 	//! Where the cache lives, for log lines.
 	static string DescribeLocation()
@@ -133,6 +138,8 @@ class TBD_MissionArtifactCache
 		return true;
 	}
 
+	//! The text of `path`, refused outside 1..`MISSION_FILE_MAX_BYTES` bytes.
+	//! @return false, with `failure` saying why, when it cannot be read whole
 	protected static bool ReadText(string path, out string text, out string failure)
 	{
 		text = string.Empty;
@@ -198,6 +205,8 @@ class TBD_MissionArtifactCache
 		return true;
 	}
 
+	//! The size of `path` in bytes.
+	//! @return the size, or -1 when the file cannot be opened
 	protected static int FileSize(string path)
 	{
 		FileHandle handle = FileIO.OpenFile(path, FileMode.READ);

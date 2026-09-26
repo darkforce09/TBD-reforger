@@ -1,36 +1,34 @@
-//! The mission this world runs: the artifact of the mission deployed to this server on the platform,
-//! loaded only when the SHA-256 of its exact bytes equals the digest the platform published.
-//!
-//! Boot order, once per world (TBD_MissionLoader.BeginLoad, from TBD_FrameworkManager.OnPostInit):
-//!   1. read the deployment in effect, `GET /api/v1/game-runtime/deployment` (mod_runtime
-//!      credential): the one in flight, else the latest confirmed one;
-//!   2. take its artifact from the local cache (TBD_MissionArtifactCache) when the cached id and
-//!      SHA-256 are the deployment's and the cached bytes still hash to them; otherwise fetch it,
-//!      `GET /api/v1/game-runtime/artifacts/{artifact_id}`, verify the received bytes before
-//!      anything reads them (TBD_MissionArtifactVerification), and cache them;
-//!   3. parse and validate the document (TBD_MissionLoader.LoadDocument);
-//!   4. declare the loaded artifact (TBD_LoadedArtifactReport): the runtime session starts,
-//!      reporting it, which is what confirms the deployment on the platform;
-//!   5. when the deployment names an event, the stage machine loads the event roster and its slot
-//!      table (TBD_RosterLoader reads GetEventId), and deployment authorization applies to it.
-//!
-//! Failure modes:
-//!   * 404 `NO_DEPLOYMENT`: no mission runs (ERROR), and the session starts reporting none. There is
-//!     no default mission.
-//!   * the deployment cannot be read (no machine credential, no answer, a refusal): the last
-//!     verified artifact in the cache runs, with a WARNING, and is reported once a session can
-//!     start. Without one no mission runs (ERROR) and the read is repeated, after no answer with
-//!     backoff from 2 s to 60 s, otherwise every 60 s, re-reading the backend config each time.
-//!   * the fetch fails, or the SHA-256 differs: nothing loads (ERROR), and the sequence repeats from
-//!     step 1 on the same schedule.
-//!   * the verified document fails validation: no mission runs, and the session reports none.
-//! @authority server
+/**
+ * @file TBD_DeployedMission.c
+ * @brief Boots every world into the mission deployed to this server: deployment read, artifact
+ * from cache or platform, SHA-256 verification, load.
+ *
+ * Role: the boot sequence, once per world from `TBD_MissionLoader.BeginLoad`: (1) read the
+ * deployment in effect (the one in flight, else the latest confirmed); (2) take its artifact from
+ * `TBD_MissionArtifactCache` when the cached id and SHA-256 match and the cached bytes still hash to
+ * them, else fetch it and verify the received bytes before anything reads them
+ * (`TBD_MissionArtifactVerification`), then cache them; (3) `TBD_MissionLoader.LoadDocument`;
+ * (4) declare the loaded artifact (`TBD_LoadedArtifactReport`), which starts the runtime session
+ * and confirms the deployment on the platform; (5) the stage machine then loads the event roster
+ * (`TBD_RosterLoader` reads `GetEventId`).  Position: fed by the platform's game-runtime routes;
+ * read by the roster, deployment authorization and the results report.
+ * State: the deployment this world runs, its source, the verification in flight and a per-world
+ * generation, all static on the server and reset by `Begin`.  Invariants: 404 `NO_DEPLOYMENT` runs
+ * no mission (ERROR) and there is no default mission; an unreadable deployment runs the last
+ * verified cached artifact with a WARNING, else no mission (ERROR) and the read repeats with backoff
+ * from 2 s to 60 s after no answer, otherwise every 60 s, re-reading the backend config each time;
+ * a failed fetch or a SHA-256 mismatch loads nothing (ERROR) and the sequence repeats; a document
+ * that fails validation runs no mission and the session reports none; an answer, verification or
+ * retry of an earlier world is dropped.
+ */
 
 //! The deployment read on its way to the platform.
 class TBD_DeploymentReadCall : TBD_GameRuntimeCall
 {
-	int m_iGeneration;
+	int m_iGeneration; //!< The world generation the read was sent in.
 
+	//! Hand the answer to `TBD_DeployedMission.OnDeploymentAnswered`.
+	//! @param answer the platform's answer
 	override void OnAnswered(notnull TBD_GameRuntimeAnswer answer)
 	{
 		TBD_DeployedMission.OnDeploymentAnswered(this, answer);
@@ -40,38 +38,37 @@ class TBD_DeploymentReadCall : TBD_GameRuntimeCall
 //! A verification the boot flow started, with what it is for.
 class TBD_BootArtifactVerification : TBD_MissionArtifactVerification
 {
-	int m_iGeneration;
-	ref TBD_RuntimeDeploymentStruct m_Identity;
-	//! The last verified artifact, checked because the deployment could not be read; the fields
-	//! below say why, for the retry when the check fails.
-	bool m_bFallback;
-	string m_sUnreadableKey;
-	string m_sUnreadableWhy;
-	bool m_bUnreadableTransient;
+	int m_iGeneration;                          //!< The world generation the verification started in.
+	ref TBD_RuntimeDeploymentStruct m_Identity; //!< The deployment whose artifact is verified.
+	bool m_bFallback;                           //!< True when this checks the last verified artifact because the deployment could not be read.
+	string m_sUnreadableKey;                    //!< Fallback only: the report key of why the deployment could not be read.
+	string m_sUnreadableWhy;                    //!< Fallback only: why the deployment could not be read, for the retry.
+	bool m_bUnreadableTransient;                //!< Fallback only: true when the read got no answer (backoff applies).
 
+	//! Hand the verdict to `TBD_DeployedMission.OnVerificationFinished`.
 	override void OnFinished()
 	{
 		TBD_DeployedMission.OnVerificationFinished(m_iGeneration);
 	}
 }
 
+//! The boot sequence and the deployment this world runs.
 class TBD_DeployedMission
 {
-	protected static const string CH_MISSION = "Mission";
-	protected static const int RETRY_BASE_MS = 2000;
-	protected static const int RETRY_CAP_MS = 60000;
+	protected static const string CH_MISSION = "Mission"; //!< Log channel.
+	protected static const int RETRY_BASE_MS = 2000;      //!< First backoff delay after no answer, milliseconds.
+	protected static const int RETRY_CAP_MS = 60000;      //!< Longest retry delay, milliseconds; also the delay after a refusal.
 
-	//! Bumped per world; answers, verifications and retries of an earlier world are dropped.
-	protected static int s_iGeneration;
+	protected static int s_iGeneration; //!< Bumped per world; answers, verifications and retries of an earlier world are dropped.
 	protected static bool s_bDecided; //!< This world's outcome is settled: a mission loaded, or none runs.
 	protected static string s_sSource = "none"; //!< "platform", "cache", "last-verified-cache" or "none".
 	protected static ref TBD_RuntimeDeploymentStruct s_Deployment; //!< The deployment this world runs, or null.
-	protected static ref TBD_BootArtifactVerification s_Verification;
-	protected static int s_iUnanswered;
+	protected static ref TBD_BootArtifactVerification s_Verification; //!< The verification in flight or last finished; null before one starts.
+	protected static int s_iUnanswered; //!< Consecutive unanswered reads or fetches this world; drives the backoff.
 	protected static ref map<string, bool> s_mReported; //!< Problems already reported at ERROR this world.
 
-	// STATE FOR OTHER SYSTEMS
-
+	//! Whether this world's outcome is settled: a mission loaded, or none runs.
+	//! @return true once settled
 	static bool IsDecided()
 	{
 		return s_bDecided;
@@ -110,6 +107,7 @@ class TBD_DeployedMission
 		return s_Deployment.mission_id;
 	}
 
+	//! The artifact running, or empty.
 	static string GetArtifactId()
 	{
 		if (!s_Deployment)
@@ -118,6 +116,7 @@ class TBD_DeployedMission
 		return s_Deployment.artifact_id;
 	}
 
+	//! The terrain key of the running deployment, or empty.
 	static string GetTerrainKey()
 	{
 		if (!s_Deployment)
@@ -125,8 +124,6 @@ class TBD_DeployedMission
 
 		return s_Deployment.terrain_key;
 	}
-
-	// BOOT
 
 	//! Start this world's boot sequence. Everything an earlier world decided is dropped.
 	static void Begin()
@@ -149,6 +146,10 @@ class TBD_DeployedMission
 		ReadDeployment();
 	}
 
+	//! Read the deployment in effect; an unconfigured credential or an unsent request goes to the
+	//! cached fallback at once.
+	//! @route GET /api/v1/game-runtime/deployment
+	//! @authority server
 	protected static void ReadDeployment()
 	{
 		if (!TBD_GameRuntimeHttp.IsConfigured())
@@ -290,6 +291,8 @@ class TBD_DeployedMission
 			queue.CallLater(SettleVerification, 0, false, generation);
 	}
 
+	//! Settle a finished verification of this world by its kind: fallback, cached copy or fetch.
+	//! @param generation the world generation it finished in; a stale one is ignored
 	protected static void SettleVerification(int generation)
 	{
 		TBD_BootArtifactVerification verification = s_Verification;
@@ -307,6 +310,7 @@ class TBD_DeployedMission
 			SettleFetch(verification);
 	}
 
+	//! The last verified artifact checked: load it with a WARNING, or wait for the deployment.
 	protected static void SettleFallback(notnull TBD_BootArtifactVerification verification)
 	{
 		if (verification.m_eResult != TBD_EArtifactVerificationResult.VERIFIED)
@@ -322,6 +326,7 @@ class TBD_DeployedMission
 		Load(verification, "last-verified-cache");
 	}
 
+	//! The cached copy checked: load it and re-point the identity, or fetch the artifact.
 	protected static void SettleCachedCopy(notnull TBD_BootArtifactVerification verification)
 	{
 		TBD_RuntimeDeploymentStruct deployment = verification.m_Identity;
@@ -337,6 +342,8 @@ class TBD_DeployedMission
 		Load(verification, "cache");
 	}
 
+	//! The fetched bytes checked: cache and load them, retry with backoff after no answer, or report
+	//! the failure once and retry every 60 s.
 	protected static void SettleFetch(notnull TBD_BootArtifactVerification verification)
 	{
 		TBD_RuntimeDeploymentStruct deployment = verification.m_Identity;
@@ -384,13 +391,15 @@ class TBD_DeployedMission
 		s_Deployment = identity;
 		s_sSource = source;
 
-		string documentMissionId = TBD_MissionLoader.GetMission().meta.id;
+		string documentMissionId = TBD_MissionLoader.GetMissionId();
 		if (!identity.mission_id.IsEmpty() && documentMissionId != identity.mission_id)
 			TBD_Log.Warn(CH_MISSION, string.Format("the artifact's meta.id '%1' is not the deployment's mission '%2'", documentMissionId, identity.mission_id));
 
 		TBD_LoadedArtifactReport.DeclareLoaded(identity.artifact_id, identity.artifact_sha256);
 	}
 
+	//! Start a verification for `identity` in this world, replacing the previous one.
+	//! @return the new verification
 	protected static TBD_BootArtifactVerification NewVerification(notnull TBD_RuntimeDeploymentStruct identity)
 	{
 		s_Verification = new TBD_BootArtifactVerification();
@@ -399,6 +408,7 @@ class TBD_DeployedMission
 		return s_Verification;
 	}
 
+	//! Read the deployment again after `delayMs` milliseconds, in this world only.
 	protected static void ScheduleRetry(int delayMs)
 	{
 		ScriptCallQueue queue = GetGame().GetCallqueue();
@@ -406,6 +416,7 @@ class TBD_DeployedMission
 			queue.CallLater(Retry, delayMs, false, s_iGeneration);
 	}
 
+	//! Re-read the backend config and the deployment, unless the world moved on or settled.
 	protected static void Retry(int generation)
 	{
 		if (generation != s_iGeneration || s_bDecided)

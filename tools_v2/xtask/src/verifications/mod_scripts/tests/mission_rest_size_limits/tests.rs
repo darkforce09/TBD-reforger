@@ -71,3 +71,18 @@ fn a_cache_or_verification_without_the_ceiling_fails() {
     unchecked.verification = String::new();
     assert!(!assert_rest_size_gate(&unchecked, "verification").unwrap());
 }
+
+#[test]
+fn the_three_pinned_sources_are_read_from_the_checkout() {
+    let root = crate::core::repository_root::test_repo_root();
+    let live = read_sources(&root).expect("every pinned source exists at its pinned path");
+    assert!(
+        live.loader
+            .contains("static bool LoadDocument(string data, string source)")
+    );
+    assert!(
+        live.verification
+            .contains("class TBD_MissionArtifactVerification")
+    );
+    assert!(live.cache.contains("class TBD_MissionArtifactCache"));
+}
