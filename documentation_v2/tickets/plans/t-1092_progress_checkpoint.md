@@ -54,10 +54,10 @@ Commits of this program stage by pathspec only.
 | P3-8 | done | 03d9d83be | Audio (5), Markers (+Client/), Radio comment pass; modded PCs named `SCR_PlayerController.c` per folder. |
 | P3-9 | done | 0bf022275 | FrameworkManager 398 over Flow/ + Stage/; Safestart/, WinConditions/; `TBD_GameStage.c` -> `TBD_EGameStage.c`; Safestart OnDelete now cancels its timers. |
 | P3-10 | done | c7afddd02 | Briefing Service/, Catalog/, UI/Pages, UI/Navigation, map launcher; wire bytes unchanged; self-check armed from Serialise now runs. |
-| P3-11 | pending | | |
-| P3-12 | pending | | |
-| P3-13 | pending | | |
-| P3-14 | pending | | |
+| P3-11 | running | | |
+| P3-12 | running | | |
+| P3-13 | running | | |
+| P3-14 | running | | |
 | P3-C | pending | | |
 | P4-1 | pending | | |
 | OP-1 | pending | | operator playtest |
@@ -71,6 +71,7 @@ Additions to a launch prompt beyond concrete values, by slice id.
 
 | Slice | Addition |
 |---|---|
+| P3-11…P3-14 | Brief file gains a "Bugs" section (operator 2026-09-26: bugs are noted with file:line, never fixed) and the wave B helpers (`EndRound`, `CountSurvivors`, `TBD_WarnOnce`, `TBD_AnnounceOnce`, `TBD_Rounding`). Slice notes carry each folder's stale-comment leftovers; P3-13 switches `TBD_MissionDeploymentRelay` off the `JsonEscape` forwarder. |
 | P3-6…P3-10 | Brief file gains wave A lessons: name split files after their primary type (ECM-9; companion structs live with their owner, enums get their own file); run `readme-coverage`/`link-check` with `--with-untracked`. |
 | P3-1…P3-5 | Delivered as one scratch brief file (B0 + CARD + SPLIT RULES + writer steps, verbatim) plus a "Parallel wave rules" block: judge compile by own-file errors only; git mv is fine, no other git add/reset. Slice notes add: heartbeat owns Tick calls (keep static Tick signatures); P3-3 adds `TBD_ZoneRegistry.FindById` and `TBD_TriggerRuntime.HasFired` for other slices; P3-5 must not touch `TBD_DebriefScoreboard.c`. |
 | P2-2 | Also update `tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/network_authority_rule.rs:25` so `TBD_Authority.IsClient()`/`IsServer()` calls count as context-dependent (the P2-1 replacement hid 82 sites), with a test. |
@@ -103,7 +104,7 @@ Wave launches pass one file built from the plan's B0, CARD, SPLIT RULES and writ
 
 ## Pause point
 
-Session paused 2026-09-26 after wave B (operator: session budget). Next: launch wave C (P3-11 Lobby, P3-12 Spectator+Players+PostGame, P3-13 Admin+MissionSelector, P3-14 UI+Core) with the plan's slice parameters, then P3-C. Tree at pause: `mod compile` 0, `mod world-boot` PASS, 2074 comment findings in 78 of 324 framework scripts.
+Session paused 2026-09-26 after wave B (operator: session budget); resumed the same day with wave C. Next: launch wave C (P3-11 Lobby, P3-12 Spectator+Players+PostGame, P3-13 Admin+MissionSelector, P3-14 UI+Core) with the plan's slice parameters, then P3-C. Tree at pause: `mod compile` 0, `mod world-boot` PASS, 2074 comment findings in 78 of 324 framework scripts.
 
 ## Comment gate baseline
 
